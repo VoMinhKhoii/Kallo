@@ -60,6 +60,7 @@ vi.mock('@/lib/db/schema', () => ({
     handle: 'pp.handle',
     displayName: 'pp.displayName',
     avatarSeed: 'pp.avatarSeed',
+    avatarUrl: 'pp.avatarUrl',
   },
   friendships: {
     id: 'f.id',
@@ -94,6 +95,7 @@ vi.mock('@/lib/db/schema', () => ({
   mealShares: {
     id: 'ms.id',
     mealId: 'ms.mealId',
+    actorId: 'ms.actorId',
     visibility: 'ms.visibility',
     sharedAt: 'ms.sharedAt',
   },
@@ -114,6 +116,12 @@ vi.mock('@/lib/groups/shares/reactions', () => ({
       new Map(shareIds.map((id) => [id, { count: 0, mine: false }]))
   ),
 }));
+vi.mock('@/lib/groups/shares/replies', () => ({
+  repliesForShares: vi.fn(
+    async (_actorId: string, shareIds: string[]) =>
+      new Map(shareIds.map((id) => [id, { replies: [], total: 0 }]))
+  ),
+}));
 
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks
@@ -130,6 +138,7 @@ import {
   getProfileBySlug,
   upsertPublicProfile,
 } from '@/lib/actions/groups/profile';
+import { repliesForShares } from '@/lib/groups/shares/replies';
 
 // Valid v4 UUIDs (the remove/uuid schemas validate version+variant bits).
 const ACTOR = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
@@ -563,6 +572,28 @@ describe('listCircleFeed', () => {
     expect(feed[1]?.friend.userId).toBe(FRIEND);
   });
 
+  it('returns the bounded reply total enrichment on ambient entries', async () => {
+    const sharedAt = new Date('2026-05-03T08:00:00Z');
+    friendsQuery([]);
+    mealsQuery([sharedMeal(ACTOR, sharedAt, 'me')]);
+    vi.mocked(repliesForShares).mockResolvedValueOnce(
+      new Map([
+        [
+          `share-${ACTOR}`,
+          {
+            replies: [],
+            total: 17,
+          },
+        ],
+      ])
+    );
+
+    const [entry] = await listCircleFeed(ACTOR, { timezoneOffset: 0 });
+
+    expect(entry?.replies).toEqual([]);
+    expect(entry?.repliesTotal).toBe(17);
+  });
+
   it('still returns the actor own meal with zero friends', async () => {
     friendsQuery([]); // no accepted friends
     mealsQuery([sharedMeal(ACTOR, new Date('2026-05-03T08:00:00Z'), 'me')]);
@@ -600,45 +631,35 @@ describe('listFriendsThreadFeed', () => {
 
   const FRIEND = INVITER;
 
-  // getAcceptedFriendIds: db.select().from().where().orderBy().
-  function friendsQuery(rows: unknown[]) {
-    mockDbSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(rows),
-        }),
-      }),
-    });
-  }
-
-  // sharedMealsBefore: db.select().from().innerJoin().innerJoin().where().orderBy().limit().
+  // sharedMealsBefore: the accepted-friend LEFT JOIN and actor's own shares
+  // are authorized in this one query.
   function sharedMealsBeforeQuery(
     rows: unknown[],
     capture?: { where?: unknown }
   ) {
-    mockDbSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockImplementation((arg: unknown) => {
-              if (capture) capture.where = arg;
-              return {
-                orderBy: vi.fn().mockReturnValue({
-                  limit: vi.fn().mockResolvedValue(rows),
-                }),
-              };
-            }),
-          }),
-        }),
+    const query = {
+      innerJoin: vi.fn(),
+      leftJoin: vi.fn(),
+      where: vi.fn().mockImplementation((arg: unknown) => {
+        if (capture) capture.where = arg;
+        return query;
       }),
-    });
+      orderBy: vi.fn(),
+      limit: vi.fn().mockResolvedValue(rows),
+    };
+    query.innerJoin.mockReturnValue(query);
+    query.leftJoin.mockReturnValue(query);
+    query.orderBy.mockReturnValue(query);
+    mockDbSelect.mockReturnValueOnce({ from: vi.fn().mockReturnValue(query) });
   }
 
   function sharedMeal(userId: string, index: number, sharedAt: Date) {
     return {
       friendUserId: userId,
       mealId: `meal-${index}`,
-      shareId: `share-${index}`,
+      shareId: `00000000-0000-4000-8000-${index
+        .toString(16)
+        .padStart(12, '0')}`,
       rawInput: `meal ${index}`,
       caloriesKcal: 500,
       proteinG: 20,
@@ -646,26 +667,30 @@ describe('listFriendsThreadFeed', () => {
       fatG: 15,
       portionFactor: 1,
       sharedAt,
+      sharedAtText: sharedAt.toISOString(),
       handle: 'phofan',
       displayName: null,
       avatarSeed: 'phofan',
+      avatarUrl: null,
     };
   }
 
-  // Page 1 upsert-bumps the read marker — stub both onConflictDoUpdate (used
-  // here) and onConflictDoNothing (used by getFriendsFeedReadMarker) on the
-  // same chain so either call shape resolves.
-  function stubReadMarkerUpsert() {
+  function stubReadMarkerUpsert(capture?: { values?: unknown; set?: unknown }) {
     mockDbInsert.mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
-        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+      values: vi.fn((values: unknown) => {
+        if (capture) capture.values = values;
+        return {
+          onConflictDoUpdate: vi.fn((config: { set: unknown }) => {
+            if (capture) capture.set = config.set;
+            return Promise.resolve(undefined);
+          }),
+          onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+        };
       }),
     });
   }
 
-  it('scopes the query to accepted friends only, never the actor', async () => {
-    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
+  it('scopes the meal query to the actor and accepted friendship edge', async () => {
     const capture: { where?: unknown } = {};
     sharedMealsBeforeQuery([], capture);
     stubReadMarkerUpsert();
@@ -673,12 +698,11 @@ describe('listFriendsThreadFeed', () => {
     await listFriendsThreadFeed(ACTOR, {});
 
     const serialized = JSON.stringify(capture.where ?? {});
-    expect(serialized).toContain(FRIEND);
-    expect(serialized).not.toContain(ACTOR);
+    expect(serialized).toContain(ACTOR);
+    expect(mockDbSelect).toHaveBeenCalledTimes(1);
   });
 
   it('returns every shared meal, not collapsed to one per day, all tagged isSelf: false', async () => {
-    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
     sharedMealsBeforeQuery([
       sharedMeal(FRIEND, 2, new Date('2026-01-01T18:00:00Z')), // dinner
       sharedMeal(FRIEND, 1, new Date('2026-01-01T08:00:00Z')), // breakfast, same day
@@ -693,7 +717,6 @@ describe('listFriendsThreadFeed', () => {
   });
 
   it('forwards the before cursor and reports nextCursor when more history remains', async () => {
-    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
     // 21 rows for the default page size of 20 signals more history exists.
     const rows = Array.from({ length: 21 }, (_, i) =>
       sharedMeal(FRIEND, i, new Date(Date.UTC(2026, 0, 21 - i)))
@@ -708,34 +731,51 @@ describe('listFriendsThreadFeed', () => {
     expect(page.nextCursor).not.toBeNull();
   });
 
-  it('returns an empty page without querying shared meals when there are no accepted friends', async () => {
-    friendsQuery([]);
-    stubReadMarkerUpsert();
+  it('returns an empty page without advancing the read marker', async () => {
+    sharedMealsBeforeQuery([]);
 
     const page = await listFriendsThreadFeed(ACTOR, {});
 
     expect(page.entries).toEqual([]);
     expect(page.nextCursor).toBeNull();
+    expect(mockDbInsert).not.toHaveBeenCalled();
   });
 
   it('bumps the read marker on page 1', async () => {
-    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
-    sharedMealsBeforeQuery([]);
-    stubReadMarkerUpsert();
+    const newest = new Date('2026-01-22T00:00:00.000Z');
+    const marker: { values?: unknown; set?: unknown } = {};
+    sharedMealsBeforeQuery([sharedMeal(FRIEND, 1, newest)]);
+    stubReadMarkerUpsert(marker);
 
     await listFriendsThreadFeed(ACTOR, {});
 
     expect(mockDbInsert).toHaveBeenCalledTimes(1);
+    expect(marker.values).toEqual({ userId: ACTOR, lastReadAt: newest });
+    expect(JSON.stringify(marker.set)).toContain('GREATEST');
+    expect(JSON.stringify(marker.set)).toContain(newest.toISOString());
   });
 
   it('does not touch the read marker when paginating with a before cursor', async () => {
-    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
     sharedMealsBeforeQuery([]);
 
     await listFriendsThreadFeed(ACTOR, {
       before: '2026-01-22T00:00:00.000Z',
     });
 
+    expect(mockDbInsert).not.toHaveBeenCalled();
+  });
+
+  it('does not advance the marker when reply enrichment fails', async () => {
+    sharedMealsBeforeQuery([
+      sharedMeal(FRIEND, 1, new Date('2026-01-22T00:00:00.000Z')),
+    ]);
+    vi.mocked(repliesForShares).mockRejectedValueOnce(
+      new Error('reply read failed')
+    );
+
+    await expect(listFriendsThreadFeed(ACTOR, {})).rejects.toThrow(
+      'reply read failed'
+    );
     expect(mockDbInsert).not.toHaveBeenCalled();
   });
 });

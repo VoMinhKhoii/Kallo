@@ -365,6 +365,27 @@
       "when": 1784224272556,
       "tag": "20260716175112_meal_share_reactions",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1784272496801,
+      "tag": "20260717071456_meal_share_replies",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1784281571703,
+      "tag": "20260717094611_public_profiles_avatar_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1784312727053,
+      "tag": "20260717182527_circle_feed_indexes",
+      "breakpoints": true
     }
   ]
 }

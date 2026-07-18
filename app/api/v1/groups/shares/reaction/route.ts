@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { toggleShareReactionAction } from '@/lib/actions/meal-sharing/reactions';
 import { readJsonBody } from '@/lib/api/auth';
-import { serializeError } from '@/lib/errors';
+import { handleRouteError } from '@/lib/api/respond';
 
 export const runtime = 'nodejs';
 
@@ -11,6 +11,6 @@ export async function POST(request: NextRequest) {
     const result = await toggleShareReactionAction(body as { shareId: string });
     return NextResponse.json(result);
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }

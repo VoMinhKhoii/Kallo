@@ -920,6 +920,10 @@ export const publicProfiles = pgTable(
     handle: text('handle').notNull(),
     displayName: text('display_name'),
     avatarSeed: text('avatar_seed'),
+    // The person's Google/Gmail picture URL, refreshed from auth metadata on
+    // sign-in. Null until captured (or for non-OAuth accounts) — the UI falls
+    // back to a letter disc.
+    avatarUrl: text('avatar_url'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -1027,6 +1031,9 @@ export const mealShares = pgTable(
       .where(sql`visibility <> 'private'`),
     // The RLS SELECT policy and feed join filter by actor_id.
     index('meal_shares_actor_idx').on(table.actorId),
+    index('meal_shares_actor_shared_at_id_idx')
+      .on(table.actorId, sql`${table.sharedAt} DESC`, sql`${table.id} DESC`)
+      .where(sql`visibility <> 'private'`),
     check(
       'meal_shares_visibility_check',
       sql`${table.visibility} IN ('private', 'circle', 'public')`
@@ -1061,10 +1068,39 @@ export const mealShareReactions = pgTable(
       table.shareId,
       table.userId
     ),
-    index('meal_share_reactions_share_idx').on(table.shareId),
     check(
       'meal_share_reactions_kind_check',
       sql`${table.kind} IN ('yum', 'cheer', 'strong', 'wow', 'heart')`
+    ),
+  ]
+);
+
+// Replies are lightweight text comments on a broadcast share — the stage-1
+// conversation unit in a group (a meal is the thread root; there is no
+// universal group chat). Like reactions, they are read and written only
+// through server actions on the Drizzle owner connection (RLS enabled, no
+// client policies), so canViewShare() is the sole visibility gate. Multiple
+// replies per user, ordered by created_at.
+export const mealShareReplies = pgTable(
+  'meal_share_replies',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    shareId: uuid('share_id')
+      .notNull()
+      .references(() => mealShares.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    body: text('body').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('meal_share_replies_share_created_id_idx').on(
+      table.shareId,
+      table.createdAt,
+      table.id
     ),
   ]
 );
@@ -1278,9 +1314,8 @@ export const chatGroupMembers = pgTable(
     joinedAt: timestamp('joined_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
-    // Bumped to now() whenever this member opens the thread (listChatGroupMessages).
-    // A message is unread when its created_at is after this — defaults to
-    // joined_at (now()) so a fresh join never shows a backlog as unread.
+    // Bumped whenever this member opens messages or the meal feed. Activity
+    // after this instant is unread; the default prevents a fresh-join backlog.
     lastReadAt: timestamp('last_read_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -1291,7 +1326,6 @@ export const chatGroupMembers = pgTable(
       table.userId
     ),
     index('chat_group_members_user_idx').on(table.userId),
-    index('chat_group_members_group_idx').on(table.groupId),
     check(
       'chat_group_members_role_check',
       sql`${table.role} IN ('owner', 'member')`

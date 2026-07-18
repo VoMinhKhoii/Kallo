@@ -3,19 +3,15 @@
 import { MessagesSquare } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { FeedEntry } from '@/components/groups/feed-entry';
+import { GroupInfo } from '@/components/groups/info/group-info';
 import { ThreadFeed } from '@/components/groups/thread-feed';
-import { GroupComposer } from '@/components/groups/timeline/group-composer';
-import { GroupMembersRow } from '@/components/groups/timeline/group-members-row';
-import { MessageEntry } from '@/components/groups/timeline/message-entry';
-import { useMyProfile } from '@/hooks/profile/use-profile';
-import { useChatGroup } from '@/hooks/social/use-chat-groups';
-import { useGroupTimeline } from '@/hooks/social/use-group-timeline';
+import { useChatGroup, useGroupMealFeed } from '@/hooks/social/use-chat-groups';
 
-/** Right-pane detail for a group's merged meal-and-message timeline. */
+/** A group's meal feed with per-meal replies (stage 1 — no universal chat).
+ * Logging happens through the AI meal bar in the Circle layout above. */
 export function GroupFeed({ groupId }: { groupId: string }) {
   const t = useTranslations('groups.page');
   const { data: group } = useChatGroup(groupId);
-  const { data: profile } = useMyProfile();
   const {
     data,
     isPending,
@@ -25,40 +21,25 @@ export function GroupFeed({ groupId }: { groupId: string }) {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useGroupTimeline(groupId);
+  } = useGroupMealFeed(groupId);
 
   const groupName = group?.name ?? '';
 
   // Pages arrive newest-page-first, each page newest-entry-first — flattening
-  // in that order already yields one continuous newest→oldest sequence, so a
-  // single reverse() gives the oldest-first order ThreadFeed renders in.
-  const entries = (data?.pages ?? []).flatMap((page) => page.entries).reverse();
-  const items = entries.map((entry) =>
-    entry.type === 'meal'
-      ? {
-          id: entry.meal.shareId,
-          timestamp: entry.meal.sharedAt,
-          content: <FeedEntry entry={entry} />,
-        }
-      : {
-          id: entry.id,
-          timestamp: entry.sentAt,
-          content: <MessageEntry entry={entry} />,
-        }
-  );
+  // yields newest-first, exactly the order ThreadFeed renders.
+  const items = (data?.pages ?? [])
+    .flatMap((page) => page.entries)
+    .map((entry) => ({
+      id: entry.meal.shareId,
+      timestamp: entry.meal.sharedAt,
+      content: <FeedEntry entry={entry} />,
+    }));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <GroupMembersRow group={group} />
+      <GroupInfo group={group} />
       <ThreadFeed
         entries={items}
-        composer={
-          <GroupComposer
-            groupId={groupId}
-            groupName={groupName}
-            profile={profile}
-          />
-        }
         emptyIcon={MessagesSquare}
         emptyMessage={t('groupNoActivity', { name: groupName })}
         isPending={isPending}

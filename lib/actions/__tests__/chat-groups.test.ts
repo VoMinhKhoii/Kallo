@@ -81,6 +81,7 @@ vi.mock('@/lib/db/schema', () => ({
     createdAt: 'cgmsg.createdAt',
   },
   friendships: {
+    id: 'f.id',
     status: 'f.status',
     userLow: 'f.userLow',
     userHigh: 'f.userHigh',
@@ -92,6 +93,7 @@ vi.mock('@/lib/db/schema', () => ({
   mealShares: {
     id: 'ms.id',
     mealId: 'ms.mealId',
+    actorId: 'ms.actorId',
     visibility: 'ms.visibility',
     sharedAt: 'ms.sharedAt',
   },
@@ -100,6 +102,7 @@ vi.mock('@/lib/db/schema', () => ({
     handle: 'pp.handle',
     displayName: 'pp.displayName',
     avatarSeed: 'pp.avatarSeed',
+    avatarUrl: 'pp.avatarUrl',
   },
 }));
 
@@ -107,6 +110,12 @@ vi.mock('@/lib/groups/shares/reactions', () => ({
   reactionsForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
       new Map(shareIds.map((id) => [id, { count: 0, mine: false }]))
+  ),
+}));
+vi.mock('@/lib/groups/shares/replies', () => ({
+  repliesForShares: vi.fn(
+    async (_actorId: string, shareIds: string[]) =>
+      new Map(shareIds.map((id) => [id, { replies: [], total: 0 }]))
   ),
 }));
 
@@ -121,10 +130,10 @@ import {
   leaveChatGroup,
   listChatGroupMessages,
   listGroupMealFeed,
-  listGroupTimeline,
   listMyChatGroups,
   sendChatGroupMessage,
 } from '@/lib/actions/chat-groups';
+import { reactionsForShares } from '@/lib/groups/shares/reactions';
 
 const USER_A = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const USER_B = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
@@ -147,11 +156,39 @@ function selectRows(rows: unknown[]) {
   return { from: vi.fn().mockReturnValue(level) };
 }
 
+function acceptedFriendsQuery(friendIds: string[]) {
+  mockDbSelect.mockReturnValueOnce({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue(
+        friendIds.map((friendId) => ({
+          userLow: USER_A < friendId ? USER_A : friendId,
+          userHigh: USER_A < friendId ? friendId : USER_A,
+        }))
+      ),
+    }),
+  });
+}
+
+function accessRow(
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> {
+  return {
+    kind: 'group',
+    role: 'member',
+    joinedAt: new Date('2020-01-01T00:00:00.000Z'),
+    directUserLow: null,
+    directUserHigh: null,
+    directFriendAccepted: true,
+    ...overrides,
+  };
+}
+
 // A stub update chain: db.update(table).set(vals).where(cond) -> resolves.
-function stubUpdate() {
+function stubUpdate(capture?: { set?: unknown }) {
   mockDbUpdate.mockReturnValue({
-    set: vi.fn().mockReturnValue({
-      where: vi.fn().mockResolvedValue(undefined),
+    set: vi.fn((values: unknown) => {
+      if (capture) capture.set = values;
+      return { where: vi.fn().mockResolvedValue(undefined) };
     }),
   });
 }
@@ -201,7 +238,7 @@ describe('createChatGroup', () => {
   });
 
   it('rejects a member who is not an accepted friend', async () => {
-    mockDbSelect.mockReturnValueOnce(selectRows([])); // no friendship edge
+    acceptedFriendsQuery([]);
 
     await expect(
       createChatGroup(USER_A, { name: 'Trip', memberUserIds: [USER_B] })
@@ -217,9 +254,7 @@ describe('createChatGroup', () => {
   });
 
   it('creates the group with the actor as owner and members as accepted friends', async () => {
-    mockDbSelect
-      .mockReturnValueOnce(selectRows([{ status: 'accepted' }])) // USER_B
-      .mockReturnValueOnce(selectRows([{ status: 'accepted' }])); // USER_C
+    acceptedFriendsQuery([USER_B, USER_C]);
 
     const txCalls: unknown[] = [];
     mockTxInsert.mockImplementation(() => ({
@@ -261,10 +296,13 @@ describe('listMyChatGroups', () => {
   // db.select().from().where() -> the actor's accepted friends, consulted by
   // the backfill (ensureDirectChatsForAcceptedFriends) before every list read.
   function friendsBackfillQuery(rows: unknown[]) {
+    const query = {
+      leftJoin: vi.fn(),
+      where: vi.fn().mockResolvedValue(rows),
+    };
+    query.leftJoin.mockReturnValue(query);
     mockDbSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue(rows),
-      }),
+      from: vi.fn().mockReturnValue(query),
     });
   }
 
@@ -329,6 +367,7 @@ describe('listMyChatGroups', () => {
         avatarSeed: null,
         updatedAt: new Date('2026-01-01T01:00:00Z'),
         lastReadAt,
+        unread: true,
       },
     ]);
     lastMessagesQuery([
@@ -358,6 +397,7 @@ describe('listMyChatGroups', () => {
         avatarSeed: null,
         updatedAt: new Date('2026-01-01T01:00:00Z'),
         lastReadAt,
+        unread: false,
       },
     ]);
     lastMessagesQuery([
@@ -384,6 +424,7 @@ describe('listMyChatGroups', () => {
         avatarSeed: null,
         updatedAt: new Date('2026-01-01T01:00:00Z'),
         lastReadAt: new Date('2026-01-01T00:00:00Z'),
+        unread: true,
       },
     ]);
     lastMessagesQuery([]);
@@ -406,6 +447,7 @@ describe('listMyChatGroups', () => {
         avatarSeed: null,
         updatedAt: new Date('2026-01-01T01:00:00Z'),
         lastReadAt: new Date('2026-01-01T00:00:00Z'),
+        unread: false,
       },
     ]);
     lastMessagesQuery([]);
@@ -419,13 +461,9 @@ describe('listMyChatGroups', () => {
   it('resolves a direct chat title to the OTHER member, not the actor', async () => {
     // The counterpart must be a current accepted friend or the direct chat is
     // gated out of the list (removed/blocked friends' chats don't surface).
-    friendsBackfillQuery([{ userLow: LOW, userHigh: HIGH }]);
-    mockDbInsert.mockImplementation(() => ({
-      values: vi.fn().mockReturnValue({
-        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
-      }),
-    }));
-    mockDbSelect.mockReturnValueOnce(selectRows([{ id: DIRECT_GROUP_ID }]));
+    friendsBackfillQuery([
+      { userLow: LOW, userHigh: HIGH, groupId: DIRECT_GROUP_ID },
+    ]);
     myGroupsQuery([
       {
         id: DIRECT_GROUP_ID,
@@ -436,6 +474,7 @@ describe('listMyChatGroups', () => {
         lastReadAt: new Date('2026-01-01T01:00:00Z'),
         directUserLow: LOW,
         directUserHigh: HIGH,
+        unread: false,
       },
     ]);
     otherMemberQuery([
@@ -470,6 +509,7 @@ describe('listMyChatGroups', () => {
         lastReadAt: new Date('2026-01-01T01:00:00Z'),
         directUserLow: LOW,
         directUserHigh: HIGH,
+        unread: false,
       },
     ]);
     // No direct groups survive the filter, so the other-member / message /
@@ -482,15 +522,28 @@ describe('listMyChatGroups', () => {
 
   it('backfills a direct chat for an accepted friend who never got one, so they still show up', async () => {
     // One accepted friend with no existing chat_groups row for the pair.
-    friendsBackfillQuery([{ userLow: USER_A, userHigh: USER_B }]);
-    // getOrCreateDirectChatGroup's own inserts, invoked by the backfill.
-    mockDbInsert.mockImplementation(() => ({
-      values: vi.fn().mockReturnValue({
-        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
-      }),
-    }));
-    // getOrCreateDirectChatGroup's re-select of the (newly created) group id.
-    mockDbSelect.mockReturnValueOnce(selectRows([{ id: DIRECT_GROUP_ID }]));
+    friendsBackfillQuery([
+      { userLow: USER_A, userHigh: USER_B, groupId: null },
+    ]);
+    mockDbInsert
+      .mockReturnValueOnce({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: DIRECT_GROUP_ID,
+                userLow: USER_A,
+                userHigh: USER_B,
+              },
+            ]),
+          }),
+        }),
+      })
+      .mockReturnValueOnce({
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+        }),
+      });
 
     myGroupsQuery([
       {
@@ -502,6 +555,7 @@ describe('listMyChatGroups', () => {
         lastReadAt: new Date('2026-01-01T01:00:00Z'),
         directUserLow: LOW,
         directUserHigh: HIGH,
+        unread: false,
       },
     ]);
     otherMemberQuery([
@@ -532,6 +586,7 @@ describe('listMyChatGroups', () => {
         avatarSeed: null,
         updatedAt: new Date('2026-01-01T01:00:00Z'),
         lastReadAt: new Date('2026-01-01T00:00:00Z'),
+        unread: true,
       },
     ]);
     lastMessagesQuery([]);
@@ -557,6 +612,7 @@ describe('listMyChatGroups', () => {
         avatarSeed: null,
         updatedAt: new Date('2026-01-05T00:00:00Z'),
         lastReadAt: new Date('2026-01-01T00:00:00Z'),
+        unread: false,
       },
       {
         id: GROUP_ID,
@@ -565,6 +621,7 @@ describe('listMyChatGroups', () => {
         avatarSeed: null,
         updatedAt: new Date('2026-01-01T00:00:00Z'),
         lastReadAt: new Date('2026-01-01T00:00:00Z'),
+        unread: false,
       },
     ]);
     lastMessagesQuery([]);
@@ -585,21 +642,11 @@ describe('listGroupMealFeed', () => {
 
   // requireMembership: db.select().from().where().limit().
   function membershipQuery(rows: unknown[]) {
-    mockDbSelect.mockReturnValueOnce(selectRows(rows));
-  }
-
-  // memberRows: db.select().from().where() — resolves directly, no .limit().
-  function memberRowsQuery(rows: unknown[]) {
-    mockDbSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue(
-          rows.map((row) => ({
-            ...(row as Record<string, unknown>),
-            joinedAt: new Date('2020-01-01T00:00:00.000Z'),
-          }))
-        ),
-      }),
-    });
+    mockDbSelect.mockReturnValueOnce(
+      selectRows(
+        rows.length > 0 ? [accessRow(rows[0] as Record<string, unknown>)] : []
+      )
+    );
   }
 
   // sharedGroupMealsBefore: four joins, then seek/order/limit.
@@ -627,7 +674,9 @@ describe('listGroupMealFeed', () => {
     return {
       friendUserId: USER_B,
       mealId: `meal-${index}`,
-      shareId: `share-${index}`,
+      shareId: `00000000-0000-4000-8000-${index
+        .toString(16)
+        .padStart(12, '0')}`,
       rawInput: `meal ${index}`,
       caloriesKcal: 500,
       proteinG: 20,
@@ -635,9 +684,11 @@ describe('listGroupMealFeed', () => {
       fatG: 15,
       portionFactor: 1,
       sharedAt,
+      sharedAtText: sharedAt.toISOString(),
       handle: 'phofan',
       displayName: null,
       avatarSeed: 'phofan',
+      avatarUrl: null,
     };
   }
 
@@ -650,23 +701,25 @@ describe('listGroupMealFeed', () => {
   });
 
   it('returns every shared meal among members, not collapsed per person', async () => {
+    const marker: { set?: unknown } = {};
     membershipQuery([{ id: 'member-row' }]);
-    memberRowsQuery([{ userId: USER_A }, { userId: USER_B }]);
     sharedMealsBeforeQuery([
       sharedMeal(2, new Date('2026-01-01T18:00:00Z')),
       sharedMeal(1, new Date('2026-01-01T08:00:00Z')),
     ]);
-    stubUpdate(); // page 1 bumps lastReadAt
+    stubUpdate(marker);
 
     const page = await listGroupMealFeed(USER_A, { groupId: GROUP_ID });
 
     expect(page.entries).toHaveLength(2);
     expect(page.nextCursor).toBeNull();
+    expect(mockDbUpdate).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(marker.set)).toContain('2026-01-01T18:00:00.000Z');
+    expect(JSON.stringify(marker.set)).toContain('GREATEST');
   });
 
   it('reports a nextCursor when more history remains', async () => {
     membershipQuery([{ id: 'member-row' }]);
-    memberRowsQuery([{ userId: USER_A }, { userId: USER_B }]);
     const rows = Array.from({ length: 21 }, (_, i) =>
       sharedMeal(i, new Date(Date.UTC(2026, 0, 21 - i)))
     );
@@ -679,20 +732,18 @@ describe('listGroupMealFeed', () => {
     expect(page.nextCursor).not.toBeNull();
   });
 
-  it('bumps lastReadAt on page 1 (opening the thread is the read receipt)', async () => {
+  it('does not bump lastReadAt for an empty first page', async () => {
     membershipQuery([{ id: 'member-row' }]);
-    memberRowsQuery([{ userId: USER_A }]);
     sharedMealsBeforeQuery([]);
     stubUpdate();
 
     await listGroupMealFeed(USER_A, { groupId: GROUP_ID });
 
-    expect(mockDbUpdate).toHaveBeenCalledTimes(1);
+    expect(mockDbUpdate).not.toHaveBeenCalled();
   });
 
   it('does not bump lastReadAt when paginating with a `before` cursor', async () => {
     membershipQuery([{ id: 'member-row' }]);
-    memberRowsQuery([{ userId: USER_A }]);
     sharedMealsBeforeQuery([]);
 
     await listGroupMealFeed(USER_A, {
@@ -700,6 +751,21 @@ describe('listGroupMealFeed', () => {
       before: '2026-01-01T00:00:00.000Z',
     });
 
+    expect(mockDbUpdate).not.toHaveBeenCalled();
+  });
+
+  it('does not advance lastReadAt when reaction enrichment fails', async () => {
+    membershipQuery([{ id: 'member-row' }]);
+    sharedMealsBeforeQuery([
+      sharedMeal(1, new Date('2026-01-01T18:00:00.000Z')),
+    ]);
+    vi.mocked(reactionsForShares).mockRejectedValueOnce(
+      new Error('reaction read failed')
+    );
+
+    await expect(
+      listGroupMealFeed(USER_A, { groupId: GROUP_ID })
+    ).rejects.toThrow('reaction read failed');
     expect(mockDbUpdate).not.toHaveBeenCalled();
   });
 });
@@ -735,7 +801,7 @@ describe('membership-gated reads', () => {
 
   it('listChatGroupMessages returns rows oldest-first and bumps the read marker', async () => {
     mockDbSelect
-      .mockReturnValueOnce(selectRows([{ id: 'member-row' }])) // membership ok
+      .mockReturnValueOnce(selectRows([accessRow()]))
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
@@ -771,18 +837,16 @@ describe('membership-gated reads', () => {
   it('direct chat: a removed/blocked ex-friend is rejected despite membership', async () => {
     // Membership row still exists (remove/block only mutates friendships) but
     // the pair no longer has an accepted edge — the gate must 404, not serve.
-    mockDbSelect
-      .mockReturnValueOnce(
-        selectRows([
-          {
-            id: 'member-row',
-            kind: 'direct',
-            directUserLow: LOW,
-            directUserHigh: HIGH,
-          },
-        ])
-      )
-      .mockReturnValueOnce(selectRows([])); // no accepted friendship edge
+    mockDbSelect.mockReturnValueOnce(
+      selectRows([
+        accessRow({
+          kind: 'direct',
+          directUserLow: LOW,
+          directUserHigh: HIGH,
+          directFriendAccepted: false,
+        }),
+      ])
+    );
 
     await expect(
       sendChatGroupMessage(USER_A, { groupId: DIRECT_GROUP_ID, body: 'hi' })
@@ -791,18 +855,15 @@ describe('membership-gated reads', () => {
   });
 
   it('direct chat: a current accepted friend passes the gate', async () => {
-    mockDbSelect
-      .mockReturnValueOnce(
-        selectRows([
-          {
-            id: 'member-row',
-            kind: 'direct',
-            directUserLow: LOW,
-            directUserHigh: HIGH,
-          },
-        ])
-      )
-      .mockReturnValueOnce(selectRows([{ status: 'accepted' }]));
+    mockDbSelect.mockReturnValueOnce(
+      selectRows([
+        accessRow({
+          kind: 'direct',
+          directUserLow: LOW,
+          directUserHigh: HIGH,
+        }),
+      ])
+    );
     mockDbInsert.mockReturnValue({
       values: vi.fn().mockReturnValue({
         returning: vi.fn().mockResolvedValue([
@@ -826,7 +887,7 @@ describe('membership-gated reads', () => {
   });
 
   it('sendChatGroupMessage bumps the group activity timestamp', async () => {
-    mockDbSelect.mockReturnValueOnce(selectRows([{ id: 'member-row' }])); // membership ok
+    mockDbSelect.mockReturnValueOnce(selectRows([accessRow()]));
     mockDbInsert.mockReturnValue({
       values: vi.fn().mockReturnValue({
         returning: vi.fn().mockResolvedValue([
@@ -884,15 +945,20 @@ describe('leaveChatGroup', () => {
   });
 
   it('refuses to orphan a group while the owner has other members', async () => {
-    queueTxSelect([
-      {
-        id: 'membership',
-        kind: 'group',
-        directUserLow: null,
-        directUserHigh: null,
-      },
-    ]);
-    queueTxSelect([{ role: 'owner' }], true);
+    queueTxSelect([{ id: GROUP_ID, kind: 'group' }], true);
+    queueTxSelect(
+      [
+        {
+          kind: 'group',
+          role: 'owner',
+          joinedAt: new Date('2020-01-01T00:00:00.000Z'),
+          directUserLow: null,
+          directUserHigh: null,
+          directFriendAccepted: true,
+        },
+      ],
+      true
+    );
     queueTxSelect([{ id: 'other-member' }]);
 
     await expect(leaveChatGroup(USER_A, GROUP_ID)).rejects.toThrow(
@@ -901,16 +967,21 @@ describe('leaveChatGroup', () => {
     expect(mockTxDelete).not.toHaveBeenCalled();
   });
 
-  it('removes a member so the next timeline read fails membership', async () => {
-    queueTxSelect([
-      {
-        id: 'membership',
-        kind: 'group',
-        directUserLow: null,
-        directUserHigh: null,
-      },
-    ]);
-    queueTxSelect([{ role: 'member' }], true);
+  it('removes a member so the next feed read fails membership', async () => {
+    queueTxSelect([{ id: GROUP_ID, kind: 'group' }], true);
+    queueTxSelect(
+      [
+        {
+          kind: 'group',
+          role: 'member',
+          joinedAt: new Date('2020-01-01T00:00:00.000Z'),
+          directUserLow: null,
+          directUserHigh: null,
+          directFriendAccepted: true,
+        },
+      ],
+      true
+    );
     mockTxDelete.mockReturnValue({
       where: vi.fn().mockResolvedValue(undefined),
     });
@@ -922,7 +993,7 @@ describe('leaveChatGroup', () => {
 
     mockDbSelect.mockReturnValueOnce(selectRows([]));
     await expect(
-      listGroupTimeline(USER_A, { groupId: GROUP_ID })
+      listGroupMealFeed(USER_A, { groupId: GROUP_ID })
     ).rejects.toThrow('Không tìm thấy nhóm chat.');
   });
 });

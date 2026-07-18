@@ -43,7 +43,7 @@ export function EmptyState({
       {Icon && (
         <span
           className={cn(
-            'flex items-center justify-center rounded-full bg-nham-accent/10 text-nham-accent',
+            'flex items-center justify-center rounded-full bg-[#E8E6DC] text-[#141413]',
             compact ? 'size-9' : 'size-12'
           )}
         >
@@ -53,7 +53,7 @@ export function EmptyState({
       <div className={cn('flex flex-col', compact ? 'gap-0.5' : 'gap-1')}>
         <p
           className={cn(
-            'font-medium font-sans-display text-nham-text',
+            'font-medium font-sans-display text-[#141413]',
             compact ? 'text-[13px]' : 'text-[15px]'
           )}
         >
@@ -62,7 +62,7 @@ export function EmptyState({
         {description && (
           <p
             className={cn(
-              'mx-auto max-w-xs font-sans-display text-nham-text-muted leading-relaxed',
+              'mx-auto max-w-xs font-sans-display text-[#6E6D66] leading-relaxed',
               compact ? 'text-[12px]' : 'text-[13px]'
             )}
           >

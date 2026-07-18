@@ -13,13 +13,9 @@ import {
 import { Errors } from '@/lib/errors';
 import { todayLocalDate } from '@/lib/groups/meal-feed';
 import { circleFeedSchema, createChatGroupSchema } from '@/lib/validation';
-import {
-  type ChatGroupDb,
-  ensureDirectChatsForAcceptedFriends,
-  isAcceptedFriend,
-  requireMembership,
-} from './membership';
-import type { ChatGroupDetail, ChatGroupIdentity } from './types';
+import { ensureDirectChatsForAcceptedFriends } from './direct-chats';
+import { acceptedFriendsAmong, type ChatGroupDb } from './membership';
+import type { ChatGroupIdentity } from './types';
 
 export async function createChatGroup(
   actorId: string,
@@ -35,10 +31,8 @@ export async function createChatGroup(
     throw Errors.validationFailed('Chọn ít nhất một thành viên.');
   }
 
-  const acceptedChecks = await Promise.all(
-    memberIds.map((memberId) => isAcceptedFriend(actorId, memberId, db))
-  );
-  if (acceptedChecks.some((accepted) => !accepted)) {
+  const acceptedFriendIds = await acceptedFriendsAmong(actorId, memberIds, db);
+  if (acceptedFriendIds.size !== memberIds.length) {
     throw Errors.validationFailed(
       'Chỉ có thể thêm bạn bè đã kết nối vào nhóm.'
     );
@@ -72,6 +66,12 @@ export async function listMyChatGroups(
     chatGroupMembers,
     'activity_viewer_membership'
   );
+  const unreadMessage = alias(chatGroupMessages, 'unread_group_message');
+  const unreadOwnerMembership = alias(
+    chatGroupMembers,
+    'unread_meal_owner_membership'
+  );
+  const unreadShare = alias(mealShares, 'unread_group_meal_share');
   const { timezoneOffset } = circleFeedSchema.parse(input);
   const acceptedFriendIds = new Set(
     await ensureDirectChatsForAcceptedFriends(actorId, db)
@@ -84,9 +84,27 @@ export async function listMyChatGroups(
       name: chatGroups.name,
       avatarSeed: chatGroups.avatarSeed,
       updatedAt: chatGroups.updatedAt,
-      lastReadAt: chatGroupMembers.lastReadAt,
       directUserLow: chatGroups.directUserLow,
       directUserHigh: chatGroups.directUserHigh,
+      unread: sql<boolean>`
+        EXISTS (
+          SELECT 1
+          FROM "chat_group_messages" AS "unread_group_message"
+          WHERE ${unreadMessage.groupId} = ${chatGroups.id}
+            AND ${unreadMessage.createdAt} > ${chatGroupMembers.lastReadAt}
+        )
+        OR EXISTS (
+          SELECT 1
+          FROM "chat_group_members" AS "unread_meal_owner_membership"
+          INNER JOIN "meal_shares" AS "unread_group_meal_share"
+            ON ${unreadShare.actorId} = ${unreadOwnerMembership.userId}
+          WHERE ${unreadOwnerMembership.groupId} = ${chatGroups.id}
+            AND ${unreadShare.visibility} <> 'private'
+            AND ${unreadShare.sharedAt} > ${chatGroupMembers.lastReadAt}
+            AND ${unreadShare.sharedAt} >= ${chatGroupMembers.joinedAt}
+            AND ${unreadShare.sharedAt} >= ${unreadOwnerMembership.joinedAt}
+        )
+      `,
     })
     .from(chatGroupMembers)
     .innerJoin(chatGroups, eq(chatGroups.id, chatGroupMembers.groupId))
@@ -146,7 +164,8 @@ export async function listMyChatGroups(
           .where(inArray(chatGroupMessages.groupId, groupIds))
           .orderBy(
             chatGroupMessages.groupId,
-            desc(chatGroupMessages.createdAt)
+            desc(chatGroupMessages.createdAt),
+            desc(chatGroupMessages.id)
           ),
     groupIds.length === 0
       ? Promise.resolve([])
@@ -163,8 +182,17 @@ export async function listMyChatGroups(
               eq(viewerMembership.userId, actorId)
             )
           )
-          .innerJoin(meals, eq(meals.userId, chatGroupMembers.userId))
-          .innerJoin(mealShares, eq(mealShares.mealId, meals.id))
+          .innerJoin(
+            mealShares,
+            eq(mealShares.actorId, chatGroupMembers.userId)
+          )
+          .innerJoin(
+            meals,
+            and(
+              eq(meals.id, mealShares.mealId),
+              eq(meals.userId, mealShares.actorId)
+            )
+          )
           .where(
             and(
               inArray(chatGroupMembers.groupId, groupIds),
@@ -189,18 +217,12 @@ export async function listMyChatGroups(
   const identities = myGroups.map((group) => {
     const lastMessage = lastMessageByGroupId.get(group.id) ?? null;
     const lastMealSharedAt = lastMealSharedAtByGroupId.get(group.id) ?? null;
-    const messageUnread = lastMessage
-      ? lastMessage.createdAt > group.lastReadAt
-      : false;
-    const mealUnread = lastMealSharedAt
-      ? lastMealSharedAt > group.lastReadAt
-      : false;
     const shared = {
       avatarSeed: group.avatarSeed,
       updatedAt: group.updatedAt.toISOString(),
       lastMessagePreview: lastMessage?.body ?? null,
       lastMessageAt: lastMessage?.createdAt.toISOString() ?? null,
-      unread: messageUnread || mealUnread,
+      unread: group.unread,
       lastMealSharedAt: lastMealSharedAt
         ? lastMealSharedAt.toISOString()
         : null,
@@ -232,43 +254,4 @@ export async function listMyChatGroups(
   return identities
     .sort((a, b) => b.activityRank - a.activityRank)
     .map(({ activityRank: _activityRank, ...identity }) => identity);
-}
-
-export async function getChatGroup(
-  actorId: string,
-  input: { groupId: string },
-  db: ChatGroupDb = defaultDb
-): Promise<ChatGroupDetail> {
-  await requireMembership(actorId, input.groupId, db);
-
-  const [group] = await db
-    .select({ id: chatGroups.id, kind: chatGroups.kind, name: chatGroups.name })
-    .from(chatGroups)
-    .where(eq(chatGroups.id, input.groupId))
-    .limit(1);
-  if (!group) {
-    throw Errors.notFound('Không tìm thấy nhóm chat.');
-  }
-
-  const memberRows = await db
-    .select({
-      userId: chatGroupMembers.userId,
-      role: chatGroupMembers.role,
-      handle: publicProfiles.handle,
-      displayName: publicProfiles.displayName,
-      avatarSeed: publicProfiles.avatarSeed,
-    })
-    .from(chatGroupMembers)
-    .innerJoin(
-      publicProfiles,
-      eq(publicProfiles.userId, chatGroupMembers.userId)
-    )
-    .where(eq(chatGroupMembers.groupId, input.groupId));
-
-  return {
-    id: group.id,
-    kind: group.kind as 'direct' | 'group',
-    name: group.name,
-    members: memberRows,
-  };
 }

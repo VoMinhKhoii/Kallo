@@ -1,4 +1,5 @@
 import type { SharedMealEntry } from '@/lib/groups/meal-feed';
+import type { PublicIdentity } from '@/lib/groups/public-identity';
 
 export interface ChatGroupIdentity {
   id: string;
@@ -17,12 +18,8 @@ export interface ChatGroupIdentity {
   lastMealSharedAt: string | null;
 }
 
-export interface ChatGroupMember {
-  userId: string;
+export interface ChatGroupMember extends PublicIdentity {
   role: string;
-  handle: string;
-  displayName: string | null;
-  avatarSeed: string | null;
 }
 
 export interface ChatGroupDetail {
@@ -30,6 +27,8 @@ export interface ChatGroupDetail {
   kind: 'direct' | 'group';
   name: string | null;
   members: ChatGroupMember[];
+  /** The requesting actor's own role — gates owner-only UI (rename, remove). */
+  myRole: 'owner' | 'member';
 }
 
 export interface ChatGroupMessage {
@@ -44,30 +43,5 @@ export type GroupMealFeedEntry = SharedMealEntry;
 
 export interface GroupMealFeedPage {
   entries: GroupMealFeedEntry[];
-  nextCursor: string | null;
-}
-
-export type GroupTimelineMealEntry = { type: 'meal' } & SharedMealEntry;
-
-export interface GroupTimelineMessageEntry {
-  type: 'message';
-  id: string;
-  author: {
-    userId: string;
-    handle: string;
-    displayName: string | null;
-    avatarSeed: string | null;
-  };
-  isSelf: boolean;
-  body: string;
-  sentAt: string;
-}
-
-export type GroupTimelineEntry =
-  | GroupTimelineMealEntry
-  | GroupTimelineMessageEntry;
-
-export interface GroupTimelinePage {
-  entries: GroupTimelineEntry[];
   nextCursor: string | null;
 }

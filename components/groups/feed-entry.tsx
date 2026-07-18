@@ -1,9 +1,10 @@
 'use client';
 
-import { Copy, Heart, Split } from 'lucide-react';
+import { Copy, Heart } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { tintFor } from '@/components/groups/avatar-tint';
 import { labelFor } from '@/components/groups/invite/profile-identity';
+import { ShareReplies } from '@/components/groups/share-replies';
+import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { useLogSharedMeal } from '@/hooks/social/use-log-shared-meal';
 import { useToggleReaction } from '@/hooks/social/use-toggle-reaction';
 import { formatElapsed } from '@/lib/date/format-elapsed';
@@ -43,42 +44,36 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
 
   return (
     <div className="flex gap-3">
-      <span
-        className={`flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${tintFor(friend.avatarSeed, label)}`}
-      >
-        <span className="font-bold font-sans-display text-[12px] text-nham-btn">
-          {label.charAt(0).toUpperCase()}
-        </span>
-      </span>
+      <ProfileAvatar avatarUrl={friend.avatarUrl} label={label} />
       <div className="min-w-0 flex-1">
         <div className="mb-[3px] flex flex-wrap items-baseline gap-2">
-          <b className="font-bold font-sans-display text-[13px] text-nham-text">
+          <b className="font-bold font-sans-display text-[#141413] text-[15px]">
             {label}
           </b>
-          <span className="font-sans-display text-[11px] text-nham-text-muted">
+          <span className="font-sans-display text-[#6E6D66] text-[15px]">
             {formatElapsed(meal.sharedAt, locale)}
           </span>
           {meal.portionFactor < 1 && (
-            <span className="rounded-full bg-nham-accent/15 px-2 py-px font-medium font-sans-display text-[10px] text-nham-text-muted">
+            <span className="rounded-full bg-[#E8E6DC]/60 px-2 py-px font-medium font-sans-display text-[#6E6D66] text-[10px]">
               {t('portion', {
                 portion: fractionLabel(meal.portionFactor),
               })}
             </span>
           )}
         </div>
-        <p className="font-medium font-sans-display text-[15px] text-nham-text leading-[1.45]">
+        <p className="font-medium font-sans-display text-[#141413] text-[15px] leading-[1.45]">
           {meal.rawInput}
         </p>
-        <div className="mt-2.5 flex items-center justify-between font-sans-display text-[11px] text-nham-text-muted tabular-nums">
+        <div className="mt-2.5 flex items-center justify-between font-sans-display text-[#6E6D66] text-[11px] tabular-nums">
           {/* flex gap, not literal spaces — HTML collapses those to one. */}
           <span className="flex items-center gap-2.5">
             <span>P: {protein}</span>
             <span>C: {carbs}</span>
             <span>F: {fat}</span>
           </span>
-          <b className="font-bold text-[13px] text-nham-text">{calories}</b>
+          <b className="font-bold text-[#141413] text-[13px]">{calories}</b>
         </div>
-        <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[11.5px] text-nham-text-muted tabular-nums">
+        <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[#6E6D66] text-[11.5px] tabular-nums">
           <button
             type="button"
             aria-label={t('heart')}
@@ -87,44 +82,39 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             onClick={() => toggleReaction.mutate(meal.shareId)}
             className={cn(
               'inline-flex items-center gap-1.5 transition-colors disabled:opacity-50',
-              entry.reactions.mine && 'text-nham-accent'
+              entry.reactions.mine && 'text-[#141413]'
             )}
           >
             <Heart
               className={cn(
                 'size-[15px]',
-                entry.reactions.mine && 'fill-nham-accent'
+                entry.reactions.mine && 'fill-[#141413]'
               )}
             />
             <span>{entry.reactions.count}</span>
           </button>
+          {/* Split half is deferred — it needs a confirmation step before it
+           *  writes a scaled copy. Only "Log this too" (verbatim) ships for
+           *  now, and only on others' meals. */}
           {!entry.isSelf && (
-            <>
-              <button
-                type="button"
-                disabled={logSharedMeal.isPending}
-                onClick={() =>
-                  logSharedMeal.mutate({ shareId: meal.shareId, factor: 1 })
-                }
-                className="inline-flex items-center gap-1.5 transition-colors hover:text-nham-text disabled:opacity-50"
-              >
-                <Copy className="size-[15px]" />
-                <span>{t('logCopy')}</span>
-              </button>
-              <button
-                type="button"
-                disabled={logSharedMeal.isPending}
-                onClick={() =>
-                  logSharedMeal.mutate({ shareId: meal.shareId, factor: 0.5 })
-                }
-                className="inline-flex items-center gap-1.5 transition-colors hover:text-nham-text disabled:opacity-50"
-              >
-                <Split className="size-[15px]" />
-                <span>{t('logHalf')}</span>
-              </button>
-            </>
+            <button
+              type="button"
+              disabled={logSharedMeal.isPending}
+              onClick={() =>
+                logSharedMeal.mutate({ shareId: meal.shareId, factor: 1 })
+              }
+              className="inline-flex items-center gap-1.5 transition-colors hover:text-[#141413] disabled:opacity-50"
+            >
+              <Copy className="size-[15px]" />
+              <span>{t('logCopy')}</span>
+            </button>
           )}
         </div>
+        <ShareReplies
+          shareId={meal.shareId}
+          replies={entry.replies}
+          repliesTotal={entry.repliesTotal}
+        />
       </div>
     </div>
   );

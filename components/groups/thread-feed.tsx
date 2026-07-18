@@ -2,13 +2,7 @@
 
 import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import {
-  Fragment,
-  type ReactNode,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-} from 'react';
+import { Fragment, type ReactNode, useEffect, useRef } from 'react';
 import { CircleError } from '@/components/groups/circle-error';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
 import {
@@ -24,7 +18,7 @@ export interface ThreadFeedItem {
 }
 
 interface ThreadFeedProps {
-  /** Oldest-first — the render order (chat convention: newest at the bottom). */
+  /** Newest-first — the render order (feed convention: newest at the top). */
   entries: ThreadFeedItem[];
   composer?: ReactNode;
   /** Shown centered when the feed is empty. `emptyMessage` is the supporting
@@ -42,13 +36,12 @@ interface ThreadFeedProps {
   fetchNextPage: () => void;
 }
 
-/** Shared infinite-scroll thread body for FriendsFeed/GroupFeed. Renders the
- * feed as flat Threads-style posts inside one bordered panel: each entry is a
- * FeedEntry row, hairline-separated, all left-aligned, with hairline day
- * separators. Newest entry sits at the bottom; a sentinel above the oldest
- * entry loads older shares as it scrolls into view, and scroll position is
- * preserved when older entries are prepended (without this the viewport
- * visually jumps by the height of whatever was just inserted above it). */
+/** Shared infinite-scroll feed body for FriendsFeed/GroupFeed. Renders as flat
+ * Threads-style posts inside one bordered panel: each entry is a FeedEntry row,
+ * hairline-separated, left-aligned, with hairline day separators. Newest sits
+ * at the top (feed convention); a sentinel below the oldest entry loads older
+ * shares as it scrolls into view — older content appends at the bottom, so no
+ * scroll-anchoring is needed. */
 export function ThreadFeed({
   entries,
   composer,
@@ -68,28 +61,10 @@ export function ThreadFeed({
   const locale = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const prevScrollHeightRef = useRef<number | null>(null);
-  const scrolledToBottomRef = useRef(false);
 
-  // Land on the most recent entry once, the first time the page has content.
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container || isPending || scrolledToBottomRef.current) return;
-    container.scrollTop = container.scrollHeight;
-    scrolledToBottomRef.current = true;
-  }, [isPending]);
-
-  // After older entries are prepended, restore the pre-prepend visual
-  // position by the height delta they just added above the viewport.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: entries.length is the deliberate re-run trigger
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    const prevHeight = prevScrollHeightRef.current;
-    if (!container || prevHeight == null) return;
-    container.scrollTop += container.scrollHeight - prevHeight;
-    prevScrollHeightRef.current = null;
-  }, [entries.length]);
-
+  // Newest-first opens at the top already, and older entries append at the
+  // bottom — so there is nothing to auto-scroll or scroll-anchor. A sentinel
+  // below the last row loads the next (older) page as it nears the viewport.
   useEffect(() => {
     const sentinel = sentinelRef.current;
     const container = containerRef.current;
@@ -102,12 +77,10 @@ export function ThreadFeed({
           hasNextPage &&
           !isFetchingNextPage
         ) {
-          // Capture height BEFORE the fetch resolves and prepends rows.
-          prevScrollHeightRef.current = container.scrollHeight;
           fetchNextPage();
         }
       },
-      { root: container, rootMargin: '200px 0px 0px 0px' }
+      { root: container, rootMargin: '0px 0px 200px 0px' }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -128,15 +101,12 @@ export function ThreadFeed({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {composer}
-      <div ref={containerRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={containerRef}
+        className="min-h-0 flex-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {entries.length > 0 ? (
           <>
-            <div ref={sentinelRef} />
-            {isFetchingNextPage && (
-              <p className="py-2 text-center font-sans-display text-[11px] text-nham-text-muted">
-                {t('loadingMore')}
-              </p>
-            )}
             {entries.map((entry) => {
               const dayKey = threadDayKey(entry.timestamp);
               const showSeparator = dayKey !== lastDayKey;
@@ -144,23 +114,29 @@ export function ThreadFeed({
               return (
                 <Fragment key={entry.id}>
                   {showSeparator && (
-                    <div className="flex items-center gap-2.5 px-4 pt-5 pb-3 font-sans-display text-[11px] text-nham-text-muted">
-                      <span className="h-px flex-1 bg-nham-border/60" />
+                    <div className="flex items-center gap-2.5 px-4 pt-5 pb-3 font-sans-display text-[#6E6D66] text-[11px]">
+                      <span className="h-px flex-1 bg-[#E8E6DC]" />
                       {threadDayLabel(
                         entry.timestamp,
                         locale,
                         t('todayLabel'),
                         t('yesterdayLabel')
                       )}
-                      <span className="h-px flex-1 bg-nham-border/60" />
+                      <span className="h-px flex-1 bg-[#E8E6DC]" />
                     </div>
                   )}
-                  <div className="border-nham-border/60 border-b p-4 last:border-b-0">
+                  <div className="border-[#E8E6DC] border-b p-4 last:border-b-0">
                     {entry.content}
                   </div>
                 </Fragment>
               );
             })}
+            {isFetchingNextPage && (
+              <p className="py-2 text-center font-sans-display text-[#6E6D66] text-[11px]">
+                {t('loadingMore')}
+              </p>
+            )}
+            <div ref={sentinelRef} />
           </>
         ) : (
           <div className="flex h-full items-center justify-center">

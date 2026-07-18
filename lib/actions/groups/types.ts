@@ -12,6 +12,7 @@
 
 import type { db as defaultDb } from '@/lib/db';
 import type { SharedMealEntry } from '@/lib/groups/meal-feed';
+import type { PublicIdentity } from '@/lib/groups/public-identity';
 
 export type Db = typeof defaultDb;
 
@@ -19,19 +20,14 @@ export type Db = typeof defaultDb;
 // Response shapes
 // ---------------------------------------------------------------------------
 
-export interface PublicProfile {
-  userId: string;
-  handle: string;
-  displayName: string | null;
-  avatarSeed: string | null;
-}
+export type PublicProfile = PublicIdentity;
 
 export interface CircleMember {
   friendshipId: string;
   status: string;
   /** Direction of a pending request relative to the actor. */
   direction: 'incoming' | 'outgoing' | null;
-  profile: PublicProfile;
+  profile: PublicIdentity;
 }
 
 export type CircleFeedEntry = SharedMealEntry;

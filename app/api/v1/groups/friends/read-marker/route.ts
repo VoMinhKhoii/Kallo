@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getFriendsFeedReadMarker } from '@/lib/actions/groups/feed';
 import { requireUserId } from '@/lib/api/auth';
-import { serializeError } from '@/lib/errors';
+import { handleRouteError } from '@/lib/api/respond';
 
 export const runtime = 'nodejs';
 
@@ -11,6 +11,6 @@ export async function GET() {
     const marker = await getFriendsFeedReadMarker(actorId);
     return NextResponse.json(marker);
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }

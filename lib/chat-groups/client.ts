@@ -9,24 +9,20 @@
 import type {
   ChatGroupDetail,
   ChatGroupIdentity,
+  ChatGroupMember,
   ChatGroupMessage,
   GroupMealFeedEntry,
   GroupMealFeedPage,
-  GroupTimelineEntry,
-  GroupTimelineMessageEntry,
-  GroupTimelinePage,
 } from '@/lib/actions/chat-groups';
 import { parseApiError } from '@/lib/errors';
 
 export type {
   ChatGroupDetail,
   ChatGroupIdentity,
+  ChatGroupMember,
   ChatGroupMessage,
   GroupMealFeedEntry,
   GroupMealFeedPage,
-  GroupTimelineEntry,
-  GroupTimelineMessageEntry,
-  GroupTimelinePage,
 };
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
@@ -85,17 +81,6 @@ export function fetchGroupMealFeed(
   );
 }
 
-/** One tuple-seek page of messages and privacy-bounded meal shares. */
-export function fetchGroupTimeline(
-  groupId: string,
-  before?: string
-): Promise<GroupTimelinePage> {
-  const query = before ? `?before=${encodeURIComponent(before)}` : '';
-  return request<GroupTimelinePage>(
-    `/api/v1/chat-groups/${groupId}/timeline${query}`
-  );
-}
-
 /** Post through the established messages endpoint. */
 export function sendGroupMessage(
   groupId: string,
@@ -111,5 +96,38 @@ export function sendGroupMessage(
 export function leaveGroup(groupId: string): Promise<{ left: true }> {
   return request<{ left: true }>(`/api/v1/chat-groups/${groupId}/leave`, {
     method: 'DELETE',
+  });
+}
+
+/** Add accepted friends of the actor to an existing named group. */
+export function addGroupMembers(
+  groupId: string,
+  memberUserIds: string[]
+): Promise<{ added: number }> {
+  return postJson<{ added: number }>(`/api/v1/chat-groups/${groupId}/members`, {
+    memberUserIds,
+  });
+}
+
+/** Owner-only: remove one member from a named group. */
+export function removeGroupMember(
+  groupId: string,
+  memberUserId: string
+): Promise<{ removed: true }> {
+  return request<{ removed: true }>(
+    `/api/v1/chat-groups/${groupId}/members/${memberUserId}`,
+    { method: 'DELETE' }
+  );
+}
+
+/** Owner-only: rename a named group. */
+export function renameGroup(
+  groupId: string,
+  name: string
+): Promise<{ name: string }> {
+  return request<{ name: string }>(`/api/v1/chat-groups/${groupId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
   });
 }

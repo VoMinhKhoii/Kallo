@@ -1,18 +1,19 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db as defaultDb } from '@/lib/db';
 import { chatGroupMembers } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
 import {
-  sharedGroupMealsBefore,
-  toSharedMealEntry,
-} from '@/lib/groups/meal-feed';
+  decodeSharedMealCursor,
+  encodeSharedMealCursor,
+} from '@/lib/groups/feed/cursor';
+import { sharedGroupMealsBefore } from '@/lib/groups/feed/group-meals';
+import { toSharedMealEntry } from '@/lib/groups/meal-feed';
 import { reactionsForShares } from '@/lib/groups/shares/reactions';
+import { repliesForShares } from '@/lib/groups/shares/replies';
 import { groupMealFeedSchema } from '@/lib/validation';
-import { type ChatGroupDb, requireMembership } from './membership';
+import { type ChatGroupDb, requireGroupAccess } from './membership';
 import type { GroupMealFeedPage } from './types';
 
 const LEGACY_GROUP_FEED_PAGE_SIZE = 20;
-const MIN_UUID = '00000000-0000-0000-0000-000000000000';
 
 export async function listGroupMealFeed(
   actorId: string,
@@ -20,32 +21,14 @@ export async function listGroupMealFeed(
   db: ChatGroupDb = defaultDb
 ): Promise<GroupMealFeedPage> {
   const parsed = groupMealFeedSchema.parse(input);
-  await requireMembership(actorId, parsed.groupId, db);
+  const access = await requireGroupAccess(actorId, parsed.groupId, db);
+  const before = decodeSharedMealCursor(parsed.before);
 
-  const [viewer] = await db
-    .select({
-      joinedAt: chatGroupMembers.joinedAt,
-    })
-    .from(chatGroupMembers)
-    .where(
-      and(
-        eq(chatGroupMembers.groupId, parsed.groupId),
-        eq(chatGroupMembers.userId, actorId)
-      )
-    );
-  if (!viewer) {
-    throw Errors.notFound('Không tìm thấy nhóm chat.');
-  }
-  const before = parsed.before
-    ? { timestamp: new Date(parsed.before), id: MIN_UUID }
-    : null;
-
-  // This endpoint remains for older clients. It deliberately shares the
-  // timeline's post-join policy so it cannot bypass that privacy boundary.
+  // The feed applies the same post-join policy as every group share read.
   const candidates = await sharedGroupMealsBefore(
     parsed.groupId,
     actorId,
-    viewer.joinedAt,
+    access.joinedAt,
     before,
     db,
     LEGACY_GROUP_FEED_PAGE_SIZE + 1
@@ -55,20 +38,32 @@ export async function listGroupMealFeed(
     ? candidates.slice(0, LEGACY_GROUP_FEED_PAGE_SIZE)
     : candidates;
   const last = rows.at(-1);
-  const nextCursor = hasMore && last ? last.sharedAt.toISOString() : null;
+  const nextCursor =
+    hasMore && last
+      ? encodeSharedMealCursor({ ts: last.sharedAtText, id: last.shareId })
+      : null;
 
-  const reactions = await reactionsForShares(
-    actorId,
-    rows.map((row) => row.shareId),
-    db
+  const shareIds = rows.map((row) => row.shareId);
+  const [reactions, replies] = await Promise.all([
+    reactionsForShares(actorId, shareIds, db),
+    repliesForShares(actorId, shareIds, db),
+  ]);
+  const entries = rows.map((row) =>
+    toSharedMealEntry(
+      row,
+      actorId,
+      reactions.get(row.shareId),
+      replies.get(row.shareId)
+    )
   );
 
   // Advance only after the complete read/enrichment succeeds.
-  if (!parsed.before) {
+  const newest = rows[0];
+  if (!parsed.before && newest) {
     await db
       .update(chatGroupMembers)
       .set({
-        lastReadAt: sql`GREATEST(${chatGroupMembers.lastReadAt}, now())`,
+        lastReadAt: sql`GREATEST(${chatGroupMembers.lastReadAt}, ${newest.sharedAt.toISOString()}::timestamptz)`,
       })
       .where(
         and(
@@ -78,10 +73,5 @@ export async function listGroupMealFeed(
       );
   }
 
-  return {
-    entries: rows.map((row) =>
-      toSharedMealEntry(row, actorId, reactions.get(row.shareId))
-    ),
-    nextCursor,
-  };
+  return { entries, nextCursor };
 }

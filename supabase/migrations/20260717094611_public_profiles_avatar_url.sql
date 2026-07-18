@@ -1,0 +1,1 @@
+ALTER TABLE "public_profiles" ADD COLUMN "avatar_url" text;

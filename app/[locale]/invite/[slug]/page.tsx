@@ -129,7 +129,7 @@ export default async function InvitePage({
 function CircleLink({ label }: { label: string }) {
   return (
     <Link
-      href="/groups"
+      href="/circle"
       className="inline-flex items-center justify-center rounded-xl border border-nham-border/60 bg-white px-6 py-3 font-medium font-sans-display text-[15px] text-nham-text transition-colors hover:border-nham-accent/50"
     >
       {label}

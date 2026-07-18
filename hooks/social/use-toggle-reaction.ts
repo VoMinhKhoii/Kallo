@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { toggleShareReaction } from '@/lib/groups/client';
+import { isFeedQuery, mapFeedEntries } from '@/lib/groups/feed-cache';
 
 interface ReactionResult {
   reacted: boolean;
@@ -13,15 +14,6 @@ interface ReactionResult {
 interface CachedReaction {
   mine: boolean;
   count: number;
-}
-
-function isFeedQuery(queryKey: readonly unknown[]): boolean {
-  return (
-    queryKey[0] === 'circle-feed' ||
-    queryKey[0] === 'friends-thread-feed' ||
-    (queryKey[0] === 'chat-groups' &&
-      (queryKey[2] === 'feed' || queryKey[2] === 'timeline'))
-  );
 }
 
 function updateEntry(
@@ -54,26 +46,7 @@ function updateFeedData(
   shareId: string,
   result?: ReactionResult
 ): unknown {
-  if (Array.isArray(value)) {
-    return value.map((entry) => updateEntry(entry, shareId, result));
-  }
-  if (!value || typeof value !== 'object') return value;
-  const record = value as Record<string, unknown>;
-  if (!Array.isArray(record.pages)) return value;
-  return {
-    ...record,
-    pages: record.pages.map((page) => {
-      if (!page || typeof page !== 'object') return page;
-      const pageRecord = page as Record<string, unknown>;
-      if (!Array.isArray(pageRecord.entries)) return page;
-      return {
-        ...pageRecord,
-        entries: pageRecord.entries.map((entry) =>
-          updateEntry(entry, shareId, result)
-        ),
-      };
-    }),
-  };
+  return mapFeedEntries(value, (entry) => updateEntry(entry, shareId, result));
 }
 
 /** Optimistically toggle one share across every mounted feed shape. Failed

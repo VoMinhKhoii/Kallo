@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { listMealShareInvitesAction } from '@/lib/actions/meal-sharing/invites-list';
-import { serializeError } from '@/lib/errors';
+import { handleRouteError } from '@/lib/api/respond';
 
 export const runtime = 'nodejs';
 
@@ -9,6 +9,6 @@ export async function GET() {
     const invites = await listMealShareInvitesAction();
     return NextResponse.json({ invites });
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }

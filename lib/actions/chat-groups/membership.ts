@@ -1,14 +1,25 @@
-import { and, eq, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, or, sql } from 'drizzle-orm';
 import type { AppTransaction } from '@/lib/db';
 import { db as defaultDb } from '@/lib/db';
 import { chatGroupMembers, chatGroups, friendships } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { orderedPair } from '@/lib/groups/friendship';
-import { leaveChatGroupSchema } from '@/lib/validation';
+import {
+  addChatGroupMembersSchema,
+  leaveChatGroupSchema,
+  removeChatGroupMemberSchema,
+} from '@/lib/validation';
 
-// Accepts the app db singleton OR a transaction handle, so acceptInvite can
-// pass its transaction through and keep friendship + chat creation atomic.
+// Also accepts a transaction so invite acceptance remains atomic.
 export type ChatGroupDb = typeof defaultDb | AppTransaction;
+
+export interface GroupAccess {
+  kind: 'direct' | 'group';
+  role: 'owner' | 'member';
+  joinedAt: Date;
+  directUserLow: string | null;
+  directUserHigh: string | null;
+}
 
 export async function isAcceptedFriend(
   actorId: string,
@@ -26,19 +37,71 @@ export async function isAcceptedFriend(
   return rows[0]?.status === 'accepted';
 }
 
-// For direct chats, membership alone is not enough: removing or blocking a
-// friend leaves stale member rows so history can survive a later re-friend.
-export async function requireMembership(
+/** Resolve accepted candidates in one canonical-pair query. */
+export async function acceptedFriendsAmong(
   actorId: string,
-  groupId: string,
+  candidateIds: string[],
   db: ChatGroupDb
-): Promise<void> {
+): Promise<Set<string>> {
+  const candidates = [...new Set(candidateIds)].filter((id) => id !== actorId);
+  if (candidates.length === 0) return new Set();
+
   const rows = await db
     .select({
-      id: chatGroupMembers.id,
+      userLow: friendships.userLow,
+      userHigh: friendships.userHigh,
+    })
+    .from(friendships)
+    .where(
+      and(
+        eq(friendships.status, 'accepted'),
+        or(
+          and(
+            eq(friendships.userLow, actorId),
+            inArray(friendships.userHigh, candidates)
+          ),
+          and(
+            eq(friendships.userHigh, actorId),
+            inArray(friendships.userLow, candidates)
+          )
+        )
+      )
+    );
+
+  return new Set(
+    rows.map((row) => (row.userLow === actorId ? row.userHigh : row.userLow))
+  );
+}
+
+// For direct chats, membership alone is not enough: removing or blocking a
+// friend leaves stale member rows so history can survive a later re-friend.
+export async function requireGroupAccess(
+  actorId: string,
+  groupId: string,
+  db: ChatGroupDb,
+  opts?: { lock?: 'update' }
+): Promise<GroupAccess> {
+  const query = db
+    .select({
       kind: chatGroups.kind,
+      role: chatGroupMembers.role,
+      joinedAt: chatGroupMembers.joinedAt,
       directUserLow: chatGroups.directUserLow,
       directUserHigh: chatGroups.directUserHigh,
+      directFriendAccepted: sql<boolean>`
+        ${chatGroups.kind} <> 'direct'
+        OR (
+          (${chatGroups.directUserLow} = ${actorId}
+            OR ${chatGroups.directUserHigh} = ${actorId})
+          AND EXISTS (
+            SELECT 1
+            FROM ${friendships}
+            WHERE ${friendships.userLow} = ${chatGroups.directUserLow}
+              AND ${friendships.userHigh} = ${chatGroups.directUserHigh}
+              AND ${friendships.status} = 'accepted'
+          )
+        )
+      `,
     })
     .from(chatGroupMembers)
     .innerJoin(chatGroups, eq(chatGroups.id, chatGroupMembers.groupId))
@@ -49,90 +112,24 @@ export async function requireMembership(
       )
     )
     .limit(1);
-  if (!rows[0]) {
+  const rows =
+    opts?.lock === 'update'
+      ? await query.for('update', { of: chatGroupMembers })
+      : await query;
+  const row = rows[0];
+  if (!row || !row.directFriendAccepted) {
     throw Errors.notFound('Không tìm thấy nhóm chat.');
   }
-  const row = rows[0];
-  if (row.kind === 'direct' && row.directUserLow && row.directUserHigh) {
-    const otherUserId =
-      row.directUserLow === actorId ? row.directUserHigh : row.directUserLow;
-    const stillFriends = await isAcceptedFriend(actorId, otherUserId, db);
-    if (!stillFriends) {
-      throw Errors.notFound('Không tìm thấy nhóm chat.');
-    }
+  if (row.kind !== 'direct' && row.kind !== 'group') {
+    throw Errors.notFound('Không tìm thấy nhóm chat.');
   }
-}
-
-export async function getOrCreateDirectChatGroup(
-  userA: string,
-  userB: string,
-  db: ChatGroupDb = defaultDb
-): Promise<{ id: string }> {
-  const { userLow, userHigh } = orderedPair(userA, userB);
-
-  await db
-    .insert(chatGroups)
-    .values({
-      kind: 'direct',
-      createdBy: userA,
-      directUserLow: userLow,
-      directUserHigh: userHigh,
-    })
-    .onConflictDoNothing({
-      target: [chatGroups.directUserLow, chatGroups.directUserHigh],
-    });
-
-  const [group] = await db
-    .select({ id: chatGroups.id })
-    .from(chatGroups)
-    .where(
-      and(
-        eq(chatGroups.directUserLow, userLow),
-        eq(chatGroups.directUserHigh, userHigh)
-      )
-    )
-    .limit(1);
-
-  await db
-    .insert(chatGroupMembers)
-    .values([
-      { groupId: group.id, userId: userLow, role: 'member' },
-      { groupId: group.id, userId: userHigh, role: 'member' },
-    ])
-    .onConflictDoNothing({
-      target: [chatGroupMembers.groupId, chatGroupMembers.userId],
-    });
-
-  return { id: group.id };
-}
-
-// Self-heals accepted friendships created before direct chats shipped, and
-// returns the live friend ids used to hide stale direct memberships.
-export async function ensureDirectChatsForAcceptedFriends(
-  actorId: string,
-  db: ChatGroupDb
-): Promise<string[]> {
-  const friendRows = await db
-    .select({ userLow: friendships.userLow, userHigh: friendships.userHigh })
-    .from(friendships)
-    .where(
-      and(
-        or(eq(friendships.userLow, actorId), eq(friendships.userHigh, actorId)),
-        eq(friendships.status, 'accepted')
-      )
-    );
-
-  const friendIds = friendRows.map((row) =>
-    row.userLow === actorId ? row.userHigh : row.userLow
-  );
-  if (friendIds.length === 0) return [];
-
-  await Promise.all(
-    friendIds.map((friendId) =>
-      getOrCreateDirectChatGroup(actorId, friendId, db)
-    )
-  );
-  return friendIds;
+  return {
+    kind: row.kind,
+    role: row.role === 'owner' ? 'owner' : 'member',
+    joinedAt: row.joinedAt,
+    directUserLow: row.directUserLow,
+    directUserHigh: row.directUserHigh,
+  };
 }
 
 /**
@@ -148,24 +145,12 @@ export async function leaveChatGroup(
   const parsed = leaveChatGroupSchema.parse({ groupId });
 
   return db.transaction(async (tx) => {
-    await requireMembership(actorId, parsed.groupId, tx);
+    await lockChatGroup(parsed.groupId, tx);
+    const access = await requireGroupAccess(actorId, parsed.groupId, tx, {
+      lock: 'update',
+    });
 
-    const [membership] = await tx
-      .select({ role: chatGroupMembers.role })
-      .from(chatGroupMembers)
-      .where(
-        and(
-          eq(chatGroupMembers.groupId, parsed.groupId),
-          eq(chatGroupMembers.userId, actorId)
-        )
-      )
-      .limit(1)
-      .for('update');
-    if (!membership) {
-      throw Errors.notFound('Không tìm thấy nhóm chat.');
-    }
-
-    if (membership.role === 'owner') {
+    if (access.role === 'owner') {
       const otherMembers = await tx
         .select({ id: chatGroupMembers.id })
         .from(chatGroupMembers)
@@ -192,5 +177,121 @@ export async function leaveChatGroup(
         )
       );
     return { left: true };
+  });
+}
+
+export async function lockChatGroup(
+  groupId: string,
+  db: ChatGroupDb
+): Promise<{ id: string; kind: string }> {
+  const [group] = await db
+    .select({ id: chatGroups.id, kind: chatGroups.kind })
+    .from(chatGroups)
+    .where(eq(chatGroups.id, groupId))
+    .limit(1)
+    .for('update');
+  if (!group) {
+    throw Errors.notFound('Không tìm thấy nhóm chat.');
+  }
+  return group;
+}
+
+/** Add the actor's accepted friends with a fresh post-join boundary. */
+export async function addChatGroupMembers(
+  actorId: string,
+  input: { groupId: string; memberUserIds: string[] },
+  db: ChatGroupDb = defaultDb
+): Promise<{ added: number }> {
+  const parsed = addChatGroupMembersSchema.parse(input);
+  const memberIds = [...new Set(parsed.memberUserIds)].filter(
+    (id) => id !== actorId
+  );
+  if (memberIds.length === 0) {
+    throw Errors.validationFailed('Chọn ít nhất một thành viên.');
+  }
+
+  return db.transaction(async (tx) => {
+    await lockChatGroup(parsed.groupId, tx);
+    const access = await requireGroupAccess(actorId, parsed.groupId, tx);
+    if (access.kind !== 'group') {
+      throw Errors.notFound('Không tìm thấy nhóm chat.');
+    }
+
+    const acceptedFriendIds = await acceptedFriendsAmong(
+      actorId,
+      memberIds,
+      tx
+    );
+    if (acceptedFriendIds.size !== memberIds.length) {
+      throw Errors.validationFailed(
+        'Chỉ có thể thêm bạn bè đã kết nối vào nhóm.'
+      );
+    }
+
+    const currentMembers = await tx
+      .select({ userId: chatGroupMembers.userId })
+      .from(chatGroupMembers)
+      .where(eq(chatGroupMembers.groupId, parsed.groupId));
+    const currentIds = new Set(currentMembers.map((member) => member.userId));
+    const toInsert = memberIds.filter((id) => !currentIds.has(id));
+    if (currentMembers.length + toInsert.length > 50) {
+      throw Errors.validationFailed('Nhóm tối đa 50 thành viên.');
+    }
+    if (toInsert.length === 0) {
+      return { added: 0 };
+    }
+
+    const inserted = await tx
+      .insert(chatGroupMembers)
+      .values(
+        toInsert.map((userId) => ({
+          groupId: parsed.groupId,
+          userId,
+          role: 'member' as const,
+        }))
+      )
+      .onConflictDoNothing({
+        target: [chatGroupMembers.groupId, chatGroupMembers.userId],
+      })
+      .returning({ id: chatGroupMembers.id });
+
+    return { added: inserted.length };
+  });
+}
+
+/** Owner-only: remove another member. Removing yourself is leaveChatGroup. */
+export async function removeChatGroupMember(
+  actorId: string,
+  input: { groupId: string; memberUserId: string },
+  db: ChatGroupDb = defaultDb
+): Promise<{ removed: true }> {
+  const parsed = removeChatGroupMemberSchema.parse(input);
+  if (parsed.memberUserId === actorId) {
+    throw Errors.validationFailed('Dùng "Rời nhóm" để tự rời khỏi nhóm.');
+  }
+
+  return db.transaction(async (tx) => {
+    await lockChatGroup(parsed.groupId, tx);
+    const access = await requireGroupAccess(actorId, parsed.groupId, tx);
+    if (access.kind !== 'group') {
+      throw Errors.notFound('Không tìm thấy nhóm chat.');
+    }
+    if (access.role !== 'owner') {
+      throw Errors.validationFailed('Chỉ chủ nhóm mới có thể xóa thành viên.');
+    }
+
+    const removed = await tx
+      .delete(chatGroupMembers)
+      .where(
+        and(
+          eq(chatGroupMembers.groupId, parsed.groupId),
+          eq(chatGroupMembers.userId, parsed.memberUserId)
+        )
+      )
+      .returning({ id: chatGroupMembers.id });
+    if (removed.length === 0) {
+      throw Errors.notFound('Không tìm thấy thành viên.');
+    }
+    return { removed: true };
   });
 }

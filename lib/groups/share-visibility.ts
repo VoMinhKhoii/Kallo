@@ -5,7 +5,7 @@
 // that starts from a share id must pass through this gate before reading the
 // underlying cross-user meal.
 
-import { and, eq, lte, or } from 'drizzle-orm';
+import { eq, type SQL, type SQLWrapper, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { AppDb, AppTransaction } from '@/lib/db';
 import { db as defaultDb } from '@/lib/db';
@@ -14,92 +14,101 @@ import {
   chatGroups,
   friendships,
   mealShares,
-  meals,
 } from '@/lib/db/schema';
 
 type Db = AppDb | AppTransaction;
 
-const viewerMembership = alias(chatGroupMembers, 'viewer_membership');
-const ownerMembership = alias(chatGroupMembers, 'owner_membership');
+const viewerMembership = alias(chatGroupMembers, 'share_viewer_membership');
+const ownerMembership = alias(chatGroupMembers, 'share_owner_membership');
 
-/**
- * Authorize access to one broadcast meal share. Owners always retain access;
- * cross-user access requires a non-private share plus either a live accepted
- * friendship or co-membership of a NAMED group (both join dates predating the
- * share). Direct-chat membership does NOT count — those rows are kept after an
- * unfriend/block to preserve message history, so counting them would let an
- * ex-friend keep reading shares; direct-chat access is authorized solely by the
- * live accepted-friendship branch. Deleted friendship / named-group rows revoke
- * future reads immediately.
- */
+function relationshipAccessSql(
+  viewerId: string,
+  ownerId: SQLWrapper | string,
+  sharedAt: SQLWrapper | Date
+): SQL<boolean> {
+  return sql<boolean>`
+    EXISTS (
+      SELECT 1
+      FROM ${friendships}
+      WHERE ${friendships.status} = 'accepted'
+        AND (
+          (${friendships.userLow} = ${viewerId}
+            AND ${friendships.userHigh} = ${ownerId})
+          OR (${friendships.userHigh} = ${viewerId}
+            AND ${friendships.userLow} = ${ownerId})
+        )
+    )
+    OR EXISTS (
+      SELECT 1
+      -- Base table + alias spelled out: Drizzle renders an alias object inside
+      -- raw sql as the bare alias name, which is not a relation.
+      FROM "chat_group_members" AS "share_viewer_membership"
+      INNER JOIN "chat_group_members" AS "share_owner_membership"
+        ON ${ownerMembership.groupId} = ${viewerMembership.groupId}
+      INNER JOIN ${chatGroups}
+        ON ${chatGroups.id} = ${viewerMembership.groupId}
+      WHERE ${chatGroups.kind} = 'group'
+        AND ${viewerMembership.userId} = ${viewerId}
+        AND ${ownerMembership.userId} = ${ownerId}
+        AND ${viewerMembership.joinedAt} <= ${sharedAt}
+        AND ${ownerMembership.joinedAt} <= ${sharedAt}
+    )
+  `;
+}
+
+function shareAccessSql(
+  viewerId: string,
+  ownerId: SQLWrapper | string,
+  sharedAt: SQLWrapper | Date,
+  visibility: SQLWrapper | string
+): SQL<boolean> {
+  return sql<boolean>`
+    ${ownerId} = ${viewerId}
+    OR (
+      ${visibility} <> 'private'
+      AND (${relationshipAccessSql(viewerId, ownerId, sharedAt)})
+    )
+  `;
+}
+
+/** Authorize a share id in exactly one statement. Owners retain access to
+ * private shares; cross-user reads require a live friendship or a named-group
+ * membership that predates the share for both people. */
 export async function canViewShare(
-  actorId: string,
+  viewerId: string,
   shareId: string,
   db: Db = defaultDb
 ): Promise<boolean> {
-  const [share] = await db
+  const [row] = await db
     .select({
-      ownerId: meals.userId,
-      sharedAt: mealShares.sharedAt,
-      visibility: mealShares.visibility,
+      visible: shareAccessSql(
+        viewerId,
+        mealShares.actorId,
+        mealShares.sharedAt,
+        mealShares.visibility
+      ),
     })
     .from(mealShares)
-    .innerJoin(meals, eq(meals.id, mealShares.mealId))
     .where(eq(mealShares.id, shareId))
     .limit(1);
+  return Boolean(row?.visible);
+}
 
-  if (!share) return false;
-  if (share.ownerId === actorId) return true;
+/** Variant for callers that already locked and read the share row. This skips
+ * the duplicate meal_shares read while preserving the same access contract. */
+export async function canViewShareOwnedBy(
+  viewerId: string,
+  share: { actorId: string; sharedAt: Date; visibility: string },
+  db: Db
+): Promise<boolean> {
+  if (share.actorId === viewerId) return true;
   if (share.visibility === 'private') return false;
 
-  const [friendRows, groupRows] = await Promise.all([
-    db
-      .select({ id: friendships.id })
-      .from(friendships)
-      .where(
-        and(
-          eq(friendships.status, 'accepted'),
-          or(
-            and(
-              eq(friendships.userLow, actorId),
-              eq(friendships.userHigh, share.ownerId)
-            ),
-            and(
-              eq(friendships.userHigh, actorId),
-              eq(friendships.userLow, share.ownerId)
-            )
-          )
-        )
-      )
-      .limit(1),
-    db
-      .select({
-        groupId: viewerMembership.groupId,
-        viewerJoinedAt: viewerMembership.joinedAt,
-        ownerJoinedAt: ownerMembership.joinedAt,
-      })
-      .from(viewerMembership)
-      .innerJoin(
-        ownerMembership,
-        eq(ownerMembership.groupId, viewerMembership.groupId)
-      )
-      .innerJoin(chatGroups, eq(chatGroups.id, viewerMembership.groupId))
-      .where(
-        and(
-          eq(chatGroups.kind, 'group'),
-          eq(viewerMembership.userId, actorId),
-          eq(ownerMembership.userId, share.ownerId),
-          lte(viewerMembership.joinedAt, share.sharedAt),
-          lte(ownerMembership.joinedAt, share.sharedAt)
-        )
-      )
-      .limit(1),
-  ]);
-
-  const visibleInGroup = groupRows.some(
-    (row) =>
-      share.sharedAt >= row.viewerJoinedAt &&
-      share.sharedAt >= row.ownerJoinedAt
-  );
-  return Boolean(friendRows[0] || visibleInGroup);
+  const [row] = await db
+    .select({
+      visible: relationshipAccessSql(viewerId, share.actorId, share.sharedAt),
+    })
+    .from(sql`(SELECT 1) AS share_access_check`)
+    .limit(1);
+  return Boolean(row?.visible);
 }

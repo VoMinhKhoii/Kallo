@@ -10,7 +10,7 @@ import { requireAuthAndProfile } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { mealShareReactions, mealShares } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
-import { canViewShare } from '@/lib/groups/share-visibility';
+import { canViewShareOwnedBy } from '@/lib/groups/share-visibility';
 
 const toggleShareReactionSchema = z.object({
   shareId: z.string().uuid('shareId phải là UUID hợp lệ.').toLowerCase(),
@@ -28,19 +28,26 @@ export async function toggleShareReactionAction(input: {
   const { user } = await requireAuthAndProfile();
 
   return db.transaction(async (tx) => {
-    if (!(await canViewShare(user.id, parsed.shareId, tx))) {
-      throw Errors.notFound('Không tìm thấy bài chia sẻ.');
-    }
-
     // Serialize concurrent toggles on this share. Without the row lock two
     // taps from "off" both see no deletion and both insert (onConflictDoNothing
     // then leaves it "on" instead of cancelling); locking forces the second
     // toggle to observe the first's row and delete it.
-    await tx
-      .select({ id: mealShares.id })
+    const lockedShares = await tx
+      .select({
+        id: mealShares.id,
+        actorId: mealShares.actorId,
+        sharedAt: mealShares.sharedAt,
+        visibility: mealShares.visibility,
+      })
       .from(mealShares)
       .where(eq(mealShares.id, parsed.shareId))
       .for('update');
+    if (lockedShares.length === 0) {
+      throw Errors.notFound('Không tìm thấy bài chia sẻ.');
+    }
+    if (!(await canViewShareOwnedBy(user.id, lockedShares[0], tx))) {
+      throw Errors.notFound('Không tìm thấy bài chia sẻ.');
+    }
 
     const deleted = await tx
       .delete(mealShareReactions)

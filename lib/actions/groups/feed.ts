@@ -9,13 +9,19 @@ import {
   friendships,
   publicProfiles,
 } from '@/lib/db/schema';
+import { decodeSharedMealCursor } from '@/lib/groups/feed/cursor';
 import {
   mostRecentSharedMealsToday,
   sharedMealsBefore,
   todayLocalDate,
   toSharedMealEntry,
 } from '@/lib/groups/meal-feed';
+import {
+  publicProfileColumns,
+  toPublicIdentity,
+} from '@/lib/groups/public-identity';
 import { reactionsForShares } from '@/lib/groups/shares/reactions';
+import { repliesForShares } from '@/lib/groups/shares/replies';
 import { circleFeedSchema, friendsThreadFeedSchema } from '@/lib/validation';
 
 import {
@@ -42,9 +48,7 @@ export async function listCircle(
       userLow: friendships.userLow,
       userHigh: friendships.userHigh,
       profileUserId: publicProfiles.userId,
-      handle: publicProfiles.handle,
-      displayName: publicProfiles.displayName,
-      avatarSeed: publicProfiles.avatarSeed,
+      ...publicProfileColumns,
     })
     .from(friendships)
     .innerJoin(
@@ -69,12 +73,13 @@ export async function listCircle(
       friendshipId: r.friendshipId,
       status: r.status,
       direction,
-      profile: {
+      profile: toPublicIdentity({
         userId: r.profileUserId,
         handle: r.handle,
         displayName: r.displayName,
         avatarSeed: r.avatarSeed,
-      },
+        avatarUrl: r.avatarUrl,
+      }),
     };
   });
 }
@@ -146,13 +151,18 @@ export async function listCircleFeed(
     db
   );
 
-  const reactions = await reactionsForShares(
-    actorId,
-    rows.map((row) => row.shareId),
-    db
-  );
+  const shareIds = rows.map((row) => row.shareId);
+  const [reactions, replies] = await Promise.all([
+    reactionsForShares(actorId, shareIds, db),
+    repliesForShares(actorId, shareIds, db),
+  ]);
   const entries = rows.map((row) =>
-    toSharedMealEntry(row, actorId, reactions.get(row.shareId))
+    toSharedMealEntry(
+      row,
+      actorId,
+      reactions.get(row.shareId),
+      replies.get(row.shareId)
+    )
   );
 
   // The actor's own table is the first slot; friends follow newest-first.
@@ -198,8 +208,9 @@ export async function getFriendsFeedReadMarker(
 // listFriendsThreadFeed — every friend's shared-meal history, merged, paginated
 // ---------------------------------------------------------------------------
 // The Friends section is one combined thread (not one row per friend): every
-// accepted friend's shared meal, merged into a single feed, EXCLUDING the
-// actor's own — the actor is simply never in the query scope. Deliberately a
+// accepted friend's shared meal PLUS the actor's own, merged into a single
+// feed (Threads-style — you see your own posts too; they render as `isSelf`,
+// so no Copy/Split and they don't drive the All unread dot). Deliberately a
 // separate query rather than a variant of listCircleFeed: that one must stay
 // exactly "today, latest per friend, capped" for the sidebar subtitle, while
 // this shows every shared meal across the whole friend graph, seek-paginated
@@ -212,34 +223,40 @@ export async function listFriendsThreadFeed(
 ): Promise<FriendsThreadFeedPage> {
   const parsed = friendsThreadFeedSchema.parse(input);
 
-  const friendIds = await getAcceptedFriendIds(actorId, db);
-  const before = parsed.before ? new Date(parsed.before) : null;
+  const before = decodeSharedMealCursor(parsed.before);
 
-  // Opening the thread IS the read receipt (page 1 only — not every "load
-  // older" scroll fetch), mirroring listGroupMealFeed's pattern.
-  const [{ rows, nextCursor }] = await Promise.all([
-    sharedMealsBefore(friendIds, before, db),
-    parsed.before
-      ? Promise.resolve(undefined)
-      : db
-          .insert(friendsFeedReadMarkers)
-          .values({ userId: actorId, lastReadAt: new Date() })
-          .onConflictDoUpdate({
-            target: friendsFeedReadMarkers.userId,
-            set: { lastReadAt: new Date() },
-          }),
+  const { rows, nextCursor } = await sharedMealsBefore(actorId, before, db);
+
+  const shareIds = rows.map((row) => row.shareId);
+  const [reactions, replies] = await Promise.all([
+    reactionsForShares(actorId, shareIds, db),
+    repliesForShares(actorId, shareIds, db),
   ]);
-
-  const reactions = await reactionsForShares(
-    actorId,
-    rows.map((row) => row.shareId),
-    db
+  const entries = rows.map((row) =>
+    toSharedMealEntry(
+      row,
+      actorId,
+      reactions.get(row.shareId),
+      replies.get(row.shareId)
+    )
   );
 
-  return {
-    entries: rows.map((row) =>
-      toSharedMealEntry(row, actorId, reactions.get(row.shareId))
-    ),
-    nextCursor,
-  };
+  // Advance only after the complete read/enrichment succeeds, and only to the
+  // newest share the actor actually received — never to wall-clock time.
+  const newest = rows[0];
+  if (!parsed.before && newest) {
+    await db
+      .insert(friendsFeedReadMarkers)
+      .values({ userId: actorId, lastReadAt: newest.sharedAt })
+      .onConflictDoUpdate({
+        target: friendsFeedReadMarkers.userId,
+        set: {
+          // ISO string, not the Date object — raw sql params bypass the column
+          // mapper and postgres.js cannot serialize a bare Date there.
+          lastReadAt: sql`GREATEST(${friendsFeedReadMarkers.lastReadAt}, ${newest.sharedAt.toISOString()}::timestamptz)`,
+        },
+      });
+  }
+
+  return { entries, nextCursor };
 }

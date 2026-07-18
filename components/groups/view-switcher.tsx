@@ -1,7 +1,6 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { AddFriendDialog } from '@/components/groups/add-friend-dialog';
 import { useMyChatGroups } from '@/hooks/social/use-chat-groups';
 import { useCircleFeed } from '@/hooks/social/use-circle-feed';
 import { useFriendsFeedReadMarker } from '@/hooks/social/use-friend-thread-feed';
@@ -10,24 +9,26 @@ import { cn } from '@/lib/utils';
 
 const PILL_BASE =
   'inline-flex items-center gap-[7px] whitespace-nowrap rounded-full ' +
-  'px-4 py-2 font-sans-display text-[12.5px] text-nham-text-muted ' +
-  'transition-colors';
-const PILL_ACTIVE = 'bg-nham-accent/15 font-medium text-nham-text';
+  'px-4 py-2 font-sans-display text-[12.5px] transition-colors';
+// Selected chip fills the whole pill with the sidebar's selected-item wash.
+const PILL_ACTIVE = 'bg-nham-hover font-semibold text-[#141413]';
+const PILL_INACTIVE = 'border border-[#E8E6DC] bg-white text-[#6E6D66]';
 
 function UnreadDot() {
   return (
     <span
       aria-hidden="true"
-      className="size-[7px] shrink-0 rounded-full bg-nham-accent"
+      className="size-[7px] shrink-0 rounded-full bg-[#141413]"
     />
   );
 }
 
-/** The Threads-style pill row atop /groups, replacing the old master-detail
+/** The Threads-style pill row atop /circle, replacing the old master-detail
  * sidebar. A standalone "All" pill links to the merged friends feed; a
- * bordered cluster holds one pill per named group plus a "+ New" pill that
- * opens the create-group tab of AddFriendDialog. Unread dots mirror the logic
- * in FriendsRow (All) and GroupList (each group). */
+ * bordered cluster holds one pill per named group. Creation lives in the
+ * header CircleAddMenu, not here. Hidden entirely until you have at least one
+ * group — with only "All" there is nothing to switch between. Unread dots
+ * mirror the logic in FriendsRow (All) and GroupList (each group). */
 export function ViewSwitcher() {
   const t = useTranslations('groups.switcher');
   const pathname = usePathname();
@@ -56,69 +57,54 @@ export function ViewSwitcher() {
       new Date(latestSharedAt) > new Date(readMarker.lastReadAt)
   );
 
+  // Nothing to switch between until there's a group (keep it visible on error
+  // so the retry affordance isn't stranded).
+  if (namedGroups.length === 0 && !isError) return null;
+
   return (
     <nav
       aria-label={t('label')}
-      className="my-0.5 mb-4 flex items-center gap-2.5 overflow-x-auto"
+      className="mb-3 flex items-center gap-2 overflow-x-auto"
     >
       <Link
-        href="/groups"
-        aria-current={pathname === '/groups' ? 'page' : undefined}
+        href="/circle"
+        aria-current={pathname === '/circle' ? 'page' : undefined}
         className={cn(
-          'border border-nham-border/60 bg-white',
           PILL_BASE,
-          pathname === '/groups' && `${PILL_ACTIVE} border-nham-accent/45`
+          pathname === '/circle' ? PILL_ACTIVE : PILL_INACTIVE
         )}
       >
         {allUnread && <UnreadDot />}
         {t('all')}
       </Link>
 
-      <div className="inline-flex gap-0.5 rounded-full border border-nham-border/60 bg-white p-1">
-        {namedGroups.map((group) => {
-          const href = `/groups/g/${group.id}`;
-          const active = pathname === href;
-          return (
-            <Link
-              key={group.id}
-              href={href}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                PILL_BASE,
-                'px-[13px] py-[5px]',
-                active && PILL_ACTIVE
-              )}
-            >
-              {group.unread && <UnreadDot />}
-              {group.title}
-            </Link>
-          );
-        })}
-
-        {/* On a load failure the group pills would otherwise vanish silently,
-         * stranding the only path to a group — offer an explicit retry. */}
-        {isError && (
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            className={cn(PILL_BASE, 'px-[13px] py-[5px]')}
+      {namedGroups.map((group) => {
+        const href = `/circle/g/${group.id}`;
+        const active = pathname === href;
+        return (
+          <Link
+            key={group.id}
+            href={href}
+            aria-current={active ? 'page' : undefined}
+            className={cn(PILL_BASE, active ? PILL_ACTIVE : PILL_INACTIVE)}
           >
-            {t('retry')}
-          </button>
-        )}
+            {group.unread && <UnreadDot />}
+            {group.title}
+          </Link>
+        );
+      })}
 
-        <AddFriendDialog
-          defaultTab="group"
-          trigger={
-            <button
-              type="button"
-              className={cn(PILL_BASE, 'px-[13px] py-[5px] text-nham-accent')}
-            >
-              {t('new')}
-            </button>
-          }
-        />
-      </div>
+      {/* On a load failure the group pills would otherwise vanish silently,
+       * stranding the only path to a group — offer an explicit retry. */}
+      {isError && (
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          className={cn(PILL_BASE, PILL_INACTIVE)}
+        >
+          {t('retry')}
+        </button>
+      )}
     </nav>
   );
 }

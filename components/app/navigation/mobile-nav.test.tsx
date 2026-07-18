@@ -45,7 +45,11 @@ vi.mock('@/components/ui/sheet', () => ({
   ),
 }));
 
-const baseUser = { email: 'minh@example.com', displayName: 'Minh' };
+const baseUser = {
+  email: 'minh@example.com',
+  displayName: 'Minh',
+  avatarUrl: null,
+};
 
 describe('MobileNav', () => {
   beforeEach(() => {

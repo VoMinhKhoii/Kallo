@@ -7,19 +7,23 @@
 
 export {
   createChatGroup,
-  getChatGroup,
   listMyChatGroups,
 } from '@/lib/actions/chat-groups/create-and-list';
+export {
+  getChatGroup,
+  renameChatGroup,
+} from '@/lib/actions/chat-groups/details';
+export { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups/direct-chats';
 export { listGroupMealFeed } from '@/lib/actions/chat-groups/feed';
 export {
-  getOrCreateDirectChatGroup,
+  addChatGroupMembers,
   leaveChatGroup,
+  removeChatGroupMember,
 } from '@/lib/actions/chat-groups/membership';
 export {
   listChatGroupMessages,
   sendChatGroupMessage,
 } from '@/lib/actions/chat-groups/messages';
-export { listGroupTimeline } from '@/lib/actions/chat-groups/timeline';
 export type {
   ChatGroupDetail,
   ChatGroupIdentity,
@@ -27,8 +31,4 @@ export type {
   ChatGroupMessage,
   GroupMealFeedEntry,
   GroupMealFeedPage,
-  GroupTimelineEntry,
-  GroupTimelineMealEntry,
-  GroupTimelineMessageEntry,
-  GroupTimelinePage,
 } from '@/lib/actions/chat-groups/types';

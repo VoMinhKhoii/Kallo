@@ -39,7 +39,7 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 vi.mock('@/lib/groups/share-visibility', () => ({
-  canViewShare: mockCanViewShare,
+  canViewShareOwnedBy: mockCanViewShare,
 }));
 
 import { toggleShareReactionAction } from '@/lib/actions/meal-sharing/reactions';
@@ -66,11 +66,20 @@ function insertReturning(rows: unknown[]) {
 
 // The first select in the action is the FOR UPDATE lock on the share row;
 // queue it as the one-shot so the default summary mock serves the second call.
-function lockShare() {
+function lockShare(
+  rows: unknown[] = [
+    {
+      id: SHARE_ID,
+      actorId: 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22',
+      sharedAt: new Date('2026-07-18T00:00:00.000Z'),
+      visibility: 'circle',
+    },
+  ]
+) {
   mockTxSelect.mockReturnValueOnce({
     from: vi.fn(() => ({
       where: vi.fn(() => ({
-        for: vi.fn().mockResolvedValue([{ id: SHARE_ID }]),
+        for: vi.fn().mockResolvedValue(rows),
       })),
     })),
   });
@@ -124,6 +133,7 @@ describe('toggleShareReactionAction', () => {
   });
 
   it('rejects an unauthorized share before any mutation', async () => {
+    lockShare();
     mockCanViewShare.mockResolvedValue(false);
 
     await expect(
@@ -131,5 +141,15 @@ describe('toggleShareReactionAction', () => {
     ).rejects.toThrow('Không tìm thấy bài chia sẻ.');
     expect(mockTxDelete).not.toHaveBeenCalled();
     expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('returns not found before visibility checks when the share is missing', async () => {
+    lockShare([]);
+
+    await expect(
+      toggleShareReactionAction({ shareId: SHARE_ID })
+    ).rejects.toThrow('Không tìm thấy bài chia sẻ.');
+    expect(mockCanViewShare).not.toHaveBeenCalled();
+    expect(mockTxDelete).not.toHaveBeenCalled();
   });
 });
