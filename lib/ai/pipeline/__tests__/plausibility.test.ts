@@ -68,6 +68,25 @@ describe('classifyIngredientPlausibility — genuinely non-caloric', () => {
       })
     ).toBe('genuinely_noncaloric');
   });
+
+  it('classifies ice by name (cà phê sữa đá decomposes to a standalone Đá)', () => {
+    expect(
+      classifyIngredientPlausibility({
+        grams: 100,
+        hasNutrition: true,
+        caloriesPer100g: 0,
+        name: 'Đá',
+      })
+    ).toBe('genuinely_noncaloric');
+    expect(
+      classifyIngredientPlausibility({
+        grams: 100,
+        hasNutrition: true,
+        caloriesPer100g: 0,
+        name: 'ice cubes',
+      })
+    ).toBe('genuinely_noncaloric');
+  });
 });
 
 describe('classifyIngredientPlausibility — unmatched with omitted caloric macros (D3 guard)', () => {

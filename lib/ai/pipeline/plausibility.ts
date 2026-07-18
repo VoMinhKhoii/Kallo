@@ -60,6 +60,8 @@ const NONCALORIC_PATTERNS: RegExp[] = [
   /\b(plain|black|green|herbal)\s*tea\b/i,
   /trà(\s*(đá|xanh|nóng))?/i,
   /nướ?c\s*trà/i,
+  /\bice(\s*cubes?)?\b/i, // ice as an ingredient (cà phê sữa đá decomposes to Đá)
+  /^đá(\s*(viên|lạnh))?$/i,
 ];
 
 /**
