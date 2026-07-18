@@ -1220,29 +1220,39 @@
     "page": {
       "title": "Vòng kết nối của bạn",
       "subtitle": "Hôm nay bạn bè đang ăn gì.",
-      "addFriend": "Thêm bạn"
+      "addFriend": "Thêm bạn",
+      "createGroup": "Tạo nhóm",
+      "friendsEmptyTitle": "Chưa có bữa ăn được chia sẻ",
+      "friendsNoMealToday": "Chưa có người bạn nào chia sẻ bữa ăn.",
+      "groupNoActivity": "Chưa có gì được chia sẻ trong {name}."
     },
-    "empty": {
-      "title": "Vòng kết nối đang yên ắng",
-      "subtitle": "Chia sẻ liên kết mời để kết nối. Nhật ký của bạn vẫn riêng tư cho đến khi bạn chọn chia sẻ.",
-      "cta": "Thêm một người bạn"
+    "switcher": {"all": "Tất cả", "label": "Chế độ xem vòng kết nối", "retry": "Thử lại"},
+    "feed": {
+      "heart": "Thả tim",
+      "reactionError": "Không thể cập nhật lượt thả tim. Hãy thử lại.",
+      "reply": "Trả lời",
+      "replyPlaceholder": "Trả lời…",
+      "replyError": "Không thể gửi trả lời. Hãy thử lại.",
+      "earlierReplies": "{count} trả lời trước đó",
+      "portion": "{portion} phần",
+      "logCopy": "Ăn theo",
+      "logSuccess": "Đã thêm vào nhật ký hôm nay",
+      "logError": "Không thể thêm bữa ăn này. Hãy thử lại.",
+      "leave": "Rời nhóm", "leaveTitle": "Rời nhóm này?", "leaveDescription": "Bạn sẽ không còn xem được dòng thời gian của nhóm.", "leaveConfirm": "Rời nhóm", "leaveError": "Không thể rời nhóm. Hãy thử lại.", "cancel": "Huỷ"
+    },
+    "createGroup": {
+      "title": "Tạo nhóm", "description": "Đặt tên và thêm thành viên từ vòng kết nối của bạn.", "nameLabel": "Tên nhóm", "namePlaceholder": "VD: Hội leo núi cuối tuần", "membersLabel": "Thêm thành viên", "membersCount": "Đã chọn {count}", "searchPlaceholder": "Tìm kiếm", "emptyTitle": "Chưa có bạn bè", "addFriendCta": "Thêm bạn", "noMatches": "Không tìm thấy", "noFriends": "Hãy kết bạn trước — bạn chỉ có thể thêm người đã có trong vòng kết nối.", "submit": "Tạo nhóm", "creating": "Đang tạo…", "created": "Đã tạo nhóm", "createError": "Không thể tạo nhóm. Hãy thử lại."
+    },
+    "info": {
+      "title": "Thông tin nhóm", "membersHeading": "Thành viên", "memberCount": "{count} thành viên", "owner": "Chủ nhóm", "addPeople": "Thêm người", "searchPlaceholder": "Tìm bạn bè", "noMatches": "Không tìm thấy", "everyoneIn": "Mọi người trong vòng kết nối đều đã ở đây.", "addCta": "Thêm", "added": "Đã thêm vào nhóm", "addError": "Không thể thêm. Hãy thử lại.", "renameLabel": "Đổi tên nhóm", "renameSave": "Lưu", "renameError": "Không thể đổi tên nhóm. Hãy thử lại.", "removeLabel": "Xóa {name}", "removeTitle": "Xóa {name}?", "removeDescription": "Họ sẽ mất quyền xem bữa ăn và trả lời trong nhóm này.", "removeConfirm": "Xóa", "removeError": "Không thể xóa thành viên này. Hãy thử lại."
     },
     "wall": {
-      "sharedAt": "Chia sẻ lúc {time}",
-      "toggleDetails": "Xem chi tiết bữa ăn",
-      "total": "Tổng",
       "loading": "Đang tải vòng kết nối của bạn",
+      "loadingMore": "Đang tải các ngày trước…",
+      "todayLabel": "Hôm nay",
+      "yesterdayLabel": "Hôm qua",
       "na": "Không có",
-      "you": "Bạn",
-      "presenceLabel": "Ai trong vòng kết nối của bạn",
-      "sharedTodayHint": "Hôm nay đã chia sẻ",
-      "quietHint": "Hôm nay yên ắng",
-      "memberActions": "Tùy chọn cho {name}",
-      "remove": "Xóa",
-      "block": "Chặn",
-      "removed": "Đã xóa khỏi vòng kết nối",
-      "blocked": "Đã chặn",
-      "actionError": "Chưa được — hãy thử lại."
+      "you": "Bạn"
     },
     "shareControl": {
       "share": "Chia sẻ với vòng kết nối",
@@ -1251,9 +1261,7 @@
       "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
       "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại.",
       "shareCard": "Chia sẻ thẻ",
-      "shareCardTitle": "Bữa ăn của tôi trên Nhẩm",
-      "copiedLink": "Đã sao chép liên kết thẻ",
-      "errorCopy": "Không thể sao chép liên kết. Vui lòng thử lại."
+      "shareCardTitle": "Bữa ăn của tôi trên Nhẩm"
     },
     "shareMeal": {
       "title": "Chia sẻ bữa ăn này",
@@ -1305,7 +1313,6 @@
       "hint": "Bất kỳ ai có liên kết này đều có thể kết nối với bạn.",
       "copy": "Sao chép",
       "linkCopied": "Đã sao chép liên kết",
-      "linkCopyError": "Không thể sao chép liên kết",
       "editTitle": "Chỉnh sửa liên kết",
       "editHint": "3–20 ký tự: chữ thường, số, gạch dưới.",
       "save": "Lưu",
@@ -1313,7 +1320,6 @@
       "endSaved": "Đã cập nhật liên kết",
       "endTaken": "Liên kết này đã được dùng",
       "endInvalid": "Liên kết không hợp lệ",
-      "endReserved": "Liên kết này đã được giữ chỗ",
       "endError": "Không thể cập nhật liên kết",
       "appearTitle": "Bạn hiện ra thế nào",
       "appearHint": "Tên mà vòng kết nối thấy trên các bữa ăn được chia sẻ.",

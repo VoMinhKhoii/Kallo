@@ -189,6 +189,10 @@ class ApiClient {
   Future<T> post<T>(String path, [Object? body]) =>
       _request<T>('POST', path, body ?? const <String, dynamic>{});
 
+  /// PATCH — defaults to an empty object body, matching POST and PUT.
+  Future<T> patch<T>(String path, [Object? body]) =>
+      _request<T>('PATCH', path, body ?? const <String, dynamic>{});
+
   /// PUT — defaults to an empty object body, matching `apiPut`.
   Future<T> put<T>(String path, [Object? body]) =>
       _request<T>('PUT', path, body ?? const <String, dynamic>{});

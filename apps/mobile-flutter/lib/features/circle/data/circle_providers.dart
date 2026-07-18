@@ -13,7 +13,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/api_client.dart';
 import '../../../data/query.dart';
 import '../../../models/circle.dart';
-import '../../dashboard/data/dashboard_providers.dart' show localTimezoneOffsetMinutes;
+import '../../dashboard/data/dashboard_providers.dart'
+    show localTimezoneOffsetMinutes;
 import '../../logging/data/logging_providers.dart' show loggingDayProvider;
 
 /// How often the ambient wall re-polls for new shared meals (web parity).
@@ -25,7 +26,8 @@ const Duration kCirclePollInterval = Duration(seconds: 30);
 /// invite survives the auth detour instead of dropping the user on the dashboard.
 final pendingInviteSlugProvider = StateProvider<String?>((ref) => null);
 
-Future<List<CircleFeedEntry>> _fetchFeed(ApiClient api) => runWithRetry(() async {
+Future<List<CircleFeedEntry>> _fetchFeed(ApiClient api) =>
+    runWithRetry(() async {
       final tz = localTimezoneOffsetMinutes();
       // Timeout so a hung request can't block the initial load or wedge a
       // poll tick forever; TimeoutException is retryable per shouldRetryQuery.
@@ -44,8 +46,9 @@ Future<List<CircleFeedEntry>> _fetchFeed(ApiClient api) => runWithRetry(() async
 /// retry), then re-polls every [kCirclePollInterval]. Transient poll failures
 /// after the first success are swallowed so a blip never blanks a loaded wall —
 /// the last good frame stays until the next successful poll.
-final circleFeedProvider =
-    StreamProvider.autoDispose<List<CircleFeedEntry>>((ref) async* {
+final circleFeedProvider = StreamProvider.autoDispose<List<CircleFeedEntry>>((
+  ref,
+) async* {
   final api = ref.watch(apiClientProvider);
 
   // First load: let errors propagate to the UI.
@@ -73,8 +76,9 @@ final circleFeedProvider =
 });
 
 /// The viewer's connections (accepted + pending), excluding blocked edges.
-final circleFriendsProvider =
-    FutureProvider.autoDispose<List<CircleMember>>((ref) async {
+final circleFriendsProvider = FutureProvider.autoDispose<List<CircleMember>>((
+  ref,
+) async {
   final api = ref.watch(apiClientProvider);
   return runWithRetry(() async {
     final json = await api.get<Map<String, dynamic>>('/api/v1/groups/friends');
@@ -87,8 +91,9 @@ final circleFriendsProvider =
 
 /// The viewer's own public profile — auto-provisioned server-side, so the
 /// invite link + handle are ready immediately (never null).
-final myCircleProfileProvider =
-    FutureProvider.autoDispose<CircleProfile>((ref) async {
+final myCircleProfileProvider = FutureProvider.autoDispose<CircleProfile>((
+  ref,
+) async {
   final api = ref.watch(apiClientProvider);
   return runWithRetry(() async {
     final json = await api.get<Map<String, dynamic>>('/api/v1/groups/profile');
@@ -99,8 +104,10 @@ final myCircleProfileProvider =
 /// Read-only preview of an invite link, keyed by the inviter's slug. Resolves
 /// the inviter's identity + the viewer's relationship WITHOUT connecting — the
 /// recipient still taps Accept. Backed by `GET /api/v1/groups/invite/<slug>`.
-final invitePreviewProvider =
-    FutureProvider.autoDispose.family<InvitePreview, String>((ref, slug) async {
+final invitePreviewProvider = FutureProvider.autoDispose.family<
+  InvitePreview,
+  String
+>((ref, slug) async {
   final api = ref.watch(apiClientProvider);
   // A bad slug is a 404 (non-retryable ApiError) — surfaces as the invalid state.
   final json = await api.get<Map<String, dynamic>>(
@@ -133,9 +140,13 @@ Future<CircleProfile> saveCircleProfile(
   if (!identical(displayName, _keepDisplayName)) {
     body['displayName'] = displayName as String?;
   }
-  final json =
-      await api.post<Map<String, dynamic>>('/api/v1/groups/profile', body);
-  final profile = CircleProfile.fromJson(json['profile'] as Map<String, dynamic>);
+  final json = await api.post<Map<String, dynamic>>(
+    '/api/v1/groups/profile',
+    body,
+  );
+  final profile = CircleProfile.fromJson(
+    json['profile'] as Map<String, dynamic>,
+  );
   ref.invalidate(myCircleProfileProvider);
   ref.invalidate(circleFriendsProvider);
   ref.invalidate(circleFeedProvider);
@@ -156,7 +167,9 @@ Future<CircleProfile> acceptCircleInvite(WidgetRef ref, String slug) async {
     '/api/v1/groups/invite/accept',
     {'slug': slug},
   );
-  final inviter = CircleProfile.fromJson(json['inviter'] as Map<String, dynamic>);
+  final inviter = CircleProfile.fromJson(
+    json['inviter'] as Map<String, dynamic>,
+  );
   ref.invalidate(circleFriendsProvider);
   ref.invalidate(circleFeedProvider);
   return inviter;
@@ -173,17 +186,6 @@ Future<void> removeCircleFriend(WidgetRef ref, String targetUserId) async {
   ref.invalidate(circleFeedProvider);
 }
 
-/// Block a user (`POST /api/v1/groups/friends/block`) — locks the edge so they
-/// can't re-invite. Invalidates friends + feed. Throws [ApiError] on failure.
-Future<void> blockCircleFriend(WidgetRef ref, String targetUserId) async {
-  final api = ref.read(apiClientProvider);
-  await api.post<dynamic>('/api/v1/groups/friends/block', {
-    'targetUserId': targetUserId,
-  });
-  ref.invalidate(circleFriendsProvider);
-  ref.invalidate(circleFeedProvider);
-}
-
 // ---------------------------------------------------------------------------
 // Copy / split a meal between friends
 // ---------------------------------------------------------------------------
@@ -192,15 +194,17 @@ Future<void> blockCircleFriend(WidgetRef ref, String targetUserId) async {
 /// web `useMealShareInvites` against `GET /api/v1/groups/invites`.
 final mealShareInvitesProvider =
     FutureProvider.autoDispose<List<MealShareInvite>>((ref) async {
-  final api = ref.watch(apiClientProvider);
-  return runWithRetry(() async {
-    final json = await api.get<Map<String, dynamic>>('/api/v1/groups/invites');
-    final list = (json['invites'] as List<dynamic>?) ?? const [];
-    return list
-        .map((e) => MealShareInvite.fromJson(e as Map<String, dynamic>))
-        .toList(growable: false);
-  });
-});
+      final api = ref.watch(apiClientProvider);
+      return runWithRetry(() async {
+        final json = await api.get<Map<String, dynamic>>(
+          '/api/v1/groups/invites',
+        );
+        final list = (json['invites'] as List<dynamic>?) ?? const [];
+        return list
+            .map((e) => MealShareInvite.fromJson(e as Map<String, dynamic>))
+            .toList(growable: false);
+      });
+    });
 
 /// Local calendar date (YYYY-MM-DD) — the day an accepted meal is stamped.
 String _todayLocalDate() {
