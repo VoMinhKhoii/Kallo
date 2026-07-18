@@ -155,6 +155,18 @@ const inviterRow = {
   handle: SLUG,
   displayName: 'Phở Fan',
   avatarSeed: SLUG,
+  avatarUrl: null,
+  avatarPath: null,
+};
+
+/** inviterRow through the toPublicIdentity projection. */
+const inviterProfile = {
+  userId: INVITER,
+  handle: SLUG,
+  displayName: 'Phở Fan',
+  avatarSeed: SLUG,
+  avatarUrl: null,
+  hasCustomAvatar: false,
 };
 
 // A `.from().where().limit()` chain resolving to the given rows (db.select).
@@ -265,7 +277,7 @@ describe('acceptInvite', () => {
 
     const result = await acceptInvite(ACTOR, { slug: SLUG });
 
-    expect(result).toEqual({ status: 'accepted', inviter: inviterRow });
+    expect(result).toEqual({ status: 'accepted', inviter: inviterProfile });
     expect(mockTxUpdate).not.toHaveBeenCalled();
     // friendship + event + chat_groups + chat_group_members
     expect(mockTxInsert).toHaveBeenCalledTimes(4);
@@ -448,7 +460,7 @@ describe('getProfileBySlug', () => {
 
   it('returns the matching profile', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
-    expect(await getProfileBySlug(SLUG)).toEqual(inviterRow);
+    expect(await getProfileBySlug(SLUG)).toEqual(inviterProfile);
   });
 
   it('returns null when no profile matches', async () => {

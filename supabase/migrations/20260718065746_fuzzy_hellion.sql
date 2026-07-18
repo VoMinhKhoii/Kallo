@@ -37,4 +37,15 @@ CREATE POLICY "avatars_delete_own"
 	USING (
 		bucket_id = 'avatars'
 		AND (storage.foldername(name))[1] = auth.uid()::text
+	);--> statement-breakpoint
+-- SELECT is required for the storage remove/list APIs even on a public bucket
+-- (public only bypasses RLS for the unauthenticated object endpoint) — without
+-- it every replace/remove silently 403s and old photos stay live forever.
+DROP POLICY IF EXISTS "avatars_select_own" ON storage.objects;--> statement-breakpoint
+CREATE POLICY "avatars_select_own"
+	ON storage.objects
+	FOR SELECT TO authenticated
+	USING (
+		bucket_id = 'avatars'
+		AND (storage.foldername(name))[1] = auth.uid()::text
 	);

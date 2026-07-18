@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { removeMyAvatar, uploadMyAvatar } from '@/lib/actions/groups/avatar';
 import { Errors, serializeError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
+import { MAX_IMAGE_BYTES } from '@/lib/uploads/image-file';
 
 export const runtime = 'nodejs';
 
@@ -24,6 +25,12 @@ async function requireSessionUser() {
 export async function POST(req: NextRequest) {
   try {
     const { supabase, userId } = await requireSessionUser();
+    // Reject oversized requests before req.formData() buffers the whole body
+    // (multipart framing overhead on top of the 5 MB file cap).
+    const contentLength = Number(req.headers.get('content-length'));
+    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES * 2) {
+      throw Errors.validationFailed('Image must be under 5 MB.');
+    }
     const form = await req.formData();
     const file = form.get('file');
     if (!(file instanceof File)) {

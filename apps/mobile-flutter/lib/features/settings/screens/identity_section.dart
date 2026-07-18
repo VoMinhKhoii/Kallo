@@ -183,12 +183,12 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
                 children: [
                   _PillButton(
                     icon: LucideIcons.upload,
-                    label: profile.avatarUrl != null
+                    label: profile.hasCustomAvatar
                         ? tr('settings.identity.avatarChange')
                         : tr('settings.identity.avatarUpload'),
                     onTap: _busy ? null : _pickAndUpload,
                   ),
-                  if (profile.avatarUrl != null)
+                  if (profile.hasCustomAvatar)
                     _PillButton(
                       icon: LucideIcons.x,
                       label: tr('settings.identity.avatarRemove'),

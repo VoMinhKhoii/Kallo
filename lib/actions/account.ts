@@ -139,6 +139,23 @@ export async function deleteAccountAction(): Promise<{ success: true }> {
   const { user, supabase } = await requireUser();
 
   const admin = createAdminClient();
+
+  // Storage objects don't cascade with the auth user — purge the (publicly
+  // served) avatar photos first so a deleted account's photo doesn't stay
+  // live. Best-effort: a storage error must not block the deletion itself.
+  try {
+    const { data: objects } = await admin.storage
+      .from('avatars')
+      .list(user.id, { limit: 100 });
+    if (objects?.length) {
+      await admin.storage
+        .from('avatars')
+        .remove(objects.map((o) => `${user.id}/${o.name}`));
+    }
+  } catch (storageError) {
+    console.error('[account] avatar purge failed:', storageError);
+  }
+
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
     throw Errors.internal(

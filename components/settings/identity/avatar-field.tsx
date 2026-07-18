@@ -74,9 +74,9 @@ export function AvatarField({ profile }: { profile: PublicProfile }) {
           ) : (
             <Upload className="h-3.5 w-3.5" />
           )}
-          {profile.avatarUrl ? t('avatarChange') : t('avatarUpload')}
+          {profile.hasCustomAvatar ? t('avatarChange') : t('avatarUpload')}
         </button>
-        {profile.avatarUrl && (
+        {profile.hasCustomAvatar && (
           <button
             type="button"
             onClick={handleRemove}
