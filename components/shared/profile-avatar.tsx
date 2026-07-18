@@ -31,7 +31,10 @@ export function ProfileAvatar({
           className="size-full object-cover"
         />
       ) : (
-        <span className="font-bold font-sans-display text-[#141413] text-[12px]">
+        <span
+          aria-hidden="true"
+          className="font-bold font-sans-display text-[#141413] text-[12px]"
+        >
           {label.charAt(0).toUpperCase()}
         </span>
       )}
