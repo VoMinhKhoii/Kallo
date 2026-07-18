@@ -81,12 +81,21 @@ describe('decomposedIngredientV2Schema', () => {
     expect(parsed.explicitMass).toEqual({ grams: 250, basis: 'raw' });
   });
 
-  it('REJECTS a non-positive count and an invalid sizeModifier', () => {
-    expect(() =>
+  it('ACCEPTS a zero count (explicit user zero → clarify), REJECTS negative/invalid', () => {
+    // count: 0 is meaningful ("0 fried chicken" — the resolver routes it to a
+    // clarify); only negative counts are schema-invalid.
+    expect(
       decomposedIngredientV2Schema.parse({
         rawName: 'x',
         canonicalName: 'x',
         count: 0,
+      }).count
+    ).toBe(0);
+    expect(() =>
+      decomposedIngredientV2Schema.parse({
+        rawName: 'x',
+        canonicalName: 'x',
+        count: -1,
       })
     ).toThrow();
     expect(() =>

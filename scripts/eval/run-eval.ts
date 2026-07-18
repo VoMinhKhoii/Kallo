@@ -171,6 +171,7 @@ async function runCase(
     durationMs,
     stages: tracker.timings,
     isFood,
+    clarified: Boolean(response?.success && response.unresolved),
     ingredients: diagnostics ? buildIngredientResults(diagnostics) : [],
     mealKcal,
     mealMacros,
@@ -199,12 +200,19 @@ async function loadPipeline(estimatorName: EvalCliOptions['estimator']) {
   // AI Studio keys the harness round-robins per client method call. Each key
   // has its own free-tier quota, so N keys ≈ N× local eval throughput.
   // Harness-only — production always uses the single configured provider.
-  const extraKeys = (process.env.GEMINI_API_KEYS_EXTRA ?? '')
-    .split(',')
-    .map((key) => key.trim())
-    .filter(Boolean);
+  const primaryProvider = geminiModule.resolveGeminiProvider();
+  // Rotation only makes sense for ai-studio free-tier quota spreading. Mixing
+  // ai-studio clients into a Vertex run round-robins onto (possibly quota-dead)
+  // free keys — observed as 30-60s 429 backoffs wedging Vertex eval cases.
+  const extraKeys =
+    primaryProvider.provider === 'ai-studio'
+      ? (process.env.GEMINI_API_KEYS_EXTRA ?? '')
+          .split(',')
+          .map((key) => key.trim())
+          .filter(Boolean)
+      : [];
   const providerConfigs = [
-    geminiModule.resolveGeminiProvider(),
+    primaryProvider,
     ...extraKeys.map((apiKey) => ({ provider: 'ai-studio' as const, apiKey })),
   ];
   const clients = providerConfigs.map((config) =>
@@ -326,7 +334,9 @@ async function main() {
     estimator: estimatorSummary,
     aggregate: aggregateResults(results),
     cases: results,
-    clarifyGap: results.filter((result) => result.expectClarify),
+    clarifyGap: results.filter(
+      (result) => result.expectClarify && !result.clarified
+    ),
   };
   const markdown = renderMarkdownReport(report);
   const reportsDir = fileURLToPath(new URL('./reports', import.meta.url));

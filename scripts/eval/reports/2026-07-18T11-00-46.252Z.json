@@ -1,0 +1,246 @@
+{
+  "generatedAt": "2026-07-18T11:00:46.252Z",
+  "fixtureVersion": 2,
+  "profile": "stable",
+  "filter": "zero-count",
+  "concurrency": 1,
+  "estimator": {
+    "name": "gemini",
+    "model": "gemini-3.1-flash-lite",
+    "inputPerMTokUsd": 0.3,
+    "outputPerMTokUsd": 2.5,
+    "costUsdPer1kMeals": null
+  },
+  "aggregate": {
+    "cases": 2,
+    "passed": 2,
+    "failed": 0,
+    "stapleMatchRate": null,
+    "kcalInRangeRate": null,
+    "macroInRangeRate": null,
+    "latencyBudgetViolations": 0,
+    "silentZeroCount": 0,
+    "nonFoodRejectionRate": null,
+    "injectionResistanceRate": null,
+    "latencyP50Ms": 8927,
+    "latencyP90Ms": 90540
+  },
+  "cases": [
+    {
+      "id": "gg-zero-count-fried-chicken",
+      "input": "0 fried chicken",
+      "tags": [
+        "en",
+        "golden",
+        "zero-count",
+        "regression-bug"
+      ],
+      "durationMs": 90540,
+      "stages": {
+        "decompositionMs": 2950,
+        "matchingMs": 87569,
+        "nutritionMs": null,
+        "assemblyMs": null
+      },
+      "isFood": null,
+      "ingredients": [],
+      "mealKcal": null,
+      "mealMacros": null,
+      "silentZeroViolations": [],
+      "error": "harness timeout: case exceeded 90000ms",
+      "timedOut": true,
+      "checks": [
+        {
+          "name": "isFood",
+          "pass": false,
+          "expected": true,
+          "actual": null
+        }
+      ],
+      "pass": false,
+      "expectClarify": true
+    },
+    {
+      "id": "gvn-zero-count-banh-mi",
+      "input": "0 ổ bánh mì thịt",
+      "tags": [
+        "vi",
+        "golden",
+        "zero-count",
+        "regression-bug"
+      ],
+      "durationMs": 8927,
+      "stages": {
+        "decompositionMs": 2445,
+        "matchingMs": 3088,
+        "nutritionMs": 3109,
+        "assemblyMs": 121
+      },
+      "isFood": true,
+      "ingredients": [
+        {
+          "mealItemName": "Bánh mì thịt",
+          "ingredientName": "Bánh mì",
+          "outcome": "accepted",
+          "provenance": "fuzzy",
+          "similarity": 1,
+          "matchedDbName": "Bánh mỳ",
+          "foodCompositionId": "fao_vn_2007_1012_raw"
+        },
+        {
+          "mealItemName": "Bánh mì thịt",
+          "ingredientName": "Thịt",
+          "outcome": "accepted",
+          "provenance": "vector",
+          "similarity": 0.840727651374046,
+          "matchedDbName": "Thịt lợn nạc",
+          "foodCompositionId": "fao_vn_2007_7017_raw"
+        }
+      ],
+      "mealKcal": {
+        "low": 83.4,
+        "mid": 99.6,
+        "high": 126.6
+      },
+      "mealMacros": {
+        "proteinG": {
+          "low": 11.4,
+          "mid": 11.4,
+          "high": 11.4
+        },
+        "carbohydrateG": {
+          "low": 0,
+          "mid": 0,
+          "high": 0
+        },
+        "fatG": {
+          "low": 4.2,
+          "mid": 6,
+          "high": 9
+        }
+      },
+      "silentZeroViolations": [],
+      "error": null,
+      "timedOut": false,
+      "checks": [
+        {
+          "name": "isFood",
+          "pass": true,
+          "expected": true,
+          "actual": true
+        }
+      ],
+      "pass": true,
+      "expectClarify": true
+    }
+  ],
+  "clarifyGap": [
+    {
+      "id": "gg-zero-count-fried-chicken",
+      "input": "0 fried chicken",
+      "tags": [
+        "en",
+        "golden",
+        "zero-count",
+        "regression-bug"
+      ],
+      "durationMs": 90540,
+      "stages": {
+        "decompositionMs": 2950,
+        "matchingMs": 87569,
+        "nutritionMs": null,
+        "assemblyMs": null
+      },
+      "isFood": null,
+      "ingredients": [],
+      "mealKcal": null,
+      "mealMacros": null,
+      "silentZeroViolations": [],
+      "error": "harness timeout: case exceeded 90000ms",
+      "timedOut": true,
+      "checks": [
+        {
+          "name": "isFood",
+          "pass": false,
+          "expected": true,
+          "actual": null
+        }
+      ],
+      "pass": false,
+      "expectClarify": true
+    },
+    {
+      "id": "gvn-zero-count-banh-mi",
+      "input": "0 ổ bánh mì thịt",
+      "tags": [
+        "vi",
+        "golden",
+        "zero-count",
+        "regression-bug"
+      ],
+      "durationMs": 8927,
+      "stages": {
+        "decompositionMs": 2445,
+        "matchingMs": 3088,
+        "nutritionMs": 3109,
+        "assemblyMs": 121
+      },
+      "isFood": true,
+      "ingredients": [
+        {
+          "mealItemName": "Bánh mì thịt",
+          "ingredientName": "Bánh mì",
+          "outcome": "accepted",
+          "provenance": "fuzzy",
+          "similarity": 1,
+          "matchedDbName": "Bánh mỳ",
+          "foodCompositionId": "fao_vn_2007_1012_raw"
+        },
+        {
+          "mealItemName": "Bánh mì thịt",
+          "ingredientName": "Thịt",
+          "outcome": "accepted",
+          "provenance": "vector",
+          "similarity": 0.840727651374046,
+          "matchedDbName": "Thịt lợn nạc",
+          "foodCompositionId": "fao_vn_2007_7017_raw"
+        }
+      ],
+      "mealKcal": {
+        "low": 83.4,
+        "mid": 99.6,
+        "high": 126.6
+      },
+      "mealMacros": {
+        "proteinG": {
+          "low": 11.4,
+          "mid": 11.4,
+          "high": 11.4
+        },
+        "carbohydrateG": {
+          "low": 0,
+          "mid": 0,
+          "high": 0
+        },
+        "fatG": {
+          "low": 4.2,
+          "mid": 6,
+          "high": 9
+        }
+      },
+      "silentZeroViolations": [],
+      "error": null,
+      "timedOut": false,
+      "checks": [
+        {
+          "name": "isFood",
+          "pass": true,
+          "expected": true,
+          "actual": true
+        }
+      ],
+      "pass": true,
+      "expectClarify": true
+    }
+  ]
+}

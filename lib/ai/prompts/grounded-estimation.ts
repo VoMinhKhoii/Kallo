@@ -144,6 +144,19 @@ function renderIngredient(ing: IngredientWithCandidates): string {
     // back verbatim as grams; do NOT re-estimate.
     attrs.push(`resolved_grams="${ing.resolvedGramsAnchor.toFixed(1)}"`);
   }
+  // User-stated quantity evidence, passed through even when the resolver
+  // produced no anchor — without these the count/unit only survive in the raw
+  // meal text, which the model can miss ("0 fried chicken" analyzed as one
+  // serving; "2 bánh bao" sized as one).
+  if (inputIng.count != null) {
+    attrs.push(`user_count="${inputIng.count}"`);
+  }
+  if (inputIng.unitToken) {
+    attrs.push(`user_unit="${escapeXmlAttribute(inputIng.unitToken)}"`);
+  }
+  if (inputIng.sizeModifier) {
+    attrs.push(`user_size="${escapeXmlAttribute(inputIng.sizeModifier)}"`);
+  }
   if (cookingMethod) {
     attrs.push(`cooking="${escapeXmlAttribute(cookingMethod)}"`);
   }
@@ -392,6 +405,12 @@ const STATIC_PREFIX_PRODUCTION = `You are a grounded nutrition expert. For each 
   When state_hint="raw_weight": the user typed the pre-cooking weight. If selected candidate is raw, emit it directly. If selected candidate is cooked (rare with our matching biased toward state-aligned rows), apply the per-food yield (chicken raw → cooked × 0.75, etc.).
 
   When state_hint="cooked_weight" or absent: the user typed the as-eaten weight. If selected candidate is raw, convert with the per-food yield to raw grams. If selected candidate is cooked, emit directly.
+
+  Absorbed cooking fat: for chiên/rán/xào/áp chảo/fried/pan-seared/stir-fried/sautéed items, fatG MUST include the absorbed cooking oil on top of the food's own fat (typical absorption per ingredient: pan-sear 3–7g, stir-fry 5–10g, shallow-fry 8–15g, deep-fry ~10–18% of food weight; scale with oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat. Skip only when the user explicitly says no oil (luộc/hấp/steamed/boiled/air-fried).
+
+  Staple carb base: when rice/noodles/bread is the base of a plate or bowl dish (cơm tấm, cơm gà, katsu curry, bibimbap, fried rice), size it as a FULL meal portion — cooked rice 200–300g, noodles 150–250g cooked — not a side garnish. Under-sizing the carb base is the most common realistic error; respect default_rice_portion in <user_context>.
+
+  If user_count="0" appears on any ingredient: the user typed an explicit zero. The server has already flagged it for a clarify and will DISCARD your numbers for that ingredient — emit your normal best-effort fields (schema still requires grams > 0) and move on; never treat the zero as one standard serving in meal-level reasoning.
 
   When the user did NOT give a verbatim quantity, estimate from priors:
     - 1 chén cơm ≈ 200g cooked. 1 đĩa rau ≈ 150g cooked. 1 tô phở ≈ 600g total (broth + noodles + meat).

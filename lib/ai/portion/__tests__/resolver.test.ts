@@ -15,6 +15,26 @@ const conceptInput = (
 });
 
 describe('resolvePortion — fallback ladder', () => {
+  it('step 0: an explicit ZERO count is unresolved (clarify), never one serving', () => {
+    // Production report: "0 fried chicken" was analyzed as a full serving
+    // because the .positive() count schema dropped the zero silently.
+    const r = resolvePortion(conceptInput({ conceptId: 'chicken-breast' }), {
+      count: 0,
+      unitToken: 'cái',
+    });
+    expect(r.provenance).toBe('unresolved');
+    expect(r.grams).toBeNull();
+    expect(r.unresolvedReason).toBe('unresolved_portion');
+  });
+
+  it('step 0: zero count outranks even an explicit mass', () => {
+    const r = resolvePortion(conceptInput({ conceptId: 'chicken-breast' }), {
+      count: 0,
+      explicitMass: { grams: 200, basis: 'raw' },
+    });
+    expect(r.provenance).toBe('unresolved');
+  });
+
   it('step 1: explicit user mass is honored verbatim (raw basis, no yield fudge)', () => {
     const r = resolvePortion(
       conceptInput({ conceptId: 'chicken-breast', form: 'raw' }),

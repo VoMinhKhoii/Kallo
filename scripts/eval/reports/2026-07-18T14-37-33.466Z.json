@@ -1,0 +1,169 @@
+{
+  "generatedAt": "2026-07-18T14:37:33.466Z",
+  "fixtureVersion": 2,
+  "profile": "stable",
+  "filter": "zero-count",
+  "concurrency": 1,
+  "estimator": {
+    "name": "gemini",
+    "model": "gemini-3.1-flash-lite",
+    "inputPerMTokUsd": 0.3,
+    "outputPerMTokUsd": 2.5,
+    "costUsdPer1kMeals": null
+  },
+  "aggregate": {
+    "cases": 2,
+    "passed": 1,
+    "failed": 1,
+    "stapleMatchRate": null,
+    "kcalInRangeRate": null,
+    "macroInRangeRate": null,
+    "latencyBudgetViolations": 0,
+    "silentZeroCount": 0,
+    "nonFoodRejectionRate": null,
+    "injectionResistanceRate": null,
+    "latencyP50Ms": 4704,
+    "latencyP90Ms": 90112
+  },
+  "cases": [
+    {
+      "id": "gg-zero-count-fried-chicken",
+      "input": "0 fried chicken",
+      "tags": [
+        "en",
+        "golden",
+        "zero-count",
+        "regression-bug"
+      ],
+      "durationMs": 4704,
+      "stages": {
+        "decompositionMs": 2372,
+        "matchingMs": 306,
+        "nutritionMs": 2020,
+        "assemblyMs": 4
+      },
+      "isFood": true,
+      "clarified": true,
+      "ingredients": [
+        {
+          "mealItemName": "Gà rán",
+          "ingredientName": "Gà rán",
+          "outcome": "rejected",
+          "provenance": "unmatched",
+          "similarity": null,
+          "matchedDbName": null,
+          "foodCompositionId": null
+        }
+      ],
+      "mealKcal": null,
+      "mealMacros": {
+        "proteinG": null,
+        "carbohydrateG": null,
+        "fatG": null
+      },
+      "silentZeroViolations": [],
+      "error": null,
+      "timedOut": false,
+      "checks": [
+        {
+          "name": "isFood",
+          "pass": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "name": "clarify",
+          "pass": true,
+          "expected": true,
+          "actual": true
+        }
+      ],
+      "pass": true,
+      "expectClarify": true
+    },
+    {
+      "id": "gvn-zero-count-banh-mi",
+      "input": "0 ổ bánh mì thịt",
+      "tags": [
+        "vi",
+        "golden",
+        "zero-count",
+        "regression-bug"
+      ],
+      "durationMs": 90112,
+      "stages": {
+        "decompositionMs": 1662,
+        "matchingMs": 88443,
+        "nutritionMs": null,
+        "assemblyMs": null
+      },
+      "isFood": null,
+      "clarified": false,
+      "ingredients": [],
+      "mealKcal": null,
+      "mealMacros": null,
+      "silentZeroViolations": [],
+      "error": "harness timeout: case exceeded 90000ms",
+      "timedOut": true,
+      "checks": [
+        {
+          "name": "isFood",
+          "pass": false,
+          "expected": true,
+          "actual": null
+        },
+        {
+          "name": "clarify",
+          "pass": false,
+          "expected": true,
+          "actual": false
+        }
+      ],
+      "pass": false,
+      "expectClarify": true
+    }
+  ],
+  "clarifyGap": [
+    {
+      "id": "gvn-zero-count-banh-mi",
+      "input": "0 ổ bánh mì thịt",
+      "tags": [
+        "vi",
+        "golden",
+        "zero-count",
+        "regression-bug"
+      ],
+      "durationMs": 90112,
+      "stages": {
+        "decompositionMs": 1662,
+        "matchingMs": 88443,
+        "nutritionMs": null,
+        "assemblyMs": null
+      },
+      "isFood": null,
+      "clarified": false,
+      "ingredients": [],
+      "mealKcal": null,
+      "mealMacros": null,
+      "silentZeroViolations": [],
+      "error": "harness timeout: case exceeded 90000ms",
+      "timedOut": true,
+      "checks": [
+        {
+          "name": "isFood",
+          "pass": false,
+          "expected": true,
+          "actual": null
+        },
+        {
+          "name": "clarify",
+          "pass": false,
+          "expected": true,
+          "actual": false
+        }
+      ],
+      "pass": false,
+      "expectClarify": true
+    }
+  ]
+}

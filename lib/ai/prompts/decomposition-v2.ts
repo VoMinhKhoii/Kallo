@@ -110,7 +110,7 @@ export function buildCompressedDecompositionV2Prompt(
   mealItems[]: name, cookingMethod, cuisineNote?, ingredients[].
   ingredients[]: rawName, canonicalName, cookingMethod?, stateHint?, stateNote?, count?, unitToken?, sizeModifier?, explicitMass?, prepNotes?.
   stateHint enum: "raw_weight" | "cooked_weight" | "unspecified". Default omitted.
-  count: number the user stated (2 in "2 bánh bao"). unitToken: verbatim counter/unit word ("bánh bao","cái","lát","slice","cup","tô"). sizeModifier enum: "small"|"medium"|"large" ("nhỏ"→small,"vừa"→medium,"lớn"→large). explicitMass: { grams, basis:"raw"|"cooked" } ONLY when the user typed a weight.
+  count: number the user stated (2 in "2 bánh bao"). A typed ZERO ("0 fried chicken") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks. unitToken: verbatim counter/unit word ("bánh bao","cái","lát","slice","cup","tô"). sizeModifier enum: "small"|"medium"|"large" ("nhỏ"→small,"vừa"→medium,"lớn"→large). explicitMass: { grams, basis:"raw"|"cooked" } ONLY when the user typed a weight.
   You do NOT emit grams and NEVER invent count/unitToken/explicitMass — extract only what the user wrote. A server resolver turns these into a weight.
   prepNotes: max 6 short strings (≤60 chars each), preserve user's language and diacritics.
 </schema_fields>

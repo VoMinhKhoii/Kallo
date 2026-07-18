@@ -52,17 +52,28 @@ function observed(): Omit<EvalCaseResult, 'checks' | 'pass' | 'expectClarify'> {
     silentZeroViolations: [],
     error: null,
     timedOut: false,
+    clarified: false,
   };
 }
 
 describe('eval scoring', () => {
-  it('scores DB-grounded staples and keeps clarify reporting-only', () => {
+  it('expectClarify is a HARD check: fails when no clarify actually fired', () => {
+    // "0 fried chicken" regression shape: the fixture expects a clarify but
+    // the pipeline analyzed a full serving — this must now FAIL, not sit in a
+    // reporting-only bucket.
     const result = scoreCase(fixture, observed());
-    expect(result.pass).toBe(true);
     expect(result.expectClarify).toBe(true);
-    expect(result.checks.map((check) => check.name)).not.toContain(
-      'expectClarify'
-    );
+    expect(result.pass).toBe(false);
+    const clarify = result.checks.find((check) => check.name === 'clarify');
+    expect(clarify?.pass).toBe(false);
+  });
+
+  it('expectClarify passes when the pipeline surfaced a clarify', () => {
+    const input = observed();
+    input.clarified = true;
+    const result = scoreCase(fixture, input);
+    expect(result.checks.find((c) => c.name === 'clarify')?.pass).toBe(true);
+    expect(result.pass).toBe(true);
   });
 
   it('rejects a staple that only appears on an unmatched ingredient', () => {
@@ -82,7 +93,12 @@ describe('eval scoring', () => {
   });
 
   it('computes aggregate rates and nearest-rank latency percentiles', () => {
-    const first = scoreCase(fixture, observed());
+    // clarified=true so the expectClarify fixture legitimately passes; the
+    // second (failing) case now COUNTS as failed — expectClarify no longer
+    // exempts a case from the aggregate.
+    const passing = observed();
+    passing.clarified = true;
+    const first = scoreCase(fixture, passing);
     const second: EvalCaseResult = {
       ...first,
       id: 'slow',
@@ -90,8 +106,8 @@ describe('eval scoring', () => {
       pass: false,
     };
     const aggregate = aggregateResults([first, second]);
-    expect(aggregate.passed).toBe(2);
-    expect(aggregate.failed).toBe(0);
+    expect(aggregate.passed).toBe(1);
+    expect(aggregate.failed).toBe(1);
     expect(aggregate.latencyP50Ms).toBe(1200);
     expect(aggregate.latencyP90Ms).toBe(2400);
   });

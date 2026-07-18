@@ -62,6 +62,21 @@ export function resolvePortion(
   concept: ResolverConceptInput,
   quantity: QuantityEvidence
 ): PortionResolution {
+  // ---- Step 0: explicit ZERO count → clarify ---------------------------
+  // "0 fried chicken" is a contradiction, not a portion. Before this check
+  // the zero was schema-dropped (count was .positive()), so the item was
+  // silently analyzed as one standard serving. A typed zero must never
+  // produce calories.
+  if (quantity.count === 0) {
+    return {
+      grams: null,
+      provenance: 'unresolved',
+      confidence: 'none',
+      unresolvedReason: 'unresolved_portion',
+      note: 'user typed an explicit ZERO count — contradictory quantity; clarify',
+    };
+  }
+
   // ---- Step 1: explicit user mass -------------------------------------
   // Honored verbatim. A raw basis means NO cooking-yield conversion here — the
   // downstream bridge already routes raw grams 1:1 against the raw DB row.

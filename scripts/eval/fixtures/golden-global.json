@@ -1632,6 +1632,46 @@
         "setAt": "2026-07-18",
         "note": "Heavy-typo robustness — decomposition should still resolve chicken/rice/broccoli."
       }
+    },
+    {
+      "id": "gg-zero-count-fried-chicken",
+      "input": "0 fried chicken",
+      "tags": [
+        "en",
+        "golden",
+        "zero-count",
+        "regression-bug"
+      ],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "expectClarify": true
+      },
+      "provenance": {
+        "source": "staging-confirmed",
+        "setAt": "2026-07-18",
+        "note": "Production report: '0 fried chicken' was analyzed as one full serving (561 kcal). A typed zero count is a contradiction — must clarify, never invent a portion."
+      }
+    },
+    {
+      "id": "gvn-zero-count-banh-mi",
+      "input": "0 ổ bánh mì thịt",
+      "tags": [
+        "vi",
+        "golden",
+        "zero-count",
+        "regression-bug"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "expectClarify": true
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18",
+        "note": "VN variant of the zero-count regression, with an explicit unit word (ổ) so the zero must survive count extraction."
+      }
     }
   ]
 }

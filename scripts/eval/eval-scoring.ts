@@ -33,6 +33,19 @@ export function scoreCase(
     },
   ];
 
+  // expectClarify is a HARD check: the pipeline must actually surface a
+  // clarify (response.unresolved) — previously the clarify-gap section only
+  // listed expectations without observing outcomes, so a case like
+  // "0 fried chicken" analyzed as a full serving still looked unscored.
+  if (fixture.expect.expectClarify) {
+    checks.push({
+      name: 'clarify',
+      pass: observed.clarified,
+      expected: true,
+      actual: observed.clarified,
+    });
+  }
+
   for (const staple of fixture.expect.staples ?? []) {
     checks.push({
       name: `staple:${staple}`,
@@ -144,7 +157,7 @@ export function aggregateResults(results: EvalCaseResult[]): EvalAggregate {
       result.tags.includes('adversarial')
   );
   const scoredFailures = results.filter(
-    (result) => !result.pass && !result.expectClarify
+    (result) => !result.pass
   );
 
   return {

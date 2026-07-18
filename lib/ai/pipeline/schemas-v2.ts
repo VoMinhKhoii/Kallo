@@ -94,11 +94,11 @@ export const decomposedIngredientV2Schema = z
     // not actually express.
     count: z
       .number()
-      .positive()
+      .nonnegative()
       .finite()
       .optional()
       .describe(
-        'Numeric count the user gave for this item/ingredient (e.g. 2 for "2 bánh bao", 3 for "3 lát"). Omit when no count was stated.'
+        'Numeric count the user gave for this item/ingredient (e.g. 2 for "2 bánh bao", 3 for "3 lát"). 0 is VALID and meaningful — extract it verbatim when the user typed zero ("0 fried chicken"); the server clarifies. Omit only when no count was stated.'
       ),
     unitToken: z
       .string()

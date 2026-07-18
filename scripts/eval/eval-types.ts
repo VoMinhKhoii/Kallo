@@ -124,6 +124,8 @@ export interface EvalCaseResult {
   checks: EvalCheck[];
   pass: boolean;
   expectClarify: boolean;
+  /** True when the pipeline actually surfaced a clarify (response.unresolved). */
+  clarified: boolean;
 }
 
 export interface EvalAggregate {
