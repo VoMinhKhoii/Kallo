@@ -672,6 +672,13 @@
       "continueWithGoogle": "Continue with Google",
       "orContinueWithEmail": "or continue with email",
       "googleError": "Google sign-in failed. Please try again.",
+      "webviewNoticeTitle": "Google sign-in isn't available here",
+      "webviewNotice": "This in-app browser blocks Google sign-in. Use email below, or open this page in your browser.",
+      "webviewNoticeIosHint": "Tap the ••• menu and choose \"Open in Safari\".",
+      "webviewOpenInChrome": "Open in Chrome",
+      "webviewCopyLink": "Copy link",
+      "webviewLinkCopied": "Link copied — paste it into your browser to continue.",
+      "webviewCopyError": "Couldn't copy the link. Please copy it from the address bar.",
       "accountExists": "You already have an account with this email. Please sign in with the method you used originally.",
       "verifyLinkError": "This link is invalid or has expired. Please request a new one."
     },
