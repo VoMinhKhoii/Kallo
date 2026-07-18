@@ -79,11 +79,11 @@ The product is bilingual (`en` / `vi`) using `next-intl`. Every string in the ru
 - **Be Vietnam Pro** (sans-serif) — every button, every label, every paragraph below 18px, every uppercase eyebrow, every tabular macro number. Weights used: 400 / 500 / 600 / 700. (It replaced DM Sans as the primary UI sans web-wide — near-identical geometry with full Vietnamese diacritic coverage; DM Sans survives only as a legacy fallback in old mocks.)
 - Numbers are always **tabular** (`font-variant-numeric: tabular-nums`) so totals don't jitter.
 
-**Color.** A single warm palette anchored by `#c9a87c` (the "Nhẩm tan" accent), `#2c2416` (espresso text), `#8b7355` (warm taupe muted), `#e8d5b5` (biscotti border). Macros are *not* a separate palette — protein = the tan accent, carbs = the taupe muted, fat = a cool stone gray. Status colors are deliberately warm: success is a leafy sage (`#7ca368`), danger is terracotta (`#d37b69`). **No pure red, no pure green, no electric blue, no purple gradients, ever.**
+**Color.** A warm cream canvas carrying **neutral ink**. Text in the app is a two-step neutral pair: primary ink `#141413` (`--nham-ink` — names, values, titles, active labels) and muted ink `#6E6D66` (`--nham-ink-muted` — metadata, timestamps, idle labels, placeholders). Muted never gets lighter — fog-class values like `#B0AEA5` are retired for contrast. Hairlines, dividers, and letter-discs are `#E8E6DC` (`--nham-hairline`). The umber CTA `--nham-btn` is **punctuation, not paint**: exactly one primary action per surface, never two in the same viewport; every secondary action is border-only or plain text. Tan `#c9a87c` survives in the Lora-italic accent clause and focus rings only — unread dots and ambient indicators are neutral `#141413`. (Espresso `#2c2416` / taupe `#8b7355` linger in legacy marketing surfaces; new work uses the neutral pair.) Macros are *not* a separate palette — protein = tan, carbs = taupe, fat = a cool stone gray. Status colors are deliberately warm: success is a leafy sage (`#7ca368`), danger is terracotta (`#d37b69`) — and danger ink appears only inside confirmation dialogs, never on the triggering row. **No pure red, no pure green, no electric blue, no purple gradients, ever.**
 
 **Spacing.** A 4-px base scale (0.25rem multiples). Density skews **generous** — cards have 16–20px of internal padding, sections have 24–32px gaps. The dashboard breathes.
 
-**Borders.** Almost everything is a hairline (`1px solid #e8d5b5` or that color at 60% / 40% opacity). Borders are *softer* than backgrounds — `var(--nham-border)` always blends slightly. The product almost never uses a thick or accent-colored border. Inputs gain an `border: 1px solid var(--nham-accent)/40` on focus-within, paired with a tan-tinted shadow.
+**Borders.** Almost everything is a hairline — `1px solid #E8E6DC` in the app (the neutral hairline; the biscotti `#e8d5b5` remains on legacy marketing surfaces). Borders are *softer* than backgrounds and the product almost never uses a thick or accent-colored border. Inputs are `#E8E6DC` hairlines whose bottom edge darkens to `#141413` on focus for in-place editors; classic boxed inputs may keep the tan focus ring.
 
 **Corner radii.** Rounded but never circular — the family sits on Anthropic's 4/6/8/12/16 scale (base `--radius: 0.5rem`):
 - 8 (`--radius-lg`) — inputs, small buttons
@@ -107,12 +107,12 @@ Submit buttons inside input bars are a **smaller, slightly square** rounded rect
 - A single named keyframe — `nham-pulse-dot` — gently breathes the "onboarding incomplete" indicator at 1.8s.
 - Respect `prefers-reduced-motion: reduce` — drop all looping animations.
 
-**Hover & press.**
-- **Nav rows**: background fades to `var(--nham-hover)` / 60% opacity, text darkens from muted to espresso. No translate.
-- **Active nav row**: solid `var(--nham-btn)` (the warm umber `#695e4e`) with white text + a faint umber shadow.
-- **Buttons (light)**: background darkens by one step (e.g., `#c9a87c` → `#b89968`), no scale, no translate. Hero CTAs translate up 2px on hover.
-- **Buttons (tap)**: `active:scale-95` for primary actions inside input bars; nothing for landing-page buttons.
-- **Ghost rows / chips**: border shifts from `border/60` to `accent/50`, background tints to `border/15`.
+**Hover, press & selection — one recipe everywhere** (nav rows, drawer rows, chips, panel rows, destructive rows):
+- **Idle**: `text-[#6E6D66]`, transparent background.
+- **Hover**: `bg-nham-hover` (the beige wash) + `text-[#141413]`. Words darken, canvas stays warm. No translate.
+- **Selected**: `bg-nham-hover` + `text-[#141413]` + `font-semibold`. Weight marks selection — **no filled umber row, no black pill, no white-on-dark state.**
+- **Chips / segmented pills**: unselected = `bg-white` + `#E8E6DC` hairline + `#6E6D66` label; selected = the *entire* pill filled with `bg-nham-hover` + `#141413` semibold. Never inner-highlight-only.
+- **Buttons**: the one brown CTA darkens a step on hover (`hover:bg-nham-btn/90`); `active:scale-95` for primary actions inside input bars; hero CTAs translate up 2px. Secondary buttons only darken their border/text.
 
 **Transparency & blur.** The fixed marketing header uses `bg-[#FEFBF6]/80 backdrop-blur-xl` — the only place blur is used in the marketing surface. Inside the app, the hero demo's status bar and the floating "smart context" badge use the same trick. Modals/sheets, when needed, sit on `bg-white/95 backdrop-blur-md`. **Never use blur on full-screen overlays** — Nhẩm has no glassmorphism aesthetic.
 
@@ -209,6 +209,10 @@ When in doubt, **mimic these specific files from the source repo** — they are 
 | **Onboarding** | `components/onboarding/wizard-shell.tsx` + `onboarding-card.tsx` | The `rounded-[28px]` modal on `bg-[#2C2416]/20 backdrop-blur-sm` overlay. Footer pinned with skip+next, `bg-[#2C2416]` dark CTA (NOT umber, this is the one place the espresso-as-CTA shows up). Step indicator at the top, gradient scroll fade at the bottom. |
 | **Logging feed** | `components/logging/feed/{persisted-meal-card,feed-area,empty-state}.tsx` + `input/meal-input.tsx` | The 40px-deep left indent for the timeline. The `top:2 -left-[43px]` dot + `-left-10 w-px` rail. Curly-quoted meal text in Lora 17. Empty state's three-suggestion-chip pattern. The meal-input bar's focus-within tan-tinted shadow. |
 | **Adherence heatmap** | `components/dashboard/progress/adherence-heatmap.tsx` + `heatmap-colors.ts` | The 5-step diverging warm scale, the ResizeObserver-driven cell sizing, the `font-mono` "85% on track" stat, the gradient-bar legend at the bottom, the staggered fade-in (0.16s with reduced-motion fallback). |
+| **Circle feed** | `components/groups/{feed-entry,thread-feed,share-replies}.tsx` | Threads-anatomy posts, newest-first: 36px `ProfileAvatar` (Google picture, letter-on-`#E8E6DC`-disc fallback) · bold 15px name + 15px muted relative time · 15px content · 11px `P: 26g` macros with bold 13px kcal · quiet 11.5px icon action row. Replies reuse the exact meal anatomy minus numbers/actions. Hairline day separators, hidden scrollbars. |
+| **Invite dialog** | `components/groups/add-friend-dialog.tsx` + `invite/*` | `bg-nham-surface` panel, `#E8E6DC` border, serif title. Tab track `bg-[#E8E6DC]/60` with the active tab as a white pill (`shadow-sm` + hairline ring). In-place editing (pencil → inline input, bottom hairline darkens on focus, inline Save). Copy buttons get a 2s check + "Copied" success state. |
+| **Empty states** | `components/ui/empty-state.tsx` | Every empty surface composes this: icon on an `#E8E6DC` disc, `#141413` title, `#6E6D66` supporting line, at most one brown CTA. No bare one-line empties. |
+| **Side panes** | `components/groups/info/*` | Reuses the left sidebar's card chrome (`rounded-xl border-nham-border/60 bg-white`, 12px shell gutter) and its collapse-to-strip behavior. Messenger-style sections: 13px semibold headings with flipping chevrons; destructive rows styled as plain nav rows — danger ink only inside the confirm dialog. |
 
 ---
 
@@ -275,7 +279,7 @@ The web dashboard (`components/dashboard/*`) is locked to these rules. They exis
 
 **Type — exactly three sizes.** `text-hero` (44px stat numbers; the `--text-hero` theme token in `app/globals.css` carries weight 500, line-height 1, −0.04em tracking), `text-sm` (14px body: meal names, inputs, empty states), `text-xs` (12px labels + meta: eyebrows, section headers, chart ticks, heatmap labels, legend, tooltips). No `text-lg`, no bracket sizes, no fourth step. Both stat heroes (calories remaining, current weight) are `text-hero` — never differently sized.
 
-**Ink — three colors.** Espresso `--nham-text` for numbers and primary copy, taupe `--nham-text-muted` for everything secondary, tan `--nham-accent` as the single highlight (flame, chart line, focus rings). White appears only on the umber `--nham-btn` CTAs; terracotta `--nham-danger` only on live validation errors. Data-viz pigments (heatmap diverging scale, macro-bar gold/taupe/stone) are chart ink, not text ink — don't promote them.
+**Ink — three colors.** Primary ink `#141413` (`--nham-ink`) for numbers and primary copy, muted ink `#6E6D66` (`--nham-ink-muted`) for everything secondary, tan `--nham-accent` as the single highlight (flame, chart line, focus rings). White appears only on the umber `--nham-btn` CTA — one per surface; terracotta `--nham-danger` only on live validation errors and confirm dialogs. Data-viz pigments (heatmap diverging scale, macro-bar gold/taupe/stone) are chart ink, not text ink — don't promote them.
 
 **Card chrome — one recipe.** `rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm` (the sidebar's crisp language) plus the shared hover: `transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06]`. Inner elements are `rounded-xl`. No borderless floating-blob cards, no `rounded-[1.375rem]`, no 32px-blur shadows.
 

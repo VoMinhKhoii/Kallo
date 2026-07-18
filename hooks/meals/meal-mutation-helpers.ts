@@ -15,6 +15,7 @@ import type { NutritionValues } from '@/lib/ai/types';
 import type { SaveManualMealInput } from '@/lib/api/contracts/meals';
 import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
+import { invalidateFeedQueries } from '@/lib/groups/feed-cache';
 import {
   type CompleteManualMealRow,
   parseGrams,
@@ -333,6 +334,7 @@ export function settleMealSave(
     refetchType,
   });
   queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+  invalidateFeedQueries(queryClient);
   for (const key of extraKeys) {
     queryClient.invalidateQueries({ queryKey: key });
   }

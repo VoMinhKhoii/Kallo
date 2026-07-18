@@ -9,6 +9,8 @@
 import type {
   ChatGroupDetail,
   ChatGroupIdentity,
+  ChatGroupMember,
+  ChatGroupMessage,
   GroupMealFeedEntry,
   GroupMealFeedPage,
 } from '@/lib/actions/chat-groups';
@@ -17,6 +19,8 @@ import { parseApiError } from '@/lib/errors';
 export type {
   ChatGroupDetail,
   ChatGroupIdentity,
+  ChatGroupMember,
+  ChatGroupMessage,
   GroupMealFeedEntry,
   GroupMealFeedPage,
 };
@@ -75,4 +79,55 @@ export function fetchGroupMealFeed(
   return request<GroupMealFeedPage>(
     `/api/v1/chat-groups/${groupId}/feed${query}`
   );
+}
+
+/** Post through the established messages endpoint. */
+export function sendGroupMessage(
+  groupId: string,
+  body: string
+): Promise<ChatGroupMessage> {
+  return postJson<{ message: ChatGroupMessage }>(
+    `/api/v1/chat-groups/${groupId}/messages`,
+    { body }
+  ).then((response) => response.message);
+}
+
+/** Remove the actor's own membership from a named chat group. */
+export function leaveGroup(groupId: string): Promise<{ left: true }> {
+  return request<{ left: true }>(`/api/v1/chat-groups/${groupId}/leave`, {
+    method: 'DELETE',
+  });
+}
+
+/** Add accepted friends of the actor to an existing named group. */
+export function addGroupMembers(
+  groupId: string,
+  memberUserIds: string[]
+): Promise<{ added: number }> {
+  return postJson<{ added: number }>(`/api/v1/chat-groups/${groupId}/members`, {
+    memberUserIds,
+  });
+}
+
+/** Owner-only: remove one member from a named group. */
+export function removeGroupMember(
+  groupId: string,
+  memberUserId: string
+): Promise<{ removed: true }> {
+  return request<{ removed: true }>(
+    `/api/v1/chat-groups/${groupId}/members/${memberUserId}`,
+    { method: 'DELETE' }
+  );
+}
+
+/** Owner-only: rename a named group. */
+export function renameGroup(
+  groupId: string,
+  name: string
+): Promise<{ name: string }> {
+  return request<{ name: string }>(`/api/v1/chat-groups/${groupId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
 }

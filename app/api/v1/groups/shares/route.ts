@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { setMealShareVisibility } from '@/lib/actions/group-members';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
-import { serializeError } from '@/lib/errors';
+import { handleRouteError } from '@/lib/api/respond';
 
 export const runtime = 'nodejs';
 
@@ -15,6 +15,6 @@ export async function POST(request: NextRequest) {
     );
     return NextResponse.json(result);
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }

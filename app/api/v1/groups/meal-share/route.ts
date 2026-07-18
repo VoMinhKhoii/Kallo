@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { shareMealWithFriendsAction } from '@/lib/actions/meal-sharing';
 import { readJsonBody } from '@/lib/api/auth';
-import { serializeError } from '@/lib/errors';
+import { handleRouteError } from '@/lib/api/respond';
 
 export const runtime = 'nodejs';
 
@@ -20,6 +20,6 @@ export async function POST(request: NextRequest) {
     );
     return NextResponse.json(result);
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }

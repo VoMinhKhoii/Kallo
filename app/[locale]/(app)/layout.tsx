@@ -48,6 +48,13 @@ export default async function AppLayout({
         ? user.user_metadata.full_name
         : null;
 
+  const avatarSource =
+    user.user_metadata?.avatar_url ?? user.user_metadata?.picture;
+  const avatarUrl =
+    typeof avatarSource === 'string' && avatarSource.length > 0
+      ? avatarSource
+      : null;
+
   // Read sidebar UI prefs from cookies so the first paint matches the user's
   // saved state (no flash, no hydration mismatch). Falls back to sensible
   // defaults: open + click mode.
@@ -65,7 +72,7 @@ export default async function AppLayout({
       initialProfile={profile}
       isFirstSession={isFirstSession}
       isAdmin={isAdmin}
-      user={{ email: user.email ?? null, displayName }}
+      user={{ email: user.email ?? null, displayName, avatarUrl }}
       initialSidebarState={initialSidebarState}
       initialSidebarExpandMode={initialSidebarExpandMode}
     >

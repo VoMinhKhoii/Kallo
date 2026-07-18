@@ -7,6 +7,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  /* The width from which the Circle feed can sit fixed at the exact viewport
+     center with BOTH side panes fully expanded and never touching it:
+     sidebar (256 + gutters) + column (672) + info rail (304 + gutters). Below
+     this the feed falls back to flow-centering and the rail becomes a sheet. */
+  --breakpoint-wide: 84rem;
   /* Unified UI sans: Be Vietnam Pro leads web-wide (full Vietnamese
      diacritics), matching the mobile app's single-typeface calm system.
      Replaces Geist/DM Sans as the primary UI face. */

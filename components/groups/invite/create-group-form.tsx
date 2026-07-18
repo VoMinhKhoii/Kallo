@@ -1,16 +1,16 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import { Search, Users2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { CircleError } from '@/components/groups/circle-error';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { useCreateChatGroup } from '@/hooks/social/use-chat-groups';
 import { useFriends } from '@/hooks/social/use-friends';
-import type { CircleMember } from '@/lib/groups/client';
-import { cn } from '@/lib/utils';
-import { labelFor, ProfileIdentity } from './profile-identity';
+import { GroupMemberRow } from './group-member-row';
+import { labelFor } from './profile-identity';
 
 const GROUP_NAME_MAX_LENGTH = 60;
 
@@ -19,11 +19,18 @@ const GROUP_NAME_MAX_LENGTH = 60;
  * friends — the only member source (no invite-link path for groups yet,
  * matching createChatGroup's backend contract).
  */
-export function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
+export function CreateGroupForm({
+  onCreated,
+  onAddFriend,
+}: {
+  onCreated: () => void;
+  onAddFriend?: () => void;
+}) {
   const t = useTranslations('groups.createGroup');
   const { data: members = [], isError, isFetching, refetch } = useFriends();
   const createGroup = useCreateChatGroup();
   const [name, setName] = useState('');
+  const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   if (isError) {
@@ -33,6 +40,9 @@ export function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
   }
 
   const friends = members.filter((m) => m.status === 'accepted');
+  const filtered = friends.filter((m) =>
+    labelFor(m.profile).toLowerCase().includes(query.trim().toLowerCase())
+  );
 
   const toggle = (userId: string) => {
     setSelected((prev) => {
@@ -70,7 +80,7 @@ export function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
       <div className="space-y-1.5">
         <label
           htmlFor="group-name"
-          className="px-1 font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
+          className="px-1 font-medium font-sans-display text-[#6E6D66] text-[10px] uppercase tracking-[0.08em]"
         >
           {t('nameLabel')}
         </label>
@@ -81,64 +91,70 @@ export function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
           placeholder={t('namePlaceholder')}
           maxLength={GROUP_NAME_MAX_LENGTH}
           autoComplete="off"
-          className="border-nham-border/60 bg-white font-sans-display text-nham-text"
+          className="border-[#E8E6DC] bg-white font-sans-display text-[#141413]"
         />
       </div>
 
-      <div className="space-y-1.5">
-        <p className="flex items-center justify-between px-1 font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.08em]">
-          <span>{t('membersLabel')}</span>
-          {selected.size > 0 && (
-            <span>{t('membersCount', { count: selected.size })}</span>
+      {friends.length === 0 ? (
+        <EmptyState
+          icon={Users2}
+          title={t('emptyTitle')}
+          description={t('noFriends')}
+        >
+          {onAddFriend && (
+            <button
+              type="button"
+              onClick={onAddFriend}
+              className="rounded-xl bg-nham-btn px-3.5 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-nham-btn/90"
+            >
+              {t('addFriendCta')}
+            </button>
           )}
-        </p>
+        </EmptyState>
+      ) : (
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#6E6D66]" />
+            <Input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t('searchPlaceholder')}
+              autoComplete="off"
+              className="border-[#E8E6DC] bg-white pl-9 font-sans-display text-[#141413]"
+            />
+          </div>
 
-        {friends.length === 0 ? (
-          <p className="px-1 py-2 font-sans-display text-[12px] text-nham-text-muted">
-            {t('noFriends')}
+          <p className="flex items-center justify-between px-1 font-medium font-sans-display text-[#6E6D66] text-[10px] uppercase tracking-[0.08em]">
+            <span>{t('suggested')}</span>
+            {selected.size > 0 && (
+              <span>{t('membersCount', { count: selected.size })}</span>
+            )}
           </p>
-        ) : (
-          <ul className="max-h-[30vh] space-y-2 overflow-y-auto">
-            {friends.map((member: CircleMember) => {
-              const isSelected = selected.has(member.profile.userId);
-              return (
-                <li key={member.friendshipId}>
-                  <button
-                    type="button"
-                    onClick={() => toggle(member.profile.userId)}
-                    aria-pressed={isSelected}
-                    aria-label={labelFor(member.profile)}
-                    className={cn(
-                      'flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors',
-                      isSelected
-                        ? 'border-nham-accent/50 bg-nham-accent/[0.06]'
-                        : 'border-nham-border/60 bg-white hover:border-nham-accent/40'
-                    )}
-                  >
-                    <ProfileIdentity profile={member.profile} />
-                    <span
-                      className={cn(
-                        'flex size-5 shrink-0 items-center justify-center rounded-full border',
-                        isSelected
-                          ? 'border-nham-btn bg-nham-btn text-white'
-                          : 'border-nham-border/70 bg-white'
-                      )}
-                    >
-                      {isSelected && <Check className="h-3 w-3" />}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+
+          {filtered.length === 0 ? (
+            <p className="px-1 py-2 font-sans-display text-[#6E6D66] text-[12px]">
+              {t('noMatches')}
+            </p>
+          ) : (
+            <ul className="max-h-[38vh] overflow-y-auto">
+              {filtered.map((member) => (
+                <GroupMemberRow
+                  key={member.friendshipId}
+                  member={member}
+                  isSelected={selected.has(member.profile.userId)}
+                  onToggle={() => toggle(member.profile.userId)}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       <button
         type="button"
         onClick={submit}
         disabled={!canSubmit}
-        className="inline-flex w-full items-center justify-center rounded-xl bg-nham-btn px-4 py-2.5 font-medium font-sans-display text-[13px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex w-full items-center justify-center rounded-xl bg-nham-btn px-4 py-2.5 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {createGroup.isPending ? t('creating') : t('submit')}
       </button>

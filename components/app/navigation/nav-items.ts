@@ -36,7 +36,7 @@ export const NAV_ITEMS: readonly NavItemConfig[] = [
   },
   {
     id: 'groups',
-    href: '/groups',
+    href: '/circle',
     labelKey: 'groups',
     icon: Users2,
   },

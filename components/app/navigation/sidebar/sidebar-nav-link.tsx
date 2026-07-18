@@ -33,8 +33,8 @@ export function SidebarNavLink({
         className={cn(
           'group/nav relative flex items-center rounded-lg px-3 py-2 transition-colors duration-200',
           isActive
-            ? 'bg-nham-btn text-white shadow-nham-btn/20 shadow-sm'
-            : 'text-nham-text-muted hover:bg-nham-hover/60 hover:text-nham-text'
+            ? 'bg-nham-hover text-[#141413]'
+            : 'text-[#6E6D66] hover:bg-nham-hover hover:text-[#141413]'
         )}
       >
         <span
@@ -50,7 +50,8 @@ export function SidebarNavLink({
         </span>
         <span
           className={cn(
-            'overflow-hidden whitespace-nowrap font-medium font-sans-display text-[13px] tracking-tight transition-all duration-300',
+            'overflow-hidden whitespace-nowrap font-sans-display text-[13px] tracking-tight transition-all duration-300',
+            isActive ? 'font-semibold' : 'font-medium',
             collapsed ? 'ml-0 max-w-0 opacity-0' : 'ml-3 max-w-40 opacity-100'
           )}
         >
