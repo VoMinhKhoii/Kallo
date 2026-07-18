@@ -4,6 +4,7 @@ import { Soup } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { labelFor } from '@/components/groups/invite/profile-identity';
+import { ProfileAvatar } from '@/components/groups/profile-avatar';
 import { formatElapsed } from '@/lib/date/format-elapsed';
 import type { CircleFeedEntry } from '@/lib/groups/client';
 import { cn } from '@/lib/utils';
@@ -135,11 +136,7 @@ export function CircleCard({
       <div className="absolute top-2 -left-5 h-2 w-2 rounded-full border-2 border-nham-accent bg-white sm:-left-[43px]" />
 
       <div className="mb-2 flex items-center gap-2">
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/55 ring-1 ring-nham-accent/25">
-          <span className="font-bold font-sans-display text-[10px] text-nham-btn">
-            {friendLabel.charAt(0).toUpperCase()}
-          </span>
-        </span>
+        <ProfileAvatar profile={friend} size="6" />
         <span className="font-sans-display text-[12px] text-nham-text">
           {friendLabel}
         </span>

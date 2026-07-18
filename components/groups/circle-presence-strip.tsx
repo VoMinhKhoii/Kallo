@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { tintFor } from '@/components/groups/avatar-tint';
 import { labelFor } from '@/components/groups/invite/profile-identity';
+import { ProfileAvatar } from '@/components/groups/profile-avatar';
 import {
   Popover,
   PopoverContent,
@@ -28,8 +28,6 @@ function MemberDisc({
   const removeFriend = useRemoveFriend();
   const blockFriend = useBlockFriend();
   const name = labelFor(member.profile);
-  const initial = name.charAt(0).toUpperCase();
-  const tint = tintFor(member.profile.avatarSeed, member.profile.handle);
   const busy = removeFriend.isPending || blockFriend.isPending;
 
   const handleRemove = () => {
@@ -53,21 +51,18 @@ function MemberDisc({
           aria-label={t('memberActions', { name })}
           className="group flex flex-col items-center gap-1.5 focus-visible:outline-none"
         >
-          <span
+          <ProfileAvatar
+            profile={member.profile}
+            size="10"
             className={cn(
-              'flex size-10 items-center justify-center rounded-full bg-gradient-to-br ring-1 transition-transform group-hover:scale-105 group-focus-visible:ring-2 group-focus-visible:ring-nham-accent',
-              tint,
+              'transition-transform group-hover:scale-105 group-focus-visible:ring-2 group-focus-visible:ring-nham-accent',
               // Shared-today reads as a soft filled ring; quiet stays a muted
               // outline disc — participation visible at a glance, no sentence.
               sharedToday
                 ? 'ring-nham-accent/40'
                 : 'opacity-60 ring-nham-border/50'
             )}
-          >
-            <span className="font-bold font-sans-display text-[14px] text-nham-btn">
-              {initial}
-            </span>
-          </span>
+          />
           <span className="max-w-[4.5rem] truncate font-sans-display text-[10px] text-nham-text-muted">
             {name}
           </span>

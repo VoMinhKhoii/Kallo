@@ -17,12 +17,16 @@ class CircleProfile {
     required this.handle,
     this.displayName,
     this.avatarSeed,
+    this.avatarUrl,
   });
 
   final String userId;
   final String handle;
   final String? displayName;
   final String? avatarSeed;
+
+  /// Public URL of the uploaded avatar photo; null = initials disc fallback.
+  final String? avatarUrl;
 
   /// How a person is labelled in a circle: their display name, else their
   /// handle (slug). Mirrors `labelFor()` in
@@ -40,6 +44,7 @@ class CircleProfile {
         handle: json['handle'] as String? ?? '',
         displayName: json['displayName'] as String?,
         avatarSeed: json['avatarSeed'] as String?,
+        avatarUrl: json['avatarUrl'] as String?,
       );
 }
 

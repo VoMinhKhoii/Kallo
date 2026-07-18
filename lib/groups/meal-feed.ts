@@ -10,6 +10,7 @@ import { and, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 import type { AppDb, AppTransaction } from '@/lib/db';
 import { db as defaultDb } from '@/lib/db';
 import { mealShares, meals, publicProfiles } from '@/lib/db/schema';
+import { avatarUrlFor } from '@/lib/groups/avatar-url';
 
 type Db = AppDb | AppTransaction;
 
@@ -26,6 +27,7 @@ export interface SharedMealRow {
   handle: string;
   displayName: string | null;
   avatarSeed: string | null;
+  avatarPath: string | null;
 }
 
 /** Local calendar date (YYYY-MM-DD) for a viewer's timezone offset. */
@@ -63,6 +65,7 @@ export async function mostRecentSharedMealsToday(
         handle: publicProfiles.handle,
         displayName: publicProfiles.displayName,
         avatarSeed: publicProfiles.avatarSeed,
+        avatarPath: publicProfiles.avatarPath,
       })
       .from(mealShares)
       .innerJoin(meals, eq(meals.id, mealShares.mealId))
@@ -121,6 +124,7 @@ export async function sharedMealsBefore(
       handle: publicProfiles.handle,
       displayName: publicProfiles.displayName,
       avatarSeed: publicProfiles.avatarSeed,
+      avatarPath: publicProfiles.avatarPath,
     })
     .from(mealShares)
     .innerJoin(meals, eq(meals.id, mealShares.mealId))
@@ -151,6 +155,7 @@ export interface SharedMealEntry {
     handle: string;
     displayName: string | null;
     avatarSeed: string | null;
+    avatarUrl: string | null;
   };
   isSelf: boolean;
   meal: {
@@ -177,6 +182,7 @@ export function toSharedMealEntry(
       handle: row.handle,
       displayName: row.displayName,
       avatarSeed: row.avatarSeed,
+      avatarUrl: avatarUrlFor(row.avatarPath),
     },
     isSelf: row.friendUserId === actorId,
     meal: {

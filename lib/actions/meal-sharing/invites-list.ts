@@ -9,6 +9,7 @@ import {
   meals,
   publicProfiles,
 } from '@/lib/db/schema';
+import { avatarUrlFor } from '@/lib/groups/avatar-url';
 import type { MealShareInvite } from './types';
 
 export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
@@ -29,6 +30,7 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
       handle: publicProfiles.handle,
       displayName: publicProfiles.displayName,
       avatarSeed: publicProfiles.avatarSeed,
+      avatarPath: publicProfiles.avatarPath,
     })
     .from(mealShareInvites)
     .innerJoin(
@@ -76,6 +78,7 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
       handle: row.handle,
       displayName: row.displayName,
       avatarSeed: row.avatarSeed,
+      avatarUrl: avatarUrlFor(row.avatarPath),
     },
     meal: {
       rawInput: row.rawInput,

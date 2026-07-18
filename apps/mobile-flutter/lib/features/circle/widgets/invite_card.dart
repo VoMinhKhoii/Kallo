@@ -10,7 +10,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../data/circle_providers.dart';
-import 'circle_avatar.dart';
+import '../../../shared/widgets/profile_avatar.dart';
 import 'invite_action.dart';
 
 String _fmtKcal(double? value) =>
@@ -88,7 +88,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
         children: [
           Row(
             children: [
-              CircleInitialsAvatar(initial: invite.from.initial, size: 24),
+              ProfileAvatarDisc(profile: invite.from, size: 24),
               const SizedBox(width: NhamSpacing.sp2),
               Expanded(
                 child: Text(

@@ -9,6 +9,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { UserAvatarDisc } from '@/components/app/navigation/user-avatar-disc';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -26,6 +27,8 @@ import { cn } from '@/lib/utils';
 export interface UserMenuUser {
   email: string | null;
   displayName: string | null;
+  /** Public URL of the uploaded avatar photo; absent = initials disc. */
+  avatarUrl?: string | null;
 }
 
 function deriveInitial(user: UserMenuUser): string {
@@ -123,17 +126,14 @@ export function UserMenu({
         collapsed ? 'justify-center gap-0 p-1' : 'gap-3 p-1.5'
       )}
     >
-      <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/55 ring-1 ring-nham-accent/25">
-        <span className="font-bold font-sans-display text-[13px] text-nham-btn">
-          {initial}
-        </span>
+      <UserAvatarDisc initial={initial} avatarUrl={user.avatarUrl}>
         {showOnboardingDot && (
           <span
             aria-hidden="true"
             className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 animate-pulse-dot rounded-full bg-nham-accent ring-2 ring-nham-surface"
           />
         )}
-      </span>
+      </UserAvatarDisc>
       {!collapsed && (
         <span className="min-w-0 flex-1 overflow-hidden">
           <span className="block truncate font-medium font-sans-display text-[12px] text-nham-text">

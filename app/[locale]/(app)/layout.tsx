@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/app/shell/app-shell';
+import { getMyPublicProfile } from '@/lib/actions/groups/profile';
 import { isAdminEmail } from '@/lib/admin/is-admin';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 import {
@@ -41,12 +42,23 @@ export default async function AppLayout({
   const onboardingStep = profile?.onboardingStep ?? 0;
   const isAdmin = isAdminEmail(user.email);
 
-  const displayName =
+  // The editable profile ("what should we call you" + avatar) is the source of
+  // truth for identity; OAuth metadata is only the pre-rename fallback.
+  let publicProfile = null;
+  try {
+    publicProfile = await getMyPublicProfile(user.id);
+  } catch (error) {
+    console.error('Failed to load public profile:', error);
+  }
+
+  const metadataName =
     typeof user.user_metadata?.display_name === 'string'
       ? user.user_metadata.display_name
       : typeof user.user_metadata?.full_name === 'string'
         ? user.user_metadata.full_name
         : null;
+  const displayName = publicProfile?.displayName ?? metadataName;
+  const avatarUrl = publicProfile?.avatarUrl ?? null;
 
   // Read sidebar UI prefs from cookies so the first paint matches the user's
   // saved state (no flash, no hydration mismatch). Falls back to sensible
@@ -65,7 +77,7 @@ export default async function AppLayout({
       initialProfile={profile}
       isFirstSession={isFirstSession}
       isAdmin={isAdmin}
-      user={{ email: user.email ?? null, displayName }}
+      user={{ email: user.email ?? null, displayName, avatarUrl }}
       initialSidebarState={initialSidebarState}
       initialSidebarExpandMode={initialSidebarExpandMode}
     >

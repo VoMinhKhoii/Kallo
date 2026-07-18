@@ -5,48 +5,53 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import { useSaveProfile } from '@/hooks/profile/use-profile';
+import { useRenameProfile, useSaveProfile } from '@/hooks/profile/use-profile';
 import type { PublicProfile } from '@/lib/groups/client';
 
 const DISPLAY_NAME_MAX = 50;
 
 /**
- * "How you appear" — the display name your circle sees on shared meals. Persists
- * through the same profile upsert as the link slug, so the current handle rides
- * along (the upsert requires it). An empty draft clears the name back to the
- * handle fallback.
+ * "How you appear" — the display name your circle sees on shared meals. A
+ * rename goes through the rename endpoint, which re-derives the invite handle
+ * from the name (same behavior as the settings identity panel). An empty
+ * draft clears the name back to the handle fallback without touching the
+ * handle.
  */
 export function DisplayNameRow({ profile }: { profile: PublicProfile }) {
   const t = useTranslations('groups.invite');
   const saveProfile = useSaveProfile();
+  const renameProfile = useRenameProfile();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
 
   const current = profile.displayName?.trim() ?? '';
+  const pending = saveProfile.isPending || renameProfile.isPending;
 
   const save = () => {
-    if (saveProfile.isPending) return;
+    if (pending) return;
     const next = draft.trim();
     if (next === current) {
       setEditing(false);
       return;
     }
-    saveProfile.mutate(
-      // Empty draft clears the name (explicit null — omitting the field now
-      // means "keep"); the handle always rides along because the upsert
-      // requires it.
-      {
-        handle: profile.handle,
-        displayName: next.length > 0 ? next : null,
+    const callbacks = {
+      onSuccess: () => {
+        setEditing(false);
+        toast.success(t('appearSaved'));
       },
-      {
-        onSuccess: () => {
-          setEditing(false);
-          toast.success(t('appearSaved'));
-        },
-        onError: () => toast.error(t('appearError')),
-      }
-    );
+      onError: () => toast.error(t('appearError')),
+    };
+    if (next.length > 0) {
+      renameProfile.mutate(next, callbacks);
+    } else {
+      // Clearing has no name to derive a handle from — keep the handle and
+      // null the stored name via the upsert (it requires the handle to ride
+      // along).
+      saveProfile.mutate(
+        { handle: profile.handle, displayName: null },
+        callbacks
+      );
+    }
   };
 
   if (editing) {
@@ -74,11 +79,11 @@ export function DisplayNameRow({ profile }: { profile: PublicProfile }) {
           <button
             type="button"
             onClick={save}
-            disabled={saveProfile.isPending}
+            disabled={pending}
             aria-label={t('save')}
             className="inline-flex shrink-0 items-center rounded-lg bg-nham-btn px-3 font-medium text-white transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {saveProfile.isPending ? (
+            {pending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Check className="h-4 w-4" />

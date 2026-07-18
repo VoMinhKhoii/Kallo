@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import { labelFor } from '@/components/groups/invite/profile-identity';
+import { ProfileAvatar } from '@/components/groups/profile-avatar';
 import type { CircleMember } from '@/lib/groups/client';
 import { cn } from '@/lib/utils';
 
@@ -27,11 +28,7 @@ export function FriendPickRow({
       )}
     >
       <span className="flex min-w-0 items-center gap-3">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/50 ring-1 ring-nham-accent/25">
-          <span className="font-bold font-sans-display text-[12px] text-nham-btn">
-            {label.charAt(0).toUpperCase()}
-          </span>
-        </span>
+        <ProfileAvatar profile={member.profile} size="8" />
         <span className="truncate font-sans-display text-[14px] text-nham-text">
           {label}
         </span>

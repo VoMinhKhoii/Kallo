@@ -7,7 +7,7 @@ import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
-import 'circle_avatar.dart';
+import '../../../shared/widgets/profile_avatar.dart';
 
 /// One friend's most-recent shared meal for today — a read-only clone of the
 /// persisted-meal-card aesthetic (Lora dish quote, collapsible macros). No
@@ -48,7 +48,7 @@ class _CircleCardState extends State<CircleCard> {
           padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
           child: Row(
             children: [
-              CircleInitialsAvatar(initial: entry.friend.initial, size: 24),
+              ProfileAvatarDisc(profile: entry.friend, size: 24),
               const SizedBox(width: NhamSpacing.sp2),
               Flexible(
                 child: Text(

@@ -5,7 +5,10 @@ import { friendsKeys } from '@/hooks/social/use-friends';
 import {
   fetchMyProfile,
   type PublicProfile,
+  removeMyAvatar,
+  renameMyProfile,
   saveMyProfile,
+  uploadMyAvatar,
 } from '@/lib/groups/client';
 
 export const profileKeys = {
@@ -30,5 +33,39 @@ export function useSaveProfile() {
       queryClient.invalidateQueries({ queryKey: profileKeys.mine });
       queryClient.invalidateQueries({ queryKey: friendsKeys.all });
     },
+  });
+}
+
+/** Shared onSuccess: refresh everything that renders the identity. */
+function useInvalidateIdentity() {
+  const queryClient = useQueryClient();
+  return () => {
+    queryClient.invalidateQueries({ queryKey: profileKeys.mine });
+    queryClient.invalidateQueries({ queryKey: friendsKeys.all });
+  };
+}
+
+/** Rename ("what should we call you") — the handle cascades server-side. */
+export function useRenameProfile() {
+  const onSuccess = useInvalidateIdentity();
+  return useMutation({
+    mutationFn: (displayName: string) => renameMyProfile(displayName),
+    onSuccess,
+  });
+}
+
+export function useUploadAvatar() {
+  const onSuccess = useInvalidateIdentity();
+  return useMutation({
+    mutationFn: (file: File) => uploadMyAvatar(file),
+    onSuccess,
+  });
+}
+
+export function useRemoveAvatar() {
+  const onSuccess = useInvalidateIdentity();
+  return useMutation({
+    mutationFn: () => removeMyAvatar(),
+    onSuccess,
   });
 }

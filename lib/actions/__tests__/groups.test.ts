@@ -60,6 +60,7 @@ vi.mock('@/lib/db/schema', () => ({
     handle: 'pp.handle',
     displayName: 'pp.displayName',
     avatarSeed: 'pp.avatarSeed',
+    avatarPath: 'pp.avatarPath',
   },
   friendships: {
     id: 'f.id',
@@ -119,8 +120,10 @@ import {
 } from '@/lib/actions/groups/feed';
 import { acceptInvite, removeFriend } from '@/lib/actions/groups/friendship';
 import {
+  getMyPublicProfile,
   getOrCreateMyProfile,
   getProfileBySlug,
+  renameMyProfile,
   upsertPublicProfile,
 } from '@/lib/actions/groups/profile';
 
@@ -136,7 +139,14 @@ const inviterRow = {
   handle: SLUG,
   displayName: 'Phở Fan',
   avatarSeed: SLUG,
+  avatarPath: null,
 };
+
+/** The response shape for a row: avatarPath resolved to avatarUrl. */
+function asProfile(row: typeof inviterRow) {
+  const { avatarPath, ...rest } = row;
+  return { ...rest, avatarUrl: avatarPath ? expect.any(String) : null };
+}
 
 // A `.from().where().limit()` chain resolving to the given rows (db.select).
 function selectRows(rows: unknown[]) {
@@ -246,7 +256,10 @@ describe('acceptInvite', () => {
 
     const result = await acceptInvite(ACTOR, { slug: SLUG });
 
-    expect(result).toEqual({ status: 'accepted', inviter: inviterRow });
+    expect(result).toEqual({
+      status: 'accepted',
+      inviter: asProfile(inviterRow),
+    });
     expect(mockTxUpdate).not.toHaveBeenCalled();
     // friendship + event + chat_groups + chat_group_members
     expect(mockTxInsert).toHaveBeenCalledTimes(4);
@@ -429,7 +442,7 @@ describe('getProfileBySlug', () => {
 
   it('returns the matching profile', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
-    expect(await getProfileBySlug(SLUG)).toEqual(inviterRow);
+    expect(await getProfileBySlug(SLUG)).toEqual(asProfile(inviterRow));
   });
 
   it('returns null when no profile matches', async () => {
@@ -834,5 +847,159 @@ describe('upsertPublicProfile', () => {
     await expect(
       upsertPublicProfile(ACTOR, { handle: SLUG, displayName: '' })
     ).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// renameMyProfile — display name + handle cascade
+// ---------------------------------------------------------------------------
+
+describe('renameMyProfile', () => {
+  // Capture every db.update(...).set(...) and script per-call outcomes:
+  // an entry in `fails` at index i makes the i-th update throw 23505.
+  function captureUpdates(fails: number[] = []) {
+    const sets: Record<string, unknown>[] = [];
+    let call = 0;
+    mockDbUpdate.mockImplementation(() => ({
+      set: vi.fn().mockImplementation((vals: Record<string, unknown>) => {
+        sets.push(vals);
+        const failing = fails.includes(call);
+        call += 1;
+        return {
+          where: vi.fn().mockReturnValue({
+            returning: failing
+              ? vi.fn().mockRejectedValue(
+                  Object.assign(new Error('dup'), { code: '23505' })
+                )
+              : vi.fn().mockImplementation(() =>
+                  Promise.resolve([
+                    {
+                      userId: ACTOR,
+                      handle: (vals.handle as string) ?? 'mine4821',
+                      displayName: vals.displayName ?? null,
+                      avatarSeed: 'mine4821',
+                      avatarPath: null,
+                    },
+                  ])
+                ),
+          }),
+        };
+      }),
+    }));
+    return sets;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // getOrCreateMyProfile: the actor already has a provisioned profile.
+    mockDbSelect.mockReturnValue(
+      selectRows([
+        {
+          userId: ACTOR,
+          handle: 'mine4821',
+          displayName: null,
+          avatarSeed: 'mine4821',
+          avatarPath: null,
+        },
+      ])
+    );
+  });
+
+  it('sets the name and re-derives the handle from it (diacritics stripped)', async () => {
+    const sets = captureUpdates();
+
+    const result = await renameMyProfile(ACTOR, 'Đặng Thu Hà');
+
+    expect(sets).toHaveLength(1);
+    expect(sets[0]).toMatchObject({
+      displayName: 'Đặng Thu Hà',
+      handle: 'dangthuha',
+    });
+    expect(result.handle).toBe('dangthuha');
+    expect(result.displayName).toBe('Đặng Thu Hà');
+  });
+
+  it('keeps the current handle when the derived slug already matches it', async () => {
+    mockDbSelect.mockReturnValue(
+      selectRows([
+        {
+          userId: ACTOR,
+          handle: 'dangthuha42', // earlier collision suffix on the same base
+          displayName: 'Đặng Thu Hà',
+          avatarSeed: 'x',
+          avatarPath: null,
+        },
+      ])
+    );
+    const sets = captureUpdates();
+
+    await renameMyProfile(ACTOR, 'Đặng Thu Hà!');
+
+    expect(sets).toHaveLength(1);
+    expect(sets[0]).not.toHaveProperty('handle');
+  });
+
+  it('suffixes digits and retries on a handle collision', async () => {
+    const sets = captureUpdates([0]); // first update hits 23505
+
+    const result = await renameMyProfile(ACTOR, 'Thu Ha');
+
+    expect(sets).toHaveLength(2);
+    expect(sets[0]).toMatchObject({ handle: 'thuha' });
+    expect(sets[1].handle).toMatch(/^thuha\d{2,4}$/u);
+    expect(result.handle).toMatch(/^thuha\d{2,4}$/u);
+  });
+
+  it('suffixes a reserved base instead of using it bare', async () => {
+    const sets = captureUpdates();
+
+    await renameMyProfile(ACTOR, 'Admin');
+
+    expect(sets).toHaveLength(1);
+    expect(sets[0].handle).toMatch(/^admin\d{2,4}$/u);
+  });
+
+  it('rejects an empty name', async () => {
+    captureUpdates();
+    await expect(renameMyProfile(ACTOR, '   ')).rejects.toThrow();
+    expect(mockDbUpdate).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getMyPublicProfile — avatarPath resolves to a public URL
+// ---------------------------------------------------------------------------
+
+describe('getMyPublicProfile avatar URL', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('maps a stored avatar path to the public bucket URL', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://proj.supabase.co');
+    mockDbSelect.mockReturnValueOnce(
+      selectRows([
+        {
+          userId: ACTOR,
+          handle: 'mine4821',
+          displayName: 'Khoi',
+          avatarSeed: 'mine4821',
+          avatarPath: `${ACTOR}/abc.jpg`,
+        },
+      ])
+    );
+
+    const result = await getMyPublicProfile(ACTOR);
+
+    expect(result?.avatarUrl).toBe(
+      `https://proj.supabase.co/storage/v1/object/public/avatars/${ACTOR}/abc.jpg`
+    );
+    vi.unstubAllEnvs();
+  });
+
+  it('returns a null avatarUrl when no photo is set', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    const result = await getMyPublicProfile(INVITER);
+    expect(result?.avatarUrl).toBeNull();
   });
 });

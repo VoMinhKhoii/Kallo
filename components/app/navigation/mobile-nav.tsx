@@ -22,6 +22,7 @@ import { MobileNavList } from './mobile/mobile-nav-list';
 import { deriveInitial, deriveLabel } from './mobile/mobile-user-label';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
+import { UserAvatarDisc } from './user-avatar-disc';
 import type { UserMenuUser } from './user-menu';
 
 interface MobileNavProps {
@@ -139,11 +140,7 @@ export function MobileNav({
             ) : null}
 
             <div className="flex items-center gap-3 rounded-xl bg-white px-3 py-2.5">
-              <span className="relative flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/55 ring-1 ring-nham-accent/25">
-                <span className="font-bold font-sans-display text-[13px] text-nham-btn">
-                  {initial}
-                </span>
-              </span>
+              <UserAvatarDisc initial={initial} avatarUrl={user.avatarUrl} />
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate font-medium font-sans-display text-[13px] text-nham-text">
                   {label || tMenu('account')}

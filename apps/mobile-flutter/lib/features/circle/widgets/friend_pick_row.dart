@@ -2,22 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../models/circle.dart';
+import '../../../shared/widgets/profile_avatar.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
-import 'circle_avatar.dart';
 
 class FriendPickRow extends StatelessWidget {
   const FriendPickRow({
-    required this.label,
-    required this.initial,
+    required this.profile,
     required this.selected,
     required this.onTap,
     super.key,
   });
 
-  final String label;
-  final String initial;
+  final CircleProfile profile;
   final bool selected;
   final VoidCallback onTap;
 
@@ -26,7 +25,7 @@ class FriendPickRow extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: label,
+      label: profile.label,
       child: GestureDetector(
         onTap: () {
           HapticFeedback.selectionClick();
@@ -43,11 +42,11 @@ class FriendPickRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              CircleInitialsAvatar(initial: initial, size: 32),
+              ProfileAvatarDisc(profile: profile, size: 32),
               const SizedBox(width: NhamSpacing.sp3),
               Expanded(
                 child: Text(
-                  label,
+                  profile.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: NhamTextStyles.sansRegular(

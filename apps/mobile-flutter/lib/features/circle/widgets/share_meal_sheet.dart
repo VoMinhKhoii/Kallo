@@ -163,8 +163,7 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                         children: [
                           for (final m in friends) ...[
                             FriendPickRow(
-                              label: m.profile.label,
-                              initial: m.profile.initial,
+                              profile: m.profile,
                               selected: _selected.contains(m.profile.userId),
                               onTap: () => _toggle(m.profile.userId),
                             ),

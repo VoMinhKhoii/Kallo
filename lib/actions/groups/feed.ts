@@ -9,6 +9,7 @@ import {
   friendships,
   publicProfiles,
 } from '@/lib/db/schema';
+import { avatarUrlFor } from '@/lib/groups/avatar-url';
 import {
   mostRecentSharedMealsToday,
   sharedMealsBefore,
@@ -44,6 +45,7 @@ export async function listCircle(
       handle: publicProfiles.handle,
       displayName: publicProfiles.displayName,
       avatarSeed: publicProfiles.avatarSeed,
+      avatarPath: publicProfiles.avatarPath,
     })
     .from(friendships)
     .innerJoin(
@@ -73,6 +75,7 @@ export async function listCircle(
         handle: r.handle,
         displayName: r.displayName,
         avatarSeed: r.avatarSeed,
+        avatarUrl: avatarUrlFor(r.avatarPath),
       },
     };
   });

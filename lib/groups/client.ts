@@ -89,6 +89,31 @@ export function saveMyProfile(input: {
   ).then((r) => r.profile);
 }
 
+/** Rename the user ("what should we call you"). The invite handle is
+ * re-derived from the name server-side, so the link changes too. */
+export function renameMyProfile(displayName: string): Promise<PublicProfile> {
+  return postJson<{ profile: PublicProfile }>('/api/v1/groups/profile/name', {
+    displayName,
+  }).then((r) => r.profile);
+}
+
+/** Upload a new avatar photo (multipart, field `file`). */
+export function uploadMyAvatar(file: File): Promise<PublicProfile> {
+  const form = new FormData();
+  form.append('file', file);
+  return request<{ profile: PublicProfile }>('/api/v1/groups/profile/avatar', {
+    method: 'POST',
+    body: form,
+  }).then((r) => r.profile);
+}
+
+/** Remove the avatar photo (falls back to the initials disc). */
+export function removeMyAvatar(): Promise<PublicProfile> {
+  return request<{ profile: PublicProfile }>('/api/v1/groups/profile/avatar', {
+    method: 'DELETE',
+  }).then((r) => r.profile);
+}
+
 /** Accept an invite link, identified by the inviter's link slug. */
 export function acceptInvite(slug: string) {
   return postJson<{ status: 'accepted'; inviter: PublicProfile }>(

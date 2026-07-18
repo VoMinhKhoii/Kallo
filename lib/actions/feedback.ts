@@ -8,6 +8,11 @@ import { db } from '@/lib/db';
 import { userFeedback } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
+import {
+  IMAGE_TYPES,
+  MAX_IMAGE_BYTES,
+  signatureMatches,
+} from '@/lib/uploads/image-file';
 
 /** The request-scoped Supabase client (user's own session, RLS-enforced). */
 type ScopedClient = Awaited<ReturnType<typeof createClient>>;
@@ -19,13 +24,6 @@ const UPLOAD_HOURLY_LIMIT = 20;
 
 /** Private bucket holding optional feedback screenshots. */
 const SCREENSHOT_BUCKET = 'feedback-screenshots';
-const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
-/** Allowed screenshot content types → file extension. */
-const SCREENSHOT_TYPES: Record<string, string> = {
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/webp': 'webp',
-};
 
 /**
  * Resolve the current authenticated user WITHOUT requiring a completed
@@ -104,43 +102,6 @@ export async function submitFeedbackAction(
   return { id: row.id };
 }
 
-/** File-signature (magic-byte) check so a spoofed Content-Type can't smuggle a
- * non-image (e.g. SVG/HTML) past the allowlist. */
-function signatureMatches(bytes: Uint8Array, mime: string): boolean {
-  switch (mime) {
-    case 'image/png':
-      return (
-        bytes.length >= 8 &&
-        bytes[0] === 0x89 &&
-        bytes[1] === 0x50 &&
-        bytes[2] === 0x4e &&
-        bytes[3] === 0x47
-      );
-    case 'image/jpeg':
-      return (
-        bytes.length >= 3 &&
-        bytes[0] === 0xff &&
-        bytes[1] === 0xd8 &&
-        bytes[2] === 0xff
-      );
-    case 'image/webp':
-      // "RIFF" .... "WEBP"
-      return (
-        bytes.length >= 12 &&
-        bytes[0] === 0x52 &&
-        bytes[1] === 0x49 &&
-        bytes[2] === 0x46 &&
-        bytes[3] === 0x46 &&
-        bytes[8] === 0x57 &&
-        bytes[9] === 0x45 &&
-        bytes[10] === 0x42 &&
-        bytes[11] === 0x50
-      );
-    default:
-      return false;
-  }
-}
-
 /**
  * Best-effort per-user upload cap. This is a soft secondary guard — the hard
  * cap is the advisory-locked submit limit in `submitFeedbackAction`. It is not
@@ -188,11 +149,11 @@ export async function uploadFeedbackScreenshotAction(
 ): Promise<{ path: string }> {
   const { supabase, user } = await requireUser();
 
-  const ext = SCREENSHOT_TYPES[file.type];
+  const ext = IMAGE_TYPES[file.type];
   if (!ext) {
     throw Errors.validationFailed('Unsupported image type.');
   }
-  if (file.size === 0 || file.size > MAX_SCREENSHOT_BYTES) {
+  if (file.size === 0 || file.size > MAX_IMAGE_BYTES) {
     throw Errors.validationFailed('Image must be between 1 byte and 5 MB.');
   }
 

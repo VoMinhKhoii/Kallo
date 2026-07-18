@@ -24,6 +24,8 @@ export interface PublicProfile {
   handle: string;
   displayName: string | null;
   avatarSeed: string | null;
+  /** Public URL of the uploaded avatar photo, or null (initials fallback). */
+  avatarUrl: string | null;
 }
 
 export interface CircleMember {

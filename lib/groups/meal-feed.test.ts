@@ -25,6 +25,7 @@ vi.mock('@/lib/db/schema', () => ({
     handle: 'pp.handle',
     displayName: 'pp.displayName',
     avatarSeed: 'pp.avatarSeed',
+    avatarPath: 'pp.avatarPath',
   },
 }));
 
@@ -46,6 +47,7 @@ function sharedMeal(index: number, sharedAt: Date) {
     handle: 'me',
     displayName: null,
     avatarSeed: 'me',
+    avatarPath: null,
   };
 }
 

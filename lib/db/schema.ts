@@ -920,6 +920,9 @@ export const publicProfiles = pgTable(
     handle: text('handle').notNull(),
     displayName: text('display_name'),
     avatarSeed: text('avatar_seed'),
+    // Storage object path in the public `avatars` bucket ({user_id}/{uuid}.{ext});
+    // null = no photo, UI falls back to the initials + avatar_seed tint disc.
+    avatarPath: text('avatar_path'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

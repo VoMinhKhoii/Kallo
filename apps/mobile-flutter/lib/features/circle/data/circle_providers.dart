@@ -7,6 +7,8 @@
 /// affected providers, matching the dashboard's `logWeight` pattern.
 library;
 
+import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -135,6 +137,60 @@ Future<CircleProfile> saveCircleProfile(
   }
   final json =
       await api.post<Map<String, dynamic>>('/api/v1/groups/profile', body);
+  final profile = CircleProfile.fromJson(json['profile'] as Map<String, dynamic>);
+  ref.invalidate(myCircleProfileProvider);
+  ref.invalidate(circleFriendsProvider);
+  ref.invalidate(circleFeedProvider);
+  return profile;
+}
+
+/// Rename the viewer ("what should we call you") via
+/// `POST /api/v1/groups/profile/name`. The invite handle is re-derived from
+/// the name server-side, so outstanding invite links change. Invalidates the
+/// same surfaces as [saveCircleProfile]. Returns the updated profile.
+Future<CircleProfile> renameCircleProfile(
+  WidgetRef ref,
+  String displayName,
+) async {
+  final api = ref.read(apiClientProvider);
+  final json = await api.post<Map<String, dynamic>>(
+    '/api/v1/groups/profile/name',
+    {'displayName': displayName},
+  );
+  final profile = CircleProfile.fromJson(json['profile'] as Map<String, dynamic>);
+  ref.invalidate(myCircleProfileProvider);
+  ref.invalidate(circleFriendsProvider);
+  ref.invalidate(circleFeedProvider);
+  return profile;
+}
+
+/// Upload a new avatar photo (`POST /api/v1/groups/profile/avatar`,
+/// multipart). Invalidates every surface that renders the viewer's identity.
+Future<CircleProfile> uploadCircleAvatar(
+  WidgetRef ref, {
+  required Uint8List bytes,
+  required String filename,
+  required String contentType,
+}) async {
+  final api = ref.read(apiClientProvider);
+  final json = await api.uploadAvatar(
+    bytes: bytes,
+    filename: filename,
+    contentType: contentType,
+  );
+  final profile = CircleProfile.fromJson(json);
+  ref.invalidate(myCircleProfileProvider);
+  ref.invalidate(circleFriendsProvider);
+  ref.invalidate(circleFeedProvider);
+  return profile;
+}
+
+/// Remove the avatar photo (`DELETE /api/v1/groups/profile/avatar`) — the UI
+/// falls back to the initials disc.
+Future<CircleProfile> removeCircleAvatar(WidgetRef ref) async {
+  final api = ref.read(apiClientProvider);
+  final json =
+      await api.delete<Map<String, dynamic>>('/api/v1/groups/profile/avatar');
   final profile = CircleProfile.fromJson(json['profile'] as Map<String, dynamic>);
   ref.invalidate(myCircleProfileProvider);
   ref.invalidate(circleFriendsProvider);
