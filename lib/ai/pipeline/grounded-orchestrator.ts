@@ -76,6 +76,9 @@ export interface V2PipelineDiagnostics {
   decomposition: MealDecompositionV2;
   matchResults: IngredientV2MatchResult[];
   verdicts: ReturnType<typeof bridgeV2ToV1>['verdicts'];
+  /** Per-ingredient plausibility trail — lets consumers (eval harness) tell a
+   *  FLAGGED zero (genuinely_noncaloric, unresolved_estimate) from a silent one. */
+  plausibility: ReturnType<typeof bridgeV2ToV1>['plausibility'];
 }
 
 /**
@@ -302,6 +305,7 @@ export async function analyzeMealV2(
       decomposition,
       matchResults,
       verdicts: bridged.verdicts,
+      plausibility: bridged.plausibility,
     });
 
     // Flush any meal items whose macros didn't stream (e.g., final closing

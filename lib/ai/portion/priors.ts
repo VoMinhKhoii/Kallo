@@ -108,7 +108,9 @@ export function applySizeModifier(
  *   1. exact locale + exact form
  *   2. exact locale, form='any' or 'composed'/'cooked' loosened
  *   3. locale='global' fallback
- * Returns null when nothing matches (resolver then falls through the ladder).
+ *   4. any-locale fallback (locale is a prior, not a filter)
+ * Returns null only when the concept×unitType pool is empty (resolver then
+ * falls through the ladder).
  */
 export function findPrior(args: {
   conceptId: ConceptId;
@@ -138,5 +140,13 @@ export function findPrior(args: {
   const globalMatch = pool.find((p) => p.locale === 'global');
   if (globalMatch) return globalMatch;
 
-  return null;
+  // 4. any-locale fallback: locale is a PRIOR, not a filter. Concept +
+  //    unitType already scope the lookup tightly — a bánh-bao count prior is
+  //    right for a user whose locale resolved to 'en'/'global' too (the food
+  //    fixes the portion norm, not the speaker's language). Without this,
+  //    every locale-tagged prior is unreachable when inputLanguage is unset,
+  //    which silently re-opens the LLM-guess portion bug.
+  const formMatch = pool.find((p) => p.form === form || p.form === 'any');
+  if (formMatch) return formMatch;
+  return pool[0];
 }

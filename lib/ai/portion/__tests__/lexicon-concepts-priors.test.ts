@@ -91,6 +91,22 @@ describe('portion priors', () => {
     expect(p?.locale).toBe('global');
   });
 
+  it('reaches a locale-tagged prior from any request locale (locale is a prior, not a filter)', () => {
+    // Production regression: nothing populated userContext.inputLanguage, so
+    // every request resolved locale='global' and the vi-tagged bánh bao prior
+    // was unreachable — "2 bánh bao trứng cút" fell to LLM-guess grams again
+    // (293 kcal observed in eval vs the ~750 the prior anchors).
+    for (const locale of ['global', 'en'] as const) {
+      const p = findPrior({
+        conceptId: 'banh-bao',
+        unitType: 'count',
+        locale,
+        form: 'composed',
+      });
+      expect(p?.perUnit).toEqual({ low: 150, mid: 165, high: 180 });
+    }
+  });
+
   it('returns null when no prior exists for the (concept, unit) pair', () => {
     expect(
       findPrior({

@@ -112,6 +112,9 @@ async function runCase(
   // still exceed a sane per-case budget. 90s covers the 55s stress fixture plus
   // headroom; anything past it is recorded as a harness timeout, not a hang.
   const HARNESS_CASE_TIMEOUT_MS = 90_000;
+  // Ref'd timer + clearTimeout, NOT .unref(): Bun fires unref'd timers late
+  // (observed 282s/640s for a 90s deadline), which defeats the ceiling.
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
   try {
     response = await Promise.race([
       dependencies.analyzeMealV2(
@@ -125,8 +128,8 @@ async function runCase(
           estimator: dependencies.estimator,
         }
       ),
-      new Promise<never>((_, reject) =>
-        setTimeout(
+      new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(
           () =>
             reject(
               new Error(
@@ -134,12 +137,13 @@ async function runCase(
               )
             ),
           HARNESS_CASE_TIMEOUT_MS
-        ).unref()
-      ),
+        );
+      }),
     ]);
   } catch (error) {
     thrownError = error instanceof Error ? error.message : String(error);
   } finally {
+    clearTimeout(timeoutHandle);
     tracker.close();
   }
 
@@ -171,7 +175,11 @@ async function runCase(
     mealKcal,
     mealMacros,
     silentZeroViolations: successData
-      ? findSilentZeros(successData, fixture.tags.includes('zero-cal'))
+      ? findSilentZeros(
+          successData,
+          fixture.tags.includes('zero-cal'),
+          diagnostics?.plausibility
+        )
       : [],
     error,
     timedOut: /took too long|timeout|timed out/i.test(error ?? ''),
@@ -187,9 +195,33 @@ async function loadPipeline(estimatorName: EvalCliOptions['estimator']) {
       import('@/lib/db'),
       import('@/lib/ai/pipeline/config/model-profile'),
     ]);
-  const gemini = geminiModule.createGeminiClient(
-    geminiModule.resolveGeminiProvider()
+  // Local quota spreading: GEMINI_API_KEYS_EXTRA (comma-separated) adds
+  // AI Studio keys the harness round-robins per client method call. Each key
+  // has its own free-tier quota, so N keys ≈ N× local eval throughput.
+  // Harness-only — production always uses the single configured provider.
+  const extraKeys = (process.env.GEMINI_API_KEYS_EXTRA ?? '')
+    .split(',')
+    .map((key) => key.trim())
+    .filter(Boolean);
+  const providerConfigs = [
+    geminiModule.resolveGeminiProvider(),
+    ...extraKeys.map((apiKey) => ({ provider: 'ai-studio' as const, apiKey })),
+  ];
+  const clients = providerConfigs.map((config) =>
+    geminiModule.createGeminiClient(config)
   );
+  let rotation = 0;
+  const gemini =
+    clients.length === 1
+      ? clients[0]
+      : new Proxy(clients[0], {
+          get(_target, prop) {
+            return Reflect.get(clients[rotation++ % clients.length], prop);
+          },
+        });
+  if (clients.length > 1) {
+    console.log(`[eval] rotating across ${clients.length} Gemini API keys`);
+  }
   // Build the selected Call-2 adapter. `gemini` is the production path;
   // `claude`/`openai` are stubs that throw when their `estimate` is first
   // called (fully-grounded fast-path meals never reach it — by design).
@@ -197,6 +229,14 @@ async function loadPipeline(estimatorName: EvalCliOptions['estimator']) {
     gemini,
     geminiModel: resolveModelProfile().nutritionModel,
   });
+  // Warm the DB pool (max: 2) before any case runs: the Supabase pooler takes
+  // ~13s to establish backends for an idle project, and paying that inside a
+  // case wedges matching (observed 30-280s matching phases, then a dead client
+  // failing every later case in 0ms).
+  const { sql } = await import('drizzle-orm');
+  const warmStart = Date.now();
+  await Promise.all([db.execute(sql`SELECT 1`), db.execute(sql`SELECT 1`)]);
+  console.log(`[eval] DB pool warmed in ${Date.now() - warmStart}ms`);
   return { analyzeMealV2, db, gemini, estimator };
 }
 
@@ -302,8 +342,13 @@ async function main() {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((error) => {
-    console.error(error instanceof Error ? error.message : error);
-    process.exitCode = 1;
-  });
+  main()
+    .catch((error) => {
+      console.error(error instanceof Error ? error.message : error);
+      process.exitCode = 1;
+    })
+    // Hard-exit: the postgres pool (and any straggling SDK sockets) keeps the
+    // event loop alive indefinitely after the report is written — observed as
+    // zombie eval processes holding DB connections + burning API quota.
+    .finally(() => process.exit(process.exitCode ?? 0));
 }
