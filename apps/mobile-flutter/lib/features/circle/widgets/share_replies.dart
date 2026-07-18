@@ -16,11 +16,9 @@ class ShareReplies extends ConsumerStatefulWidget {
     required this.repliesTotal,
     super.key,
   });
-
   final String shareId;
   final List<ShareReply> replies;
   final int repliesTotal;
-
   @override
   ConsumerState<ShareReplies> createState() => _ShareRepliesState();
 }
@@ -30,7 +28,6 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
   final _focus = FocusNode();
   bool _open = false;
   bool _submitting = false;
-
   @override
   void initState() {
     super.initState();
@@ -47,7 +44,9 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
 
   void _showComposer() {
     setState(() => _open = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus.requestFocus();
+    });
   }
 
   Future<void> _submit() async {
@@ -56,6 +55,7 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
     setState(() => _submitting = true);
     try {
       await createShareReply(ref, shareId: widget.shareId, body: body);
+      if (!mounted) return;
       _controller.clear();
     } catch (_) {
       if (mounted) {

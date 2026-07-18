@@ -1226,6 +1226,7 @@
       "friendsNoMealToday": "None of your friends have shared a meal yet.",
       "groupNoActivity": "Nothing has been shared in {name} yet."
     },
+    "friendsLoadError": "Couldn't load your friends.",
     "switcher": {
       "all": "All",
       "label": "Circle views",

@@ -28,6 +28,9 @@ void main() {
   });
 
   CircleFeedEntry entry({
+    String mealId = 'm1',
+    String shareId = 's1',
+    String rawInput = 'Bún chả Hà Nội',
     bool self = false,
     double portion = 1,
     double? protein = 38,
@@ -44,9 +47,9 @@ void main() {
     ),
     isSelf: self,
     meal: CircleFeedMeal(
-      mealId: 'm1',
-      shareId: 's1',
-      rawInput: 'Bún chả Hà Nội',
+      mealId: mealId,
+      shareId: shareId,
+      rawInput: rawInput,
       sharedAt: (sharedAt ?? DateTime.now()).toUtc().toIso8601String(),
       caloriesKcal: 540,
       proteinG: protein,
@@ -217,6 +220,28 @@ void main() {
     expect(find.text('No shared meals yet'), findsOneWidget);
     expect(find.text('Add friend'), findsOneWidget);
   });
+
+  testWidgets('reply draft does not migrate when its feed entry is removed', (
+    tester,
+  ) async {
+    final entryA = entry(rawInput: 'Meal A');
+    final entryB = entry(mealId: 'm2', shareId: 's2', rawInput: 'Meal B');
+    final entries = ValueNotifier<List<CircleFeedEntry>>([entryA, entryB]);
+    addTearDown(entries.dispose);
+    await pump(tester, _MutableThread(entries: entries));
+
+    await tester.tap(find.text('Reply').first);
+    await tester.pump();
+    await tester.enterText(find.byKey(const Key('reply-composer')), 'Draft A');
+
+    entries.value = [entryB];
+    await tester.pump();
+
+    expect(find.text('Meal A'), findsNothing);
+    expect(find.text('Meal B'), findsOneWidget);
+    expect(find.byKey(const Key('reply-composer')), findsNothing);
+    expect(find.text('Draft A'), findsNothing);
+  });
 }
 
 class _FeedHost extends ConsumerWidget {
@@ -242,4 +267,19 @@ class _StaticThread extends StatelessWidget {
     onRetry: () {},
     onAddFriend: () {},
   );
+}
+
+class _MutableThread extends StatelessWidget {
+  const _MutableThread({required this.entries});
+  final ValueNotifier<List<CircleFeedEntry>> entries;
+
+  @override
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<List<CircleFeedEntry>>(
+        valueListenable: entries,
+        builder:
+            (_, value, __) => _StaticThread(
+              state: SharedMealFeedState(entries: value, nextCursor: null),
+            ),
+      );
 }

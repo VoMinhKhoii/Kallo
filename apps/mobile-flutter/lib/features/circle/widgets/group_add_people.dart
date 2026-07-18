@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/chat_group.dart';
+import '../../../models/circle.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../data/chat_group_providers.dart';
@@ -60,17 +61,37 @@ class _GroupAddPeopleState extends ConsumerState<GroupAddPeople> {
   Widget build(BuildContext context) {
     final memberIds =
         widget.group.members.map((member) => member.userId).toSet();
-    final candidates =
-        ref
-            .watch(circleFriendsProvider)
-            .valueOrNull
-            ?.where(
-              (friend) =>
-                  friend.isAccepted &&
-                  !memberIds.contains(friend.profile.userId),
-            )
-            .toList() ??
-        const [];
+    return ref
+        .watch(circleFriendsProvider)
+        .when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error:
+              (_, __) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(tr('groups.friendsLoadError'), style: dashMeta()),
+                    TextButton(
+                      onPressed: () => ref.invalidate(circleFriendsProvider),
+                      child: Text(tr('groups.switcher.retry')),
+                    ),
+                  ],
+                ),
+              ),
+          data:
+              (friends) => _content(
+                friends
+                    .where(
+                      (friend) =>
+                          friend.isAccepted &&
+                          !memberIds.contains(friend.profile.userId),
+                    )
+                    .toList(),
+              ),
+        );
+  }
+
+  Widget _content(List<CircleMember> candidates) {
     if (candidates.isEmpty) {
       return Text(tr('groups.info.everyoneIn'), style: dashMeta());
     }

@@ -20,7 +20,7 @@ class GroupInfoSheet extends ConsumerStatefulWidget {
 }
 
 class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
-  bool _renaming = false;
+  bool _editingName = false, _renaming = false;
   final _name = TextEditingController();
   @override
   void dispose() {
@@ -29,24 +29,25 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
   }
 
   Future<void> _rename() async {
-    if (_name.text.trim().isEmpty) return;
-    final sheetContext = context;
-    final container = ProviderScope.containerOf(sheetContext, listen: false);
+    if (_renaming || _name.text.trim().isEmpty) return;
+    setState(() => _renaming = true);
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
       await renameChatGroup(
         container,
         groupId: widget.groupId,
         name: _name.text.trim(),
       );
-      if (sheetContext.mounted) setState(() => _renaming = false);
+      if (mounted) setState(() => _editingName = false);
     } catch (_) {
-      if (sheetContext.mounted) {
-        showTopToast(
-          sheetContext,
-          tr('groups.info.renameError'),
-          variant: TopToastVariant.error,
-        );
-      }
+      if (!mounted) return;
+      showTopToast(
+        context,
+        tr('groups.info.renameError'),
+        variant: TopToastVariant.error,
+      );
+    } finally {
+      if (mounted) setState(() => _renaming = false);
     }
   }
 
@@ -129,7 +130,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                     ),
                   ),
                   const SizedBox(height: NhamSpacing.sp4),
-                  if (_renaming)
+                  if (_editingName)
                     Row(
                       children: [
                         Expanded(
@@ -142,7 +143,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                           ),
                         ),
                         IconButton(
-                          onPressed: _rename,
+                          onPressed: _renaming ? null : _rename,
                           tooltip: tr('groups.info.renameSave'),
                           icon: const Icon(LucideIcons.check),
                         ),
@@ -164,7 +165,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                             tooltip: tr('groups.info.renameLabel'),
                             onPressed: () {
                               _name.text = group.name ?? '';
-                              setState(() => _renaming = true);
+                              setState(() => _editingName = true);
                             },
                             icon: const Icon(LucideIcons.pencil, size: 16),
                           ),

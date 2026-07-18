@@ -39,7 +39,9 @@ class ThreadFeed extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        if (notification.metrics.extentAfter < 400) {
+        if (notification.metrics.axis == Axis.vertical &&
+            notification.depth == 0 &&
+            notification.metrics.extentAfter < 400) {
           ref.read(sharedMealFeedProvider(scope).notifier).loadMore();
         }
         return false;
@@ -86,6 +88,7 @@ class ThreadFeed extends ConsumerWidget {
       if (day != previousDay) children.add(_DaySeparator(date: date));
       children.add(
         Padding(
+          key: ValueKey(entry.meal.shareId),
           padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp4),
           child: FeedEntry(entry: entry),
         ),

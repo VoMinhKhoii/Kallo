@@ -9,8 +9,7 @@ import '../data/chat_group_providers.dart';
 import '../data/circle_providers.dart';
 import '../data/feed_providers.dart';
 import 'add_friend_sheet.dart';
-import 'create_group_empty.dart';
-import 'friend_pick_row.dart';
+import 'create_group_member_picker.dart';
 
 class CreateGroupSheet extends ConsumerStatefulWidget {
   const CreateGroupSheet({super.key});
@@ -30,6 +29,7 @@ class _CreateGroupSheetState extends ConsumerState<CreateGroupSheet> {
     _search.dispose();
     super.dispose();
   }
+
   Future<void> _submit() async {
     if (_creating || _name.text.trim().isEmpty || _selected.isEmpty) return;
     setState(() => _creating = true);
@@ -60,20 +60,6 @@ class _CreateGroupSheetState extends ConsumerState<CreateGroupSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final friends =
-        ref
-            .watch(circleFriendsProvider)
-            .valueOrNull
-            ?.where((friend) => friend.isAccepted)
-            .toList() ??
-        const [];
-    final query = _search.text.trim().toLowerCase();
-    final filtered =
-        friends
-            .where(
-              (friend) => friend.profile.label.toLowerCase().contains(query),
-            )
-            .toList();
     final canSubmit =
         !_creating && _name.text.trim().isNotEmpty && _selected.isNotEmpty;
     return Container(
@@ -119,66 +105,17 @@ class _CreateGroupSheetState extends ConsumerState<CreateGroupSheet> {
           ),
           Text(tr('groups.createGroup.membersLabel'), style: dashMeta()),
           const SizedBox(height: NhamSpacing.sp2),
-          if (friends.isEmpty)
-            CreateGroupEmpty(
-              onAddFriend: () {
-                Navigator.pop(context);
-                showAddFriendSheet(context);
-              },
-            )
-          else ...[
-            TextField(
-              controller: _search,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: tr('groups.createGroup.searchPlaceholder'),
-                prefixIcon: const Icon(Icons.search),
-              ),
-            ),
-            Text(
-              tr(
-                'groups.createGroup.membersCount',
-                namedArgs: {'count': '${_selected.length}'},
-              ),
-              style: dashMeta(),
-            ),
-            const SizedBox(height: NhamSpacing.sp1),
-            Flexible(
-              child:
-                  filtered.isEmpty
-                      ? Center(
-                        child: Text(
-                          tr('groups.createGroup.noMatches'),
-                          style: dashMeta(),
-                        ),
-                      )
-                      : ListView(
-                        children: [
-                          for (final friend in filtered)
-                            FriendPickRow(
-                              label: friend.profile.label,
-                              initial: friend.profile.initial,
-                              selected: _selected.contains(
-                                friend.profile.userId,
-                              ),
-                              onTap:
-                                  () => setState(
-                                    () =>
-                                        _selected.contains(
-                                              friend.profile.userId,
-                                            )
-                                            ? _selected.remove(
-                                              friend.profile.userId,
-                                            )
-                                            : _selected.add(
-                                              friend.profile.userId,
-                                            ),
-                                  ),
-                            ),
-                        ],
-                      ),
-            ),
-          ],
+          CreateGroupMemberPicker(
+            friends: ref.watch(circleFriendsProvider),
+            searchController: _search,
+            selected: _selected,
+            onChanged: () => setState(() {}),
+            onRetry: () => ref.invalidate(circleFriendsProvider),
+            onAddFriend: () {
+              Navigator.pop(context);
+              showAddFriendSheet(context);
+            },
+          ),
           const SizedBox(height: NhamSpacing.sp3),
           SizedBox(
             width: double.infinity,

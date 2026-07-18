@@ -1226,6 +1226,7 @@
       "friendsNoMealToday": "Chưa có người bạn nào chia sẻ bữa ăn.",
       "groupNoActivity": "Chưa có gì được chia sẻ trong {name}."
     },
+    "friendsLoadError": "Không tải được danh sách bạn bè.",
     "switcher": {"all": "Tất cả", "label": "Chế độ xem vòng kết nối", "retry": "Thử lại"},
     "feed": {
       "heart": "Thả tim",

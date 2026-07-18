@@ -105,7 +105,10 @@ class CircleScreen extends ConsumerWidget {
     ref.invalidate(sharedMealFeedProvider(selected));
     ref.invalidate(mealShareInvitesProvider);
     ref.invalidate(circleFeedProvider);
-    if (selected != null) ref.invalidate(chatGroupsProvider);
+    if (selected != null) {
+      ref.invalidate(chatGroupsProvider);
+      ref.invalidate(chatGroupDetailProvider(selected));
+    }
     try {
       await ref.read(sharedMealFeedProvider(selected).future);
     } catch (_) {}
