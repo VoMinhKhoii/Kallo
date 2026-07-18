@@ -4,7 +4,7 @@ import { Check, Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { labelFor } from '@/components/groups/invite/profile-identity';
-import { ProfileAvatar } from '@/components/groups/profile-avatar';
+import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import {
   useAcceptMealShareInvite,
   useDismissMealShareInvite,
@@ -57,7 +57,11 @@ function InviteCard({ invite }: { invite: MealShareInvite }) {
   return (
     <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm">
       <div className="flex items-center gap-2">
-        <ProfileAvatar profile={invite.from} size="6" />
+        <ProfileAvatar
+          avatarUrl={invite.from.avatarUrl}
+          label={senderLabel}
+          className="size-6"
+        />
         <p className="font-sans-display text-[12px] text-nham-text">
           {invite.mode === 'split'
             ? t('sharedSplit', { name: senderLabel })

@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import { labelFor } from '@/components/groups/invite/profile-identity';
-import { ProfileAvatar } from '@/components/groups/profile-avatar';
+import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import type { CircleMember } from '@/lib/groups/client';
 import { cn } from '@/lib/utils';
 
@@ -28,7 +28,11 @@ export function FriendPickRow({
       )}
     >
       <span className="flex min-w-0 items-center gap-3">
-        <ProfileAvatar profile={member.profile} size="8" />
+        <ProfileAvatar
+          avatarUrl={member.profile.avatarUrl}
+          label={label}
+          className="size-8"
+        />
         <span className="truncate font-sans-display text-[14px] text-nham-text">
           {label}
         </span>

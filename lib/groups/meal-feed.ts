@@ -59,6 +59,7 @@ export interface SharedMealRow {
   displayName: string | null;
   avatarSeed: string | null;
   avatarUrl: string | null;
+  avatarPath: string | null;
 }
 
 /** Local calendar date (YYYY-MM-DD) for a viewer's timezone offset. */
@@ -248,6 +249,7 @@ export function toSharedMealEntry(
       displayName: row.displayName,
       avatarSeed: row.avatarSeed,
       avatarUrl: row.avatarUrl,
+      avatarPath: row.avatarPath,
     }),
     isSelf: row.friendUserId === actorId,
     meal: {

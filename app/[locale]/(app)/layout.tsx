@@ -58,14 +58,16 @@ export default async function AppLayout({
         ? user.user_metadata.full_name
         : null;
   const displayName = publicProfile?.displayName ?? metadataName;
-  const avatarUrl = publicProfile?.avatarUrl ?? null;
 
+  // Effective avatar: uploaded photo / synced OAuth picture from the profile
+  // row, else the raw OAuth metadata picture (pre-provision fallback).
   const avatarSource =
     user.user_metadata?.avatar_url ?? user.user_metadata?.picture;
   const avatarUrl =
-    typeof avatarSource === 'string' && avatarSource.length > 0
+    publicProfile?.avatarUrl ??
+    (typeof avatarSource === 'string' && avatarSource.length > 0
       ? avatarSource
-      : null;
+      : null);
 
   // Read sidebar UI prefs from cookies so the first paint matches the user's
   // saved state (no flash, no hydration mismatch). Falls back to sensible

@@ -71,7 +71,7 @@ export async function uploadMyAvatar(
   }
 
   // Rename/upload may be the first profile touch — make sure the row exists.
-  await getOrCreateMyProfile(actorId, db);
+  await getOrCreateMyProfile(actorId, null, db);
   const previous = await currentAvatarPath(actorId, db);
 
   const path = `${actorId}/${randomUUID()}.${ext}`;
@@ -109,5 +109,5 @@ export async function removeMyAvatar(
 
   await removeObject(supabase, previous);
 
-  return getOrCreateMyProfile(actorId, db);
+  return getOrCreateMyProfile(actorId, null, db);
 }

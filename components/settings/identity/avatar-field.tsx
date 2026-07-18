@@ -4,7 +4,7 @@ import { Loader2, Upload, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import { toast } from 'sonner';
-import { ProfileAvatar } from '@/components/groups/profile-avatar';
+import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { useRemoveAvatar, useUploadAvatar } from '@/hooks/profile/use-profile';
 import type { PublicProfile } from '@/lib/groups/client';
 import { IMAGE_TYPES, MAX_IMAGE_BYTES } from '@/lib/uploads/image-file';
@@ -49,7 +49,11 @@ export function AvatarField({ profile }: { profile: PublicProfile }) {
 
   return (
     <div className="flex items-center gap-4">
-      <ProfileAvatar profile={profile} size="16" />
+      <ProfileAvatar
+        avatarUrl={profile.avatarUrl}
+        label={profile.displayName?.trim() || profile.handle}
+        className="size-16 text-[22px]"
+      />
       <div className="flex flex-wrap items-center gap-2">
         <input
           ref={inputRef}
