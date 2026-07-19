@@ -864,7 +864,7 @@ export const pipelineRuns = pgTable(
     // Phase 4 (D2) — v2 anomaly cause breakdown ({wrong_row, wrong_state,
     // implausible_grams, macro_inconsistent, unmatched_high_uncertainty,
     // legit_prep_adjustment} → count). Migration
-    // 20260719142927_add_pipeline_version_and_v2_anomaly_causes.sql is intentionally UNAPPLIED this
+    // 20260719143129_add_pipeline_version_and_v2_anomaly_causes.sql is intentionally UNAPPLIED this
     // phase; writePipelineRun tolerates the column's absence (undefined_column
     // → strip + retry) so runs still persist on a pre-migration DB.
     v2AnomalyCauses: jsonb('v2_anomaly_causes').$type<Record<string, number>>(),
