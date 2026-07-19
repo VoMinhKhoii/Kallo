@@ -326,7 +326,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
   bool _editing = false;
   bool _saving = false;
 
-  String get _origin => Env.apiBaseUrl;
+  String get _origin => Env.webBaseUrl;
 
   String _inviteLink(String handle) =>
       '$_origin/${context.locale.languageCode}/invite/$handle';

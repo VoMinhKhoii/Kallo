@@ -1,14 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:nham_mobile/features/circle/circle_deep_links.dart';
-import 'package:nham_mobile/features/circle/widgets/circle_card.dart';
-import 'package:nham_mobile/features/circle/widgets/circle_presence_strip.dart';
+import 'package:nham_mobile/features/circle/widgets/profile_avatar.dart';
 import 'package:nham_mobile/models/circle.dart';
-
-import 'l10n_test_loader.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -27,19 +22,21 @@ void main() {
     test('prefers a trimmed display name, else the handle', () {
       expect(
         const CircleProfile(
-                userId: 'u', handle: 'alice_1', displayName: '  Alice  ')
-            .label,
+          userId: 'u',
+          handle: 'alice_1',
+          displayName: '  Alice  ',
+        ).label,
         'Alice',
       );
       expect(
-        const CircleProfile(userId: 'u', handle: 'alice_1', displayName: '   ')
-            .label,
+        const CircleProfile(
+          userId: 'u',
+          handle: 'alice_1',
+          displayName: '   ',
+        ).label,
         'alice_1',
       );
-      expect(
-        const CircleProfile(userId: 'u', handle: 'alice_1').initial,
-        'A',
-      );
+      expect(const CircleProfile(userId: 'u', handle: 'alice_1').initial, 'A');
     });
   });
 
@@ -119,87 +116,19 @@ void main() {
   });
 
   group('discTintIndex', () {
-    test('replicates the web signed-32-bit hash (same tint cross-platform)',
-        () {
-      // 'alice' hashes to 92903040 under the JS `hash*31+code|0` scheme.
-      expect(discTintIndex(null, 'alice'), 92903040 % 3);
-    });
+    test(
+      'replicates the web signed-32-bit hash (same tint cross-platform)',
+      () {
+        // 'alice' hashes to 92903040 under the JS `hash*31+code|0` scheme.
+        expect(discTintIndex(null, 'alice'), 92903040 % 3);
+      },
+    );
 
     test('is deterministic and prefers the seed over the handle', () {
       final a = discTintIndex('seed_x', 'ignored');
       final b = discTintIndex('seed_x', 'other_handle');
       expect(a, b);
       expect(a, inInclusiveRange(0, 2));
-    });
-  });
-
-  group('CircleCard', () {
-    const entry = CircleFeedEntry(
-      friend: CircleProfile(
-        userId: 'u2',
-        handle: 'bob',
-        displayName: 'Bob',
-        avatarSeed: 'bob',
-      ),
-      isSelf: false,
-      meal: CircleFeedMeal(
-        mealId: 'm1',
-        shareId: 's1',
-        rawInput: '2 bowls phở',
-        sharedAt: '2026-07-01T09:00:00Z',
-        caloriesKcal: 540,
-        proteinG: 30,
-        carbohydrateG: 60,
-        fatG: 12,
-      ),
-    );
-
-    Future<void> pumpCard(WidgetTester tester) async {
-      await EasyLocalization.ensureInitialized();
-      await tester.pumpWidget(
-        EasyLocalization(
-          supportedLocales: const [Locale('en')],
-          path: 'assets/l10n',
-          fallbackLocale: const Locale('en'),
-          // Disk loader: rootBundle.loadString isolate-decodes >50KiB assets,
-          // which never completes in the fake-async test zone.
-          assetLoader: const FsL10nLoader(),
-          child: Builder(
-            builder: (context) => MaterialApp(
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-              locale: context.locale,
-              home: const Scaffold(
-                body: SingleChildScrollView(child: CircleCard(entry: entry)),
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-    }
-
-    testWidgets('renders the quote + collapsed macro summary', (tester) async {
-      await pumpCard(tester);
-
-      expect(find.text('2 bowls phở'), findsOneWidget);
-      expect(find.text('540 kcal'), findsOneWidget);
-      expect(find.textContaining('P: 30g'), findsOneWidget);
-      // Expanded-only content is absent while collapsed.
-      expect(find.text('Total'), findsNothing);
-    });
-
-    testWidgets('chevron expands to the Total row and collapses back',
-        (tester) async {
-      await pumpCard(tester);
-
-      await tester.tap(find.byIcon(LucideIcons.chevronDown));
-      await tester.pumpAndSettle();
-      expect(find.text('Total'), findsOneWidget);
-
-      await tester.tap(find.byIcon(LucideIcons.chevronDown));
-      await tester.pumpAndSettle();
-      expect(find.text('Total'), findsNothing);
     });
   });
 

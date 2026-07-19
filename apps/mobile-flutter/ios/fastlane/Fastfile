@@ -20,6 +20,10 @@ default_platform(:ios)
 APP_ID            = ENV["ASC_APP_IDENTIFIER"] || "com.khoivo.nham"
 TEAM_ID           = ENV["ASC_TEAM_ID"]        || "ZNG57U88R5"
 API_BASE_URL      = ENV["NHAM_API_BASE_URL"]  || "https://nham-internal-714321235532.asia-southeast3.run.app"
+# Public web origin for links the user shares outward (invite links, macro
+# cards). Distinct from API_BASE_URL, which points at the Cloud Run backend —
+# shared links must resolve to the public site, not the internal host.
+WEB_BASE_URL      = ENV["NHAM_WEB_BASE_URL"]  || "https://kallo.fit"
 # Auth goes through the Cloud Run proxy (see app/api/supabase-proxy) because
 # some VN ISPs blackhole the supabase.co Cloudflare edge. Anon key unchanged.
 SUPABASE_URL      = ENV["NHAM_SUPABASE_URL"]  || "#{API_BASE_URL}/api/supabase-proxy"
@@ -121,6 +125,7 @@ platform :ios do
         sh("flutter", "build", "ios", "--release", "--no-codesign",
            "--build-name=1.0.1", "--build-number=#{next_build}",
            "--dart-define=API_BASE_URL=#{API_BASE_URL}",
+           "--dart-define=WEB_BASE_URL=#{WEB_BASE_URL}",
            "--dart-define=SUPABASE_URL=#{SUPABASE_URL}",
            "--dart-define=SUPABASE_ANON_KEY=#{SUPABASE_ANON_KEY}",
            "--dart-define=GOOGLE_WEB_CLIENT_ID=#{GOOGLE_WEB_CLIENT_ID}",
