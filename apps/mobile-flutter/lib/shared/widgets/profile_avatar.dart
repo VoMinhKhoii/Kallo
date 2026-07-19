@@ -83,12 +83,9 @@ class _InitialsDisc extends StatelessWidget {
     ),
     child: Text(
       initial,
-      style: TextStyle(
-        fontFamily: NhamTextStyles.sansFamily,
+      style: NhamTextStyles.sansMedium(
         fontSize: size <= 28 ? 10 : 12,
-        fontWeight: FontWeight.w500,
-        color: kInk,
-      ),
+      ).copyWith(color: kInk),
     ),
   );
 }
