@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildCompressedDecompositionV2Prompt,
   buildDecompositionV2Prompt,
-  getDecompositionV2PromptBuilder,
-  getDecompositionV2PromptLabel,
   wrapUserMealTextAsData,
 } from '../decomposition-v2';
 import type { PromptPersonalizationContext } from '../types';
@@ -23,24 +20,21 @@ const baseUserContext: PromptPersonalizationContext = {
 };
 
 describe('decomposition-v2 prompt', () => {
-  it('compressed builder does NOT mention grams as a required field', () => {
-    const out = buildCompressedDecompositionV2Prompt(baseUserContext);
+  it('builder does NOT mention grams as a required field', () => {
+    const out = buildDecompositionV2Prompt(baseUserContext);
     // Schema fields should list rawName, canonicalName, cookingMethod?, stateHint?, stateNote?, prepNotes?
     expect(out).toMatch(/rawName/);
     expect(out).toMatch(/canonicalName/);
     expect(out).toMatch(/stateHint/);
     expect(out).toMatch(/prepNotes/);
-    // grams should NOT be in the schema_fields block
-    expect(out).not.toMatch(/grams:\s/);
+    // grams should NOT be in the schema_fields block (prose may mention the
+    // word — e.g. "NO grams: the server resolver..." — that is fine).
     expect(out).not.toMatch(/ingredients\[\]:\s*\{[^}]*grams/);
   });
 
-  it('both builders instruct structured quantity extraction (count/unitToken/explicitMass) without emitting grams', () => {
-    for (const build of [
-      buildDecompositionV2Prompt,
-      buildCompressedDecompositionV2Prompt,
-    ]) {
-      const out = build(baseUserContext);
+  it('builder instructs structured quantity extraction (count/unitToken/explicitMass) without emitting grams', () => {
+    {
+      const out = buildDecompositionV2Prompt(baseUserContext);
       expect(out).toMatch(/count/);
       expect(out).toMatch(/unitToken/);
       expect(out).toMatch(/explicitMass/);
@@ -78,7 +72,7 @@ describe('decomposition-v2 prompt', () => {
   });
 
   it('user_context block carries country info only (cookingHabits moved to Call 2)', () => {
-    const out = buildCompressedDecompositionV2Prompt(baseUserContext);
+    const out = buildDecompositionV2Prompt(baseUserContext);
     expect(out).toMatch(/country_of_origin: Vietnam/);
     expect(out).toMatch(/country_of_residence: Vietnam/);
     // Portion / cooking-habit knobs are NOT load-bearing for decomposition
@@ -90,39 +84,9 @@ describe('decomposition-v2 prompt', () => {
     expect(out).not.toMatch(/broth_consumption/);
   });
 
-  it('label resolution defaults to compressed; production opt-in via env', () => {
-    expect(getDecompositionV2PromptLabel({})).toBe('compressed');
-    expect(
-      getDecompositionV2PromptLabel({
-        PIPELINE_DECOMPOSITION_V2_PROMPT_LABEL: 'production',
-      })
-    ).toBe('production');
-    expect(
-      getDecompositionV2PromptLabel({
-        PIPELINE_DECOMPOSITION_V2_PROMPT_LABEL: 'compressed',
-      })
-    ).toBe('compressed');
-    expect(
-      getDecompositionV2PromptLabel({
-        PIPELINE_DECOMPOSITION_V2_PROMPT_LABEL: 'garbage',
-      })
-    ).toBe('compressed');
-  });
-
-  it('builder factory returns the matching builder', () => {
-    expect(getDecompositionV2PromptBuilder('compressed')).toBe(
-      buildCompressedDecompositionV2Prompt
-    );
-    expect(getDecompositionV2PromptBuilder('production')).toBe(
-      buildDecompositionV2Prompt
-    );
-  });
-
-  it('both builders carry the injection-hardening input_handling rule', () => {
-    for (const build of [
-      buildDecompositionV2Prompt,
-      buildCompressedDecompositionV2Prompt,
-    ]) {
+  it('builder carries the injection-hardening input_handling rule', () => {
+    {
+      const build = buildDecompositionV2Prompt;
       const out = build(baseUserContext);
       expect(out).toMatch(/<input_handling>/);
       expect(out).toMatch(/<meal_text_data>/);

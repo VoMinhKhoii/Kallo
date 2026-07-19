@@ -57,13 +57,20 @@ export interface GroundedEstimatorStreamHooks {
    * (`analysis_model_budget_events`). Structurally compatible with the gemini
    * client's attempt metadata; adapters for other providers map into it.
    */
-  onAttemptComplete?: (usage: {
-    attempt: number;
-    model: string;
-    inputTokens: number | null;
-    outputTokens: number | null;
-    error: unknown;
-  }) => void;
+  onAttemptComplete?: (usage: EstimatorAttemptUsage) => void;
+}
+
+/**
+ * Provider-agnostic per-attempt usage record (structurally identical to the
+ * gemini client's `GeminiAttemptMetadata` so the recorder can be passed
+ * straight through as a stream option).
+ */
+export interface EstimatorAttemptUsage {
+  attempt: number;
+  model: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  error: unknown;
 }
 
 /**

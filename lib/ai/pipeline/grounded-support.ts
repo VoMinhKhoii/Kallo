@@ -44,7 +44,6 @@ import {
   summarizeV2Anomalies,
   type V2AnomalySummary,
 } from './anomaly-v2';
-import type { PlausibilityPerIngredient } from './bridge';
 import type { ModelProfile } from './config/model-profile';
 import type { AnalyzeMealTraceContext } from './orchestrator';
 import type { GroundedEstimation, MealDecompositionV2 } from './schemas-v2';

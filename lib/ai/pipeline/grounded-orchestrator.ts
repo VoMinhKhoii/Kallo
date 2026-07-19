@@ -4,10 +4,7 @@ import {
   DEFAULT_K,
   DEFAULT_MATCH_CONCURRENCY,
   type IngredientV2MatchResult,
-  matchTopKPerIngredient,
 } from '../matching/top-k-cascade';
-import { resolvePortionsForCallTwo } from '../portion/ingredient-portion';
-import type { MealItemWithCandidates } from '../prompts/grounded-estimation';
 import {
   buildMealItemOffsetByName,
   buildPerMealItemOffsetMap,
@@ -26,10 +23,9 @@ import {
   renderGeminiEstimatorPrompt,
 } from './estimator/gemini-estimator';
 import type { GroundedEstimator } from './estimator/types';
-import { buildFastPathEstimation, isFullyGrounded } from './fast-path';
+import { buildFastPathEstimation } from './fast-path';
 import { runGroundedDecomposition } from './grounded-decomposition';
 import {
-  buildCallTwoPayload,
   createCall2StreamHandler,
   flushUnstreamedItemMacros,
   runV2AnomalyPass,
@@ -40,6 +36,7 @@ import {
 import { recordV2RunTelemetry } from './grounded-telemetry';
 import { reconcileNutritionIds } from './nutrition';
 import type { AnalyzeMealTraceContext } from './orchestrator';
+import { prepareGrounding } from './prepare-grounding';
 import type { GroundedEstimation, MealDecompositionV2 } from './schemas-v2';
 import { buildLlmStageTrace } from './telemetry/trace';
 
@@ -139,47 +136,24 @@ export async function analyzeMealV2(
       promptCharsCall1,
     } = stage1;
 
-    // ---- Stage 2: Match top-K per ingredient ----------------------------
-    const flatIngredients = decomposition.mealItems.flatMap((mi) =>
-      mi.ingredients.map((ing) => ({
-        ingredient: ing,
-        dishCookingMethod: mi.cookingMethod,
-      }))
-    );
-    const matchResults: IngredientV2MatchResult[] = await withStageLogV2(
-      traceContext,
-      'matching',
-      2,
-      { ingredientCount: flatIngredients.length, topK },
-      async (_ctx) => {
-        emit({ type: 'stage', stage: 'matching' });
-        return matchTopKPerIngredient(
-          flatIngredients.map((f) => f.ingredient),
-          flatIngredients.map((f) => f.dishCookingMethod),
-          db,
-          gemini,
-          { k: topK, concurrency: matchConcurrency }
-        );
-      }
-    );
-
-    // Portion resolver (Phase 3): a grounded weight becomes a Call-2 ANCHOR;
-    // null → LLM estimates; unresolved → Phase-1 clarify. See `resolver.ts`.
-    const { resolutions: portionResolutions, anchors: resolvedGramsAnchors } =
-      resolvePortionsForCallTwo(flatIngredients, userContext.inputLanguage);
-
-    // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
-    const mealItemsWithCandidates: MealItemWithCandidates[] =
-      buildCallTwoPayload(decomposition, matchResults, resolvedGramsAnchors);
-    // D2 fast path: when EVERY ingredient is fully grounded (exact-match +
-    // server anchor, no prep notes), skip Call 2 and synthesize the estimation
-    // server-side (numerically identical to the full path). Otherwise Call 2
-    // runs against the Gemini estimator (D3 seam) — chunked for large meals.
-    const fullyGrounded = isFullyGrounded({
-      decomposition,
+    // ---- Stage 2: matching + portion resolution (prepare-grounding) -----
+    const {
       matchResults,
       portionResolutions,
+      mealItemsWithCandidates,
+      fullyGrounded,
+    } = await prepareGrounding({
+      decomposition,
+      userContext,
+      db,
+      gemini,
+      traceContext,
+      emit,
+      topK,
+      matchConcurrency,
     });
+
+    // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
     const estimator =
       options.estimator ??
       createGeminiEstimator(gemini, profile.nutritionModel);
@@ -278,7 +252,7 @@ export async function analyzeMealV2(
       traceContext,
       'assembly',
       4,
-      { ingredientCount: flatIngredients.length },
+      { ingredientCount: matchResults.length },
       async (_ctx) => {
         emit({ type: 'stage', stage: 'assembling' });
         const bridged = bridgeV2ToV1({
