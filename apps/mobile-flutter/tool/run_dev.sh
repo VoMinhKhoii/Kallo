@@ -65,6 +65,9 @@ if [[ -z "${SUPABASE_URL:-}" || -z "${SUPABASE_ANON_KEY:-}" ]]; then
 fi
 [[ -n "$SUPABASE_URL" && -n "$SUPABASE_ANON_KEY" ]] || { echo "Empty Supabase creds — check your .env.local."; exit 1; }
 API_BASE_URL="${API_BASE_URL:-http://localhost:3000}"
+# Public web origin for shared links (invite links, macro cards). Defaults to
+# prod so link previews match; override to point at a local invite page.
+WEB_BASE_URL="${WEB_BASE_URL:-https://kallo.fit}"
 
 # --- optional: native Google sign-in client IDs ------------------------------
 # Mirror the Supabase creds: read from the same .env.local if present, else use
@@ -105,6 +108,7 @@ echo "Edit files in $WORK for hot reload; run 'tool/run_dev.sh back' to save the
 
 run=(flutter run -d "$SIM_UDID"
   --dart-define=API_BASE_URL="$API_BASE_URL"
+  --dart-define=WEB_BASE_URL="$WEB_BASE_URL"
   --dart-define=SUPABASE_URL="$SUPABASE_URL"
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
   --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}"
