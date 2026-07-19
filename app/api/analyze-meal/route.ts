@@ -23,12 +23,12 @@ import {
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
 } from '@/lib/rate-limit/analysis-guards';
-
 import {
   createGuardRelease,
   getRequestIp,
   validateRequest,
 } from './request-validation';
+import { emitUnresolvedOutcome } from './unresolved-response';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -251,33 +251,15 @@ export async function POST(request: NextRequest) {
         // persisting an incomplete pending_analyses row. The client re-submits
         // with `clarifyAnswer`.
         if (result.unresolved) {
-          const tClarify = await getTranslations({
+          await emitUnresolvedOutcome({
+            unresolved: result.unresolved,
             locale: locale ?? profile.preferredLocale ?? 'en',
-            namespace: 'logging.clarify',
-          });
-          const question =
-            result.unresolved.reason === 'ambiguous_food'
-              ? tClarify('food', {
-                  ingredient: result.unresolved.ingredientName,
-                  mealItem: result.unresolved.mealItemName,
-                })
-              : tClarify('portion', {
-                  ingredient: result.unresolved.ingredientName,
-                  mealItem: result.unresolved.mealItemName,
-                });
-          emit({
-            type: 'clarify',
-            question,
-            reason: result.unresolved.reason,
-          });
-          logPipelineEnd(
+            emit,
             requestId,
-            'success',
-            Date.now() - startTime,
             db,
-            undefined,
-            pvu
-          );
+            startTime,
+            promptVersionsUsed: pvu,
+          });
           return;
         }
 

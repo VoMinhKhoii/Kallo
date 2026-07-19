@@ -19,9 +19,7 @@ import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiCallTrace } from '../gemini';
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
-import type {
-  MealItemWithCandidates,
-} from '../prompts/grounded-estimation';
+import type { MealItemWithCandidates } from '../prompts/grounded-estimation';
 import type { PromptPersonalizationContext } from '../prompts/types';
 import {
   buildMealItemOffsetByName,
@@ -32,10 +30,7 @@ import { computeStreamingMealItem } from '../streaming/parsers';
 import type { StreamEvent } from '../streaming/types';
 import type { UserContext } from '../types';
 import { NUTRITION_TIMEOUT_MS } from './config/stage-timeouts';
-import {
-  runChunkedCall2,
-  shouldChunkCall2,
-} from './estimator/chunked-call2';
+import { runChunkedCall2, shouldChunkCall2 } from './estimator/chunked-call2';
 import type { GroundedEstimator } from './estimator/types';
 import type { GroundedEstimation, GroundedMealItem } from './schemas-v2';
 
@@ -69,6 +64,10 @@ export interface RunCallTwoArgs {
   stream: CallTwoStreamDeps;
   /** Optional per-call trace for the single-call path. */
   trace?: GeminiCallTrace;
+  /** Per-attempt token/error usage recorder (model-budget guards). */
+  onAttemptComplete?: NonNullable<
+    import('./estimator/types').GroundedEstimatorStreamHooks['onAttemptComplete']
+  >;
   /** Chunked-path progressive item_macros emitter context. */
   chunkEmit: ChunkEmitContext;
 }
@@ -112,6 +111,7 @@ export async function runCallTwo(
       temperature: args.temperature,
       phaseDeadlineMs: chunkedPhaseDeadlineMs(),
       onChunkComplete: (items) => emitChunkItemMacros(args.chunkEmit, items),
+      onAttemptComplete: args.onAttemptComplete,
     });
     return {
       grounded: result.estimation,
@@ -141,6 +141,9 @@ export async function runCallTwo(
               args.stream.handleChunk(accumulated);
             },
             ...(args.trace ? { trace: args.trace } : {}),
+            ...(args.onAttemptComplete
+              ? { onAttemptComplete: args.onAttemptComplete }
+              : {}),
           }
         )
         .then((r) => r.estimation),

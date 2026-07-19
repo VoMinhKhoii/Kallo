@@ -204,3 +204,21 @@ export async function persistV2PipelineRun(args: {
     console.error('[ai/pipeline] v2 failed to build pipeline_runs row', err);
   }
 }
+
+/**
+ * Log + persist a completed v2 run in one call (console telemetry always;
+ * pipeline_runs row when tracing is enabled — best-effort, never blocks; in
+ * tests the persist is awaited so assertions aren't racy).
+ */
+export async function recordV2RunTelemetry(args: {
+  log: Parameters<typeof logV2Telemetry>[0];
+  persist: Parameters<typeof persistV2PipelineRun>[0];
+}): Promise<void> {
+  logV2Telemetry(args.log);
+  const persistPromise = persistV2PipelineRun(args.persist);
+  if (process.env.NODE_ENV === 'test') {
+    await persistPromise;
+  } else {
+    void persistPromise;
+  }
+}

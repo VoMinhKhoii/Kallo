@@ -110,7 +110,8 @@ function collect(): {
   emit: (e: StreamEvent) => void;
   events: Array<{ mealItemId: string; name: string; calories: number }>;
 } {
-  const events: Array<{ mealItemId: string; name: string; calories: number }> = [];
+  const events: Array<{ mealItemId: string; name: string; calories: number }> =
+    [];
   const emit = (e: StreamEvent) => {
     if (e.type === 'item_macros') {
       events.push({

@@ -73,7 +73,12 @@ describe('classifyIngredientPlausibility — genuinely non-caloric', () => {
     // Review finding: unanchored patterns matched "trà sữa"/"ice cream" and,
     // because the noncaloric check precedes the missing-macros guard, an
     // unmatched milk tea could persist a silent ZERO_TRIPLE.
-    for (const name of ['trà sữa trân châu', 'trà đào', 'ice cream', 'iced coffee']) {
+    for (const name of [
+      'trà sữa trân châu',
+      'trà đào',
+      'ice cream',
+      'iced coffee',
+    ]) {
       expect(
         classifyIngredientPlausibility({
           grams: 200,

@@ -47,7 +47,8 @@ export const PORTION_PRIORS: PortionPrior[] = [
     form: 'cooked',
     perUnit: band(9, 10, 11),
     confidence: 'high',
-    source: 'Quail egg shelled ~9–11g (FAO/USDA egg tables); DB row Trứng chim cút.',
+    source:
+      'Quail egg shelled ~9–11g (FAO/USDA egg tables); DB row Trứng chim cút.',
   },
   {
     // 1 lát bánh mì ≈ 25–35g. SLICE prior scoped to the loaf concept ONLY.
@@ -57,7 +58,8 @@ export const PORTION_PRIORS: PortionPrior[] = [
     form: 'raw',
     perUnit: band(25, 30, 35),
     confidence: 'medium',
-    source: 'French-bread slice ~25–35g (loaf-scoped, NOT a global slice value).',
+    source:
+      'French-bread slice ~25–35g (loaf-scoped, NOT a global slice value).',
   },
   {
     // whole ổ bánh mì ≈ 90–120g bread (VN sandwich loaf, bread only).
@@ -77,7 +79,8 @@ export const PORTION_PRIORS: PortionPrior[] = [
     form: 'cooked',
     perUnit: band(180, 200, 220),
     confidence: 'high',
-    source: 'VN chén/bát cơm ~200g cooked (household survey); rice-concept-scoped.',
+    source:
+      'VN chén/bát cơm ~200g cooked (household survey); rice-concept-scoped.',
   },
   {
     // 1 ức gà ≈ 150–200g cooked (single breast fillet).
@@ -87,7 +90,8 @@ export const PORTION_PRIORS: PortionPrior[] = [
     form: 'cooked',
     perUnit: band(150, 175, 200),
     confidence: 'medium',
-    source: 'Single chicken-breast fillet ~150–200g cooked (USDA portion refs).',
+    source:
+      'Single chicken-breast fillet ~150–200g cooked (USDA portion refs).',
   },
 ];
 

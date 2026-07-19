@@ -21,6 +21,7 @@
 
 import { NUTRITION_KEYS } from '../constants';
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
+import type { PortionResolution } from '../portion/types';
 import type {
   DecomposedIngredient,
   DecomposedMealItem,
@@ -35,7 +36,6 @@ import {
   v2IngredientToV1,
   ZERO_TRIPLE,
 } from './bridge-verdicts';
-import type { PortionResolution } from '../portion/types';
 import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
 import type { RawNutritionAdjustment } from './nutrition';
 import {

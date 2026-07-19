@@ -7,7 +7,6 @@ import {
   checkDecompositionLanguage,
 } from '../language/guard';
 import { createV2SpeculativeMatcher } from '../matching/speculative';
-import { readBooleanEnv } from './config/feature-flags';
 import {
   buildDecompositionV2Prompt,
   wrapUserMealTextAsData,
@@ -15,6 +14,7 @@ import {
 import type { PromptPersonalizationContext } from '../prompts/types';
 import type { StreamEvent } from '../streaming/types';
 import type { MealDecomposition, UserContext } from '../types';
+import { readBooleanEnv } from './config/feature-flags';
 import type { ModelProfile } from './config/model-profile';
 import { DECOMPOSITION_TIMEOUT_MS } from './config/stage-timeouts';
 import { createDecompositionStreamController } from './decomposition-stream';
@@ -76,6 +76,14 @@ export async function runGroundedDecomposition(args: {
   profile: ModelProfile;
   /** Reply to a prior precise-mode clarify question; woven into the Call-1 message. */
   clarifyAnswer?: string;
+  /** Per-attempt token/error recorder (analysis model-budget guards). */
+  onAttemptComplete?: (usage: {
+    attempt: number;
+    model: string;
+    inputTokens: number | null;
+    outputTokens: number | null;
+    error: unknown;
+  }) => void;
 }): Promise<GroundedDecompositionResult> {
   const { rawInput, userContext, db, gemini, traceContext, emit, promptCtx } =
     args;
@@ -174,6 +182,9 @@ export async function runGroundedDecomposition(args: {
               decompStream.handleChunk(accumulated);
             },
             ...(callTrace ? { trace: callTrace } : {}),
+            ...(args.onAttemptComplete
+              ? { onAttemptComplete: args.onAttemptComplete }
+              : {}),
           }
         );
       },

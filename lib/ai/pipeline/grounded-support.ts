@@ -362,36 +362,3 @@ export function toPromptPersonalizationContext(
     outputLanguage: userContext.outputLanguage,
   };
 }
-
-/**
- * Completeness gate: from the bridge's per-ingredient plausibility trail,
- * build the `unresolved` payload the route uses to emit a precise `clarify`
- * event instead of persisting an under-weighted meal (Phase 1). Returns
- * `undefined` when every ingredient resolved.
- *
- * "Most impactful" in Phase 1 is the FIRST unresolved ingredient in
- * decomposition order — deterministic; the grams-weighted policy lands in a
- * later phase (we intentionally have no grams for unresolved items yet).
- */
-export function buildUnresolvedFromPlausibility(
-  plausibility: PlausibilityPerIngredient[]
-):
-  | {
-      mealItemName: string;
-      ingredientName: string;
-      reason: 'unresolved_portion' | 'ambiguous_food';
-      unresolvedCount: number;
-    }
-  | undefined {
-  const unresolved = plausibility.filter(
-    (p) => p.state === 'unresolved_estimate'
-  );
-  if (unresolved.length === 0) return undefined;
-  const primary = unresolved[0];
-  return {
-    mealItemName: primary.mealItemName,
-    ingredientName: primary.ingredientName,
-    reason: primary.unresolvedReason ?? 'unresolved_portion',
-    unresolvedCount: unresolved.length,
-  };
-}

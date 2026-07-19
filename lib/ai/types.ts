@@ -356,8 +356,13 @@ export interface PipelineUnresolved {
   mealItemName: string;
   /** The unresolved ingredient's display name. */
   ingredientName: string;
-  /** Why it's unresolved — drives the clarify `reason`. */
-  reason: 'unresolved_portion' | 'ambiguous_food';
+  /**
+   * Why it's unresolved — drives the clarify `reason`.
+   * 'processing_incomplete' = a Call-2 chunk failed after retries (transient),
+   * NOT a gap in the user's input — the route emits a retryable error, not a
+   * clarify question about a portion the user already stated.
+   */
+  reason: 'unresolved_portion' | 'ambiguous_food' | 'processing_incomplete';
   /** Count of unresolved ingredients across the whole meal. */
   unresolvedCount: number;
 }

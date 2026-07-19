@@ -132,7 +132,7 @@ export function resolveStreamingV2MealItem(
         (n) => typeof n === 'string' && n.trim().length > 0
       ) ?? false;
 
-    const grams = rawIng.grams > 0 ? rawIng.grams : 1;
+    const grams = rawIng.grams;
     totalGrams += grams;
 
     const base = computeBaseFromVerdict(rawIng, candidates, grams);

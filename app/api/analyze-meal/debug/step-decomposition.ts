@@ -10,7 +10,14 @@ import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 import { DEBUG_LLM_TIMEOUT_MS, serializeAttempt } from './debug-shared';
 
-/** Step 1: decomposition LLM call with raw response + attempt capture. */
+/**
+ * Step 1: decomposition LLM call with raw response + attempt capture.
+ *
+ * NOTE (v1 surface): this debug step still exercises the V1 prompt + schema,
+ * while production defaults to the v2 grounded pipeline — useful only for
+ * debugging the v1 fallback path. Porting the whole debug route to v2 (all
+ * steps consume the v1 decomposition shape) is tracked in DEV-91.
+ */
 export async function runDecompositionDebugStep({
   gemini,
   modelProfile,

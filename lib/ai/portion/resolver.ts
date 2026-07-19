@@ -130,9 +130,11 @@ export function resolvePortion(
       form: concept.form,
     });
     if (prior) {
-      const count =
-        quantity.count && quantity.count > 0 ? quantity.count : 1;
-      const perUnitMid = applySizeModifier(prior.perUnit, quantity.sizeModifier);
+      const count = quantity.count && quantity.count > 0 ? quantity.count : 1;
+      const perUnitMid = applySizeModifier(
+        prior.perUnit,
+        quantity.sizeModifier
+      );
       // Preserve the band shape while honoring the size modifier's centering:
       // scale low/high by count too, then recentre mid on the size pick.
       const scaled = scaleBand(prior.perUnit, count);

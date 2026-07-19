@@ -35,7 +35,9 @@ export const explicitMassSchema = z
       .number()
       .positive()
       .finite()
-      .describe('Verbatim mass in grams the user typed (e.g. 250 for "250gr").'),
+      .describe(
+        'Verbatim mass in grams the user typed (e.g. 250 for "250gr").'
+      ),
     basis: z
       .enum(['raw', 'cooked'])
       .describe(

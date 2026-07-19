@@ -39,7 +39,11 @@ function deriveForm(
 }
 
 function deriveLocale(inputLanguage: string | undefined): Locale {
-  return inputLanguage === 'vi' ? 'vi' : inputLanguage === 'en' ? 'en' : 'global';
+  return inputLanguage === 'vi'
+    ? 'vi'
+    : inputLanguage === 'en'
+      ? 'en'
+      : 'global';
 }
 
 function buildQuantityEvidence(
@@ -50,7 +54,6 @@ function buildQuantityEvidence(
     unitToken: ingredient.unitToken,
     sizeModifier: ingredient.sizeModifier,
     explicitMass: ingredient.explicitMass,
-    stateHintRawWeight: ingredient.stateHint === 'raw_weight',
   };
 }
 
@@ -64,7 +67,6 @@ export function resolveIngredientPortion(args: {
   dishCookingMethod: string | null | undefined;
   inputLanguage: string | undefined;
   dbServingSizeG?: number | null;
-  dbPackageSizeG?: number | null;
 }): PortionResolution {
   const { ingredient, dishCookingMethod, inputLanguage } = args;
 
@@ -73,8 +75,7 @@ export function resolveIngredientPortion(args: {
   const resolution = byRaw ?? byCanonical;
   const ambiguous = byRaw === AMBIGUOUS || byCanonical === AMBIGUOUS;
 
-  const conceptId =
-    resolution && resolution !== AMBIGUOUS ? resolution : null;
+  const conceptId = resolution && resolution !== AMBIGUOUS ? resolution : null;
 
   const conceptInput: ResolverConceptInput = {
     conceptId: ambiguous ? AMBIGUOUS : conceptId,
@@ -82,7 +83,6 @@ export function resolveIngredientPortion(args: {
     locale: deriveLocale(inputLanguage),
     form: deriveForm(ingredient, dishCookingMethod),
     dbServingSizeG: args.dbServingSizeG ?? null,
-    dbPackageSizeG: args.dbPackageSizeG ?? null,
   };
 
   return resolvePortion(conceptInput, buildQuantityEvidence(ingredient));
@@ -98,7 +98,6 @@ export function resolveFlatIngredientPortions(
     ingredient: DecomposedIngredientV2;
     dishCookingMethod: string | null | undefined;
     dbServingSizeG?: number | null;
-    dbPackageSizeG?: number | null;
   }>,
   inputLanguage: string | undefined
 ): PortionResolution[] {
@@ -108,17 +107,15 @@ export function resolveFlatIngredientPortions(
       dishCookingMethod: f.dishCookingMethod,
       inputLanguage,
       dbServingSizeG: f.dbServingSizeG,
-      dbPackageSizeG: f.dbPackageSizeG,
     })
   );
 }
 
 /** Extract the anchor grams (mid) from a resolution, or null when deferred. */
-export function anchorGramsFromResolution(
-  r: PortionResolution
-): number | null {
+export function anchorGramsFromResolution(r: PortionResolution): number | null {
   if (!r.grams) return null;
-  if (r.provenance === 'llm_range' || r.provenance === 'unresolved') return null;
+  if (r.provenance === 'llm_range' || r.provenance === 'unresolved')
+    return null;
   return r.grams.mid;
 }
 

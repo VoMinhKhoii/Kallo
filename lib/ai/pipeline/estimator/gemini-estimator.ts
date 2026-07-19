@@ -14,7 +14,10 @@
 
 import type { GeminiClient } from '../../gemini';
 import { buildGroundedEstimationPrompt } from '../../prompts/grounded-estimation';
-import { type GroundedEstimation, groundedEstimationSchema } from '../schemas-v2';
+import {
+  type GroundedEstimation,
+  groundedEstimationSchema,
+} from '../schemas-v2';
 import type {
   GroundedEstimator,
   GroundedEstimatorInput,
@@ -61,6 +64,9 @@ export function createGeminiEstimator(
               : {}),
             ...(hooks?.onChunk ? { onChunk: hooks.onChunk } : {}),
             ...(hooks?.trace ? { trace: hooks.trace } : {}),
+            ...(hooks?.onAttemptComplete
+              ? { onAttemptComplete: hooks.onAttemptComplete }
+              : {}),
           }
         );
       return { estimation };

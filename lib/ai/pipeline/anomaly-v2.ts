@@ -49,10 +49,10 @@ export type AnomalyCause =
  */
 export type AnomalyAction =
   | 'none' // legit_prep_adjustment — informational only
-  | 'flag_only' // wrong_row / wrong_state — telemetry, no mutation (seam)
-  | 'kcal_rederived' // macro_inconsistent on matched — kcal := 4P+4C+9F (deterministic)
-  | 'route_clarify' // implausible_grams / too-wide unmatched → unresolved→clarify
-  | 'interval_widened' // unmatched_high_uncertainty → widen low/high
+  | 'flag_only' // telemetry only, no mutation (wrong_row/state, implausible grams, macro identity breaks)
+  | 'kcal_rederived' // RESERVED (no current producer): standalone kcal := 4P+4C+9F correction
+  | 'route_clarify' // too-wide UNMATCHED interval → fed into the unresolved→clarify gate
+  | 'interval_widened' // unmatched_high_uncertainty within band — visible, no clarify
   | 'escalation_candidate'; // high-confidence correctness anomaly → gated re-run
 
 export interface V2Anomaly {
@@ -122,13 +122,17 @@ export function classifyV2Anomalies(input: {
       const match = matchedByName.get(ing.ingredientName);
 
       // --- implausible_grams: portion out of physical range -----------------
+      // flag_only (NOT route_clarify): eval showed this fires on plausible
+      // meals; auto-routing to clarify would question meals users stated fine.
+      // The clarify decision stays with bridge plausibility + the unmatched
+      // high-uncertainty rule below.
       if (
         grams < V2_ANOMALY_THRESHOLDS.MIN_GRAMS ||
         grams > V2_ANOMALY_THRESHOLDS.MAX_GRAMS
       ) {
         anomalies.push({
           cause: 'implausible_grams',
-          action: 'route_clarify',
+          action: 'flag_only',
           severity: 'warning',
           message: `${ing.ingredientName}: ${grams.toFixed(0)}g outside physical band [${V2_ANOMALY_THRESHOLDS.MIN_GRAMS}, ${V2_ANOMALY_THRESHOLDS.MAX_GRAMS}]`,
           ingredientName: ing.ingredientName,
@@ -141,12 +145,13 @@ export function classifyV2Anomalies(input: {
       const denom = Math.max(kcalMid, 1);
       const deviation = Math.abs(kcalMid - identity) / denom;
       if (deviation > V2_ANOMALY_THRESHOLDS.MACRO_KCAL_IDENTITY_TOLERANCE) {
-        // On a MATCHED ingredient the server can re-derive kcal deterministically
-        // (P/C are DB-anchored, so kcal := 4P+4C+9F is authoritative). On an
-        // unmatched one we only flag — the LLM owns all macros.
+        // Assembly is the re-derivation authority (kcal := 4P+4C+9F is baked
+        // into DB-anchored macros there); an inconsistency observed HERE means
+        // that invariant broke upstream — telemeter it, don't mutate a result
+        // that's already streamed. flag_only for both matched and unmatched.
         anomalies.push({
           cause: 'macro_inconsistent',
-          action: match ? 'kcal_rederived' : 'flag_only',
+          action: 'flag_only',
           severity: 'warning',
           message: `${ing.ingredientName}: kcal ${kcalMid.toFixed(0)} vs 4P+4C+9F=${identity.toFixed(0)} (${(deviation * 100).toFixed(0)}%)`,
           ingredientName: ing.ingredientName,
@@ -280,6 +285,13 @@ export interface V2AnomalySummary {
    * was found — the signal the orchestrator's gated escalation seam reads.
    */
   hasEscalationCandidate: boolean;
+  /**
+   * First anomaly whose action is route_clarify (deterministic: classification
+   * order). The orchestrator feeds it into the unresolved→clarify gate when
+   * bridge plausibility found nothing — so "unmatched + interval too wide to
+   * trust" actually asks instead of silently persisting.
+   */
+  firstClarifyAnomaly: { ingredientName: string; mealItemName: string } | null;
 }
 
 /**
@@ -304,9 +316,16 @@ export function summarizeV2Anomalies(anomalies: V2Anomaly[]): V2AnomalySummary {
     escalation_candidate: 0,
   } satisfies Record<AnomalyAction, number>;
 
+  let firstClarifyAnomaly: V2AnomalySummary['firstClarifyAnomaly'] = null;
   for (const a of anomalies) {
     causeCounts[a.cause]++;
     actionCounts[a.action]++;
+    if (a.action === 'route_clarify' && !firstClarifyAnomaly) {
+      firstClarifyAnomaly = {
+        ingredientName: a.ingredientName,
+        mealItemName: a.mealItemName,
+      };
+    }
   }
 
   const markers: string[] = [];
@@ -315,6 +334,7 @@ export function summarizeV2Anomalies(anomalies: V2Anomaly[]): V2AnomalySummary {
   }
 
   return {
+    firstClarifyAnomaly,
     causeCounts,
     actionCounts,
     markers,

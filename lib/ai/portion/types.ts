@@ -94,13 +94,11 @@ export interface QuantityEvidence {
   unitToken?: string;
   sizeModifier?: SizeModifier;
   explicitMass?: { grams: number; basis: 'raw' | 'cooked' };
-  /** Raw-weight cue from stateHint, used as a fallback explicit-mass basis. */
-  stateHintRawWeight?: boolean;
 }
 
 /**
  * A matched food concept handed to the resolver. `dbServingSizeG` /
- * `dbPackageSizeG` carry the matched row's packaged weight when present
+ * `dbServingSizeG` carries the matched row's packaged weight when present
  * (ladder step 2). Both null for the vast majority of FAO rows.
  */
 export interface ResolverConceptInput {
@@ -109,8 +107,13 @@ export interface ResolverConceptInput {
   ambiguous: boolean;
   locale: Locale;
   form: FoodForm;
+  /**
+   * Serving weight from the matched row (Open Food Facts packaged products).
+   * DORMANT SEAM: only ~5 of ~7.5k rows carry serving_size_g today and no
+   * caller threads it yet — ladder step 2 activates when packaged-product
+   * data lands and the orchestrator passes the accepted row's serving weight.
+   */
   dbServingSizeG?: number | null;
-  dbPackageSizeG?: number | null;
 }
 
 /** The resolver's verdict for one ingredient. */

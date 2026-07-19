@@ -10,7 +10,6 @@ const conceptInput = (
   locale: 'vi',
   form: 'composed',
   dbServingSizeG: null,
-  dbPackageSizeG: null,
   ...over,
 });
 
@@ -76,7 +75,11 @@ describe('resolvePortion — fallback ladder', () => {
 
   it('step 4: curated global prior (chicken breast count, locale=global)', () => {
     const r = resolvePortion(
-      conceptInput({ conceptId: 'chicken-breast', locale: 'en', form: 'cooked' }),
+      conceptInput({
+        conceptId: 'chicken-breast',
+        locale: 'en',
+        form: 'cooked',
+      }),
       { count: 1, unitToken: 'piece' }
     );
     expect(r.provenance).toBe('curated_prior');
@@ -114,10 +117,13 @@ describe('resolvePortion — fallback ladder', () => {
   });
 
   it('step 7: ambiguous concept → unresolved with ambiguous_food reason', () => {
-    const r = resolvePortion(conceptInput({ ambiguous: true, conceptId: null }), {
-      count: 1,
-      unitToken: 'cái',
-    });
+    const r = resolvePortion(
+      conceptInput({ ambiguous: true, conceptId: null }),
+      {
+        count: 1,
+        unitToken: 'cái',
+      }
+    );
     expect(r.grams).toBeNull();
     expect(r.provenance).toBe('unresolved');
     expect(r.unresolvedReason).toBe('ambiguous_food');
@@ -188,7 +194,7 @@ describe('D4 regression — raw-weight honored verbatim', () => {
   it('250gr ức gà cân sống → 250g exactly, no yield conversion', () => {
     const r = resolvePortion(
       conceptInput({ conceptId: 'chicken-breast', form: 'raw' }),
-      { explicitMass: { grams: 250, basis: 'raw' }, stateHintRawWeight: true }
+      { explicitMass: { grams: 250, basis: 'raw' } }
     );
     expect(r.provenance).toBe('explicit_user_mass');
     expect(r.grams).toEqual({ low: 250, mid: 250, high: 250 });

@@ -122,7 +122,7 @@ describe('classifyV2Anomalies — cause classification', () => {
     expect(causes).not.toContain('wrong_row');
   });
 
-  it('flags implausible_grams below the physical floor → route_clarify', () => {
+  it('flags implausible_grams below the physical floor → flag_only (advisory, never auto-clarifies)', () => {
     const result = makeResult([
       makeIngredient({ ingredientName: 'Muối', estimatedGrams: 0.2 }),
     ]);
@@ -134,7 +134,7 @@ describe('classifyV2Anomalies — cause classification', () => {
     });
     const g = anomalies.find((a) => a.cause === 'implausible_grams');
     expect(g).toBeDefined();
-    expect(g?.action).toBe('route_clarify');
+    expect(g?.action).toBe('flag_only');
   });
 
   it('flags implausible_grams above the physical ceiling', () => {
@@ -153,7 +153,7 @@ describe('classifyV2Anomalies — cause classification', () => {
     expect(anomalies.some((a) => a.cause === 'implausible_grams')).toBe(true);
   });
 
-  it('classifies macro_inconsistent on a MATCHED ingredient as kcal_rederived', () => {
+  it('classifies macro_inconsistent as flag_only (assembly owns re-derivation)', () => {
     // kcal 500, macros 6P+65C+1F = 293 → 41% dev > 20%.
     const result = makeResult([
       makeIngredient({
@@ -175,7 +175,7 @@ describe('classifyV2Anomalies — cause classification', () => {
     });
     const m = anomalies.find((a) => a.cause === 'macro_inconsistent');
     expect(m).toBeDefined();
-    expect(m?.action).toBe('kcal_rederived');
+    expect(m?.action).toBe('flag_only');
   });
 
   it('classifies macro_inconsistent on an UNMATCHED ingredient as flag_only (LLM owns macros)', () => {

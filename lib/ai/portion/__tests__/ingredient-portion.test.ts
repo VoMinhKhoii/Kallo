@@ -27,7 +27,12 @@ describe('resolveIngredientPortion — adapter', () => {
 
   it('routes an ambiguous surface form to clarify', () => {
     const r = resolveIngredientPortion({
-      ingredient: ing({ rawName: 'bun', canonicalName: 'bun', count: 1, unitToken: 'piece' }),
+      ingredient: ing({
+        rawName: 'bun',
+        canonicalName: 'bun',
+        count: 1,
+        unitToken: 'piece',
+      }),
       dishCookingMethod: null,
       inputLanguage: 'en',
     });

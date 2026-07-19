@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { AppDb } from '@/lib/db';
 import {
   buildPipelineRunRow,
   writePipelineRun,
 } from '@/lib/ai/pipeline/telemetry/run-telemetry';
+import type { AppDb } from '@/lib/db';
 
 // ---------------------------------------------------------------------------
 // D2: the new `v2_anomaly_causes` column ships with an UNAPPLIED migration.
@@ -61,13 +61,19 @@ describe('writePipelineRun — v2_anomaly_causes column tolerance', () => {
     await writePipelineRun(db, { ...baseRow(), v2AnomalyCauses: V2_CAUSES });
 
     expect(values).toHaveBeenCalledTimes(1);
-    expect(values.mock.calls[0][0]).toHaveProperty('v2AnomalyCauses', V2_CAUSES);
+    expect(values.mock.calls[0][0]).toHaveProperty(
+      'v2AnomalyCauses',
+      V2_CAUSES
+    );
   });
 
   it('strips v2AnomalyCauses and retries on undefined_column (42703)', async () => {
-    const err = Object.assign(new Error('column "v2_anomaly_causes" does not exist'), {
-      code: '42703',
-    });
+    const err = Object.assign(
+      new Error('column "v2_anomaly_causes" does not exist'),
+      {
+        code: '42703',
+      }
+    );
     const values = vi
       .fn()
       .mockRejectedValueOnce(err) // first attempt: column missing

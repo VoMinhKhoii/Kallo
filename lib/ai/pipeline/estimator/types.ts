@@ -52,6 +52,18 @@ export interface GroundedEstimatorStreamHooks {
   onChunk?: (accumulated: string) => void;
   /** Optional per-call LLM trace (prompt-version + response persistence). */
   trace?: GeminiCallTrace;
+  /**
+   * Per-attempt token/error usage — feeds the analysis model-budget guards
+   * (`analysis_model_budget_events`). Structurally compatible with the gemini
+   * client's attempt metadata; adapters for other providers map into it.
+   */
+  onAttemptComplete?: (usage: {
+    attempt: number;
+    model: string;
+    inputTokens: number | null;
+    outputTokens: number | null;
+    error: unknown;
+  }) => void;
 }
 
 /**

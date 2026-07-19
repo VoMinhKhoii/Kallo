@@ -16,7 +16,9 @@ import type { StreamEvent } from '../streaming/types';
 import type { PipelineResponse, UserContext } from '../types';
 import { assembleResult } from './assembly';
 import { bridgeV2ToV1 } from './bridge';
+import { initV2BudgetAccounting } from './budget-telemetry';
 import { createChunkEmitContext, runCallTwo } from './call-two';
+import { resolveCompletenessGate } from './completeness-gate';
 import { resolveModelProfile } from './config/model-profile';
 import { handleError, nonFoodResponse } from './errors';
 import {
@@ -28,7 +30,6 @@ import { buildFastPathEstimation, isFullyGrounded } from './fast-path';
 import { runGroundedDecomposition } from './grounded-decomposition';
 import {
   buildCallTwoPayload,
-  buildUnresolvedFromPlausibility,
   createCall2StreamHandler,
   flushUnstreamedItemMacros,
   runV2AnomalyPass,
@@ -36,7 +37,7 @@ import {
   toPromptPersonalizationContext,
   withStageLogV2,
 } from './grounded-support';
-import { logV2Telemetry, persistV2PipelineRun } from './grounded-telemetry';
+import { recordV2RunTelemetry } from './grounded-telemetry';
 import { reconcileNutritionIds } from './nutrition';
 import type { AnalyzeMealTraceContext } from './orchestrator';
 import type { GroundedEstimation, MealDecompositionV2 } from './schemas-v2';
@@ -58,10 +59,7 @@ export interface AnalyzeMealV2Options {
   traceContext?: AnalyzeMealTraceContext;
   /** Read-only internals used by the offline eval harness. */
   onDiagnostics?: (diagnostics: V2PipelineDiagnostics) => void;
-  /**
-   * Precise-mode clarify reply, threaded into the Call-1 decomposition user
-   * message on a re-analysis (mirrors cheat mode's `clarifyAnswer`).
-   */
+  /** Precise-mode clarify reply, threaded into the Call-1 user message on re-analysis. */
   clarifyAnswer?: string;
   /**
    * Call-2 provider adapter (D3 seam). Offline-eval-only override for the
@@ -105,6 +103,13 @@ export async function analyzeMealV2(
   const promptCtx = toPromptPersonalizationContext(userContext);
   const t0 = Date.now();
 
+  const budget = initV2BudgetAccounting({
+    db,
+    requestId: traceContext?.requestId ?? null,
+    decompositionModel: profile.decompositionModel,
+    nutritionModel: profile.nutritionModel,
+  });
+
   let promptCharsCall2 = 0;
   let nutritionChunkCount = 0;
 
@@ -120,6 +125,7 @@ export async function analyzeMealV2(
       promptCtx,
       profile,
       clarifyAnswer: options.clarifyAnswer,
+      onAttemptComplete: budget.decompositionRecorder,
     });
     if (stage1.nonFood) {
       return nonFoodResponse();
@@ -186,9 +192,8 @@ export async function analyzeMealV2(
     promptCharsCall2 = call2SystemPrompt.length;
 
     const perItemOffsets = buildPerMealItemOffsetMap(decomposition.mealItems);
-    // Identity-based offset lookup (D4): Call 2 streams meal items in the
-    // prompt's SORTED order, not decomposition order. `createCall2StreamHandler`
-    // attributes each streamed item to its slice by name+occurrence.
+    // D4: Call 2 streams meal items in the prompt's SORTED order; the stream
+    // handler attributes each item to its slice by name+occurrence.
     const offsetByName = buildMealItemOffsetByName(decomposition.mealItems);
     const itemMacrosStreamed = new Set<string>();
     const call2Stream = createCall2StreamHandler({
@@ -252,6 +257,7 @@ export async function analyzeMealV2(
             },
           },
           chunkEmit,
+          onAttemptComplete: budget.nutritionRecorder,
           ...(fullyGrounded
             ? {
                 fastPath: buildFastPathEstimation({
@@ -334,57 +340,51 @@ export async function analyzeMealV2(
     });
     const escalated = shouldEscalateV2({ profile, summary: anomalySummary });
     if (escalated) {
-      console.info('[v2-pipeline] escalation fired', {
-        model: profile.escalationModel,
-      });
+      console.info('[v2-pipeline] escalation fired', profile.escalationModel);
     }
 
-    logV2Telemetry({
-      decomposition,
-      matchResults,
-      grounded,
-      verdicts: bridged.verdicts,
-      promptCharsCall1,
-      promptCharsCall2,
-      decomposeChunkCount,
-      nutritionChunkCount,
-      languageRetryCount,
-      portionProvenance: portionResolutions.map((r) => r.provenance),
+    await recordV2RunTelemetry({
+      log: {
+        decomposition,
+        matchResults,
+        grounded,
+        verdicts: bridged.verdicts,
+        promptCharsCall1,
+        promptCharsCall2,
+        decomposeChunkCount,
+        nutritionChunkCount,
+        languageRetryCount,
+        portionProvenance: portionResolutions.map((r) => r.provenance),
+      },
+      persist: {
+        traceContext,
+        userContext,
+        profile,
+        decomposition,
+        matched: bridged.matched,
+        unmatched: bridged.unmatched,
+        verdicts: bridged.verdicts,
+        anomalySummary,
+        escalated,
+        totalMs: Date.now() - t0,
+        languageRetryCount,
+        providerRetryCount:
+          decompositionProviderRetryCount +
+          Math.max(0, nutritionMaxAttempt - 1),
+      },
     });
 
-    // Persist a pipeline_runs row when tracing is enabled (best-effort, never
-    // blocks; errors swallowed). Await in tests so assertions aren't racy.
-    const persistPromise = persistV2PipelineRun({
-      traceContext,
-      userContext,
-      profile,
-      decomposition,
-      matched: bridged.matched,
-      unmatched: bridged.unmatched,
-      verdicts: bridged.verdicts,
+    // Chunk-failure → plausibility → anomaly clarify (see completeness-gate).
+    const unresolved = resolveCompletenessGate({
+      failedMealItemNames: call2.failedMealItemNames,
+      plausibility: bridged.plausibility,
       anomalySummary,
-      escalated,
-      totalMs: Date.now() - t0,
-      languageRetryCount,
-      providerRetryCount:
-        decompositionProviderRetryCount + Math.max(0, nutritionMaxAttempt - 1),
     });
-    if (process.env.NODE_ENV === 'test') {
-      await persistPromise;
-    } else {
-      void persistPromise;
-    }
-
-    // Completeness gate: if any ingredient's portion/match couldn't be
-    // resolved, surface the most-impactful one so the route emits a precise
-    // clarify event INSTEAD of persisting an under-weighted meal (Phase 1).
-    const unresolved = buildUnresolvedFromPlausibility(bridged.plausibility);
-    if (unresolved) {
-      return { success: true, data: assembly.result, unresolved };
-    }
-
-    return { success: true, data: assembly.result };
+    return unresolved
+      ? { success: true, data: assembly.result, unresolved }
+      : { success: true, data: assembly.result };
   } catch (error) {
+    budget.recordCatchError(error);
     return handleError(error);
   }
 }

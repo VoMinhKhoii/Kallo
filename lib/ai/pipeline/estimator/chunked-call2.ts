@@ -30,10 +30,7 @@ import { mapWithConcurrency } from '@/lib/utils';
 import type { MealItemWithCandidates } from '../../prompts/grounded-estimation';
 import type { PromptPersonalizationContext } from '../../prompts/types';
 import type { GroundedEstimation, GroundedMealItem } from '../schemas-v2';
-import type {
-  GroundedEstimator,
-  GroundedEstimatorInput,
-} from './types';
+import type { GroundedEstimator, GroundedEstimatorInput } from './types';
 
 // ---------------------------------------------------------------------------
 // Chunking thresholds + concurrency (named constants — tune from prompt-size
@@ -132,6 +129,10 @@ export interface RunChunkedCall2Args {
    * land (identity-mapped downstream). Receives the chunk's parsed meal items.
    */
   onChunkComplete?: (mealItems: GroundedMealItem[]) => void;
+  /** Per-attempt token/error usage recorder (model-budget guards). */
+  onAttemptComplete?: NonNullable<
+    import('./types').GroundedEstimatorStreamHooks['onAttemptComplete']
+  >;
   concurrency?: number;
   maxAttempts?: number;
 }
@@ -174,6 +175,7 @@ export async function runChunkedCall2(
         phaseDeadlineMs,
         maxAttempts,
         onChunkComplete,
+        onAttemptComplete: args.onAttemptComplete,
       }),
     concurrency
   );
@@ -217,6 +219,10 @@ async function runOneChunk(args: {
   phaseDeadlineMs: number;
   maxAttempts: number;
   onChunkComplete?: (mealItems: GroundedMealItem[]) => void;
+  /** Per-attempt token/error usage recorder (model-budget guards). */
+  onAttemptComplete?: NonNullable<
+    import('./types').GroundedEstimatorStreamHooks['onAttemptComplete']
+  >;
 }): Promise<GroundedMealItem[] | null> {
   const input: GroundedEstimatorInput = {
     originalPrompt: args.originalPrompt,
@@ -233,7 +239,14 @@ async function runOneChunk(args: {
     if (remaining <= 0) return null;
     try {
       const result = await fetchWithTimeout(
-        (signal) => args.estimator.estimate(input, signal),
+        (signal) =>
+          args.estimator.estimate(
+            input,
+            signal,
+            args.onAttemptComplete
+              ? { onAttemptComplete: args.onAttemptComplete }
+              : undefined
+          ),
         remaining,
         'grounded-nutrition-chunk'
       );
