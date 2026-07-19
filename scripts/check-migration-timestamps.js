@@ -4,7 +4,9 @@
  *
  * Validates all Supabase migration files for:
  *   1. Correct filename format: YYYYMMDDHHMMSS_description.sql
- *   2. Strict chronological ordering (no duplicates, no out-of-order)
+ *   2. No duplicate timestamps (filename order IS apply order, so intra-
+ *      directory ordering cannot be violated — see check 4 for the real
+ *      ordering hazard)
  *   3. No future-dated timestamps (filename digits are UTC, matching the
  *      Supabase CLI, which stamps `supabase migration new` files in UTC)
  *   4. In PR context (GITHUB_BASE_REF set): every migration the branch ADDS
@@ -123,19 +125,19 @@ function main() {
       continue;
     }
 
-    // 2. Ordering check
-    if (prevTs) {
-      if (ts === prevTs) {
-        console.error(`ERROR: Duplicate timestamp ${ts}`);
-        console.error(`  - ${prevFile}`);
-        console.error(`  - ${filename}`);
-        errors++;
-      } else if (ts < prevTs) {
-        console.error(`ERROR: Out-of-order timestamp`);
-        console.error(`  - ${prevFile} (${prevTs})`);
-        console.error(`  - ${filename} (${ts}) ← should be after ${prevTs}`);
-        errors++;
-      }
+    // 2. Duplicate check. NOTE: there is deliberately no intra-directory
+    // "out-of-order" check — filename order IS apply order for the Supabase
+    // CLI, so a directory cannot be internally out of order (and the files
+    // are walked sorted, so such a branch could never fire anyway; a dead
+    // branch here previously gave false confidence that ordering was
+    // guarded). The REAL ordering hazard — a new file timestamped before
+    // migrations already applied remotely — is check 4 below, which needs a
+    // reference point outside the directory.
+    if (prevTs && ts === prevTs) {
+      console.error(`ERROR: Duplicate timestamp ${ts}`);
+      console.error(`  - ${prevFile}`);
+      console.error(`  - ${filename}`);
+      errors++;
     }
 
     // 3. Future timestamp check (UTC)
@@ -215,7 +217,7 @@ function main() {
   }
 
   console.log(
-    `OK: ${files.length} migrations — valid format, ordered, no future timestamps.`
+    `OK: ${files.length} migrations — valid format, no duplicates, no future timestamps.`
   );
 }
 
