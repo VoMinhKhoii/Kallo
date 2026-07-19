@@ -11,6 +11,7 @@ import { db as defaultDb } from '@/lib/db';
 import { publicProfiles } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import type { createClient } from '@/lib/supabase/server';
+import { processAvatarImage } from '@/lib/uploads/avatar-image';
 import {
   IMAGE_TYPES,
   MAX_IMAGE_BYTES,
@@ -48,8 +49,9 @@ async function currentAvatarPath(
 
 /**
  * Upload a new avatar photo for the authenticated actor and point their
- * profile at it. Validates type, size, and magic bytes (a spoofed
- * Content-Type can't smuggle SVG/HTML into the public bucket).
+ * profile at it. Validates type, size, and magic bytes, then re-encodes to a
+ * 512px square WebP — a few KB instead of a multi-MB phone photo, EXIF (GPS)
+ * stripped, and the sharp decode hard-proves the bytes are a real image.
  */
 export async function uploadMyAvatar(
   actorId: string,
@@ -57,8 +59,7 @@ export async function uploadMyAvatar(
   supabase: ScopedClient,
   db: Db = defaultDb
 ): Promise<PublicProfile> {
-  const ext = IMAGE_TYPES[file.type];
-  if (!ext) {
+  if (!IMAGE_TYPES[file.type]) {
     throw Errors.validationFailed('Unsupported image type.');
   }
   if (file.size === 0 || file.size > MAX_IMAGE_BYTES) {
@@ -70,14 +71,21 @@ export async function uploadMyAvatar(
     throw Errors.validationFailed('Image content does not match its type.');
   }
 
+  let webp: Buffer;
+  try {
+    webp = await processAvatarImage(bytes);
+  } catch {
+    throw Errors.validationFailed('Could not process the image.');
+  }
+
   // Rename/upload may be the first profile touch — make sure the row exists.
   await getOrCreateMyProfile(actorId, null, db);
   const previous = await currentAvatarPath(actorId, db);
 
-  const path = `${actorId}/${randomUUID()}.${ext}`;
+  const path = `${actorId}/${randomUUID()}.webp`;
   const { error } = await supabase.storage
     .from(AVATAR_BUCKET)
-    .upload(path, bytes, { contentType: file.type, upsert: false });
+    .upload(path, webp, { contentType: 'image/webp', upsert: false });
   if (error) {
     throw Errors.internal(error, 'Could not upload the avatar.');
   }

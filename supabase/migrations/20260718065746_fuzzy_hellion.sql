@@ -13,11 +13,12 @@ ALTER TABLE "public_profiles" ADD COLUMN "avatar_path" text;--> statement-breakp
 -- policy below authorizes direct Storage uploads with a user JWT (bypassing
 -- the API route's validation), so the bucket itself must reject oversized or
 -- non-image objects. Magic-byte sniffing still happens in the route; the
--- MIME allowlist here keeps a spoofed Content-Type inside image/* (never
--- text/html or image/svg+xml), so a smuggled object can't execute in a
--- browser. DO UPDATE so re-runs upgrade an existing bucket's limits.
+-- MIME allowlist is webp-only: the API route re-encodes every accepted
+-- upload (png/jpeg/webp in) to WebP before storing, so nothing else ever
+-- legitimately lands here — and a smuggled object can't claim text/html or
+-- image/svg+xml. DO UPDATE so re-runs upgrade an existing bucket's limits.
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('avatars', 'avatars', true, 5242880, ARRAY['image/png', 'image/jpeg', 'image/webp'])
+VALUES ('avatars', 'avatars', true, 5242880, ARRAY['image/webp'])
 ON CONFLICT (id) DO UPDATE SET
 	public = EXCLUDED.public,
 	file_size_limit = EXCLUDED.file_size_limit,
