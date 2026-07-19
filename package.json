@@ -79,7 +79,7 @@
     "@types/three": "^0.185.0",
     "@vitejs/plugin-react": "^5.1.4",
     "drizzle-kit": "^0.31.9",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.2.6",
     "jsdom": "^28.1.0",
     "shadcn": "^3.8.5",
