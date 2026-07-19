@@ -6,6 +6,17 @@ import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
 import type { CheatSliderSpec } from '@/lib/types/cheat';
 import type { MealItem, ParsedMeal } from '@/lib/types/meal';
 
+/**
+ * Precise-mode clarify prompt: the pipeline finished but an ingredient's
+ * portion/food couldn't be resolved. The stream ends here (no analysis_complete);
+ * the client re-submits the meal with `clarifyAnswer`.
+ */
+export interface PreciseClarify {
+  question: string;
+  mealItemId?: string;
+  reason: 'unresolved_portion' | 'ambiguous_food';
+}
+
 export interface StreamAnalysisState {
   status: StreamStatus;
   items: string[];
@@ -13,6 +24,8 @@ export interface StreamAnalysisState {
   result: ParsedMeal | null;
   /** Cheat-meal slider spec (when mode='cheat'); replaces `result`. */
   cheatSpec: CheatSliderSpec | null;
+  /** Precise-mode clarify prompt (when the pipeline couldn't resolve a portion). */
+  clarify: PreciseClarify | null;
   analysisId: string | null;
   error: string | null;
   isAnalyzing: boolean;
@@ -34,12 +47,27 @@ export interface StreamAnalyzeInput {
   inheritLoggedAt?: string;
 }
 
+/**
+ * Terminal events end the SSE stream with no follow-up frame: a durable
+ * `analysis_complete`, a fatal `error`, a precise-mode `clarify`, or a cheat
+ * `cheat_estimate` carrying a clarifyingQuestion (the vague-input fallback).
+ */
+function isTerminalEvent(event: StreamEvent): boolean {
+  return (
+    event.type === 'analysis_complete' ||
+    event.type === 'error' ||
+    event.type === 'clarify' ||
+    (event.type === 'cheat_estimate' && event.spec.clarifyingQuestion != null)
+  );
+}
+
 const INITIAL_STATE: StreamAnalysisState = {
   status: 'idle',
   items: [],
   completedItems: [],
   result: null,
   cheatSpec: null,
+  clarify: null,
   analysisId: null,
   error: null,
   isAnalyzing: false,
@@ -118,6 +146,21 @@ export function useStreamAnalysis() {
                   isAnalyzing: false,
                 }
               : { ...prev, cheatSpec: event.spec };
+
+          case 'clarify':
+            // Terminal, like a cheat clarifyingQuestion: the stream ends with
+            // no analysis_complete. Settle isAnalyzing and expose the prompt
+            // so the UI can collect an answer and resubmit with clarifyAnswer.
+            return {
+              ...prev,
+              clarify: {
+                question: event.question,
+                mealItemId: event.mealItemId,
+                reason: event.reason,
+              },
+              status: 'done',
+              isAnalyzing: false,
+            };
 
           case 'analysis_complete':
             return {
@@ -215,12 +258,7 @@ export function useStreamAnalysis() {
           const events = parseSSEChunk(chunk, buffer);
 
           for (const event of events) {
-            if (
-              event.type === 'analysis_complete' ||
-              event.type === 'error' ||
-              (event.type === 'cheat_estimate' &&
-                event.spec.clarifyingQuestion != null)
-            ) {
+            if (isTerminalEvent(event)) {
               receivedTerminal = true;
             }
             processEvent(event, thisRequestId, requestIdRef);
@@ -232,12 +270,7 @@ export function useStreamAnalysis() {
         if (finalChunk) {
           const events = parseSSEChunk(finalChunk, buffer);
           for (const event of events) {
-            if (
-              event.type === 'analysis_complete' ||
-              event.type === 'error' ||
-              (event.type === 'cheat_estimate' &&
-                event.spec.clarifyingQuestion != null)
-            ) {
+            if (isTerminalEvent(event)) {
               receivedTerminal = true;
             }
             processEvent(event, thisRequestId, requestIdRef);

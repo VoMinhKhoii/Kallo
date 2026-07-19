@@ -23,12 +23,12 @@ import {
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
 } from '@/lib/rate-limit/analysis-guards';
-
 import {
   createGuardRelease,
   getRequestIp,
   validateRequest,
 } from './request-validation';
+import { emitUnresolvedOutcome } from './unresolved-response';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -204,7 +204,8 @@ export async function POST(request: NextRequest) {
           db,
           gemini,
           emit,
-          traceContext
+          traceContext,
+          { clarifyAnswer }
         );
 
         // Check for abort after pipeline completes
@@ -236,6 +237,28 @@ export async function POST(request: NextRequest) {
             code: result.error.type,
             message: result.error.message,
             retryable: result.error.retryable,
+          });
+          return;
+        }
+
+        // Completeness gate (precise clarify) — MUST run BEFORE the
+        // empty_nutrition gate: a meal whose only ingredients are unresolved
+        // (e.g. "0 fried chicken") assembles to all-zero macros, and the
+        // nutrition gate would swallow the clarify with a generic error.
+        // The pipeline finished but ≥1
+        // ingredient's portion/match couldn't be resolved. Mirror the cheat
+        // clarify early-exit — surface ONE targeted question and stop WITHOUT
+        // persisting an incomplete pending_analyses row. The client re-submits
+        // with `clarifyAnswer`.
+        if (result.unresolved) {
+          await emitUnresolvedOutcome({
+            unresolved: result.unresolved,
+            locale: locale ?? profile.preferredLocale ?? 'en',
+            emit,
+            requestId,
+            db,
+            startTime,
+            promptVersionsUsed: pvu,
           });
           return;
         }

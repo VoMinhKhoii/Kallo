@@ -41,6 +41,18 @@ export const NUTRITION_SELECT_COLUMNS = [
   ...Object.values(DB_NUTRITION_COLUMNS),
 ] as const;
 
+/**
+ * Columns the nutrition cache's `loadAll` needs: the nutrition fields
+ * (`NUTRITION_SELECT_COLUMNS`) plus `inedible_portion_pct` for the inedible
+ * cache. Deliberately excludes the 768-dim `embedding` vector — pulling it for
+ * all ~526 rows was a multi-MB cross-region load on the cold matching path
+ * (the L1 embedding warm now runs independently; see embedding-cache.ts).
+ */
+export const NUTRITION_CACHE_SELECT_COLUMNS = [
+  ...NUTRITION_SELECT_COLUMNS,
+  'inedible_portion_pct',
+] as const;
+
 export function parseNutritionRow(
   row: Record<string, unknown>
 ): NutritionPer100g {

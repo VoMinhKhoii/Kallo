@@ -56,4 +56,20 @@ describe('resolveModelProfile', () => {
   it('NEXT_PROFILE introduces an escalation model', () => {
     expect(NEXT_PROFILE.escalationModel).not.toBeNull();
   });
+
+  // Phase 4 (D1): Call-2 A/B candidate.
+  it('NEXT_PROFILE moves Call 2 to gemini-3-flash-preview while Call 1 stays flash-lite', () => {
+    expect(NEXT_PROFILE.nutritionModel).toBe('gemini-3-flash-preview');
+    expect(NEXT_PROFILE.decompositionModel).toBe('gemini-3.1-flash-lite');
+    expect(NEXT_PROFILE.escalationModel).toBe('gemini-3-flash-preview');
+  });
+
+  it('deployed default is UNCHANGED — resolveModelProfile still returns stable when env is unset', () => {
+    // The Phase-4 flip is an ops decision via PIPELINE_MODEL_PROFILE, NOT a
+    // code default. Default resolution must stay entirely on flash-lite.
+    delete process.env.PIPELINE_MODEL_PROFILE;
+    const resolved = resolveModelProfile();
+    expect(resolved.nutritionModel).toBe('gemini-3.1-flash-lite');
+    expect(resolved).toEqual(STABLE_PROFILE);
+  });
 });

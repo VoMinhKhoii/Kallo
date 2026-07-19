@@ -17,6 +17,36 @@ export const stateHintSchema = z.enum([
 ]);
 
 /**
+ * Closed-enum size cue the user typed alongside a count/unit ("nhỏ"/"vừa"/
+ * "lớn"/"small"/"medium"/"large"). NLP-shaped: the LLM only classifies the
+ * word; the server-side portion resolver maps it to a low/mid/high grams band.
+ */
+export const sizeModifierSchema = z.enum(['small', 'medium', 'large']);
+
+/**
+ * Structured explicit mass the user typed verbatim (e.g. "250gr ... cân sống").
+ * Extraction ONLY — the LLM must NOT invent this when the user gave no weight.
+ * `basis` mirrors `stateHint`'s raw/cooked axis so the resolver honors a raw
+ * weight 1:1 with no cooking-yield fudge.
+ */
+export const explicitMassSchema = z
+  .object({
+    grams: z
+      .number()
+      .positive()
+      .finite()
+      .describe(
+        'Verbatim mass in grams the user typed (e.g. 250 for "250gr").'
+      ),
+    basis: z
+      .enum(['raw', 'cooked'])
+      .describe(
+        '"raw" when the weight was measured before cooking ("cân sống"); "cooked" for as-eaten.'
+      ),
+  })
+  .strict();
+
+/**
  * V2 Call 1 ingredient — pure decomposition. Notably absent: `grams`,
  * `weightBasis`, `expectedState`. Those move to Call 2 where the LLM sees
  * the matched DB row and can reason with full context (eliminates the
@@ -58,6 +88,37 @@ export const decomposedIngredientV2Schema = z
       .optional()
       .describe(
         'Free-form short verbatim user phrase that informed `stateHint`. Helps Call 2 disambiguate unusual phrasings. Optional.'
+      ),
+    // ---- Structured quantity evidence (Phase 3, NLP-shaped) --------------
+    // Extraction ONLY. The LLM never computes grams here — the server-side
+    // portion resolver turns (count × unitToken × sizeModifier) into a grams
+    // band scoped to a food concept + locale. Omit every field the user did
+    // not actually express.
+    count: z
+      .number()
+      .nonnegative()
+      .finite()
+      .optional()
+      .describe(
+        'Numeric count the user gave for this item/ingredient (e.g. 2 for "2 bánh bao", 3 for "3 lát"). 0 is VALID and meaningful — extract it verbatim when the user typed zero ("0 fried chicken"); the server clarifies. Omit only when no count was stated.'
+      ),
+    unitToken: z
+      .string()
+      .min(1)
+      .max(24)
+      .optional()
+      .describe(
+        'Verbatim unit/counter word the count applied to, in the user\'s language ("bánh bao", "cái", "lát", "slice", "cup", "tô", "xiên"). Omit when no unit word was used.'
+      ),
+    sizeModifier: sizeModifierSchema
+      .optional()
+      .describe(
+        'Size cue the user typed for the unit ("nhỏ"→small, "vừa"→medium, "lớn"→large, "small"/"large"). Omit when unspecified.'
+      ),
+    explicitMass: explicitMassSchema
+      .optional()
+      .describe(
+        'Set ONLY when the user typed an explicit weight (e.g. "250gr ức gà cân sống" → {grams:250, basis:"raw"}). Never invent a mass.'
       ),
     prepNotes: z
       .array(z.string().min(1).max(60))
@@ -114,6 +175,8 @@ export const mealDecompositionV2Schema = z.object({
 });
 
 export type StateHint = z.infer<typeof stateHintSchema>;
+export type SizeModifier = z.infer<typeof sizeModifierSchema>;
+export type ExplicitMass = z.infer<typeof explicitMassSchema>;
 export type DecomposedIngredientV2 = z.infer<
   typeof decomposedIngredientV2Schema
 >;
@@ -153,22 +216,45 @@ export const groundedIngredientEstimateSchema = z
       .describe(
         'When selectedCandidateId="none", a short reason (e.g. "category mismatch — ức gà ≠ generic chicken meat"). Used for telemetry, not user-facing.'
       ),
+    // `.positive().finite()` is genuinely enforcing: Zod's `schema.parse()`
+    // (run post-provider-parse in gemini.ts) rejects 0/negative/NaN/Infinity
+    // grams and THROWS, which routes the whole call into the existing
+    // `withRetry` parse-retry path — instead of the old silent grams=1
+    // fallback in bridge.ts. We enforce at the Zod layer rather than relying
+    // on the provider JSON schema because Gemini's `responseJsonSchema` does
+    // not reliably honor `exclusiveMinimum` (same class of limitation that
+    // forced the cheat-slider `.max()` drop above).
     grams: z
       .number()
+      .positive()
+      .finite()
       .describe(
         "As-eaten or raw mass in grams, scoped to the selected candidate's state when present. Must be > 0."
       ),
-    caloriesKcal: boundedEstimateSchema.describe(
-      'Calories in kcal for the as-eaten portion. Server overrides for matched ingredients via the macro identity 4P + 4C + 9F.'
-    ),
-    proteinG: boundedEstimateSchema.describe(
-      'Protein in grams for the as-eaten portion. Server-anchored to base unless prepNotes is non-empty.'
-    ),
-    carbohydrateG: boundedEstimateSchema.describe(
-      'Carbohydrates in grams for the as-eaten portion. Server-anchored to base unless prepNotes is non-empty.'
-    ),
+    // Phase 4 (D3) — slimmed matched output. For a MATCHED ingredient with
+    // EMPTY prepNotes the server OVERWRITES caloriesKcal/proteinG/carbohydrateG
+    // with the DB-anchored base, so emitting them only burns Call-2 output
+    // tokens (which dominate Call-2 latency). All three are now OPTIONAL: the
+    // prompt omits them for matched-without-prep-notes, keeps them for UNMATCHED
+    // and prep-note-unlocked matched. The bridge/streaming default an omitted
+    // triple to ZERO_TRIPLE (matched: overwritten; unmatched: degrades to 0).
+    caloriesKcal: boundedEstimateSchema
+      .optional()
+      .describe(
+        'Calories in kcal for the as-eaten portion. OMIT for matched ingredients with empty prepNotes (server derives via 4P + 4C + 9F). REQUIRED for unmatched ingredients.'
+      ),
+    proteinG: boundedEstimateSchema
+      .optional()
+      .describe(
+        'Protein in grams. OMIT for matched ingredients with empty prepNotes (server anchors to DB base). REQUIRED for unmatched ingredients and prep-note-unlocked matched ingredients.'
+      ),
+    carbohydrateG: boundedEstimateSchema
+      .optional()
+      .describe(
+        'Carbohydrates in grams. OMIT for matched ingredients with empty prepNotes (server anchors to DB base). REQUIRED for unmatched ingredients and prep-note-unlocked matched ingredients.'
+      ),
     fatG: boundedEstimateSchema.describe(
-      'Fat in grams for the as-eaten portion. Always LLM-driven (cooking-method effect); subject to hallucination guard.'
+      'Fat in grams for the as-eaten portion. ALWAYS emit — always LLM-driven (cooking-method effect); subject to hallucination guard.'
     ),
   })
   .strict();

@@ -25,9 +25,21 @@ export const STABLE_PROFILE: ModelProfile = {
   escalationModel: null,
 };
 
+/**
+ * Phase-4 A/B CANDIDATE. `next` moves Call 2 (grounded nutrition estimation)
+ * onto `gemini-3-flash-preview` while Call 1 (decomposition) stays on
+ * flash-lite — decomposition is cheap and already accurate. This profile is
+ * NOT the deployed default: `resolveModelProfile()` returns `STABLE_PROFILE`
+ * unless `PIPELINE_MODEL_PROFILE=next` is set. The flip is an ops decision made
+ * only after tomorrow's live eval confirms latency stays in budget (Call-2 p90
+ * must remain <10s); it is deliberately NOT hard-coded here. Roll forward /
+ * back purely via the `PIPELINE_MODEL_PROFILE` env var. `escalationModel` uses
+ * the same string so an in-profile escalation re-runs Call 2 on the same model
+ * tier when the escalation flag is opted in (see grounded-orchestrator).
+ */
 export const NEXT_PROFILE: ModelProfile = {
   decompositionModel: 'gemini-3.1-flash-lite',
-  nutritionModel: 'gemini-3.1-flash-lite',
+  nutritionModel: 'gemini-3-flash-preview',
   escalationModel: 'gemini-3-flash-preview',
 };
 

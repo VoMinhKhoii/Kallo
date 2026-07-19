@@ -1,5 +1,6 @@
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
 import type { UserContext } from '../types';
+import type { V2AnomalySummary } from './anomaly-v2';
 import type { bridgeV2ToV1 } from './bridge';
 import type { resolveModelProfile } from './config/model-profile';
 import type { AnalyzeMealTraceContext } from './orchestrator';
@@ -23,6 +24,12 @@ export interface V2TelemetryInput {
   /** Same probe for Call 2 / item_macros. */
   nutritionChunkCount: number;
   languageRetryCount: number;
+  /**
+   * Phase 3 portion-resolver provenance per flat ingredient (same order as
+   * `verdicts`). Summarized into per-ladder-step counts so telemetry can show
+   * how many portions were server-grounded vs deferred to the LLM vs clarified.
+   */
+  portionProvenance?: string[];
 }
 
 export function logV2Telemetry(input: V2TelemetryInput): void {
@@ -43,6 +50,12 @@ export function logV2Telemetry(input: V2TelemetryInput): void {
       v.selectedCandidateIdx !== null &&
       v.selectedCandidateIdx > 0
   ).length;
+  const portionProvenanceCounts = (input.portionProvenance ?? []).reduce<
+    Record<string, number>
+  >((acc, p) => {
+    acc[p] = (acc[p] ?? 0) + 1;
+    return acc;
+  }, {});
   console.info('[v2-pipeline] verdicts', {
     totalIngredients,
     accepted,
@@ -56,6 +69,7 @@ export function logV2Telemetry(input: V2TelemetryInput): void {
     decomposeChunkCount: input.decomposeChunkCount,
     nutritionChunkCount: input.nutritionChunkCount,
     languageRetryCount: input.languageRetryCount,
+    portionProvenance: portionProvenanceCounts,
   });
 }
 
@@ -63,10 +77,9 @@ export function logV2Telemetry(input: V2TelemetryInput): void {
  * Persist a `pipeline_runs` row for an observed v2 run so admin / audit /
  * shadow-runner queries surface v2 alongside v1.
  *
- * Schema reuse: the v1 `buildPipelineRunRow` fields cover most of what we
- * want to report. v2-specific signals (verdict counts, overturnedTopOne,
- * prompt sizes) ride along in `anomalyTypes` as marker strings prefixed
- * `v2_*` until a dedicated column exists. Best-effort write.
+ * Schema reuse: `pipeline_version` is the authoritative v1/v2 discriminator.
+ * The legacy `v2_run` anomaly marker remains for existing dashboards, while
+ * v2-specific verdict signals continue as `v2_*` markers. Best-effort write.
  */
 export async function persistV2PipelineRun(args: {
   traceContext: AnalyzeMealTraceContext | undefined;
@@ -76,8 +89,14 @@ export async function persistV2PipelineRun(args: {
   matched: ReturnType<typeof bridgeV2ToV1>['matched'];
   unmatched: ReturnType<typeof bridgeV2ToV1>['unmatched'];
   verdicts: ReturnType<typeof bridgeV2ToV1>['verdicts'];
+  /** Phase 4 (D2) anomaly cause/action counts. Optional so callers/tests that
+   *  don't run the anomaly pass still persist a row. */
+  anomalySummary?: V2AnomalySummary;
+  /** Whether the gated escalation seam fired this run. */
+  escalated?: boolean;
   totalMs: number;
   languageRetryCount: number;
+  providerRetryCount: number;
 }): Promise<void> {
   const trace = args.traceContext;
   if (!trace) return;
@@ -110,10 +129,20 @@ export async function persistV2PipelineRun(args: {
     if (rejected > 0) anomalyMarkers.push(`v2_rejected_${rejected}`);
     if (overturnedTopOne > 0)
       anomalyMarkers.push(`v2_overturned_${overturnedTopOne}`);
+    // D2: fold per-cause anomaly markers into the existing anomaly_types text[]
+    // (no schema change needed for these — the column already exists). The new
+    // dedicated v2 anomaly columns below are guarded by column presence.
+    if (args.anomalySummary) {
+      anomalyMarkers.push(...args.anomalySummary.markers);
+    }
+    const macroInconsistentFires =
+      args.anomalySummary?.causeCounts.macro_inconsistent ?? 0;
+    const escalationFired = args.escalated ?? false;
 
     const row = buildPipelineRunRow({
       userId: trace.userId,
       requestId: trace.requestId,
+      pipelineVersion: 'v2',
       modelCall1: args.profile.decompositionModel,
       modelCall2: args.profile.nutritionModel,
       timings: { total: args.totalMs },
@@ -136,19 +165,35 @@ export async function persistV2PipelineRun(args: {
         dbStateUnknownFires: 0,
         retryStep2Count: 0,
       },
-      escalated: false,
+      // v2 has no L4 cache/escalation — false means "not applicable",
+      // disambiguated by pipeline_version.
+      escalated: escalationFired,
       cacheHitL4: false,
-      retryCount: args.languageRetryCount,
+      retryCount: args.providerRetryCount,
       languageGuardMisfire: args.languageRetryCount > 0,
       languageRetryCount: args.languageRetryCount,
       aliasFallbackFired: false,
       promptPersonalizationFields: personalizationFields,
     });
 
+    // D2: `macro_inconsistent_fires` already exists in the schema, so it's safe
+    // to set unconditionally.
+    row.macroInconsistentFires = macroInconsistentFires;
+
+    // D2: the per-cause breakdown lives in a NEW column `v2_anomaly_causes`
+    // whose migration is intentionally UNAPPLIED this phase. writePipelineRun
+    // detects the column's absence and drops it, so the rest of the row still
+    // persists on a DB that hasn't run the migration yet (mirrors Phase 0's
+    // pipeline_version tolerance).
+    const rowWithV2 = {
+      ...row,
+      v2AnomalyCauses: args.anomalySummary?.causeCounts ?? null,
+    };
+
     if (process.env.NODE_ENV === 'test') {
-      await writePipelineRun(trace.db, row);
+      await writePipelineRun(trace.db, rowWithV2);
     } else {
-      writePipelineRun(trace.db, row).catch((err) => {
+      writePipelineRun(trace.db, rowWithV2).catch((err) => {
         console.error(
           '[ai/pipeline] v2 failed to write pipeline_runs row',
           err
@@ -157,5 +202,23 @@ export async function persistV2PipelineRun(args: {
     }
   } catch (err) {
     console.error('[ai/pipeline] v2 failed to build pipeline_runs row', err);
+  }
+}
+
+/**
+ * Log + persist a completed v2 run in one call (console telemetry always;
+ * pipeline_runs row when tracing is enabled — best-effort, never blocks; in
+ * tests the persist is awaited so assertions aren't racy).
+ */
+export async function recordV2RunTelemetry(args: {
+  log: Parameters<typeof logV2Telemetry>[0];
+  persist: Parameters<typeof persistV2PipelineRun>[0];
+}): Promise<void> {
+  logV2Telemetry(args.log);
+  const persistPromise = persistV2PipelineRun(args.persist);
+  if (process.env.NODE_ENV === 'test') {
+    await persistPromise;
+  } else {
+    void persistPromise;
   }
 }

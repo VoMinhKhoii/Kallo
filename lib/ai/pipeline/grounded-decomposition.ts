@@ -1,15 +1,24 @@
+import type { AppDb } from '@/lib/db';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import {
   buildLanguageCorrectionMessage,
   checkDecompositionLanguage,
 } from '../language/guard';
-import { buildDecompositionV2Prompt } from '../prompts/decomposition-v2';
+import { createV2SpeculativeMatcher } from '../matching/speculative';
+import {
+  buildDecompositionV2Prompt,
+  wrapUserMealTextAsData,
+} from '../prompts/decomposition-v2';
 import type { PromptPersonalizationContext } from '../prompts/types';
 import type { StreamEvent } from '../streaming/types';
 import type { MealDecomposition, UserContext } from '../types';
+import { readBooleanEnv } from './config/feature-flags';
 import type { ModelProfile } from './config/model-profile';
+import { DECOMPOSITION_TIMEOUT_MS } from './config/stage-timeouts';
 import { createDecompositionStreamController } from './decomposition-stream';
+import type { EstimatorAttemptUsage } from './estimator/types';
 import { withStageLogV2 } from './grounded-support';
 import type { AnalyzeMealTraceContext } from './orchestrator';
 import {
@@ -24,6 +33,21 @@ type StreamedMealItemIds = ReturnType<
   >['getStreamedMealItemIds']
 >;
 
+/**
+ * Append a precise-mode clarify reply to the original meal text as an extra
+ * data line, so Call 1 re-decomposes with the portion/food answer in hand.
+ * Both halves are user-authored DATA — the decomposition system prompt's
+ * delimiter rule guards against embedded instructions.
+ */
+function buildClarifiedDecompositionInput(
+  rawInput: string,
+  clarifyAnswer: string
+): string {
+  const answer = clarifyAnswer.trim();
+  if (!answer) return rawInput;
+  return `${rawInput}\n(clarification: ${answer})`;
+}
+
 export type GroundedDecompositionResult =
   | { nonFood: true }
   | {
@@ -32,6 +56,7 @@ export type GroundedDecompositionResult =
       streamedMealItemIds: StreamedMealItemIds;
       decomposeChunkCount: number;
       languageRetryCount: number;
+      providerRetryCount: number;
       promptCharsCall1: number;
     };
 
@@ -44,14 +69,37 @@ export type GroundedDecompositionResult =
 export async function runGroundedDecomposition(args: {
   rawInput: string;
   userContext: UserContext;
+  db: AppDb;
   gemini: GeminiClient;
   traceContext: AnalyzeMealTraceContext | undefined;
   emit: (event: StreamEvent) => void;
   promptCtx: PromptPersonalizationContext;
   profile: ModelProfile;
+  /** Reply to a prior precise-mode clarify question; woven into the Call-1 message. */
+  clarifyAnswer?: string;
+  /** Per-attempt token/error recorder (analysis model-budget guards). */
+  onAttemptComplete?: (usage: EstimatorAttemptUsage) => void;
 }): Promise<GroundedDecompositionResult> {
-  const { rawInput, userContext, gemini, traceContext, emit, promptCtx } = args;
+  const { rawInput, userContext, db, gemini, traceContext, emit, promptCtx } =
+    args;
   const profile = args.profile;
+
+  // v2-aware speculative prewarm: as Call-1 decomposition streams, warm the
+  // embedding cache for each ingredient's canonicalName in the background so
+  // embeddings are ready when matching runs. Feature-flagged; on abort the
+  // matcher stops firing new embeds. A prewarm error can never reject the
+  // stream (the matcher is fully catch-guarded).
+  const prewarmEnabled = readBooleanEnv('PIPELINE_V2_PREWARM_ENABLED', true);
+  const prewarmAbort = new AbortController();
+  const prewarm = prewarmEnabled
+    ? createV2SpeculativeMatcher(db, gemini, prewarmAbort.signal)
+    : () => {};
+  // Weave a clarify reply into the Call-1 user message so the re-analysis
+  // reasons with the answer (mirrors cheat mode threading clarifyAnswer into
+  // its prompt). Sanitized to keep it DATA, never instructions.
+  const decompositionInput = args.clarifyAnswer
+    ? buildClarifiedDecompositionInput(rawInput, args.clarifyAnswer)
+    : rawInput;
 
   const bufferedItemNameEvents: Array<
     Extract<StreamEvent, { type: 'item_name' }>
@@ -69,21 +117,23 @@ export async function runGroundedDecomposition(args: {
   };
   let decompStream = createDecompositionStreamController({
     emit: itemNameBufferingEmit,
-    prewarm: () => {},
+    prewarm,
   });
   const recreateDecompStream = () => {
     bufferedItemNameEvents.length = 0;
     decompStream = createDecompositionStreamController({
       emit: itemNameBufferingEmit,
-      prewarm: () => {},
+      prewarm,
     });
   };
 
   let decomposeChunkCount = 0;
   let languageRetryCount = 0;
+  let providerRetryCount = 0;
 
   const decompSystemPrompt = buildDecompositionV2Prompt(promptCtx);
-  const promptCharsCall1 = decompSystemPrompt.length + rawInput.length;
+  const promptCharsCall1 =
+    decompSystemPrompt.length + decompositionInput.length;
 
   const runDecompositionAttempt = async (
     userMessage: string,
@@ -97,24 +147,47 @@ export async function runGroundedDecomposition(args: {
       templateSample: decompSystemPrompt,
       model: profile.decompositionModel,
     });
-    return gemini.generateStructuredOutputStream(
-      {
-        schema: mealDecompositionV2Schema,
-        systemPrompt: decompSystemPrompt,
-        userMessage,
-        model: profile.decompositionModel,
-        temperature: 0.3,
-        topP: 1,
-        topK: 1,
+    let maxAttempt = 0;
+    const result = await fetchWithTimeout(
+      (signal) => {
+        // Propagate a decomposition timeout/abort to the prewarm so it stops
+        // firing background embeds for an abandoned request.
+        signal.addEventListener('abort', () => prewarmAbort.abort(), {
+          once: true,
+        });
+        return gemini.generateStructuredOutputStream(
+          {
+            schema: mealDecompositionV2Schema,
+            systemPrompt: decompSystemPrompt,
+            userMessage,
+            model: profile.decompositionModel,
+            temperature: 0.3,
+            topP: 1,
+            topK: 1,
+            abortSignal: signal,
+          },
+          {
+            onAttemptStart: (attempt) => {
+              maxAttempt = Math.max(maxAttempt, attempt);
+              if (attempt > 1) bufferedItemNameEvents.length = 0;
+              decompStream.resetAttempt();
+            },
+            onChunk: (accumulated) => {
+              decomposeChunkCount++;
+              decompStream.handleChunk(accumulated);
+            },
+            ...(callTrace ? { trace: callTrace } : {}),
+            ...(args.onAttemptComplete
+              ? { onAttemptComplete: args.onAttemptComplete }
+              : {}),
+          }
+        );
       },
-      {
-        onChunk: (accumulated) => {
-          decomposeChunkCount++;
-          decompStream.handleChunk(accumulated);
-        },
-        ...(callTrace ? { trace: callTrace } : {}),
-      }
+      DECOMPOSITION_TIMEOUT_MS,
+      'grounded-decomposition'
     );
+    providerRetryCount += Math.max(0, maxAttempt - 1);
+    return result;
   };
 
   let decomposition: MealDecompositionV2 = await withStageLogV2(
@@ -124,7 +197,10 @@ export async function runGroundedDecomposition(args: {
     { rawInputLength: rawInput.length, model: profile.decompositionModel },
     ({ stageLogId }) => {
       emit({ type: 'stage', stage: 'decomposing' });
-      return runDecompositionAttempt(rawInput, stageLogId);
+      return runDecompositionAttempt(
+        wrapUserMealTextAsData(decompositionInput),
+        stageLogId
+      );
     }
   );
 
@@ -157,7 +233,10 @@ export async function runGroundedDecomposition(args: {
       },
       ({ stageLogId }) =>
         runDecompositionAttempt(
-          buildLanguageCorrectionMessage(rawInput, userContext),
+          buildLanguageCorrectionMessage(
+            wrapUserMealTextAsData(decompositionInput),
+            userContext
+          ),
           stageLogId
         )
     );
@@ -199,6 +278,7 @@ export async function runGroundedDecomposition(args: {
     streamedMealItemIds: decompStream.getStreamedMealItemIds(),
     decomposeChunkCount,
     languageRetryCount,
+    providerRetryCount,
     promptCharsCall1,
   };
 }

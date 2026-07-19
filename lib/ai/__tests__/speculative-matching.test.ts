@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { extractIngredientNames } from '../matching/speculative';
+import { describe, expect, it, vi } from 'vitest';
+import type { AppDb } from '@/lib/db';
+import type { GeminiClient } from '../gemini';
+import { clearMemoryCache } from '../matching/embedding-cache';
+import {
+  createV2SpeculativeMatcher,
+  extractIngredientNames,
+  extractV2CanonicalNames,
+} from '../matching/speculative';
 
 describe('extractIngredientNames', () => {
   it('extracts names from partial JSON stream', () => {
@@ -50,5 +57,81 @@ describe('extractIngredientNames', () => {
     expect(names).toContain('Bún bò Huế');
     expect(names).toContain('Bún phở');
     expect(names).toContain('Thịt bò');
+  });
+});
+
+describe('extractV2CanonicalNames', () => {
+  it('extracts canonicalName (not rawName/name) from the v2 stream', () => {
+    const seen = new Set<string>();
+    const partial =
+      '{"mealItems":[{"name":"Cơm","ingredients":[{"rawName":"cơm trắng","canonicalName":"Gạo tẻ"';
+    const names = extractV2CanonicalNames(partial, seen);
+    expect(names).toEqual(['Gạo tẻ']);
+    // The legacy "name"/"rawName" fields must NOT be picked up here.
+    expect(names).not.toContain('Cơm');
+    expect(names).not.toContain('cơm trắng');
+  });
+
+  it('returns only new canonical names across chunks', () => {
+    const seen = new Set<string>();
+    const c1 = '{"ingredients":[{"canonicalName":"Gạo tẻ"';
+    extractV2CanonicalNames(c1, seen);
+    const c2 = `${c1}},{"canonicalName":"Thịt bò"}`;
+    expect(extractV2CanonicalNames(c2, seen)).toEqual(['Thịt bò']);
+  });
+});
+
+describe('createV2SpeculativeMatcher', () => {
+  function mocks() {
+    clearMemoryCache();
+    const db = {
+      execute: vi.fn().mockResolvedValue([]),
+    } as unknown as AppDb;
+    const generateEmbedding = vi.fn().mockResolvedValue(Array(768).fill(0.1));
+    const gemini = { generateEmbedding } as unknown as GeminiClient;
+    return { db, gemini, generateEmbedding };
+  }
+
+  it('fires an embedding for a canonicalName on L1/L2 miss', async () => {
+    const { db, gemini, generateEmbedding } = mocks();
+    const onChunk = createV2SpeculativeMatcher(db, gemini);
+    onChunk('{"ingredients":[{"canonicalName":"Thịt bò"}]}');
+    await vi.waitFor(() =>
+      expect(generateEmbedding).toHaveBeenCalledWith('Thịt bò')
+    );
+  });
+
+  it('dedupes case-variant canonical names to one embed', async () => {
+    const { db, gemini, generateEmbedding } = mocks();
+    const onChunk = createV2SpeculativeMatcher(db, gemini);
+    onChunk('{"ingredients":[{"canonicalName":"cà rốt"}]}');
+    onChunk('{"ingredients":[{"canonicalName":"Cà rốt"}]}');
+    await vi.waitFor(() => expect(generateEmbedding).toHaveBeenCalled());
+    // Both normalize to the same key → a single embed.
+    expect(generateEmbedding).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not fire embeds once the signal is aborted', async () => {
+    const { db, gemini, generateEmbedding } = mocks();
+    const ctrl = new AbortController();
+    const onChunk = createV2SpeculativeMatcher(db, gemini, ctrl.signal);
+    ctrl.abort();
+    onChunk('{"ingredients":[{"canonicalName":"Thịt bò"}]}');
+    await new Promise((r) => setTimeout(r, 10));
+    expect(generateEmbedding).not.toHaveBeenCalled();
+  });
+
+  it('never throws / rejects into the caller even if embedding fails', async () => {
+    const { db } = mocks();
+    const gemini = {
+      generateEmbedding: vi.fn().mockRejectedValue(new Error('gemini down')),
+    } as unknown as GeminiClient;
+    const onChunk = createV2SpeculativeMatcher(db, gemini);
+    // Synchronous call must not throw.
+    expect(() =>
+      onChunk('{"ingredients":[{"canonicalName":"Thịt bò"}]}')
+    ).not.toThrow();
+    // And the background rejection must be swallowed.
+    await new Promise((r) => setTimeout(r, 10));
   });
 });

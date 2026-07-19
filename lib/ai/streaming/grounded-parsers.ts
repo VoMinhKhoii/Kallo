@@ -14,7 +14,9 @@
  *      existing `computeStreamingMealItem` (goal-adjusted display sum) can
  *      run unchanged.
  */
+
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
+import { ZERO_TRIPLE } from '../pipeline/bridge-verdicts';
 import type { RawNutritionAdjustment } from '../pipeline/nutrition';
 import { __testing as nutritionTesting } from '../pipeline/nutrition';
 import type {
@@ -116,31 +118,46 @@ export function resolveStreamingV2MealItem(
   const ingredients: IngredientLlmNutrition[] = [];
   let totalGrams = 0;
 
-  rawItem.ingredients.forEach((rawIng, localIdx) => {
+  // Call-2 output follows the PROMPT's sorted ingredient order, not
+  // decomposition order — map each streamed ingredient back to its
+  // decomposition slot by normalized name + occurrence (mirrors the bridge's
+  // pairing) so candidates/nutrition never attach to the wrong ingredient.
+  const localIdxByName = new Map<string, number[]>();
+  decomposedIngredients.forEach((d, i) => {
+    const key = d.rawName.trim().toLocaleLowerCase('vi-VN');
+    const queue = localIdxByName.get(key);
+    if (queue) queue.push(i);
+    else localIdxByName.set(key, [i]);
+  });
+
+  rawItem.ingredients.forEach((rawIng, streamIdx) => {
+    const nameKey = rawIng.ingredientName.trim().toLocaleLowerCase('vi-VN');
+    const localIdx = localIdxByName.get(nameKey)?.shift() ?? streamIdx;
     const flatIdx = flatIngredientStart + localIdx;
-    // matchResults is built in flat-ingredient order by matchTopKPerIngredient,
-    // so direct indexing avoids an O(N²) scan in this hot streaming loop.
     const matchResult = matchResults[flatIdx];
     const candidates = matchResult?.candidates ?? [];
-    const decompForName = decomposedIngredients.find(
-      (d) => d.rawName === rawIng.ingredientName
-    );
+    const decompForName = decomposedIngredients[localIdx];
     const prepNotesPresent =
       (decompForName?.prepNotes ?? []).some(
         (n) => typeof n === 'string' && n.trim().length > 0
       ) ?? false;
 
-    const grams = rawIng.grams > 0 ? rawIng.grams : 1;
+    const grams = rawIng.grams;
     totalGrams += grams;
 
     const base = computeBaseFromVerdict(rawIng, candidates, grams);
 
+    // Phase 4 (D3): matched ingredients omit caloriesKcal/proteinG/
+    // carbohydrateG in Call-2 output because the server overwrites them from
+    // the DB anchor. Default an omitted triple to ZERO_TRIPLE — harmless for
+    // matched (resolveIngredientMacros replaces it), and a safe floor for the
+    // rare unmatched ingredient that drops a triple. fatG is always emitted.
     const rawAdjustment: RawNutritionAdjustment['mealItems'][number]['ingredients'][number] =
       {
         ingredientName: rawIng.ingredientName,
-        caloriesKcal: rawIng.caloriesKcal,
-        proteinG: rawIng.proteinG,
-        carbohydrateG: rawIng.carbohydrateG,
+        caloriesKcal: rawIng.caloriesKcal ?? ZERO_TRIPLE,
+        proteinG: rawIng.proteinG ?? ZERO_TRIPLE,
+        carbohydrateG: rawIng.carbohydrateG ?? ZERO_TRIPLE,
         fatG: rawIng.fatG,
       };
 
@@ -198,6 +215,11 @@ function computeBaseFromVerdict(
   };
 }
 
+export interface MealItemOffset {
+  decomposedIngredients: DecomposedIngredientV2[];
+  flatIngredientStart: number;
+}
+
 /**
  * Map each v2 meal item to the `(decomposed ingredients slice, flat-ingredient
  * start offset)` pair the streaming resolver needs. Computed once per request
@@ -206,10 +228,7 @@ function computeBaseFromVerdict(
  */
 export function buildPerMealItemOffsetMap(
   v2MealItems: Array<{ ingredients: DecomposedIngredientV2[] }>
-): Array<{
-  decomposedIngredients: DecomposedIngredientV2[];
-  flatIngredientStart: number;
-}> {
+): MealItemOffset[] {
   let start = 0;
   return v2MealItems.map((mi) => {
     const entry = {
@@ -219,4 +238,37 @@ export function buildPerMealItemOffsetMap(
     start += mi.ingredients.length;
     return entry;
   });
+}
+
+/**
+ * Identity-based offset lookup keyed by `${lowercased name}::${occurrence}`
+ * (1-based occurrence handles duplicate dish names like "Cơm trắng" × 2).
+ *
+ * Why (Phase 4, D4): Call 2's prompt sorts meal items + ingredients for
+ * deterministic prompt caching (`buildIngredientDataBlock`), so the model
+ * streams meal items back in SORTED order. The positional `perItemOffsets[i]`
+ * built from the ORIGINAL decomposition order therefore attaches the wrong
+ * decomposition slice (and thus the wrong candidate/prepNotes) to a streamed
+ * item whenever sorted order ≠ original order. Matching on the streamed
+ * `mealItemName` instead of array position attributes each `item_macros`
+ * event to the correct meal item regardless of stream order — and is robust
+ * to the D3 output-shape change.
+ */
+export function buildMealItemOffsetByName(
+  v2MealItems: Array<{ name: string; ingredients: DecomposedIngredientV2[] }>
+): Map<string, MealItemOffset> {
+  const byName = new Map<string, MealItemOffset>();
+  const occ = new Map<string, number>();
+  let start = 0;
+  for (const mi of v2MealItems) {
+    const key = mi.name.trim().toLocaleLowerCase('vi-VN');
+    const n = (occ.get(key) ?? 0) + 1;
+    occ.set(key, n);
+    byName.set(`${key}::${n}`, {
+      decomposedIngredients: mi.ingredients,
+      flatIngredientStart: start,
+    });
+    start += mi.ingredients.length;
+  }
+  return byName;
 }

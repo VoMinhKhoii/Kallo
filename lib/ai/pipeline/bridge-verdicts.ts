@@ -238,10 +238,3 @@ export function v2DishToV1(
     ingredients,
   };
 }
-
-/**
- * The fallback grams to use when Call 2 didn't return a value for this
- * ingredient (verdict='missing'). 1g lets downstream code treat it as a
- * tiny placeholder rather than dividing by zero. Anomaly detection in v1
- * will catch implausible_grams.
- */

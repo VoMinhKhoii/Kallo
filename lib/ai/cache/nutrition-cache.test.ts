@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearNutritionCache,
+  fetchInediblePctForIds,
+  fetchNutritionForIds,
   getInedibleCache,
   getNutritionCache,
   getNutritionCacheStats,
+  isNutritionCacheInitialized,
+  peekNutritionCache,
 } from './nutrition-cache';
 
 // ---------------------------------------------------------------------------
@@ -188,5 +192,64 @@ describe('getInedibleCache', () => {
     expect(db.execute).toHaveBeenCalledOnce();
     expect(nutrition.size).toBe(1);
     expect(inedible.get('fc-001')).toBe(30);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cold-path helpers (Deliverable 1)
+// ---------------------------------------------------------------------------
+
+describe('cold-path helpers', () => {
+  it('isNutritionCacheInitialized reflects warm state', async () => {
+    expect(isNutritionCacheInitialized()).toBe(false);
+    await getNutritionCache(createMockDb([ROW_CHICKEN]));
+    expect(isNutritionCacheInitialized()).toBe(true);
+  });
+
+  it('peekNutritionCache does NOT trigger the bulk warm', () => {
+    const db = createMockDb([ROW_CHICKEN, ROW_RICE]);
+    const map = peekNutritionCache();
+    expect(map.size).toBe(0);
+    expect(db.execute).not.toHaveBeenCalled();
+    expect(isNutritionCacheInitialized()).toBe(false);
+  });
+
+  it('fetchNutritionForIds queries only the given IDs and promotes them', async () => {
+    const db = createMockDb([ROW_CHICKEN]);
+    const map = await fetchNutritionForIds(['fc-001'], db);
+
+    expect(db.execute).toHaveBeenCalledOnce();
+    // The SQL must be an id-scoped SELECT, not the full-table warm.
+    const sqlObj = vi.mocked(db.execute).mock.calls[0][0] as {
+      queryChunks?: unknown[];
+    };
+    expect(JSON.stringify(sqlObj)).toContain('WHERE id IN');
+    expect(map.get('fc-001')?.caloriesKcal).toBe(165);
+    // Promoted into the singleton so later reads are warm, WITHOUT marking the
+    // bulk warm as initialized.
+    expect(peekNutritionCache().get('fc-001')?.caloriesKcal).toBe(165);
+    expect(isNutritionCacheInitialized()).toBe(false);
+  });
+
+  it('fetchNutritionForIds returns empty for an empty id list without querying', async () => {
+    const db = createMockDb([ROW_CHICKEN]);
+    const map = await fetchNutritionForIds([], db);
+    expect(map.size).toBe(0);
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
+  it('fetchInediblePctForIds returns only numeric inedible pcts', async () => {
+    const db = createMockDb([
+      { id: 'fc-001', inedible_portion_pct: 25 },
+      { id: 'fc-002', inedible_portion_pct: null },
+      { id: 'fc-003', inedible_portion_pct: '10.5' },
+    ]);
+    const map = await fetchInediblePctForIds(
+      ['fc-001', 'fc-002', 'fc-003'],
+      db
+    );
+    expect(map.get('fc-001')).toBe(25);
+    expect(map.has('fc-002')).toBe(false);
+    expect(map.get('fc-003')).toBe(10.5);
   });
 });

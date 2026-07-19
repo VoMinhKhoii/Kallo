@@ -23,6 +23,7 @@ describe('buildPipelineRunRow', () => {
     const row = buildPipelineRunRow({
       userId: 'u-1',
       requestId: 'req-1',
+      pipelineVersion: 'v1',
       modelCall1: 'gemini-2.5-flash-lite',
       modelCall2: 'gemini-2.5-flash-lite',
       timings: { total: 4500 },
@@ -50,6 +51,7 @@ describe('buildPipelineRunRow', () => {
     });
     expect(row.userIdHash).toMatch(/^[0-9a-f]{64}$/);
     expect(row.requestId).toBe('req-1');
+    expect(row.pipelineVersion).toBe('v1');
     expect(row.totalMs).toBe(4500);
     expect(row.promptPersonalizationFields).not.toContain('goal');
   });
@@ -59,6 +61,7 @@ describe('buildPipelineRunRow', () => {
       buildPipelineRunRow({
         userId: 'u-1',
         requestId: 'req-1',
+        pipelineVersion: 'v1',
         modelCall1: 'gemini-2.5-flash-lite',
         modelCall2: 'gemini-2.5-flash-lite',
         timings: { total: 3 },
@@ -91,6 +94,7 @@ describe('buildPipelineRunRow', () => {
     const row = buildPipelineRunRow({
       userId: 'u-1',
       requestId: 'req-1',
+      pipelineVersion: 'v1',
       modelCall1: 'gemini-2.5-flash-lite',
       modelCall2: 'gemini-2.5-flash-lite',
       timings: { total: 4500 },

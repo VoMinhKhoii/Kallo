@@ -1,6 +1,6 @@
 {
-  "id": "090f2de5-acf5-4c30-b261-0c792a668b54",
-  "prevId": "8cdae3ee-793e-4d76-a039-f54aba9c3247",
+  "id": "d371bdaa-584d-469a-be78-6c01b78a6f7b",
+  "prevId": "e5c59812-6d39-4631-ac97-da9c2fd7853b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -578,21 +578,6 @@
           "columns": [
             {
               "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "chat_group_members_group_idx": {
-          "name": "chat_group_members_group_idx",
-          "columns": [
-            {
-              "expression": "group_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1833,6 +1818,195 @@
       },
       "isRLSEnabled": false
     },
+    "public.meal_share_reactions": {
+      "name": "meal_share_reactions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "share_id": {
+          "name": "share_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'yum'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "meal_share_reactions_share_id_meal_shares_id_fk": {
+          "name": "meal_share_reactions_share_id_meal_shares_id_fk",
+          "tableFrom": "meal_share_reactions",
+          "tableTo": "meal_shares",
+          "columnsFrom": [
+            "share_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "meal_share_reactions_user_id_users_id_fk": {
+          "name": "meal_share_reactions_user_id_users_id_fk",
+          "tableFrom": "meal_share_reactions",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "meal_share_reactions_share_user_uniq": {
+          "name": "meal_share_reactions_share_user_uniq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "share_id",
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "meal_share_reactions_kind_check": {
+          "name": "meal_share_reactions_kind_check",
+          "value": "\"meal_share_reactions\".\"kind\" IN ('yum', 'cheer', 'strong', 'wow', 'heart')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.meal_share_replies": {
+      "name": "meal_share_replies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "share_id": {
+          "name": "share_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "meal_share_replies_share_created_id_idx": {
+          "name": "meal_share_replies_share_created_id_idx",
+          "columns": [
+            {
+              "expression": "share_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "meal_share_replies_share_id_meal_shares_id_fk": {
+          "name": "meal_share_replies_share_id_meal_shares_id_fk",
+          "tableFrom": "meal_share_replies",
+          "tableTo": "meal_shares",
+          "columnsFrom": [
+            "share_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "meal_share_replies_user_id_users_id_fk": {
+          "name": "meal_share_replies_user_id_users_id_fk",
+          "tableFrom": "meal_share_replies",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.meal_shares": {
       "name": "meal_shares",
       "schema": "",
@@ -1899,6 +2073,34 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "meal_shares_actor_shared_at_id_idx": {
+          "name": "meal_shares_actor_shared_at_id_idx",
+          "columns": [
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"shared_at\" DESC",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"id\" DESC",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "visibility <> 'private'",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2934,6 +3136,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "pipeline_version": {
+          "name": "pipeline_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "model_call1": {
           "name": "model_call1",
           "type": "text",
@@ -3103,6 +3311,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{}'::text[]"
+        },
+        "v2_anomaly_causes": {
+          "name": "v2_anomaly_causes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -3494,8 +3708,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "avatar_path": {
-          "name": "avatar_path",
+        "avatar_url": {
+          "name": "avatar_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false
