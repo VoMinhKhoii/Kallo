@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../models/circle.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -79,10 +80,13 @@ class ViewSwitcher extends ConsumerWidget {
     );
   }
 
-  bool _allUnread(AsyncValue ambient, AsyncValue<DateTime> marker) {
+  bool _allUnread(
+    AsyncValue<List<CircleFeedEntry>> ambient,
+    AsyncValue<DateTime> marker,
+  ) {
     if (!ambient.hasValue || !marker.hasValue) return false;
     DateTime? latest;
-    for (final entry in ambient.value as List) {
+    for (final entry in ambient.requireValue) {
       if (entry.isSelf) continue;
       final date = DateTime.tryParse(entry.meal.sharedAt);
       if (date != null && (latest == null || date.isAfter(latest))) {
