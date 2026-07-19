@@ -5,8 +5,8 @@ import '../../../models/circle.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/feed_time.dart';
+import '../../../shared/widgets/profile_avatar.dart';
 import 'feed_entry_actions.dart';
-import 'profile_avatar.dart';
 import 'share_replies.dart';
 
 class FeedEntry extends StatelessWidget {
@@ -35,12 +35,7 @@ class FeedEntry extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ProfileAvatar(
-          label: name,
-          handle: entry.friend.handle,
-          avatarUrl: entry.friend.avatarUrl,
-          avatarSeed: entry.friend.avatarSeed,
-        ),
+        ProfileAvatarDisc(profile: entry.friend, size: 36),
         const SizedBox(width: NhamSpacing.sp3),
         Expanded(
           child: Column(
