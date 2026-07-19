@@ -55,6 +55,7 @@ export async function getChatGroup(
         displayName: member.displayName,
         avatarSeed: member.avatarSeed,
         avatarUrl: member.avatarUrl,
+        avatarPath: member.avatarPath ?? null,
       }),
       role: member.role,
     })),

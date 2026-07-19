@@ -79,6 +79,7 @@ export async function listCircle(
         displayName: r.displayName,
         avatarSeed: r.avatarSeed,
         avatarUrl: r.avatarUrl,
+        avatarPath: r.avatarPath,
       }),
     };
   });

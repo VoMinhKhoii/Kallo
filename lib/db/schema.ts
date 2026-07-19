@@ -932,6 +932,10 @@ export const publicProfiles = pgTable(
     // sign-in. Null until captured (or for non-OAuth accounts) — the UI falls
     // back to a letter disc.
     avatarUrl: text('avatar_url'),
+    // Storage object path of a user-UPLOADED photo in the public `avatars`
+    // bucket ({user_id}/{uuid}.{ext}). Takes precedence over avatar_url in
+    // the projected identity; null = fall back to the OAuth picture/initials.
+    avatarPath: text('avatar_path'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

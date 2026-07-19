@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { SETTINGS_SECTION_ANCHOR } from './profile';
 
+const IDENTITY_ANCHOR = 'settings-identity';
 const ACCOUNT_ANCHOR = 'settings-account';
 const FEEDBACK_ANCHOR = 'settings-feedback';
 
@@ -12,6 +13,7 @@ interface AnchorItem {
 }
 
 const ANCHORS: readonly AnchorItem[] = [
+  { id: IDENTITY_ANCHOR, labelKey: 'identity' },
   { id: SETTINGS_SECTION_ANCHOR['body-metrics'], labelKey: 'bodyMetrics' },
   { id: SETTINGS_SECTION_ANCHOR.regional, labelKey: 'regional' },
   { id: SETTINGS_SECTION_ANCHOR.cooking, labelKey: 'cooking' },
@@ -60,4 +62,4 @@ export function SettingsAnchorNav() {
   );
 }
 
-export { ACCOUNT_ANCHOR, FEEDBACK_ANCHOR };
+export { ACCOUNT_ANCHOR, FEEDBACK_ANCHOR, IDENTITY_ANCHOR };

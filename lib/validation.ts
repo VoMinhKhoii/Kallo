@@ -110,6 +110,12 @@ export const upsertPublicProfileSchema = z.object({
   avatarSeed: z.string().trim().min(1).max(64).optional(),
 });
 
+/** Rename the caller's profile ("what should we call you") — the handle is
+ * re-derived from the name server-side, so only the name comes in. */
+export const renameProfileSchema = z.object({
+  displayName: z.string().trim().min(1).max(50),
+});
+
 export const blockFriendSchema = z.object({
   targetUserId: uuidSchema,
 });

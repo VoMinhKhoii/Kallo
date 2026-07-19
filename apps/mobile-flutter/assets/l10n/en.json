@@ -1457,6 +1457,24 @@
       "version": "Version",
       "privacy": "Privacy policy",
       "terms": "Terms of service"
+    },
+    "identity": {
+      "title": "Profile",
+      "description": "How you appear across Nhẩm and to your circle.",
+      "avatarUpload": "Upload photo",
+      "avatarChange": "Change photo",
+      "avatarRemove": "Remove",
+      "avatarSaved": "Photo updated",
+      "avatarRemoved": "Photo removed",
+      "avatarError": "Couldn't update your photo",
+      "avatarTooLarge": "Image must be under 5 MB",
+      "nameLabel": "What should we call you?",
+      "namePlaceholder": "Your name",
+      "nameSave": "Save name",
+      "nameSaved": "Name updated",
+      "nameError": "Couldn't update your name",
+      "nameRequired": "Please enter a name.",
+      "linkWarning": "Changing your name updates your invite link — old links stop working."
     }
   },
   "errors": {
