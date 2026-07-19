@@ -159,6 +159,7 @@ export function createSourceAwareMockDb(
     fao_fuzzy: unknown[];
     usda_fuzzy: unknown[];
     nutrition: unknown[];
+    exact: unknown[];
   }>,
   options?: { customRouter?: (q: string) => unknown[] | null }
 ): AppDb {
@@ -210,6 +211,17 @@ export function createSourceAwareMockDb(
       if (q.includes('fuzzy_match_ingredients_by_source')) {
         if (q.includes('1')) return Promise.resolve(routes.fao_fuzzy ?? []);
         if (q.includes('2')) return Promise.resolve(routes.usda_fuzzy ?? []);
+      }
+      // Phase-0 exact-match lookup (v2): SELECTs name_primary and probes
+      // name_alt via `unnest`, which the nutrition batch query never does.
+      // Route it separately so it doesn't fall through to the nutrition rows
+      // (which would masquerade as a bogus single-row exact hit). Defaults to
+      // no exact hit so callers exercising the vector/fuzzy arms are unaffected.
+      if (
+        q.includes('vietnamese_food_composition') &&
+        q.includes('unnest(name_alt)')
+      ) {
+        return Promise.resolve(routes.exact ?? []);
       }
       // Nutrition batch fetch
       if (q.includes('vietnamese_food_composition')) {

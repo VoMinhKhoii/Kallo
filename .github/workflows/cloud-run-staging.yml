@@ -175,12 +175,26 @@ jobs:
           image: ${{ env.IMAGE_URI }}
           region: ${{ vars.GCP_REGION }}
           skip_default_labels: true
+          # --min-instances=0: cold-start on most requests is an intentional
+          # product/cost decision (do NOT set a floor here). That is exactly
+          # why the matching pipeline was hardened to keep the multi-MB
+          # full-table load, embedding warm, and exact/lexical matching OFF the
+          # cold critical path (pipeline Phase 2, Deliverables 1-3).
+          #
+          # --cpu-boost is already enabled at the service level (extra CPU
+          # during cold-start init) — leave it.
+          #
+          # --concurrency lowered 20→8 (keeping --cpu=1): 20 requests sharing a
+          # single vCPU starved each other under load. Dropping to ~8 removes
+          # the starvation without paying for a second vCPU per instance
+          # (cheaper than --cpu=2). Benchmark under representative concurrency
+          # before tightening further.
           flags: >-
             --allow-unauthenticated
             --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
             --memory=1Gi
             --cpu=1
-            --concurrency=20
+            --concurrency=8
             --timeout=60
             --min-instances=0
             --max-instances=3

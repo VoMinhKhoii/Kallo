@@ -1,27 +1,21 @@
-import { sql } from 'drizzle-orm';
 import type { AppDb } from '@/lib/db';
 import { mapWithConcurrency } from '@/lib/utils';
-import { getInedibleCache } from '../cache/nutrition-cache';
+import {
+  fetchInediblePctForIds,
+  getInedibleCache,
+  isNutritionCacheInitialized,
+} from '../cache/nutrition-cache';
 import type { GeminiClient } from '../gemini';
+import { readBooleanEnv } from '../pipeline/config/feature-flags';
 import { deriveExpectedState } from '../pipeline/cooking-method-state';
 import type { DecomposedIngredientV2 } from '../pipeline/schemas-v2';
-import type { MatchType, NutritionPer100g } from '../types';
-import {
-  buildMatchTopK,
-  mergeTopKAcrossSources,
-  rrfFuseCandidates,
-} from './candidate-ranking';
+import type { NutritionPer100g } from '../types';
+import { resolvePreMatchAlias } from './aliases';
 import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
-import {
-  type DbIngredientState,
-  FAO_VECTOR_THRESHOLD,
-  FUZZY_FALLBACK_THRESHOLD,
-  type MatchInfo,
-  type SourcedMatchRow,
-  splitBySource,
-  USDA_VECTOR_THRESHOLD,
-} from './match-constants';
+import { resolveExactMatch } from './exact-match';
+import type { DbIngredientState, MatchInfo } from './match-constants';
 import { batchFetchNutrition } from './nutrition-batch';
+import { retrieveHybridTopK, retrieveLexicalTopK } from './top-k-retrieval';
 
 /**
  * V2 match result per ingredient — up to `k` candidates (sorted by similarity
@@ -120,19 +114,72 @@ export async function matchTopKPerIngredient(
 
   const t0 = Date.now();
   let vectorArmEmptyCount = 0;
+  let exactHitCount = 0;
+  let lexicalFallbackCount = 0;
+
+  // Pre-match alias rewrite (gated, mirrors v1 cascade.ts): rewrite known
+  // surface forms — incl. the curated exact-alias staples — to a canonical
+  // VN-FCT name before any lookup. Original names are preserved for display.
+  const preMatchAliasEnabled = readBooleanEnv(
+    'PIPELINE_PREMATCH_ALIAS_ENABLED',
+    true
+  );
+  const rewriteName = (name: string): string => {
+    if (!preMatchAliasEnabled) return name;
+    const alias = resolvePreMatchAlias(name);
+    if (alias !== name) {
+      console.info(`[v2-matching] pre-match alias: "${name}" → "${alias}"`);
+    }
+    return alias;
+  };
 
   const ctxs: IngredientWithContext[] = ingredients.map((ing, i) => ({
     ingredient: ing,
     index: i,
-    matchingName: ing.canonicalName,
+    matchingName: rewriteName(ing.canonicalName),
     expectedState: deriveExpectedStateFromV2(ing, dishCookingMethods[i]),
     dishCookingMethod: dishCookingMethods[i] ?? null,
   }));
 
+  // Phase 0: exact/alias-first — a single unambiguous normalized name hit
+  // short-circuits the embedding round-trip entirely (availability + latency).
+  // Ambiguous or missing → falls through to the embedding/lexical cascade.
+  const exactMatchEnabled = readBooleanEnv(
+    'PIPELINE_V2_EXACT_MATCH_ENABLED',
+    true
+  );
+  const results: IngredientV2MatchResult[] = ctxs.map((c) => ({
+    ingredientIndex: c.index,
+    candidates: [],
+  }));
+  const exactResolved = new Array<boolean>(ctxs.length).fill(false);
+  const tPhase0 = Date.now();
+  if (exactMatchEnabled) {
+    const exactSettled = await mapWithConcurrency(
+      ctxs,
+      (c) => resolveExactMatch(c.matchingName, db, c.expectedState),
+      concurrency
+    );
+    for (let i = 0; i < exactSettled.length; i++) {
+      const r = exactSettled[i];
+      if (r.status !== 'fulfilled' || !r.value) continue;
+      exactResolved[i] = true;
+      exactHitCount++;
+      results[i] = {
+        ingredientIndex: ctxs[i].index,
+        candidates: [{ info: r.value, nutrition: null, inediblePct: null }],
+      };
+    }
+  }
+  const phase0Ms = Date.now() - tPhase0;
+
+  // Only ingredients NOT resolved by the exact short-circuit continue.
+  const pending = ctxs.filter((_, i) => !exactResolved[i]);
+
   // Phase 1: resolve embeddings via the existing cache layer.
   const tPhase1 = Date.now();
   const cacheSettled = await mapWithConcurrency(
-    ctxs,
+    pending,
     (c) => resolveQueryEmbedding(c.matchingName, db),
     concurrency
   );
@@ -140,7 +187,7 @@ export async function matchTopKPerIngredient(
   const embeddings: (number[] | null)[] = cacheSettled.map((r, i) => {
     if (r.status === 'rejected') {
       console.warn(
-        `[v2-matching] cache lookup failed for "${ctxs[i].matchingName}":`,
+        `[v2-matching] cache lookup failed for "${pending[i].matchingName}":`,
         r.reason
       );
       return null;
@@ -148,124 +195,104 @@ export async function matchTopKPerIngredient(
     return r.value;
   });
 
-  // Phase 2: batch-embed L3 misses.
+  // Phase 2: batch-embed L3 misses (best-effort — a failure/empty here now
+  // degrades to the lexical arm in Phase 3 instead of blanking the ingredient).
   const tPhase2 = Date.now();
   const missIndices = embeddings
     .map((e, i) => (e ? -1 : i))
     .filter((i) => i >= 0);
   const l3MissCount = missIndices.length;
   if (missIndices.length > 0) {
-    const missNames = missIndices.map((i) => ctxs[i].matchingName);
+    const missNames = missIndices.map((i) => pending[i].matchingName);
     console.info(`[v2-matching] batch embedding ${missNames.length} L3 misses`);
-    const batchResults = await gemini.generateEmbeddingBatch(missNames);
-    if (batchResults.length !== missNames.length) {
-      console.warn(
-        `[v2-matching] embedding batch length mismatch: expected ${missNames.length}, got ${batchResults.length}`
-      );
-    } else {
-      for (let j = 0; j < missIndices.length; j++) {
-        const embedding = batchResults[j];
-        if (!embedding) continue;
-        const idx = missIndices[j];
-        embeddings[idx] = embedding;
-        cacheQueryEmbedding(ctxs[idx].matchingName, embedding, db);
+    try {
+      const batchResults = await gemini.generateEmbeddingBatch(missNames);
+      if (batchResults.length !== missNames.length) {
+        console.warn(
+          `[v2-matching] embedding batch length mismatch: expected ${missNames.length}, got ${batchResults.length}`
+        );
+      } else {
+        for (let j = 0; j < missIndices.length; j++) {
+          const embedding = batchResults[j];
+          if (!embedding) continue;
+          const idx = missIndices[j];
+          embeddings[idx] = embedding;
+          cacheQueryEmbedding(pending[idx].matchingName, embedding, db);
+        }
       }
+    } catch (err) {
+      // Availability hole plugged: rather than returning zero candidates for
+      // the whole batch, leave these embeddings null so Phase 3 runs the
+      // lexical (fuzzy/trigram) fallback arm for them.
+      console.warn(
+        '[v2-matching] embedding batch failed; degrading to lexical fallback:',
+        err
+      );
     }
   }
 
   const phase2Ms = Date.now() - tPhase2;
 
-  // Phase 3: per-ingredient top-K cascade with bounded concurrency.
+  // Phase 3: per-ingredient top-K cascade with bounded concurrency. Ingredients
+  // with a resolved embedding run the hybrid vector+fuzzy retrieval; those
+  // without (embedding gen failed) fall back to the lexical arm alone.
   const tPhase3 = Date.now();
+  const pendingWithEmbedding = pending.map((c, i) => ({
+    c,
+    embedding: embeddings[i],
+  }));
   const settled = await mapWithConcurrency(
-    ctxs,
-    async (c) => {
-      const embedding = embeddings[c.index];
-      if (!embedding) return { ingredientIndex: c.index, candidates: [] };
-
-      // Hybrid retrieval, one round-trip-time: the vector and fuzzy arms run
-      // as two parallel single-statement queries, each returning the top rows
-      // for BOTH sources via a window partition (previously 2 vector
-      // statements — each shipping the same ~15-20KB embedding literal — plus
-      // 2 more fuzzy statements when the vector arm came up empty). The fuzzy
-      // arm now always runs: an exact lexical name hit must be able to
-      // compete with a semantically-adjacent-but-wrong vector hit instead of
-      // only surfacing when the vector arm fails entirely.
-      const embeddingLiteral = JSON.stringify(embedding);
-      const [vectorRows, fuzzyRows] = await Promise.all([
-        db.execute(
-          sql`SELECT * FROM match_ingredients_all_sources(${embeddingLiteral}::vector, ${sourceLimit}, 0.5)`
-        ),
-        db.execute(
-          sql`SELECT * FROM fuzzy_match_ingredients_all_sources(${c.matchingName}, ${sourceLimit}, 0.15)`
-        ),
-      ]);
-      // Per-arm, per-source acceptance thresholds + state penalty, exactly as
-      // before — fusion only ever sees candidates that cleared their own bar.
-      const armTopK = (
-        rows: unknown,
-        matchType: MatchType,
-        faoThreshold: number,
-        usdaThreshold: number
-      ) => {
-        const bySource = splitBySource(rows as SourcedMatchRow[]);
-        return mergeTopKAcrossSources(
-          [
-            buildMatchTopK(
-              c.matchingName,
-              bySource.fao,
-              k,
-              faoThreshold,
-              'fao',
-              matchType,
-              c.expectedState
-            ),
-            buildMatchTopK(
-              c.matchingName,
-              bySource.usda,
-              k,
-              usdaThreshold,
-              'usda',
-              matchType,
-              c.expectedState
-            ),
-          ],
-          k
-        );
-      };
-      const vectorList = armTopK(
-        vectorRows,
-        'vector',
-        FAO_VECTOR_THRESHOLD,
-        USDA_VECTOR_THRESHOLD
-      );
-      const fuzzyList = armTopK(
-        fuzzyRows,
-        'fuzzy',
-        FUZZY_FALLBACK_THRESHOLD,
-        FUZZY_FALLBACK_THRESHOLD
-      );
-
-      if (vectorList.length === 0) vectorArmEmptyCount++;
-      const merged = rrfFuseCandidates(vectorList, fuzzyList, k);
-
-      return {
-        ingredientIndex: c.index,
-        candidates: merged.map((info) => ({
-          info,
-          nutrition: null,
-          inediblePct: null,
-        })),
-      };
+    pendingWithEmbedding,
+    async ({ c, embedding }) => {
+      if (embedding) {
+        const { candidates, vectorArmEmpty } = await retrieveHybridTopK({
+          matchingName: c.matchingName,
+          embedding,
+          db,
+          k,
+          sourceLimit,
+          expectedState: c.expectedState,
+        });
+        if (vectorArmEmpty) vectorArmEmptyCount++;
+        return { ingredientIndex: c.index, candidates, embedded: true };
+      }
+      // Lexical fallback — never blank out.
+      const candidates = await retrieveLexicalTopK({
+        matchingName: c.matchingName,
+        db,
+        k,
+        sourceLimit,
+        expectedState: c.expectedState,
+      });
+      return { ingredientIndex: c.index, candidates, embedded: false };
     },
     concurrency
   );
+  for (const [taskIdx, r] of settled.entries()) {
+    if (r.status === 'rejected') {
+      // Both retrieval arms AND the lexical fallback failed (DB-level error).
+      // The preinitialized empty candidate list stands — Call 2 sees the
+      // ingredient as unmatched — but this must be visible as a failure, not
+      // pass silently as an ordinary no-match.
+      console.error(
+        '[v2-matching] retrieval task failed; ingredient proceeds unmatched:',
+        r.reason,
+        { taskIdx }
+      );
+      continue;
+    }
+    if (!r.value.embedded) lexicalFallbackCount++;
+    results[r.value.ingredientIndex] = {
+      ingredientIndex: r.value.ingredientIndex,
+      candidates: r.value.candidates.map((info) => ({
+        info,
+        nutrition: null,
+        inediblePct: null,
+      })),
+    };
+  }
 
   const phase3Ms = Date.now() - tPhase3;
-
-  const results: IngredientV2MatchResult[] = settled.map((r, i) =>
-    r.status === 'fulfilled' ? r.value : { ingredientIndex: i, candidates: [] }
-  );
 
   // Phase 5: batch-fetch nutrition + inedible pct for all unique candidate ids.
   // USDA rows are intentionally not back-filled: `inedible_portion_pct` is
@@ -278,9 +305,16 @@ export async function matchTopKPerIngredient(
   }
   if (uniqueIds.size > 0) {
     const ids = Array.from(uniqueIds);
+    // Inedible pct: on a warm cache read the full in-memory map; on cold DON'T
+    // block on the full-table load (`getInedibleCache` would) — query only this
+    // meal's candidate IDs directly. `batchFetchNutrition` already kicked the
+    // background warm, so subsequent requests read the warm map.
+    const inediblePromise = isNutritionCacheInitialized()
+      ? getInedibleCache(db)
+      : fetchInediblePctForIds(ids, db);
     const [nutritionMap, inedibleMap] = await Promise.all([
       batchFetchNutrition(ids, db),
-      getInedibleCache(db),
+      inediblePromise,
     ]);
     for (const r of results) {
       for (const c of r.candidates) {
@@ -301,8 +335,11 @@ export async function matchTopKPerIngredient(
   ) {
     console.info('[v2-matching] phase timings', {
       ingredients: ingredients.length,
+      exactHitCount,
+      lexicalFallbackCount,
       l3MissCount,
       vectorArmEmptyCount,
+      phase0_exactMatchMs: phase0Ms,
       phase1_cacheLookupMs: phase1Ms,
       phase2_geminiBatchMs: phase2Ms,
       phase3_vectorAndFuzzyMs: phase3Ms,

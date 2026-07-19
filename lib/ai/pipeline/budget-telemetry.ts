@@ -122,3 +122,62 @@ export function classifyProviderError(
 
   return null;
 }
+
+/**
+ * One-call budget accounting setup for the v2 orchestrator: records the
+ * primary request-count event immediately and returns per-stage attempt
+ * recorders plus a catch-path error recorder. Parity with v1's inline wiring
+ * in orchestrator.ts — without it the daily budget + provider-pressure guards
+ * in lib/rate-limit/analysis-guards.ts are blind to v2 traffic.
+ */
+export function initV2BudgetAccounting(args: {
+  db: AppDb;
+  requestId: string | null;
+  decompositionModel: string;
+  nutritionModel: string;
+}): {
+  decompositionRecorder: NonNullable<StreamOptions['onAttemptComplete']>;
+  nutritionRecorder: NonNullable<StreamOptions['onAttemptComplete']>;
+  recordCatchError: (error: unknown) => void;
+} {
+  const providerErrorState = { recorded: false };
+  recordAnalysisModelBudgetEventBestEffort({
+    db: args.db,
+    requestId: args.requestId,
+    route: ANALYSIS_MODEL_BUDGET_ROUTE,
+    workKind: 'primary',
+    provider: ANALYSIS_MODEL_PROVIDER,
+    model: args.nutritionModel,
+    requestCount: 1,
+  });
+  return {
+    decompositionRecorder: createBudgetAttemptRecorder({
+      db: args.db,
+      requestId: args.requestId,
+      workKind: 'primary',
+      model: args.decompositionModel,
+      providerErrorState,
+    }),
+    nutritionRecorder: createBudgetAttemptRecorder({
+      db: args.db,
+      requestId: args.requestId,
+      workKind: 'primary',
+      model: args.nutritionModel,
+      providerErrorState,
+    }),
+    recordCatchError: (error: unknown) => {
+      const category = classifyProviderError(error);
+      if (!category || providerErrorState.recorded) return;
+      recordAnalysisModelBudgetEventBestEffort({
+        db: args.db,
+        requestId: args.requestId,
+        route: ANALYSIS_MODEL_BUDGET_ROUTE,
+        workKind: 'primary',
+        provider: ANALYSIS_MODEL_PROVIDER,
+        model: args.nutritionModel,
+        requestCount: 0,
+        errorCategory: category,
+      });
+    },
+  };
+}
