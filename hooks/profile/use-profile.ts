@@ -23,19 +23,6 @@ export function useMyProfile() {
   });
 }
 
-/** Update the user's link end (slug), then refresh anything that renders it. */
-export function useSaveProfile() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { handle: string; displayName?: string | null }) =>
-      saveMyProfile(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: profileKeys.mine });
-      queryClient.invalidateQueries({ queryKey: friendsKeys.all });
-    },
-  });
-}
-
 /** Shared onSuccess: refresh everything that renders the identity. */
 function useInvalidateIdentity() {
   const queryClient = useQueryClient();
@@ -43,6 +30,16 @@ function useInvalidateIdentity() {
     queryClient.invalidateQueries({ queryKey: profileKeys.mine });
     queryClient.invalidateQueries({ queryKey: friendsKeys.all });
   };
+}
+
+/** Update the user's link end (slug), then refresh anything that renders it. */
+export function useSaveProfile() {
+  const onSuccess = useInvalidateIdentity();
+  return useMutation({
+    mutationFn: (input: { handle: string; displayName?: string | null }) =>
+      saveMyProfile(input),
+    onSuccess,
+  });
 }
 
 /** Rename ("what should we call you") — the handle cascades server-side. */
