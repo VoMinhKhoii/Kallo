@@ -358,6 +358,13 @@
       "when": 1784175119917,
       "tag": "20260716041159_meal_share_invites_and_portion_factor",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1784471367854,
+      "tag": "20260719142927_add_pipeline_version_and_v2_anomaly_causes",
+      "breakpoints": true
     }
   ]
 }
