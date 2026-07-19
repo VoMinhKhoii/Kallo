@@ -118,6 +118,7 @@ export async function createShareReplyAction(input: {
         displayName: author?.displayName ?? null,
         avatarSeed: author?.avatarSeed ?? null,
         avatarUrl: author?.avatarUrl ?? null,
+        avatarPath: author?.avatarPath ?? null,
       }),
       isSelf: true,
       body: reply.body,

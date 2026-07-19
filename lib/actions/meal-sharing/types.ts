@@ -9,6 +9,7 @@ export interface MealShareInvite {
     handle: string;
     displayName: string | null;
     avatarSeed: string | null;
+    avatarUrl: string | null;
   };
   /** The portion the recipient will receive (already scaled for a split). */
   meal: {

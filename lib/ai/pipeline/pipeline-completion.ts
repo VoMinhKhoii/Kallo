@@ -111,6 +111,7 @@ export async function finalizePipelineRun(args: {
       const row = buildPipelineRunRow({
         userId: traceContext.userId,
         requestId: traceContext.requestId,
+        pipelineVersion: 'v1',
         modelCall1: DECOMPOSITION_MODEL,
         modelCall2: selectedNutritionModel,
         timings: { total: Date.now() - t0 },

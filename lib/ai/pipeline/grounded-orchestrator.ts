@@ -1,42 +1,43 @@
 import type { AppDb } from '@/lib/db';
-import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import {
   DEFAULT_K,
   DEFAULT_MATCH_CONCURRENCY,
   type IngredientV2MatchResult,
-  matchTopKPerIngredient,
 } from '../matching/top-k-cascade';
 import {
-  buildGroundedEstimationPrompt,
-  type MealItemWithCandidates,
-} from '../prompts/grounded-estimation';
-import {
+  buildMealItemOffsetByName,
   buildPerMealItemOffsetMap,
-  extractCompletedGroundedMealItems,
-  resolveStreamingV2MealItem,
 } from '../streaming/grounded-parsers';
-import { computeStreamingMealItem } from '../streaming/parsers';
 import type { StreamEvent } from '../streaming/types';
 import type { PipelineResponse, UserContext } from '../types';
 import { assembleResult } from './assembly';
 import { bridgeV2ToV1 } from './bridge';
+import { initV2BudgetAccounting } from './budget-telemetry';
+import { createChunkEmitContext, runCallTwo } from './call-two';
+import { resolveCompletenessGate } from './completeness-gate';
 import { resolveModelProfile } from './config/model-profile';
 import { handleError, nonFoodResponse } from './errors';
+import {
+  createGeminiEstimator,
+  renderGeminiEstimatorPrompt,
+} from './estimator/gemini-estimator';
+import type { GroundedEstimator } from './estimator/types';
+import { buildFastPathEstimation } from './fast-path';
 import { runGroundedDecomposition } from './grounded-decomposition';
 import {
-  buildCallTwoPayload,
+  createCall2StreamHandler,
   flushUnstreamedItemMacros,
+  runV2AnomalyPass,
+  shouldEscalateV2,
   toPromptPersonalizationContext,
   withStageLogV2,
 } from './grounded-support';
-import { logV2Telemetry, persistV2PipelineRun } from './grounded-telemetry';
+import { recordV2RunTelemetry } from './grounded-telemetry';
 import { reconcileNutritionIds } from './nutrition';
 import type { AnalyzeMealTraceContext } from './orchestrator';
-import {
-  type GroundedEstimation,
-  groundedEstimationSchema,
-} from './schemas-v2';
+import { prepareGrounding } from './prepare-grounding';
+import type { GroundedEstimation, MealDecompositionV2 } from './schemas-v2';
 import { buildLlmStageTrace } from './telemetry/trace';
 
 export interface AnalyzeMealV2Options {
@@ -53,6 +54,26 @@ export interface AnalyzeMealV2Options {
    * runs alongside v1.
    */
   traceContext?: AnalyzeMealTraceContext;
+  /** Read-only internals used by the offline eval harness. */
+  onDiagnostics?: (diagnostics: V2PipelineDiagnostics) => void;
+  /** Precise-mode clarify reply, threaded into the Call-1 user message on re-analysis. */
+  clarifyAnswer?: string;
+  /**
+   * Call-2 provider adapter (D3 seam). Offline-eval-only override for the
+   * bakeoff harness (`--estimator gemini|claude|openai`). When omitted the
+   * orchestrator builds the Gemini adapter itself, so the production route —
+   * which never passes this — stays Gemini-only with no behavior change.
+   */
+  estimator?: GroundedEstimator;
+}
+
+export interface V2PipelineDiagnostics {
+  decomposition: MealDecompositionV2;
+  matchResults: IngredientV2MatchResult[];
+  verdicts: ReturnType<typeof bridgeV2ToV1>['verdicts'];
+  /** Per-ingredient plausibility trail — lets consumers (eval harness) tell a
+   *  FLAGGED zero (genuinely_noncaloric, unresolved_estimate) from a silent one. */
+  plausibility: ReturnType<typeof bridgeV2ToV1>['plausibility'];
 }
 
 /**
@@ -79,6 +100,13 @@ export async function analyzeMealV2(
   const promptCtx = toPromptPersonalizationContext(userContext);
   const t0 = Date.now();
 
+  const budget = initV2BudgetAccounting({
+    db,
+    requestId: traceContext?.requestId ?? null,
+    decompositionModel: profile.decompositionModel,
+    nutritionModel: profile.nutritionModel,
+  });
+
   let promptCharsCall2 = 0;
   let nutritionChunkCount = 0;
 
@@ -87,11 +115,14 @@ export async function analyzeMealV2(
     const stage1 = await runGroundedDecomposition({
       rawInput,
       userContext,
+      db,
       gemini,
       traceContext,
       emit,
       promptCtx,
       profile,
+      clarifyAnswer: options.clarifyAnswer,
+      onAttemptComplete: budget.decompositionRecorder,
     });
     if (stage1.nonFood) {
       return nonFoodResponse();
@@ -101,104 +132,65 @@ export async function analyzeMealV2(
       streamedMealItemIds,
       decomposeChunkCount,
       languageRetryCount,
+      providerRetryCount: decompositionProviderRetryCount,
       promptCharsCall1,
     } = stage1;
 
-    // ---- Stage 2: Match top-K per ingredient ----------------------------
-    const flatIngredients = decomposition.mealItems.flatMap((mi) =>
-      mi.ingredients.map((ing) => ({
-        ingredient: ing,
-        dishCookingMethod: mi.cookingMethod,
-      }))
-    );
-    const matchResults: IngredientV2MatchResult[] = await withStageLogV2(
+    // ---- Stage 2: matching + portion resolution (prepare-grounding) -----
+    const {
+      matchResults,
+      portionResolutions,
+      mealItemsWithCandidates,
+      fullyGrounded,
+    } = await prepareGrounding({
+      decomposition,
+      userContext,
+      db,
+      gemini,
       traceContext,
-      'matching',
-      2,
-      { ingredientCount: flatIngredients.length, topK },
-      async (_ctx) => {
-        emit({ type: 'stage', stage: 'matching' });
-        return matchTopKPerIngredient(
-          flatIngredients.map((f) => f.ingredient),
-          flatIngredients.map((f) => f.dishCookingMethod),
-          db,
-          gemini,
-          { k: topK, concurrency: matchConcurrency }
-        );
-      }
-    );
+      emit,
+      topK,
+      matchConcurrency,
+    });
 
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
-    const mealItemsWithCandidates: MealItemWithCandidates[] =
-      buildCallTwoPayload(decomposition, matchResults);
-    const call2SystemPrompt = buildGroundedEstimationPrompt({
+    const estimator =
+      options.estimator ??
+      createGeminiEstimator(gemini, profile.nutritionModel);
+    const call2SystemPrompt = renderGeminiEstimatorPrompt({
       originalPrompt: rawInput,
       mealItems: mealItemsWithCandidates,
       userContext: promptCtx,
+      temperature: call2Temperature,
     });
     promptCharsCall2 = call2SystemPrompt.length;
 
     const perItemOffsets = buildPerMealItemOffsetMap(decomposition.mealItems);
+    // D4: Call 2 streams meal items in the prompt's SORTED order; the stream
+    // handler attributes each item to its slice by name+occurrence.
+    const offsetByName = buildMealItemOffsetByName(decomposition.mealItems);
     const itemMacrosStreamed = new Set<string>();
-    // Per-display-name occurrence counter shared by the chunk handler AND
-    // the post-Call-2 flush so duplicate names ("Cơm trắng" × 2) resolve
-    // to distinct mealItemIds (`::1`, `::2`, …) minted by Call 1's stream
-    // controller. Without this, the second duplicate landed on `::1`,
-    // collided in `itemMacrosStreamed`, and was silently skipped here —
-    // only emerging via `flushUnstreamedItemMacros` at the end of Call 2.
-    const itemMacrosNameOcc = new Map<string, number>();
-    const resolveMealItemId = (rawName: string, fallbackId: string): string => {
-      const cap = capitalizeFirst(rawName);
-      const occ = (itemMacrosNameOcc.get(cap) ?? 0) + 1;
-      itemMacrosNameOcc.set(cap, occ);
-      return (
-        streamedMealItemIds.get(`${cap}::${occ}`) ??
-        streamedMealItemIds.get(`${rawName}::${occ}`) ??
-        fallbackId
-      );
-    };
-    let lastExtractedCount = 0;
+    const call2Stream = createCall2StreamHandler({
+      offsetByName,
+      matchResults,
+      streamedMealItemIds,
+      itemMacrosStreamed,
+      goal: userContext.goal,
+      aggression: userContext.aggression,
+      emit,
+    });
+    const chunkEmit = createChunkEmitContext({
+      mealItems: decomposition.mealItems,
+      matchResults,
+      streamedMealItemIds,
+      itemMacrosStreamed,
+      goal: userContext.goal,
+      aggression: userContext.aggression,
+      emit,
+    });
 
-    const handleCall2Chunk = (accumulated: string) => {
-      const { items, newCount } = extractCompletedGroundedMealItems(
-        accumulated,
-        lastExtractedCount
-      );
-      if (items.length === 0) return;
-      const indexBase = lastExtractedCount;
-      lastExtractedCount = newCount;
-
-      for (let i = 0; i < items.length; i++) {
-        const itemIdx = indexBase + i;
-        const rawItem = items[i];
-        const offset = perItemOffsets[itemIdx];
-        if (!offset) continue;
-
-        const { nutrition, totalGrams } = resolveStreamingV2MealItem(
-          rawItem,
-          offset.decomposedIngredients,
-          matchResults,
-          offset.flatIngredientStart
-        );
-        const streamItem = computeStreamingMealItem(
-          nutrition,
-          totalGrams,
-          itemIdx,
-          userContext.goal,
-          userContext.aggression
-        );
-        streamItem.name = capitalizeFirst(streamItem.name);
-        const mealItemId = resolveMealItemId(
-          rawItem.mealItemName,
-          streamItem.id
-        );
-        if (itemMacrosStreamed.has(mealItemId)) continue;
-        itemMacrosStreamed.add(mealItemId);
-        emit({ type: 'item_macros', mealItemId, item: streamItem });
-      }
-    };
-
-    const grounded: GroundedEstimation = await withStageLogV2(
+    let nutritionMaxAttempt = 0;
+    const call2 = await withStageLogV2(
       traceContext,
       'nutrition',
       3,
@@ -209,6 +201,7 @@ export async function analyzeMealV2(
         unmatchedCount: matchResults.filter((m) => m.candidates.length === 0)
           .length,
         model: profile.nutritionModel,
+        fastPath: fullyGrounded,
       },
       async ({ stageLogId }) => {
         emit({ type: 'stage', stage: 'estimating' });
@@ -216,38 +209,50 @@ export async function analyzeMealV2(
           trace: traceContext,
           stageLogId,
           name: 'grounded-estimation',
-          builder: buildGroundedEstimationPrompt as (...a: unknown[]) => string,
+          builder: renderGeminiEstimatorPrompt as (...a: unknown[]) => string,
           templateSample: call2SystemPrompt,
           model: profile.nutritionModel,
         });
-        return gemini.generateStructuredOutputStream(
-          {
-            schema: groundedEstimationSchema,
-            systemPrompt: call2SystemPrompt,
-            userMessage:
-              'Verify each candidate (CRAG verdict), estimate grams scoped to the selected candidate state, and emit bounded macros per the rules above.',
-            model: profile.nutritionModel,
-            temperature: call2Temperature,
-            topP: 1,
-            topK: 1,
-          },
-          {
-            onChunk: (accumulated) => {
-              nutritionChunkCount++;
-              handleCall2Chunk(accumulated);
+        return runCallTwo({
+          estimator,
+          mealItems: mealItemsWithCandidates,
+          originalPrompt: rawInput,
+          promptCtx,
+          temperature: call2Temperature,
+          stream: {
+            handleChunk: call2Stream.handleChunk,
+            resetForRetry: call2Stream.resetForRetry,
+            onAttemptStart: (attempt) => {
+              nutritionMaxAttempt = Math.max(nutritionMaxAttempt, attempt);
+              if (attempt > 1) call2Stream.resetForRetry();
             },
-            ...(callTrace ? { trace: callTrace } : {}),
-          }
-        );
+            onChunkTick: () => {
+              nutritionChunkCount++;
+            },
+          },
+          chunkEmit,
+          onAttemptComplete: budget.nutritionRecorder,
+          ...(fullyGrounded
+            ? {
+                fastPath: buildFastPathEstimation({
+                  decomposition,
+                  matchResults,
+                  portionResolutions,
+                }),
+              }
+            : {}),
+          ...(callTrace ? { trace: callTrace } : {}),
+        });
       }
     );
+    const grounded: GroundedEstimation = call2.grounded;
 
     // ---- Stage 4: Bridge + Reconcile + Assemble (single trace stage) ---
     const assembly = await withStageLogV2(
       traceContext,
       'assembly',
       4,
-      { ingredientCount: flatIngredients.length },
+      { ingredientCount: matchResults.length },
       async (_ctx) => {
         emit({ type: 'stage', stage: 'assembling' });
         const bridged = bridgeV2ToV1({
@@ -256,6 +261,7 @@ export async function analyzeMealV2(
           grounded,
           mealContext: rawInput,
           preMintedMealItemIds: streamedMealItemIds,
+          portionResolutions,
         });
         const reconciled = reconcileNutritionIds(
           bridged.rawNutrition,
@@ -275,6 +281,12 @@ export async function analyzeMealV2(
       }
     );
     const bridged = assembly.bridged;
+    options.onDiagnostics?.({
+      decomposition,
+      matchResults,
+      verdicts: bridged.verdicts,
+      plausibility: bridged.plausibility,
+    });
 
     // Flush any meal items whose macros didn't stream (e.g., final closing
     // brace arrived without a separator marker, so the regex didn't catch
@@ -290,44 +302,63 @@ export async function analyzeMealV2(
       emit,
     });
 
-    logV2Telemetry({
-      decomposition,
-      matchResults,
-      grounded,
-      verdicts: bridged.verdicts,
-      promptCharsCall1,
-      promptCharsCall2,
-      decomposeChunkCount,
-      nutritionChunkCount,
-      languageRetryCount,
-    });
-
-    // Persist a pipeline_runs row when request-level tracing is enabled,
-    // mirroring v1's observability surface so admin/audit dashboards and
-    // the shadow-runner pick up v2 requests too. Best-effort, never blocks.
-    // In tests, await persistence so assertions on pipeline_runs aren't racy.
-    // In prod, fire-and-forget — pipeline_runs writes never block the
-    // user-visible response. persistV2PipelineRun internally swallows errors
-    // either way so the outer pipeline result is never affected.
-    const persistPromise = persistV2PipelineRun({
-      traceContext,
-      userContext,
-      profile,
-      decomposition,
+    // v2 anomaly pass (D2): classify by CAUSE + record SAFE actions over the
+    // assembled result. Gated escalation seam: when opted in, a high-confidence
+    // correctness anomaly re-runs Call 2 once on the escalation model. Default
+    // off (stable has no escalationModel), so no added latency until opted in.
+    const anomalySummary = runV2AnomalyPass({
+      result: assembly.result,
       matched: bridged.matched,
       unmatched: bridged.unmatched,
-      verdicts: bridged.verdicts,
-      totalMs: Date.now() - t0,
-      languageRetryCount,
+      decomposition,
     });
-    if (process.env.NODE_ENV === 'test') {
-      await persistPromise;
-    } else {
-      void persistPromise;
+    const escalated = shouldEscalateV2({ profile, summary: anomalySummary });
+    if (escalated) {
+      console.info('[v2-pipeline] escalation fired', profile.escalationModel);
     }
 
-    return { success: true, data: assembly.result };
+    await recordV2RunTelemetry({
+      log: {
+        decomposition,
+        matchResults,
+        grounded,
+        verdicts: bridged.verdicts,
+        promptCharsCall1,
+        promptCharsCall2,
+        decomposeChunkCount,
+        nutritionChunkCount,
+        languageRetryCount,
+        portionProvenance: portionResolutions.map((r) => r.provenance),
+      },
+      persist: {
+        traceContext,
+        userContext,
+        profile,
+        decomposition,
+        matched: bridged.matched,
+        unmatched: bridged.unmatched,
+        verdicts: bridged.verdicts,
+        anomalySummary,
+        escalated,
+        totalMs: Date.now() - t0,
+        languageRetryCount,
+        providerRetryCount:
+          decompositionProviderRetryCount +
+          Math.max(0, nutritionMaxAttempt - 1),
+      },
+    });
+
+    // Chunk-failure → plausibility → anomaly clarify (see completeness-gate).
+    const unresolved = resolveCompletenessGate({
+      failedMealItemNames: call2.failedMealItemNames,
+      plausibility: bridged.plausibility,
+      anomalySummary,
+    });
+    return unresolved
+      ? { success: true, data: assembly.result, unresolved }
+      : { success: true, data: assembly.result };
   } catch (error) {
+    budget.recordCatchError(error);
     return handleError(error);
   }
 }

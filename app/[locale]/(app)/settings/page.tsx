@@ -4,9 +4,11 @@ import { AccountPanel } from '@/components/settings/account/account-panel';
 import {
   ACCOUNT_ANCHOR,
   FEEDBACK_ANCHOR,
+  IDENTITY_ANCHOR,
   SettingsAnchorNav,
 } from '@/components/settings/anchor-nav';
 import { FeedbackPanel } from '@/components/settings/feedback/feedback-panel';
+import { IdentityPanel } from '@/components/settings/identity/identity-panel';
 import { Profile } from '@/components/settings/profile';
 import { Link } from '@/i18n/navigation';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
@@ -31,6 +33,7 @@ export default async function SettingsPage() {
   const tProfile = await getTranslations('settings.profilePage');
   const tAccount = await getTranslations('settings.account');
   const tFeedback = await getTranslations('settings.feedback');
+  const tIdentity = await getTranslations('settings.identity');
 
   const [profile, supabase] = await Promise.all([
     getOnboardingProfile(),
@@ -54,6 +57,23 @@ export default async function SettingsPage() {
           </h1>
           <p className="mt-1 text-[#7B6F62] text-[14px]">{t('description')}</p>
         </header>
+
+        {/* Identity — avatar + "what should we call you", above the metrics. */}
+        <section
+          id={IDENTITY_ANCHOR}
+          aria-label={tIdentity('title')}
+          className="mb-8 scroll-mt-20"
+        >
+          <div className="mb-4">
+            <h2 className="font-normal font-serif text-nham-text text-xl tracking-tight">
+              {tIdentity('title')}
+            </h2>
+            <p className="mt-1 text-[#7B6F62] text-[14px]">
+              {tIdentity('description')}
+            </p>
+          </div>
+          <IdentityPanel />
+        </section>
 
         {profile ? (
           <Profile profile={profile} />

@@ -21,6 +21,7 @@
 
 import { NUTRITION_KEYS } from '../constants';
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
+import type { PortionResolution } from '../portion/types';
 import type {
   DecomposedIngredient,
   DecomposedMealItem,
@@ -37,6 +38,10 @@ import {
 } from './bridge-verdicts';
 import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
 import type { RawNutritionAdjustment } from './nutrition';
+import {
+  classifyIngredientPlausibility,
+  type IngredientPlausibility,
+} from './plausibility';
 import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
@@ -57,6 +62,29 @@ export interface VerdictPerIngredient {
   grounded: GroundedIngredientEstimate | null;
 }
 
+/**
+ * Per-ingredient plausibility trail (flat order, one entry per decomposed
+ * ingredient). `unresolved_estimate` entries are the ones the completeness
+ * gates key on — they carry NO 1g/zero-filled matched or nutrition row.
+ */
+export interface PlausibilityPerIngredient {
+  mealItemIdx: number;
+  ingredientIdx: number;
+  /** Run-scoped ingredient id (assigned after `ensureIdsOnDecomposition`). */
+  ingredientId: string;
+  /** Ingredient display name (rawName). */
+  ingredientName: string;
+  /** Owning meal-item display name. */
+  mealItemName: string;
+  state: IngredientPlausibility;
+  /**
+   * When `state === 'unresolved_estimate'`, why — drives the clarify reason.
+   * 'ambiguous_food' when the portion resolver couldn't scope the concept;
+   * 'unresolved_portion' (default) for a missing/too-wide portion.
+   */
+  unresolvedReason?: 'ambiguous_food' | 'unresolved_portion';
+}
+
 export interface V2BridgeOutput {
   /** v1-shape decomposition with run-scoped IDs and grams emitted by Call 2. */
   decomposition: MealDecompositionWithIds;
@@ -68,9 +96,9 @@ export interface V2BridgeOutput {
   rawNutrition: RawNutritionAdjustment;
   /** Per-ingredient verdict trail for telemetry / shadow-divergence dashboards. */
   verdicts: VerdictPerIngredient[];
+  /** Per-ingredient plausibility classification (Phase 1 silent-zero kill). */
+  plausibility: PlausibilityPerIngredient[];
 }
-
-const FALLBACK_GRAMS = 1;
 
 export function bridgeV2ToV1(args: {
   v2: MealDecompositionV2;
@@ -86,8 +114,24 @@ export function bridgeV2ToV1(args: {
    * final `result` event.
    */
   preMintedMealItemIds?: Map<string, string>;
+  /**
+   * Phase 3 portion-resolver output, one entry per flat ingredient (same order
+   * as the decomposition walk). When a resolution grounded grams (steps 1–4),
+   * it OVERRIDES the LLM grams so Call 2 cannot drift from the server anchor.
+   * When a resolution is `unresolved`, the ingredient is forced to
+   * `unresolved_estimate` so the completeness gate clarifies. Omitted on the
+   * v1-shadow / test paths that don't run the resolver.
+   */
+  portionResolutions?: PortionResolution[];
 }): V2BridgeOutput {
-  const { v2, matches, grounded, mealContext, preMintedMealItemIds } = args;
+  const {
+    v2,
+    matches,
+    grounded,
+    mealContext,
+    preMintedMealItemIds,
+    portionResolutions,
+  } = args;
 
   const paired = pairIngredientsWithGrounded(v2, grounded);
   const matchByIndex = new Map<number, IngredientV2MatchResult>();
@@ -103,6 +147,11 @@ export function bridgeV2ToV1(args: {
   >();
   const unmatched: UnmatchedIngredient[] = [];
   const rawMealItems: RawNutritionAdjustment['mealItems'] = [];
+  // Per-flat-index plausibility partial (ingredientId attached after id assignment).
+  const plausibilityPartialByFlatIdx = new Map<
+    number,
+    Omit<PlausibilityPerIngredient, 'ingredientId'>
+  >();
 
   let flatIngredientIdx = 0;
 
@@ -133,14 +182,89 @@ export function bridgeV2ToV1(args: {
       });
 
       const cookingMethodForIng = ing.cookingMethod ?? mi.cookingMethod;
-      const grams =
-        ground?.grams && ground.grams > 0 ? ground.grams : FALLBACK_GRAMS;
+      const portion = portionResolutions?.[flatIngredientIdx];
+      // Server ANCHOR override (Phase 3): when the portion resolver grounded
+      // grams (ladder steps 1–4), that number is authoritative — Call 2 must
+      // not drift from it. Prefer the resolver's grams over the LLM's.
+      const anchorGrams =
+        portion &&
+        portion.grams != null &&
+        portion.provenance !== 'llm_range' &&
+        portion.provenance !== 'unresolved' &&
+        Number.isFinite(portion.grams.mid) &&
+        portion.grams.mid > 0
+          ? portion.grams.mid
+          : null;
+      // NO FALLBACK_GRAMS: a missing/invalid grams is left unresolved rather
+      // than coerced to a 1g placeholder row. `schemas-v2.ts` enforces
+      // grams.positive().finite() at parse time, so an invalid value here can
+      // only mean Call 2 dropped the ingredient entirely (verdict='missing').
+      const llmGrams =
+        ground?.grams != null &&
+        Number.isFinite(ground.grams) &&
+        ground.grams > 0
+          ? ground.grams
+          : null;
+      const resolvedGrams = anchorGrams ?? llmGrams;
+      // When the resolver explicitly deferred to clarify, force the ingredient
+      // unresolved regardless of whatever grams Call 2 emitted.
+      const resolverUnresolved = portion?.provenance === 'unresolved';
+
+      const acceptedCandidate =
+        verdict === 'accepted' && selectedCandidateIdx !== null
+          ? candidates[selectedCandidateIdx]
+          : null;
+
+      // UNMATCHED-path defense-in-depth (Phase 4/D3): when the ingredient will
+      // flow through the unmatched path (no accepted candidate), the server does
+      // NOT anchor its P/C/kcal — those come from Call 2. If Call 2 omitted the
+      // whole caloric triple (D3 made it optional), degrading to ZERO_TRIPLE
+      // would be a silent zero-macro persist. Signal that to the classifier so
+      // it routes to clarify instead. Matched ingredients keep this `false`:
+      // their omitted triple is correctly re-derived from the DB row.
+      const unmatchedCaloricMacrosMissing =
+        acceptedCandidate == null &&
+        ground != null &&
+        ground.caloriesKcal == null &&
+        ground.proteinG == null &&
+        ground.carbohydrateG == null;
+
+      const state = resolverUnresolved
+        ? 'unresolved_estimate'
+        : classifyIngredientPlausibility({
+            grams: resolvedGrams,
+            hasNutrition: ground != null,
+            caloriesPer100g: acceptedCandidate?.nutrition?.caloriesKcal ?? null,
+            name: ing.rawName || ing.canonicalName,
+            emittedCaloricMacrosMissing: unmatchedCaloricMacrosMissing,
+          });
+      plausibilityPartialByFlatIdx.set(flatIngredientIdx, {
+        mealItemIdx,
+        ingredientIdx,
+        ingredientName: ing.rawName,
+        mealItemName: mi.name,
+        state,
+        ...(state === 'unresolved_estimate' && portion?.unresolvedReason
+          ? { unresolvedReason: portion.unresolvedReason }
+          : {}),
+      });
+
+      // Unresolved: emit NEITHER a matched row NOR a zero/1g-filled nutrition
+      // row. The ingredient still exists in the decomposition (so streamed
+      // ids stay stable), but it contributes no silent under-weighted macros.
+      // The completeness gate downstream decides whether to clarify.
+      if (state === 'unresolved_estimate') {
+        v1Ings.push(v2IngredientToV1(ing, cookingMethodForIng, 0, undefined));
+        flatIngredientIdx++;
+        return;
+      }
+
+      const grams = resolvedGrams as number;
       let weightBasis: 'raw' | undefined;
       let v1Ing: DecomposedIngredient;
 
-      if (verdict === 'accepted' && selectedCandidateIdx !== null) {
-        const candidate = candidates[selectedCandidateIdx];
-        const dbState = candidate.info.state;
+      if (acceptedCandidate) {
+        const dbState = acceptedCandidate.info.state;
         // For raw or unknown candidates, force weightBasis='raw' so
         // computeDbScalingGrams skips convertCookedToRaw. For cooked
         // candidates, omitting weightBasis still yields grams unchanged
@@ -149,17 +273,17 @@ export function bridgeV2ToV1(args: {
         v1Ing = v2IngredientToV1(ing, cookingMethodForIng, grams, weightBasis);
         matchedPartialByFlatIdx.set(flatIngredientIdx, {
           ingredientName: ing.rawName,
-          foodCompositionId: candidate.info.foodCompositionId,
-          matchedName: candidate.info.matchedName,
-          similarity: candidate.info.similarity,
-          confidence: candidate.info.confidence,
+          foodCompositionId: acceptedCandidate.info.foodCompositionId,
+          matchedName: acceptedCandidate.info.matchedName,
+          similarity: acceptedCandidate.info.similarity,
+          confidence: acceptedCandidate.info.confidence,
           dbState: dbState,
-          matchType: candidate.info.matchType,
-          source: candidate.info.source,
-          nutritionPer100g: candidate.nutrition ?? buildNullNutrition(),
+          matchType: acceptedCandidate.info.matchType,
+          source: acceptedCandidate.info.source,
+          nutritionPer100g: acceptedCandidate.nutrition ?? buildNullNutrition(),
         });
       } else {
-        // Unmatched OR rejected: Call 2 macros flow through verbatim.
+        // Unmatched OR rejected but resolvable: Call 2 macros flow through.
         v1Ing = v2IngredientToV1(ing, cookingMethodForIng, grams, undefined);
         unmatched.push({
           ingredientName: ing.rawName,
@@ -213,12 +337,20 @@ export function bridgeV2ToV1(args: {
   // Walk withIds in flat order (same order as flatIngredientIdx above) and
   // attach run-scoped ingredientIds to partial matched data.
   const matched: MatchedIngredient[] = [];
+  const plausibility: PlausibilityPerIngredient[] = [];
   let cursor = 0;
   withIds.mealItems.forEach((mi) => {
     mi.ingredients.forEach((ing) => {
       const partial = matchedPartialByFlatIdx.get(cursor);
       if (partial) {
         matched.push({ ...partial, ingredientId: ing.ingredientId });
+      }
+      const plausPartial = plausibilityPartialByFlatIdx.get(cursor);
+      if (plausPartial) {
+        plausibility.push({
+          ...plausPartial,
+          ingredientId: ing.ingredientId,
+        });
       }
       cursor++;
     });
@@ -232,6 +364,7 @@ export function bridgeV2ToV1(args: {
     unmatched,
     rawNutrition,
     verdicts,
+    plausibility,
   };
 }
 

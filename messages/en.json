@@ -1132,6 +1132,10 @@
       "alcohol": "alcohol",
       "between": "Between {low} and {high}"
     },
+    "clarify": {
+      "portion": "How much {ingredient} was in your {mealItem}? A rough weight or portion helps.",
+      "food": "Which {ingredient} did you mean in your {mealItem}?"
+    },
     "cheatRepeat": {
       "title": "Log it again"
     },
@@ -1395,7 +1399,8 @@
       "regional": "Region & language",
       "cooking": "Cooking",
       "account": "Account",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "identity": "Profile"
     },
     "feedback": {
       "title": "Send feedback",
@@ -1474,6 +1479,26 @@
       "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
       "saveError": "Failed to save settings. Please try again.",
       "invalidError": "Some entries are invalid — please review your body metrics."
+    },
+    "identity": {
+      "title": "Profile",
+      "description": "How you appear across Nhẩm and to your circle.",
+      "avatarLabel": "Profile photo",
+      "avatarUpload": "Upload photo",
+      "avatarChange": "Change photo",
+      "avatarRemove": "Remove",
+      "avatarSaved": "Photo updated",
+      "avatarRemoved": "Photo removed",
+      "avatarError": "Couldn't update your photo",
+      "avatarTooLarge": "Image must be under 5 MB",
+      "avatarType": "Use a PNG, JPG, or WebP image",
+      "nameLabel": "What should we call you?",
+      "namePlaceholder": "Your name",
+      "nameSave": "Save name",
+      "nameSaved": "Name updated",
+      "nameError": "Couldn't update your name",
+      "linkPreview": "Your invite link:",
+      "linkWarning": "Changing your name updates your invite link — old links stop working."
     }
   },
   "errors": {

@@ -24,13 +24,21 @@ class CircleProfile {
     this.displayName,
     this.avatarSeed,
     this.avatarUrl,
+    this.hasCustomAvatar = false,
   });
 
   final String userId;
   final String handle;
   final String? displayName;
   final String? avatarSeed;
+
+  /// Effective photo URL (uploaded avatar, else the OAuth picture); null =
+  /// initials disc fallback.
   final String? avatarUrl;
+
+  /// True when [avatarUrl] is a user upload (drives the settings Remove
+  /// button — clearing an OAuth-only avatar would be a silent no-op).
+  final bool hasCustomAvatar;
 
   /// How a person is labelled in a circle: their display name, else their
   /// handle (slug). Mirrors `labelFor()` in
@@ -50,6 +58,7 @@ class CircleProfile {
     displayName: json['displayName'] as String?,
     avatarSeed: json['avatarSeed'] as String?,
     avatarUrl: json['avatarUrl'] as String?,
+    hasCustomAvatar: json['hasCustomAvatar'] as bool? ?? false,
   );
 }
 

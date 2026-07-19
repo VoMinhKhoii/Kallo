@@ -117,8 +117,7 @@ class _GroupAddPeopleState extends ConsumerState<GroupAddPeople> {
         else
           for (final friend in filtered)
             FriendPickRow(
-              label: friend.profile.label,
-              initial: friend.profile.initial,
+              profile: friend.profile,
               selected: _selected.contains(friend.profile.userId),
               onTap:
                   () => setState(

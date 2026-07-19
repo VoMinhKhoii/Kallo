@@ -23,6 +23,8 @@ import '../models/streaming.dart';
 import '../services/supabase_service.dart';
 import 'env.dart';
 
+part 'api_client_uploads.dart';
+
 const _authRefreshSkew = Duration(minutes: 5);
 
 /// Client-side mirror of the server `ApiError` envelope.
@@ -234,37 +236,6 @@ class ApiClient {
       if (route != null) 'route': route,
     });
     return res['id'] as String;
-  }
-
-  /// Upload an optional feedback screenshot as multipart form-data
-  /// (`POST /api/v1/feedback/screenshot`, field `file`). Returns the storage
-  /// path to pass as `screenshotPath` on [submitFeedback]. Uploads go through
-  /// the backend because the mobile supabase client rides the auth-only proxy
-  /// and can't reach Storage directly.
-  Future<String> uploadFeedbackScreenshot({
-    required Uint8List bytes,
-    required String filename,
-    required String contentType,
-  }) async {
-    final headers = await _authHeaders();
-    final uri = Uri.parse('$_baseUrl/api/v1/feedback/screenshot');
-    final req = http.MultipartRequest('POST', uri)
-      ..headers.addAll(headers)
-      ..files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          bytes,
-          filename: filename,
-          contentType: MediaType.parse(contentType),
-        ),
-      );
-    final streamed = await _http.send(req);
-    final res = await http.Response.fromStream(streamed);
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw _toApiError(res);
-    }
-    final body = jsonDecode(res.body) as Map<String, dynamic>;
-    return body['path'] as String;
   }
 
   /// Fire-and-forget ping to wake a scale-to-zero backend on launch. Failures

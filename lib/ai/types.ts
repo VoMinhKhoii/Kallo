@@ -345,11 +345,35 @@ export interface PipelineError {
   retryable: boolean;
 }
 
+/**
+ * Phase 1: the pipeline finished but ≥1 ingredient's portion or food match
+ * couldn't be resolved. The route emits a precise-mode `clarify` event for
+ * the most-impactful item INSTEAD of persisting an under-weighted meal.
+ * Present only on the v2 grounded path; v1 never sets it.
+ */
+export interface PipelineUnresolved {
+  /** Owning meal-item name of the most-impactful unresolved ingredient. */
+  mealItemName: string;
+  /** The unresolved ingredient's display name. */
+  ingredientName: string;
+  /**
+   * Why it's unresolved — drives the clarify `reason`.
+   * 'processing_incomplete' = a Call-2 chunk failed after retries (transient),
+   * NOT a gap in the user's input — the route emits a retryable error, not a
+   * clarify question about a portion the user already stated.
+   */
+  reason: 'unresolved_portion' | 'ambiguous_food' | 'processing_incomplete';
+  /** Count of unresolved ingredients across the whole meal. */
+  unresolvedCount: number;
+}
+
 /** Discriminated union result type */
 export type PipelineResponse =
   | {
       success: true;
       data: PipelineResult;
+      /** Set when ≥1 ingredient couldn't be resolved (see PipelineUnresolved). */
+      unresolved?: PipelineUnresolved;
       __telemetry?: import('./pipeline/telemetry/run-telemetry').PipelineRunRow;
       __telemetryRunId?: string;
       /** Resolves once the pipeline_runs row insert has committed.

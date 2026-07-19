@@ -45,9 +45,16 @@ const isEmbeddingCacheWarmupEnabled = () =>
  * Warm L1 memory cache from the 526 VN FCT food items (source_id = 1).
  *
  * Loads directly from `vietnamese_food_composition` — the authoritative source
- * of pre-computed embeddings — rather than from the query cache table which
- * only accumulates entries as users search. This ensures L1 is pre-populated
- * with all common Vietnamese food names from the first request.
+ * of pre-computed embeddings — selecting ONLY name + embedding (never the full
+ * row) rather than from the query cache table which only accumulates entries as
+ * users search. This ensures L1 is pre-populated with all common Vietnamese
+ * food names.
+ *
+ * Runs independently of the nutrition cache's `loadAll` (which no longer pulls
+ * embeddings at all — see nutrition-cache.ts). This is a background warm only;
+ * the cold matching path relies on the L2 `ingredient_query_embeddings` tier
+ * (seeded from the same FCT embeddings) plus the streaming prewarm, so it is
+ * never awaited on a request.
  *
  * Safe to call concurrently — the boolean guard ensures the DB load runs
  * exactly once per process. On DB error the warm-up is skipped silently;
@@ -87,36 +94,6 @@ export async function warmEmbeddingCache(
     console.warn('[embedding-cache] Warm-up failed, continuing without:', err);
     warmCacheStarted = false; // allow retry on next request
   }
-}
-
-/**
- * Prime L1 from rows already fetched by another caller — used by
- * `nutrition-cache.loadAll` so the boot-time `SELECT * FROM
- * vietnamese_food_composition WHERE source_id = 1` runs once instead of twice.
- * Marks the cache as warmed so later explicit warm-up attempts become no-ops.
- */
-export function primeEmbeddingCacheFromRows(
-  rows: Iterable<Record<string, unknown>>
-): void {
-  if (!isEmbeddingCacheEnabled() || !isEmbeddingCacheWarmupEnabled()) return;
-  let loaded = 0;
-  for (const row of rows) {
-    const embedding = parseEmbeddingValue(row.embedding);
-    if (!embedding) continue;
-    const nameVi = row.name_primary as string | null;
-    const nameEn = row.name_en as string | null;
-    if (nameVi) {
-      memoryCache.set(normalizeIngredientKey(nameVi), embedding);
-      loaded++;
-    }
-    if (nameEn) {
-      memoryCache.set(normalizeIngredientKey(nameEn), embedding);
-    }
-  }
-  warmCacheStarted = true;
-  console.info(
-    `[embedding-cache] primed ${loaded} embeddings from co-loaded rows`
-  );
 }
 
 /**

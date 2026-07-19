@@ -13,7 +13,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../data/circle_providers.dart';
-import 'circle_avatar.dart';
+import '../../../shared/widgets/profile_avatar.dart';
 import 'circle_error.dart';
 
 /// Opens the invite surface: your shareable link (with an editable end), your
@@ -583,7 +583,7 @@ class _MemberRowState extends ConsumerState<_MemberRow> {
       ),
       child: Row(
         children: [
-          CircleInitialsAvatar(initial: profile.initial, size: 36),
+          ProfileAvatarDisc(profile: profile, size: 36),
           const SizedBox(width: NhamSpacing.sp3),
           Expanded(
             child: Text(

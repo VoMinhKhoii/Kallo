@@ -3,8 +3,10 @@
 > The only tracking method accurate enough for Vietnamese home cooking is natural language description.
 
 Nham turns a sentence about what you ate into a structured breakdown of
-ingredients, weights, and macros — built around how Vietnamese meals are
-actually composed, not how Western food trackers expect them to be.
+ingredients, weights, and macros. It began around how Vietnamese meals are
+actually composed — not how Western food trackers expect them to be — and now
+handles meals globally, matching against both FAO and USDA food data with
+multilingual input and output.
 
 [![Latest release](https://img.shields.io/github/v/release/VoMinhKhoii/Nham?display_name=tag&sort=semver)](https://github.com/VoMinhKhoii/Nham/releases)
 [![CI](https://github.com/VoMinhKhoii/Nham/actions/workflows/ci.yml/badge.svg)](https://github.com/VoMinhKhoii/Nham/actions/workflows/ci.yml)
@@ -14,9 +16,10 @@ actually composed, not how Western food trackers expect them to be.
 
 - **Natural-language meal logging** — describe a meal the way you'd tell a
   friend; Nham extracts ingredients, preparation, and portions.
-- **Vietnamese-first ingredient recognition** — a two-stage AI pipeline
-  (decompose then ground) matches local foods and dishes that generic
-  trackers miss.
+- **Grounded ingredient recognition** — a two-call AI pipeline (decompose,
+  then ground against retrieved FAO/USDA candidates) matches local foods and
+  dishes that generic trackers miss, with a Vietnamese-first heritage that now
+  extends to global cuisines.
 - **Macros you can trust** — server-anchored protein and carbs, with
   weight-basis and prep modifiers honored from the original phrasing.
 - **Logging UI built for repeat use** — fast input, mode-aware empty

@@ -4,7 +4,6 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -20,18 +19,14 @@ import '../data/countries.dart';
 import '../data/profile_providers.dart';
 import '../panels/cooking.dart';
 import '../widgets/instant_commit_editor.dart';
-import '../../../shared/widgets/top_toast.dart';
 import '../../feedback/feedback_screen.dart';
 import '../widgets/profile_form.dart';
 import '../widgets/region_editor.dart';
 import '../widgets/settings_group.dart';
+import '../../circle/data/circle_providers.dart';
+import 'about_section.dart';
 import 'account_section.dart';
-
-/// The marketing version string (no `package_info_plus` dependency in pubspec,
-/// so this is rendered statically — keep in sync with `pubspec.yaml`).
-const String _appVersion = '1.0.1';
-const String _privacyUrl = 'https://kallo.fit/privacy';
-const String _termsUrl = 'https://kallo.fit/terms';
+import 'identity_section.dart';
 
 /// Settings tab — a single scrollable root of grouped preference rows, each
 /// pushing ONE focused editor (Cupertino swipe-back). The numeric goal editor
@@ -93,6 +88,13 @@ class _SettingsList extends ConsumerWidget {
                   label: tr('settings.preferences'),
                   children: [
                     SettingsRow(
+                      icon: LucideIcons.user,
+                      label: tr('settings.identity.title'),
+                      subline: _identitySubline(ref),
+                      showChevron: true,
+                      onTap: () => _openIdentity(context),
+                    ),
+                    SettingsRow(
                       icon: LucideIcons.target,
                       label: tr('settings.rows.goalPace'),
                       subline: _goalPaceSubline(context, profile),
@@ -135,29 +137,7 @@ class _SettingsList extends ConsumerWidget {
                 const AccountSection(),
 
                 const SizedBox(height: NhamSpacing.sp5),
-                // ── About ───────────────────────────────────────────────────
-                SettingsGroup(
-                  label: tr('settings.about.title'),
-                  children: [
-                    SettingsRow(
-                      icon: LucideIcons.info,
-                      label: tr('settings.about.version'),
-                      value: _appVersion,
-                    ),
-                    SettingsRow(
-                      icon: LucideIcons.shieldCheck,
-                      label: tr('settings.about.privacy'),
-                      subline: _privacyUrl,
-                      onTap: () => _copyLink(context, _privacyUrl),
-                    ),
-                    SettingsRow(
-                      icon: LucideIcons.fileText,
-                      label: tr('settings.about.terms'),
-                      subline: _termsUrl,
-                      onTap: () => _copyLink(context, _termsUrl),
-                    ),
-                  ],
-                ),
+                const AboutSection(),
               ],
             ),
           ),
@@ -172,15 +152,23 @@ class _SettingsList extends ConsumerWidget {
     ).push(MaterialPageRoute<void>(builder: (_) => _ProfileScreen(kind: kind)));
   }
 
+  void _openIdentity(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const IdentityScreen()));
+  }
+
+  /// The saved display name, else the invite handle, else "Not set".
+  String _identitySubline(WidgetRef ref) {
+    final profile = ref.watch(myCircleProfileProvider).valueOrNull;
+    if (profile == null) return tr('settings.rows.notSet');
+    return profile.label;
+  }
+
   void _openFeedback(BuildContext context) {
     Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => const FeedbackScreen()));
-  }
-
-  void _copyLink(BuildContext context, String url) {
-    Clipboard.setData(ClipboardData(text: url));
-    showTopToast(context, tr('common.copied'));
   }
 
   /// "Cutting · 0.50 kg/wk" — the saved goal + pace, or "Not set" when no

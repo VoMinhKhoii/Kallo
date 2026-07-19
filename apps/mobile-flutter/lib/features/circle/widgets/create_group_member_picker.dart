@@ -87,8 +87,7 @@ class CreateGroupMemberPicker extends StatelessWidget {
                         children: [
                           for (final friend in filtered)
                             FriendPickRow(
-                              label: friend.profile.label,
-                              initial: friend.profile.initial,
+                              profile: friend.profile,
                               selected: selected.contains(
                                 friend.profile.userId,
                               ),

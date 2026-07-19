@@ -9,6 +9,7 @@ import {
   meals,
   publicProfiles,
 } from '@/lib/db/schema';
+import { avatarUrlFor } from '@/lib/groups/avatar-url';
 import type { MealShareInvite } from './types';
 
 export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
@@ -29,6 +30,8 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
       handle: publicProfiles.handle,
       displayName: publicProfiles.displayName,
       avatarSeed: publicProfiles.avatarSeed,
+      avatarUrl: publicProfiles.avatarUrl,
+      avatarPath: publicProfiles.avatarPath,
     })
     .from(mealShareInvites)
     .innerJoin(
@@ -76,6 +79,8 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
       handle: row.handle,
       displayName: row.displayName,
       avatarSeed: row.avatarSeed,
+      // Uploaded photo takes precedence over the synced OAuth picture.
+      avatarUrl: avatarUrlFor(row.avatarPath) ?? row.avatarUrl,
     },
     meal: {
       rawInput: row.rawInput,

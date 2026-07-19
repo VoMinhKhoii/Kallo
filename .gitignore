@@ -70,3 +70,6 @@ seed_food.sql
 
 # Playwright MCP session artifacts
 .playwright-mcp/
+
+# Eval run artifacts: keep the human-readable .md summaries, not the raw JSON
+scripts/eval/reports/*.json

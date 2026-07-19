@@ -23,7 +23,7 @@
     "apps/mobile-flutter/lib/features/dashboard/screens/dashboard_screen.dart": 506,
     "components/logging/sidebar/mobile-timeline-picker.tsx": 502,
     "components/landing-page/solution-section.tsx": 500,
-    "apps/mobile-flutter/lib/features/settings/screens/settings_screen.dart": 499,
+    "apps/mobile-flutter/lib/features/settings/screens/settings_screen.dart": 487,
     "apps/mobile-flutter/lib/models/dashboard.dart": 474,
     "apps/mobile-flutter/lib/features/logging/widgets/cheat_meal_card.dart": 460,
     "app/api/og/macro-card/[shareId]/route.tsx": 446,
