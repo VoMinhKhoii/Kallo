@@ -85,7 +85,6 @@ export interface MealItemWithCandidates {
   ingredients: IngredientWithCandidates[];
 }
 
-
 function buildUserContextBlock(
   userContext: PromptPersonalizationContext
 ): string {
@@ -336,4 +335,3 @@ const STATIC_PREFIX = `You are a grounded nutrition estimator. Return JSON only.
     - UNMATCHED ingredient → emit caloriesKcal, proteinG, carbohydrateG, fatG (all four).
   Round numerical fields to 1 decimal place.
 </output_format>`;
-

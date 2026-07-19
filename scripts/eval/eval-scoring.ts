@@ -156,9 +156,7 @@ export function aggregateResults(results: EvalCaseResult[]): EvalAggregate {
       result.tags.includes('prompt-injection') ||
       result.tags.includes('adversarial')
   );
-  const scoredFailures = results.filter(
-    (result) => !result.pass
-  );
+  const scoredFailures = results.filter((result) => !result.pass);
 
   return {
     cases: results.length,

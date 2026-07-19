@@ -32,7 +32,7 @@ const EXACT_MATCH_SIMILARITY = 1;
 export async function resolveExactMatch(
   matchingName: string,
   db: AppDb,
-  expectedState: DbIngredientState
+  _expectedState: DbIngredientState
 ): Promise<MatchInfo | null> {
   const normalized = normalizeIngredientKey(matchingName);
   if (!normalized) return null;

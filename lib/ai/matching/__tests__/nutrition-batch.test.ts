@@ -30,8 +30,9 @@ describe('batchFetchNutrition', () => {
     const db = { execute: vi.fn() } as unknown as AppDb;
     const map = await batchFetchNutrition([], db);
     expect(map.size).toBe(0);
-    expect((db as unknown as { execute: ReturnType<typeof vi.fn> }).execute)
-      .not.toHaveBeenCalled();
+    expect(
+      (db as unknown as { execute: ReturnType<typeof vi.fn> }).execute
+    ).not.toHaveBeenCalled();
   });
 
   it('cold path: resolves only the meal IDs directly and kicks the bulk warm in the background', async () => {

@@ -15,10 +15,7 @@ import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
 import { resolveExactMatch } from './exact-match';
 import type { DbIngredientState, MatchInfo } from './match-constants';
 import { batchFetchNutrition } from './nutrition-batch';
-import {
-  retrieveHybridTopK,
-  retrieveLexicalTopK,
-} from './top-k-retrieval';
+import { retrieveHybridTopK, retrieveLexicalTopK } from './top-k-retrieval';
 
 /**
  * V2 match result per ingredient — up to `k` candidates (sorted by similarity

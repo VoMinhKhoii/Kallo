@@ -54,7 +54,11 @@ describe('resolveExactMatch', () => {
 
   it('returns null for an empty/whitespace name without querying', async () => {
     const mock = db([ROW]) as unknown as MockDb;
-    const info = await resolveExactMatch('   ', mock as unknown as AppDb, 'unknown');
+    const info = await resolveExactMatch(
+      '   ',
+      mock as unknown as AppDb,
+      'unknown'
+    );
     expect(info).toBeNull();
     expect(mock.execute).not.toHaveBeenCalled();
   });

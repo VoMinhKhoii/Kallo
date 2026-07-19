@@ -220,7 +220,9 @@ describe('cold-path helpers', () => {
 
     expect(db.execute).toHaveBeenCalledOnce();
     // The SQL must be an id-scoped SELECT, not the full-table warm.
-    const sqlObj = db.execute.mock.calls[0][0] as { queryChunks?: unknown[] };
+    const sqlObj = vi.mocked(db.execute).mock.calls[0][0] as {
+      queryChunks?: unknown[];
+    };
     expect(JSON.stringify(sqlObj)).toContain('WHERE id IN');
     expect(map.get('fc-001')?.caloriesKcal).toBe(165);
     // Promoted into the singleton so later reads are warm, WITHOUT marking the

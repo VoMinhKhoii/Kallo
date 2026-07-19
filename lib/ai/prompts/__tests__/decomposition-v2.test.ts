@@ -39,7 +39,9 @@ describe('decomposition-v2 prompt', () => {
       expect(out).toMatch(/unitToken/);
       expect(out).toMatch(/explicitMass/);
       // The model must still be told it does NOT compute grams itself.
-      expect(out).toMatch(/do not emit grams|do NOT emit grams|NEVER emit grams/i);
+      expect(out).toMatch(
+        /do not emit grams|do NOT emit grams|NEVER emit grams/i
+      );
     }
   });
 

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppDb } from '@/lib/db';
 import type { GeminiClient } from '@/lib/ai/gemini';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/schemas-v2';
+import type { AppDb } from '@/lib/db';
 import { clearNutritionCache } from '../../cache/nutrition-cache';
 import { clearMemoryCache } from '../embedding-cache';
 import { matchTopKPerIngredient } from '../top-k-cascade';
@@ -54,9 +54,10 @@ function routingDb(opts: {
 
 const EMBED = Array(768).fill(0.1);
 
-function gemini(
-  batch: () => Promise<number[][]>
-): { g: GeminiClient; spy: ReturnType<typeof vi.fn> } {
+function gemini(batch: () => Promise<number[][]>): {
+  g: GeminiClient;
+  spy: ReturnType<typeof vi.fn>;
+} {
   const spy = vi.fn().mockImplementation(batch);
   return {
     g: {
@@ -117,7 +118,11 @@ describe('matchTopKPerIngredient — exact/alias-first + lexical fallback', () =
         },
       ],
       nutrition: [
-        { id: 'fao_vn_2007_1013_raw', calories_kcal: 143, carbohydrate_g: 31.7 },
+        {
+          id: 'fao_vn_2007_1013_raw',
+          calories_kcal: 143,
+          carbohydrate_g: 31.7,
+        },
       ],
     });
     // Gemini embedding batch throws — the availability hole this plugs.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_RELATIVE_BAND_WIDTH, resolvePortion } from '../resolver';
-import type { QuantityEvidence, ResolverConceptInput } from '../types';
+import type { ResolverConceptInput } from '../types';
 
 const conceptInput = (
   over: Partial<ResolverConceptInput> = {}
