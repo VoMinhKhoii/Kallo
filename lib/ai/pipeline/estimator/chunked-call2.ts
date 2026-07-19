@@ -250,7 +250,16 @@ async function runOneChunk(args: {
         remaining,
         'grounded-nutrition-chunk'
       );
-      args.onChunkComplete?.(result.estimation.mealItems);
+      // Callback failures are OUR bug (emitter/parser), not the provider's —
+      // never let them re-trigger a provider retry or discard a valid chunk.
+      try {
+        args.onChunkComplete?.(result.estimation.mealItems);
+      } catch (callbackErr) {
+        console.error(
+          '[v2-pipeline] chunk onChunkComplete callback failed (chunk kept):',
+          callbackErr
+        );
+      }
       return result.estimation.mealItems;
     } catch (err) {
       const isLast = attempt >= args.maxAttempts;

@@ -268,18 +268,28 @@ export async function matchTopKPerIngredient(
     },
     concurrency
   );
-  for (const r of settled) {
-    if (r.status === 'fulfilled' && !r.value.embedded) lexicalFallbackCount++;
-    if (r.status === 'fulfilled') {
-      results[r.value.ingredientIndex] = {
-        ingredientIndex: r.value.ingredientIndex,
-        candidates: r.value.candidates.map((info) => ({
-          info,
-          nutrition: null,
-          inediblePct: null,
-        })),
-      };
+  for (const [taskIdx, r] of settled.entries()) {
+    if (r.status === 'rejected') {
+      // Both retrieval arms AND the lexical fallback failed (DB-level error).
+      // The preinitialized empty candidate list stands — Call 2 sees the
+      // ingredient as unmatched — but this must be visible as a failure, not
+      // pass silently as an ordinary no-match.
+      console.error(
+        '[v2-matching] retrieval task failed; ingredient proceeds unmatched:',
+        r.reason,
+        { taskIdx }
+      );
+      continue;
     }
+    if (!r.value.embedded) lexicalFallbackCount++;
+    results[r.value.ingredientIndex] = {
+      ingredientIndex: r.value.ingredientIndex,
+      candidates: r.value.candidates.map((info) => ({
+        info,
+        nutrition: null,
+        inediblePct: null,
+      })),
+    };
   }
 
   const phase3Ms = Date.now() - tPhase3;

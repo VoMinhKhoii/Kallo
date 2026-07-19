@@ -118,15 +118,25 @@ export function resolveStreamingV2MealItem(
   const ingredients: IngredientLlmNutrition[] = [];
   let totalGrams = 0;
 
-  rawItem.ingredients.forEach((rawIng, localIdx) => {
+  // Call-2 output follows the PROMPT's sorted ingredient order, not
+  // decomposition order — map each streamed ingredient back to its
+  // decomposition slot by normalized name + occurrence (mirrors the bridge's
+  // pairing) so candidates/nutrition never attach to the wrong ingredient.
+  const localIdxByName = new Map<string, number[]>();
+  decomposedIngredients.forEach((d, i) => {
+    const key = d.rawName.trim().toLocaleLowerCase('vi-VN');
+    const queue = localIdxByName.get(key);
+    if (queue) queue.push(i);
+    else localIdxByName.set(key, [i]);
+  });
+
+  rawItem.ingredients.forEach((rawIng, streamIdx) => {
+    const nameKey = rawIng.ingredientName.trim().toLocaleLowerCase('vi-VN');
+    const localIdx = localIdxByName.get(nameKey)?.shift() ?? streamIdx;
     const flatIdx = flatIngredientStart + localIdx;
-    // matchResults is built in flat-ingredient order by matchTopKPerIngredient,
-    // so direct indexing avoids an O(N²) scan in this hot streaming loop.
     const matchResult = matchResults[flatIdx];
     const candidates = matchResult?.candidates ?? [];
-    const decompForName = decomposedIngredients.find(
-      (d) => d.rawName === rawIng.ingredientName
-    );
+    const decompForName = decomposedIngredients[localIdx];
     const prepNotesPresent =
       (decompForName?.prepNotes ?? []).some(
         (n) => typeof n === 'string' && n.trim().length > 0

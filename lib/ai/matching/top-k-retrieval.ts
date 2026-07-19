@@ -88,12 +88,36 @@ export async function retrieveHybridTopK(args: {
 }): Promise<{ candidates: MatchInfo[]; vectorArmEmpty: boolean }> {
   const { matchingName, embedding, db, k, sourceLimit, expectedState } = args;
   const embeddingLiteral = JSON.stringify(embedding);
-  const [vectorRows, fuzzyRows] = await Promise.all([
+  // One arm failing must not discard the other's results: settle both, treat
+  // a failed arm as empty, and only reject when BOTH arms failed (a healthy
+  // fuzzy arm still yields candidates through a vector outage, and vice versa).
+  const [vectorSettled, fuzzySettled] = await Promise.allSettled([
     db.execute(
       sql`SELECT * FROM match_ingredients_all_sources(${embeddingLiteral}::vector, ${sourceLimit}, 0.5)`
     ),
     fuzzyArm(matchingName, db, sourceLimit),
   ]);
+  if (
+    vectorSettled.status === 'rejected' &&
+    fuzzySettled.status === 'rejected'
+  ) {
+    throw vectorSettled.reason;
+  }
+  for (const [arm, settled] of [
+    ['vector', vectorSettled],
+    ['fuzzy', fuzzySettled],
+  ] as const) {
+    if (settled.status === 'rejected') {
+      console.error(
+        `[v2-matching] ${arm} arm failed for "${matchingName}"; continuing with the other arm:`,
+        settled.reason
+      );
+    }
+  }
+  const vectorRows =
+    vectorSettled.status === 'fulfilled' ? vectorSettled.value : [];
+  const fuzzyRows =
+    fuzzySettled.status === 'fulfilled' ? fuzzySettled.value : [];
 
   const vectorList = armTopK(
     vectorRows,

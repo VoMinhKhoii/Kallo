@@ -121,13 +121,17 @@ const PG_UNDEFINED_COLUMN = '42703';
 function isUndefinedColumnError(err: unknown): boolean {
   if (typeof err !== 'object' || err === null) return false;
   const code = (err as { code?: unknown }).code;
-  if (code === PG_UNDEFINED_COLUMN) return true;
-  // Some drivers surface the code only in the message.
+  // A present-but-different code (constraint/type/serialization error that
+  // merely MENTIONS the column) must NOT trigger the strip-and-retry — that
+  // would silently drop anomaly telemetry for unrelated failures.
+  if (code != null) return code === PG_UNDEFINED_COLUMN;
+  // No code surfaced: fall back to the precise undefined-column message only.
   const message = (err as { message?: unknown }).message;
   return (
     typeof message === 'string' &&
-    (message.includes('v2_anomaly_causes') ||
-      message.includes(PG_UNDEFINED_COLUMN))
+    /column .*(v2_anomaly_causes|pipeline_version).* does not exist/i.test(
+      message
+    )
   );
 }
 

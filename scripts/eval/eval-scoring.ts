@@ -12,11 +12,12 @@ function staplePassed(staple: string, result: EvalCaseResult): boolean {
   return result.ingredients.some(
     (ingredient) =>
       ingredient.outcome === 'accepted' &&
-      [
-        ingredient.ingredientName,
-        ingredient.mealItemName,
-        ingredient.matchedDbName,
-      ].some((name) => name != null && normalize(name).includes(needle))
+      // The ACCEPTED ingredient itself (or its matched DB row) must carry the
+      // staple — the parent meal-item name must not vouch for an unmatched
+      // sibling (an accepted "nước chấm" must not validate staple "bánh cuốn").
+      [ingredient.ingredientName, ingredient.matchedDbName].some(
+        (name) => name != null && normalize(name).includes(needle)
+      )
   );
 }
 

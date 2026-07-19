@@ -104,6 +104,20 @@ export function resolvePortion(
     };
   }
 
+  // Unit semantics FIRST: a mass token ("250 g") means count is a weight,
+  // not a multiplier — 250 × a 100g packaged serving would be 25kg. Mass
+  // quantities belong in explicitMass (step 1); if the extractor emitted a
+  // bare mass count instead, defer to the LLM range rather than fabricate.
+  const unitType = resolveUnitType(quantity.unitToken);
+  if (unitType === 'mass') {
+    return {
+      grams: null,
+      provenance: 'llm_range',
+      confidence: 'none',
+      note: 'mass unit token without explicitMass — defer to Call 2 LLM range',
+    };
+  }
+
   // ---- Step 2: packaged / serving weight on the matched row -----------
   const serving = concept.dbServingSizeG;
   if (serving != null && Number.isFinite(serving) && serving > 0) {
@@ -121,8 +135,7 @@ export function resolvePortion(
   // Requires a concept id AND a resolvable unit type. Without a unit token we
   // have no basis to scale a count/slice/container prior — fall through to null.
   const conceptId = concept.conceptId;
-  const unitType = resolveUnitType(quantity.unitToken);
-  if (conceptId && conceptId !== AMBIGUOUS && unitType && unitType !== 'mass') {
+  if (conceptId && conceptId !== AMBIGUOUS && unitType) {
     const prior = findPrior({
       conceptId,
       unitType,

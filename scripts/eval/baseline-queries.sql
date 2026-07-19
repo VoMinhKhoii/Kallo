@@ -37,7 +37,15 @@ WITH request_versions AS (
           WHERE plc.request_id = pq.id
             AND pv.name IN ('decomposition-grounded', 'grounded-estimation')
         ) THEN 'v2'
-        ELSE 'v1'
+        -- Positive v1 evidence required: a request that failed BEFORE its
+        -- first LLM call has no prompt rows at all and must not pollute the
+        -- v1 failure/timeout cohort.
+        WHEN EXISTS (
+          SELECT 1
+          FROM public.pipeline_llm_calls AS plc
+          WHERE plc.request_id = pq.id
+        ) THEN 'v1'
+        ELSE 'unknown'
       END
     ) AS pipeline_version
   FROM public.pipeline_requests AS pq
@@ -95,7 +103,15 @@ WITH request_versions AS (
           WHERE plc.request_id = pq.id
             AND pv.name IN ('decomposition-grounded', 'grounded-estimation')
         ) THEN 'v2'
-        ELSE 'v1'
+        -- Positive v1 evidence required: a request that failed BEFORE its
+        -- first LLM call has no prompt rows at all and must not pollute the
+        -- v1 failure/timeout cohort.
+        WHEN EXISTS (
+          SELECT 1
+          FROM public.pipeline_llm_calls AS plc
+          WHERE plc.request_id = pq.id
+        ) THEN 'v1'
+        ELSE 'unknown'
       END
     ) AS pipeline_version
   FROM public.pipeline_requests AS pq

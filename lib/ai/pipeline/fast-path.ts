@@ -50,13 +50,31 @@ function isGroundedAnchor(r: PortionResolution | undefined): boolean {
  * cascade never returns 1.0, so this cleanly distinguishes the two.
  */
 function isExactMatchHit(match: IngredientV2MatchResult | undefined): boolean {
+  if (
+    match == null ||
+    match.candidates.length !== 1 ||
+    match.candidates[0].info.similarity !== 1
+  ) {
+    return false;
+  }
+  // The DB row must carry a COMPLETE core-macro set: the fast path scales
+  // per-100g values with no LLM judgment, so a row with missing/non-finite
+  // macros would synthesize confident zeros — exactly the silent-zero class.
+  const n = match.candidates[0].nutrition;
   return (
-    match != null &&
-    match.candidates.length === 1 &&
-    match.candidates[0].info.similarity === 1 &&
-    match.candidates[0].nutrition != null
+    n != null &&
+    [n.caloriesKcal, n.proteinG, n.carbohydrateG, n.fatG].every(
+      (v) => v != null && Number.isFinite(v)
+    )
   );
 }
+
+/**
+ * Cooking methods that ADD fat the flat DB row does not carry (absorbed oil).
+ * Estimating that adjustment is Call-2 judgment — never fast-path.
+ */
+const FAT_ADDING_METHOD =
+  /chiên|rán|xào|áp chảo|fried|fry|stir[- ]?fr|sauté|saute|pan[- ]?sear/i;
 
 /** True iff the ingredient carries at least one non-empty prepNote. */
 function hasPrepNotes(notes: string[] | undefined): boolean {
@@ -87,6 +105,8 @@ export function isFullyGrounded(args: {
       if (!isGroundedAnchor(portion)) return false;
       // Prep notes shift fat/PC density → that's LLM judgment; not fast-path.
       if (hasPrepNotes(ing.prepNotes)) return false;
+      // Oil-absorbing cooking methods need Call-2's absorbed-fat adjustment.
+      if (FAT_ADDING_METHOD.test(ing.cookingMethod ?? '')) return false;
     }
   }
   // A zero-ingredient meal has nothing to ground — let the full path handle it.
