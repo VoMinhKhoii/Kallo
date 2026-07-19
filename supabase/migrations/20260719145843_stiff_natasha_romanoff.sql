@@ -17,8 +17,12 @@ ALTER TABLE "public_profiles" ADD COLUMN "avatar_path" text;--> statement-breakp
 -- upload (png/jpeg/webp in) to WebP before storing, so nothing else ever
 -- legitimately lands here — and a smuggled object can't claim text/html or
 -- image/svg+xml. DO UPDATE so re-runs upgrade an existing bucket's limits.
+-- The 500 KB cap is deliberately far below the route's 5 MB raw-upload limit:
+-- the server always re-encodes to a 512px WebP (well under 100 KB), so nothing
+-- legitimate approaches it, while it shrinks the ceiling a direct JWT upload
+-- (which bypasses the route) can park in the public bucket.
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('avatars', 'avatars', true, 5242880, ARRAY['image/webp'])
+VALUES ('avatars', 'avatars', true, 512000, ARRAY['image/webp'])
 ON CONFLICT (id) DO UPDATE SET
 	public = EXCLUDED.public,
 	file_size_limit = EXCLUDED.file_size_limit,
