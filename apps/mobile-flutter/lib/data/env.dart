@@ -32,6 +32,14 @@ abstract final class Env {
   static const String apiBaseUrl =
       String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:3000');
 
+  /// Public web origin used for links shown to or shared by the user (invite
+  /// links). Distinct from [apiBaseUrl]: the API may live on a backend host
+  /// (Cloud Run) while shared links must always point at the public site.
+  static const String webBaseUrl = String.fromEnvironment(
+    'WEB_BASE_URL',
+    defaultValue: 'https://kallo.fit',
+  );
+
   /// Google **Web** OAuth client ID — passed to `google_sign_in` as
   /// `serverClientId` and registered in Supabase's Google provider "Authorized
   /// Client IDs". Empty unless configured; native Google sign-in is a guarded

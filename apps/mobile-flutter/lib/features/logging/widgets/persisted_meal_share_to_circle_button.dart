@@ -99,7 +99,7 @@ class _PersistedMealShareToCircleButtonState
     if (shareId == null) return;
     HapticFeedback.lightImpact();
     await Share.share(
-      '${Env.apiBaseUrl}/api/og/macro-card/$shareId',
+      '${Env.webBaseUrl}/api/og/macro-card/$shareId',
       subject: tr('groups.shareControl.shareCardTitle'),
     );
   }
