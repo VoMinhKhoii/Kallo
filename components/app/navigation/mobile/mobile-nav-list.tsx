@@ -42,21 +42,21 @@ export function MobileNavList({
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
                 active
-                  ? 'bg-nham-btn text-white shadow-nham-btn/20 shadow-sm'
-                  : 'text-nham-text hover:bg-nham-hover/60'
+                  ? 'bg-nham-hover text-[#141413]'
+                  : 'text-[#6E6D66] hover:bg-nham-hover hover:text-[#141413]'
               )}
             >
               <Icon className="h-5 w-5" aria-hidden="true" />
-              <span className="font-medium font-sans-display text-[14px]">
+              <span
+                className={cn(
+                  'font-sans-display text-[14px]',
+                  active ? 'font-semibold' : 'font-medium'
+                )}
+              >
                 {tNav(item.labelKey)}
               </span>
               {item.id === 'groups' && inviteCount > 0 && (
-                <span
-                  className={cn(
-                    'ml-auto h-2 w-2 shrink-0 rounded-full',
-                    active ? 'bg-white' : 'bg-nham-accent'
-                  )}
-                />
+                <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-nham-accent" />
               )}
             </Link>
           </li>

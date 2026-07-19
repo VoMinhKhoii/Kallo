@@ -19,7 +19,13 @@ vi.mock('@/hooks/social/use-meal-share-invites', () => ({
 describe('MainSidebar (back-compat re-export of DesktopSidebar)', () => {
   it('renders the nutrition link, not tracking', () => {
     render(
-      <MainSidebar user={{ email: 'tester@example.com', displayName: null }} />
+      <MainSidebar
+        user={{
+          email: 'tester@example.com',
+          displayName: null,
+          avatarUrl: null,
+        }}
+      />
     );
 
     expect(screen.getByRole('link', { name: 'nutrition' })).toHaveAttribute(

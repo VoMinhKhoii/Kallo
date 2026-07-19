@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createChatGroup, listMyChatGroups } from '@/lib/actions/chat-groups';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
-import { serializeError } from '@/lib/errors';
+import { handleRouteError } from '@/lib/api/respond';
 import { timezoneOffsetSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const groups = await listMyChatGroups(actorId, { timezoneOffset });
     return NextResponse.json({ groups });
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }
 
@@ -32,6 +32,6 @@ export async function POST(request: NextRequest) {
     );
     return NextResponse.json({ group });
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }

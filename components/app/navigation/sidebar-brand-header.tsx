@@ -33,7 +33,7 @@ export function SidebarBrandHeader({
       )}
     >
       {!collapsed && (
-        <KalloWordmark className="ml-1.5 h-4 w-auto text-nham-text" />
+        <KalloWordmark className="ml-1.5 h-5 w-auto text-nham-text" />
       )}
       <SidebarTooltip
         enabled={collapsed}
@@ -48,7 +48,7 @@ export function SidebarBrandHeader({
           aria-pressed={pinnedCollapsed}
           aria-keyshortcuts="Meta+B Control+B"
           className={cn(
-            'group/toggle relative flex items-center justify-center rounded-md text-nham-text-muted transition-colors hover:bg-nham-hover/60 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
+            'group/toggle relative flex items-center justify-center rounded-md text-nham-text-muted transition-colors hover:bg-[#141413]/[0.06] hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
             collapsed ? 'h-8 w-8' : 'h-7 w-7'
           )}
         >

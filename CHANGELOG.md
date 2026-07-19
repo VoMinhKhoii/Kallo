@@ -1,5 +1,80 @@
 # Changelog
 
+## [1.8.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.7.0...v1.8.0) (2026-07-18)
+
+
+### Features
+
+* **agents:** add project-local thermo-nuclear-code-quality-review skill ([a019b2d](https://github.com/VoMinhKhoii/Kallo/commit/a019b2d56bda4e299944caeb4bcccb244c4b755b))
+* **brand:** add Kallo wordmark to web and mobile sidebars ([e753e90](https://github.com/VoMinhKhoii/Kallo/commit/e753e90dfedb307ab0d4b5c3e86d71706409360c))
+* **brand:** approve segmented K mark and Kallo wordmark geometry ([d7943f0](https://github.com/VoMinhKhoii/Kallo/commit/d7943f05eae6e5668cca53ce4c232a1544996d23))
+* **brand:** collapsed-rail K toggle morph and app-icon placements ([35a8ed3](https://github.com/VoMinhKhoii/Kallo/commit/35a8ed38894794e32b62d0ad1225fba6ac65bd72))
+* **brand:** generate full Kallo asset library from approved mark ([70dbac6](https://github.com/VoMinhKhoii/Kallo/commit/70dbac6381140019a5744d3114241301e0bd7dc7))
+* **brand:** Kallo identity — segmented K mark, wordmark, and full rollout ([997ea00](https://github.com/VoMinhKhoii/Kallo/commit/997ea005bbc3cf84393e8304f6ddeba1ef48b4c7))
+* **brand:** rename user-facing surfaces to Kallo and wire the wordmark ([05a952d](https://github.com/VoMinhKhoii/Kallo/commit/05a952db96b6bd64b7b4b3aac59ad2ca3e11bd93))
+* **brand:** wire Kallo icons into Flutter web target ([8447ecf](https://github.com/VoMinhKhoii/Kallo/commit/8447ecf0981ce09e295d3c54e4e2fcce7966b26a))
+* **brand:** wire Kallo icons into web and mobile surfaces ([ef3a1e0](https://github.com/VoMinhKhoii/Kallo/commit/ef3a1e074defbffdadecca6e5bde71219338eb0e))
+* **ci:** enforce 400/200 LOC file-size limits with a ratchet baseline ([bcc1932](https://github.com/VoMinhKhoii/Kallo/commit/bcc1932191ef5d051d511486e28dad8e16ea3eec))
+* **circle:** friends unread highlight ([76f1f17](https://github.com/VoMinhKhoii/Kallo/commit/76f1f1777a2bdd3c247c86c2ebd865f6f02271da))
+* **circle:** group timeline, reactions, and recipient-initiated copies ([835513b](https://github.com/VoMinhKhoii/Kallo/commit/835513bff1bb33040a19f5d3bb523c235d3d7099))
+* **circle:** merge friends into one combined thread ([812827c](https://github.com/VoMinhKhoii/Kallo/commit/812827ced849fa3d228146d1128a9cb79665d785))
+* **circle:** redesign /groups as a Threads-style centered feed ([4f44cd4](https://github.com/VoMinhKhoii/Kallo/commit/4f44cd45289f23e7e4e73d3d387200f821a53e46))
+* **circle:** scrollable thread history + thread subtitles ([7f90411](https://github.com/VoMinhKhoii/Kallo/commit/7f90411f49fbe95239a258d31c6f3623e21cd7bb))
+* **circle:** threads feed redesign, replies, group management, backend consolidation ([5debe0f](https://github.com/VoMinhKhoii/Kallo/commit/5debe0f0f4bf71ca68d67e0aaa094778dd33b5d0))
+* **circle:** Threads-style Circle redesign — feed, replies, reactions, group management ([c554ec2](https://github.com/VoMinhKhoii/Kallo/commit/c554ec27a586c32e09ef3def826294b7e7231070))
+* **circle:** unread highlight, mark-as-read, and recency sort for threads ([ba738f0](https://github.com/VoMinhKhoii/Kallo/commit/ba738f0ee1cf5d3facd0eb68132d6356e6094aaf))
+* **social:** meal copy/split sharing + Circle chat groups ([27b9d7b](https://github.com/VoMinhKhoii/Kallo/commit/27b9d7b58f40250ae110e9e4b11336c5ce1ba710))
+* **social:** share meals with friends via copy or split ([f41bffc](https://github.com/VoMinhKhoii/Kallo/commit/f41bffc865e78a2c30d27183bd73d58f96307968))
+* **ui:** add EmptyState foundation component; adopt in Circle feed ([870a66f](https://github.com/VoMinhKhoii/Kallo/commit/870a66f232533a112477335e827a1ece370053ca))
+
+
+### Bug Fixes
+
+* **auth:** close pre-hydration gaps in webview detection ([a803204](https://github.com/VoMinhKhoii/Kallo/commit/a803204be61db4d0fdc81896fa868021b1b24472))
+* **auth:** handle Google OAuth block in in-app browsers ([3026f24](https://github.com/VoMinhKhoii/Kallo/commit/3026f24f35170fe3e1042326e6dd443fdcfcd418))
+* **auth:** handle Google OAuth block in in-app browsers ([8e4bdcd](https://github.com/VoMinhKhoii/Kallo/commit/8e4bdcde168de1458786f7b8bbc5991e3d57e360))
+* **auth:** resolve webview detection after hydration ([c068f7c](https://github.com/VoMinhKhoii/Kallo/commit/c068f7ce08312422eb619d600cd63699e269af92))
+* **build:** drop value/type re-exports from the meal-sharing use-server barrel ([fe927e0](https://github.com/VoMinhKhoii/Kallo/commit/fe927e0b0a00879fca204ad229edfc4163c0e4b1))
+* **circle:** address adversarial review — dialog tab, invites overflow, switcher error state ([e975a4f](https://github.com/VoMinhKhoii/Kallo/commit/e975a4fb61fb81eb9c4fa72fe4681a68a6870b94))
+* **circle:** permanent redirect for retired friends route, hide avatar initial from AT ([babd02e](https://github.com/VoMinhKhoii/Kallo/commit/babd02e7855f4a96543eda027577cc523cbc7b60))
+* **social:** close adversarial-review findings; lock chat tables to server-only ([56c23d3](https://github.com/VoMinhKhoii/Kallo/commit/56c23d37e0c6afbc4d100e998c2649e69daef6a1))
+* **social:** harden share flow + direct-chat access per cross-model review ([6698bb3](https://github.com/VoMinhKhoii/Kallo/commit/6698bb32fd218531297787d0e655e4340f1c7b7b))
+
+
+### Refactor
+
+* **actions:** split meals server actions into per-concern modules ([48ab603](https://github.com/VoMinhKhoii/Kallo/commit/48ab603cfec1ddc2c1a634ed7b46bb42c1a802db))
+* **admin:** split health and prompt queries out of queries.ts ([a1c5ab6](https://github.com/VoMinhKhoii/Kallo/commit/a1c5ab6ad72570a478d082ef0d2e33ac18bb894a))
+* **admin:** split pipeline-summary into per-concern modules ([d6b46ab](https://github.com/VoMinhKhoii/Kallo/commit/d6b46ab0b9a93d73e75cdddd8fa70d65ea004034))
+* **ai:** extract retry loop and embedding methods from gemini.ts ([523b2c4](https://github.com/VoMinhKhoii/Kallo/commit/523b2c4252e454395738c3fc2f4045e26b19edd9))
+* **api:** extract request validation from the analyze-meal route ([4cafa84](https://github.com/VoMinhKhoii/Kallo/commit/4cafa849d5177874fe554f7d70340fe5f3204426))
+* **api:** split analyze-meal debug route into step modules ([8e78155](https://github.com/VoMinhKhoii/Kallo/commit/8e781555bbb76e938cfe32c2f6ffb7f6fd9d0f0d))
+* **brand:** split brand additions out of baselined files for the size ratchet ([06b56d6](https://github.com/VoMinhKhoii/Kallo/commit/06b56d6a94f9b9c077fe673e89ab91d55b873053))
+* **circle:** borderless Threads-minimal feed + Circle nav label ([9e305c1](https://github.com/VoMinhKhoii/Kallo/commit/9e305c1d4e46c219f9d0c05230d353dcca3e91c0))
+* **groups:** split circle service functions into per-domain modules ([9eeb4d6](https://github.com/VoMinhKhoii/Kallo/commit/9eeb4d6247a14ea80081d2a1558c26e80ace207b))
+* **hooks:** extract optimistic-cache helpers from use-meal-mutations ([029afed](https://github.com/VoMinhKhoii/Kallo/commit/029afed1f2e75eeb10ecc1fc6d190e226c694926))
+* **logging:** split FeedArea into view + controller + focused hooks ([77412e4](https://github.com/VoMinhKhoii/Kallo/commit/77412e4409aa2ba358ff1f3a649ffefa74cde261))
+* **logging:** split PersistedMealCard into per-concern modules ([88f86f0](https://github.com/VoMinhKhoii/Kallo/commit/88f86f05fe5d8ae972ae82166bf9e390f2094643))
+* **matching:** extract Phase 3b alias fallback from cascade.ts ([acba9af](https://github.com/VoMinhKhoii/Kallo/commit/acba9af1ddd6f607ce5f9d234e66709c8ca87838))
+* **matching:** split source-matching into constants/ranking/matcher ([c1f9387](https://github.com/VoMinhKhoii/Kallo/commit/c1f93872eb470ef4953a734acfdf6a26e8146c50))
+* **meals:** extract copyMealVerbatim, dedupe re-log and accept-share ([f45365a](https://github.com/VoMinhKhoii/Kallo/commit/f45365a085d39cb5a02cdd26704f74028a6bd1bc))
+* **mobile:** split oversized Flutter widgets for the file-size ratchet ([e7e4ab7](https://github.com/VoMinhKhoii/Kallo/commit/e7e4ab7407f5163498f3a00a4c2c32b596564e13))
+* **onboarding:** split ScreenBodyMetrics into body-metrics modules ([30a678d](https://github.com/VoMinhKhoii/Kallo/commit/30a678dc07cef888cdf5773fb2c750ef95757bf6))
+* **pipeline:** extract bounded-macro math from nutrition.ts ([ce0c426](https://github.com/VoMinhKhoii/Kallo/commit/ce0c4266bed5bf9dab12aec56d831418705ed3bd))
+* **pipeline:** extract orchestrator leaf modules ([bd9f75a](https://github.com/VoMinhKhoii/Kallo/commit/bd9f75ab22bd59cc5e88ce018e4e2a4afdb4d5a5))
+* **pipeline:** split grounded-orchestrator (v2) into stage modules ([f129964](https://github.com/VoMinhKhoii/Kallo/commit/f1299646551342e0562087c97a29de1fe028ada0))
+* **pipeline:** split runPipeline into stage modules under 400 LOC ([b59cac6](https://github.com/VoMinhKhoii/Kallo/commit/b59cac642a8cd1c99daba67ffb3923e25941cda9))
+* **pipeline:** split v2/grounded/cheat schemas into schemas-v2.ts ([189ea5a](https://github.com/VoMinhKhoii/Kallo/commit/189ea5a725b59fc5e43f9893df1ff3dfae066422))
+* **pipeline:** split v2→v1 verdict helpers out of bridge.ts ([5f83fb3](https://github.com/VoMinhKhoii/Kallo/commit/5f83fb30c863b278cbbb3a4492d131a6463f641c))
+* **rate-limit:** split analysis-guards into focused modules ([21dd9bf](https://github.com/VoMinhKhoii/Kallo/commit/21dd9bf92ab167a5b7e0a239aa10bb662386138c))
+* split oversized web files to satisfy the file-size ratchet ([6700d74](https://github.com/VoMinhKhoii/Kallo/commit/6700d74f958fd97701eb6e17e67fd3fd9bac9e5d))
+* split oversized web files under the 400/200 LOC gate (wave W1-W2) ([4dd644a](https://github.com/VoMinhKhoii/Kallo/commit/4dd644a7f97755b7cef7aadf7cbed61b8e692eec))
+
+
+### Documentation
+
+* **agents:** lean root AGENTS.md, nested Flutter AGENTS.md, drop stale docs ([561875d](https://github.com/VoMinhKhoii/Kallo/commit/561875d50bafb8b070e6bacb4e000c623b4e77a9))
+
 ## [1.7.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.6.0...v1.7.0) (2026-07-11)
 
 

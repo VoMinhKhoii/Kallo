@@ -1,46 +1,32 @@
 'use client';
 
+import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Fragment, useEffect, useLayoutEffect, useRef } from 'react';
-import { CircleCard } from '@/components/groups/circle-card';
+import { Fragment, type ReactNode, useEffect, useRef } from 'react';
 import { CircleError } from '@/components/groups/circle-error';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
-import type { CircleFeedEntry } from '@/lib/groups/client';
-import { cn } from '@/lib/utils';
+import {
+  threadDayKey,
+  threadDayLabel,
+} from '@/components/groups/timeline/thread-day';
+import { EmptyState } from '@/components/ui/empty-state';
 
-/** Local calendar-day identity for an ISO timestamp — used only for
- * same-day grouping, not display, so timezone-dependent formatting is fine. */
-function localDateKey(iso: string): string {
-  return new Date(iso).toDateString();
-}
-
-function dayLabel(
-  iso: string,
-  locale: string,
-  todayLabel: string,
-  yesterdayLabel: string
-): string {
-  const now = new Date();
-  const key = localDateKey(iso);
-  if (key === localDateKey(now.toISOString())) return todayLabel;
-
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  if (key === localDateKey(yesterday.toISOString())) return yesterdayLabel;
-
-  const date = new Date(iso);
-  return date.toLocaleDateString(locale, {
-    month: 'long',
-    day: 'numeric',
-    year: date.getFullYear() === now.getFullYear() ? undefined : 'numeric',
-  });
+export interface ThreadFeedItem {
+  id: string;
+  timestamp: string;
+  content: ReactNode;
 }
 
 interface ThreadFeedProps {
-  title: string;
-  /** Oldest-first — the render order (chat convention: newest at the bottom). */
-  entries: CircleFeedEntry[];
+  /** Newest-first — the render order (feed convention: newest at the top). */
+  entries: ThreadFeedItem[];
+  composer?: ReactNode;
+  /** Shown centered when the feed is empty. `emptyMessage` is the supporting
+   *  line; pass `emptyTitle`/`emptyIcon`/`emptyAction` for the fuller state. */
   emptyMessage: string;
+  emptyTitle?: string;
+  emptyIcon?: LucideIcon;
+  emptyAction?: ReactNode;
   isPending: boolean;
   isError: boolean;
   isFetching: boolean;
@@ -50,15 +36,19 @@ interface ThreadFeedProps {
   fetchNextPage: () => void;
 }
 
-/** Shared infinite-scroll thread body for FriendsFeed/GroupFeed. Renders
- * newest entry at the bottom, loads older shares as a sentinel above the
- * oldest entry scrolls into view, and preserves scroll position when older
- * entries are prepended (without this the viewport visually jumps by the
- * height of whatever was just inserted above it). */
+/** Shared infinite-scroll feed body for FriendsFeed/GroupFeed. Renders as flat
+ * Threads-style posts inside one bordered panel: each entry is a FeedEntry row,
+ * hairline-separated, left-aligned, with hairline day separators. Newest sits
+ * at the top (feed convention); a sentinel below the oldest entry loads older
+ * shares as it scrolls into view — older content appends at the bottom, so no
+ * scroll-anchoring is needed. */
 export function ThreadFeed({
-  title,
   entries,
+  composer,
   emptyMessage,
+  emptyTitle,
+  emptyIcon,
+  emptyAction,
   isPending,
   isError,
   isFetching,
@@ -71,28 +61,10 @@ export function ThreadFeed({
   const locale = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const prevScrollHeightRef = useRef<number | null>(null);
-  const scrolledToBottomRef = useRef(false);
 
-  // Land on the most recent entry once, the first time the page has content.
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container || isPending || scrolledToBottomRef.current) return;
-    container.scrollTop = container.scrollHeight;
-    scrolledToBottomRef.current = true;
-  }, [isPending]);
-
-  // After older entries are prepended, restore the pre-prepend visual
-  // position by the height delta they just added above the viewport.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: entries.length is the deliberate re-run trigger
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    const prevHeight = prevScrollHeightRef.current;
-    if (!container || prevHeight == null) return;
-    container.scrollTop += container.scrollHeight - prevHeight;
-    prevScrollHeightRef.current = null;
-  }, [entries.length]);
-
+  // Newest-first opens at the top already, and older entries append at the
+  // bottom — so there is nothing to auto-scroll or scroll-anchor. A sentinel
+  // below the last row loads the next (older) page as it nears the viewport.
   useEffect(() => {
     const sentinel = sentinelRef.current;
     const container = containerRef.current;
@@ -105,12 +77,10 @@ export function ThreadFeed({
           hasNextPage &&
           !isFetchingNextPage
         ) {
-          // Capture height BEFORE the fetch resolves and prepends rows.
-          prevScrollHeightRef.current = container.scrollHeight;
           fetchNextPage();
         }
       },
-      { root: container, rootMargin: '200px 0px 0px 0px' }
+      { root: container, rootMargin: '0px 0px 200px 0px' }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -130,63 +100,54 @@ export function ThreadFeed({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* Outside the scroll area (not just `sticky`) so the thread's name is
-       * always visible — the view lands on the newest entry at the bottom by
-       * default, which would otherwise scroll the title off-screen above. */}
-      <header className="shrink-0 border-nham-border/60 border-b px-5 py-4 sm:px-8">
-        <h1 className="font-normal font-serif text-nham-text text-xl tracking-tight">
-          {title}
-        </h1>
-      </header>
+      {composer}
       <div
         ref={containerRef}
-        className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-8"
+        className="min-h-0 flex-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {entries.length > 0 ? (
-          <div className="flex flex-col gap-4">
-            <div ref={sentinelRef} />
-            {isFetchingNextPage && (
-              <p className="text-center font-sans-display text-[11px] text-nham-text-muted">
-                {t('loadingMore')}
-              </p>
-            )}
+          <>
             {entries.map((entry) => {
-              const dayKey = localDateKey(entry.meal.sharedAt);
+              const dayKey = threadDayKey(entry.timestamp);
               const showSeparator = dayKey !== lastDayKey;
               lastDayKey = dayKey;
               return (
-                <Fragment key={entry.meal.shareId}>
+                <Fragment key={entry.id}>
                   {showSeparator && (
-                    <div className="flex items-center justify-center">
-                      <span className="rounded-full bg-nham-hover/60 px-3 py-1 font-sans-display text-[11px] text-nham-text-muted">
-                        {dayLabel(
-                          entry.meal.sharedAt,
-                          locale,
-                          t('todayLabel'),
-                          t('yesterdayLabel')
-                        )}
-                      </span>
+                    <div className="flex items-center gap-2.5 px-4 pt-5 pb-3 font-sans-display text-[#6E6D66] text-[11px]">
+                      <span className="h-px flex-1 bg-[#E8E6DC]" />
+                      {threadDayLabel(
+                        entry.timestamp,
+                        locale,
+                        t('todayLabel'),
+                        t('yesterdayLabel')
+                      )}
+                      <span className="h-px flex-1 bg-[#E8E6DC]" />
                     </div>
                   )}
-                  <div
-                    className={cn(
-                      'flex',
-                      entry.isSelf ? 'justify-end' : 'justify-start'
-                    )}
-                  >
-                    <CircleCard
-                      entry={entry}
-                      align={entry.isSelf ? 'right' : 'left'}
-                    />
+                  <div className="border-[#E8E6DC] border-b p-4 last:border-b-0">
+                    {entry.content}
                   </div>
                 </Fragment>
               );
             })}
-          </div>
+            {isFetchingNextPage && (
+              <p className="py-2 text-center font-sans-display text-[#6E6D66] text-[11px]">
+                {t('loadingMore')}
+              </p>
+            )}
+            <div ref={sentinelRef} />
+          </>
         ) : (
-          <p className="font-sans-display text-[13px] text-nham-text-muted">
-            {emptyMessage}
-          </p>
+          <div className="flex h-full items-center justify-center">
+            <EmptyState
+              icon={emptyIcon}
+              title={emptyTitle ?? emptyMessage}
+              description={emptyTitle ? emptyMessage : undefined}
+            >
+              {emptyAction}
+            </EmptyState>
+          </div>
         )}
       </div>
     </div>

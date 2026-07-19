@@ -7,6 +7,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {
+  addGroupMembers,
   type ChatGroupDetail,
   type ChatGroupIdentity,
   createChatGroup,
@@ -14,10 +15,17 @@ import {
   fetchGroupMealFeed,
   fetchMyChatGroups,
   type GroupMealFeedPage,
+  leaveGroup,
+  removeGroupMember,
+  renameGroup,
 } from '@/lib/chat-groups/client';
 
 export const chatGroupsKeys = {
   all: ['chat-groups'] as const,
+  /** Prefix over every timezone-scoped chat list — invalidate this (not `all`)
+   * from inside a feed queryFn, so refreshing the sidebar's unread
+   * state can't invalidate the active query itself into a refetch loop. */
+  lists: () => ['chat-groups', 'list'] as const,
   list: (timezoneOffset: number) =>
     ['chat-groups', 'list', timezoneOffset] as const,
   detail: (groupId: string) => ['chat-groups', groupId] as const,
@@ -53,6 +61,66 @@ export function useChatGroup(groupId: string) {
   });
 }
 
+/** Leave a group and evict every list/detail/feed view on success. */
+export function useLeaveChatGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (groupId: string) => leaveGroup(groupId),
+    onSuccess: (_data, groupId) => {
+      // Evict the departed group's now-unauthorized detail/feed views
+      // (detail's key prefixes both) so back-nav can't render stale rows
+      // while an unauthorized refetch is pending; then refresh the list.
+      queryClient.cancelQueries({ queryKey: chatGroupsKeys.detail(groupId) });
+      queryClient.removeQueries({ queryKey: chatGroupsKeys.detail(groupId) });
+      queryClient.invalidateQueries({ queryKey: chatGroupsKeys.lists() });
+    },
+  });
+}
+
+/** Grow the group with the actor's accepted friends; refresh detail + lists. */
+export function useAddGroupMembers(groupId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (memberUserIds: string[]) =>
+      addGroupMembers(groupId, memberUserIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: chatGroupsKeys.detail(groupId),
+      });
+      queryClient.invalidateQueries({ queryKey: chatGroupsKeys.lists() });
+    },
+  });
+}
+
+/** Owner-only: remove one member; refresh detail + lists. */
+export function useRemoveGroupMember(groupId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (memberUserId: string) =>
+      removeGroupMember(groupId, memberUserId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: chatGroupsKeys.detail(groupId),
+      });
+      queryClient.invalidateQueries({ queryKey: chatGroupsKeys.lists() });
+    },
+  });
+}
+
+/** Owner-only rename; refresh detail (name) + lists (pill titles). */
+export function useRenameGroup(groupId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => renameGroup(groupId, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: chatGroupsKeys.detail(groupId),
+      });
+      queryClient.invalidateQueries({ queryKey: chatGroupsKeys.lists() });
+    },
+  });
+}
+
 /** This group's shared-meal history, newest page first — scroll up
  * (`fetchNextPage`) to load earlier shares. First page is today's or, if
  * quiet today, the most recent shares regardless of day.
@@ -74,9 +142,10 @@ export function useGroupMealFeed(groupId: string) {
       );
       // Page 1 = the thread was just opened, which marks it read server-side
       // (see listGroupMealFeed) — refresh the sidebar so its unread/order
-      // state matches without a full reload.
+      // state matches. Invalidate only the list prefix, never `all`: `all`
+      // prefixes this feed query, so it would invalidate itself into a loop.
       if (pageParam === undefined) {
-        queryClient.invalidateQueries({ queryKey: chatGroupsKeys.all });
+        queryClient.invalidateQueries({ queryKey: chatGroupsKeys.lists() });
       }
       return page;
     },

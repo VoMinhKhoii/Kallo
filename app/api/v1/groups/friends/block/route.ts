@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { blockFriend } from '@/lib/actions/groups/friendship';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
-import { serializeError } from '@/lib/errors';
+import { handleRouteError } from '@/lib/api/respond';
 
 export const runtime = 'nodejs';
 
@@ -12,6 +12,6 @@ export async function POST(request: NextRequest) {
     const result = await blockFriend(actorId, body as { targetUserId: string });
     return NextResponse.json(result);
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }

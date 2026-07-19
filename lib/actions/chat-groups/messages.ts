@@ -5,8 +5,11 @@ import {
   chatGroupMessages,
   chatGroups,
 } from '@/lib/db/schema';
-import { sendChatGroupMessageSchema } from '@/lib/validation';
-import { type ChatGroupDb, requireMembership } from './membership';
+import {
+  getChatGroupSchema,
+  sendChatGroupMessageSchema,
+} from '@/lib/validation';
+import { type ChatGroupDb, requireGroupAccess } from './membership';
 import type { ChatGroupMessage } from './types';
 
 /** Most-recent messages loaded per thread open — no cursor yet (deferred). */
@@ -17,7 +20,8 @@ export async function listChatGroupMessages(
   input: { groupId: string },
   db: ChatGroupDb = defaultDb
 ): Promise<ChatGroupMessage[]> {
-  await requireMembership(actorId, input.groupId, db);
+  const parsed = getChatGroupSchema.parse(input);
+  await requireGroupAccess(actorId, parsed.groupId, db);
 
   const [rows] = await Promise.all([
     db
@@ -29,15 +33,15 @@ export async function listChatGroupMessages(
         createdAt: chatGroupMessages.createdAt,
       })
       .from(chatGroupMessages)
-      .where(eq(chatGroupMessages.groupId, input.groupId))
-      .orderBy(desc(chatGroupMessages.createdAt))
+      .where(eq(chatGroupMessages.groupId, parsed.groupId))
+      .orderBy(desc(chatGroupMessages.createdAt), desc(chatGroupMessages.id))
       .limit(MESSAGE_PAGE_SIZE),
     db
       .update(chatGroupMembers)
       .set({ lastReadAt: new Date() })
       .where(
         and(
-          eq(chatGroupMembers.groupId, input.groupId),
+          eq(chatGroupMembers.groupId, parsed.groupId),
           eq(chatGroupMembers.userId, actorId)
         )
       ),
@@ -55,7 +59,7 @@ export async function sendChatGroupMessage(
   db: ChatGroupDb = defaultDb
 ): Promise<ChatGroupMessage> {
   const parsed = sendChatGroupMessageSchema.parse(input);
-  await requireMembership(actorId, parsed.groupId, db);
+  await requireGroupAccess(actorId, parsed.groupId, db);
 
   const [row] = await db
     .insert(chatGroupMessages)

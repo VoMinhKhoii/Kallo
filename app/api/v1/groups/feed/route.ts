@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { listCircleFeed } from '@/lib/actions/groups/feed';
 import { requireUserId } from '@/lib/api/auth';
-import { serializeError } from '@/lib/errors';
+import { handleRouteError } from '@/lib/api/respond';
 import { timezoneOffsetSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
@@ -18,6 +18,6 @@ export async function GET(request: NextRequest) {
     const feed = await listCircleFeed(actorId, { timezoneOffset });
     return NextResponse.json({ feed });
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }
