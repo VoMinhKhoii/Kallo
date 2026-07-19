@@ -241,34 +241,11 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        const meal = toParsedMeal(result.data);
-        const hasNutrition = meal.items?.some(
-          (item) => item.macros.calories !== 0 || item.macros.protein !== 0
-        );
-
-        if (!hasNutrition) {
-          console.error('[analyze-meal] Pipeline returned all-null nutrition', {
-            inputLength: message.length,
-          });
-          logPipelineEnd(
-            requestId,
-            'error',
-            Date.now() - startTime,
-            db,
-            'empty_nutrition',
-            pvu
-          );
-          emit({
-            type: 'error',
-            code: 'empty_nutrition',
-            message:
-              'Could not estimate nutrition for this meal. Please try describing it differently.',
-            retryable: true,
-          });
-          return;
-        }
-
-        // Completeness gate (precise clarify): the pipeline finished but ≥1
+        // Completeness gate (precise clarify) — MUST run BEFORE the
+        // empty_nutrition gate: a meal whose only ingredients are unresolved
+        // (e.g. "0 fried chicken") assembles to all-zero macros, and the
+        // nutrition gate would swallow the clarify with a generic error.
+        // The pipeline finished but ≥1
         // ingredient's portion/match couldn't be resolved. Mirror the cheat
         // clarify early-exit — surface ONE targeted question and stop WITHOUT
         // persisting an incomplete pending_analyses row. The client re-submits
@@ -301,6 +278,33 @@ export async function POST(request: NextRequest) {
             undefined,
             pvu
           );
+          return;
+        }
+
+        const meal = toParsedMeal(result.data);
+        const hasNutrition = meal.items?.some(
+          (item) => item.macros.calories !== 0 || item.macros.protein !== 0
+        );
+
+        if (!hasNutrition) {
+          console.error('[analyze-meal] Pipeline returned all-null nutrition', {
+            inputLength: message.length,
+          });
+          logPipelineEnd(
+            requestId,
+            'error',
+            Date.now() - startTime,
+            db,
+            'empty_nutrition',
+            pvu
+          );
+          emit({
+            type: 'error',
+            code: 'empty_nutrition',
+            message:
+              'Could not estimate nutrition for this meal. Please try describing it differently.',
+            retryable: true,
+          });
           return;
         }
 

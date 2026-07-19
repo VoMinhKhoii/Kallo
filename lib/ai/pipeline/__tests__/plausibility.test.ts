@@ -69,6 +69,22 @@ describe('classifyIngredientPlausibility — genuinely non-caloric', () => {
     ).toBe('genuinely_noncaloric');
   });
 
+  it('does NOT classify caloric compounds as noncaloric (trà sữa, ice cream)', () => {
+    // Review finding: unanchored patterns matched "trà sữa"/"ice cream" and,
+    // because the noncaloric check precedes the missing-macros guard, an
+    // unmatched milk tea could persist a silent ZERO_TRIPLE.
+    for (const name of ['trà sữa trân châu', 'trà đào', 'ice cream', 'iced coffee']) {
+      expect(
+        classifyIngredientPlausibility({
+          grams: 200,
+          hasNutrition: false,
+          caloriesPer100g: null,
+          name,
+        })
+      ).not.toBe('genuinely_noncaloric');
+    }
+  });
+
   it('classifies ice by name (cà phê sữa đá decomposes to a standalone Đá)', () => {
     expect(
       classifyIngredientPlausibility({

@@ -308,6 +308,9 @@ const STATIC_PREFIX_COMPRESSED = `You are a grounded nutrition estimator. Return
     - rice nấu: cooked ≈ 2.6× raw weight (absorbs water).
     - chicken nướng/luộc: cooked ≈ 0.75× raw.
     - beef chiên/xào: cooked ≈ 0.75× raw.
+  Absorbed cooking fat: for chiên/rán/xào/áp chảo/fried/pan-seared/stir-fried items, fatG MUST include absorbed oil on top of the food's own fat (pan-sear 3–7g, stir-fry 5–10g, shallow-fry 8–15g, deep-fry ~10–18% of food weight; scale with oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat. Skip when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
+  Staple carb base: when rice/noodles/bread is the base of a plate or bowl dish (cơm tấm, cơm gà, katsu curry, bibimbap, fried rice), size it as a FULL meal portion — cooked rice 200–300g, noodles 150–250g cooked — never a side garnish; respect default_rice_portion in <user_context>.
+  If user_count="0" on an ingredient: the user typed an explicit zero. The server has flagged it for a clarify and will DISCARD your numbers for it — emit normal best-effort fields (grams must be > 0) and never treat the zero as one standard serving in meal-level reasoning.
     - fish hấp/nướng: cooked ≈ 0.85× raw.
     - shrimp luộc: cooked ≈ 0.85× raw.
   IMPORTANT: emit grams in the SAME state as the selected candidate's db_state.

@@ -190,7 +190,7 @@ export function buildDecompositionV2Prompt(
     Route every user-typed qualifier to EXACTLY ONE field. No cross-contamination.
 
     1. **Quantity cues** — route to structured fields. You NEVER emit grams and NEVER invent numbers; extract only what the user wrote:
-       - **Counted units** ("2 bánh bao", "3 lát bánh mì", "2 slices", "1 tô phở", "nửa cái") → count (the number; "nửa"→0.5) + unitToken (the verbatim counter/unit word: "bánh bao", "lát", "slice", "tô", "cái"). Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("bánh bao lớn"→"large", "tô nhỏ"→"small").
+       - **Counted units** ("2 bánh bao", "3 lát bánh mì", "2 slices", "1 tô phở", "nửa cái") → count (the number; "nửa"→0.5) + unitToken (the verbatim counter/unit word: "bánh bao", "lát", "slice", "tô", "cái"). Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("bánh bao lớn"→"large", "tô nhỏ"→"small"). A typed ZERO ("0 fried chicken", "0 ổ bánh mì") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
        - **Explicit weights** ("250gr ức gà", "100g cơm") → explicitMass: grams + basis. Set basis="raw" when paired with a raw-weight cue ("cân sống", "trước khi nấu"), otherwise basis="cooked".
        - **Vague portion cues** ("nhiều cơm", "ít thịt", "extra protein", "nửa phần", "đầy bát") — no count. Capture genuinely portion-load-bearing phrases in stateNote (e.g., "ăn ít" / "đầy bát") so the resolver / Call 2 can bias the estimate.
 

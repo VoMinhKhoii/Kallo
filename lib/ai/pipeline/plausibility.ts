@@ -58,9 +58,13 @@ const NONCALORIC_PATTERNS: RegExp[] = [
   /\bblack\s*coffee\b/i,
   /cà\s*phê\s*đen/i,
   /\b(plain|black|green|herbal)\s*tea\b/i,
-  /trà(\s*(đá|xanh|nóng))?/i,
-  /nướ?c\s*trà/i,
-  /\bice(\s*cubes?)?\b/i, // ice as an ingredient (cà phê sữa đá decomposes to Đá)
+  // Anchored to bare trà + noncaloric qualifiers only. Unanchored /trà.../
+  // matched "trà sữa"/"trà đào" (very caloric) and reopened the silent-zero
+  // hole; qualifiers cover "trà đá không đường"-style names.
+  /^(nướ?c\s*)?trà(\s+(đá|xanh|nóng|không\s*đường|unsweetened))*$/i,
+  // "ice"/"ice cubes" as a standalone ingredient — NOT "ice cream"/"iced
+  // coffee" (word-boundary alone matched those). Anchored like đá below.
+  /^ice(\s*cubes?)?$/i,
   /^đá(\s*(viên|lạnh))?$/i,
 ];
 
