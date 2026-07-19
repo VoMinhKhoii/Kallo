@@ -76,6 +76,7 @@ The README has a full **Drift watchlist** section calling out 8 anti-patterns th
 - **No photography in the product.** Marketing imagery, if used, must be warm-toned (tungsten/golden hour), grainy, never blue-cast.
 - **Preserve Vietnamese diacritics** in dish names — never anglicize `phở`, `bún chả`, `mực kho`.
 - **Bounded estimates, never fake precision.** When generating sample data, write ranges (`760–845 kcal`) and confidence labels, not single-decimal numbers.
+- **Ink is the neutral pair** — primary `#141413`, muted `#6E6D66` (never lighter), hairlines `#E8E6DC` — and **brown (`--nham-btn`) fires on exactly one primary CTA per surface**; selected/hover states are the beige `--nham-hover` wash + black text (+ semibold when selected), never a filled umber or black pill. See README → "Visual foundations" (Color / Hover, press & selection).
 
 ## Files
 

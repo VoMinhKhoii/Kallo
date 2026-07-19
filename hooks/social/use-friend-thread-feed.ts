@@ -20,7 +20,7 @@ export const friendsFeedReadMarkerKeys = {
 };
 
 /** The combined Friends thread — every accepted friend's shared meal, merged
- * into one feed (excluding the actor's own), newest page first. Scroll up
+ * with the actor's own shares into one feed, newest page first. Scroll up
  * (`fetchNextPage`) to load earlier shares. First page is today's or, if
  * quiet today, the most recent shares regardless of day. Deliberately
  * separate from useCircleFeed: that hook backs the sidebar's per-section

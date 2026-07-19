@@ -3,8 +3,12 @@ import {
   getOrCreateMyProfile,
   upsertPublicProfile,
 } from '@/lib/actions/groups/profile';
-import { readJsonBody, requireUserId } from '@/lib/api/auth';
-import { serializeError } from '@/lib/errors';
+import {
+  readJsonBody,
+  requireUserId,
+  requireUserWithAvatar,
+} from '@/lib/api/auth';
+import { handleRouteError } from '@/lib/api/respond';
 
 export const runtime = 'nodejs';
 
@@ -14,11 +18,11 @@ export const runtime = 'nodejs';
  */
 export async function GET() {
   try {
-    const actorId = await requireUserId();
-    const profile = await getOrCreateMyProfile(actorId);
+    const { id, avatarUrl } = await requireUserWithAvatar();
+    const profile = await getOrCreateMyProfile(id, avatarUrl);
     return NextResponse.json({ profile });
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }
 
@@ -38,6 +42,6 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ profile });
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }

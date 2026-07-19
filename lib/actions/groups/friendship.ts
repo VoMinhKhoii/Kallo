@@ -46,7 +46,7 @@ export async function acceptInvite(
   // Provision the recipient's own link profile so they carry a circle label in
   // the inviter's circle even if they accept before ever opening their own
   // Groups page. Idempotent — returns the existing profile when one exists.
-  await getOrCreateMyProfile(actorId, db);
+  await getOrCreateMyProfile(actorId, null, db);
 
   const { userLow, userHigh } = orderedPair(actorId, inviter.userId);
 

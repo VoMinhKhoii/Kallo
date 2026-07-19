@@ -6,6 +6,10 @@ import { db as defaultDb } from '@/lib/db';
 import { publicProfiles } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { validateHandle } from '@/lib/groups/handles';
+import {
+  publicProfileColumns,
+  toPublicIdentity,
+} from '@/lib/groups/public-identity';
 import { generateInviteSlug } from '@/lib/groups/slug';
 import { handleSchema, upsertPublicProfileSchema } from '@/lib/validation';
 
@@ -77,12 +81,7 @@ export async function upsertPublicProfile(
       })
       .returning();
 
-    return {
-      userId: row.userId,
-      handle: row.handle,
-      displayName: row.displayName,
-      avatarSeed: row.avatarSeed,
-    };
+    return toPublicIdentity(row);
   } catch (error) {
     // The handle unique index is the ultimate guard: a concurrent claim of the
     // same handle by a different user (which the pre-check above can race past)
@@ -106,15 +105,13 @@ export async function getMyPublicProfile(
   const rows = await db
     .select({
       userId: publicProfiles.userId,
-      handle: publicProfiles.handle,
-      displayName: publicProfiles.displayName,
-      avatarSeed: publicProfiles.avatarSeed,
+      ...publicProfileColumns,
     })
     .from(publicProfiles)
     .where(eq(publicProfiles.userId, actorId))
     .limit(1);
 
-  return rows[0] ?? null;
+  return rows[0] ? toPublicIdentity(rows[0]) : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,10 +123,22 @@ export async function getMyPublicProfile(
 
 export async function getOrCreateMyProfile(
   actorId: string,
+  avatarUrl: string | null = null,
   db: Db = defaultDb
 ): Promise<PublicProfile> {
   const existing = await getMyPublicProfile(actorId, db);
-  if (existing) return existing;
+  if (existing) {
+    // Refresh a changed Google picture (or backfill a null one) so friends see
+    // the current avatar; never clobber a stored URL with null.
+    if (avatarUrl && existing.avatarUrl !== avatarUrl) {
+      await db
+        .update(publicProfiles)
+        .set({ avatarUrl, updatedAt: new Date() })
+        .where(eq(publicProfiles.userId, actorId));
+      return { ...existing, avatarUrl };
+    }
+    return existing;
+  }
 
   // Provision with a generated slug; retry a few times on a uniqueness clash.
   for (let attempt = 0; attempt < 6; attempt++) {
@@ -142,14 +151,10 @@ export async function getOrCreateMyProfile(
           handle,
           displayName: null,
           avatarSeed: handle,
+          avatarUrl,
         })
         .returning();
-      return {
-        userId: row.userId,
-        handle: row.handle,
-        displayName: row.displayName,
-        avatarSeed: row.avatarSeed,
-      };
+      return toPublicIdentity(row);
     } catch (error) {
       if ((error as { code?: string } | null)?.code === '23505') {
         // Either a concurrent provision for this user, or a slug clash.
@@ -180,13 +185,11 @@ export async function getProfileBySlug(
   const rows = await db
     .select({
       userId: publicProfiles.userId,
-      handle: publicProfiles.handle,
-      displayName: publicProfiles.displayName,
-      avatarSeed: publicProfiles.avatarSeed,
+      ...publicProfileColumns,
     })
     .from(publicProfiles)
     .where(eq(publicProfiles.handle, parsed.data))
     .limit(1);
 
-  return rows[0] ?? null;
+  return rows[0] ? toPublicIdentity(rows[0]) : null;
 }

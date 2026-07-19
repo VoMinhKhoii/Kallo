@@ -255,3 +255,14 @@ code, .mono { font-family: var(--font-mono); font-size: 0.95em; }
   box-shadow: var(--ring-accent);
   border-radius: var(--radius-md);
 }
+
+/* --- App-shell neutral ink (hardened 2026-07, Circle redesign) ---------
+   The app chrome's two-step neutral ink on the warm canvas, plus the
+   neutral hairline. Replaces taupe/tan for chrome text; #B0AEA5 retired
+   for contrast. Brown (--nham-btn) is reserved for ONE primary CTA per
+   surface; selected/hover = --nham-hover wash + ink-primary text. */
+:root {
+  --nham-ink: #141413;        /* primary ink — names, values, active labels */
+  --nham-ink-muted: #6e6d66;  /* the only muted text color — never lighter */
+  --nham-hairline: #e8e6dc;   /* borders, dividers, letter-disc fill */
+}

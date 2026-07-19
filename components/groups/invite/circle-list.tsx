@@ -31,7 +31,7 @@ export function CircleList() {
 
   if (circle.length === 0) {
     return (
-      <p className="px-1 py-2 font-sans-display text-[12px] text-nham-text-muted">
+      <p className="px-1 py-2 font-sans-display text-[#6E6D66] text-[12px]">
         {t('empty')}
       </p>
     );
@@ -39,14 +39,14 @@ export function CircleList() {
 
   return (
     <section className="space-y-2">
-      <h3 className="px-1 font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.08em]">
+      <h3 className="px-1 font-medium font-sans-display text-[#6E6D66] text-[10px] uppercase tracking-[0.08em]">
         {t('title', { count: circle.length })}
       </h3>
       <ul className="space-y-2">
         {circle.map((member: CircleMember) => (
           <li
             key={member.friendshipId}
-            className="flex items-center justify-between gap-3 rounded-xl border border-nham-border/60 bg-white p-3"
+            className="flex items-center justify-between gap-3 rounded-xl border border-[#E8E6DC] bg-white p-3"
           >
             <ProfileIdentity profile={member.profile} />
             <div className="flex shrink-0 items-center gap-1.5">
@@ -60,7 +60,7 @@ export function CircleList() {
                 }
                 disabled={blockFriend.isPending}
                 aria-busy={blockFriend.isPending}
-                className="inline-flex items-center rounded-lg border border-nham-border/60 px-2.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text-muted transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-lg border border-[#E8E6DC] px-2.5 py-1.5 font-medium font-sans-display text-[#6E6D66] text-[12px] transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {tWall('block')}
               </button>
@@ -73,7 +73,7 @@ export function CircleList() {
                 }
                 disabled={removeFriend.isPending}
                 aria-busy={removeFriend.isPending}
-                className="inline-flex items-center rounded-lg border border-nham-border/60 px-2.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text-muted transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-lg border border-[#E8E6DC] px-2.5 py-1.5 font-medium font-sans-display text-[#6E6D66] text-[12px] transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {t('remove')}
               </button>

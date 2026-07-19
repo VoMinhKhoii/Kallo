@@ -2,14 +2,13 @@
 
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { inferMealSlot } from '@/lib/actions/persisted-meal';
+import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { mealItems, meals } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
-import { copyMealVerbatim } from './copy-meal-verbatim';
 import type { ConfirmMealResponse } from './types';
 
 // ---------------------------------------------------------------------------
@@ -50,7 +49,8 @@ export async function duplicateMealAction(input: {
       .select()
       .from(meals)
       .where(and(eq(meals.id, parsed.mealId), eq(meals.userId, user.id)))
-      .limit(1);
+      .limit(1)
+      .for('update');
 
     if (!source) {
       throw Errors.validationFailed(
@@ -74,17 +74,13 @@ export async function duplicateMealAction(input: {
       parsed.loggedDate,
       parsed.timezoneOffset
     );
-    const mealSlot = inferMealSlot(loggedAt);
-
     // Copy the source verbatim into a new meal for this user (shared helper —
     // same materialization the accept-a-share path uses).
-    return await copyMealVerbatim(tx, {
-      source,
-      sourceItems,
+    return await copyMealVerbatim(tx, source, sourceItems, {
+      factor: 1,
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt,
-      mealSlot,
     });
   });
 }

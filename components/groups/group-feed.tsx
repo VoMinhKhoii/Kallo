@@ -1,13 +1,14 @@
 'use client';
 
+import { MessagesSquare } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { FeedEntry } from '@/components/groups/feed-entry';
+import { GroupInfo } from '@/components/groups/info/group-info';
 import { ThreadFeed } from '@/components/groups/thread-feed';
 import { useChatGroup, useGroupMealFeed } from '@/hooks/social/use-chat-groups';
 
-/** Right-pane detail for a group: every member's shared-meal history,
- * infinite-scrolled — newest at the bottom by default, scrolling up loads
- * earlier days. Same layout as FriendsFeed, just scoped to a chat group's
- * membership instead of the actor's whole friend graph. */
+/** A group's meal feed with per-meal replies (stage 1 — no universal chat).
+ * Logging happens through the AI meal bar in the Circle layout above. */
 export function GroupFeed({ groupId }: { groupId: string }) {
   const t = useTranslations('groups.page');
   const { data: group } = useChatGroup(groupId);
@@ -25,22 +26,30 @@ export function GroupFeed({ groupId }: { groupId: string }) {
   const groupName = group?.name ?? '';
 
   // Pages arrive newest-page-first, each page newest-entry-first — flattening
-  // in that order already yields one continuous newest→oldest sequence, so a
-  // single reverse() gives the oldest-first order ThreadFeed renders in.
-  const entries = (data?.pages ?? []).flatMap((page) => page.entries).reverse();
+  // yields newest-first, exactly the order ThreadFeed renders.
+  const items = (data?.pages ?? [])
+    .flatMap((page) => page.entries)
+    .map((entry) => ({
+      id: entry.meal.shareId,
+      timestamp: entry.meal.sharedAt,
+      content: <FeedEntry entry={entry} />,
+    }));
 
   return (
-    <ThreadFeed
-      title={groupName}
-      entries={entries}
-      emptyMessage={t('groupNoMealToday', { name: groupName })}
-      isPending={isPending}
-      isError={isError}
-      isFetching={isFetching}
-      refetch={() => void refetch()}
-      hasNextPage={hasNextPage}
-      isFetchingNextPage={isFetchingNextPage}
-      fetchNextPage={() => void fetchNextPage()}
-    />
+    <div className="flex min-h-0 flex-1 flex-col">
+      <GroupInfo group={group} />
+      <ThreadFeed
+        entries={items}
+        emptyIcon={MessagesSquare}
+        emptyMessage={t('groupNoActivity', { name: groupName })}
+        isPending={isPending}
+        isError={isError}
+        isFetching={isFetching}
+        refetch={() => void refetch()}
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        fetchNextPage={() => void fetchNextPage()}
+      />
+    </div>
   );
 }

@@ -90,7 +90,8 @@ export async function updateMealAction(input: {
       .select()
       .from(meals)
       .where(and(eq(meals.id, parsed.mealId), eq(meals.userId, user.id)))
-      .limit(1);
+      .limit(1)
+      .for('update');
 
     if (!meal) {
       throw Errors.validationFailed(
@@ -233,6 +234,7 @@ export async function updateMealAction(input: {
       entryMode: 'precise',
       alcoholG: newAlcoholG,
       cheatSliders: null,
+      portionFactor: meal.portionFactor,
       share: shareRow
         ? { shareId: shareRow.id, visibility: shareRow.visibility }
         : null,

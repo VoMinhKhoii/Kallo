@@ -928,6 +928,10 @@ export const publicProfiles = pgTable(
     handle: text('handle').notNull(),
     displayName: text('display_name'),
     avatarSeed: text('avatar_seed'),
+    // The person's Google/Gmail picture URL, refreshed from auth metadata on
+    // sign-in. Null until captured (or for non-OAuth accounts) — the UI falls
+    // back to a letter disc.
+    avatarUrl: text('avatar_url'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -1035,9 +1039,76 @@ export const mealShares = pgTable(
       .where(sql`visibility <> 'private'`),
     // The RLS SELECT policy and feed join filter by actor_id.
     index('meal_shares_actor_idx').on(table.actorId),
+    index('meal_shares_actor_shared_at_id_idx')
+      .on(table.actorId, sql`${table.sharedAt} DESC`, sql`${table.id} DESC`)
+      .where(sql`visibility <> 'private'`),
     check(
       'meal_shares_visibility_check',
       sql`${table.visibility} IN ('private', 'circle', 'public')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Group Tracking — Meal Share Reactions
+// ---------------------------------------------------------------------------
+// Reactions belong to the broadcast share, not the private meal row. The
+// one-per-user constraint makes the v1 heart a true toggle while the widened
+// kind CHECK leaves room for richer reactions without another table rewrite.
+
+export const mealShareReactions = pgTable(
+  'meal_share_reactions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    shareId: uuid('share_id')
+      .notNull()
+      .references(() => mealShares.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull().default('yum'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('meal_share_reactions_share_user_uniq').on(
+      table.shareId,
+      table.userId
+    ),
+    check(
+      'meal_share_reactions_kind_check',
+      sql`${table.kind} IN ('yum', 'cheer', 'strong', 'wow', 'heart')`
+    ),
+  ]
+);
+
+// Replies are lightweight text comments on a broadcast share — the stage-1
+// conversation unit in a group (a meal is the thread root; there is no
+// universal group chat). Like reactions, they are read and written only
+// through server actions on the Drizzle owner connection (RLS enabled, no
+// client policies), so canViewShare() is the sole visibility gate. Multiple
+// replies per user, ordered by created_at.
+export const mealShareReplies = pgTable(
+  'meal_share_replies',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    shareId: uuid('share_id')
+      .notNull()
+      .references(() => mealShares.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    body: text('body').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('meal_share_replies_share_created_id_idx').on(
+      table.shareId,
+      table.createdAt,
+      table.id
     ),
   ]
 );
@@ -1129,8 +1200,9 @@ export const circleEvents = pgTable(
 // full copy or as a split fraction. B one-tap-accepts to materialize a scaled
 // copy in their own diary (accepted_meal_id) or dismisses it. This drives the
 // Circle inbox. Isolation is the from_user_id / to_user_id filters (Drizzle
-// bypasses RLS); the accept path is the one deliberate cross-user meal read,
-// authorized solely by a pending invite row addressed to the reader.
+// bypasses RLS); invite acceptance is a deliberate cross-user meal read,
+// authorized solely by a pending invite row addressed to the reader. The other
+// deliberate read starts from meal_shares and is gated by canViewShare.
 
 export const mealShareInvites = pgTable(
   'meal_share_invites',
@@ -1250,9 +1322,8 @@ export const chatGroupMembers = pgTable(
     joinedAt: timestamp('joined_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
-    // Bumped to now() whenever this member opens the thread (listChatGroupMessages).
-    // A message is unread when its created_at is after this — defaults to
-    // joined_at (now()) so a fresh join never shows a backlog as unread.
+    // Bumped whenever this member opens messages or the meal feed. Activity
+    // after this instant is unread; the default prevents a fresh-join backlog.
     lastReadAt: timestamp('last_read_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -1263,7 +1334,6 @@ export const chatGroupMembers = pgTable(
       table.userId
     ),
     index('chat_group_members_user_idx').on(table.userId),
-    index('chat_group_members_group_idx').on(table.groupId),
     check(
       'chat_group_members_role_check',
       sql`${table.role} IN ('owner', 'member')`

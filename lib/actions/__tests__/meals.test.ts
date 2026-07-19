@@ -803,10 +803,13 @@ describe('updateMealAction', () => {
   // Each `tx.select()` resolves through .from().where() — the meal lookup adds
   // .limit(), the item lookup awaits .where() directly. Queue per call.
   function queueMealLookup(rows: unknown[]) {
+    const limitResult = Object.assign(Promise.resolve(rows), {
+      for: vi.fn().mockResolvedValue(rows),
+    });
     mockTxSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue(rows),
+          limit: vi.fn().mockReturnValue(limitResult),
         }),
       }),
     });
@@ -839,6 +842,7 @@ describe('updateMealAction', () => {
       loggedAt: LOGGED_AT,
       entryMode: 'precise',
       alcoholG: null,
+      portionFactor: 1,
       caloriesKcal: 520,
       proteinG: 31,
       carbohydrateG: 60,
@@ -1067,10 +1071,13 @@ describe('duplicateMealAction', () => {
   });
 
   function queueMealLookup(rows: unknown[]) {
+    const limitResult = Object.assign(Promise.resolve(rows), {
+      for: vi.fn().mockResolvedValue(rows),
+    });
     mockTxSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue(rows),
+          limit: vi.fn().mockReturnValue(limitResult),
         }),
       }),
     });
@@ -1092,6 +1099,7 @@ describe('duplicateMealAction', () => {
       loggedAt: LOGGED_AT,
       entryMode: 'precise',
       alcoholG: 12,
+      portionFactor: 1,
       caloriesKcal: 520,
       proteinG: 31,
       carbohydrateG: 60,

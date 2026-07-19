@@ -32,7 +32,11 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-const FALLBACK_USER: UserMenuUser = { email: null, displayName: null };
+const FALLBACK_USER: UserMenuUser = {
+  email: null,
+  displayName: null,
+  avatarUrl: null,
+};
 
 function subscribeToStepOneLocaleDraft() {
   return () => {};

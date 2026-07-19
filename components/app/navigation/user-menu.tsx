@@ -9,6 +9,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -26,13 +27,7 @@ import { cn } from '@/lib/utils';
 export interface UserMenuUser {
   email: string | null;
   displayName: string | null;
-}
-
-function deriveInitial(user: UserMenuUser): string {
-  const source = user.displayName || user.email || '';
-  const trimmed = source.trim();
-  if (!trimmed) return '·';
-  return trimmed.charAt(0).toUpperCase();
+  avatarUrl: string | null;
 }
 
 function deriveLabel(user: UserMenuUser): string {
@@ -77,7 +72,6 @@ export function UserMenu({
     if (openProp === undefined) setInternalOpen(next);
     onOpenChange?.(next);
   };
-  const initial = deriveInitial(user);
   const label = deriveLabel(user);
 
   // Show the hover-mode toggle only on fine-pointer devices. On touch the
@@ -119,18 +113,16 @@ export function UserMenu({
       aria-haspopup="menu"
       aria-expanded={open}
       className={cn(
-        'group/usermenu relative flex w-full items-center rounded-lg text-left transition-colors hover:bg-nham-hover/55 focus-visible:bg-nham-hover/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
+        'group/usermenu relative flex w-full items-center rounded-lg text-left transition-colors hover:bg-[#141413]/[0.04] focus-visible:bg-[#141413]/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
         collapsed ? 'justify-center gap-0 p-1' : 'gap-3 p-1.5'
       )}
     >
-      <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/55 ring-1 ring-nham-accent/25">
-        <span className="font-bold font-sans-display text-[13px] text-nham-btn">
-          {initial}
-        </span>
+      <span className="relative flex shrink-0">
+        <ProfileAvatar avatarUrl={user.avatarUrl} label={label} />
         {showOnboardingDot && (
           <span
             aria-hidden="true"
-            className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 animate-pulse-dot rounded-full bg-nham-accent ring-2 ring-nham-surface"
+            className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 animate-pulse-dot rounded-full bg-[#141413] ring-2 ring-nham-surface"
           />
         )}
       </span>
@@ -156,7 +148,7 @@ export function UserMenu({
         side={collapsed ? 'right' : 'top'}
         align={collapsed ? 'end' : 'start'}
         sideOffset={collapsed ? 12 : 8}
-        className="min-w-[12rem] border border-nham-border/60 bg-nham-surface font-sans-display"
+        className="min-w-[12rem] border border-[#141413]/10 bg-white font-sans-display"
       >
         {label && (
           <>
@@ -170,7 +162,7 @@ export function UserMenu({
                 </span>
               )}
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-nham-border/60" />
+            <DropdownMenuSeparator className="bg-[#141413]/10" />
           </>
         )}
 
@@ -181,19 +173,19 @@ export function UserMenu({
               onCheckedChange={(checked) =>
                 onExpandModeChange?.(checked ? 'hover' : 'click')
               }
-              className="gap-2 text-[12px] text-nham-text focus:bg-nham-hover/70 focus:text-nham-text"
+              className="gap-2 text-[12px] text-nham-text focus:bg-[#141413]/[0.04] focus:text-nham-text"
             >
               <MousePointerClick className="h-3.5 w-3.5 text-nham-text-muted" />
               {t('expandOnHover')}
             </DropdownMenuCheckboxItem>
-            <DropdownMenuSeparator className="bg-nham-border/60" />
+            <DropdownMenuSeparator className="bg-[#141413]/10" />
           </>
         )}
 
         <DropdownMenuItem asChild>
           <Link
             href="/settings"
-            className="flex items-center gap-2 text-[12px] text-nham-text focus:bg-nham-hover/70 focus:text-nham-text"
+            className="flex items-center gap-2 text-[12px] text-nham-text focus:bg-[#141413]/[0.04] focus:text-nham-text"
           >
             <UserIcon className="h-3.5 w-3.5" />
             {t('profile')}
@@ -202,14 +194,14 @@ export function UserMenu({
         <DropdownMenuItem asChild>
           <Link
             href="/settings"
-            className="flex items-center gap-2 text-[12px] text-nham-text focus:bg-nham-hover/70 focus:text-nham-text"
+            className="flex items-center gap-2 text-[12px] text-nham-text focus:bg-[#141413]/[0.04] focus:text-nham-text"
           >
             <Settings className="h-3.5 w-3.5" />
             {t('settings')}
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator className="bg-nham-border/60" />
+        <DropdownMenuSeparator className="bg-[#141413]/10" />
 
         <DropdownMenuItem
           onClick={handleSignOut}

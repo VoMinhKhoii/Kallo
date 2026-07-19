@@ -11,13 +11,13 @@
 // stands — the recipient's portion is already baked in. portion_factor is kept
 // for the inbox label only; it is never re-applied at accept time (that would
 // double-scale). Every query is re-scoped to the actor (Drizzle bypasses RLS);
-// the accept path performs the one deliberate cross-user meal read, authorized
-// solely by a pending invite row addressed to the reader.
+// this module's accept path performs a deliberate cross-user meal read,
+// authorized solely by a pending invite row addressed to the reader. Broadcast
+// copies use the separate canViewShare-gated log-shared action.
 
 import { and, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
 import { scaleOwnMealInPlace } from '@/lib/actions/meal-sharing/scale';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
-import { inferMealSlot } from '@/lib/actions/persisted-meal';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
@@ -230,11 +230,49 @@ export async function acceptMealShareInviteAction(input: {
   const { user } = await requireAuthAndProfile();
 
   return await db.transaction(async (tx) => {
-    // Atomically CLAIM the invite: flip pending -> accepted in one guarded
-    // UPDATE. A concurrent accept (two devices, a double-tap) loses the race —
-    // zero rows returned — and is rejected, so the meal is never materialized
-    // twice. The status flip rolls back with the tx if anything below throws.
+    // Discover the actor-scoped pending invite before touching cross-user data.
+    // The source meal is then locked BEFORE the invite is claimed, matching the
+    // split path's meal -> invite lock order and avoiding an accept/split
+    // deadlock while still keeping the final claim atomic.
     const [invite] = await tx
+      .select({
+        sourceMealId: mealShareInvites.sourceMealId,
+        fromUserId: mealShareInvites.fromUserId,
+      })
+      .from(mealShareInvites)
+      .where(
+        and(
+          eq(mealShareInvites.id, parsed.inviteId),
+          eq(mealShareInvites.toUserId, user.id),
+          eq(mealShareInvites.status, 'pending')
+        )
+      )
+      .limit(1);
+    if (!invite) {
+      throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
+    }
+
+    // Authorized cross-user read: the actor-scoped invite above grants this
+    // single source read. FOR UPDATE serializes it against split/edit, so meal
+    // totals and item rows come from one coherent portion.
+    const [source] = await tx
+      .select()
+      .from(meals)
+      .where(
+        and(
+          eq(meals.id, invite.sourceMealId),
+          eq(meals.userId, invite.fromUserId)
+        )
+      )
+      .limit(1)
+      .for('update');
+    if (!source) {
+      throw Errors.notFound('Bữa ăn không còn tồn tại.');
+    }
+
+    // Atomically claim after the source lock. A concurrent accept loses this
+    // guarded update after waiting and cannot materialize a second copy.
+    const claimed = await tx
       .update(mealShareInvites)
       .set({ status: 'accepted', respondedAt: new Date() })
       .where(
@@ -244,11 +282,8 @@ export async function acceptMealShareInviteAction(input: {
           eq(mealShareInvites.status, 'pending')
         )
       )
-      .returning({
-        sourceMealId: mealShareInvites.sourceMealId,
-        fromUserId: mealShareInvites.fromUserId,
-      });
-    if (!invite) {
+      .returning({ id: mealShareInvites.id });
+    if (!claimed[0]) {
       throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
     }
 
@@ -277,24 +312,6 @@ export async function acceptMealShareInviteAction(input: {
       throw Errors.validationFailed('Bạn không còn là bạn bè với người này.');
     }
 
-    // Authorized cross-user read: the source meal belongs to the SENDER. The
-    // invite I just claimed is what permits this single read. The userId
-    // predicate re-proves the sender owns the meal (defense-in-depth — no
-    // schema constraint ties from_user_id to source_meal_id's owner).
-    const [source] = await tx
-      .select()
-      .from(meals)
-      .where(
-        and(
-          eq(meals.id, invite.sourceMealId),
-          eq(meals.userId, invite.fromUserId)
-        )
-      )
-      .limit(1);
-    if (!source) {
-      throw Errors.notFound('Bữa ăn không còn tồn tại.');
-    }
-
     const sourceItems = await tx
       .select()
       .from(mealItems)
@@ -308,18 +325,14 @@ export async function acceptMealShareInviteAction(input: {
       parsed.loggedDate,
       parsed.timezoneOffset
     );
-    const mealSlot = inferMealSlot(loggedAt);
-
     // Materialize the sender's meal in my diary — verbatim, no re-scaling (a
     // split's share is already baked into the source's stored values). Shared
     // helper — the same copy the "log again" path performs.
-    const { mealId, meal } = await copyMealVerbatim(tx, {
-      source,
-      sourceItems,
+    const { mealId, meal } = await copyMealVerbatim(tx, source, sourceItems, {
+      factor: 1,
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt,
-      mealSlot,
     });
 
     // Point the already-claimed invite at the materialized meal.
