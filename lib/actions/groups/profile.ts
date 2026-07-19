@@ -247,6 +247,9 @@ export async function renameMyProfile(
       .set({ displayName: name, updatedAt: new Date() })
       .where(eq(publicProfiles.userId, actorId))
       .returning();
+    // Empty when the row was deleted concurrently (e.g. account deletion race)
+    // after getOrCreateMyProfile — surface a clean error, not a TypeError.
+    if (!row) throw Errors.internal(null, 'Profile disappeared mid-rename.');
     return toPublicIdentity(row);
   }
 
@@ -261,6 +264,7 @@ export async function renameMyProfile(
         .set({ displayName: name, handle, updatedAt: new Date() })
         .where(eq(publicProfiles.userId, actorId))
         .returning();
+      if (!row) throw Errors.internal(null, 'Profile disappeared mid-rename.');
       return toPublicIdentity(row);
     } catch (error) {
       if ((error as { code?: string } | null)?.code === '23505') {

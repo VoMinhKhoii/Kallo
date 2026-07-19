@@ -62,12 +62,17 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
         imageQuality: 85,
       );
       if (picked == null || !mounted) return;
-      final bytes = await File(picked.path).readAsBytes();
-      if (!mounted) return;
-      if (bytes.length > _maxAvatarBytes) {
+      // Check the on-disk size before reading the whole file into memory — a
+      // large PNG/HEIC that bypassed picker compression shouldn't be buffered
+      // just to reject it.
+      final file = File(picked.path);
+      if (await file.length() > _maxAvatarBytes) {
+        if (!mounted) return;
         showTopToast(context, tr('settings.identity.avatarTooLarge'));
         return;
       }
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
       setState(() => _busy = true);
       await uploadCircleAvatar(
         ref,
@@ -107,7 +112,12 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
   Future<void> _saveName(CircleProfile profile) async {
     final next = _name.text.trim();
     final saved = profile.displayName?.trim() ?? '';
-    if (_busy || next.isEmpty || next == saved) return;
+    if (_busy || next == saved) return;
+    // Every other path here toasts — an empty name shouldn't be a silent no-op.
+    if (next.isEmpty) {
+      showTopToast(context, tr('settings.identity.nameRequired'));
+      return;
+    }
     setState(() => _busy = true);
     try {
       await renameCircleProfile(ref, next);

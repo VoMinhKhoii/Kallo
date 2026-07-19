@@ -144,16 +144,24 @@ export async function deleteAccountAction(): Promise<{ success: true }> {
   // served) avatar photos first so a deleted account's photo doesn't stay
   // live. Best-effort: a storage error must not block the deletion itself.
   try {
-    const { data: objects } = await admin.storage
+    // Supabase storage returns { error } rather than throwing on API failures
+    // (missing bucket, permission denied), so the try/catch alone would miss
+    // them — inspect each result explicitly.
+    const { data: objects, error: listError } = await admin.storage
       .from('avatars')
       .list(user.id, { limit: 100 });
-    if (objects?.length) {
-      await admin.storage
+    if (listError) {
+      console.error('[account] avatar list failed:', listError);
+    } else if (objects?.length) {
+      const { error: removeError } = await admin.storage
         .from('avatars')
         .remove(objects.map((o) => `${user.id}/${o.name}`));
+      if (removeError) {
+        console.error('[account] avatar remove failed:', removeError);
+      }
     }
   } catch (storageError) {
-    console.error('[account] avatar purge failed:', storageError);
+    console.error('[account] avatar purge threw:', storageError);
   }
 
   const { error } = await admin.auth.admin.deleteUser(user.id);

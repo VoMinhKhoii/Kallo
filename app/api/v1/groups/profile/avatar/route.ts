@@ -26,9 +26,17 @@ export async function POST(req: NextRequest) {
   try {
     const { supabase, userId } = await requireSessionUser();
     // Reject oversized requests before req.formData() buffers the whole body
-    // (multipart framing overhead on top of the 5 MB file cap).
-    const contentLength = Number(req.headers.get('content-length'));
-    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES * 2) {
+    // (multipart framing overhead on top of the 5 MB file cap). A missing or
+    // non-numeric Content-Length is rejected too — otherwise a chunked upload
+    // with no declared length would slip past and buffer unbounded. (The file
+    // is still re-validated for real size + magic bytes downstream.)
+    const rawLength = req.headers.get('content-length');
+    const contentLength = Number(rawLength);
+    if (
+      rawLength === null ||
+      !Number.isFinite(contentLength) ||
+      contentLength > MAX_IMAGE_BYTES * 2
+    ) {
       throw Errors.validationFailed('Image must be under 5 MB.');
     }
     const form = await req.formData();
