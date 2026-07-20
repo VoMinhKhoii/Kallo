@@ -19,18 +19,18 @@ import { encodeSSE } from '@/lib/ai/streaming';
 import { db } from '@/lib/db';
 import { analysisGuardEvents, pendingAnalyses } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
-import { withDeadline } from '@/lib/with-deadline';
 import {
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
 } from '@/lib/rate-limit/analysis-guards';
+import { withDeadline } from '@/lib/with-deadline';
 import {
   createGuardRelease,
   getRequestIp,
   validateRequest,
 } from './request-validation';
-import { emitUnresolvedOutcome } from './unresolved-response';
 import { toStreamErrorEvent } from './stream-errors';
+import { emitUnresolvedOutcome } from './unresolved-response';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
