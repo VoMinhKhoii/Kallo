@@ -77,7 +77,7 @@ export function IdentityPanel() {
               placeholder={t('namePlaceholder')}
               autoComplete="off"
               maxLength={DISPLAY_NAME_MAX}
-              className="w-full max-w-sm rounded-xl border border-nham-border bg-nham-surface px-3.5 py-2.5 text-[15px] text-nham-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-nham-accent/40"
+              className="w-full max-w-sm rounded-xl border border-nham-border bg-white px-3.5 py-2.5 text-[15px] text-nham-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-nham-accent/40"
             />
             <button
               type="button"
