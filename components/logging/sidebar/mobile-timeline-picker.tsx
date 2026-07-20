@@ -109,9 +109,9 @@ function DayCell({
       className={cn(
         'flex min-h-11 min-w-0 flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 overflow-hidden rounded-[0.9rem] px-0.5 py-1 transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.97] motion-reduce:transition-none',
         isSelected
-          ? 'bg-nham-accent/20 text-nham-text'
+          ? 'bg-nham-hover font-semibold text-nham-text'
           : 'text-nham-text-muted hover:bg-nham-hover/40',
-        isToday && !isSelected && 'bg-nham-accent/10 text-nham-text'
+        isToday && !isSelected && 'bg-nham-hover text-nham-text'
       )}
       aria-label={accessibleDateLabel}
       aria-current={isSelected ? 'date' : undefined}
@@ -371,7 +371,7 @@ export function MobileTimelinePicker({
                   aria-expanded={false}
                 >
                   <CalendarIcon
-                    className="size-3.5 shrink-0 text-nham-accent"
+                    className="size-3.5 shrink-0 text-nham-text-muted"
                     aria-hidden="true"
                   />
                   <span className="min-w-0 truncate">{formattedDate}</span>

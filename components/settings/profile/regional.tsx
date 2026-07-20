@@ -103,7 +103,7 @@ function CountrySelect({
                   className={cn(
                     'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30',
                     value === c.value
-                      ? 'bg-nham-accent/10 font-medium text-nham-text'
+                      ? 'bg-nham-hover font-semibold text-nham-text'
                       : 'text-nham-text hover:bg-nham-track'
                   )}
                 >
@@ -138,7 +138,7 @@ export function Regional() {
           it lives outside the profile form's dirty state. */}
       <div>
         <div className="mb-2 flex items-center gap-2 font-medium text-[13px] text-nham-text">
-          <Languages className="h-4 w-4 text-nham-accent" />
+          <Languages className="h-4 w-4 text-nham-text-muted" />
           {tSettings('language')}
         </div>
         <LanguageToggle
@@ -157,7 +157,7 @@ export function Regional() {
           render={({ field }) => (
             <FormItem>
               <div className="mb-2 flex items-center gap-2 font-medium text-[13px] text-nham-text">
-                <Globe className="h-4 w-4 text-nham-accent" />
+                <Globe className="h-4 w-4 text-nham-text-muted" />
                 {tOrigin('countryOfOrigin')}
               </div>
               <FormControl>
@@ -173,7 +173,7 @@ export function Regional() {
           render={({ field }) => (
             <FormItem>
               <div className="mb-2 flex items-center gap-2 font-medium text-[13px] text-nham-text">
-                <MapPin className="h-4 w-4 text-nham-accent" />
+                <MapPin className="h-4 w-4 text-nham-text-muted" />
                 {tOrigin('countryOfResidence')}
               </div>
               <FormControl>

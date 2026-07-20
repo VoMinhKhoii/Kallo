@@ -19,7 +19,7 @@ export function MacroSummarySkeleton() {
             className="mb-2 h-3 rounded-full bg-nham-border/70"
             style={{ width }}
           />
-          <div className="h-5 w-16 rounded-full bg-nham-accent/25" />
+          <div className="h-5 w-16 rounded-full bg-nham-track" />
         </div>
       ))}
     </div>
@@ -48,7 +48,7 @@ export function LoggingDaySkeleton() {
               </div>
               <div className="mt-5 flex items-center justify-between border-nham-border/50 border-t border-dashed pt-3">
                 <div className="h-3 w-28 rounded-full bg-nham-border/50" />
-                <div className="h-4 w-16 rounded-full bg-nham-accent/25" />
+                <div className="h-4 w-16 rounded-full bg-nham-track" />
               </div>
             </div>
           </div>

@@ -27,7 +27,7 @@ export function LanguageToggle({ value, onChange }: LanguageToggleProps) {
             className={cn(
               'flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors',
               selected
-                ? 'border-nham-accent bg-nham-accent/10'
+                ? 'border-nham-text/30 bg-nham-hover'
                 : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-nham-accent/50'
             )}
           >
@@ -36,7 +36,7 @@ export function LanguageToggle({ value, onChange }: LanguageToggleProps) {
               {label}
             </span>
             {selected && (
-              <Check className="ml-auto h-4 w-4 shrink-0 text-nham-accent" />
+              <Check className="ml-auto h-4 w-4 shrink-0 text-nham-text" />
             )}
           </button>
         );

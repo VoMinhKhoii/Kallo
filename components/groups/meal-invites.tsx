@@ -74,7 +74,7 @@ function InviteCard({ invite }: { invite: MealShareInvite }) {
           {invite.meal.rawInput}
         </p>
         {invite.mode === 'split' && portion && (
-          <span className="mt-0.5 shrink-0 rounded-full bg-nham-accent/15 px-2 py-0.5 font-medium font-sans-display text-[10px] text-nham-text">
+          <span className="mt-0.5 shrink-0 rounded-full bg-nham-hover px-2 py-0.5 font-medium font-sans-display text-[10px] text-nham-text">
             {t('portion', { portion })}
           </span>
         )}
@@ -106,7 +106,7 @@ function InviteCard({ invite }: { invite: MealShareInvite }) {
           onClick={handleAccept}
           disabled={busy}
           aria-busy={accept.isPending}
-          className="inline-flex items-center gap-1.5 rounded-full bg-nham-accent/15 px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text transition-colors hover:bg-nham-accent/25 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-full bg-nham-hover px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text transition-colors hover:bg-nham-hover/70 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {accept.isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
