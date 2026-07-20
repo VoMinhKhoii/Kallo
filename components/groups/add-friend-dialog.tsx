@@ -64,7 +64,7 @@ export function AddFriendDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="gap-5 border-[#E8E6DC] bg-nham-surface">
+      <DialogContent className="gap-5 border-[#E8E6DC] bg-white">
         <DialogHeader>
           <DialogTitle className="font-serif text-[#141413] text-xl">
             {tab === 'friend' ? t('title') : tGroup('title')}

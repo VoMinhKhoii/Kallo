@@ -99,7 +99,7 @@ export function ShareMealDialog({ mealId, trigger }: ShareMealDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="gap-5 border-nham-border/60 bg-nham-surface">
+      <DialogContent className="gap-5 border-nham-border/60 bg-white">
         <DialogHeader>
           <DialogTitle className="font-serif text-nham-text text-xl">
             {t('title')}
