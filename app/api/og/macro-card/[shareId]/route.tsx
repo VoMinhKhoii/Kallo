@@ -29,12 +29,12 @@ const RING_CENTER = RING_VIEWBOX / 2;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 // Kallo warm palette (from app/globals.css :root — satori needs literal hex).
-const NHAM_SURFACE = '#fefbf6';
-const NHAM_TEXT = '#2c2416';
-const NHAM_TEXT_MUTED = '#8b7355';
+const NHAM_SURFACE = '#f9f9f7';
+const NHAM_TEXT = '#141413';
+const NHAM_TEXT_MUTED = '#6e6d66';
 const NHAM_ACCENT = '#c9a87c';
-const NHAM_BORDER = '#e8d5b5';
-const NHAM_TRACK = '#f5f4f0';
+const NHAM_BORDER = '#e8e6dc';
+const NHAM_TRACK = '#ecece9';
 const NHAM_STONE = '#a8a29e';
 const NHAM_MACRO_PROTEIN = '#c9a87c';
 const NHAM_MACRO_CARBS = '#8b7355';

@@ -128,10 +128,10 @@ export function MealEntry({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.85 }}
                     transition={{ duration: 0.15 }}
-                    className="flex items-center gap-1.5 rounded-full border border-nham-accent/50 bg-nham-accent/10 px-2.5 py-1 text-nham-accent transition-colors hover:bg-nham-accent/20"
+                    className="flex items-center gap-1.5 rounded-full border border-nham-border bg-nham-hover px-2.5 py-1 text-nham-text transition-colors hover:bg-nham-hover/70"
                   >
                     <Check className="h-3 w-3" />
-                    <span className="font-medium font-sans-display text-[10px]">
+                    <span className="font-sans-display font-semibold text-[10px]">
                       {t('done')}
                     </span>
                   </motion.button>

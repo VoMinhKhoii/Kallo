@@ -43,7 +43,7 @@ function StateBadge({ state }: { state: string }) {
       className={cn(
         'shrink-0 rounded-full px-1.5 py-px text-[10px] uppercase tracking-wide',
         state === 'cooked'
-          ? 'bg-nham-accent/15 text-nham-accent'
+          ? 'bg-nham-hover text-nham-text'
           : 'bg-nham-hover/40 text-nham-text-muted',
         'font-sans-display'
       )}

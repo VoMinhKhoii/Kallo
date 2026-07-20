@@ -125,7 +125,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
                 <span className="font-bold text-nham-text-muted text-xs uppercase tracking-widest">
                   {t('profileTitle')}
                 </span>
-                <User className="h-4 w-4 text-nham-accent" />
+                <User className="h-4 w-4 text-nham-text-muted" />
               </div>
               <div className="space-y-3 text-nham-text-soft text-xs">
                 <div className="flex items-center justify-between">
@@ -173,7 +173,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
                     kcal
                   </span>
                 </div>
-                <div className="mt-1 flex items-center gap-1 font-medium text-[10px] text-nham-accent">
+                <div className="mt-1 flex items-center gap-1 font-medium text-[10px] text-nham-text-muted">
                   <div className="h-1.5 w-1.5 rounded-full bg-nham-accent" />
                   {t('upperBoundNote')}
                 </div>
@@ -242,7 +242,7 @@ export function SolutionSection() {
         <div className="relative z-10 col-span-5">
           {/* Section 1 */}
           <div className="flex h-screen flex-col justify-center px-10">
-            <span className="mb-4 font-mono text-nham-accent text-xs uppercase tracking-widest">
+            <span className="mb-4 font-mono text-nham-stone text-xs uppercase tracking-widest">
               {t('step1Label')}
             </span>
             <h2 className="mb-6 font-serif text-5xl leading-tight">
@@ -255,7 +255,7 @@ export function SolutionSection() {
 
           {/* Section 2 */}
           <div className="flex h-screen flex-col justify-center px-10">
-            <span className="mb-4 font-mono text-nham-accent text-xs uppercase tracking-widest">
+            <span className="mb-4 font-mono text-nham-stone text-xs uppercase tracking-widest">
               {t('step2Label')}
             </span>
             <h2 className="mb-6 font-serif text-5xl leading-tight">
@@ -268,7 +268,7 @@ export function SolutionSection() {
 
           {/* Section 3 */}
           <div className="flex h-screen flex-col justify-center px-10">
-            <span className="mb-4 font-mono text-nham-accent text-xs uppercase tracking-widest">
+            <span className="mb-4 font-mono text-nham-stone text-xs uppercase tracking-widest">
               {t('step3Label')}
             </span>
             <h2 className="mb-6 font-serif text-5xl leading-tight">
@@ -281,7 +281,7 @@ export function SolutionSection() {
 
           {/* Section 4 */}
           <div className="flex h-screen flex-col justify-center px-10">
-            <span className="mb-4 font-mono text-nham-accent text-xs uppercase tracking-widest">
+            <span className="mb-4 font-mono text-nham-stone text-xs uppercase tracking-widest">
               {t('step4Label')}
             </span>
             <h2 className="mb-6 font-serif text-5xl leading-tight">
@@ -305,7 +305,7 @@ export function SolutionSection() {
       <div className="pb-16 lg:hidden">
         {/* Stage 1 */}
         <div className="border-nham-border/30 border-b px-6 py-14">
-          <span className="mb-4 block font-mono text-nham-accent text-xs uppercase tracking-widest">
+          <span className="mb-4 block font-mono text-nham-stone text-xs uppercase tracking-widest">
             {t('step1Label')}
           </span>
           <h2 className="mb-4 font-serif text-4xl text-nham-text leading-tight">
@@ -319,7 +319,7 @@ export function SolutionSection() {
 
         {/* Stage 2 */}
         <div className="border-nham-border/30 border-b bg-[#FFFDF9] px-6 py-14">
-          <span className="mb-4 block font-mono text-nham-accent text-xs uppercase tracking-widest">
+          <span className="mb-4 block font-mono text-nham-stone text-xs uppercase tracking-widest">
             {t('step2Label')}
           </span>
           <h2 className="mb-4 font-serif text-4xl text-nham-text leading-tight">
@@ -333,7 +333,7 @@ export function SolutionSection() {
 
         {/* Stage 3 */}
         <div className="border-nham-border/30 border-b px-6 py-14">
-          <span className="mb-4 block font-mono text-nham-accent text-xs uppercase tracking-widest">
+          <span className="mb-4 block font-mono text-nham-stone text-xs uppercase tracking-widest">
             {t('step3Label')}
           </span>
           <h2 className="mb-4 font-serif text-4xl text-nham-text leading-tight">
@@ -347,7 +347,7 @@ export function SolutionSection() {
 
         {/* Stage 4 */}
         <div className="bg-[#FFFDF9] px-6 py-14">
-          <span className="mb-4 block font-mono text-nham-accent text-xs uppercase tracking-widest">
+          <span className="mb-4 block font-mono text-nham-stone text-xs uppercase tracking-widest">
             {t('step4Label')}
           </span>
           <h2 className="mb-4 font-serif text-4xl text-nham-text leading-tight">
@@ -447,7 +447,7 @@ export function SolutionSection() {
               <span className="font-medium text-nham-text-muted text-sm">
                 {t('profile.title')}
               </span>
-              <span className="rounded bg-nham-border/20 px-2 py-1 text-nham-accent text-xs">
+              <span className="rounded bg-nham-border/20 px-2 py-1 text-nham-text-muted text-xs">
                 {t('profile.active')}
               </span>
             </div>

@@ -52,8 +52,8 @@ export function CheckEmailPanel() {
 
   return (
     <div className="space-y-5 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-nham-accent/15">
-        <MailCheck className="h-5 w-5 text-[#A88B63]" />
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-nham-hover">
+        <MailCheck className="h-5 w-5 text-nham-text-muted" />
       </div>
       <div className="space-y-2">
         <p className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
@@ -67,7 +67,7 @@ export function CheckEmailPanel() {
           type="button"
           onClick={handleResend}
           disabled={cooldown > 0}
-          className="font-sans-display text-nham-accent text-sm transition-colors hover:text-[#A88B63] disabled:text-[#B0A695] disabled:hover:text-[#B0A695]"
+          className="font-sans-display text-nham-text-muted text-sm transition-colors hover:text-nham-text disabled:text-nham-text-muted/60 disabled:hover:text-nham-text-muted/60"
         >
           {cooldown > 0 ? t('resendIn', { seconds: cooldown }) : t('resend')}
         </button>

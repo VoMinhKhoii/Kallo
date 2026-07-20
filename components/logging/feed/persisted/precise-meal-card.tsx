@@ -74,7 +74,7 @@ export function PrecisePersistedMealCard({
           {timeLabel}
         </span>
         {isFractional && (
-          <span className="rounded-full bg-nham-accent/15 px-2 py-0.5 font-medium font-sans-display text-[10px] text-nham-text">
+          <span className="rounded-full bg-nham-hover px-2 py-0.5 font-medium font-sans-display text-[10px] text-nham-text">
             {t('portionChip', { portion: portionText })}
           </span>
         )}

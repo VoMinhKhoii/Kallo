@@ -55,15 +55,15 @@ export function CTASection() {
           {/* Features */}
           <div className="mb-16 flex flex-wrap justify-center gap-8 text-nham-text-muted text-sm">
             <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-nham-accent" />
+              <Check className="h-4 w-4 text-nham-text-muted" />
               <span className="font-sans-display">{t('feature1')}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-nham-accent" />
+              <Check className="h-4 w-4 text-nham-text-muted" />
               <span className="font-sans-display">{t('feature2')}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-nham-accent" />
+              <Check className="h-4 w-4 text-nham-text-muted" />
               <span className="font-sans-display">{t('feature3')}</span>
             </div>
           </div>

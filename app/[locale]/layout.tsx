@@ -69,7 +69,7 @@ export const viewport: Viewport = {
   // Cream canvas, light-only. The product ships a single warm theme; the prior
   // white / near-black status-bar zone framed the cream paper incorrectly in
   // standalone PWA.
-  themeColor: '#fefbf6',
+  themeColor: '#f9f9f7',
   viewportFit: 'cover',
 };
 

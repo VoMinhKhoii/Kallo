@@ -43,7 +43,7 @@ export function AnalysisStageBanner({
             {items.map((item) => (
               <span
                 key={item}
-                className="rounded-full bg-nham-accent/10 px-2.5 py-0.5 text-nham-accent text-xs"
+                className="rounded-full border border-nham-border bg-white px-2.5 py-0.5 text-nham-text-muted text-xs"
               >
                 {item}
               </span>

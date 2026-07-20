@@ -170,7 +170,7 @@
      at the source — no cold grays, no pure red, no default-blue ring. */
   --background: var(--nham-surface);
   --foreground: var(--nham-text);
-  --card: #ffffff; /* cards are plain white on cream, hairline-separated */
+  --card: #ffffff; /* cards are plain white on the neutral canvas, hairline-separated */
   --card-foreground: var(--nham-text);
   --popover: #ffffff;
   --popover-foreground: var(--nham-text);
@@ -199,18 +199,22 @@
   --sidebar-accent-foreground: var(--nham-text);
   --sidebar-border: var(--nham-border);
   --sidebar-ring: var(--nham-accent);
-  /* Nhẩm warm palette */
-  --nham-surface: #fefbf6;
-  --nham-text: #2c2416;
-  --nham-text-muted: #8b7355;
-  --nham-text-soft: #6b5d4f; /* landing body copy — between text and muted */
-  --nham-ink: #2c2416; /* espresso as a *surface* (hero-dark CTA) */
-  --nham-ink-hover: #4a3f30;
+  /* Nhẩm palette — Circle-era neutral trio (ink #141413 / muted #6e6d66 /
+     hairline #e8e6dc) promoted from components/groups/* to the global
+     tokens; the canvas is a near-neutral gray-white so white cards and the
+     sidebar visibly separate from it. Tan stays for italic-accent, focus
+     rings, and chart/ring strokes only — never running text. */
+  --nham-surface: #f9f9f7;
+  --nham-text: #141413;
+  --nham-text-muted: #6e6d66;
+  --nham-text-soft: #3d3d3a; /* landing body copy — between text and muted */
+  --nham-ink: #141413; /* near-black ink as a *surface* (hero-dark CTA) */
+  --nham-ink-hover: #2f2f2d;
   --nham-accent: #c9a87c;
   --nham-accent-hover: #b89968; /* accent darkened one step on hover */
-  --nham-border: #e8d5b5;
-  --nham-hover: #f0eae0;
-  --nham-track: #f5f4f0;
+  --nham-border: #e8e6dc;
+  --nham-hover: #efefec;
+  --nham-track: #ecece9;
   --nham-stone: #a8a29e;
   --nham-btn: #695e4e;
   --nham-btn-hover: #5a5043;

@@ -256,7 +256,7 @@ export function BarcodeProductStep({
                   onClick={() => setCustomGrams(val)}
                   className={`rounded-full border px-3 py-1 font-sans-display text-[13px] tabular-nums transition-colors ${
                     customGrams === val
-                      ? 'border-nham-accent/50 bg-nham-accent/15 text-nham-text'
+                      ? 'border-nham-border bg-nham-hover font-semibold text-nham-text'
                       : 'border-[#EAE7E0] bg-white text-[#8B8682] hover:bg-nham-track'
                   }`}
                 >

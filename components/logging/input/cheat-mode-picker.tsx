@@ -81,7 +81,7 @@ export function CheatModePicker({
                 </span>
               </span>
               {selected && (
-                <Check className="mt-0.5 size-4 shrink-0 text-nham-accent" />
+                <Check className="mt-0.5 size-4 shrink-0 text-nham-text" />
               )}
             </DropdownMenuItem>
           );
@@ -108,7 +108,7 @@ export function CheatModePicker({
                     {t(`cheatIntensity.${level}`)}
                   </span>
                   {selected && (
-                    <Check className="size-4 shrink-0 text-nham-accent" />
+                    <Check className="size-4 shrink-0 text-nham-text" />
                   )}
                 </DropdownMenuItem>
               );

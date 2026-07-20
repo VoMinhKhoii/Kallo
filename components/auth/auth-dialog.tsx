@@ -168,7 +168,7 @@ export function AuthDialog() {
                         onClick={() =>
                           setTab(tab === 'sign-in' ? 'sign-up' : 'sign-in')
                         }
-                        className="font-semibold text-nham-accent transition-colors hover:text-[#A88B63]"
+                        className="font-semibold text-nham-text underline-offset-2 hover:underline"
                       >
                         {tab === 'sign-in'
                           ? tSignIn('signUpLink')

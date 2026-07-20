@@ -24,7 +24,7 @@ export function FriendPickRow({
       onClick={() => onToggle(member.profile.userId)}
       className={cn(
         'flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors',
-        selected ? 'bg-nham-accent/15' : 'hover:bg-nham-hover/40'
+        selected ? 'bg-nham-hover' : 'hover:bg-nham-hover/40'
       )}
     >
       <span className="flex min-w-0 items-center gap-3">
