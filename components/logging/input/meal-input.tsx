@@ -324,7 +324,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
     const placeholder = isCheat ? t('cheatPlaceholder') : t('placeholder');
 
     return (
-      <div className="flex flex-col gap-2 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
+      <div className="flex flex-col gap-2 rounded-2xl border border-nham-border/40 bg-white p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
         {/* Manual mode: DB-backed ingredient rows */}
         {isManual && (
           <ManualLoggingControls
