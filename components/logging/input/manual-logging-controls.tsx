@@ -162,7 +162,7 @@ function IngredientCombobox({
           role="listbox"
           aria-label={t('manualLogging.searchPlaceholder')}
           // Opens UPWARD — the manual input sits at the bottom of the feed.
-          className="absolute right-0 bottom-full left-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-xl border border-nham-border/50 bg-background py-1 shadow-[0_8px_30px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]"
+          className="absolute right-0 bottom-full left-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-xl border border-nham-border/50 bg-white py-1 shadow-[0_8px_30px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]"
         >
           {isRecents && results.length > 0 && (
             <div

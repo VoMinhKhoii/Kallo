@@ -109,7 +109,7 @@ export function MealAmountEditor({
             key={row.id}
             className={cn(
               'flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-[13px]',
-              row.removed ? 'opacity-40' : 'bg-nham-surface/80',
+              row.removed ? 'opacity-40' : 'bg-nham-hover/30',
               'font-sans-display'
             )}
           >

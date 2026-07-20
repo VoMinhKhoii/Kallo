@@ -110,7 +110,7 @@ export function AccountPanel({ email }: { email: string | null }) {
           onClick={handleExport}
           disabled={exportAction.pending}
           aria-busy={exportAction.pending}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-nham-border bg-nham-surface px-3.5 py-2 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-nham-border bg-white px-3.5 py-2 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
         >
           <Download className="h-3.5 w-3.5" />
           {exportAction.pending ? t('exporting') : t('exportAction')}
@@ -125,7 +125,7 @@ export function AccountPanel({ email }: { email: string | null }) {
           onClick={handleSignOut}
           disabled={signOutAction.pending}
           aria-busy={signOutAction.pending}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-nham-border bg-nham-surface px-3.5 py-2 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-nham-border bg-white px-3.5 py-2 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
         >
           <LogOut className="h-3.5 w-3.5" />
           {t('signOutAction')}
@@ -173,7 +173,7 @@ export function AccountPanel({ email }: { email: string | null }) {
                 autoComplete="off"
                 autoCapitalize="characters"
                 spellCheck={false}
-                className="mt-1.5 w-full rounded-xl border border-nham-border bg-nham-surface px-3.5 py-2.5 text-[15px] text-nham-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-nham-danger/30"
+                className="mt-1.5 w-full rounded-xl border border-nham-border bg-white px-3.5 py-2.5 text-[15px] text-nham-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-nham-danger/30"
               />
             </label>
             <div className="mt-3 flex items-center justify-end gap-2">
