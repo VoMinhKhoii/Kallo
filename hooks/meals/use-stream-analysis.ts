@@ -61,6 +61,15 @@ function isTerminalEvent(event: StreamEvent): boolean {
   );
 }
 
+/**
+ * Client-side backstop: if the SSE stream goes completely silent for this long
+ * (no frame at all, and no terminal event received yet), abort and surface a
+ * retryable timeout instead of spinning forever. Guards against a wedged socket
+ * or proxy where the server never closes the stream. Generous enough not to
+ * trip on a slow-but-progressing LLM step, which still emits stage/item frames.
+ */
+const INACTIVITY_MS = 45_000;
+
 const INITIAL_STATE: StreamAnalysisState = {
   status: 'idle',
   items: [],
@@ -201,6 +210,25 @@ export function useStreamAnalysis() {
         isAnalyzing: true,
       });
 
+      // Inactivity watchdog — hoisted so catch/finally can read/clear it.
+      let receivedTerminal = false;
+      let timedOut = false;
+      let watchdog: ReturnType<typeof setTimeout> | undefined;
+      const clearWatchdog = () => {
+        if (watchdog) clearTimeout(watchdog);
+        watchdog = undefined;
+      };
+      const armWatchdog = () => {
+        clearWatchdog();
+        // Once terminal, the server just needs to close — its delay must not
+        // trip a spurious timeout over an already-successful analysis.
+        if (receivedTerminal) return;
+        watchdog = setTimeout(() => {
+          timedOut = true;
+          controller.abort();
+        }, INACTIVITY_MS);
+      };
+
       try {
         const response = await fetch('/api/analyze-meal', {
           method: 'POST',
@@ -242,7 +270,8 @@ export function useStreamAnalysis() {
 
         const decoder = new TextDecoder('utf-8');
         const buffer = { current: '' };
-        let receivedTerminal = false;
+
+        armWatchdog();
 
         while (true) {
           const { done, value } = await reader.read();
@@ -263,6 +292,9 @@ export function useStreamAnalysis() {
             }
             processEvent(event, thisRequestId, requestIdRef);
           }
+
+          // Frame arrived — reset (or, once terminal, retire) the watchdog.
+          armWatchdog();
         }
 
         // Flush any remaining data in decoder
@@ -291,10 +323,23 @@ export function useStreamAnalysis() {
           }));
         }
       } catch (error) {
-        // Stale request or aborted — ignore
+        // Stale request — ignore
         if (thisRequestId !== requestIdRef.current) return;
-        if (error instanceof DOMException && error.name === 'AbortError')
+
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          // The watchdog aborted a silent, un-terminated stream — surface it as
+          // a retryable timeout. A user-initiated cancel() leaves timedOut
+          // false and stays silent.
+          if (timedOut) {
+            setState((prev) => ({
+              ...prev,
+              status: 'error',
+              error: 'Analysis timed out. Please try again.',
+              isAnalyzing: false,
+            }));
+          }
           return;
+        }
 
         setState((prev) => ({
           ...prev,
@@ -303,6 +348,8 @@ export function useStreamAnalysis() {
             error instanceof Error ? error.message : 'Failed to analyze meal',
           isAnalyzing: false,
         }));
+      } finally {
+        clearWatchdog();
       }
     },
     [processEvent]

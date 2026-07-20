@@ -37,7 +37,13 @@ function getClient() {
       // Shared staging can have internal + preview services alive at once.
       // Keep the per-instance session pool small so a second service doesn't
       // exhaust Supabase's session-mode pooler during cold starts or health checks.
-      max: 2,
+      // Env-configurable so an environment that owns its pooler can raise it —
+      // a too-small pool lets one request's concurrent writes starve its own
+      // critical-path insert (see the analyze-meal SSE hang).
+      max: Number(process.env.DB_POOL_MAX) || 2,
+      // Bound establishing a *new* connection so a dead pooler fails fast
+      // instead of hanging the acquiring query indefinitely.
+      connect_timeout: Number(process.env.DB_CONNECT_TIMEOUT_S) || 10,
       // Prepared statements are unsupported in PgBouncer transaction mode.
       prepare: false,
     });
