@@ -53,7 +53,7 @@ function SeedMark() {
       viewBox="0 0 56 56"
       fill="none"
       aria-hidden="true"
-      className="text-nham-accent"
+      className="text-nham-text-muted"
     >
       <path
         d="M28 8c8 6 12 14 12 22 0 10-7 18-12 18s-12-8-12-18c0-8 4-16 12-22z"

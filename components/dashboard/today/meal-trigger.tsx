@@ -121,12 +121,12 @@ function MealInputForm({
         /* The bar becomes the stream: one loader for the whole run, the text
            flipping in place as stages, item names, and macros arrive. Stage
            labels stay quiet sans; the meal's own words flip in serif italic
-           with the resolved kcal in tan. */
+           with the resolved kcal in muted ink. */
         <div
           aria-live="polite"
           className="flex min-w-0 flex-1 items-center gap-3"
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center text-nham-accent">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center text-nham-text-muted">
             <Loader size={20} />
           </span>
           <AnimatePresence mode="wait" initial={false}>
@@ -145,7 +145,7 @@ function MealInputForm({
             >
               {streaming.ticker?.text ?? tm('analyzing')}
               {streaming.ticker?.detail && (
-                <span className="ml-1.5 font-sans text-nham-accent not-italic tabular-nums">
+                <span className="ml-1.5 font-sans text-nham-text-muted not-italic tabular-nums">
                   · {streaming.ticker.detail}
                 </span>
               )}

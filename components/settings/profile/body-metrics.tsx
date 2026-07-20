@@ -378,7 +378,7 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
                           onClick={() => field.onChange(opt.id)}
                           className={`flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40 ${
                             field.value === opt.id
-                              ? 'border-nham-accent bg-nham-accent/5 shadow-sm'
+                              ? 'border-nham-text/30 bg-nham-hover shadow-sm'
                               : 'border-[#EAE7E0] bg-white hover:border-nham-accent/50'
                           }`}
                         >

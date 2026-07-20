@@ -180,7 +180,7 @@ export function MealAmountEditor({
           onClick={handleSave}
           disabled={isSaving || !canSave}
           aria-busy={isSaving}
-          className="inline-flex items-center gap-1.5 rounded-full bg-nham-accent/15 px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text transition-colors hover:bg-nham-accent/25 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-full bg-nham-hover px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text transition-colors hover:bg-nham-hover/70 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           {isSaving ? t('savingEdit') : t('saveEdit')}

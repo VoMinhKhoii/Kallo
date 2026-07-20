@@ -345,7 +345,7 @@ export function Hero() {
                             <span className="font-normal font-serif text-nham-text text-xs sm:text-sm">
                               {t('demo.totalCalories')}
                             </span>
-                            <span className="font-bold font-mono text-base text-nham-accent sm:text-lg">
+                            <span className="font-bold font-mono text-base text-nham-text sm:text-lg">
                               {fixture.total}
                             </span>
                           </div>
@@ -396,7 +396,7 @@ export function Hero() {
                     disabled={!interactive || isAnalyzing || phase === 'typing'}
                     placeholder={t('demo.inputPlaceholder')}
                     aria-label={t('demo.inputPlaceholder')}
-                    className="min-w-0 flex-1 bg-transparent text-nham-text text-sm outline-none placeholder:text-[#B0A695] disabled:cursor-default sm:text-base"
+                    className="min-w-0 flex-1 bg-transparent text-nham-text text-sm outline-none placeholder:text-nham-text-muted/70 disabled:cursor-default sm:text-base"
                   />
                   <button
                     type="submit"

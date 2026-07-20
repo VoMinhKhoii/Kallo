@@ -91,7 +91,7 @@ export function ShareToCircleButton({
         className={cn(
           'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-60',
           isShared
-            ? 'bg-nham-accent/15 text-nham-text'
+            ? 'bg-nham-hover font-semibold text-nham-text'
             : 'text-nham-text-muted/70 hover:bg-nham-hover/40 hover:text-nham-text',
           'font-sans-display'
         )}

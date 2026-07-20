@@ -14,20 +14,20 @@ const BRAND: Swatch[] = [
     name: 'Surface',
     token: '--nham-surface',
     className: 'bg-nham-surface',
-    note: 'App background — paper cream',
+    note: 'App background — neutral gray-white',
     border: true,
   },
   {
     name: 'Text',
     token: '--nham-text',
     className: 'bg-nham-text',
-    note: 'Primary text — espresso',
+    note: 'Primary text — near-black ink',
   },
   {
     name: 'Text muted',
     token: '--nham-text-muted',
     className: 'bg-nham-text-muted',
-    note: 'Secondary text — warm taupe',
+    note: 'Secondary text — muted neutral ink',
   },
   {
     name: 'Text soft',
@@ -51,7 +51,7 @@ const BRAND: Swatch[] = [
     name: 'Border',
     token: '--nham-border',
     className: 'bg-nham-border',
-    note: 'Hairlines, dividers — biscotti',
+    note: 'Hairlines, dividers — neutral hairline',
   },
   {
     name: 'Hover',
@@ -83,7 +83,7 @@ const BRAND: Swatch[] = [
     name: 'Ink',
     token: '--nham-ink',
     className: 'bg-nham-ink',
-    note: 'Espresso as a surface (hero CTA)',
+    note: 'Ink as a surface (hero CTA)',
   },
 ];
 
@@ -188,7 +188,7 @@ export function ColorsSection() {
       accent="one warm palette"
       eyebrow="Color"
       id="color"
-      intro="Everything is anchored on cream, espresso, and the Kallo tan. The shadcn semantic tokens (primary, destructive, ring, border…) are re-pointed at this palette, so stock components are on-brand without per-component overrides. No pure red, no pure green, no electric blue, no purple gradients — ever."
+      intro="Everything is anchored on the neutral canvas, near-black ink, and the Kallo tan. The shadcn semantic tokens (primary, destructive, ring, border…) are re-pointed at this palette, so stock components are on-brand without per-component overrides. No pure red, no pure green, no electric blue, no purple gradients — ever."
       title="Only"
     >
       <DsCard title="Brand tokens">

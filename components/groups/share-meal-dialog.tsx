@@ -120,7 +120,7 @@ export function ShareMealDialog({ mealId, trigger }: ShareMealDialogProps) {
               className={cn(
                 'rounded-xl border px-3 py-2.5 text-left transition-colors',
                 mode === m
-                  ? 'border-nham-accent/50 bg-nham-accent/15'
+                  ? 'border-nham-border bg-nham-hover'
                   : 'border-nham-border/60 bg-white hover:bg-nham-hover/40'
               )}
             >

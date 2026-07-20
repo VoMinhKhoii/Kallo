@@ -33,10 +33,10 @@ export function WebviewGoogleNotice() {
   };
 
   return (
-    <div className="rounded-xl border border-nham-accent/30 bg-nham-accent/10 px-4 py-3">
+    <div className="rounded-xl border border-nham-border bg-nham-hover/50 px-4 py-3">
       <div className="flex gap-2.5">
         <Globe
-          className="mt-0.5 h-4 w-4 shrink-0 text-nham-accent"
+          className="mt-0.5 h-4 w-4 shrink-0 text-nham-text-muted"
           aria-hidden="true"
         />
         <div className="space-y-1.5">
@@ -52,7 +52,7 @@ export function WebviewGoogleNotice() {
               <button
                 type="button"
                 onClick={openInChrome}
-                className="font-sans-display font-semibold text-nham-accent text-xs transition-colors hover:text-[#A88B63]"
+                className="font-sans-display font-semibold text-nham-text text-xs underline-offset-2 hover:underline"
               >
                 {t('webviewOpenInChrome')}
               </button>
@@ -60,7 +60,7 @@ export function WebviewGoogleNotice() {
             <button
               type="button"
               onClick={copyLink}
-              className="font-sans-display font-semibold text-nham-accent text-xs transition-colors hover:text-[#A88B63]"
+              className="font-sans-display font-semibold text-nham-text text-xs underline-offset-2 hover:underline"
             >
               {t('webviewCopyLink')}
             </button>
