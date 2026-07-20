@@ -1,17 +1,16 @@
 name: Cloud Run Prod
 
-# Production deploy for kallo-prod (the kallo.fit service). Mirrors the internal
-# deploy but applies migrations behind a GCS lease (like staging) so concurrent
-# prod deploys serialize, and against prod-only secrets. Triggered post-merge on
-# a successful main CI run — the same gate as internal.
+# Production deploy for kallo-prod (the kallo.fit service). Applies migrations
+# behind a GCS lease so concurrent prod deploys serialize, against prod-only
+# secrets. Triggered post-merge on a successful main CI run. This is the only
+# Cloud Run deploy pipeline — a merge to main both applies schema and ships the
+# app in one pass.
 #
 # Transitional note: until the non-prod DB is split off (see
 # docs/SHARED_STAGING_CICD.md), kallo-prod-database-url and
-# nham-nonprod-database-url point at the SAME database, so this workflow and
-# cloud-run-internal both apply migrations to it on a main merge. `supabase db
-# push` is effectively idempotent (each applies only what is pending), but if
-# they race, re-running this workflow is safe. The race disappears once the
-# non-prod DB is split.
+# nham-nonprod-database-url point at the SAME database. `supabase db push` is
+# effectively idempotent (each applies only what is pending), so re-running this
+# workflow is safe.
 on:
   workflow_run:
     workflows: ['CI']
@@ -56,19 +55,19 @@ jobs:
       # prod deploy the moment the split lands.
       KALLO_PROD_PROJECT_ID: ${{ secrets.KALLO_PROD_PROJECT_ID }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
-      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+      - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
+      - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
-      - uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1.7.1
+      - uses: supabase/setup-cli@v1
         with:
-          version: 1.200.3
+          version: 2.90.0
       - name: Read prod database URL
         run: |
           db_url="$(gcloud secrets versions access latest --secret=kallo-prod-database-url)"
@@ -136,7 +135,7 @@ jobs:
             echo "First deploy of $SERVICE_NAME — the first revision will serve traffic directly."
           fi
       - id: deploy
-        uses: google-github-actions/deploy-cloudrun@2028e2d7d30a78c6910e0632e48dd561b064884d # v3.0.1
+        uses: google-github-actions/deploy-cloudrun@v3
         with:
           service: ${{ env.SERVICE_NAME }}
           image: ${{ env.IMAGE_URI }}
@@ -230,7 +229,7 @@ jobs:
           revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ env.PROD_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
           url="$(gcloud run services describe "$SERVICE_NAME" --region="${{ env.PROD_REGION }}" --format='value(status.url)' 2>/dev/null || true)"
           echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"$IMAGE_URI\",\"revision\":\"$revision\",\"url\":\"$url\",\"commit_sha\":\"${{ github.event.workflow_run.head_sha }}\",\"smoke\":\"${{ steps.smoke.outcome }}\"}" > deployment-record.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: prod-deployment-record-${{ github.event.workflow_run.head_sha }}
