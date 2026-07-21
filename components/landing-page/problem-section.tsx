@@ -34,7 +34,7 @@ export function ProblemSection() {
           >
             <div className="mb-8 flex items-center gap-3">
               <div className="h-px w-12 bg-nham-accent" />
-              <span className="font-medium text-nham-accent text-xs uppercase tracking-[0.2em]">
+              <span className="font-medium text-nham-surface/60 text-xs uppercase tracking-[0.2em]">
                 {t('label')}
               </span>
             </div>
@@ -47,7 +47,7 @@ export function ProblemSection() {
               </span>
             </h2>
 
-            <p className="mb-12 max-w-md font-light font-sans-display text-[#B0A695] text-lg leading-relaxed">
+            <p className="mb-12 max-w-md font-light font-sans-display text-lg text-nham-surface/70 leading-relaxed">
               {t('subtitle')}
             </p>
 
@@ -153,7 +153,7 @@ export function ProblemSection() {
           transition={{ duration: 0.7 }}
           className="relative border-nham-accent/20 border-t pt-16 text-center"
         >
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-nham-ink px-4 text-nham-accent">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-nham-ink px-4 text-nham-surface/60">
             <span className="font-serif text-4xl">&quot;</span>
           </div>
 

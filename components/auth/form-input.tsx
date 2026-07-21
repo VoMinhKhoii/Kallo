@@ -31,7 +31,7 @@ export function FormInput({
           type={isPassword && showPassword ? 'text' : type}
           placeholder={placeholder}
           className={cn(
-            'w-full rounded-xl border bg-white px-4 py-3 text-nham-text text-sm outline-none transition-all duration-200 placeholder:text-[#B0A695]',
+            'w-full rounded-xl border bg-white px-4 py-3 text-nham-text text-sm outline-none transition-all duration-200 placeholder:text-nham-text-muted/70',
             error
               ? 'border-nham-danger/50 focus:border-nham-danger focus:ring-2 focus:ring-nham-danger/10'
               : 'border-nham-border/60 focus:border-nham-accent focus:ring-2 focus:ring-nham-accent/10',

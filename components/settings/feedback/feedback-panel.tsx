@@ -200,7 +200,7 @@ export function FeedbackPanel() {
                 className={cn(
                   'flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60',
                   active
-                    ? 'border-nham-accent bg-nham-accent/10 text-nham-text'
+                    ? 'border-nham-border bg-nham-hover font-semibold text-nham-text'
                     : 'border-[#EAE7E0] bg-white text-[#7B6F62] hover:border-nham-accent/50'
                 )}
               >

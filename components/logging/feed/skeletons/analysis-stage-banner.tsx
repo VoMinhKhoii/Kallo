@@ -30,7 +30,7 @@ export function AnalysisStageBanner({
     >
       <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
       <div className="absolute top-2 -left-[43px] h-2 w-2 animate-pulse rounded-full border-2 border-nham-accent bg-nham-accent/30" />
-      <div className="rounded-2xl border border-nham-border/30 bg-nham-surface p-4">
+      <div className="rounded-2xl border border-nham-border/30 bg-white p-4">
         <div className="flex items-center gap-2.5">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-nham-accent border-t-transparent" />
           <span className="font-medium text-nham-text-muted text-sm">
@@ -43,7 +43,7 @@ export function AnalysisStageBanner({
             {items.map((item) => (
               <span
                 key={item}
-                className="rounded-full bg-nham-accent/10 px-2.5 py-0.5 text-nham-accent text-xs"
+                className="rounded-full border border-nham-border bg-white px-2.5 py-0.5 text-nham-text-muted text-xs"
               >
                 {item}
               </span>

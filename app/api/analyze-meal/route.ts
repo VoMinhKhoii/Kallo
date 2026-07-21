@@ -23,17 +23,29 @@ import {
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
 } from '@/lib/rate-limit/analysis-guards';
+import { withDeadline } from '@/lib/with-deadline';
 import {
   createGuardRelease,
   getRequestIp,
   validateRequest,
 } from './request-validation';
+import { toStreamErrorEvent } from './stream-errors';
 import { emitUnresolvedOutcome } from './unresolved-response';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 const analyzeMealRoute = '/api/analyze-meal';
+
+// Bound the awaited `pendingAnalyses` insert so a stalled DB connection (the
+// `max: 2` pool can starve under a saturated Supabase pooler) can't leave the
+// SSE stream open forever between `stage: assembling` and `analysis_complete`.
+// On timeout we emit an `error` terminal event and close, instead of hanging.
+const PERSIST_DEADLINE_MS =
+  Number(process.env.ANALYZE_PERSIST_DEADLINE_MS) || 15_000;
+// The guard release in `finally` is DB-backed too; bound it so it can never
+// block `controller.close()`.
+const GUARD_RELEASE_DEADLINE_MS = 5_000;
 export async function POST(request: NextRequest) {
   // Phase 1: Pre-stream validation — errors returned as JSON
   const validation = await validateRequest(request);
@@ -173,16 +185,19 @@ export async function POST(request: NextRequest) {
           // Stage the spec so confirm can recompute nutrition authoritatively
           // from the user's chosen levels. Persist BEFORE surfacing (same
           // ordering rationale as the precise path).
-          const [insertedCheat] = await db
-            .insert(pendingAnalyses)
-            .values({
-              userId,
-              pipelineResult: { entryMode: 'cheat', spec },
-              rawInput: message,
-              entryMode: 'cheat',
-              loggedAt,
-            })
-            .returning({ id: pendingAnalyses.id });
+          const [insertedCheat] = await withDeadline(
+            db
+              .insert(pendingAnalyses)
+              .values({
+                userId,
+                pipelineResult: { entryMode: 'cheat', spec },
+                rawInput: message,
+                entryMode: 'cheat',
+                loggedAt,
+              })
+              .returning({ id: pendingAnalyses.id }),
+            PERSIST_DEADLINE_MS
+          );
 
           emit({ type: 'cheat_estimate', spec });
           emit({ type: 'analysis_complete', analysisId: insertedCheat.id });
@@ -294,15 +309,18 @@ export async function POST(request: NextRequest) {
         // so a failed insert produces an error path with no half-state. If
         // we emit `result` first and then the insert throws, the client has
         // a populated meal preview with no `analysisId` to confirm it.
-        const [inserted] = await db
-          .insert(pendingAnalyses)
-          .values({
-            userId,
-            pipelineResult: result.data,
-            rawInput: message,
-            loggedAt,
-          })
-          .returning({ id: pendingAnalyses.id });
+        const [inserted] = await withDeadline(
+          db
+            .insert(pendingAnalyses)
+            .values({
+              userId,
+              pipelineResult: result.data,
+              rawInput: message,
+              loggedAt,
+            })
+            .returning({ id: pendingAnalyses.id }),
+          PERSIST_DEADLINE_MS
+        );
 
         // Now safe to surface the meal — durable row exists.
         emit({ type: 'result', data: meal });
@@ -346,21 +364,23 @@ export async function POST(request: NextRequest) {
           pvu
         );
 
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to process meal';
-        const isRateLimit = errorMessage.includes('429');
-
-        emit({
-          type: 'error',
-          code: isRateLimit ? 'rate_limit' : 'internal',
-          message: isRateLimit
-            ? 'Rate limited — please wait a moment and try again'
-            : 'Failed to process meal',
-          retryable: !isRateLimit,
-        });
+        emit(toStreamErrorEvent(error));
       } finally {
         request.signal.removeEventListener('abort', releaseOnAbort);
-        await releaseGuard();
+        // The guard release is a DB write; bound it so a stalled pool can't
+        // block the stream close. Still awaited (best-effort) so the in-flight
+        // counter is decremented before the instance can freeze.
+        try {
+          await withDeadline(
+            Promise.resolve(releaseGuard()),
+            GUARD_RELEASE_DEADLINE_MS
+          );
+        } catch (releaseError) {
+          console.error(
+            '[analyze-meal] Guard release timed out or failed:',
+            releaseError
+          );
+        }
         controller.close();
       }
     },

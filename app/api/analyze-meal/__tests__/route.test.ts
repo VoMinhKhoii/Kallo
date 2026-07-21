@@ -663,6 +663,41 @@ describe('POST /api/analyze-meal', () => {
     }
   });
 
+  it('emits a retryable timeout error (not a hang) when the pendingAnalyses insert stalls', async () => {
+    vi.useFakeTimers();
+    try {
+      mockAnalyzeMeal.mockResolvedValue({
+        success: true,
+        data: mockPipelineData,
+      });
+      // The insert never settles — simulates a starved DB pool. Without the
+      // deadline this would leave the SSE stream open forever (the reported
+      // "Putting it all together…" hang).
+      mockInsert.mockReturnValue(new Promise(() => {}));
+
+      const res = await POST(createRequest(mealRequestBody('phở bò')));
+      const textPromise = res.text();
+
+      // Advance past PERSIST_DEADLINE_MS (15s) so withDeadline fires.
+      await vi.advanceTimersByTimeAsync(15_000);
+
+      const text = await textPromise;
+      const buffer = { current: '' };
+      const events = parseSSEChunk(text, buffer);
+
+      const errorEvent = events.find((e) => e.type === 'error');
+      expect(errorEvent).toBeDefined();
+      if (errorEvent?.type === 'error') {
+        expect(errorEvent.code).toBe('pipeline_timeout');
+        expect(errorEvent.retryable).toBe(true);
+      }
+      // Never reaches the terminal success event — the stream still closes.
+      expect(events.some((e) => e.type === 'analysis_complete')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('streams error event on unexpected exceptions', async () => {
     mockAnalyzeMeal.mockRejectedValue(new Error('unexpected'));
 

@@ -59,7 +59,7 @@ export function OnboardingCard({
         <div className="flex-shrink-0">
           <Link
             href="/onboarding"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-nham-ink px-6 font-medium font-sans-display text-[#FFFCF8] text-sm transition-colors hover:bg-[#3D3425]"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-nham-ink px-6 font-medium font-sans-display text-[#FFFCF8] text-sm transition-colors hover:bg-nham-ink-hover"
           >
             Tiếp tục thiết lập
             <ArrowRight className="h-4 w-4" />

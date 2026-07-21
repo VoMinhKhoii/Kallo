@@ -109,7 +109,7 @@ export function MealAmountEditor({
             key={row.id}
             className={cn(
               'flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-[13px]',
-              row.removed ? 'opacity-40' : 'bg-nham-surface/80',
+              row.removed ? 'opacity-40' : 'bg-nham-hover/30',
               'font-sans-display'
             )}
           >
@@ -180,7 +180,7 @@ export function MealAmountEditor({
           onClick={handleSave}
           disabled={isSaving || !canSave}
           aria-busy={isSaving}
-          className="inline-flex items-center gap-1.5 rounded-full bg-nham-accent/15 px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text transition-colors hover:bg-nham-accent/25 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-full bg-nham-hover px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text transition-colors hover:bg-nham-hover/70 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           {isSaving ? t('savingEdit') : t('saveEdit')}

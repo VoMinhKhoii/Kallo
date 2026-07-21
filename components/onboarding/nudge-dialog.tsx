@@ -87,7 +87,7 @@ export function NudgeDialog({
           </Button>
           <Button
             onClick={handleGoToOnboarding}
-            className="h-10 w-full rounded-xl bg-nham-ink px-6 font-medium font-sans-display text-[#FFFCF8] text-sm transition-colors hover:bg-[#3D3425] sm:w-auto"
+            className="h-10 w-full rounded-xl bg-nham-ink px-6 font-medium font-sans-display text-[#FFFCF8] text-sm transition-colors hover:bg-nham-ink-hover sm:w-auto"
           >
             Hoàn tất ngay
           </Button>
