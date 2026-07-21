@@ -57,14 +57,14 @@ const BRAND: Swatch[] = [
     name: 'Hover',
     token: '--nham-hover',
     className: 'bg-nham-hover',
-    note: 'Hover wash for nav and rows',
+    note: 'Warm beige hover/selected wash',
     border: true,
   },
   {
     name: 'Track',
     token: '--nham-track',
     className: 'bg-nham-track',
-    note: 'Disabled, tracks, chip ground',
+    note: 'Warm track — disabled, skeletons, chips',
     border: true,
   },
   {

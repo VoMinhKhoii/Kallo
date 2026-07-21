@@ -100,7 +100,7 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
       </div>
 
       {/* Card */}
-      <div className="rounded-2xl border border-nham-border/60 bg-nham-surface p-4 shadow-sm sm:p-5">
+      <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
         {/* Header: quoted input */}
         {message.userInput && (
           <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">

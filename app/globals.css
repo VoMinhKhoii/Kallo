@@ -202,8 +202,9 @@
   /* Nhẩm palette — Circle-era neutral trio (ink #141413 / muted #6e6d66 /
      hairline #e8e6dc) promoted from components/groups/* to the global
      tokens; the canvas is a near-neutral gray-white so white cards and the
-     sidebar visibly separate from it. Tan stays for italic-accent, focus
-     rings, and chart/ring strokes only — never running text. */
+     sidebar visibly separate from it. Hover/selected washes and tracks stay
+     warm beige — text is neutral, interaction states are not. Tan stays for
+     italic-accent, focus rings, and chart/ring strokes — never running text. */
   --nham-surface: #f9f9f7;
   --nham-text: #141413;
   --nham-text-muted: #6e6d66;
@@ -213,8 +214,8 @@
   --nham-accent: #c9a87c;
   --nham-accent-hover: #b89968; /* accent darkened one step on hover */
   --nham-border: #e8e6dc;
-  --nham-hover: #efefec;
-  --nham-track: #ecece9;
+  --nham-hover: #f0eae0;
+  --nham-track: #f5f4f0;
   --nham-stone: #a8a29e;
   --nham-btn: #695e4e;
   --nham-btn-hover: #5a5043;

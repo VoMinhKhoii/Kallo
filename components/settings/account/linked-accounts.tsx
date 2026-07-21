@@ -99,7 +99,7 @@ export function LinkedAccounts() {
           <button
             type="button"
             onClick={() => refetch()}
-            className="shrink-0 rounded-lg border border-nham-border bg-nham-surface px-3 py-1.5 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+            className="shrink-0 rounded-lg border border-nham-border bg-white px-3 py-1.5 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
           >
             {t('linkedRetry')}
           </button>
@@ -146,7 +146,7 @@ export function LinkedAccounts() {
                     disabled={busy || identitiesLoading}
                     aria-busy={busy}
                     aria-label={`${t('linkedConnect')} ${label}`}
-                    className="shrink-0 rounded-lg border border-nham-border bg-nham-surface px-3 py-1.5 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
+                    className="shrink-0 rounded-lg border border-nham-border bg-white px-3 py-1.5 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
                   >
                     {t('linkedConnect')}
                   </button>
