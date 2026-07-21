@@ -62,6 +62,10 @@ export const mealMessageSchema = z.object({
   // the meal's place in the timeline (and its inferred slot) instead of jumping
   // to "now". When present it overrides the loggedDate/timezoneOffset stamping.
   inheritLoggedAt: z.string().datetime().optional(),
+  // Stable per-attempt id: re-analyzing the same card reuses it so the server
+  // upserts one staging row instead of orphaning its predecessor. Optional —
+  // absent from older clients / non-analyze staging paths.
+  attemptId: z.string().uuid().optional(),
 });
 
 /** Shared schema for a single weight log entry. */

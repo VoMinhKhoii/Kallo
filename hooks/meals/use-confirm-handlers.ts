@@ -91,6 +91,9 @@ export function useConfirmHandlers(args: {
           : meal.rawInput;
       const combined = `${base} (${correction})`;
       const assistantMsgId = crypto.randomUUID();
+      // A refine is a fresh logging attempt (a new correction card), so it mints
+      // its own attempt id — re-runs of THIS card supersede its staging row.
+      const attemptId = crypto.randomUUID();
       replacedMealByMsgIdRef.current.set(assistantMsgId, meal.id);
       setStreamingMsgId(assistantMsgId);
       lastAnalysisIdRef.current = null;
@@ -107,6 +110,7 @@ export function useConfirmHandlers(args: {
           timestamp: new Date(),
           isStreaming: true,
           streamingPhase: 'waiting',
+          attemptId,
         },
       ]);
       scrollToBottom();
@@ -115,6 +119,7 @@ export function useConfirmHandlers(args: {
         message: combined,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
+        attemptId,
         // Keep the corrected meal anchored to the original's instant/slot.
         inheritLoggedAt: meal.loggedAt,
       });
@@ -254,6 +259,9 @@ export function useConfirmHandlers(args: {
       mode: 'cheat',
       cheatIntensity,
       clarifyAnswer: answer,
+      // Reuse this card's attempt id so the clarify re-run supersedes its
+      // staging row instead of leaving the pre-clarify row as an orphan.
+      attemptId: message.attemptId,
     });
   };
 

@@ -80,6 +80,9 @@ export function useDashboardMealLog({
         loggedDate: todayDate,
         timezoneOffset: new Date().getTimezoneOffset(),
         mode: 'precise',
+        // Fresh attempt per submit. Retry only fires after an error, which
+        // persists no staging row, so there's nothing to supersede.
+        attemptId: crypto.randomUUID(),
       });
     },
     [analyze, isSaving, stream.isAnalyzing, todayDate]

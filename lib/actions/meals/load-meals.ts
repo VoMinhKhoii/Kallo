@@ -172,6 +172,9 @@ async function loadPendingAnalysesByDateForUser(
         id: row.id,
         rawInput: row.rawInput,
         loggedAt: row.loggedAt.toISOString(),
+        // Echoed so a re-analysis of a reloaded (server-loaded) card reuses the
+        // same attempt id and supersedes this row instead of orphaning it.
+        attemptId: row.attemptId ?? undefined,
       };
       // Cheat rows stage a slider spec, not a decomposition PipelineResult, so
       // toParsedMeal (which reads .mealItems) can't apply. Branch on entryMode,

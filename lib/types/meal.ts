@@ -48,6 +48,10 @@ export interface ChatMessage {
   streamingItems?: string[];
   streamingCompletedItems?: MealItem[];
   analysisId?: string;
+  /** Stable per-attempt id minted when this card's analysis starts. Reused when
+   *  the card is re-analyzed (cheat-clarify, refine) so the server supersedes
+   *  the prior staging row instead of leaving a duplicate "unsaved" card. */
+  attemptId?: string;
   /** Cheat-meal slider spec — set on a finalized cheat message. */
   cheatSpec?: import('./cheat').CheatSliderSpec;
 }

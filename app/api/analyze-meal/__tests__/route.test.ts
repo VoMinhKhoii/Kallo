@@ -65,6 +65,7 @@ vi.mock('@/lib/db', () => {
       mockInsertValues(values);
       return insertChain;
     },
+    onConflictDoUpdate: () => insertChain, // pending_analyses attempt-id upsert
     returning: () => mockInsert(),
     catch: () => undefined, // fire-and-forget path (pipelineRequests)
   };

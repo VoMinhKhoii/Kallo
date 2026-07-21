@@ -118,6 +118,7 @@ export async function validateRequest(request: NextRequest) {
         cheatType: parsed.data.cheatType,
         clarifyAnswer: parsed.data.clarifyAnswer,
         cheatIntensity: parsed.data.cheatIntensity,
+        attemptId: parsed.data.attemptId,
         profile,
         geminiConfig,
       },
