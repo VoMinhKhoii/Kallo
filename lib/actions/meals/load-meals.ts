@@ -172,8 +172,11 @@ async function loadPendingAnalysesByDateForUser(
         id: row.id,
         rawInput: row.rawInput,
         loggedAt: row.loggedAt.toISOString(),
-        // Echoed so a re-analysis of a reloaded (server-loaded) card reuses the
-        // same attempt id and supersedes this row instead of orphaning it.
+        // Echoed so that IF a reloaded (server-loaded) card is ever re-analyzed,
+        // it reuses this attempt id and supersedes the row instead of orphaning
+        // it. No current flow re-analyzes a server-loaded card (refine targets
+        // saved meals; clarify-question specs stage nothing), so this is
+        // forward-looking — cheap to keep the id available.
         attemptId: row.attemptId ?? undefined,
       };
       // Cheat rows stage a slider spec, not a decomposition PipelineResult, so

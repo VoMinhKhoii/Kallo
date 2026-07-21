@@ -15,11 +15,15 @@ const mockLogPipelineEnd = vi.fn();
 const mockDbInsert = vi.fn();
 const mockDbInsertValues = vi.fn();
 const mockInsertValues = vi.fn();
+const mockOnConflict = vi.fn();
 const mockAnalysisGuardEvents = { table: 'analysis_guard_events' };
 const mockPendingAnalyses = {
   table: 'pending_analyses',
   id: 'id',
+  userId: 'user_id',
+  attemptId: 'attempt_id',
   loggedAt: 'loggedAt',
+  expiresAt: 'expires_at',
 };
 const mockPipelineRequests = { table: 'pipeline_requests', id: 'id' };
 
@@ -65,7 +69,10 @@ vi.mock('@/lib/db', () => {
       mockInsertValues(values);
       return insertChain;
     },
-    onConflictDoUpdate: () => insertChain, // pending_analyses attempt-id upsert
+    onConflictDoUpdate: (arg?: unknown) => {
+      mockOnConflict(arg); // pending_analyses attempt-id upsert
+      return insertChain;
+    },
     returning: () => mockInsert(),
     catch: () => undefined, // fire-and-forget path (pipelineRequests)
   };
@@ -181,11 +188,13 @@ function createRequest(
   }) as unknown as NextRequest;
 }
 
+const TEST_ATTEMPT_ID = '11111111-1111-4111-8111-111111111111';
 function mealRequestBody(message: string) {
   return {
     message,
     loggedDate: '2026-04-06',
     timezoneOffset: -420,
+    attemptId: TEST_ATTEMPT_ID,
   };
 }
 
@@ -289,6 +298,7 @@ describe('POST /api/analyze-meal', () => {
     mockDbInsertValues.mockClear();
     mockInsert.mockResolvedValue([{ id: 'analysis-123' }]);
     mockInsertValues.mockClear();
+    mockOnConflict.mockClear();
   });
 
   afterEach(() => {
@@ -578,6 +588,18 @@ describe('POST /api/analyze-meal', () => {
       expect.objectContaining({
         rawInput: 'Phở bò tái',
         loggedAt: expect.any(Date),
+        attemptId: TEST_ATTEMPT_ID,
+      })
+    );
+    // Upserts on (user_id, attempt_id) and refreshes expiresAt so a re-analysis
+    // of the same attempt supersedes its staging row instead of orphaning it.
+    expect(mockOnConflict).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: [mockPendingAnalyses.userId, mockPendingAnalyses.attemptId],
+        set: expect.objectContaining({
+          expiresAt: expect.anything(),
+          rawInput: 'Phở bò tái',
+        }),
       })
     );
   });

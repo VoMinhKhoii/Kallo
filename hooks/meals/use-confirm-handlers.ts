@@ -259,8 +259,10 @@ export function useConfirmHandlers(args: {
       mode: 'cheat',
       cheatIntensity,
       clarifyAnswer: answer,
-      // Reuse this card's attempt id so the clarify re-run supersedes its
-      // staging row instead of leaving the pre-clarify row as an orphan.
+      // Reuse this card's attempt id. A clarifying-question spec stages no row
+      // (the route returns early), so there's no pre-clarify orphan to supersede
+      // here — but this handler has no in-flight guard, so a double-fired clarify
+      // would stage twice; the shared attempt id collapses that to one row.
       attemptId: message.attemptId,
     });
   };
