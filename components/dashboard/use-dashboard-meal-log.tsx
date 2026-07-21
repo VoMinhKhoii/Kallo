@@ -74,7 +74,7 @@ export function useDashboardMealLog({
     todayDate,
     submittedText,
     submittedAtRef,
-    onSettled: clearSubmitted,
+    onSaved: clearSubmitted,
   });
 
   const submit = useCallback(

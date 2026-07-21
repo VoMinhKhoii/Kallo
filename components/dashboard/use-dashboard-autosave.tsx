@@ -22,16 +22,11 @@ export function useDashboardAutoSave(args: {
   todayDate: string;
   submittedText: string | null;
   submittedAtRef: RefObject<Date | null>;
-  onSettled: () => void;
+  /** Called only after a SUCCESSFUL save, to clear the caller's draft state. */
+  onSaved: () => void;
 }): boolean {
-  const {
-    userId,
-    stream,
-    todayDate,
-    submittedText,
-    submittedAtRef,
-    onSettled,
-  } = args;
+  const { userId, stream, todayDate, submittedText, submittedAtRef, onSaved } =
+    args;
   const t = useTranslations('dashboard');
   const { mutate: confirm } = useConfirmMeal(userId);
   const { mutate: removeMeal } = useDeleteMeal();
@@ -77,11 +72,18 @@ export function useDashboardAutoSave(args: {
               </button>
             ),
           });
+          // Clear the draft + reset the stream only on SUCCESS. On failure both
+          // are kept so the user can retry (onError unlocks the guard).
+          onSaved();
+          reset();
+        },
+        onError: () => {
+          // Release the once-per-analysis guard so a retry — same attempt id →
+          // same analysisId (upsert) — can re-trigger the auto-save.
+          confirmedAnalysisRef.current = null;
         },
         onSettled: () => {
           setIsSaving(false);
-          onSettled();
-          reset();
         },
       }
     );
@@ -89,7 +91,7 @@ export function useDashboardAutoSave(args: {
     confirm,
     removeMeal,
     reset,
-    onSettled,
+    onSaved,
     stream.analysisId,
     stream.result,
     stream.status,
