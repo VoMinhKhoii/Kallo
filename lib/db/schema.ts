@@ -668,6 +668,13 @@ export const pendingAnalyses = pgTable(
       .references(() => authUsers.id, { onDelete: 'cascade' }),
     pipelineResult: jsonb('pipeline_result').notNull(),
     rawInput: text('raw_input').notNull(),
+    // Stable per-logging-attempt id from the client. Re-analyzing the same card
+    // (cheat-clarify, retry) reuses it, so the insert upserts the SAME row
+    // instead of leaving an orphan pending row behind (which would render as a
+    // duplicate "unsaved" card). Nullable: legacy rows and non-analyze staging
+    // paths (barcode, cheat-repeat) have none, and PG treats NULLs as distinct
+    // in the unique index below, so they never collide.
+    attemptId: uuid('attempt_id'),
     // Mirrors meals.entry_mode so confirmAndSaveMealAction can branch without
     // unpacking the JSONB. 'precise' is the default pipeline.
     entryMode: text('entry_mode').notNull().default('precise'),
@@ -690,6 +697,12 @@ export const pendingAnalyses = pgTable(
     index('pending_analyses_user_logged_at_idx').on(
       table.userId,
       table.loggedAt
+    ),
+    // One live staging row per (user, attempt): the analyze insert upserts on
+    // this so a re-analysis supersedes its predecessor rather than orphaning it.
+    uniqueIndex('pending_analyses_user_attempt_key').on(
+      table.userId,
+      table.attemptId
     ),
   ]
 );

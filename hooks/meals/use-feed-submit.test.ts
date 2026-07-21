@@ -48,6 +48,7 @@ describe('useFeedSubmit', () => {
       message: 'Phở bò',
       loggedDate: '2026-04-06',
       timezoneOffset: expect.any(Number),
+      attemptId: expect.any(String),
     });
     expect(messages).toHaveLength(2);
     expect(

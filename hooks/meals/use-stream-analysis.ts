@@ -45,6 +45,9 @@ export interface StreamAnalyzeInput {
   /** NL-refine: original meal's ISO timestamp, so the corrected meal keeps its
    *  timeline position/slot instead of being re-stamped to "now". */
   inheritLoggedAt?: string;
+  /** Stable per-attempt id. Reused across re-analyses of one card so the server
+   *  upserts the same staging row instead of orphaning its predecessor. */
+  attemptId?: string;
 }
 
 /**

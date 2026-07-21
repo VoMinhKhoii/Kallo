@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { createGeminiClient } from '@/lib/ai/gemini';
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
     cheatType,
     clarifyAnswer,
     cheatIntensity,
+    attemptId,
     profile,
     geminiConfig,
   } = validation.data;
@@ -194,6 +196,19 @@ export async function POST(request: NextRequest) {
                 rawInput: message,
                 entryMode: 'cheat',
                 loggedAt,
+                attemptId,
+              })
+              // Supersede the same attempt's prior row (e.g. a cheat-clarify
+              // re-run) rather than orphaning it — see the precise path below.
+              .onConflictDoUpdate({
+                target: [pendingAnalyses.userId, pendingAnalyses.attemptId],
+                set: {
+                  pipelineResult: { entryMode: 'cheat', spec },
+                  rawInput: message,
+                  entryMode: 'cheat',
+                  loggedAt,
+                  expiresAt: sql`now() + interval '30 minutes'`,
+                },
               })
               .returning({ id: pendingAnalyses.id }),
             PERSIST_DEADLINE_MS
@@ -317,6 +332,21 @@ export async function POST(request: NextRequest) {
               pipelineResult: result.data,
               rawInput: message,
               loggedAt,
+              attemptId,
+            })
+            // Re-analyzing the same attempt (cheat-clarify, retry) upserts this
+            // row instead of orphaning it. NULL attemptId can't conflict (NULLs
+            // are distinct), so it always inserts. Refresh expiresAt so the
+            // renewed card gets a full window.
+            .onConflictDoUpdate({
+              target: [pendingAnalyses.userId, pendingAnalyses.attemptId],
+              set: {
+                pipelineResult: result.data,
+                rawInput: message,
+                entryMode: 'precise',
+                loggedAt,
+                expiresAt: sql`now() + interval '30 minutes'`,
+              },
             })
             .returning({ id: pendingAnalyses.id }),
           PERSIST_DEADLINE_MS

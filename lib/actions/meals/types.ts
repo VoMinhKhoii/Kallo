@@ -52,6 +52,9 @@ export interface PendingMealConfirmation {
   id: string;
   rawInput: string;
   loggedAt: string;
+  /** Stable per-attempt id (echoed from the staging row). Re-analyzing this card
+   *  reuses it so the server supersedes the row instead of orphaning it. */
+  attemptId?: string;
   /** Set for precise entries. Absent for cheat entries (which carry cheatSpec). */
   parsedMeal?: ReturnType<typeof toParsedMeal>;
   /** Set for cheat entries: the staged slider spec the user confirms against. */
