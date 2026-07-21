@@ -63,41 +63,30 @@ export function useDashboardMealLog({
   );
   const submittedAtRef = useRef<Date | null>(null);
   const confirmedAnalysisRef = useRef<string | null>(null);
-  // Stable id for the current attempt. A retry reuses it so, if the first try
-  // errored client-side AFTER the server persisted its staging row (e.g. the
-  // watchdog fired between the insert and analysis_complete), the retry upserts
-  // that same row instead of orphaning it.
-  const attemptIdRef = useRef<string | null>(null);
 
   const { analyze, reset } = stream;
   const { mutate: confirm } = confirmMeal;
   const { mutate: removeMeal } = deleteMeal;
 
   const submit = useCallback(
-    (text: string, options?: { retry?: boolean }) => {
+    (text: string) => {
       if (stream.isAnalyzing || isSaving) return;
       setSubmittedText(text);
       setRestoredDraft(null);
       setLoaderIndex(Math.floor(Math.random() * DASH_LOADERS.length));
       submittedAtRef.current = new Date();
-      // A fresh submit starts a new attempt; a retry reuses the prior one so it
-      // supersedes any row the first try already persisted rather than orphaning it.
-      if (!options?.retry || !attemptIdRef.current) {
-        attemptIdRef.current = crypto.randomUUID();
-      }
       void analyze({
         message: text,
         loggedDate: todayDate,
         timezoneOffset: new Date().getTimezoneOffset(),
         mode: 'precise',
-        attemptId: attemptIdRef.current,
       });
     },
     [analyze, isSaving, stream.isAnalyzing, todayDate]
   );
 
   const onRetry = useCallback(() => {
-    if (submittedText) submit(submittedText, { retry: true });
+    if (submittedText) submit(submittedText);
   }, [submit, submittedText]);
 
   const onDismiss = useCallback(() => {

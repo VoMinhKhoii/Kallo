@@ -1,4 +1,3 @@
-import { sql } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { createGeminiClient } from '@/lib/ai/gemini';
@@ -18,13 +17,14 @@ import {
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
 import { db } from '@/lib/db';
-import { analysisGuardEvents, pendingAnalyses } from '@/lib/db/schema';
+import { analysisGuardEvents } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import {
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
 } from '@/lib/rate-limit/analysis-guards';
 import { withDeadline } from '@/lib/with-deadline';
+import { upsertPendingAnalysis } from './persist-analysis';
 import {
   createGuardRelease,
   getRequestIp,
@@ -188,29 +188,14 @@ export async function POST(request: NextRequest) {
           // from the user's chosen levels. Persist BEFORE surfacing (same
           // ordering rationale as the precise path).
           const [insertedCheat] = await withDeadline(
-            db
-              .insert(pendingAnalyses)
-              .values({
-                userId,
-                pipelineResult: { entryMode: 'cheat', spec },
-                rawInput: message,
-                entryMode: 'cheat',
-                loggedAt,
-                attemptId,
-              })
-              // Supersede the same attempt's prior row (e.g. a cheat-clarify
-              // re-run) rather than orphaning it — see the precise path below.
-              .onConflictDoUpdate({
-                target: [pendingAnalyses.userId, pendingAnalyses.attemptId],
-                set: {
-                  pipelineResult: { entryMode: 'cheat', spec },
-                  rawInput: message,
-                  entryMode: 'cheat',
-                  loggedAt,
-                  expiresAt: sql`now() + interval '30 minutes'`,
-                },
-              })
-              .returning({ id: pendingAnalyses.id }),
+            upsertPendingAnalysis({
+              userId,
+              pipelineResult: { entryMode: 'cheat', spec },
+              rawInput: message,
+              entryMode: 'cheat',
+              loggedAt,
+              attemptId,
+            }),
             PERSIST_DEADLINE_MS
           );
 
@@ -325,30 +310,14 @@ export async function POST(request: NextRequest) {
         // we emit `result` first and then the insert throws, the client has
         // a populated meal preview with no `analysisId` to confirm it.
         const [inserted] = await withDeadline(
-          db
-            .insert(pendingAnalyses)
-            .values({
-              userId,
-              pipelineResult: result.data,
-              rawInput: message,
-              loggedAt,
-              attemptId,
-            })
-            // Re-analyzing the same attempt (cheat-clarify, retry) upserts this
-            // row instead of orphaning it. NULL attemptId can't conflict (NULLs
-            // are distinct), so it always inserts. Refresh expiresAt so the
-            // renewed card gets a full window.
-            .onConflictDoUpdate({
-              target: [pendingAnalyses.userId, pendingAnalyses.attemptId],
-              set: {
-                pipelineResult: result.data,
-                rawInput: message,
-                entryMode: 'precise',
-                loggedAt,
-                expiresAt: sql`now() + interval '30 minutes'`,
-              },
-            })
-            .returning({ id: pendingAnalyses.id }),
+          upsertPendingAnalysis({
+            userId,
+            pipelineResult: result.data,
+            rawInput: message,
+            entryMode: 'precise',
+            loggedAt,
+            attemptId,
+          }),
           PERSIST_DEADLINE_MS
         );
 
