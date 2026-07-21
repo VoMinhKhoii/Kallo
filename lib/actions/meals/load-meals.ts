@@ -220,10 +220,13 @@ async function reapAbandonedPendingAnalyses(userId: string): Promise<void> {
         )
       );
   } catch (error) {
-    console.error('[loadLoggingDay] failed to reap abandoned pending analyses', {
-      userId,
-      error,
-    });
+    console.error(
+      '[loadLoggingDay] failed to reap abandoned pending analyses',
+      {
+        userId,
+        error,
+      }
+    );
   }
 }
 
