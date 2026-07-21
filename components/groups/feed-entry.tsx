@@ -50,9 +50,13 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
           <b className="font-bold font-sans-display text-[#141413] text-[15px]">
             {label}
           </b>
-          <span className="font-sans-display text-[#6E6D66] text-[15px]">
-            {formatElapsed(meal.sharedAt, locale)}
-          </span>
+          {/* A backfilled meal (logged for a past date) is shared "now", so its
+              elapsed time would misleadingly read "just now" — hide it. */}
+          {!meal.isBackfilled && (
+            <span className="font-sans-display text-[#6E6D66] text-[15px]">
+              {formatElapsed(meal.sharedAt, locale)}
+            </span>
+          )}
           {meal.portionFactor < 1 && (
             <span className="rounded-full bg-[#E8E6DC]/60 px-2 py-px font-medium font-sans-display text-[#6E6D66] text-[10px]">
               {t('portion', {

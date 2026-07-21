@@ -150,7 +150,13 @@ async function loadPendingAnalysesByDateForUser(
       and(
         eq(pendingAnalyses.userId, userId),
         gte(pendingAnalyses.loggedAt, dayStart),
-        lt(pendingAnalyses.loggedAt, dayEnd)
+        lt(pendingAnalyses.loggedAt, dayEnd),
+        // Only surface still-valid staging rows. A pending analysis is deleted
+        // on confirm; an un-confirmed one expires (default now()+30min). Without
+        // this filter, orphaned rows left behind by re-analysis (re-submit,
+        // NL-refine, cheat-clarify, retry) render as an unsaved duplicate of the
+        // already-saved meal. Compare against DB now() to avoid client skew.
+        sql`${pendingAnalyses.expiresAt} > now()`
       )
     )
     .orderBy(desc(pendingAnalyses.loggedAt));
@@ -201,6 +207,29 @@ async function loadPendingAnalysesByDateForUser(
   });
 }
 
+// Best-effort purge of a user's long-abandoned pending analyses. Never throws:
+// its result is discarded and its failure must not affect the day load.
+async function reapAbandonedPendingAnalyses(userId: string): Promise<void> {
+  try {
+    await db
+      .delete(pendingAnalyses)
+      .where(
+        and(
+          eq(pendingAnalyses.userId, userId),
+          sql`${pendingAnalyses.expiresAt} < now() - interval '7 days'`
+        )
+      );
+  } catch (error) {
+    console.error(
+      '[loadLoggingDay] failed to reap abandoned pending analyses',
+      {
+        userId,
+        error,
+      }
+    );
+  }
+}
+
 export async function loadLoggingDay(input: {
   date: string;
   timezoneOffset: number;
@@ -210,6 +239,17 @@ export async function loadLoggingDay(input: {
   const [persistedMeals, pendingConfirmations] = await Promise.all([
     loadMealsByDateForUser(user.id, parsed),
     loadPendingAnalysesByDateForUser(user.id, parsed),
+    // Hygiene: reap this user's long-abandoned staging rows so the table doesn't
+    // grow unbounded. Correctness never depends on it — the load above already
+    // hides expired rows from the feed — so it is best-effort:
+    //  - swallow its own errors: a failed DELETE (lock/pooler hiccup) must not
+    //    reject the whole day load and 500 the logging page.
+    //  - only delete rows a full WEEK past expiry, never merely-expired ones: an
+    //    actively-open confirm card lives in client state and stays confirmable
+    //    past the 30-min feed cutoff, so yanking its row out mid-session would
+    //    make Confirm throw "phân tích không tồn tại". A pg_cron purge would be
+    //    the tidier long-term home, but this keeps the fix self-contained.
+    reapAbandonedPendingAnalyses(user.id),
   ]);
 
   return { persistedMeals, pendingConfirmations };
@@ -248,7 +288,14 @@ export async function loadMealDates(input: {
         date: pendingDateExpr.as('date'),
       })
       .from(pendingAnalyses)
-      .where(eq(pendingAnalyses.userId, user.id))
+      // Match loadPendingAnalysesByDate: expired orphans must not paint a
+      // timeline dot for a day that has no live pending card.
+      .where(
+        and(
+          eq(pendingAnalyses.userId, user.id),
+          sql`${pendingAnalyses.expiresAt} > now()`
+        )
+      )
       .orderBy(desc(pendingDateExpr)),
   ]);
 

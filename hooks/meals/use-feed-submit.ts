@@ -58,6 +58,9 @@ export function useFeedSubmit({
 
     await guard(async () => {
       const assistantMsgId = generateId();
+      // Stable per-attempt id: a clarify re-run of this card reuses it so the
+      // server upserts one staging row instead of orphaning its predecessor.
+      const attemptId = crypto.randomUUID();
       setStreamingMsgId(assistantMsgId);
       lastAnalysisIdRef.current = null;
       lastErrorRef.current = null;
@@ -79,6 +82,7 @@ export function useFeedSubmit({
         timestamp: new Date(),
         isStreaming: true,
         streamingPhase: 'waiting',
+        attemptId,
       };
 
       setMessages((prev) => [...prev, userMessage, streamingMessage]);
@@ -89,6 +93,7 @@ export function useFeedSubmit({
         message: text,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
+        attemptId,
         ...(isCheat
           ? {
               mode: 'cheat' as const,

@@ -2,6 +2,10 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
+import { useDashboardDateRefresh } from '@/hooks/dashboard/use-dashboard-date-refresh';
+import { useDashboardMealLog } from '@/hooks/dashboard/use-dashboard-meal-log';
+import { useDashboardMeasurements } from '@/hooks/dashboard/use-dashboard-measurements';
+import { useDashboardQueries } from '@/hooks/dashboard/use-dashboard-queries';
 import { chooseRenderedHeatmapRange } from '@/lib/dashboard/heatmap-range';
 import type {
   DashboardProfile,
@@ -15,10 +19,6 @@ import { HeatmapSkeleton } from './progress/progress-section-skeleton';
 import { ProgressStory } from './progress/progress-story';
 import { FloatingMealTrigger, InlineMealTrigger } from './today/meal-trigger';
 import { TodayDock } from './today/today-dock';
-import { useDashboardDateRefresh } from './use-dashboard-date-refresh';
-import { useDashboardMealLog } from './use-dashboard-meal-log';
-import { useDashboardMeasurements } from './use-dashboard-measurements';
-import { useDashboardQueries } from './use-dashboard-queries';
 
 const RANGE_LABEL_KEYS: Record<HeatmapRange, string> = {
   '30d': 'ranges.thirtyDays',

@@ -54,6 +54,8 @@ function sharedMeal(index: number, sharedAt: Date) {
     fatG: 15,
     portionFactor: 1,
     sharedAt,
+    // Real-time log: eaten when shared (not backfilled).
+    loggedAt: sharedAt,
     sharedAtText: sharedAt.toISOString().replace('Z', '123+00'),
     handle: 'me',
     displayName: null,
@@ -141,5 +143,34 @@ describe('toSharedMealEntry', () => {
 
     expect(toSharedMealEntry(row, USER_A).isSelf).toBe(true);
     expect(toSharedMealEntry(row, 'someone-else').isSelf).toBe(false);
+  });
+
+  it('is not backfilled when logged ≈ shared (real-time log)', () => {
+    const sharedAt = new Date('2026-01-01T12:00:00Z');
+    const row = { ...sharedMeal(1, sharedAt), loggedAt: sharedAt };
+
+    expect(toSharedMealEntry(row, USER_A).meal.isBackfilled).toBe(false);
+  });
+
+  it('is not backfilled for a same-day analyze→confirm gap under the threshold', () => {
+    const sharedAt = new Date('2026-01-01T12:00:00Z');
+    // Analyzed ~2h earlier, confirmed now — same-day, still shows time.
+    const row = {
+      ...sharedMeal(1, sharedAt),
+      loggedAt: new Date('2026-01-01T10:00:00Z'),
+    };
+
+    expect(toSharedMealEntry(row, USER_A).meal.isBackfilled).toBe(false);
+  });
+
+  it('is backfilled when logged for a past date (≥ ~24h before shared)', () => {
+    const sharedAt = new Date('2026-01-02T12:00:00Z');
+    // Logged for yesterday at the same time-of-day it was analyzed.
+    const row = {
+      ...sharedMeal(1, sharedAt),
+      loggedAt: new Date('2026-01-01T12:00:00Z'),
+    };
+
+    expect(toSharedMealEntry(row, USER_A).meal.isBackfilled).toBe(true);
   });
 });

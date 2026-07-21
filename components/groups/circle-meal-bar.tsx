@@ -2,8 +2,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { InlineMealTrigger } from '@/components/dashboard/today/meal-trigger';
-import { useDashboardDateRefresh } from '@/components/dashboard/use-dashboard-date-refresh';
-import { useDashboardMealLog } from '@/components/dashboard/use-dashboard-meal-log';
+import { useDashboardDateRefresh } from '@/hooks/dashboard/use-dashboard-date-refresh';
+import { useDashboardMealLog } from '@/hooks/dashboard/use-dashboard-meal-log';
 import { useMyProfile } from '@/hooks/profile/use-profile';
 
 /**

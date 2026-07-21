@@ -10,8 +10,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import type { DashboardMealStream } from '@/components/dashboard/use-dashboard-meal-log';
 import { DASH_LOADERS } from '@/components/shared/svg-loaders';
+import type { DashboardMealStream } from '@/hooks/dashboard/use-dashboard-meal-log';
 import { cn } from '@/lib/utils';
 
 interface MealTriggerProps {

@@ -53,6 +53,9 @@ export interface SharedMealRow {
   fatG: number | null;
   portionFactor: number;
   sharedAt: Date;
+  /** When the meal was eaten. Differs from sharedAt for a backfilled meal
+   * (logged for a past date), letting the client hide its meaningless time. */
+  loggedAt: Date;
   /** Full PostgreSQL timestamptz precision used only to construct cursors. */
   sharedAtText: string;
   handle: string;
@@ -95,6 +98,7 @@ export async function mostRecentSharedMealsToday(
         fatG: meals.fatG,
         portionFactor: meals.portionFactor,
         sharedAt: mealShares.sharedAt,
+        loggedAt: meals.loggedAt,
         sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
         ...publicProfileColumns,
       })
@@ -159,6 +163,7 @@ export async function sharedMealsBefore(
       fatG: meals.fatG,
       portionFactor: meals.portionFactor,
       sharedAt: mealShares.sharedAt,
+      loggedAt: meals.loggedAt,
       sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
       ...publicProfileColumns,
     })
@@ -228,10 +233,29 @@ export interface SharedMealEntry {
     fatG: number | null;
     portionFactor: number;
     sharedAt: string;
+    /** True when the meal was logged for a PAST date (backfilled), so its
+     * share-time ("just now") would be misleading and the UI hides it.
+     * Computed server-side and timezone-independently — see isBackfilledShare. */
+    isBackfilled: boolean;
   };
   reactions: ShareReactions;
   replies: ShareReply[];
   repliesTotal: number;
+}
+
+// A meal's loggedAt is the chosen local date stamped with the time-of-day at
+// which it was analyzed (see getUtcInstantForLocalDate), i.e. exactly N days
+// before that analysis instant. sharedAt is set (~now) when it's saved/shared,
+// always at or after analysis. So sharedAt − loggedAt ≈ N×24h + a small
+// analyze→confirm gap: a real-time log is minutes apart, a past-date backfill is
+// ≥ ~24h apart. Thresholding the gap detects backfills WITHOUT any timezone —
+// no viewer/owner-tz ambiguity, no stored offset. 18h sits safely between the
+// two (well under the ~23–24h backfill floor even across a DST shift, well over
+// any realistic same-day analyze→confirm delay).
+const BACKFILL_MIN_GAP_MS = 18 * 60 * 60 * 1000;
+
+export function isBackfilledShare(loggedAt: Date, sharedAt: Date): boolean {
+  return sharedAt.getTime() - loggedAt.getTime() >= BACKFILL_MIN_GAP_MS;
 }
 
 /** Shared row → entry projection, reused by listCircleFeed, listFriendsThreadFeed,
@@ -262,6 +286,7 @@ export function toSharedMealEntry(
       fatG: row.fatG,
       portionFactor: row.portionFactor,
       sharedAt: row.sharedAt.toISOString(),
+      isBackfilled: isBackfilledShare(row.loggedAt, row.sharedAt),
     },
     reactions,
     replies: replySummary.replies,

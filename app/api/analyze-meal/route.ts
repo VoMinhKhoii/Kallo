@@ -17,13 +17,14 @@ import {
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
 import { db } from '@/lib/db';
-import { analysisGuardEvents, pendingAnalyses } from '@/lib/db/schema';
+import { analysisGuardEvents } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import {
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
 } from '@/lib/rate-limit/analysis-guards';
 import { withDeadline } from '@/lib/with-deadline';
+import { upsertPendingAnalysis } from './persist-analysis';
 import {
   createGuardRelease,
   getRequestIp,
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
     cheatType,
     clarifyAnswer,
     cheatIntensity,
+    attemptId,
     profile,
     geminiConfig,
   } = validation.data;
@@ -186,16 +188,14 @@ export async function POST(request: NextRequest) {
           // from the user's chosen levels. Persist BEFORE surfacing (same
           // ordering rationale as the precise path).
           const [insertedCheat] = await withDeadline(
-            db
-              .insert(pendingAnalyses)
-              .values({
-                userId,
-                pipelineResult: { entryMode: 'cheat', spec },
-                rawInput: message,
-                entryMode: 'cheat',
-                loggedAt,
-              })
-              .returning({ id: pendingAnalyses.id }),
+            upsertPendingAnalysis({
+              userId,
+              pipelineResult: { entryMode: 'cheat', spec },
+              rawInput: message,
+              entryMode: 'cheat',
+              loggedAt,
+              attemptId,
+            }),
             PERSIST_DEADLINE_MS
           );
 
@@ -310,15 +310,14 @@ export async function POST(request: NextRequest) {
         // we emit `result` first and then the insert throws, the client has
         // a populated meal preview with no `analysisId` to confirm it.
         const [inserted] = await withDeadline(
-          db
-            .insert(pendingAnalyses)
-            .values({
-              userId,
-              pipelineResult: result.data,
-              rawInput: message,
-              loggedAt,
-            })
-            .returning({ id: pendingAnalyses.id }),
+          upsertPendingAnalysis({
+            userId,
+            pipelineResult: result.data,
+            rawInput: message,
+            entryMode: 'precise',
+            loggedAt,
+            attemptId,
+          }),
           PERSIST_DEADLINE_MS
         );
 

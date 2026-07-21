@@ -6,7 +6,7 @@ import {
   getLabFixture,
   LAB_AUTOPLAY_ID,
   type LabDemoFixture,
-} from './fixtures';
+} from '@/components/landing-lab/fixtures';
 
 export type LabPhase = 'typing' | 'matching' | 'estimating' | 'result';
 
