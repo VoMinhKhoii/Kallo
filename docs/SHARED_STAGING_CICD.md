@@ -1,7 +1,15 @@
 # Shared Staging CI/CD Guide
 
-This document explains how the Cloud Run CI/CD flow works **right now** for the
-shared non-production database.
+> **Retired (2026-07):** The `nham-internal`, `nham-staging`, and PR-preview Cloud
+> Run pipelines described here have been removed to cut cost. The only surviving
+> deploy pipeline is `cloud-run-prod.yml` (`kallo-prod`), which applies migrations
+> to the DB on each `main` merge. This document is kept for historical reference;
+> the workflows and helper scripts it mentions (`cloud-run-internal.yml`,
+> `cloud-run-staging.yml`, `reset-staging-db.yml`, `preview-db.ts`,
+> `staging-pr-comment.mjs`) no longer exist.
+
+This document explains how the Cloud Run CI/CD flow worked for the shared
+non-production database.
 
 ## Services
 

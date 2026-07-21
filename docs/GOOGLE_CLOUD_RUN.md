@@ -1,11 +1,14 @@
 # Google Cloud Run Setup
 
-This repo uses a **manual-only CI/CD model** for the shared database:
+> **Updated (2026-07):** The `nham-internal`, `nham-staging`, and PR-preview
+> pipelines were retired to cut cost. `kallo-prod` is now the only Cloud Run
+> deploy target. Sections below that describe the internal/staging/preview
+> services are historical.
 
-- **Internal service** (`nham-internal`): Automatically deploys on main branch merge (no manual gate)
-- **Staging service** (`nham-staging`): Manual deployment only via `workflow_dispatch` (gatekeeper for schema/code changes)
-- **Preview services** (`nham-pr-<number>`): Disabled—no automatic PR preview deployments
-- Artifact Registry: One immutable image per commit SHA
+This repo deploys a single production service via `cloud-run-prod.yml`:
+
+- **Production service** (`kallo-prod`): Automatically deploys on `main` merge after CI succeeds; applies pending migrations behind a GCS lease, then blue-green promotes after a smoke check
+- Artifact Registry: One immutable image per commit SHA (built + pushed by CI)
 - Authentication: GitHub Actions via Workload Identity Federation (WIF)
 
 ## Deployment Model
