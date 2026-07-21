@@ -2,9 +2,9 @@
 
 import { Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import type { LabDemo } from '@/hooks/landing-lab/use-demo';
 import type { LabTone } from './command-bar';
 import { LAB_COPY } from './copy';
-import type { LabDemo } from './use-demo';
 
 /**
  * The staged status line + expanding result card under the command bar.
