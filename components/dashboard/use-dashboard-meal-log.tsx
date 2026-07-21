@@ -62,7 +62,12 @@ export function useDashboardMealLog({
 
   const { analyze, reset } = stream;
 
-  const clearSubmitted = useCallback(() => setSubmittedText(null), []);
+  // Clearing on a settled save (and on dismiss) resets the attempt so the next
+  // submit mints a fresh id; an ERROR leaves both intact so onRetry reuses them.
+  const clearSubmitted = useCallback(() => {
+    setSubmittedText(null);
+    attemptIdRef.current = null;
+  }, []);
   const isSaving = useDashboardAutoSave({
     userId,
     stream,
@@ -103,6 +108,7 @@ export function useDashboardMealLog({
     // Hand the text back to the input so a mistyped meal is one edit away.
     if (submittedText) setRestoredDraft({ text: submittedText });
     setSubmittedText(null);
+    attemptIdRef.current = null;
     reset();
   }, [reset, submittedText]);
 
