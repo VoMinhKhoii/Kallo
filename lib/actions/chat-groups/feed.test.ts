@@ -65,6 +65,7 @@ function meal(index: number, sharedAt: Date, ownerJoinedAt: Date) {
     fatG: 15,
     portionFactor: 1,
     sharedAt,
+    loggedAt: sharedAt,
     sharedAtText: sharedAt.toISOString(),
     handle: 'owner',
     displayName: 'Owner',
