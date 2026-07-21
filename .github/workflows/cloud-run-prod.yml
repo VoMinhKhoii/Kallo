@@ -67,7 +67,11 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - uses: supabase/setup-cli@v1
         with:
-          version: 2.90.0
+          # Kept at the version prod has always deployed with — the prod
+          # workflow runs only on a real main-merge deploy, so this is never
+          # exercised by PR CI. Not bumped to CI's 2.90.0 to avoid an
+          # unverified behavioral change on the prod path.
+          version: 1.200.3
       - name: Read prod database URL
         run: |
           db_url="$(gcloud secrets versions access latest --secret=kallo-prod-database-url)"
