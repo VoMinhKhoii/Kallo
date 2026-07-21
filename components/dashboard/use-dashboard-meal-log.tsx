@@ -1,16 +1,11 @@
 'use client';
 
-import { Undo2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
 import { getStreamingPhaseLabel } from '@/components/logging/feed/streaming/streaming-phase-label';
 import { DASH_LOADERS } from '@/components/shared/svg-loaders';
-import {
-  useConfirmMeal,
-  useDeleteMeal,
-} from '@/hooks/meals/use-meal-mutations';
 import { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
+import { useDashboardAutoSave } from './use-dashboard-autosave';
 
 /** One frame of the input-bar ticker; a new `key` flips the text in place.
  *  `phase` frames are quiet sans labels; `item`/`macros` frames carry the
@@ -37,9 +32,9 @@ export interface DashboardMealStream {
 /**
  * Dashboard-native meal logging: the input bar itself streams the AI analysis
  * (a random SVG loader for the run + a ticker flipping through stages, item
- * names, and resolved macros), then auto-saves. The confirm mutation's
- * optimistic cache write lands the meal in Recent meals and the hero number /
- * ring / macro bars animate on their own.
+ * names, and resolved macros), then auto-saves (see useDashboardAutoSave). The
+ * confirm mutation's optimistic cache write lands the meal in Recent meals and
+ * the hero number / ring / macro bars animate on their own.
  */
 export function useDashboardMealLog({
   userId,
@@ -51,42 +46,57 @@ export function useDashboardMealLog({
   const t = useTranslations('dashboard');
   const ts = useTranslations('logging.streaming');
   const stream = useStreamAnalysis();
-  const confirmMeal = useConfirmMeal(userId);
-  const deleteMeal = useDeleteMeal();
 
   const [submittedText, setSubmittedText] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [loaderIndex, setLoaderIndex] = useState(0);
   // Bumped object identity tells the input to restore a dismissed draft.
   const [restoredDraft, setRestoredDraft] = useState<{ text: string } | null>(
     null
   );
   const submittedAtRef = useRef<Date | null>(null);
-  const confirmedAnalysisRef = useRef<string | null>(null);
+  // Stable id for the current attempt. A retry reuses it so, if the first try
+  // errored client-side AFTER the server persisted its staging row (e.g. the
+  // watchdog fired between the insert and analysis_complete), the retry upserts
+  // that same row instead of orphaning it.
+  const attemptIdRef = useRef<string | null>(null);
 
   const { analyze, reset } = stream;
-  const { mutate: confirm } = confirmMeal;
-  const { mutate: removeMeal } = deleteMeal;
+
+  const clearSubmitted = useCallback(() => setSubmittedText(null), []);
+  const isSaving = useDashboardAutoSave({
+    userId,
+    stream,
+    todayDate,
+    submittedText,
+    submittedAtRef,
+    onSettled: clearSubmitted,
+  });
 
   const submit = useCallback(
-    (text: string) => {
+    (text: string, options?: { retry?: boolean }) => {
       if (stream.isAnalyzing || isSaving) return;
       setSubmittedText(text);
       setRestoredDraft(null);
       setLoaderIndex(Math.floor(Math.random() * DASH_LOADERS.length));
       submittedAtRef.current = new Date();
+      // Fresh submit starts a new attempt; a retry reuses the prior id so it
+      // supersedes any row the first try already persisted rather than orphaning it.
+      if (!options?.retry || !attemptIdRef.current) {
+        attemptIdRef.current = crypto.randomUUID();
+      }
       void analyze({
         message: text,
         loggedDate: todayDate,
         timezoneOffset: new Date().getTimezoneOffset(),
         mode: 'precise',
+        attemptId: attemptIdRef.current,
       });
     },
     [analyze, isSaving, stream.isAnalyzing, todayDate]
   );
 
   const onRetry = useCallback(() => {
-    if (submittedText) submit(submittedText);
+    if (submittedText) submit(submittedText, { retry: true });
   }, [submit, submittedText]);
 
   const onDismiss = useCallback(() => {
@@ -152,66 +162,6 @@ export function useDashboardMealLog({
     }
     return () => document.body.removeAttribute('data-meal-streaming');
   }, [isActive]);
-
-  // --- Auto-save -----------------------------------------------------------
-  // The dashboard is quick capture — no confirm step. Undo (via the toast)
-  // deletes the saved meal; full editing lives on /logging.
-  useEffect(() => {
-    if (stream.status !== 'done' || !stream.result || !stream.analysisId) {
-      return;
-    }
-    if (confirmedAnalysisRef.current === stream.analysisId) return;
-    confirmedAnalysisRef.current = stream.analysisId;
-
-    const mealId = crypto.randomUUID();
-    setIsSaving(true);
-    confirm(
-      {
-        analysisId: stream.analysisId,
-        mealId,
-        originDate: todayDate,
-        parsedMeal: stream.result,
-        rawInput: submittedText ?? '',
-        loggedAt: (submittedAtRef.current ?? new Date()).toISOString(),
-      },
-      {
-        onSuccess: () => {
-          // Custom action node (not sonner's {label, onClick} form) so the
-          // button carries the back icon + hover; dismissal is manual.
-          const toastId = toast.success(t('streaming.saved'), {
-            action: (
-              <button
-                type="button"
-                onClick={() => {
-                  removeMeal({ mealId });
-                  toast.dismiss(toastId);
-                }}
-                className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-nham-btn px-2.5 py-1.5 font-medium text-white text-xs transition-colors hover:bg-nham-btn-hover"
-              >
-                <Undo2 aria-hidden className="h-3.5 w-3.5" />
-                {t('streaming.undo')}
-              </button>
-            ),
-          });
-        },
-        onSettled: () => {
-          setIsSaving(false);
-          setSubmittedText(null);
-          reset();
-        },
-      }
-    );
-  }, [
-    confirm,
-    removeMeal,
-    reset,
-    stream.analysisId,
-    stream.result,
-    stream.status,
-    submittedText,
-    t,
-    todayDate,
-  ]);
 
   const streaming: DashboardMealStream = {
     isActive,
