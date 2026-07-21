@@ -99,7 +99,6 @@ export function useFeedMessages(args: {
           timestamp: new Date(pending.loggedAt),
           loggedDate: selectedDate,
           analysisId: pending.id,
-          attemptId: pending.attemptId,
         })),
     [args.pendingConfirmations, selectedDate, localAnalysisIds]
   );
