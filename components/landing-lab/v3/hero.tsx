@@ -12,11 +12,11 @@ import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { scrollToAnchorId } from '@/components/landing-page/scroll-to-anchor';
 import { Button } from '@/components/ui/button';
+import { useLabDemo } from '@/hooks/landing-lab/use-demo';
 import { CommandBar, DemoChips } from '../command-bar';
 import { LAB_COPY } from '../copy';
 import { DerivationCard } from '../derivation-card';
 import { FallbackBlobs } from '../fallback-blobs';
-import { useLabDemo } from '../use-demo';
 import { CalloutLayer, type CalloutLayerHandle } from './callout-layer';
 import { CountryPanel } from './country-panel';
 import {

@@ -43,6 +43,7 @@ export async function sharedGroupMealsBefore(
       fatG: meals.fatG,
       portionFactor: meals.portionFactor,
       sharedAt: mealShares.sharedAt,
+      loggedAt: meals.loggedAt,
       sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
       ...publicProfileColumns,
       ownerJoinedAt: ownerMembership.joinedAt,

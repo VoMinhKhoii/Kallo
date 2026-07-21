@@ -5,8 +5,8 @@ import { type MotionValue, useReducedMotion } from 'motion/react';
 import R3fGlobe from 'r3f-globe';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+import type { LabMood } from '@/hooks/landing-lab/use-demo';
 import { FallbackBlobs } from '../fallback-blobs';
-import type { LabMood } from '../use-demo';
 import { FEATURED_ISOS, GLOBE_PALETTE } from './globe-dishes';
 import { type TourMarker, tourFocusAt } from './globe-tour';
 

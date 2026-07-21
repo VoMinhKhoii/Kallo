@@ -684,6 +684,7 @@ describe('listGroupMealFeed', () => {
       fatG: 15,
       portionFactor: 1,
       sharedAt,
+      loggedAt: sharedAt,
       sharedAtText: sharedAt.toISOString(),
       handle: 'phofan',
       displayName: null,

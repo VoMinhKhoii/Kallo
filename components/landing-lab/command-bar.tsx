@@ -1,9 +1,9 @@
 'use client';
 
 import { ArrowRight, Sparkles } from 'lucide-react';
+import type { LabDemo } from '@/hooks/landing-lab/use-demo';
 import { LAB_COPY } from './copy';
 import { getLabFixture, LAB_CHIP_IDS } from './fixtures';
-import type { LabDemo } from './use-demo';
 
 export type LabTone = 'light' | 'dark';
 
