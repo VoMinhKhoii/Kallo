@@ -76,7 +76,6 @@
     "components/auth/auth-dialog.tsx": 208,
     "components/dashboard/progress/adherence-heatmap.tsx": 208,
     "components/app/navigation/mobile-nav.tsx": 206,
-    "components/settings/account/account-panel.tsx": 206,
     "components/design-system/colors-section.tsx": 205,
     "apps/mobile-flutter/lib/features/dashboard/widgets/section_header.dart": 204,
     "apps/mobile-flutter/lib/shell/tab_scaffold.dart": 204,

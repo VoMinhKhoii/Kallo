@@ -76,86 +76,82 @@ export function LinkedAccounts() {
 
   const total = identities?.length ?? 0;
 
-  return (
-    <div className="rounded-2xl border border-nham-border/70 bg-white px-4 py-3.5">
-      <p className="text-[15px] text-nham-text">{t('linkedTitle')}</p>
-      <p className="mt-0.5 text-[13px] text-nham-text-muted">
-        {t('linkedDescription')}
-      </p>
+  if (identitiesLoading) {
+    // Until identities resolve we don't know what's linked — show a
+    // placeholder rather than rendering every provider as "Connect".
+    return (
+      <p className="text-[13px] text-nham-text-muted">{t('linkedLoading')}</p>
+    );
+  }
 
-      {identitiesLoading ? (
-        // Until identities resolve we don't know what's linked — show a
-        // placeholder rather than rendering every provider as "Connect".
-        <p className="mt-3 text-[13px] text-nham-text-muted">
-          {t('linkedLoading')}
+  if (isError) {
+    // Fetch failed — don't render the providers as silently "unlinked"
+    // (misleads the user into reconnecting). Offer an explicit retry.
+    return (
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-[13px] text-nham-text-muted">
+          {t('linkedLoadError')}
         </p>
-      ) : isError ? (
-        // Fetch failed — don't render the providers as silently "unlinked"
-        // (misleads the user into reconnecting). Offer an explicit retry.
-        <div className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-nham-border/60 px-3.5 py-2.5">
-          <p className="text-[13px] text-nham-text-muted">
-            {t('linkedLoadError')}
-          </p>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="shrink-0 rounded-lg border border-nham-border bg-white px-3 py-1.5 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="shrink-0 rounded-lg border border-nham-border bg-white px-3 py-1.5 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+        >
+          {t('linkedRetry')}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col divide-y divide-nham-border">
+      {OAUTH_PROVIDERS.map(({ key, label }) => {
+        const identity = identities?.find((i) => i.provider === key) ?? null;
+        const linked = Boolean(identity);
+        const busy = pending === key;
+        const isLast = total <= 1;
+
+        return (
+          <div
+            key={key}
+            className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0"
           >
-            {t('linkedRetry')}
-          </button>
-        </div>
-      ) : (
-        <div className="mt-3 flex flex-col gap-2">
-          {OAUTH_PROVIDERS.map(({ key, label }) => {
-            const identity =
-              identities?.find((i) => i.provider === key) ?? null;
-            const linked = Boolean(identity);
-            const busy = pending === key;
-            const isLast = total <= 1;
+            <div className="min-w-0">
+              <p className="text-[14px] text-nham-text">{label}</p>
+              {linked && (
+                <p className="mt-0.5 text-[12px] text-nham-text-muted">
+                  {t('linkedConnected')}
+                  {isLast ? ` · ${t('linkedLastHint')}` : ''}
+                </p>
+              )}
+            </div>
 
-            return (
-              <div
-                key={key}
-                className="flex items-center justify-between gap-4 rounded-xl border border-nham-border/60 px-3.5 py-2.5"
+            {linked ? (
+              <button
+                type="button"
+                onClick={() => identity && handleDisconnect(identity)}
+                disabled={busy || isLast}
+                aria-busy={busy}
+                aria-label={`${t('linkedDisconnect')} ${label}`}
+                className="shrink-0 rounded-lg px-3 py-1.5 font-medium text-[13px] text-nham-text-muted transition-colors duration-150 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-40"
               >
-                <div className="min-w-0">
-                  <p className="text-[14px] text-nham-text">{label}</p>
-                  {linked && (
-                    <p className="mt-0.5 text-[12px] text-nham-text-muted">
-                      {t('linkedConnected')}
-                      {isLast ? ` · ${t('linkedLastHint')}` : ''}
-                    </p>
-                  )}
-                </div>
-
-                {linked ? (
-                  <button
-                    type="button"
-                    onClick={() => identity && handleDisconnect(identity)}
-                    disabled={busy || isLast}
-                    aria-busy={busy}
-                    aria-label={`${t('linkedDisconnect')} ${label}`}
-                    className="shrink-0 rounded-lg px-3 py-1.5 font-medium text-[13px] text-nham-text-muted transition-colors duration-150 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-40"
-                  >
-                    {t('linkedDisconnect')}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleConnect(key)}
-                    disabled={busy || identitiesLoading}
-                    aria-busy={busy}
-                    aria-label={`${t('linkedConnect')} ${label}`}
-                    className="shrink-0 rounded-lg border border-nham-border bg-white px-3 py-1.5 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
-                  >
-                    {t('linkedConnect')}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                {t('linkedDisconnect')}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleConnect(key)}
+                disabled={busy || identitiesLoading}
+                aria-busy={busy}
+                aria-label={`${t('linkedConnect')} ${label}`}
+                className="shrink-0 rounded-lg border border-nham-border bg-white px-3 py-1.5 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
+              >
+                {t('linkedConnect')}
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

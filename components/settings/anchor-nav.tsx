@@ -72,8 +72,4 @@ export function SettingsAnchorNav({
   );
 }
 
-// Temporary: page.tsx still anchors the pre-revamp identity section on this id.
-// Phase B removes that usage; kept here only so the repo typechecks after Phase A.
-export const IDENTITY_ANCHOR = 'settings-identity';
-
 export { ACCOUNT_ANCHOR, FEEDBACK_ANCHOR };
