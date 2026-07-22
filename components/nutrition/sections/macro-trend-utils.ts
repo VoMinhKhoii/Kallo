@@ -109,6 +109,12 @@ export function formatBucketLabel(
   const d = new Date(`${startDate}T00:00:00`);
   if (Number.isNaN(d.getTime())) return '';
   if (unit === 'week') return `${d.getDate()}/${d.getMonth() + 1}`;
+  // Vietnamese convention: weekday number for Mon–Sat, "CN" for Sunday. Taking
+  // the first grapheme of vi short weekdays ("Th 2".."Th 7"/"CN") yields six
+  // indistinct "T"s, so use the numeric scheme instead (matches the mobile chart).
+  if (locale.startsWith('vi')) {
+    return d.getDay() === 0 ? 'CN' : String(d.getDay() + 1);
+  }
   const weekday = new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(
     d
   );

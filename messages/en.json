@@ -470,7 +470,7 @@
       "calories": "kcal",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
-      "days": "days",
+      "dayCount": "{count, plural, one {# day} other {# days}}",
       "noCompleteDays": "No fully-logged days yet — keep logging, or tap All.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Macro composition",

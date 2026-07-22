@@ -2,12 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/widgets/skeleton.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../data/circle_providers.dart';
+import 'friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
 import 'share_meal_mode_selector.dart';
 import 'share_meal_sheet_header.dart';

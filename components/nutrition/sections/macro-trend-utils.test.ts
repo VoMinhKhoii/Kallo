@@ -133,4 +133,19 @@ describe('formatBucketLabel', () => {
     // timezones; local parse keeps the 3rd (Sunday) → "S".
     expect(formatBucketLabel('2026-05-03', 'day', 'en')).toBe('S');
   });
+
+  it('uses the Vietnamese numeric weekday scheme (Mon=2..Sat=7)', () => {
+    // 2026-05-04 is a Monday → "2".
+    expect(formatBucketLabel('2026-05-04', 'day', 'vi')).toBe('2');
+  });
+
+  it('labels Sunday as "CN" in Vietnamese', () => {
+    // 2026-05-03 is a Sunday → "CN".
+    expect(formatBucketLabel('2026-05-03', 'day', 'vi')).toBe('CN');
+  });
+
+  it('leaves non-vi locales on the first-grapheme behavior', () => {
+    // 2026-05-04 is a Monday → English initial "M".
+    expect(formatBucketLabel('2026-05-04', 'day', 'en')).toBe('M');
+  });
 });

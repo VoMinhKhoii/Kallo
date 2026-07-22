@@ -25,6 +25,7 @@ export function NutritionSkeleton() {
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-20 sm:px-6 lg:px-8">
         <div
           role="status"
+          aria-busy="true"
           aria-live="polite"
           aria-label={t('loading')}
           className="mx-auto flex max-w-2xl flex-col gap-7 motion-safe:animate-pulse"

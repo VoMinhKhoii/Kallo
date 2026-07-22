@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/chat_group.dart';
 import '../../../models/circle.dart';
-import '../../../shared/widgets/skeleton.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../data/chat_group_providers.dart';
 import '../data/circle_providers.dart';
+import 'friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
 
 class GroupAddPeople extends ConsumerStatefulWidget {

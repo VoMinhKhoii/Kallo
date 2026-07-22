@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/skeleton.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
+import 'friend_list_skeleton.dart';
 
 /// Group-detail load skeleton: grab handle, centered name + member-count bars,
 /// a members heading, then a few member-row placeholders.

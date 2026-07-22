@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/circle.dart';
-import '../../../shared/widgets/skeleton.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
 import 'create_group_empty.dart';
+import 'friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
 
 class CreateGroupMemberPicker extends StatelessWidget {

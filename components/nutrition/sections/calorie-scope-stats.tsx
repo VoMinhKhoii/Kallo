@@ -97,7 +97,7 @@ function ScopeEntry({
     data.averagePerDay !== null
       ? formatLocalizedNumber(data.averagePerDay, locale)
       : '—';
-  const label = `${t(labelKey)} · ${data.days} ${t('rhythm.days')}`;
+  const label = `${t(labelKey)} · ${t('rhythm.dayCount', { count: data.days })}`;
 
   return (
     <motion.div

@@ -32,26 +32,14 @@ class SkeletonPulse extends StatefulWidget {
 
 class _SkeletonPulseState extends State<SkeletonPulse>
     with SingleTickerProviderStateMixin {
-  // Tailwind `animate-pulse`: opacity 1→.5→1, 2s, cubic-bezier(0.4,0,0.6,1),
-  // infinite. A 1s reversing tween (1.0→0.5) with that ease gives the 2s loop.
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1000),
-  )..repeat(reverse: true);
-
-  late final Animation<double> _opacity = Tween<double>(
-    begin: 1.0,
-    end: 0.5,
-  ).animate(
-    CurvedAnimation(
-      parent: _c,
-      curve: const Cubic(0.4, 0.0, 0.6, 1.0),
-    ),
-  );
+  // Created lazily so the reduced-motion and nested-in-_PulseScope paths (which
+  // return early without rendering the pulse) never spin up a controller.
+  AnimationController? _c;
+  Animation<double>? _opacity;
 
   @override
   void dispose() {
-    _c.dispose();
+    _c?.dispose();
     super.dispose();
   }
 
@@ -63,8 +51,20 @@ class _SkeletonPulseState extends State<SkeletonPulse>
     if (context.dependOnInheritedWidgetOfExactType<_PulseScope>() != null) {
       return widget.child;
     }
+    // Tailwind `animate-pulse`: opacity 1→.5→1, 2s, cubic-bezier(0.4,0,0.6,1),
+    // infinite. A 1s reversing tween (1.0→0.5) with that ease gives the 2s loop.
+    // Build can run repeatedly — memoize so the controller is made only once.
+    final opacity = _opacity ??= Tween<double>(begin: 1.0, end: 0.5).animate(
+      CurvedAnimation(
+        parent: _c ??= AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 1000),
+        )..repeat(reverse: true),
+        curve: const Cubic(0.4, 0.0, 0.6, 1.0),
+      ),
+    );
     return _PulseScope(
-      child: FadeTransition(opacity: _opacity, child: widget.child),
+      child: FadeTransition(opacity: opacity, child: widget.child),
     );
   }
 }
@@ -118,44 +118,6 @@ class SkeletonCircle extends StatelessWidget {
           shape: BoxShape.circle,
         ),
       );
-}
-
-/// A friend-picker row placeholder — avatar disc + name bar, matching
-/// `FriendPickRow`'s padding.
-class FriendRowSkeleton extends StatelessWidget {
-  const FriendRowSkeleton({super.key});
-
-  @override
-  Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            SkeletonCircle(size: 32),
-            SizedBox(width: 12),
-            Expanded(child: SkeletonBar(widthFactor: 0.55, height: 12)),
-          ],
-        ),
-      );
-}
-
-/// A pulsing column of three friend-row placeholders under a [Semantics]
-/// loading label. Shared by the circle friend-list loading states.
-class FriendListSkeleton extends StatelessWidget {
-  const FriendListSkeleton({this.semanticsLabel, super.key});
-
-  final String? semanticsLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final list = SkeletonPulse(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [for (var i = 0; i < 3; i++) const FriendRowSkeleton()],
-      ),
-    );
-    if (semanticsLabel == null) return list;
-    return Semantics(label: semanticsLabel, child: list);
-  }
 }
 
 /// A white card matching the real dashboard cards, holding skeleton [children].

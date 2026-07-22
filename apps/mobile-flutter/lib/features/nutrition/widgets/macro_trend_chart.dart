@@ -166,6 +166,12 @@ class MacroTrendChart extends StatelessWidget {
     final d = DateTime.tryParse(startDate);
     if (d == null) return '';
     if (unit == 'week') return DateFormat('d/M', locale).format(d);
+    // Vietnamese convention: weekday number for Mon–Sat, "CN" for Sunday.
+    // The first grapheme of vi short weekdays ("Th 2".."Th 7"/"CN") yields six
+    // indistinct "T"s, so use the numeric scheme instead (matches the web chart).
+    if (locale.startsWith('vi')) {
+      return d.weekday == DateTime.sunday ? 'CN' : (d.weekday + 1).toString();
+    }
     return DateFormat('E', locale).format(d).characters.first;
   }
 }
