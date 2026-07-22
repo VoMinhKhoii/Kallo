@@ -6,14 +6,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../data/env.dart';
-import '../../../shared/widgets/nham_text.dart';
 import '../../../shared/widgets/top_toast.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../../circle/data/circle_providers.dart';
 import '../data/logging_models.dart';
-import 'persisted_meal_share_chip.dart';
+import 'meal_action_icon_button.dart';
 
 /// The per-meal "Share to circle" toggle plus, once shared, the "Share card"
 /// action (the shareable Macro Card link). Optimistically flips its own state,
@@ -38,8 +34,9 @@ class PersistedMealShareToCircleButton extends ConsumerStatefulWidget {
 class _PersistedMealShareToCircleButtonState
     extends ConsumerState<PersistedMealShareToCircleButton> {
   late bool _shared = widget.share?.isShared ?? false;
-  late String? _shareId =
-      (widget.share?.isShared ?? false) ? widget.share!.shareId : null;
+  late String? _shareId = (widget.share?.isShared ?? false)
+      ? widget.share!.shareId
+      : null;
   bool _pending = false;
 
   @override
@@ -48,7 +45,8 @@ class _PersistedMealShareToCircleButtonState
     // Re-seed from fresh server state when the day refetches — but never mid
     // mutation, so the optimistic flip isn't stomped by a stale frame. Compare
     // the FULL share state: the shareId can change under the same visibility.
-    final changed = widget.share?.visibility != old.share?.visibility ||
+    final changed =
+        widget.share?.visibility != old.share?.visibility ||
         widget.share?.shareId != old.share?.shareId;
     if (!_pending && changed) {
       _shared = widget.share?.isShared ?? false;
@@ -86,9 +84,11 @@ class _PersistedMealShareToCircleButtonState
       });
       showTopToast(
         context,
-        tr(next == 'circle'
-            ? 'groups.shareControl.errorShare'
-            : 'groups.shareControl.errorUnshare'),
+        tr(
+          next == 'circle'
+              ? 'groups.shareControl.errorShare'
+              : 'groups.shareControl.errorUnshare',
+        ),
         variant: TopToastVariant.error,
       );
     }
@@ -109,73 +109,24 @@ class _PersistedMealShareToCircleButtonState
     final label = _pending
         ? tr('groups.shareControl.sharing')
         : _shared
-            ? tr('groups.shareControl.shared')
-            : tr('groups.shareControl.share');
-    final Color fg = _shared ? NhamColors.accentDark : NhamColors.textMuted;
-
+        ? tr('groups.shareControl.shared')
+        : tr('groups.shareControl.share');
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         // "Share card" appears only once the meal is shared (web parity).
-        if (_shared && _shareId != null) ...[
-          PersistedMealShareChip(
+        if (_shared && _shareId != null)
+          MealActionIconButton(
             icon: LucideIcons.share2,
             label: tr('groups.shareControl.shareCard'),
-            fg: NhamColors.textMuted,
-            border: NhamColors.borderSoft,
-            fill: Colors.transparent,
-            semanticsLabel: tr('groups.shareControl.shareCard'),
             onTap: _shareCard,
           ),
-          const SizedBox(width: NhamSpacing.sp2),
-        ],
-        Semantics(
-          button: true,
-          toggled: _shared,
+        MealActionIconButton(
+          icon: _shared ? LucideIcons.check : LucideIcons.users,
           label: label,
-          child: GestureDetector(
-            onTap: _toggle,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: NhamSpacing.sp2_5,
-                vertical: NhamSpacing.sp1_5,
-              ),
-              decoration: BoxDecoration(
-                color: _shared ? NhamColors.accent10 : Colors.transparent,
-                borderRadius: BorderRadius.circular(NhamRadii.pill),
-                border: Border.all(
-                  color: _shared ? NhamColors.accent50 : NhamColors.borderSoft,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_pending)
-                    const SizedBox(
-                      width: 13,
-                      height: 13,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: NhamColors.accentDark,
-                      ),
-                    )
-                  else
-                    Icon(
-                      _shared ? LucideIcons.check : LucideIcons.users,
-                      size: 13,
-                      color: fg,
-                    ),
-                  const SizedBox(width: NhamSpacing.sp1_5),
-                  NhamText(
-                    label,
-                    variant: NhamTextVariant.chipText,
-                    style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
-                        .copyWith(color: fg),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          active: _shared,
+          pending: _pending,
+          onTap: _toggle,
         ),
       ],
     );

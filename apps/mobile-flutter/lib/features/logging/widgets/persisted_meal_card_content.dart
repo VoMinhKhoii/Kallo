@@ -6,7 +6,6 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/logging_models.dart';
 import '../logic/format.dart';
-import 'persisted_meal_actions.dart';
 import 'persisted_meal_chevron_toggle.dart';
 import 'persisted_meal_expanded_details.dart';
 
@@ -58,10 +57,7 @@ class PersistedMealCardContent extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: NhamSpacing.sp3), // gap-3
-                PersistedMealChevronToggle(
-                  expand: expand,
-                  onTap: onToggle,
-                ),
+                PersistedMealChevronToggle(expand: expand, onTap: onToggle),
               ],
             ),
           ),
@@ -110,8 +106,6 @@ class PersistedMealCardContent extends StatelessWidget {
               child: PersistedMealExpandedDetails(meal: meal),
             ),
           ),
-
-          PersistedMealActions(meal: meal),
         ],
       ),
     );

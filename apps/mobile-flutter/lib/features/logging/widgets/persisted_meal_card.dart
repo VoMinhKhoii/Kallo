@@ -8,6 +8,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/logging_models.dart';
+import 'persisted_meal_actions.dart';
 import 'persisted_meal_card_content.dart';
 import 'persisted_meal_time_divider.dart';
 
@@ -100,8 +101,9 @@ class _PersistedMealCardState extends State<PersistedMealCard>
   @override
   Widget build(BuildContext context) {
     final meal = widget.meal;
-    final time = DateFormat.jm(context.locale.toString())
-        .format(DateTime.parse(meal.loggedAt).toLocal());
+    final time = DateFormat.jm(
+      context.locale.toString(),
+    ).format(DateTime.parse(meal.loggedAt).toLocal());
 
     // Details height open/close: 200ms ease-in-out (persisted-meal-card.tsx:231).
     final curvedExpand = CurvedAnimation(
@@ -112,22 +114,24 @@ class _PersistedMealCardState extends State<PersistedMealCard>
     return Padding(
       padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Time as a centered divider on top of the card (── 1:04 AM ──) —
-            // no left timeline gutter, so the card gets the full row width.
-            PersistedMealTimeDivider(time: time),
-            const SizedBox(height: NhamSpacing.sp2), // mb-2
-            _maybeDismissible(
-              PersistedMealCardContent(
-                meal: meal,
-                expand: _expand,
-                curvedExpand: curvedExpand,
-                onToggle: _toggle,
-              ),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Time as a centered divider on top of the card (── 1:04 AM ──) —
+          // no left timeline gutter, so the card gets the full row width.
+          PersistedMealTimeDivider(time: time),
+          const SizedBox(height: NhamSpacing.sp2), // mb-2
+          _maybeDismissible(
+            PersistedMealCardContent(
+              meal: meal,
+              expand: _expand,
+              curvedExpand: curvedExpand,
+              onToggle: _toggle,
             ),
-          ],
-        ),
-      );
+          ),
+          const SizedBox(height: NhamSpacing.sp1_5),
+          PersistedMealActions(meal: meal, onRemove: widget.onRemove),
+        ],
+      ),
+    );
   }
 }
