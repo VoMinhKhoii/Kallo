@@ -1400,9 +1400,17 @@
       "bodyMetrics": "Goal & metrics",
       "regional": "Region & language",
       "cooking": "Cooking",
+      "sharing": "Sharing",
       "account": "Account",
       "feedback": "Feedback",
       "identity": "Profile"
+    },
+    "sharing": {
+      "title": "Sharing",
+      "description": "Choose what happens after you save a meal.",
+      "autoShareLabel": "Share new meals with your circle",
+      "autoShareHint": "When this is on, each new meal is shared with your circle automatically.",
+      "error": "Couldn't update your sharing preference. Please try again."
     },
     "feedback": {
       "title": "Send feedback",

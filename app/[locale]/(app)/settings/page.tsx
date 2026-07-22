@@ -6,10 +6,12 @@ import {
   FEEDBACK_ANCHOR,
   IDENTITY_ANCHOR,
   SettingsAnchorNav,
+  SHARING_ANCHOR,
 } from '@/components/settings/anchor-nav';
 import { FeedbackPanel } from '@/components/settings/feedback/feedback-panel';
 import { IdentityPanel } from '@/components/settings/identity/identity-panel';
 import { Profile } from '@/components/settings/profile';
+import { SharingPanel } from '@/components/settings/sharing/sharing-panel';
 import { Link } from '@/i18n/navigation';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { createClient } from '@/lib/supabase/server';
@@ -34,6 +36,7 @@ export default async function SettingsPage() {
   const tAccount = await getTranslations('settings.account');
   const tFeedback = await getTranslations('settings.feedback');
   const tIdentity = await getTranslations('settings.identity');
+  const tSharing = await getTranslations('settings.sharing');
 
   const [profile, supabase] = await Promise.all([
     getOnboardingProfile(),
@@ -93,6 +96,24 @@ export default async function SettingsPage() {
             </Link>
           </div>
         )}
+
+        {profile ? (
+          <section
+            id={SHARING_ANCHOR}
+            aria-label={tSharing('title')}
+            className="mt-8 scroll-mt-20"
+          >
+            <div className="mb-4">
+              <h2 className="font-normal font-serif text-nham-text text-xl tracking-tight">
+                {tSharing('title')}
+              </h2>
+              <p className="mt-1 text-[#7B6F62] text-[14px]">
+                {tSharing('description')}
+              </p>
+            </div>
+            <SharingPanel initialValue={profile.autoShareToCircle} />
+          </section>
+        ) : null}
 
         {/* Feedback section — kept above Account so it doesn't sit below the
             delete-account danger zone. */}

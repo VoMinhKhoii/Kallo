@@ -1400,9 +1400,17 @@
       "bodyMetrics": "Mục tiêu & chỉ số",
       "regional": "Khu vực & ngôn ngữ",
       "cooking": "Nấu nướng",
+      "sharing": "Chia sẻ",
       "account": "Tài khoản",
       "feedback": "Góp ý",
       "identity": "Hồ sơ"
+    },
+    "sharing": {
+      "title": "Chia sẻ",
+      "description": "Chọn điều sẽ xảy ra sau khi bạn lưu một bữa ăn.",
+      "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
+      "autoShareHint": "Khi bật, mỗi bữa ăn mới sẽ tự động được chia sẻ với vòng kết nối của bạn.",
+      "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
     },
     "feedback": {
       "title": "Gửi góp ý",
