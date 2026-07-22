@@ -20,14 +20,10 @@ import {
 import { requireAuthAndProfile } from '@/lib/auth';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
-import {
-  mealItems,
-  mealShares,
-  meals,
-  vietnameseFoodComposition,
-} from '@/lib/db/schema';
+import { mealItems, meals, vietnameseFoodComposition } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { scaleNutritionValues } from '@/lib/logging/manual-logging';
+import { insertDefaultCircleShare } from './meals/insert-default-share';
 
 // Only the columns the save needs — the composition table also carries the
 // 768-dim embedding (~15-20KB serialized) and search-text blobs, which
@@ -132,16 +128,15 @@ export async function saveManualMealAction(
       }))
     );
 
-    // Share to circle by default: every freshly-logged meal shares
-    // automatically (the AFTER INSERT trigger fans out the meal_shared circle
-    // event). The user can still opt this meal back out via the per-meal
-    // toggle. onConflictDoNothing preserves a prior explicit choice on the
+    // Share to circle by default unless the profile-level opt-out is set (the
+    // AFTER INSERT trigger fans out the meal_shared circle event). The user
+    // can still opt this meal back out via the per-meal toggle, while
+    // onConflictDoNothing preserves a prior explicit choice on the
     // re-confirm/edit path (existing meal id).
-    const [shareRow] = await tx
-      .insert(mealShares)
-      .values({ mealId: meal.id, actorId: user.id, visibility: 'circle' })
-      .onConflictDoNothing({ target: mealShares.mealId })
-      .returning({ id: mealShares.id, visibility: mealShares.visibility });
+    const shareRow = await insertDefaultCircleShare(tx, {
+      mealId: meal.id,
+      actorId: user.id,
+    });
     const share = shareRow
       ? { shareId: shareRow.id, visibility: shareRow.visibility }
       : null;

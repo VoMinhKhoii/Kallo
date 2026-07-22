@@ -1,0 +1,1 @@
+ALTER TABLE "user_profiles" ADD COLUMN "auto_share_to_circle" boolean DEFAULT true NOT NULL;

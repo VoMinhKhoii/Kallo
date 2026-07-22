@@ -20,7 +20,6 @@ import { requireAuthAndProfile } from '@/lib/auth';
 import { db } from '@/lib/db';
 import {
   mealItems,
-  mealShares,
   meals,
   pendingAnalyses,
   unmatchedIngredients,
@@ -30,6 +29,7 @@ import { goalEnumSchema } from '@/lib/onboarding/schemas';
 import type { Goal } from '@/lib/onboarding/types';
 import type { CheatSliderLevels } from '@/lib/types/cheat';
 import { confirmCheatMeal } from './confirm-cheat';
+import { insertDefaultCircleShare } from './insert-default-share';
 import type { ConfirmMealResponse, PersistedMealItemGroup } from './types';
 
 // ---------------------------------------------------------------------------
@@ -256,16 +256,16 @@ export async function confirmAndSaveMealAction(input: {
       })
       .returning({ id: meals.id });
 
-    // Share to circle by default: insert a 'circle' meal_shares row so every
-    // freshly-logged meal is shared automatically (the AFTER INSERT trigger
-    // fans out the meal_shared circle event). The user can still opt this meal
-    // back out via the per-meal toggle. onConflictDoNothing preserves a prior
-    // explicit choice on the re-confirm/edit path (existing meal id).
-    const [shareRow] = await tx
-      .insert(mealShares)
-      .values({ mealId: meal.id, actorId: user.id, visibility: 'circle' })
-      .onConflictDoNothing({ target: mealShares.mealId })
-      .returning({ id: mealShares.id, visibility: mealShares.visibility });
+    // Share to circle by default when the profile-level opt-out is disabled.
+    // The AFTER INSERT trigger fans out the meal_shared circle event. The user
+    // can still opt this meal back out via the per-meal toggle, while
+    // onConflictDoNothing preserves a prior explicit choice on the
+    // re-confirm/edit path (existing meal id).
+    const shareRow = await insertDefaultCircleShare(tx, {
+      mealId: meal.id,
+      actorId: user.id,
+      autoShare: profile.autoShareToCircle,
+    });
     const share = shareRow
       ? { shareId: shareRow.id, visibility: shareRow.visibility }
       : null;

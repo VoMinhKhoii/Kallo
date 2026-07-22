@@ -7,7 +7,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const { mockUser, mockTxInsert, mockDbSelect, mockTx } = vi.hoisted(() => {
   const mockTxInsert = vi.fn();
   const mockDbSelect = vi.fn();
-  const mockTx = { insert: mockTxInsert };
+  const mockTx = {
+    insert: mockTxInsert,
+    select: vi.fn(() => ({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
+      }),
+    })),
+  };
   return {
     mockUser: { id: 'user-123', email: 'test@example.com' },
     mockTxInsert,
@@ -39,6 +46,10 @@ vi.mock('@/lib/db/schema', () => ({
     mealId: 'mealShares.mealId',
     id: 'mealShares.id',
     visibility: 'mealShares.visibility',
+  },
+  userProfiles: {
+    userId: 'userProfiles.userId',
+    autoShareToCircle: 'userProfiles.autoShareToCircle',
   },
   vietnameseFoodComposition: { id: 'vfc.id' },
 }));
@@ -264,6 +275,27 @@ describe('saveManualMealAction', () => {
     expect(new Date(localMs).toISOString().slice(0, 10)).toBe(
       baseInput.loggedDate
     );
+  });
+
+  it('does not share a manual meal when the profile opts out', async () => {
+    mockCompositionRows([riceRow]);
+    mockInserts(UUID_MEAL);
+    mockTx.select.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([{ autoShareToCircle: false }]),
+      }),
+    });
+
+    const result = await saveManualMealAction({
+      ...baseInput,
+      items: [{ foodCompositionId: 'fct-rice', grams: 150 }],
+    });
+
+    const insertedIntoMealShares = mockTxInsert.mock.calls.some(
+      ([table]) => table?.id === 'mealShares.id'
+    );
+    expect(insertedIntoMealShares).toBe(false);
+    expect(result.meal.share).toBeNull();
   });
 
   it('rejects invalid input (no items, non-positive grams)', async () => {

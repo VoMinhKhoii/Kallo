@@ -22,7 +22,11 @@ const {
   const mockTxDelete = vi.fn();
   const mockTxInsert = vi.fn();
   const mockTxUpdate = vi.fn();
-  const mockTxSelect = vi.fn();
+  const mockTxSelect = vi.fn(() => ({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
+    }),
+  }));
   const mockDbSelect = vi.fn();
   const mockDbDelete = vi.fn();
   const mockTx = {
@@ -49,6 +53,7 @@ vi.mock('@/lib/auth', () => ({
     profile: {
       goal: 'cutting',
       aggression: '0.5',
+      autoShareToCircle: true,
     },
   }),
 }));
@@ -85,6 +90,10 @@ vi.mock('@/lib/db/schema', () => ({
   unmatchedIngredients: {
     queryText: 'unmatchedIngredients.queryText',
     mealId: 'unmatchedIngredients.mealId',
+  },
+  userProfiles: {
+    userId: 'userProfiles.userId',
+    autoShareToCircle: 'userProfiles.autoShareToCircle',
   },
 }));
 
@@ -277,6 +286,39 @@ describe('confirmAndSaveMealAction', () => {
     });
     // INSERT called three times: meals + mealShares + mealItems
     expect(mockTxInsert).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not share a confirmed meal when the profile opts out', async () => {
+    vi.mocked(requireAuthAndProfile).mockResolvedValueOnce({
+      user: mockUser,
+      profile: {
+        goal: 'cutting',
+        aggression: '0.5',
+        autoShareToCircle: false,
+      },
+    } as never);
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_1,
+            userId: mockUser.id,
+            rawInput: 'Phở bò',
+            pipelineResult: samplePipelineResult,
+            loggedAt: LOGGED_AT,
+          },
+        ]),
+      }),
+    });
+    mockTxInsert.mockImplementation(mockInsertRouting());
+
+    const result = await confirmAndSaveMealAction({ analysisId: UUID_1 });
+
+    const insertedIntoMealShares = mockTxInsert.mock.calls.some(
+      ([table]) => table?.id === 'mealShares.id'
+    );
+    expect(insertedIntoMealShares).toBe(false);
+    expect(result.meal.share).toBeNull();
   });
 
   it('persists the client-provided meal id when supplied', async () => {

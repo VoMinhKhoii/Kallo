@@ -14,7 +14,11 @@ const {
   mockDbUpdate,
   mockTx,
 } = vi.hoisted(() => {
-  const mockTxSelect = vi.fn();
+  const mockTxSelect = vi.fn(() => ({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
+    }),
+  }));
   const mockTxUpdate = vi.fn();
   const mockTxInsert = vi.fn();
   return {
@@ -70,6 +74,10 @@ vi.mock('@/lib/db/schema', () => ({
     status: 'friendships.status',
   },
   publicProfiles: { userId: 'publicProfiles.userId' },
+  userProfiles: {
+    userId: 'userProfiles.userId',
+    autoShareToCircle: 'userProfiles.autoShareToCircle',
+  },
 }));
 
 // ---------------------------------------------------------------------------

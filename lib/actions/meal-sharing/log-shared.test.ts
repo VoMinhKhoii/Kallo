@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockUser, mockCanViewShare, mockTxSelect, mockTxInsert, mockTx } =
   vi.hoisted(() => {
-    const mockTxSelect = vi.fn();
+    const mockTxSelect = vi.fn(() => ({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
+      }),
+    }));
     const mockTxInsert = vi.fn();
     return {
       mockUser: { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' },
