@@ -97,9 +97,9 @@
     "loading": "Loading nutrition overview…",
     "range": {
       "label": "Nutrition range",
+      "1d": "Today",
       "7d": "7 days",
-      "30d": "30 days",
-      "90d": "90 days"
+      "30d": "30 days"
     },
     "summary": {
       "label": "Nutrition summary",
@@ -132,7 +132,6 @@
       "noTarget": "No target"
     },
     "grid": {
-      "eyebrow": "Micronutrients",
       "title": "Micronutrient coverage",
       "description": "Use these cards to see which nutrients look adequate, which need more data, and which have source-specific caveats.",
       "vitamins": "Vitamins",
@@ -468,11 +467,14 @@
       "period90d": "the last 90 days"
     },
     "rhythm": {
-      "eyebrow": "The shape of your days",
       "calories": "kcal",
-      "avgPerLoggedDay": "avg per complete day",
+      "avgPerLoggedDay": "avg per logged day",
+      "avgPerCompleteDay": "avg per complete day",
+      "days": "days",
+      "noCompleteDays": "No fully-logged days yet — keep logging, or tap All.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Macro composition",
+      "macroTrendAria": "Calories from protein, carbs and fat over time",
       "consistency": {
         "steady": "steady",
         "rhythmic": "rhythmic",
@@ -520,8 +522,8 @@
       "eyebrow": "An editor's note"
     },
     "emptyV2": {
-      "title": "A blank page, for now",
-      "description": "Log a few meals and your weekly pattern will start to take shape here, gently.",
+      "title": "No meals logged yet",
+      "description": "Log a few meals to see your nutrition overview.",
       "logMeal": "Log a meal"
     }
   },

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
-import '../../dashboard/widgets/skeleton.dart';
+import '../../../shared/widgets/skeleton.dart';
 
 /// Flat feed-row loading state matching avatar, text, macros, and actions.
 class CircleWallSkeleton extends StatelessWidget {
@@ -15,7 +15,7 @@ class CircleWallSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       label: tr('groups.wall.loading'),
-      child: Shimmer(
+      child: SkeletonPulse(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -18,7 +18,7 @@ import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
 import 'compact_weight_log.dart';
 import '../../../theme/calm_tokens.dart';
-import 'skeleton.dart';
+import 'card_skeletons.dart';
 import 'weight_chart_canvas.dart';
 
 class WeightChart extends ConsumerWidget {
@@ -41,7 +41,7 @@ class WeightChart extends ConsumerWidget {
       child: async.when(
         // Skeleton of the card body (no spinner) — the card is already drawn,
         // so only its inner rows shimmer.
-        loading: () => Shimmer(
+        loading: () => SkeletonPulse(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: weightCardSkeletonChildren(),

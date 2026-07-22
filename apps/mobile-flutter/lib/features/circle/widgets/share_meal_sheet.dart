@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/skeleton.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -134,13 +135,9 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                   ],
                   const SizedBox(height: NhamSpacing.sp4),
                   friendsAsync.when(
-                    loading:
-                        () => Text(
-                          tr('groups.shareMeal.loadingFriends'),
-                          style: NhamTextStyles.sansRegular(
-                            fontSize: NhamFontSize.detail,
-                          ).copyWith(color: NhamColors.textMuted),
-                        ),
+                    loading: () => FriendListSkeleton(
+                      semanticsLabel: tr('groups.shareMeal.loadingFriends'),
+                    ),
                     error:
                         (_, __) => Text(
                           tr('groups.shareMeal.error'),

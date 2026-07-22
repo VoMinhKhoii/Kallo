@@ -6,7 +6,10 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getNutritionOverview } from '@/lib/nutrition/actions';
-import type { NutritionRangeInput } from '@/lib/nutrition/types';
+import type {
+  NutritionDayScope,
+  NutritionRangeInput,
+} from '@/lib/nutrition/types';
 import { NutritionSkeleton } from './nutrition-skeleton';
 import { DaySummary } from './sections/day-summary';
 import { NutrientGrid } from './sections/nutrient-grid';
@@ -24,11 +27,19 @@ export function NutritionShell() {
   const t = useTranslations('nutrition');
   const timezoneOffset = useMemo(() => getTimezoneOffset(), []);
   const [range, setRange] = useState<NutritionRangeInput>('auto');
+  const [dayScope, setDayScope] = useState<NutritionDayScope>('complete');
   const hasShownErrorToast = useRef(false);
 
   const overviewQuery = useQuery({
-    queryKey: ['nutrition', 'overview', range, timezoneOffset ?? 'utc'],
-    queryFn: () => getNutritionOverview({ range, timezoneOffset }),
+    queryKey: [
+      'nutrition',
+      'overview',
+      range,
+      dayScope,
+      timezoneOffset ?? 'utc',
+    ],
+    queryFn: () =>
+      getNutritionOverview({ range, timezoneOffset, days: dayScope }),
     retry: false,
     // 5 minutes — overview is computed from the user's logged meals which
     // change at most once per logging action; a longer staleTime avoids
@@ -58,15 +69,17 @@ export function NutritionShell() {
 
   if (overviewQuery.isError || !overviewQuery.data) {
     return (
-      <main className="flex-1 overflow-y-auto px-5 py-4 sm:px-8">
-        <InlineError
-          isRetrying={overviewQuery.isFetching}
-          message={overviewErrorMessage}
-          onRetry={() => {
-            void overviewQuery.refetch();
-          }}
-          retryLabel={overviewRetryLabel}
-        />
+      <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl">
+          <InlineError
+            isRetrying={overviewQuery.isFetching}
+            message={overviewErrorMessage}
+            onRetry={() => {
+              void overviewQuery.refetch();
+            }}
+            retryLabel={overviewRetryLabel}
+          />
+        </div>
       </main>
     );
   }
@@ -76,31 +89,47 @@ export function NutritionShell() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className="flex-1 overflow-y-auto px-4 py-4 pb-20 sm:px-6 lg:px-8">
-        <h1 className="sr-only">{t('title')}</h1>
-        <div className="mx-auto flex max-w-2xl flex-col gap-5">
-          <NutritionHeader
-            resolvedRange={overview.resolvedRange}
-            onRangeChange={setRange}
-            disabled={overviewQuery.isFetching}
-          />
+      <main className="flex min-h-0 flex-1 flex-col">
+        {/* Padding lives on the outer div so the inner max-w column aligns
+            with the content cards' column below. */}
+        <div className="shrink-0 px-4 pt-4 sm:px-6 lg:px-8">
+          <div className="mx-auto mb-3 w-full max-w-2xl">
+            <NutritionHeader
+              resolvedRange={overview.resolvedRange}
+              onRangeChange={setRange}
+              disabled={overviewQuery.isFetching}
+            />
+          </div>
+        </div>
 
-          {isEmpty ? (
-            <EmptyState />
-          ) : (
-            <div
-              aria-live="polite"
-              aria-busy={overviewQuery.isFetching}
-              className="flex flex-col gap-7"
-            >
-              <DaySummary macros={overview.macros} />
-              <NutrientGrid
-                micronutrients={overview.micronutrients}
-                moreNutrients={overview.moreNutrients}
-              />
-              <SourceAttribution />
-            </div>
-          )}
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-20 sm:px-6 lg:px-8">
+          <div className="mx-auto flex min-h-full max-w-2xl flex-col">
+            {isEmpty ? (
+              <div className="flex flex-1 items-center justify-center">
+                <EmptyState />
+              </div>
+            ) : (
+              <div
+                aria-live="polite"
+                aria-busy={overviewQuery.isFetching}
+                className="flex flex-col gap-7"
+              >
+                <DaySummary
+                  macros={overview.macros}
+                  daySeries={overview.daySeries}
+                  resolvedRange={overview.resolvedRange}
+                  calorieAverages={overview.calorieAverages}
+                  scope={dayScope}
+                  onScopeChange={setDayScope}
+                />
+                <NutrientGrid
+                  micronutrients={overview.micronutrients}
+                  moreNutrients={overview.moreNutrients}
+                />
+                <SourceAttribution />
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </MotionConfig>

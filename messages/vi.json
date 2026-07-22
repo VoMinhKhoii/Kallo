@@ -97,9 +97,9 @@
     "loading": "Đang tải tổng quan dinh dưỡng…",
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
+      "1d": "Hôm nay",
       "7d": "7 ngày",
-      "30d": "30 ngày",
-      "90d": "90 ngày"
+      "30d": "30 ngày"
     },
     "summary": {
       "label": "Tóm tắt dinh dưỡng",
@@ -132,7 +132,6 @@
       "noTarget": "Không có mục tiêu"
     },
     "grid": {
-      "eyebrow": "Vi chất",
       "title": "Độ phủ vi chất",
       "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn.",
       "vitamins": "Vitamin",
@@ -468,11 +467,14 @@
       "period90d": "90 ngày qua"
     },
     "rhythm": {
-      "eyebrow": "Nhịp ăn mỗi ngày",
       "calories": "kcal",
-      "avgPerLoggedDay": "trung bình mỗi ngày đủ bữa",
+      "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
+      "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
+      "days": "ngày",
+      "noCompleteDays": "Chưa có ngày nào ghi đủ — hãy tiếp tục ghi, hoặc chạm Tất cả.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Tỷ lệ macro",
+      "macroTrendAria": "Calo từ đạm, tinh bột và chất béo theo thời gian",
       "consistency": {
         "steady": "ổn định",
         "rhythmic": "đều đặn",
@@ -520,8 +522,8 @@
       "eyebrow": "Lời ngỏ của ban biên tập"
     },
     "emptyV2": {
-      "title": "Trang giấy còn để trống",
-      "description": "Ghi vài bữa ăn và xu hướng tuần của bạn sẽ dần hiện ra ở đây, nhẹ nhàng thôi.",
+      "title": "Chưa ghi bữa ăn nào",
+      "description": "Ghi vài bữa ăn để xem tổng quan dinh dưỡng của bạn.",
       "logMeal": "Ghi bữa ăn"
     }
   },

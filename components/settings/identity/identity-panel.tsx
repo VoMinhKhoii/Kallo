@@ -24,10 +24,10 @@ export function IdentityPanel() {
 
   if (isPending || !profile) {
     return (
-      <div className="animate-pulse rounded-2xl border border-nham-border/70 bg-white px-4 py-5">
+      <div className="rounded-2xl border border-nham-border/70 bg-white px-4 py-5 motion-safe:animate-pulse">
         <div className="flex items-center gap-4">
-          <span className="size-16 rounded-full bg-nham-border/40" />
-          <span className="h-4 w-40 rounded-full bg-nham-border/40" />
+          <span className="size-16 rounded-full bg-nham-track" />
+          <span className="h-4 w-40 rounded-full bg-nham-track" />
         </div>
       </div>
     );

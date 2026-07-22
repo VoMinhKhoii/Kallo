@@ -10,6 +10,7 @@ import '../../../theme/nham_theme.dart';
 import '../data/chat_group_providers.dart';
 import '../data/feed_providers.dart';
 import 'group_add_people.dart';
+import 'group_info_skeleton.dart';
 import 'group_members_list.dart';
 
 class GroupInfoSheet extends ConsumerStatefulWidget {
@@ -98,13 +99,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
     child: ref
         .watch(chatGroupDetailProvider(widget.groupId))
         .when(
-          loading:
-              () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: CircularProgressIndicator(),
-                ),
-              ),
+          loading: () => const GroupDetailSkeleton(),
           error:
               (_, __) => Center(
                 child: TextButton(

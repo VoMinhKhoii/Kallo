@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/chat_group.dart';
 import '../../../models/circle.dart';
+import '../../../shared/widgets/skeleton.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../data/chat_group_providers.dart';
@@ -64,7 +65,9 @@ class _GroupAddPeopleState extends ConsumerState<GroupAddPeople> {
     return ref
         .watch(circleFriendsProvider)
         .when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => FriendListSkeleton(
+            semanticsLabel: tr('common.loading'),
+          ),
           error:
               (_, __) => Center(
                 child: Column(

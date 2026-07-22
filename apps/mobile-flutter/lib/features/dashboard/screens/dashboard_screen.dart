@@ -20,6 +20,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/dashboard.dart';
 import '../../../shared/widgets/widgets.dart';
+import '../widgets/card_skeletons.dart';
 import '../../../data/session_provider.dart';
 import '../../../shell/app_header.dart';
 import '../../../theme/nham_theme.dart';
@@ -30,7 +31,6 @@ import '../widgets/adherence_heatmap.dart';
 import '../../../theme/calm_tokens.dart';
 import '../widgets/floating_meal_trigger.dart';
 import '../widgets/section_header.dart';
-import '../widgets/skeleton.dart';
 import '../widgets/today_section.dart';
 import '../widgets/week_strip.dart';
 import '../widgets/weight_chart.dart';
@@ -79,8 +79,9 @@ class DashboardScreen extends ConsumerWidget {
           Expanded(
             child: bundle.when(
               // Skeleton of the real layout (not a centered spinner) so the
-              // load previews its own shape.
-              loading: () => const _DashboardSkeleton(),
+              // load previews its own shape. One outer pulse so the nested
+              // per-card pulses collapse in phase (see SkeletonPulse).
+              loading: () => const SkeletonPulse(child: _DashboardSkeleton()),
               error: (_, __) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(NhamSpacing.sp6),
@@ -437,8 +438,8 @@ class _DashboardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    // Each card / header shimmers its own bars internally (so the white card
-    // surfaces stay white); only the bare week-strip pills need a wrapper.
+    // The pulse comes from the caller (one outer SkeletonPulse); every card /
+    // header / bar below inherits it and fades in phase.
     return ListView(
       padding: EdgeInsets.only(
         left: NhamSpacing.sp3,
@@ -448,18 +449,16 @@ class _DashboardSkeleton extends StatelessWidget {
       ),
       children: const [
         // Week-strip row — four day pills.
-        Shimmer(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: NhamSpacing.sp2),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                SkeletonBar(width: 64, height: 76, radius: 16),
-                SkeletonBar(width: 64, height: 76, radius: 16),
-                SkeletonBar(width: 64, height: 76, radius: 16),
-                SkeletonBar(width: 64, height: 76, radius: 16),
-              ],
-            ),
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: NhamSpacing.sp2),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SkeletonBar(width: 64, height: 76, radius: 16),
+              SkeletonBar(width: 64, height: 76, radius: 16),
+              SkeletonBar(width: 64, height: 76, radius: 16),
+              SkeletonBar(width: 64, height: 76, radius: 16),
+            ],
           ),
         ),
         SizedBox(height: NhamSpacing.sp3),

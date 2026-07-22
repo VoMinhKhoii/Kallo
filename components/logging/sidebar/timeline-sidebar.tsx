@@ -95,7 +95,7 @@ export function TimelineSidebar({
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-12 animate-pulse rounded-lg bg-nham-hover/40"
+              className="h-12 rounded-lg bg-nham-track motion-safe:animate-pulse"
               aria-busy="true"
             />
           ))}

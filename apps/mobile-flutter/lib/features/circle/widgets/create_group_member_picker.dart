@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/circle.dart';
+import '../../../shared/widgets/skeleton.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
 import 'create_group_empty.dart';
@@ -28,8 +29,12 @@ class CreateGroupMemberPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => friends.when(
-    loading:
-        () => const Flexible(child: Center(child: CircularProgressIndicator())),
+    loading: () => Flexible(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: FriendListSkeleton(semanticsLabel: tr('common.loading')),
+      ),
+    ),
     error:
         (_, __) => Flexible(
           child: Center(

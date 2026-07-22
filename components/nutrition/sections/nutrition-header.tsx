@@ -7,11 +7,7 @@ import type {
 } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
 
-const RANGES = [
-  '7d',
-  '30d',
-  '90d',
-] as const satisfies readonly NutritionRange[];
+const RANGES = ['1d', '7d', '30d'] as const satisfies readonly NutritionRange[];
 
 interface NutritionHeaderProps {
   resolvedRange: NutritionRange;
@@ -33,9 +29,9 @@ export function NutritionHeader({
 
   return (
     <header className="flex items-center justify-between gap-4">
-      <span className="font-medium text-[11px] text-nham-text-muted uppercase tracking-[0.08em]">
-        {t('grid.eyebrow')}
-      </span>
+      <h1 className="font-bold font-sans-display text-[18px] text-nham-text tracking-[-0.01em]">
+        {t('title')}
+      </h1>
       <div
         role="group"
         aria-label={t('range.label')}
@@ -53,7 +49,7 @@ export function NutritionHeader({
               className={cn(
                 'touch-manipulation rounded-full px-3 py-1.5 font-medium text-[12px] tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface disabled:opacity-60',
                 active
-                  ? 'bg-nham-text text-nham-surface'
+                  ? 'bg-card text-nham-text shadow-sm'
                   : 'text-nham-text-muted hover:text-nham-text'
               )}
             >

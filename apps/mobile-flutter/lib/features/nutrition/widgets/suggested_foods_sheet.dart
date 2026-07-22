@@ -11,6 +11,7 @@ import '../../../theme/nham_theme.dart';
 import '../logic/status.dart';
 import '../providers/candidates_response.dart';
 import '../providers/food_candidates_provider.dart';
+import 'suggested_foods_skeleton.dart';
 
 /// The under-target nutrients from an overview, most in-need first — the input
 /// to the suggested-foods CTA (confidence ≥ 40 · < 90% of target).
@@ -154,8 +155,7 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
         ),
         const SizedBox(height: NhamSpacing.sp2_5),
         async.when(
-          loading: () => Text(tr('nutrition.candidates.loading'),
-              style: dashMeta(color: kInkMuted)),
+          loading: () => const CandidatesSkeleton(),
           error: (_, __) => Text(tr('nutrition.candidates.error'),
               style: dashMeta(color: kInkMuted)),
           data: (response) => _foods(response, vi),

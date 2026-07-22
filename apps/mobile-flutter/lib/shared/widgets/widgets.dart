@@ -8,4 +8,5 @@ export 'decimal_input.dart';
 export 'nham_primitives.dart';
 export 'nham_text.dart';
 export 'section_eyebrow.dart';
+export 'skeleton.dart';
 export 'target_progress_bar.dart';
