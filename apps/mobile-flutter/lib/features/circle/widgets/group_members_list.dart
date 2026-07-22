@@ -4,10 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/chat_group.dart';
+import '../../../shared/widgets/profile_avatar.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../data/chat_group_providers.dart';
-import 'profile_avatar.dart';
 
 class GroupMembersList extends ConsumerWidget {
   const GroupMembersList({required this.group, super.key});
@@ -23,13 +23,7 @@ class GroupMembersList extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 7),
         child: Row(
           children: [
-            ProfileAvatar(
-              label: member.label,
-              handle: member.handle,
-              avatarSeed: member.avatarSeed,
-              avatarUrl: member.avatarUrl,
-              size: 32,
-            ),
+            ProfileAvatarDisc(profile: member, size: 32),
             const SizedBox(width: 10),
             Expanded(
               child: Text(

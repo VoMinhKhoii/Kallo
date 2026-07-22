@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/features/circle/circle_deep_links.dart';
-import 'package:nham_mobile/features/circle/widgets/profile_avatar.dart';
+import 'package:nham_mobile/shared/widgets/profile_avatar.dart';
 import 'package:nham_mobile/models/circle.dart';
 
 void main() {

@@ -2,12 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/circle.dart';
+import '../../../shared/widgets/profile_avatar.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/feed_mutations.dart';
 import '../data/feed_time.dart';
-import 'profile_avatar.dart';
 
 class ShareReplies extends ConsumerStatefulWidget {
   const ShareReplies({
@@ -163,13 +163,7 @@ class _ReplyRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ProfileAvatar(
-          label: name,
-          handle: reply.author.handle,
-          avatarSeed: reply.author.avatarSeed,
-          avatarUrl: reply.author.avatarUrl,
-          size: 28,
-        ),
+        ProfileAvatarDisc(profile: reply.author, size: 28),
         const SizedBox(width: NhamSpacing.sp2),
         Expanded(
           child: Column(
