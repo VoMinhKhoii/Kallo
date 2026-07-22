@@ -34,9 +34,8 @@ class PersistedMealShareToCircleButton extends ConsumerStatefulWidget {
 class _PersistedMealShareToCircleButtonState
     extends ConsumerState<PersistedMealShareToCircleButton> {
   late bool _shared = widget.share?.isShared ?? false;
-  late String? _shareId = (widget.share?.isShared ?? false)
-      ? widget.share!.shareId
-      : null;
+  late String? _shareId =
+      (widget.share?.isShared ?? false) ? widget.share!.shareId : null;
   bool _pending = false;
 
   @override
@@ -106,11 +105,12 @@ class _PersistedMealShareToCircleButtonState
 
   @override
   Widget build(BuildContext context) {
-    final label = _pending
-        ? tr('groups.shareControl.sharing')
-        : _shared
-        ? tr('groups.shareControl.shared')
-        : tr('groups.shareControl.share');
+    final label =
+        _pending
+            ? tr('groups.shareControl.sharing')
+            : _shared
+            ? tr('groups.shareControl.shared')
+            : tr('groups.shareControl.share');
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -126,6 +126,7 @@ class _PersistedMealShareToCircleButtonState
           label: label,
           active: _shared,
           pending: _pending,
+          toggled: _shared,
           onTap: _toggle,
         ),
       ],
