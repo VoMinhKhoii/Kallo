@@ -4,11 +4,11 @@ import { ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { MealCardActionBar } from '@/components/logging/feed/action-bar/meal-card-action-bar';
 import {
   formatCaloriesOrNA,
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
-import { CardActionRow } from './card-action-row';
 import { MealAmountEditor } from './meal-amount-editor';
 import { MealDetails } from './meal-details';
 // The NL-refine is submitted as `${rawInput} (${correction})` — the joining
@@ -159,26 +159,6 @@ export function PrecisePersistedMealCard({
           )}
         </AnimatePresence>
 
-        {/* Post-save actions — the correction row, never at the text input */}
-        {!isEditing && (
-          <CardActionRow
-            meal={meal}
-            canEdit={canEdit}
-            canShare={canShare}
-            isRefineOpen={isRefineOpen}
-            onLogAgain={onLogAgain}
-            onRefineToggle={
-              refine ? () => setIsRefineOpen((prev) => !prev) : undefined
-            }
-            onEditAmounts={() => {
-              setIsRefineOpen(false);
-              setIsCollapsed(true);
-              setIsEditing(true);
-            }}
-            onDelete={onDelete}
-          />
-        )}
-
         {/* The refine field opened from the action row — one interaction from
             the collapsed card. Also available inside the amount editor. */}
         {!isEditing && isRefineOpen && refine && (
@@ -194,6 +174,26 @@ export function PrecisePersistedMealCard({
           </div>
         )}
       </div>
+      {!isEditing && (
+        <div className="mt-1.5 px-1">
+          <MealCardActionBar
+            meal={meal}
+            canEdit={canEdit}
+            canShare={canShare}
+            isRefineOpen={isRefineOpen}
+            onLogAgain={onLogAgain}
+            onRefineToggle={
+              refine ? () => setIsRefineOpen((prev) => !prev) : undefined
+            }
+            onEditAmounts={() => {
+              setIsRefineOpen(false);
+              setIsCollapsed(true);
+              setIsEditing(true);
+            }}
+            onDelete={onDelete}
+          />
+        </div>
+      )}
     </motion.article>
   );
 }

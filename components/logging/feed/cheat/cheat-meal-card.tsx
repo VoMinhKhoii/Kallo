@@ -1,9 +1,10 @@
 'use client';
 
-import { ChevronDown, PartyPopper } from 'lucide-react';
+import { ChevronDown, PartyPopper, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { ActionIconButton } from '@/components/logging/feed/action-bar/action-icon-button';
 import {
   formatCaloriesOrNA,
   formatMacroOrNA,
@@ -204,19 +205,17 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {onDelete && (
-          <div className="mt-3 flex justify-start border-nham-border/40 border-t border-dashed pt-2.5">
-            <button
-              type="button"
-              onClick={onDelete}
-              className="rounded-full px-2.5 py-1 font-medium font-sans-display text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
-            >
-              {t('remove')}
-            </button>
-          </div>
-        )}
       </div>
+      {onDelete && (
+        <div className="mt-1.5 px-1">
+          <ActionIconButton
+            icon={Trash2}
+            label={t('remove')}
+            onClick={onDelete}
+            danger
+          />
+        </div>
+      )}
     </motion.article>
   );
 }
