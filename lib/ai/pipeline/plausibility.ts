@@ -34,6 +34,14 @@ export interface PlausibilityInput {
   hasNutrition: boolean;
   /** Matched DB row's per-100g energy, when the ingredient matched a candidate. */
   caloriesPer100g: number | null;
+  /**
+   * Carbohydrate density in g/100g when derivable, else null.
+   * Matched: DB row per-100g carbs. Unmatched: Call 2 absolute carb mid
+   * scaled by grams ((mid / grams) * 100). `undefined` (field not provided)
+   * skips the carb-staple check entirely — backward-compatible with callers
+   * that predate it.
+   */
+  carbsPer100g?: number | null;
   /** Ingredient name (rawName or canonicalName) for name-class heuristics. */
   name: string;
   /**
@@ -107,6 +115,42 @@ const CONCENTRATED_PATTERNS: RegExp[] = [
   /\bmsg\b/i,
 ];
 
+/**
+ * Carb-staple names: rice/noodle/bread bases whose correct carb density is
+ * high (tens of g/100g). A near-zero carb emission on one of these is the
+ * bánh-ướt-chả-bò bug class — the LLM assigned P/F but C≈0 to an unmatched
+ * starch and the meal persisted at 0g carbs. Matching here (and NOT the
+ * exempt list) makes the carb-staple floor check bite.
+ */
+const CARB_STAPLE_PATTERNS: RegExp[] = [
+  /cơm/i, /xôi/i, /gạo/i, /\brice\b/i,
+  /bánh\s*(ướt|cuốn|phở|canh|hỏi|đa|tráng)/i,
+  /phở/i, /bún/i, /miến/i, /hủ\s*tiếu/i, /hu\s*tieu/i, /mì/i, /nui/i,
+  /\bnoodles?\b/i, /\bvermicelli\b/i, /\bpasta\b/i, /\bspaghetti\b/i,
+  /bánh\s*m[ìỳ]/i, /\bbread\b/i, /\bbaguette\b/i,
+];
+/**
+ * Names that match a CARB_STAPLE_PATTERN by substring but are legitimately
+ * low/near-zero carb, so they must NOT trip the floor: broths carry dish
+ * names like "nước dùng phở"; konjac/shirataki are real near-zero-carb
+ * noodles; mì chính is MSG; mì căn is seitan; giấm gạo / rượu gạo are
+ * vinegar / rice wine, not a starch base.
+ */
+const CARB_STAPLE_EXEMPT_PATTERNS: RegExp[] = [
+  /konjac/i, /shirataki/i,
+  /nướ?c\s*(dùng|lèo)/i, /\bbroth\b/i, /\bstock\b/i, /\bsoup\b/i,
+  /mì\s*chính/i, /mì\s*căn/i,
+  /giấm/i, /\bvinegar\b/i, /rượu/i, /\bwine\b/i,
+];
+/**
+ * Carb-density floor for staples, on the MID bound. Density is portion-
+ * invariant, so this is robust across grams. 5 g/100g leaves headroom under
+ * thin cháo (~8-13 g/100g — cháo is deliberately NOT in the staple list)
+ * while catching C≈0 emissions outright; named low-carb substitutes
+ * (konjac/shirataki) are exempted by name, not by threshold.
+ */
+export const STAPLE_MIN_CARBS_PER_100G = 5;
+
 const SMALL_PORTION_MAX_GRAMS = 5;
 /**
  * A resolved portion is "near-zero calories" when its total energy is below
@@ -162,6 +206,28 @@ export function classifyIngredientPlausibility(
   // Non-caloric names already returned above, so this only bites real foods.
   if (input.emittedCaloricMacrosMissing) {
     return 'unresolved_estimate';
+  }
+
+  // Carb-staple floor (bánh-ướt-chả-bò bug class): a rice/noodle/bread base
+  // must carry real carbs. `undefined` skips the check (backward-compat). When
+  // provided, MATCHED carbs come from the DB row and UNMATCHED carbs are the
+  // scaled Call 2 mid; either way a density below the floor is implausible for
+  // a staple → route to clarify. Non-null-vs-null semantics: a known low
+  // density trips outright; a null density (carb triple omitted for an
+  // unmatched staple) only trips when calories are ALSO absent, so a matched
+  // staple with a null DB carb but a real energy density still passes.
+  if (
+    input.carbsPer100g !== undefined &&
+    matchesAny(name, CARB_STAPLE_PATTERNS) &&
+    !matchesAny(name, CARB_STAPLE_EXEMPT_PATTERNS)
+  ) {
+    const carbs = input.carbsPer100g;
+    if (carbs != null && carbs < STAPLE_MIN_CARBS_PER_100G) {
+      return 'unresolved_estimate';
+    }
+    if (carbs == null && caloriesPer100g == null) {
+      return 'unresolved_estimate';
+    }
   }
 
   // Small concentrated portions (spices/oils/sweeteners/sauces): a small gram

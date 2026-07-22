@@ -863,6 +863,29 @@
         "source": "knowledge-estimate",
         "setAt": "2026-07-18"
       }
+    },
+    {
+      "id": "gvn-banh-uot-cha-bo-regression",
+      "input": "1 dĩa bánh ướt chả bò + 1 trứng nhỏ",
+      "tags": ["vi", "golden", "staple", "regression-bug"],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "staples": ["bánh ướt"],
+        "kcalRange": [380, 750],
+        "macroRanges": {
+          "proteinG": [15, 40],
+          "carbohydrateG": [30, 75],
+          "fatG": [12, 40]
+        },
+        "latencyBudgetMs": 15000,
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "staging-confirmed",
+        "setAt": "2026-07-22",
+        "note": "0g-carb silent persist bug (tt 867463e3): bánh ướt was unmatched and Call 2 emitted C:0, persisting P:15/C:0/F:12. The carb band is the real guard — noSilentZeros only checks grams<=1/kcal=0 and did NOT catch this. Bands: sheets 150-300g (C 36-72 at 24g/100g) + chả bò 80-120g + 1 small egg (~60 kcal); the carb FLOOR (30) is the regression guard, the ceiling is portion-variance headroom. Requires the usda_20134_cooked row (add_banh_uot_row migration) for the staples match."
+      }
     }
   ]
 }

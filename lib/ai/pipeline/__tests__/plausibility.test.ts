@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { classifyIngredientPlausibility } from '../plausibility';
+import {
+  classifyIngredientPlausibility,
+  STAPLE_MIN_CARBS_PER_100G,
+} from '../plausibility';
 
 describe('classifyIngredientPlausibility — unresolved', () => {
   it('flags a missing portion as unresolved_estimate', () => {
@@ -191,5 +194,198 @@ describe('classifyIngredientPlausibility — ok', () => {
         name: 'ức gà',
       })
     ).toBe('ok');
+  });
+});
+
+describe('classifyIngredientPlausibility — carb-staple floor', () => {
+  it('flags the bánh ướt bug (unmatched staple, C≈0) as unresolved_estimate', () => {
+    expect(
+      classifyIngredientPlausibility({
+        grams: 250,
+        hasNutrition: true,
+        caloriesPer100g: null,
+        carbsPer100g: 0,
+        name: 'bánh ướt',
+      })
+    ).toBe('unresolved_estimate');
+  });
+
+  it('flags a C≈0 emission across the staple class', () => {
+    for (const name of [
+      'bánh cuốn',
+      'bánh phở',
+      'bún',
+      'hủ tiếu',
+      'xôi',
+      'cơm',
+      'rice noodles',
+      'bread',
+    ]) {
+      expect(
+        classifyIngredientPlausibility({
+          grams: 250,
+          hasNutrition: true,
+          caloriesPer100g: null,
+          carbsPer100g: 0,
+          name,
+        })
+      ).toBe('unresolved_estimate');
+    }
+  });
+
+  it('flags an unmatched staple with the carb triple omitted (null carbs, null calories)', () => {
+    expect(
+      classifyIngredientPlausibility({
+        grams: 250,
+        hasNutrition: true,
+        caloriesPer100g: null,
+        carbsPer100g: null,
+        name: 'bún',
+      })
+    ).toBe('unresolved_estimate');
+  });
+
+  it('flags a matched staple onto a ~0-carb row (below the floor)', () => {
+    expect(
+      classifyIngredientPlausibility({
+        grams: 250,
+        hasNutrition: true,
+        caloriesPer100g: 120,
+        carbsPer100g: 1,
+        name: 'bánh phở',
+      })
+    ).toBe('unresolved_estimate');
+  });
+
+  it('does NOT flag a healthy matched staple → ok', () => {
+    expect(
+      classifyIngredientPlausibility({
+        grams: 250,
+        hasNutrition: true,
+        caloriesPer100g: 108,
+        carbsPer100g: 24.9,
+        name: 'bánh ướt',
+      })
+    ).toBe('ok');
+  });
+
+  it('does NOT flag a healthy unmatched staple → ok', () => {
+    expect(
+      classifyIngredientPlausibility({
+        grams: 250,
+        hasNutrition: true,
+        caloriesPer100g: null,
+        carbsPer100g: 25,
+        name: 'bánh ướt',
+      })
+    ).toBe('ok');
+  });
+
+  it('exempts named low-carb noodle substitutes → ok', () => {
+    for (const name of ['bún konjac', 'shirataki noodles']) {
+      expect(
+        classifyIngredientPlausibility({
+          grams: 250,
+          hasNutrition: true,
+          caloriesPer100g: null,
+          carbsPer100g: 2,
+          name,
+        })
+      ).toBe('ok');
+    }
+  });
+
+  it('exempts broths that carry a staple dish name → ok', () => {
+    for (const name of ['nước dùng phở', 'nước lèo hủ tiếu']) {
+      expect(
+        classifyIngredientPlausibility({
+          grams: 250,
+          hasNutrition: true,
+          caloriesPer100g: null,
+          carbsPer100g: 1,
+          name,
+        })
+      ).toBe('ok');
+    }
+  });
+
+  it('does NOT flag mì chính (MSG) via the staple floor', () => {
+    // "mì" substring-matches the staple list but "mì chính" is exempt, so the
+    // carb floor never trips. The concentrated-class MSG patterns key on "bột
+    // ngọt"/"msg" (not "mì chính"), so this lands on 'ok' here — the point is
+    // only that it is NOT unresolved_estimate.
+    expect(
+      classifyIngredientPlausibility({
+        grams: 3,
+        hasNutrition: true,
+        caloriesPer100g: null,
+        carbsPer100g: 0,
+        name: 'mì chính',
+      })
+    ).not.toBe('unresolved_estimate');
+  });
+
+  it('exempts giấm gạo (vinegar) → ok', () => {
+    expect(
+      classifyIngredientPlausibility({
+        grams: 250,
+        hasNutrition: true,
+        caloriesPer100g: null,
+        carbsPer100g: 0.4,
+        name: 'giấm gạo',
+      })
+    ).toBe('ok');
+  });
+
+  it('does NOT flag a non-staple zero-carb food → ok', () => {
+    expect(
+      classifyIngredientPlausibility({
+        grams: 250,
+        hasNutrition: true,
+        caloriesPer100g: 165,
+        carbsPer100g: 0,
+        name: 'ức gà',
+      })
+    ).toBe('ok');
+  });
+
+  it('does NOT flag a matched staple with NULL DB carbs but real calories → ok', () => {
+    // Documented gap: all current staple rows carry carbs, so a null DB carb
+    // with a real energy density passes rather than clarifies.
+    expect(
+      classifyIngredientPlausibility({
+        grams: 250,
+        hasNutrition: true,
+        caloriesPer100g: 110,
+        carbsPer100g: null,
+        name: 'bún',
+      })
+    ).toBe('ok');
+  });
+
+  it('is backward-compatible when carbsPer100g is omitted entirely → ok', () => {
+    expect(
+      classifyIngredientPlausibility({
+        grams: 250,
+        hasNutrition: true,
+        caloriesPer100g: null,
+        name: 'bánh ướt',
+      })
+    ).toBe('ok');
+  });
+
+  it('lets genuinely_noncaloric win precedence over the staple floor', () => {
+    // Threshold sanity: 0 is below STAPLE_MIN_CARBS_PER_100G, but nước lọc is
+    // non-caloric and returns before the staple check runs.
+    expect(STAPLE_MIN_CARBS_PER_100G).toBeGreaterThan(0);
+    expect(
+      classifyIngredientPlausibility({
+        grams: 300,
+        hasNutrition: true,
+        caloriesPer100g: 0,
+        carbsPer100g: 0,
+        name: 'nước lọc',
+      })
+    ).toBe('genuinely_noncaloric');
   });
 });
