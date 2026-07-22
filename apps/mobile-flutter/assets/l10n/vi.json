@@ -1397,6 +1397,11 @@
     "saved": "Đã lưu thay đổi",
     "language": "Ngôn ngữ",
     "languageHint": "Thay đổi ngôn ngữ ứng dụng",
+    "sharing": {
+      "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
+      "autoShareHint": "Khi bật, mỗi bữa ăn mới sẽ tự động được chia sẻ với vòng kết nối của bạn.",
+      "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
+    },
     "sidebar": {
       "title": "Cài đặt",
       "profile": "Hồ sơ",

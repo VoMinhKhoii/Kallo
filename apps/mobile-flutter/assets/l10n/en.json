@@ -1438,6 +1438,11 @@
     "saved": "Changes saved",
     "language": "Language",
     "languageHint": "Change the app language",
+    "sharing": {
+      "autoShareLabel": "Share new meals with your circle",
+      "autoShareHint": "When this is on, each new meal is shared with your circle automatically.",
+      "error": "Couldn't update your sharing preference. Please try again."
+    },
     "sidebar": {
       "title": "Settings",
       "profile": "Profile",
