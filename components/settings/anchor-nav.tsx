@@ -1,11 +1,12 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { SETTINGS_SECTION_ANCHOR } from './profile';
-
-const IDENTITY_ANCHOR = 'settings-identity';
-const ACCOUNT_ANCHOR = 'settings-account';
-const FEEDBACK_ANCHOR = 'settings-feedback';
+import {
+  ACCOUNT_ANCHOR,
+  FEEDBACK_ANCHOR,
+  PREFERENCES_ANCHOR,
+  PROFILE_ANCHOR,
+} from './anchors';
 
 interface AnchorItem {
   id: string;
@@ -13,22 +14,31 @@ interface AnchorItem {
 }
 
 const ANCHORS: readonly AnchorItem[] = [
-  { id: IDENTITY_ANCHOR, labelKey: 'identity' },
-  { id: SETTINGS_SECTION_ANCHOR['body-metrics'], labelKey: 'bodyMetrics' },
-  { id: SETTINGS_SECTION_ANCHOR.regional, labelKey: 'regional' },
-  { id: SETTINGS_SECTION_ANCHOR.cooking, labelKey: 'cooking' },
+  { id: PROFILE_ANCHOR, labelKey: 'profile' },
+  { id: PREFERENCES_ANCHOR, labelKey: 'preferences' },
   { id: FEEDBACK_ANCHOR, labelKey: 'feedback' },
   { id: ACCOUNT_ANCHOR, labelKey: 'account' },
 ] as const;
+
+interface SettingsAnchorNavProps {
+  hasProfile?: boolean;
+}
 
 /**
  * Settings anchor nav — replaces the old routed master-detail sidebar. Jumps
  * to a stacked section on the single scrollable settings page. On large
  * screens it sits beside the content; on small screens it's a horizontal
- * scroller above the sections.
+ * scroller above the sections. Profile-less users don't get a Preferences
+ * section, so its entry is filtered out for them.
  */
-export function SettingsAnchorNav() {
+export function SettingsAnchorNav({
+  hasProfile = true,
+}: SettingsAnchorNavProps) {
   const t = useTranslations('settings.anchorNav');
+
+  const items = hasProfile
+    ? ANCHORS
+    : ANCHORS.filter((item) => item.id !== PREFERENCES_ANCHOR);
 
   const handleJump = (id: string) => (event: React.MouseEvent) => {
     event.preventDefault();
@@ -46,7 +56,7 @@ export function SettingsAnchorNav() {
         {t('label')}
       </p>
       <ul className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
-        {ANCHORS.map((item) => (
+        {items.map((item) => (
           <li key={item.id} className="shrink-0">
             <a
               href={`#${item.id}`}
@@ -62,4 +72,8 @@ export function SettingsAnchorNav() {
   );
 }
 
-export { ACCOUNT_ANCHOR, FEEDBACK_ANCHOR, IDENTITY_ANCHOR };
+// Temporary: page.tsx still anchors the pre-revamp identity section on this id.
+// Phase B removes that usage; kept here only so the repo typechecks after Phase A.
+export const IDENTITY_ANCHOR = 'settings-identity';
+
+export { ACCOUNT_ANCHOR, FEEDBACK_ANCHOR };

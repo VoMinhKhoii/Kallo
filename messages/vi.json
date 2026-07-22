@@ -1378,7 +1378,9 @@
   "settings": {
     "title": "Cài đặt",
     "profile": "Hồ sơ",
+    "profileDescription": "Cách bạn xuất hiện và cơ thể bạn cần gì.",
     "preferences": "Tùy chỉnh",
+    "preferencesDescription": "Ngôn ngữ, khu vực và cách bạn nấu ăn.",
     "bodyMetrics": "Chỉ số cơ thể",
     "goals": "Mục tiêu",
     "cooking": "Thói quen nấu ăn",
@@ -1397,12 +1399,10 @@
     "description": "Mục tiêu, cách nấu, và tài khoản của bạn — tất cả ở một nơi.",
     "anchorNav": {
       "label": "Trong trang này",
-      "bodyMetrics": "Mục tiêu & chỉ số",
-      "regional": "Khu vực & ngôn ngữ",
-      "cooking": "Nấu nướng",
-      "account": "Tài khoản",
+      "profile": "Hồ sơ",
+      "preferences": "Tùy chỉnh",
       "feedback": "Góp ý",
-      "identity": "Hồ sơ"
+      "account": "Tài khoản"
     },
     "feedback": {
       "title": "Gửi góp ý",

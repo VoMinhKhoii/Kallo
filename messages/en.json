@@ -1378,7 +1378,9 @@
   "settings": {
     "title": "Settings",
     "profile": "Profile",
+    "profileDescription": "How you appear, and what your body needs.",
     "preferences": "Preferences",
+    "preferencesDescription": "Language, region, and how you cook.",
     "bodyMetrics": "Body Metrics",
     "goals": "Goals & Targets",
     "cooking": "Cooking Habits",
@@ -1397,12 +1399,10 @@
     "description": "Your goal, your cooking, and your account — all in one place.",
     "anchorNav": {
       "label": "On this page",
-      "bodyMetrics": "Goal & metrics",
-      "regional": "Region & language",
-      "cooking": "Cooking",
-      "account": "Account",
+      "profile": "Profile",
+      "preferences": "Preferences",
       "feedback": "Feedback",
-      "identity": "Profile"
+      "account": "Account"
     },
     "feedback": {
       "title": "Send feedback",
