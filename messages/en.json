@@ -1382,14 +1382,10 @@
     "preferences": "Preferences",
     "preferencesDescription": "Language, region, and how you cook.",
     "bodyMetrics": "Body Metrics",
-    "goals": "Goals & Targets",
-    "cooking": "Cooking Habits",
-    "regional": "Regional",
     "save": "Save changes",
     "saveWithTarget": "Save — new target {target} kcal",
     "saved": "Changes saved",
     "targetRitual": {
-      "savedLabel": "Saved target",
       "newLabel": "New target",
       "unit": "kcal",
       "aggressivePace": "{pace} kg/wk — an aggressive pace"
@@ -1419,6 +1415,7 @@
         "ingredient": "Which ingredient or food is missing?",
         "idea": "What would make Kallo better for you?"
       },
+      "screenshotLabel": "Screenshot",
       "addScreenshot": "Add a screenshot",
       "removeScreenshot": "Remove screenshot",
       "screenshotTooLarge": "That image is over 5 MB. Please pick a smaller one.",
@@ -1464,21 +1461,15 @@
       "deleteError": "Could not delete your account. Please try again."
     },
     "regionalPanel": {
-      "description": "AI uses your country info to understand food culture and locally available ingredients.",
       "searchCountryLabel": "Search country",
       "clearLabel": "Clear selection"
     },
     "profilePage": {
-      "title": "Profile",
-      "description": "Manage your body metrics, regional preferences, and cooking habits.",
       "emptyTitle": "No profile found",
       "emptyDescription": "You need to complete the initial setup before editing your settings.",
       "startSetup": "Start setup"
     },
     "profilePanel": {
-      "bodyMetricsSubtitle": "Weight, height, activity level, and macro targets",
-      "regionalSubtitle": "Country of origin and current residence",
-      "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
       "saveError": "Failed to save settings. Please try again.",
       "invalidError": "Some entries are invalid — please review your body metrics."
     },

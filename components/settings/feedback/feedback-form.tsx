@@ -109,7 +109,7 @@ export function FeedbackForm({
       </SettingsRow>
 
       {/* Screenshot */}
-      <SettingsRow label={t('addScreenshot')} layout="inline">
+      <SettingsRow label={t('screenshotLabel')} layout="inline">
         <div className="min-w-0">
           <input
             ref={fileInput}

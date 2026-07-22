@@ -1382,14 +1382,10 @@
     "preferences": "Tùy chỉnh",
     "preferencesDescription": "Ngôn ngữ, khu vực và cách bạn nấu ăn.",
     "bodyMetrics": "Chỉ số cơ thể",
-    "goals": "Mục tiêu",
-    "cooking": "Thói quen nấu ăn",
-    "regional": "Khu vực",
     "save": "Lưu thay đổi",
     "saveWithTarget": "Lưu — mục tiêu mới {target} kcal",
     "saved": "Đã lưu thay đổi",
     "targetRitual": {
-      "savedLabel": "Mục tiêu đã lưu",
       "newLabel": "Mục tiêu mới",
       "unit": "kcal",
       "aggressivePace": "{pace} kg/tuần — nhịp khá gắt"
@@ -1419,6 +1415,7 @@
         "ingredient": "Nguyên liệu hoặc món ăn nào đang thiếu?",
         "idea": "Điều gì sẽ giúp Kallo tốt hơn cho bạn?"
       },
+      "screenshotLabel": "Ảnh chụp màn hình",
       "addScreenshot": "Thêm ảnh chụp màn hình",
       "removeScreenshot": "Bỏ ảnh chụp màn hình",
       "screenshotTooLarge": "Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.",
@@ -1464,21 +1461,15 @@
       "deleteError": "Không thể xóa tài khoản. Vui lòng thử lại."
     },
     "regionalPanel": {
-      "description": "AI dùng thông tin quốc gia của bạn để hiểu văn hóa ẩm thực và nguyên liệu dễ tìm tại nơi bạn sống.",
       "searchCountryLabel": "Tìm quốc gia",
       "clearLabel": "Xóa lựa chọn"
     },
     "profilePage": {
-      "title": "Hồ sơ",
-      "description": "Quản lý chỉ số cơ thể, vùng miền và thói quen nấu ăn của bạn.",
       "emptyTitle": "Chưa tìm thấy hồ sơ",
       "emptyDescription": "Bạn cần hoàn tất thiết lập ban đầu trước khi chỉnh sửa cài đặt.",
       "startSetup": "Bắt đầu thiết lập"
     },
     "profilePanel": {
-      "bodyMetricsSubtitle": "Cân nặng, chiều cao, mức hoạt động và mục tiêu macro",
-      "regionalSubtitle": "Quê quán và nơi ở hiện tại",
-      "cookingSubtitle": "Thiết lập dầu mỡ, cơm, đường, đạm và nước dùng mặc định",
       "saveError": "Không thể lưu cài đặt. Vui lòng thử lại.",
       "invalidError": "Một số giá trị không hợp lệ — vui lòng kiểm tra lại chỉ số cơ thể."
     },
