@@ -3,7 +3,6 @@
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { cn } from '@/lib/utils';
 import { TimelineDateButton } from './timeline-date-button';
 import {
   formatTimelineDayLabel,
@@ -148,9 +147,9 @@ export function TimelineSidebar({
                 onClick={() => toggleMonth(month.key)}
                 aria-expanded={isMonthExpanded}
                 aria-controls={`month-${month.key}`}
-                className="ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 text-muted-foreground transition-colors hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2"
+                className="group ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2"
               >
-                <span className="min-w-0 flex-1 truncate text-left font-medium font-sans-display text-[10px] uppercase tracking-[0.04em]">
+                <span className="min-w-0 flex-1 truncate text-left font-medium font-sans-display text-[10px] uppercase tracking-[0.04em] group-hover:font-bold">
                   {month.month}/{month.year}
                 </span>
                 {isMonthExpanded ? (
@@ -172,7 +171,6 @@ export function TimelineSidebar({
                   {/* Weeks */}
                   {month.weeks.map((week) => {
                     const isWeekExpanded = expandedWeeks.has(week.key);
-                    const hasSelectedDay = week.days.includes(selectedDate);
                     const weekRange = getWeekDateRange({
                       year: month.year,
                       month: month.month,
@@ -192,15 +190,10 @@ export function TimelineSidebar({
                           onClick={() => toggleWeek(week.key)}
                           aria-expanded={isWeekExpanded}
                           aria-controls={`week-${week.key}`}
-                          className={cn(
-                            'ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 rounded-md px-1 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2',
-                            hasSelectedDay
-                              ? 'text-nham-text'
-                              : 'text-nham-text-muted hover:text-nham-text'
-                          )}
+                          className="group ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 rounded-md px-1 py-1.5 text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2"
                         >
                           <span className="flex min-w-0 flex-1 items-baseline gap-2 text-left font-sans-display tracking-tight">
-                            <span className="shrink-0 font-semibold text-[13px]">
+                            <span className="shrink-0 font-semibold text-[13px] group-hover:font-bold">
                               {t('week', { number: week.weekNumber })}
                             </span>
                             <span className="min-w-0 truncate font-medium text-[11px] text-nham-text-muted/75">
