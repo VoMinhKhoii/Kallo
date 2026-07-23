@@ -93,9 +93,10 @@ export function PrecisePersistedMealCard({
           </button>
         </div>
 
-        {/* Collapsed summary */}
+        {/* Collapsed summary — hidden while editing: the amount editor's live
+            Total row already shows the (rescaling) macros. */}
         <AnimatePresence initial={false}>
-          {isCollapsed && (
+          {!isEditing && isCollapsed && (
             <motion.div
               key="summary"
               initial={{ opacity: 0 }}
@@ -180,7 +181,6 @@ export function PrecisePersistedMealCard({
             }
             onEditAmounts={() => {
               setIsRefineOpen(false);
-              setIsCollapsed(true);
               setIsEditing(true);
             }}
             onDelete={onDelete}
