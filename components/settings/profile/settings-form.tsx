@@ -67,12 +67,13 @@ function FormBody({
           title={t('profile')}
           description={t('profileDescription')}
         />
+        {/* Hairlines separate subsections, not individual rows — each wrapper
+            div below is one direct child of the group's divide-y. */}
         <SettingsGroup>
-          <IdentityRows />
-          <div
-            id={SUBSECTION_ANCHOR['body-metrics']}
-            className="scroll-mt-20 divide-y divide-nham-border"
-          >
+          <div>
+            <IdentityRows />
+          </div>
+          <div id={SUBSECTION_ANCHOR['body-metrics']} className="scroll-mt-20">
             <MetricsFields />
             <GoalFields
               tdee={live.tdee}
@@ -100,10 +101,7 @@ function FormBody({
         />
         <SettingsGroup>
           <RegionalRows />
-          <div
-            id={SUBSECTION_ANCHOR.cooking}
-            className="scroll-mt-20 divide-y divide-nham-border"
-          >
+          <div id={SUBSECTION_ANCHOR.cooking} className="scroll-mt-20">
             <CookingRows />
           </div>
         </SettingsGroup>

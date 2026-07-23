@@ -61,8 +61,17 @@ export function IdentityRows() {
         <AvatarField profile={profile} />
       </SettingsRow>
 
-      <SettingsRow label={t('nameLabel')} layout="stacked">
-        <div className="flex items-stretch gap-2">
+      <SettingsRow
+        label={t('nameLabel')}
+        description={
+          <>
+            {t('linkPreview')}{' '}
+            <span className="break-all text-nham-text">{inviteLink}</span>
+            <span className="mt-1 block">{t('linkWarning')}</span>
+          </>
+        }
+      >
+        <div className="flex w-full items-stretch gap-2 sm:w-auto">
           <input
             type="text"
             value={value}
@@ -76,7 +85,7 @@ export function IdentityRows() {
             placeholder={t('namePlaceholder')}
             autoComplete="off"
             maxLength={DISPLAY_NAME_MAX}
-            className="w-full max-w-sm rounded-xl border border-nham-border bg-white px-3.5 py-2.5 text-[15px] text-nham-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-nham-accent/40"
+            className="w-full rounded-xl border border-nham-border bg-white px-3.5 py-2.5 text-[15px] text-nham-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-nham-accent/40 sm:w-64"
           />
           <button
             type="button"
@@ -93,13 +102,6 @@ export function IdentityRows() {
             )}
           </button>
         </div>
-        <p className="mt-3 text-[12px] text-nham-text-muted">
-          {t('linkPreview')}{' '}
-          <span className="break-all text-nham-text">{inviteLink}</span>
-        </p>
-        <p className="mt-1 text-[12px] text-nham-text-muted">
-          {t('linkWarning')}
-        </p>
       </SettingsRow>
     </>
   );

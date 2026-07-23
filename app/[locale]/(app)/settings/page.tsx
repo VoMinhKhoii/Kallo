@@ -52,12 +52,7 @@ export default async function SettingsPage() {
       </div>
 
       <div className="min-w-0 flex-1">
-        <header className="mb-5 sm:mb-7">
-          <h1 className="font-normal font-serif text-2xl text-nham-text tracking-tight">
-            {t('title')}
-          </h1>
-          <p className="mt-1 text-[#7B6F62] text-[14px]">{t('description')}</p>
-        </header>
+        <h1 className="sr-only">{t('title')}</h1>
 
         {profile ? (
           <SettingsForm profile={profile} />

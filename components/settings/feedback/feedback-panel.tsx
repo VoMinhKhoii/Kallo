@@ -51,21 +51,25 @@ export function FeedbackPanel() {
           </button>
         </div>
       ) : (
-        <FeedbackForm
-          type={form.type}
-          setType={form.setType}
-          message={form.message}
-          setMessage={form.setMessage}
-          file={form.file}
-          fileError={form.fileError}
-          submitError={form.submitError}
-          pending={form.pending}
-          fileInput={form.fileInput}
-          canSubmit={form.canSubmit}
-          pickFile={form.pickFile}
-          clearFile={form.clearFile}
-          handleSubmit={form.handleSubmit}
-        />
+        // One wrapper div = one direct child of the group, so the form rows
+        // get no hairlines between them (they're all one subsection).
+        <div>
+          <FeedbackForm
+            type={form.type}
+            setType={form.setType}
+            message={form.message}
+            setMessage={form.setMessage}
+            file={form.file}
+            fileError={form.fileError}
+            submitError={form.submitError}
+            pending={form.pending}
+            fileInput={form.fileInput}
+            canSubmit={form.canSubmit}
+            pickFile={form.pickFile}
+            clearFile={form.clearFile}
+            handleSubmit={form.handleSubmit}
+          />
+        </div>
       )}
     </SettingsGroup>
   );

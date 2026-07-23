@@ -33,10 +33,7 @@ export function RegionalRows() {
         />
       </SettingsRow>
 
-      <div
-        id={SUBSECTION_ANCHOR.regional}
-        className="scroll-mt-20 divide-y divide-nham-border"
-      >
+      <div id={SUBSECTION_ANCHOR.regional} className="scroll-mt-20">
         <FormField
           control={form.control}
           name="countryOfOrigin"

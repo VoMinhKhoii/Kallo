@@ -97,17 +97,19 @@ export function CookingRows() {
           name={row.name}
           render={({ field }) => (
             <FormItem>
-              <SettingsRow label={t(row.labelKey)} layout="stacked">
+              <SettingsRow label={t(row.labelKey)}>
                 <FormControl>
-                  <OptionStrip
-                    options={row.options.map((o) => ({
-                      value: o.value,
-                      label: t(o.labelKey),
-                      hint: o.hintKey ? t(o.hintKey) : undefined,
-                    }))}
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
+                  <div className="w-full sm:w-96">
+                    <OptionStrip
+                      options={row.options.map((o) => ({
+                        value: o.value,
+                        label: t(o.labelKey),
+                        hint: o.hintKey ? t(o.hintKey) : undefined,
+                      }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  </div>
                 </FormControl>
               </SettingsRow>
             </FormItem>
