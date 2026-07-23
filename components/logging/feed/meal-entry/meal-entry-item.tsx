@@ -34,9 +34,10 @@ export function MealEntryItem({
       transition={{ delay: index * 0.05 }}
       className="flex items-center justify-between py-2.5 font-sans-display text-[13px]"
     >
-      {/* Left: item name */}
-      <div className="flex min-w-0 items-center">
-        <span className="truncate font-medium text-nham-text">{item.name}</span>
+      {/* Left: item name — flex-1 + block truncate so long names ellipsize
+          instead of running under the right-side controls */}
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium text-nham-text">{item.name}</p>
       </div>
 
       {/* Right: edit controls + P/C/F macros + calories */}

@@ -39,6 +39,9 @@ class MealActionIconButton extends StatelessWidget {
 
     return Tooltip(
       message: label,
+      // The inner Semantics already names the button — without this, iOS
+      // appends the tooltip text to the accessibility label a second time.
+      excludeFromSemantics: true,
       child: Semantics(
         button: true,
         enabled: enabled,

@@ -291,12 +291,14 @@ describe('confirmAndSaveMealAction', () => {
   it('does not share a confirmed meal when the profile opts out', async () => {
     vi.mocked(requireAuthAndProfile).mockResolvedValueOnce({
       user: mockUser,
-      profile: {
-        goal: 'cutting',
-        aggression: '0.5',
-        autoShareToCircle: false,
-      },
+      profile: { goal: 'cutting', aggression: '0.5' },
     } as never);
+    // The opt-out is read in-transaction, not from the auth-time profile row.
+    mockTxSelect.mockImplementationOnce(() => ({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([{ autoShareToCircle: false }]),
+      }),
+    }));
     mockTxDelete.mockReturnValue({
       where: vi.fn().mockReturnValue({
         returning: vi.fn().mockResolvedValue([

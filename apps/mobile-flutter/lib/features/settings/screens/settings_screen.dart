@@ -114,9 +114,10 @@ class _SettingsList extends ConsumerWidget {
                       showChevron: true,
                       onTap: () => _push(context, _EditorKind.region),
                     ),
-                    AutoShareToCircleToggle(
-                      value: profile?.autoShareToCircle ?? true,
-                    ),
+                    // Hidden until the profile loads (web parity) — an enabled
+                    // switch with no profile row can only produce an error.
+                    if (profile != null)
+                      AutoShareToCircleToggle(value: profile.autoShareToCircle),
                   ],
                 ),
 

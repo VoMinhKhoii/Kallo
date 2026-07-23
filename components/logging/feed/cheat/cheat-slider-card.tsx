@@ -79,6 +79,7 @@ export function CheatSliderCard({
         animate={{ opacity: 1 }}
         className="relative"
       >
+        <TimeDivider timeLabel={timeLabel} />
         <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
           {userInput && (
             <p className="mb-3 font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">

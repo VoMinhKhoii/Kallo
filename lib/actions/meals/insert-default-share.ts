@@ -7,25 +7,19 @@ import { mealShares, userProfiles } from '@/lib/db/schema';
  * autoShareToCircle preference. Returns the inserted row, or null when
  * the insert is skipped (opt-out) or produces no row (onConflictDoNothing).
  *
- * Pass opts.autoShare when the caller already holds the profile row to
- * avoid a redundant query inside the transaction.
+ * The preference is always read inside the caller's transaction so a toggle
+ * flipped mid-request can't race a stale profile row into a share.
  */
 export async function insertDefaultCircleShare(
   tx: AppTransaction,
-  opts: { mealId: string; actorId: string; autoShare?: boolean }
+  opts: { mealId: string; actorId: string }
 ): Promise<{ id: string; visibility: string } | null> {
-  let share = opts.autoShare;
-
-  if (share === undefined) {
-    // Keep the preference read in the caller's transaction so it sees any
-    // in-flight profile writes.
-    const [profile] = await tx
-      .select({ autoShareToCircle: userProfiles.autoShareToCircle })
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, opts.actorId));
-    // Missing profile rows retain the existing opt-in behaviour.
-    share = profile?.autoShareToCircle ?? true;
-  }
+  const [profile] = await tx
+    .select({ autoShareToCircle: userProfiles.autoShareToCircle })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, opts.actorId));
+  // Missing profile rows retain the existing opt-in behaviour.
+  const share = profile?.autoShareToCircle ?? true;
 
   if (!share) {
     // No row means private; the per-meal toggle can create one from scratch.

@@ -63,9 +63,14 @@ class _AutoShareToCircleToggleState
       icon: LucideIcons.users,
       label: tr('settings.sharing.autoShareLabel'),
       subline: tr('settings.sharing.autoShareHint'),
-      trailing: Switch.adaptive(
-        value: _enabled,
-        onChanged: _pending ? null : _toggle,
+      // The static row provides no toggle semantics of its own — name the
+      // switch so screen readers don't announce a bare on/off control.
+      trailing: Semantics(
+        label: tr('settings.sharing.autoShareLabel'),
+        child: Switch.adaptive(
+          value: _enabled,
+          onChanged: _pending ? null : _toggle,
+        ),
       ),
     );
   }

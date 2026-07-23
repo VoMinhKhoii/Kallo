@@ -260,11 +260,12 @@ export async function confirmAndSaveMealAction(input: {
     // The AFTER INSERT trigger fans out the meal_shared circle event. The user
     // can still opt this meal back out via the per-meal toggle, while
     // onConflictDoNothing preserves a prior explicit choice on the
-    // re-confirm/edit path (existing meal id).
+    // re-confirm/edit path (existing meal id). The helper reads the preference
+    // inside the transaction — the profile row loaded at auth time could be
+    // stale if the user flips the toggle mid-analysis.
     const shareRow = await insertDefaultCircleShare(tx, {
       mealId: meal.id,
       actorId: user.id,
-      autoShare: profile.autoShareToCircle,
     });
     const share = shareRow
       ? { shareId: shareRow.id, visibility: shareRow.visibility }
