@@ -64,10 +64,12 @@ export function SettingsAnchorNav({
     };
 
     pick();
-    window.addEventListener('scroll', pick, { passive: true });
+    // The app shell scrolls an inner container, not the window — scroll
+    // events don't bubble, so listen in the capture phase to catch them all.
+    window.addEventListener('scroll', pick, { passive: true, capture: true });
     window.addEventListener('resize', pick);
     return () => {
-      window.removeEventListener('scroll', pick);
+      window.removeEventListener('scroll', pick, { capture: true });
       window.removeEventListener('resize', pick);
     };
   }, []);

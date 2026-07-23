@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { AppleLogo, GoogleLogo } from '@/components/shared/brand-logos';
 import { createClient } from '@/lib/supabase/client';
 
 /**
@@ -16,8 +17,8 @@ import { createClient } from '@/lib/supabase/client';
  * The last remaining identity can't be removed (it would lock the user out).
  */
 const OAUTH_PROVIDERS = [
-  { key: 'google', label: 'Google' },
-  { key: 'apple', label: 'Apple' },
+  { key: 'google', label: 'Google', Logo: GoogleLogo },
+  { key: 'apple', label: 'Apple', Logo: AppleLogo },
 ] as const;
 
 type OAuthProviderKey = (typeof OAUTH_PROVIDERS)[number]['key'];
@@ -105,7 +106,7 @@ export function LinkedAccounts() {
 
   return (
     <div className="flex flex-col divide-y divide-nham-border">
-      {OAUTH_PROVIDERS.map(({ key, label }) => {
+      {OAUTH_PROVIDERS.map(({ key, label, Logo }) => {
         const identity = identities?.find((i) => i.provider === key) ?? null;
         const linked = Boolean(identity);
         const busy = pending === key;
@@ -116,14 +117,17 @@ export function LinkedAccounts() {
             key={key}
             className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0"
           >
-            <div className="min-w-0">
-              <p className="text-[14px] text-nham-text">{label}</p>
-              {linked && (
-                <p className="mt-0.5 text-[12px] text-nham-text-muted">
-                  {t('linkedConnected')}
-                  {isLast ? ` · ${t('linkedLastHint')}` : ''}
-                </p>
-              )}
+            <div className="flex min-w-0 items-center gap-2.5">
+              <Logo className="size-4 shrink-0 text-nham-text" />
+              <div className="min-w-0">
+                <p className="text-[14px] text-nham-text">{label}</p>
+                {linked && (
+                  <p className="mt-0.5 text-[12px] text-nham-text-muted">
+                    {t('linkedConnected')}
+                    {isLast ? ` · ${t('linkedLastHint')}` : ''}
+                  </p>
+                )}
+              </div>
             </div>
 
             {linked ? (
