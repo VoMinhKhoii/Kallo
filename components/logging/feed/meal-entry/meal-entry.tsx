@@ -109,42 +109,33 @@ export function MealEntry({
                 />
               </button>
             )}
+            {/* One button whose face swaps in place — a mode="wait" morph here
+                left a beat with no button at all. */}
             {!confirmed && (
-              <AnimatePresence mode="wait" initial={false}>
+              <button
+                type="button"
+                onClick={() => setIsEditing((prev) => !prev)}
+                className={
+                  isEditing
+                    ? 'flex items-center gap-1.5 rounded-full border border-nham-border bg-nham-hover px-2.5 py-1 text-nham-text transition-colors hover:bg-nham-hover/70'
+                    : 'flex items-center gap-1.5 rounded-full border border-nham-border/50 px-2.5 py-1 text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:bg-nham-hover/40 hover:text-nham-text'
+                }
+              >
                 {isEditing ? (
-                  <motion.button
-                    key="done"
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.85 }}
-                    transition={{ duration: 0.15 }}
-                    className="flex items-center gap-1.5 rounded-full border border-nham-border bg-nham-hover px-2.5 py-1 text-nham-text transition-colors hover:bg-nham-hover/70"
-                  >
-                    <Check className="h-3 w-3" />
-                    <span className="font-sans-display font-semibold text-[10px]">
-                      {t('done')}
-                    </span>
-                  </motion.button>
+                  <Check className="h-3 w-3" />
                 ) : (
-                  <motion.button
-                    key="edit"
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.85 }}
-                    transition={{ duration: 0.15 }}
-                    className="flex items-center gap-1.5 rounded-full border border-nham-border/50 px-2.5 py-1 text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:bg-nham-hover/40 hover:text-nham-text"
-                  >
-                    <Pencil className="h-3 w-3" />
-                    <span className="font-medium font-sans-display text-[10px]">
-                      {t('edit')}
-                    </span>
-                  </motion.button>
+                  <Pencil className="h-3 w-3" />
                 )}
-              </AnimatePresence>
+                <span
+                  className={
+                    isEditing
+                      ? 'font-sans-display font-semibold text-[10px]'
+                      : 'font-medium font-sans-display text-[10px]'
+                  }
+                >
+                  {isEditing ? t('done') : t('edit')}
+                </span>
+              </button>
             )}
           </div>
         </div>

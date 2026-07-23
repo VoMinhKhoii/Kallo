@@ -93,32 +93,12 @@ export function PrecisePersistedMealCard({
           </button>
         </div>
 
-        {/* Collapsed summary — hidden while editing: the amount editor's live
-            Total row already shows the (rescaling) macros. */}
-        <AnimatePresence initial={false}>
-          {!isEditing && isCollapsed && (
-            <motion.div
-              key="summary"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="mt-2 flex items-center justify-between font-sans-display"
-            >
-              <span className="text-[11px] text-nham-text-muted tabular-nums">
-                P: {protein}
-                {'  '}C: {carbs}
-                {'  '}F: {fat}
-              </span>
-              <span className="font-bold text-nham-text text-sm tabular-nums">
-                {calories}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Amount editor — replaces the read-only details while editing */}
-        {isEditing && onUpdate && (
+        {/* Edit mode swaps the read-only body for the amount editor IN PLACE
+            (one ternary, one frame). The read-only AnimatePresence blocks
+            unmount with the branch, so no exit animation overlaps the editor —
+            the collapse toggle keeps its smooth height animation, entering/
+            leaving edit doesn't animate at all. */}
+        {isEditing && onUpdate ? (
           <MealAmountEditor
             meal={meal}
             onCancel={() => setIsEditing(false)}
@@ -132,40 +112,65 @@ export function PrecisePersistedMealCard({
                 : undefined
             }
           />
-        )}
+        ) : (
+          <>
+            {/* Collapsed summary */}
+            <AnimatePresence initial={false}>
+              {isCollapsed && (
+                <motion.div
+                  key="summary"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="mt-2 flex items-center justify-between font-sans-display"
+                >
+                  <span className="text-[11px] text-nham-text-muted tabular-nums">
+                    P: {protein}
+                    {'  '}C: {carbs}
+                    {'  '}F: {fat}
+                  </span>
+                  <span className="font-bold text-nham-text text-sm tabular-nums">
+                    {calories}
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-        {/* Expanded details */}
-        <AnimatePresence initial={false}>
-          {!isEditing && !isCollapsed && (
-            <motion.div
-              key="details"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-              style={{ overflow: 'hidden' }}
-            >
-              <MealDetails
-                meal={meal}
-                totals={{ calories, protein, carbs, fat }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {/* Expanded details */}
+            <AnimatePresence initial={false}>
+              {!isCollapsed && (
+                <motion.div
+                  key="details"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <MealDetails
+                    meal={meal}
+                    totals={{ calories, protein, carbs, fat }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-        {/* The refine field opened from the action row — one interaction from
-            the collapsed card. Also available inside the amount editor. */}
-        {!isEditing && isRefineOpen && refine && (
-          <div className="mt-3 border-nham-border/40 border-t pt-3">
-            <RefineField
-              meal={meal}
-              autoFocus
-              onRefine={(correction) => {
-                setIsRefineOpen(false);
-                refine(correction);
-              }}
-            />
-          </div>
+            {/* The refine field opened from the action row — one interaction
+                from the collapsed card. Also inside the amount editor. */}
+            {isRefineOpen && refine && (
+              <div className="mt-3 border-nham-border/40 border-t pt-3">
+                <RefineField
+                  meal={meal}
+                  autoFocus
+                  onRefine={(correction) => {
+                    setIsRefineOpen(false);
+                    refine(correction);
+                  }}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
       {!isEditing && (
