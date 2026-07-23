@@ -91,7 +91,7 @@ export function TimelineSidebar({
         className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
         aria-label={t('navigationLabel')}
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -109,7 +109,7 @@ export function TimelineSidebar({
       className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
       aria-label={t('navigationLabel')}
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden overscroll-contain">
         {/* Error state */}
         {isError && (
           <div className="ml-3 flex flex-col gap-2 rounded-lg border border-nham-danger/30 bg-nham-danger/10 p-3">

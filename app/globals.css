@@ -418,6 +418,14 @@
 
 }
 
+/* The app shell is viewport-locked (h-dvh + inner scrollers); kill body-level
+   overscroll so hard scrolling can't rubber-band the sidebars/nav with it
+   (Safari bounces the body even when nothing overflows). */
+html,
+body {
+  overscroll-behavior: none;
+}
+
 /* Hide scrollbars everywhere (scrolling still works) — visible track/thumb
    chrome adds clutter the calm feed doesn't want; keyboard/trackpad/OS
    overlay indicators still communicate scroll position. */
