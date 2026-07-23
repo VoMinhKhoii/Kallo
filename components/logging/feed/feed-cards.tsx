@@ -115,7 +115,7 @@ export function FeedCards({
                 <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-danger bg-white" />
                 <div className="rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4">
                   {msg.userInput && (
-                    <p className="mb-2 font-serif text-[13px] text-nham-text-muted">
+                    <p className="mb-2 font-sans-display text-[13px] text-nham-text-muted">
                       {msg.userInput}
                     </p>
                   )}

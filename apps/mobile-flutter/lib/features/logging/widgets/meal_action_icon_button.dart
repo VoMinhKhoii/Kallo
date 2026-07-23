@@ -34,7 +34,7 @@ class MealActionIconButton extends StatelessWidget {
             ? NhamColors.danger
             : active
             ? NhamColors.accentDark
-            : NhamColors.textMuted;
+            : NhamColors.text;
     final enabled = onTap != null && !pending;
 
     return Tooltip(
@@ -71,7 +71,7 @@ class MealActionIconButton extends StatelessWidget {
                             color: foreground,
                           ),
                         )
-                        : Icon(icon, size: 18, color: foreground),
+                        : Icon(icon, size: 16, color: foreground),
               ),
             ),
           ),

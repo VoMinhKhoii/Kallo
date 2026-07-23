@@ -82,7 +82,7 @@ export function CheatSliderCard({
         <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-accent bg-white" />
         <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
           {userInput && (
-            <p className="mb-3 font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
+            <p className="mb-3 font-sans-display text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
               {userInput}
             </p>
           )}
@@ -129,7 +129,7 @@ export function CheatSliderCard({
       <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-start justify-between gap-3">
           {userInput && (
-            <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
+            <p className="font-sans-display text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
               {userInput}
             </p>
           )}

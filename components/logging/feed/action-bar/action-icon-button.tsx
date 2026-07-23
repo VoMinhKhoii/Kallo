@@ -32,7 +32,7 @@ export function ActionIconButton({
   const IconComponent = Icon as React.ComponentType<{ className?: string }>;
 
   return (
-    <TooltipProvider delayDuration={150}>
+    <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -41,14 +41,14 @@ export function ActionIconButton({
             size="icon-sm"
             aria-label={label}
             className={cn(
-              'rounded-md text-nham-text-muted/70 hover:bg-nham-hover/40 hover:text-nham-text',
+              'rounded-md text-nham-text hover:bg-nham-hover/40',
               danger && 'hover:bg-nham-danger/10 hover:text-nham-danger',
               active && 'bg-nham-hover text-nham-text',
               className
             )}
             {...props}
           >
-            <IconComponent className="size-4" />
+            <IconComponent className="size-3.5" />
           </Button>
         </TooltipTrigger>
         <TooltipContent className="rounded-md bg-nham-text font-sans-display text-nham-surface text-xs">
