@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/nham_text.dart';
@@ -8,6 +7,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/logging_models.dart';
+import 'confirm_meal_removal.dart';
 import 'persisted_meal_actions.dart';
 import 'persisted_meal_card_content.dart';
 import 'persisted_meal_time_divider.dart';
@@ -70,10 +70,8 @@ class _PersistedMealCardState extends State<PersistedMealCard>
     return Dismissible(
       key: ValueKey('dismiss-${widget.meal.id}'),
       direction: DismissDirection.endToStart,
-      onDismissed: (_) {
-        HapticFeedback.mediumImpact();
-        onRemove();
-      },
+      confirmDismiss: (_) => confirmMealRemoval(context),
+      onDismissed: (_) => onRemove(),
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),

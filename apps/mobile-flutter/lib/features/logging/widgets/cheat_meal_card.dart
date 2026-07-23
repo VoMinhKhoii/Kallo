@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/nham_text.dart';
@@ -11,6 +10,7 @@ import '../data/logging_models.dart';
 import '../logic/format.dart';
 import 'cheat_meal_expanded_details.dart';
 import 'cheat_slider_card.dart' show CheatBadge;
+import 'confirm_meal_removal.dart';
 import 'meal_action_icon_button.dart';
 
 /// A saved cheat meal in the day's feed — accent-tinted (never red), the
@@ -71,10 +71,8 @@ class _CheatMealCardState extends State<CheatMealCard>
     return Dismissible(
       key: ValueKey('dismiss-${widget.meal.id}'),
       direction: DismissDirection.endToStart,
-      onDismissed: (_) {
-        HapticFeedback.mediumImpact();
-        onRemove();
-      },
+      confirmDismiss: (_) => confirmMealRemoval(context),
+      onDismissed: (_) => onRemove(),
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
@@ -238,7 +236,12 @@ class _CheatMealCardState extends State<CheatMealCard>
                 icon: LucideIcons.trash2,
                 label: 'logging.remove'.tr(),
                 danger: true,
-                onTap: widget.onRemove,
+                onTap: () async {
+                  if (await confirmMealRemoval(context)) {
+                    if (!context.mounted) return;
+                    widget.onRemove?.call();
+                  }
+                },
               ),
             ),
           ],

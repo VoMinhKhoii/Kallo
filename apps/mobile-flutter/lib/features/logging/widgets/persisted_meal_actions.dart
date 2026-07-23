@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../circle/widgets/share_meal_sheet.dart';
 import '../data/logging_models.dart';
+import 'confirm_meal_removal.dart';
 import 'meal_action_icon_button.dart';
 import 'persisted_meal_share_to_circle_button.dart';
 
@@ -34,7 +35,12 @@ class PersistedMealActions extends StatelessWidget {
             icon: LucideIcons.trash2,
             label: 'logging.remove'.tr(),
             danger: true,
-            onTap: onRemove,
+            onTap: () async {
+              if (await confirmMealRemoval(context)) {
+                if (!context.mounted) return;
+                onRemove?.call();
+              }
+            },
           ),
       ],
     );

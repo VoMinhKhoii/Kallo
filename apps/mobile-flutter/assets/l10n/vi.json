@@ -1109,6 +1109,8 @@
     "confirm": "Lưu bữa ăn",
     "discard": "Bỏ",
     "remove": "Xóa",
+    "removeConfirmTitle": "Xoá bữa ăn này?",
+    "removeConfirmDescription": "Bữa ăn sẽ biến mất khỏi nhật ký của bạn và bảng tin của vòng kết nối.",
     "mealRemoved": "Đã xóa bữa ăn",
     "undo": "Hoàn tác",
     "edit": "Sửa",

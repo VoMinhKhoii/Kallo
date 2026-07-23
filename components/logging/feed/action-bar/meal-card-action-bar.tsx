@@ -4,7 +4,6 @@ import {
   PencilLine,
   RotateCcw,
   SlidersHorizontal,
-  Trash2,
   UserPlus,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -12,6 +11,7 @@ import { ShareMealDialog } from '@/components/groups/share-meal-dialog';
 import { ShareToCircleButton } from '@/components/logging/feed/persisted/share-buttons';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { ActionIconButton } from './action-icon-button';
+import { RemoveMealButton } from './remove-meal-button';
 
 interface MealCardActionBarProps {
   meal: PersistedMeal;
@@ -70,12 +70,7 @@ export function MealCardActionBar({
           />
         )}
         {onDelete && (
-          <ActionIconButton
-            icon={Trash2}
-            label={t('remove')}
-            onClick={onDelete}
-            danger
-          />
+          <RemoveMealButton label={t('remove')} onConfirm={onDelete} />
         )}
       </div>
       <ShareToCircleButton mealId={meal.id} share={meal.share} />

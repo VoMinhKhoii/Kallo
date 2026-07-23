@@ -1109,6 +1109,8 @@
     "confirm": "Save meal",
     "discard": "Discard",
     "remove": "Remove",
+    "removeConfirmTitle": "Remove this meal?",
+    "removeConfirmDescription": "It disappears from your log and your circle's feed.",
     "mealRemoved": "Meal removed",
     "undo": "Undo",
     "edit": "Edit",

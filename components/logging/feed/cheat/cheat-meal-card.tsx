@@ -1,10 +1,10 @@
 'use client';
 
-import { ChevronDown, PartyPopper, Trash2 } from 'lucide-react';
+import { ChevronDown, PartyPopper } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { ActionIconButton } from '@/components/logging/feed/action-bar/action-icon-button';
+import { RemoveMealButton } from '@/components/logging/feed/action-bar/remove-meal-button';
 import {
   formatCaloriesOrNA,
   formatMacroOrNA,
@@ -88,7 +88,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
               <PartyPopper className="h-3 w-3" />
               {t('badge')}
             </Badge>
-            <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
+            <p className="font-sans-display text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
               {meal.rawInput}
             </p>
           </div>
@@ -208,12 +208,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
       </div>
       {onDelete && (
         <div className="mt-1.5 px-1">
-          <ActionIconButton
-            icon={Trash2}
-            label={t('remove')}
-            onClick={onDelete}
-            danger
-          />
+          <RemoveMealButton label={t('remove')} onConfirm={onDelete} />
         </div>
       )}
     </motion.article>
