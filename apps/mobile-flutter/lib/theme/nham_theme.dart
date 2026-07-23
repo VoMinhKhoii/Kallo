@@ -183,6 +183,22 @@ abstract final class NhamTheme {
         thickness: 1,
         space: 0,
       ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: NhamColors.text,
+          borderRadius: BorderRadius.circular(NhamRadii.md),
+        ),
+        textStyle: NhamTextStyles.sansRegular(
+          fontSize: NhamFontSize.xs,
+        ).copyWith(color: NhamColors.surface),
+        padding: const EdgeInsets.symmetric(
+          horizontal: NhamSpacing.sp3,
+          vertical: NhamSpacing.sp1_5,
+        ),
+        preferBelow: true,
+        triggerMode: TooltipTriggerMode.longPress,
+        waitDuration: Duration.zero,
+      ),
       // Branded toasts: espresso pill, cream text, soft radius — not the stock
       // dark-gray Material pill (sign-out errors, the undo toast, etc.).
       snackBarTheme: SnackBarThemeData(

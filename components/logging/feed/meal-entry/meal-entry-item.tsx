@@ -9,7 +9,6 @@ import {
 } from '@/components/logging/feed/format-inline-nutrition';
 import { MIN_DISH_GRAMS } from '@/lib/meal-utils';
 import type { MealItem } from '@/lib/types/meal';
-import { cn } from '@/lib/utils';
 
 interface MealEntryItemProps {
   item: MealItem;
@@ -33,14 +32,16 @@ export function MealEntryItem({
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05 }}
-      className={cn(
-        'flex items-center justify-between py-2.5 text-[13px]',
-        isEditing && 'rounded-lg bg-nham-hover/30 px-2',
-        'font-sans-display'
-      )}
+      className="flex items-center justify-between py-2.5 font-sans-display text-[13px]"
     >
-      {/* Left: edit controls + item name */}
-      <div className="flex min-w-0 items-center gap-2">
+      {/* Left: item name — flex-1 + block truncate so long names ellipsize
+          instead of running under the right-side controls */}
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium text-nham-text">{item.name}</p>
+      </div>
+
+      {/* Right: edit controls + P/C/F macros + calories */}
+      <div className="flex shrink-0 items-center gap-3">
         {isEditing && (
           <div className="flex shrink-0 items-center gap-0.5">
             <button
@@ -48,7 +49,7 @@ export function MealEntryItem({
               aria-label={t('decreaseQuantity', { name: item.name })}
               disabled={item.quantity <= MIN_DISH_GRAMS}
               onClick={() => onQuantityChange(item.id, getDelta(-1))}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border/60 bg-white text-nham-text-muted transition-colors hover:bg-nham-hover disabled:opacity-40"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border bg-white text-nham-text transition-colors hover:bg-nham-hover disabled:opacity-40"
             >
               <Minus className="h-2.5 w-2.5" />
             </button>
@@ -59,17 +60,12 @@ export function MealEntryItem({
               type="button"
               aria-label={t('increaseQuantity', { name: item.name })}
               onClick={() => onQuantityChange(item.id, getDelta(1))}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border/60 bg-white text-nham-text-muted transition-colors hover:bg-nham-hover"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border bg-white text-nham-text transition-colors hover:bg-nham-hover"
             >
               <Plus className="h-2.5 w-2.5" />
             </button>
           </div>
         )}
-        <span className="truncate font-medium text-nham-text">{item.name}</span>
-      </div>
-
-      {/* Right: P/C/F macros + calories */}
-      <div className="flex shrink-0 items-center gap-3">
         <div className="flex gap-2 text-[10px] text-nham-text-muted tabular-nums">
           <span className="whitespace-nowrap text-right">
             P:{formatMacroValue(item.macros.protein)}

@@ -4,12 +4,13 @@ import {
 } from '@/lib/actions/persisted-meal';
 import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
 import type { AppDb } from '@/lib/db';
-import { mealShares, meals, type pendingAnalyses } from '@/lib/db/schema';
+import { meals, type pendingAnalyses } from '@/lib/db/schema';
 import type {
   CheatSliderLevels,
   CheatSliderSpec,
   CheatSlidersPersisted,
 } from '@/lib/types/cheat';
+import { insertDefaultCircleShare } from './insert-default-share';
 import { EMPTY_NUTRITION } from './shared';
 import type { ConfirmMealResponse } from './types';
 
@@ -58,19 +59,15 @@ export async function confirmCheatMeal(args: {
     })
     .returning({ id: meals.id });
 
-  // Share to circle by default: insert a 'circle' meal_shares row so every
-  // freshly-logged meal is shared automatically (the AFTER INSERT trigger
-  // fans out the meal_shared circle event). The user can still opt this
-  // meal back out via the per-meal toggle. onConflictDoNothing preserves a
-  // prior explicit choice on the re-confirm/edit path (existing meal id).
-  const [shareRow] = await tx
-    .insert(mealShares)
-    .values({ mealId: meal.id, actorId: userId, visibility: 'circle' })
-    .onConflictDoNothing({ target: mealShares.mealId })
-    .returning({ id: mealShares.id, visibility: mealShares.visibility });
-  const share = shareRow
-    ? { shareId: shareRow.id, visibility: shareRow.visibility }
-    : null;
+  // Share to circle by default unless the profile-level opt-out is set (the
+  // AFTER INSERT trigger fans out the meal_shared circle event). The user can
+  // still opt this meal back out via the per-meal toggle, while
+  // onConflictDoNothing preserves a prior explicit choice on the
+  // re-confirm/edit path (existing meal id).
+  const share = await insertDefaultCircleShare(tx, {
+    mealId: meal.id,
+    actorId: userId,
+  });
 
   // Rebuild the saved cheat meal in the shape loadMealsByDate returns, so
   // the client reconciles its optimistic card from the confirm response

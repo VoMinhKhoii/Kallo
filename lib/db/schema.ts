@@ -56,6 +56,7 @@ export const userProfiles = pgTable(
     countryOfOrigin: text('country_of_origin'),
     countryOfResidence: text('country_of_residence'),
     preferredLocale: text('preferred_locale').default('en'),
+    autoShareToCircle: boolean('auto_share_to_circle').notNull().default(true),
 
     // Screen 3: Cooking Habits
     oilUsage: text('oil_usage'),

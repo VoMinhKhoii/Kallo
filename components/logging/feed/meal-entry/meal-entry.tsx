@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry/meal-entry-item';
+import { TimeDivider } from '@/components/logging/feed/time-divider';
 import {
   applyQuantityChange,
   deriveQuantityEdits,
@@ -81,18 +82,9 @@ export function MealEntry({
     <motion.article
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="group relative"
+      className="relative"
     >
-      {/* Timeline dot & line */}
-      <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-accent bg-white" />
-
-      {/* Time label */}
-      <div className="mb-2">
-        <span className="font-bold font-sans-display text-[11px] text-nham-text-muted/60 tracking-widest">
-          {timeLabel}
-        </span>
-      </div>
+      <TimeDivider timeLabel={timeLabel} />
 
       {/* Card */}
       <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
@@ -117,42 +109,33 @@ export function MealEntry({
                 />
               </button>
             )}
+            {/* One button whose face swaps in place — a mode="wait" morph here
+                left a beat with no button at all. */}
             {!confirmed && (
-              <AnimatePresence mode="wait" initial={false}>
+              <button
+                type="button"
+                onClick={() => setIsEditing((prev) => !prev)}
+                className={
+                  isEditing
+                    ? 'flex items-center gap-1.5 rounded-full border border-nham-border bg-nham-hover px-2.5 py-1 text-nham-text transition-colors hover:bg-nham-hover/70'
+                    : 'flex items-center gap-1.5 rounded-full border border-nham-border/50 px-2.5 py-1 text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:bg-nham-hover/40 hover:text-nham-text'
+                }
+              >
                 {isEditing ? (
-                  <motion.button
-                    key="done"
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.85 }}
-                    transition={{ duration: 0.15 }}
-                    className="flex items-center gap-1.5 rounded-full border border-nham-border bg-nham-hover px-2.5 py-1 text-nham-text transition-colors hover:bg-nham-hover/70"
-                  >
-                    <Check className="h-3 w-3" />
-                    <span className="font-sans-display font-semibold text-[10px]">
-                      {t('done')}
-                    </span>
-                  </motion.button>
+                  <Check className="h-3 w-3" />
                 ) : (
-                  <motion.button
-                    key="edit"
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.85 }}
-                    transition={{ duration: 0.15 }}
-                    className="flex items-center gap-1.5 rounded-full border border-nham-border/50 px-2.5 py-1 text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:bg-nham-hover/40 hover:text-nham-text"
-                  >
-                    <Pencil className="h-3 w-3" />
-                    <span className="font-medium font-sans-display text-[10px]">
-                      {t('edit')}
-                    </span>
-                  </motion.button>
+                  <Pencil className="h-3 w-3" />
                 )}
-              </AnimatePresence>
+                <span
+                  className={
+                    isEditing
+                      ? 'font-sans-display font-semibold text-[10px]'
+                      : 'font-medium font-sans-display text-[10px]'
+                  }
+                >
+                  {isEditing ? t('done') : t('edit')}
+                </span>
+              </button>
             )}
           </div>
         </div>
@@ -191,7 +174,7 @@ export function MealEntry({
               transition={{ duration: 0.2, ease: 'easeInOut' }}
               style={{ overflow: 'hidden' }}
             >
-              <div className="mt-5 border-nham-border border-t border-dashed pt-4">
+              <div className="mt-5 border-nham-border border-t pt-4">
                 {/* Items list */}
                 <div className="mb-4 space-y-1">
                   {items.map((item, idx) => (
@@ -206,7 +189,7 @@ export function MealEntry({
                 </div>
 
                 {/* Totals — flat, no card */}
-                <div className="border-nham-border/50 border-t border-dashed pt-3">
+                <div className="border-nham-border/50 border-t pt-3">
                   <div className="flex items-center justify-between">
                     <span className="font-bold font-sans-display text-[13px] text-nham-text">
                       {t('total')}

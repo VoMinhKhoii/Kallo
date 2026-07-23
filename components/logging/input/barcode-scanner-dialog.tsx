@@ -172,7 +172,7 @@ export function BarcodeScannerDialog({
         {/* Header */}
         <div className="flex shrink-0 items-start justify-between gap-4 border-[#EAE7E0]/70 border-b px-6 py-4">
           <div className="min-w-0 space-y-1">
-            <DialogTitle className="font-normal font-serif text-[22px] text-nham-text leading-tight tracking-tight">
+            <DialogTitle className="font-normal font-sans-display text-[22px] text-nham-text leading-tight tracking-tight">
               {t('barcodeDialogTitle')}
             </DialogTitle>
             <DialogDescription className="font-sans-display text-[#8B8682] text-[13px] leading-normal">

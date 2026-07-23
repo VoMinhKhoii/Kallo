@@ -1072,6 +1072,8 @@
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",
       "remove": "Xóa",
+      "removeConfirmTitle": "Xoá bữa ăn này?",
+      "removeConfirmDescription": "Bữa ăn sẽ biến mất khỏi nhật ký của bạn và bảng tin của vòng kết nối.",
       "logAgain": "Ghi lại",
       "editAmounts": "Sửa lượng",
       "shareWithFriends": "Gửi cho bạn bè",
@@ -1233,6 +1235,8 @@
       "share": "Chia sẻ với vòng kết nối",
       "shared": "Đã chia sẻ với vòng kết nối",
       "sharing": "Đang chia sẻ…",
+      "sharedToast": "Đã chia sẻ với vòng kết nối",
+      "unsharedToast": "Đã ngừng chia sẻ với vòng kết nối",
       "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
       "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại.",
       "shareCard": "Chia sẻ thẻ",
@@ -1400,9 +1404,17 @@
       "bodyMetrics": "Mục tiêu & chỉ số",
       "regional": "Khu vực & ngôn ngữ",
       "cooking": "Nấu nướng",
+      "sharing": "Chia sẻ",
       "account": "Tài khoản",
       "feedback": "Góp ý",
       "identity": "Hồ sơ"
+    },
+    "sharing": {
+      "title": "Chia sẻ",
+      "description": "Chọn điều sẽ xảy ra sau khi bạn lưu một bữa ăn.",
+      "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
+      "autoShareHint": "Khi bật, mỗi bữa ăn mới sẽ tự động được chia sẻ với vòng kết nối của bạn.",
+      "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
     },
     "feedback": {
       "title": "Gửi góp ý",

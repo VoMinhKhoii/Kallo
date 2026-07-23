@@ -338,7 +338,7 @@ export function ManualLoggingControls({
 
       {hasTotals && (
         <div className="flex items-baseline justify-between border-nham-border/30 border-t pt-2.5">
-          <span className="font-serif text-nham-text-muted text-sm">
+          <span className="font-sans-display text-nham-text-muted text-sm">
             {t('manualLogging.total')}
           </span>
           <div className="flex items-baseline gap-3 font-sans-display tabular-nums">

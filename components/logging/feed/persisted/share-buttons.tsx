@@ -1,14 +1,12 @@
 'use client';
 
-import { Loader2, Share2, Users2 } from 'lucide-react';
+import { Share2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { ActionIconButton } from '@/components/logging/feed/action-bar/action-icon-button';
 import { useShareMeal } from '@/hooks/social/use-share-meal';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-import { cn } from '@/lib/utils';
-
-// The NL-refine is submitted as `${rawInput} (${correction})` — the joining
 
 export function ShareCardButton({ shareId }: { shareId: string }) {
   const t = useTranslations('groups.shareControl');
@@ -36,14 +34,11 @@ export function ShareCardButton({ shareId }: { shareId: string }) {
   };
 
   return (
-    <button
-      type="button"
+    <ActionIconButton
+      icon={Share2}
+      label={t('shareCard')}
       onClick={handleShare}
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium font-sans-display text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
-    >
-      <Share2 className="h-3.5 w-3.5" />
-      {t('shareCard')}
-    </button>
+    />
   );
 }
 
@@ -72,6 +67,11 @@ export function ShareToCircleButton({
         onSuccess: (data) => {
           setIsShared(next === 'circle');
           setShareId(next === 'circle' ? data.shareId : null);
+          // The icon-only toggle has no text flip to announce the change —
+          // confirm it with a toast.
+          toast.success(
+            next === 'circle' ? t('sharedToast') : t('unsharedToast')
+          );
         },
         onError: () =>
           toast.error(next === 'circle' ? t('errorShare') : t('errorUnshare')),
@@ -82,31 +82,22 @@ export function ShareToCircleButton({
   return (
     <div className="flex items-center gap-1.5">
       {isShared && shareId && <ShareCardButton shareId={shareId} />}
-      <button
-        type="button"
+      <ActionIconButton
+        icon={Users}
+        pending={shareMeal.isPending}
+        label={
+          shareMeal.isPending
+            ? t('sharing')
+            : isShared
+              ? t('shared')
+              : t('share')
+        }
         onClick={handleToggle}
         disabled={shareMeal.isPending}
+        active={isShared}
         aria-pressed={isShared}
         aria-busy={shareMeal.isPending}
-        className={cn(
-          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-          isShared
-            ? 'bg-nham-hover font-semibold text-nham-text'
-            : 'text-nham-text-muted/70 hover:bg-nham-hover/40 hover:text-nham-text',
-          'font-sans-display'
-        )}
-      >
-        {shareMeal.isPending ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <Users2 className="h-3.5 w-3.5" />
-        )}
-        {shareMeal.isPending
-          ? t('sharing')
-          : isShared
-            ? t('shared')
-            : t('share')}
-      </button>
+      />
     </div>
   );
 }

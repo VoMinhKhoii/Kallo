@@ -117,7 +117,7 @@ export function BarcodeProductStep({
               {product.brand}
             </span>
           ) : null}
-          <h3 className="font-normal font-serif text-[20px] text-nham-text leading-snug tracking-tight">
+          <h3 className="font-normal font-sans-display text-[20px] text-nham-text leading-snug tracking-tight">
             {product.name}
           </h3>
         </div>
@@ -204,7 +204,7 @@ export function BarcodeProductStep({
             <span className="font-sans-display text-[#8B8682] text-[14px]">
               {t('barcodeWholePackage')}
             </span>
-            <span className="font-normal font-serif text-[22px] text-nham-text tabular-nums">
+            <span className="font-normal font-sans-display text-[22px] text-nham-text tabular-nums">
               {t('barcodeTotalGrams', { grams })}
             </span>
           </div>
@@ -275,7 +275,7 @@ export function BarcodeProductStep({
               {t('barcodeNutritionForAmount', { grams })}
             </span>
             <div className="flex items-baseline gap-1">
-              <span className="font-normal font-serif text-[26px] text-nham-text tabular-nums leading-none">
+              <span className="font-normal font-sans-display text-[26px] text-nham-text tabular-nums leading-none">
                 {calories !== null ? calories : '--'}
               </span>
               <span className="font-sans-display text-[#8B8682] text-[12px]">

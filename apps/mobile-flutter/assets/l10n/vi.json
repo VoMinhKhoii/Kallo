@@ -1109,6 +1109,8 @@
     "confirm": "Lưu bữa ăn",
     "discard": "Bỏ",
     "remove": "Xóa",
+    "removeConfirmTitle": "Xoá bữa ăn này?",
+    "removeConfirmDescription": "Bữa ăn sẽ biến mất khỏi nhật ký của bạn và bảng tin của vòng kết nối.",
     "mealRemoved": "Đã xóa bữa ăn",
     "undo": "Hoàn tác",
     "edit": "Sửa",
@@ -1259,6 +1261,8 @@
       "share": "Chia sẻ với vòng kết nối",
       "shared": "Đã chia sẻ với vòng kết nối",
       "sharing": "Đang chia sẻ…",
+      "sharedToast": "Đã chia sẻ với vòng kết nối",
+      "unsharedToast": "Đã ngừng chia sẻ với vòng kết nối",
       "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
       "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại.",
       "shareCard": "Chia sẻ thẻ",
@@ -1397,6 +1401,11 @@
     "saved": "Đã lưu thay đổi",
     "language": "Ngôn ngữ",
     "languageHint": "Thay đổi ngôn ngữ ứng dụng",
+    "sharing": {
+      "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
+      "autoShareHint": "Khi bật, mỗi bữa ăn mới sẽ tự động được chia sẻ với vòng kết nối của bạn.",
+      "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
+    },
     "sidebar": {
       "title": "Cài đặt",
       "profile": "Hồ sơ",

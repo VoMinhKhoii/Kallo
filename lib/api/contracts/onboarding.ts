@@ -90,6 +90,11 @@ export const profileSettingsSchema = z.object({
 
 export type ProfileSettingsInput = z.infer<typeof profileSettingsSchema>;
 
+/** Request body for `PUT /api/v1/profile/sharing`. */
+export const sharingPreferencesSchema = z.object({
+  autoShareToCircle: z.boolean(),
+});
+
 /**
  * Type-only re-export so the mobile client can type the
  * `GET /api/v1/onboarding/profile` response. The action has no named return

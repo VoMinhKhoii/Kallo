@@ -54,6 +54,7 @@ class ProfileRow {
   String? get sugarBraised => _str('sugarBraised');
   String? get defaultProteinPortion => _str('defaultProteinPortion');
   String? get brothConsumption => _str('brothConsumption');
+  bool get autoShareToCircle => (raw['autoShareToCircle'] as bool?) ?? true;
 }
 
 /// Loads the user's profile row (or null if onboarding never ran). Shares the
@@ -61,8 +62,10 @@ class ProfileRow {
 ///
 /// Keyed by [enabled] (mirrors RN `useProfile(!!userId)`): when false it short
 /// circuits to null without hitting the network.
-final profileProvider =
-    FutureProvider.family<ProfileRow?, bool>((ref, enabled) async {
+final profileProvider = FutureProvider.family<ProfileRow?, bool>((
+  ref,
+  enabled,
+) async {
   if (!enabled) return null;
   final client = ref.read(apiClientProvider);
   final json = await client.get<Map<String, dynamic>?>(
@@ -124,28 +127,28 @@ class ProfileSavePayload {
   });
 
   Map<String, dynamic> toJson() => {
-        'weightKg': weightKg,
-        'heightCm': heightCm,
-        'age': age,
-        'biologicalSex': biologicalSex.name,
-        'activityLevel': activityLevelToString(activityLevel),
-        'tdeeKcal': tdeeKcal,
-        'goal': goal.name,
-        'aggression': aggression,
-        'carbSplit': carbSplitToString(carbSplit),
-        'calorieTarget': calorieTarget,
-        'proteinTargetG': proteinTargetG,
-        'carbsTargetG': carbsTargetG,
-        'fatTargetG': fatTargetG,
-        'countryOfOrigin': countryOfOrigin,
-        'countryOfResidence': countryOfResidence,
-        'preferredLocale': preferredLocale,
-        'oilUsage': oilUsage.name,
-        'defaultRicePortion': defaultRicePortion.name,
-        'sugarBraised': sugarBraised.name,
-        'defaultProteinPortion': defaultProteinPortion.name,
-        'brothConsumption': brothConsumptionToString(brothConsumption),
-      };
+    'weightKg': weightKg,
+    'heightCm': heightCm,
+    'age': age,
+    'biologicalSex': biologicalSex.name,
+    'activityLevel': activityLevelToString(activityLevel),
+    'tdeeKcal': tdeeKcal,
+    'goal': goal.name,
+    'aggression': aggression,
+    'carbSplit': carbSplitToString(carbSplit),
+    'calorieTarget': calorieTarget,
+    'proteinTargetG': proteinTargetG,
+    'carbsTargetG': carbsTargetG,
+    'fatTargetG': fatTargetG,
+    'countryOfOrigin': countryOfOrigin,
+    'countryOfResidence': countryOfResidence,
+    'preferredLocale': preferredLocale,
+    'oilUsage': oilUsage.name,
+    'defaultRicePortion': defaultRicePortion.name,
+    'sugarBraised': sugarBraised.name,
+    'defaultProteinPortion': defaultProteinPortion.name,
+    'brothConsumption': brothConsumptionToString(brothConsumption),
+  };
 }
 
 /// Saves the profile/settings form via `PUT /api/v1/profile`. Invalidates the
@@ -162,7 +165,10 @@ class SaveProfileController extends AsyncNotifier<void> {
     state = const AsyncValue<void>.loading();
     try {
       final client = ref.read(apiClientProvider);
-      await client.put<Map<String, dynamic>>('/api/v1/profile', payload.toJson());
+      await client.put<Map<String, dynamic>>(
+        '/api/v1/profile',
+        payload.toJson(),
+      );
       state = const AsyncValue<void>.data(null);
       // Invalidate the shared profile read (prefix match) so every reader
       // refreshes — mirrors RN `invalidateQueries(onboardingKeys.profile)`.
@@ -175,5 +181,6 @@ class SaveProfileController extends AsyncNotifier<void> {
   }
 }
 
-final saveProfileProvider =
-    AsyncNotifierProvider<SaveProfileController, void>(SaveProfileController.new);
+final saveProfileProvider = AsyncNotifierProvider<SaveProfileController, void>(
+  SaveProfileController.new,
+);

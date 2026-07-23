@@ -9,7 +9,8 @@ import {
   scaleNutritionRow,
 } from '@/lib/actions/persisted-meal';
 import type { AppTransaction } from '@/lib/db';
-import { mealItems, mealShares, meals } from '@/lib/db/schema';
+import { mealItems, meals } from '@/lib/db/schema';
+import { insertDefaultCircleShare } from './insert-default-share';
 
 type MealRow = typeof meals.$inferSelect;
 type MealItemDbRow = typeof mealItems.$inferSelect;
@@ -59,14 +60,10 @@ export async function copyMealVerbatim(
     })
     .returning({ id: meals.id });
 
-  const [shareRow] = await tx
-    .insert(mealShares)
-    .values({ mealId: meal.id, actorId: userId, visibility: 'circle' })
-    .onConflictDoNothing({ target: mealShares.mealId })
-    .returning({ id: mealShares.id, visibility: mealShares.visibility });
-  const share = shareRow
-    ? { shareId: shareRow.id, visibility: shareRow.visibility }
-    : null;
+  const share = await insertDefaultCircleShare(tx, {
+    mealId: meal.id,
+    actorId: userId,
+  });
 
   const copies = sourceItems.map((row) => ({
     id: randomUUID(),

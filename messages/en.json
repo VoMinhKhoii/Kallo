@@ -1072,6 +1072,8 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total",
       "remove": "Remove",
+      "removeConfirmTitle": "Remove this meal?",
+      "removeConfirmDescription": "It disappears from your log and your circle's feed.",
       "logAgain": "Log again",
       "editAmounts": "Edit amounts",
       "shareWithFriends": "Send to friends",
@@ -1233,6 +1235,8 @@
       "share": "Share to circle",
       "shared": "Shared to circle",
       "sharing": "Sharing…",
+      "sharedToast": "Shared to your circle",
+      "unsharedToast": "No longer shared with your circle",
       "errorShare": "Couldn't share to your circle. Try again.",
       "errorUnshare": "Couldn't update sharing. Try again.",
       "shareCard": "Share card",
@@ -1400,9 +1404,17 @@
       "bodyMetrics": "Goal & metrics",
       "regional": "Region & language",
       "cooking": "Cooking",
+      "sharing": "Sharing",
       "account": "Account",
       "feedback": "Feedback",
       "identity": "Profile"
+    },
+    "sharing": {
+      "title": "Sharing",
+      "description": "Choose what happens after you save a meal.",
+      "autoShareLabel": "Share new meals with your circle",
+      "autoShareHint": "When this is on, each new meal is shared with your circle automatically.",
+      "error": "Couldn't update your sharing preference. Please try again."
     },
     "feedback": {
       "title": "Send feedback",

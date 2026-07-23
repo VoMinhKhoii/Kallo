@@ -1,22 +1,19 @@
 'use client';
 
-import { Loader2, Minus, Plus, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import {
+  formatCaloriesOrNA,
+  formatMacroOrNA,
+} from '@/components/logging/feed/format-inline-nutrition';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { MIN_DISH_GRAMS } from '@/lib/meal-utils';
-import { cn } from '@/lib/utils';
 
-// The NL-refine is submitted as `${rawInput} (${correction})` — the joining
+import { AmountEditorRow, type EditableRow } from './amount-editor-row';
+import { computeEditedTotals } from './amount-editor-totals';
 import type { MealAmountEdit } from './persisted-meal-card';
 import { RefineField } from './refine-field';
-
-interface EditableRow {
-  id: string;
-  name: string;
-  grams: number | null;
-  removed: boolean;
-}
 
 /**
  * Natural-language refine input — talk to fix the meal, the same way it was
@@ -38,9 +35,7 @@ export function MealAmountEditor({
   const t = useTranslations('logging.persistedMealCard');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Flatten the meal's ingredient rows (each carries a stable id + grams) into
-  // the editable working set. Removals and gram steps mutate local state only;
-  // nothing persists until Save.
+  // Removals and gram steps mutate local state only until Save.
   const initialRows = useMemo<EditableRow[]>(
     () =>
       meal.mealItemGroups.flatMap((group) =>
@@ -56,6 +51,7 @@ export function MealAmountEditor({
   const [rows, setRows] = useState<EditableRow[]>(initialRows);
 
   const remaining = rows.filter((r) => !r.removed);
+  const totals = useMemo(() => computeEditedTotals(meal, rows), [meal, rows]);
   const initialById = useMemo(
     () => new Map(initialRows.map((r) => [r.id, r.grams])),
     [initialRows]
@@ -102,66 +98,40 @@ export function MealAmountEditor({
   const canSave = remaining.length > 0;
 
   return (
-    <div className="mt-5 border-nham-border border-t border-dashed pt-4">
+    <div className="mt-5 border-nham-border border-t pt-4">
       <div className="space-y-1">
         {rows.map((row) => (
-          <div
+          <AmountEditorRow
             key={row.id}
-            className={cn(
-              'flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-[13px]',
-              row.removed ? 'opacity-40' : 'bg-nham-hover/30',
-              'font-sans-display'
-            )}
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              {row.grams != null && !row.removed && (
-                <div className="flex shrink-0 items-center gap-0.5">
-                  <button
-                    type="button"
-                    aria-label={t('removeRow', { name: row.name })}
-                    disabled={row.grams <= MIN_DISH_GRAMS}
-                    onClick={() => stepGrams(row.id, -10)}
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border/60 bg-white text-nham-text-muted transition-colors hover:bg-nham-hover disabled:opacity-40"
-                  >
-                    <Minus className="h-2.5 w-2.5" />
-                  </button>
-                  <span className="w-9 text-center font-semibold text-[11px] text-nham-text tabular-nums">
-                    {Math.round(row.grams)}g
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => stepGrams(row.id, 10)}
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border/60 bg-white text-nham-text-muted transition-colors hover:bg-nham-hover"
-                  >
-                    <Plus className="h-2.5 w-2.5" />
-                  </button>
-                </div>
-              )}
-              <span
-                className={cn(
-                  'truncate font-medium text-nham-text',
-                  row.removed && 'line-through'
-                )}
-              >
-                {row.name}
-              </span>
-            </div>
-            <button
-              type="button"
-              aria-label={t('removeRow', { name: row.name })}
-              aria-pressed={row.removed}
-              onClick={() => toggleRemove(row.id)}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
+            row={row}
+            onStep={stepGrams}
+            onToggleRemove={toggleRemove}
+            t={t}
+          />
         ))}
+      </div>
+
+      <div className="mt-4 border-nham-border/50 border-t pt-3">
+        <div className="flex items-center justify-between">
+          <span className="font-bold font-sans-display text-[13px] text-nham-text">
+            {t('total')}
+          </span>
+          <div className="flex items-center gap-4">
+            <span className="font-sans-display text-[11px] text-nham-text-muted tabular-nums">
+              P: {formatMacroOrNA(totals.proteinG)}
+              {'  '}C: {formatMacroOrNA(totals.carbohydrateG)}
+              {'  '}F: {formatMacroOrNA(totals.fatG)}
+            </span>
+            <span className="font-bold font-sans-display text-nham-text tabular-nums">
+              {formatCaloriesOrNA(totals.caloriesKcal)}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Natural-language refine — talk to fix it, the same way you logged it. */}
       {onRefine && (
-        <div className="mt-4 border-nham-border/50 border-t border-dashed pt-4">
+        <div className="mt-4 border-nham-border/50 border-t pt-4">
           <RefineField meal={meal} onRefine={onRefine} />
         </div>
       )}

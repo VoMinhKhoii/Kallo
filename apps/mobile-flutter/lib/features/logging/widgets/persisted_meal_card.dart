@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/nham_text.dart';
@@ -8,6 +7,8 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/logging_models.dart';
+import 'confirm_meal_removal.dart';
+import 'persisted_meal_actions.dart';
 import 'persisted_meal_card_content.dart';
 import 'persisted_meal_time_divider.dart';
 
@@ -69,10 +70,8 @@ class _PersistedMealCardState extends State<PersistedMealCard>
     return Dismissible(
       key: ValueKey('dismiss-${widget.meal.id}'),
       direction: DismissDirection.endToStart,
-      onDismissed: (_) {
-        HapticFeedback.mediumImpact();
-        onRemove();
-      },
+      confirmDismiss: (_) => confirmMealRemoval(context),
+      onDismissed: (_) => onRemove(),
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
@@ -100,8 +99,9 @@ class _PersistedMealCardState extends State<PersistedMealCard>
   @override
   Widget build(BuildContext context) {
     final meal = widget.meal;
-    final time = DateFormat.jm(context.locale.toString())
-        .format(DateTime.parse(meal.loggedAt).toLocal());
+    final time = DateFormat.jm(
+      context.locale.toString(),
+    ).format(DateTime.parse(meal.loggedAt).toLocal());
 
     // Details height open/close: 200ms ease-in-out (persisted-meal-card.tsx:231).
     final curvedExpand = CurvedAnimation(
@@ -112,22 +112,24 @@ class _PersistedMealCardState extends State<PersistedMealCard>
     return Padding(
       padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Time as a centered divider on top of the card (── 1:04 AM ──) —
-            // no left timeline gutter, so the card gets the full row width.
-            PersistedMealTimeDivider(time: time),
-            const SizedBox(height: NhamSpacing.sp2), // mb-2
-            _maybeDismissible(
-              PersistedMealCardContent(
-                meal: meal,
-                expand: _expand,
-                curvedExpand: curvedExpand,
-                onToggle: _toggle,
-              ),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Time as a centered divider on top of the card (── 1:04 AM ──) —
+          // no left timeline gutter, so the card gets the full row width.
+          PersistedMealTimeDivider(time: time),
+          const SizedBox(height: NhamSpacing.sp2), // mb-2
+          _maybeDismissible(
+            PersistedMealCardContent(
+              meal: meal,
+              expand: _expand,
+              curvedExpand: curvedExpand,
+              onToggle: _toggle,
             ),
-          ],
-        ),
-      );
+          ),
+          const SizedBox(height: NhamSpacing.sp1_5),
+          PersistedMealActions(meal: meal, onRemove: widget.onRemove),
+        ],
+      ),
+    );
   }
 }
