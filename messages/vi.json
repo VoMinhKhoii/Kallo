@@ -1235,6 +1235,8 @@
       "share": "Chia sẻ với vòng kết nối",
       "shared": "Đã chia sẻ với vòng kết nối",
       "sharing": "Đang chia sẻ…",
+      "sharedToast": "Đã chia sẻ với vòng kết nối",
+      "unsharedToast": "Đã ngừng chia sẻ với vòng kết nối",
       "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
       "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại.",
       "shareCard": "Chia sẻ thẻ",

@@ -75,6 +75,17 @@ class _PersistedMealShareToCircleButtonState
         _shared = isShared;
         _shareId = isShared ? result.shareId : null;
       });
+      // The icon-only toggle has no text flip to announce the change —
+      // confirm it with a toast (web parity).
+      showTopToast(
+        context,
+        tr(
+          isShared
+              ? 'groups.shareControl.sharedToast'
+              : 'groups.shareControl.unsharedToast',
+        ),
+        variant: TopToastVariant.success,
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() {

@@ -73,6 +73,11 @@ export function ShareToCircleButton({
         onSuccess: (data) => {
           setIsShared(next === 'circle');
           setShareId(next === 'circle' ? data.shareId : null);
+          // The icon-only toggle has no text flip to announce the change —
+          // confirm it with a toast.
+          toast.success(
+            next === 'circle' ? t('sharedToast') : t('unsharedToast')
+          );
         },
         onError: () =>
           toast.error(next === 'circle' ? t('errorShare') : t('errorUnshare')),

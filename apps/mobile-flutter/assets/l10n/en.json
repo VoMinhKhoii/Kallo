@@ -1302,6 +1302,8 @@
       "share": "Share to circle",
       "shared": "Shared to circle",
       "sharing": "Sharing…",
+      "sharedToast": "Shared to your circle",
+      "unsharedToast": "No longer shared with your circle",
       "errorShare": "Couldn't share to your circle. Try again.",
       "errorUnshare": "Couldn't update sharing. Try again.",
       "shareCard": "Share card",
