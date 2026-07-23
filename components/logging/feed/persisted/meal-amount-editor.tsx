@@ -102,7 +102,7 @@ export function MealAmountEditor({
   const canSave = remaining.length > 0;
 
   return (
-    <div className="mt-5 border-nham-border border-t border-dashed pt-4">
+    <div className="mt-5 border-nham-border border-t pt-4">
       <div className="space-y-1">
         {rows.map((row) => (
           <div
@@ -161,7 +161,7 @@ export function MealAmountEditor({
 
       {/* Natural-language refine — talk to fix it, the same way you logged it. */}
       {onRefine && (
-        <div className="mt-4 border-nham-border/50 border-t border-dashed pt-4">
+        <div className="mt-4 border-nham-border/50 border-t pt-4">
           <RefineField meal={meal} onRefine={onRefine} />
         </div>
       )}

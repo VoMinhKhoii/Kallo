@@ -9,6 +9,7 @@ import {
   formatCaloriesOrNA,
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
+import { TimeDivider } from '@/components/logging/feed/time-divider';
 import { MealAmountEditor } from './meal-amount-editor';
 import { MealDetails } from './meal-details';
 // The NL-refine is submitted as `${rawInput} (${correction})` — the joining
@@ -62,23 +63,15 @@ export function PrecisePersistedMealCard({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, height: 0 }}
-      className="group relative"
+      className="relative"
     >
-      {/* Timeline dot & line */}
-      <div className="absolute top-2 bottom-0 -left-4 w-px bg-nham-border/60 group-last:bg-transparent sm:-left-10" />
-      <div className="absolute top-2 -left-5 h-2 w-2 rounded-full border-2 border-nham-accent bg-white sm:-left-[43px]" />
-
-      {/* Time label + split-portion chip */}
-      <div className="mb-2 flex items-center gap-2">
-        <span className="font-bold font-sans-display text-[11px] text-nham-text-muted/60 tracking-widest">
-          {timeLabel}
-        </span>
+      <TimeDivider timeLabel={timeLabel}>
         {isFractional && (
           <span className="rounded-full bg-nham-hover px-2 py-0.5 font-medium font-sans-display text-[10px] text-nham-text">
             {t('portionChip', { portion: portionText })}
           </span>
         )}
-      </div>
+      </TimeDivider>
 
       {/* Card */}
       <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
@@ -162,7 +155,7 @@ export function PrecisePersistedMealCard({
         {/* The refine field opened from the action row — one interaction from
             the collapsed card. Also available inside the amount editor. */}
         {!isEditing && isRefineOpen && refine && (
-          <div className="mt-3 border-nham-border/40 border-t border-dashed pt-3">
+          <div className="mt-3 border-nham-border/40 border-t pt-3">
             <RefineField
               meal={meal}
               autoFocus
