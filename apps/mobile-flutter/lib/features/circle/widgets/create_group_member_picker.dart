@@ -6,6 +6,7 @@ import '../../../models/circle.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
 import 'create_group_empty.dart';
+import 'friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
 
 class CreateGroupMemberPicker extends StatelessWidget {
@@ -28,8 +29,12 @@ class CreateGroupMemberPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => friends.when(
-    loading:
-        () => const Flexible(child: Center(child: CircularProgressIndicator())),
+    loading: () => Flexible(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: FriendListSkeleton(semanticsLabel: tr('common.loading')),
+      ),
+    ),
     error:
         (_, __) => Flexible(
           child: Center(

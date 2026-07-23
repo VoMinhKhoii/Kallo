@@ -12,6 +12,7 @@ import '../../../data/api_client.dart';
 import '../../../models/circle.dart';
 import '../../../shared/widgets/nham_primitives.dart';
 import '../../../shared/widgets/profile_avatar.dart';
+import '../../../shared/widgets/skeleton.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
@@ -142,11 +143,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
           _IdentityBackHeader(onBack: () => Navigator.of(context).pop()),
           Expanded(
             child: profileAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(NhamColors.accent),
-                ),
-              ),
+              loading: () => const _IdentitySkeleton(),
               error: (_, __) => Center(
                 child: Text(tr('common.error'), style: dashBody()),
               ),
@@ -258,6 +255,42 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
           style: dashBody(color: kInkMuted),
         ),
       ],
+    );
+  }
+}
+
+/// Profile-load skeleton for the identity screen: title + description bars,
+/// then an avatar disc beside a name bar.
+class _IdentitySkeleton extends StatelessWidget {
+  const _IdentitySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: tr('common.loading'),
+      child: SkeletonPulse(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            NhamSpacing.sp4,
+            NhamSpacing.sp4,
+            NhamSpacing.sp4,
+            NhamSpacing.sp6,
+          ),
+          children: const [
+            SkeletonBar(width: 120, height: 20, radius: 8),
+            SizedBox(height: NhamSpacing.sp2),
+            SkeletonBar(widthFactor: 0.9, height: 12, radius: 6),
+            SizedBox(height: NhamSpacing.sp5),
+            Row(
+              children: [
+                SkeletonCircle(size: 64),
+                SizedBox(width: NhamSpacing.sp4),
+                Expanded(child: SkeletonBar(height: 14, radius: 6)),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

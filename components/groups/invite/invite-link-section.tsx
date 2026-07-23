@@ -26,7 +26,7 @@ export function InviteLinkSection() {
 
   if (isLoading || !profile) {
     return (
-      <div className="h-[76px] animate-pulse rounded-xl bg-[#E8E6DC]/50" />
+      <div className="h-[76px] rounded-xl bg-nham-track motion-safe:animate-pulse" />
     );
   }
 

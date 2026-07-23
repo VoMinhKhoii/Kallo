@@ -7,6 +7,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../data/circle_providers.dart';
+import 'friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
 import 'share_meal_mode_selector.dart';
 import 'share_meal_sheet_header.dart';
@@ -134,13 +135,9 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                   ],
                   const SizedBox(height: NhamSpacing.sp4),
                   friendsAsync.when(
-                    loading:
-                        () => Text(
-                          tr('groups.shareMeal.loadingFriends'),
-                          style: NhamTextStyles.sansRegular(
-                            fontSize: NhamFontSize.detail,
-                          ).copyWith(color: NhamColors.textMuted),
-                        ),
+                    loading: () => FriendListSkeleton(
+                      semanticsLabel: tr('groups.shareMeal.loadingFriends'),
+                    ),
                     error:
                         (_, __) => Text(
                           tr('groups.shareMeal.error'),

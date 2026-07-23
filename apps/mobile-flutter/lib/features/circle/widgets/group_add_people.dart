@@ -8,6 +8,7 @@ import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../data/chat_group_providers.dart';
 import '../data/circle_providers.dart';
+import 'friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
 
 class GroupAddPeople extends ConsumerStatefulWidget {
@@ -64,7 +65,9 @@ class _GroupAddPeopleState extends ConsumerState<GroupAddPeople> {
     return ref
         .watch(circleFriendsProvider)
         .when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => FriendListSkeleton(
+            semanticsLabel: tr('common.loading'),
+          ),
           error:
               (_, __) => Center(
                 child: Column(

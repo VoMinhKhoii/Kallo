@@ -13,6 +13,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../data/circle_providers.dart';
+import '../widgets/connect_skeleton.dart';
 
 /// The invite-accept target (deep link `/circle/invite/:slug`). Previews the
 /// inviter and, depending on the viewer's relationship, shows Accept / already
@@ -73,9 +74,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             child: Padding(
               padding: const EdgeInsets.all(NhamSpacing.sp5),
               child: previewAsync.when(
-                loading: () => const CircularProgressIndicator(
-                  color: NhamColors.accent,
-                ),
+                loading: () => const ConnectPreviewSkeleton(),
                 error: (error, _) => _errorFor(error),
                 data: (preview) => _stateFor(preview),
               ),

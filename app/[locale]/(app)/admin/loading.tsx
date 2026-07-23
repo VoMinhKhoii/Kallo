@@ -1,14 +1,30 @@
-import { Loader2 } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-export default function AdminLoading() {
+export default async function AdminLoading() {
+  const t = await getTranslations('common');
   return (
     <div
-      className="flex min-h-[40vh] items-center justify-center text-muted-foreground"
+      className="space-y-4 motion-safe:animate-pulse"
+      role="status"
       aria-busy="true"
       aria-live="polite"
+      aria-label={t('loading')}
     >
-      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-      <span>Loading…</span>
+      {/* Header bar — title + right-side meta */}
+      <div className="flex items-center justify-between">
+        <div className="h-6 w-48 rounded-md bg-nham-track" />
+        <div className="h-4 w-32 rounded-md bg-nham-track" />
+      </div>
+
+      {/* Filters row */}
+      <div className="h-10 w-full rounded-md bg-nham-track" />
+
+      {/* Content rows */}
+      <div className="space-y-2">
+        {Array.from({ length: 6 }, (_, index) => (
+          <div key={index} className="h-12 w-full rounded-md bg-nham-track" />
+        ))}
+      </div>
     </div>
   );
 }

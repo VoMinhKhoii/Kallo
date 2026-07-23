@@ -14,6 +14,7 @@ import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../data/circle_providers.dart';
 import '../../../shared/widgets/profile_avatar.dart';
+import 'add_friend_skeleton.dart';
 import 'circle_error.dart';
 
 /// Opens the invite surface: your shareable link (with an editable end), your
@@ -127,13 +128,7 @@ class _ProfileSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(myCircleProfileProvider);
     return profileAsync.when(
-      loading: () => Container(
-        height: 84,
-        decoration: BoxDecoration(
-          color: NhamColors.hover50,
-          borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-        ),
-      ),
+      loading: () => const AddFriendProfileSkeleton(),
       error: (_, __) => CircleErrorCard(
         onRetry: () => ref.invalidate(myCircleProfileProvider),
       ),

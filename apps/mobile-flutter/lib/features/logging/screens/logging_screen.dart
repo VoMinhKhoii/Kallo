@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/session_provider.dart';
 import '../../../shared/widgets/nham_text.dart';
+import '../../../shared/widgets/skeleton.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/logging_keys.dart';
@@ -45,9 +46,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         ref.watch(mealDatesProvider(userId)).valueOrNull ?? const <String>[];
 
     if (profileAsync.isLoading) {
-      return _centered(
-        const CircularProgressIndicator(color: NhamColors.accent),
-      );
+      return const _LoggingSkeleton();
     }
 
     final data = profileAsync.valueOrNull;
@@ -128,6 +127,58 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         child: Padding(
           padding: const EdgeInsets.all(NhamSpacing.sp6),
           child: Center(child: child),
+        ),
+      ),
+    );
+  }
+}
+
+/// Profile-load skeleton mirroring the logging tab: a date-chip header, then a
+/// stack of feed-ish meal blocks.
+class _LoggingSkeleton extends StatelessWidget {
+  const _LoggingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: tr('common.loading'),
+      child: ColoredBox(
+        color: NhamColors.surface,
+        child: SafeArea(
+          bottom: false,
+          child: SkeletonPulse(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    NhamSpacing.sp3,
+                    NhamSpacing.sp2,
+                    NhamSpacing.sp3,
+                    NhamSpacing.sp1,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      SkeletonBar(width: 132, height: 20, radius: 10),
+                      SkeletonBar(width: 40, height: 20, radius: 10),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: NhamSpacing.sp2),
+                for (var i = 0; i < 3; i++)
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      NhamSpacing.sp3,
+                      NhamSpacing.sp2,
+                      NhamSpacing.sp3,
+                      NhamSpacing.sp2,
+                    ),
+                    child: SkeletonBar(height: 96, radius: 16),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );

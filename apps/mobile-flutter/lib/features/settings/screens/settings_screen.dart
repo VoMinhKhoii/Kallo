@@ -23,6 +23,7 @@ import '../../feedback/feedback_screen.dart';
 import '../widgets/profile_form.dart';
 import '../widgets/region_editor.dart';
 import '../widgets/settings_group.dart';
+import '../widgets/settings_skeleton.dart';
 import '../../circle/data/circle_providers.dart';
 import 'about_section.dart';
 import 'account_section.dart';
@@ -249,14 +250,7 @@ class _ProfileScreen extends ConsumerWidget {
                       ),
                     )
                     : profileAsync.when(
-                      loading:
-                          () => const _Centered(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation(
-                                NhamColors.accent,
-                              ),
-                            ),
-                          ),
+                      loading: () => const SettingsSkeleton(),
                       // A flaky fetch is NOT an absent profile — only a
                       // genuinely-null profile (onboarding never ran) gets the
                       // re-onboarding empty state. An error offers a retry, not

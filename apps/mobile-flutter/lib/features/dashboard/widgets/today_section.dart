@@ -21,7 +21,7 @@ import '../logic/dashboard_format.dart';
 import 'calorie_ring.dart';
 import '../../../theme/calm_tokens.dart';
 import 'section_header.dart';
-import 'skeleton.dart';
+import 'card_skeletons.dart';
 
 /// Per-screen dock targets (profile values, with the web DEFAULT_PROFILE
 /// fallbacks applied by the screen).
