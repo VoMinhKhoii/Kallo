@@ -415,7 +415,6 @@
   select {
     font-size: 16px;
   }
-
 }
 
 /* The app shell is viewport-locked (h-dvh + inner scrollers); kill body-level
