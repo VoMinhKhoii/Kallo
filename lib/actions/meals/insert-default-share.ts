@@ -7,8 +7,9 @@ import { mealShares, userProfiles } from '@/lib/db/schema';
  * autoShareToCircle preference. Returns the response `share` shape, or null
  * when the insert is skipped (opt-out) or produces no row (onConflictDoNothing).
  *
- * The preference is always read inside the caller's transaction so a toggle
- * flipped mid-request can't race a stale profile row into a share.
+ * The preference is read inside the caller's transaction WITH a row lock —
+ * setAutoShareToCircle commits outside this transaction, so without FOR UPDATE
+ * an opt-out could land between this read and the insert below.
  */
 export async function insertDefaultCircleShare(
   tx: AppTransaction,
@@ -17,7 +18,8 @@ export async function insertDefaultCircleShare(
   const [profile] = await tx
     .select({ autoShareToCircle: userProfiles.autoShareToCircle })
     .from(userProfiles)
-    .where(eq(userProfiles.userId, opts.actorId));
+    .where(eq(userProfiles.userId, opts.actorId))
+    .for('update');
   // Missing profile rows retain the existing opt-in behaviour.
   const share = profile?.autoShareToCircle ?? true;
 

@@ -4,7 +4,12 @@ const { mockUser, mockCanViewShare, mockTxSelect, mockTxInsert, mockTx } =
   vi.hoisted(() => {
     const mockTxSelect = vi.fn(() => ({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
+        where: vi.fn().mockReturnValue(
+          // Thenable + .for('update') — the share helper locks the row.
+          Object.assign(Promise.resolve([{ autoShareToCircle: true }]), {
+            for: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
+          })
+        ),
       }),
     }));
     const mockTxInsert = vi.fn();

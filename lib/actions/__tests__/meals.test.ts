@@ -24,7 +24,12 @@ const {
   const mockTxUpdate = vi.fn();
   const mockTxSelect = vi.fn(() => ({
     from: vi.fn().mockReturnValue({
-      where: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
+      where: vi.fn().mockReturnValue(
+        // Thenable + .for('update') — the share helper locks the row.
+        Object.assign(Promise.resolve([{ autoShareToCircle: true }]), {
+          for: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
+        })
+      ),
     }),
   }));
   const mockDbSelect = vi.fn();
@@ -296,7 +301,12 @@ describe('confirmAndSaveMealAction', () => {
     // The opt-out is read in-transaction, not from the auth-time profile row.
     mockTxSelect.mockImplementationOnce(() => ({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue([{ autoShareToCircle: false }]),
+        where: vi.fn().mockReturnValue(
+          // Thenable + .for('update') — the share helper locks the row.
+          Object.assign(Promise.resolve([{ autoShareToCircle: false }]), {
+            for: vi.fn().mockResolvedValue([{ autoShareToCircle: false }]),
+          })
+        ),
       }),
     }));
     mockTxDelete.mockReturnValue({
