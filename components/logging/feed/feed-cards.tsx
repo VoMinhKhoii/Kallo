@@ -43,7 +43,7 @@ export function FeedCards({
   onCheatClarify,
 }: FeedCardsProps) {
   return (
-    <div className="mx-auto w-full max-w-3xl pl-6 sm:pl-12">
+    <div className="mx-auto w-full max-w-3xl">
       <div className="flex flex-col gap-5 sm:gap-8">
         {/* Persisted meals from DB */}
         <AnimatePresence initial={false}>
@@ -109,13 +109,11 @@ export function FeedCards({
                 key={msg.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="group relative"
+                className="relative"
               >
-                <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-                <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-danger bg-white" />
                 <div className="rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4">
                   {msg.userInput && (
-                    <p className="mb-2 font-serif text-[13px] text-nham-text-muted">
+                    <p className="mb-2 font-sans-display text-[13px] text-nham-text-muted">
                       {msg.userInput}
                     </p>
                   )}

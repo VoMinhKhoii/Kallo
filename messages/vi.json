@@ -1380,7 +1380,7 @@
     "profile": "Hồ sơ",
     "profileDescription": "Cách bạn xuất hiện và cơ thể bạn cần gì.",
     "preferences": "Tùy chỉnh",
-    "preferencesDescription": "Ngôn ngữ, khu vực và cách bạn nấu ăn.",
+    "preferencesDescription": "Ngôn ngữ, khu vực, cách nấu ăn và chia sẻ.",
     "bodyMetrics": "Chỉ số cơ thể",
     "save": "Lưu thay đổi",
     "saveWithTarget": "Lưu — mục tiêu mới {target} kcal",
@@ -1487,6 +1487,11 @@
       "nameError": "Không thể cập nhật tên",
       "linkPreview": "Liên kết mời của bạn:",
       "linkWarning": "Đổi tên sẽ đổi liên kết mời — liên kết cũ sẽ không dùng được nữa."
+    },
+    "sharing": {
+      "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
+      "autoShareHint": "Khi bật, mỗi bữa ăn mới sẽ tự động được chia sẻ với vòng kết nối của bạn.",
+      "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
     }
   },
   "errors": {

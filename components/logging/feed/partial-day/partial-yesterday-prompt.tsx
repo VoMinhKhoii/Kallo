@@ -51,7 +51,7 @@ export function PartialYesterdayPrompt({
           className="flex items-start gap-3 rounded-2xl border border-nham-border/60 bg-white p-3 sm:p-4"
         >
           <div className="min-w-0 flex-1">
-            <p className="font-serif text-base text-nham-danger italic">
+            <p className="font-sans-display text-base text-nham-danger italic">
               {t('title')}
             </p>
             <p className="mt-1 font-sans-display text-[13px] text-nham-text-muted">

@@ -50,7 +50,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
           className="size-[78px] [--calorie-ring-stroke:3px] sm:size-[86px] sm:[--calorie-ring-stroke:4px]"
           center={
             <>
-              <span className="font-normal font-serif text-[17px] text-nham-text tabular-nums leading-none sm:text-[19px]">
+              <span className="font-normal font-sans-display text-[17px] text-nham-text tabular-nums leading-none sm:text-[19px]">
                 {remaining.toLocaleString()}
               </span>
               <span className="mt-0.5 font-bold font-sans-display text-[8px] text-nham-stone uppercase tracking-[0.15em]">

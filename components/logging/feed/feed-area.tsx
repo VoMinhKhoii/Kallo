@@ -89,7 +89,7 @@ export function FeedArea({
             'flex flex-col overscroll-contain px-3 sm:px-6',
             feed.isEmptyComposer
               ? 'shrink-0'
-              : 'min-h-0 flex-1 overflow-y-auto py-3 sm:py-4'
+              : 'min-h-0 flex-1 overflow-y-auto overscroll-contain py-3 sm:py-4'
           )}
           data-testid="meal-card-scroll"
         >

@@ -188,7 +188,7 @@ export function DesktopSidebar({
       />
 
       {/* Scroll region: nav + onboarding + settings */}
-      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain p-3">
         <nav className="flex flex-col gap-3">
           <SectionHeader label={t('sectionLabel')} collapsed={collapsed} />
           <ul className="flex flex-col gap-1.5">

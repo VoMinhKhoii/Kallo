@@ -1380,7 +1380,7 @@
     "profile": "Profile",
     "profileDescription": "How you appear, and what your body needs.",
     "preferences": "Preferences",
-    "preferencesDescription": "Language, region, and how you cook.",
+    "preferencesDescription": "Language, region, how you cook, and sharing.",
     "bodyMetrics": "Body Metrics",
     "save": "Save changes",
     "saveWithTarget": "Save — new target {target} kcal",
@@ -1487,6 +1487,11 @@
       "nameError": "Couldn't update your name",
       "linkPreview": "Your invite link:",
       "linkWarning": "Changing your name updates your invite link — old links stop working."
+    },
+    "sharing": {
+      "autoShareLabel": "Share new meals with your circle",
+      "autoShareHint": "When this is on, each new meal is shared with your circle automatically.",
+      "error": "Couldn't update your sharing preference. Please try again."
     }
   },
   "errors": {

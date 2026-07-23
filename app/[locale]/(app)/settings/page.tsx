@@ -55,7 +55,10 @@ export default async function SettingsPage() {
         <h1 className="sr-only">{t('title')}</h1>
 
         {profile ? (
-          <SettingsForm profile={profile} />
+          <SettingsForm
+            profile={profile}
+            autoShare={profile.autoShareToCircle}
+          />
         ) : (
           <section id={PROFILE_ANCHOR} className="mb-8 scroll-mt-20">
             <SectionHeader

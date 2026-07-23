@@ -11,6 +11,7 @@ import {
 import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { TimeDivider } from '@/components/logging/feed/time-divider';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -76,10 +77,9 @@ export function CheatSliderCard({
       <motion.article
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="group relative"
+        className="relative"
       >
-        <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-        <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-accent bg-white" />
+        <TimeDivider timeLabel={timeLabel} />
         <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
           {userInput && (
             <p className="mb-3 font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
@@ -114,17 +114,9 @@ export function CheatSliderCard({
     <motion.article
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="group relative"
+      className="relative"
     >
-      {/* Timeline dot & line */}
-      <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-accent bg-white" />
-
-      <div className="mb-2">
-        <span className="font-bold font-sans-display text-[11px] text-nham-text-muted/60 tracking-widest">
-          {timeLabel}
-        </span>
-      </div>
+      <TimeDivider timeLabel={timeLabel} />
 
       <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-start justify-between gap-3">

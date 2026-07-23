@@ -12,4 +12,5 @@ export const SUBSECTION_ANCHOR = {
   'body-metrics': 'settings-body-metrics',
   regional: 'settings-regional',
   cooking: 'settings-cooking',
+  sharing: 'settings-sharing',
 } as const;

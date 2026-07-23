@@ -4,10 +4,12 @@ import { ChevronDown, PartyPopper } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { RemoveMealButton } from '@/components/logging/feed/action-bar/remove-meal-button';
 import {
   formatCaloriesOrNA,
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
+import { TimeDivider } from '@/components/logging/feed/time-divider';
 import { Badge } from '@/components/ui/badge';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import {
@@ -67,17 +69,9 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, height: 0 }}
-      className="group relative"
+      className="relative"
     >
-      {/* Timeline dot & line — warm accent, never red */}
-      <div className="absolute top-2 bottom-0 -left-4 w-px bg-nham-border/60 group-last:bg-transparent sm:-left-10" />
-      <div className="absolute top-2 -left-5 h-2 w-2 rounded-full border-2 border-nham-accent bg-nham-accent sm:-left-[43px]" />
-
-      <div className="mb-2">
-        <span className="font-bold font-sans-display text-[11px] text-nham-text-muted/60 tracking-widest">
-          {timeLabel}
-        </span>
-      </div>
+      <TimeDivider timeLabel={timeLabel} />
 
       <div className="rounded-2xl border border-nham-accent/30 bg-nham-accent/[0.04] p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
         {/* Header */}
@@ -141,7 +135,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
               transition={{ duration: 0.2, ease: 'easeInOut' }}
               style={{ overflow: 'hidden' }}
             >
-              <div className="mt-5 border-nham-border border-t border-dashed pt-4">
+              <div className="mt-5 border-nham-border border-t pt-4">
                 {/* "You set" slider summary */}
                 {persisted && (
                   <div className="mb-4 space-y-2">
@@ -175,7 +169,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
                 )}
 
                 {/* Totals */}
-                <div className="border-nham-border/50 border-t border-dashed pt-3">
+                <div className="border-nham-border/50 border-t pt-3">
                   <div className="flex items-center justify-between">
                     <span className="font-bold font-sans-display text-[13px] text-nham-text">
                       {t('total')}
@@ -204,19 +198,12 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {onDelete && (
-          <div className="mt-3 flex justify-start border-nham-border/40 border-t border-dashed pt-2.5">
-            <button
-              type="button"
-              onClick={onDelete}
-              className="rounded-full px-2.5 py-1 font-medium font-sans-display text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
-            >
-              {t('remove')}
-            </button>
-          </div>
-        )}
       </div>
+      {onDelete && (
+        <div className="mt-1.5 px-1">
+          <RemoveMealButton label={t('remove')} onConfirm={onDelete} />
+        </div>
+      )}
     </motion.article>
   );
 }

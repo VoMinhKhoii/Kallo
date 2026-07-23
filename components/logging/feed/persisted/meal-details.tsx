@@ -17,7 +17,7 @@ export function MealDetails({
 }) {
   const t = useTranslations('logging.persistedMealCard');
   return (
-    <div className="mt-5 border-nham-border border-t border-dashed pt-4">
+    <div className="mt-5 border-nham-border border-t pt-4">
       <div className="mb-4 space-y-1">
         {meal.mealItemGroups.map((group) => {
           const gProtein = formatMacroOrNA(group.nutrition.proteinG);
@@ -48,7 +48,7 @@ export function MealDetails({
       </div>
 
       {/* Totals */}
-      <div className="border-nham-border/50 border-t border-dashed pt-3">
+      <div className="border-nham-border/50 border-t pt-3">
         <div className="flex items-center justify-between">
           <span className="font-bold font-sans-display text-[13px] text-nham-text">
             {t('total')}

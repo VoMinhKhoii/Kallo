@@ -10,6 +10,7 @@ import {
 import { SettingsGroup } from '@/components/settings/group';
 import { IdentityRows } from '@/components/settings/identity/identity-rows';
 import { SectionHeader } from '@/components/settings/section-header';
+import { SharingRow } from '@/components/settings/sharing/sharing-row';
 import { Form } from '@/components/ui/form';
 import { CookingRows } from './cooking-rows';
 import type { ProfileFormValues, ProfileInput } from './form-schema';
@@ -26,7 +27,13 @@ import { useProfileForm } from './use-profile-form';
  * plus the sticky save bar — they must live under one <form> so one save
  * commits body metrics, region, and cooking together.
  */
-export function SettingsForm({ profile }: { profile: ProfileInput }) {
+export function SettingsForm({
+  profile,
+  autoShare,
+}: {
+  profile: ProfileInput;
+  autoShare: boolean;
+}) {
   const { form, isPending, onSubmit, handleCancel } = useProfileForm(profile);
 
   return (
@@ -36,6 +43,7 @@ export function SettingsForm({ profile }: { profile: ProfileInput }) {
           form={form}
           isPending={isPending}
           savedCalorieTarget={profile.calorieTarget}
+          autoShare={autoShare}
           onCancel={handleCancel}
         />
       </form>
@@ -50,11 +58,13 @@ function FormBody({
   form,
   isPending,
   savedCalorieTarget,
+  autoShare,
   onCancel,
 }: {
   form: UseFormReturn<ProfileFormValues>;
   isPending: boolean;
   savedCalorieTarget: number | null;
+  autoShare: boolean;
   onCancel: () => void;
 }) {
   const t = useTranslations('settings');
@@ -103,6 +113,9 @@ function FormBody({
           <RegionalRows />
           <div id={SUBSECTION_ANCHOR.cooking} className="scroll-mt-20">
             <CookingRows />
+          </div>
+          <div id={SUBSECTION_ANCHOR.sharing} className="scroll-mt-20">
+            <SharingRow initialValue={autoShare} />
           </div>
         </SettingsGroup>
       </section>

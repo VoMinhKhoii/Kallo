@@ -415,18 +415,27 @@
   select {
     font-size: 16px;
   }
+}
 
-  /* Hide scrollbars on mobile (scrolling still works) — the OS overlays its
-     own indicator, so visible track/thumb chrome just adds clutter. */
-  * {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* legacy Edge/IE */
-  }
-  *::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-    display: none; /* WebKit (Safari/Chrome) */
-  }
+/* The app shell is viewport-locked (h-dvh + inner scrollers); kill body-level
+   overscroll so hard scrolling can't rubber-band the sidebars/nav with it
+   (Safari bounces the body even when nothing overflows). */
+html,
+body {
+  overscroll-behavior: none;
+}
+
+/* Hide scrollbars everywhere (scrolling still works) — visible track/thumb
+   chrome adds clutter the calm feed doesn't want; keyboard/trackpad/OS
+   overlay indicators still communicate scroll position. */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge/IE */
+}
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* WebKit (Safari/Chrome) */
 }
 
 /* Dashboard meal-streaming focus: while the input bar streams an analysis,

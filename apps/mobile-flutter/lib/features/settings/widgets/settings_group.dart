@@ -23,11 +23,7 @@ const double _kIconGap = NhamSpacing.sp3; // 12 — icon column → label
 /// spread flat (no wrapping surface) so nothing but the label + spacing groups
 /// them.
 class SettingsGroup extends StatelessWidget {
-  const SettingsGroup({
-    super.key,
-    required this.label,
-    required this.children,
-  });
+  const SettingsGroup({super.key, required this.label, required this.children});
 
   final String label;
   final List<Widget> children;
@@ -68,6 +64,7 @@ class SettingsRow extends StatefulWidget {
     this.enabled = true,
     this.busy = false,
     this.showChevron = false,
+    this.trailing,
   });
 
   final IconData icon;
@@ -84,6 +81,7 @@ class SettingsRow extends StatefulWidget {
   final bool enabled;
   final bool busy;
   final bool showChevron;
+  final Widget? trailing;
 
   @override
   State<SettingsRow> createState() => _SettingsRowState();
@@ -102,9 +100,10 @@ class _SettingsRowState extends State<SettingsRow> {
     // Label is primary data — espresso "black" (terracotta for danger rows).
     final Color labelColor = widget.danger ? NhamColors.danger : kInk;
     final Color iconColor = _pressed ? activeColor : restColor;
-    final Color fill = widget.danger
-        ? const Color(0x1AD37B69) // danger @ 10%
-        : NhamColors.hover50;
+    final Color fill =
+        widget.danger
+            ? const Color(0x1AD37B69) // danger @ 10%
+            : NhamColors.hover50;
 
     final row = Container(
       padding: const EdgeInsets.symmetric(
@@ -154,30 +153,33 @@ class _SettingsRowState extends State<SettingsRow> {
     // export, the last-remaining sign-in method) — so a screen reader says
     // "dimmed button" instead of reading the raw text. Only a currently-
     // interactive row gets the press gestures.
-    final Widget content = _interactive
-        ? GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.onTap,
-            onTapDown: (_) => setState(() => _pressed = true),
-            onTapUp: (_) => setState(() => _pressed = false),
-            onTapCancel: () => setState(() => _pressed = false),
-            child: row,
-          )
-        : row;
+    final Widget content =
+        _interactive
+            ? GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: widget.onTap,
+              onTapDown: (_) => setState(() => _pressed = true),
+              onTapUp: (_) => setState(() => _pressed = false),
+              onTapCancel: () => setState(() => _pressed = false),
+              child: row,
+            )
+            : row;
 
     return Semantics(
       button: true,
       enabled: widget.enabled,
       excludeSemantics: true,
-      label: widget.subline != null
-          ? '${widget.label}, ${widget.subline}'
-          : widget.label,
+      label:
+          widget.subline != null
+              ? '${widget.label}, ${widget.subline}'
+              : widget.label,
       onTap: widget.enabled ? widget.onTap : null,
       child: Opacity(opacity: widget.enabled ? 1.0 : 0.6, child: content),
     );
   }
 
   Widget _trailing() {
+    if (widget.trailing != null) return widget.trailing!;
     if (widget.busy) {
       return const SizedBox(
         width: 14,

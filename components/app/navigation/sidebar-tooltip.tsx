@@ -18,7 +18,7 @@ export function SidebarTooltip({
   enabled,
   label,
   children,
-  delayMs = 200,
+  delayMs = 0,
 }: {
   enabled: boolean;
   label: string;
