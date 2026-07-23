@@ -83,7 +83,7 @@ export function SettingsRow({
   return (
     <div
       className={cn(
-        'flex flex-col gap-3 p-card-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4',
+        'flex flex-col gap-3 p-card-sm sm:flex-row sm:items-start sm:justify-between sm:gap-4',
         className
       )}
     >
