@@ -64,13 +64,10 @@ export async function confirmCheatMeal(args: {
   // still opt this meal back out via the per-meal toggle, while
   // onConflictDoNothing preserves a prior explicit choice on the
   // re-confirm/edit path (existing meal id).
-  const shareRow = await insertDefaultCircleShare(tx, {
+  const share = await insertDefaultCircleShare(tx, {
     mealId: meal.id,
     actorId: userId,
   });
-  const share = shareRow
-    ? { shareId: shareRow.id, visibility: shareRow.visibility }
-    : null;
 
   // Rebuild the saved cheat meal in the shape loadMealsByDate returns, so
   // the client reconciles its optimistic card from the confirm response

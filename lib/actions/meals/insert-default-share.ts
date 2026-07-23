@@ -4,8 +4,8 @@ import { mealShares, userProfiles } from '@/lib/db/schema';
 
 /**
  * Insert the default circle share for a meal, respecting the actor's
- * autoShareToCircle preference. Returns the inserted row, or null when
- * the insert is skipped (opt-out) or produces no row (onConflictDoNothing).
+ * autoShareToCircle preference. Returns the response `share` shape, or null
+ * when the insert is skipped (opt-out) or produces no row (onConflictDoNothing).
  *
  * The preference is always read inside the caller's transaction so a toggle
  * flipped mid-request can't race a stale profile row into a share.
@@ -13,7 +13,7 @@ import { mealShares, userProfiles } from '@/lib/db/schema';
 export async function insertDefaultCircleShare(
   tx: AppTransaction,
   opts: { mealId: string; actorId: string }
-): Promise<{ id: string; visibility: string } | null> {
+): Promise<{ shareId: string; visibility: string } | null> {
   const [profile] = await tx
     .select({ autoShareToCircle: userProfiles.autoShareToCircle })
     .from(userProfiles)
@@ -36,5 +36,5 @@ export async function insertDefaultCircleShare(
     .onConflictDoNothing({ target: mealShares.mealId })
     .returning({ id: mealShares.id, visibility: mealShares.visibility });
 
-  return row ?? null;
+  return row ? { shareId: row.id, visibility: row.visibility } : null;
 }

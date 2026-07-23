@@ -11,6 +11,7 @@ import '../logic/format.dart';
 import 'cheat_meal_expanded_details.dart';
 import 'cheat_slider_card.dart' show CheatBadge;
 import 'confirm_meal_removal.dart';
+import 'persisted_meal_time_divider.dart';
 import 'meal_action_icon_button.dart';
 
 /// A saved cheat meal in the day's feed — accent-tinted (never red), the
@@ -130,7 +131,7 @@ class _CheatMealCardState extends State<CheatMealCard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _TimeDivider(time: time),
+          PersistedMealTimeDivider(time: time),
           const SizedBox(height: NhamSpacing.sp2),
           _maybeDismissible(
             Container(
@@ -247,31 +248,6 @@ class _CheatMealCardState extends State<CheatMealCard>
           ],
         ],
       ),
-    );
-  }
-}
-
-/// Centered time divider on top of the card (── 1:04 AM ──), matching the
-/// precise persisted card's.
-class _TimeDivider extends StatelessWidget {
-  const _TimeDivider({required this.time});
-
-  final String time;
-
-  @override
-  Widget build(BuildContext context) {
-    const line = Expanded(
-      child: Divider(color: NhamColors.borderFaint, height: 1, thickness: 1),
-    );
-    return Row(
-      children: [
-        line,
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-          child: NhamText(time, variant: NhamTextVariant.timeLabel),
-        ),
-        line,
-      ],
     );
   }
 }

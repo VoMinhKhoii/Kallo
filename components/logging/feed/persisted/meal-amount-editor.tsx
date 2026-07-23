@@ -11,15 +11,9 @@ import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { MIN_DISH_GRAMS } from '@/lib/meal-utils';
 
 import { AmountEditorRow, type EditableRow } from './amount-editor-row';
+import { computeEditedTotals } from './amount-editor-totals';
 import type { MealAmountEdit } from './persisted-meal-card';
 import { RefineField } from './refine-field';
-
-const TOTAL_FIELDS = [
-  'caloriesKcal',
-  'proteinG',
-  'carbohydrateG',
-  'fatG',
-] as const;
 
 /**
  * Natural-language refine input — talk to fix the meal, the same way it was
@@ -57,39 +51,7 @@ export function MealAmountEditor({
   const [rows, setRows] = useState<EditableRow[]>(initialRows);
 
   const remaining = rows.filter((r) => !r.removed);
-  const totals = useMemo(() => {
-    const ingredients = new Map(
-      meal.mealItemGroups.flatMap((group) =>
-        group.ingredients.map((ingredient) => [ingredient.id, ingredient])
-      )
-    );
-    const sums = Object.fromEntries(TOTAL_FIELDS.map((field) => [field, 0]));
-    const hasValue = Object.fromEntries(
-      TOTAL_FIELDS.map((field) => [field, false])
-    );
-
-    for (const row of rows) {
-      if (row.removed) continue;
-      const ingredient = ingredients.get(row.id);
-      if (!ingredient) continue;
-      const scale =
-        row.grams == null ||
-        ingredient.estimatedGrams == null ||
-        ingredient.estimatedGrams === 0
-          ? 1
-          : row.grams / ingredient.estimatedGrams;
-      for (const field of TOTAL_FIELDS) {
-        const value = ingredient.nutrition[field];
-        if (value == null) continue;
-        sums[field] += value * scale;
-        hasValue[field] = true;
-      }
-    }
-
-    return Object.fromEntries(
-      TOTAL_FIELDS.map((field) => [field, hasValue[field] ? sums[field] : null])
-    ) as Record<(typeof TOTAL_FIELDS)[number], number | null>;
-  }, [meal.mealItemGroups, rows]);
+  const totals = useMemo(() => computeEditedTotals(meal, rows), [meal, rows]);
   const initialById = useMemo(
     () => new Map(initialRows.map((r) => [r.id, r.grams])),
     [initialRows]

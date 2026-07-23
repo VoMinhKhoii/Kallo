@@ -263,13 +263,10 @@ export async function confirmAndSaveMealAction(input: {
     // re-confirm/edit path (existing meal id). The helper reads the preference
     // inside the transaction — the profile row loaded at auth time could be
     // stale if the user flips the toggle mid-analysis.
-    const shareRow = await insertDefaultCircleShare(tx, {
+    const share = await insertDefaultCircleShare(tx, {
       mealId: meal.id,
       actorId: user.id,
     });
-    const share = shareRow
-      ? { shareId: shareRow.id, visibility: shareRow.visibility }
-      : null;
 
     // Pre-generate a stable id for each ingredient row so the inserted rows and
     // the saved-meal payload returned below share ids by construction — no

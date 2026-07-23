@@ -1,18 +1,12 @@
 'use client';
 
-import { Loader2, Share2, Users } from 'lucide-react';
+import { Share2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { type ComponentProps, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { ActionIconButton } from '@/components/logging/feed/action-bar/action-icon-button';
 import { useShareMeal } from '@/hooks/social/use-share-meal';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-
-// The NL-refine is submitted as `${rawInput} (${correction})` — the joining
-
-function SpinningLoader(props: ComponentProps<typeof Loader2>) {
-  return <Loader2 {...props} className="size-4 animate-spin" />;
-}
 
 export function ShareCardButton({ shareId }: { shareId: string }) {
   const t = useTranslations('groups.shareControl');
@@ -89,7 +83,8 @@ export function ShareToCircleButton({
     <div className="flex items-center gap-1.5">
       {isShared && shareId && <ShareCardButton shareId={shareId} />}
       <ActionIconButton
-        icon={shareMeal.isPending ? SpinningLoader : Users}
+        icon={Users}
+        pending={shareMeal.isPending}
         label={
           shareMeal.isPending
             ? t('sharing')

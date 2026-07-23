@@ -60,13 +60,10 @@ export async function copyMealVerbatim(
     })
     .returning({ id: meals.id });
 
-  const shareRow = await insertDefaultCircleShare(tx, {
+  const share = await insertDefaultCircleShare(tx, {
     mealId: meal.id,
     actorId: userId,
   });
-  const share = shareRow
-    ? { shareId: shareRow.id, visibility: shareRow.visibility }
-    : null;
 
   const copies = sourceItems.map((row) => ({
     id: randomUUID(),

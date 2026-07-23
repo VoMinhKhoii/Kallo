@@ -133,13 +133,10 @@ export async function saveManualMealAction(
     // can still opt this meal back out via the per-meal toggle, while
     // onConflictDoNothing preserves a prior explicit choice on the
     // re-confirm/edit path (existing meal id).
-    const shareRow = await insertDefaultCircleShare(tx, {
+    const share = await insertDefaultCircleShare(tx, {
       mealId: meal.id,
       actorId: user.id,
     });
-    const share = shareRow
-      ? { shareId: shareRow.id, visibility: shareRow.visibility }
-      : null;
 
     return { mealId: meal.id, share };
   });

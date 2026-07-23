@@ -14,7 +14,8 @@ import { ActionIconButton } from './action-icon-button';
 import { RemoveMealButton } from './remove-meal-button';
 
 interface MealCardActionBarProps {
-  meal: PersistedMeal;
+  mealId: string;
+  share: PersistedMeal['share'];
   canEdit: boolean;
   canShare?: boolean;
   isRefineOpen: boolean;
@@ -25,7 +26,8 @@ interface MealCardActionBarProps {
 }
 
 export function MealCardActionBar({
-  meal,
+  mealId,
+  share,
   canEdit,
   canShare,
   isRefineOpen,
@@ -63,7 +65,7 @@ export function MealCardActionBar({
         )}
         {canShare && (
           <ShareMealDialog
-            mealId={meal.id}
+            mealId={mealId}
             trigger={
               <ActionIconButton icon={UserPlus} label={t('shareWithFriends')} />
             }
@@ -73,7 +75,7 @@ export function MealCardActionBar({
           <RemoveMealButton label={t('remove')} onConfirm={onDelete} />
         )}
       </div>
-      <ShareToCircleButton mealId={meal.id} share={meal.share} />
+      <ShareToCircleButton mealId={mealId} share={share} />
     </div>
   );
 }

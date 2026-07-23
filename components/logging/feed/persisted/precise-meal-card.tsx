@@ -176,7 +176,8 @@ export function PrecisePersistedMealCard({
       {!isEditing && (
         <div className="mt-1.5 px-1">
           <MealCardActionBar
-            meal={meal}
+            mealId={meal.id}
+            share={meal.share}
             canEdit={canEdit}
             canShare={canShare}
             isRefineOpen={isRefineOpen}
