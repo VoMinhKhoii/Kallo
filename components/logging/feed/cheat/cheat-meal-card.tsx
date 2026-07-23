@@ -88,7 +88,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
               <PartyPopper className="h-3 w-3" />
               {t('badge')}
             </Badge>
-            <p className="font-sans-display text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
+            <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
               {meal.rawInput}
             </p>
           </div>
