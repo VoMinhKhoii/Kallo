@@ -1442,6 +1442,7 @@
       "exportAction": "Export",
       "exporting": "Preparing your data…",
       "exportError": "Could not export your data. Please try again.",
+      "signOutError": "Couldn't sign out. Please try again.",
       "signOutTitle": "Sign out",
       "signOutAction": "Sign out",
       "deleteTitle": "Delete account",

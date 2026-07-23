@@ -66,15 +66,18 @@ export function useLiveTargets(): LiveTargets {
     return calcDailyTargets(tdee, goal, aggression, carbSplit);
   }, [tdee, goal, aggression, carbSplit]);
 
-  const targetCalories = finalTargets?.calories ?? 0;
+  // Clamp once so the hero, macro previews, and save-bar label all describe
+  // the same effective target (persistence applies the same 500-kcal floor).
+  const targetCalories = finalTargets
+    ? Math.max(finalTargets.calories, 500)
+    : 0;
 
   const macros = useMemo(() => {
     if (!targetCalories) return null;
     return calcMacroGrams(targetCalories, carbSplit);
   }, [targetCalories, carbSplit]);
 
-  const pendingTarget =
-    tdee === null ? null : Math.round(Math.max(targetCalories, 500));
+  const pendingTarget = tdee === null ? null : Math.round(targetCalories);
 
   return {
     goal,

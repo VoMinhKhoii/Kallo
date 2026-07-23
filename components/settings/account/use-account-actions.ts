@@ -48,7 +48,7 @@ export function useAccountActions() {
       },
       {
         logLabel: 'Failed to sign out:',
-        errorMessage: t('signOutAction'),
+        errorMessage: t('signOutError'),
         keepPendingOnSuccess: true,
       }
     );

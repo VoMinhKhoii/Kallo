@@ -1442,6 +1442,7 @@
       "exportAction": "Xuất",
       "exporting": "Đang chuẩn bị dữ liệu…",
       "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+      "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
       "signOutTitle": "Đăng xuất",
       "signOutAction": "Đăng xuất",
       "deleteTitle": "Xóa tài khoản",

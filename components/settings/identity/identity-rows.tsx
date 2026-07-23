@@ -51,7 +51,10 @@ export function IdentityRows() {
         setDraft(null);
         toast.success(t('nameSaved'));
       },
-      onError: () => toast.error(t('nameError')),
+      onError: (error) => {
+        console.error('[identity-rows] rename failed', error);
+        toast.error(t('nameError'));
+      },
     });
   };
 
@@ -63,6 +66,7 @@ export function IdentityRows() {
 
       <SettingsRow
         label={t('nameLabel')}
+        htmlFor="identity-display-name"
         description={
           <>
             {t('linkPreview')}{' '}
@@ -73,6 +77,7 @@ export function IdentityRows() {
       >
         <div className="flex w-full items-stretch gap-2 sm:w-auto">
           <input
+            id="identity-display-name"
             type="text"
             value={value}
             onChange={(event) => setDraft(event.target.value)}
