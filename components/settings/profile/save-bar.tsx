@@ -39,19 +39,19 @@ export function SaveBar({
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 -top-8 bottom-0 bg-gradient-to-t from-55% from-nham-surface to-transparent"
           />
-          <div className="relative flex items-center justify-end gap-3 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8]/95 px-5 py-3.5 shadow-lg backdrop-blur-sm sm:px-6 sm:py-4">
+          <div className="relative flex items-center justify-end gap-3 rounded-2xl border border-nham-border bg-white/95 px-5 py-3.5 shadow-lg backdrop-blur-sm sm:px-6 sm:py-4">
             <button
               type="button"
               onClick={onCancel}
               disabled={isPending}
-              className="rounded-xl px-5 py-2.5 font-medium text-[#7B6F62] text-[14px] transition-colors hover:bg-nham-track hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40"
+              className="rounded-xl px-5 py-2.5 font-medium text-[14px] text-nham-text-muted transition-colors hover:bg-nham-track hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40"
             >
               {tc('cancel')}
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="flex items-center gap-2 rounded-xl bg-nham-ink px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-nham-btn px-5 py-2.5 font-medium text-[14px] text-white shadow-sm transition-all hover:bg-nham-btn/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60 disabled:opacity-50"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {pendingTarget !== null

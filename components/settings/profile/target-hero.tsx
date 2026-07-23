@@ -55,7 +55,9 @@ export function TargetHero({
           style={{ fontWeight: 400 }}
         >
           {newTarget.toLocaleString()}{' '}
-          <span className="font-sans text-[#7B6F62] text-lg">{t('kcal')}</span>
+          <span className="font-sans text-lg text-nham-text-muted">
+            {t('kcal')}
+          </span>
         </div>
         {aggressivePace ? (
           <p className="mt-1.5 text-[12px] text-nham-danger">
@@ -64,7 +66,7 @@ export function TargetHero({
             })}
           </p>
         ) : null}
-        <p className="mt-1.5 text-[#7B6F62] text-[12px]">
+        <p className="mt-1.5 text-[12px] text-nham-text-muted">
           {t('basedOnTdee')} ~{Math.round(tdee).toLocaleString()} {t('kcal')}
           {goal === 'maintaining' ? (
             <> · {t('maintenance')}</>

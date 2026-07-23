@@ -117,17 +117,9 @@ export function LinkedAccounts() {
             key={key}
             className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0"
           >
-            <div className="flex min-w-0 items-center gap-2.5">
-              <Logo className="size-4 shrink-0 text-nham-text" />
-              <div className="min-w-0">
-                <p className="text-[14px] text-nham-text">{label}</p>
-                {linked && (
-                  <p className="mt-0.5 text-[12px] text-nham-text-muted">
-                    {t('linkedConnected')}
-                    {isLast ? ` · ${t('linkedLastHint')}` : ''}
-                  </p>
-                )}
-              </div>
+            <div className="flex min-w-0 items-start gap-2.5">
+              <Logo className="mt-0.5 size-4 shrink-0 text-nham-text" />
+              <p className="text-[14px] text-nham-text">{label}</p>
             </div>
 
             {linked ? (

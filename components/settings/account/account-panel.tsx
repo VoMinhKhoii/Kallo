@@ -37,11 +37,7 @@ export function AccountPanel({ email }: { email: string | null }) {
           </SettingsRow>
         )}
 
-        <SettingsRow
-          label={t('linkedTitle')}
-          description={t('linkedDescription')}
-          layout="stacked"
-        >
+        <SettingsRow label={t('linkedTitle')} layout="stacked">
           <LinkedAccounts />
         </SettingsRow>
 

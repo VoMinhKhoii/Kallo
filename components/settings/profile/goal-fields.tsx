@@ -64,7 +64,7 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
           <FormItem>
             <SettingsRow label={t('goal')} layout="stacked">
               <FormControl>
-                <div className="flex w-full gap-1 rounded-xl bg-[#EAE7E0]/40 p-1">
+                <div className="flex w-full gap-1 rounded-xl bg-nham-track p-1">
                   {GOALS.map((g) => (
                     <button
                       key={g}
@@ -84,7 +84,7 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
                       className={`flex-1 rounded-lg px-2 py-2 text-center font-medium text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40 ${
                         field.value === g
                           ? 'bg-white text-nham-text shadow-sm'
-                          : 'text-[#7B6F62] hover:text-nham-text'
+                          : 'text-nham-text-muted hover:text-nham-text'
                       }`}
                     >
                       {goalLabels[g]}
@@ -116,7 +116,7 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
                   <div className="space-y-3">
                     <div className="text-center font-medium text-[15px] text-nham-text">
                       {aggressionKg.toFixed(2)} {t('weightUnit')}/wk
-                      <span className="text-[#7B6F62]"> · </span>
+                      <span className="text-nham-text-muted"> · </span>
                       {goal === 'cutting' ? '−' : '+'}
                       {kcalDelta} {t('perDay')}
                     </div>
@@ -135,7 +135,7 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
                         className="w-full accent-nham-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40"
                       />
                     </FormControl>
-                    <div className="flex items-center justify-between text-[#7B6F62] text-[12px]">
+                    <div className="flex items-center justify-between text-[12px] text-nham-text-muted">
                       <span>{t('aggressionLow')}</span>
                       <span>{t('aggressionHigh')}</span>
                     </div>
@@ -165,23 +165,23 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
                       className={`flex flex-col gap-1 rounded-xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40 ${
                         field.value === opt.id
                           ? 'border-nham-text/30 bg-nham-hover shadow-sm'
-                          : 'border-[#EAE7E0] bg-white hover:border-nham-accent/50'
+                          : 'border-nham-border bg-white hover:border-nham-accent/50'
                       }`}
                     >
                       <span className="font-medium text-[14px] text-nham-text">
                         {opt.label}
                       </span>
-                      <span className="text-[#7B6F62] text-[11px]">
+                      <span className="text-[11px] text-nham-text-muted">
                         {opt.desc}
                       </span>
                       <div className="mt-1 flex gap-3 text-[11px]">
-                        <span className="text-[#7B6F62]">
+                        <span className="text-nham-text-muted">
                           P {opt.macros.proteinG}g
                         </span>
-                        <span className="text-[#7B6F62]">
+                        <span className="text-nham-text-muted">
                           C {opt.macros.carbsG}g
                         </span>
-                        <span className="text-[#7B6F62]">
+                        <span className="text-nham-text-muted">
                           F {opt.macros.fatG}g
                         </span>
                       </div>

@@ -98,7 +98,7 @@ export function SettingsAnchorNav({
                 'block whitespace-nowrap rounded-xl px-3 py-2 font-medium text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
                 activeId === item.id
                   ? 'bg-nham-hover/50 font-semibold text-nham-text'
-                  : 'text-[#7B6F62] hover:bg-nham-hover/50 hover:text-nham-text'
+                  : 'text-nham-text-muted hover:bg-nham-hover/50 hover:text-nham-text'
               )}
             >
               {t(item.labelKey)}

@@ -65,7 +65,7 @@ export default async function SettingsPage() {
             <SettingsGroup>
               <IdentityRows />
             </SettingsGroup>
-            <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] px-4 py-12 text-center">
+            <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-nham-border bg-white px-4 py-12 text-center">
               <h2 className="font-serif text-lg text-nham-text">
                 {tProfile('emptyTitle')}
               </h2>
@@ -74,7 +74,7 @@ export default async function SettingsPage() {
               </p>
               <Link
                 href="/onboarding"
-                className="rounded-lg bg-nham-ink px-4 py-2 font-medium text-nham-surface text-sm"
+                className="rounded-lg bg-nham-btn px-4 py-2 font-medium text-sm text-white"
               >
                 {tProfile('startSetup')}
               </Link>

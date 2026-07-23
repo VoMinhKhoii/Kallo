@@ -36,13 +36,13 @@ export function CountrySelect({
           value ? 'pr-10' : 'pr-4',
           isOpen
             ? 'border-nham-accent bg-white'
-            : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-nham-accent/50'
+            : 'border-nham-border bg-white hover:border-nham-accent/50'
         )}
       >
         <span
           className={cn(
             'min-w-0 truncate',
-            value ? 'text-nham-text' : 'text-[#7B6F62]'
+            value ? 'text-nham-text' : 'text-nham-text-muted'
           )}
         >
           {value
@@ -58,15 +58,15 @@ export function CountrySelect({
           type="button"
           onClick={() => onChange(null)}
           aria-label={tRegional('clearLabel')}
-          className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-1 text-[#7B6F62] leading-none transition-colors hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30"
+          className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-1 text-nham-text-muted leading-none transition-colors hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30"
         >
           ×
         </button>
       )}
 
       {isOpen && (
-        <div className="absolute z-[120] mt-1 w-full overflow-hidden rounded-xl border border-[#EAE7E0] bg-white shadow-lg">
-          <div className="border-[#EAE7E0] border-b p-2">
+        <div className="absolute z-[120] mt-1 w-full overflow-hidden rounded-xl border border-nham-border bg-white shadow-lg">
+          <div className="border-nham-border border-b p-2">
             <input
               type="text"
               value={search}
@@ -74,12 +74,12 @@ export function CountrySelect({
               onChange={(e) => setSearch(e.target.value)}
               aria-label={tRegional('searchCountryLabel')}
               placeholder={tOrigin('searchCountry')}
-              className="w-full rounded-lg bg-nham-track px-3 py-2 text-[13px] outline-none placeholder:text-[#7B6F62] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30"
+              className="w-full rounded-lg bg-nham-track px-3 py-2 text-[13px] outline-none placeholder:text-nham-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30"
             />
           </div>
           <div className="max-h-48 overflow-y-auto p-1">
             {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-center text-[#7B6F62] text-[13px]">
+              <div className="px-3 py-2 text-center text-[13px] text-nham-text-muted">
                 {tOrigin('noCountries')}
               </div>
             ) : (
@@ -101,7 +101,9 @@ export function CountrySelect({
                   )}
                 >
                   <span>{c.value}</span>
-                  <span className="text-[#7B6F62] text-[11px]">{c.vi}</span>
+                  <span className="text-[11px] text-nham-text-muted">
+                    {c.vi}
+                  </span>
                 </button>
               ))
             )}

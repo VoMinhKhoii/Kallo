@@ -1,11 +1,13 @@
 'use client';
 
+import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OptionStripItem {
   value: string;
   label: string;
   hint?: string;
+  icon?: LucideIcon;
 }
 
 interface OptionStripProps {
@@ -27,10 +29,13 @@ export function OptionStrip({ options, value, onChange }: OptionStripProps) {
             'flex flex-1 flex-col items-center rounded-lg py-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40',
             value === opt.value
               ? 'bg-white text-nham-text shadow-sm'
-              : 'text-[#7B6F62] hover:text-nham-text'
+              : 'text-nham-text-muted hover:text-nham-text'
           )}
         >
-          <span className="font-medium text-[13px]">{opt.label}</span>
+          <span className="flex items-center gap-1.5 font-medium text-[13px]">
+            {opt.icon && <opt.icon className="size-3.5" aria-hidden />}
+            {opt.label}
+          </span>
           {opt.hint && (
             <span className="mt-0.5 text-center text-[10px] leading-tight opacity-70">
               {opt.hint}

@@ -2,9 +2,8 @@
 
 import { Bug, ImageIcon, ImagePlus, Lightbulb, Sprout, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { OptionStrip } from '@/components/settings/option-strip';
 import { FEEDBACK_TYPES } from '@/lib/api/contracts/feedback';
-import { cn } from '@/lib/utils';
-import { SettingsRow } from '../group';
 import {
   ACCEPTED,
   MAX_LENGTH,
@@ -37,9 +36,9 @@ type FeedbackFormProps = Pick<
 >;
 
 /**
- * The feedback form as grouped list-rows: type pills, message + counter,
- * screenshot attach, and a footer submit row. Hairlines come from the parent
- * SettingsGroup's `divide-y`; no row draws its own border.
+ * The feedback form as one compact padded block: type strip (same OptionStrip
+ * control the cooking rows use), message with an inline counter, and a footer
+ * that pairs the screenshot attach with the submit button.
  */
 export function FeedbackForm({
   type,
@@ -59,117 +58,100 @@ export function FeedbackForm({
   const t = useTranslations('settings.feedback');
 
   return (
-    <>
+    <div className="space-y-5 p-card-sm">
       {/* Type */}
-      <SettingsRow label={t('typeLabel')} layout="stacked">
-        <div className="grid grid-cols-3 gap-2">
-          {FEEDBACK_TYPES.map((option) => {
-            const Icon = TYPE_ICONS[option];
-            const active = type === option;
-            return (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setType(option)}
-                aria-pressed={active}
-                className={cn(
-                  'flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60',
-                  active
-                    ? 'border-nham-border bg-nham-hover font-semibold text-nham-text'
-                    : 'border-[#EAE7E0] bg-white text-[#7B6F62] hover:border-nham-accent/50'
-                )}
-              >
-                <Icon className="size-4" aria-hidden />
-                {t(`types.${option}`)}
-              </button>
-            );
-          })}
+      <div>
+        <p className="text-[15px] text-nham-text">{t('typeLabel')}</p>
+        <div className="mt-2">
+          <OptionStrip
+            options={FEEDBACK_TYPES.map((option) => ({
+              value: option,
+              label: t(`types.${option}`),
+              icon: TYPE_ICONS[option],
+            }))}
+            value={type}
+            onChange={(next) => setType(next as FeedbackType)}
+          />
         </div>
-      </SettingsRow>
+      </div>
 
       {/* Message */}
-      <SettingsRow
-        label={t('messageLabel')}
-        htmlFor="feedback-message"
-        layout="stacked"
-      >
+      <div>
+        <div className="flex items-baseline justify-between gap-3">
+          <label
+            htmlFor="feedback-message"
+            className="text-[15px] text-nham-text"
+          >
+            {t('messageLabel')}
+          </label>
+          <span className="text-[12px] text-nham-text-muted tabular-nums">
+            {message.length} / {MAX_LENGTH}
+          </span>
+        </div>
         <textarea
           id="feedback-message"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder={t(`placeholder.${type}`)}
           maxLength={MAX_LENGTH}
-          rows={5}
+          rows={3}
           aria-required="true"
-          className="w-full resize-y rounded-xl border border-[#EAE7E0] bg-white px-3 py-2.5 text-[14px] text-nham-text placeholder:text-[#A79B8B] focus-visible:border-nham-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60"
+          className="mt-2 w-full resize-y rounded-xl border border-nham-border bg-white px-3 py-2.5 text-[14px] text-nham-text placeholder:text-nham-text-muted focus-visible:border-nham-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60"
         />
-        <p className="mt-1 text-right text-[#A79B8B] text-[12px] tabular-nums">
-          {message.length} / {MAX_LENGTH}
-        </p>
-      </SettingsRow>
+      </div>
 
-      {/* Screenshot */}
-      <SettingsRow label={t('screenshotLabel')} layout="inline">
-        <div className="min-w-0">
-          <input
-            ref={fileInput}
-            type="file"
-            accept={ACCEPTED}
-            onChange={pickFile}
-            className="hidden"
-          />
-          {file ? (
-            <div className="flex items-center gap-2 rounded-xl border border-[#EAE7E0] bg-white px-3 py-2 text-[13px]">
-              <ImageIcon
-                className="size-4 shrink-0 text-[#7B6F62]"
-                aria-hidden
-              />
-              <span className="min-w-0 flex-1 truncate text-nham-text">
-                {file.name}
-              </span>
-              <button
-                type="button"
-                onClick={clearFile}
-                aria-label={t('removeScreenshot')}
-                className="shrink-0 rounded-md p-1 text-[#7B6F62] transition-colors hover:text-nham-text"
-              >
-                <X className="size-4" aria-hidden />
-              </button>
-            </div>
-          ) : (
+      {(fileError || submitError) && (
+        <p role="alert" className="text-[13px] text-nham-danger">
+          {fileError ?? submitError}
+        </p>
+      )}
+
+      {/* Footer: screenshot attach + submit */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <input
+          ref={fileInput}
+          type="file"
+          accept={ACCEPTED}
+          onChange={pickFile}
+          className="hidden"
+        />
+        {file ? (
+          <div className="flex min-w-0 items-center gap-2 rounded-xl border border-nham-border bg-white px-3 py-2 text-[13px]">
+            <ImageIcon
+              className="size-4 shrink-0 text-nham-text-muted"
+              aria-hidden
+            />
+            <span className="min-w-0 flex-1 truncate text-nham-text">
+              {file.name}
+            </span>
             <button
               type="button"
-              onClick={() => fileInput.current?.click()}
-              className="flex items-center gap-2 rounded-xl border border-[#EAE7E0] border-dashed bg-white px-3 py-2 text-[#7B6F62] text-[13px] transition-colors hover:border-nham-accent/50 hover:text-nham-text"
+              onClick={clearFile}
+              aria-label={t('removeScreenshot')}
+              className="shrink-0 rounded-md p-1 text-nham-text-muted transition-colors hover:text-nham-text"
             >
-              <ImagePlus className="size-4" aria-hidden />
-              {t('addScreenshot')}
+              <X className="size-4" aria-hidden />
             </button>
-          )}
-          {fileError && (
-            <p role="alert" className="mt-1.5 text-[13px] text-nham-danger">
-              {fileError}
-            </p>
-          )}
-        </div>
-      </SettingsRow>
-
-      {/* Footer: submit + submit error */}
-      <div className="flex flex-col items-end gap-2 p-card-sm">
-        {submitError && (
-          <p role="alert" className="w-full text-[13px] text-nham-danger">
-            {submitError}
-          </p>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            className="flex items-center gap-2 rounded-xl border border-nham-border border-dashed bg-white px-3 py-2 text-[13px] text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:text-nham-text"
+          >
+            <ImagePlus className="size-4" aria-hidden />
+            {t('addScreenshot')}
+          </button>
         )}
         <button
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="w-full rounded-lg bg-nham-ink px-4 py-2.5 font-medium text-nham-surface text-sm transition-opacity disabled:opacity-50 sm:w-auto"
+          className="rounded-lg bg-nham-btn px-4 py-2 font-medium text-sm text-white transition-opacity disabled:opacity-50"
         >
           {pending ? t('submitting') : t('submit')}
         </button>
       </div>
-    </>
+    </div>
   );
 }

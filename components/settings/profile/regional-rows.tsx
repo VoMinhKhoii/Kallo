@@ -2,8 +2,8 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
-import { LanguageToggle } from '@/components/onboarding/language-toggle';
 import { SUBSECTION_ANCHOR } from '@/components/settings/anchors';
+import { CustomSelect } from '@/components/settings/custom-select';
 import { SettingsRow } from '@/components/settings/group';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
 import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
@@ -27,10 +27,16 @@ export function RegionalRows() {
         label={tSettings('language')}
         description={tSettings('languageHint')}
       >
-        <LanguageToggle
-          value={locale}
-          onChange={(next) => switchLocale(next as Locale)}
-        />
+        <div className="w-full sm:w-72">
+          <CustomSelect
+            options={[
+              { value: 'en', label: 'English' },
+              { value: 'vi', label: 'Tiếng Việt' },
+            ]}
+            value={locale}
+            onChange={(next) => switchLocale(next as Locale)}
+          />
+        </div>
       </SettingsRow>
 
       <div id={SUBSECTION_ANCHOR.regional} className="scroll-mt-20">

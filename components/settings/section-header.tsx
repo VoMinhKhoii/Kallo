@@ -13,7 +13,7 @@ export function SectionHeader({ title, description }: SectionHeaderProps) {
     <div className="mb-4">
       <h2 className="font-normal font-serif text-nham-text text-xl">{title}</h2>
       {description && (
-        <p className="mt-1 text-[#7B6F62] text-[14px]">{description}</p>
+        <p className="mt-1 text-[14px] text-nham-text-muted">{description}</p>
       )}
     </div>
   );
