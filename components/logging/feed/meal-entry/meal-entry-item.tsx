@@ -9,7 +9,6 @@ import {
 } from '@/components/logging/feed/format-inline-nutrition';
 import { MIN_DISH_GRAMS } from '@/lib/meal-utils';
 import type { MealItem } from '@/lib/types/meal';
-import { cn } from '@/lib/utils';
 
 interface MealEntryItemProps {
   item: MealItem;
@@ -33,14 +32,15 @@ export function MealEntryItem({
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05 }}
-      className={cn(
-        'flex items-center justify-between py-2.5 text-[13px]',
-        isEditing && 'rounded-lg bg-nham-hover/30 px-2',
-        'font-sans-display'
-      )}
+      className="flex items-center justify-between py-2.5 font-sans-display text-[13px]"
     >
-      {/* Left: edit controls + item name */}
-      <div className="flex min-w-0 items-center gap-2">
+      {/* Left: item name */}
+      <div className="flex min-w-0 items-center">
+        <span className="truncate font-medium text-nham-text">{item.name}</span>
+      </div>
+
+      {/* Right: edit controls + P/C/F macros + calories */}
+      <div className="flex shrink-0 items-center gap-3">
         {isEditing && (
           <div className="flex shrink-0 items-center gap-0.5">
             <button
@@ -65,11 +65,6 @@ export function MealEntryItem({
             </button>
           </div>
         )}
-        <span className="truncate font-medium text-nham-text">{item.name}</span>
-      </div>
-
-      {/* Right: P/C/F macros + calories */}
-      <div className="flex shrink-0 items-center gap-3">
         <div className="flex gap-2 text-[10px] text-nham-text-muted tabular-nums">
           <span className="whitespace-nowrap text-right">
             P:{formatMacroValue(item.macros.protein)}

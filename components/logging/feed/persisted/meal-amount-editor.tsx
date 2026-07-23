@@ -108,12 +108,20 @@ export function MealAmountEditor({
           <div
             key={row.id}
             className={cn(
-              'flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-[13px]',
-              row.removed ? 'opacity-40' : 'bg-nham-hover/30',
+              'flex items-center justify-between py-2 text-[13px]',
+              row.removed && 'opacity-40',
               'font-sans-display'
             )}
           >
-            <div className="flex min-w-0 items-center gap-2">
+            <span
+              className={cn(
+                'min-w-0 truncate font-medium text-nham-text',
+                row.removed && 'line-through'
+              )}
+            >
+              {row.name}
+            </span>
+            <div className="flex shrink-0 items-center gap-2">
               {row.grams != null && !row.removed && (
                 <div className="flex shrink-0 items-center gap-0.5">
                   <button
@@ -137,24 +145,16 @@ export function MealAmountEditor({
                   </button>
                 </div>
               )}
-              <span
-                className={cn(
-                  'truncate font-medium text-nham-text',
-                  row.removed && 'line-through'
-                )}
+              <button
+                type="button"
+                aria-label={t('removeRow', { name: row.name })}
+                aria-pressed={row.removed}
+                onClick={() => toggleRemove(row.id)}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
               >
-                {row.name}
-              </span>
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <button
-              type="button"
-              aria-label={t('removeRow', { name: row.name })}
-              aria-pressed={row.removed}
-              onClick={() => toggleRemove(row.id)}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
           </div>
         ))}
       </div>
