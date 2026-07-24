@@ -18,7 +18,7 @@ The team's planning/task board is **Tuturuuu**, driven by the `ttr` CLI. Referre
 
 Board/list ids drift — confirm before use:
 
-```
+```bash
 ttr boards list
 ttr lists list --board <board-id>
 ```
@@ -42,7 +42,7 @@ Keeping them in sync: author/edit the local `.md`, then `ttr task-templates impo
 
 ## Common commands
 
-```
+```bash
 ttr tasks list                              # open personal + assigned tasks
 ttr tasks list --all                        # include done/closed
 ttr tasks create "<title>" \
@@ -58,13 +58,13 @@ Scoped help: `ttr tasks --help`, `ttr tasks create --help`, `ttr boards --help`.
 
 The `ttr` CLI does **not** print a task URL. **Whenever you create a task (or anything with a shareable board view), construct and surface its web link so the user can click straight to it.** Get the task id from the create output (or `ttr tasks get <id> --json`), then:
 
-```
+```text
 https://tasks.tuturuuu.com/<workspace-id>/tasks/boards/<board-id>?task=<task-id>
 ```
 
 Example (the `/docs` task):
 
-```
+```text
 https://tasks.tuturuuu.com/86f5dd41-8305-42ba-a93d-820afaa81c41/tasks/boards/5d6e17ca-40ea-4d82-98d8-fba232654e54?task=5ad70561-2432-4848-94a8-fd5b42856c89
 ```
 
