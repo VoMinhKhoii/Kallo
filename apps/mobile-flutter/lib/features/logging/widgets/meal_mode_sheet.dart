@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
@@ -42,9 +43,8 @@ Future<MealLogMode?> showMealModeSheet(
   BuildContext context, {
   required MealLogMode current,
 }) {
-  return showModalBottomSheet<MealLogMode>(
-    context: context,
-    backgroundColor: Colors.transparent,
+  return showNhamSheet<MealLogMode>(
+    context,
     builder: (context) => _MealModeSheet(current: current),
   );
 }
@@ -57,46 +57,11 @@ class _MealModeSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: NhamColors.surface,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(NhamRadii.xxl),
-        ),
-      ),
+    return NhamSheetSurface(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header — X (close) on the left, centered title.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp1,
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(LucideIcons.x, size: 22),
-                  color: NhamColors.textMuted,
-                  tooltip: 'common.cancel'.tr(),
-                ),
-                Expanded(
-                  child: Center(
-                    child: NhamText(
-                      'logging.modeSelector.title'.tr(),
-                      variant: NhamTextVariant.body,
-                      style: dashBody(weight: FontWeight.w500),
-                    ),
-                  ),
-                ),
-                // Mirror the X so the title stays optically centered.
-                const SizedBox(width: 48, height: 48),
-              ],
-            ),
-          ),
+          NhamSheetHeader(title: 'logging.modeSelector.title'.tr()),
           Padding(
             padding: EdgeInsets.fromLTRB(
               NhamSpacing.sp3,

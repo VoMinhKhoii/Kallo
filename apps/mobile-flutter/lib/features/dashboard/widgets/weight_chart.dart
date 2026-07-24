@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/weight.dart';
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
@@ -251,16 +252,10 @@ void _openLogSheet(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(top: NhamSpacing.sp3),
-                decoration: BoxDecoration(
-                  color: NhamColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+              NhamSheetHeader(
+                title: tr('dashboard.weightCard.todaysWeight'),
               ),
-              const SizedBox(height: NhamSpacing.sp6),
+              const SizedBox(height: NhamSpacing.sp3),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: NhamSpacing.sp5,

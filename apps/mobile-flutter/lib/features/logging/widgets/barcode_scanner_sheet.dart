@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -24,10 +25,9 @@ Future<bool?> showBarcodeScannerSheet(
   required String date,
   VoidCallback? onFallbackToText,
 }) {
-  return showModalBottomSheet<bool>(
-    context: context,
+  return showNhamSheet<bool>(
+    context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder:
         (context) => BarcodeScannerSheet(
           userId: userId,
@@ -164,67 +164,16 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
         ignoring: saving,
         child: Padding(
           padding: EdgeInsets.only(bottom: keyboardInset),
-          child: Container(
+          child: NhamSheetSurface(
             constraints: BoxConstraints(maxHeight: maxHeight),
-            decoration: const BoxDecoration(
-              color: NhamColors.surface,
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(NhamRadii.xxl),
-              ),
-            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: NhamSpacing.sp2),
-                // Drag handle.
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: NhamColors.borderSoft,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                NhamSheetHeader(
+                  title: 'logging.barcode.title'.tr(),
+                  subtitle: 'logging.barcode.subtitle'.tr(),
+                  closeEnabled: !saving,
                 ),
-                // Header: title/subtitle left, X right.
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    NhamSpacing.sp4,
-                    NhamSpacing.sp3,
-                    NhamSpacing.sp2,
-                    NhamSpacing.sp2,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            NhamText(
-                              'logging.barcode.title'.tr(),
-                              variant: NhamTextVariant.h3,
-                            ),
-                            const SizedBox(height: 2),
-                            NhamText(
-                              'logging.barcode.subtitle'.tr(),
-                              variant: NhamTextVariant.small,
-                              style: const TextStyle(
-                                color: NhamColors.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed:
-                            saving ? null : () => Navigator.of(context).pop(),
-                        icon: const Icon(LucideIcons.x, size: 20),
-                        color: NhamColors.textMuted,
-                        tooltip: 'common.cancel'.tr(),
-                      ),
-                    ],
-                  ),
-                ),
-
                 Flexible(child: _buildBody(state)),
               ],
             ),

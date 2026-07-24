@@ -185,16 +185,8 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Always "Today's weight" — this field only ever logs today. No leading
-        // icon: the label alone carries the meaning and reads cleaner.
-        Padding(
-          padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
-          child: Text(
-            tr('dashboard.weightCard.todaysWeight').toUpperCase(),
-            style: dashEyebrow(),
-          ),
-        ),
-        // Field on its own row, full width.
+        // Field on its own row, full width. The "Today's weight" label now
+        // lives in the hosting sheet's header (NhamSheetHeader title).
         TextField(
           controller: _controller,
           onChanged: _onChanged,

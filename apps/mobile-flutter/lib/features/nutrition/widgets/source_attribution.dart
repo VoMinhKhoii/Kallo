@@ -2,8 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 
 /// A quiet line under the nutrient grid attributing the daily targets to
@@ -43,44 +43,13 @@ class SourceAttribution extends StatelessWidget {
 
 void _showCitations(BuildContext context) {
   final bottomInset = MediaQuery.of(context).padding.bottom;
-  showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    builder: (_) => Container(
-      decoration: const BoxDecoration(
-        color: NhamColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(NhamRadii.xxl)),
-      ),
+  showNhamSheet<void>(
+    context,
+    builder: (_) => NhamSheetSurface(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp1,
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(LucideIcons.x, size: 22),
-                  color: NhamColors.textMuted,
-                  tooltip: tr('common.cancel'),
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      tr('nutrition.sources.title'),
-                      style: dashBody(weight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 48, height: 48),
-              ],
-            ),
-          ),
+          NhamSheetHeader(title: tr('nutrition.sources.title')),
           Padding(
             padding: EdgeInsets.fromLTRB(
               NhamSpacing.sp5,

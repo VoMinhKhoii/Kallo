@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../theme/nham_colors.dart';
@@ -31,9 +32,8 @@ Future<void> showSuggestedFoodsSheet(
   BuildContext context, {
   required List<NutrientCardData> nutrients,
 }) {
-  return showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: Colors.transparent,
+  return showNhamSheet<void>(
+    context,
     isScrollControlled: true,
     builder: (_) => _SuggestedFoodsSheet(nutrients: nutrients),
   );
@@ -49,42 +49,12 @@ class _SuggestedFoodsSheet extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     final maxHeight = MediaQuery.of(context).size.height * 0.8;
 
-    return Container(
+    return NhamSheetSurface(
       constraints: BoxConstraints(maxHeight: maxHeight),
-      decoration: const BoxDecoration(
-        color: NhamColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(NhamRadii.xxl)),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp1,
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(LucideIcons.x, size: 22),
-                  color: NhamColors.textMuted,
-                  tooltip: tr('common.cancel'),
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      tr('nutrition.suggestedFoods.title'),
-                      style: dashBody(weight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 48, height: 48),
-              ],
-            ),
-          ),
+          NhamSheetHeader(title: tr('nutrition.suggestedFoods.title')),
           Flexible(
             child: ListView.separated(
               shrinkWrap: true,
