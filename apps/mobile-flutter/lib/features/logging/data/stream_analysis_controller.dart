@@ -22,6 +22,24 @@ import '../../../models/cheat.dart';
 import '../../../models/meal.dart';
 import '../../../models/streaming.dart';
 
+/// Precise-mode clarify prompt: the pipeline finished but an ingredient's
+/// portion/food couldn't be resolved. The stream ends here (no
+/// analysis_complete) and nothing is staged; the client re-submits the meal
+/// with `clarifyAnswer`. Mirrors the web hook's `PreciseClarify`.
+class PreciseClarify {
+  final String question;
+  final String? mealItemId;
+
+  /// 'unresolved_portion' | 'ambiguous_food'.
+  final String reason;
+
+  const PreciseClarify({
+    required this.question,
+    this.mealItemId,
+    required this.reason,
+  });
+}
+
 /// Immutable streaming state — the RN `StreamAnalysisState`.
 class StreamAnalysisState {
   final StreamStatus status;
@@ -33,8 +51,17 @@ class StreamAnalysisState {
   /// a clarifyingQuestion is terminal with no [analysisId] — the user must
   /// re-ask with `clarifyAnswer`.
   final CheatSliderSpec? cheatSpec;
+
+  /// Precise-mode clarify prompt (when the pipeline couldn't resolve a
+  /// portion/food). Terminal with no [analysisId], like a cheat clarify.
+  final PreciseClarify? clarify;
   final String? analysisId;
   final String? error;
+
+  /// Whether the terminal [error] is worth retrying. Defaults true (matches the
+  /// server contract's default and covers the inactivity-timeout error, which
+  /// is always retryable). Only a server `error` frame can set it false.
+  final bool retryable;
   final bool isAnalyzing;
 
   /// The day this run logs into (`StreamAnalyzeInput.loggedDate`). Lets the
@@ -48,8 +75,10 @@ class StreamAnalysisState {
     this.completedItems = const [],
     this.result,
     this.cheatSpec,
+    this.clarify,
     this.analysisId,
     this.error,
+    this.retryable = true,
     this.isAnalyzing = false,
     this.loggedDate,
   });
@@ -60,8 +89,10 @@ class StreamAnalysisState {
     List<MealItem>? completedItems,
     ParsedMeal? result,
     CheatSliderSpec? cheatSpec,
+    PreciseClarify? clarify,
     String? analysisId,
     String? error,
+    bool? retryable,
     bool? isAnalyzing,
     String? loggedDate,
   }) => StreamAnalysisState(
@@ -70,8 +101,10 @@ class StreamAnalysisState {
     completedItems: completedItems ?? this.completedItems,
     result: result ?? this.result,
     cheatSpec: cheatSpec ?? this.cheatSpec,
+    clarify: clarify ?? this.clarify,
     analysisId: analysisId ?? this.analysisId,
     error: error ?? this.error,
+    retryable: retryable ?? this.retryable,
     isAnalyzing: isAnalyzing ?? this.isAnalyzing,
     loggedDate: loggedDate ?? this.loggedDate,
   );
@@ -90,12 +123,21 @@ StreamStatus _statusForStage(PipelineStage stage) => switch (stage) {
 
 class StreamAnalysisController extends Notifier<StreamAnalysisState> {
   StreamSubscription<StreamEvent>? _sub;
-  Timer? _timeout;
+  Timer? _watchdog;
   int _requestId = 0;
 
-  // Server caps analyze at 60s (maxDuration); time the client out a bit past
-  // that so a stalled pipeline surfaces an error instead of spinning forever.
-  static const Duration _analyzeTimeout = Duration(seconds: 70);
+  /// Set once any terminal event arrives for the current run, so the watchdog
+  /// stops re-arming — a slow socket close after a successful/settled analysis
+  /// must never trip a spurious timeout.
+  bool _receivedTerminal = false;
+
+  // Inactivity watchdog: if the SSE stream goes completely silent for this long
+  // (no frame at all, and no terminal event yet), abort and surface a retryable
+  // timeout instead of spinning forever. Reset on every frame — a slow but
+  // progressing pipeline keeps emitting stage/item frames — and disarmed once
+  // any terminal event arrives. Mirrors the web hook's INACTIVITY watchdog
+  // (which replaced the old wall-clock timeout).
+  static const Duration _inactivityTimeout = Duration(seconds: 45);
 
   @override
   StreamAnalysisState build() {
@@ -106,8 +148,26 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
   void _closeStream() {
     _sub?.cancel();
     _sub = null;
-    _timeout?.cancel();
-    _timeout = null;
+    _watchdog?.cancel();
+    _watchdog = null;
+  }
+
+  /// (Re)start the inactivity watchdog for [reqId]. A no-op once the run is
+  /// terminal — the server just needs to close the socket, and its delay must
+  /// not fire a timeout over an already-settled analysis.
+  void _armWatchdog(int reqId) {
+    _watchdog?.cancel();
+    if (_receivedTerminal) return;
+    _watchdog = Timer(_inactivityTimeout, () {
+      if (reqId != _requestId || _receivedTerminal) return;
+      state = state.copyWith(
+        status: StreamStatus.error,
+        error: tr('errors.pipelineTimeout'),
+        retryable: true,
+        isAnalyzing: false,
+      );
+      _closeStream();
+    });
   }
 
   /// Reset to idle WITHOUT bumping the request id (the RN `reset`, called after
@@ -159,16 +219,31 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
         } else {
           state = state.copyWith(cheatSpec: spec);
         }
+      case ClarifyEvent(:final question, :final mealItemId, :final reason):
+        // Terminal, like a cheat clarifyingQuestion: the stream ends with no
+        // analysis_complete and nothing staged. Settle here and expose the
+        // prompt so the UI can collect an answer and re-submit with
+        // clarifyAnswer (+ the same attemptId). Mirrors the web hook.
+        state = state.copyWith(
+          clarify: PreciseClarify(
+            question: question,
+            mealItemId: mealItemId,
+            reason: reason,
+          ),
+          status: StreamStatus.done,
+          isAnalyzing: false,
+        );
       case AnalysisCompleteEvent(:final analysisId):
         state = state.copyWith(
           status: StreamStatus.done,
           analysisId: analysisId,
           isAnalyzing: false,
         );
-      case StreamErrorEvent(:final message):
+      case StreamErrorEvent(:final message, :final retryable):
         state = state.copyWith(
           status: StreamStatus.error,
           error: message,
+          retryable: retryable,
           isAnalyzing: false,
         );
     }
@@ -179,6 +254,7 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
   Future<void> analyze(StreamAnalyzeInput input) async {
     _closeStream();
     final reqId = ++_requestId;
+    _receivedTerminal = false;
     state = StreamAnalysisState(
       status: StreamStatus.connecting,
       isAnalyzing: true,
@@ -191,16 +267,22 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
         .listen(
           (event) {
             _apply(event, reqId);
-            // A clarify cheat_estimate is terminal too (the server ends the
-            // stream without analysis_complete) — close so the 70s timeout
-            // guard's `status == done` check disarms it.
-            final clarifyTerminal =
-                event is CheatEstimateEvent &&
-                event.spec.clarifyingQuestion != null;
-            if (event is AnalysisCompleteEvent ||
+            // Terminal frames end the run: analysis_complete, error, a precise
+            // clarify, or a cheat_estimate carrying a clarifyingQuestion (both
+            // clarifies end the stream WITHOUT analysis_complete). Mark terminal
+            // and tear down — this also disarms the inactivity watchdog.
+            final isTerminal =
+                event is AnalysisCompleteEvent ||
                 event is StreamErrorEvent ||
-                clarifyTerminal) {
+                event is ClarifyEvent ||
+                (event is CheatEstimateEvent &&
+                    event.spec.clarifyingQuestion != null);
+            if (isTerminal) {
+              _receivedTerminal = true;
               _closeStream();
+            } else {
+              // Progress frame — reset the inactivity watchdog.
+              _armWatchdog(reqId);
             }
           },
           onError: (_) {
@@ -209,6 +291,7 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
             state = state.copyWith(
               status: StreamStatus.error,
               error: tr('errors.internal'),
+              retryable: true,
               isAnalyzing: false,
             );
             _closeStream();
@@ -216,17 +299,10 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
           cancelOnError: true,
         );
 
-    // Wall-clock guard: a stalled pipeline that never emits analysis_complete /
-    // error would otherwise leave the UI spinning with the input disabled.
-    _timeout = Timer(_analyzeTimeout, () {
-      if (reqId != _requestId || state.status == StreamStatus.done) return;
-      state = state.copyWith(
-        status: StreamStatus.error,
-        error: tr('errors.pipelineTimeout'),
-        isAnalyzing: false,
-      );
-      _closeStream();
-    });
+    // Arm the inactivity watchdog for the initial connect — a stalled pipeline
+    // that never emits a frame surfaces a retryable timeout instead of leaving
+    // the UI spinning with the input disabled.
+    _armWatchdog(reqId);
   }
 }
 
