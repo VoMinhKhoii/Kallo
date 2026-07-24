@@ -213,6 +213,33 @@ async function clickConfirm() {
   });
 }
 
+// A promise we resolve by hand, to hold a query's initial fetch unresolved
+// across the confirm (simulating a first-load still in flight when the user
+// saves) and release it afterwards.
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}
+
+function savedMeal(id: string, calories: number): PersistedMeal {
+  return {
+    id,
+    rawInput: 'Cơm tấm',
+    mealSlot: null,
+    confidenceOverall: null,
+    loggedAt: '2026-05-04T03:00:00.000Z',
+    nutrition: nutritionWith(calories),
+    mealItemGroups: [],
+    entryMode: 'precise',
+    alcoholG: null,
+    cheatSliders: null,
+    share: null,
+  };
+}
+
 beforeEach(() => {
   server.reset();
   vi.clearAllMocks();
@@ -520,5 +547,87 @@ describe('save-meal flow (integration)', () => {
     // Exactly one meal saved; the other pending row remains unconfirmed.
     expect(server.meals).toHaveLength(1);
     expect(server.pending.map((p) => p.id)).toEqual(['analysis-2']);
+  });
+
+  it('first meal saved while the dashboard daily-meals initial fetch is still in flight → dashboard ring settles to the server calories', async () => {
+    // The dashboard's daily-meals query is never touched by onMutate, so a cancel
+    // of its in-flight first load leaves it with no data; upsertMealIntoList
+    // no-ops on undefined and the success settle refetches nothing → the ring
+    // used to stay empty. It must instead heal to the saved value.
+    const daily = deferred<PersistedMeal[]>();
+    let dailyCalls = 0;
+    mockLoadMealsByDate.mockImplementation(async () => {
+      dailyCalls += 1;
+      // Hold ONLY the first load unresolved (across the confirm); any post-save
+      // refetch reads the current server state.
+      if (dailyCalls === 1) return daily.promise;
+      return server.meals;
+    });
+
+    const client = makeClient();
+    renderWith(client, <Surfaces />);
+
+    // logging-day resolves empty; the dashboard's daily-meals load is still in
+    // flight, so its ring has no data yet (renders 0).
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('0')
+    );
+    expect(screen.getByTestId('dashboard-ring')).toHaveTextContent('0');
+
+    // Save the first meal while that initial dashboard fetch is unresolved.
+    await clickConfirm();
+
+    // Release the held pre-save fetch AFTER the confirm; its (empty) pre-save
+    // result must not win — the ring must reflect the saved server value.
+    await act(async () => {
+      daily.resolve([]);
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('dashboard-ring')).toHaveTextContent(
+        String(SERVER_CALORIES)
+      )
+    );
+  });
+
+  it('meal saved while the logging-day initial fetch (holding an existing server meal) is still in flight → logging ring settles to BOTH meals total', async () => {
+    // The day already has a saved meal (300) on the server, but its logging-day
+    // first load is still in flight when the user confirms a second meal (480).
+    // Cancelling that load and seeding only the new meal undercounts the ring
+    // (480), dropping the never-loaded 300. It must heal to the true total 780.
+    server.meals = [savedMeal('meal-0', 300)];
+    const day = deferred<LoggingDayData>();
+    let dayCalls = 0;
+    mockLoadLoggingDay.mockImplementation(async () => {
+      dayCalls += 1;
+      if (dayCalls === 1) return day.promise;
+      return {
+        persistedMeals: server.meals,
+        pendingConfirmations: server.pending,
+      };
+    });
+
+    const client = makeClient();
+    renderWith(client, <Surfaces showDashboard={false} mealId="meal-1" />);
+
+    // The initial logging-day fetch is in flight → the ring has no data yet.
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('0')
+    );
+
+    await clickConfirm();
+
+    // Release the held pre-save fetch (it saw only the existing meal-0); it must
+    // neither clobber the save nor let the never-loaded meal-0 fall out.
+    await act(async () => {
+      day.resolve({
+        persistedMeals: [savedMeal('meal-0', 300)],
+        pendingConfirmations: [],
+      });
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('780')
+    );
   });
 });

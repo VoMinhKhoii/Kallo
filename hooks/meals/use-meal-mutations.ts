@@ -14,18 +14,20 @@ import {
 import type { LoggingDayData, PersistedMeal } from '@/lib/actions/meals/types';
 import { parseGrams, rowLabel } from '@/lib/logging/manual-logging';
 import {
-  applyOptimisticMeal,
   buildOptimisticManualMeal,
   buildOptimisticMeal,
   type ConfirmMealVariables,
-  reconcileSavedMeal,
-  rollbackOptimisticMeal,
   type SaveManualMealVariables,
-  settleMealSave,
   todayDateString,
   upsertById,
   upsertMealIntoList,
 } from './meal-mutation-helpers';
+import {
+  applyOptimisticMeal,
+  reconcileSavedMeal,
+  rollbackOptimisticMeal,
+  settleMealSave,
+} from './meal-save-choreography';
 
 export function useConfirmMeal(userId: string) {
   const queryClient = useQueryClient();
@@ -54,13 +56,14 @@ export function useConfirmMeal(userId: string) {
         ),
         variables.analysisId
       ),
-    onSuccess: (data, variables) =>
+    onSuccess: (data, variables, context) =>
       reconcileSavedMeal(
         queryClient,
         userId,
         variables.originDate,
         data.meal,
-        variables.analysisId
+        variables.analysisId,
+        context?.snapshots
       ),
     onError: (error, _vars, context) =>
       rollbackOptimisticMeal(queryClient, error, context),
@@ -103,8 +106,15 @@ export function useSaveManualMeal(userId: string) {
         variables.originDate,
         buildOptimisticManualMeal(variables)
       ),
-    onSuccess: (data, variables) =>
-      reconcileSavedMeal(queryClient, userId, variables.originDate, data.meal),
+    onSuccess: (data, variables, context) =>
+      reconcileSavedMeal(
+        queryClient,
+        userId,
+        variables.originDate,
+        data.meal,
+        undefined,
+        context?.snapshots
+      ),
     onError: (error, _vars, context) =>
       rollbackOptimisticMeal(queryClient, error, context),
     onSettled: (_data, error, variables) =>
@@ -205,8 +215,15 @@ export function useDuplicateMeal(userId: string) {
         // save response brings the real one.
         share: { shareId: '', visibility: 'circle' },
       }),
-    onSuccess: (data, v) =>
-      reconcileSavedMeal(queryClient, userId, v.originDate, data.meal),
+    onSuccess: (data, v, context) =>
+      reconcileSavedMeal(
+        queryClient,
+        userId,
+        v.originDate,
+        data.meal,
+        undefined,
+        context?.snapshots
+      ),
     onError: (error, _v, context) =>
       rollbackOptimisticMeal(queryClient, error, context),
     onSettled: (_data, error, v) =>
