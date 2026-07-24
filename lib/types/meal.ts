@@ -69,4 +69,7 @@ export interface ChatMessage {
    *  question (portion/food unresolved) instead of a meal. The card collects a
    *  free-text answer and re-analyzes the same text with `clarifyAnswer`. */
   preciseClarify?: PreciseClarify;
+  /** Timeline anchor carried from an NL-refine's origin meal, so a clarify
+   *  round-trip on the refine keeps `inheritLoggedAt`. Absent on normal logs. */
+  inheritLoggedAt?: string;
 }

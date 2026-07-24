@@ -117,6 +117,9 @@ export function useConfirmHandlers(args: {
           isStreaming: true,
           streamingPhase: 'waiting',
           attemptId,
+          // Anchor carried on the card so a clarify round-trip keeps it (the
+          // terminal effect spreads ...msg, preserving this field).
+          inheritLoggedAt: meal.loggedAt,
         },
       ]);
       scrollToBottom();
@@ -305,6 +308,9 @@ export function useConfirmHandlers(args: {
       // Reuse this card's attempt id so the resubmit supersedes the pre-clarify
       // staging row instead of orphaning it (mirrors handleCheatClarify).
       attemptId: message.attemptId,
+      // Carry the refine's origin anchor through the clarify so the corrected
+      // meal keeps the original's instant/slot (undefined on normal logs).
+      inheritLoggedAt: message.inheritLoggedAt,
     });
   };
 

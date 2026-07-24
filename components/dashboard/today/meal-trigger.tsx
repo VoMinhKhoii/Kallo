@@ -46,13 +46,12 @@ function MealInputForm({
   const wasActiveRef = useRef(false);
 
   const isStreaming = streaming.isActive;
-  const showTicker = isStreaming || Boolean(streaming.error);
   const Loader = DASH_LOADERS[streaming.loaderIndex % DASH_LOADERS.length];
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const meal = text.trim();
-    if (!meal || showTicker) return;
+    if (!meal || isStreaming || streaming.error || streaming.clarify) return;
     onSubmit?.();
     setText('');
     onSubmitMeal(meal);
@@ -69,8 +68,7 @@ function MealInputForm({
     inputRef.current?.focus();
   }, [restoredDraft]);
 
-  // Hand focus back to the field once a run finishes cleanly, so logging the
-  // next meal is zero-click.
+  // Hand focus back to the field once a run finishes cleanly (zero-click next log).
   useEffect(() => {
     if (wasActiveRef.current && !isStreaming && !streaming.error) {
       inputRef.current?.focus();
@@ -78,7 +76,7 @@ function MealInputForm({
     wasActiveRef.current = isStreaming;
   }, [isStreaming, streaming.error]);
 
-  const isStreamingLive = isStreaming && !streaming.error;
+  const isStreamingLive = isStreaming && !streaming.error && !streaming.clarify;
 
   return (
     <form
@@ -86,29 +84,34 @@ function MealInputForm({
       className={cn(
         'flex min-w-0 items-center gap-2 rounded-2xl px-3 transition-colors',
         compact ? 'h-11' : 'h-12',
-        // While streaming, the box chrome falls away — just the loader and
-        // the flipping text on the page surface.
         isStreamingLive
           ? 'border border-transparent'
           : 'border border-nham-border/70 bg-card shadow-none focus-within:border-nham-accent/50 hover:border-nham-accent/50',
         streaming.error && 'border-nham-danger/40'
       )}
     >
-      {streaming.error ? (
+      {streaming.error || streaming.clarify ? (
+        /* One-row terminal notice: error (danger, retryable) or precise-clarify
+           question (quiet). Dismiss restores the draft; see the clarify docs. */
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span
-            role="alert"
-            className="min-w-0 flex-1 truncate text-nham-danger text-sm"
+            role={streaming.error ? 'alert' : 'status'}
+            className={cn(
+              'min-w-0 flex-1 truncate text-sm',
+              streaming.error ? 'text-nham-danger' : 'text-nham-text'
+            )}
           >
-            {streaming.error}
+            {streaming.error ?? streaming.clarify}
           </span>
-          <button
-            type="button"
-            onClick={streaming.onRetry}
-            className="shrink-0 font-medium text-nham-btn text-xs underline-offset-2 hover:underline"
-          >
-            {td('retry')}
-          </button>
+          {streaming.error && (
+            <button
+              type="button"
+              onClick={streaming.onRetry}
+              className="shrink-0 font-medium text-nham-btn text-xs underline-offset-2 hover:underline"
+            >
+              {td('retry')}
+            </button>
+          )}
           <button
             type="button"
             onClick={streaming.onDismiss}
@@ -118,10 +121,7 @@ function MealInputForm({
           </button>
         </div>
       ) : isStreaming ? (
-        /* The bar becomes the stream: one loader for the whole run, the text
-           flipping in place as stages, item names, and macros arrive. Stage
-           labels stay quiet sans; the meal's own words flip in serif italic
-           with the resolved kcal in muted ink. */
+        /* The bar becomes the stream: a loader + text flipping through stages. */
         <div
           aria-live="polite"
           className="flex min-w-0 flex-1 items-center gap-3"
