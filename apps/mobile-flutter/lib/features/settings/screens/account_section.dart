@@ -14,8 +14,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../data/api_client.dart';
 import '../../../data/session_provider.dart';
-import '../../auth/widgets/apple_logo.dart';
-import '../../auth/widgets/google_logo.dart';
+import '../../../shared/widgets/brand/apple_logo.dart';
+import '../../../shared/widgets/brand/google_logo.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../widgets/settings_group.dart';
 import '../widgets/settings_row.dart';

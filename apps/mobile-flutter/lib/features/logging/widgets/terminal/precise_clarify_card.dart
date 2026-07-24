@@ -1,12 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import 'precise_clarify_card_buttons.dart';
+import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/nham_colors.dart';
+import '../../../../theme/nham_theme.dart';
+import 'terminal_card_buttons.dart';
 
 /// Precise-mode clarify prompt, rendered as a feed card. The pipeline finished
 /// but an ingredient's portion/food couldn't be resolved, so the server asked
@@ -127,10 +128,15 @@ class _PreciseClarifyCardState extends State<PreciseClarifyCard> {
           Row(
             children: [
               Expanded(
-                child: ClarifySendButton(disabled: widget.busy, onTap: _submit),
+                child: TerminalPrimaryButton(
+                  icon: LucideIcons.cornerDownLeft,
+                  label: 'logging.clarify.send'.tr(),
+                  onTap: _submit,
+                  busy: widget.busy,
+                ),
               ),
               const SizedBox(width: NhamSpacing.sp2),
-              ClarifyDiscardButton(onTap: widget.onDiscard),
+              TerminalDiscardButton(onTap: widget.onDiscard),
             ],
           ),
         ],

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import 'google_logo.dart';
+import '../../../shared/widgets/brand/google_logo.dart';
 
 /// "Continue with Google" button.
 ///

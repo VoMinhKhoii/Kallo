@@ -2,13 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../logic/amount_editor_totals.dart';
-import '../logic/meal_utils.dart';
-import 'meal_stepper_button.dart';
+import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/nham_colors.dart';
+import '../../../../theme/nham_theme.dart';
+import '../../logic/amount_editor_totals.dart';
+import '../../logic/meal_utils.dart';
+import '../meal_stepper_button.dart';
 
 /// One ingredient row in the amount editor: name, ±10g steppers with a tabular
 /// grams readout, and an X toggle that flags the row for removal (opacity 0.40 +

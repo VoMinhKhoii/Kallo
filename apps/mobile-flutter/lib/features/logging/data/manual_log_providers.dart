@@ -120,7 +120,7 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
         'timezoneOffset': timezoneOffsetMinutes(),
       });
       state = const ManualLogState();
-      invalidateMealSurfaces(ref, userId, date);
+      invalidateMealSurfaces(ref.invalidate, userId, date);
     } finally {
       if (state.isSaving) state = state.copyWith(isSaving: false);
     }

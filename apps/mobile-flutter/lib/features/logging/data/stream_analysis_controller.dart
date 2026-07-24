@@ -269,15 +269,10 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
             _apply(event, reqId);
             // Terminal frames end the run: analysis_complete, error, a precise
             // clarify, or a cheat_estimate carrying a clarifyingQuestion (both
-            // clarifies end the stream WITHOUT analysis_complete). Mark terminal
-            // and tear down — this also disarms the inactivity watchdog.
-            final isTerminal =
-                event is AnalysisCompleteEvent ||
-                event is StreamErrorEvent ||
-                event is ClarifyEvent ||
-                (event is CheatEstimateEvent &&
-                    event.spec.clarifyingQuestion != null);
-            if (isTerminal) {
+            // clarifies end the stream WITHOUT analysis_complete). The rule is
+            // the single `StreamEvent.isTerminal` predicate. Mark terminal and
+            // tear down — this also disarms the inactivity watchdog.
+            if (event.isTerminal) {
               _receivedTerminal = true;
               _closeStream();
             } else {

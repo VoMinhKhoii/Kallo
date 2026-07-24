@@ -1,45 +1,58 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/nham_colors.dart';
+import '../../../../theme/nham_theme.dart';
 
-/// Primary "Send" — solid umber, mirroring the confirm/try-again buttons.
-class ClarifySendButton extends StatefulWidget {
-  const ClarifySendButton({
+/// Solid-umber primary pill shared by the terminal feed cards — the
+/// failed-attempt "Try again" and the precise-clarify "Send". Icon + label, a
+/// pressed-state [AnimatedContainer] that deepens the shadow, and an optional
+/// [busy] state that dims to 0.5 and swallows taps (the in-flight clarify
+/// submit). The resting look mirrors the confirm button.
+class TerminalPrimaryButton extends StatefulWidget {
+  const TerminalPrimaryButton({
     super.key,
-    required this.disabled,
+    required this.icon,
+    required this.label,
     required this.onTap,
+    this.busy = false,
   });
-  final bool disabled;
+
+  final IconData icon;
+
+  /// Already-translated string used for both the visible text and the Semantics
+  /// label.
+  final String label;
   final VoidCallback onTap;
 
+  /// While true the pill dims and ignores taps.
+  final bool busy;
+
   @override
-  State<ClarifySendButton> createState() => _ClarifySendButtonState();
+  State<TerminalPrimaryButton> createState() => _TerminalPrimaryButtonState();
 }
 
-class _ClarifySendButtonState extends State<ClarifySendButton> {
+class _TerminalPrimaryButtonState extends State<TerminalPrimaryButton> {
   bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      enabled: !widget.disabled,
-      label: 'logging.clarify.send'.tr(),
+      enabled: !widget.busy,
+      label: widget.label,
       child: Opacity(
-        opacity: widget.disabled ? 0.5 : 1,
+        opacity: widget.busy ? 0.5 : 1,
         child: GestureDetector(
           onTapDown:
-              widget.disabled ? null : (_) => setState(() => _pressed = true),
+              widget.busy ? null : (_) => setState(() => _pressed = true),
           onTapUp:
-              widget.disabled ? null : (_) => setState(() => _pressed = false),
+              widget.busy ? null : (_) => setState(() => _pressed = false),
           onTapCancel:
-              widget.disabled ? null : () => setState(() => _pressed = false),
-          onTap: widget.disabled ? null : widget.onTap,
+              widget.busy ? null : () => setState(() => _pressed = false),
+          onTap: widget.busy ? null : widget.onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
@@ -51,14 +64,10 @@ class _ClarifySendButtonState extends State<ClarifySendButton> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  LucideIcons.cornerDownLeft,
-                  size: 14,
-                  color: Colors.white,
-                ),
+                Icon(widget.icon, size: 14, color: Colors.white),
                 const SizedBox(width: 6),
                 NhamText(
-                  'logging.clarify.send'.tr(),
+                  widget.label,
                   variant: NhamTextVariant.body,
                   style: dashBody(color: Colors.white, weight: FontWeight.w500),
                 ),
@@ -71,16 +80,17 @@ class _ClarifySendButtonState extends State<ClarifySendButton> {
   }
 }
 
-/// Quiet "Discard" — reuses the shared logging.discard string.
-class ClarifyDiscardButton extends StatefulWidget {
-  const ClarifyDiscardButton({super.key, required this.onTap});
+/// Quiet transparent "Discard" shared by the terminal feed cards — a hover-tint
+/// on press, no fill at rest. Wires the shared logging.discard string.
+class TerminalDiscardButton extends StatefulWidget {
+  const TerminalDiscardButton({super.key, required this.onTap});
   final VoidCallback onTap;
 
   @override
-  State<ClarifyDiscardButton> createState() => _ClarifyDiscardButtonState();
+  State<TerminalDiscardButton> createState() => _TerminalDiscardButtonState();
 }
 
-class _ClarifyDiscardButtonState extends State<ClarifyDiscardButton> {
+class _TerminalDiscardButtonState extends State<TerminalDiscardButton> {
   bool _pressed = false;
 
   @override

@@ -5,12 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../../shared/widgets/nham_sheet.dart';
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
-import '../data/barcode_providers.dart';
+import '../../../../shared/widgets/nham_sheet.dart';
+import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/nham_colors.dart';
+import '../../../../theme/nham_theme.dart';
+import '../../../../theme/nham_typography.dart';
+import '../../data/barcode_providers.dart';
 import 'barcode_product_step.dart';
 
 /// Open the barcode sheet: scan (or type) a product barcode, pick an amount,

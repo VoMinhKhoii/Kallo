@@ -48,6 +48,37 @@ export const confirmMealSchema = z.object({
 export type ConfirmMealInput = z.infer<typeof confirmMealSchema>;
 
 /**
+ * Full input for `updateMealAction` (edit a persisted precise meal). Lives here
+ * rather than in the action module because the action carries `'use server'`
+ * (which may only export async functions) and this file is imported by the
+ * mobile client — so the schema is defined once here and imported back by the
+ * action. `updateMealBodySchema` is the request body for
+ * `PATCH /api/v1/meals/[mealId]`: the same shape minus `mealId`, which the route
+ * takes from the URL path.
+ */
+export const updateMealSchema = z.object({
+  mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
+  // Per-stored-item gram override. `id` is the meal_items row id (the same id
+  // the card renders), so the client never needs to track positional order.
+  edits: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        newGrams: z.number().positive().finite().max(100_000),
+      })
+    )
+    .max(100)
+    .optional(),
+  // Stored item rows to drop entirely (per-row "remove").
+  removeIds: z.array(z.string().uuid()).max(100).optional(),
+});
+
+export const updateMealBodySchema = updateMealSchema.omit({ mealId: true });
+
+export type UpdateMealInput = z.infer<typeof updateMealSchema>;
+export type UpdateMealBody = z.infer<typeof updateMealBodySchema>;
+
+/**
  * Request body for `POST /api/v1/meals/manual` → `saveManualMealAction`.
  *
  * Deterministic manual logging: the client sends ingredient ids + grams; the
@@ -102,20 +133,31 @@ export const cheatRepeatSchema = z.object({
 export type CheatRepeatInput = z.infer<typeof cheatRepeatSchema>;
 
 /**
- * Request body for `POST /api/v1/meals/[mealId]/duplicate` →
- * `duplicateMealAction` ("log again"). The source `mealId` is taken from the
- * URL path (not the body) and loaded server-side scoped to the authenticated
- * user, so no client-supplied meal object is ever trusted. This body mirrors
- * the remaining fields of the action's (un-exported) `duplicateMealSchema`
- * exactly: an optional client-generated `newMealId` UUID plus the target
- * day + timezone the copy lands on.
+ * Full input for `duplicateMealAction` ("log again"). Defined here (not in the
+ * action module, which carries `'use server'` and may only export async
+ * functions) and imported back by the action, so the request-body schema is
+ * derived from it rather than hand-copied.
+ *
+ * `duplicateMealBodySchema` is the request body for
+ * `POST /api/v1/meals/[mealId]/duplicate`: the same fields minus `mealId`, which
+ * the route takes from the URL path (never the body) and the action loads
+ * server-side scoped to the authenticated user, so no client-supplied meal
+ * object is ever trusted.
  */
-export const duplicateMealBodySchema = z.object({
+export const duplicateMealSchema = z.object({
+  mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
+  // Client-generated id so the optimistic card and the persisted row share a
+  // stable React key (mirrors confirm/manual save).
   newMealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,
 });
 
+export const duplicateMealBodySchema = duplicateMealSchema.omit({
+  mealId: true,
+});
+
+export type DuplicateMealInput = z.infer<typeof duplicateMealSchema>;
 export type DuplicateMealBody = z.infer<typeof duplicateMealBodySchema>;
 
 export type {

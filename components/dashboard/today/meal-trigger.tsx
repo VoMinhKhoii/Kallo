@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { MealTriggerNotice } from '@/components/dashboard/today/meal-trigger-notice';
 import { DASH_LOADERS } from '@/components/shared/svg-loaders';
 import type { DashboardMealStream } from '@/hooks/dashboard/use-dashboard-meal-log';
 import { cn } from '@/lib/utils';
@@ -39,7 +40,6 @@ function MealInputForm({
   restoredDraft,
 }: MealInputFormProps) {
   const tm = useTranslations('dashboard.mealTrigger');
-  const td = useTranslations('dashboard');
   const tl = useTranslations('logging');
   const [text, setText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -91,35 +91,7 @@ function MealInputForm({
       )}
     >
       {streaming.error || streaming.clarify ? (
-        /* One-row terminal notice: error (danger, retryable) or precise-clarify
-           question (quiet). Dismiss restores the draft; see the clarify docs. */
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <span
-            role={streaming.error ? 'alert' : 'status'}
-            className={cn(
-              'min-w-0 flex-1 truncate text-sm',
-              streaming.error ? 'text-nham-danger' : 'text-nham-text'
-            )}
-          >
-            {streaming.error ?? streaming.clarify}
-          </span>
-          {streaming.error && (
-            <button
-              type="button"
-              onClick={streaming.onRetry}
-              className="shrink-0 font-medium text-nham-btn text-xs underline-offset-2 hover:underline"
-            >
-              {td('retry')}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={streaming.onDismiss}
-            className="shrink-0 text-nham-text-muted text-xs underline-offset-2 hover:underline"
-          >
-            {td('streaming.dismiss')}
-          </button>
-        </div>
+        <MealTriggerNotice streaming={streaming} />
       ) : isStreaming ? (
         /* The bar becomes the stream: a loader + text flipping through stages. */
         <div

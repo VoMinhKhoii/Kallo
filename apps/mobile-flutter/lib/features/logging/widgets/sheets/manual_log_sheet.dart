@@ -6,14 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../models/ingredient.dart';
-import '../../../shared/widgets/decimal_input.dart';
-import '../../../shared/widgets/nham_sheet.dart';
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../data/manual_log_providers.dart';
+import '../../../../models/ingredient.dart';
+import '../../../../shared/widgets/decimal_input.dart';
+import '../../../../shared/widgets/nham_sheet.dart';
+import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/nham_colors.dart';
+import '../../../../theme/nham_theme.dart';
+import '../../data/manual_log_providers.dart';
 
 /// Open the manual-log sheet: search the food database, enter exact grams,
 /// save deterministically — no AI. The Cronometer-style mobile flow.

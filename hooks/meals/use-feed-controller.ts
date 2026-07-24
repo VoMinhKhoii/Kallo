@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
 import type { MealInputHandle } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
+import { useClarifyHandlers } from '@/hooks/meals/use-clarify-handlers';
 import { useConfirmHandlers } from '@/hooks/meals/use-confirm-handlers';
 import { useFeedDay } from '@/hooks/meals/use-feed-day';
 import { useFeedInvalidation } from '@/hooks/meals/use-feed-invalidation';
@@ -95,7 +96,6 @@ export function useFeedController(args: {
   const confirmHandlers = useConfirmHandlers({
     stream,
     selectedDate,
-    cheatIntensity,
     confirmMeal,
     replaceOldMeal,
     setMessages,
@@ -103,6 +103,16 @@ export function useFeedController(args: {
     lastAnalysisIdRef,
     lastErrorRef,
     scrollToBottom,
+  });
+
+  const clarifyHandlers = useClarifyHandlers({
+    stream,
+    selectedDate,
+    cheatIntensity,
+    setMessages,
+    setStreamingMsgId,
+    lastAnalysisIdRef,
+    lastErrorRef,
     inputRef,
   });
 
@@ -206,6 +216,7 @@ export function useFeedController(args: {
     confirmMeal,
     unconfirmedMessages,
     ...confirmHandlers,
+    ...clarifyHandlers,
     handleDeleteMeal,
     handleUpdateMeal,
     handleLogAgain,

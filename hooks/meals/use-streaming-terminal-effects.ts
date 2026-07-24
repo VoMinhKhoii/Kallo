@@ -17,6 +17,123 @@ interface UseStreamingTerminalEffectsParams {
   onAnalysisComplete?: (analysisId: string) => void;
 }
 
+/**
+ * The five ways an analysis stream can settle, made exclusive by construction so
+ * one effect (not three racing ones) can finalize the streaming card:
+ *   - `meal`            a precise `result` + durable analysisId.
+ *   - `cheat`           a full cheat `cheatSpec` + durable analysisId.
+ *   - `cheat-clarify`   a cheat spec carrying a clarifyingQuestion, no analysisId
+ *                       (the vague-input fallback — client must re-ask).
+ *   - `precise-clarify` a precise `clarify` question, nothing staged (no id).
+ *   - `error`           a fatal `error`.
+ *
+ * `analysisId` is present only on `meal`/`cheat` (the durable ones): it both
+ * dedupes the transition (via `lastAnalysisId`) and drives `onAnalysisComplete`.
+ * `error` is deduped via `lastError`. The clarify kinds carry no id and rely on
+ * the streamingMsgId-null + stream.reset() one-shot instead. `patch` is the
+ * exact field set each original effect wrote onto the finalized card.
+ */
+type Terminal = {
+  kind: 'meal' | 'cheat' | 'cheat-clarify' | 'precise-clarify' | 'error';
+  msgId: string;
+  /** Durable analysis id — only `meal`/`cheat`. Triggers dedupe + onComplete. */
+  analysisId?: string;
+  /** Error text — only `error`. Triggers dedupe + toast. */
+  error?: string;
+  patch: Partial<ChatMessage>;
+};
+
+/**
+ * Pure classifier: given the settled stream + the one-shot guard state, return
+ * the single terminal descriptor (or null when nothing should fire). Kept free
+ * of side effects and refs writes — the effect performs those — so the branches
+ * stay exclusive and hand-traceable.
+ */
+function deriveTerminal(
+  s: Pick<
+    StreamAnalysisState,
+    'status' | 'result' | 'cheatSpec' | 'clarify' | 'analysisId' | 'error'
+  >,
+  streamingMsgId: string | null,
+  lastAnalysisId: string | null,
+  lastError: string | null
+): Terminal | null {
+  if (!streamingMsgId) return null;
+
+  // Error terminal. Deduped on the error string (a retry re-arms it once the
+  // ref is cleared by the next analyze()).
+  if (s.status === 'error') {
+    if (!s.error || lastError === s.error) return null;
+    return {
+      kind: 'error',
+      msgId: streamingMsgId,
+      error: s.error,
+      patch: {
+        isStreaming: false,
+        streamingPhase: undefined,
+        streamingItems: undefined,
+        streamingCompletedItems: undefined,
+        parsedMeal: undefined,
+        content: s.error,
+      },
+    };
+  }
+
+  if (s.status !== 'done') return null;
+
+  // Precise-mode clarify: the pipeline settled on a single question and staged
+  // nothing (no analysisId). Mutually exclusive with the payload cases below —
+  // the pipeline emits either a clarify OR a result/cheat_estimate, never both.
+  if (s.clarify && s.analysisId == null) {
+    return {
+      kind: 'precise-clarify',
+      msgId: streamingMsgId,
+      patch: {
+        isStreaming: false,
+        streamingPhase: undefined,
+        streamingItems: undefined,
+        streamingCompletedItems: undefined,
+        parsedMeal: undefined,
+        cheatSpec: undefined,
+        preciseClarify: s.clarify,
+      },
+    };
+  }
+
+  // Payload terminals: a precise `result` meal, a full cheat `cheatSpec`, or a
+  // cheat spec carrying a clarifyingQuestion (finalizes WITHOUT an analysisId).
+  const isCheatClarify =
+    s.cheatSpec?.clarifyingQuestion != null && !s.analysisId;
+  const hasPayload = Boolean(s.result) || Boolean(s.cheatSpec);
+  if (!hasPayload) return null;
+  if (!s.analysisId && !isCheatClarify) return null;
+  // Durable transitions are deduped on the analysisId; the cheat-clarify path
+  // has no id, so it is never caught here (its one-shot is the reset below).
+  if (s.analysisId != null && lastAnalysisId === s.analysisId) return null;
+
+  const patch: Partial<ChatMessage> = {
+    isStreaming: false,
+    streamingPhase: 'done',
+    streamingItems: undefined,
+    streamingCompletedItems: undefined,
+    parsedMeal: s.result ?? undefined,
+    cheatSpec: s.cheatSpec ?? undefined,
+    analysisId: s.analysisId ?? undefined,
+  };
+
+  if (isCheatClarify) {
+    return { kind: 'cheat-clarify', msgId: streamingMsgId, patch };
+  }
+  // analysisId is guaranteed non-null here (guarded above): a `result` means a
+  // precise meal, otherwise the `cheatSpec` is a full cheat estimate.
+  return {
+    kind: s.result ? 'meal' : 'cheat',
+    msgId: streamingMsgId,
+    analysisId: s.analysisId ?? undefined,
+    patch,
+  };
+}
+
 export function useStreamingTerminalEffects({
   stream,
   streamingMsgId,
@@ -27,152 +144,61 @@ export function useStreamingTerminalEffects({
   lastErrorRef,
   onAnalysisComplete,
 }: UseStreamingTerminalEffectsParams) {
-  // Terminal: stream completed — finalize streaming message, store analysisId.
-  // Two shapes settle here: a precise `result` meal, or a cheat `cheatSpec`.
-  // The cheat clarify-question fallback finalizes WITHOUT an analysisId (the
-  // client must re-ask), so it's allowed through explicitly.
+  const { status, result, cheatSpec, clarify, analysisId, error, reset } =
+    stream;
+
+  // Single terminal effect. `deriveTerminal` makes the five settle-paths
+  // exclusive, so the shared epilogue (clear streamingMsgId → patch the card →
+  // reset the stream → scroll) runs exactly once per transition. The one-shot
+  // guards are preserved verbatim: the analysisId/error refs are written BEFORE
+  // any state update so a strict-mode re-invocation (same committed state) sees
+  // the guard and bails; the clarify kinds carry no id and instead trip on the
+  // streamingMsgId-null + reset() the epilogue applies.
   useEffect(() => {
-    const isCheatClarify =
-      stream.cheatSpec?.clarifyingQuestion != null && !stream.analysisId;
-    const hasPayload = Boolean(stream.result) || Boolean(stream.cheatSpec);
-    if (
-      stream.status !== 'done' ||
-      !hasPayload ||
-      (!stream.analysisId && !isCheatClarify) ||
-      (stream.analysisId != null &&
-        lastAnalysisIdRef.current === stream.analysisId) ||
-      !streamingMsgId
-    ) {
-      return;
+    const terminal = deriveTerminal(
+      { status, result, cheatSpec, clarify, analysisId, error },
+      streamingMsgId,
+      lastAnalysisIdRef.current,
+      lastErrorRef.current
+    );
+    if (!terminal) return;
+
+    // Record the one-shot guards first (synchronous ref writes).
+    if (terminal.analysisId) lastAnalysisIdRef.current = terminal.analysisId;
+    if (terminal.kind === 'error' && terminal.error) {
+      lastErrorRef.current = terminal.error;
     }
-    const analysisId = stream.analysisId;
-    if (analysisId) lastAnalysisIdRef.current = analysisId;
-    const msgId = streamingMsgId;
-    const cheatSpec = stream.cheatSpec;
-    const result = stream.result;
+
     setStreamingMsgId(null);
+
+    if (terminal.kind === 'error' && terminal.error) {
+      toast.error(terminal.error);
+    }
 
     setMessages((prev) =>
       prev.map((msg) =>
-        msg.id === msgId
-          ? {
-              ...msg,
-              isStreaming: false,
-              streamingPhase: 'done' as const,
-              streamingItems: undefined,
-              streamingCompletedItems: undefined,
-              parsedMeal: result ?? undefined,
-              cheatSpec: cheatSpec ?? undefined,
-              analysisId: analysisId ?? undefined,
-            }
-          : msg
+        msg.id === terminal.msgId ? { ...msg, ...terminal.patch } : msg
       )
     );
-    if (analysisId) onAnalysisComplete?.(analysisId);
-    stream.reset();
+
+    // Durable analyses notify the invalidation layer; clarify/error don't.
+    if (terminal.analysisId) onAnalysisComplete?.(terminal.analysisId);
+
+    reset();
     scrollToBottom();
   }, [
-    stream.status,
-    stream.result,
-    stream.cheatSpec,
-    stream.analysisId,
-    stream.reset,
+    status,
+    result,
+    cheatSpec,
+    clarify,
+    analysisId,
+    error,
+    reset,
     streamingMsgId,
     scrollToBottom,
     lastAnalysisIdRef,
-    onAnalysisComplete,
-    setStreamingMsgId,
-    setMessages,
-  ]);
-
-  // Terminal: precise-mode clarify — the pipeline settled on a single question
-  // (portion/food unresolved) and staged nothing (no analysisId). Finalize the
-  // streaming card in place into a clarify card carrying the question, so it
-  // stops spinning on "assembling" and can collect an answer. One-shot: clearing
-  // streamingMsgId + resetting the stream trips the guard on re-run (mirrors the
-  // cheat clarify-question fallback above, which also finalizes without an id).
-  useEffect(() => {
-    if (
-      stream.status !== 'done' ||
-      !stream.clarify ||
-      stream.analysisId != null ||
-      !streamingMsgId
-    ) {
-      return;
-    }
-    const msgId = streamingMsgId;
-    const clarify = stream.clarify;
-    setStreamingMsgId(null);
-
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === msgId
-          ? {
-              ...msg,
-              isStreaming: false,
-              streamingPhase: undefined,
-              streamingItems: undefined,
-              streamingCompletedItems: undefined,
-              parsedMeal: undefined,
-              cheatSpec: undefined,
-              preciseClarify: clarify,
-            }
-          : msg
-      )
-    );
-    stream.reset();
-    scrollToBottom();
-  }, [
-    stream.status,
-    stream.clarify,
-    stream.analysisId,
-    stream.reset,
-    streamingMsgId,
-    scrollToBottom,
-    setStreamingMsgId,
-    setMessages,
-  ]);
-
-  // Terminal: stream errored
-  useEffect(() => {
-    if (
-      stream.status !== 'error' ||
-      !stream.error ||
-      lastErrorRef.current === stream.error ||
-      !streamingMsgId
-    ) {
-      return;
-    }
-    lastErrorRef.current = stream.error;
-    const msgId = streamingMsgId;
-    setStreamingMsgId(null);
-
-    toast.error(stream.error);
-
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === msgId
-          ? {
-              ...msg,
-              isStreaming: false,
-              streamingPhase: undefined,
-              streamingItems: undefined,
-              streamingCompletedItems: undefined,
-              parsedMeal: undefined,
-              content: stream.error!,
-            }
-          : msg
-      )
-    );
-    stream.reset();
-    scrollToBottom();
-  }, [
-    stream.status,
-    stream.error,
-    stream.reset,
-    streamingMsgId,
-    scrollToBottom,
     lastErrorRef,
+    onAnalysisComplete,
     setStreamingMsgId,
     setMessages,
   ]);

@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../models/barcode_product.dart';
-import '../../../shared/widgets/decimal_input.dart';
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
-import '../logic/barcode_amount.dart';
+import '../../../../models/barcode_product.dart';
+import '../../../../shared/widgets/decimal_input.dart';
+import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/nham_colors.dart';
+import '../../../../theme/nham_theme.dart';
+import '../../../../theme/nham_typography.dart';
+import '../../logic/barcode_amount.dart';
 
 /// The quantity step of the barcode sheet: pick an amount by serving, whole
 /// package, or custom grams — offering only the modes the product actually

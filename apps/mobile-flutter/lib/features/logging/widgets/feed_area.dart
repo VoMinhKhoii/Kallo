@@ -18,7 +18,6 @@ import '../../../theme/nham_theme.dart';
 import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
-import '../../dashboard/data/dashboard_providers.dart' as dash;
 import '../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../data/stream_analysis_controller.dart';
 import '../logic/format.dart';
@@ -31,17 +30,16 @@ import 'cheat_occasion_chips.dart';
 import 'cheat_slider_card.dart';
 import 'empty_state.dart';
 import 'entrances.dart';
-import 'failed_attempt_card.dart';
-import 'logging_day_error_state.dart';
-import 'barcode_scanner_sheet.dart';
-import 'manual_log_sheet.dart';
+import 'terminal/failed_attempt_card.dart';
+import 'terminal/logging_day_error_state.dart';
+import 'sheets/barcode_scanner_sheet.dart';
+import 'sheets/manual_log_sheet.dart';
 import 'meal_entry.dart';
 import 'meal_input.dart';
-import 'meal_mode_sheet.dart';
-import 'persisted_meal_card.dart';
-import 'persisted_meal_log_again.dart';
-import 'persisted_meal_update.dart';
-import 'precise_clarify_card.dart';
+import 'sheets/meal_mode_sheet.dart';
+import 'persisted/persisted_meal_card.dart';
+import '../data/persisted_meal_mutations.dart';
+import 'terminal/precise_clarify_card.dart';
 import 'streaming_entry.dart';
 
 const _uuid = Uuid();
@@ -329,18 +327,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       } catch (_) {
         // The server rejected the delete — releasing the id makes the card
         // reappear (the cache was never mutated), keeping the feed truthful.
-        ref.invalidate(loggingDayProvider(_dayArgs));
-        ref.invalidate(
-          dash.dashboardBundleProvider((
-            userId: widget.profile.userId,
-            date: widget.date,
-          )),
-        );
-        ref.invalidate(
-          dash.dashboardDayProvider((
-            userId: widget.profile.userId,
-            date: widget.date,
-          )),
+        // Heal the day here (nothing refetches it after) plus the rest of the
+        // canonical meal surfaces.
+        invalidateMealSurfaces(
+          ref.invalidate,
+          widget.profile.userId,
+          widget.date,
         );
         if (mounted) {
           setState(() {
@@ -351,20 +343,14 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         return;
       }
       if (!mounted) return;
-      // The delete landed — heal every cache that carries this date before
-      // releasing the id, so the refetched day (sans meal) is what renders.
-      ref.invalidate(mealDatesProvider(widget.profile.userId));
-      ref.invalidate(
-        dash.dashboardBundleProvider((
-          userId: widget.profile.userId,
-          date: widget.date,
-        )),
-      );
-      ref.invalidate(
-        dash.dashboardDayProvider((
-          userId: widget.profile.userId,
-          date: widget.date,
-        )),
+      // The delete landed — heal every date-keyed surface before releasing the
+      // id, then refetch the day itself (includeDay:false — the refresh below
+      // owns it) so the refetched day (sans meal) is what renders.
+      invalidateMealSurfaces(
+        ref.invalidate,
+        widget.profile.userId,
+        widget.date,
+        includeDay: false,
       );
       try {
         await ref.read(loggingDayProvider(_dayArgs).notifier).refresh();

@@ -2,6 +2,7 @@
 
 import type { RefObject } from 'react';
 import { toast } from 'sonner';
+import type { MealInputHandle } from '@/components/logging/input/meal-input';
 import type {
   StreamAnalysisState,
   StreamAnalyzeInput,
@@ -16,7 +17,7 @@ interface UseFeedSubmitParams {
     reset: () => void;
   };
   selectedDate: string;
-  inputRef: RefObject<{ getText: () => string; clear: () => void } | null>;
+  inputRef: RefObject<MealInputHandle | null>;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   setStreamingMsgId: (id: string | null) => void;
   scrollToBottom: () => void;

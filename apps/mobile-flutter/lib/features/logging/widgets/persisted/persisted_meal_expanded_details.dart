@@ -1,11 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../data/logging_models.dart';
-import '../logic/format.dart';
+import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/nham_colors.dart';
+import '../../../../theme/nham_theme.dart';
+import '../../data/logging_models.dart';
+import '../../logic/format.dart';
 
 class PersistedMealExpandedDetails extends StatelessWidget {
   const PersistedMealExpandedDetails({super.key, required this.meal});

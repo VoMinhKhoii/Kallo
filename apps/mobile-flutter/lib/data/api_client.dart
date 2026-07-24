@@ -340,12 +340,10 @@ class ApiClient {
         final event = flush();
         if (event != null) {
           yield event;
-          // Terminal frames end the stream: a durable analysis_complete, a
-          // fatal error, or a precise clarify (which ends WITHOUT
-          // analysis_complete — nothing is staged; the client re-asks).
-          if (event is AnalysisCompleteEvent ||
-              event is StreamErrorEvent ||
-              event is ClarifyEvent) {
+          // Terminal frames end the stream — the rule lives on the event itself
+          // (`StreamEvent.isTerminal`) so this generator and the stream
+          // controller can never enumerate it differently.
+          if (event.isTerminal) {
             return;
           }
         }

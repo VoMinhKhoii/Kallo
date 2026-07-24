@@ -1,28 +1,22 @@
 'use server';
 
 import { and, eq } from 'drizzle-orm';
-import { z } from 'zod';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
+import { duplicateMealSchema } from '@/lib/api/contracts/meals';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { mealItems, meals } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 import type { ConfirmMealResponse } from './types';
 
 // ---------------------------------------------------------------------------
 // C4b: Duplicate a persisted meal ("log again")
 // ---------------------------------------------------------------------------
 
-const duplicateMealSchema = z.object({
-  mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
-  // Client-generated id so the optimistic card and the persisted row share a
-  // stable React key (mirrors confirm/manual save).
-  newMealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
-  loggedDate: dateStringSchema,
-  timezoneOffset: timezoneOffsetSchema,
-});
+// `duplicateMealSchema` (the full input incl. `mealId`) lives in the meals
+// contract so the route can derive its body schema; imported here since this
+// `'use server'` module may only export async functions.
 
 /**
  * "Log again": reproduce an existing meal exactly by copying its stored item
