@@ -7,7 +7,10 @@ import 'package:uuid/uuid.dart';
 import '../../../data/api_client.dart';
 import '../../../models/circle.dart';
 import '../../dashboard/data/dashboard_providers.dart'
-    show localTimezoneOffsetMinutes;
+    show
+        dashboardBundleProvider,
+        dashboardDayProvider,
+        localTimezoneOffsetMinutes;
 import '../../logging/data/logging_keys.dart' show todayDateString;
 import '../../logging/data/logging_providers.dart' show loggingDayProvider;
 import 'chat_group_providers.dart';
@@ -124,4 +127,9 @@ Future<void> logSharedMeal(WidgetRef ref, String shareId) async {
       })
       .timeout(_mutationTimeout);
   ref.invalidate(loggingDayProvider);
+  // The copied meal lands in today's diary — the dashboard reads its ring off a
+  // separate bundle/day cache, so heal it too or the Today + week-strip ring
+  // keep the pre-log total.
+  ref.invalidate(dashboardBundleProvider);
+  ref.invalidate(dashboardDayProvider);
 }
