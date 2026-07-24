@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -32,12 +31,15 @@ import 'cheat_occasion_chips.dart';
 import 'cheat_slider_card.dart';
 import 'empty_state.dart';
 import 'entrances.dart';
+import 'failed_attempt_card.dart';
+import 'logging_day_error_state.dart';
 import 'barcode_scanner_sheet.dart';
 import 'manual_log_sheet.dart';
 import 'meal_entry.dart';
 import 'meal_input.dart';
 import 'meal_mode_sheet.dart';
 import 'persisted_meal_card.dart';
+import 'persisted_meal_update.dart';
 import 'precise_clarify_card.dart';
 import 'streaming_entry.dart';
 
@@ -760,7 +762,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   }) {
     // Day fetch error → red alert card with retry (LoggingDayErrorState).
     if (hasError && persistedMeals.isEmpty && !hasFooterItems) {
-      return _LoggingDayErrorState(
+      return LoggingDayErrorState(
         onRetry: () => ref.invalidate(loggingDayProvider(_dayArgs)),
       );
     }
@@ -872,6 +874,16 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                             !hasFooterItems &&
                             index == persistedMeals.length - 1,
                         onRemove: () => _removeMeal(meal),
+                        onUpdate: ({required edits, required removeIds}) =>
+                            updatePersistedMeal(
+                              context,
+                              ref,
+                              userId: widget.profile.userId,
+                              date: widget.date,
+                              mealId: meal.id,
+                              edits: edits,
+                              removeIds: removeIds,
+                            ),
                       ),
             );
           }
@@ -1260,172 +1272,13 @@ class _Footer extends StatelessWidget {
             onDiscard: onDiscardClarify,
           ),
         if (hasFailed)
-          _FailedAttemptCard(
+          FailedAttemptCard(
             rawInput: failedText!,
             retryable: failedRetryable,
             onRetry: onRetry,
             onDiscard: onDiscardFailed,
           ),
       ],
-    );
-  }
-}
-
-/// A failed analysis, rendered as a feed card so the attempt is never lost: the
-/// raw input as a Lora quote, a terracotta one-liner, and "Try again" as the
-/// primary action (with a quiet Discard). The raw text is also restored to the
-/// composer — this card is the visible record of what happened.
-class _FailedAttemptCard extends StatelessWidget {
-  const _FailedAttemptCard({
-    required this.rawInput,
-    required this.retryable,
-    required this.onRetry,
-    required this.onDiscard,
-  });
-
-  final String rawInput;
-
-  /// When false (a non-retryable server error), the card offers only Discard —
-  /// re-running the same input would just fail again.
-  final bool retryable;
-  final VoidCallback onRetry;
-  final VoidCallback onDiscard;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
-      child: Container(
-        padding: const EdgeInsets.all(NhamSpacing.sp4),
-        decoration: BoxDecoration(
-          color: NhamColors.elev,
-          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-          border: Border.all(color: NhamColors.borderSoft),
-          boxShadow: const [NhamShadows.sm],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            NhamText(
-              rawInput,
-              variant: NhamTextVariant.mealQuote,
-              style: const TextStyle(fontSize: 17, height: 28 / 17),
-            ),
-            const SizedBox(height: NhamSpacing.sp3),
-            NhamText(
-              'logging.failedAttempt.message'.tr(),
-              variant: NhamTextVariant.small,
-              style: dashMeta(color: NhamColors.danger),
-            ),
-            const SizedBox(height: NhamSpacing.sp4),
-            Row(
-              children: [
-                if (retryable) ...[
-                  Expanded(child: _RetryButton(onTap: onRetry)),
-                  const SizedBox(width: NhamSpacing.sp2),
-                  _DiscardButton(onTap: onDiscard),
-                ] else
-                  // Non-retryable: only Discard, stretched to fill the row.
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: _DiscardButton(onTap: onDiscard),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Primary "Try again" — solid umber, mirroring the confirm button's resting
-/// look (an honest re-run of the same meal).
-class _RetryButton extends StatefulWidget {
-  const _RetryButton({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  State<_RetryButton> createState() => _RetryButtonState();
-}
-
-class _RetryButtonState extends State<_RetryButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'logging.failedAttempt.tryAgain'.tr(),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          decoration: BoxDecoration(
-            color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-            borderRadius: BorderRadius.circular(NhamRadii.xl),
-            boxShadow: [_pressed ? NhamShadows.md : NhamShadows.sm],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(LucideIcons.refreshCw, size: 14, color: Colors.white),
-              const SizedBox(width: 6),
-              NhamText(
-                'logging.failedAttempt.tryAgain'.tr(),
-                variant: NhamTextVariant.body,
-                style: dashBody(color: Colors.white, weight: FontWeight.w500),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Quiet "Discard" — wires the previously-unused logging.discard string.
-class _DiscardButton extends StatefulWidget {
-  const _DiscardButton({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  State<_DiscardButton> createState() => _DiscardButtonState();
-}
-
-class _DiscardButtonState extends State<_DiscardButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'logging.discard'.tr(),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          decoration: BoxDecoration(
-            color: _pressed ? NhamColors.hover : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.xl),
-          ),
-          child: NhamText(
-            'logging.discard'.tr(),
-            variant: NhamTextVariant.body,
-            style: dashBody(color: kInkMuted, weight: FontWeight.w500),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -1778,110 +1631,5 @@ class _LoggingDaySkeleton extends StatelessWidget {
     );
 
     return _Pulse(child: Column(children: [ghostCard(false), ghostCard(true)]));
-  }
-}
-
-/// Day fetch error: a warm alert card — terracotta `nham-danger` accents on
-/// the cream surface (never literal reds, which break the palette on sight) —
-/// with a CircleAlert, title/desc, and a retry pill (LoggingDayErrorState).
-class _LoggingDayErrorState extends StatelessWidget {
-  const _LoggingDayErrorState({required this.onRetry});
-  final VoidCallback onRetry;
-
-  static const _dangerFill = Color(0x1AD37B69); // nham-danger @ 10%
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(NhamSpacing.sp6),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 448), // max-w-md
-          padding: const EdgeInsets.all(NhamSpacing.sp4), // p-4
-          decoration: BoxDecoration(
-            color: NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
-            border: Border.all(color: NhamColors.borderSoft),
-            boxShadow: const [NhamShadows.sm],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2), // mt-0.5
-                child: Icon(
-                  LucideIcons.circleAlert, // lucide AlertCircle
-                  size: 20,
-                  color: NhamColors.danger,
-                ),
-              ),
-              const SizedBox(width: NhamSpacing.sp3), // gap-3
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    NhamText(
-                      'logging.feedArea.loadErrorTitle'.tr(),
-                      variant: NhamTextVariant.small,
-                      style: dashBody(weight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 4), // mt-1
-                    NhamText(
-                      'logging.feedArea.loadErrorDescription'.tr(),
-                      variant: NhamTextVariant.small,
-                      style: dashMeta(),
-                    ),
-                    const SizedBox(height: NhamSpacing.sp3), // mt-3
-                    _RetryPill(onRetry: onRetry),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RetryPill extends StatelessWidget {
-  const _RetryPill({required this.onRetry});
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onRetry,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 36), // min-h-9
-        padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 8,
-        ), // px-3.5 py-2
-        decoration: BoxDecoration(
-          color: _LoggingDayErrorState._dangerFill,
-          borderRadius: BorderRadius.circular(NhamRadii.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              LucideIcons.refreshCw, // lucide RefreshCw
-              size: 16,
-              color: NhamColors.danger,
-            ),
-            const SizedBox(width: NhamSpacing.sp2), // gap-2
-            NhamText(
-              'logging.feedArea.retryDay'.tr(),
-              variant: NhamTextVariant.small,
-              style: dashBody(
-                color: NhamColors.danger,
-                weight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

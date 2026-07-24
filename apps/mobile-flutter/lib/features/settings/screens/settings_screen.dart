@@ -24,6 +24,7 @@ import '../widgets/profile_form.dart';
 import '../widgets/profile_status_views.dart';
 import '../widgets/region_editor.dart';
 import '../widgets/settings_group.dart';
+import '../widgets/settings_row.dart';
 import '../widgets/settings_skeleton.dart';
 import '../../circle/data/circle_providers.dart';
 import 'about_section.dart';

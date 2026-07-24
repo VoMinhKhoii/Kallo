@@ -13,15 +13,26 @@ class PersistedMealActions extends StatelessWidget {
     super.key,
     required this.meal,
     required this.onRemove,
+    this.onEditAmounts,
   });
 
   final PersistedMeal meal;
   final VoidCallback? onRemove;
 
+  /// Opens the in-place amount editor. Null hides the "Edit amounts" action
+  /// (the meal has no gram-bearing ingredient to step).
+  final VoidCallback? onEditAmounts;
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
+        if (onEditAmounts != null)
+          MealActionIconButton(
+            icon: LucideIcons.pencil,
+            label: 'logging.persistedMealCard.editAmounts'.tr(),
+            onTap: onEditAmounts,
+          ),
         if (meal.mealItemGroups.isNotEmpty)
           MealActionIconButton(
             icon: LucideIcons.userPlus,

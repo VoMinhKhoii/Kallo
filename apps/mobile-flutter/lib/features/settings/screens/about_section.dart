@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/top_toast.dart';
 import '../widgets/settings_group.dart';
+import '../widgets/settings_row.dart';
 
 /// The marketing version string (no `package_info_plus` dependency in pubspec,
 /// so this is rendered statically — keep in sync with `pubspec.yaml`).

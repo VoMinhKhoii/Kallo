@@ -73,6 +73,24 @@ class LoggingDayNotifier
     state = AsyncData(snapshot);
   }
 
+  /// Replace a persisted meal in place by id from an authoritative server
+  /// response (the amount-edit reconcile). Same id, so the card updates without
+  /// a remount — mirrors the web `upsertById` in `use-meal-mutations`. A no-op
+  /// if the meal isn't in the current cache.
+  void reconcileMeal(PersistedMeal meal) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    if (!current.persistedMeals.any((m) => m.id == meal.id)) return;
+    state = AsyncData(
+      current.copyWith(
+        persistedMeals: [
+          for (final m in current.persistedMeals)
+            if (m.id == meal.id) meal else m,
+        ],
+      ),
+    );
+  }
+
   /// Refetch from the server (the `onSettled` invalidation analogue).
   Future<void> refresh() => ref.refresh(
     loggingDayProvider(LoggingDayArgs(arg.userId, arg.date)).future,

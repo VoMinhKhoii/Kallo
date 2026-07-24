@@ -1178,7 +1178,14 @@
     "persistedMealCard": {
       "toggleDetails": "Toggle meal details",
       "total": "Total",
-      "shareWithFriends": "Send to friends"
+      "shareWithFriends": "Send to friends",
+      "editAmounts": "Edit amounts",
+      "removeRow": "Remove {name}",
+      "cancelEdit": "Cancel",
+      "saveEdit": "Save changes",
+      "savingEdit": "Saving…",
+      "mealUpdated": "Meal updated",
+      "updateError": "Couldn't update the meal — try again."
     },
     "timelineSidebar": {
       "navigationLabel": "Timeline navigation",

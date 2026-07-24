@@ -16,12 +16,18 @@ class PersistedMealCardContent extends StatelessWidget {
     required this.expand,
     required this.curvedExpand,
     required this.onToggle,
+    this.editorBody,
   });
 
   final PersistedMeal meal;
   final Animation<double> expand;
   final Animation<double> curvedExpand;
   final VoidCallback onToggle;
+
+  /// When set, the read-only body (collapsed summary + expanded details) is
+  /// swapped IN PLACE for this editor — the header (quote + chevron) stays. No
+  /// enter/exit animation overlaps the swap, mirroring the web's amount editor.
+  final Widget? editorBody;
 
   @override
   Widget build(BuildContext context) {
@@ -62,8 +68,12 @@ class PersistedMealCardContent extends StatelessWidget {
             ),
           ),
 
+          // Edit mode swaps the read-only body for the amount editor in place.
+          if (editorBody != null) editorBody!,
+
           // Collapsed summary — fades + collapses height as it expands.
-          AnimatedBuilder(
+          if (editorBody == null)
+            AnimatedBuilder(
             animation: curvedExpand,
             builder: (context, child) {
               final t = curvedExpand.value;
@@ -98,14 +108,15 @@ class PersistedMealCardContent extends StatelessWidget {
           ),
 
           // Expanded details — animate height open (easeInOut).
-          SizeTransition(
-            sizeFactor: curvedExpand,
-            alignment: Alignment.topCenter,
-            child: FadeTransition(
-              opacity: curvedExpand,
-              child: PersistedMealExpandedDetails(meal: meal),
+          if (editorBody == null)
+            SizeTransition(
+              sizeFactor: curvedExpand,
+              alignment: Alignment.topCenter,
+              child: FadeTransition(
+                opacity: curvedExpand,
+                child: PersistedMealExpandedDetails(meal: meal),
+              ),
             ),
-          ),
         ],
       ),
     );

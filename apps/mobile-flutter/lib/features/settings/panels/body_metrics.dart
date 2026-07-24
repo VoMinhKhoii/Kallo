@@ -9,6 +9,7 @@ import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../controls/aggression_slider.dart';
 import '../controls/custom_select.dart';
+import '../logic/number_format.dart';
 import '../logic/tdee.dart';
 import '../widgets/profile_form_controller.dart';
 import '../widgets/profile_form_values.dart';
@@ -559,11 +560,11 @@ class _HeroTarget extends StatelessWidget {
     final isCutting = goal == Goal.cutting;
 
     final subtitle = StringBuffer()
-      ..write('${t('basedOnTdee')} ~${_grouped(tdee)} ${t('kcal')}');
+      ..write('${t('basedOnTdee')} ~${groupThousands(tdee)} ${t('kcal')}');
     if (goal == Goal.maintaining) {
       subtitle.write(' · ${t('maintenance')}');
     } else {
-      subtitle.write(' · ${isCutting ? '−' : '+'}${_grouped(delta)} '
+      subtitle.write(' · ${isCutting ? '−' : '+'}${groupThousands(delta)} '
           '${t('perDay')} '
           '${isCutting ? t('aggressionDeficit') : t('aggressionSurplus')}');
     }
@@ -585,7 +586,7 @@ class _HeroTarget extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                _grouped(calories),
+                groupThousands(calories),
                 style: NhamTextStyles.serifRegular(fontSize: 36, height: 44 / 36)
                     // tracking-tighter = -0.05em ≈ -1.8px at 36px
                     .copyWith(letterSpacing: -1.8, color: NhamColors.text),
@@ -636,17 +637,6 @@ class _HeroTarget extends StatelessWidget {
           ],
         ),
       );
-}
-
-/// Groups an integer with thousands separators (RN `.toLocaleString()`).
-String _grouped(int n) {
-  final s = n.abs().toString();
-  final buf = StringBuffer();
-  for (var i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-    buf.write(s[i]);
-  }
-  return n < 0 ? '-$buf' : buf.toString();
 }
 
 extension on Border {

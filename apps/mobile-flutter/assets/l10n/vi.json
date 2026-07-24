@@ -1178,7 +1178,14 @@
     "persistedMealCard": {
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",
-      "shareWithFriends": "Gửi cho bạn bè"
+      "shareWithFriends": "Gửi cho bạn bè",
+      "editAmounts": "Sửa lượng",
+      "removeRow": "Bỏ {name}",
+      "cancelEdit": "Hủy",
+      "saveEdit": "Lưu thay đổi",
+      "savingEdit": "Đang lưu…",
+      "mealUpdated": "Đã cập nhật bữa ăn",
+      "updateError": "Không cập nhật được bữa ăn — hãy thử lại."
     },
     "timelineSidebar": {
       "navigationLabel": "Điều hướng dòng thời gian",

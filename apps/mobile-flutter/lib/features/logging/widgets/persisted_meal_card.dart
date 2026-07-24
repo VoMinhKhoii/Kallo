@@ -9,6 +9,7 @@ import '../../../theme/nham_theme.dart';
 import '../data/logging_models.dart';
 import 'confirm_meal_removal.dart';
 import 'persisted_meal_actions.dart';
+import 'persisted_meal_amount_editor.dart';
 import 'persisted_meal_card_content.dart';
 import 'persisted_meal_time_divider.dart';
 
@@ -24,6 +25,7 @@ class PersistedMealCard extends StatefulWidget {
     required this.meal,
     this.isLast = false,
     this.onRemove,
+    this.onUpdate,
   });
 
   final PersistedMeal meal;
@@ -33,6 +35,10 @@ class PersistedMealCard extends StatefulWidget {
   /// dismissed. Null disables the swipe.
   final VoidCallback? onRemove;
 
+  /// Persist an amount edit (gram overrides + per-row removals). Null disables
+  /// the "Edit amounts" affordance entirely.
+  final AmountEditSave? onUpdate;
+
   @override
   State<PersistedMealCard> createState() => _PersistedMealCardState();
 }
@@ -40,6 +46,7 @@ class PersistedMealCard extends StatefulWidget {
 class _PersistedMealCardState extends State<PersistedMealCard>
     with SingleTickerProviderStateMixin {
   bool _collapsed = true;
+  bool _editing = false;
 
   // expandProgress 0 (collapsed) → 1 (expanded), 200ms.
   late final AnimationController _expand = AnimationController(
@@ -109,6 +116,30 @@ class _PersistedMealCardState extends State<PersistedMealCard>
       curve: Curves.easeInOut,
     );
 
+    // Only meals with a gram-bearing ingredient row can be amount-edited; a
+    // legacy/empty meal has nothing to step. Mirrors the web card's `canEdit`.
+    final canEdit =
+        widget.onUpdate != null &&
+        meal.mealItemGroups.any(
+          (g) => g.ingredients.any((i) => i.estimatedGrams != null),
+        );
+
+    final Widget? editorBody = _editing && widget.onUpdate != null
+        ? PersistedMealAmountEditor(
+            meal: meal,
+            onCancel: () => setState(() => _editing = false),
+            onSave: widget.onUpdate!,
+          )
+        : null;
+
+    final cardBody = PersistedMealCardContent(
+      meal: meal,
+      expand: _expand,
+      curvedExpand: curvedExpand,
+      onToggle: _toggle,
+      editorBody: editorBody,
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
       child: Column(
@@ -118,16 +149,19 @@ class _PersistedMealCardState extends State<PersistedMealCard>
           // no left timeline gutter, so the card gets the full row width.
           PersistedMealTimeDivider(time: time),
           const SizedBox(height: NhamSpacing.sp2), // mb-2
-          _maybeDismissible(
-            PersistedMealCardContent(
+          // Editing swaps the body in place AND hides the action row (the web
+          // hides the action bar while editing). While editing the card is not
+          // swipe-dismissible — a stray swipe must not delete the meal mid-edit.
+          _editing ? cardBody : _maybeDismissible(cardBody),
+          if (!_editing) ...[
+            const SizedBox(height: NhamSpacing.sp1_5),
+            PersistedMealActions(
               meal: meal,
-              expand: _expand,
-              curvedExpand: curvedExpand,
-              onToggle: _toggle,
+              onRemove: widget.onRemove,
+              onEditAmounts:
+                  canEdit ? () => setState(() => _editing = true) : null,
             ),
-          ),
-          const SizedBox(height: NhamSpacing.sp1_5),
-          PersistedMealActions(meal: meal, onRemove: widget.onRemove),
+          ],
         ],
       ),
     );
