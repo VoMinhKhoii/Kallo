@@ -150,7 +150,7 @@ class _CountrySheetState extends State<_CountrySheet> {
           clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
-              NhamSheetHeader(title: tr('onboarding.origin.selectCountry')),
+              NhamSheetHeader(title: tr('common.country')),
               // Pinned search.
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),

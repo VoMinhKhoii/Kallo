@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../shared/widgets/widgets.dart';
 import '../../../shell/app_header.dart';
 import '../../../theme/calm_tokens.dart';
@@ -20,10 +21,9 @@ import '../widgets/thread_feed.dart';
 import '../widgets/view_switcher.dart';
 
 Future<void> _showGroupInfoSheet(BuildContext context, String groupId) =>
-    showModalBottomSheet<void>(
-      context: context,
+    showNhamSheet<void>(
+      context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (_) => GroupInfoSheet(groupId: groupId),
     );
 

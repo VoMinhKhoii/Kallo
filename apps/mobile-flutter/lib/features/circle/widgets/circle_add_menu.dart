@@ -2,16 +2,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_typography.dart';
 import 'add_friend_sheet.dart';
 import 'create_group_sheet.dart';
 
 Future<void> showCreateGroupSheet(BuildContext context) =>
-    showModalBottomSheet<void>(
-      context: context,
+    showNhamSheet<void>(
+      context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (_) => const CreateGroupSheet(),
     );
 

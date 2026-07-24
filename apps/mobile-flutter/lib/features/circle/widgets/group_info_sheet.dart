@@ -139,6 +139,8 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                                 child: Text(
                                   group.name ?? '',
                                   textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: dashValue().copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -181,10 +183,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                         Text(tr('groups.info.addPeople'), style: dashMeta()),
                         const SizedBox(height: NhamSpacing.sp2),
                         GroupAddPeople(group: group),
-                        const Divider(
-                          height: NhamSpacing.sp6,
-                          color: kHairline,
-                        ),
+                        const Divider(height: NhamSpacing.sp6, color: kHairline),
                         TextButton.icon(
                           onPressed: _leave,
                           icon: const Icon(LucideIcons.logOut, size: 16),

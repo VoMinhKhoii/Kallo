@@ -19,7 +19,8 @@
     "notSignedIn": "Not signed in.",
     "increase": "Increase",
     "decrease": "Decrease",
-    "copied": "Link copied"
+    "copied": "Link copied",
+    "country": "Country"
   },
   "nav": {
     "logging": "Logging",

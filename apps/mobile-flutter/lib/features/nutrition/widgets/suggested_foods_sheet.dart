@@ -215,7 +215,7 @@ class _FoodChip extends StatelessWidget {
           6,
         ),
         decoration: BoxDecoration(
-          color: reserved ? NhamColors.accent10 : kFieldFill,
+          color: reserved ? NhamColors.accent10 : NhamColors.track,
           borderRadius: BorderRadius.circular(NhamRadii.pill),
           border: Border.all(
             color: reserved ? NhamColors.accent50 : NhamColors.borderSoft,

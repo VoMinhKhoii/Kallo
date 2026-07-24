@@ -232,7 +232,7 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
                   vertical: NhamSpacing.sp2_5,
                 ),
                 decoration: BoxDecoration(
-                  color: NhamColors.elev,
+                  color: NhamColors.track,
                   borderRadius: BorderRadius.circular(NhamRadii.lg),
                   border: Border.all(color: NhamColors.borderSoft),
                 ),
@@ -425,7 +425,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
                   vertical: NhamSpacing.sp2_5,
                 ),
                 decoration: BoxDecoration(
-                  color: NhamColors.elev,
+                  color: NhamColors.track,
                   borderRadius: BorderRadius.circular(NhamRadii.lg),
                   border: Border.all(color: NhamColors.borderSoft),
                 ),
@@ -538,7 +538,7 @@ class _MemberRowState extends ConsumerState<_MemberRow> {
     return Container(
       padding: const EdgeInsets.all(NhamSpacing.sp3),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
+        color: NhamColors.track,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),
         border: Border.all(color: NhamColors.borderSoft),
       ),
@@ -622,7 +622,7 @@ class _CopyButton extends StatelessWidget {
           vertical: NhamSpacing.sp2_5,
         ),
         decoration: BoxDecoration(
-          color: NhamColors.elev,
+          color: NhamColors.track,
           borderRadius: BorderRadius.circular(NhamRadii.lg),
           border: Border.all(color: NhamColors.borderSoft),
         ),
@@ -678,7 +678,7 @@ class _IconAction extends StatelessWidget {
             height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: filled ? NhamColors.btn : NhamColors.elev,
+              color: filled ? NhamColors.btn : NhamColors.track,
               borderRadius: BorderRadius.circular(NhamRadii.lg),
               border: filled ? null : Border.all(color: NhamColors.borderSoft),
             ),
