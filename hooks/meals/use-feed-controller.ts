@@ -103,6 +103,7 @@ export function useFeedController(args: {
     lastAnalysisIdRef,
     lastErrorRef,
     scrollToBottom,
+    inputRef,
   });
 
   const { handleSubmit } = useFeedSubmit({

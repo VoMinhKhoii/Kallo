@@ -7,6 +7,7 @@ import {
   type MealAmountEdit,
   PersistedMealCard,
 } from '@/components/logging/feed/persisted/persisted-meal-card';
+import { PreciseClarifyCard } from '@/components/logging/feed/precise-clarify-card';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming/streaming-meal-entry';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import type { CheatSliderLevels } from '@/lib/types/cheat';
@@ -27,6 +28,8 @@ interface FeedCardsProps {
   onConfirmMeal: (message: ChatMessage, edits: MealQuantityEdit[]) => void;
   onConfirmCheatMeal: (message: ChatMessage, levels: CheatSliderLevels) => void;
   onCheatClarify: (message: ChatMessage, answer: string) => void;
+  onPreciseClarify: (message: ChatMessage, answer: string) => void;
+  onDiscardClarify: (message: ChatMessage) => void;
 }
 
 /** The day's card stack: persisted meals, then streaming/unconfirmed cards. */
@@ -41,6 +44,8 @@ export function FeedCards({
   onConfirmMeal,
   onConfirmCheatMeal,
   onCheatClarify,
+  onPreciseClarify,
+  onDiscardClarify,
 }: FeedCardsProps) {
   return (
     <div className="mx-auto w-full max-w-3xl">
@@ -88,6 +93,20 @@ export function FeedCards({
                   isConfirming={isConfirming}
                   onConfirm={(levels) => onConfirmCheatMeal(msg, levels)}
                   onClarify={(answer) => onCheatClarify(msg, answer)}
+                />
+              );
+            }
+
+            if (msg.preciseClarify) {
+              return (
+                <PreciseClarifyCard
+                  key={msg.id}
+                  rawInput={msg.userInput}
+                  question={msg.preciseClarify.question}
+                  timestamp={msg.timestamp}
+                  isBusy={isConfirming}
+                  onSubmit={(answer) => onPreciseClarify(msg, answer)}
+                  onDiscard={() => onDiscardClarify(msg)}
                 />
               );
             }

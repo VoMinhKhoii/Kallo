@@ -46,6 +46,11 @@ export function useConfirmHandlers(args: {
   lastAnalysisIdRef: MutableRefObject<string | null>;
   lastErrorRef: MutableRefObject<string | null>;
   scrollToBottom: () => void;
+  /** Composer handle — a discarded clarify restores its raw text here. */
+  inputRef: MutableRefObject<{
+    getText: () => string;
+    setText: (text: string) => void;
+  } | null>;
 }) {
   const {
     stream,
@@ -58,6 +63,7 @@ export function useConfirmHandlers(args: {
     lastAnalysisIdRef,
     lastErrorRef,
     scrollToBottom,
+    inputRef,
   } = args;
   const t = useTranslations('logging.feedArea');
 
@@ -267,6 +273,54 @@ export function useConfirmHandlers(args: {
     });
   };
 
+  // Precise-mode clarify resubmit: the pipeline asked ONE question and staged
+  // nothing, so re-run the SAME meal on the precise pipeline with the typed
+  // answer. Mirrors handleCheatClarify, minus cheat mode — a precise clarify is
+  // always answered precisely, regardless of the composer's current mode.
+  const handlePreciseClarify = (message: ChatMessage, answer: string) => {
+    setStreamingMsgId(message.id);
+    lastAnalysisIdRef.current = null;
+    lastErrorRef.current = null;
+    // The clarify card is always a local message (nothing was staged, so there
+    // is no server-pending twin) — flip it back to streaming in place.
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === message.id
+          ? {
+              ...m,
+              preciseClarify: undefined,
+              isStreaming: true,
+              streamingPhase: 'waiting',
+            }
+          : m
+      )
+    );
+    void stream.analyze({
+      message: message.userInput ?? message.content,
+      loggedDate: selectedDate,
+      timezoneOffset: new Date().getTimezoneOffset(),
+      // Force precise — never inherit a cheat composer mode for a precise clarify.
+      mode: 'precise',
+      clarifyAnswer: answer,
+      // Reuse this card's attempt id so the resubmit supersedes the pre-clarify
+      // staging row instead of orphaning it (mirrors handleCheatClarify).
+      attemptId: message.attemptId,
+    });
+  };
+
+  // Discard a precise-clarify prompt without answering: drop the card and
+  // restore its raw text into the composer (never destroy what the user typed).
+  // Removing the message retires its attempt id, so the next submit mints a
+  // fresh one. Nothing was staged server-side, so there is no pending twin to
+  // clean up.
+  const handleDiscardClarify = (message: ChatMessage) => {
+    const text = message.userInput ?? message.content;
+    setMessages((prev) => prev.filter((m) => m.id !== message.id));
+    if (text && inputRef.current?.getText().trim() === '') {
+      inputRef.current.setText(text);
+    }
+  };
+
   // "Log it again": re-stage a past cheat occasion's sliders (seeded with last
   // time's amounts) without re-running the estimator, then surface the card.
   const handleRepeatCheat = async (occasion: RecentCheatOccasion) => {
@@ -305,6 +359,8 @@ export function useConfirmHandlers(args: {
     handleConfirmMeal,
     handleConfirmCheatMeal,
     handleCheatClarify,
+    handlePreciseClarify,
+    handleDiscardClarify,
     handleRepeatCheat,
   };
 }

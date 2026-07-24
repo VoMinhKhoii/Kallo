@@ -85,6 +85,54 @@ export function useStreamingTerminalEffects({
     setMessages,
   ]);
 
+  // Terminal: precise-mode clarify — the pipeline settled on a single question
+  // (portion/food unresolved) and staged nothing (no analysisId). Finalize the
+  // streaming card in place into a clarify card carrying the question, so it
+  // stops spinning on "assembling" and can collect an answer. One-shot: clearing
+  // streamingMsgId + resetting the stream trips the guard on re-run (mirrors the
+  // cheat clarify-question fallback above, which also finalizes without an id).
+  useEffect(() => {
+    if (
+      stream.status !== 'done' ||
+      !stream.clarify ||
+      stream.analysisId != null ||
+      !streamingMsgId
+    ) {
+      return;
+    }
+    const msgId = streamingMsgId;
+    const clarify = stream.clarify;
+    setStreamingMsgId(null);
+
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === msgId
+          ? {
+              ...msg,
+              isStreaming: false,
+              streamingPhase: undefined,
+              streamingItems: undefined,
+              streamingCompletedItems: undefined,
+              parsedMeal: undefined,
+              cheatSpec: undefined,
+              preciseClarify: clarify,
+            }
+          : msg
+      )
+    );
+    stream.reset();
+    scrollToBottom();
+  }, [
+    stream.status,
+    stream.clarify,
+    stream.analysisId,
+    stream.reset,
+    streamingMsgId,
+    scrollToBottom,
+    setStreamingMsgId,
+    setMessages,
+  ]);
+
   // Terminal: stream errored
   useEffect(() => {
     if (
