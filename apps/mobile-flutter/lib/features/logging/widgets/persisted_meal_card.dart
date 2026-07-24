@@ -26,6 +26,7 @@ class PersistedMealCard extends StatefulWidget {
     this.isLast = false,
     this.onRemove,
     this.onUpdate,
+    this.onLogAgain,
   });
 
   final PersistedMeal meal;
@@ -38,6 +39,10 @@ class PersistedMealCard extends StatefulWidget {
   /// Persist an amount edit (gram overrides + per-row removals). Null disables
   /// the "Edit amounts" affordance entirely.
   final AmountEditSave? onUpdate;
+
+  /// Re-log this meal onto the current day (deterministic server-side copy).
+  /// Null hides the "Log again" action.
+  final Future<void> Function()? onLogAgain;
 
   @override
   State<PersistedMealCard> createState() => _PersistedMealCardState();
@@ -160,6 +165,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
               onRemove: widget.onRemove,
               onEditAmounts:
                   canEdit ? () => setState(() => _editing = true) : null,
+              onLogAgain: widget.onLogAgain,
             ),
           ],
         ],

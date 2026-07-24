@@ -101,6 +101,23 @@ export const cheatRepeatSchema = z.object({
 
 export type CheatRepeatInput = z.infer<typeof cheatRepeatSchema>;
 
+/**
+ * Request body for `POST /api/v1/meals/[mealId]/duplicate` →
+ * `duplicateMealAction` ("log again"). The source `mealId` is taken from the
+ * URL path (not the body) and loaded server-side scoped to the authenticated
+ * user, so no client-supplied meal object is ever trusted. This body mirrors
+ * the remaining fields of the action's (un-exported) `duplicateMealSchema`
+ * exactly: an optional client-generated `newMealId` UUID plus the target
+ * day + timezone the copy lands on.
+ */
+export const duplicateMealBodySchema = z.object({
+  newMealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+export type DuplicateMealBody = z.infer<typeof duplicateMealBodySchema>;
+
 export type {
   ConfirmMealResponse,
   LoggingDayData,

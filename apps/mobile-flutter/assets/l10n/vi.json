@@ -1180,6 +1180,8 @@
       "total": "Tổng",
       "shareWithFriends": "Gửi cho bạn bè",
       "editAmounts": "Sửa lượng",
+      "logAgain": "Ghi lại",
+      "logAgainError": "Không ghi lại được — hãy thử lại.",
       "removeRow": "Bỏ {name}",
       "cancelEdit": "Hủy",
       "saveEdit": "Lưu thay đổi",

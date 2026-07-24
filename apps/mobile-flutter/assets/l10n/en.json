@@ -1180,6 +1180,8 @@
       "total": "Total",
       "shareWithFriends": "Send to friends",
       "editAmounts": "Edit amounts",
+      "logAgain": "Log again",
+      "logAgainError": "Couldn't log it again — try again.",
       "removeRow": "Remove {name}",
       "cancelEdit": "Cancel",
       "saveEdit": "Save changes",

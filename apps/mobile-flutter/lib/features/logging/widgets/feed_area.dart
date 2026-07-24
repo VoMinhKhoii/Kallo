@@ -39,6 +39,7 @@ import 'meal_entry.dart';
 import 'meal_input.dart';
 import 'meal_mode_sheet.dart';
 import 'persisted_meal_card.dart';
+import 'persisted_meal_log_again.dart';
 import 'persisted_meal_update.dart';
 import 'precise_clarify_card.dart';
 import 'streaming_entry.dart';
@@ -884,6 +885,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                               edits: edits,
                               removeIds: removeIds,
                             ),
+                        onLogAgain: () => logMealAgain(
+                          context,
+                          ref,
+                          userId: widget.profile.userId,
+                          date: widget.date,
+                          mealId: meal.id,
+                        ),
                       ),
             );
           }
