@@ -212,12 +212,13 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
           decoration: InputDecoration(
             isDense: true,
             filled: true,
-            // Soft warm fill instead of a hairline outline — the field reads as
+            // Soft track fill instead of a hairline outline — the field reads as
             // a tappable surface, the way native mobile inputs do, and the
-            // border only appears on focus / error.
+            // border only appears on focus / error. (kFieldFill is now white,
+            // which would vanish on the white bottom sheet.)
             fillColor: hasError
                 ? NhamColors.danger.withValues(alpha: 0.06)
-                : kFieldFill,
+                : NhamColors.track,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: NhamSpacing.sp4,
               vertical: 15,

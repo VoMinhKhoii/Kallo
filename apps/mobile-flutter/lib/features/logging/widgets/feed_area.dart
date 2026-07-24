@@ -161,6 +161,10 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     }
     setState(() {
       _failedText = null;
+      // Kept in lockstep with _failedText (only read while _failedText != null);
+      // reset it explicitly so the invariant holds without relying on the error
+      // branch always rewriting both.
+      _failedRetryable = true;
       _revealRawInput = null;
       _inFlightText = text;
     });

@@ -288,7 +288,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       rows.add(
         _providerRow(
           OAuthProvider.google,
-          const GoogleLogo(size: 16),
+          const GoogleLogo(size: 18),
           tr('settings.account.connectGoogle'),
           tr('settings.account.googleConnected'),
         ),
@@ -298,7 +298,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         rows.add(
           _providerRow(
             OAuthProvider.apple,
-            const AppleLogo(size: 16),
+            const AppleLogo(size: 18),
             tr('settings.account.connectApple'),
             tr('settings.account.appleConnected'),
           ),

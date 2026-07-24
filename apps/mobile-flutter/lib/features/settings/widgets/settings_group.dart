@@ -130,7 +130,7 @@ class _SettingsRowState extends State<SettingsRow> {
           SizedBox(
             width: _kGutter,
             child: widget.leading != null
-                ? Align(alignment: Alignment.centerLeft, child: widget.leading)
+                ? Center(child: widget.leading)
                 : Icon(widget.icon, size: 18, color: iconColor),
           ),
           const SizedBox(width: _kIconGap),
