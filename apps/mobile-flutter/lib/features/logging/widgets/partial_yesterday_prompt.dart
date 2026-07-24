@@ -74,7 +74,7 @@ class PartialYesterdayPrompt extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(NhamSpacing.sp3),
         decoration: BoxDecoration(
-          color: NhamColors.surface,
+          color: NhamColors.elev,
           borderRadius: BorderRadius.circular(NhamRadii.containerLg),
           border: Border.all(color: NhamColors.borderSoft),
         ),

@@ -3,33 +3,34 @@ import 'dart:ui';
 /// The Nham design system color palette.
 ///
 /// Transcribed from the web's `globals.css` `:root` tokens (the canonical
-/// `--nham-*` values). Visual direction: "Apple Notes on cream paper."
+/// `--nham-*` values). Visual direction: neutral canvas / ink / hairline with
+/// warm interaction washes; tan accent kept for non-text moments only.
 abstract final class NhamColors {
   // ── Core surfaces ────────────────────────────────────────────────────
-  static const Color surface = Color(0xFFFEFBF6); // app background — paper cream
+  static const Color surface = Color(0xFFF9F9F7); // app background — neutral canvas
   static const Color elev = Color(0xFFFFFFFF); // cards / sheets
-  static const Color hover = Color(0xFFF0EAE0);
-  static const Color track = Color(0xFFF5F4F0);
+  static const Color hover = Color(0xFFF0EAE0); // warm hover/select wash
+  static const Color track = Color(0xFFF5F4F0); // warm segmented/track
 
   // ── Text ─────────────────────────────────────────────────────────────
-  static const Color text = Color(0xFF2C2416); // espresso
-  static const Color textMuted = Color(0xFF8B7355); // warm taupe
-  static const Color textSoft = Color(0xFF6B5D4F);
+  static const Color text = Color(0xFF141413); // near-black ink
+  static const Color textMuted = Color(0xFF6E6D66); // neutral muted
+  static const Color textSoft = Color(0xFF3D3D3A); // soft long-body text
 
   // ── Accent ───────────────────────────────────────────────────────────
   static const Color accent = Color(0xFFC9A87C); // signature tan
   static const Color accentDark = Color(0xFFB89968);
 
   // ── Borders ──────────────────────────────────────────────────────────
-  static const Color border = Color(0xFFE8D5B5); // biscotti hairline
-  static const Color borderSoft = Color(0x99E8D5B5); // biscotti @ 60%
-  static const Color borderHalf = Color(0x80E8D5B5); // biscotti @ 50%
-  static const Color borderFaint = Color(0x4DE8D5B5); // biscotti @ 30%
-  static const Color borderBiscotti40 = Color(0x66E8D5B5); // biscotti @ 40%
+  static const Color border = Color(0xFFE8E6DC); // neutral hairline
+  static const Color borderSoft = Color(0x99E8E6DC); // hairline @ 60%
+  static const Color borderHalf = Color(0x80E8E6DC); // hairline @ 50%
+  static const Color borderFaint = Color(0x4DE8E6DC); // hairline @ 30%
+  static const Color borderBiscotti40 = Color(0x66E8E6DC); // hairline @ 40%
 
   // ── Translucent surfaces ─────────────────────────────────────────────
   static const Color elevTranslucent = Color(0xCCFFFFFF); // card/elev @ 80%
-  static const Color surface80 = Color(0xCCFEFBF6); // surface cream @ 80%
+  static const Color surface80 = Color(0xCCF9F9F7); // canvas @ 80%
   static const Color cardWhite55 = Color(0x8CFFFFFF); // card white @ 55%
   static const Color cardWhite40 = Color(0x66FFFFFF); // card white @ 40%
   static const Color cardWhite30 = Color(0x4DFFFFFF); // card white @ 30%
@@ -63,12 +64,12 @@ abstract final class NhamColors {
   static const Color stone70 = Color(0xB3A8A29E); // 70%
 
   // ── Text alpha variants ──────────────────────────────────────────────
-  static const Color text40 = Color(0x662C2416); // 40%
-  static const Color textMuted50 = Color(0x808B7355); // 50%
-  static const Color textMuted60 = Color(0x998B7355); // 60%
-  static const Color textMuted70 = Color(0xB38B7355); // 70% — macro-bar labels
-  static const Color textMuted80 = Color(0xCC8B7355); // 80% — legacy-macro note
-  static const Color placeholderMuted40 = Color(0x668B7355); // 40%
+  static const Color text40 = Color(0x66141413); // 40%
+  static const Color textMuted50 = Color(0x806E6D66); // 50%
+  static const Color textMuted60 = Color(0x996E6D66); // 60%
+  static const Color textMuted70 = Color(0xB36E6D66); // 70% — macro-bar labels
+  static const Color textMuted80 = Color(0xCC6E6D66); // 80% — legacy-macro note
+  static const Color placeholderMuted40 = Color(0x666E6D66); // 40%
 
   // ── Hover alpha variants ─────────────────────────────────────────────
   static const Color hover40 = Color(0x66F0EAE0); // 40%
@@ -101,8 +102,8 @@ abstract final class NhamColors {
   static const Color heatmapBarMiss = Color(0xFFD4C9AD);
 
   // ── Settings + onboarding neutral/cream palette ──────────────────────
-  static const Color inputBorder = Color(0xFFEAE7E0);
-  static const Color inputBorder40 = Color(0x66EAE7E0);
+  static const Color inputBorder = Color(0xFFE8E6DC); // unified neutral hairline
+  static const Color inputBorder40 = Color(0x66E8E6DC);
   static const Color textWarm = Color(0xFF7B6F62);
   static const Color textHelp = Color(0xFF8B8682);
   static const Color textSelected = Color(0xFF6F6556);

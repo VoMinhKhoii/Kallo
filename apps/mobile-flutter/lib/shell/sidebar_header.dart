@@ -95,7 +95,7 @@ class _Avatar extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             Color(0x66C9A87C), // accent @ 40%
-            Color(0x8CE8D5B5), // border @ 55%
+            Color(0x8CE8E6DC), // border @ 55%
           ],
         ),
         border: Border.all(color: const Color(0x40C9A87C), width: 1),

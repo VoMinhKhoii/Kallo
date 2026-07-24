@@ -108,7 +108,7 @@ class _MealModeSheet extends StatelessWidget {
               children: [
                 _ModeRow(
                   icon: mealModeIcon(MealLogMode.normal),
-                  iconColor: NhamColors.accentDark,
+                  iconColor: NhamColors.text,
                   title: 'logging.modeSelector.normal'.tr(),
                   desc: 'logging.modeSelector.normalDesc'.tr(),
                   selected: current == MealLogMode.normal,
@@ -133,7 +133,7 @@ class _MealModeSheet extends StatelessWidget {
                 if (isBarcodeLoggingSupported)
                   _ModeRow(
                     icon: mealModeIcon(MealLogMode.barcode),
-                    iconColor: NhamColors.accentDark,
+                    iconColor: NhamColors.text,
                     title: 'logging.modeSelector.barcode'.tr(),
                     desc: 'logging.modeSelector.barcodeDesc'.tr(),
                     selected: current == MealLogMode.barcode,
@@ -216,7 +216,7 @@ class _ModeRowState extends State<_ModeRow> {
               ),
             ),
             if (widget.selected)
-              const Icon(LucideIcons.check, size: 20, color: NhamColors.accent),
+              const Icon(LucideIcons.check, size: 20, color: NhamColors.text),
           ],
         ),
       ),

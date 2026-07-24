@@ -101,7 +101,7 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final dt = dateStringToDate(date);
     final weekday = DateFormat('EEE', locale).format(dt); // locale-aware, e.g. "Sun"
-    final labelColor = isToday ? NhamColors.accentDark : kInkMuted;
+    final labelColor = isToday ? kInk : kInkMuted;
 
     final consumed = cell?.consumedRatio;
     final isFuture = cell?.status == HeatmapCellStatus.future ||
@@ -126,7 +126,7 @@ class _DayCell extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x142C2416), // espresso @8% — small-chip lift
+                  color: Color(0x14141413), // ink @8% — small-chip lift
                   blurRadius: 12,
                   offset: Offset(0, 4),
                 ),

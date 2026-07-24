@@ -479,7 +479,7 @@ class _CarbCardState extends State<_CarbCard> {
     // Unselected `hover:border-[#C9A87C]/50` — border lightens to accent50 on
     // press; selected keeps the solid accent border + shadow-sm.
     final borderColor = widget.active
-        ? NhamColors.accent
+        ? NhamColors.text.withValues(alpha: 0.3)
         : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
     return GestureDetector(
       onTap: widget.onTap,
@@ -490,7 +490,7 @@ class _CarbCardState extends State<_CarbCard> {
         duration: const Duration(milliseconds: 150), // transition-all
         padding: const EdgeInsets.all(NhamSpacing.sp4),
         decoration: BoxDecoration(
-          color: widget.active ? NhamColors.accent05 : NhamColors.elev,
+          color: widget.active ? NhamColors.hover : NhamColors.elev,
           borderRadius: BorderRadius.circular(NhamRadii.containerLg),
           border: Border.all(color: borderColor),
           boxShadow: widget.active ? const [NhamShadows.sm] : null,

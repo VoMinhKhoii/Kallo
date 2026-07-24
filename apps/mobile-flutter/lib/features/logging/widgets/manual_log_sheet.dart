@@ -301,7 +301,7 @@ class _StateBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
-        color: cooked ? NhamColors.accent15 : NhamColors.hover,
+        color: NhamColors.hover,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -310,7 +310,7 @@ class _StateBadge extends StatelessWidget {
                 : 'logging.manualLogging.stateRaw')
             .tr(),
         style: dashEyebrow(
-          color: cooked ? NhamColors.accentDark : kInkMuted,
+          color: cooked ? kInk : kInkMuted,
         ),
       ),
     );
@@ -574,7 +574,7 @@ class _ResultTileState extends State<_ResultTile> {
               const Icon(
                 LucideIcons.circlePlus,
                 size: 18,
-                color: NhamColors.accentDark,
+                color: NhamColors.text,
               ),
             ],
           ),

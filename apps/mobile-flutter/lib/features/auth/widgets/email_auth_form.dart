@@ -205,7 +205,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
                     _createMode
                         ? tr('auth.signUp.signInLink')
                         : tr('auth.signIn.signUpLink'),
-                    style: dashBody(color: NhamColors.accent, weight: FontWeight.w500),
+                    style: dashBody(color: NhamColors.textMuted, weight: FontWeight.w500),
                   ),
                 ),
               ),

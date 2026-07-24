@@ -310,7 +310,7 @@ class _OptionRowState extends State<_OptionRow> {
               ),
             ),
             if (widget.selected)
-              const Icon(LucideIcons.check, size: 16, color: NhamColors.accent)
+              const Icon(LucideIcons.check, size: 16, color: NhamColors.text)
             else
               const SizedBox(width: 16, height: 16),
           ],

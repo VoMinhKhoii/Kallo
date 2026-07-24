@@ -224,7 +224,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             const Icon(
               LucideIcons.circleCheck,
               size: 40,
-              color: NhamColors.accent,
+              color: NhamColors.text,
             ),
             const SizedBox(height: NhamSpacing.sp4),
             Text(
@@ -391,11 +391,11 @@ class _TypeChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
           decoration: BoxDecoration(
             color: selected
-                ? NhamColors.accent.withValues(alpha: 0.12)
+                ? NhamColors.hover
                 : NhamColors.elev,
             borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
             border: Border.all(
-              color: selected ? NhamColors.accent : NhamColors.borderSoft,
+              color: selected ? NhamColors.text.withValues(alpha: 0.3) : NhamColors.borderSoft,
             ),
           ),
           child: Column(

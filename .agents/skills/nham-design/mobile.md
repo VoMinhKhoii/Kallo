@@ -1,7 +1,8 @@
 # Nhẩm mobile (Flutter) — type, colour & spacing
 
 The **mobile** design system for `apps/mobile-flutter`. It shares the brand core
-with web (warm palette, logo, Vietnamese-diacritic rule, no-emoji, Lucide) but is
+with web (neutral canvas + warm accent palette, logo, Vietnamese-diacritic rule,
+no-emoji, Lucide) but is
 a **calmer, Threads / Apple-Health–tuned** system that deliberately **diverges**
 from the web type scale and tokens. Do not apply `--nham-*` CSS tokens, DM Sans,
 or the web scale here.
@@ -34,12 +35,28 @@ all new mobile UI work against this doc.
 Medium (500) is the **weight ceiling for data** — Be Vietnam Pro reads heavy, so
 semibold felt thick; body/meta stay regular (400). Serif is never bold.
 
-## Colour — exactly two text colours
+## Colour — neutral canvas, exactly two text colours
+
+The palette is a **neutral canvas / ink / hairline** system (the old cream /
+espresso / biscotti trio is retired). Interaction washes stay **warm**, and the
+tan accent survives only on **non-text** moments — ring/chart strokes, the streak
+Flame, focus/press rings, and the one deliberate italic-accent phrase. Tan never
+colours running text or ordinary icons; former gold text/marks become ink or
+muted. Tan selection washes become the warm hover wash + ink + semibold, and
+surface-tinted cards that would read grey on the canvas become solid white.
 
 | Token | Hex | Role |
 |-------|-----|------|
-| `kInk` | `#2C2416` | primary data — numbers, meal names, macro labels |
-| `kInkMuted` | `#8C867C` | everything secondary — labels, units, captions, dates |
+| `kPage` | `#F9F9F7` | app canvas — neutral gray-white |
+| `kCardSurface` | `#FFFFFF` | cards / sheets — solid white |
+| `kTrack` | `#F5F4F0` | ring/bar tracks (warm), the only low-contrast surface |
+| `kHairline` | `#E8E6DC` | the one border — neutral hairline |
+| `kInk` | `#141413` | primary data — numbers, meal names, macro labels |
+| `kInkMuted` | `#6E6D66` | everything secondary — labels, units, captions, dates |
+
+`NhamColors` mirrors these plus `textSoft #3D3D3A` (long body), `hover #F0EAE0`
+(warm select wash), and the unchanged accent `#C9A87C`, button umber `#695E4E`,
+`danger #D37B69`, `success`, and macro colours.
 
 No third "disabled" tier. The old `kInkSecondary` (taupe) / `kInkDisabled`
 (stone) constants have been **deleted** — every surface is on `kInk` + `kInkMuted`.

@@ -38,22 +38,22 @@ abstract final class NhamRadii {
   static const double pill = 9999;
 }
 
-/// Warm, espresso-tinted, very low-contrast shadows (never #000-based).
+/// Neutral ink-tinted, very low-contrast shadows (never #000-based).
 abstract final class NhamShadows {
   static const BoxShadow xs = BoxShadow(
-    color: Color(0x0A2C2416), // opacity ~4%
+    color: Color(0x0A141413), // opacity ~4%
     blurRadius: 2,
     offset: Offset(0, 1),
   );
 
   static const BoxShadow sm = BoxShadow(
-    color: Color(0x0D2C2416), // opacity ~5%
+    color: Color(0x0D141413), // opacity ~5%
     blurRadius: 8,
     offset: Offset(0, 2),
   );
 
   static const BoxShadow md = BoxShadow(
-    color: Color(0x0D2C2416), // opacity ~5%
+    color: Color(0x0D141413), // opacity ~5%
     blurRadius: 16,
     offset: Offset(0, 10),
   );

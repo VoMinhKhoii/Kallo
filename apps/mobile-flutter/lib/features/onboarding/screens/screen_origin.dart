@@ -162,7 +162,7 @@ class _LabelRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: NhamColors.accent),
+        Icon(icon, size: 16, color: NhamColors.textMuted),
         const SizedBox(width: NhamSpacing.sp2),
         Text(
           label,

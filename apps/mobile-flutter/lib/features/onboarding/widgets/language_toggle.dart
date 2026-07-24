@@ -73,7 +73,7 @@ class _LangButtonState extends State<_LangButton> {
     // Unselected: hover:border-[#C9A87C]/50 (border lightens toward accent).
     final borderColor =
         widget.selected
-            ? NhamColors.accent
+            ? NhamColors.text.withValues(alpha: 0.3)
             : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
     return Semantics(
       button: true,
@@ -95,7 +95,7 @@ class _LangButtonState extends State<_LangButton> {
             vertical: NhamSpacing.sp3,
           ),
           decoration: BoxDecoration(
-            color: widget.selected ? NhamColors.accent10 : NhamColors.cream,
+            color: widget.selected ? NhamColors.hover : NhamColors.cream,
             borderRadius: BorderRadius.circular(NhamRadii.containerLg),
             border: Border.all(color: borderColor),
           ),
@@ -131,7 +131,7 @@ class _LangButtonState extends State<_LangButton> {
                 const Icon(
                   LucideIcons.check,
                   size: 16,
-                  color: NhamColors.accent,
+                  color: NhamColors.text,
                 ),
               ],
             ],

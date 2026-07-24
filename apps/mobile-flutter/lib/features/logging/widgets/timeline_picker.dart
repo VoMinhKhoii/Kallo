@@ -61,7 +61,7 @@ class _TimelineChipState extends State<TimelineChip> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(LucideIcons.calendar,
-                  size: 14, color: NhamColors.accent),
+                  size: 14, color: NhamColors.textMuted),
               const SizedBox(width: NhamSpacing.sp2), // gap-2
               Flexible(
                 child: NhamText(
@@ -340,7 +340,7 @@ class _TimelineStripState extends State<TimelineStrip> {
             onTap: _canNavigateNext ? _scrollNext : null,
             color: _canNavigateNext
                 ? NhamColors.textMuted
-                : const Color(0x4D8B7355), // text-nham-text-muted/30
+                : const Color(0x4D6E6D66), // text-nham-text-muted/30
           ),
         ],
       ),

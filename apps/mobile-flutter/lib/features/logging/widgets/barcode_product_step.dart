@@ -497,10 +497,10 @@ class _QuickChip extends StatelessWidget {
             vertical: 10,
           ),
           decoration: BoxDecoration(
-            color: selected ? NhamColors.accent15 : NhamColors.elev,
+            color: selected ? NhamColors.hover : NhamColors.elev,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected ? NhamColors.accent : NhamColors.inputBorder,
+              color: selected ? NhamColors.border : NhamColors.inputBorder,
             ),
           ),
           child: Text(
@@ -508,7 +508,7 @@ class _QuickChip extends StatelessWidget {
             style: NhamTextStyles.sansMedium(
               fontSize: NhamFontSize.xs,
             ).copyWith(
-              color: selected ? NhamColors.accentDark : NhamColors.textMuted,
+              color: selected ? NhamColors.text : NhamColors.textMuted,
             ),
           ),
         ),

@@ -255,7 +255,7 @@ class _FoodChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (reserved) ...[
-              const Icon(LucideIcons.check, size: 13, color: NhamColors.accentDark),
+              const Icon(LucideIcons.check, size: 13, color: NhamColors.text),
               const SizedBox(width: 4),
             ],
             Flexible(

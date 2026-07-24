@@ -439,7 +439,7 @@ class _EditPill extends StatelessWidget {
                     ? LucideIcons.check
                     : LucideIcons.pencil, // Check / Pencil
                 size: 12,
-                color: editing ? NhamColors.accent : NhamColors.textMuted,
+                color: editing ? NhamColors.text : NhamColors.textMuted,
               ),
               const SizedBox(width: 6), // gap-1.5
               NhamText(
@@ -448,7 +448,7 @@ class _EditPill extends StatelessWidget {
                     : 'logging.mealEntry.edit'.tr(),
                 variant: NhamTextVariant.pillLabel,
                 style: TextStyle(
-                  color: editing ? NhamColors.accent : kInkMuted,
+                  color: editing ? NhamColors.text : kInkMuted,
                 ),
               ),
             ],

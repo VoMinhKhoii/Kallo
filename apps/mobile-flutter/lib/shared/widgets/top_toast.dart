@@ -139,7 +139,7 @@ class _TopToastState extends State<_TopToast>
             size: 16,
             color: widget.variant == TopToastVariant.error
                 ? NhamColors.danger
-                : NhamColors.accent,
+                : NhamColors.text,
           ),
           const SizedBox(width: NhamSpacing.sp2),
           Flexible(
@@ -165,7 +165,7 @@ class _TopToastState extends State<_TopToast>
                   widget.actionLabel!,
                   style: NhamTextStyles.sansSemiBold(
                     fontSize: NhamFontSize.sm,
-                  ).copyWith(color: NhamColors.accentDark),
+                  ).copyWith(color: NhamColors.text),
                 ),
               ),
             ),

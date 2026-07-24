@@ -341,7 +341,7 @@ class _DropdownRowState extends State<_DropdownRow> {
                 const Icon(
                   LucideIcons.check,
                   size: 16,
-                  color: NhamColors.accent,
+                  color: NhamColors.text,
                 )
               else
                 const SizedBox(width: 16, height: 16),

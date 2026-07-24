@@ -389,7 +389,7 @@ class _ScanFramePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // Dim everything outside the window.
     final dim =
-        Paint()..color = const Color(0xFF2C2416).withValues(alpha: 0.35);
+        Paint()..color = const Color(0xFF141413).withValues(alpha: 0.35);
     final frame = RRect.fromRectAndRadius(
       scanWindow,
       const Radius.circular(12),

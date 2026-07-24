@@ -62,7 +62,7 @@ class _LanguageFieldState extends State<_LanguageField> {
             const Icon(
               LucideIcons.languages,
               size: 16,
-              color: NhamColors.accent,
+              color: NhamColors.textMuted,
             ),
             const SizedBox(width: NhamSpacing.sp2),
             Text(

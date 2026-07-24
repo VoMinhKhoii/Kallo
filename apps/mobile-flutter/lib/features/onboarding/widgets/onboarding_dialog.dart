@@ -24,7 +24,7 @@ Future<void> showOnboardingDialog(BuildContext context, WidgetRef ref) {
     context: context,
     barrierDismissible: true,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: const Color(0x332C2416), // rgba(44,36,22,0.2)
+    barrierColor: const Color(0x33141413), // ink @20% scrim
     transitionDuration: const Duration(milliseconds: 250),
     pageBuilder: (ctx, _, __) {
       final insets = MediaQuery.paddingOf(ctx);

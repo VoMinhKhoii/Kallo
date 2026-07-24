@@ -216,7 +216,7 @@ class _FloatingMealTriggerState extends ConsumerState<FloatingMealTrigger> {
                             // Deeper shadow while dragging reads as "above" the
                             // surface; resting shadow matches the web FAB.
                             BoxShadow(
-                              color: const Color(0x2E2C2416), // #2C2416 @ 18%
+                              color: const Color(0x2E141413), // ink @ 18%
                               blurRadius: _dragging ? 24 : 16,
                               offset: Offset(0, _dragging ? 8 : 4),
                             ),
@@ -295,7 +295,7 @@ class _MealInputBarState extends State<_MealInputBar> {
         ), // rounded-2xl
         border: Border.all(
           // border-nham-border/70 → focus-within:border-nham-accent/50.
-          color: focused ? NhamColors.accent50 : const Color(0xB3E8D5B5),
+          color: focused ? NhamColors.accent50 : const Color(0xB3E8E6DC),
         ),
       ),
       child: Row(
