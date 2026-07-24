@@ -1072,8 +1072,6 @@
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",
       "remove": "Xóa",
-      "removeConfirmTitle": "Xoá bữa ăn này?",
-      "removeConfirmDescription": "Bữa ăn sẽ biến mất khỏi nhật ký của bạn và bảng tin của vòng kết nối.",
       "logAgain": "Ghi lại",
       "editAmounts": "Sửa lượng",
       "shareWithFriends": "Gửi cho bạn bè",
@@ -1235,8 +1233,6 @@
       "share": "Chia sẻ với vòng kết nối",
       "shared": "Đã chia sẻ với vòng kết nối",
       "sharing": "Đang chia sẻ…",
-      "sharedToast": "Đã chia sẻ với vòng kết nối",
-      "unsharedToast": "Đã ngừng chia sẻ với vòng kết nối",
       "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
       "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại.",
       "shareCard": "Chia sẻ thẻ",
@@ -1382,39 +1378,26 @@
   "settings": {
     "title": "Cài đặt",
     "profile": "Hồ sơ",
+    "profileDescription": "Cách bạn xuất hiện và cơ thể bạn cần gì.",
     "preferences": "Tùy chỉnh",
+    "preferencesDescription": "Ngôn ngữ, khu vực, cách nấu ăn và chia sẻ.",
     "bodyMetrics": "Chỉ số cơ thể",
-    "goals": "Mục tiêu",
-    "cooking": "Thói quen nấu ăn",
-    "regional": "Khu vực",
     "save": "Lưu thay đổi",
     "saveWithTarget": "Lưu — mục tiêu mới {target} kcal",
     "saved": "Đã lưu thay đổi",
     "targetRitual": {
-      "savedLabel": "Mục tiêu đã lưu",
       "newLabel": "Mục tiêu mới",
       "unit": "kcal",
       "aggressivePace": "{pace} kg/tuần — nhịp khá gắt"
     },
     "language": "Ngôn ngữ",
     "languageHint": "Thay đổi ngôn ngữ ứng dụng",
-    "description": "Mục tiêu, cách nấu, và tài khoản của bạn — tất cả ở một nơi.",
     "anchorNav": {
       "label": "Trong trang này",
-      "bodyMetrics": "Mục tiêu & chỉ số",
-      "regional": "Khu vực & ngôn ngữ",
-      "cooking": "Nấu nướng",
-      "sharing": "Chia sẻ",
-      "account": "Tài khoản",
+      "profile": "Hồ sơ",
+      "preferences": "Tùy chỉnh",
       "feedback": "Góp ý",
-      "identity": "Hồ sơ"
-    },
-    "sharing": {
-      "title": "Chia sẻ",
-      "description": "Chọn điều sẽ xảy ra sau khi bạn lưu một bữa ăn.",
-      "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
-      "autoShareHint": "Khi bật, mỗi bữa ăn mới sẽ tự động được chia sẻ với vòng kết nối của bạn.",
-      "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
+      "account": "Tài khoản"
     },
     "feedback": {
       "title": "Gửi góp ý",
@@ -1447,11 +1430,8 @@
       "description": "Đăng nhập, dữ liệu, và cách rời đi của bạn.",
       "emailLabel": "Đang đăng nhập với",
       "linkedTitle": "Phương thức đăng nhập",
-      "linkedDescription": "Liên kết Google hoặc Apple để bạn có thể đăng nhập bằng bất kỳ phương thức nào — tất cả đều vào cùng một tài khoản.",
-      "linkedConnected": "Đã liên kết",
       "linkedConnect": "Liên kết",
       "linkedDisconnect": "Hủy liên kết",
-      "linkedLastHint": "Giữ lại ít nhất một phương thức đăng nhập.",
       "linkedConnectError": "Không thể liên kết tài khoản đó. Vui lòng thử lại.",
       "linkedDisconnectError": "Không thể hủy liên kết tài khoản đó. Vui lòng thử lại.",
       "linkedLoadError": "Không tải được phương thức đăng nhập của bạn.",
@@ -1462,6 +1442,7 @@
       "exportAction": "Xuất",
       "exporting": "Đang chuẩn bị dữ liệu…",
       "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+      "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
       "signOutTitle": "Đăng xuất",
       "signOutAction": "Đăng xuất",
       "deleteTitle": "Xóa tài khoản",
@@ -1476,21 +1457,15 @@
       "deleteError": "Không thể xóa tài khoản. Vui lòng thử lại."
     },
     "regionalPanel": {
-      "description": "AI dùng thông tin quốc gia của bạn để hiểu văn hóa ẩm thực và nguyên liệu dễ tìm tại nơi bạn sống.",
       "searchCountryLabel": "Tìm quốc gia",
       "clearLabel": "Xóa lựa chọn"
     },
     "profilePage": {
-      "title": "Hồ sơ",
-      "description": "Quản lý chỉ số cơ thể, vùng miền và thói quen nấu ăn của bạn.",
       "emptyTitle": "Chưa tìm thấy hồ sơ",
       "emptyDescription": "Bạn cần hoàn tất thiết lập ban đầu trước khi chỉnh sửa cài đặt.",
       "startSetup": "Bắt đầu thiết lập"
     },
     "profilePanel": {
-      "bodyMetricsSubtitle": "Cân nặng, chiều cao, mức hoạt động và mục tiêu macro",
-      "regionalSubtitle": "Quê quán và nơi ở hiện tại",
-      "cookingSubtitle": "Thiết lập dầu mỡ, cơm, đường, đạm và nước dùng mặc định",
       "saveError": "Không thể lưu cài đặt. Vui lòng thử lại.",
       "invalidError": "Một số giá trị không hợp lệ — vui lòng kiểm tra lại chỉ số cơ thể."
     },
@@ -1513,6 +1488,11 @@
       "nameError": "Không thể cập nhật tên",
       "linkPreview": "Liên kết mời của bạn:",
       "linkWarning": "Đổi tên sẽ đổi liên kết mời — liên kết cũ sẽ không dùng được nữa."
+    },
+    "sharing": {
+      "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
+      "autoShareHint": "Khi bật, mỗi bữa ăn mới sẽ tự động được chia sẻ với vòng kết nối của bạn.",
+      "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
     }
   },
   "errors": {
