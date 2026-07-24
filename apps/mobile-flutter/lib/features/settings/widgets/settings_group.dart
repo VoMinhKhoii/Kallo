@@ -55,7 +55,8 @@ class SettingsGroup extends StatelessWidget {
 class SettingsRow extends StatefulWidget {
   const SettingsRow({
     super.key,
-    required this.icon,
+    this.icon,
+    this.leading,
     required this.label,
     this.subline,
     this.value,
@@ -65,9 +66,19 @@ class SettingsRow extends StatefulWidget {
     this.busy = false,
     this.showChevron = false,
     this.trailing,
-  });
+  }) : assert(
+         icon != null || leading != null,
+         'SettingsRow needs an icon or a leading widget',
+       );
 
-  final IconData icon;
+  /// Lucide glyph for the gutter — muted at rest, ink on press. Omit when
+  /// supplying a custom [leading] (e.g. a brand mark that keeps its own colour).
+  final IconData? icon;
+
+  /// Custom leading widget occupying the icon gutter instead of [icon] — used
+  /// for the linked-account brand marks (Google's four-colour G, Apple in ink),
+  /// which never take the press tint. Mirrors web `brand-logos.tsx`.
+  final Widget? leading;
   final String label;
 
   /// Current-value subline under the label (goal pace, region, a URL).
@@ -118,7 +129,9 @@ class _SettingsRowState extends State<SettingsRow> {
         children: [
           SizedBox(
             width: _kGutter,
-            child: Icon(widget.icon, size: 18, color: iconColor),
+            child: widget.leading != null
+                ? Align(alignment: Alignment.centerLeft, child: widget.leading)
+                : Icon(widget.icon, size: 18, color: iconColor),
           ),
           const SizedBox(width: _kIconGap),
           Expanded(

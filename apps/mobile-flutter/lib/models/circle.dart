@@ -102,6 +102,7 @@ class CircleFeedMeal {
     this.carbohydrateG,
     this.fatG,
     this.portionFactor = 1,
+    this.isBackfilled = false,
   });
 
   final String mealId;
@@ -117,6 +118,12 @@ class CircleFeedMeal {
   final double? fatG;
   final double portionFactor;
 
+  /// True when the meal was logged for a PAST date (backfilled) — the server
+  /// computes this as `sharedAt − loggedAt ≥ 18h` (see `lib/groups/meal-feed.ts`
+  /// `isBackfilledShare`). When set, the elapsed-time span is hidden because a
+  /// past-date meal shared "now" would misleadingly read "just now".
+  final bool isBackfilled;
+
   factory CircleFeedMeal.fromJson(Map<String, dynamic> json) => CircleFeedMeal(
     mealId: json['mealId'] as String,
     shareId: json['shareId'] as String? ?? '',
@@ -127,6 +134,7 @@ class CircleFeedMeal {
     carbohydrateG: _asDouble(json['carbohydrateG']),
     fatG: _asDouble(json['fatG']),
     portionFactor: _asDouble(json['portionFactor']) ?? 1,
+    isBackfilled: json['isBackfilled'] as bool? ?? false,
   );
 }
 

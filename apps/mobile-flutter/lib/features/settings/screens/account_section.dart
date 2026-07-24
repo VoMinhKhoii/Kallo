@@ -14,6 +14,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../data/api_client.dart';
 import '../../../data/session_provider.dart';
+import '../../auth/widgets/apple_logo.dart';
+import '../../auth/widgets/google_logo.dart';
 import '../../../shared/widgets/nham_primitives.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
@@ -173,8 +175,13 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
 
   /// One linked-account row: "Connected via …" (tap to disconnect) or "Connect
   /// …" (tap to link). The last remaining identity can't be removed (lockout).
+  ///
+  /// The gutter shows the provider's real brand mark ([leading]) — Google's
+  /// four-colour G, Apple in ink — rather than a generic Lucide glyph, mirroring
+  /// web `components/settings/account/linked-accounts.tsx`.
   Widget _providerRow(
     OAuthProvider provider,
+    Widget leading,
     String connectLabel,
     String connectedLabel,
   ) {
@@ -183,7 +190,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     final total = _identities?.length ?? 0;
     if (_isLinked(key)) {
       return SettingsRow(
-        icon: LucideIcons.check,
+        leading: leading,
         label: connectedLabel,
         busy: _busyProvider == key,
         // Can't remove the last sign-in method (lockout), or mid-action.
@@ -193,7 +200,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       );
     }
     return SettingsRow(
-      icon: LucideIcons.link,
+      leading: leading,
       label: connectLabel,
       busy: _busyProvider == key,
       enabled: _busyProvider == null && _identities != null,
@@ -281,6 +288,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       rows.add(
         _providerRow(
           OAuthProvider.google,
+          const GoogleLogo(size: 16),
           tr('settings.account.connectGoogle'),
           tr('settings.account.googleConnected'),
         ),
@@ -290,6 +298,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         rows.add(
           _providerRow(
             OAuthProvider.apple,
+            const AppleLogo(size: 16),
             tr('settings.account.connectApple'),
             tr('settings.account.appleConnected'),
           ),

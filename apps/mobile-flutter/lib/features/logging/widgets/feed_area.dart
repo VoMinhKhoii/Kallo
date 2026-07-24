@@ -761,14 +761,14 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       );
     }
 
-    // FlatList contentContainerStyle: empty → centered with vertical padding;
-    // populated → padding 12 + extra left gutter of 24 (for the timeline rail).
+    // Empty → centered with vertical padding; populated → symmetric 12 padding,
+    // full-width cards (the old left timeline gutter is gone, matching web).
     if (persistedMeals.isEmpty) {
       final Widget body;
       if (isEmpty) {
         body = const EmptyState();
       } else if (isLoading) {
-        // 2-item card skeleton with the timeline rail (LoggingDaySkeleton).
+        // 2-item full-width card skeleton (LoggingDaySkeleton).
         body = const _LoggingDaySkeleton();
       } else {
         body = const SizedBox.shrink();
@@ -812,8 +812,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         );
       }
 
-      // The loading skeleton sits in the timeline gutter (it carries its own
-      // rail); the empty state is centered.
+      // The loading skeleton uses the same symmetric padding as the real cards;
+      // the empty state is centered.
       if (isLoading) {
         return SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -1294,7 +1294,7 @@ class _FailedAttemptCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(NhamSpacing.sp4),
         decoration: BoxDecoration(
-          color: NhamColors.surface,
+          color: NhamColors.elev,
           borderRadius: BorderRadius.circular(NhamRadii.containerLg),
           border: Border.all(color: NhamColors.borderSoft),
           boxShadow: const [NhamShadows.sm],
@@ -1442,7 +1442,7 @@ class _PartialDayNotice extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(NhamSpacing.sp3),
       decoration: BoxDecoration(
-        color: NhamColors.surface,
+        color: NhamColors.elev,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),
         border: Border.all(color: NhamColors.borderSoft),
       ),
@@ -1670,9 +1670,9 @@ class _MacroSummarySkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _bar(_labelWidths[i], 12, const Color(0xB3E8D5B5)), // border/70
+          _bar(_labelWidths[i], 12, const Color(0xB3E8E6DC)), // border/70
           const SizedBox(height: NhamSpacing.sp2), // mb-2
-          _bar(64, 20, NhamColors.accent35), // h-5 w-16 accent/25
+          _bar(64, 20, NhamColors.track), // h-5 w-16 track skeleton pill
         ],
       ),
     );
@@ -1701,8 +1701,9 @@ class _MacroSummarySkeleton extends StatelessWidget {
   }
 }
 
-/// Day-loading skeleton: 2 pulsing ghost cards with the timeline rail, a title
-/// bar, 3 text lines, and a dashed-top totals row (LoggingDaySkeleton).
+/// Day-loading skeleton: 2 pulsing full-width ghost cards, each with a time
+/// bar, a title bar, 3 text lines, and a hairline-topped totals row
+/// (LoggingDaySkeleton).
 class _LoggingDaySkeleton extends StatelessWidget {
   const _LoggingDaySkeleton();
 
@@ -1713,7 +1714,7 @@ class _LoggingDaySkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _bar(64, 12, const Color(0xB3E8D5B5)), // border/70 time bar
+          _bar(64, 12, const Color(0xB3E8E6DC)), // border/70 time bar
           const SizedBox(height: NhamSpacing.sp2), // mb-2
           Container(
             padding: const EdgeInsets.all(NhamSpacing.sp4), // p-5→16
@@ -1729,7 +1730,7 @@ class _LoggingDaySkeleton extends StatelessWidget {
                 LayoutBuilder(
                   builder:
                       (_, c) =>
-                          _bar(c.maxWidth * 2 / 3, 20, const Color(0xB3E8D5B5)),
+                          _bar(c.maxWidth * 2 / 3, 20, const Color(0xB3E8E6DC)),
                 ),
                 const SizedBox(height: NhamSpacing.sp4), // mb-4
                 LayoutBuilder(
@@ -1794,7 +1795,7 @@ class _LoggingDayErrorState extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 448), // max-w-md
           padding: const EdgeInsets.all(NhamSpacing.sp4), // p-4
           decoration: BoxDecoration(
-            color: NhamColors.surface,
+            color: NhamColors.elev,
             borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
             border: Border.all(color: NhamColors.borderSoft),
             boxShadow: const [NhamShadows.sm],

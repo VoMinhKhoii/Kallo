@@ -47,13 +47,17 @@ class FeedEntry extends StatelessWidget {
                 runSpacing: 3,
                 children: [
                   Text(name, style: dashBody(weight: FontWeight.w500)),
-                  Text(
-                    formatElapsed(
-                      sharedAt,
-                      locale: context.locale.languageCode,
+                  // A backfilled (past-date) meal shared "now" would misleadingly
+                  // read "just now" — hide the elapsed time. Mirrors web
+                  // `components/groups/feed-entry.tsx`.
+                  if (!meal.isBackfilled)
+                    Text(
+                      formatElapsed(
+                        sharedAt,
+                        locale: context.locale.languageCode,
+                      ),
+                      style: dashMeta(),
                     ),
-                    style: dashMeta(),
-                  ),
                   if (meal.portionFactor < 1)
                     Container(
                       padding: const EdgeInsets.symmetric(

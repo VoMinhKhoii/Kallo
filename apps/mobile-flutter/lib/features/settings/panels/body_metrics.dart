@@ -49,9 +49,16 @@ class BodyMetrics extends StatelessWidget {
       tdee = calcTDEE(bmr, v.activityLevel);
     }
 
-    final targetCalories = tdee == null
+    final rawTarget = tdee == null
         ? 0.0
         : calcDailyTargets(tdee, v.goal, v.aggression, v.carbSplit).calories;
+    // Clamp the DISPLAYED target once at the source — the server persists
+    // max(500) (see profile_payload.dart), so the hero, carb-split previews and
+    // every macro-gram preview derived from it must name that same effective
+    // target. Mirrors web 40f859b. Only a real computed target is floored; an
+    // incomplete form (tdee null) stays 0 and is never rendered.
+    final targetCalories =
+        tdee != null && rawTarget < 500 ? 500.0 : rawTarget;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

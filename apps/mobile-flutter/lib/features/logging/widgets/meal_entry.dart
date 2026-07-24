@@ -99,22 +99,25 @@ class _MealEntryState extends State<MealEntry> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header: raw input + edit/done pill.
+                  // Header: raw input + edit/done pill. The Lora quote is the
+                  // user's raw input ONLY — web renders it solely when
+                  // `userInput` exists (meal-entry.tsx), never a serif meal name.
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start, // items-start
                     children: [
-                      Expanded(
-                        child: NhamText(
-                          widget.rawInput.isNotEmpty
-                              ? widget.rawInput
-                              : widget.parsedMeal.mealName,
-                          variant: NhamTextVariant.mealQuote,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            height: 1.625, // leading-relaxed
+                      if (widget.rawInput.isNotEmpty)
+                        Expanded(
+                          child: NhamText(
+                            widget.rawInput,
+                            variant: NhamTextVariant.mealQuote,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              height: 1.625, // leading-relaxed
+                            ),
                           ),
-                        ),
-                      ),
+                        )
+                      else
+                        const Spacer(),
                       const SizedBox(width: NhamSpacing.sp2),
                       _EditPill(
                         editing: _editing,

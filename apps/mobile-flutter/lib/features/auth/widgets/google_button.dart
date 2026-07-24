@@ -10,7 +10,7 @@ import 'google_logo.dart';
 ///
 /// Matches web `components/auth/google-sign-in-button.tsx:42`:
 /// `flex w-full items-center justify-center gap-2.5 rounded-xl border
-/// border-[#E8D5B5] bg-white px-4 py-3 font-medium text-[#2C2416] text-sm
+/// border-[#E8E6DC] bg-white px-4 py-3 font-medium text-[#2C2416] text-sm
 /// tracking-tight transition-all duration-200 hover:bg-[#FFFCF8]
 /// disabled:opacity-60`. While busy a Loader2 spinner (h-4 w-4, currentColor
 /// = #2C2416) replaces the logo. rounded-xl → 12, gap-2.5 → 10, px-4 → 16,
