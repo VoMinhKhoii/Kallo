@@ -1,17 +1,17 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { AccountPanel } from '@/components/settings/account/account-panel';
+import { SettingsAnchorNav } from '@/components/settings/anchor-nav';
 import {
   ACCOUNT_ANCHOR,
   FEEDBACK_ANCHOR,
-  IDENTITY_ANCHOR,
-  SettingsAnchorNav,
-  SHARING_ANCHOR,
-} from '@/components/settings/anchor-nav';
+  PROFILE_ANCHOR,
+} from '@/components/settings/anchors';
 import { FeedbackPanel } from '@/components/settings/feedback/feedback-panel';
-import { IdentityPanel } from '@/components/settings/identity/identity-panel';
-import { Profile } from '@/components/settings/profile';
-import { SharingPanel } from '@/components/settings/sharing/sharing-panel';
+import { SettingsGroup } from '@/components/settings/group';
+import { IdentityRows } from '@/components/settings/identity/identity-rows';
+import { SettingsForm } from '@/components/settings/profile/settings-form';
+import { SectionHeader } from '@/components/settings/section-header';
 import { Link } from '@/i18n/navigation';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { createClient } from '@/lib/supabase/server';
@@ -35,8 +35,6 @@ export default async function SettingsPage() {
   const tProfile = await getTranslations('settings.profilePage');
   const tAccount = await getTranslations('settings.account');
   const tFeedback = await getTranslations('settings.feedback');
-  const tIdentity = await getTranslations('settings.identity');
-  const tSharing = await getTranslations('settings.sharing');
 
   const [profile, supabase] = await Promise.all([
     getOnboardingProfile(),
@@ -50,86 +48,54 @@ export default async function SettingsPage() {
       {/* Anchor nav — replaces the routed master-detail. Horizontal on small
           screens, a sticky rail on large. */}
       <div className="mb-3 shrink-0 lg:mb-0 lg:w-[200px]">
-        <SettingsAnchorNav />
+        <SettingsAnchorNav hasProfile={!!profile} />
       </div>
 
       <div className="min-w-0 flex-1">
-        <header className="mb-5 sm:mb-7">
-          <h1 className="font-normal font-serif text-2xl text-nham-text tracking-tight">
-            {t('title')}
-          </h1>
-          <p className="mt-1 text-[#7B6F62] text-[14px]">{t('description')}</p>
-        </header>
-
-        {/* Identity — avatar + "what should we call you", above the metrics. */}
-        <section
-          id={IDENTITY_ANCHOR}
-          aria-label={tIdentity('title')}
-          className="mb-8 scroll-mt-20"
-        >
-          <div className="mb-4">
-            <h2 className="font-normal font-serif text-nham-text text-xl tracking-tight">
-              {tIdentity('title')}
-            </h2>
-            <p className="mt-1 text-[#7B6F62] text-[14px]">
-              {tIdentity('description')}
-            </p>
-          </div>
-          <IdentityPanel />
-        </section>
+        <h1 className="sr-only">{t('title')}</h1>
 
         {profile ? (
-          <Profile profile={profile} />
+          <SettingsForm
+            profile={profile}
+            autoShare={profile.autoShareToCircle}
+          />
         ) : (
-          <div className="flex flex-col items-center gap-4 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] px-4 py-12 text-center">
-            <h2 className="font-serif text-lg text-nham-text">
-              {tProfile('emptyTitle')}
-            </h2>
-            <p className="max-w-sm text-[14px] text-nham-text-soft">
-              {tProfile('emptyDescription')}
-            </p>
-            <Link
-              href="/onboarding"
-              className="rounded-lg bg-nham-ink px-4 py-2 font-medium text-nham-surface text-sm"
-            >
-              {tProfile('startSetup')}
-            </Link>
-          </div>
-        )}
-
-        {profile ? (
-          <section
-            id={SHARING_ANCHOR}
-            aria-label={tSharing('title')}
-            className="mt-8 scroll-mt-20"
-          >
-            <div className="mb-4">
-              <h2 className="font-normal font-serif text-nham-text text-xl tracking-tight">
-                {tSharing('title')}
+          <section id={PROFILE_ANCHOR} className="mb-8 scroll-mt-20">
+            <SectionHeader
+              title={t('profile')}
+              description={t('profileDescription')}
+            />
+            <SettingsGroup>
+              <IdentityRows />
+            </SettingsGroup>
+            <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-nham-border bg-white px-4 py-12 text-center">
+              <h2 className="font-serif text-lg text-nham-text">
+                {tProfile('emptyTitle')}
               </h2>
-              <p className="mt-1 text-[#7B6F62] text-[14px]">
-                {tSharing('description')}
+              <p className="max-w-sm text-[14px] text-nham-text-soft">
+                {tProfile('emptyDescription')}
               </p>
+              <Link
+                href="/onboarding"
+                className="rounded-lg bg-nham-btn px-4 py-2 font-medium text-sm text-white"
+              >
+                {tProfile('startSetup')}
+              </Link>
             </div>
-            <SharingPanel initialValue={profile.autoShareToCircle} />
           </section>
-        ) : null}
+        )}
 
         {/* Feedback section — kept above Account so it doesn't sit below the
             delete-account danger zone. */}
         <section
           id={FEEDBACK_ANCHOR}
           aria-label={tFeedback('title')}
-          className="mt-8 scroll-mt-20"
+          className="mb-8 scroll-mt-20"
         >
-          <div className="mb-4">
-            <h2 className="font-normal font-serif text-nham-text text-xl tracking-tight">
-              {tFeedback('title')}
-            </h2>
-            <p className="mt-1 text-[#7B6F62] text-[14px]">
-              {tFeedback('description')}
-            </p>
-          </div>
+          <SectionHeader
+            title={tFeedback('title')}
+            description={tFeedback('description')}
+          />
           <FeedbackPanel />
         </section>
 
@@ -137,16 +103,12 @@ export default async function SettingsPage() {
         <section
           id={ACCOUNT_ANCHOR}
           aria-label={tAccount('title')}
-          className="mt-8 scroll-mt-20"
+          className="mb-8 scroll-mt-20"
         >
-          <div className="mb-4">
-            <h2 className="font-normal font-serif text-nham-text text-xl tracking-tight">
-              {tAccount('title')}
-            </h2>
-            <p className="mt-1 text-[#7B6F62] text-[14px]">
-              {tAccount('description')}
-            </p>
-          </div>
+          <SectionHeader
+            title={tAccount('title')}
+            description={tAccount('description')}
+          />
           <AccountPanel email={email} />
         </section>
       </div>

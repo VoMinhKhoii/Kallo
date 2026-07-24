@@ -137,7 +137,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
   return (
     <>
       {/* Mobile/tablet: in-flow trigger + sheet. */}
-      <div className="mb-2.5 flex shrink-0 items-center justify-end px-1 wide:hidden">
+      <div className="mb-2.5 flex wide:hidden shrink-0 items-center justify-end px-1">
         <Sheet>
           <SheetTrigger asChild>
             <button

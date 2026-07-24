@@ -1072,8 +1072,6 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total",
       "remove": "Remove",
-      "removeConfirmTitle": "Remove this meal?",
-      "removeConfirmDescription": "It disappears from your log and your circle's feed.",
       "logAgain": "Log again",
       "editAmounts": "Edit amounts",
       "shareWithFriends": "Send to friends",
@@ -1235,8 +1233,6 @@
       "share": "Share to circle",
       "shared": "Shared to circle",
       "sharing": "Sharing…",
-      "sharedToast": "Shared to your circle",
-      "unsharedToast": "No longer shared with your circle",
       "errorShare": "Couldn't share to your circle. Try again.",
       "errorUnshare": "Couldn't update sharing. Try again.",
       "shareCard": "Share card",
@@ -1382,39 +1378,26 @@
   "settings": {
     "title": "Settings",
     "profile": "Profile",
+    "profileDescription": "How you appear, and what your body needs.",
     "preferences": "Preferences",
+    "preferencesDescription": "Language, region, how you cook, and sharing.",
     "bodyMetrics": "Body Metrics",
-    "goals": "Goals & Targets",
-    "cooking": "Cooking Habits",
-    "regional": "Regional",
     "save": "Save changes",
     "saveWithTarget": "Save — new target {target} kcal",
     "saved": "Changes saved",
     "targetRitual": {
-      "savedLabel": "Saved target",
       "newLabel": "New target",
       "unit": "kcal",
       "aggressivePace": "{pace} kg/wk — an aggressive pace"
     },
     "language": "Language",
     "languageHint": "Change the app language",
-    "description": "Your goal, your cooking, and your account — all in one place.",
     "anchorNav": {
       "label": "On this page",
-      "bodyMetrics": "Goal & metrics",
-      "regional": "Region & language",
-      "cooking": "Cooking",
-      "sharing": "Sharing",
-      "account": "Account",
+      "profile": "Profile",
+      "preferences": "Preferences",
       "feedback": "Feedback",
-      "identity": "Profile"
-    },
-    "sharing": {
-      "title": "Sharing",
-      "description": "Choose what happens after you save a meal.",
-      "autoShareLabel": "Share new meals with your circle",
-      "autoShareHint": "When this is on, each new meal is shared with your circle automatically.",
-      "error": "Couldn't update your sharing preference. Please try again."
+      "account": "Account"
     },
     "feedback": {
       "title": "Send feedback",
@@ -1447,11 +1430,8 @@
       "description": "Your sign-in, your data, and how to leave.",
       "emailLabel": "Signed in as",
       "linkedTitle": "Sign-in methods",
-      "linkedDescription": "Connect Google or Apple so you can sign in with either — they all reach this one account.",
-      "linkedConnected": "Connected",
       "linkedConnect": "Connect",
       "linkedDisconnect": "Disconnect",
-      "linkedLastHint": "Keep at least one sign-in method.",
       "linkedConnectError": "Could not connect that account. Please try again.",
       "linkedDisconnectError": "Could not disconnect that account. Please try again.",
       "linkedLoadError": "Could not load your sign-in methods.",
@@ -1462,6 +1442,7 @@
       "exportAction": "Export",
       "exporting": "Preparing your data…",
       "exportError": "Could not export your data. Please try again.",
+      "signOutError": "Couldn't sign out. Please try again.",
       "signOutTitle": "Sign out",
       "signOutAction": "Sign out",
       "deleteTitle": "Delete account",
@@ -1476,21 +1457,15 @@
       "deleteError": "Could not delete your account. Please try again."
     },
     "regionalPanel": {
-      "description": "AI uses your country info to understand food culture and locally available ingredients.",
       "searchCountryLabel": "Search country",
       "clearLabel": "Clear selection"
     },
     "profilePage": {
-      "title": "Profile",
-      "description": "Manage your body metrics, regional preferences, and cooking habits.",
       "emptyTitle": "No profile found",
       "emptyDescription": "You need to complete the initial setup before editing your settings.",
       "startSetup": "Start setup"
     },
     "profilePanel": {
-      "bodyMetricsSubtitle": "Weight, height, activity level, and macro targets",
-      "regionalSubtitle": "Country of origin and current residence",
-      "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
       "saveError": "Failed to save settings. Please try again.",
       "invalidError": "Some entries are invalid — please review your body metrics."
     },
@@ -1513,6 +1488,11 @@
       "nameError": "Couldn't update your name",
       "linkPreview": "Your invite link:",
       "linkWarning": "Changing your name updates your invite link — old links stop working."
+    },
+    "sharing": {
+      "autoShareLabel": "Share new meals with your circle",
+      "autoShareHint": "When this is on, each new meal is shared with your circle automatically.",
+      "error": "Couldn't update your sharing preference. Please try again."
     }
   },
   "errors": {
