@@ -20,7 +20,19 @@ import {
 // ---------------------------------------------------------------------------
 
 /** onMutate: cancel in-flight day fetches, snapshot, upsert the optimistic
- *  meal into the cached day. Returns the rollback snapshots. */
+ *  meal into the cached day. Returns the rollback snapshots plus a flag for
+ *  whether our cancel killed a logging-day fetch that was actually in flight.
+ *
+ *  `dayFetchCancelled` invariant: any fetch our cancel here aborts carried
+ *  state (the day's server meals) that we then can't trust the cache to hold —
+ *  whether it was the INITIAL load or a PRIOR save's heal refetch. The snapshot
+ *  can't distinguish the latter: cancelling a prior heal reverts the cache to
+ *  that save's (defined) seed, so the snapshot looks defined even though the
+ *  never-loaded server meals are still missing. Capturing the fetch-in-flight
+ *  status BEFORE the cancel lets onSuccess re-arm the post-write active refetch
+ *  in exactly that case. (`isInvalidated` is deliberately NOT the signal —
+ *  settleMealSave marks the day invalidated on every save, so it would fire a
+ *  heal after every save and defeat the no-refetch fast path.) */
 export async function applyOptimisticMeal(
   queryClient: QueryClient,
   userId: string,
@@ -29,12 +41,16 @@ export async function applyOptimisticMeal(
   analysisId?: string
 ) {
   const filter = { queryKey: loggingDayKeys.byUserDate(userId, originDate) };
+  const dayFetchCancelled = queryClient
+    .getQueryCache()
+    .findAll(filter)
+    .some((q) => q.state.fetchStatus === 'fetching');
   await queryClient.cancelQueries(filter);
   const snapshots = queryClient.getQueriesData<LoggingDayData>(filter);
   queryClient.setQueriesData<LoggingDayData>(filter, (old) =>
     mergeConfirmedMealIntoDay(old, optimisticMeal, analysisId)
   );
-  return { snapshots };
+  return { snapshots, dayFetchCancelled };
 }
 
 /**
@@ -73,14 +89,21 @@ export async function reconcileSavedMeal(
   /** onMutate's rollback snapshots (from applyOptimisticMeal), taken after the
    *  cancel but before the optimistic seed — a `undefined` logging-day entry
    *  here means its initial fetch was in flight and the seed now hides that. */
-  onMutateSnapshots?: ReturnType<QueryClient['getQueriesData']>
+  onMutateSnapshots?: ReturnType<QueryClient['getQueriesData']>,
+  /** applyOptimisticMeal's flag: our onMutate cancel killed a logging-day fetch
+   *  that was in flight (initial load OR a prior save's heal refetch). When it
+   *  was a prior heal, the snapshot above looks defined (the cancel reverted to
+   *  that save's seed) yet the never-loaded server meals are still missing, so
+   *  the post-write active refetch below must be re-armed regardless. */
+  dayFetchCancelled?: boolean
 ) {
   const loggingDayKey = loggingDayKeys.byUserDate(userId, originDate);
   const dailyMealsKey = dailyMealsKeys.byDate(originDate);
   // Capture in-flight entries (initial fetch still running → data undefined)
   // BEFORE the cancels below abort them. daily-meals is unseeded so its live
   // entry is accurate; logging-day is masked by onMutate's seed, so consult the
-  // pre-seed snapshot for it.
+  // pre-seed snapshot for it — or the dayFetchCancelled flag when the cancel
+  // aborted a prior save's heal (which leaves the snapshot looking defined).
   const dailyMealsInFlight = queryClient
     .getQueriesData<PersistedMeal[]>({ queryKey: dailyMealsKey })
     .some(([, data]) => data === undefined);
@@ -88,7 +111,8 @@ export async function reconcileSavedMeal(
     queryClient
       .getQueriesData<LoggingDayData>({ queryKey: loggingDayKey })
       .some(([, data]) => data === undefined) ||
-    (onMutateSnapshots?.some(([, data]) => data === undefined) ?? false);
+    (onMutateSnapshots?.some(([, data]) => data === undefined) ?? false) ||
+    (dayFetchCancelled ?? false);
   await Promise.all([
     queryClient.cancelQueries({ queryKey: loggingDayKey }),
     queryClient.cancelQueries({ queryKey: dailyMealsKey }),

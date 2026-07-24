@@ -192,6 +192,48 @@ function Surfaces({
   );
 }
 
+// Two independent confirm buttons (mirrors two pending cards, each with its own
+// useConfirmMeal), so the test can drive two sequential confirms — the second
+// fired while the first save's heal refetch is still in flight.
+function DualConfirm() {
+  const confirmA = useConfirmMeal(USER_ID);
+  const confirmB = useConfirmMeal(USER_ID);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          confirmA.mutate({
+            analysisId: 'analysis-1',
+            mealId: 'meal-1',
+            originDate: DATE,
+            parsedMeal: parsedMeal(),
+            rawInput: 'Phở bò',
+            loggedAt: '2026-05-04T05:30:00.000Z',
+          })
+        }
+      >
+        confirm-a
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          confirmB.mutate({
+            analysisId: 'analysis-2',
+            mealId: 'meal-2',
+            originDate: DATE,
+            parsedMeal: parsedMeal(),
+            rawInput: 'Bún chả',
+            loggedAt: '2026-05-04T06:30:00.000Z',
+          })
+        }
+      >
+        confirm-b
+      </button>
+    </>
+  );
+}
+
 function makeClient() {
   return new QueryClient({
     defaultOptions: {
@@ -628,6 +670,72 @@ describe('save-meal flow (integration)', () => {
 
     await waitFor(() =>
       expect(screen.getByTestId('logging-ring')).toHaveTextContent('780')
+    );
+  });
+
+  it("two meals confirmed back-to-back while the logging-day initial load and the first save's heal are both in flight → ring keeps the never-loaded server meal", async () => {
+    // The day already has a saved server meal (300) whose logging-day initial
+    // load is held in flight. Confirm A (480): its onMutate cancels the initial
+    // load (data undefined), seeds [A], and — undefined snapshot — arms a heal
+    // refetch (held, call 2). Then confirm B (480) WHILE that heal is still in
+    // flight: B's onMutate cancel kills the heal and reverts to the (now defined)
+    // [A] data, so B's snapshot is defined. Without re-arming, B's onSuccess sees
+    // defined live data + defined snapshot → skips the heal, silently dropping
+    // the never-loaded meal-0. The ring must heal to all three (300+480+480=1260).
+    server.meals = [savedMeal('meal-0', 300)];
+    const initial = deferred<LoggingDayData>();
+    const heal = deferred<LoggingDayData>();
+    let dayCalls = 0;
+    mockLoadLoggingDay.mockImplementation(async () => {
+      dayCalls += 1;
+      // call 1 = held initial load; call 2 = A's held heal; call 3+ = current
+      // server state (B's re-armed heal reads all three meals).
+      if (dayCalls === 1) return initial.promise;
+      if (dayCalls === 2) return heal.promise;
+      return {
+        persistedMeals: server.meals,
+        pendingConfirmations: server.pending,
+      };
+    });
+
+    const client = makeClient();
+    renderWith(
+      client,
+      <>
+        <LoggingRing />
+        <DualConfirm />
+      </>
+    );
+
+    // The initial logging-day fetch is in flight → the ring has no data yet.
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('0')
+    );
+
+    // Confirm A — its heal refetch is issued and held (call 2).
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'confirm-a' }));
+    });
+
+    // Confirm B while A's heal is still unresolved.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'confirm-b' }));
+    });
+
+    // Release the held fetches; both were cancelled, so their results must not win.
+    await act(async () => {
+      initial.resolve({
+        persistedMeals: [savedMeal('meal-0', 300)],
+        pendingConfirmations: [],
+      });
+      heal.resolve({
+        persistedMeals: server.meals,
+        pendingConfirmations: [],
+      });
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('1260')
     );
   });
 });

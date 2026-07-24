@@ -63,7 +63,8 @@ export function useConfirmMeal(userId: string) {
         variables.originDate,
         data.meal,
         variables.analysisId,
-        context?.snapshots
+        context?.snapshots,
+        context?.dayFetchCancelled
       ),
     onError: (error, _vars, context) =>
       rollbackOptimisticMeal(queryClient, error, context),
@@ -113,7 +114,8 @@ export function useSaveManualMeal(userId: string) {
         variables.originDate,
         data.meal,
         undefined,
-        context?.snapshots
+        context?.snapshots,
+        context?.dayFetchCancelled
       ),
     onError: (error, _vars, context) =>
       rollbackOptimisticMeal(queryClient, error, context),
@@ -222,7 +224,8 @@ export function useDuplicateMeal(userId: string) {
         v.originDate,
         data.meal,
         undefined,
-        context?.snapshots
+        context?.snapshots,
+        context?.dayFetchCancelled
       ),
     onError: (error, _v, context) =>
       rollbackOptimisticMeal(queryClient, error, context),
