@@ -18,7 +18,6 @@ import {
   buildOptimisticMeal,
   type ConfirmMealVariables,
   type SaveManualMealVariables,
-  todayDateString,
   upsertById,
   upsertMealIntoList,
 } from './meal-mutation-helpers';
@@ -234,41 +233,72 @@ export function useDuplicateMeal(userId: string) {
   });
 }
 
-export function useDeleteMeal() {
+// Delete a meal, scoped by (userId, originDate) — mirrors useUpdateMeal. The
+// optimistic drop and the settle invalidation both touch the logging-day cache
+// AND the dashboard daily-meals cache, so neither ring keeps showing the
+// removed meal. Scoping by the passed originDate (not a self-computed "today")
+// keeps a quick-save-then-undo correct across a midnight rollover.
+export function useDeleteMeal(userId: string, originDate: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: deleteMealAction,
     onMutate: async ({ mealId }) => {
-      // Optimistic delete: remove meal from cache before server confirms
-      const today = todayDateString();
-      const queryKey = dailyMealsKeys.byDate(today);
+      // Cancel any in-flight day fetch first: it read the pre-delete snapshot
+      // and would restore the meal when it lands (mirrors useUpdateMeal).
+      const loggingDayFilter = {
+        queryKey: loggingDayKeys.byUserDate(userId, originDate),
+      };
+      const dailyMealsKey = dailyMealsKeys.byDate(originDate);
+      await Promise.all([
+        queryClient.cancelQueries(loggingDayFilter),
+        queryClient.cancelQueries({ queryKey: dailyMealsKey }),
+      ]);
+      const loggingDaySnapshots =
+        queryClient.getQueriesData<LoggingDayData>(loggingDayFilter);
+      const dailyMeals =
+        queryClient.getQueryData<PersistedMeal[]>(dailyMealsKey);
 
-      await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<PersistedMeal[]>(queryKey);
-
-      if (previous) {
+      queryClient.setQueriesData<LoggingDayData>(loggingDayFilter, (old) =>
+        old
+          ? {
+              ...old,
+              persistedMeals: old.persistedMeals.filter(
+                (meal) => meal.id !== mealId
+              ),
+            }
+          : old
+      );
+      if (dailyMeals) {
         queryClient.setQueryData<PersistedMeal[]>(
-          queryKey,
-          previous.filter((m) => m.id !== mealId)
+          dailyMealsKey,
+          dailyMeals.filter((meal) => meal.id !== mealId)
         );
       }
 
-      return { previous, queryKey };
+      return { loggingDaySnapshots, dailyMeals, dailyMealsKey };
     },
     onError: (error, _vars, context) => {
-      // Rollback on failure
-      if (context?.previous) {
-        queryClient.setQueryData(context.queryKey, context.previous);
+      // Rollback both caches on failure.
+      if (context?.loggingDaySnapshots) {
+        for (const [key, data] of context.loggingDaySnapshots) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+      if (context?.dailyMeals) {
+        queryClient.setQueryData(context.dailyMealsKey, context.dailyMeals);
       }
       toast.error(
         error instanceof Error ? error.message : 'Không thể xóa bữa ăn.'
       );
     },
     onSettled: () => {
-      const today = todayDateString();
       queryClient.invalidateQueries({
-        queryKey: dailyMealsKeys.byDate(today),
+        queryKey: loggingDayKeys.byUserDate(userId, originDate),
+        refetchType: 'none',
+      });
+      queryClient.invalidateQueries({
+        queryKey: dailyMealsKeys.byDate(originDate),
       });
       queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
     },
