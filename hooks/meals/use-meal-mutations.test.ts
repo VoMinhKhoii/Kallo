@@ -361,6 +361,54 @@ describe('useConfirmMeal optimistic update', () => {
     );
     expect(activeDayInvalidations.length).toBeGreaterThan(0);
   });
+
+  it('re-arms the daily-meals heal when a save races a refetch over DEFINED-but-stale data', async () => {
+    // The `data === undefined` in-flight check catches an initial load, but not
+    // a refetch running over already-cached (stale) daily-meals — e.g. a
+    // focus/staleTime refetch, or a prior save's heal about to land fuller
+    // server state. reconcile's cancel kills that refetch; upserting only the
+    // saved meal onto the stale list drops whatever the refetch would have
+    // surfaced. The fetch-status signal must re-arm an active refetch so the
+    // ring heals to authoritative state instead of the stale list + one meal.
+    const queryClient = new QueryClient();
+    queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
+      persistedMeals: [],
+      pendingConfirmations: [],
+    });
+    const dailyKey = dailyMealsKeys.byDate(DATE);
+    // Defined (stale) data present, then a refetch left in flight over it.
+    queryClient.setQueryData<PersistedMeal[]>(dailyKey, [
+      savedMealResult({ id: 'meal-existing' }).meal,
+    ]);
+    queryClient
+      .fetchQuery({
+        queryKey: dailyKey,
+        queryFn: () => new Promise<PersistedMeal[]>(() => {}),
+      })
+      .catch(() => {});
+    await waitFor(() =>
+      expect(queryClient.getQueryState(dailyKey)?.fetchStatus).toBe('fetching')
+    );
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    mockConfirm.mockResolvedValue(savedMealResult());
+
+    const { result } = renderConfirm(queryClient);
+    await result.current.mutateAsync({
+      analysisId: 'analysis-1',
+      mealId: 'meal-1',
+      originDate: DATE,
+      parsedMeal: makeParsedMeal(),
+      rawInput: 'Phở bò',
+      loggedAt: '2026-05-29T01:00:00.000Z',
+    });
+
+    const dailyActiveRearm = invalidateSpy.mock.calls.find(
+      (call) =>
+        JSON.stringify(call[0]?.queryKey) === JSON.stringify(dailyKey) &&
+        call[0]?.refetchType === 'active'
+    );
+    expect(dailyActiveRearm).toBeDefined();
+  });
 });
 
 // ---------------------------------------------------------------------------

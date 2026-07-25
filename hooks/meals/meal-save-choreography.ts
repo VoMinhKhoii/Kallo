@@ -104,9 +104,21 @@ export async function reconcileSavedMeal(
   // entry is accurate; logging-day is masked by onMutate's seed, so consult the
   // pre-seed snapshot for it — or the dayFetchCancelled flag when the cancel
   // aborted a prior save's heal (which leaves the snapshot looking defined).
-  const dailyMealsInFlight = queryClient
-    .getQueriesData<PersistedMeal[]>({ queryKey: dailyMealsKey })
-    .some(([, data]) => data === undefined);
+  //
+  // daily-meals also needs the fetch-status signal, not just `data === undefined`:
+  // a refetch running over already-cached (stale) data — a focus/staleTime
+  // refetch, or a prior save's heal about to land fuller server state — has
+  // DEFINED data yet is still fetching. The cancel below kills it, so upserting
+  // only the saved meal onto the stale list would drop what the refetch would
+  // have surfaced; re-arm the active refetch in that case too.
+  const dailyMealsInFlight =
+    queryClient
+      .getQueriesData<PersistedMeal[]>({ queryKey: dailyMealsKey })
+      .some(([, data]) => data === undefined) ||
+    queryClient
+      .getQueryCache()
+      .findAll({ queryKey: dailyMealsKey })
+      .some((query) => query.state.fetchStatus === 'fetching');
   const loggingDayInFlight =
     queryClient
       .getQueriesData<LoggingDayData>({ queryKey: loggingDayKey })
