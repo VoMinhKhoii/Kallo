@@ -1138,9 +1138,7 @@
     },
     "clarify": {
       "portion": "How much {ingredient} was in your {mealItem}? A rough weight or portion helps.",
-      "food": "Which {ingredient} did you mean in your {mealItem}?",
-      "answerHint": "Type your answer…",
-      "send": "Send"
+      "food": "Which {ingredient} did you mean in your {mealItem}?"
     },
     "cheatRepeat": {
       "title": "Log it again"

@@ -51,7 +51,7 @@ function MealInputForm({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const meal = text.trim();
-    if (!meal || isStreaming || streaming.error || streaming.clarify) return;
+    if (!meal || isStreaming || streaming.error) return;
     onSubmit?.();
     setText('');
     onSubmitMeal(meal);
@@ -76,7 +76,7 @@ function MealInputForm({
     wasActiveRef.current = isStreaming;
   }, [isStreaming, streaming.error]);
 
-  const isStreamingLive = isStreaming && !streaming.error && !streaming.clarify;
+  const isStreamingLive = isStreaming && !streaming.error;
 
   return (
     <form
@@ -90,7 +90,7 @@ function MealInputForm({
         streaming.error && 'border-nham-danger/40'
       )}
     >
-      {streaming.error || streaming.clarify ? (
+      {streaming.error ? (
         <MealTriggerNotice streaming={streaming} />
       ) : isStreaming ? (
         /* The bar becomes the stream: a loader + text flipping through stages. */

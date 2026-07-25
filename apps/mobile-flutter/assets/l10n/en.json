@@ -1164,10 +1164,6 @@
       "message": "We couldn't read this one. Your note is safe — give it another try.",
       "tryAgain": "Try again"
     },
-    "clarify": {
-      "answerHint": "Type your answer…",
-      "send": "Send"
-    },
     "mealEntry": {
       "edit": "Edit",
       "done": "Done",

@@ -1164,10 +1164,6 @@
       "message": "Chưa đọc được món này. Ghi chú của bạn vẫn còn — thử lại nhé.",
       "tryAgain": "Thử lại"
     },
-    "clarify": {
-      "answerHint": "Nhập câu trả lời…",
-      "send": "Gửi"
-    },
     "mealEntry": {
       "edit": "Sửa",
       "done": "Xong",

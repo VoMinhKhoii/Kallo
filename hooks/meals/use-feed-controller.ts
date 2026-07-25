@@ -113,7 +113,6 @@ export function useFeedController(args: {
     setStreamingMsgId,
     lastAnalysisIdRef,
     lastErrorRef,
-    inputRef,
   });
 
   const { handleSubmit } = useFeedSubmit({
