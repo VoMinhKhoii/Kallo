@@ -1,9 +1,5 @@
 'use client';
 
-import type { QueryClient, QueryKey } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
-import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
 import type { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import type {
   LoggingDayData,
@@ -15,7 +11,6 @@ import type { NutritionValues } from '@/lib/ai/types';
 import type { SaveManualMealInput } from '@/lib/api/contracts/meals';
 import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
-import { invalidateFeedQueries } from '@/lib/groups/feed-cache';
 import {
   type CompleteManualMealRow,
   parseGrams,
@@ -229,116 +224,6 @@ export type ConfirmMealVariables = Omit<
   /** Present for cheat meals — seeds the optimistic cheat card. */
   cheat?: OptimisticCheatInput;
 };
-
-// ---------------------------------------------------------------------------
-// Shared save choreography (useConfirmMeal + useSaveManualMeal)
-// ---------------------------------------------------------------------------
-
-/** onMutate: cancel in-flight day fetches, snapshot, upsert the optimistic
- *  meal into the cached day. Returns the rollback snapshots. */
-export async function applyOptimisticMeal(
-  queryClient: QueryClient,
-  userId: string,
-  originDate: string,
-  optimisticMeal: PersistedMeal,
-  analysisId?: string
-) {
-  const filter = { queryKey: loggingDayKeys.byUserDate(userId, originDate) };
-  await queryClient.cancelQueries(filter);
-  const snapshots = queryClient.getQueriesData<LoggingDayData>(filter);
-  queryClient.setQueriesData<LoggingDayData>(filter, (old) =>
-    mergeConfirmedMealIntoDay(old, optimisticMeal, analysisId)
-  );
-  return { snapshots };
-}
-
-/**
- * onSuccess: reconcile straight from the save response — the server returns
- * the saved meal in its authoritative shape, so we overwrite the optimistic
- * estimate in place (same id → no remount/re-fade) rather than waiting for a
- * day refetch. Any day fetch still in flight is cancelled BEFORE the write:
- * such a fetch read the PRE-save snapshot and would clobber the write when it
- * lands; the cancellations are AWAITED so an in-flight fetch can't resolve
- * between the cancel and the setQueriesData below.
- */
-export async function reconcileSavedMeal(
-  queryClient: QueryClient,
-  userId: string,
-  originDate: string,
-  savedMeal: PersistedMeal | undefined,
-  analysisId?: string
-) {
-  const loggingDayKey = loggingDayKeys.byUserDate(userId, originDate);
-  const dailyMealsKey = dailyMealsKeys.byDate(originDate);
-  await Promise.all([
-    queryClient.cancelQueries({ queryKey: loggingDayKey }),
-    queryClient.cancelQueries({ queryKey: dailyMealsKey }),
-  ]);
-  if (!savedMeal) {
-    // Defensive (the web actions always return `meal`): if a version-skewed
-    // response omits it, fall back to a refetch so the ring reconciles
-    // instead of keeping the optimistic estimate stuck.
-    queryClient.invalidateQueries({ queryKey: loggingDayKey });
-    queryClient.invalidateQueries({ queryKey: dailyMealsKey });
-    return;
-  }
-  queryClient.setQueriesData<LoggingDayData>(
-    { queryKey: loggingDayKey },
-    (old) => mergeConfirmedMealIntoDay(old, savedMeal, analysisId)
-  );
-  // Keep the dashboard ring in sync instantly when its daily-meals query is
-  // already mounted; an unmounted one is marked stale by the invalidate on
-  // settle and refetches on its next mount.
-  queryClient.setQueriesData<PersistedMeal[]>(
-    { queryKey: dailyMealsKey },
-    (old) => upsertMealIntoList(old, savedMeal)
-  );
-}
-
-/** onError: restore the pre-mutation snapshots and surface the failure. */
-export function rollbackOptimisticMeal(
-  queryClient: QueryClient,
-  error: unknown,
-  context: { snapshots?: ReturnType<QueryClient['getQueriesData']> } | undefined
-) {
-  if (context?.snapshots) {
-    for (const [key, data] of context.snapshots) {
-      queryClient.setQueryData(key, data);
-    }
-  }
-  toast.error(error instanceof Error ? error.message : 'Không thể lưu bữa ăn.');
-}
-
-/**
- * onSettled: on success, onSuccess already wrote authoritative state — mark
- * the day queries stale WITHOUT a refetch (refetchType 'none' = no network);
- * an unmounted surface (e.g. the dashboard while logging) refreshes on its
- * next mount. On error the optimistic insert was rolled back; refetch
- * actively to heal in case a cancelled in-flight fetch left a surface behind.
- * meal-dates (timeline dots) has no optimistic path; refresh it normally.
- */
-export function settleMealSave(
-  queryClient: QueryClient,
-  userId: string,
-  originDate: string,
-  error: unknown,
-  extraKeys: readonly QueryKey[] = []
-) {
-  const refetchType = error ? 'active' : 'none';
-  queryClient.invalidateQueries({
-    queryKey: loggingDayKeys.byUserDate(userId, originDate),
-    refetchType,
-  });
-  queryClient.invalidateQueries({
-    queryKey: dailyMealsKeys.byDate(originDate),
-    refetchType,
-  });
-  queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
-  invalidateFeedQueries(queryClient);
-  for (const key of extraKeys) {
-    queryClient.invalidateQueries({ queryKey: key });
-  }
-}
 
 export type SaveManualMealVariables = Omit<
   SaveManualMealInput,

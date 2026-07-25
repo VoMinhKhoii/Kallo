@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
+import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
 import type { ChatMessage } from '@/lib/types/meal';
 
@@ -38,9 +39,26 @@ export function useFeedInvalidation(args: {
     queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
   }, [messages, userId, queryClient, selectedDate, streamingMsgId]);
 
-  const handleBarcodeSuccess = useCallback(() => {
+  const handleBarcodeSuccess = useCallback(async () => {
+    // The barcode flow confirm-and-saves directly (no confirm mutation), so
+    // there's no cancel/optimistic choreography guarding it. Cancel any pre-save
+    // day fetch still in flight BEFORE invalidating: such a fetch captured the
+    // pre-save snapshot and could dedupe onto the refetch and clobber the just-
+    // saved meal, leaving the ring stale. Refetch BOTH day queries (the logging
+    // ring and the dashboard's daily-meals ring) so neither lags after a save.
+    await Promise.all([
+      queryClient.cancelQueries({
+        queryKey: loggingDayKeys.byUserDate(userId, selectedDate),
+      }),
+      queryClient.cancelQueries({
+        queryKey: dailyMealsKeys.byDate(selectedDate),
+      }),
+    ]);
     queryClient.invalidateQueries({
       queryKey: loggingDayKeys.byUserDate(userId, selectedDate),
+    });
+    queryClient.invalidateQueries({
+      queryKey: dailyMealsKeys.byDate(selectedDate),
     });
     queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
   }, [userId, queryClient, selectedDate]);

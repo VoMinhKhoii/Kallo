@@ -16,7 +16,10 @@ import '../../../data/api_client.dart';
 import '../../../data/query.dart';
 import '../../../models/circle.dart';
 import '../../dashboard/data/dashboard_providers.dart'
-    show localTimezoneOffsetMinutes;
+    show
+        dashboardBundleProvider,
+        dashboardDayProvider,
+        localTimezoneOffsetMinutes;
 import '../../logging/data/logging_providers.dart' show loggingDayProvider;
 
 /// How often the ambient wall re-polls for new shared meals (web parity).
@@ -286,6 +289,10 @@ Future<void> shareMealWithFriends(
     'mode': mode,
   });
   ref.invalidate(loggingDayProvider);
+  // The dashboard reads its ring off a separate bundle/day cache — invalidate
+  // it too or the Today card + week-strip ring keep the pre-split total.
+  ref.invalidate(dashboardBundleProvider);
+  ref.invalidate(dashboardDayProvider);
   ref.invalidate(circleFeedProvider);
 }
 
@@ -300,6 +307,10 @@ Future<void> acceptMealShareInvite(WidgetRef ref, String inviteId) async {
   });
   ref.invalidate(mealShareInvitesProvider);
   ref.invalidate(loggingDayProvider);
+  // A newly-logged meal must also heal the dashboard's Today + week-strip ring,
+  // which read off a separate bundle/day cache.
+  ref.invalidate(dashboardBundleProvider);
+  ref.invalidate(dashboardDayProvider);
   ref.invalidate(circleFeedProvider);
 }
 

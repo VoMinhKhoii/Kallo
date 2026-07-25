@@ -7,8 +7,10 @@ import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
 import {
   useConfirmMeal,
+  useDeleteMeal,
   useSaveManualMeal,
 } from '@/hooks/meals/use-meal-mutations';
+import { deleteMealAction } from '@/lib/actions/meals/mutate-meal';
 import type { LoggingDayData, PersistedMeal } from '@/lib/actions/meals/types';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { CompleteManualMealRow } from '@/lib/logging/manual-logging';
@@ -359,6 +361,54 @@ describe('useConfirmMeal optimistic update', () => {
     );
     expect(activeDayInvalidations.length).toBeGreaterThan(0);
   });
+
+  it('re-arms the daily-meals heal when a save races a refetch over DEFINED-but-stale data', async () => {
+    // The `data === undefined` in-flight check catches an initial load, but not
+    // a refetch running over already-cached (stale) daily-meals — e.g. a
+    // focus/staleTime refetch, or a prior save's heal about to land fuller
+    // server state. reconcile's cancel kills that refetch; upserting only the
+    // saved meal onto the stale list drops whatever the refetch would have
+    // surfaced. The fetch-status signal must re-arm an active refetch so the
+    // ring heals to authoritative state instead of the stale list + one meal.
+    const queryClient = new QueryClient();
+    queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
+      persistedMeals: [],
+      pendingConfirmations: [],
+    });
+    const dailyKey = dailyMealsKeys.byDate(DATE);
+    // Defined (stale) data present, then a refetch left in flight over it.
+    queryClient.setQueryData<PersistedMeal[]>(dailyKey, [
+      savedMealResult({ id: 'meal-existing' }).meal,
+    ]);
+    queryClient
+      .fetchQuery({
+        queryKey: dailyKey,
+        queryFn: () => new Promise<PersistedMeal[]>(() => {}),
+      })
+      .catch(() => {});
+    await waitFor(() =>
+      expect(queryClient.getQueryState(dailyKey)?.fetchStatus).toBe('fetching')
+    );
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    mockConfirm.mockResolvedValue(savedMealResult());
+
+    const { result } = renderConfirm(queryClient);
+    await result.current.mutateAsync({
+      analysisId: 'analysis-1',
+      mealId: 'meal-1',
+      originDate: DATE,
+      parsedMeal: makeParsedMeal(),
+      rawInput: 'Phở bò',
+      loggedAt: '2026-05-29T01:00:00.000Z',
+    });
+
+    const dailyActiveRearm = invalidateSpy.mock.calls.find(
+      (call) =>
+        JSON.stringify(call[0]?.queryKey) === JSON.stringify(dailyKey) &&
+        call[0]?.refetchType === 'active'
+    );
+    expect(dailyActiveRearm).toBeDefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -519,5 +569,115 @@ describe('useSaveManualMeal', () => {
       (call) => JSON.stringify(call[0]?.queryKey) === '["meal-dates"]'
     );
     expect(mealDatesInvalidation).toBeDefined();
+  });
+});
+
+function renderDelete(queryClient: QueryClient, date = DATE) {
+  return renderHook(() => useDeleteMeal(USER_ID, date), {
+    wrapper: makeWrapper(queryClient),
+  });
+}
+
+describe('useDeleteMeal', () => {
+  beforeEach(() => {
+    vi.mocked(deleteMealAction).mockReset();
+  });
+
+  it('cancels then invalidates BOTH day queries + meal-dates on settle, scoped by the passed originDate (not today)', async () => {
+    // The delete undo lives on the dashboard, but the meal must also drop from
+    // the logging-day cache — else it lingers on the logging page after undo.
+    // And the keys must use the passed originDate: a self-computed "today" drifts
+    // from the save's originDate across a midnight rollover. DATE is a fixed past
+    // day, so at HEAD (which keys off today) these DATE-scoped assertions fail.
+    const queryClient = new QueryClient();
+    queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
+      persistedMeals: [savedMealResult({ id: 'meal-1' }).meal],
+      pendingConfirmations: [],
+    });
+    queryClient.setQueryData<PersistedMeal[]>(dailyMealsKeys.byDate(DATE), [
+      savedMealResult({ id: 'meal-1' }).meal,
+    ]);
+    const cancelSpy = vi.spyOn(queryClient, 'cancelQueries');
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const { result } = renderDelete(queryClient);
+    await result.current.mutateAsync({ mealId: 'meal-1' });
+
+    await waitFor(() => {
+      const cancelKeys = cancelSpy.mock.calls.map((call) => call[0]?.queryKey);
+      const invalidateKeys = invalidateSpy.mock.calls.map(
+        (call) => call[0]?.queryKey
+      );
+      expect(cancelKeys).toContainEqual(
+        loggingDayKeys.byUserDate(USER_ID, DATE)
+      );
+      expect(cancelKeys).toContainEqual(dailyMealsKeys.byDate(DATE));
+      expect(invalidateKeys).toContainEqual(
+        loggingDayKeys.byUserDate(USER_ID, DATE)
+      );
+      expect(invalidateKeys).toContainEqual(dailyMealsKeys.byDate(DATE));
+      expect(invalidateKeys).toContainEqual(['meal-dates']);
+    });
+  });
+
+  it('optimistically removes the meal from the logging-day cache', async () => {
+    // At HEAD onMutate only touches the dashboard daily-meals key, so the
+    // logging-day cache keeps the deleted meal until a refetch. Hold the delete
+    // unresolved to observe the optimistic (pre-settle) cache.
+    const queryClient = new QueryClient();
+    queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
+      persistedMeals: [
+        savedMealResult({ id: 'meal-1' }).meal,
+        savedMealResult({ id: 'meal-2' }).meal,
+      ],
+      pendingConfirmations: [],
+    });
+    let resolveDelete!: () => void;
+    vi.mocked(deleteMealAction).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveDelete = () => resolve({ success: true });
+        })
+    );
+
+    const { result } = renderDelete(queryClient);
+    act(() => {
+      result.current.mutate({ mealId: 'meal-1' });
+    });
+
+    await waitFor(() => {
+      const meals = dayData(queryClient)?.persistedMeals ?? [];
+      expect(meals.map((meal) => meal.id)).toEqual(['meal-2']);
+    });
+    act(() => resolveDelete());
+  });
+
+  it('actively refetches the logging-day surface when the delete fails', async () => {
+    // onMutate cancelled any in-flight day fetch; on failure the rollback can
+    // only restore the pre-cancel snapshot (undefined for an initial load that
+    // never landed), so a mounted logging ring stays stale unless onSettled
+    // refetches on error — mirror settleMealSave's error-keyed refetchType.
+    const queryClient = new QueryClient();
+    queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
+      persistedMeals: [savedMealResult({ id: 'meal-1' }).meal],
+      pendingConfirmations: [],
+    });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    vi.mocked(deleteMealAction).mockRejectedValue(new Error('boom'));
+
+    const { result } = renderDelete(queryClient);
+    await result.current
+      .mutateAsync({ mealId: 'meal-1' })
+      .catch(() => undefined);
+
+    await waitFor(() => {
+      const loggingDayRefetch = invalidateSpy.mock.calls.find(
+        (call) =>
+          JSON.stringify(call[0]?.queryKey) ===
+            JSON.stringify(loggingDayKeys.byUserDate(USER_ID, DATE)) &&
+          call[0]?.refetchType === 'active'
+      );
+      expect(loggingDayRefetch).toBeDefined();
+    });
   });
 });

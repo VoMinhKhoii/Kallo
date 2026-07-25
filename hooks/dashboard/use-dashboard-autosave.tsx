@@ -29,7 +29,7 @@ export function useDashboardAutoSave(args: {
     args;
   const t = useTranslations('dashboard');
   const { mutate: confirm } = useConfirmMeal(userId);
-  const { mutate: removeMeal } = useDeleteMeal();
+  const { mutate: removeMeal } = useDeleteMeal(userId, todayDate);
   const { reset } = stream;
 
   const [isSaving, setIsSaving] = useState(false);
