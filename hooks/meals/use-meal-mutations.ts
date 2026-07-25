@@ -292,10 +292,14 @@ export function useDeleteMeal(userId: string, originDate: string) {
         error instanceof Error ? error.message : 'Không thể xóa bữa ăn.'
       );
     },
-    onSettled: () => {
+    onSettled: (_data, error) => {
+      // On success the optimistic delete already healed the mounted surface, so
+      // just mark stale (no refetch). On failure the rollback can only restore
+      // the pre-cancel snapshot (undefined if an initial load was cancelled
+      // mid-flight), so refetch actively to heal — mirrors settleMealSave.
       queryClient.invalidateQueries({
         queryKey: loggingDayKeys.byUserDate(userId, originDate),
-        refetchType: 'none',
+        refetchType: error ? 'active' : 'none',
       });
       queryClient.invalidateQueries({
         queryKey: dailyMealsKeys.byDate(originDate),

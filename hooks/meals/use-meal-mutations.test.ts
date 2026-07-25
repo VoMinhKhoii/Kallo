@@ -651,4 +651,33 @@ describe('useDeleteMeal', () => {
     });
     act(() => resolveDelete());
   });
+
+  it('actively refetches the logging-day surface when the delete fails', async () => {
+    // onMutate cancelled any in-flight day fetch; on failure the rollback can
+    // only restore the pre-cancel snapshot (undefined for an initial load that
+    // never landed), so a mounted logging ring stays stale unless onSettled
+    // refetches on error — mirror settleMealSave's error-keyed refetchType.
+    const queryClient = new QueryClient();
+    queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
+      persistedMeals: [savedMealResult({ id: 'meal-1' }).meal],
+      pendingConfirmations: [],
+    });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    vi.mocked(deleteMealAction).mockRejectedValue(new Error('boom'));
+
+    const { result } = renderDelete(queryClient);
+    await result.current
+      .mutateAsync({ mealId: 'meal-1' })
+      .catch(() => undefined);
+
+    await waitFor(() => {
+      const loggingDayRefetch = invalidateSpy.mock.calls.find(
+        (call) =>
+          JSON.stringify(call[0]?.queryKey) ===
+            JSON.stringify(loggingDayKeys.byUserDate(USER_ID, DATE)) &&
+          call[0]?.refetchType === 'active'
+      );
+      expect(loggingDayRefetch).toBeDefined();
+    });
+  });
 });
