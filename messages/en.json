@@ -1072,6 +1072,8 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total",
       "remove": "Remove",
+      "removeConfirmTitle": "Remove this meal?",
+      "removeConfirmDescription": "It disappears from your log and your circle's feed.",
       "logAgain": "Log again",
       "editAmounts": "Edit amounts",
       "shareWithFriends": "Send to friends",
