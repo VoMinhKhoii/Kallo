@@ -185,16 +185,8 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Always "Today's weight" — this field only ever logs today. No leading
-        // icon: the label alone carries the meaning and reads cleaner.
-        Padding(
-          padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
-          child: Text(
-            tr('dashboard.weightCard.todaysWeight').toUpperCase(),
-            style: dashEyebrow(),
-          ),
-        ),
-        // Field on its own row, full width.
+        // Field on its own row, full width. The "Today's weight" label now
+        // lives in the hosting sheet's header (NhamSheetHeader title).
         TextField(
           controller: _controller,
           onChanged: _onChanged,
@@ -212,12 +204,12 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
           decoration: InputDecoration(
             isDense: true,
             filled: true,
-            // Soft warm fill instead of a hairline outline — the field reads as
-            // a tappable surface, the way native mobile inputs do, and the
-            // border only appears on focus / error.
+            // Soft track fill instead of a hairline outline — reads as a tappable
+            // surface, border only on focus / error. (kFieldFill is white now,
+            // which would vanish on the white bottom sheet.)
             fillColor: hasError
                 ? NhamColors.danger.withValues(alpha: 0.06)
-                : kFieldFill,
+                : NhamColors.track,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: NhamSpacing.sp4,
               vertical: 15,

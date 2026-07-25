@@ -5,7 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/top_toast.dart';
 import '../data/sharing_providers.dart';
-import 'settings_group.dart';
+import 'settings_row.dart';
 
 class AutoShareToCircleToggle extends ConsumerStatefulWidget {
   const AutoShareToCircleToggle({super.key, required this.value});

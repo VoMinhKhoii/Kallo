@@ -70,10 +70,19 @@ void main() {
       final entry = CircleFeedEntry.fromJson(json);
 
       expect(entry.meal.portionFactor, 1);
+      expect(entry.meal.isBackfilled, isFalse);
       expect(entry.reactions.count, 0);
       expect(entry.reactions.mine, isFalse);
       expect(entry.replies, isEmpty);
       expect(entry.repliesTotal, 0);
+    });
+
+    test('parses isBackfilled flag on a shared meal', () {
+      final json = _feedEntryJson();
+      (json['meal'] as Map<String, dynamic>)['isBackfilled'] = true;
+      final entry = CircleFeedEntry.fromJson(json);
+
+      expect(entry.meal.isBackfilled, isTrue);
     });
 
     test('parses reactions, replies, and a feed page cursor', () {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -48,10 +49,9 @@ class _CountrySelectState extends State<CountrySelect> {
 
   Future<void> _open() async {
     HapticFeedback.selectionClick();
-    final picked = await showModalBottomSheet<String>(
-      context: context,
+    final picked = await showNhamSheet<String>(
+      context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       barrierColor: NhamColors.text40,
       builder: (_) => _CountrySheet(selectedValue: widget.value),
     );
@@ -146,24 +146,11 @@ class _CountrySheetState extends State<_CountrySheet> {
       padding: EdgeInsets.only(bottom: bottomInset),
       child: FractionallySizedBox(
         heightFactor: 0.85,
-        child: Container(
-          decoration: const BoxDecoration(
-            color: NhamColors.elev,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
+        child: NhamSheetSurface(
           clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
-              const SizedBox(height: 8),
-              // Grabber.
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: NhamColors.border,
-                  borderRadius: BorderRadius.circular(NhamRadii.pill),
-                ),
-              ),
+              NhamSheetHeader(title: tr('common.country')),
               // Pinned search.
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -325,7 +312,7 @@ class _OptionRowState extends State<_OptionRow> {
             ),
             if (widget.selected) ...[
               const SizedBox(width: NhamSpacing.sp2),
-              const Icon(LucideIcons.check, size: 16, color: NhamColors.accent),
+              const Icon(LucideIcons.check, size: 16, color: NhamColors.text),
             ],
           ],
         ),

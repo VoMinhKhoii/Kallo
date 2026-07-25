@@ -296,7 +296,7 @@ class _Disc extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: highlighted
-              ? const [Color(0x8CC9A87C), Color(0x99E8D5B5)] // 55% → 60%
+              ? const [Color(0x8CC9A87C), Color(0x99E8E6DC)] // 55% → 60%
               : const [NhamColors.accent40, NhamColors.borderHalf],
         ),
         border: Border.all(

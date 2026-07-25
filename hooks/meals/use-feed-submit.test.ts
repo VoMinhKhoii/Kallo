@@ -26,7 +26,10 @@ describe('useFeedSubmit', () => {
       inputRef: {
         current: {
           getText: () => 'Phở bò',
+          getManualRows: () => [],
           clear,
+          focus: vi.fn(),
+          setText: vi.fn(),
         },
       },
       setMessages: (updater) => {

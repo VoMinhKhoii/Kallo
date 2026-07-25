@@ -110,7 +110,7 @@ class _SeedMarkPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.25
       ..strokeJoin = StrokeJoin.round
-      ..color = NhamColors.accent.withValues(alpha: 0.55);
+      ..color = NhamColors.textMuted.withValues(alpha: 0.55);
     canvas.drawPath(outline, outlinePaint);
 
     // Dashed central vein.
@@ -118,7 +118,7 @@ class _SeedMarkPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
       ..strokeCap = StrokeCap.round
-      ..color = NhamColors.accent.withValues(alpha: 0.45);
+      ..color = NhamColors.textMuted.withValues(alpha: 0.45);
     const dash = 2.0;
     const gap = 3.0;
     var y = 16.0;

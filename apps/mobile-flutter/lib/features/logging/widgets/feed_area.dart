@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -19,7 +18,6 @@ import '../../../theme/nham_theme.dart';
 import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
-import '../../dashboard/data/dashboard_providers.dart' as dash;
 import '../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../data/stream_analysis_controller.dart';
 import '../logic/format.dart';
@@ -32,12 +30,16 @@ import 'cheat_occasion_chips.dart';
 import 'cheat_slider_card.dart';
 import 'empty_state.dart';
 import 'entrances.dart';
-import 'barcode_scanner_sheet.dart';
-import 'manual_log_sheet.dart';
+import 'terminal/failed_attempt_card.dart';
+import 'terminal/logging_day_error_state.dart';
+import 'sheets/barcode_scanner_sheet.dart';
+import 'sheets/manual_log_sheet.dart';
 import 'meal_entry.dart';
 import 'meal_input.dart';
-import 'meal_mode_sheet.dart';
-import 'persisted_meal_card.dart';
+import 'sheets/meal_mode_sheet.dart';
+import 'persisted/persisted_meal_card.dart';
+import '../data/persisted_meal_mutations.dart';
+import 'terminal/precise_clarify_card.dart';
 import 'streaming_entry.dart';
 
 const _uuid = Uuid();
@@ -81,6 +83,18 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// A failed attempt, rendered as a feed card with "Try again" (terracotta).
   String? _failedText;
 
+  /// Whether the failed attempt is worth retrying (from the error's `retryable`
+  /// flag). When false the failed card offers only Discard, no "Try again".
+  bool _failedRetryable = true;
+
+  /// Stable per-attempt id for the run currently on screen. Minted fresh on a
+  /// new submit; REUSED for a retry of a failed attempt and for a clarify
+  /// resubmit (cheat or precise), so the server upserts one staging row instead
+  /// of orphaning its predecessor. Cleared once the attempt is saved or
+  /// discarded; kept on error so the retry supersedes. Mirrors the web
+  /// attemptId semantics (use-feed-submit / use-confirm-handlers).
+  String? _attemptId;
+
   /// The raw text of the just-revealed answer — shown as the morph card's Lora
   /// quote so the confirmable card carries the user's own words, not a derived
   /// meal name (the streaming→reveal→persisted object stays continuous).
@@ -118,6 +132,17 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   }
 
   void _submit(String text) {
+    // A fresh logging attempt: mint a new attempt id. Retries and clarify
+    // resubmits reuse the existing id instead (see _retry / _clarifyPrecise /
+    // _clarifyCheat) so the server upserts one staging row per attempt.
+    _attemptId = _uuid.v4();
+    _runAnalyze(text);
+  }
+
+  /// Core analyze path shared by fresh submit, retry, and precise-clarify
+  /// resubmit. Honors the persistent composer [_mode] (precise vs cheat) and
+  /// sends the current [_attemptId]; a [clarifyAnswer] re-runs the same meal.
+  void _runAnalyze(String text, {String? clarifyAnswer}) {
     // A second submit while an unconfirmed reveal is showing must not
     // vaporize the first answer: that analysis is already stored server-side
     // as pending, so refresh its origin day — it resurfaces as a
@@ -137,6 +162,10 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     }
     setState(() {
       _failedText = null;
+      // Kept in lockstep with _failedText (only read while _failedText != null);
+      // reset it explicitly so the invariant holds without relying on the error
+      // branch always rewriting both.
+      _failedRetryable = true;
       _revealRawInput = null;
       _inFlightText = text;
     });
@@ -152,6 +181,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             timezoneOffset: timezoneOffsetMinutes(),
             mode: isCheat ? 'cheat' : null,
             cheatIntensity: isCheat ? _cheatIntensity.name : null,
+            clarifyAnswer: clarifyAnswer,
+            attemptId: _attemptId,
           ),
         );
   }
@@ -159,7 +190,64 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   void _retry() {
     final text = _failedText;
     if (text == null) return;
-    _submit(text);
+    // Reuse the failed attempt's id so the retry supersedes its staging row
+    // (kept on error precisely for this). Fall back to a fresh id defensively.
+    _attemptId ??= _uuid.v4();
+    _runAnalyze(text);
+  }
+
+  /// Precise-mode clarify resubmit: the pipeline asked ONE question and staged
+  /// nothing, so re-run the SAME meal (precise) with the typed answer. Reuses
+  /// this attempt's id — a double-fired resubmit collapses to one staging row.
+  void _clarifyPrecise(String answer) {
+    final text = _revealRawInput;
+    if (text == null || text.isEmpty) return;
+    _attemptId ??= _uuid.v4();
+    setState(() {
+      _revealRawInput = null;
+      _inFlightText = text;
+    });
+    _scrollToAnswer();
+    // Force precise mode regardless of the current composer mode — a precise
+    // clarify is always answered on the precise pipeline.
+    ref
+        .read(streamAnalysisProvider.notifier)
+        .analyze(
+          StreamAnalyzeInput(
+            message: text,
+            loggedDate: widget.date,
+            timezoneOffset: timezoneOffsetMinutes(),
+            clarifyAnswer: answer,
+            attemptId: _attemptId,
+          ),
+        );
+  }
+
+  /// Discard a failed attempt: drop the card and retire its attempt id (the raw
+  /// text stays in the composer to re-log by hand).
+  void _discardFailed() {
+    setState(() {
+      _failedText = null;
+      _attemptId = null;
+    });
+  }
+
+  /// Dismiss a precise-clarify prompt without answering: retire the attempt id
+  /// and clear the settled run so the card disappears. The meal's raw text is
+  /// restored into the composer (never destroy what the user typed), matching
+  /// the failed-attempt card's philosophy.
+  void _discardClarify() {
+    final text = _revealRawInput;
+    setState(() {
+      _revealRawInput = null;
+      _attemptId = null;
+    });
+    if (text != null &&
+        text.isNotEmpty &&
+        _inputController.getText().trim().isEmpty) {
+      _inputController.setText(text);
+    }
+    ref.read(streamAnalysisProvider.notifier).reset();
   }
 
   /// The first step: choose how to log. Normal and Cheat set the persistent
@@ -239,18 +327,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       } catch (_) {
         // The server rejected the delete — releasing the id makes the card
         // reappear (the cache was never mutated), keeping the feed truthful.
-        ref.invalidate(loggingDayProvider(_dayArgs));
-        ref.invalidate(
-          dash.dashboardBundleProvider((
-            userId: widget.profile.userId,
-            date: widget.date,
-          )),
-        );
-        ref.invalidate(
-          dash.dashboardDayProvider((
-            userId: widget.profile.userId,
-            date: widget.date,
-          )),
+        // Heal the day here (nothing refetches it after) plus the rest of the
+        // canonical meal surfaces.
+        invalidateMealSurfaces(
+          ref.invalidate,
+          widget.profile.userId,
+          widget.date,
         );
         if (mounted) {
           setState(() {
@@ -261,20 +343,14 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         return;
       }
       if (!mounted) return;
-      // The delete landed — heal every cache that carries this date before
-      // releasing the id, so the refetched day (sans meal) is what renders.
-      ref.invalidate(mealDatesProvider(widget.profile.userId));
-      ref.invalidate(
-        dash.dashboardBundleProvider((
-          userId: widget.profile.userId,
-          date: widget.date,
-        )),
-      );
-      ref.invalidate(
-        dash.dashboardDayProvider((
-          userId: widget.profile.userId,
-          date: widget.date,
-        )),
+      // The delete landed — heal every date-keyed surface before releasing the
+      // id, then refetch the day itself (includeDay:false — the refresh below
+      // owns it) so the refetched day (sans meal) is what renders.
+      invalidateMealSurfaces(
+        ref.invalidate,
+        widget.profile.userId,
+        widget.date,
+        includeDay: false,
       );
       try {
         await ref.read(loggingDayProvider(_dayArgs).notifier).refresh();
@@ -302,9 +378,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     // happens only once the user confirms (_confirmReveal).
     // The cheat clarify terminal reaches done with a cheatSpec but NO
     // analysisId (nothing is staged for a vague input) — it still reveals as a
-    // card, so it takes the same transition.
+    // card, so it takes the same transition. The precise clarify terminal is
+    // the same shape: done with a `clarify` prompt and no analysisId.
     if (next.status == StreamStatus.done &&
-        (next.analysisId != null || next.cheatSpec != null) &&
+        (next.analysisId != null ||
+            next.cheatSpec != null ||
+            next.clarify != null) &&
         prev?.status != StreamStatus.done) {
       _revealRawInput = _inFlightText;
       _inFlightText = null;
@@ -317,6 +396,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       final text = _inFlightText;
       setState(() {
         _failedText = text;
+        _failedRetryable = next.retryable;
         _inFlightText = null;
       });
       if (text != null && _inputController.getText().trim().isEmpty) {
@@ -388,6 +468,14 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         stream.status == StreamStatus.done &&
         stream.cheatSpec != null;
 
+    // The precise-mode clarify prompt: the pipeline settled with a question and
+    // staged nothing (no analysisId). Rendered as a card that collects an
+    // answer and re-submits the same meal with clarifyAnswer.
+    final isClarifying =
+        streamIsForThisDay &&
+        stream.status == StreamStatus.done &&
+        stream.clarify != null;
+
     final dailyCalories = round0(
       persistedMeals.fold<double>(
         0,
@@ -416,6 +504,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         !isStreaming &&
         !isRevealing &&
         !isCheatRevealing &&
+        !isClarifying &&
         !hasFailedAttempt;
 
     final hasFooterItems =
@@ -423,6 +512,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         isStreaming ||
         isRevealing ||
         isCheatRevealing ||
+        isClarifying ||
         hasFailedAttempt;
 
     // A past day with real meals but under half the target reads as
@@ -439,6 +529,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         !isStreaming &&
         !isRevealing &&
         !isCheatRevealing &&
+        !isClarifying &&
         isLikelyPartialDay(dailyCalories.toDouble(), profile.calorieTarget);
 
     final macroBars = [
@@ -556,8 +647,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             hasFooterItems: hasFooterItems,
             confirmPending: confirmPending,
             failedText: _failedText,
+            failedRetryable: _failedRetryable,
             onRetry: _retry,
-            onDiscardFailed: () => setState(() => _failedText = null),
+            onDiscardFailed: _discardFailed,
+            clarify: stream.clarify,
+            isClarifying: isClarifying,
+            onClarifyPrecise: _clarifyPrecise,
+            onDiscardClarify: _discardClarify,
           ),
         ),
 
@@ -639,28 +735,33 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     required bool isStreaming,
     required bool isRevealing,
     required bool isCheatRevealing,
+    required bool isClarifying,
     required StreamAnalysisState stream,
     required bool hasFooterItems,
     required bool confirmPending,
     required String? failedText,
+    required bool failedRetryable,
     required VoidCallback onRetry,
     required VoidCallback onDiscardFailed,
+    required PreciseClarify? clarify,
+    required ValueChanged<String> onClarifyPrecise,
+    required VoidCallback onDiscardClarify,
   }) {
     // Day fetch error → red alert card with retry (LoggingDayErrorState).
     if (hasError && persistedMeals.isEmpty && !hasFooterItems) {
-      return _LoggingDayErrorState(
+      return LoggingDayErrorState(
         onRetry: () => ref.invalidate(loggingDayProvider(_dayArgs)),
       );
     }
 
-    // FlatList contentContainerStyle: empty → centered with vertical padding;
-    // populated → padding 12 + extra left gutter of 24 (for the timeline rail).
+    // Empty → centered with vertical padding; populated → symmetric 12 padding,
+    // full-width cards (the old left timeline gutter is gone, matching web).
     if (persistedMeals.isEmpty) {
       final Widget body;
       if (isEmpty) {
         body = const EmptyState();
       } else if (isLoading) {
-        // 2-item card skeleton with the timeline rail (LoggingDaySkeleton).
+        // 2-item full-width card skeleton (LoggingDaySkeleton).
         body = const _LoggingDaySkeleton();
       } else {
         body = const SizedBox.shrink();
@@ -683,6 +784,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             isStreaming: isStreaming,
             isRevealing: isRevealing,
             isCheatRevealing: isCheatRevealing,
+            isClarifying: isClarifying,
             stream: stream,
             streamingRawInput: _inFlightText,
             confirmPending: confirmPending,
@@ -693,14 +795,18 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             onClarifyCheat: _clarifyCheat,
             revealRawInput: _revealRawInput,
             failedText: failedText,
+            failedRetryable: failedRetryable,
             onRetry: onRetry,
             onDiscardFailed: onDiscardFailed,
+            clarify: clarify,
+            onClarifyPrecise: onClarifyPrecise,
+            onDiscardClarify: onDiscardClarify,
           ),
         );
       }
 
-      // The loading skeleton sits in the timeline gutter (it carries its own
-      // rail); the empty state is centered.
+      // The loading skeleton uses the same symmetric padding as the real cards;
+      // the empty state is centered.
       if (isLoading) {
         return SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -755,6 +861,23 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                             !hasFooterItems &&
                             index == persistedMeals.length - 1,
                         onRemove: () => _removeMeal(meal),
+                        onUpdate: ({required edits, required removeIds}) =>
+                            updatePersistedMeal(
+                              context,
+                              ref,
+                              userId: widget.profile.userId,
+                              date: widget.date,
+                              mealId: meal.id,
+                              edits: edits,
+                              removeIds: removeIds,
+                            ),
+                        onLogAgain: () => logMealAgain(
+                          context,
+                          ref,
+                          userId: widget.profile.userId,
+                          date: widget.date,
+                          mealId: meal.id,
+                        ),
                       ),
             );
           }
@@ -763,6 +886,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             isStreaming: isStreaming,
             isRevealing: isRevealing,
             isCheatRevealing: isCheatRevealing,
+            isClarifying: isClarifying,
             stream: stream,
             streamingRawInput: _inFlightText,
             confirmPending: confirmPending,
@@ -773,8 +897,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             onClarifyCheat: _clarifyCheat,
             revealRawInput: _revealRawInput,
             failedText: failedText,
+            failedRetryable: failedRetryable,
             onRetry: onRetry,
             onDiscardFailed: onDiscardFailed,
+            clarify: clarify,
+            onClarifyPrecise: onClarifyPrecise,
+            onDiscardClarify: onDiscardClarify,
           );
         },
       ),
@@ -844,6 +972,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       HapticFeedback.mediumImpact();
       if (mounted) showTopToast(context, 'logging.feedArea.savedMeal'.tr());
       _revealRawInput = null;
+      // The attempt reached a confirmed save — retire its id.
+      _attemptId = null;
       ref.read(streamAnalysisProvider.notifier).reset();
     } catch (_) {
       if (mounted) setState(() => _errorText = 'errors.internal'.tr());
@@ -893,6 +1023,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       HapticFeedback.mediumImpact();
       if (mounted) showTopToast(context, 'logging.feedArea.savedMeal'.tr());
       _revealRawInput = null;
+      // The attempt reached a confirmed save — retire its id.
+      _attemptId = null;
       ref.read(streamAnalysisProvider.notifier).reset();
     } catch (_) {
       if (mounted) setState(() => _errorText = 'errors.internal'.tr());
@@ -906,6 +1038,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   void _clarifyCheat(String answer) {
     final text = _revealRawInput;
     if (text == null || text.isEmpty) return;
+    // Reuse this attempt's id — a vague cheat input stages nothing, but a
+    // double-fired clarify would stage twice; the shared id collapses it to one.
+    _attemptId ??= _uuid.v4();
     setState(() {
       _revealRawInput = null;
       _inFlightText = text;
@@ -921,6 +1056,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             mode: 'cheat',
             cheatIntensity: _cheatIntensity.name,
             clarifyAnswer: answer,
+            attemptId: _attemptId,
           ),
         );
   }
@@ -999,6 +1135,7 @@ class _Footer extends StatelessWidget {
     required this.isStreaming,
     required this.isRevealing,
     required this.isCheatRevealing,
+    required this.isClarifying,
     required this.stream,
     required this.streamingRawInput,
     required this.confirmPending,
@@ -1009,14 +1146,19 @@ class _Footer extends StatelessWidget {
     required this.onClarifyCheat,
     required this.revealRawInput,
     required this.failedText,
+    required this.failedRetryable,
     required this.onRetry,
     required this.onDiscardFailed,
+    required this.clarify,
+    required this.onClarifyPrecise,
+    required this.onDiscardClarify,
   });
 
   final List<PendingMealConfirmation> pendingConfirmations;
   final bool isStreaming;
   final bool isRevealing;
   final bool isCheatRevealing;
+  final bool isClarifying;
   final String? revealRawInput;
 
   /// The just-typed text of the in-flight analysis, shown on the streaming card
@@ -1033,8 +1175,12 @@ class _Footer extends StatelessWidget {
   final ValueChanged<CheatSliderLevels> onConfirmCheatReveal;
   final ValueChanged<String> onClarifyCheat;
   final String? failedText;
+  final bool failedRetryable;
   final VoidCallback onRetry;
   final VoidCallback onDiscardFailed;
+  final PreciseClarify? clarify;
+  final ValueChanged<String> onClarifyPrecise;
+  final VoidCallback onDiscardClarify;
 
   @override
   Widget build(BuildContext context) {
@@ -1107,158 +1253,26 @@ class _Footer extends StatelessWidget {
             onConfirm: onConfirmCheatReveal,
             onClarify: onClarifyCheat,
           ),
+        // The precise-mode clarify prompt: the pipeline settled with a question
+        // and staged nothing. Answering re-submits the same meal (reusing the
+        // attempt id) with clarifyAnswer.
+        if (isClarifying && clarify != null)
+          PreciseClarifyCard(
+            key: const ValueKey('precise-clarify'),
+            rawInput: revealRawInput ?? '',
+            question: clarify!.question,
+            busy: confirmPending,
+            onSubmit: onClarifyPrecise,
+            onDiscard: onDiscardClarify,
+          ),
         if (hasFailed)
-          _FailedAttemptCard(
+          FailedAttemptCard(
             rawInput: failedText!,
+            retryable: failedRetryable,
             onRetry: onRetry,
             onDiscard: onDiscardFailed,
           ),
       ],
-    );
-  }
-}
-
-/// A failed analysis, rendered as a feed card so the attempt is never lost: the
-/// raw input as a Lora quote, a terracotta one-liner, and "Try again" as the
-/// primary action (with a quiet Discard). The raw text is also restored to the
-/// composer — this card is the visible record of what happened.
-class _FailedAttemptCard extends StatelessWidget {
-  const _FailedAttemptCard({
-    required this.rawInput,
-    required this.onRetry,
-    required this.onDiscard,
-  });
-
-  final String rawInput;
-  final VoidCallback onRetry;
-  final VoidCallback onDiscard;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
-      child: Container(
-        padding: const EdgeInsets.all(NhamSpacing.sp4),
-        decoration: BoxDecoration(
-          color: NhamColors.surface,
-          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-          border: Border.all(color: NhamColors.borderSoft),
-          boxShadow: const [NhamShadows.sm],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            NhamText(
-              rawInput,
-              variant: NhamTextVariant.mealQuote,
-              style: const TextStyle(fontSize: 17, height: 28 / 17),
-            ),
-            const SizedBox(height: NhamSpacing.sp3),
-            NhamText(
-              'logging.failedAttempt.message'.tr(),
-              variant: NhamTextVariant.small,
-              style: dashMeta(color: NhamColors.danger),
-            ),
-            const SizedBox(height: NhamSpacing.sp4),
-            Row(
-              children: [
-                Expanded(child: _RetryButton(onTap: onRetry)),
-                const SizedBox(width: NhamSpacing.sp2),
-                _DiscardButton(onTap: onDiscard),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Primary "Try again" — solid umber, mirroring the confirm button's resting
-/// look (an honest re-run of the same meal).
-class _RetryButton extends StatefulWidget {
-  const _RetryButton({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  State<_RetryButton> createState() => _RetryButtonState();
-}
-
-class _RetryButtonState extends State<_RetryButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'logging.failedAttempt.tryAgain'.tr(),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          decoration: BoxDecoration(
-            color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-            borderRadius: BorderRadius.circular(NhamRadii.xl),
-            boxShadow: [_pressed ? NhamShadows.md : NhamShadows.sm],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(LucideIcons.refreshCw, size: 14, color: Colors.white),
-              const SizedBox(width: 6),
-              NhamText(
-                'logging.failedAttempt.tryAgain'.tr(),
-                variant: NhamTextVariant.body,
-                style: dashBody(color: Colors.white, weight: FontWeight.w500),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Quiet "Discard" — wires the previously-unused logging.discard string.
-class _DiscardButton extends StatefulWidget {
-  const _DiscardButton({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  State<_DiscardButton> createState() => _DiscardButtonState();
-}
-
-class _DiscardButtonState extends State<_DiscardButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'logging.discard'.tr(),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          decoration: BoxDecoration(
-            color: _pressed ? NhamColors.hover : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.xl),
-          ),
-          child: NhamText(
-            'logging.discard'.tr(),
-            variant: NhamTextVariant.body,
-            style: dashBody(color: kInkMuted, weight: FontWeight.w500),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -1279,7 +1293,7 @@ class _PartialDayNotice extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(NhamSpacing.sp3),
       decoration: BoxDecoration(
-        color: NhamColors.surface,
+        color: NhamColors.elev,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),
         border: Border.all(color: NhamColors.borderSoft),
       ),
@@ -1507,9 +1521,9 @@ class _MacroSummarySkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _bar(_labelWidths[i], 12, const Color(0xB3E8D5B5)), // border/70
+          _bar(_labelWidths[i], 12, const Color(0xB3E8E6DC)), // border/70
           const SizedBox(height: NhamSpacing.sp2), // mb-2
-          _bar(64, 20, NhamColors.accent35), // h-5 w-16 accent/25
+          _bar(64, 20, NhamColors.track), // h-5 w-16 track skeleton pill
         ],
       ),
     );
@@ -1538,8 +1552,9 @@ class _MacroSummarySkeleton extends StatelessWidget {
   }
 }
 
-/// Day-loading skeleton: 2 pulsing ghost cards with the timeline rail, a title
-/// bar, 3 text lines, and a dashed-top totals row (LoggingDaySkeleton).
+/// Day-loading skeleton: 2 pulsing full-width ghost cards, each with a time
+/// bar, a title bar, 3 text lines, and a hairline-topped totals row
+/// (LoggingDaySkeleton).
 class _LoggingDaySkeleton extends StatelessWidget {
   const _LoggingDaySkeleton();
 
@@ -1550,7 +1565,7 @@ class _LoggingDaySkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _bar(64, 12, const Color(0xB3E8D5B5)), // border/70 time bar
+          _bar(64, 12, const Color(0xB3E8E6DC)), // border/70 time bar
           const SizedBox(height: NhamSpacing.sp2), // mb-2
           Container(
             padding: const EdgeInsets.all(NhamSpacing.sp4), // p-5→16
@@ -1566,7 +1581,7 @@ class _LoggingDaySkeleton extends StatelessWidget {
                 LayoutBuilder(
                   builder:
                       (_, c) =>
-                          _bar(c.maxWidth * 2 / 3, 20, const Color(0xB3E8D5B5)),
+                          _bar(c.maxWidth * 2 / 3, 20, const Color(0xB3E8E6DC)),
                 ),
                 const SizedBox(height: NhamSpacing.sp4), // mb-4
                 LayoutBuilder(
@@ -1610,110 +1625,5 @@ class _LoggingDaySkeleton extends StatelessWidget {
     );
 
     return _Pulse(child: Column(children: [ghostCard(false), ghostCard(true)]));
-  }
-}
-
-/// Day fetch error: a warm alert card — terracotta `nham-danger` accents on
-/// the cream surface (never literal reds, which break the palette on sight) —
-/// with a CircleAlert, title/desc, and a retry pill (LoggingDayErrorState).
-class _LoggingDayErrorState extends StatelessWidget {
-  const _LoggingDayErrorState({required this.onRetry});
-  final VoidCallback onRetry;
-
-  static const _dangerFill = Color(0x1AD37B69); // nham-danger @ 10%
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(NhamSpacing.sp6),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 448), // max-w-md
-          padding: const EdgeInsets.all(NhamSpacing.sp4), // p-4
-          decoration: BoxDecoration(
-            color: NhamColors.surface,
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
-            border: Border.all(color: NhamColors.borderSoft),
-            boxShadow: const [NhamShadows.sm],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2), // mt-0.5
-                child: Icon(
-                  LucideIcons.circleAlert, // lucide AlertCircle
-                  size: 20,
-                  color: NhamColors.danger,
-                ),
-              ),
-              const SizedBox(width: NhamSpacing.sp3), // gap-3
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    NhamText(
-                      'logging.feedArea.loadErrorTitle'.tr(),
-                      variant: NhamTextVariant.small,
-                      style: dashBody(weight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 4), // mt-1
-                    NhamText(
-                      'logging.feedArea.loadErrorDescription'.tr(),
-                      variant: NhamTextVariant.small,
-                      style: dashMeta(),
-                    ),
-                    const SizedBox(height: NhamSpacing.sp3), // mt-3
-                    _RetryPill(onRetry: onRetry),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RetryPill extends StatelessWidget {
-  const _RetryPill({required this.onRetry});
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onRetry,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 36), // min-h-9
-        padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 8,
-        ), // px-3.5 py-2
-        decoration: BoxDecoration(
-          color: _LoggingDayErrorState._dangerFill,
-          borderRadius: BorderRadius.circular(NhamRadii.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              LucideIcons.refreshCw, // lucide RefreshCw
-              size: 16,
-              color: NhamColors.danger,
-            ),
-            const SizedBox(width: NhamSpacing.sp2), // gap-2
-            NhamText(
-              'logging.feedArea.retryDay'.tr(),
-              variant: NhamTextVariant.small,
-              style: dashBody(
-                color: NhamColors.danger,
-                weight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

@@ -73,6 +73,24 @@ class LoggingDayNotifier
     state = AsyncData(snapshot);
   }
 
+  /// Replace a persisted meal in place by id from an authoritative server
+  /// response (the amount-edit reconcile). Same id, so the card updates without
+  /// a remount — mirrors the web `upsertById` in `use-meal-mutations`. A no-op
+  /// if the meal isn't in the current cache.
+  void reconcileMeal(PersistedMeal meal) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    if (!current.persistedMeals.any((m) => m.id == meal.id)) return;
+    state = AsyncData(
+      current.copyWith(
+        persistedMeals: [
+          for (final m in current.persistedMeals)
+            if (m.id == meal.id) meal else m,
+        ],
+      ),
+    );
+  }
+
   /// Refetch from the server (the `onSettled` invalidation analogue).
   Future<void> refresh() => ref.refresh(
     loggingDayProvider(LoggingDayArgs(arg.userId, arg.date)).future,
@@ -162,23 +180,29 @@ final loggingProfileProvider =
     });
 
 /// Mark every meal-keyed surface stale after a meal mutation: the day feed
-/// (optional — confirm awaits an explicit refresh instead), the timeline
-/// dots, and the dashboard bundle. The dashboard reads the day/macros/heatmap
-/// off its own bundle, keyed by (userId, date) — it must be invalidated too or
-/// the Today card + week-strip ring keep showing the pre-log cache.
+/// (optional — confirm awaits an explicit refresh instead), the timeline dots,
+/// the recent-cheat chips, and the dashboard bundle/day. The dashboard reads the
+/// day/macros/heatmap off its own bundle, keyed by (userId, date) — it must be
+/// invalidated too or the Today card + week-strip ring keep showing the pre-log
+/// cache.
+///
+/// Takes the `invalidate` method rather than a `ref` so a single canonical set
+/// serves both provider callers (`ref.invalidate`, a [Ref]) and widget callers
+/// (`ref.invalidate`, a `WidgetRef`) — the two ref types share the method but no
+/// common supertype, so the tear-off is what unifies them.
 void invalidateMealSurfaces(
-  Ref ref,
+  void Function(ProviderOrFamily) invalidate,
   String userId,
   String date, {
   bool includeDay = true,
 }) {
   if (includeDay) {
-    ref.invalidate(loggingDayProvider(LoggingDayArgs(userId, date)));
+    invalidate(loggingDayProvider(LoggingDayArgs(userId, date)));
   }
-  ref.invalidate(mealDatesProvider(userId));
-  ref.invalidate(recentCheatOccasionsProvider(userId));
-  ref.invalidate(dash.dashboardBundleProvider((userId: userId, date: date)));
-  ref.invalidate(dash.dashboardDayProvider((userId: userId, date: date)));
+  invalidate(mealDatesProvider(userId));
+  invalidate(recentCheatOccasionsProvider(userId));
+  invalidate(dash.dashboardBundleProvider((userId: userId, date: date)));
+  invalidate(dash.dashboardDayProvider((userId: userId, date: date)));
 }
 
 /// Confirm a pending analysis into a saved meal, with the RN hook's optimistic
@@ -226,7 +250,7 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
       } catch (_) {
         ref.invalidate(loggingDayProvider(dayArgs));
       }
-      invalidateMealSurfaces(ref, arg, originDate, includeDay: false);
+      invalidateMealSurfaces(ref.invalidate, arg, originDate, includeDay: false);
     }
   }
 }

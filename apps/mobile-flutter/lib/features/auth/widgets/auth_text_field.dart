@@ -12,7 +12,7 @@ import '../../../theme/nham_theme.dart';
 ///     (DM Sans w500, 12px, ~0.6px tracking).
 ///   • Input: `w-full rounded-xl border bg-white px-4 py-3 text-[#2C2416]
 ///     text-sm placeholder:text-[#B0A695] transition-all duration-200`.
-///       resting border `#E8D5B5/60`; focus border `#C9A87C` + a 2px ring
+///       resting border `#E8E6DC/60`; focus border `#C9A87C` + a 2px ring
 ///       `#C9A87C/10`. Error state: border `red-400`, focus `red-500`, ring
 ///       `red-500/10`.
 ///   • Password fields render an Eye/EyeOff toggle at `right-3` (12px),
@@ -93,7 +93,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
       borderColor = NhamColors.accent;
       ringColor = NhamColors.accent.withValues(alpha: 0.10);
     } else {
-      borderColor = NhamColors.borderSoft; // #E8D5B5 @ 60%
+      borderColor = NhamColors.borderSoft; // hairline #E8E6DC @ 60%
       ringColor = null;
     }
 

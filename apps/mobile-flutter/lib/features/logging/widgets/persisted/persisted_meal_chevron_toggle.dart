@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../theme/nham_colors.dart';
+import '../../../../theme/nham_colors.dart';
 
 /// The collapse chevron: its OWN button — rounded-full p-1, text-muted/60,
 /// pressed bg-nham-hover/40 + text-nham-text (web hover affordance). Rotates

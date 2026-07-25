@@ -143,7 +143,7 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
         'loggedDate': date,
         'timezoneOffset': timezoneOffsetMinutes(),
       });
-      invalidateMealSurfaces(ref, userId, date);
+      invalidateMealSurfaces(ref.invalidate, userId, date);
       return true;
     } catch (error) {
       final key = _errorKeyFor(error);

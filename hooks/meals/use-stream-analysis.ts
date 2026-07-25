@@ -4,18 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
 import type { CheatSliderSpec } from '@/lib/types/cheat';
-import type { MealItem, ParsedMeal } from '@/lib/types/meal';
+import type { MealItem, ParsedMeal, PreciseClarify } from '@/lib/types/meal';
 
-/**
- * Precise-mode clarify prompt: the pipeline finished but an ingredient's
- * portion/food couldn't be resolved. The stream ends here (no analysis_complete);
- * the client re-submits the meal with `clarifyAnswer`.
- */
-export interface PreciseClarify {
-  question: string;
-  mealItemId?: string;
-  reason: 'unresolved_portion' | 'ambiguous_food';
-}
+// The precise-mode clarify prompt lives in lib/types/meal alongside ChatMessage
+// (which carries it on a finalized clarify card); re-exported here so existing
+// stream-layer imports keep resolving from this module.
+export type { PreciseClarify };
 
 export interface StreamAnalysisState {
   status: StreamStatus;

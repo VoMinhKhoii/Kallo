@@ -8,7 +8,7 @@ import '../../theme/nham_typography.dart';
 /// people are visually distinguishable in a list. Mirrors the web feed's
 /// `avatar-tint.ts`.
 const List<List<Color>> _discTints = [
-  [Color(0x59C9A87C), Color(0x73E8D5B5)],
+  [Color(0x59C9A87C), Color(0x73E8E6DC)],
   [Color(0x66B8A890), Color(0x599C8C78)],
   [Color(0x73CFC6BA), Color(0x59A9A193)],
 ];

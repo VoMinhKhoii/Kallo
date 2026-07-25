@@ -99,13 +99,13 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
             width: 56,
             height: 56,
             decoration: const BoxDecoration(
-              color: NhamColors.accentSelectedFill,
+              color: NhamColors.hover,
               shape: BoxShape.circle,
             ),
             child: const Icon(
               LucideIcons.mail,
               size: 24,
-              color: NhamColors.accent,
+              color: NhamColors.textMuted,
             ),
           ),
         ),

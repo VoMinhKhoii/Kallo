@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/api_client.dart';
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
@@ -88,13 +89,9 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
   }
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => NhamSheetSurface(
     constraints: BoxConstraints(
       maxHeight: MediaQuery.sizeOf(context).height * .9,
-    ),
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     child: ref
         .watch(chatGroupDetailProvider(widget.groupId))
@@ -111,82 +108,89 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                 ),
               ),
           data:
-              (group) => ListView(
-                padding: const EdgeInsets.all(NhamSpacing.sp5),
+              (group) => Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: kHairline,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                  NhamSheetHeader(
+                    titleWidget: _editingName
+                        ? Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _name,
+                                  maxLength: 60,
+                                  decoration: InputDecoration(
+                                    labelText: tr('groups.info.renameLabel'),
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: _renaming ? null : _rename,
+                                tooltip: tr('groups.info.renameSave'),
+                                icon: const Icon(LucideIcons.check),
+                              ),
+                            ],
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  group.name ?? '',
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: dashValue().copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              if (group.myRole == 'owner')
+                                IconButton(
+                                  tooltip: tr('groups.info.renameLabel'),
+                                  onPressed: () {
+                                    _name.text = group.name ?? '';
+                                    setState(() => _editingName = true);
+                                  },
+                                  icon: const Icon(
+                                    LucideIcons.pencil,
+                                    size: 16,
+                                  ),
+                                ),
+                            ],
+                          ),
+                    subtitle: tr(
+                      'groups.info.memberCount',
+                      namedArgs: {'count': '${group.members.length}'},
                     ),
                   ),
-                  const SizedBox(height: NhamSpacing.sp4),
-                  if (_editingName)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _name,
-                            maxLength: 60,
-                            decoration: InputDecoration(
-                              labelText: tr('groups.info.renameLabel'),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: _renaming ? null : _rename,
-                          tooltip: tr('groups.info.renameSave'),
-                          icon: const Icon(LucideIcons.check),
-                        ),
-                      ],
-                    )
-                  else
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            group.name ?? '',
-                            textAlign: TextAlign.center,
-                            style: dashValue(),
-                          ),
-                        ),
-                        if (group.myRole == 'owner')
-                          IconButton(
-                            tooltip: tr('groups.info.renameLabel'),
-                            onPressed: () {
-                              _name.text = group.name ?? '';
-                              setState(() => _editingName = true);
-                            },
-                            icon: const Icon(LucideIcons.pencil, size: 16),
-                          ),
-                      ],
-                    ),
-                  Center(
-                    child: Text(
-                      tr(
-                        'groups.info.memberCount',
-                        namedArgs: {'count': '${group.members.length}'},
+                  Flexible(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(
+                        NhamSpacing.sp5,
+                        NhamSpacing.sp2,
+                        NhamSpacing.sp5,
+                        NhamSpacing.sp5,
                       ),
-                      style: dashMeta(),
+                      children: [
+                        Text(
+                          tr('groups.info.membersHeading'),
+                          style: dashMeta(),
+                        ),
+                        GroupMembersList(group: group),
+                        const SizedBox(height: NhamSpacing.sp4),
+                        Text(tr('groups.info.addPeople'), style: dashMeta()),
+                        const SizedBox(height: NhamSpacing.sp2),
+                        GroupAddPeople(group: group),
+                        const Divider(height: NhamSpacing.sp6, color: kHairline),
+                        TextButton.icon(
+                          onPressed: _leave,
+                          icon: const Icon(LucideIcons.logOut, size: 16),
+                          label: Text(tr('groups.feed.leave')),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: NhamSpacing.sp4),
-                  Text(tr('groups.info.membersHeading'), style: dashMeta()),
-                  GroupMembersList(group: group),
-                  const SizedBox(height: NhamSpacing.sp4),
-                  Text(tr('groups.info.addPeople'), style: dashMeta()),
-                  const SizedBox(height: NhamSpacing.sp2),
-                  GroupAddPeople(group: group),
-                  const Divider(height: NhamSpacing.sp6, color: kHairline),
-                  TextButton.icon(
-                    onPressed: _leave,
-                    icon: const Icon(LucideIcons.logOut, size: 16),
-                    label: Text(tr('groups.feed.leave')),
                   ),
                 ],
               ),

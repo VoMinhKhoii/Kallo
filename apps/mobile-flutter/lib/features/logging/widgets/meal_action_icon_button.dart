@@ -29,12 +29,9 @@ class MealActionIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground =
-        danger
-            ? NhamColors.danger
-            : active
-            ? NhamColors.accentDark
-            : NhamColors.text;
+    // Active is carried by the warm hover wash behind the icon, not the icon
+    // colour — the glyph stays ink (never tan) in every non-danger state.
+    final foreground = danger ? NhamColors.danger : NhamColors.text;
     final enabled = onTap != null && !pending;
 
     return Tooltip(
@@ -48,7 +45,7 @@ class MealActionIconButton extends StatelessWidget {
         toggled: toggled,
         label: label,
         child: Material(
-          color: active ? NhamColors.accent10 : Colors.transparent,
+          color: active ? NhamColors.hover : Colors.transparent,
           borderRadius: BorderRadius.circular(NhamRadii.md),
           child: InkResponse(
             onTap:

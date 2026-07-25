@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../data/api_client.dart';
 import '../../../data/env.dart';
 import '../../../models/circle.dart';
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../shared/widgets/nham_text.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/nham_colors.dart';
@@ -21,10 +22,9 @@ import 'circle_error.dart';
 /// display name, and your circle. No username search, no requests — people
 /// connect by opening your link and tapping Accept. Mirrors `AddFriendDialog`.
 Future<void> showAddFriendSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
-    context: context,
+  return showNhamSheet<void>(
+    context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => const _AddFriendSheet(),
   );
 }
@@ -45,46 +45,12 @@ class _AddFriendSheet extends ConsumerWidget {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     final maxHeight = MediaQuery.of(context).size.height * 0.85;
 
-    return Container(
+    return NhamSheetSurface(
       constraints: BoxConstraints(maxHeight: maxHeight),
-      decoration: const BoxDecoration(
-        color: NhamColors.surface,
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(NhamRadii.xxl)),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header — X (close) + centered title.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp1,
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(LucideIcons.x, size: 22),
-                  color: NhamColors.textMuted,
-                  tooltip: tr('groups.invite.cancel'),
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      tr('groups.invite.title'),
-                      style: NhamTextStyles.serifRegular(
-                        fontSize: NhamFontSize.h4,
-                      ).copyWith(color: NhamColors.text),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 48, height: 48),
-              ],
-            ),
-          ),
+          NhamSheetHeader(title: tr('groups.invite.title')),
           Flexible(
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -266,7 +232,7 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
                   vertical: NhamSpacing.sp2_5,
                 ),
                 decoration: BoxDecoration(
-                  color: NhamColors.elev,
+                  color: NhamColors.track,
                   borderRadius: BorderRadius.circular(NhamRadii.lg),
                   border: Border.all(color: NhamColors.borderSoft),
                 ),
@@ -459,7 +425,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
                   vertical: NhamSpacing.sp2_5,
                 ),
                 decoration: BoxDecoration(
-                  color: NhamColors.elev,
+                  color: NhamColors.track,
                   borderRadius: BorderRadius.circular(NhamRadii.lg),
                   border: Border.all(color: NhamColors.borderSoft),
                 ),
@@ -572,7 +538,7 @@ class _MemberRowState extends ConsumerState<_MemberRow> {
     return Container(
       padding: const EdgeInsets.all(NhamSpacing.sp3),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
+        color: NhamColors.track,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),
         border: Border.all(color: NhamColors.borderSoft),
       ),
@@ -656,7 +622,7 @@ class _CopyButton extends StatelessWidget {
           vertical: NhamSpacing.sp2_5,
         ),
         decoration: BoxDecoration(
-          color: NhamColors.elev,
+          color: NhamColors.track,
           borderRadius: BorderRadius.circular(NhamRadii.lg),
           border: Border.all(color: NhamColors.borderSoft),
         ),
@@ -712,7 +678,7 @@ class _IconAction extends StatelessWidget {
             height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: filled ? NhamColors.btn : NhamColors.elev,
+              color: filled ? NhamColors.btn : NhamColors.track,
               borderRadius: BorderRadius.circular(NhamRadii.lg),
               border: filled ? null : Border.all(color: NhamColors.borderSoft),
             ),

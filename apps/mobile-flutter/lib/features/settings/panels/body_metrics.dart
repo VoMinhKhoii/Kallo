@@ -9,6 +9,7 @@ import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../controls/aggression_slider.dart';
 import '../controls/custom_select.dart';
+import '../logic/number_format.dart';
 import '../logic/tdee.dart';
 import '../widgets/profile_form_controller.dart';
 import '../widgets/profile_form_values.dart';
@@ -49,9 +50,16 @@ class BodyMetrics extends StatelessWidget {
       tdee = calcTDEE(bmr, v.activityLevel);
     }
 
-    final targetCalories = tdee == null
+    final rawTarget = tdee == null
         ? 0.0
         : calcDailyTargets(tdee, v.goal, v.aggression, v.carbSplit).calories;
+    // Clamp the DISPLAYED target once at the source — the server persists
+    // max(500) (see profile_payload.dart), so the hero, carb-split previews and
+    // every macro-gram preview derived from it must name that same effective
+    // target. Mirrors web 40f859b. Only a real computed target is floored; an
+    // incomplete form (tdee null) stays 0 and is never rendered.
+    final targetCalories =
+        tdee != null && rawTarget < 500 ? 500.0 : rawTarget;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -479,7 +487,7 @@ class _CarbCardState extends State<_CarbCard> {
     // Unselected `hover:border-[#C9A87C]/50` — border lightens to accent50 on
     // press; selected keeps the solid accent border + shadow-sm.
     final borderColor = widget.active
-        ? NhamColors.accent
+        ? NhamColors.text.withValues(alpha: 0.3)
         : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
     return GestureDetector(
       onTap: widget.onTap,
@@ -490,7 +498,7 @@ class _CarbCardState extends State<_CarbCard> {
         duration: const Duration(milliseconds: 150), // transition-all
         padding: const EdgeInsets.all(NhamSpacing.sp4),
         decoration: BoxDecoration(
-          color: widget.active ? NhamColors.accent05 : NhamColors.elev,
+          color: widget.active ? NhamColors.hover : NhamColors.elev,
           borderRadius: BorderRadius.circular(NhamRadii.containerLg),
           border: Border.all(color: borderColor),
           boxShadow: widget.active ? const [NhamShadows.sm] : null,
@@ -552,11 +560,11 @@ class _HeroTarget extends StatelessWidget {
     final isCutting = goal == Goal.cutting;
 
     final subtitle = StringBuffer()
-      ..write('${t('basedOnTdee')} ~${_grouped(tdee)} ${t('kcal')}');
+      ..write('${t('basedOnTdee')} ~${groupThousands(tdee)} ${t('kcal')}');
     if (goal == Goal.maintaining) {
       subtitle.write(' · ${t('maintenance')}');
     } else {
-      subtitle.write(' · ${isCutting ? '−' : '+'}${_grouped(delta)} '
+      subtitle.write(' · ${isCutting ? '−' : '+'}${groupThousands(delta)} '
           '${t('perDay')} '
           '${isCutting ? t('aggressionDeficit') : t('aggressionSurplus')}');
     }
@@ -578,7 +586,7 @@ class _HeroTarget extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                _grouped(calories),
+                groupThousands(calories),
                 style: NhamTextStyles.serifRegular(fontSize: 36, height: 44 / 36)
                     // tracking-tighter = -0.05em ≈ -1.8px at 36px
                     .copyWith(letterSpacing: -1.8, color: NhamColors.text),
@@ -629,17 +637,6 @@ class _HeroTarget extends StatelessWidget {
           ],
         ),
       );
-}
-
-/// Groups an integer with thousands separators (RN `.toLocaleString()`).
-String _grouped(int n) {
-  final s = n.abs().toString();
-  final buf = StringBuffer();
-  for (var i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-    buf.write(s[i]);
-  }
-  return n < 0 ? '-$buf' : buf.toString();
 }
 
 extension on Border {

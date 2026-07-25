@@ -4,12 +4,22 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 
-/// A single option for [OptionStrip], with an optional hint sub-label.
+/// A single option for [OptionStrip], with an optional hint sub-label and an
+/// optional leading icon (Lucide) rendered beside the label.
 class OptionStripItem {
   final String value;
   final String label;
   final String? hint;
-  const OptionStripItem({required this.value, required this.label, this.hint});
+
+  /// Optional Lucide icon shown before the label (web `size-3.5`, currentColor).
+  /// Mirrors the `icon` prop on web `components/settings/option-strip.tsx`.
+  final IconData? icon;
+  const OptionStripItem({
+    required this.value,
+    required this.label,
+    this.hint,
+    this.icon,
+  });
 }
 
 /// RN port of web `components/settings/option-strip.tsx` — segmented control
@@ -106,10 +116,24 @@ class _OptionButtonState extends State<_OptionButton> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                widget.option.label,
-                textAlign: TextAlign.center,
-                style: dashBody(weight: FontWeight.w500, color: color),
+              // `flex items-center gap-1.5` — optional icon (size-3.5)
+              // beside the label, both in currentColor.
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (widget.option.icon != null) ...[
+                    Icon(widget.option.icon, size: 14, color: color), // size-3.5
+                    const SizedBox(width: 6), // gap-1.5
+                  ],
+                  Flexible(
+                    child: Text(
+                      widget.option.label,
+                      textAlign: TextAlign.center,
+                      style: dashBody(weight: FontWeight.w500, color: color),
+                    ),
+                  ),
+                ],
               ),
               if (widget.option.hint != null)
                 Padding(

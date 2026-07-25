@@ -14,6 +14,7 @@ import '../logic/format.dart';
 import '../logic/meal_utils.dart';
 import 'count_up.dart';
 import 'entrances.dart';
+import 'meal_stepper_button.dart';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a stepper
 // can't slip through and save before the user is done adjusting.
@@ -99,22 +100,25 @@ class _MealEntryState extends State<MealEntry> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header: raw input + edit/done pill.
+                  // Header: raw input + edit/done pill. The Lora quote is the
+                  // user's raw input ONLY — web renders it solely when
+                  // `userInput` exists (meal-entry.tsx), never a serif meal name.
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start, // items-start
                     children: [
-                      Expanded(
-                        child: NhamText(
-                          widget.rawInput.isNotEmpty
-                              ? widget.rawInput
-                              : widget.parsedMeal.mealName,
-                          variant: NhamTextVariant.mealQuote,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            height: 1.625, // leading-relaxed
+                      if (widget.rawInput.isNotEmpty)
+                        Expanded(
+                          child: NhamText(
+                            widget.rawInput,
+                            variant: NhamTextVariant.mealQuote,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              height: 1.625, // leading-relaxed
+                            ),
                           ),
-                        ),
-                      ),
+                        )
+                      else
+                        const Spacer(),
                       const SizedBox(width: NhamSpacing.sp2),
                       _EditPill(
                         editing: _editing,
@@ -260,7 +264,7 @@ class _ItemRow extends StatelessWidget {
                     duration: const Duration(milliseconds: 150),
                     child: Row(
                       children: [
-                        _Stepper(
+                        MealStepperButton(
                           icon: LucideIcons.minus, // lucide Minus
                           disabled: minusDisabled,
                           onTap:
@@ -279,7 +283,7 @@ class _ItemRow extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 2),
-                        _Stepper(
+                        MealStepperButton(
                           icon: LucideIcons.plus, // lucide Plus
                           onTap: () => onChange(item.id, step),
                         ),
@@ -343,57 +347,6 @@ class _ItemRow extends StatelessWidget {
   }
 }
 
-/// A 28x28 (w-7 h-7) stepper button: rounded-md, border/60, white fill.
-/// Pressed → bg-nham-hover (the web hover:bg-nham-hover touch affordance).
-class _Stepper extends StatefulWidget {
-  const _Stepper({required this.icon, this.onTap, this.disabled = false});
-
-  final IconData icon;
-  final VoidCallback? onTap;
-  final bool disabled;
-
-  @override
-  State<_Stepper> createState() => _StepperState();
-}
-
-class _StepperState extends State<_Stepper> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final tappable = widget.onTap != null;
-    return GestureDetector(
-      onTapDown: tappable ? (_) => setState(() => _pressed = true) : null,
-      onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
-      onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
-      onTap: widget.onTap,
-      // 40pt tap target around the 28pt visual stepper (kept under 44 so two
-      // steppers + the count value still fit a narrow row without overflow).
-      child: SizedBox(
-        width: 40,
-        height: 40,
-        child: Center(
-          child: Opacity(
-            opacity: widget.disabled ? 0.4 : 1, // opacity-40
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150), // transition-colors
-              width: 28,
-              height: 28,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: _pressed ? NhamColors.hover : NhamColors.elev,
-                borderRadius: BorderRadius.circular(NhamRadii.md),
-                border: Border.all(color: NhamColors.borderSoft),
-              ),
-              child: Icon(widget.icon, size: 10, color: NhamColors.textMuted),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Edit ↔ Done pill. Keyed swap pops with a scale-in (RN AnimatePresence).
 class _EditPill extends StatelessWidget {
   const _EditPill({required this.editing, required this.onTap});
@@ -439,7 +392,7 @@ class _EditPill extends StatelessWidget {
                     ? LucideIcons.check
                     : LucideIcons.pencil, // Check / Pencil
                 size: 12,
-                color: editing ? NhamColors.accent : NhamColors.textMuted,
+                color: editing ? NhamColors.text : NhamColors.textMuted,
               ),
               const SizedBox(width: 6), // gap-1.5
               NhamText(
@@ -448,7 +401,7 @@ class _EditPill extends StatelessWidget {
                     : 'logging.mealEntry.edit'.tr(),
                 variant: NhamTextVariant.pillLabel,
                 style: TextStyle(
-                  color: editing ? NhamColors.accent : kInkMuted,
+                  color: editing ? NhamColors.text : kInkMuted,
                 ),
               ),
             ],

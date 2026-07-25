@@ -19,7 +19,8 @@
     "notSignedIn": "Chưa đăng nhập.",
     "increase": "Tăng",
     "decrease": "Giảm",
-    "copied": "Đã sao chép liên kết"
+    "copied": "Đã sao chép liên kết",
+    "country": "Quốc gia"
   },
   "nav": {
     "logging": "Ghi nhận",
@@ -1163,6 +1164,10 @@
       "message": "Chưa đọc được món này. Ghi chú của bạn vẫn còn — thử lại nhé.",
       "tryAgain": "Thử lại"
     },
+    "clarify": {
+      "answerHint": "Nhập câu trả lời…",
+      "send": "Gửi"
+    },
     "mealEntry": {
       "edit": "Sửa",
       "done": "Xong",
@@ -1174,7 +1179,16 @@
     "persistedMealCard": {
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",
-      "shareWithFriends": "Gửi cho bạn bè"
+      "shareWithFriends": "Gửi cho bạn bè",
+      "editAmounts": "Sửa lượng",
+      "logAgain": "Ghi lại",
+      "logAgainError": "Không ghi lại được — hãy thử lại.",
+      "removeRow": "Bỏ {name}",
+      "cancelEdit": "Hủy",
+      "saveEdit": "Lưu thay đổi",
+      "savingEdit": "Đang lưu…",
+      "mealUpdated": "Đã cập nhật bữa ăn",
+      "updateError": "Không cập nhật được bữa ăn — hãy thử lại."
     },
     "timelineSidebar": {
       "navigationLabel": "Điều hướng dòng thời gian",

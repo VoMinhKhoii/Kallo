@@ -108,6 +108,12 @@ class StreamAnalyzeInput {
   /// Reply to a prior vague-input clarifying question.
   final String? clarifyAnswer;
 
+  /// Stable per-attempt id. Reused across re-analyses of one logging attempt
+  /// (retry, cheat/precise clarify resubmit) so the server upserts the same
+  /// `pending_analyses` staging row instead of orphaning its predecessor. Sent
+  /// only when set — a null attemptId always inserts a fresh row server-side.
+  final String? attemptId;
+
   const StreamAnalyzeInput({
     required this.message,
     required this.loggedDate,
@@ -117,6 +123,7 @@ class StreamAnalyzeInput {
     this.cheatIntensity,
     this.cheatType,
     this.clarifyAnswer,
+    this.attemptId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -128,6 +135,7 @@ class StreamAnalyzeInput {
     if (cheatIntensity != null) 'cheatIntensity': cheatIntensity,
     if (cheatType != null) 'cheatType': cheatType,
     if (clarifyAnswer != null) 'clarifyAnswer': clarifyAnswer,
+    if (attemptId != null) 'attemptId': attemptId,
   };
 }
 
@@ -251,9 +259,10 @@ class ApiClient {
   /// Open the meal-analysis SSE stream (`POST /api/analyze-meal`).
   ///
   /// Yields parsed [StreamEvent]s as the server emits NAMED SSE frames
-  /// (`stage`, `item_name`, `item_macros`, `result`, `analysis_complete`,
-  /// `error`). The stream completes after `analysis_complete`, on a terminal
-  /// `error` frame, or on a transport error (surfaced as a [StreamErrorEvent]).
+  /// (`stage`, `item_name`, `item_macros`, `result`, `cheat_estimate`,
+  /// `clarify`, `analysis_complete`, `error`). The stream completes after a
+  /// terminal frame (`analysis_complete`, `error`, or a precise `clarify`), or
+  /// on a transport error (surfaced as a [StreamErrorEvent]).
   ///
   /// Cancel by cancelling the returned subscription — the underlying request is
   /// aborted (no auto-reconnect, matching `pollingInterval: 0` in RN).
@@ -318,6 +327,10 @@ class ApiClient {
         }
         return StreamEvent.fromJson(json);
       } catch (_) {
+        // A malformed frame or an event type this client doesn't know about is
+        // skipped deliberately — never crash the stream. Known terminals
+        // (analysis_complete / error / clarify) all parse above, so this only
+        // drops genuinely unrecognized frames, not the ones the reducer needs.
         return null;
       }
     }
@@ -327,7 +340,10 @@ class ApiClient {
         final event = flush();
         if (event != null) {
           yield event;
-          if (event is AnalysisCompleteEvent || event is StreamErrorEvent) {
+          // Terminal frames end the stream — the rule lives on the event itself
+          // (`StreamEvent.isTerminal`) so this generator and the stream
+          // controller can never enumerate it differently.
+          if (event.isTerminal) {
             return;
           }
         }

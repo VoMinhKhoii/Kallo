@@ -27,11 +27,36 @@ sealed class StreamEvent {
       'item_macros' => ItemMacrosEvent.fromJson(json),
       'result' => ResultEvent.fromJson(json),
       'cheat_estimate' => CheatEstimateEvent.fromJson(json),
+      'clarify' => ClarifyEvent.fromJson(json),
       'analysis_complete' => AnalysisCompleteEvent.fromJson(json),
       'error' => StreamErrorEvent.fromJson(json),
       _ => throw ArgumentError('Unknown StreamEvent type: $type'),
     };
   }
+
+  /// Whether this frame ends the analysis stream. The single source of truth for
+  /// the "terminal frame" rule, consumed by BOTH the SSE generator
+  /// (`api_client.analyzeMeal`) and the stream controller
+  /// (`stream_analysis_controller`) so the two can never drift apart.
+  ///
+  /// Terminal frames:
+  ///  - [AnalysisCompleteEvent] — the durable, confirmable result.
+  ///  - [StreamErrorEvent] — a fatal error.
+  ///  - [ClarifyEvent] — a precise-mode clarify: ends WITHOUT analysis_complete
+  ///    (nothing is staged; the client re-asks with `clarifyAnswer`).
+  ///  - [CheatEstimateEvent] ONLY when it carries a `clarifyingQuestion` — the
+  ///    same re-ask round-trip. A plain cheat spec is confirmable, so the stream
+  ///    continues on to analysis_complete.
+  ///
+  /// Everything else (stage / item_name / item_macros / result) is a progress
+  /// frame and returns false.
+  ///
+  /// Folding the cheat-clarify case in here means the api_client generator now
+  /// RETURNS on a cheat-clarify frame instead of waiting for the server to close
+  /// the stream. That alignment is intended and safe: the controller already
+  /// tears down on that frame, and the server closes the stream immediately
+  /// after emitting it anyway.
+  bool get isTerminal => false;
 }
 
 /// Progress update -- which pipeline stage is active.
@@ -135,6 +160,50 @@ class CheatEstimateEvent extends StreamEvent {
         'type': 'cheat_estimate',
         'spec': spec.toJson(),
       };
+
+  /// Terminal only when the spec carries a clarifying question — then the stream
+  /// ends WITHOUT analysis_complete and the client re-asks. A plain spec is
+  /// confirmable and the stream continues.
+  @override
+  bool get isTerminal => spec.clarifyingQuestion != null;
+}
+
+/// Precise-mode clarify -- the pipeline finished but >=1 ingredient's portion
+/// or food match couldn't be resolved, so the server asks ONE targeted question
+/// and stops. TERMINAL with NO analysis_complete: nothing is staged for confirm;
+/// the client re-submits with `clarifyAnswer` (mirrors the cheat clarify
+/// round-trip). The `question` arrives already localized by the server.
+class ClarifyEvent extends StreamEvent {
+  final String question;
+
+  /// Run-scoped meal-item id of the unresolved item, when known.
+  final String? mealItemId;
+
+  /// 'unresolved_portion' | 'ambiguous_food'. Kept as a raw string so an
+  /// unfamiliar reason from a newer server never crashes the parse.
+  final String reason;
+
+  const ClarifyEvent({
+    required this.question,
+    this.mealItemId,
+    required this.reason,
+  });
+
+  factory ClarifyEvent.fromJson(Map<String, dynamic> json) => ClarifyEvent(
+        question: json['question'] as String,
+        mealItemId: json['mealItemId'] as String?,
+        reason: json['reason'] as String,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'type': 'clarify',
+        'question': question,
+        if (mealItemId != null) 'mealItemId': mealItemId,
+        'reason': reason,
+      };
+
+  @override
+  bool get isTerminal => true;
 }
 
 /// Analysis stored durably -- safe to confirm and persist.
@@ -152,6 +221,9 @@ class AnalysisCompleteEvent extends StreamEvent {
         'type': 'analysis_complete',
         'analysisId': analysisId,
       };
+
+  @override
+  bool get isTerminal => true;
 }
 
 /// Error during streaming -- terminal event.
@@ -179,6 +251,9 @@ class StreamErrorEvent extends StreamEvent {
         'message': message,
         'retryable': retryable,
       };
+
+  @override
+  bool get isTerminal => true;
 }
 
 /// Client-side stream status.

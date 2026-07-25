@@ -126,7 +126,7 @@ class _OccasionChipState extends State<_OccasionChip> {
                 const Icon(
                   LucideIcons.cookie,
                   size: 12,
-                  color: NhamColors.accent,
+                  color: NhamColors.textMuted,
                 ),
                 const SizedBox(width: 6),
                 Flexible(

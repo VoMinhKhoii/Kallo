@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -10,16 +11,14 @@ import '../data/circle_providers.dart';
 import 'friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
 import 'share_meal_mode_selector.dart';
-import 'share_meal_sheet_header.dart';
 import 'share_meal_submit_button.dart';
 
 /// Opens the "share this meal" sheet: pick a mode (full copy or even split) and
 /// the friends who ate with you. Mirrors the web `ShareMealDialog`.
 Future<void> showShareMealSheet(BuildContext context, String mealId) {
-  return showModalBottomSheet<void>(
-    context: context,
+  return showNhamSheet<void>(
+    context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => _ShareMealSheet(mealId: mealId),
   );
 }
@@ -83,20 +82,12 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
     final count = _selected.length;
     final portion = count > 0 ? '1/${count + 1}' : '—';
 
-    return Container(
+    return NhamSheetSurface(
       constraints: BoxConstraints(maxHeight: maxHeight),
-      decoration: const BoxDecoration(
-        color: NhamColors.surface,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(NhamRadii.xxl),
-        ),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ShareMealSheetHeader(
-            onClose: () => Navigator.of(context).pop(),
-          ),
+          NhamSheetHeader(title: tr('groups.shareMeal.title')),
           Flexible(
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(

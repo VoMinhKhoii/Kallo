@@ -1138,7 +1138,9 @@
     },
     "clarify": {
       "portion": "Bạn đã ăn bao nhiêu {ingredient} trong {mealItem}? Ước lượng khối lượng hoặc khẩu phần giúp ước tính chính xác hơn.",
-      "food": "Ý bạn là loại {ingredient} nào trong {mealItem}?"
+      "food": "Ý bạn là loại {ingredient} nào trong {mealItem}?",
+      "answerHint": "Nhập câu trả lời…",
+      "send": "Gửi"
     },
     "cheatRepeat": {
       "title": "Ghi lại lần nữa"

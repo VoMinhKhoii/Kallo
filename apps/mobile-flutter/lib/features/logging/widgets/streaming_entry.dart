@@ -249,7 +249,7 @@ class _Card extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(NhamSpacing.sp4),
       decoration: BoxDecoration(
-        color: NhamColors.surface, // bg-nham-surface
+        color: NhamColors.elev, // solid white card on neutral canvas
         borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 16
         border: Border.all(color: NhamColors.borderSoft),
         boxShadow: const [NhamShadows.sm],

@@ -11,6 +11,7 @@ import {
 } from '@/lib/actions/persisted-meal';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import type { NutritionValues } from '@/lib/ai/types';
+import { updateMealSchema } from '@/lib/api/contracts/meals';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { mealItems, mealShares, meals } from '@/lib/db/schema';
@@ -21,22 +22,10 @@ const deleteMealSchema = z.object({
   mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
 });
 
-const updateMealSchema = z.object({
-  mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
-  // Per-stored-item gram override. `id` is the meal_items row id (the same id
-  // the card renders), so the client never needs to track positional order.
-  edits: z
-    .array(
-      z.object({
-        id: z.string().uuid(),
-        newGrams: z.number().positive().finite().max(100_000),
-      })
-    )
-    .max(100)
-    .optional(),
-  // Stored item rows to drop entirely (per-row "remove").
-  removeIds: z.array(z.string().uuid()).max(100).optional(),
-});
+// `updateMealSchema` (the full input incl. `mealId`) lives in the meals
+// contract so the route can derive its body schema and the mobile client can
+// share it; imported here since this `'use server'` module may only export
+// async functions.
 
 // ---------------------------------------------------------------------------
 // C3: Delete Meal

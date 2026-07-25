@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../../shared/widgets/nham_sheet.dart';
+import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/nham_colors.dart';
+import '../../../../theme/nham_theme.dart';
 
 /// How a meal gets logged. `normal` = describe it in words (AI); `cheat` = the
 /// slider-estimate flow for hard-to-count occasions; `manual` = search foods +
@@ -42,9 +43,8 @@ Future<MealLogMode?> showMealModeSheet(
   BuildContext context, {
   required MealLogMode current,
 }) {
-  return showModalBottomSheet<MealLogMode>(
-    context: context,
-    backgroundColor: Colors.transparent,
+  return showNhamSheet<MealLogMode>(
+    context,
     builder: (context) => _MealModeSheet(current: current),
   );
 }
@@ -57,46 +57,11 @@ class _MealModeSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: NhamColors.surface,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(NhamRadii.xxl),
-        ),
-      ),
+    return NhamSheetSurface(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header — X (close) on the left, centered title.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp1,
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(LucideIcons.x, size: 22),
-                  color: NhamColors.textMuted,
-                  tooltip: 'common.cancel'.tr(),
-                ),
-                Expanded(
-                  child: Center(
-                    child: NhamText(
-                      'logging.modeSelector.title'.tr(),
-                      variant: NhamTextVariant.body,
-                      style: dashBody(weight: FontWeight.w500),
-                    ),
-                  ),
-                ),
-                // Mirror the X so the title stays optically centered.
-                const SizedBox(width: 48, height: 48),
-              ],
-            ),
-          ),
+          NhamSheetHeader(title: 'logging.modeSelector.title'.tr()),
           Padding(
             padding: EdgeInsets.fromLTRB(
               NhamSpacing.sp3,
@@ -108,7 +73,7 @@ class _MealModeSheet extends StatelessWidget {
               children: [
                 _ModeRow(
                   icon: mealModeIcon(MealLogMode.normal),
-                  iconColor: NhamColors.accentDark,
+                  iconColor: NhamColors.text,
                   title: 'logging.modeSelector.normal'.tr(),
                   desc: 'logging.modeSelector.normalDesc'.tr(),
                   selected: current == MealLogMode.normal,
@@ -133,7 +98,7 @@ class _MealModeSheet extends StatelessWidget {
                 if (isBarcodeLoggingSupported)
                   _ModeRow(
                     icon: mealModeIcon(MealLogMode.barcode),
-                    iconColor: NhamColors.accentDark,
+                    iconColor: NhamColors.text,
                     title: 'logging.modeSelector.barcode'.tr(),
                     desc: 'logging.modeSelector.barcodeDesc'.tr(),
                     selected: current == MealLogMode.barcode,
@@ -216,7 +181,7 @@ class _ModeRowState extends State<_ModeRow> {
               ),
             ),
             if (widget.selected)
-              const Icon(LucideIcons.check, size: 20, color: NhamColors.accent),
+              const Icon(LucideIcons.check, size: 20, color: NhamColors.text),
           ],
         ),
       ),

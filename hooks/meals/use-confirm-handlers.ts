@@ -14,7 +14,7 @@ import type { useConfirmMeal } from '@/hooks/meals/use-meal-mutations';
 import type { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
 import { stageCheatRepeatAction } from '@/lib/actions/meals/cheat';
 import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
-import type { CheatIntensity, CheatSliderLevels } from '@/lib/types/cheat';
+import type { CheatSliderLevels } from '@/lib/types/cheat';
 import type {
   ChatMessage,
   MacroBreakdown,
@@ -38,7 +38,6 @@ const emptyMacros: MacroBreakdown = {
 export function useConfirmHandlers(args: {
   stream: ReturnType<typeof useStreamAnalysis>;
   selectedDate: string;
-  cheatIntensity: CheatIntensity;
   confirmMeal: ReturnType<typeof useConfirmMeal>;
   replaceOldMeal: (mealId: string) => Promise<void>;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
@@ -50,7 +49,6 @@ export function useConfirmHandlers(args: {
   const {
     stream,
     selectedDate,
-    cheatIntensity,
     confirmMeal,
     replaceOldMeal,
     setMessages,
@@ -111,6 +109,9 @@ export function useConfirmHandlers(args: {
           isStreaming: true,
           streamingPhase: 'waiting',
           attemptId,
+          // Anchor carried on the card so a clarify round-trip keeps it (the
+          // terminal effect spreads ...msg, preserving this field).
+          inheritLoggedAt: meal.loggedAt,
         },
       ]);
       scrollToBottom();
@@ -222,51 +223,6 @@ export function useConfirmHandlers(args: {
     );
   };
 
-  // Vague-input fallback: re-run the cheat estimator with the chosen answer.
-  const handleCheatClarify = (message: ChatMessage, answer: string) => {
-    setStreamingMsgId(message.id);
-    lastAnalysisIdRef.current = null;
-    lastErrorRef.current = null;
-    // Update the local message in place, or seed it if this card came from a
-    // server pending row (not yet in `messages`) — so the streaming overlay has
-    // a message to attach to.
-    setMessages((prev) =>
-      prev.some((m) => m.id === message.id)
-        ? prev.map((m) =>
-            m.id === message.id
-              ? {
-                  ...m,
-                  cheatSpec: undefined,
-                  isStreaming: true,
-                  streamingPhase: 'waiting',
-                }
-              : m
-          )
-        : [
-            ...prev,
-            {
-              ...message,
-              cheatSpec: undefined,
-              isStreaming: true,
-              streamingPhase: 'waiting',
-            },
-          ]
-    );
-    void stream.analyze({
-      message: message.userInput ?? message.content,
-      loggedDate: selectedDate,
-      timezoneOffset: new Date().getTimezoneOffset(),
-      mode: 'cheat',
-      cheatIntensity,
-      clarifyAnswer: answer,
-      // Reuse this card's attempt id. A clarifying-question spec stages no row
-      // (the route returns early), so there's no pre-clarify orphan to supersede
-      // here — but this handler has no in-flight guard, so a double-fired clarify
-      // would stage twice; the shared attempt id collapses that to one row.
-      attemptId: message.attemptId,
-    });
-  };
-
   // "Log it again": re-stage a past cheat occasion's sliders (seeded with last
   // time's amounts) without re-running the estimator, then surface the card.
   const handleRepeatCheat = async (occasion: RecentCheatOccasion) => {
@@ -304,7 +260,6 @@ export function useConfirmHandlers(args: {
     handleRefineMeal,
     handleConfirmMeal,
     handleConfirmCheatMeal,
-    handleCheatClarify,
     handleRepeatCheat,
   };
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/nham_colors.dart';
+import '../../../../theme/nham_theme.dart';
 
 /// Centered time divider that sits on top of a meal card: a hairline, the time
 /// (── 1:04 AM ──), and a hairline — replacing the old left-rail time label.

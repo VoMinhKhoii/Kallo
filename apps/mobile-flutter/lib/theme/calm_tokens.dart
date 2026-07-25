@@ -1,9 +1,11 @@
 /// Calm design tokens — the mobile app's shared type/colour/spacing system.
 ///
 /// Born on the dashboard (2026 redesign) and now the canonical system for the
-/// whole Flutter app. The palette stays cream / espresso / tan; the APPLICATION
-/// is calm: solid surfaces (no stacked translucency), ONE sans family (Be
-/// Vietnam Pro), exactly TWO text colours, one card radius.
+/// whole Flutter app. The palette is a neutral canvas / ink / hairline system
+/// (warm cream / espresso retired) with WARM interaction washes and the tan
+/// accent kept for non-text moments; the APPLICATION is calm: solid surfaces
+/// (no stacked translucency), ONE sans family (Be Vietnam Pro), exactly TWO
+/// text colours, one card radius.
 ///
 /// Threads / Apple-Health tuned: compact sizes, lighter weights, hierarchy
 /// carried by weight + colour rather than size — minimal tracking, quiet muted
@@ -11,41 +13,47 @@
 /// throughline — hierarchy comes from contrast + weight, not from loud type.
 ///
 /// Canonical doc: `.agents/skills/nham-design/mobile.md`.
+///
+/// Colour values are NOT restated here: every surface/ink token DERIVES from
+/// [NhamColors] (the single source of truth for the palette). This file owns
+/// only the calm TYPE system + the semantic colour aliases (kPage, kInk, …)
+/// that map design-system intent onto those canonical values.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'nham_colors.dart';
 import 'nham_typography.dart';
 
-// ── Surfaces (all solid, 100% opacity) ───────────────────────────────────
-const Color kPage = Color(0xFFFEFBF6); // app page — paper cream
-const Color kCardSurface = Color(0xFFFFFFFF); // cards — solid white
-const Color kTrack = Color(0xFFF1EFE9); // ring/bar tracks — the ONLY low-contrast surface
-const Color kHairline = Color(0xFFE8D5B5); // the one border (biscotti, solid)
-const Color kFieldFill = Color(0xFFF6F1E8); // soft warm fill for inputs
+// ── Surfaces (all solid, 100% opacity) — semantic aliases onto NhamColors ──
+const Color kPage = NhamColors.surface; // app page — neutral canvas
+const Color kCardSurface = NhamColors.elev; // cards — solid white
+const Color kTrack = NhamColors.track; // ring/bar tracks — the ONLY low-contrast surface (warm)
+const Color kHairline = NhamColors.border; // the one border (neutral hairline, solid)
+const Color kFieldFill = NhamColors.elev; // input fills read white on the neutral canvas
 
 // ── Text colours — the app uses exactly TWO (Threads: black + grey) ────────
-const Color kInk = Color(0xFF2C2416); // espresso "black" — primary data
+const Color kInk = NhamColors.text; // near-black ink — primary data
 // Canonical calm secondary: ONE warm neutral grey for every secondary role
 // (labels, units, captions, meta, dates). This is the mobile design-system
 // secondary text colour — the only secondary text colour there is.
-const Color kInkMuted = Color(0xFF8C867C);
+const Color kInkMuted = NhamColors.textMuted;
 
 // ── Shape ────────────────────────────────────────────────────────────────
 const double kCardRadius = 22; // one card radius — modern iOS grouped-card feel
 
-/// Layered espresso card shadow — a tight contact shadow plus a soft ambient
-/// one. Two stacked shadows read like a real iOS card lifting off the warm page,
+/// Layered ink card shadow — a tight contact shadow plus a soft ambient
+/// one. Two stacked shadows read like a real iOS card lifting off the page,
 /// where one flat blur read as a smudge. Cards use shadow, not border.
 const List<BoxShadow> kCardShadows = [
   BoxShadow(
-    color: Color(0x142C2416), // ambient (~8%)
+    color: Color(0x14141413), // ambient (~8%)
     blurRadius: 24,
     offset: Offset(0, 10),
   ),
   BoxShadow(
-    color: Color(0x0F2C2416), // contact (~6%)
+    color: Color(0x0F141413), // contact (~6%)
     blurRadius: 3,
     offset: Offset(0, 1),
   ),
@@ -53,7 +61,7 @@ const List<BoxShadow> kCardShadows = [
 
 /// Back-compat single shadow (some surfaces still reference it).
 const BoxShadow kCardShadow = BoxShadow(
-  color: Color(0x0F2C2416),
+  color: Color(0x0F141413),
   blurRadius: 28,
   offset: Offset(0, 12),
 );

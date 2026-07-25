@@ -35,16 +35,56 @@ class MealNutrition {
       );
 }
 
+/// A single ingredient row within a dish group — the amount-editable unit.
+/// Mirrors the web `PersistedIngredient` built by
+/// `lib/actions/persisted-meal.ts#buildPersistedIngredient`; only the fields the
+/// mobile amount editor consumes are modeled (unknown keys are ignored).
+class PersistedIngredient {
+  /// The `meal_items` row id — the stable key edits/removals are addressed by.
+  final String id;
+  final String ingredientName;
+
+  /// Cooked grams; nullable for legacy rows with no recorded amount (the editor
+  /// can't step those, and totals fall back to scale 1).
+  final double? estimatedGrams;
+
+  /// Display unit (e.g. `g`, `ml`), when the server recorded one.
+  final String? userFacingUnit;
+  final MealNutrition nutrition;
+
+  const PersistedIngredient({
+    required this.id,
+    required this.ingredientName,
+    required this.estimatedGrams,
+    required this.userFacingUnit,
+    required this.nutrition,
+  });
+
+  factory PersistedIngredient.fromJson(Map<String, dynamic> json) =>
+      PersistedIngredient(
+        id: json['id'] as String,
+        ingredientName: json['ingredientName'] as String? ?? '',
+        estimatedGrams: MealNutrition._num(json['estimatedGrams']),
+        userFacingUnit: json['userFacingUnit'] as String?,
+        nutrition:
+            MealNutrition.fromJson(json['nutrition'] as Map<String, dynamic>),
+      );
+}
+
 /// A named dish group within a persisted meal (collapsed/expanded rows).
 class PersistedMealItemGroup {
   final String name;
   final int order;
   final MealNutrition nutrition;
 
+  /// The dish's ingredient rows. Absent on older day-feed payloads → `[]`.
+  final List<PersistedIngredient> ingredients;
+
   const PersistedMealItemGroup({
     required this.name,
     required this.order,
     required this.nutrition,
+    this.ingredients = const [],
   });
 
   factory PersistedMealItemGroup.fromJson(Map<String, dynamic> json) =>
@@ -53,6 +93,10 @@ class PersistedMealItemGroup {
         order: (json['order'] as num).toInt(),
         nutrition:
             MealNutrition.fromJson(json['nutrition'] as Map<String, dynamic>),
+        ingredients: (json['ingredients'] as List<dynamic>? ?? [])
+            .map((e) =>
+                PersistedIngredient.fromJson(e as Map<String, dynamic>))
+            .toList(),
       );
 }
 

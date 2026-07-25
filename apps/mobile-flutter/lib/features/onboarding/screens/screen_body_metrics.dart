@@ -470,7 +470,7 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
             },
           ),
           const SizedBox(height: NhamSpacing.sp4), // pb-4 divider gap
-          const _Divider(color: Color(0xCCEAE7E0)), // border-[#EAE7E0]/80
+          const _Divider(color: Color(0xCCE8E6DC)), // border @80%
 
           if (_goal != 'maintaining') ...[
             const SizedBox(height: NhamSpacing.sp4), // space-y-4
@@ -785,7 +785,7 @@ class _GoalStrip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(NhamSpacing.sp1),
       decoration: BoxDecoration(
-        color: const Color(0x80EAE7E0), // bg-[#EAE7E0]/50
+        color: const Color(0x80E8E6DC), // hairline @50%
         borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
       ),
       child: Row(
@@ -908,7 +908,7 @@ class _CarbCardState extends State<_CarbCard> {
 
     final borderColor =
         active
-            ? NhamColors.accent
+            ? NhamColors.text.withValues(alpha: 0.3)
             : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
 
     return GestureDetector(
@@ -920,7 +920,7 @@ class _CarbCardState extends State<_CarbCard> {
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: active ? NhamColors.selectedCard : NhamColors.elev, // #FFF8EF
+          color: active ? NhamColors.hover : NhamColors.elev,
           borderRadius: BorderRadius.circular(NhamRadii.xxxl), // rounded-[22px]
           border: Border.all(color: borderColor),
           boxShadow:

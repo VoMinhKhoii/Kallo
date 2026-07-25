@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/nham_sheet.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
@@ -62,71 +63,70 @@ class _CreateGroupSheetState extends ConsumerState<CreateGroupSheet> {
   Widget build(BuildContext context) {
     final canSubmit =
         !_creating && _name.text.trim().isNotEmpty && _selected.isNotEmpty;
-    return Container(
+    return NhamSheetSurface(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.sizeOf(context).height * .88,
-      ),
-      padding: EdgeInsets.fromLTRB(
-        20,
-        16,
-        20,
-        MediaQuery.viewInsetsOf(context).bottom + 20,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: kHairline,
-                borderRadius: BorderRadius.circular(2),
+          NhamSheetHeader(
+            title: tr('groups.createGroup.title'),
+            subtitle: tr('groups.createGroup.description'),
+          ),
+          Flexible(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                0,
+                20,
+                MediaQuery.viewInsetsOf(context).bottom + 20,
               ),
-            ),
-          ),
-          const SizedBox(height: NhamSpacing.sp3),
-          Text(tr('groups.createGroup.title'), style: dashValue()),
-          Text(tr('groups.createGroup.description'), style: dashMeta()),
-          const SizedBox(height: NhamSpacing.sp3),
-          TextField(
-            controller: _name,
-            maxLength: 60,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              labelText: tr('groups.createGroup.nameLabel'),
-              hintText: tr('groups.createGroup.namePlaceholder'),
-            ),
-          ),
-          Text(tr('groups.createGroup.membersLabel'), style: dashMeta()),
-          const SizedBox(height: NhamSpacing.sp2),
-          CreateGroupMemberPicker(
-            friends: ref.watch(circleFriendsProvider),
-            searchController: _search,
-            selected: _selected,
-            onChanged: () => setState(() {}),
-            onRetry: () => ref.invalidate(circleFriendsProvider),
-            onAddFriend: () {
-              Navigator.pop(context);
-              showAddFriendSheet(context);
-            },
-          ),
-          const SizedBox(height: NhamSpacing.sp3),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: canSubmit ? _submit : null,
-              child: Text(
-                tr(
-                  _creating
-                      ? 'groups.createGroup.creating'
-                      : 'groups.createGroup.submit',
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _name,
+                    maxLength: 60,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      labelText: tr('groups.createGroup.nameLabel'),
+                      hintText: tr('groups.createGroup.namePlaceholder'),
+                    ),
+                  ),
+                  Text(
+                    tr('groups.createGroup.membersLabel'),
+                    style: dashMeta(),
+                  ),
+                  const SizedBox(height: NhamSpacing.sp2),
+                  CreateGroupMemberPicker(
+                    friends: ref.watch(circleFriendsProvider),
+                    searchController: _search,
+                    selected: _selected,
+                    onChanged: () => setState(() {}),
+                    onRetry: () => ref.invalidate(circleFriendsProvider),
+                    onAddFriend: () {
+                      Navigator.pop(context);
+                      showAddFriendSheet(context);
+                    },
+                  ),
+                  const SizedBox(height: NhamSpacing.sp3),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: canSubmit ? _submit : null,
+                      child: Text(
+                        tr(
+                          _creating
+                              ? 'groups.createGroup.creating'
+                              : 'groups.createGroup.submit',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

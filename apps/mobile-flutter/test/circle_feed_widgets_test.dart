@@ -38,6 +38,7 @@ void main() {
     List<ShareReply> replies = const [],
     ShareReactions reactions = const ShareReactions(),
     DateTime? sharedAt,
+    bool isBackfilled = false,
   }) => CircleFeedEntry(
     friend: const CircleProfile(
       userId: 'u2',
@@ -56,6 +57,7 @@ void main() {
       carbohydrateG: protein == null ? null : 62,
       fatG: protein == null ? null : 14,
       portionFactor: portion,
+      isBackfilled: isBackfilled,
     ),
     reactions: reactions,
     replies: replies,
@@ -110,6 +112,15 @@ void main() {
     expect(find.text('½ portion'), findsOneWidget);
     await pump(tester, FeedEntry(entry: entry()));
     expect(find.textContaining('portion'), findsNothing);
+  });
+
+  testWidgets('elapsed time is hidden for a backfilled share', (
+    tester,
+  ) async {
+    await pump(tester, FeedEntry(entry: entry()));
+    expect(find.textContaining('ago'), findsOneWidget);
+    await pump(tester, FeedEntry(entry: entry(isBackfilled: true)));
+    expect(find.textContaining('ago'), findsNothing);
   });
 
   testWidgets('Log this too is hidden for self and shown for others', (
