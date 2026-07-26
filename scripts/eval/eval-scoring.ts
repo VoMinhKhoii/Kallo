@@ -74,6 +74,25 @@ export function scoreCase(
     });
   }
 
+  if (fixture.expect.expectVessel !== undefined) {
+    const expected = fixture.expect.expectVessel;
+    const actual = observed.vessels;
+    checks.push({
+      name: 'vessel',
+      pass:
+        expected === null
+          ? actual.every((vessel) => vessel === null)
+          : expected.length === actual.length &&
+            expected.every(
+              (vessel, index) =>
+                vessel.family === actual[index]?.family &&
+                vessel.tier === actual[index]?.tier
+            ),
+      expected,
+      actual,
+    });
+  }
+
   if (fixture.expect.macroRanges) {
     const macroKeys = ['proteinG', 'carbohydrateG', 'fatG'] as const;
     for (const key of macroKeys) {

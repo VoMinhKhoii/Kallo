@@ -175,6 +175,12 @@ async function runCase(
     ingredients: diagnostics ? buildIngredientResults(diagnostics) : [],
     mealKcal,
     mealMacros,
+    vessels:
+      successData?.mealItems.map((item) =>
+        item.vessel
+          ? { family: item.vessel.family, tier: item.vessel.tier }
+          : null
+      ) ?? [],
     silentZeroViolations: successData
       ? findSilentZeros(
           successData,
