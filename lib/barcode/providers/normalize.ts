@@ -8,7 +8,7 @@
  * persisted rows obey the same bounds as freshly ingested ones.
  */
 import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
-import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
+import type { ParsedBarcodeProduct } from '@/lib/barcode/types';
 
 export function parseNumber(val: unknown): number | null {
   if (val === undefined || val === null) return null;

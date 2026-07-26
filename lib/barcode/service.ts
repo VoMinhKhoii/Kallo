@@ -6,12 +6,12 @@ import type {
   NutritionValues,
   PipelineResult,
 } from '@/lib/ai/types';
-import {
-  fetchProductFromOpenFoodFacts,
-  type ParsedBarcodeProduct,
-} from '@/lib/barcode/openfoodfacts';
+import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
 import { parseSizeGrams } from '@/lib/barcode/providers/normalize';
-import type { BarcodeErrorCode } from '@/lib/barcode/types';
+import type {
+  BarcodeErrorCode,
+  ParsedBarcodeProduct,
+} from '@/lib/barcode/types';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import {

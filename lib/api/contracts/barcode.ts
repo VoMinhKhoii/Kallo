@@ -50,5 +50,7 @@ export const logBarcodeMealSchema = z.object({
 
 export type LogBarcodeMealInput = z.infer<typeof logBarcodeMealSchema>;
 
-export type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
-export type { BarcodeErrorCode } from '@/lib/barcode/types';
+export type {
+  BarcodeErrorCode,
+  ParsedBarcodeProduct,
+} from '@/lib/barcode/types';

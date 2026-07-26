@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
+import type { ParsedBarcodeProduct } from '@/lib/barcode/types';
 import {
   hasUsableNutrition,
   isNutritionComplete,

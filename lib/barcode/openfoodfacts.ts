@@ -5,6 +5,7 @@ import {
   reconcileEnergy,
   sodiumMgFromGrams,
 } from '@/lib/barcode/providers/normalize';
+import type { ParsedBarcodeProduct } from '@/lib/barcode/types';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 // Open Food Facts can be slow/unresponsive; bound the wait so the server
@@ -49,21 +50,11 @@ export const openFoodFactsResponseSchema = z
   })
   .passthrough();
 
-export interface ParsedBarcodeProduct {
-  barcode: string;
-  name: string;
-  brand: string | null;
-  caloriesKcal: number | null;
-  proteinG: number | null;
-  carbohydrateG: number | null;
-  fatG: number | null;
-  fiberG: number | null;
-  sodiumMg: number | null;
-  /** Grams per serving, if OFF provides a plausible value. */
-  servingSizeG: number | null;
-  /** Grams in the whole package (net quantity), if plausible. */
-  packageSizeG: number | null;
-}
+// Compatibility re-export. The type's home is `@/lib/barcode/types`, but
+// `components/logging/input/barcode-scanner-dialog.tsx` and
+// `barcode-product-step.tsx` import it from here and are frozen by the
+// file-size ratchet baseline, so this module cannot stop exporting the name.
+export type { ParsedBarcodeProduct } from '@/lib/barcode/types';
 
 /**
  * Fetch food product details from Open Food Facts API using the barcode.

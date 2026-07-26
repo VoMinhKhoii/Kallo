@@ -11,8 +11,10 @@
  * body, no match): they `console.error` and return null. Only the service
  * layer turns an exhausted chain into a `BarcodeServiceError`.
  */
-import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
-import type { BarcodeProviderId } from '@/lib/barcode/types';
+import type {
+  BarcodeProviderId,
+  ParsedBarcodeProduct,
+} from '@/lib/barcode/types';
 
 export interface BarcodeProvider {
   id: BarcodeProviderId;
