@@ -6,11 +6,11 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 
-/// Solid-umber primary pill shared by the terminal feed cards — the
-/// failed-attempt "Try again" and the precise-clarify "Send". Icon + label, a
-/// pressed-state [AnimatedContainer] that deepens the shadow, and an optional
-/// [busy] state that dims to 0.5 and swallows taps (the in-flight clarify
-/// submit). The resting look mirrors the confirm button.
+/// Solid-umber primary pill for the terminal feed cards — currently the
+/// failed-attempt "Try again". Icon + label, a pressed-state
+/// [AnimatedContainer] that deepens the shadow, and an optional [busy] state
+/// that dims to 0.5 and swallows taps (an in-flight resubmit). The resting look
+/// mirrors the confirm button.
 class TerminalPrimaryButton extends StatefulWidget {
   const TerminalPrimaryButton({
     super.key,

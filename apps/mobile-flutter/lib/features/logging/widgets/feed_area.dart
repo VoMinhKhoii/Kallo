@@ -39,7 +39,6 @@ import 'meal_input.dart';
 import 'sheets/meal_mode_sheet.dart';
 import 'persisted/persisted_meal_card.dart';
 import '../data/persisted_meal_mutations.dart';
-import 'terminal/precise_clarify_card.dart';
 import 'streaming_entry.dart';
 
 const _uuid = Uuid();
@@ -88,8 +87,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   bool _failedRetryable = true;
 
   /// Stable per-attempt id for the run currently on screen. Minted fresh on a
-  /// new submit; REUSED for a retry of a failed attempt and for a clarify
-  /// resubmit (cheat or precise), so the server upserts one staging row instead
+  /// new submit; REUSED for a retry of a failed attempt and for a cheat-clarify
+  /// resubmit, so the server upserts one staging row instead
   /// of orphaning its predecessor. Cleared once the attempt is saved or
   /// discarded; kept on error so the retry supersedes. Mirrors the web
   /// attemptId semantics (use-feed-submit / use-confirm-handlers).
@@ -132,17 +131,16 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   }
 
   void _submit(String text) {
-    // A fresh logging attempt: mint a new attempt id. Retries and clarify
-    // resubmits reuse the existing id instead (see _retry / _clarifyPrecise /
-    // _clarifyCheat) so the server upserts one staging row per attempt.
+    // A fresh logging attempt: mint a new attempt id. Retries and cheat-clarify
+    // resubmits reuse the existing id instead (see _retry / _clarifyCheat) so
+    // the server upserts one staging row per attempt.
     _attemptId = _uuid.v4();
     _runAnalyze(text);
   }
 
-  /// Core analyze path shared by fresh submit, retry, and precise-clarify
-  /// resubmit. Honors the persistent composer [_mode] (precise vs cheat) and
-  /// sends the current [_attemptId]; a [clarifyAnswer] re-runs the same meal.
-  void _runAnalyze(String text, {String? clarifyAnswer}) {
+  /// Core analyze path shared by fresh submit and retry. Honors the persistent
+  /// composer [_mode] (precise vs cheat) and sends the current [_attemptId].
+  void _runAnalyze(String text) {
     // A second submit while an unconfirmed reveal is showing must not
     // vaporize the first answer: that analysis is already stored server-side
     // as pending, so refresh its origin day — it resurfaces as a
@@ -181,7 +179,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             timezoneOffset: timezoneOffsetMinutes(),
             mode: isCheat ? 'cheat' : null,
             cheatIntensity: isCheat ? _cheatIntensity.name : null,
-            clarifyAnswer: clarifyAnswer,
             attemptId: _attemptId,
           ),
         );
@@ -196,33 +193,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     _runAnalyze(text);
   }
 
-  /// Precise-mode clarify resubmit: the pipeline asked ONE question and staged
-  /// nothing, so re-run the SAME meal (precise) with the typed answer. Reuses
-  /// this attempt's id — a double-fired resubmit collapses to one staging row.
-  void _clarifyPrecise(String answer) {
-    final text = _revealRawInput;
-    if (text == null || text.isEmpty) return;
-    _attemptId ??= _uuid.v4();
-    setState(() {
-      _revealRawInput = null;
-      _inFlightText = text;
-    });
-    _scrollToAnswer();
-    // Force precise mode regardless of the current composer mode — a precise
-    // clarify is always answered on the precise pipeline.
-    ref
-        .read(streamAnalysisProvider.notifier)
-        .analyze(
-          StreamAnalyzeInput(
-            message: text,
-            loggedDate: widget.date,
-            timezoneOffset: timezoneOffsetMinutes(),
-            clarifyAnswer: answer,
-            attemptId: _attemptId,
-          ),
-        );
-  }
-
   /// Discard a failed attempt: drop the card and retire its attempt id (the raw
   /// text stays in the composer to re-log by hand).
   void _discardFailed() {
@@ -230,24 +200,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       _failedText = null;
       _attemptId = null;
     });
-  }
-
-  /// Dismiss a precise-clarify prompt without answering: retire the attempt id
-  /// and clear the settled run so the card disappears. The meal's raw text is
-  /// restored into the composer (never destroy what the user typed), matching
-  /// the failed-attempt card's philosophy.
-  void _discardClarify() {
-    final text = _revealRawInput;
-    setState(() {
-      _revealRawInput = null;
-      _attemptId = null;
-    });
-    if (text != null &&
-        text.isNotEmpty &&
-        _inputController.getText().trim().isEmpty) {
-      _inputController.setText(text);
-    }
-    ref.read(streamAnalysisProvider.notifier).reset();
   }
 
   /// The first step: choose how to log. Normal and Cheat set the persistent
@@ -378,12 +330,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     // happens only once the user confirms (_confirmReveal).
     // The cheat clarify terminal reaches done with a cheatSpec but NO
     // analysisId (nothing is staged for a vague input) — it still reveals as a
-    // card, so it takes the same transition. The precise clarify terminal is
-    // the same shape: done with a `clarify` prompt and no analysisId.
+    // card, so it takes the same transition.
     if (next.status == StreamStatus.done &&
-        (next.analysisId != null ||
-            next.cheatSpec != null ||
-            next.clarify != null) &&
+        (next.analysisId != null || next.cheatSpec != null) &&
         prev?.status != StreamStatus.done) {
       _revealRawInput = _inFlightText;
       _inFlightText = null;
@@ -468,14 +417,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         stream.status == StreamStatus.done &&
         stream.cheatSpec != null;
 
-    // The precise-mode clarify prompt: the pipeline settled with a question and
-    // staged nothing (no analysisId). Rendered as a card that collects an
-    // answer and re-submits the same meal with clarifyAnswer.
-    final isClarifying =
-        streamIsForThisDay &&
-        stream.status == StreamStatus.done &&
-        stream.clarify != null;
-
     final dailyCalories = round0(
       persistedMeals.fold<double>(
         0,
@@ -504,7 +445,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         !isStreaming &&
         !isRevealing &&
         !isCheatRevealing &&
-        !isClarifying &&
         !hasFailedAttempt;
 
     final hasFooterItems =
@@ -512,7 +452,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         isStreaming ||
         isRevealing ||
         isCheatRevealing ||
-        isClarifying ||
         hasFailedAttempt;
 
     // A past day with real meals but under half the target reads as
@@ -529,7 +468,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         !isStreaming &&
         !isRevealing &&
         !isCheatRevealing &&
-        !isClarifying &&
         isLikelyPartialDay(dailyCalories.toDouble(), profile.calorieTarget);
 
     final macroBars = [
@@ -650,10 +588,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             failedRetryable: _failedRetryable,
             onRetry: _retry,
             onDiscardFailed: _discardFailed,
-            clarify: stream.clarify,
-            isClarifying: isClarifying,
-            onClarifyPrecise: _clarifyPrecise,
-            onDiscardClarify: _discardClarify,
           ),
         ),
 
@@ -735,7 +669,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     required bool isStreaming,
     required bool isRevealing,
     required bool isCheatRevealing,
-    required bool isClarifying,
     required StreamAnalysisState stream,
     required bool hasFooterItems,
     required bool confirmPending,
@@ -743,9 +676,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     required bool failedRetryable,
     required VoidCallback onRetry,
     required VoidCallback onDiscardFailed,
-    required PreciseClarify? clarify,
-    required ValueChanged<String> onClarifyPrecise,
-    required VoidCallback onDiscardClarify,
   }) {
     // Day fetch error → red alert card with retry (LoggingDayErrorState).
     if (hasError && persistedMeals.isEmpty && !hasFooterItems) {
@@ -784,7 +714,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             isStreaming: isStreaming,
             isRevealing: isRevealing,
             isCheatRevealing: isCheatRevealing,
-            isClarifying: isClarifying,
             stream: stream,
             streamingRawInput: _inFlightText,
             confirmPending: confirmPending,
@@ -798,9 +727,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             failedRetryable: failedRetryable,
             onRetry: onRetry,
             onDiscardFailed: onDiscardFailed,
-            clarify: clarify,
-            onClarifyPrecise: onClarifyPrecise,
-            onDiscardClarify: onDiscardClarify,
           ),
         );
       }
@@ -886,7 +812,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             isStreaming: isStreaming,
             isRevealing: isRevealing,
             isCheatRevealing: isCheatRevealing,
-            isClarifying: isClarifying,
             stream: stream,
             streamingRawInput: _inFlightText,
             confirmPending: confirmPending,
@@ -900,9 +825,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             failedRetryable: failedRetryable,
             onRetry: onRetry,
             onDiscardFailed: onDiscardFailed,
-            clarify: clarify,
-            onClarifyPrecise: onClarifyPrecise,
-            onDiscardClarify: onDiscardClarify,
           );
         },
       ),
@@ -1135,7 +1057,6 @@ class _Footer extends StatelessWidget {
     required this.isStreaming,
     required this.isRevealing,
     required this.isCheatRevealing,
-    required this.isClarifying,
     required this.stream,
     required this.streamingRawInput,
     required this.confirmPending,
@@ -1149,16 +1070,12 @@ class _Footer extends StatelessWidget {
     required this.failedRetryable,
     required this.onRetry,
     required this.onDiscardFailed,
-    required this.clarify,
-    required this.onClarifyPrecise,
-    required this.onDiscardClarify,
   });
 
   final List<PendingMealConfirmation> pendingConfirmations;
   final bool isStreaming;
   final bool isRevealing;
   final bool isCheatRevealing;
-  final bool isClarifying;
   final String? revealRawInput;
 
   /// The just-typed text of the in-flight analysis, shown on the streaming card
@@ -1178,9 +1095,6 @@ class _Footer extends StatelessWidget {
   final bool failedRetryable;
   final VoidCallback onRetry;
   final VoidCallback onDiscardFailed;
-  final PreciseClarify? clarify;
-  final ValueChanged<String> onClarifyPrecise;
-  final VoidCallback onDiscardClarify;
 
   @override
   Widget build(BuildContext context) {
@@ -1252,18 +1166,6 @@ class _Footer extends StatelessWidget {
             busy: confirmPending,
             onConfirm: onConfirmCheatReveal,
             onClarify: onClarifyCheat,
-          ),
-        // The precise-mode clarify prompt: the pipeline settled with a question
-        // and staged nothing. Answering re-submits the same meal (reusing the
-        // attempt id) with clarifyAnswer.
-        if (isClarifying && clarify != null)
-          PreciseClarifyCard(
-            key: const ValueKey('precise-clarify'),
-            rawInput: revealRawInput ?? '',
-            question: clarify!.question,
-            busy: confirmPending,
-            onSubmit: onClarifyPrecise,
-            onDiscard: onDiscardClarify,
           ),
         if (hasFailed)
           FailedAttemptCard(

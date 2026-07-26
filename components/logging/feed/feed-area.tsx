@@ -116,8 +116,6 @@ export function FeedArea({
               onConfirmMeal={feed.handleConfirmMeal}
               onConfirmCheatMeal={feed.handleConfirmCheatMeal}
               onCheatClarify={feed.handleCheatClarify}
-              onPreciseClarify={feed.handlePreciseClarify}
-              onDiscardClarify={feed.handleDiscardClarify}
             />
           )}
         </div>

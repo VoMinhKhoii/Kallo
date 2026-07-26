@@ -25,10 +25,6 @@ export interface DashboardMealStream {
   /** Index into DASH_LOADERS — randomized per run, stable within it. */
   loaderIndex: number;
   error: string | null;
-  /** Terminal precise-clarify question — the run ended asking for one detail
-   *  instead of a meal (no result/analysisId), so autosave never fires. Quiet
-   *  prompt; dismiss restores the draft so the user can add detail and resubmit. */
-  clarify: string | null;
   onRetry: () => void;
   onDismiss: () => void;
 }
@@ -178,12 +174,6 @@ export function useDashboardMealLog({
     ticker,
     loaderIndex,
     error: stream.status === 'error' ? stream.error : null,
-    // Mutually exclusive with autosave: autosave gates on result + analysisId,
-    // a terminal clarify carries neither (status 'done', only stream.clarify).
-    clarify:
-      stream.status === 'done' && stream.clarify
-        ? stream.clarify.question
-        : null,
     onRetry,
     onDismiss,
   };

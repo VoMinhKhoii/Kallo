@@ -22,24 +22,6 @@ import '../../../models/cheat.dart';
 import '../../../models/meal.dart';
 import '../../../models/streaming.dart';
 
-/// Precise-mode clarify prompt: the pipeline finished but an ingredient's
-/// portion/food couldn't be resolved. The stream ends here (no
-/// analysis_complete) and nothing is staged; the client re-submits the meal
-/// with `clarifyAnswer`. Mirrors the web hook's `PreciseClarify`.
-class PreciseClarify {
-  final String question;
-  final String? mealItemId;
-
-  /// 'unresolved_portion' | 'ambiguous_food'.
-  final String reason;
-
-  const PreciseClarify({
-    required this.question,
-    this.mealItemId,
-    required this.reason,
-  });
-}
-
 /// Immutable streaming state — the RN `StreamAnalysisState`.
 class StreamAnalysisState {
   final StreamStatus status;
@@ -51,10 +33,6 @@ class StreamAnalysisState {
   /// a clarifyingQuestion is terminal with no [analysisId] — the user must
   /// re-ask with `clarifyAnswer`.
   final CheatSliderSpec? cheatSpec;
-
-  /// Precise-mode clarify prompt (when the pipeline couldn't resolve a
-  /// portion/food). Terminal with no [analysisId], like a cheat clarify.
-  final PreciseClarify? clarify;
   final String? analysisId;
   final String? error;
 
@@ -75,7 +53,6 @@ class StreamAnalysisState {
     this.completedItems = const [],
     this.result,
     this.cheatSpec,
-    this.clarify,
     this.analysisId,
     this.error,
     this.retryable = true,
@@ -89,7 +66,6 @@ class StreamAnalysisState {
     List<MealItem>? completedItems,
     ParsedMeal? result,
     CheatSliderSpec? cheatSpec,
-    PreciseClarify? clarify,
     String? analysisId,
     String? error,
     bool? retryable,
@@ -101,7 +77,6 @@ class StreamAnalysisState {
     completedItems: completedItems ?? this.completedItems,
     result: result ?? this.result,
     cheatSpec: cheatSpec ?? this.cheatSpec,
-    clarify: clarify ?? this.clarify,
     analysisId: analysisId ?? this.analysisId,
     error: error ?? this.error,
     retryable: retryable ?? this.retryable,
@@ -219,20 +194,6 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
         } else {
           state = state.copyWith(cheatSpec: spec);
         }
-      case ClarifyEvent(:final question, :final mealItemId, :final reason):
-        // Terminal, like a cheat clarifyingQuestion: the stream ends with no
-        // analysis_complete and nothing staged. Settle here and expose the
-        // prompt so the UI can collect an answer and re-submit with
-        // clarifyAnswer (+ the same attemptId). Mirrors the web hook.
-        state = state.copyWith(
-          clarify: PreciseClarify(
-            question: question,
-            mealItemId: mealItemId,
-            reason: reason,
-          ),
-          status: StreamStatus.done,
-          isAnalyzing: false,
-        );
       case AnalysisCompleteEvent(:final analysisId):
         state = state.copyWith(
           status: StreamStatus.done,
@@ -267,11 +228,11 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
         .listen(
           (event) {
             _apply(event, reqId);
-            // Terminal frames end the run: analysis_complete, error, a precise
-            // clarify, or a cheat_estimate carrying a clarifyingQuestion (both
-            // clarifies end the stream WITHOUT analysis_complete). The rule is
-            // the single `StreamEvent.isTerminal` predicate. Mark terminal and
-            // tear down — this also disarms the inactivity watchdog.
+            // Terminal frames end the run: analysis_complete, error, or a
+            // cheat_estimate carrying a clarifyingQuestion (which ends the
+            // stream WITHOUT analysis_complete). The rule is the single
+            // `StreamEvent.isTerminal` predicate. Mark terminal and tear down —
+            // this also disarms the inactivity watchdog.
             if (event.isTerminal) {
               _receivedTerminal = true;
               _closeStream();
@@ -283,6 +244,23 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
           onError: (_) {
             if (reqId != _requestId) return;
             if (state.status == StreamStatus.done) return;
+            state = state.copyWith(
+              status: StreamStatus.error,
+              error: tr('errors.internal'),
+              retryable: true,
+              isAnalyzing: false,
+            );
+            _closeStream();
+          },
+          onDone: () {
+            if (reqId != _requestId || _receivedTerminal) return;
+            // The transport closed without ever delivering a terminal frame:
+            // the server hung up early, or it ended the run with a frame this
+            // client doesn't model (a `clarify` ask-back, say — deliberately
+            // unparsed, so `flush()` drops it). Nothing is staged and nothing
+            // more is coming, so settle IMMEDIATELY as a retryable failure
+            // rather than leaving the UI spinning until the 45s inactivity
+            // watchdog fires.
             state = state.copyWith(
               status: StreamStatus.error,
               error: tr('errors.internal'),

@@ -105,11 +105,11 @@ class StreamAnalyzeInput {
   final String? cheatIntensity;
   final String? cheatType;
 
-  /// Reply to a prior vague-input clarifying question.
+  /// Reply to a prior vague-input cheat clarifying question.
   final String? clarifyAnswer;
 
   /// Stable per-attempt id. Reused across re-analyses of one logging attempt
-  /// (retry, cheat/precise clarify resubmit) so the server upserts the same
+  /// (retry, cheat-clarify resubmit) so the server upserts the same
   /// `pending_analyses` staging row instead of orphaning its predecessor. Sent
   /// only when set — a null attemptId always inserts a fresh row server-side.
   final String? attemptId;
@@ -260,9 +260,9 @@ class ApiClient {
   ///
   /// Yields parsed [StreamEvent]s as the server emits NAMED SSE frames
   /// (`stage`, `item_name`, `item_macros`, `result`, `cheat_estimate`,
-  /// `clarify`, `analysis_complete`, `error`). The stream completes after a
-  /// terminal frame (`analysis_complete`, `error`, or a precise `clarify`), or
-  /// on a transport error (surfaced as a [StreamErrorEvent]).
+  /// `analysis_complete`, `error`). The stream completes after a terminal frame
+  /// (`analysis_complete`, `error`), when the transport closes, or on a
+  /// transport error (surfaced as a [StreamErrorEvent]).
   ///
   /// Cancel by cancelling the returned subscription — the underlying request is
   /// aborted (no auto-reconnect, matching `pollingInterval: 0` in RN).
@@ -329,8 +329,11 @@ class ApiClient {
       } catch (_) {
         // A malformed frame or an event type this client doesn't know about is
         // skipped deliberately — never crash the stream. Known terminals
-        // (analysis_complete / error / clarify) all parse above, so this only
-        // drops genuinely unrecognized frames, not the ones the reducer needs.
+        // (analysis_complete / error) all parse above, so this only drops
+        // frames the reducer has no use for (e.g. the server's precise-mode
+        // `clarify` ask-back, which this client does not implement). The server
+        // closes the socket right after such a frame, so the controller's
+        // onDone settles the run as a retryable failure.
         return null;
       }
     }

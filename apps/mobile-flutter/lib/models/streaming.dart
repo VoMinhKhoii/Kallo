@@ -27,7 +27,6 @@ sealed class StreamEvent {
       'item_macros' => ItemMacrosEvent.fromJson(json),
       'result' => ResultEvent.fromJson(json),
       'cheat_estimate' => CheatEstimateEvent.fromJson(json),
-      'clarify' => ClarifyEvent.fromJson(json),
       'analysis_complete' => AnalysisCompleteEvent.fromJson(json),
       'error' => StreamErrorEvent.fromJson(json),
       _ => throw ArgumentError('Unknown StreamEvent type: $type'),
@@ -42,8 +41,6 @@ sealed class StreamEvent {
   /// Terminal frames:
   ///  - [AnalysisCompleteEvent] — the durable, confirmable result.
   ///  - [StreamErrorEvent] — a fatal error.
-  ///  - [ClarifyEvent] — a precise-mode clarify: ends WITHOUT analysis_complete
-  ///    (nothing is staged; the client re-asks with `clarifyAnswer`).
   ///  - [CheatEstimateEvent] ONLY when it carries a `clarifyingQuestion` — the
   ///    same re-ask round-trip. A plain cheat spec is confirmable, so the stream
   ///    continues on to analysis_complete.
@@ -166,44 +163,6 @@ class CheatEstimateEvent extends StreamEvent {
   /// confirmable and the stream continues.
   @override
   bool get isTerminal => spec.clarifyingQuestion != null;
-}
-
-/// Precise-mode clarify -- the pipeline finished but >=1 ingredient's portion
-/// or food match couldn't be resolved, so the server asks ONE targeted question
-/// and stops. TERMINAL with NO analysis_complete: nothing is staged for confirm;
-/// the client re-submits with `clarifyAnswer` (mirrors the cheat clarify
-/// round-trip). The `question` arrives already localized by the server.
-class ClarifyEvent extends StreamEvent {
-  final String question;
-
-  /// Run-scoped meal-item id of the unresolved item, when known.
-  final String? mealItemId;
-
-  /// 'unresolved_portion' | 'ambiguous_food'. Kept as a raw string so an
-  /// unfamiliar reason from a newer server never crashes the parse.
-  final String reason;
-
-  const ClarifyEvent({
-    required this.question,
-    this.mealItemId,
-    required this.reason,
-  });
-
-  factory ClarifyEvent.fromJson(Map<String, dynamic> json) => ClarifyEvent(
-        question: json['question'] as String,
-        mealItemId: json['mealItemId'] as String?,
-        reason: json['reason'] as String,
-      );
-
-  Map<String, dynamic> toJson() => {
-        'type': 'clarify',
-        'question': question,
-        if (mealItemId != null) 'mealItemId': mealItemId,
-        'reason': reason,
-      };
-
-  @override
-  bool get isTerminal => true;
 }
 
 /// Analysis stored durably -- safe to confirm and persist.
