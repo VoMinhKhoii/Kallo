@@ -967,7 +967,7 @@
     "barcodeGramsLabel": "Khối lượng ăn (g)",
     "barcodeAddMeal": "Thêm bữa ăn",
     "barcodeDialogTitle": "Tra cứu mã vạch",
-    "barcodeDialogDesc": "Nhập mã vạch để tra cứu nhanh giá trị dinh dưỡng của sản phẩm đóng gói từ Open Food Facts.",
+    "barcodeDialogDesc": "Nhập mã vạch để tra cứu nhanh giá trị dinh dưỡng của sản phẩm đóng gói.",
     "barcodeBack": "Quay lại",
     "barcodeScanTab": "Quét camera",
     "barcodeManualTab": "Nhập tay",

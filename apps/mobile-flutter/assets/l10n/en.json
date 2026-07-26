@@ -1061,7 +1061,7 @@
     },
     "barcode": {
       "title": "Scan barcode",
-      "subtitle": "Nutrition for packaged products, via Open Food Facts",
+      "subtitle": "Nutrition for packaged products",
       "scanning": "Center the barcode inside the frame",
       "torch": "Flashlight",
       "cameraDenied": "Camera access is off. Enable it for Nhẩm in Settings > Privacy > Camera, or enter the barcode below.",

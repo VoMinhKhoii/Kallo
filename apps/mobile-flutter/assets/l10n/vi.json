@@ -1061,7 +1061,7 @@
     },
     "barcode": {
       "title": "Quét mã vạch",
-      "subtitle": "Dinh dưỡng sản phẩm đóng gói, từ Open Food Facts",
+      "subtitle": "Dinh dưỡng sản phẩm đóng gói",
       "scanning": "Căn chỉnh mã vạch vào khung",
       "torch": "Đèn pin",
       "cameraDenied": "Chưa cấp quyền camera. Hãy bật camera cho Nhẩm trong Cài đặt > Quyền riêng tư > Camera, hoặc nhập mã vạch bên dưới.",

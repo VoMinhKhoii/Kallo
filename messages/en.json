@@ -967,7 +967,7 @@
     "barcodeGramsLabel": "Quantity (g)",
     "barcodeAddMeal": "Add meal",
     "barcodeDialogTitle": "Look up barcode",
-    "barcodeDialogDesc": "Enter a barcode to retrieve nutrition values of packaged products from Open Food Facts.",
+    "barcodeDialogDesc": "Enter a barcode to look up nutrition values for packaged products.",
     "barcodeBack": "Back",
     "barcodeScanTab": "Camera Scan",
     "barcodeManualTab": "Manual Entry",
