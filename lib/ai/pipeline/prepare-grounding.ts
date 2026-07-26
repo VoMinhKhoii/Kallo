@@ -14,9 +14,14 @@ import {
 } from '../matching/top-k-cascade';
 import { resolvePortionsForCallTwo } from '../portion/ingredient-portion';
 import type { PortionResolution } from '../portion/types';
+import {
+  resolveVesselEnvelope,
+  type VesselEnvelope,
+} from '../portion/vessel-envelope';
 import type { MealItemWithCandidates } from '../prompts/grounded-estimation';
 import type { StreamEvent } from '../streaming/types';
 import type { UserContext } from '../types';
+import { isPortionVesselEnabled } from './config/portion-vessel-flag';
 import { isFullyGrounded } from './fast-path';
 import { buildCallTwoPayload, withStageLogV2 } from './grounded-support';
 import type { AnalyzeMealTraceContext } from './orchestrator';
@@ -26,6 +31,7 @@ export interface GroundingPreparation {
   matchResults: IngredientV2MatchResult[];
   portionResolutions: PortionResolution[];
   resolvedGramsAnchors: Array<number | null>;
+  vesselEnvelopes: Array<VesselEnvelope | null>;
   mealItemsWithCandidates: MealItemWithCandidates[];
   fullyGrounded: boolean;
 }
@@ -69,10 +75,15 @@ export async function prepareGrounding(args: {
   const { resolutions: portionResolutions, anchors: resolvedGramsAnchors } =
     resolvePortionsForCallTwo(flatIngredients, args.userContext.inputLanguage);
 
+  const vesselEnabled = isPortionVesselEnabled();
+  const vesselEnvelopes = decomposition.mealItems.map((mealItem) =>
+    vesselEnabled ? resolveVesselEnvelope(mealItem) : null
+  );
   const mealItemsWithCandidates: MealItemWithCandidates[] = buildCallTwoPayload(
     decomposition,
     matchResults,
-    resolvedGramsAnchors
+    resolvedGramsAnchors,
+    vesselEnvelopes
   );
   // D2 fast path: when EVERY ingredient is fully grounded (exact-match +
   // server anchor, no prep notes), Call 2 is skipped and the estimation is
@@ -86,6 +97,7 @@ export async function prepareGrounding(args: {
     matchResults,
     portionResolutions,
     resolvedGramsAnchors,
+    vesselEnvelopes,
     mealItemsWithCandidates,
     fullyGrounded,
   };

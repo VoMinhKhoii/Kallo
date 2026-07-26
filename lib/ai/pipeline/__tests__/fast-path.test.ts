@@ -183,6 +183,40 @@ describe('isFullyGrounded — conservative qualification', () => {
       })
     ).toBe(false);
   });
+
+  it('DISQUALIFIES a meal with a vessel envelope while the flag is enabled', () => {
+    const decomp = decomposition();
+    decomp.mealItems[0].vesselToken = 'tô';
+    expect(
+      isFullyGrounded({
+        decomposition: decomp,
+        matchResults: [exactMatch('cooked')],
+        portionResolutions: [anchor(150)],
+      })
+    ).toBe(false);
+  });
+
+  it('allows the normal fast-path gate when the vessel flag is off', () => {
+    const original = process.env.PORTION_VESSEL_ENABLED;
+    process.env.PORTION_VESSEL_ENABLED = 'false';
+    try {
+      const decomp = decomposition();
+      decomp.mealItems[0].vesselToken = 'tô';
+      expect(
+        isFullyGrounded({
+          decomposition: decomp,
+          matchResults: [exactMatch('cooked')],
+          portionResolutions: [anchor(150)],
+        })
+      ).toBe(true);
+    } finally {
+      if (original === undefined) {
+        delete process.env.PORTION_VESSEL_ENABLED;
+      } else {
+        process.env.PORTION_VESSEL_ENABLED = original;
+      }
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

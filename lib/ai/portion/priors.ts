@@ -56,6 +56,7 @@ export const PORTION_PRIORS: PortionPrior[] = [
     unitType: 'slice',
     locale: 'vi',
     form: 'raw',
+    promptLabel: 'lát bánh mì',
     perUnit: band(25, 30, 35),
     confidence: 'medium',
     source:
@@ -67,6 +68,7 @@ export const PORTION_PRIORS: PortionPrior[] = [
     unitType: 'count',
     locale: 'vi',
     form: 'raw',
+    promptLabel: 'ổ bánh mì',
     perUnit: band(90, 105, 120),
     confidence: 'medium',
     source: 'VN bánh mì loaf (bread only) ~90–120g; excludes fillings.',
@@ -92,6 +94,50 @@ export const PORTION_PRIORS: PortionPrior[] = [
     confidence: 'medium',
     source:
       'Single chicken-breast fillet ~150–200g cooked (USDA portion refs).',
+  },
+  {
+    // 1 đùi gà ≈ 140–165g cooked, edible portion.
+    conceptId: 'chicken-thigh',
+    unitType: 'count',
+    locale: 'global',
+    form: 'cooked',
+    perUnit: band(140, 150, 165),
+    confidence: 'medium',
+    source:
+      'Cooked chicken thigh edible portion ~140–165g (USDA portion references; 2026 review).',
+  },
+  {
+    // 1 miếng cá ≈ 50–70g cooked.
+    conceptId: 'fish-piece',
+    unitType: 'count',
+    locale: 'vi',
+    form: 'cooked',
+    perUnit: band(50, 60, 70),
+    confidence: 'medium',
+    source:
+      'Vietnamese cooked fish piece ~50–70g (household portion references; 2026 review).',
+  },
+  {
+    // 1 cây nem lụi ≈ 22–28g cooked.
+    conceptId: 'nem-lui',
+    unitType: 'count',
+    locale: 'vi',
+    form: 'cooked',
+    perUnit: band(22, 25, 28),
+    confidence: 'medium',
+    source:
+      'Vietnamese nem lụi skewer ~22–28g cooked (recipe-yield review, 2026).',
+  },
+  {
+    // 1 phần protein áp chảo ≈ 140–160g cooked.
+    conceptId: 'pan-seared-protein-serving',
+    unitType: 'count',
+    locale: 'global',
+    form: 'cooked',
+    perUnit: band(140, 150, 160),
+    confidence: 'medium',
+    source:
+      'Single pan-seared protein serving ~140–160g cooked (restaurant portion review, 2026).',
   },
 ];
 

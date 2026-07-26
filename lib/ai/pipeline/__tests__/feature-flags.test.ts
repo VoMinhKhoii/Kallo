@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readBooleanEnv } from '../config/feature-flags';
+import { isPortionVesselEnabled } from '../config/portion-vessel-flag';
 
 describe('readBooleanEnv', () => {
   it('falls back to default when the env var is unset', () => {
@@ -65,5 +66,14 @@ describe('readBooleanEnv', () => {
         process.env.PIPELINE_TEST_FLAG = original;
       }
     }
+  });
+});
+
+describe('isPortionVesselEnabled', () => {
+  it('defaults on and accepts an explicit off override', () => {
+    expect(isPortionVesselEnabled({})).toBe(true);
+    expect(isPortionVesselEnabled({ PORTION_VESSEL_ENABLED: 'false' })).toBe(
+      false
+    );
   });
 });

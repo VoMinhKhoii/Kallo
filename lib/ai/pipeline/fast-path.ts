@@ -20,7 +20,9 @@
 
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
 import type { PortionResolution } from '../portion/types';
+import { resolveVesselEnvelope } from '../portion/vessel-envelope';
 import { computeDbScalingGrams, scalePer100g } from './bounded-macros';
+import { isPortionVesselEnabled } from './config/portion-vessel-flag';
 import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
@@ -95,6 +97,16 @@ export function isFullyGrounded(args: {
   portionResolutions: PortionResolution[];
 }): boolean {
   const { decomposition, matchResults, portionResolutions } = args;
+  // Envelope constraints require Call-2 reasoning; the fast path must stay
+  // numerically identical to the full path.
+  if (
+    isPortionVesselEnabled() &&
+    decomposition.mealItems.some(
+      (mealItem) => resolveVesselEnvelope(mealItem) !== null
+    )
+  ) {
+    return false;
+  }
   let flatIdx = 0;
   for (const mi of decomposition.mealItems) {
     for (const ing of mi.ingredients) {
