@@ -150,8 +150,9 @@ describe('isPlausiblePer100g', () => {
     expect(isPlausiblePer100g(product({ carbohydrateG: 250 }))).toBe(false);
   });
 
-  it('rejects macros whose Atwater energy overshoots the stated calories', () => {
-    // Per-serving macros (240 g bottle) next to per-100g calories.
+  it('rejects macros whose Atwater energy is impossible next to the calories', () => {
+    // Per-serving macros (240 g bottle) next to per-100g calories: 197 kcal of
+    // macros against a stated 40.
     expect(
       isPlausiblePer100g(
         product({
@@ -162,6 +163,49 @@ describe('isPlausiblePer100g', () => {
         })
       )
     ).toBe(false);
+  });
+
+  it('rejects a partially mixed label (Atwater 370 against a stated 50)', () => {
+    expect(
+      isPlausiblePer100g(
+        product({
+          caloriesKcal: 50,
+          proteinG: 10,
+          carbohydrateG: 60,
+          fatG: 10,
+        })
+      )
+    ).toBe(false);
+  });
+
+  it('accepts a sugar-free polyol label whose carbs carry under 4 kcal/g', () => {
+    // Isomalt candy: 98 g carbohydrate would be 392 Atwater kcal against a
+    // stated 240 — legitimate, isomalt delivers ~2.4 kcal/g.
+    expect(
+      isPlausiblePer100g(
+        product({
+          caloriesKcal: 240,
+          proteinG: 0,
+          carbohydrateG: 98,
+          fatG: 0,
+          fiberG: null,
+        })
+      )
+    ).toBe(true);
+  });
+
+  it('accepts a US high-fiber label, where fiber sits inside total carbs', () => {
+    expect(
+      isPlausiblePer100g(
+        product({
+          caloriesKcal: 259,
+          proteinG: 12,
+          carbohydrateG: 80,
+          fatG: 3.6,
+          fiberG: 29,
+        })
+      )
+    ).toBe(true);
   });
 
   it('accepts an Atwater undershoot (alcohol carries unattributed energy)', () => {

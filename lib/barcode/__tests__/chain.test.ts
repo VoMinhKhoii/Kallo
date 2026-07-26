@@ -107,18 +107,25 @@ describe('resolveBarcodeProduct', () => {
     mockFetchFdc.mockResolvedValue(fdcHit);
     mockFetchOff.mockResolvedValue(product({ name: 'OFF product' }));
 
-    const result = await resolveBarcodeProduct(BARCODE, CONFIGURED_ENV);
+    const result = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+    });
 
     expect(result?.provider.id).toBe('usda_fdc');
     expect(result?.product).toBe(fdcHit);
     expect(mockFetchFdc).toHaveBeenCalledWith(BARCODE, 4000);
+    // Hedged, not a cascade: OFF must have been dispatched too. A degeneration
+    // to a sequential chain would silently skip it and fail here.
+    expect(mockFetchOff).toHaveBeenCalledWith(BARCODE, 8000);
   });
 
   it('falls through to OFF when FDC has no match', async () => {
     mockFetchFdc.mockResolvedValue(null);
     mockFetchOff.mockResolvedValue(product());
 
-    const result = await resolveBarcodeProduct(BARCODE, CONFIGURED_ENV);
+    const result = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+    });
     expect(result?.provider.id).toBe('off');
   });
 
@@ -127,7 +134,7 @@ describe('resolveBarcodeProduct', () => {
     mockFetchFdc.mockReturnValue(slowFdc.promise);
     mockFetchOff.mockResolvedValue(product({ name: 'OFF product' }));
 
-    const pending = resolveBarcodeProduct(BARCODE, CONFIGURED_ENV);
+    const pending = resolveBarcodeProduct(BARCODE, { env: CONFIGURED_ENV });
     // Let the fast OFF promise settle before FDC produces anything.
     await Promise.resolve();
     await Promise.resolve();
@@ -152,7 +159,9 @@ describe('resolveBarcodeProduct', () => {
     );
     mockFetchOff.mockResolvedValue(product({ name: 'OFF product' }));
 
-    const result = await resolveBarcodeProduct(BARCODE, CONFIGURED_ENV);
+    const result = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+    });
 
     expect(result?.provider.id).toBe('off');
     expect(result?.product.name).toBe('OFF product');
@@ -171,7 +180,9 @@ describe('resolveBarcodeProduct', () => {
     );
     mockFetchOff.mockResolvedValue(product({ name: 'OFF product' }));
 
-    const result = await resolveBarcodeProduct(BARCODE, CONFIGURED_ENV);
+    const result = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+    });
     expect(result?.product.name).toBe('OFF product');
   });
 
@@ -188,7 +199,9 @@ describe('resolveBarcodeProduct', () => {
     );
     mockFetchOff.mockResolvedValue(null);
 
-    const result = await resolveBarcodeProduct(BARCODE, CONFIGURED_ENV);
+    const result = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+    });
     expect(result?.provider.id).toBe('usda_fdc');
     expect(result?.product.name).toBe('FDC kcal only');
   });
@@ -206,14 +219,14 @@ describe('resolveBarcodeProduct', () => {
     mockFetchOff.mockResolvedValue(product(shell));
 
     await expect(
-      resolveBarcodeProduct(BARCODE, CONFIGURED_ENV)
+      resolveBarcodeProduct(BARCODE, { env: CONFIGURED_ENV })
     ).resolves.toBeNull();
   });
 
   it('skips an unconfigured provider without a request', async () => {
     mockFetchOff.mockResolvedValue(product());
 
-    const result = await resolveBarcodeProduct(BARCODE, {});
+    const result = await resolveBarcodeProduct(BARCODE, { env: {} });
 
     expect(mockFetchFdc).not.toHaveBeenCalled();
     expect(result?.provider.id).toBe('off');
@@ -223,7 +236,9 @@ describe('resolveBarcodeProduct', () => {
     mockFetchFdc.mockResolvedValue(product({ caloriesKcal: 4200 }));
     mockFetchOff.mockResolvedValue(product({ name: 'OFF product' }));
 
-    const result = await resolveBarcodeProduct(BARCODE, CONFIGURED_ENV);
+    const result = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+    });
     expect(result?.product.name).toBe('OFF product');
   });
 
@@ -234,7 +249,9 @@ describe('resolveBarcodeProduct', () => {
     mockFetchFdc.mockResolvedValue(product({ name: 'FDC product' }));
     mockFetchOff.mockRejectedValue(new Error('socket hang up'));
 
-    const result = await resolveBarcodeProduct(BARCODE, CONFIGURED_ENV);
+    const result = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+    });
     await new Promise((resolve) => setTimeout(resolve, 10));
     process.off('unhandledRejection', unhandled);
 
@@ -285,6 +302,28 @@ describe('resolveBarcodeProduct', () => {
   it('catches a throwing provider instead of propagating', async () => {
     mockFetchOff.mockRejectedValue(new Error('socket hang up'));
     await expect(resolveBarcodeProduct(BARCODE)).resolves.toBeNull();
+    expect(console.error).toHaveBeenCalled();
+  });
+
+  it('contains a synchronously throwing provider', async () => {
+    mockFetchOff.mockImplementation(() => {
+      throw new Error('sync boom');
+    });
+
+    await expect(resolveBarcodeProduct(BARCODE)).resolves.toBeNull();
+    expect(console.error).toHaveBeenCalled();
+  });
+
+  it('skips a provider whose ingredient source row is not seeded', async () => {
+    mockFetchOff.mockResolvedValue(product());
+
+    const result = await resolveBarcodeProduct(BARCODE, {
+      env: CONFIGURED_ENV,
+      seededSourceCodes: new Set(['OFF']),
+    });
+
+    expect(mockFetchFdc).not.toHaveBeenCalled();
+    expect(result?.provider.id).toBe('off');
     expect(console.error).toHaveBeenCalled();
   });
 });

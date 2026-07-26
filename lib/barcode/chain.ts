@@ -64,9 +64,9 @@ const usdaFdcProvider: BarcodeProvider = {
   fetch: (barcode, timeoutMs) => fetchProductFromUsdaFdc(barcode, timeoutMs),
 };
 
-const PROVIDER_DESCRIPTORS: Partial<
-  Record<BarcodeProviderId, BarcodeProvider>
-> = {
+// Total, not Partial: adding a BarcodeProviderId must fail compilation until a
+// descriptor exists for it.
+const PROVIDER_DESCRIPTORS: Record<BarcodeProviderId, BarcodeProvider> = {
   usda_fdc: usdaFdcProvider,
   off: openFoodFactsProvider,
 };
@@ -76,20 +76,39 @@ const PROVIDER_DESCRIPTORS: Partial<
  * and a cache read can never disagree about which source wins.
  */
 export const BARCODE_PROVIDERS: readonly BarcodeProvider[] =
-  BARCODE_PROVIDER_RANK.map((id) => PROVIDER_DESCRIPTORS[id]).filter(
-    (provider): provider is BarcodeProvider => provider !== undefined
-  );
+  BARCODE_PROVIDER_RANK.map((id) => PROVIDER_DESCRIPTORS[id]);
 
 export interface BarcodeChainResult {
   provider: BarcodeProvider;
   product: ParsedBarcodeProduct;
 }
 
+export interface BarcodeChainOptions {
+  env?: BarcodeProviderEnv;
+  /**
+   * `ingredient_sources.code`s that actually exist in the database. When given,
+   * a provider whose source row is absent is skipped: its answer could not be
+   * cached and would fail the lookup outright, so it must degrade instead.
+   */
+  seededSourceCodes?: ReadonlySet<string>;
+}
+
 export async function resolveBarcodeProduct(
   barcode: string,
-  env: BarcodeProviderEnv = process.env
+  opts: BarcodeChainOptions = {}
 ): Promise<BarcodeChainResult | null> {
+  const { env = process.env, seededSourceCodes } = opts;
+
   const inFlight = BARCODE_PROVIDERS.filter((provider) => {
+    if (seededSourceCodes && !seededSourceCodes.has(provider.sourceCode)) {
+      // A missing seed row is a real misconfiguration (the migration has not
+      // been applied) — log loudly, but degrade to the other providers rather
+      // than failing the scan.
+      console.error(
+        `Barcode provider ${provider.id} has no '${provider.sourceCode}' ingredient source — skipping`
+      );
+      return false;
+    }
     if (provider.isConfigured(env)) return true;
     console.info(
       `Barcode provider ${provider.id} is not configured — skipping`
@@ -99,11 +118,15 @@ export async function resolveBarcodeProduct(
     provider,
     // The rejection handler is attached at dispatch, not at await: returning
     // early leaves siblings in flight, and their rejection must never surface
-    // as an unhandled one.
-    settled: provider.fetch(barcode, provider.timeoutMs).catch((error) => {
-      console.error(`Barcode provider ${provider.id} threw:`, error);
-      return null;
-    }),
+    // as an unhandled one. The Promise.resolve().then() wrapper is load-bearing
+    // too: the descriptor seam is public, so a synchronous throw from `fetch`
+    // must be contained exactly like an async one.
+    settled: Promise.resolve()
+      .then(() => provider.fetch(barcode, provider.timeoutMs))
+      .catch((error) => {
+        console.error(`Barcode provider ${provider.id} threw:`, error);
+        return null;
+      }),
   }));
 
   let fallback: BarcodeChainResult | null = null;

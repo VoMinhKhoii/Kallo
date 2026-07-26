@@ -152,7 +152,9 @@ describe('searchBarcodeAction', () => {
 
     const result = await searchBarcodeAction({ barcode: '8934563138162' });
 
-    expect(resolveBarcodeProduct).toHaveBeenCalledWith('8934563138162');
+    expect(resolveBarcodeProduct).toHaveBeenCalledWith('8934563138162', {
+      seededSourceCodes: new Set(['OFF']),
+    });
     expect(result).toEqual({
       success: true,
       data: mockProduct,

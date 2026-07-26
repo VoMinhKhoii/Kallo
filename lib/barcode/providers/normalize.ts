@@ -89,17 +89,27 @@ export function normalizeGtin(val: unknown): string | null {
 
 const MAX_KCAL_PER_100G = 950;
 const MAX_MACRO_G_PER_100G = 100;
-const ATWATER_OVERSHOOT_LIMIT = 1.4;
+const ATWATER_OVERSHOOT_LIMIT = 2.0;
 
 /**
  * Guard against values that cannot be a per-100g label: more energy than pure
  * fat carries, a macro exceeding the 100 g basis itself, or macros whose
- * Atwater energy (4P + 4C + 9F) overshoots the stated calories — the
- * signature of mixed per-serving/per-100g figures.
+ * Atwater energy (4P + 4C + 9F) is energetically impossible next to the stated
+ * calories — the signature of partially mixed per-serving/per-100g figures.
  *
- * The Atwater check is deliberately one-sided. Undershoot is legitimate:
- * alcohol and polyols carry energy no macro field accounts for, so a
- * symmetric check would reject correct beer and wine labels.
+ * The Atwater sum is a loose upper bound, not an identity, so the check is
+ * one-sided and generously bounded:
+ * - Overshoot happens on correct labels whenever the carbohydrate figure
+ *   includes carbohydrate that does not deliver 4 kcal/g. Fiber (counted in
+ *   total carbs on US labels) is subtracted outright; polyols, which are not a
+ *   separate field here, are covered by the 2.0 headroom — a sugar-free
+ *   isomalt candy states ~240 kcal against 98 g carbohydrate.
+ * - Undershoot is always legitimate: alcohol carries energy that no macro
+ *   field lists, so a symmetric check would reject correct beer and wine.
+ *
+ * The Atwater ratio is scale-invariant: a UNIFORMLY per-serving label passes it
+ * unchanged, so only the absolute caps above (kcal > 950, macro > 100 g) can
+ * catch that case.
  */
 export function isPlausiblePer100g(product: ParsedBarcodeProduct): boolean {
   const { caloriesKcal, proteinG, carbohydrateG, fatG, fiberG } = product;
@@ -119,7 +129,8 @@ export function isPlausiblePer100g(product: ParsedBarcodeProduct): boolean {
   if (caloriesKcal === null || caloriesKcal <= 0) return true;
   if (proteinG === null || carbohydrateG === null || fatG === null) return true;
 
-  const atwaterKcal = 4 * proteinG + 4 * carbohydrateG + 9 * fatG;
+  const effectiveCarbG = Math.max(0, carbohydrateG - (fiberG ?? 0));
+  const atwaterKcal = 4 * proteinG + 4 * effectiveCarbG + 9 * fatG;
   return atwaterKcal <= caloriesKcal * ATWATER_OVERSHOOT_LIMIT;
 }
 

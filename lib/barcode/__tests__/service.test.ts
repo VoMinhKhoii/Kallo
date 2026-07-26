@@ -198,12 +198,40 @@ describe('searchBarcodeProduct', () => {
     expect(mockDbInsert).not.toHaveBeenCalled();
   });
 
-  it("throws server_error when the resolving provider's source row is missing", async () => {
+  it('hands the chain only the seeded source codes and still resolves', async () => {
+    // Secret deployed before the USDA_FDC migration: FDC has no source row, so
+    // the chain must be told to skip it rather than 500 on an FDC answer.
     mockDbSelect
       .mockReturnValueOnce(mockSelectOnce([]))
-      .mockReturnValueOnce(mockSelectOnce([])); // seeded source missing
+      .mockReturnValueOnce(mockSelectOnce([{ id: 42, code: 'OFF' }]));
+
     vi.mocked(resolveBarcodeProduct).mockResolvedValue({
       provider: offProvider,
+      product: offProduct,
+    });
+
+    mockDbInsert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+      }),
+    });
+
+    const product = await searchBarcodeProduct('8934563138162');
+
+    expect(product).toEqual(offProduct);
+    expect(resolveBarcodeProduct).toHaveBeenCalledWith('8934563138162', {
+      seededSourceCodes: new Set(['OFF']),
+    });
+  });
+
+  it("throws server_error when the resolving provider's source row is missing", async () => {
+    // Backstop only: the chain is handed the seeded codes and skips unseeded
+    // providers, so reaching this requires forcing an unseeded winner.
+    mockDbSelect
+      .mockReturnValueOnce(mockSelectOnce([]))
+      .mockReturnValueOnce(mockSelectOnce([{ id: 42, code: 'OFF' }]));
+    vi.mocked(resolveBarcodeProduct).mockResolvedValue({
+      provider: fdcProvider, // USDA_FDC is not among the seeded codes
       product: offProduct,
     });
 
@@ -283,6 +311,43 @@ describe('stageBarcodeMeal', () => {
       matchConfidence: 1,
       userFacingUnit: 'g',
     });
+  });
+
+  it('stages from an fdc_ row under that row id', async () => {
+    // Staging reads whichever provider's row cached the barcode, so an FDC
+    // winner must be referenced as fdc_<barcode>, not the legacy off_ id.
+    mockDbSelect.mockReturnValue(
+      mockSelectOnce([
+        {
+          id: 'fdc_8934563138162',
+          namePrimary: '[Acecook] Hảo Hảo',
+          caloriesKcal: 350,
+          proteinG: 8.33,
+          carbohydrateG: 50,
+          fatG: 10,
+          fiberG: null,
+          sodiumMg: 800,
+        },
+      ])
+    );
+
+    const capturedValues: unknown[] = [];
+    mockDbInsert.mockReturnValue({
+      values: vi.fn().mockImplementation((val) => {
+        capturedValues.push(val);
+        return {
+          returning: vi.fn().mockResolvedValue([{ id: 'pending-1000' }]),
+        };
+      }),
+    });
+
+    await stageBarcodeMeal('user-123', stageInput);
+
+    const pipelineResult = (capturedValues[0] as Record<string, unknown>)
+      .pipelineResult as PipelineResult;
+    expect(pipelineResult.mealItems[0].ingredients[0].foodCompositionId).toBe(
+      'fdc_8934563138162'
+    );
   });
 
   it('throws stage_failed when the insert returns no row', async () => {

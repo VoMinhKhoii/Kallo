@@ -79,21 +79,24 @@ export async function searchBarcodeProduct(
     return rowToProduct(barcode, cached);
   }
 
-  // Run the chain and resolve every provider's source id in parallel — the
-  // source lookup is independent of the (slow, external) provider fetches, and
-  // which one is needed is only known once the chain resolves.
-  const [resolved, sourceIds] = await Promise.all([
-    resolveBarcodeProduct(barcode),
-    getBarcodeSourceIds(),
-  ]);
+  // Resolved BEFORE the chain, not in parallel with it: a provider whose seed
+  // row is missing must be skipped rather than allowed to win and then fail.
+  // The lost parallelism is noise — one indexed local query against 4–8s of
+  // external provider fetches.
+  const sourceIds = await getBarcodeSourceIds();
+
+  const resolved = await resolveBarcodeProduct(barcode, {
+    seededSourceCodes: new Set(sourceIds.keys()),
+  });
 
   if (!resolved) {
     throw new BarcodeServiceError('not_found');
   }
 
-  // Ingredient sources are seeded by migration; an absent row is a server
-  // misconfiguration, not a user error. Fail loudly rather than silently
-  // mislabeling provenance with an arbitrary fallback id.
+  // Defensive backstop, effectively unreachable: the chain was already handed
+  // the seeded codes and skips any provider missing from them. Kept so a future
+  // caller that omits `seededSourceCodes` still fails loudly rather than
+  // silently mislabeling provenance with an arbitrary fallback id.
   const sourceId = sourceIds.get(resolved.provider.sourceCode);
   if (sourceId === undefined) {
     console.error(

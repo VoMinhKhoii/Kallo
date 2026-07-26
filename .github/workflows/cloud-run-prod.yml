@@ -172,6 +172,16 @@ jobs:
           # tightening likely applies here but is deliberately left unchanged in
           # this phase — prod's concurrency change must be benchmarked under
           # representative load before shipping.
+          #
+          # --set-secrets below: referencing a Secret Manager secret that does
+          # NOT exist fails the ENTIRE deploy, not just the one variable — an
+          # absent secret bricks the release rather than degrading it. Every
+          # secret named there must be created in Secret Manager (and readable
+          # by GCP_RUNTIME_SERVICE_ACCOUNT) BEFORE this workflow runs;
+          # `kallo-prod-usda-api-key` is the most recent addition. Creating the
+          # secret is a manual pre-merge step. NOTE: the flags value is a folded
+          # block scalar — a `#` line inside it becomes a literal argument, so
+          # flag documentation belongs here, above the key.
           flags: >-
             --allow-unauthenticated
             --ingress=all
