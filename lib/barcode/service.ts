@@ -1,4 +1,3 @@
-import { eq } from 'drizzle-orm';
 import { extractNutritionValues } from '@/lib/actions/persisted-meal';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type {
@@ -6,19 +5,21 @@ import type {
   NutritionValues,
   PipelineResult,
 } from '@/lib/ai/types';
+import {
+  BARCODE_SOURCE_CODES,
+  cacheBarcodeProduct,
+  findCachedRow,
+  getBarcodeSourceIds,
+  rowToProduct,
+} from '@/lib/barcode/cache';
 import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
-import { parseSizeGrams } from '@/lib/barcode/providers/normalize';
 import type {
   BarcodeErrorCode,
   ParsedBarcodeProduct,
 } from '@/lib/barcode/types';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
-import {
-  ingredientSources,
-  pendingAnalyses,
-  vietnameseFoodComposition,
-} from '@/lib/db/schema';
+import { pendingAnalyses } from '@/lib/db/schema';
 
 /**
  * Domain failure in the barcode flow, carrying a stable {@link BarcodeErrorCode}.
@@ -73,56 +74,17 @@ function buildBoundedNutrition(nutrition: NutritionValues): BoundedNutrition {
 export async function searchBarcodeProduct(
   barcode: string
 ): Promise<ParsedBarcodeProduct> {
-  const dbId = `off_${barcode}`;
-
-  // 1. Check local cache
-  const [cached] = await db
-    .select()
-    .from(vietnameseFoodComposition)
-    .where(eq(vietnameseFoodComposition.id, dbId))
-    .limit(1);
-
+  const cached = await findCachedRow(barcode);
   if (cached) {
-    // Parse brand and name from primary name e.g. "[Coca-Cola] Original Taste"
-    let brand: string | null = null;
-    let name = cached.namePrimary;
-    const brandMatch = cached.namePrimary.match(/^\[(.*?)\]\s*(.*)$/);
-    if (brandMatch) {
-      brand = brandMatch[1];
-      name = brandMatch[2];
-    }
-
-    const nutrition = extractNutritionValues(cached);
-
-    return {
-      barcode,
-      name,
-      brand,
-      caloriesKcal: nutrition.caloriesKcal,
-      proteinG: nutrition.proteinG,
-      carbohydrateG: nutrition.carbohydrateG,
-      fatG: nutrition.fatG,
-      fiberG: nutrition.fiberG,
-      sodiumMg: nutrition.sodiumMg,
-      // numeric columns surface as strings; run through the same sizing
-      // validation as ingestion so cache reads apply the identical
-      // positivity + 100kg-cap invariant (single source of truth).
-      servingSizeG: parseSizeGrams(cached.servingSizeG),
-      packageSizeG: parseSizeGrams(cached.packageSizeG),
-    };
+    return rowToProduct(barcode, cached);
   }
 
-  // 2. Fetch from Open Food Facts and resolve the OFF source id in parallel —
-  // the source lookup is independent of the product fetch, so there's no
-  // reason to wait for the (slow, external) fetch before starting it.
-  const [product, sourceRow] = await Promise.all([
+  // Fetch from Open Food Facts and resolve the source ids in parallel — the
+  // source lookup is independent of the product fetch, so there's no reason to
+  // wait for the (slow, external) fetch before starting it.
+  const [product, sourceIds] = await Promise.all([
     fetchProductFromOpenFoodFacts(barcode),
-    db
-      .select({ id: ingredientSources.id })
-      .from(ingredientSources)
-      .where(eq(ingredientSources.code, 'OFF'))
-      .limit(1)
-      .then((rows) => rows[0]),
+    getBarcodeSourceIds(),
   ]);
 
   if (!product) {
@@ -132,47 +94,20 @@ export async function searchBarcodeProduct(
   // The 'OFF' ingredient source is seeded by migration; its absence is a
   // server misconfiguration, not a user error. Fail loudly rather than
   // silently mislabeling provenance with an arbitrary fallback id.
-  if (!sourceRow) {
+  const sourceId = sourceIds.get(BARCODE_SOURCE_CODES.off);
+  if (sourceId === undefined) {
     console.error(
       "Missing 'OFF' ingredient source — cannot cache barcode product"
     );
     throw new BarcodeServiceError('server_error');
   }
 
-  // 3. Cache in Database
-  const sourceId = sourceRow.id;
-  const namePrimary = product.brand
-    ? `[${product.brand}] ${product.name}`
-    : product.name;
-
-  // onConflictDoNothing: two concurrent first-time scans of the same barcode
-  // would otherwise race on the primary key; the loser is harmlessly ignored.
-  await db
-    .insert(vietnameseFoodComposition)
-    .values({
-      id: dbId,
-      namePrimary,
-      nameEn: product.name,
-      typeVn: 'Sản phẩm đóng gói',
-      typeEn: 'Packaged product',
-      sourceId,
-      state: 'cooked',
-      servingSizeG:
-        product.servingSizeG !== null ? String(product.servingSizeG) : null,
-      packageSizeG:
-        product.packageSizeG !== null ? String(product.packageSizeG) : null,
-      caloriesKcal:
-        product.caloriesKcal !== null ? String(product.caloriesKcal) : null,
-      proteinG: product.proteinG !== null ? String(product.proteinG) : null,
-      carbohydrateG:
-        product.carbohydrateG !== null ? String(product.carbohydrateG) : null,
-      fatG: product.fatG !== null ? String(product.fatG) : null,
-      fiberG: product.fiberG !== null ? String(product.fiberG) : null,
-      sodiumMg: product.sodiumMg !== null ? String(product.sodiumMg) : null,
-      searchText: namePrimary.toLowerCase(),
-      searchTextAscii: namePrimary.toLowerCase(),
-    })
-    .onConflictDoNothing({ target: vietnameseFoodComposition.id });
+  await cacheBarcodeProduct({
+    providerId: 'off',
+    barcode,
+    product,
+    sourceId,
+  });
 
   return product;
 }
@@ -194,14 +129,8 @@ export async function stageBarcodeMeal(
     timezoneOffset: number;
   }
 ): Promise<{ analysisId: string }> {
-  const dbId = `off_${input.barcode}`;
-
-  // 1. Get cached product
-  const [dbProduct] = await db
-    .select()
-    .from(vietnameseFoodComposition)
-    .where(eq(vietnameseFoodComposition.id, dbId))
-    .limit(1);
+  // 1. Get the cached product from whichever provider resolved this barcode.
+  const dbProduct = await findCachedRow(input.barcode);
 
   if (!dbProduct) {
     throw new BarcodeServiceError('not_cached');

@@ -114,7 +114,7 @@ describe('searchBarcodeAction', () => {
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([{ id: 42 }]), // source ID
+            limit: vi.fn().mockResolvedValue([{ id: 42, code: 'OFF' }]),
           }),
         }),
       });

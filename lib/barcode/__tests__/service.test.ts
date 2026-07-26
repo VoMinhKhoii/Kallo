@@ -110,7 +110,7 @@ describe('searchBarcodeProduct', () => {
   it('fetches from OFF and caches on a miss', async () => {
     mockDbSelect
       .mockReturnValueOnce(mockSelectOnce([])) // no cached item
-      .mockReturnValueOnce(mockSelectOnce([{ id: 42 }])); // OFF source id
+      .mockReturnValueOnce(mockSelectOnce([{ id: 42, code: 'OFF' }]));
 
     vi.mocked(fetchProductFromOpenFoodFacts).mockResolvedValue(offProduct);
 
@@ -139,7 +139,7 @@ describe('searchBarcodeProduct', () => {
   it('throws not_found when OFF has no product', async () => {
     mockDbSelect
       .mockReturnValueOnce(mockSelectOnce([]))
-      .mockReturnValueOnce(mockSelectOnce([{ id: 42 }]));
+      .mockReturnValueOnce(mockSelectOnce([{ id: 42, code: 'OFF' }]));
     vi.mocked(fetchProductFromOpenFoodFacts).mockResolvedValue(null);
 
     await expect(searchBarcodeProduct('0000000000000')).rejects.toMatchObject({
