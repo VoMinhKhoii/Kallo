@@ -16,6 +16,13 @@ import type {
   ParsedBarcodeProduct,
 } from '@/lib/barcode/types';
 
+/**
+ * The env slice a provider inspects for credentials. Structurally satisfied by
+ * `process.env`, but declared loosely so a caller (or a test) can hand in a
+ * bare object without Next's required `NODE_ENV`.
+ */
+export type BarcodeProviderEnv = Record<string, string | undefined>;
+
 export interface BarcodeProvider {
   id: BarcodeProviderId;
   /** `ingredient_sources.code` this provider's cached rows are attributed to. */
@@ -30,7 +37,7 @@ export interface BarcodeProvider {
    * matters; an unconfigured provider is skipped, which is a normal state and
    * not an error.
    */
-  isConfigured(env: NodeJS.ProcessEnv): boolean;
+  isConfigured(env: BarcodeProviderEnv): boolean;
   fetch(
     barcode: string,
     timeoutMs: number

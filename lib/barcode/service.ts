@@ -6,13 +6,12 @@ import type {
   PipelineResult,
 } from '@/lib/ai/types';
 import {
-  BARCODE_SOURCE_CODES,
   cacheBarcodeProduct,
   findCachedRow,
   getBarcodeSourceIds,
   rowToProduct,
 } from '@/lib/barcode/cache';
-import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
+import { resolveBarcodeProduct } from '@/lib/barcode/chain';
 import type {
   BarcodeErrorCode,
   ParsedBarcodeProduct,
@@ -65,11 +64,12 @@ function buildBoundedNutrition(nutrition: NutritionValues): BoundedNutrition {
 
 /**
  * Look up a product by (digits-only, pre-validated) barcode. Checks the local
- * cache first; on a miss fetches from Open Food Facts and caches the result in
- * `vietnamese_food_composition` under id `off_<barcode>`.
+ * cache first; on a miss runs the provider chain and caches the winner in
+ * `vietnamese_food_composition` under the resolving provider's prefixed id.
  *
- * @throws BarcodeServiceError `not_found` when OFF has no such product;
- *   `server_error` when the seeded 'OFF' ingredient source row is missing.
+ * @throws BarcodeServiceError `not_found` when no provider returns a usable
+ *   product; `server_error` when that provider's seeded `ingredient_sources`
+ *   row is missing.
  */
 export async function searchBarcodeProduct(
   barcode: string
@@ -79,37 +79,37 @@ export async function searchBarcodeProduct(
     return rowToProduct(barcode, cached);
   }
 
-  // Fetch from Open Food Facts and resolve the source ids in parallel — the
-  // source lookup is independent of the product fetch, so there's no reason to
-  // wait for the (slow, external) fetch before starting it.
-  const [product, sourceIds] = await Promise.all([
-    fetchProductFromOpenFoodFacts(barcode),
+  // Run the chain and resolve every provider's source id in parallel — the
+  // source lookup is independent of the (slow, external) provider fetches, and
+  // which one is needed is only known once the chain resolves.
+  const [resolved, sourceIds] = await Promise.all([
+    resolveBarcodeProduct(barcode),
     getBarcodeSourceIds(),
   ]);
 
-  if (!product) {
+  if (!resolved) {
     throw new BarcodeServiceError('not_found');
   }
 
-  // The 'OFF' ingredient source is seeded by migration; its absence is a
-  // server misconfiguration, not a user error. Fail loudly rather than
-  // silently mislabeling provenance with an arbitrary fallback id.
-  const sourceId = sourceIds.get(BARCODE_SOURCE_CODES.off);
+  // Ingredient sources are seeded by migration; an absent row is a server
+  // misconfiguration, not a user error. Fail loudly rather than silently
+  // mislabeling provenance with an arbitrary fallback id.
+  const sourceId = sourceIds.get(resolved.provider.sourceCode);
   if (sourceId === undefined) {
     console.error(
-      "Missing 'OFF' ingredient source — cannot cache barcode product"
+      `Missing '${resolved.provider.sourceCode}' ingredient source — cannot cache barcode product`
     );
     throw new BarcodeServiceError('server_error');
   }
 
   await cacheBarcodeProduct({
-    providerId: 'off',
+    providerId: resolved.provider.id,
     barcode,
-    product,
+    product: resolved.product,
     sourceId,
   });
 
-  return product;
+  return resolved.product;
 }
 
 /**

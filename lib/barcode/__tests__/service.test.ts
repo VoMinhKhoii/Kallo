@@ -21,24 +21,41 @@ vi.mock('@/lib/db/schema', () => ({
   pendingAnalyses: { id: 'pendingAnalyses.id' },
 }));
 
-vi.mock('@/lib/barcode/openfoodfacts', async (importActual) => {
-  // Keep the real parseSizeGrams (used by the cache-read path); only the
-  // network fetch is stubbed.
-  const actual =
-    await importActual<typeof import('@/lib/barcode/openfoodfacts')>();
-  return {
-    ...actual,
-    fetchProductFromOpenFoodFacts: vi.fn(),
-  };
-});
+// The chain owns all provider I/O, so stubbing it is what keeps this suite
+// off the network; the real cache module still runs against the db mock above
+// so the persisted row is asserted for real.
+vi.mock('@/lib/barcode/chain', () => ({
+  resolveBarcodeProduct: vi.fn(),
+}));
 
 import type { PipelineResult } from '@/lib/ai/types';
-import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
+import { resolveBarcodeProduct } from '@/lib/barcode/chain';
+import type { BarcodeProvider } from '@/lib/barcode/providers/types';
 import {
   BarcodeServiceError,
   searchBarcodeProduct,
   stageBarcodeMeal,
 } from '../service';
+
+function providerStub(
+  overrides: Partial<BarcodeProvider> & Pick<BarcodeProvider, 'id'>
+): BarcodeProvider {
+  return {
+    sourceCode: 'OFF',
+    cachePrefix: 'off_',
+    timeoutMs: 8000,
+    isConfigured: () => true,
+    fetch: vi.fn(),
+    ...overrides,
+  };
+}
+
+const offProvider = providerStub({ id: 'off' });
+const fdcProvider = providerStub({
+  id: 'usda_fdc',
+  sourceCode: 'USDA_FDC',
+  cachePrefix: 'fdc_',
+});
 
 function mockSelectOnce(rows: unknown[]) {
   return {
@@ -104,15 +121,18 @@ describe('searchBarcodeProduct', () => {
       servingSizeG: 75,
       packageSizeG: null,
     });
-    expect(fetchProductFromOpenFoodFacts).not.toHaveBeenCalled();
+    expect(resolveBarcodeProduct).not.toHaveBeenCalled();
   });
 
-  it('fetches from OFF and caches on a miss', async () => {
+  it('resolves through the chain and caches on a miss', async () => {
     mockDbSelect
       .mockReturnValueOnce(mockSelectOnce([])) // no cached item
       .mockReturnValueOnce(mockSelectOnce([{ id: 42, code: 'OFF' }]));
 
-    vi.mocked(fetchProductFromOpenFoodFacts).mockResolvedValue(offProduct);
+    vi.mocked(resolveBarcodeProduct).mockResolvedValue({
+      provider: offProvider,
+      product: offProduct,
+    });
 
     const capturedValues: unknown[] = [];
     mockDbInsert.mockReturnValue({
@@ -136,11 +156,40 @@ describe('searchBarcodeProduct', () => {
     });
   });
 
-  it('throws not_found when OFF has no product', async () => {
+  it('caches under the resolving provider prefix and source id', async () => {
+    mockDbSelect.mockReturnValueOnce(mockSelectOnce([])).mockReturnValueOnce(
+      mockSelectOnce([
+        { id: 42, code: 'OFF' },
+        { id: 77, code: 'USDA_FDC' },
+      ])
+    );
+
+    vi.mocked(resolveBarcodeProduct).mockResolvedValue({
+      provider: fdcProvider,
+      product: offProduct,
+    });
+
+    const capturedValues: unknown[] = [];
+    mockDbInsert.mockReturnValue({
+      values: vi.fn().mockImplementation((val) => {
+        capturedValues.push(val);
+        return { onConflictDoNothing: vi.fn().mockResolvedValue(undefined) };
+      }),
+    });
+
+    await searchBarcodeProduct('8934563138162');
+
+    expect(capturedValues[0]).toMatchObject({
+      id: 'fdc_8934563138162',
+      sourceId: 77,
+    });
+  });
+
+  it('throws not_found when the chain is exhausted', async () => {
     mockDbSelect
       .mockReturnValueOnce(mockSelectOnce([]))
       .mockReturnValueOnce(mockSelectOnce([{ id: 42, code: 'OFF' }]));
-    vi.mocked(fetchProductFromOpenFoodFacts).mockResolvedValue(null);
+    vi.mocked(resolveBarcodeProduct).mockResolvedValue(null);
 
     await expect(searchBarcodeProduct('0000000000000')).rejects.toMatchObject({
       name: 'BarcodeServiceError',
@@ -149,11 +198,14 @@ describe('searchBarcodeProduct', () => {
     expect(mockDbInsert).not.toHaveBeenCalled();
   });
 
-  it('throws server_error when the OFF source row is missing', async () => {
+  it("throws server_error when the resolving provider's source row is missing", async () => {
     mockDbSelect
       .mockReturnValueOnce(mockSelectOnce([]))
       .mockReturnValueOnce(mockSelectOnce([])); // seeded source missing
-    vi.mocked(fetchProductFromOpenFoodFacts).mockResolvedValue(offProduct);
+    vi.mocked(resolveBarcodeProduct).mockResolvedValue({
+      provider: offProvider,
+      product: offProduct,
+    });
 
     await expect(searchBarcodeProduct('8934563138162')).rejects.toMatchObject({
       name: 'BarcodeServiceError',

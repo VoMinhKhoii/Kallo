@@ -37,19 +37,14 @@ vi.mock('@/lib/db/schema', () => ({
   pendingAnalyses: { id: 'pendingAnalyses.id' },
 }));
 
-vi.mock('@/lib/barcode/openfoodfacts', async (importActual) => {
-  // Keep the real parseSizeGrams (used by the cache-read path); only the
-  // network fetch is stubbed.
-  const actual =
-    await importActual<typeof import('@/lib/barcode/openfoodfacts')>();
-  return {
-    ...actual,
-    fetchProductFromOpenFoodFacts: vi.fn(),
-  };
-});
+// Stubbing the chain is what keeps this suite off the network — it owns every
+// provider fetch.
+vi.mock('@/lib/barcode/chain', () => ({
+  resolveBarcodeProduct: vi.fn(),
+}));
 
 import type { PipelineResult } from '@/lib/ai/types';
-import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
+import { resolveBarcodeProduct } from '@/lib/barcode/chain';
 // Import modules under test
 import { searchBarcodeAction, stageBarcodeMealAction } from '../barcode';
 
@@ -133,7 +128,17 @@ describe('searchBarcodeAction', () => {
       packageSizeG: null,
     };
 
-    vi.mocked(fetchProductFromOpenFoodFacts).mockResolvedValue(mockProduct);
+    vi.mocked(resolveBarcodeProduct).mockResolvedValue({
+      provider: {
+        id: 'off',
+        sourceCode: 'OFF',
+        cachePrefix: 'off_',
+        timeoutMs: 8000,
+        isConfigured: () => true,
+        fetch: vi.fn(),
+      },
+      product: mockProduct,
+    });
 
     const capturedValues: unknown[] = [];
     mockDbInsert.mockReturnValue({
@@ -147,7 +152,7 @@ describe('searchBarcodeAction', () => {
 
     const result = await searchBarcodeAction({ barcode: '8934563138162' });
 
-    expect(fetchProductFromOpenFoodFacts).toHaveBeenCalledWith('8934563138162');
+    expect(resolveBarcodeProduct).toHaveBeenCalledWith('8934563138162');
     expect(result).toEqual({
       success: true,
       data: mockProduct,
