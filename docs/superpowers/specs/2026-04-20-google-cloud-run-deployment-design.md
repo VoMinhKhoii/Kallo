@@ -39,7 +39,12 @@ The deployed app needs at least these values:
 | Category | Variables |
 |---|---|
 | Public runtime config | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
-| Sensitive server config | `DATABASE_URL`, `GEMINI_API_KEY` |
+| Sensitive server config | `DATABASE_URL`, `GEMINI_API_KEY`, `USDA_API_KEY` |
+
+`USDA_API_KEY` was script-only until the barcode lookup chain began querying
+USDA FoodData Central at runtime. It is optional: a deploy that omits it keeps
+resolving barcodes through Open Food Facts alone, so a missed rollout degrades
+coverage rather than causing an outage.
 
 Additional script-only variables such as `GOOGLE_TRANSLATE_API_KEY` are not part
 of the app runtime contract and should not be bundled into the normal app deploy

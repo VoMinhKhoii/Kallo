@@ -35,6 +35,10 @@ import type {
   BarcodeProvider,
   BarcodeProviderEnv,
 } from '@/lib/barcode/providers/types';
+import {
+  FDC_TIMEOUT_MS,
+  fetchProductFromUsdaFdc,
+} from '@/lib/barcode/providers/usda-fdc';
 import type {
   BarcodeProviderId,
   ParsedBarcodeProduct,
@@ -51,9 +55,19 @@ const openFoodFactsProvider: BarcodeProvider = {
     fetchProductFromOpenFoodFacts(barcode, timeoutMs),
 };
 
+const usdaFdcProvider: BarcodeProvider = {
+  id: 'usda_fdc',
+  sourceCode: BARCODE_SOURCE_CODES.usda_fdc,
+  cachePrefix: BARCODE_CACHE_PREFIXES.usda_fdc,
+  timeoutMs: FDC_TIMEOUT_MS,
+  isConfigured: (env) => Boolean(env.USDA_API_KEY),
+  fetch: (barcode, timeoutMs) => fetchProductFromUsdaFdc(barcode, timeoutMs),
+};
+
 const PROVIDER_DESCRIPTORS: Partial<
   Record<BarcodeProviderId, BarcodeProvider>
 > = {
+  usda_fdc: usdaFdcProvider,
   off: openFoodFactsProvider,
 };
 
