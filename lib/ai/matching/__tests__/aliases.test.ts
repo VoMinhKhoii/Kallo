@@ -30,6 +30,10 @@ describe('EXACT_ALIASES staples (verified DB targets)', () => {
     ['bánh bao', 'Bánh bao nhân thịt'],
     ['mực', 'Mực tươi'],
     ['squid', 'Mực tươi'],
+    ['bánh ướt', 'Bánh ướt'],
+    ['bánh cuốn', 'Bánh ướt'],
+    ['hủ tiếu', 'Bánh phở'],
+    ['bánh hỏi', 'Bún'],
   ])('%s → %s', (key, target) => {
     expect(EXACT_ALIASES[key]?.target).toBe(target);
   });
@@ -41,7 +45,6 @@ describe('EXACT_ALIASES staples (verified DB targets)', () => {
   });
 
   it('leaves out staples without a real DB row', () => {
-    expect(EXACT_ALIASES['bánh cuốn']).toBeUndefined();
     expect(EXACT_ALIASES['bánh canh']).toBeUndefined();
     expect(EXACT_ALIASES['hành phi']).toBeUndefined();
   });
@@ -52,6 +55,13 @@ describe('resolvePreMatchAlias', () => {
     expect(resolvePreMatchAlias('Tôm')).toBe('Tôm biển');
     expect(resolvePreMatchAlias('Bánh mì')).toBe('Bánh mỳ');
     expect(resolvePreMatchAlias('Mực')).toBe('Mực tươi');
+  });
+
+  it('rewrites the curated rice-sheet and rice-noodle staples', () => {
+    expect(resolvePreMatchAlias('bánh ướt')).toBe('Bánh ướt');
+    expect(resolvePreMatchAlias('Bánh Cuốn')).toBe('Bánh ướt');
+    expect(resolvePreMatchAlias('hủ tiếu')).toBe('Bánh phở');
+    expect(resolvePreMatchAlias('bánh hỏi')).toBe('Bún');
   });
 
   it('still rewrites the original wrong-match corrections', () => {

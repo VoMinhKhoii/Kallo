@@ -28,9 +28,17 @@ export interface ExactAlias {
  *                                             seed uses the "mỳ" spelling)
  *   - Bánh bao       → "Bánh bao nhân thịt"  (fao_vn_2007_1009_cooked)
  *   - Mực/squid      → "Mực tươi"            (fao_vn_2007_8040_raw, fresh squid)
+ *   - Bánh ướt       → "Bánh ướt"            (usda_20134_cooked, curated steamed
+ *                                             rice sheets — added this migration)
+ *   - Bánh cuốn      → "Bánh ướt"            (usda_20134_cooked, same rice-sheet
+ *                                             batter as bánh ướt)
+ *   - Hủ tiếu        → "Bánh phở"            (fao_vn_2007_1013_raw, fresh rice
+ *                                             noodle proxy)
+ *   - Bánh hỏi       → "Bún"                 (fao_vn_2007_1020_raw, woven rice
+ *                                             vermicelli proxy — proxy caveat)
  *
  * Deliberately LEFT OUT (no correct DB row exists yet — a later phase adds
- * curated rows): Bánh cuốn, Bánh canh, Hành phi.
+ * curated rows): Bánh canh (tapioca-based, no honest proxy), Hành phi.
  *
  * Keys are normalized (NFC + lowercase + trim) for locale-agnostic lookup.
  */
@@ -42,6 +50,10 @@ export const EXACT_ALIASES: Record<string, ExactAlias> = {
   'bánh bao': { lang: 'vi', target: 'Bánh bao nhân thịt' },
   mực: { lang: 'vi', target: 'Mực tươi' },
   squid: { lang: 'en', target: 'Mực tươi' },
+  'bánh ướt': { lang: 'vi', target: 'Bánh ướt' },
+  'bánh cuốn': { lang: 'vi', target: 'Bánh ướt' },
+  'hủ tiếu': { lang: 'vi', target: 'Bánh phở' },
+  'bánh hỏi': { lang: 'vi', target: 'Bún' },
 };
 
 /**
