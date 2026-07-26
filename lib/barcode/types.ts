@@ -13,3 +13,10 @@ export type BarcodeErrorCode =
   | 'not_cached'
   | 'stage_failed'
   | 'server_error';
+
+/**
+ * Identifier for a barcode lookup source. Doubles as the key for its cache
+ * prefix (`lib/barcode/cache.ts`) and its chain descriptor
+ * (`lib/barcode/chain.ts`).
+ */
+export type BarcodeProviderId = 'usda_fdc' | 'off';

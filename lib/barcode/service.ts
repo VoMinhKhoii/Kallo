@@ -9,8 +9,8 @@ import type {
 import {
   fetchProductFromOpenFoodFacts,
   type ParsedBarcodeProduct,
-  parseSizeGrams,
 } from '@/lib/barcode/openfoodfacts';
+import { parseSizeGrams } from '@/lib/barcode/providers/normalize';
 import type { BarcodeErrorCode } from '@/lib/barcode/types';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';

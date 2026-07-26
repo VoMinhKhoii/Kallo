@@ -1,10 +1,15 @@
 import { z } from 'zod';
-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
+import {
+  parseNumber,
+  parseSizeGrams,
+  reconcileEnergy,
+  sodiumMgFromGrams,
+} from '@/lib/barcode/providers/normalize';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 // Open Food Facts can be slow/unresponsive; bound the wait so the server
 // action (awaited directly by the client dialog) never hangs indefinitely.
-const OFF_TIMEOUT_MS = 8000;
+export const OFF_TIMEOUT_MS = 8000;
 
 // Open Food Facts API response validation schema
 const openFoodFactsNutrimentsSchema = z
@@ -60,30 +65,12 @@ export interface ParsedBarcodeProduct {
   packageSizeG: number | null;
 }
 
-function parseNumber(val: unknown): number | null {
-  if (val === undefined || val === null) return null;
-  // Blank/whitespace strings would coerce to 0 via Number(), turning unknown
-  // OFF nutriments into authoritative zeroes — treat them as missing.
-  if (typeof val === 'string' && val.trim() === '') return null;
-  const num = Number(val);
-  return Number.isNaN(num) ? null : num;
-}
-
-// Reject OFF sizing that can't be a usable gram weight: non-positive, or larger
-// than the staging cap (100kg). Keeps a stray "0"/"1500000" from becoming a
-// nonsensical serving/package amount in the picker. Exported so the cache-read
-// path (`lib/actions/barcode.ts`) validates persisted sizes the same way.
-export function parseSizeGrams(val: unknown): number | null {
-  const num = parseNumber(val);
-  if (num === null || num <= 0 || num > MAX_FOOD_ITEM_GRAMS) return null;
-  return num;
-}
-
 /**
  * Fetch food product details from Open Food Facts API using the barcode.
  */
 export async function fetchProductFromOpenFoodFacts(
-  barcode: string
+  barcode: string,
+  timeoutMs: number = OFF_TIMEOUT_MS
 ): Promise<ParsedBarcodeProduct | null> {
   const cleanBarcode = barcode.trim();
   if (!/^\d+$/.test(cleanBarcode)) {
@@ -105,7 +92,7 @@ export async function fetchProductFromOpenFoodFacts(
           next: { revalidate: 86400 }, // Cache on the server side for 24h
           signal,
         }),
-      OFF_TIMEOUT_MS,
+      timeoutMs,
       'openfoodfacts'
     );
 
@@ -134,51 +121,23 @@ export async function fetchProductFromOpenFoodFacts(
     const brand = product.brands?.trim() || null;
     const nutriments = product.nutriments;
 
-    // Macro/nutrient parsing. kcal = kJ / 4.184 by definition, so the kJ value
-    // is the more trustworthy anchor: OFF products sometimes carry a garbage
-    // `energy-kcal_100g` (e.g. 3.27 kcal for a 411 kcal drink) next to a
-    // correct kJ. Prefer the stated kcal, but fall back to — or override with —
-    // the kJ-derived value when kcal is missing, non-positive, or wildly
-    // inconsistent with kJ (differs by more than ~25%).
-    const KCAL_PER_KJ = 1 / 4.184;
-    const statedKcal = parseNumber(
-      nutriments?.['energy-kcal_100g'] ?? nutriments?.['energy-kcal']
+    const caloriesKcal = reconcileEnergy(
+      parseNumber(
+        nutriments?.['energy-kcal_100g'] ?? nutriments?.['energy-kcal']
+      ),
+      parseNumber(nutriments?.['energy-kj_100g'] ?? nutriments?.energy_100g)
     );
-    const energyKj = parseNumber(
-      nutriments?.['energy-kj_100g'] ?? nutriments?.energy_100g
-    );
-    const kcalFromKj =
-      energyKj !== null && energyKj > 0 ? energyKj * KCAL_PER_KJ : null;
-
-    let caloriesKcal = statedKcal;
-    if (kcalFromKj !== null) {
-      if (statedKcal === null || statedKcal <= 0) {
-        caloriesKcal = Math.round(kcalFromKj);
-      } else {
-        const ratio = statedKcal / kcalFromKj;
-        if (ratio < 0.75 || ratio > 1.25) {
-          caloriesKcal = Math.round(kcalFromKj);
-        }
-      }
-    }
 
     const proteinG = parseNumber(nutriments?.proteins_100g);
     const carbohydrateG = parseNumber(nutriments?.carbohydrates_100g);
     const fatG = parseNumber(nutriments?.fat_100g);
     const fiberG = parseNumber(nutriments?.fiber_100g);
 
-    // Sodium parsing (OFF reports in grams, we store in milligrams)
-    let sodiumMg = null;
-    const sodiumG = parseNumber(nutriments?.sodium_100g);
-    if (sodiumG !== null) {
-      sodiumMg = Math.round(sodiumG * 1000);
-    } else {
-      // Fallback: estimate from salt (salt = sodium * 2.5)
-      const saltG = parseNumber(nutriments?.salt_100g);
-      if (saltG !== null) {
-        sodiumMg = Math.round((saltG / 2.5) * 1000);
-      }
-    }
+    // OFF reports sodium and salt in grams; we store milligrams.
+    const sodiumMg = sodiumMgFromGrams(
+      parseNumber(nutriments?.sodium_100g),
+      parseNumber(nutriments?.salt_100g)
+    );
 
     return {
       barcode: cleanBarcode,
