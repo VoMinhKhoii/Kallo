@@ -2,13 +2,24 @@
 
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { RulerSlider } from '@/components/ui/ruler-slider';
+import { RulerSlider } from '@/components/shared/ruler-slider';
 import { VESSEL_FAMILIES, type VesselTier } from '@/lib/ai/portion/vessel-data';
 
 export interface PortionAnchor {
   tier: VesselTier;
   value: number;
   label: string;
+}
+
+export function nearestAnchor(
+  anchors: PortionAnchor[],
+  grams: number
+): PortionAnchor {
+  return anchors.reduce((best, anchor) =>
+    Math.abs(anchor.value - grams) < Math.abs(best.value - grams)
+      ? anchor
+      : best
+  );
 }
 
 interface PortionPickerBodyProps {
@@ -36,9 +47,7 @@ export function PortionPickerBody({
   onCancel,
 }: PortionPickerBodyProps) {
   const t = useTranslations('logging.portionPicker');
-  const nearest = anchors.reduce((best, a) =>
-    Math.abs(a.value - grams) < Math.abs(best.value - grams) ? a : best
-  );
+  const nearest = nearestAnchor(anchors, grams);
   const tierMl = VESSEL_FAMILIES[family].tiers[nearest.tier].ml;
   const tier4Ml = VESSEL_FAMILIES[family].tiers[4].ml;
   // Bigger tier reads bigger: width scales by volume^(1/3), normalized to tier 4.

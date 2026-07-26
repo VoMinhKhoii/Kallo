@@ -134,7 +134,13 @@ export const DENSITY_FILL: Record<DishClass, DensityFill> = {
   drink: densityFill(0.95, 1.05, 0.85, 1),
 };
 
-type ContainerFamily = Extract<VesselFamily, 'bowl' | 'plate' | 'cup'>;
+export type ContainerFamily = Extract<VesselFamily, 'bowl' | 'plate' | 'cup'>;
+
+export function isContainerFamily(
+  family: VesselFamily
+): family is ContainerFamily {
+  return family === 'bowl' || family === 'plate' || family === 'cup';
+}
 
 function roundToTen(value: number): number {
   return Math.round(value / 10) * 10;
@@ -220,15 +226,15 @@ export const PIECE_TIERS: Record<
 > = {
   'piece-fish': [
     pieceTier(30, 'fish-1-chunk.png'),
-    pieceTier(70, 'fish-2-small.png'),
-    pieceTier(150, 'fish-3-medium.png'),
-    pieceTier(250, 'fish-4-large.png'),
+    pieceTier(70, 'fish-2-lat.png'),
+    pieceTier(150, 'fish-3-khoanh.png'),
+    pieceTier(250, 'fish-4-portion.png'),
     pieceTier(500, 'fish-5-large.png'),
   ],
   'piece-meat': [
     pieceTier(30, 'meat-1-cubes.png'),
-    pieceTier(70, 'meat-2-small.png'),
-    pieceTier(150, 'meat-3-medium.png'),
+    pieceTier(70, 'meat-2-belly-slices.png'),
+    pieceTier(150, 'meat-3-chop.png'),
     pieceTier(250, 'meat-4-steak.png'),
     pieceTier(500, 'meat-5-big-steak.png'),
   ],

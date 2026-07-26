@@ -92,6 +92,7 @@ export async function prepareGrounding(args: {
     decomposition,
     matchResults,
     portionResolutions,
+    vesselEnvelopes,
   });
   return {
     matchResults,

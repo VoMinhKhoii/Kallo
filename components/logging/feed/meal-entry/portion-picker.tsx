@@ -3,7 +3,10 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { PortionAssumptionLine } from '@/components/logging/feed/meal-entry/portion-assumption-line';
-import { PortionPickerBody } from '@/components/logging/feed/meal-entry/portion-picker-body';
+import {
+  nearestAnchor,
+  PortionPickerBody,
+} from '@/components/logging/feed/meal-entry/portion-picker-body';
 import {
   Drawer,
   DrawerContent,
@@ -16,8 +19,12 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useIsMobile } from '@/hooks/ui/use-mobile';
-import { midG, VESSEL_FAMILIES } from '@/lib/ai/portion/vessel-data';
-import { applyQuantityChange, applyVesselTierChange } from '@/lib/meal-utils';
+import {
+  isContainerFamily,
+  midG,
+  VESSEL_FAMILIES,
+} from '@/lib/ai/portion/vessel-data';
+import { applyQuantityChange } from '@/lib/meal-utils';
 import type { MealItem } from '@/lib/types/meal';
 
 const TIERS = [1, 2, 3, 4] as const;
@@ -26,19 +33,6 @@ interface PortionPickerProps {
   item: MealItem;
   items: MealItem[];
   onApply: (items: MealItem[]) => void;
-}
-
-function isContainer(vessel: MealItem['vessel']): vessel is NonNullable<
-  MealItem['vessel']
-> & {
-  family: 'bowl' | 'plate' | 'cup';
-} {
-  return (
-    !!vessel &&
-    (vessel.family === 'bowl' ||
-      vessel.family === 'plate' ||
-      vessel.family === 'cup')
-  );
 }
 
 /**
@@ -55,8 +49,9 @@ export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
   const [open, setOpen] = useState(false);
   const [grams, setGrams] = useState(item.quantity);
 
-  if (!isContainer(vessel)) return null;
-  const { family, dishClass } = vessel;
+  if (!vessel || !isContainerFamily(vessel.family)) return null;
+  const containerVessel = { ...vessel, family: vessel.family };
+  const { family, dishClass } = containerVessel;
 
   const anchors = TIERS.map((tier) => ({
     tier,
@@ -72,19 +67,10 @@ export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
     setOpen(next);
   };
 
-  // Settled on an anchor → tier rescale. Otherwise scale the raw grams via the
-  // same proportional path the +/- stepper uses, and re-point vessel.tier to the
-  // nearest anchor so the assumption line's tier label stays truthful.
+  // Commit the exact previewed grams, then re-point vessel.tier to the nearest
+  // anchor so the assumption line's tier label stays truthful.
   const handleApply = () => {
-    const onAnchor = anchors.find((a) => a.value === grams);
-    if (onAnchor) {
-      onApply(applyVesselTierChange(items, item.id, onAnchor.tier));
-      setOpen(false);
-      return;
-    }
-    const nearest = anchors.reduce((best, a) =>
-      Math.abs(a.value - grams) < Math.abs(best.value - grams) ? a : best
-    );
+    const nearest = nearestAnchor(anchors, grams);
     const scaled = applyQuantityChange(
       items,
       items,
@@ -119,7 +105,7 @@ export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
     />
   );
 
-  const trigger = <PortionAssumptionLine vessel={vessel} />;
+  const trigger = <PortionAssumptionLine vessel={containerVessel} />;
 
   if (isMobile) {
     return (

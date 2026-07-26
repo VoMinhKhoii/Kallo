@@ -123,11 +123,25 @@ const CONCENTRATED_PATTERNS: RegExp[] = [
  * exempt list) makes the carb-staple floor check bite.
  */
 const CARB_STAPLE_PATTERNS: RegExp[] = [
-  /cơm/i, /xôi/i, /gạo/i, /\brice\b/i,
+  /cơm/i,
+  /xôi/i,
+  /gạo/i,
+  /\brice\b/i,
   /bánh\s*(ướt|cuốn|phở|canh|hỏi|đa|tráng)/i,
-  /phở/i, /bún/i, /miến/i, /hủ\s*tiếu/i, /hu\s*tieu/i, /mì/i, /nui/i,
-  /\bnoodles?\b/i, /\bvermicelli\b/i, /\bpasta\b/i, /\bspaghetti\b/i,
-  /bánh\s*m[ìỳ]/i, /\bbread\b/i, /\bbaguette\b/i,
+  /phở/i,
+  /bún/i,
+  /miến/i,
+  /hủ\s*tiếu/i,
+  /hu\s*tieu/i,
+  /mì/i,
+  /nui/i,
+  /\bnoodles?\b/i,
+  /\bvermicelli\b/i,
+  /\bpasta\b/i,
+  /\bspaghetti\b/i,
+  /bánh\s*m[ìỳ]/i,
+  /\bbread\b/i,
+  /\bbaguette\b/i,
 ];
 /**
  * Names that match a CARB_STAPLE_PATTERN by substring but are legitimately
@@ -137,10 +151,18 @@ const CARB_STAPLE_PATTERNS: RegExp[] = [
  * vinegar / rice wine, not a starch base.
  */
 const CARB_STAPLE_EXEMPT_PATTERNS: RegExp[] = [
-  /konjac/i, /shirataki/i,
-  /nướ?c\s*(dùng|lèo)/i, /\bbroth\b/i, /\bstock\b/i, /\bsoup\b/i,
-  /mì\s*chính/i, /mì\s*căn/i,
-  /giấm/i, /\bvinegar\b/i, /rượu/i, /\bwine\b/i,
+  /konjac/i,
+  /shirataki/i,
+  /nướ?c\s*(dùng|lèo)/i,
+  /\bbroth\b/i,
+  /\bstock\b/i,
+  /\bsoup\b/i,
+  /mì\s*chính/i,
+  /mì\s*căn/i,
+  /giấm/i,
+  /\bvinegar\b/i,
+  /rượu/i,
+  /\bwine\b/i,
 ];
 /**
  * Carb-density floor for staples, on the MID bound. Density is portion-

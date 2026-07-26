@@ -20,9 +20,8 @@
 
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
 import type { PortionResolution } from '../portion/types';
-import { resolveVesselEnvelope } from '../portion/vessel-envelope';
+import type { VesselEnvelope } from '../portion/vessel-envelope';
 import { computeDbScalingGrams, scalePer100g } from './bounded-macros';
-import { isPortionVesselEnabled } from './config/portion-vessel-flag';
 import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
@@ -95,15 +94,17 @@ export function isFullyGrounded(args: {
   decomposition: MealDecompositionV2;
   matchResults: IngredientV2MatchResult[];
   portionResolutions: PortionResolution[];
+  vesselEnvelopes: Array<VesselEnvelope | null>;
 }): boolean {
-  const { decomposition, matchResults, portionResolutions } = args;
-  // Envelope constraints require Call-2 reasoning; the fast path must stay
-  // numerically identical to the full path.
+  const { decomposition, matchResults, portionResolutions, vesselEnvelopes } =
+    args;
+  // A vessel envelope needs Call-2 judgment only while some ingredient remains
+  // unanchored. When every ingredient has an authoritative resolver anchor,
+  // the prompt forbids Call 2 from changing those grams, so skipping it remains
+  // contract-safe and numerically identical.
   if (
-    isPortionVesselEnabled() &&
-    decomposition.mealItems.some(
-      (mealItem) => resolveVesselEnvelope(mealItem) !== null
-    )
+    vesselEnvelopes.some((envelope) => envelope !== null) &&
+    portionResolutions.some((portion) => !isGroundedAnchor(portion))
   ) {
     return false;
   }

@@ -64,6 +64,10 @@ export function RulerSlider({
     const v = values[0] ?? min;
     const target = nearestAnchor(v);
     if (target && target.value !== v && Math.abs(target.value - v) <= radius) {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        onChange(target.value);
+        return;
+      }
       animRef.current = animate(v, target.value, {
         type: 'spring',
         stiffness: 500,
@@ -125,7 +129,7 @@ export function RulerSlider({
 
         {/* Thumb doubles as the current-value indicator line */}
         <SliderPrimitive.Thumb
-          aria-valuetext={nearestAnchor(value)?.label}
+          aria-valuetext={`${value} g — ${nearestAnchor(value)?.label ?? ''}`}
           className="flex h-10 w-6 items-center justify-center rounded-sm outline-hidden focus-visible:ring-2 focus-visible:ring-nham-accent/50"
         >
           <span className="h-8 w-0.5 rounded-full bg-nham-accent" />

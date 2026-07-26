@@ -233,7 +233,9 @@ export function bridgeV2ToV1(args: {
       // Unmatched: scale Call 2's absolute carb mid back to a per-100g density.
       const carbsPer100g = acceptedCandidate
         ? (acceptedCandidate.nutrition?.carbohydrateG ?? null)
-        : ground?.carbohydrateG != null && resolvedGrams != null && resolvedGrams > 0
+        : ground?.carbohydrateG != null &&
+            resolvedGrams != null &&
+            resolvedGrams > 0
           ? (ground.carbohydrateG.mid / resolvedGrams) * 100
           : null;
 

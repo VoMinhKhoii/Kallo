@@ -13,7 +13,11 @@ export interface DishLike {
   cookingMethod?: string;
   vesselToken?: string;
   vesselSize?: 'small' | 'medium' | 'large';
-  ingredients: Array<{ rawName?: string; canonicalName?: string }>;
+  ingredients: Array<{
+    rawName?: string;
+    canonicalName?: string;
+    count?: number;
+  }>;
 }
 
 export interface VesselEnvelope {
@@ -32,12 +36,15 @@ const SOUP_DISH =
   /phở|pho\b|bún bò|bún riêu|hủ tiếu|miến|bánh canh|cháo|ramen|udon|soba|noodle soup|soup|stew|congee|laksa|malatang/i;
 const AIRY_DISH = /gỏi|nộm|salad|rau trộn/i;
 const LARGE_BOWL_DISH = /ramen|donburi|malatang|lẩu mini/i;
+const FOOD_IN_CUP =
+  /mì|noodle|ramen|soup|súp|cháo|rice|cơm|cake|yogurt|granola|oatmeal/i;
+const SOUP_IN_CUP = /mì|noodle|ramen|soup|súp|cháo/i;
 
 export function classifyDishClass(
   dish: DishLike,
   vesselFamily: VesselFamily
 ): DishClass {
-  if (vesselFamily === 'cup') return 'drink';
+  if (vesselFamily === 'cup' && !FOOD_IN_CUP.test(dish.name)) return 'drink';
 
   const hasSoupIngredient = dish.ingredients.some((ingredient) =>
     SOUP_INGREDIENT.test(
@@ -47,7 +54,8 @@ export function classifyDishClass(
   if (
     hasSoupIngredient ||
     SOUP_METHOD.test(dish.cookingMethod ?? '') ||
-    SOUP_DISH.test(dish.name)
+    SOUP_DISH.test(dish.name) ||
+    (vesselFamily === 'cup' && SOUP_IN_CUP.test(dish.name))
   ) {
     return 'soup';
   }
@@ -56,7 +64,12 @@ export function classifyDishClass(
 }
 
 export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
-  if (!dish.vesselToken) return null;
+  if (
+    !dish.vesselToken ||
+    dish.ingredients.some((ingredient) => ingredient.count === 0)
+  ) {
+    return null;
+  }
 
   const resolved = resolveVesselFromToken(dish.vesselToken, dish.vesselSize);
   if (!resolved) return null;
@@ -81,14 +94,16 @@ export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
 }
 
 export function attachVesselToResult<
-  T extends { mealItems: Array<{ vessel?: unknown }> },
->(result: T, dishes: DishLike[], envelopes?: Array<VesselEnvelope | null>): T {
+  T extends { mealItems: Array<{ name: string; vessel?: unknown }> },
+>(result: T, dishes: DishLike[], envelopes: Array<VesselEnvelope | null>): T {
   for (const [index, dish] of dishes.entries()) {
-    const envelope = envelopes
-      ? (envelopes[index] ?? null)
-      : resolveVesselEnvelope(dish);
+    const envelope = envelopes[index] ?? null;
     const mealItem = result.mealItems[index];
-    if (envelope && mealItem) {
+    if (
+      envelope &&
+      mealItem &&
+      mealItem.name.toLocaleLowerCase() === dish.name.toLocaleLowerCase()
+    ) {
       mealItem.vessel = {
         family: envelope.family,
         tier: envelope.tier,

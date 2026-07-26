@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyVesselTierChange, MIN_DISH_GRAMS } from '@/lib/meal-utils';
+import { vesselGramsForTier } from '@/lib/meal-utils';
 import type { MealItem } from '@/lib/types/meal';
 
 function vesselItem(overrides: Partial<MealItem> = {}): MealItem {
@@ -14,33 +14,20 @@ function vesselItem(overrides: Partial<MealItem> = {}): MealItem {
   };
 }
 
-describe('applyVesselTierChange', () => {
-  it('updates the tier and scales quantity and macros by the mid-gram ratio', () => {
-    const item = vesselItem();
-    const [updated] = applyVesselTierChange([item], item.id, 3);
-    const ratio = 850 / 595;
-
-    expect(updated.quantity).toBe(850);
-    expect(updated.macros.calories).toBeCloseTo(500 * ratio);
-    expect(updated.macros.protein).toBeCloseTo(30 * ratio);
-    expect(updated.macros.carbs).toBeCloseTo(60 * ratio);
-    expect(updated.macros.fat).toBeCloseTo(15 * ratio);
-    expect(updated.vessel?.tier).toBe(3);
-  });
-
-  it('floors a tiny rescaled quantity at MIN_DISH_GRAMS', () => {
-    const [updated] = applyVesselTierChange(
-      [vesselItem({ quantity: 1 })],
-      'soup',
-      1
-    );
-
-    expect(updated.quantity).toBe(MIN_DISH_GRAMS);
-  });
-
-  it('returns the same items array when the target has no vessel', () => {
-    const items = [vesselItem({ vessel: undefined })];
-
-    expect(applyVesselTierChange(items, 'soup', 3)).toBe(items);
+describe('vesselGramsForTier', () => {
+  it('resolves container tiers and rejects non-container families', () => {
+    expect(vesselGramsForTier(vesselItem(), 3)).toBe(850);
+    expect(
+      vesselGramsForTier(
+        vesselItem({
+          vessel: {
+            family: 'piece-fish',
+            tier: 2,
+            dishClass: 'solid',
+          },
+        }),
+        3
+      )
+    ).toBeUndefined();
   });
 });

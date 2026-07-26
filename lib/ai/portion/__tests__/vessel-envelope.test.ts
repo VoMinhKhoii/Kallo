@@ -4,6 +4,7 @@ import {
   guardBandG,
   midG,
   normalizeVesselToken,
+  PIECE_TIERS,
   resolveVesselFromToken,
   type VesselTier,
 } from '../vessel-data';
@@ -11,6 +12,7 @@ import {
   attachVesselToResult,
   classifyDishClass,
   type DishLike,
+  resolveVesselEnvelope,
 } from '../vessel-envelope';
 
 const dish = (overrides: Partial<DishLike> = {}): DishLike => ({
@@ -43,6 +45,34 @@ describe('vessel token resolution', () => {
   });
 });
 
+describe('piece tier assets', () => {
+  it('matches the generated portion filenames', () => {
+    expect(
+      Object.fromEntries(
+        Object.entries(PIECE_TIERS).map(([family, tiers]) => [
+          family,
+          tiers.map((tier) => tier.asset),
+        ])
+      )
+    ).toEqual({
+      'piece-fish': [
+        'fish-1-chunk.png',
+        'fish-2-lat.png',
+        'fish-3-khoanh.png',
+        'fish-4-portion.png',
+        'fish-5-large.png',
+      ],
+      'piece-meat': [
+        'meat-1-cubes.png',
+        'meat-2-belly-slices.png',
+        'meat-3-chop.png',
+        'meat-4-steak.png',
+        'meat-5-big-steak.png',
+      ],
+    });
+  });
+});
+
 describe('dish classification', () => {
   it.each([
     ['phở', 'bowl', 'soup'],
@@ -50,6 +80,8 @@ describe('dish classification', () => {
     ['cơm tấm', 'plate', 'solid'],
     ['gỏi cuốn', 'plate', 'airy'],
     ['trà sữa', 'cup', 'drink'],
+    ['cup noodles', 'cup', 'soup'],
+    ['mug cake', 'cup', 'solid'],
     ['cereal with milk', 'bowl', 'solid'],
   ] as const)('%s in a %s is %s', (name, family, expected) => {
     expect(classifyDishClass(dish({ name }), family)).toBe(expected);
@@ -316,22 +348,38 @@ describe('vessel gram envelopes', () => {
       }
     }
   });
+
+  it('returns no envelope when any dish ingredient has a zero count', () => {
+    expect(
+      resolveVesselEnvelope(
+        dish({
+          vesselToken: 'tô',
+          ingredients: [{ rawName: 'phở', count: 0 }],
+        })
+      )
+    ).toBeNull();
+  });
 });
 
 describe('attachVesselToResult', () => {
   it('aligns by index and skips absent or unknown vessels', () => {
+    const dishes = [
+      dish({ name: 'phở', vesselToken: 'tô' }),
+      dish({ name: 'second', vesselToken: 'jar' }),
+      dish({ name: 'third' }),
+    ];
     const result = {
       mealItems: [
-        { name: 'first' },
+        { name: 'PHỞ' },
         { name: 'second', vessel: 'unchanged' },
         { name: 'third' },
       ],
     };
-    const returned = attachVesselToResult(result, [
-      dish({ name: 'phở', vesselToken: 'tô' }),
-      dish({ vesselToken: 'jar' }),
-      dish(),
-    ]);
+    const returned = attachVesselToResult(
+      result,
+      dishes,
+      dishes.map(resolveVesselEnvelope)
+    );
 
     expect(returned).toBe(result);
     expect(result.mealItems[0].vessel).toMatchObject({
@@ -341,5 +389,19 @@ describe('attachVesselToResult', () => {
     });
     expect(result.mealItems[1].vessel).toBe('unchanged');
     expect(result.mealItems[2]).not.toHaveProperty('vessel');
+  });
+
+  it('skips envelopes when result items are in a mismatched order', () => {
+    const dishes = [
+      dish({ name: 'phở', vesselToken: 'tô' }),
+      dish({ name: 'cơm tấm', vesselToken: 'đĩa' }),
+    ];
+    const result = {
+      mealItems: [{ name: 'cơm tấm' }, { name: 'phở' }],
+    };
+
+    attachVesselToResult(result, dishes, dishes.map(resolveVesselEnvelope));
+
+    expect(result.mealItems.every((item) => !('vessel' in item))).toBe(true);
   });
 });

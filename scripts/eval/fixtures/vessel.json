@@ -5,17 +5,11 @@
     {
       "id": "vessel-vn-pho-large-tier3",
       "input": "1 tô lớn phở bò",
-      "tags": [
-        "vessel",
-        "vi",
-        "size-modifier"
-      ],
+      "tags": ["vessel", "vi", "size-modifier"],
       "tier": "smoke",
       "expect": {
         "isFood": true,
-        "staples": [
-          "phở"
-        ],
+        "staples": ["phở"],
         "expectVessel": [
           {
             "family": "bowl",
@@ -28,11 +22,7 @@
     {
       "id": "vessel-vn-canh-chua",
       "input": "tô canh chua cá lóc",
-      "tags": [
-        "vessel",
-        "vi",
-        "soup"
-      ],
+      "tags": ["vessel", "vi", "soup"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -47,17 +37,11 @@
     {
       "id": "vessel-vn-com-tam-plate",
       "input": "1 dĩa cơm tấm sườn bì chả",
-      "tags": [
-        "vessel",
-        "vi",
-        "solid"
-      ],
+      "tags": ["vessel", "vi", "solid"],
       "tier": "core",
       "expect": {
         "isFood": true,
-        "staples": [
-          "cơm"
-        ],
+        "staples": ["cơm"],
         "expectVessel": [
           {
             "family": "plate",
@@ -69,18 +53,11 @@
     {
       "id": "vessel-vn-milk-tea",
       "input": "1 ly trà sữa trân châu",
-      "tags": [
-        "vessel",
-        "vi",
-        "drink"
-      ],
+      "tags": ["vessel", "vi", "drink"],
       "tier": "smoke",
       "expect": {
         "isFood": true,
-        "kcalRange": [
-          300,
-          700
-        ],
+        "kcalRange": [300, 700],
         "expectVessel": [
           {
             "family": "cup",
@@ -92,11 +69,7 @@
     {
       "id": "vessel-vn-three-independent",
       "input": "1 tô bún bò + 1 dĩa gỏi cuốn + 1 ly cà phê sữa",
-      "tags": [
-        "vessel",
-        "vi",
-        "multi-item"
-      ],
+      "tags": ["vessel", "vi", "multi-item"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -119,11 +92,7 @@
     {
       "id": "vessel-vn-explicit-mass-wins",
       "input": "300g phở bò (cân cả nước)",
-      "tags": [
-        "vessel",
-        "vi",
-        "explicit-mass"
-      ],
+      "tags": ["vessel", "vi", "explicit-mass"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -133,11 +102,7 @@
     {
       "id": "vessel-vn-count-prior",
       "input": "2 khứa cá kho",
-      "tags": [
-        "vessel",
-        "vi",
-        "count-portion"
-      ],
+      "tags": ["vessel", "vi", "count-portion"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -147,11 +112,7 @@
     {
       "id": "vessel-vn-vague-no-vessel",
       "input": "ăn ít cơm với thịt kho",
-      "tags": [
-        "vessel",
-        "vi",
-        "quantifier-vague"
-      ],
+      "tags": ["vessel", "vi", "quantifier-vague"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -161,11 +122,7 @@
     {
       "id": "vessel-en-ramen-large",
       "input": "a big bowl of chicken ramen",
-      "tags": [
-        "vessel",
-        "en",
-        "size-modifier"
-      ],
+      "tags": ["vessel", "en", "size-modifier"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -180,10 +137,7 @@
     {
       "id": "vessel-en-cereal",
       "input": "a bowl of cereal with milk",
-      "tags": [
-        "vessel",
-        "en"
-      ],
+      "tags": ["vessel", "en"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -198,11 +152,7 @@
     {
       "id": "vessel-en-spaghetti",
       "input": "a plate of spaghetti bolognese",
-      "tags": [
-        "vessel",
-        "en",
-        "solid"
-      ],
+      "tags": ["vessel", "en", "solid"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -217,12 +167,7 @@
     {
       "id": "vessel-en-hot-chocolate",
       "input": "large mug of hot chocolate",
-      "tags": [
-        "vessel",
-        "en",
-        "drink",
-        "size-modifier"
-      ],
+      "tags": ["vessel", "en", "drink", "size-modifier"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -237,11 +182,7 @@
     {
       "id": "vessel-en-caesar-salad",
       "input": "chicken caesar salad bowl",
-      "tags": [
-        "vessel",
-        "en",
-        "solid"
-      ],
+      "tags": ["vessel", "en", "solid"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -256,10 +197,7 @@
     {
       "id": "vessel-mixed-pho-ga",
       "input": "1 bowl phở gà",
-      "tags": [
-        "vessel",
-        "mixed-language"
-      ],
+      "tags": ["vessel", "mixed-language"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -274,12 +212,7 @@
     {
       "id": "vessel-adversarial-bathtub",
       "input": "a bathtub of soup",
-      "tags": [
-        "vessel",
-        "en",
-        "adversarial",
-        "unknown-vessel"
-      ],
+      "tags": ["vessel", "en", "adversarial", "unknown-vessel"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -289,19 +222,11 @@
     {
       "id": "vessel-adversarial-five-liters",
       "input": "tô phở khổng lồ 5 lít",
-      "tags": [
-        "vessel",
-        "vi",
-        "adversarial",
-        "size-modifier"
-      ],
+      "tags": ["vessel", "vi", "adversarial", "size-modifier"],
       "tier": "core",
       "expect": {
         "isFood": true,
-        "kcalRange": [
-          0,
-          2000
-        ],
+        "kcalRange": [0, 2000],
         "expectVessel": [
           {
             "family": "bowl",
@@ -313,12 +238,7 @@
     {
       "id": "vessel-en-soup-mug",
       "input": "soup in a mug",
-      "tags": [
-        "vessel",
-        "en",
-        "adversarial",
-        "soup"
-      ],
+      "tags": ["vessel", "en", "adversarial", "soup"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -333,12 +253,7 @@
     {
       "id": "vessel-vn-emoji-typo",
       "input": "1 tô phở 🍜 bò taí",
-      "tags": [
-        "vessel",
-        "vi",
-        "adversarial",
-        "typo"
-      ],
+      "tags": ["vessel", "vi", "adversarial", "typo"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -353,12 +268,7 @@
     {
       "id": "vessel-en-half-plate-rice",
       "input": "half a plate of rice",
-      "tags": [
-        "vessel",
-        "en",
-        "adversarial",
-        "fraction"
-      ],
+      "tags": ["vessel", "en", "adversarial", "fraction"],
       "tier": "core",
       "expect": {
         "isFood": true,
@@ -373,21 +283,12 @@
     {
       "id": "vessel-vn-pho-tier2",
       "input": "1 tô phở bò tái",
-      "tags": [
-        "vessel",
-        "vi",
-        "staple"
-      ],
+      "tags": ["vessel", "vi", "staple"],
       "tier": "smoke",
       "expect": {
         "isFood": true,
-        "staples": [
-          "phở"
-        ],
-        "kcalRange": [
-          350,
-          650
-        ],
+        "staples": ["phở"],
+        "kcalRange": [350, 650],
         "expectVessel": [
           {
             "family": "bowl",
