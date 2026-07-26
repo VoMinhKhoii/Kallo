@@ -82,11 +82,23 @@ export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
 
 export function attachVesselToResult<
   T extends { mealItems: Array<{ vessel?: unknown }> },
->(result: T, dishes: DishLike[]): T {
+>(result: T, dishes: DishLike[], envelopes?: Array<VesselEnvelope | null>): T {
   for (const [index, dish] of dishes.entries()) {
-    const envelope = resolveVesselEnvelope(dish);
+    const envelope = envelopes
+      ? (envelopes[index] ?? null)
+      : resolveVesselEnvelope(dish);
     const mealItem = result.mealItems[index];
-    if (envelope && mealItem) mealItem.vessel = envelope;
+    if (envelope && mealItem) {
+      mealItem.vessel = {
+        family: envelope.family,
+        tier: envelope.tier,
+        dishClass: envelope.dishClass,
+        token: envelope.token,
+        guardG: envelope.guardG,
+        midG: envelope.midG,
+        provenance: 'vessel_prior',
+      };
+    }
   }
   return result;
 }

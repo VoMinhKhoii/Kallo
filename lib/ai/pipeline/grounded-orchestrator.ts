@@ -5,6 +5,7 @@ import {
   DEFAULT_MATCH_CONCURRENCY,
   type IngredientV2MatchResult,
 } from '../matching/top-k-cascade';
+import { attachVesselToResult } from '../portion/vessel-envelope';
 import {
   buildMealItemOffsetByName,
   buildPerMealItemOffsetMap,
@@ -17,6 +18,7 @@ import { initV2BudgetAccounting } from './budget-telemetry';
 import { createChunkEmitContext, runCallTwo } from './call-two';
 import { resolveCompletenessGate } from './completeness-gate';
 import { resolveModelProfile } from './config/model-profile';
+import { isPortionVesselEnabled } from './config/portion-vessel-flag';
 import { handleError, nonFoodResponse } from './errors';
 import {
   createGeminiEstimator,
@@ -140,6 +142,7 @@ export async function analyzeMealV2(
     const {
       matchResults,
       portionResolutions,
+      vesselEnvelopes,
       mealItemsWithCandidates,
       fullyGrounded,
     } = await prepareGrounding({
@@ -268,15 +271,23 @@ export async function analyzeMealV2(
           bridged.decomposition,
           bridged.matched
         );
+        const assembled = assembleResult(
+          bridged.decomposition,
+          reconciled,
+          bridged.matched,
+          bridged.unmatched,
+          userContext
+        );
+        if (isPortionVesselEnabled()) {
+          attachVesselToResult(
+            assembled.result,
+            decomposition.mealItems,
+            vesselEnvelopes
+          );
+        }
         return {
           bridged,
-          ...assembleResult(
-            bridged.decomposition,
-            reconciled,
-            bridged.matched,
-            bridged.unmatched,
-            userContext
-          ),
+          ...assembled,
         };
       }
     );

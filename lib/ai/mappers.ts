@@ -110,6 +110,13 @@ export function toParsedMeal(result: PipelineResult): ParsedMeal {
     ),
     unit: 'g',
     macros: toMacros(mealItem.displayedNutrition),
+    vessel: mealItem.vessel
+      ? {
+          family: mealItem.vessel.family,
+          tier: mealItem.vessel.tier,
+          dishClass: mealItem.vessel.dishClass,
+        }
+      : undefined,
   }));
 
   return {

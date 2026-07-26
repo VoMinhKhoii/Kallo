@@ -1,3 +1,4 @@
+import { midG, type VesselTier } from '@/lib/ai/portion/vessel-data';
 import type {
   MacroBreakdown,
   MealItem,
@@ -24,6 +25,15 @@ export function recalculateTotals(items: MealItem[]): MacroBreakdown {
   );
 }
 
+function scaleMacros(macros: MacroBreakdown, ratio: number): MacroBreakdown {
+  return {
+    calories: macros.calories * ratio,
+    protein: macros.protein * ratio,
+    carbs: macros.carbs * ratio,
+    fat: macros.fat * ratio,
+  };
+}
+
 export function applyQuantityChange(
   items: MealItem[],
   originalItems: MealItem[],
@@ -44,14 +54,55 @@ export function applyQuantityChange(
     return {
       ...item,
       quantity: newQuantity,
-      macros: {
-        calories: originalItem.macros.calories * ratio,
-        protein: originalItem.macros.protein * ratio,
-        carbs: originalItem.macros.carbs * ratio,
-        fat: originalItem.macros.fat * ratio,
-      },
+      macros: scaleMacros(originalItem.macros, ratio),
     };
   });
+}
+
+export function vesselGramsForTier(
+  item: MealItem,
+  tier: VesselTier
+): number | undefined {
+  if (!item.vessel) return undefined;
+  if (
+    item.vessel.family !== 'bowl' &&
+    item.vessel.family !== 'plate' &&
+    item.vessel.family !== 'cup'
+  ) {
+    return undefined;
+  }
+  return midG(item.vessel.family, tier, item.vessel.dishClass);
+}
+
+export function applyVesselTierChange(
+  items: MealItem[],
+  itemId: string,
+  newTier: VesselTier
+): MealItem[] {
+  const target = items.find((item) => item.id === itemId);
+  if (!target?.vessel) return items;
+  const vessel = target.vessel;
+
+  const currentMid = vesselGramsForTier(target, vessel.tier);
+  const nextMid = vesselGramsForTier(target, newTier);
+  if (!currentMid || nextMid === undefined) return items;
+
+  const ratio = nextMid / currentMid;
+  const newQuantity = Math.max(
+    MIN_DISH_GRAMS,
+    Math.round(target.quantity * ratio)
+  );
+
+  return items.map((item) =>
+    item.id === itemId
+      ? {
+          ...item,
+          quantity: newQuantity,
+          macros: scaleMacros(item.macros, ratio),
+          vessel: { ...vessel, tier: newTier },
+        }
+      : item
+  );
 }
 
 /**

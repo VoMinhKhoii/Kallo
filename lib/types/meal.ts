@@ -1,3 +1,9 @@
+import type {
+  DishClass,
+  VesselFamily,
+  VesselTier,
+} from '@/lib/ai/portion/vessel-data';
+
 export interface MacroBreakdown {
   calories: number;
   protein: number;
@@ -11,6 +17,11 @@ export interface MealItem {
   quantity: number;
   unit: string;
   macros: MacroBreakdown;
+  vessel?: {
+    family: VesselFamily;
+    tier: VesselTier;
+    dishClass: DishClass;
+  };
 }
 
 export interface ParsedMeal {
