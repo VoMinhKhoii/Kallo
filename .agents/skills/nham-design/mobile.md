@@ -152,8 +152,10 @@ can usually just retry.
 
 ## Status / migration
 
-- ✅ **Dashboard, Nutrition, Logging, Onboarding, Settings** — live on this system
-  (`kInk` + `kInkMuted`, the calm scale).
+**Palette + token adoption** — settled, unchanged by the density work:
+
+- ✅ **Dashboard, Nutrition, Logging, Onboarding, Settings** — on `kInk` +
+  `kInkMuted` and the calm `dash*` scale.
 - 🔸 **Auth** — a deliberate **light-touch**: body / labels / buttons are on the
   calm sans tokens and the two-colour palette, but its serif brand identity is
   preserved intact (the "Nhẩm" wordmark, the italic tagline, and the form titles
@@ -163,3 +165,36 @@ Two shared-widget paths still carry pre-calm styling where a call site didn't
 override them: `lib/shared/widgets/nham_text.dart` (its `NhamTextVariant`
 defaults) and the logging `mealQuote` serif variant. These are intentional and
 out of the calm token set; migrate the shared widget separately if desired.
+
+### ⚠️ The density rules below are PROVISIONAL
+
+The *at-most-three-sizes* rule, the `LoggingSpacing` rhythm, `LoggingIcons`,
+never-margin-a-card, and status-colour-on-the-affordance are implemented on
+**logging only** and have **not yet been validated on a physical device**.
+
+Two of the changes are already **app-wide** and reach surfaces that were never
+designed around them — check these first when validating:
+
+| Change | Scope | Risk |
+|--------|-------|------|
+| `dashBody` leading 1.45 → 1.3, `dashMeta` 1.35 → 1.25 | every surface | dashboard / settings / circle / onboarding / auth / nutrition now read tighter than when they were designed |
+| Text scaling capped at 1.3x | every surface | a user above 130% sees text stop growing |
+
+Do **not** port the density rules to another surface until logging is signed off
+on hardware. If it is rejected, the leading is the first thing to revert — it is
+two numbers in `calm_tokens.dart` and it moves every screen at once.
+
+### Porting a surface (once logging is signed off)
+
+1. Inventory it: `grep -rhoE "NhamTextVariant\.[a-zA-Z]+|dash[A-Z][a-zA-Z]*\(" <dir> | sort | uniq -c`.
+2. Map every hit onto Value 17 / Body 14 / Meta 12. More than three sizes on one
+   screen means the mapping is wrong, not that the screen is special.
+3. Replace `NhamText(variant:)` with plain `Text(style: dash*())`. Watch the
+   merge trap: a call site passing **both** keeps the override and silently
+   drops the variant's size.
+4. Name the surface's gaps in one constants file, the way
+   `logging/logic/logging_spacing.dart` does. Presentational surfaces keep the
+   12px default; only a dense scrolling list earns tighter.
+5. Strip card-owned bottom margins — the parent stack owns every gap.
+6. One glyph size + one hit target for icon-only controls.
+7. Re-check on device at 100% **and** at the smallest Dynamic Type step.
