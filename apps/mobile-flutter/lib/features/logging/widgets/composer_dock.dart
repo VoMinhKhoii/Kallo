@@ -1,17 +1,14 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 
-import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/logging_spacing.dart';
 
 /// The composer's floating dock: the feed scrolls UNDER it, so the day stays
 /// visible behind the input instead of being cut off by a solid bar.
 ///
-/// The dock itself is a blurred veil — content reads through it, softened —
-/// while the composer card inside stays fully opaque. Two layers, deliberately:
-/// the veil is what floats, the card is what you type into.
+/// The dock paints nothing at all — the feed shows through it untouched, and
+/// the only opaque thing here is the composer card inside, which floats on its
+/// own shadow.
 ///
 /// The dock reports its own height through [onHeightChanged] so the feed can
 /// reserve exactly that much scroll padding; nothing is ever permanently
@@ -53,25 +50,15 @@ class _ComposerDockState extends State<ComposerDock> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
-    return ClipRect(
+    return Padding(
       key: _dockKey,
-      // The clip bounds the filter: without it the blur samples the whole
-      // layer, not just the strip behind the dock.
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          // A veil, not a fill — enough to keep the composer legible over a
-          // busy feed while the cards behind stay readable as cards.
-          color: NhamColors.surface.withValues(alpha: 0.55),
-          padding: EdgeInsets.fromLTRB(
-            NhamSpacing.sp3,
-            LoggingSpacing.block,
-            NhamSpacing.sp3,
-            bottomInset + LoggingSpacing.block,
-          ),
-          child: widget.child,
-        ),
+      padding: EdgeInsets.fromLTRB(
+        NhamSpacing.sp3,
+        LoggingSpacing.block,
+        NhamSpacing.sp3,
+        bottomInset + LoggingSpacing.block,
       ),
+      child: widget.child,
     );
   }
 }

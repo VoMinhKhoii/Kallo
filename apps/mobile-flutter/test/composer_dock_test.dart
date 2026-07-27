@@ -57,18 +57,18 @@ void main() {
     expect(heights.last - initial, 140 - 64);
   });
 
-  testWidgets('blurs what is behind it instead of hiding it', (tester) async {
+  testWidgets('paints nothing, so the feed shows through it', (tester) async {
     await tester.pumpWidget(host(onHeightChanged: (_) {}));
     await tester.pumpAndSettle();
 
-    expect(find.byType(BackdropFilter), findsOneWidget);
-    // A veil, not a fill — a fully opaque dock would defeat the blur.
-    final veil = tester.widget<Container>(
+    // Any painted surface in the dock would occlude the feed behind it — the
+    // composer card is the only opaque thing allowed down here.
+    expect(
       find.descendant(
-        of: find.byType(BackdropFilter),
-        matching: find.byType(Container),
+        of: find.byType(ComposerDock),
+        matching: find.byType(DecoratedBox),
       ),
+      findsNothing,
     );
-    expect((veil.color ?? const Color(0xFF000000)).a, lessThan(1.0));
   });
 }
