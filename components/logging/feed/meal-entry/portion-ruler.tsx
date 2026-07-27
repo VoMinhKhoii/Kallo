@@ -12,8 +12,8 @@ const ANCHOR_POSITIONS = [10, 30, 50, 70, 90] as const;
 const POSITION_MAX = 1000;
 const POSITION_BREAKS = [0, 100, 300, 500, 700, 900, 1000] as const;
 
-const MIN_GLYPH_PX = 14;
-const MAX_GLYPH_PX = 40;
+const MIN_GLYPH_PX = 20;
+const MAX_GLYPH_PX = 60;
 const CBRT_MIN = Math.cbrt(PIECE_TIERS[0].grams);
 const CBRT_MAX = Math.cbrt(PIECE_TIERS[PIECE_TIERS.length - 1].grams);
 
@@ -88,7 +88,7 @@ export function PortionRuler({
 
   return (
     <div>
-      <div className="relative mb-1 h-[44px]">
+      <div className="relative mb-1 h-[64px]">
         {anchors.map((anchor, index) => {
           const tier = PIECE_TIERS[anchor.tier - 1];
           const asset = pieceAssetFor(tier, kind);
