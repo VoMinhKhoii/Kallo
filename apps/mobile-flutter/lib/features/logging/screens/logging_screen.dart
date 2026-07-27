@@ -10,6 +10,7 @@ import '../../../theme/nham_theme.dart';
 import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
+import '../logic/logging_spacing.dart';
 import '../widgets/feed_area.dart';
 import '../widgets/partial_yesterday_prompt.dart';
 import '../widgets/timeline_picker.dart';
@@ -72,12 +73,9 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                NhamSpacing.sp3,
-                0,
-                NhamSpacing.sp3,
-                NhamSpacing.sp1,
-              ),
+              // No bottom inset — the macro summary below owns the one
+              // block gap, so the date strip never double-spaces it.
+              padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
               child: DateMorph(
                 dates: mealDates,
                 today: today,
@@ -153,9 +151,9 @@ class _LoggingSkeleton extends StatelessWidget {
                 const Padding(
                   padding: EdgeInsets.fromLTRB(
                     NhamSpacing.sp3,
-                    NhamSpacing.sp2,
+                    LoggingSpacing.block,
                     NhamSpacing.sp3,
-                    NhamSpacing.sp1,
+                    LoggingSpacing.block,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -165,14 +163,13 @@ class _LoggingSkeleton extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: NhamSpacing.sp2),
                 for (var i = 0; i < 3; i++)
                   const Padding(
                     padding: EdgeInsets.fromLTRB(
                       NhamSpacing.sp3,
-                      NhamSpacing.sp2,
+                      0,
                       NhamSpacing.sp3,
-                      NhamSpacing.sp2,
+                      LoggingSpacing.block,
                     ),
                     child: SkeletonBar(height: 96, radius: 16),
                   ),

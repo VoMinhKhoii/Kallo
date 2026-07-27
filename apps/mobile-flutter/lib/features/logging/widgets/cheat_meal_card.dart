@@ -8,6 +8,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/logging_models.dart';
 import '../logic/format.dart';
+import '../logic/logging_spacing.dart';
 import 'cheat_meal_expanded_details.dart';
 import 'cheat_slider_card.dart' show CheatBadge;
 import 'confirm_meal_removal.dart';
@@ -84,7 +85,11 @@ class _CheatMealCardState extends State<CheatMealCard>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.trash2, size: 18, color: Colors.white),
+            const Icon(
+              LucideIcons.trash2,
+              size: LoggingIcons.size,
+              color: Colors.white,
+            ),
             const SizedBox(width: 6),
             NhamText(
               'logging.remove'.tr(),
@@ -126,128 +131,126 @@ class _CheatMealCardState extends State<CheatMealCard>
 
     final curvedExpand = _curvedExpand;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          PersistedMealTimeDivider(time: time),
-          const SizedBox(height: NhamSpacing.sp2),
-          _maybeDismissible(
-            Container(
-              padding: const EdgeInsets.all(NhamSpacing.sp4),
-              decoration: BoxDecoration(
-                // Warm accent tint over the card white (web bg-nham-accent/4).
-                color: Color.alphaBlend(NhamColors.accent05, NhamColors.elev),
-                borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-                border: Border.all(color: NhamColors.accent30),
-                boxShadow: const [NhamShadows.sm],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _toggle,
+    // No bottom margin — the feed's list separator owns the gap below.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PersistedMealTimeDivider(time: time),
+        const SizedBox(height: LoggingSpacing.block),
+        _maybeDismissible(
+          Container(
+            padding: const EdgeInsets.all(NhamSpacing.sp4),
+            decoration: BoxDecoration(
+              // Warm accent tint over the card white (web bg-nham-accent/4).
+              color: Color.alphaBlend(NhamColors.accent05, NhamColors.elev),
+              borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+              border: Border.all(color: NhamColors.accent30),
+              boxShadow: const [NhamShadows.sm],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _toggle,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CheatBadge(
+                              label: 'logging.cheatMealCard.badge'.tr(),
+                            ),
+                            const SizedBox(height: NhamSpacing.sp2),
+                            NhamText(
+                              meal.rawInput,
+                              variant: NhamTextVariant.mealQuote,
+                              style: const TextStyle(
+                                fontSize: 17,
+                                height: 28 / 17,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: NhamSpacing.sp3),
+                      _ChevronToggle(expand: _expand, onTap: _toggle),
+                    ],
+                  ),
+                ),
+
+                // Collapsed summary — fades + collapses height as it expands.
+                AnimatedBuilder(
+                  animation: curvedExpand,
+                  builder: (context, child) {
+                    final t = curvedExpand.value;
+                    final fade = (1 - (t / 0.75)).clamp(0.0, 1.0);
+                    return ClipRect(
+                      child: Align(
+                        heightFactor: (1 - t),
+                        child: Opacity(opacity: fade, child: child),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: NhamSpacing.sp2),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CheatBadge(
-                                label: 'logging.cheatMealCard.badge'.tr(),
-                              ),
-                              const SizedBox(height: NhamSpacing.sp2),
-                              NhamText(
-                                meal.rawInput,
-                                variant: NhamTextVariant.mealQuote,
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  height: 28 / 17,
-                                ),
-                              ),
-                            ],
+                        Flexible(
+                          child: NhamText(
+                            _macroLine(meal),
+                            variant: NhamTextVariant.captionTabular,
                           ),
                         ),
                         const SizedBox(width: NhamSpacing.sp3),
-                        _ChevronToggle(expand: _expand, onTap: _toggle),
+                        NhamText(
+                          caloriesApprox,
+                          variant: NhamTextVariant.numStrong,
+                          style: dashValue(),
+                        ),
                       ],
                     ),
                   ),
+                ),
 
-                  // Collapsed summary — fades + collapses height as it expands.
-                  AnimatedBuilder(
-                    animation: curvedExpand,
-                    builder: (context, child) {
-                      final t = curvedExpand.value;
-                      final fade = (1 - (t / 0.75)).clamp(0.0, 1.0);
-                      return ClipRect(
-                        child: Align(
-                          heightFactor: (1 - t),
-                          child: Opacity(opacity: fade, child: child),
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: NhamSpacing.sp2),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: NhamText(
-                              _macroLine(meal),
-                              variant: NhamTextVariant.captionTabular,
-                            ),
-                          ),
-                          const SizedBox(width: NhamSpacing.sp3),
-                          NhamText(
-                            caloriesApprox,
-                            variant: NhamTextVariant.numStrong,
-                            style: dashValue(),
-                          ),
-                        ],
-                      ),
+                // Expanded details — the "you set" recap + total + reassurance.
+                SizeTransition(
+                  sizeFactor: curvedExpand,
+                  alignment: Alignment.topCenter,
+                  child: FadeTransition(
+                    opacity: curvedExpand,
+                    child: CheatMealExpandedDetails(
+                      meal: meal,
+                      macroLine: _macroLine(meal),
+                      caloriesApprox: caloriesApprox,
                     ),
                   ),
-
-                  // Expanded details — the "you set" recap + total + reassurance.
-                  SizeTransition(
-                    sizeFactor: curvedExpand,
-                    alignment: Alignment.topCenter,
-                    child: FadeTransition(
-                      opacity: curvedExpand,
-                      child: CheatMealExpandedDetails(
-                        meal: meal,
-                        macroLine: _macroLine(meal),
-                        caloriesApprox: caloriesApprox,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          if (widget.onRemove != null) ...[
-            const SizedBox(height: NhamSpacing.sp1_5),
-            Align(
-              alignment: Alignment.centerRight,
-              child: MealActionIconButton(
-                icon: LucideIcons.trash2,
-                label: 'logging.remove'.tr(),
-                danger: true,
-                onTap: () async {
-                  if (await confirmMealRemoval(context)) {
-                    if (!context.mounted) return;
-                    widget.onRemove?.call();
-                  }
-                },
-              ),
+        ),
+        if (widget.onRemove != null) ...[
+          const SizedBox(height: LoggingSpacing.actions),
+          Align(
+            alignment: Alignment.centerRight,
+            child: MealActionIconButton(
+              icon: LucideIcons.trash2,
+              label: 'logging.remove'.tr(),
+              danger: true,
+              onTap: () async {
+                if (await confirmMealRemoval(context)) {
+                  if (!context.mounted) return;
+                  widget.onRemove?.call();
+                }
+              },
             ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -285,10 +288,11 @@ class _ChevronToggleState extends State<_ChevronToggle> {
           ),
           child: RotationTransition(
             turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
-            child: Icon(
+            child: const Icon(
               LucideIcons.chevronDown,
-              size: 16,
-              color: _pressed ? NhamColors.text : NhamColors.textMuted60,
+              // Same glyph size and ink as the action icons beneath the card.
+              size: LoggingIcons.size,
+              color: NhamColors.text,
             ),
           ),
         ),

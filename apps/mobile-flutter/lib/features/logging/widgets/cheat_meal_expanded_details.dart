@@ -7,6 +7,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/logging_models.dart';
+import '../logic/logging_spacing.dart';
 import '../logic/slider_nutrition.dart';
 import 'cheat_slider_card.dart' show cheatSliderColor;
 
@@ -28,30 +29,32 @@ class CheatMealExpandedDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     final persisted = meal.cheatSliders;
     return Padding(
-      padding: const EdgeInsets.only(top: NhamSpacing.sp5),
+      padding: const EdgeInsets.only(top: LoggingSpacing.section),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
-          const SizedBox(height: NhamSpacing.sp4),
+          const SizedBox(height: LoggingSpacing.section),
           if (persisted != null) ...[
             Text('logging.cheatMealCard.youSet'.tr(), style: dashEyebrow()),
             const SizedBox(height: NhamSpacing.sp2),
             for (final slider in persisted.spec.sliders)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  vertical: LoggingSpacing.row,
+                ),
                 child: _YouSetRow(
                   slider: slider,
                   level: persisted.levels[slider.key] ?? slider.defaultLevel,
                 ),
               ),
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: LoggingSpacing.section),
             const Divider(
               height: 1,
               thickness: 1,
               color: NhamColors.borderFaint,
             ),
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: LoggingSpacing.section),
           ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -80,7 +83,7 @@ class CheatMealExpandedDetails extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: NhamSpacing.sp4),
+          const SizedBox(height: LoggingSpacing.section),
           NhamText(
             'logging.cheatMealCard.reassurance'.tr(),
             variant: NhamTextVariant.small,

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../logic/logging_spacing.dart';
 
 /// Imperative handle for [MealInput] — the RN `MealInputHandle`
 /// (`getText` / `clear` / `focus` / `setText`). The feed clears the field on
@@ -208,14 +209,14 @@ class _MealInputState extends State<MealInput>
               if (!_canSubmit && widget.analyzing && widget.onCancel != null)
                 _ActionButton(
                   icon: LucideIcons.square, // lucide Square (filled)
-                  iconSize: 14,
+                  iconSize: LoggingIcons.size,
                   label: 'common.cancel'.tr(),
                   onTap: widget.onCancel,
                 )
               else
                 _ActionButton(
                   icon: LucideIcons.arrowUp, // lucide ArrowUp
-                  iconSize: 16,
+                  iconSize: LoggingIcons.size,
                   label: 'logging.submit'.tr(),
                   enabled: _canSubmit,
                   onTap: _canSubmit ? _submit : null,
@@ -270,15 +271,12 @@ class _ModeButtonState extends State<_ModeButton> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(widget.icon, size: 18, color: NhamColors.btn),
+                    Icon(widget.icon,
+                        size: LoggingIcons.size, color: NhamColors.btn),
                     const SizedBox(width: 6),
-                    Text(
-                      widget.label,
-                      style: dashBody(
-                        color: NhamColors.btn,
-                        weight: FontWeight.w500,
-                      ),
-                    ),
+                    // Regular weight, same as the field's own text — the mode
+                    // names the composer, it doesn't outrank what's typed.
+                    Text(widget.label, style: dashBody(color: NhamColors.btn)),
                   ],
                 ),
               ),
@@ -326,7 +324,7 @@ class _BarcodeButtonState extends State<_BarcodeButton> {
               duration: const Duration(milliseconds: 200),
               child: const Icon(
                 LucideIcons.scanBarcode,
-                size: 18,
+                size: LoggingIcons.size,
                 color: NhamColors.btn,
               ),
             ),

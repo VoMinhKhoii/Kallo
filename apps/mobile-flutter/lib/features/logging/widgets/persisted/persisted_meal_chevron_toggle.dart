@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/nham_colors.dart';
+import '../../logic/logging_spacing.dart';
 
-/// The collapse chevron: its OWN button — rounded-full p-1, text-muted/60,
-/// pressed bg-nham-hover/40 + text-nham-text (web hover affordance). Rotates
-/// 0°↔180° over 200ms.
+/// The collapse chevron: its OWN button — a round pressed wash sized to the
+/// glyph, not to the row. Rotates 0°↔180° over 200ms.
 class PersistedMealChevronToggle extends StatefulWidget {
   const PersistedMealChevronToggle({
     super.key,
@@ -41,10 +41,11 @@ class _PersistedMealChevronToggleState
         ),
         child: RotationTransition(
           turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
-          child: Icon(
+          child: const Icon(
             LucideIcons.chevronDown, // lucide ChevronDown
-            size: 16,
-            color: _pressed ? NhamColors.text : NhamColors.textMuted60,
+            // Same glyph size and ink as the action icons beneath the card.
+            size: LoggingIcons.size,
+            color: NhamColors.text,
           ),
         ),
       ),

@@ -6,6 +6,7 @@ import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/format.dart';
+import '../../logic/logging_spacing.dart';
 
 class PersistedMealExpandedDetails extends StatelessWidget {
   const PersistedMealExpandedDetails({super.key, required this.meal});
@@ -18,19 +19,21 @@ class PersistedMealExpandedDetails extends StatelessWidget {
     final groups = [...meal.mealItemGroups]
       ..sort((a, b) => a.order.compareTo(b.order));
     return Padding(
-      padding: const EdgeInsets.only(top: NhamSpacing.sp5), // mt-5
+      padding: const EdgeInsets.only(top: LoggingSpacing.section),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
-          const SizedBox(height: NhamSpacing.sp4), // pt-4
+          const SizedBox(height: LoggingSpacing.section),
           Padding(
-            padding: const EdgeInsets.only(bottom: NhamSpacing.sp4), // mb-4
+            padding: const EdgeInsets.only(bottom: LoggingSpacing.section),
             child: Column(
               children: [
                 for (final group in groups)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8), // py-2
+                    padding: const EdgeInsets.symmetric(
+                      vertical: LoggingSpacing.row,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
@@ -44,15 +47,20 @@ class PersistedMealExpandedDetails extends StatelessWidget {
                         const SizedBox(width: NhamSpacing.sp3), // gap-3
                         Row(
                           children: [
-                            NhamText('P: ${fmtG(group.nutrition.proteinG)}',
-                                variant: NhamTextVariant.macroTiny),
+                            NhamText(
+                              'P: ${fmtG(group.nutrition.proteinG)}',
+                              variant: NhamTextVariant.macroTiny,
+                            ),
                             const SizedBox(width: NhamSpacing.sp2),
                             NhamText(
-                                'C: ${fmtG(group.nutrition.carbohydrateG)}',
-                                variant: NhamTextVariant.macroTiny),
+                              'C: ${fmtG(group.nutrition.carbohydrateG)}',
+                              variant: NhamTextVariant.macroTiny,
+                            ),
                             const SizedBox(width: NhamSpacing.sp2),
-                            NhamText('F: ${fmtG(group.nutrition.fatG)}',
-                                variant: NhamTextVariant.macroTiny),
+                            NhamText(
+                              'F: ${fmtG(group.nutrition.fatG)}',
+                              variant: NhamTextVariant.macroTiny,
+                            ),
                             const SizedBox(width: NhamSpacing.sp3), // gap-3
                             NhamText(
                               fmtKcal(group.nutrition.caloriesKcal),
@@ -67,12 +75,14 @@ class PersistedMealExpandedDetails extends StatelessWidget {
             ),
           ),
           const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
-          const SizedBox(height: NhamSpacing.sp3), // pt-3
+          const SizedBox(height: LoggingSpacing.section),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              NhamText('logging.persistedMealCard.total'.tr(),
-                  variant: NhamTextVariant.calorieBold),
+              NhamText(
+                'logging.persistedMealCard.total'.tr(),
+                variant: NhamTextVariant.calorieBold,
+              ),
               Row(
                 children: [
                   NhamText(
@@ -80,8 +90,10 @@ class PersistedMealExpandedDetails extends StatelessWidget {
                     variant: NhamTextVariant.captionTabular,
                   ),
                   const SizedBox(width: NhamSpacing.sp4), // gap-4
-                  NhamText(fmtKcal(n.caloriesKcal),
-                      variant: NhamTextVariant.numStrong),
+                  NhamText(
+                    fmtKcal(n.caloriesKcal),
+                    variant: NhamTextVariant.numStrong,
+                  ),
                 ],
               ),
             ],
