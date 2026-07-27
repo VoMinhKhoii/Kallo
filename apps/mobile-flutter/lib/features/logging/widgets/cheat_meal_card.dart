@@ -275,24 +275,32 @@ class _ChevronToggleState extends State<_ChevronToggle> {
       button: true,
       label: 'logging.cheatMealCard.toggleDetails'.tr(),
       child: GestureDetector(
+        // Full [LoggingIcons.hit] tap target around a wash that stays hugging
+        // the glyph — bigger target, same small press affordance.
+        behavior: HitTestBehavior.opaque,
         onTapDown: (_) => setState(() => _pressed = true),
         onTapUp: (_) => setState(() => _pressed = false),
         onTapCancel: () => setState(() => _pressed = false),
         onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: _pressed ? NhamColors.hover40 : Colors.transparent,
-            shape: BoxShape.circle,
-          ),
-          child: RotationTransition(
-            turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
-            child: const Icon(
-              LucideIcons.chevronDown,
-              // Same glyph size and ink as the action icons beneath the card.
-              size: LoggingIcons.size,
-              color: NhamColors.text,
+        child: SizedBox.square(
+          dimension: LoggingIcons.hit,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: _pressed ? NhamColors.hover40 : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: RotationTransition(
+                turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
+                child: const Icon(
+                  LucideIcons.chevronDown,
+                  // Same glyph size/ink as the action icons beneath the card.
+                  size: LoggingIcons.size,
+                  color: NhamColors.text,
+                ),
+              ),
             ),
           ),
         ),

@@ -52,16 +52,29 @@ class _ComposerDockState extends State<ComposerDock> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
-    return Container(
-      key: _dockKey,
-      color: NhamColors.surface,
-      padding: EdgeInsets.fromLTRB(
-        NhamSpacing.sp3,
-        LoggingSpacing.block,
-        NhamSpacing.sp3,
-        bottomInset + LoggingSpacing.block,
+    // Rebuilding the dock is NOT the only way it changes height: the composer
+    // grows a line under the user's thumb via its own setState, which never
+    // re-runs this build. Without the notifier the reserved padding would go
+    // stale mid-type and the last meal card would slide under the dock.
+    return NotificationListener<SizeChangedLayoutNotification>(
+      onNotification: (_) {
+        // Fired during layout — defer the parent's setState past this frame.
+        WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
+        return false;
+      },
+      child: SizeChangedLayoutNotifier(
+        child: Container(
+          key: _dockKey,
+          color: NhamColors.surface,
+          padding: EdgeInsets.fromLTRB(
+            NhamSpacing.sp3,
+            LoggingSpacing.block,
+            NhamSpacing.sp3,
+            bottomInset + LoggingSpacing.block,
+          ),
+          child: widget.child,
+        ),
       ),
-      child: widget.child,
     );
   }
 }

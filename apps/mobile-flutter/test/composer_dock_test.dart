@@ -11,7 +11,7 @@ import 'package:nham_mobile/theme/nham_colors.dart';
 void main() {
   Widget host({
     required ValueChanged<double> onHeightChanged,
-    double contentHeight = 64,
+    Widget child = const SizedBox(height: 64),
   }) => MaterialApp(
         home: Scaffold(
           body: Stack(
@@ -23,7 +23,7 @@ void main() {
                 bottom: 0,
                 child: ComposerDock(
                   onHeightChanged: onHeightChanged,
-                  child: SizedBox(height: contentHeight),
+                  child: child,
                 ),
               ),
             ],
@@ -43,19 +43,27 @@ void main() {
     expect(reported, greaterThan(64));
   });
 
-  testWidgets('re-reports when the composer grows', (tester) async {
+  testWidgets('re-reports when the composer grows on its own', (tester) async {
+    // The real scenario: the composer gains a line under the user's thumb via
+    // its OWN setState, which never re-runs the dock's build. Driving this from
+    // the host instead would pass even with the size notifier removed.
+    final key = GlobalKey<_GrowerState>();
     final heights = <double>[];
-    await tester.pumpWidget(host(onHeightChanged: heights.add));
+
+    await tester.pumpWidget(
+      host(onHeightChanged: heights.add, child: _Grower(key: key)),
+    );
     await tester.pumpAndSettle();
     final initial = heights.last;
 
-    await tester.pumpWidget(
-      host(onHeightChanged: heights.add, contentHeight: 140),
-    );
+    key.currentState!.grow();
     await tester.pumpAndSettle();
 
-    expect(heights.last, greaterThan(initial));
-    expect(heights.last - initial, 140 - 64);
+    expect(
+      heights.last - initial,
+      _Grower.grownHeight - _Grower.restingHeight,
+      reason: 'stale padding here buries the last meal card under the dock',
+    );
   });
 
   testWidgets('is a solid surface, so cards pass cleanly behind it',
@@ -74,4 +82,25 @@ void main() {
     );
     expect(dock.color, NhamColors.surface);
   });
+}
+
+/// A child that grows via its own setState — how [MealInput] behaves when the
+/// user types a second line, without its parent rebuilding.
+class _Grower extends StatefulWidget {
+  const _Grower({super.key});
+
+  static const double restingHeight = 64;
+  static const double grownHeight = 140;
+
+  @override
+  State<_Grower> createState() => _GrowerState();
+}
+
+class _GrowerState extends State<_Grower> {
+  double _height = _Grower.restingHeight;
+
+  void grow() => setState(() => _height = _Grower.grownHeight);
+
+  @override
+  Widget build(BuildContext context) => SizedBox(height: _height);
 }
