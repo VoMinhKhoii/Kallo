@@ -152,10 +152,13 @@ class _MealInputState extends State<MealInput>
         return Container(
           padding: const EdgeInsets.all(NhamSpacing.sp3),
           decoration: BoxDecoration(
+            // Opaque: the feed reads through the DOCK, never through the field.
             color: NhamColors.elev,
             borderRadius: BorderRadius.circular(NhamRadii.containerLg),
             border: Border.all(color: borderColor),
-            boxShadow: [glow],
+            // Ink contact + ambient under the accent glow — what lifts the
+            // card off the feed scrolling behind it.
+            boxShadow: [NhamShadows.md, NhamShadows.xs, glow],
           ),
           child: child,
         );
@@ -274,8 +277,7 @@ class _ModeButtonState extends State<_ModeButton> {
                     Icon(widget.icon,
                         size: LoggingIcons.size, color: NhamColors.btn),
                     const SizedBox(width: 6),
-                    // Regular weight, same as the field's own text — the mode
-                    // names the composer, it doesn't outrank what's typed.
+                    // Regular weight, same as the field's own text.
                     Text(widget.label, style: dashBody(color: NhamColors.btn)),
                   ],
                 ),
