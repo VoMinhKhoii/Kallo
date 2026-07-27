@@ -25,7 +25,7 @@ import {
   PIECE_TIERS,
   VESSEL_FAMILIES,
 } from '@/lib/ai/portion/vessel-data';
-import type { ClientVessel } from '@/lib/ai/portion/vessel-types';
+import type { ClientVessel, PieceVessel } from '@/lib/ai/portion/vessel-types';
 import { applyQuantityChange } from '@/lib/meal-utils';
 import type { MealItem } from '@/lib/types/meal';
 
@@ -57,7 +57,7 @@ export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
 
   let anchors: PortionAnchor[];
   let count: number | undefined;
-  let kind: 'fish' | 'meat' | undefined;
+  let kind: PieceVessel['kind'] | undefined;
   if ('dishClass' in vessel) {
     const { family, dishClass } = vessel;
     anchors = TIERS.map((tier) => ({

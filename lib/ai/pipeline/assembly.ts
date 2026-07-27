@@ -213,6 +213,7 @@ export function assembleResult(
           return {
             ingredientName: ingredientDisplayName(ing),
             foodCompositionId: matchInfo?.foodCompositionId ?? null,
+            foodGroupEn: matchInfo?.foodGroupEn,
             estimatedGrams: grams,
             rawEquivalentGrams: dbScalingGrams,
             cookingMethod,

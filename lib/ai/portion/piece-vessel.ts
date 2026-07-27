@@ -30,6 +30,32 @@ const ANIMAL_PROTEIN =
 const FISH_OR_SEAFOOD =
   /\b(ca|fish|salmon|tuna|basa|mackerel|cod|trout|muc|squid|tom|shrimp|prawn|cua|crab)\b/;
 
+const POULTRY = /\b(ga|chicken|vit|duck|turkey|quail|chim cut|cut bird)\b/;
+
+const FOOD_GROUP_KIND_RULES: ReadonlyArray<{
+  fragments: readonly string[];
+  kind: PieceVessel['kind'] | null;
+}> = [
+  { fragments: ['sausages and luncheon meats'], kind: null },
+  {
+    fragments: [
+      'finfish and shellfish products',
+      'fish, shellfish and products',
+    ],
+    kind: 'fish',
+  },
+  { fragments: ['poultry products'], kind: 'poultry' },
+  {
+    fragments: [
+      'beef products',
+      'pork products',
+      'lamb, veal, and game products',
+      'meat and meat products',
+    ],
+    kind: 'meat',
+  },
+];
+
 function normalizeWords(value: string): string {
   return normalizeVesselToken(value)
     .replace(/[^a-z0-9]+/g, ' ')
@@ -41,7 +67,22 @@ function isAnimalProtein(names: string): boolean {
 }
 
 function pieceKind(names: string): PieceVessel['kind'] {
-  return FISH_OR_SEAFOOD.test(normalizeWords(names)) ? 'fish' : 'meat';
+  const normalized = normalizeWords(names);
+  if (FISH_OR_SEAFOOD.test(normalized)) return 'fish';
+  if (POULTRY.test(normalized)) return 'poultry';
+  return 'meat';
+}
+
+function pieceKindFromFoodGroup(
+  foodGroupEn: string
+): PieceVessel['kind'] | null {
+  const normalized = foodGroupEn.trim().toLocaleLowerCase('en');
+  for (const rule of FOOD_GROUP_KIND_RULES) {
+    if (rule.fragments.some((fragment) => normalized.includes(fragment))) {
+      return rule.kind;
+    }
+  }
+  return null;
 }
 
 export interface PieceDishLike {
@@ -55,7 +96,11 @@ export interface PieceDishLike {
 
 export interface PieceMealItemLike {
   vessel?: unknown;
-  ingredients: Array<{ ingredientName: string; estimatedGrams: number }>;
+  ingredients: Array<{
+    ingredientName: string;
+    estimatedGrams: number;
+    foodGroupEn?: string;
+  }>;
 }
 
 /** Derive deterministic piece metadata from Call-1 quantity evidence. */
@@ -100,14 +145,19 @@ export function resolvePieceVessel(
   }
 
   const sourceNames = `${source.rawName} ${source.canonicalName}`;
-  if (!isAnimalProtein(sourceNames)) return null;
+  const kind = dominant.ingredient.foodGroupEn
+    ? pieceKindFromFoodGroup(dominant.ingredient.foodGroupEn)
+    : isAnimalProtein(sourceNames)
+      ? pieceKind(sourceNames)
+      : null;
+  if (!kind) return null;
 
   const dominantGrams = displayedTotal * dominant.share;
   return {
     family: 'piece',
     tier: nearestPieceTier(dominantGrams / source.count),
     count: source.count,
-    kind: pieceKind(sourceNames),
+    kind,
     provenance: 'piece_prior',
   };
 }

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { Slider as SliderPrimitive } from 'radix-ui';
 import type { PortionAnchor } from '@/components/logging/feed/meal-entry/portion-picker-body';
 import { PIECE_TIERS, pieceAssetFor } from '@/lib/ai/portion/vessel-data';
+import type { PieceVessel } from '@/lib/ai/portion/vessel-types';
 
 /** Fixed track positions (%) for the five tier anchors — equal visual spacing. */
 const ANCHOR_POSITIONS = [10, 30, 50, 70, 90] as const;
@@ -49,7 +50,7 @@ interface PortionRulerProps {
   grams: number;
   min: number;
   max: number;
-  kind: 'fish' | 'meat';
+  kind: PieceVessel['kind'];
   ariaLabel: string;
   ariaValueText: string;
   onChange: (grams: number) => void;

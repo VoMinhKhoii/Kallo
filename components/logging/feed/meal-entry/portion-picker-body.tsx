@@ -8,6 +8,7 @@ import {
   isContainerFamily,
   type VesselFamily,
 } from '@/lib/ai/portion/vessel-data';
+import type { PieceVessel } from '@/lib/ai/portion/vessel-types';
 
 export interface PortionAnchor {
   tier: number;
@@ -31,7 +32,7 @@ interface PortionPickerBodyProps {
   /** Piece count (pieces only) — drives the "N ×" label prefix. */
   count?: number;
   /** Silhouette family for pieces (fish vs meat). */
-  kind?: 'fish' | 'meat';
+  kind?: PieceVessel['kind'];
   anchors: PortionAnchor[];
   grams: number;
   min: number;

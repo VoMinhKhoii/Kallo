@@ -18,6 +18,7 @@ const ROW_CHICKEN = {
   protein_g: 31,
   carbohydrate_g: 0,
   fat_g: 3.6,
+  type_en: 'Poultry Products',
 };
 
 const ROW_RICE = { ...ROW_CHICKEN, id: 'fc-002', calories_kcal: 130 };
@@ -52,6 +53,7 @@ describe('batchFetchNutrition', () => {
 
     const map = await batchFetchNutrition(['fc-001'], db);
     expect(map.get('fc-001')?.caloriesKcal).toBe(165);
+    expect(map.get('fc-001')?.foodGroupEn).toBe('Poultry Products');
 
     // Let the background warm settle, then confirm it ran.
     await vi.waitFor(() => expect(isNutritionCacheInitialized()).toBe(true));
@@ -70,6 +72,7 @@ describe('batchFetchNutrition', () => {
 
     const map = await batchFetchNutrition(['fc-001', 'fc-002'], db);
     expect(map.size).toBe(2);
+    expect(map.get('fc-001')?.foodGroupEn).toBe('Poultry Products');
     // Both hit the warm cache — no residual DB query.
     expect(execute).not.toHaveBeenCalled();
   });

@@ -27,6 +27,7 @@ import type { NutritionPer100g } from '../types';
  */
 const cache = new Map<string, NutritionPer100g>();
 const inedibleCache = new Map<string, number>();
+const foodGroupCache = new Map<string, string>();
 
 /** True only after loadAll() finishes successfully */
 let initialized = false;
@@ -38,6 +39,7 @@ let initPromise: Promise<void> | null = null;
 export function clearNutritionCache(): void {
   cache.clear();
   inedibleCache.clear();
+  foodGroupCache.clear();
   initialized = false;
   initPromise = null;
 }
@@ -95,6 +97,11 @@ export function peekNutritionCache(): Map<string, NutritionPer100g> {
   return cache;
 }
 
+/** Return food-group metadata loaded alongside cached nutrition rows. */
+export function peekFoodGroupCache(): Map<string, string> {
+  return foodGroupCache;
+}
+
 /** Insert a directly-fetched row into the singleton so later hits are warm. */
 export function primeNutritionEntry(
   id: string,
@@ -138,6 +145,10 @@ export async function fetchNutritionForIds(
     const nutrition = parseNutritionRow(row);
     map.set(id, nutrition);
     cache.set(id, nutrition);
+    const foodGroupEn = row.type_en;
+    if (typeof foodGroupEn === 'string' && foodGroupEn.length > 0) {
+      foodGroupCache.set(id, foodGroupEn);
+    }
     const inedible = row.inedible_portion_pct;
     if (inedible != null) {
       const parsed = Number(inedible);
@@ -203,6 +214,10 @@ async function loadAll(db: PostgresJsDatabase<typeof schema>): Promise<void> {
   for (const row of allRows) {
     const id = row.id as string;
     cache.set(id, parseNutritionRow(row));
+    const foodGroupEn = row.type_en;
+    if (typeof foodGroupEn === 'string' && foodGroupEn.length > 0) {
+      foodGroupCache.set(id, foodGroupEn);
+    }
     // Postgres `numeric` columns arrive as strings from postgres-js, but tests
     // pass numbers; `Number()` normalizes both. Skip NaN (null/missing/junk).
     const inedible = row.inedible_portion_pct;

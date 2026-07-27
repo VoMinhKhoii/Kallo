@@ -8,7 +8,7 @@ export type PieceVessel = {
   family: 'piece';
   tier: 1 | 2 | 3 | 4 | 5;
   count: number;
-  kind: 'fish' | 'meat';
+  kind: 'fish' | 'meat' | 'poultry';
 };
 
 export type ClientVessel = ContainerVessel | PieceVessel;

@@ -5,6 +5,7 @@ import {
   decideMealLanguage,
   type SupportedOutputLanguage,
 } from './language/detect';
+import type { PieceVessel } from './portion/vessel-types';
 import type { PipelineResult, UserContext } from './types';
 
 type ProfileRow = typeof userProfiles.$inferSelect;
@@ -98,8 +99,8 @@ function toMacros(nutrition: {
 
 function toPieceKind(vessel: {
   family: string;
-  kind?: 'fish' | 'meat';
-}): 'fish' | 'meat' {
+  kind?: PieceVessel['kind'];
+}): PieceVessel['kind'] {
   if (vessel.family === 'piece-fish') return 'fish';
   if (vessel.family === 'piece-meat') return 'meat';
   return vessel.kind ?? 'meat';

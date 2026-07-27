@@ -285,6 +285,7 @@ export function bridgeV2ToV1(args: {
         matchedPartialByFlatIdx.set(flatIngredientIdx, {
           ingredientName: ing.rawName,
           foodCompositionId: acceptedCandidate.info.foodCompositionId,
+          foodGroupEn: acceptedCandidate.info.foodGroupEn,
           matchedName: acceptedCandidate.info.matchedName,
           similarity: acceptedCandidate.info.similarity,
           confidence: acceptedCandidate.info.confidence,

@@ -87,22 +87,27 @@ describe('piece tier assets', () => {
       [
         { file: 'fish-1-chunk.png', aspect: 1.06 },
         { file: 'meat-1-cubes.png', aspect: 1.83 },
+        { file: 'poultry-1-chunk.png', aspect: 1.02 },
       ],
       [
         { file: 'fish-2-lat.png', aspect: 2.19 },
         { file: 'meat-2-belly-slices.png', aspect: 1.28 },
+        { file: 'poultry-2-wing.png', aspect: 0.95 },
       ],
       [
         { file: 'fish-3-khoanh.png', aspect: 1.29 },
         { file: 'meat-3-chop.png', aspect: 0.82 },
+        { file: 'poultry-3-drumstick.png', aspect: 0.49 },
       ],
       [
         { file: 'fish-4-portion.png', aspect: 2.17 },
         { file: 'meat-4-steak.png', aspect: 0.74 },
+        { file: 'poultry-4-breast.png', aspect: 0.58 },
       ],
       [
         { file: 'fish-5-large.png', aspect: 2.17 },
         { file: 'meat-5-big-steak.png', aspect: 0.72 },
+        { file: 'poultry-5-quarter.png', aspect: 1.03 },
       ],
     ]);
   });

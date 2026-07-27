@@ -6,7 +6,10 @@ import {
   resolveQueryEmbedding,
 } from '@/lib/ai/matching/embedding-cache';
 import type { MatchInfo } from '@/lib/ai/matching/match-constants';
-import { batchFetchNutrition } from '@/lib/ai/matching/nutrition-batch';
+import {
+  batchFetchNutrition,
+  type MatchedFoodData,
+} from '@/lib/ai/matching/nutrition-batch';
 import {
   ingredientStateInfo,
   type MatchMeasurementContext,
@@ -20,7 +23,6 @@ import {
 import type {
   DecomposedIngredient,
   MatchedIngredient,
-  NutritionPer100g,
   UnmatchedIngredient,
 } from '@/lib/ai/types';
 import type { AppDb } from '@/lib/db';
@@ -255,7 +257,7 @@ export async function matchIngredients(
 
   // Phase 4: Batch-fetch nutrition for all matched IDs in a single query
   const uniqueIds = [...new Set(matchInfos.map((m) => m.foodCompositionId))];
-  let nutritionMap: Map<string, NutritionPer100g>;
+  let nutritionMap: Map<string, MatchedFoodData>;
   try {
     nutritionMap = await batchFetchNutrition(uniqueIds, db);
   } catch (err) {
@@ -274,13 +276,14 @@ export async function matchIngredients(
 
   // Phase 5: Combine MatchInfo + nutrition → MatchedIngredient
   for (const info of matchInfos) {
-    const nutrition = nutritionMap.get(info.foodCompositionId);
-    if (nutrition) {
+    const foodData = nutritionMap.get(info.foodCompositionId);
+    if (foodData) {
       const { state, ingredientId, ...rest } = info;
       matched.push({
         ...rest,
         ingredientId,
-        nutritionPer100g: nutrition,
+        nutritionPer100g: foodData,
+        ...(foodData.foodGroupEn ? { foodGroupEn: foodData.foodGroupEn } : {}),
         dbState: state,
       });
     } else {

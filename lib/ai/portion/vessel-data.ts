@@ -1,5 +1,7 @@
 /** Client-safe vessel dimensions and portion-envelope arithmetic. */
 
+import type { PieceVessel } from './vessel-types';
+
 export type VesselFamily = 'bowl' | 'plate' | 'cup' | 'piece';
 
 export type DishClass = 'soup' | 'solid' | 'airy' | 'drink';
@@ -237,6 +239,7 @@ export interface PieceTier {
   assets: readonly [
     { file: string; aspect: number },
     { file: string; aspect: number },
+    { file: string; aspect: number },
   ];
 }
 
@@ -257,30 +260,35 @@ export const PIECE_TIERS: readonly PieceTier[] = [
   pieceTier(30, { vi: 'miếng nhỏ', en: 'small piece' }, [
     { file: 'fish-1-chunk.png', aspect: 1.06 },
     { file: 'meat-1-cubes.png', aspect: 1.83 },
+    { file: 'poultry-1-chunk.png', aspect: 1.02 },
   ]),
   pieceTier(70, { vi: 'lát', en: 'slice' }, [
     { file: 'fish-2-lat.png', aspect: 2.19 },
     { file: 'meat-2-belly-slices.png', aspect: 1.28 },
+    { file: 'poultry-2-wing.png', aspect: 0.95 },
   ]),
   pieceTier(150, { vi: 'miếng vừa', en: 'medium cut' }, [
     { file: 'fish-3-khoanh.png', aspect: 1.29 },
     { file: 'meat-3-chop.png', aspect: 0.82 },
+    { file: 'poultry-3-drumstick.png', aspect: 0.49 },
   ]),
   pieceTier(250, { vi: 'phi lê', en: 'fillet' }, [
     { file: 'fish-4-portion.png', aspect: 2.17 },
     { file: 'meat-4-steak.png', aspect: 0.74 },
+    { file: 'poultry-4-breast.png', aspect: 0.58 },
   ]),
   pieceTier(500, { vi: 'phần lớn', en: 'large cut' }, [
     { file: 'fish-5-large.png', aspect: 2.17 },
     { file: 'meat-5-big-steak.png', aspect: 0.72 },
+    { file: 'poultry-5-quarter.png', aspect: 1.03 },
   ]),
 ];
 
 export function pieceAssetFor(
   tier: PieceTier,
-  kind: 'fish' | 'meat'
+  kind: PieceVessel['kind']
 ): PieceTier['assets'][number] {
-  return tier.assets[kind === 'fish' ? 0 : 1];
+  return tier.assets[kind === 'fish' ? 0 : kind === 'meat' ? 1 : 2];
 }
 
 /**

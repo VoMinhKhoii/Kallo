@@ -9,13 +9,14 @@ import { nearestPieceTier, PIECE_TIERS, pieceAssetFor } from '../vessel-data';
 import { attachVesselToResult } from '../vessel-envelope';
 
 function item(
-  ingredients: Array<{ name: string; grams: number }>
+  ingredients: Array<{ name: string; grams: number; foodGroupEn?: string }>
 ): PipelineMealItem {
   return {
     name: ingredients.map(({ name }) => name).join(' + '),
-    ingredients: ingredients.map(({ name, grams }) => ({
+    ingredients: ingredients.map(({ name, grams, foodGroupEn }) => ({
       ingredientName: name,
       foodCompositionId: null,
+      foodGroupEn,
       estimatedGrams: grams,
       rawEquivalentGrams: grams,
       cookingMethod: null,
@@ -123,8 +124,106 @@ describe('resolvePieceVessel', () => {
       family: 'piece',
       tier: 3,
       count,
-      kind: canonicalName === 'shrimp' ? 'fish' : 'meat',
+      kind: canonicalName === 'shrimp' ? 'fish' : 'poultry',
     });
+  });
+
+  it('uses the matched DB group to classify poultry', () => {
+    expect(
+      resolvePieceVessel(
+        item([
+          {
+            name: 'gà nướng',
+            grams: 150,
+            foodGroupEn: 'Poultry Products',
+          },
+        ]),
+        dish([
+          {
+            rawName: 'gà nướng',
+            canonicalName: 'chicken',
+            count: 1,
+            unitToken: 'miếng',
+          },
+        ])
+      )
+    ).toMatchObject({ kind: 'poultry' });
+  });
+
+  it('vetoes processed sausage even when the name matches the meat lexicon', () => {
+    expect(
+      resolvePieceVessel(
+        item([
+          {
+            name: 'chả lụa',
+            grams: 140,
+            foodGroupEn: 'Sausages and Luncheon Meats',
+          },
+        ]),
+        dish([
+          {
+            rawName: 'chả lụa',
+            canonicalName: 'thịt',
+            count: 2,
+            unitToken: 'miếng',
+          },
+        ])
+      )
+    ).toBeNull();
+  });
+
+  it('rejects a matched non-protein food group with a piece token', () => {
+    expect(
+      resolvePieceVessel(
+        item([
+          {
+            name: 'cá giả chay',
+            grams: 150,
+            foodGroupEn: 'Vegetables and Vegetable Products',
+          },
+        ]),
+        dish([
+          {
+            rawName: 'cá giả chay',
+            canonicalName: 'fish-style vegetable',
+            count: 1,
+            unitToken: 'miếng',
+          },
+        ])
+      )
+    ).toBeNull();
+  });
+
+  it('falls back to the fish lexicon for an unmatched ingredient', () => {
+    expect(
+      resolvePieceVessel(
+        item([{ name: 'cá thu', grams: 150 }]),
+        dish([
+          {
+            rawName: 'cá thu',
+            canonicalName: 'mackerel',
+            count: 1,
+            unitToken: 'miếng',
+          },
+        ])
+      )
+    ).toMatchObject({ kind: 'fish' });
+  });
+
+  it('falls back to the poultry lexicon for an unmatched ingredient', () => {
+    expect(
+      resolvePieceVessel(
+        item([{ name: 'vịt quay', grams: 150 }]),
+        dish([
+          {
+            rawName: 'vịt quay',
+            canonicalName: 'roast duck',
+            count: 1,
+            unitToken: 'miếng',
+          },
+        ])
+      )
+    ).toMatchObject({ kind: 'poultry' });
   });
 
   it('rejects plant protein even with a piece token', () => {
@@ -252,7 +351,7 @@ describe('nearestPieceTier', () => {
     expect(nearestPieceTier(900)).toBe(5);
   });
 
-  it('selects one silhouette family from the retained asset pair', () => {
+  it('selects the fish and meat silhouette families', () => {
     expect(pieceAssetFor(PIECE_TIERS[2], 'fish')).toEqual({
       file: 'fish-3-khoanh.png',
       aspect: 1.29,
@@ -261,6 +360,16 @@ describe('nearestPieceTier', () => {
       file: 'meat-3-chop.png',
       aspect: 0.82,
     });
+  });
+
+  it('selects the poultry silhouette for every tier', () => {
+    expect(PIECE_TIERS.map((tier) => pieceAssetFor(tier, 'poultry'))).toEqual([
+      { file: 'poultry-1-chunk.png', aspect: 1.02 },
+      { file: 'poultry-2-wing.png', aspect: 0.95 },
+      { file: 'poultry-3-drumstick.png', aspect: 0.49 },
+      { file: 'poultry-4-breast.png', aspect: 0.58 },
+      { file: 'poultry-5-quarter.png', aspect: 1.03 },
+    ]);
   });
 
   it('documents the exact normalized cut-token allowlist', () => {

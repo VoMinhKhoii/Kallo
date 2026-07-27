@@ -2,10 +2,15 @@ import type { AppDb } from '@/lib/db';
 import {
   fetchNutritionForIds,
   isNutritionCacheInitialized,
+  peekFoodGroupCache,
   peekNutritionCache,
   warmNutritionCacheInBackground,
 } from '../cache/nutrition-cache';
 import type { NutritionPer100g } from '../types';
+
+export interface MatchedFoodData extends NutritionPer100g {
+  foodGroupEn?: string;
+}
 
 /**
  * Batch-fetch nutrition per 100g for a list of food composition IDs.
@@ -23,8 +28,8 @@ import type { NutritionPer100g } from '../types';
 export async function batchFetchNutrition(
   ids: string[],
   db: AppDb
-): Promise<Map<string, NutritionPer100g>> {
-  const map = new Map<string, NutritionPer100g>();
+): Promise<Map<string, MatchedFoodData>> {
+  const map = new Map<string, MatchedFoodData>();
   if (ids.length === 0) return map;
 
   if (!isNutritionCacheInitialized()) {
@@ -33,11 +38,17 @@ export async function batchFetchNutrition(
   }
 
   const nutritionCache = peekNutritionCache();
+  const foodGroupCache = peekFoodGroupCache();
   const missIds: string[] = [];
   for (const id of ids) {
     const cached = nutritionCache.get(id);
     if (cached) {
-      map.set(id, cached);
+      map.set(id, {
+        ...cached,
+        ...(foodGroupCache.has(id)
+          ? { foodGroupEn: foodGroupCache.get(id) }
+          : {}),
+      });
     } else {
       missIds.push(id);
     }
@@ -45,7 +56,14 @@ export async function batchFetchNutrition(
 
   if (missIds.length > 0) {
     const fetched = await fetchNutritionForIds(missIds, db);
-    for (const [id, nutrition] of fetched) map.set(id, nutrition);
+    for (const [id, nutrition] of fetched) {
+      map.set(id, {
+        ...nutrition,
+        ...(foodGroupCache.has(id)
+          ? { foodGroupEn: foodGroupCache.get(id) }
+          : {}),
+      });
+    }
   }
 
   return map;

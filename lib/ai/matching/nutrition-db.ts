@@ -51,6 +51,7 @@ export const NUTRITION_SELECT_COLUMNS = [
 export const NUTRITION_CACHE_SELECT_COLUMNS = [
   ...NUTRITION_SELECT_COLUMNS,
   'inedible_portion_pct',
+  'type_en',
 ] as const;
 
 export function parseNutritionRow(
