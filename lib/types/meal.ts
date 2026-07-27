@@ -1,8 +1,4 @@
-import type {
-  DishClass,
-  VesselFamily,
-  VesselTier,
-} from '@/lib/ai/portion/vessel-data';
+import type { ClientVessel } from '@/lib/ai/portion/vessel-types';
 
 export interface MacroBreakdown {
   calories: number;
@@ -17,11 +13,7 @@ export interface MealItem {
   quantity: number;
   unit: string;
   macros: MacroBreakdown;
-  vessel?: {
-    family: VesselFamily;
-    tier: VesselTier;
-    dishClass: DishClass;
-  };
+  vessel?: ClientVessel;
 }
 
 export interface ParsedMeal {

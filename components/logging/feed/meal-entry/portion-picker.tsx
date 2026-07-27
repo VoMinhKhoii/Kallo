@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { PortionAssumptionLine } from '@/components/logging/feed/meal-entry/portion-assumption-line';
 import {
   nearestAnchor,
+  type PortionAnchor,
   PortionPickerBody,
 } from '@/components/logging/feed/meal-entry/portion-picker-body';
 import {
@@ -20,10 +21,11 @@ import {
 } from '@/components/ui/popover';
 import { useIsMobile } from '@/hooks/ui/use-mobile';
 import {
-  isContainerFamily,
   midG,
+  PIECE_TIERS,
   VESSEL_FAMILIES,
 } from '@/lib/ai/portion/vessel-data';
+import type { ClientVessel } from '@/lib/ai/portion/vessel-types';
 import { applyQuantityChange } from '@/lib/meal-utils';
 import type { MealItem } from '@/lib/types/meal';
 
@@ -36,10 +38,10 @@ interface PortionPickerProps {
 }
 
 /**
- * Opens from the assumption line to adjust a dish's portion: a scaled vessel
- * image, a magnetic ruler anchored at the family's four tier weights, and a
- * live gram/kcal preview. Drawer on phones, Popover on wider screens. Edits
- * local staging state only — never a server action.
+ * Opens from the assumption line to adjust a dish's portion: a row of
+ * true-to-scale vessel thumbnails (tap to jump to a tier), a plain slider for
+ * fine adjustment, and a live gram/kcal preview. Drawer on phones, Popover on
+ * wider screens. Edits local staging state only — never a server action.
  */
 export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
   const { vessel } = item;
@@ -49,18 +51,31 @@ export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
   const [open, setOpen] = useState(false);
   const [grams, setGrams] = useState(item.quantity);
 
-  if (!vessel || !isContainerFamily(vessel.family)) return null;
-  const containerVessel = { ...vessel, family: vessel.family };
-  const { family, dishClass } = containerVessel;
+  if (!vessel) return null;
 
-  const anchors = TIERS.map((tier) => ({
-    tier,
-    value: midG(family, tier, dishClass),
-    label:
-      VESSEL_FAMILIES[family].tiers[tier].label[locale === 'vi' ? 'vi' : 'en'],
-  }));
+  const loc = locale === 'vi' ? 'vi' : 'en';
+
+  let anchors: PortionAnchor[];
+  let count: number | undefined;
+  let kind: 'fish' | 'meat' | undefined;
+  if ('dishClass' in vessel) {
+    const { family, dishClass } = vessel;
+    anchors = TIERS.map((tier) => ({
+      tier,
+      value: midG(family, tier, dishClass),
+      label: VESSEL_FAMILIES[family].tiers[tier].label[loc],
+    }));
+  } else {
+    count = vessel.count;
+    kind = vessel.kind;
+    anchors = PIECE_TIERS.map((tier, index) => ({
+      tier: index + 1,
+      value: vessel.count * tier.grams,
+      label: tier.label[loc],
+    }));
+  }
   const min = Math.round(anchors[0].value * 0.6);
-  const max = Math.round(anchors[3].value * 1.2);
+  const max = Math.round(anchors[anchors.length - 1].value * 1.2);
 
   const handleOpenChange = (next: boolean) => {
     if (next) setGrams(Math.min(max, Math.max(min, item.quantity)));
@@ -80,7 +95,10 @@ export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
     onApply(
       scaled.map((it) =>
         it.id === item.id && it.vessel
-          ? { ...it, vessel: { ...it.vessel, tier: nearest.tier } }
+          ? {
+              ...it,
+              vessel: { ...it.vessel, tier: nearest.tier } as ClientVessel,
+            }
           : it
       )
     );
@@ -89,7 +107,9 @@ export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
 
   const body = (
     <PortionPickerBody
-      family={family}
+      family={vessel.family}
+      count={count}
+      kind={kind}
       anchors={anchors}
       grams={grams}
       min={min}
@@ -105,7 +125,7 @@ export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
     />
   );
 
-  const trigger = <PortionAssumptionLine vessel={containerVessel} />;
+  const trigger = <PortionAssumptionLine vessel={vessel} />;
 
   if (isMobile) {
     return (

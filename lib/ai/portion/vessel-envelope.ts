@@ -1,3 +1,5 @@
+import type { PipelineMealItem } from '../types';
+import { resolvePieceVessel } from './piece-vessel';
 import {
   type DishClass,
   guardBandG,
@@ -17,6 +19,7 @@ export interface DishLike {
     rawName?: string;
     canonicalName?: string;
     count?: number;
+    unitToken?: string;
   }>;
 }
 
@@ -94,8 +97,21 @@ export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
 }
 
 export function attachVesselToResult<
-  T extends { mealItems: Array<{ name: string; vessel?: unknown }> },
->(result: T, dishes: DishLike[], envelopes: Array<VesselEnvelope | null>): T {
+  T extends {
+    mealItems: Array<{
+      name: string;
+      vessel?: unknown;
+      ingredients?: PipelineMealItem['ingredients'];
+    }>;
+  },
+>(
+  result: T,
+  dishes: DishLike[],
+  envelopes: Array<VesselEnvelope | null>,
+  enabled = true
+): T {
+  if (!enabled) return result;
+
   for (const [index, dish] of dishes.entries()) {
     const envelope = envelopes[index] ?? null;
     const mealItem = result.mealItems[index];
@@ -113,6 +129,17 @@ export function attachVesselToResult<
         midG: envelope.midG,
         provenance: 'vessel_prior',
       };
+    }
+    if (
+      mealItem?.ingredients &&
+      !mealItem.vessel &&
+      mealItem.name.toLocaleLowerCase() === dish.name.toLocaleLowerCase()
+    ) {
+      mealItem.vessel =
+        resolvePieceVessel(
+          { vessel: mealItem.vessel, ingredients: mealItem.ingredients },
+          dish
+        ) ?? undefined;
     }
   }
   return result;

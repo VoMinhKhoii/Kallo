@@ -18,6 +18,7 @@ import { initV2BudgetAccounting } from './budget-telemetry';
 import { createChunkEmitContext, runCallTwo } from './call-two';
 import { resolveCompletenessGate } from './completeness-gate';
 import { resolveModelProfile } from './config/model-profile';
+import { isPortionVesselEnabled } from './config/portion-vessel-flag';
 import { handleError, nonFoodResponse } from './errors';
 import {
   createGeminiEstimator,
@@ -280,7 +281,8 @@ export async function analyzeMealV2(
         attachVesselToResult(
           assembled.result,
           decomposition.mealItems,
-          vesselEnvelopes
+          vesselEnvelopes,
+          isPortionVesselEnabled()
         );
         return {
           bridged,

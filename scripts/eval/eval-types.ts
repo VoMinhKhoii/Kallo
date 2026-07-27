@@ -125,8 +125,8 @@ export interface EvalCaseResult {
     fatG: { low: number; mid: number; high: number } | null;
   } | null;
   vessels: Array<{
-    family: 'bowl' | 'plate' | 'cup';
-    tier: 1 | 2 | 3 | 4;
+    family: 'bowl' | 'plate' | 'cup' | 'piece';
+    tier: 1 | 2 | 3 | 4 | 5;
   } | null>;
   silentZeroViolations: SilentZeroViolation[];
   error: string | null;

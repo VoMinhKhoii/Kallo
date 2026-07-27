@@ -21,9 +21,10 @@ describe('vesselGramsForTier', () => {
       vesselGramsForTier(
         vesselItem({
           vessel: {
-            family: 'piece-fish',
+            family: 'piece',
             tier: 2,
-            dishClass: 'solid',
+            count: 1,
+            kind: 'meat',
           },
         }),
         3

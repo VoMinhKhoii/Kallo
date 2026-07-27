@@ -3,6 +3,7 @@ import type {
   MealInputLanguage,
   SupportedOutputLanguage,
 } from './language/detect';
+import type { PipelineVessel } from './portion/vessel-types';
 
 // ---------------------------------------------------------------------------
 // Primitives
@@ -324,15 +325,7 @@ export interface PipelineMealItem {
   ingredients: ProcessedIngredient[];
   boundedNutrition: BoundedNutrition;
   displayedNutrition: NutritionValues;
-  vessel?: {
-    family: 'bowl' | 'plate' | 'cup';
-    tier: 1 | 2 | 3 | 4;
-    dishClass: 'soup' | 'solid' | 'airy' | 'drink';
-    token: string;
-    guardG: { low: number; high: number };
-    midG: number;
-    provenance: 'vessel_prior';
-  };
+  vessel?: PipelineVessel;
 }
 
 /** Full pipeline result for a successful analysis */

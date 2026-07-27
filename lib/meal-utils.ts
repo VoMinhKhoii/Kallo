@@ -69,6 +69,7 @@ export function vesselGramsForTier(
 ): number | undefined {
   if (!item.vessel) return undefined;
   if (!isContainerFamily(item.vessel.family)) return undefined;
+  if (!('dishClass' in item.vessel)) return undefined;
   return midG(item.vessel.family, tier, item.vessel.dishClass);
 }
 

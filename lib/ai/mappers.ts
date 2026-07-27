@@ -96,6 +96,15 @@ function toMacros(nutrition: {
   };
 }
 
+function toPieceKind(vessel: {
+  family: string;
+  kind?: 'fish' | 'meat';
+}): 'fish' | 'meat' {
+  if (vessel.family === 'piece-fish') return 'fish';
+  if (vessel.family === 'piece-meat') return 'meat';
+  return vessel.kind ?? 'meat';
+}
+
 /**
  * Maps PipelineResult → ParsedMeal for the /api/analyze-meal response.
  * Uses meal item names (user-facing cooked names) for display, not raw DB ingredient names.
@@ -110,13 +119,20 @@ export function toParsedMeal(result: PipelineResult): ParsedMeal {
     ),
     unit: 'g',
     macros: toMacros(mealItem.displayedNutrition),
-    vessel: mealItem.vessel
-      ? {
-          family: mealItem.vessel.family,
-          tier: mealItem.vessel.tier,
-          dishClass: mealItem.vessel.dishClass,
-        }
-      : undefined,
+    vessel: !mealItem.vessel
+      ? undefined
+      : mealItem.vessel.provenance === 'piece_prior'
+        ? {
+            family: 'piece',
+            tier: mealItem.vessel.tier,
+            count: mealItem.vessel.count,
+            kind: toPieceKind(mealItem.vessel),
+          }
+        : {
+            family: mealItem.vessel.family,
+            tier: mealItem.vessel.tier,
+            dishClass: mealItem.vessel.dishClass,
+          },
   }));
 
   return {

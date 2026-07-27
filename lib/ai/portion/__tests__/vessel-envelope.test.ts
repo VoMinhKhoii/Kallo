@@ -46,30 +46,65 @@ describe('vessel token resolution', () => {
 });
 
 describe('piece tier assets', () => {
-  it('matches the generated portion filenames', () => {
+  it('uses the species-neutral five-tier ladder', () => {
     expect(
-      Object.fromEntries(
-        Object.entries(PIECE_TIERS).map(([family, tiers]) => [
-          family,
-          tiers.map((tier) => tier.asset),
-        ])
-      )
-    ).toEqual({
-      'piece-fish': [
-        'fish-1-chunk.png',
-        'fish-2-lat.png',
-        'fish-3-khoanh.png',
-        'fish-4-portion.png',
-        'fish-5-large.png',
+      PIECE_TIERS.map(({ grams, sizeLabel, label }) => ({
+        grams,
+        sizeLabel,
+        label,
+      }))
+    ).toEqual([
+      {
+        grams: 30,
+        sizeLabel: '30 g',
+        label: { vi: 'miếng nhỏ', en: 'small piece' },
+      },
+      {
+        grams: 70,
+        sizeLabel: '70 g',
+        label: { vi: 'lát', en: 'slice' },
+      },
+      {
+        grams: 150,
+        sizeLabel: '150 g',
+        label: { vi: 'miếng vừa', en: 'medium cut' },
+      },
+      {
+        grams: 250,
+        sizeLabel: '250 g',
+        label: { vi: 'phi lê', en: 'fillet' },
+      },
+      {
+        grams: 500,
+        sizeLabel: '500 g',
+        label: { vi: 'phần lớn', en: 'large cut' },
+      },
+    ]);
+  });
+
+  it('matches the generated portion filenames', () => {
+    expect(PIECE_TIERS.map((tier) => tier.assets)).toEqual([
+      [
+        { file: 'fish-1-chunk.png', aspect: 1.06 },
+        { file: 'meat-1-cubes.png', aspect: 1.83 },
       ],
-      'piece-meat': [
-        'meat-1-cubes.png',
-        'meat-2-belly-slices.png',
-        'meat-3-chop.png',
-        'meat-4-steak.png',
-        'meat-5-big-steak.png',
+      [
+        { file: 'fish-2-lat.png', aspect: 2.19 },
+        { file: 'meat-2-belly-slices.png', aspect: 1.28 },
       ],
-    });
+      [
+        { file: 'fish-3-khoanh.png', aspect: 1.29 },
+        { file: 'meat-3-chop.png', aspect: 0.82 },
+      ],
+      [
+        { file: 'fish-4-portion.png', aspect: 2.17 },
+        { file: 'meat-4-steak.png', aspect: 0.74 },
+      ],
+      [
+        { file: 'fish-5-large.png', aspect: 2.17 },
+        { file: 'meat-5-big-steak.png', aspect: 0.72 },
+      ],
+    ]);
   });
 });
 

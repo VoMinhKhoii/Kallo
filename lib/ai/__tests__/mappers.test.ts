@@ -65,4 +65,52 @@ describe('toParsedMeal vessel mapping', () => {
     expect(parsed.items[0]?.unit).toBe('g');
     expect(parsed.items[0]?.vessel).toBeUndefined();
   });
+
+  it('coerces a legacy piece family and passes piece metadata through', () => {
+    const parsed = toParsedMeal(
+      pipelineResult({
+        family: 'piece-fish',
+        tier: 3,
+        count: 2,
+        provenance: 'piece_prior',
+      } as unknown as PipelineResult['mealItems'][number]['vessel'])
+    );
+
+    expect(parsed.items[0]?.vessel).toEqual({
+      family: 'piece',
+      tier: 3,
+      count: 2,
+      kind: 'fish',
+    });
+  });
+
+  it('coerces legacy meat and missing piece kinds to meat', () => {
+    for (const vessel of [
+      {
+        family: 'piece-meat',
+        tier: 3,
+        count: 2,
+        provenance: 'piece_prior',
+      },
+      {
+        family: 'piece',
+        tier: 3,
+        count: 2,
+        provenance: 'piece_prior',
+      },
+    ]) {
+      const parsed = toParsedMeal(
+        pipelineResult(
+          vessel as unknown as PipelineResult['mealItems'][number]['vessel']
+        )
+      );
+
+      expect(parsed.items[0]?.vessel).toEqual({
+        family: 'piece',
+        tier: 3,
+        count: 2,
+        kind: 'meat',
+      });
+    }
+  });
 });
