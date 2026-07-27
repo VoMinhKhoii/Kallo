@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:nham_mobile/features/logging/widgets/composer_dock.dart';
+import 'package:nham_mobile/theme/nham_colors.dart';
 
-/// The dock is what lets the feed scroll UNDER the composer. Its contract is
-/// small but load-bearing: it must blur what's behind it, and it must report
-/// its own height — the feed reserves exactly that much scroll padding, so a
-/// wrong (or never-fired) measurement permanently hides the last meal card.
+/// The dock is what lets the feed flow UNDER the composer. Its contract is
+/// small but load-bearing: it must be a solid surface, and it must report its
+/// own height — the feed reserves exactly that much scroll padding, so a wrong
+/// (or never-fired) measurement permanently hides the last meal card.
 void main() {
   Widget host({
     required ValueChanged<double> onHeightChanged,
@@ -57,18 +58,20 @@ void main() {
     expect(heights.last - initial, 140 - 64);
   });
 
-  testWidgets('paints nothing, so the feed shows through it', (tester) async {
+  testWidgets('is a solid surface, so cards pass cleanly behind it',
+      (tester) async {
     await tester.pumpWidget(host(onHeightChanged: (_) {}));
     await tester.pumpAndSettle();
 
-    // Any painted surface in the dock would occlude the feed behind it — the
-    // composer card is the only opaque thing allowed down here.
-    expect(
-      find.descendant(
-        of: find.byType(ComposerDock),
-        matching: find.byType(DecoratedBox),
-      ),
-      findsNothing,
+    // Translucency here would show the feed ghosting through the dock.
+    final dock = tester.widget<Container>(
+      find
+          .descendant(
+            of: find.byType(ComposerDock),
+            matching: find.byType(Container),
+          )
+          .first,
     );
+    expect(dock.color, NhamColors.surface);
   });
 }

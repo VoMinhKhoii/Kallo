@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/logging_spacing.dart';
 
-/// The composer's floating dock: the feed scrolls UNDER it, so the day stays
-/// visible behind the input instead of being cut off by a solid bar.
+/// The composer's floating dock: the feed FLOWS UNDER it. The list runs the
+/// full height of the tab and its cards pass behind the dock as you scroll,
+/// rather than the feed stopping short above a bar that owns its own slice of
+/// the screen.
 ///
-/// The dock paints nothing at all — the feed shows through it untouched, and
-/// the only opaque thing here is the composer card inside, which floats on its
-/// own shadow.
+/// The dock is a solid surface, not a translucent one — cards disappear behind
+/// it cleanly, and the composer card inside floats on its own shadow.
 ///
 /// The dock reports its own height through [onHeightChanged] so the feed can
 /// reserve exactly that much scroll padding; nothing is ever permanently
@@ -50,8 +52,9 @@ class _ComposerDockState extends State<ComposerDock> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
-    return Padding(
+    return Container(
       key: _dockKey,
+      color: NhamColors.surface,
       padding: EdgeInsets.fromLTRB(
         NhamSpacing.sp3,
         LoggingSpacing.block,

@@ -611,22 +611,10 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Carries its own opaque chip: the dock is see-through,
-                      // and this must stay readable over a scrolling feed.
                       if (_errorText != null)
-                        Container(
-                          margin: const EdgeInsets.only(
+                        Padding(
+                          padding: const EdgeInsets.only(
                             bottom: LoggingSpacing.block,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: NhamSpacing.sp3,
-                            vertical: NhamSpacing.sp2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: NhamColors.elev,
-                            borderRadius: BorderRadius.circular(NhamRadii.xl),
-                            border: Border.all(color: NhamColors.borderSoft),
-                            boxShadow: const [NhamShadows.sm],
                           ),
                           child: NhamText(
                             _errorText!,
