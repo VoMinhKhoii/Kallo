@@ -103,27 +103,6 @@ does, at 8px, and names it (see *Spacing — one rhythm per surface* below). Goi
 tighter than 12 is a per-surface decision that must be captured in a named token
 set, never improvised gap by gap.
 
-## Reference implementation (source of truth)
-
-`apps/mobile-flutter/lib/theme/calm_tokens.dart` —
-`dashHero` / `dashValue` / `dashBody` / `dashMeta` / `dashEyebrow` /
-`dashHeadline`, plus `kInk` / `kInkMuted`. Inter-component spacing lives in
-`dashboard_screen.dart` (the `sp3` rhythm) and the section widgets.
-
-## Status / migration
-
-- ✅ **Dashboard, Nutrition, Logging, Onboarding, Settings** — live on this system
-  (`kInk` + `kInkMuted`, the calm scale).
-- 🔸 **Auth** — a deliberate **light-touch**: body / labels / buttons are on the
-  calm sans tokens and the two-colour palette, but its serif brand identity is
-  preserved intact (the "Nhẩm" wordmark, the italic tagline, and the form titles
-  stay serif — that is the one surface where serif is the point, not an accent).
-
-Two shared-widget paths still carry pre-calm styling where a call site didn't
-override them: `lib/shared/widgets/nham_text.dart` (its `NhamTextVariant`
-defaults) and the logging `mealQuote` serif variant. These are intentional and
-out of the calm token set; migrate the shared widget separately if desired.
-
 ## Spacing — one rhythm per surface
 
 Gaps resolve to a small named set, not per-widget guesses. The logging feed's
@@ -163,3 +142,24 @@ Errors stay red on the **affordance**, not the copy: the alert icon and the
 terracotta action button carry the signal while the message itself reads in
 `kInkMuted`. A whole card of red text reads as an alarm for something the user
 can usually just retry.
+
+## Reference implementation (source of truth)
+
+`apps/mobile-flutter/lib/theme/calm_tokens.dart` —
+`dashHero` / `dashValue` / `dashBody` / `dashMeta` / `dashEyebrow` /
+`dashHeadline`, plus `kInk` / `kInkMuted`. Inter-component spacing lives in
+`dashboard_screen.dart` (the `sp3` rhythm) and the section widgets.
+
+## Status / migration
+
+- ✅ **Dashboard, Nutrition, Logging, Onboarding, Settings** — live on this system
+  (`kInk` + `kInkMuted`, the calm scale).
+- 🔸 **Auth** — a deliberate **light-touch**: body / labels / buttons are on the
+  calm sans tokens and the two-colour palette, but its serif brand identity is
+  preserved intact (the "Nhẩm" wordmark, the italic tagline, and the form titles
+  stay serif — that is the one surface where serif is the point, not an accent).
+
+Two shared-widget paths still carry pre-calm styling where a call site didn't
+override them: `lib/shared/widgets/nham_text.dart` (its `NhamTextVariant`
+defaults) and the logging `mealQuote` serif variant. These are intentional and
+out of the calm token set; migrate the shared widget separately if desired.
