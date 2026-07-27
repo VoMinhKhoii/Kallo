@@ -175,16 +175,14 @@ class _MealEntryState extends State<MealEntry> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  NhamText(
+                  Text(
                     'logging.mealEntry.total'.tr(),
-                    variant: NhamTextVariant.itemName,
                     style: dashBody(weight: FontWeight.w500),
                   ),
                   Row(
                     children: [
-                      NhamText(
+                      Text(
                         'P: ${fmtG(totals.protein)}  C: ${fmtG(totals.carbs)}  F: ${fmtG(totals.fat)}',
-                        variant: NhamTextVariant.captionTabular,
                         style: dashMeta(tabular: true),
                       ),
                       const SizedBox(width: NhamSpacing.sp4), // gap-4
@@ -195,7 +193,7 @@ class _MealEntryState extends State<MealEntry> {
                             _countUp &&
                             !MediaQuery.disableAnimationsOf(context),
                         format: (v) => fmtKcal(v),
-                        variant: NhamTextVariant.numStrong,
+                        style: dashValue(),
                       ),
                     ],
                   ),
@@ -278,9 +276,8 @@ class _ItemRow extends StatelessWidget {
                   const SizedBox(width: 2), // gap-0.5
                   SizedBox(
                     width: 28,
-                    child: NhamText(
+                    child: Text(
                       item.quantity.round().toString(),
-                      variant: NhamTextVariant.numStrong,
                       textAlign: TextAlign.center,
                       style: dashMeta(color: kInk, tabular: true),
                     ),
@@ -293,19 +290,18 @@ class _ItemRow extends StatelessWidget {
                   const SizedBox(width: NhamSpacing.sp2), // gap-2
                 ],
                 Expanded(
-                  child: NhamText(
+                  child: Text(
                     item.name,
-                    variant: NhamTextVariant.itemName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style:
-                        struck
+                        dashBody().merge(struck
                             ? const TextStyle(
                               decoration: TextDecoration.lineThrough,
                               decorationColor: kInkMuted,
                               color: kInkMuted,
                             )
-                            : null,
+                            : null),
                   ),
                 ),
               ],
@@ -316,29 +312,21 @@ class _ItemRow extends StatelessWidget {
             opacity: struck ? 0.4 : 1,
             child: Row(
               children: [
-                NhamText(
+                Text(
                   'P: ${fmtG(item.macros.protein)}',
-                  variant: NhamTextVariant.itemMacro,
-                  maxLines: 1,
-                ),
+                  maxLines: 1, style: dashMeta(tabular: true),),
                 const SizedBox(width: NhamSpacing.sp2),
-                NhamText(
+                Text(
                   'C: ${fmtG(item.macros.carbs)}',
-                  variant: NhamTextVariant.itemMacro,
-                  maxLines: 1,
-                ),
+                  maxLines: 1, style: dashMeta(tabular: true),),
                 const SizedBox(width: NhamSpacing.sp2),
-                NhamText(
+                Text(
                   'F: ${fmtG(item.macros.fat)}',
-                  variant: NhamTextVariant.itemMacro,
-                  maxLines: 1,
-                ),
+                  maxLines: 1, style: dashMeta(tabular: true),),
                 const SizedBox(width: NhamSpacing.sp3), // gap-3
-                NhamText(
+                Text(
                   fmtKcal(item.macros.calories),
-                  variant: NhamTextVariant.itemCalories,
-                  maxLines: 1,
-                ),
+                  maxLines: 1, style: dashBody(weight: FontWeight.w500, tabular: true),),
               ],
             ),
           ),
@@ -396,12 +384,11 @@ class _EditPill extends StatelessWidget {
                 color: editing ? NhamColors.text : NhamColors.textMuted,
               ),
               const SizedBox(width: 6), // gap-1.5
-              NhamText(
+              Text(
                 editing
                     ? 'logging.mealEntry.done'.tr()
                     : 'logging.mealEntry.edit'.tr(),
-                variant: NhamTextVariant.pillLabel,
-                style: TextStyle(color: editing ? NhamColors.text : kInkMuted),
+                style: dashMeta().merge(TextStyle(color: editing ? NhamColors.text : kInkMuted)),
               ),
             ],
           ),
@@ -488,9 +475,8 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
               children: [
                 Icon(LucideIcons.check, size: 14, color: fg),
                 const SizedBox(width: 6), // gap-1.5
-                NhamText(
+                Text(
                   'logging.confirm'.tr(),
-                  variant: NhamTextVariant.body,
                   style: dashBody(color: fg, weight: FontWeight.w500),
                 ),
               ],

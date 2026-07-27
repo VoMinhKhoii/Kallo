@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
@@ -42,19 +41,18 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: NhamText(
+              child: Text(
                 name,
-                variant: NhamTextVariant.itemName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style:
-                    row.removed
+                    dashBody().merge(row.removed
                         ? const TextStyle(
                           decoration: TextDecoration.lineThrough,
                           decorationColor: kInkMuted,
                           color: kInkMuted,
                         )
-                        : null,
+                        : null),
               ),
             ),
             const SizedBox(width: NhamSpacing.sp2),
@@ -67,9 +65,8 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
               const SizedBox(width: 2), // gap-0.5
               SizedBox(
                 width: 36,
-                child: NhamText(
+                child: Text(
                   '${grams.round()}g',
-                  variant: NhamTextVariant.numStrong,
                   textAlign: TextAlign.center,
                   style: dashMeta(color: kInk, tabular: true),
                 ),

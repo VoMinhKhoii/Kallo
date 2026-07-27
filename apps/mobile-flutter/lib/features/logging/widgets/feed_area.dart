@@ -11,7 +11,6 @@ import '../../../data/api_client.dart';
 import '../../../models/cheat.dart';
 import '../../../models/meal.dart';
 import '../../../models/streaming.dart';
-import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -520,9 +519,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                     // totalled, so say so plainly instead of showing a wrong ring.
                     ? Align(
                       alignment: Alignment.centerLeft,
-                      child: NhamText(
+                      child: Text(
                         'logging.feedArea.legacyMacroWarning'.tr(),
-                        variant: NhamTextVariant.small,
                         style: dashMeta(),
                       ),
                     )
@@ -536,10 +534,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                               target: profile.calorieTarget.toDouble(),
                             ),
                             const SizedBox(height: 4), // gap-1
-                            NhamText(
-                              '${formatCount(dailyCalories, context.locale.toString())} / ${formatCount(profile.calorieTarget, context.locale.toString())} kcal',
-                              variant: NhamTextVariant.numCaption,
-                            ),
+                            Text(
+                              '${formatCount(dailyCalories, context.locale.toString())} / ${formatCount(profile.calorieTarget, context.locale.toString())} kcal', style: dashMeta(tabular: true),),
                           ],
                         ),
                         const SizedBox(width: NhamSpacing.sp4), // gap-4
@@ -616,10 +612,10 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                           padding: const EdgeInsets.only(
                             bottom: LoggingSpacing.block,
                           ),
-                          child: NhamText(
+                          child: Text(
                             _errorText!,
-                            variant: NhamTextVariant.small,
-                            style: dashMeta(color: NhamColors.danger),
+                            // Grey copy; the red lives on the affordances.
+                            style: dashMeta(),
                           ),
                         ),
                       // Cheat mode's per-meal controls sit above the composer:
@@ -1052,7 +1048,7 @@ class _CheatIntensityRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('logging.cheatIntensity.label'.tr(), style: dashEyebrow()),
+              Text('logging.cheatIntensity.label'.tr(), style: dashMeta()),
               const SizedBox(height: 2),
               Text('logging.cheatIntensity.helper'.tr(), style: dashMeta()),
             ],
@@ -1230,20 +1226,18 @@ class _PartialDayNotice extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          NhamText(
+          Text(
             'logging.feedArea.partialDayNotice.title'.tr(),
-            variant: NhamTextVariant.italicAccent,
-            style: const TextStyle(color: NhamColors.danger),
+            style: dashBody(weight: FontWeight.w500).merge(const TextStyle(color: NhamColors.danger)),
           ),
           const SizedBox(height: 4), // mt-1
-          NhamText(
+          Text(
             'logging.feedArea.partialDayNotice.body'.tr(
               namedArgs: {
                 'calories': formatCount(calories, locale),
                 'target': formatCount(target, locale),
               },
             ),
-            variant: NhamTextVariant.small,
             style: dashMeta(),
           ),
         ],
@@ -1276,13 +1270,12 @@ class _MacroRow extends StatelessWidget {
       children: [
         SizedBox(
           width: 76,
-          child: NhamText(
+          child: Text(
             data.label,
-            variant: NhamTextVariant.macroLabel,
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.clip,
-            style: dashEyebrow(),
+            style: dashMeta(),
           ),
         ),
         const SizedBox(width: NhamSpacing.sp3), // gap-3
@@ -1290,10 +1283,8 @@ class _MacroRow extends StatelessWidget {
         const SizedBox(width: NhamSpacing.sp3),
         SizedBox(
           width: 56, // w-14
-          child: NhamText(
-            '${data.current}/${data.target}g',
-            variant: NhamTextVariant.macroValue,
-          ),
+          child: Text(
+            '${data.current}/${data.target}g', style: dashMeta(tabular: true),),
         ),
       ],
     );

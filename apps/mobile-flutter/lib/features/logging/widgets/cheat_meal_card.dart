@@ -91,9 +91,8 @@ class _CheatMealCardState extends State<CheatMealCard>
               color: Colors.white,
             ),
             const SizedBox(width: 6),
-            NhamText(
+            Text(
               'logging.remove'.tr(),
-              variant: NhamTextVariant.body,
               style: dashBody(color: Colors.white, weight: FontWeight.w500),
             ),
           ],
@@ -200,15 +199,12 @@ class _CheatMealCardState extends State<CheatMealCard>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Flexible(
-                          child: NhamText(
-                            _macroLine(meal),
-                            variant: NhamTextVariant.captionTabular,
-                          ),
+                          child: Text(
+                            _macroLine(meal), style: dashMeta(tabular: true),),
                         ),
                         const SizedBox(width: NhamSpacing.sp3),
-                        NhamText(
+                        Text(
                           caloriesApprox,
-                          variant: NhamTextVariant.numStrong,
                           style: dashValue(),
                         ),
                       ],

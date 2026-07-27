@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../data/logging_models.dart';
@@ -141,21 +141,15 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              NhamText(
-                'logging.persistedMealCard.total'.tr(),
-                variant: NhamTextVariant.calorieBold,
-              ),
+              Text(
+                'logging.persistedMealCard.total'.tr(), style: dashBody(weight: FontWeight.w500, tabular: true),),
               Row(
                 children: [
-                  NhamText(
-                    'P: ${fmtG(totals.proteinG)}  C: ${fmtG(totals.carbohydrateG)}  F: ${fmtG(totals.fatG)}',
-                    variant: NhamTextVariant.captionTabular,
-                  ),
+                  Text(
+                    'P: ${fmtG(totals.proteinG)}  C: ${fmtG(totals.carbohydrateG)}  F: ${fmtG(totals.fatG)}', style: dashMeta(tabular: true),),
                   const SizedBox(width: NhamSpacing.sp4), // gap-4
-                  NhamText(
-                    fmtKcal(totals.caloriesKcal),
-                    variant: NhamTextVariant.numStrong,
-                  ),
+                  Text(
+                    fmtKcal(totals.caloriesKcal), style: dashValue(),),
                 ],
               ),
             ],

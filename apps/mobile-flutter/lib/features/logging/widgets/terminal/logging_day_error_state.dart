@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
@@ -46,15 +45,13 @@ class LoggingDayErrorState extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    NhamText(
+                    Text(
                       'logging.feedArea.loadErrorTitle'.tr(),
-                      variant: NhamTextVariant.small,
                       style: dashBody(weight: FontWeight.w500),
                     ),
                     const SizedBox(height: 4), // mt-1
-                    NhamText(
+                    Text(
                       'logging.feedArea.loadErrorDescription'.tr(),
-                      variant: NhamTextVariant.small,
                       style: dashMeta(),
                     ),
                     const SizedBox(height: NhamSpacing.sp3), // mt-3
@@ -97,9 +94,8 @@ class _RetryPill extends StatelessWidget {
               color: NhamColors.danger,
             ),
             const SizedBox(width: NhamSpacing.sp2), // gap-2
-            NhamText(
+            Text(
               'logging.feedArea.retryDay'.tr(),
-              variant: NhamTextVariant.small,
               style: dashBody(
                 color: NhamColors.danger,
                 weight: FontWeight.w500,

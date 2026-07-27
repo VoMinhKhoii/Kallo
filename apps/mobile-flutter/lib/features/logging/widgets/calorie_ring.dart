@@ -4,7 +4,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../features/dashboard/logic/dashboard_format.dart' show formatCount;
-import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 
@@ -126,17 +125,15 @@ class _DefaultCenter extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        NhamText(
+        Text(
           formatCount(value, locale),
-          variant: NhamTextVariant.numDisplay,
           // Calm: the ring-centre number is a sans metric value (dashValue), not
           // a serif moment — the screen's one serif is the empty-state heading.
           style: dashValue().copyWith(height: 1),
         ),
         const SizedBox(height: 2),
-        NhamText(
+        Text(
           over ? tr('dashboard.over') : tr('dashboard.left'),
-          variant: NhamTextVariant.eyebrow,
           // Calm eyebrow (w500, muted) held at 8px so it never overflows the
           // fixed 78px ring.
           style: dashEyebrow().copyWith(fontSize: 8, letterSpacing: 1.2),

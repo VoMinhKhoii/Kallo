@@ -138,7 +138,7 @@ class _StreamingEntryState extends State<StreamingEntry>
             children: [
               RotationTransition(turns: _spin, child: const _Spinner()),
               const SizedBox(width: NhamSpacing.sp2), // gap-2
-              NhamText(phaseLabel, variant: NhamTextVariant.phaseLabel),
+              Text(phaseLabel, style: dashMeta(),),
             ],
           ),
         ],
@@ -159,23 +159,19 @@ class _CompletedRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: NhamText(item.name,
-                variant: NhamTextVariant.itemName, maxLines: 1),
+            child: Text(item.name,
+                maxLines: 1, style: dashBody(),),
           ),
           const SizedBox(width: NhamSpacing.sp3),
           Row(
             children: [
-              NhamText('P: ${fmtG(item.macros.protein)}',
-                  variant: NhamTextVariant.macroTiny),
+              Text('P: ${fmtG(item.macros.protein)}', style: dashMeta(tabular: true),),
               const SizedBox(width: NhamSpacing.sp2),
-              NhamText('C: ${fmtG(item.macros.carbs)}',
-                  variant: NhamTextVariant.macroTiny),
+              Text('C: ${fmtG(item.macros.carbs)}', style: dashMeta(tabular: true),),
               const SizedBox(width: NhamSpacing.sp2),
-              NhamText('F: ${fmtG(item.macros.fat)}',
-                  variant: NhamTextVariant.macroTiny),
+              Text('F: ${fmtG(item.macros.fat)}', style: dashMeta(tabular: true),),
               const SizedBox(width: NhamSpacing.sp3), // gap-3
-              NhamText(fmtKcal(item.macros.calories),
-                  variant: NhamTextVariant.calorieBold),
+              Text(fmtKcal(item.macros.calories), style: dashBody(weight: FontWeight.w500, tabular: true),),
             ],
           ),
         ],
@@ -194,11 +190,10 @@ class _PendingNameRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: LoggingSpacing.row),
-      child: NhamText(
+      child: Text(
         name,
-        variant: NhamTextVariant.itemName,
         maxLines: 1,
-        style: const TextStyle(color: kInkMuted),
+        style: dashBody().merge(const TextStyle(color: kInkMuted)),
       ),
     );
   }

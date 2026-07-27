@@ -49,10 +49,11 @@ class FailedAttemptCard extends StatelessWidget {
             style: const TextStyle(fontSize: 17, height: 28 / 17),
           ),
           const SizedBox(height: NhamSpacing.sp3),
-          NhamText(
+          Text(
             'logging.failedAttempt.message'.tr(),
-            variant: NhamTextVariant.small,
-            style: dashMeta(color: NhamColors.danger),
+            // Grey, not terracotta: the alert icon and the terracotta
+            // "Try again" button carry the signal — the copy stays calm.
+            style: dashMeta(),
           ),
           const SizedBox(height: NhamSpacing.sp4),
           Row(

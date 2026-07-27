@@ -93,13 +93,10 @@ class PersistedMealCardContent extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  NhamText(
-                    'P: ${fmtG(n.proteinG)}  C: ${fmtG(n.carbohydrateG)}  F: ${fmtG(n.fatG)}',
-                    variant: NhamTextVariant.captionTabular,
-                  ),
-                  NhamText(
+                  Text(
+                    'P: ${fmtG(n.proteinG)}  C: ${fmtG(n.carbohydrateG)}  F: ${fmtG(n.fatG)}', style: dashMeta(tabular: true),),
+                  Text(
                     fmtKcal(n.caloriesKcal),
-                    variant: NhamTextVariant.numStrong,
                     style: dashValue(),
                   ),
                 ],

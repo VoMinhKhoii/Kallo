@@ -278,7 +278,7 @@ class _ModeButtonState extends State<_ModeButton> {
                         size: LoggingIcons.size, color: NhamColors.btn),
                     const SizedBox(width: 6),
                     // Regular weight, same as the field's own text.
-                    Text(widget.label, style: dashBody(color: NhamColors.btn)),
+                    Text(widget.label, style: dashBody(color: kInkMuted)),
                   ],
                 ),
               ),

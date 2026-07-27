@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/session_provider.dart';
-import '../../../shared/widgets/nham_text.dart';
 import '../../../shared/widgets/skeleton.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/logging_keys.dart';
@@ -38,7 +38,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
 
     if (userId == null) {
       return _centered(
-        NhamText('common.notSignedIn'.tr(), variant: NhamTextVariant.small),
+        Text('common.notSignedIn'.tr(), style: dashMeta(),),
       );
     }
 

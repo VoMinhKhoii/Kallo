@@ -126,14 +126,12 @@ class _CheatSliderCardState extends State<CheatSliderCard> {
                 spacing: NhamSpacing.sp3,
                 runSpacing: 2,
                 children: [
-                  NhamText(
+                  Text(
                     '≈ ${resolved.caloriesKcal} ${'logging.cheatSliders.kcal'.tr()}',
-                    variant: NhamTextVariant.numStrong,
-                    style: dashValue().copyWith(fontSize: 22),
+                    style: dashValue(),
                   ),
-                  NhamText(
+                  Text(
                     macroLine.toString(),
-                    variant: NhamTextVariant.captionTabular,
                     style: dashMeta(tabular: true),
                   ),
                 ],
@@ -244,9 +242,8 @@ class _CheatSliderRow extends StatelessWidget {
           children: [
             Icon(cheatSliderIcon(slider.key), size: 16, color: color),
             const SizedBox(width: 6),
-            NhamText(
+            Text(
               slider.label,
-              variant: NhamTextVariant.body,
               style: dashBody(weight: FontWeight.w500),
             ),
           ],
@@ -321,9 +318,8 @@ class _StopLabel extends StatelessWidget {
             : (center - labelWidth / 2).clamp(0.0, trackWidth - labelWidth);
 
     final style = dashMeta(color: exact || between ? kInk : kInkMuted).copyWith(
-      fontSize: 11,
       height: 1.25,
-      fontWeight: exact ? FontWeight.w600 : FontWeight.w400,
+      fontWeight: exact ? FontWeight.w500 : FontWeight.w400,
     );
 
     return Positioned(
@@ -381,9 +377,8 @@ class _ClarifyCard extends StatelessWidget {
             ),
             const SizedBox(height: NhamSpacing.sp3),
           ],
-          NhamText(
+          Text(
             question.prompt,
-            variant: NhamTextVariant.body,
             style: dashBody(),
           ),
           if (options.isNotEmpty) ...[
@@ -460,9 +455,8 @@ class _ClarifyChipState extends State<_ClarifyChip> {
                 color: _pressed ? NhamColors.accent60 : NhamColors.borderSoft,
               ),
             ),
-            child: NhamText(
+            child: Text(
               widget.label,
-              variant: NhamTextVariant.body,
               style: dashBody(),
             ),
           ),
@@ -493,9 +487,8 @@ class CheatBadge extends StatelessWidget {
         children: [
           const Icon(LucideIcons.partyPopper, size: 12, color: kInk),
           const SizedBox(width: 4),
-          NhamText(
+          Text(
             label,
-            variant: NhamTextVariant.pillLabel,
             style: dashMeta(color: kInk),
           ),
         ],
@@ -551,9 +544,8 @@ class _SaveButtonState extends State<_SaveButton> {
               children: [
                 const Icon(LucideIcons.check, size: 14, color: Colors.white),
                 const SizedBox(width: 6),
-                NhamText(
+                Text(
                   'logging.cheatSliders.confirm'.tr(),
-                  variant: NhamTextVariant.body,
                   style: dashBody(color: Colors.white, weight: FontWeight.w500),
                 ),
               ],
