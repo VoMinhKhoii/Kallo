@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
@@ -16,9 +15,8 @@ class AmountEditorCancelButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton(
       onPressed: onTap,
-      child: NhamText(
+      child: Text(
         'logging.persistedMealCard.cancelEdit'.tr(),
-        variant: NhamTextVariant.body,
         style: dashBody(color: kInkMuted),
       ),
     );
@@ -65,11 +63,10 @@ class AmountEditorSaveButton extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                 ],
-                NhamText(
+                Text(
                   saving
                       ? 'logging.persistedMealCard.savingEdit'.tr()
                       : 'logging.persistedMealCard.saveEdit'.tr(),
-                  variant: NhamTextVariant.body,
                   style:
                       dashBody(color: NhamColors.text, weight: FontWeight.w500),
                 ),

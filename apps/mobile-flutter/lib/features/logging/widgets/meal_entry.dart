@@ -11,6 +11,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/format.dart';
+import '../logic/logging_spacing.dart';
 import '../logic/meal_utils.dart';
 import 'count_up.dart';
 import 'entrances.dart';
@@ -88,131 +89,135 @@ class _MealEntryState extends State<MealEntry> {
   Widget build(BuildContext context) {
     final totals = recalculateTotals(_items);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
-      child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _Card(
-              // The reveal replaces the streaming card in place — matching its
-              // surface background removes the background flip at the swap.
-              color: widget.revealing ? NhamColors.surface : NhamColors.elev,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    // No bottom margin — the feed's list/footer stack owns the gap below.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Card(
+          // The reveal replaces the streaming card in place — matching its
+          // surface background removes the background flip at the swap.
+          color: widget.revealing ? NhamColors.surface : NhamColors.elev,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header: raw input + edit/done pill. The Lora quote is the
+              // user's raw input ONLY — web renders it solely when
+              // `userInput` exists (meal-entry.tsx), never a serif meal name.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start, // items-start
                 children: [
-                  // Header: raw input + edit/done pill. The Lora quote is the
-                  // user's raw input ONLY — web renders it solely when
-                  // `userInput` exists (meal-entry.tsx), never a serif meal name.
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start, // items-start
-                    children: [
-                      if (widget.rawInput.isNotEmpty)
-                        Expanded(
-                          child: NhamText(
-                            widget.rawInput,
-                            variant: NhamTextVariant.mealQuote,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              height: 1.625, // leading-relaxed
-                            ),
+                  if (widget.rawInput.isNotEmpty)
+                    Expanded(
+                      child: NhamText(
+                        widget.rawInput,
+                        variant: NhamTextVariant.mealQuote,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          height: 1.625, // leading-relaxed
+                        ),
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  const SizedBox(width: NhamSpacing.sp2),
+                  _EditPill(
+                    editing: _editing,
+                    onTap: () => setState(() => _editing = !_editing),
+                  ),
+                ],
+              ),
+              const SizedBox(height: LoggingSpacing.section),
+              const Divider(
+                height: 1,
+                thickness: 1,
+                color: NhamColors.borderFaint,
+              ),
+              const SizedBox(height: LoggingSpacing.section),
+              Padding(
+                padding: const EdgeInsets.only(bottom: LoggingSpacing.section),
+                child: Column(
+                  children: [
+                    for (final (index, item) in _items.indexed)
+                      // Web: each item enters opacity 0→1, x:-8→0, staggered
+                      // delay index*0.05s (meal-entry-item.tsx:32-35). On
+                      // the reveal the rows were already on screen in the
+                      // streaming card — crossfade in place, don't re-enter.
+                      if (widget.revealing)
+                        FadeIn(
+                          key: ValueKey(item.id),
+                          duration: const Duration(milliseconds: 150),
+                          child: _ItemRow(
+                            item: item,
+                            editing: _editing,
+                            onChange: _change,
                           ),
                         )
                       else
-                        const Spacer(),
-                      const SizedBox(width: NhamSpacing.sp2),
-                      _EditPill(
-                        editing: _editing,
-                        onTap: () => setState(() => _editing = !_editing),
-                      ),
-                    ],
+                        FadeInLeft(
+                          key: ValueKey(item.id),
+                          offset: 8,
+                          delay: Duration(milliseconds: index * 50),
+                          child: _ItemRow(
+                            item: item,
+                            editing: _editing,
+                            onChange: _change,
+                          ),
+                        ),
+                  ],
+                ),
+              ),
+              const Divider(
+                height: 1,
+                thickness: 1,
+                color: NhamColors.borderFaint,
+              ),
+              const SizedBox(height: LoggingSpacing.section),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'logging.mealEntry.total'.tr(),
+                    style: dashBody(weight: FontWeight.w500),
                   ),
-                  const SizedBox(height: NhamSpacing.sp5), // mt-5
-                  const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
-                  const SizedBox(height: NhamSpacing.sp4), // pt-4
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
-                    child: Column(
-                      children: [
-                        for (final (index, item) in _items.indexed)
-                          // Web: each item enters opacity 0→1, x:-8→0, staggered
-                          // delay index*0.05s (meal-entry-item.tsx:32-35). On
-                          // the reveal the rows were already on screen in the
-                          // streaming card — crossfade in place, don't re-enter.
-                          if (widget.revealing)
-                            FadeIn(
-                              key: ValueKey(item.id),
-                              duration: const Duration(milliseconds: 150),
-                              child: _ItemRow(
-                                item: item,
-                                editing: _editing,
-                                onChange: _change,
-                              ),
-                            )
-                          else
-                            FadeInLeft(
-                              key: ValueKey(item.id),
-                              offset: 8,
-                              delay: Duration(milliseconds: index * 50),
-                              child: _ItemRow(
-                                item: item,
-                                editing: _editing,
-                                onChange: _change,
-                              ),
-                            ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
-                  const SizedBox(height: NhamSpacing.sp3), // pt-3
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      NhamText(
-                        'logging.mealEntry.total'.tr(),
-                        variant: NhamTextVariant.itemName,
-                        style: dashBody(weight: FontWeight.w500),
+                      Text(
+                        'P: ${fmtG(totals.protein)}  C: ${fmtG(totals.carbs)}  F: ${fmtG(totals.fat)}',
+                        style: dashMeta(tabular: true),
                       ),
-                      Row(
-                        children: [
-                          NhamText(
-                            'P: ${fmtG(totals.protein)}  C: ${fmtG(totals.carbs)}  F: ${fmtG(totals.fat)}',
-                            variant: NhamTextVariant.captionTabular,
-                            style: dashMeta(tabular: true),
-                          ),
-                          const SizedBox(width: NhamSpacing.sp4), // gap-4
-                          CountUpText(
-                            value: totals.calories,
-                            // Reduced motion: the reveal total lands in place.
-                            enabled:
-                                _countUp &&
-                                !MediaQuery.disableAnimationsOf(context),
-                            format: (v) => fmtKcal(v),
-                            variant: NhamTextVariant.numStrong,
-                          ),
-                        ],
+                      const SizedBox(width: NhamSpacing.sp4), // gap-4
+                      CountUpText(
+                        value: totals.calories,
+                        // Reduced motion: the reveal total lands in place.
+                        enabled:
+                            _countUp &&
+                            !MediaQuery.disableAnimationsOf(context),
+                        format: (v) => fmtKcal(v),
+                        style: dashValue(),
                       ),
                     ],
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: NhamSpacing.sp3), // mt-3
-            // On reveal the CTA slides up into the slot the spinner row vacated.
-            _maybeReveal(
-              _ConfirmButton(
-                editing: _editing,
-                disabled: _confirmDisabled,
-                onTap:
-                    _confirmDisabled
-                        ? null
-                        : () => widget.onConfirm(
-                          deriveQuantityEdits(_items, _original),
-                        ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-      );
+        const SizedBox(height: LoggingSpacing.block),
+        // On reveal the CTA slides up into the slot the spinner row vacated.
+        _maybeReveal(
+          _ConfirmButton(
+            editing: _editing,
+            disabled: _confirmDisabled,
+            onTap:
+                _confirmDisabled
+                    ? null
+                    : () => widget.onConfirm(
+                      deriveQuantityEdits(_items, _original),
+                    ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -238,15 +243,17 @@ class _ItemRow extends StatelessWidget {
     // count units can reach 0.
     final struck = !isGrams && item.quantity <= 0;
 
+    // Edit mode is ONE transition: the row's wash and inset crossfade over
+    // 150ms and the steppers come with it. No nested per-control fade.
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       padding:
           editing
               ? const EdgeInsets.symmetric(
-                vertical: 10,
-                horizontal: 8,
-              ) // py-2.5 px-2
-              : const EdgeInsets.symmetric(vertical: 10),
+                vertical: LoggingSpacing.row,
+                horizontal: NhamSpacing.sp2,
+              )
+              : const EdgeInsets.symmetric(vertical: LoggingSpacing.row),
       decoration:
           editing
               ? BoxDecoration(
@@ -259,52 +266,42 @@ class _ItemRow extends StatelessWidget {
           Expanded(
             child: Row(
               children: [
-                if (editing)
-                  FadeIn(
-                    duration: const Duration(milliseconds: 150),
-                    child: Row(
-                      children: [
-                        MealStepperButton(
-                          icon: LucideIcons.minus, // lucide Minus
-                          disabled: minusDisabled,
-                          onTap:
-                              minusDisabled
-                                  ? null
-                                  : () => onChange(item.id, -step),
-                        ),
-                        const SizedBox(width: 2), // gap-0.5
-                        SizedBox(
-                          width: 28,
-                          child: NhamText(
-                            item.quantity.round().toString(),
-                            variant: NhamTextVariant.numStrong,
-                            textAlign: TextAlign.center,
-                            style: dashMeta(color: kInk, tabular: true),
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        MealStepperButton(
-                          icon: LucideIcons.plus, // lucide Plus
-                          onTap: () => onChange(item.id, step),
-                        ),
-                        const SizedBox(width: NhamSpacing.sp2), // gap-2
-                      ],
+                if (editing) ...[
+                  MealStepperButton(
+                    icon: LucideIcons.minus, // lucide Minus
+                    disabled: minusDisabled,
+                    onTap:
+                        minusDisabled ? null : () => onChange(item.id, -step),
+                  ),
+                  const SizedBox(width: 2), // gap-0.5
+                  SizedBox(
+                    width: 28,
+                    child: Text(
+                      item.quantity.round().toString(),
+                      textAlign: TextAlign.center,
+                      style: dashMeta(color: kInk, tabular: true),
                     ),
                   ),
+                  const SizedBox(width: 2),
+                  MealStepperButton(
+                    icon: LucideIcons.plus, // lucide Plus
+                    onTap: () => onChange(item.id, step),
+                  ),
+                  const SizedBox(width: NhamSpacing.sp2), // gap-2
+                ],
                 Expanded(
-                  child: NhamText(
+                  child: Text(
                     item.name,
-                    variant: NhamTextVariant.itemName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style:
-                        struck
+                        dashBody().merge(struck
                             ? const TextStyle(
                               decoration: TextDecoration.lineThrough,
                               decorationColor: kInkMuted,
                               color: kInkMuted,
                             )
-                            : null,
+                            : null),
                   ),
                 ),
               ],
@@ -315,29 +312,21 @@ class _ItemRow extends StatelessWidget {
             opacity: struck ? 0.4 : 1,
             child: Row(
               children: [
-                NhamText(
+                Text(
                   'P: ${fmtG(item.macros.protein)}',
-                  variant: NhamTextVariant.itemMacro,
-                  maxLines: 1,
-                ),
+                  maxLines: 1, style: dashMeta(tabular: true),),
                 const SizedBox(width: NhamSpacing.sp2),
-                NhamText(
+                Text(
                   'C: ${fmtG(item.macros.carbs)}',
-                  variant: NhamTextVariant.itemMacro,
-                  maxLines: 1,
-                ),
+                  maxLines: 1, style: dashMeta(tabular: true),),
                 const SizedBox(width: NhamSpacing.sp2),
-                NhamText(
+                Text(
                   'F: ${fmtG(item.macros.fat)}',
-                  variant: NhamTextVariant.itemMacro,
-                  maxLines: 1,
-                ),
+                  maxLines: 1, style: dashMeta(tabular: true),),
                 const SizedBox(width: NhamSpacing.sp3), // gap-3
-                NhamText(
+                Text(
                   fmtKcal(item.macros.calories),
-                  variant: NhamTextVariant.itemCalories,
-                  maxLines: 1,
-                ),
+                  maxLines: 1, style: dashBody(weight: FontWeight.w500, tabular: true),),
               ],
             ),
           ),
@@ -395,14 +384,11 @@ class _EditPill extends StatelessWidget {
                 color: editing ? NhamColors.text : NhamColors.textMuted,
               ),
               const SizedBox(width: 6), // gap-1.5
-              NhamText(
+              Text(
                 editing
                     ? 'logging.mealEntry.done'.tr()
                     : 'logging.mealEntry.edit'.tr(),
-                variant: NhamTextVariant.pillLabel,
-                style: TextStyle(
-                  color: editing ? NhamColors.text : kInkMuted,
-                ),
+                style: dashMeta().merge(TextStyle(color: editing ? NhamColors.text : kInkMuted)),
               ),
             ],
           ),
@@ -489,9 +475,8 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
               children: [
                 Icon(LucideIcons.check, size: 14, color: fg),
                 const SizedBox(width: 6), // gap-1.5
-                NhamText(
+                Text(
                   'logging.confirm'.tr(),
-                  variant: NhamTextVariant.body,
                   style: dashBody(color: fg, weight: FontWeight.w500),
                 ),
               ],
@@ -513,7 +498,7 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),

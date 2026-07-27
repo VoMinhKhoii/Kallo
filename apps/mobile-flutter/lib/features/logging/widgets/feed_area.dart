@@ -11,7 +11,6 @@ import '../../../data/api_client.dart';
 import '../../../models/cheat.dart';
 import '../../../models/meal.dart';
 import '../../../models/streaming.dart';
-import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -21,6 +20,7 @@ import '../data/logging_providers.dart';
 import '../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../data/stream_analysis_controller.dart';
 import '../logic/format.dart';
+import '../logic/logging_spacing.dart';
 import '../logic/meal_utils.dart' show isLikelyPartialDay;
 import 'calorie_ring.dart';
 import '../../../shared/widgets/top_toast.dart';
@@ -28,6 +28,7 @@ import '../../settings/controls/option_strip.dart';
 import 'cheat_meal_card.dart';
 import 'cheat_occasion_chips.dart';
 import 'cheat_slider_card.dart';
+import 'composer_dock.dart';
 import 'empty_state.dart';
 import 'entrances.dart';
 import 'terminal/failed_attempt_card.dart';
@@ -102,6 +103,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// Inline error for a failed confirm (saving a meal) — not analysis errors,
   /// which surface as the failed-attempt card.
   String? _errorText;
+
+  /// The floating composer dock's measured height — the scroll padding the
+  /// feed reserves so its last card can always clear the dock it scrolls
+  /// under. Seeded generously; [ComposerDock] reports the real value on the
+  /// first frame.
+  double _dockHeight = 120;
 
   /// Meals swiped away but still inside the undo window. They are filtered out
   /// of the rendered feed (so a mid-window refetch can't resurrect the card)
@@ -491,8 +498,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       ),
     ];
 
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-
     return Column(
       children: [
         // Macro summary — enters opacity + slide-down (350ms). While the day
@@ -502,9 +507,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             color: NhamColors.surface,
             padding: const EdgeInsets.fromLTRB(
               NhamSpacing.sp3,
+              LoggingSpacing.block,
               NhamSpacing.sp3,
-              NhamSpacing.sp3,
-              NhamSpacing.sp2,
+              LoggingSpacing.block,
             ),
             child:
                 isLoading
@@ -514,9 +519,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                     // totalled, so say so plainly instead of showing a wrong ring.
                     ? Align(
                       alignment: Alignment.centerLeft,
-                      child: NhamText(
+                      child: Text(
                         'logging.feedArea.legacyMacroWarning'.tr(),
-                        variant: NhamTextVariant.small,
                         style: dashMeta(),
                       ),
                     )
@@ -530,10 +534,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                               target: profile.calorieTarget.toDouble(),
                             ),
                             const SizedBox(height: 4), // gap-1
-                            NhamText(
-                              '${formatCount(dailyCalories, context.locale.toString())} / ${formatCount(profile.calorieTarget, context.locale.toString())} kcal',
-                              variant: NhamTextVariant.numCaption,
-                            ),
+                            Text(
+                              '${formatCount(dailyCalories, context.locale.toString())} / ${formatCount(profile.calorieTarget, context.locale.toString())} kcal', style: dashMeta(tabular: true),),
                           ],
                         ),
                         const SizedBox(width: NhamSpacing.sp4), // gap-4
@@ -562,7 +564,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
               NhamSpacing.sp3,
               0,
               NhamSpacing.sp3,
-              NhamSpacing.sp2,
+              LoggingSpacing.block,
             ),
             child: _PartialDayNotice(
               calories: dailyCalories,
@@ -570,88 +572,97 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             ),
           ),
 
-        // The card list.
+        // The card list, with the composer FLOATING over its bottom edge —
+        // the feed scrolls under the dock (reserving `_dockHeight` so the last
+        // card can always clear it) instead of stopping above a solid bar.
         Expanded(
-          child: _buildList(
-            isEmpty: isEmpty,
-            isLoading: isLoading,
-            hasError: dayAsync.hasError,
-            persistedMeals: persistedMeals,
-            pendingConfirmations: pendingConfirmations,
-            isStreaming: isStreaming,
-            isRevealing: isRevealing,
-            isCheatRevealing: isCheatRevealing,
-            stream: stream,
-            hasFooterItems: hasFooterItems,
-            confirmPending: confirmPending,
-            failedText: _failedText,
-            failedRetryable: _failedRetryable,
-            onRetry: _retry,
-            onDiscardFailed: _discardFailed,
-          ),
-        ),
-
-        if (_errorText != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp3,
-              0,
-              NhamSpacing.sp3,
-              NhamSpacing.sp2,
-            ),
-            child: NhamText(
-              _errorText!,
-              variant: NhamTextVariant.small,
-              style: dashMeta(color: NhamColors.danger),
-            ),
-          ),
-
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            NhamSpacing.sp3,
-            NhamSpacing.sp3,
-            NhamSpacing.sp3,
-            bottomInset + NhamSpacing.sp2,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: Stack(
             children: [
-              // Cheat mode's per-meal controls sit above the composer: the
-              // light/medium/heavy intensity strip and the "log it again"
-              // chips (the web keeps both beside/above the input too).
-              if (_mode == MealLogMode.cheat) ...[
-                CheatOccasionChips(
-                  userId: widget.profile.userId,
-                  disabled: _stagingRepeat || stream.isAnalyzing,
-                  onSelect: _repeatCheat,
+              Positioned.fill(
+                child: _buildList(
+                  isEmpty: isEmpty,
+                  isLoading: isLoading,
+                  hasError: dayAsync.hasError,
+                  persistedMeals: persistedMeals,
+                  pendingConfirmations: pendingConfirmations,
+                  isStreaming: isStreaming,
+                  isRevealing: isRevealing,
+                  isCheatRevealing: isCheatRevealing,
+                  stream: stream,
+                  hasFooterItems: hasFooterItems,
+                  confirmPending: confirmPending,
+                  failedText: _failedText,
+                  failedRetryable: _failedRetryable,
+                  onRetry: _retry,
+                  onDiscardFailed: _discardFailed,
                 ),
-                _CheatIntensityRow(
-                  value: _cheatIntensity,
-                  onChange:
-                      (intensity) =>
-                          setState(() => _cheatIntensity = intensity),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: ComposerDock(
+                  onHeightChanged:
+                      (height) => setState(() => _dockHeight = height),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_errorText != null)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: LoggingSpacing.block,
+                          ),
+                          child: Text(
+                            _errorText!,
+                            // Grey copy; the red lives on the affordances.
+                            style: dashMeta(),
+                          ),
+                        ),
+                      // Cheat mode's per-meal controls sit above the composer:
+                      // the light/medium/heavy intensity strip and the "log it
+                      // again" chips (the web keeps both above the input too).
+                      if (_mode == MealLogMode.cheat) ...[
+                        CheatOccasionChips(
+                          userId: widget.profile.userId,
+                          disabled: _stagingRepeat || stream.isAnalyzing,
+                          onSelect: _repeatCheat,
+                        ),
+                        _CheatIntensityRow(
+                          value: _cheatIntensity,
+                          onChange:
+                              (intensity) =>
+                                  setState(() => _cheatIntensity = intensity),
+                        ),
+                        const SizedBox(height: LoggingSpacing.block),
+                      ],
+                      MealInput(
+                        controller: _inputController,
+                        onSubmit: _submit,
+                        onCancel:
+                            () =>
+                                ref
+                                    .read(streamAnalysisProvider.notifier)
+                                    .cancel(),
+                        analyzing: stream.isAnalyzing,
+                        modeLabel: mealModeLabel(_mode),
+                        modeIcon: mealModeIcon(_mode),
+                        hintText:
+                            _mode == MealLogMode.cheat
+                                ? 'logging.cheatPlaceholder'.tr()
+                                : null,
+                        onModePressed: _openModeSheet,
+                        // iOS-only for now (matches the mode sheet's gating);
+                        // null hides the composer icon entirely. Gated via the
+                        // shared `isBarcodeLoggingSupported` (same source of
+                        // truth as the mode sheet).
+                        onBarcodePressed:
+                            isBarcodeLoggingSupported
+                                ? _openBarcodeSheet
+                                : null,
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: NhamSpacing.sp2),
-              ],
-              MealInput(
-                controller: _inputController,
-                onSubmit: _submit,
-                onCancel:
-                    () => ref.read(streamAnalysisProvider.notifier).cancel(),
-                analyzing: stream.isAnalyzing,
-                modeLabel: mealModeLabel(_mode),
-                modeIcon: mealModeIcon(_mode),
-                hintText:
-                    _mode == MealLogMode.cheat
-                        ? 'logging.cheatPlaceholder'.tr()
-                        : null,
-                onModePressed: _openModeSheet,
-                // iOS-only for now (matches the mode sheet's gating); null
-                // hides the composer icon entirely.
-                // Gated to iOS via the shared `isBarcodeLoggingSupported`
-                // (same source of truth as the mode sheet).
-                onBarcodePressed:
-                    isBarcodeLoggingSupported ? _openBarcodeSheet : null,
               ),
             ],
           ),
@@ -679,8 +690,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   }) {
     // Day fetch error → red alert card with retry (LoggingDayErrorState).
     if (hasError && persistedMeals.isEmpty && !hasFooterItems) {
-      return LoggingDayErrorState(
-        onRetry: () => ref.invalidate(loggingDayProvider(_dayArgs)),
+      return Padding(
+        // Centre the alert in the space the dock leaves, not behind it.
+        padding: EdgeInsets.only(bottom: _dockHeight),
+        child: LoggingDayErrorState(
+          onRetry: () => ref.invalidate(loggingDayProvider(_dayArgs)),
+        ),
       );
     }
 
@@ -703,11 +718,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         return SingleChildScrollView(
           controller: _scrollController,
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.only(
-            top: NhamSpacing.sp3,
-            bottom: NhamSpacing.sp3,
-            left: NhamSpacing.sp3,
-            right: NhamSpacing.sp3,
+          // The macro block above owns the top gap; the bottom reserves the
+          // floating dock's height so the last card can clear it.
+          padding: EdgeInsets.fromLTRB(
+            NhamSpacing.sp3,
+            0,
+            NhamSpacing.sp3,
+            _dockHeight,
           ),
           child: _Footer(
             pendingConfirmations: pendingConfirmations,
@@ -736,11 +753,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       if (isLoading) {
         return SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.only(
-            top: NhamSpacing.sp3,
-            bottom: NhamSpacing.sp3,
-            left: NhamSpacing.sp3,
-            right: NhamSpacing.sp3,
+          padding: EdgeInsets.fromLTRB(
+            NhamSpacing.sp3,
+            0,
+            NhamSpacing.sp3,
+            _dockHeight,
           ),
           child: body,
         );
@@ -749,7 +766,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       return SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp6),
+          padding: EdgeInsets.fromLTRB(
+            0,
+            NhamSpacing.sp6,
+            0,
+            NhamSpacing.sp6 + _dockHeight,
+          ),
           child: Center(child: body),
         ),
       );
@@ -762,14 +784,17 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.only(
-          top: NhamSpacing.sp3,
-          bottom: NhamSpacing.sp3,
-          left: NhamSpacing.sp3,
-          right: NhamSpacing.sp3,
+        padding: EdgeInsets.fromLTRB(
+          NhamSpacing.sp3,
+          0,
+          NhamSpacing.sp3,
+          _dockHeight,
         ),
         itemCount: persistedMeals.length + (hasFooterItems ? 1 : 0),
-        separatorBuilder: (_, __) => const SizedBox(height: NhamSpacing.sp2),
+        // The ONE gap between cards — no card carries a bottom margin of its
+        // own, so this separator is the whole story.
+        separatorBuilder:
+            (_, __) => const SizedBox(height: LoggingSpacing.block),
         itemBuilder: (context, index) {
           if (index < persistedMeals.length) {
             final meal = persistedMeals[index];
@@ -787,23 +812,25 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                             !hasFooterItems &&
                             index == persistedMeals.length - 1,
                         onRemove: () => _removeMeal(meal),
-                        onUpdate: ({required edits, required removeIds}) =>
-                            updatePersistedMeal(
+                        onUpdate:
+                            ({required edits, required removeIds}) =>
+                                updatePersistedMeal(
+                                  context,
+                                  ref,
+                                  userId: widget.profile.userId,
+                                  date: widget.date,
+                                  mealId: meal.id,
+                                  edits: edits,
+                                  removeIds: removeIds,
+                                ),
+                        onLogAgain:
+                            () => logMealAgain(
                               context,
                               ref,
                               userId: widget.profile.userId,
                               date: widget.date,
                               mealId: meal.id,
-                              edits: edits,
-                              removeIds: removeIds,
                             ),
-                        onLogAgain: () => logMealAgain(
-                          context,
-                          ref,
-                          userId: widget.profile.userId,
-                          date: widget.date,
-                          mealId: meal.id,
-                        ),
                       ),
             );
           }
@@ -1021,10 +1048,7 @@ class _CheatIntensityRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'logging.cheatIntensity.label'.tr(),
-                style: dashEyebrow(),
-              ),
+              Text('logging.cheatIntensity.label'.tr(), style: dashMeta()),
               const SizedBox(height: 2),
               Text('logging.cheatIntensity.helper'.tr(), style: dashMeta()),
             ],
@@ -1042,8 +1066,7 @@ class _CheatIntensityRow extends StatelessWidget {
                   label: 'logging.cheatIntensity.${intensity.name}'.tr(),
                 ),
             ],
-            onChange:
-                (name) => onChange(CheatIntensity.values.byName(name)),
+            onChange: (name) => onChange(CheatIntensity.values.byName(name)),
           ),
         ),
       ],
@@ -1099,8 +1122,11 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasFailed = failedText != null;
+    // The footer's cards carry no margins of their own, so the stack spaces
+    // them at the same block gap the card list uses above.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: LoggingSpacing.block,
       children: [
         for (var i = 0; i < pendingConfirmations.length; i++)
           if (pendingConfirmations[i].cheatSpec case final cheatSpec?)
@@ -1158,9 +1184,7 @@ class _Footer extends StatelessWidget {
         // estimator).
         if (isCheatRevealing)
           CheatSliderCard(
-            key: ValueKey(
-              'cheat-reveal-${stream.analysisId ?? 'clarify'}',
-            ),
+            key: ValueKey('cheat-reveal-${stream.analysisId ?? 'clarify'}'),
             spec: stream.cheatSpec!,
             rawInput: revealRawInput ?? '',
             busy: confirmPending,
@@ -1202,20 +1226,18 @@ class _PartialDayNotice extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          NhamText(
+          Text(
             'logging.feedArea.partialDayNotice.title'.tr(),
-            variant: NhamTextVariant.italicAccent,
-            style: const TextStyle(color: NhamColors.danger),
+            style: dashBody(weight: FontWeight.w500).merge(const TextStyle(color: NhamColors.danger)),
           ),
           const SizedBox(height: 4), // mt-1
-          NhamText(
+          Text(
             'logging.feedArea.partialDayNotice.body'.tr(
               namedArgs: {
                 'calories': formatCount(calories, locale),
                 'target': formatCount(target, locale),
               },
             ),
-            variant: NhamTextVariant.small,
             style: dashMeta(),
           ),
         ],
@@ -1248,13 +1270,12 @@ class _MacroRow extends StatelessWidget {
       children: [
         SizedBox(
           width: 76,
-          child: NhamText(
+          child: Text(
             data.label,
-            variant: NhamTextVariant.macroLabel,
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.clip,
-            style: dashEyebrow(),
+            style: dashMeta(),
           ),
         ),
         const SizedBox(width: NhamSpacing.sp3), // gap-3
@@ -1262,10 +1283,8 @@ class _MacroRow extends StatelessWidget {
         const SizedBox(width: NhamSpacing.sp3),
         SizedBox(
           width: 56, // w-14
-          child: NhamText(
-            '${data.current}/${data.target}g',
-            variant: NhamTextVariant.macroValue,
-          ),
+          child: Text(
+            '${data.current}/${data.target}g', style: dashMeta(tabular: true),),
         ),
       ],
     );
@@ -1463,7 +1482,7 @@ class _LoggingDaySkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget ghostCard(bool isLast) => Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp8), // gap-8
+      padding: const EdgeInsets.only(bottom: LoggingSpacing.block),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1505,13 +1524,13 @@ class _LoggingDaySkeleton extends StatelessWidget {
                         NhamColors.borderBiscotti40,
                       ),
                 ),
-                const SizedBox(height: NhamSpacing.sp5), // mt-5
+                const SizedBox(height: LoggingSpacing.section),
                 const Divider(
                   height: 1,
                   thickness: 1,
                   color: NhamColors.borderHalf,
                 ),
-                const SizedBox(height: NhamSpacing.sp3), // pt-3
+                const SizedBox(height: LoggingSpacing.section),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

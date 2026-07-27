@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -85,20 +84,18 @@ class PartialYesterdayPrompt extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  NhamText(
+                  Text(
                     '$t.title'.tr(),
-                    variant: NhamTextVariant.italicAccent,
-                    style: const TextStyle(color: NhamColors.danger),
+                    style: dashBody(weight: FontWeight.w500).merge(const TextStyle(color: NhamColors.danger)),
                   ),
                   const SizedBox(height: 4), // mt-1
-                  NhamText(
+                  Text(
                     '$t.body'.tr(
                       namedArgs: {
                         'calories': formatCount(calories, locale),
                         'target': formatCount(calorieTarget, locale),
                       },
                     ),
-                    variant: NhamTextVariant.small,
                     style: dashMeta(),
                   ),
                   const SizedBox(height: NhamSpacing.sp3), // mt-3
@@ -176,9 +173,8 @@ class _OpenButtonState extends State<_OpenButton> {
                 color: NhamColors.text,
               ),
               const SizedBox(width: 8), // gap-2
-              NhamText(
+              Text(
                 widget.label,
-                variant: NhamTextVariant.body,
                 style: dashBody(weight: FontWeight.w500),
               ),
             ],

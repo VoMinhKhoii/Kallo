@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/cheat.dart';
-import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -45,7 +44,7 @@ class CheatOccasionChips extends ConsumerWidget {
             padding: const EdgeInsets.only(left: 4, bottom: 6),
             child: Text(
               'logging.cheatRepeat.title'.tr().toUpperCase(),
-              style: dashEyebrow(),
+              style: dashMeta(),
             ),
           ),
           Wrap(
@@ -130,9 +129,8 @@ class _OccasionChipState extends State<_OccasionChip> {
                 ),
                 const SizedBox(width: 6),
                 Flexible(
-                  child: NhamText(
+                  child: Text(
                     widget.occasion.rawInput,
-                    variant: NhamTextVariant.small,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: dashMeta(color: kInk),

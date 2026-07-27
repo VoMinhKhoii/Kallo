@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 
@@ -25,7 +25,7 @@ class PersistedMealTimeDivider extends StatelessWidget {
         line,
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-          child: NhamText(time, variant: NhamTextVariant.timeLabel),
+          child: Text(time, style: dashMeta(),),
         ),
         line,
       ],

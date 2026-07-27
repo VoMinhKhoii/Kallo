@@ -9,6 +9,7 @@ import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
+import '../../logic/logging_spacing.dart';
 
 /// How a meal gets logged. `normal` = describe it in words (AI); `cheat` = the
 /// slider-estimate flow for hard-to-count occasions; `manual` = search foods +
@@ -73,7 +74,7 @@ class _MealModeSheet extends StatelessWidget {
               children: [
                 _ModeRow(
                   icon: mealModeIcon(MealLogMode.normal),
-                  iconColor: NhamColors.text,
+                  iconColor: NhamColors.btn, // umber — 6.3:1
                   title: 'logging.modeSelector.normal'.tr(),
                   desc: 'logging.modeSelector.normalDesc'.tr(),
                   selected: current == MealLogMode.normal,
@@ -81,7 +82,7 @@ class _MealModeSheet extends StatelessWidget {
                 ),
                 _ModeRow(
                   icon: mealModeIcon(MealLogMode.cheat),
-                  iconColor: NhamColors.danger,
+                  iconColor: NhamColors.danger, // terracotta — 3.1:1
                   title: 'logging.modeSelector.cheat'.tr(),
                   desc: 'logging.modeSelector.cheatDesc'.tr(),
                   selected: current == MealLogMode.cheat,
@@ -89,7 +90,7 @@ class _MealModeSheet extends StatelessWidget {
                 ),
                 _ModeRow(
                   icon: mealModeIcon(MealLogMode.manual),
-                  iconColor: NhamColors.text,
+                  iconColor: NhamColors.successDark, // emerald — 4.6:1
                   title: 'logging.modeSelector.manual'.tr(),
                   desc: 'logging.modeSelector.manualDesc'.tr(),
                   selected: current == MealLogMode.manual,
@@ -98,7 +99,7 @@ class _MealModeSheet extends StatelessWidget {
                 if (isBarcodeLoggingSupported)
                   _ModeRow(
                     icon: mealModeIcon(MealLogMode.barcode),
-                    iconColor: NhamColors.text,
+                    iconColor: NhamColors.textMuted, // neutral — 5.2:1
                     title: 'logging.modeSelector.barcode'.tr(),
                     desc: 'logging.modeSelector.barcodeDesc'.tr(),
                     selected: current == MealLogMode.barcode,
@@ -160,7 +161,7 @@ class _ModeRowState extends State<_ModeRow> {
         ),
         child: Row(
           children: [
-            Icon(widget.icon, size: 24, color: widget.iconColor),
+            Icon(widget.icon, size: LoggingIcons.size, color: widget.iconColor),
             const SizedBox(width: NhamSpacing.sp3),
             Expanded(
               child: Column(
@@ -181,7 +182,11 @@ class _ModeRowState extends State<_ModeRow> {
               ),
             ),
             if (widget.selected)
-              const Icon(LucideIcons.check, size: 20, color: NhamColors.text),
+              const Icon(
+                LucideIcons.check,
+                size: LoggingIcons.size,
+                color: NhamColors.text,
+              ),
           ],
         ),
       ),

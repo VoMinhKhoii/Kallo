@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../logic/logging_spacing.dart';
 
 class MealActionIconButton extends StatelessWidget {
   const MealActionIconButton({
@@ -55,12 +56,15 @@ class MealActionIconButton extends StatelessWidget {
                       onTap!();
                     }
                     : null,
-            radius: 20,
+            // The pressed wash hugs the glyph rather than filling the whole
+            // hit box — the tap target stays [LoggingIcons.hit], the visible
+            // splash is the smaller square inside it.
+            radius: LoggingIcons.hit / 2,
             containedInkWell: true,
             highlightShape: BoxShape.rectangle,
             borderRadius: BorderRadius.circular(NhamRadii.md),
             child: SizedBox.square(
-              dimension: 40,
+              dimension: LoggingIcons.hit,
               child: Center(
                 child:
                     pending
@@ -71,7 +75,11 @@ class MealActionIconButton extends StatelessWidget {
                             color: foreground,
                           ),
                         )
-                        : Icon(icon, size: 16, color: foreground),
+                        : Icon(
+                          icon,
+                          size: LoggingIcons.size,
+                          color: foreground,
+                        ),
               ),
             ),
           ),
