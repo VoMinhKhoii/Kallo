@@ -97,7 +97,13 @@ greeting ↔ week strip ↔ card title ↔ card ↔ card. Card padding `16` (`sp
 card radius `22`. Card padding is **16 horizontal / 12 vertical** where the card
 opens or closes on text (`LoggingSpacing.card`): the first and last lines each
 carry ~4px of line-height slack above and below their glyphs, so a flat 16 reads
-top-heavy. Equal *optically*, not geometrically — that is the one that matters. Within-card gaps (e.g. meal rows) are tighter and deliberate;
+top-heavy. Equal *optically*, not geometrically — that is the one that matters.
+
+The composer goes further (`LoggingSpacing.composer`, 12/6): it stacks two more
+insets of its own — the field's min-height centring its single line, and the send
+button's 44pt tap target wrapping a 32pt visual. Count every inset in the stack
+before setting the outermost one; a control-dense card needs less than a
+text-only one to land in the same place. Within-card gaps (e.g. meal rows) are tighter and deliberate;
 the 12px rule governs the *between-component* rhythm.
 
 This is the default for **presentational** surfaces — the dashboard, settings,

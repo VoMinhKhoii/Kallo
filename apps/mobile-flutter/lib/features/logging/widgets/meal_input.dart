@@ -68,7 +68,7 @@ class MealInput extends StatefulWidget {
 class _MealInputState extends State<MealInput>
     with SingleTickerProviderStateMixin {
   static const double _maxHeight = 200;
-  static const double _minHeight = 32;
+  static const double _minHeight = 24;
 
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
@@ -150,7 +150,7 @@ class _MealInputState extends State<MealInput>
           offset: const Offset(0, 4),
         );
         return Container(
-          padding: const EdgeInsets.all(NhamSpacing.sp3),
+          padding: LoggingSpacing.composer,
           decoration: BoxDecoration(
             // Opaque: the feed reads through the DOCK, never through the field.
             color: NhamColors.elev,
@@ -187,9 +187,7 @@ class _MealInputState extends State<MealInput>
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 disabledBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 6,
-                ), // py-1.5
+                contentPadding: const EdgeInsets.symmetric(vertical: 4),
                 hintText: widget.hintText ?? 'logging.composerPlaceholder'.tr(),
                 hintStyle: dashBody(color: kInkMuted),
               ),
