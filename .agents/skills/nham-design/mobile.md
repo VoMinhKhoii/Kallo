@@ -99,7 +99,8 @@ opens or closes on text (`LoggingSpacing.card`): the first and last lines each
 carry ~4px of line-height slack above and below their glyphs, so a flat 16 reads
 top-heavy. Equal *optically*, not geometrically — that is the one that matters.
 
-The composer goes further (`LoggingSpacing.composer`, 12/6): it stacks two more
+The composer goes further (`LoggingSpacing.composer`, 10 sides / 6 top / 4
+bottom — only the edge above running text keeps its room): it stacks two more
 insets of its own — the field's min-height centring its single line, and the send
 button's 44pt tap target wrapping a 32pt visual. Count every inset in the stack
 before setting the outermost one; a control-dense card needs less than a

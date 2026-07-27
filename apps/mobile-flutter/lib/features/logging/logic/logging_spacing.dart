@@ -33,16 +33,19 @@ abstract final class LoggingSpacing {
     NhamSpacing.sp3,
   );
 
-  /// The composer card's inset. Vertical drops to 6 because the composer stacks
-  /// two more insets of its own: the field's min-height centres its single line
-  /// (~7px above the glyphs) and the send button's 44pt tap target wraps a 32pt
-  /// visual (~6px below it). 12 on top of those read ~21/18 against 12 at the
-  /// sides; 6 lands all four optically level.
+  /// The composer card's inset — tighter than [card] on three sides because the
+  /// composer stacks two more insets of its own: the field's min-height centres
+  /// its single line (~7px above the glyphs) and the send button's 44pt tap
+  /// target wraps a 32pt visual (~6px below it).
+  ///
+  /// Only the top stays at 6 — it sits above running text, which needs the room.
+  /// The sides come in to 10 and the bottom to 4, where the button row's own
+  /// mass already does the spacing work.
   static const EdgeInsets composer = EdgeInsets.fromLTRB(
-    NhamSpacing.sp3, // 12
-    NhamSpacing.sp1_5, // 6
-    NhamSpacing.sp3,
-    NhamSpacing.sp1_5,
+    NhamSpacing.sp2_5, // 10
+    NhamSpacing.sp1_5, // 6 — above text, the one side that keeps its room
+    NhamSpacing.sp2_5,
+    NhamSpacing.sp1, // 4 — under the buttons, which carry their own mass
   );
 }
 
