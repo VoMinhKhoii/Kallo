@@ -1,8 +1,3 @@
-import {
-  isContainerFamily,
-  midG,
-  type VesselTier,
-} from '@/lib/ai/portion/vessel-data';
 import type {
   MacroBreakdown,
   MealItem,
@@ -61,16 +56,6 @@ export function applyQuantityChange(
       macros: scaleMacros(originalItem.macros, ratio),
     };
   });
-}
-
-export function vesselGramsForTier(
-  item: MealItem,
-  tier: VesselTier
-): number | undefined {
-  if (!item.vessel) return undefined;
-  if (!isContainerFamily(item.vessel.family)) return undefined;
-  if (!('dishClass' in item.vessel)) return undefined;
-  return midG(item.vessel.family, tier, item.vessel.dishClass);
 }
 
 /**

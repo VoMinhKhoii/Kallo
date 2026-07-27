@@ -2,15 +2,17 @@
 
 import Image from 'next/image';
 import { Slider as SliderPrimitive } from 'radix-ui';
-import type { PortionAnchor } from '@/components/logging/feed/meal-entry/portion-picker-body';
+import { useState } from 'react';
+import {
+  anchorPositions,
+  interpolate,
+  POSITION_MAX,
+  type PortionAnchor,
+  positionBreaks,
+  rulerStep,
+} from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { PIECE_TIERS, pieceAssetFor } from '@/lib/ai/portion/vessel-data';
 import type { PieceVessel } from '@/lib/ai/portion/vessel-types';
-
-/** Fixed track positions (%) for the five tier anchors — equal visual spacing. */
-const ANCHOR_POSITIONS = [10, 30, 50, 70, 90] as const;
-/** Slider operates in integer position space; grams map piecewise over it. */
-const POSITION_MAX = 1000;
-const POSITION_BREAKS = [0, 100, 300, 500, 700, 900, 1000] as const;
 
 const MIN_GLYPH_PX = 20;
 const MAX_GLYPH_PX = 60;
@@ -24,28 +26,11 @@ function glyphHeight(grams: number): number {
   return MIN_GLYPH_PX + t * (MAX_GLYPH_PX - MIN_GLYPH_PX);
 }
 
-/** Piecewise-linear interpolation of `x` from the `xs` domain onto `ys`. */
-function interp(
-  x: number,
-  xs: readonly number[],
-  ys: readonly number[]
-): number {
-  if (x <= xs[0]) return ys[0];
-  if (x >= xs[xs.length - 1]) return ys[ys.length - 1];
-  for (let i = 0; i < xs.length - 1; i += 1) {
-    if (x <= xs[i + 1]) {
-      const f = (x - xs[i]) / (xs[i + 1] - xs[i]);
-      return ys[i] + f * (ys[i + 1] - ys[i]);
-    }
-  }
-  return ys[ys.length - 1];
-}
-
 interface PortionRulerProps {
   anchors: PortionAnchor[];
   /** "N × " prefix (blank for a single piece). */
   countPrefix: string;
-  /** Tier claimed by the ±10% rule, or null when the portion is custom. */
+  /** Tier claimed by the claim band, or null when the portion is custom. */
   claimedTier: number | null;
   grams: number;
   min: number;
@@ -57,12 +42,14 @@ interface PortionRulerProps {
 }
 
 /**
- * Integrated piece ruler: one continuous track with five equal-spaced anchors.
- * Each anchor carries a bottom-aligned silhouette above the track, a 1px tick
- * on it, and a gram label below — all sharing one column. The Radix slider runs
- * in position space (0–1000); grams map to/from it piecewise-linearly over the
- * breakpoints (0%,min) (10%,a1) (30%,a2) (50%,a3) (70%,a4) (90%,a5) (100%,max),
- * so anchors sit at fixed positions while grams stay continuous between them.
+ * Integrated piece ruler: one continuous track with equal-spaced anchors. Each
+ * anchor carries a bottom-aligned silhouette above the track, a 1px tick on it,
+ * and a gram label below — all sharing one column. The Radix slider runs in
+ * position space (0–POSITION_MAX); grams map to/from it piecewise-linearly over
+ * (0, min) (anchor positions, anchor values) (100%, max), so anchors sit at
+ * fixed positions while grams stay continuous between them. Position is held
+ * here so a drag never snaps back through the lossy grams round-trip; it
+ * resyncs whenever grams change from outside (e.g. an anchor tap).
  */
 export function PortionRuler({
   anchors,
@@ -76,15 +63,32 @@ export function PortionRuler({
   ariaValueText,
   onChange,
 }: PortionRulerProps) {
+  const positions = anchorPositions(anchors.length);
+  const breaks = positionBreaks(anchors.length);
   const gramBreaks = [min, ...anchors.map((a) => a.value), max];
-  const positionToGrams = (position: number) =>
-    Math.round(interp(position, POSITION_BREAKS, gramBreaks));
+  const positionToGrams = (value: number) =>
+    Math.round(interpolate(value, breaks, gramBreaks));
   const gramsToPosition = (value: number) =>
-    Math.round(interp(value, gramBreaks, POSITION_BREAKS));
+    Math.round(interpolate(value, gramBreaks, breaks));
 
-  const position = gramsToPosition(grams);
-  // Guarantee each arrow key press nudges grams by at least ~1 g.
-  const step = Math.max(1, Math.round(POSITION_MAX / (max - min)));
+  const [position, setPosition] = useState(() => gramsToPosition(grams));
+  const [ownGrams, setOwnGrams] = useState(grams);
+  if (ownGrams !== grams) {
+    setOwnGrams(grams);
+    setPosition(gramsToPosition(grams));
+  }
+
+  // One arrow press moves at least 1 g in every segment: the step is the
+  // flattest segment's position-per-gram slope, rounded up.
+  const step = rulerStep(gramBreaks, breaks);
+
+  const handlePositionChange = (values: number[]) => {
+    const next = values[0] ?? 0;
+    const nextGrams = positionToGrams(next);
+    setPosition(next);
+    setOwnGrams(nextGrams);
+    onChange(nextGrams);
+  };
 
   return (
     <div>
@@ -101,7 +105,7 @@ export function PortionRuler({
               onClick={() => onChange(anchor.value)}
               aria-label={`${countPrefix}${anchor.label} (${tier.sizeLabel})`}
               aria-pressed={selected}
-              style={{ left: `${ANCHOR_POSITIONS[index]}%` }}
+              style={{ left: `${positions[index]}%` }}
               className={`absolute bottom-0 flex -translate-x-1/2 items-end justify-center transition-opacity ${
                 selected ? 'opacity-100' : 'opacity-50 hover:opacity-80'
               }`}
@@ -128,13 +132,13 @@ export function PortionRuler({
         max={POSITION_MAX}
         step={step}
         value={[position]}
-        onValueChange={(values) => onChange(positionToGrams(values[0] ?? 0))}
+        onValueChange={handlePositionChange}
         aria-label={ariaLabel}
         className="relative flex h-4 w-full touch-none select-none items-center"
       >
         <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-nham-border/50">
           <SliderPrimitive.Range className="absolute h-full rounded-full bg-nham-text/30" />
-          {ANCHOR_POSITIONS.map((pos) => (
+          {positions.map((pos) => (
             <span
               key={`tick-${pos}`}
               className="absolute top-0 h-full w-px bg-nham-text/25"
@@ -153,7 +157,7 @@ export function PortionRuler({
           <span
             key={`label-${anchor.tier}`}
             className="absolute -translate-x-1/2 whitespace-nowrap text-[10px] text-nham-text-muted tabular-nums"
-            style={{ left: `${ANCHOR_POSITIONS[index]}%` }}
+            style={{ left: `${positions[index]}%` }}
           >
             {anchor.value} g
           </span>

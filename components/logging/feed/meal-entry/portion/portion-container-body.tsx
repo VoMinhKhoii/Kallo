@@ -2,11 +2,12 @@
 
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { formatCaloriesValue } from '@/components/logging/feed/format-inline-nutrition';
 import {
   nearestAnchor,
   type PortionAnchor,
-} from '@/components/logging/feed/meal-entry/portion-picker-body';
-import { PortionSlider } from '@/components/logging/feed/meal-entry/portion-slider';
+} from '@/components/logging/feed/meal-entry/portion/portion-anchors';
+import { PortionSlider } from '@/components/logging/feed/meal-entry/portion/portion-slider';
 import {
   type ContainerFamily,
   VESSEL_FAMILIES,
@@ -16,7 +17,6 @@ import {
 interface PortionContainerBodyProps {
   family: ContainerFamily;
   anchors: PortionAnchor[];
-  countPrefix: string;
   grams: number;
   min: number;
   max: number;
@@ -33,7 +33,6 @@ interface PortionContainerBodyProps {
 export function PortionContainerBody({
   family,
   anchors,
-  countPrefix,
   grams,
   min,
   max,
@@ -54,8 +53,7 @@ export function PortionContainerBody({
   const nearest = nearestAnchor(anchors, grams);
   const nearestIndex = anchors.findIndex((a) => a.tier === nearest.tier);
   const nearestGlyph = glyphs[nearestIndex] ?? glyphs[0];
-  const nearestLabel = `${countPrefix}${nearest.label}`;
-  const ariaValueText = `${grams} g — ${nearestLabel} (${nearestGlyph?.sizeLabel})`;
+  const ariaValueText = `${grams} g — ${nearest.label} (${nearestGlyph?.sizeLabel})`;
 
   return (
     <>
@@ -69,7 +67,7 @@ export function PortionContainerBody({
               key={anchor.tier}
               type="button"
               onClick={() => onChange(anchor.value)}
-              aria-label={`${countPrefix}${anchor.label} (${glyph.sizeLabel})`}
+              aria-label={`${anchor.label} (${glyph.sizeLabel})`}
               aria-pressed={selected}
               style={{ flex: `${weight} 1 0%` }}
               className={`flex flex-col items-center transition-opacity ${
@@ -98,11 +96,14 @@ export function PortionContainerBody({
         })}
       </div>
       <p className="mb-1 text-center text-[13px] text-nham-text-muted">
-        {nearestLabel} · {nearestGlyph?.sizeLabel}
+        {nearest.label} · {nearestGlyph?.sizeLabel}
       </p>
       <p className="mb-4 text-center text-nham-text tabular-nums">
         <span className="font-semibold text-lg">{grams} g</span>
-        <span className="text-[13px] text-nham-text-muted"> · {kcal} kcal</span>
+        <span className="text-[13px] text-nham-text-muted">
+          {' · '}
+          {formatCaloriesValue(kcal)}
+        </span>
       </p>
       <PortionSlider
         grams={grams}

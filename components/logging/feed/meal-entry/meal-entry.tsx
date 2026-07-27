@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry/meal-entry-item';
-import { PortionPicker } from '@/components/logging/feed/meal-entry/portion-picker';
+import { PortionPicker } from '@/components/logging/feed/meal-entry/portion/portion-picker';
 import { TimeDivider } from '@/components/logging/feed/time-divider';
 import {
   applyQuantityChange,

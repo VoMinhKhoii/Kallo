@@ -1,38 +1,17 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { PortionContainerBody } from '@/components/logging/feed/meal-entry/portion-container-body';
-import { PortionRuler } from '@/components/logging/feed/meal-entry/portion-ruler';
+import { formatCaloriesValue } from '@/components/logging/feed/format-inline-nutrition';
 import {
-  type ContainerFamily,
-  isContainerFamily,
-  type VesselFamily,
-} from '@/lib/ai/portion/vessel-data';
-import type { PieceVessel } from '@/lib/ai/portion/vessel-types';
-
-export interface PortionAnchor {
-  tier: number;
-  value: number;
-  label: string;
-}
-
-export function nearestAnchor(
-  anchors: PortionAnchor[],
-  grams: number
-): PortionAnchor {
-  return anchors.reduce((best, anchor) =>
-    Math.abs(anchor.value - grams) < Math.abs(best.value - grams)
-      ? anchor
-      : best
-  );
-}
+  claimedAnchor,
+  type PortionAnchor,
+} from '@/components/logging/feed/meal-entry/portion/portion-anchors';
+import { PortionContainerBody } from '@/components/logging/feed/meal-entry/portion/portion-container-body';
+import { PortionRuler } from '@/components/logging/feed/meal-entry/portion/portion-ruler';
+import type { ClientVessel } from '@/lib/ai/portion/vessel-types';
 
 interface PortionPickerBodyProps {
-  family: VesselFamily;
-  /** Piece count (pieces only) — drives the "N ×" label prefix. */
-  count?: number;
-  /** Silhouette family for pieces (fish vs meat). */
-  kind?: PieceVessel['kind'];
+  vessel: ClientVessel;
   anchors: PortionAnchor[];
   grams: number;
   min: number;
@@ -45,9 +24,7 @@ interface PortionPickerBodyProps {
 
 /** Shared inner content for the portion picker (Drawer on phones, Popover ≥md). */
 export function PortionPickerBody({
-  family,
-  count,
-  kind,
+  vessel,
   anchors,
   grams,
   min,
@@ -58,13 +35,12 @@ export function PortionPickerBody({
   onCancel,
 }: PortionPickerBodyProps) {
   const t = useTranslations('logging.portionPicker');
-  const isPiece = !isContainerFamily(family);
-  const countPrefix = count && count > 1 ? `${count} × ` : '';
+  const isPiece = vessel.family === 'piece';
 
-  // Pieces claim a tier only within ±10% of its value; otherwise "Custom".
-  const claimed = isPiece
-    ? (anchors.find((a) => Math.abs(grams - a.value) <= a.value * 0.1) ?? null)
-    : null;
+  // Pieces claim a tier only within the claim band; otherwise "Custom".
+  const claimed = isPiece ? claimedAnchor(anchors, grams) : null;
+  const countPrefix =
+    vessel.family === 'piece' && vessel.count > 1 ? `${vessel.count} × ` : '';
   const claimedName = claimed ? `${countPrefix}${claimed.label}` : null;
   const ariaValueText = claimedName
     ? `${grams} g — ${claimedName}`
@@ -78,13 +54,13 @@ export function PortionPickerBody({
         {t('title')}
       </h2>
 
-      {isPiece ? (
+      {vessel.family === 'piece' ? (
         <>
           <p className="mb-3 text-center text-nham-text tabular-nums">
             <span className="font-semibold text-lg">{grams} g</span>
             <span className="text-[13px] text-nham-text-muted">
-              {' '}
-              · {kcal} kcal
+              {' · '}
+              {formatCaloriesValue(kcal)}
             </span>
           </p>
           <PortionRuler
@@ -94,7 +70,7 @@ export function PortionPickerBody({
             grams={grams}
             min={min}
             max={max}
-            kind={kind ?? 'meat'}
+            kind={vessel.kind}
             ariaLabel={t('title')}
             ariaValueText={ariaValueText}
             onChange={onChange}
@@ -109,9 +85,8 @@ export function PortionPickerBody({
         </>
       ) : (
         <PortionContainerBody
-          family={family as ContainerFamily}
+          family={vessel.family}
           anchors={anchors}
-          countPrefix={countPrefix}
           grams={grams}
           min={min}
           max={max}
