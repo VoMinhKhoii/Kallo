@@ -44,6 +44,14 @@ class NhamApp extends ConsumerWidget {
         debugShowCheckedModeBanner: false,
         theme: NhamTheme.light(),
         routerConfig: router,
+        // Dynamic Type is respected, but capped: the feed's fixed-width
+        // columns (macro labels, gram readouts, stepper values) overflow past
+        // ~1.3x. No lower bound — smaller text is a legitimate preference and
+        // nothing breaks below 1.0.
+        builder: (context, child) => MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.3,
+          child: child!,
+        ),
         // easy_localization wiring (locale source of truth lives on the
         // EasyLocalization wrapper in main()).
         localizationsDelegates: context.localizationDelegates,

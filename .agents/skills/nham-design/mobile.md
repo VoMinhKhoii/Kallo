@@ -23,17 +23,46 @@ all new mobile UI work against this doc.
 
 ## Type scale
 
-| Role | Size | Weight | Tracking | Used for |
-|------|------|--------|----------|----------|
-| Hero | 40 | 500 (medium) | −1.0 | the ONE big number per card (calories remaining, weight) |
-| Value | 17 | 500 | — | ring-centre number, metric values |
-| Body | 14 | 400 | — | meal names, primary detail, the `/target` denominator |
-| Meta | 12 | 400 | — | captions, units, stat values, dates |
-| Eyebrow | 11 | 500 | +0.3, UPPERCASE | section labels (muted) |
-| Greeting | 22 | 400 | −0.3 | Lora serif — the single editorial moment per viewport |
+| Role | Size | Weight | Leading | Tracking | Used for |
+|------|------|--------|---------|----------|----------|
+| Hero | 40 | 500 (medium) | 1.05 | −1.0 | the ONE big number per card (calories remaining, weight) |
+| Value | 17 | 500 | 1.1 | — | ring-centre number, metric values |
+| Body | 14 | 400 | 1.3 | — | meal names, primary detail, the `/target` denominator |
+| Meta | 12 | 400 | 1.25 | — | captions, units, stat values, dates |
+| Eyebrow | 11 | 500 | 1.3 | +0.3, UPPERCASE | section labels (muted) |
+| Greeting | 22 | 400 | — | −0.3 | Lora serif — the single editorial moment per viewport |
 
 Medium (500) is the **weight ceiling for data** — Be Vietnam Pro reads heavy, so
 semibold felt thick; body/meta stay regular (400). Serif is never bold.
+
+**Leading is tight on purpose.** Body sits at 1.3 and meta at 1.25, not the
+1.45/1.35 they started at. These are scannable data rows, not prose — the loose
+leading made cards read padded even once their gaps were tightened, and it is
+the first lever to reach for when a screen "feels big" (before touching sizes,
+which are already below iOS's 17pt default body).
+
+### One scale per surface
+
+A screen picks **at most three sizes**. The logging feed is the reference
+implementation: Value 17 for the one figure per card, Body 14 for content, Meta
+12 for everything quiet — with the serif quote at 17 as the single editorial
+moment. Anything outside those three needs a comment saying why.
+
+Do NOT mix `NhamTextVariant` with `dash*` on the same screen. `NhamText` does
+`base.merge(style)`, so a `dash*` override silently beats the variant's size and
+weight — which is how one card ended up rendering collapsed kcal at 17/500 and
+its total kcal three lines below at 16/700. On calm surfaces, use plain `Text`
+with a `dash*` token.
+
+### Text scaling
+
+Dynamic Type is respected but **capped at 1.3x** (`MediaQuery.withClampedTextScaling`
+in `app.dart`). Past that the feed's fixed-width columns — macro labels, gram
+readouts, stepper values — overflow their rows. There is deliberately **no lower
+bound**: users who prefer smaller text get it, and nothing breaks below 1.0.
+
+When judging whether a screen "feels too big", check the device's Text Size
+setting first — at 130% every number below is 30% larger than spec.
 
 ## Colour — neutral canvas, exactly two text colours
 
@@ -88,3 +117,37 @@ Two shared-widget paths still carry pre-calm styling where a call site didn't
 override them: `lib/shared/widgets/nham_text.dart` (its `NhamTextVariant`
 defaults) and the logging `mealQuote` serif variant. These are intentional and
 out of the calm token set; migrate the shared widget separately if desired.
+
+## Spacing — one rhythm per surface
+
+Gaps resolve to a small named set, not per-widget guesses. The logging feed's
+`LoggingSpacing` is the pattern to copy:
+
+| Token | Value | Used for |
+|-------|-------|----------|
+| `block` | 8 | between the big blocks — header ↔ list ↔ composer, and card ↔ card |
+| `section` | 12 | inside a card: above/below every hairline, between sections |
+| `row` | 4 | vertical padding on one item row (so neighbours sit `block` apart) |
+| `actions` | 2 | a card ↔ the action icons under it (they carry their own inset) |
+
+**A card never carries a bottom margin.** The parent stack owns the gap — a list
+separator or a `Column`'s `spacing`. Margins on both sides silently double, which
+is how cards ended up 20px apart when the separator said 8.
+
+### Icons
+
+One glyph size and one hit target per surface. Logging uses `LoggingIcons.size`
+16 on `LoggingIcons.hit` 36 for every icon-only control — chevrons, steppers,
+row-removes, composer controls, send/stop. The pressed wash hugs the glyph rather
+than filling the hit box: the target can grow for accessibility without the press
+affordance growing with it.
+
+The one documented exception on the logging page is the calorie ring's
+`LEFT`/`OVER` label at 8px — it sits inside a fixed 78px ring that 12px overflows.
+
+### Status colour
+
+Errors stay red on the **affordance**, not the copy: the alert icon and the
+terracotta action button carry the signal while the message itself reads in
+`kInkMuted`. A whole card of red text reads as an alarm for something the user
+can usually just retry.
