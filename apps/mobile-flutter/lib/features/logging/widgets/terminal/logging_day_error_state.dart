@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../logic/logging_spacing.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
@@ -22,7 +23,7 @@ class LoggingDayErrorState extends StatelessWidget {
         padding: const EdgeInsets.all(NhamSpacing.sp6),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 448), // max-w-md
-          padding: const EdgeInsets.all(NhamSpacing.sp4), // p-4
+          padding: LoggingSpacing.card,
           decoration: BoxDecoration(
             color: NhamColors.elev,
             borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl

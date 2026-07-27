@@ -241,7 +241,7 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: NhamColors.elev, // solid white card on neutral canvas
         borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 16

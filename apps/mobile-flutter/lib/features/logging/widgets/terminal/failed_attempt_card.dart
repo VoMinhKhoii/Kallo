@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../logic/logging_spacing.dart';
 import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
@@ -33,7 +34,7 @@ class FailedAttemptCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // No bottom margin — the feed's footer stack owns the gap below.
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: NhamColors.elev,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),

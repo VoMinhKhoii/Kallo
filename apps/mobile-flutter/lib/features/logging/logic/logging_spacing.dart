@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import '../../../theme/nham_theme.dart';
 
 /// The logging feed's ONE vertical rhythm. Every gap on the tab resolves to one
@@ -19,6 +21,17 @@ abstract final class LoggingSpacing {
   /// A card ↔ the action icons underneath it. Tiny, because the icon buttons
   /// carry their own centring inset.
   static const double actions = NhamSpacing.sp0_5; // 2
+
+  /// A card's own inset. Vertical is 12, not the horizontal 16, so the padding
+  /// reads EQUAL on all four sides: the first and last lines each carry ~4px of
+  /// line-height slack above/below their glyphs, which a flat 16 would stack on
+  /// top of. Optical balance, not geometric.
+  static const EdgeInsets card = EdgeInsets.fromLTRB(
+    NhamSpacing.sp4, // 16
+    NhamSpacing.sp3, // 12
+    NhamSpacing.sp4,
+    NhamSpacing.sp3,
+  );
 }
 
 /// One size and one hit target for every glyph on the logging tab — the action

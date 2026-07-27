@@ -94,7 +94,10 @@ No third "disabled" tier. The old `kInkSecondary` (taupe) / `kInkDisabled`
 
 `12px` (`NhamSpacing.sp3`) between **all** major stacked components:
 greeting ↔ week strip ↔ card title ↔ card ↔ card. Card padding `16` (`sp4`),
-card radius `22`. Within-card gaps (e.g. meal rows) are tighter and deliberate;
+card radius `22`. Card padding is **16 horizontal / 12 vertical** where the card
+opens or closes on text (`LoggingSpacing.card`): the first and last lines each
+carry ~4px of line-height slack above and below their glyphs, so a flat 16 reads
+top-heavy. Equal *optically*, not geometrically — that is the one that matters. Within-card gaps (e.g. meal rows) are tighter and deliberate;
 the 12px rule governs the *between-component* rhythm.
 
 This is the default for **presentational** surfaces — the dashboard, settings,

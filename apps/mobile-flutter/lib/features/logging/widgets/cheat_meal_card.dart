@@ -138,7 +138,7 @@ class _CheatMealCardState extends State<CheatMealCard>
         const SizedBox(height: LoggingSpacing.block),
         _maybeDismissible(
           Container(
-            padding: const EdgeInsets.all(NhamSpacing.sp4),
+            padding: LoggingSpacing.card,
             decoration: BoxDecoration(
               // Warm accent tint over the card white (web bg-nham-accent/4).
               color: Color.alphaBlend(NhamColors.accent05, NhamColors.elev),
