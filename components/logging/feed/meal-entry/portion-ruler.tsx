@@ -106,13 +106,18 @@ export function PortionRuler({
                 selected ? 'opacity-100' : 'opacity-50 hover:opacity-80'
               }`}
             >
-              <Image
-                src={`/portions/${asset.file}`}
-                alt=""
-                width={Math.round(height * asset.aspect)}
-                height={height}
-                className="w-auto"
-              />
+              <div
+                className="relative"
+                style={{ width: Math.round(height * asset.aspect), height }}
+              >
+                <Image
+                  src={`/portions/${asset.file}`}
+                  alt=""
+                  fill
+                  sizes="48px"
+                  className="object-contain object-bottom"
+                />
+              </div>
             </button>
           );
         })}
