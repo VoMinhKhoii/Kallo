@@ -99,7 +99,7 @@ opens or closes on text (`LoggingSpacing.card`): the first and last lines each
 carry ~4px of line-height slack above and below their glyphs, so a flat 16 reads
 top-heavy. Equal *optically*, not geometrically — that is the one that matters.
 
-The composer goes further (`LoggingSpacing.composer`, 10 sides / 6 top / 4
+The composer goes further (`LoggingSpacing.composer`, 4 sides / 10 top / 4
 bottom — only the edge above running text keeps its room): it stacks two more
 insets of its own — the field's min-height centring its single line, and the send
 button's 44pt tap target wrapping a 32pt visual. Count every inset in the stack
@@ -143,8 +143,16 @@ row-removes, composer controls, send/stop. The pressed wash hugs the glyph rathe
 than filling the hit box: the target can grow for accessibility without the press
 affordance growing with it.
 
-The one documented exception on the logging page is the calorie ring's
-`LEFT`/`OVER` label at 8px — it sits inside a fixed 78px ring that 12px overflows.
+The logging page now holds the three sizes with **no exceptions** — the calorie
+ring's label was the last holdout at 8px and is on Meta 12 like every other
+caption. Lower-case, not the old uppercase: it keeps Vietnamese ("còn lại")
+inside the fixed 78px ring, which uppercase at 12 would not.
+
+Note the trap that hid there. `NhamText` upper-cases its `eyebrow` and
+`macroLabel` variants *in the widget*, so a call site moving to plain `Text`
+silently loses the transform — and any casing inconsistency in the strings
+(`"left"` vs `"Over"`) stops being masked. Normalise casing at the call site
+when you port, or check the rendered word, not just the size.
 
 ### Status colour
 

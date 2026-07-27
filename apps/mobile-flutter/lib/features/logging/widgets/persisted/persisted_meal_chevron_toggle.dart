@@ -38,7 +38,11 @@ class _PersistedMealChevronToggleState
       onTap: widget.onTap,
       child: SizedBox.square(
         dimension: LoggingIcons.hit,
-        child: Center(
+        // Right-aligned, not centred: the glyph lands on the card's content
+        // edge (level with the kcal below it) while the 36pt target keeps its
+        // size by extending inward.
+        child: Align(
+          alignment: Alignment.centerRight,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150), // transition-colors
             padding: const EdgeInsets.all(4), // p-1

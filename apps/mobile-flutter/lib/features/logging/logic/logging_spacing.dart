@@ -38,13 +38,18 @@ abstract final class LoggingSpacing {
   /// its single line (~7px above the glyphs) and the send button's 44pt tap
   /// target wraps a 32pt visual (~6px below it).
   ///
-  /// Only the top stays at 6 — it sits above running text, which needs the room.
-  /// The sides come in to 10 and the bottom to 4, where the button row's own
-  /// mass already does the spacing work.
+  /// The top is the generous edge (10) because it is the only one above running
+  /// text; the sides and bottom come right in to 4, where the field and the
+  /// button row already carry inset of their own.
+  ///
+  /// At 4 the container is no longer what positions things: the text starts at
+  /// 4 from the border, the mode icon at 8 (its own 4), and the send button's
+  /// visual edge at 10 (a 32pt button centred in a 44pt tap target). That
+  /// stagger was proportionally invisible at 12; it is not at 4.
   static const EdgeInsets composer = EdgeInsets.fromLTRB(
-    NhamSpacing.sp2_5, // 10
-    NhamSpacing.sp1_5, // 6 — above text, the one side that keeps its room
-    NhamSpacing.sp2_5,
+    NhamSpacing.sp1, // 4
+    NhamSpacing.sp2_5, // 10 — above text, the one edge that keeps its room
+    NhamSpacing.sp1,
     NhamSpacing.sp1, // 4 — under the buttons, which carry their own mass
   );
 }

@@ -133,10 +133,13 @@ class _DefaultCenter extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(
-          over ? tr('dashboard.over') : tr('dashboard.left'),
-          // Calm eyebrow (w500, muted) held at 8px so it never overflows the
-          // fixed 78px ring.
-          style: dashEyebrow().copyWith(fontSize: 8, letterSpacing: 1.2),
+          // Lower-cased explicitly: the strings disagree ("left" vs "Over"),
+          // and the uppercase transform that used to hide that lived on the
+          // NhamText eyebrow variant this no longer uses. Lower also keeps
+          // Vietnamese ("còn lại") well inside the fixed 78px ring, which
+          // uppercase at this size would not.
+          (over ? tr('dashboard.over') : tr('dashboard.left')).toLowerCase(),
+          style: dashMeta(),
         ),
       ],
     );

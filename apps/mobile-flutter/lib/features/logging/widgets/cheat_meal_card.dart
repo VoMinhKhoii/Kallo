@@ -280,7 +280,10 @@ class _ChevronToggleState extends State<_ChevronToggle> {
         onTap: widget.onTap,
         child: SizedBox.square(
           dimension: LoggingIcons.hit,
-          child: Center(
+          // Right-aligned so the glyph lands on the content edge; the 36pt
+          // target keeps its size by extending inward.
+          child: Align(
+            alignment: Alignment.centerRight,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
               padding: const EdgeInsets.all(4),
