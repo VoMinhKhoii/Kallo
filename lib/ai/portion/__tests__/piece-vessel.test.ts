@@ -150,6 +150,32 @@ describe('resolvePieceVessel', () => {
     ).toMatchObject({ kind: 'poultry' });
   });
 
+  it.each([
+    ['thịt gà', 'chicken', 'poultry'],
+    ['thịt bò', 'beef', 'meat'],
+    ['thịt vịt', 'duck', 'poultry'],
+  ] as const)('refines the coarse FAO meat group for %s', (rawName, canonicalName, kind) => {
+    expect(
+      resolvePieceVessel(
+        item([
+          {
+            name: rawName,
+            grams: 150,
+            foodGroupEn: 'Meat and meat products',
+          },
+        ]),
+        dish([
+          {
+            rawName,
+            canonicalName,
+            count: 1,
+            unitToken: 'miếng',
+          },
+        ])
+      )
+    ).toMatchObject({ kind });
+  });
+
   it('vetoes processed sausage even when the name matches the meat lexicon', () => {
     expect(
       resolvePieceVessel(

@@ -50,7 +50,6 @@ const FOOD_GROUP_KIND_RULES: ReadonlyArray<{
       'beef products',
       'pork products',
       'lamb, veal, and game products',
-      'meat and meat products',
     ],
     kind: 'meat',
   },
@@ -74,9 +73,13 @@ function pieceKind(names: string): PieceVessel['kind'] {
 }
 
 function pieceKindFromFoodGroup(
-  foodGroupEn: string
+  foodGroupEn: string,
+  names: string
 ): PieceVessel['kind'] | null {
   const normalized = foodGroupEn.trim().toLocaleLowerCase('en');
+  if (normalized === 'meat and meat products') {
+    return pieceKind(names);
+  }
   for (const rule of FOOD_GROUP_KIND_RULES) {
     if (rule.fragments.some((fragment) => normalized.includes(fragment))) {
       return rule.kind;
@@ -144,9 +147,9 @@ export function resolvePieceVessel(
     return null;
   }
 
-  const sourceNames = `${source.rawName} ${source.canonicalName}`;
+  const sourceNames = `${dominant.ingredient.ingredientName} ${source.rawName} ${source.canonicalName}`;
   const kind = dominant.ingredient.foodGroupEn
-    ? pieceKindFromFoodGroup(dominant.ingredient.foodGroupEn)
+    ? pieceKindFromFoodGroup(dominant.ingredient.foodGroupEn, sourceNames)
     : isAnimalProtein(sourceNames)
       ? pieceKind(sourceNames)
       : null;
