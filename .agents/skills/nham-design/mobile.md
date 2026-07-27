@@ -97,6 +97,12 @@ greeting ↔ week strip ↔ card title ↔ card ↔ card. Card padding `16` (`sp
 card radius `22`. Within-card gaps (e.g. meal rows) are tighter and deliberate;
 the 12px rule governs the *between-component* rhythm.
 
+This is the default for **presentational** surfaces — the dashboard, settings,
+onboarding. A dense scrolling **list** surface may run tighter; the logging feed
+does, at 8px, and names it (see *Spacing — one rhythm per surface* below). Going
+tighter than 12 is a per-surface decision that must be captured in a named token
+set, never improvised gap by gap.
+
 ## Reference implementation (source of truth)
 
 `apps/mobile-flutter/lib/theme/calm_tokens.dart` —
@@ -121,7 +127,13 @@ out of the calm token set; migrate the shared widget separately if desired.
 ## Spacing — one rhythm per surface
 
 Gaps resolve to a small named set, not per-widget guesses. The logging feed's
-`LoggingSpacing` is the pattern to copy:
+`LoggingSpacing` is the pattern to copy.
+
+**It deliberately overrides the 12px default above**: `block` is 8, not 12,
+including for card ↔ card. The logging feed is a dense scrolling list where the
+default rhythm left the day feeling padded — and every card there also carries a
+time divider and an action row, which already separate them. Presentational
+surfaces stay at 12; this is the documented exception, not a new default.
 
 | Token | Value | Used for |
 |-------|-------|----------|
