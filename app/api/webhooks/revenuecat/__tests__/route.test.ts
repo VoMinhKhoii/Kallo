@@ -8,7 +8,7 @@ import {
   entitlementGrants,
   userProfiles,
 } from '@/lib/db/schema';
-import { POST } from '../route';
+import { handleRevenueCatWebhook } from '../route';
 
 const SECRET = 'test-webhook-secret';
 const USER_ID = '11111111-1111-1111-1111-111111111111';
@@ -434,7 +434,7 @@ function post(
     vi.fn(async (userId: string, environment: 'production' | 'sandbox') =>
       snapshot(userId, environment)
     );
-  return POST(request(payload), {
+  return handleRevenueCatWebhook(request(payload), {
     db: database.client,
     now: () => fixedNow,
     fetchSnapshot: snapshotFetcher,
@@ -449,7 +449,7 @@ type WebhookFetchSnapshot = (
 
 describe('RevenueCat webhook authentication and parsing', () => {
   it('rejects a wrong bearer secret', async () => {
-    const response = await POST(request(body(), 'wrong'), {
+    const response = await handleRevenueCatWebhook(request(body(), 'wrong'), {
       db: database.client,
       now: () => fixedNow,
       billingEnvironment: 'production',
@@ -465,7 +465,7 @@ describe('RevenueCat webhook authentication and parsing', () => {
     const signature = createHmac('sha256', 'hmac-secret')
       .update(`${timestamp}.${raw}`)
       .digest('hex');
-    const valid = await POST(
+    const valid = await handleRevenueCatWebhook(
       request(payload, SECRET, `t=${timestamp},v1=${signature}`),
       {
         db: database.client,
@@ -479,7 +479,7 @@ describe('RevenueCat webhook authentication and parsing', () => {
     const staleSignature = createHmac('sha256', 'hmac-secret')
       .update(`${staleTimestamp}.${raw}`)
       .digest('hex');
-    const stale = await POST(
+    const stale = await handleRevenueCatWebhook(
       request(payload, SECRET, `t=${staleTimestamp},v1=${staleSignature}`),
       {
         db: database.client,
@@ -496,11 +496,14 @@ describe('RevenueCat webhook authentication and parsing', () => {
   });
 
   it('rejects an oversized body before parsing or audit storage', async () => {
-    const response = await POST(request('x'.repeat(300 * 1024)), {
-      db: database.client,
-      now: () => fixedNow,
-      billingEnvironment: 'production',
-    });
+    const response = await handleRevenueCatWebhook(
+      request('x'.repeat(300 * 1024)),
+      {
+        db: database.client,
+        now: () => fixedNow,
+        billingEnvironment: 'production',
+      }
+    );
     expect(response.status).toBe(413);
     expect(database.events).toHaveLength(0);
   });

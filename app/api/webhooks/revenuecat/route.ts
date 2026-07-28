@@ -40,7 +40,10 @@ export interface WebhookDeps {
   ) => Promise<RevenueCatSnapshot>;
 }
 
-export async function POST(request: Request, deps?: WebhookDeps) {
+export async function handleRevenueCatWebhook(
+  request: Request,
+  deps?: WebhookDeps
+) {
   const database = deps?.db ?? appDb;
   const now = deps?.now?.() ?? new Date();
   const fetchSnapshot =
@@ -337,4 +340,12 @@ export async function POST(request: Request, deps?: WebhookDeps) {
     }
     return NextResponse.json({ error: 'processing_failed' }, { status: 500 });
   }
+}
+
+/**
+ * Next.js route entrypoint. Dependency injection stays on the internal handler
+ * because App Router reserves the second exported-handler argument for context.
+ */
+export async function POST(request: Request) {
+  return handleRevenueCatWebhook(request);
 }

@@ -171,7 +171,10 @@ void main() {
     () async {
       final gateway =
           FakePurchasesGateway()..configureCompleter = Completer<void>();
-      final service = PurchasesService(gateway: gateway, apiKey: 'appl_test');
+      final service = PurchasesService(
+        gateway: gateway,
+        apiKey: 'test_sandbox',
+      );
 
       final first = service.identify(userA);
       final second = service.identify(userA);
@@ -187,7 +190,7 @@ void main() {
 
   test('failed account switch blocks the new user from offerings', () async {
     final gateway = FakePurchasesGateway();
-    final service = PurchasesService(gateway: gateway, apiKey: 'appl_test');
+    final service = PurchasesService(gateway: gateway, apiKey: 'test_sandbox');
     await service.identify(userA);
     gateway.loginError = StateError('identity switch failed');
 
@@ -201,7 +204,7 @@ void main() {
   test('account switching waits until an in-flight restore settles', () async {
     final gateway =
         FakePurchasesGateway()..restoreCompleter = Completer<CustomerInfo>();
-    final service = PurchasesService(gateway: gateway, apiKey: 'appl_test');
+    final service = PurchasesService(gateway: gateway, apiKey: 'test_sandbox');
     await service.identify(userA);
 
     final restore = service.restorePurchases(userA);
