@@ -24,13 +24,14 @@ class InstantCommitEditor extends ConsumerStatefulWidget {
   const InstantCommitEditor({
     super.key,
     required this.profile,
-    required this.title,
     required this.subtitle,
     required this.child,
   });
 
   final ProfileRow profile;
-  final String title;
+
+  /// The description line under the header bar. The screen's TITLE is not this
+  /// widget's business — it lives in the shared settings header.
   final String subtitle;
   final Widget child;
 
@@ -164,17 +165,15 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
       controller: _controller,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
-          NhamSpacing.sp4,
+          NhamSpacing.sp3, // the app-wide 12 content inset
           NhamSpacing.sp2,
-          NhamSpacing.sp4,
+          NhamSpacing.sp3,
           NhamSpacing.sp8,
         ),
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         children: [
-          // One left-aligned serif title per sub-page, same token as the
-          // settings root — the drill-in reads as a continuation of it.
-          Text(widget.title, style: dashHeadline()),
-          const SizedBox(height: NhamSpacing.sp1),
+          // No title here — it lives in the header bar. This is the subtitle
+          // that used to sit under it.
           Padding(
             padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
             child: Text(

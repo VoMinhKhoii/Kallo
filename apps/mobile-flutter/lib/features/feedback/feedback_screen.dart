@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/api_client.dart';
+import 'feedback_fields.dart';
 import '../../shared/widgets/nham_primitives.dart';
 import '../../shared/widgets/quiet_action_button.dart';
 import '../../shell/app_header.dart';
@@ -23,14 +24,14 @@ const String _appVersion = '1.0.1';
 const int _maxMessageLength = 4000;
 const int _maxScreenshotBytes = 5 * 1024 * 1024;
 
-const _feedbackTypes = <_FeedbackType>[
-  _FeedbackType('bug', LucideIcons.bug),
-  _FeedbackType('ingredient', LucideIcons.sprout),
-  _FeedbackType('idea', LucideIcons.lightbulb),
+const _feedbackTypes = <FeedbackType>[
+  FeedbackType('bug', LucideIcons.bug),
+  FeedbackType('ingredient', LucideIcons.sprout),
+  FeedbackType('idea', LucideIcons.lightbulb),
 ];
 
-class _FeedbackType {
-  const _FeedbackType(this.value, this.icon);
+class FeedbackType {
+  const FeedbackType(this.value, this.icon);
   final String value;
   final IconData icon;
 }
@@ -281,7 +282,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             for (var i = 0; i < _feedbackTypes.length; i++) ...[
               if (i > 0) const SizedBox(width: NhamSpacing.sp2),
               Expanded(
-                child: _TypeChip(
+                child: FeedbackTypeChip(
                   type: _feedbackTypes[i],
                   selected: _type == _feedbackTypes[i].value,
                   onTap: () => setState(() => _type = _feedbackTypes[i].value),
@@ -346,7 +347,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         const SizedBox(height: NhamSpacing.sp2),
 
         // Screenshot.
-        _ScreenshotField(
+        FeedbackScreenshotField(
           file: _image,
           onAdd: _busy ? null : _pickImage,
           onRemove: _busy
@@ -378,164 +379,6 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _TypeChip extends StatelessWidget {
-  const _TypeChip({
-    required this.type,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final _FeedbackType type;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: tr('settings.feedback.types.${type.value}'),
-      excludeSemantics: true,
-      onTap: onTap,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
-          decoration: BoxDecoration(
-            color: selected
-                ? NhamColors.hover
-                : NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            border: Border.all(
-              color: selected ? kInk.withValues(alpha: 0.3) : NhamColors.borderSoft,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                type.icon,
-                size: 18,
-                color: selected ? kInk : kInkMuted,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                tr('settings.feedback.types.${type.value}'),
-                style: dashMeta(
-                  color: selected ? kInk : kInkMuted,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ScreenshotField extends StatelessWidget {
-  const _ScreenshotField({
-    required this.file,
-    required this.onAdd,
-    required this.onRemove,
-  });
-
-  final XFile? file;
-  final VoidCallback? onAdd;
-  final VoidCallback? onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final selected = file;
-    if (selected != null) {
-      return Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
-          vertical: 10,
-        ),
-        decoration: BoxDecoration(
-          color: NhamColors.elev,
-          borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-          border: Border.all(color: NhamColors.borderSoft),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(NhamRadii.sm),
-              child: Image.file(
-                File(selected.path),
-                width: 36,
-                height: 36,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                selected.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: dashBody(),
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: tr('settings.feedback.removeScreenshot'),
-              excludeSemantics: true,
-              onTap: onRemove,
-              child: GestureDetector(
-                onTap: onRemove,
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
-                  child: Icon(
-                    LucideIcons.x,
-                    size: 16,
-                    color: kInkMuted,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Semantics(
-      button: true,
-      label: tr('settings.feedback.addScreenshot'),
-      excludeSemantics: true,
-      onTap: onAdd,
-      child: GestureDetector(
-        onTap: onAdd,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
-            vertical: 10,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            border: Border.all(color: NhamColors.borderSoft),
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                LucideIcons.imagePlus,
-                size: 16,
-                color: kInkMuted,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                tr('settings.feedback.addScreenshot'),
-                style: dashBody(color: kInkMuted),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

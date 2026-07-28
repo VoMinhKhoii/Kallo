@@ -20,7 +20,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../circle/data/circle_providers.dart';
 import '../logic/settings_spacing.dart';
-import '../widgets/settings_back_bar.dart';
+import '../widgets/settings_header.dart';
 
 const int _maxAvatarBytes = 5 * 1024 * 1024;
 const int _displayNameMax = 50;
@@ -141,7 +141,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: SettingsBackBar(onBack: () => Navigator.of(context).pop()),
+        header: SettingsHeader(title: tr('settings.identity.title')),
         child: profileAsync.when(
           loading: () => const _IdentitySkeleton(),
           error: (_, __) => Center(
@@ -163,10 +163,8 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
     return ListView(
       padding: SettingsSpacing.page,
       children: [
-        // Same left-aligned serif title as the settings root — the sub-page
-        // reads as "Settings" continuing, not as a new centred screen.
-        Text(tr('settings.identity.title'), style: dashHeadline()),
-        const SizedBox(height: NhamSpacing.sp2),
+        // No title here — it lives in the header bar. This is the description
+        // that used to sit under it.
         Text(
           tr('settings.identity.description'),
           style: dashBody(color: kInkMuted),
@@ -254,8 +252,8 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
   }
 }
 
-/// Profile-load skeleton for the identity screen: title + description bars,
-/// then an avatar disc beside a name bar.
+/// Profile-load skeleton for the identity screen: the description bar, then an
+/// avatar disc beside a name bar.
 class _IdentitySkeleton extends StatelessWidget {
   const _IdentitySkeleton();
 
@@ -267,8 +265,7 @@ class _IdentitySkeleton extends StatelessWidget {
         child: ListView(
           padding: SettingsSpacing.page,
           children: const [
-            SkeletonBar(width: 120, height: 20, radius: 8),
-            SizedBox(height: NhamSpacing.sp2),
+            // Mirrors the real body: description line, then the avatar row.
             SkeletonBar(widthFactor: 0.9, height: 12, radius: 6),
             SizedBox(height: NhamSpacing.sp5),
             Row(

@@ -9,7 +9,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../data/session_provider.dart';
 import '../../../shared/widgets/nham_primitives.dart';
 import '../../../shared/widgets/scroll_separator.dart';
-import '../../../shell/app_header.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/countries.dart';
@@ -22,8 +21,8 @@ import '../widgets/auto_share_to_circle_toggle.dart';
 import '../widgets/profile_form.dart';
 import '../widgets/profile_status_views.dart';
 import '../widgets/region_editor.dart';
-import '../widgets/settings_back_bar.dart';
 import '../widgets/settings_group.dart';
+import '../widgets/settings_header.dart';
 import '../widgets/settings_navigator.dart';
 import '../widgets/settings_row.dart';
 import '../widgets/settings_skeleton.dart';
@@ -65,18 +64,18 @@ class _SettingsList extends ConsumerWidget {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-          // The title sits on the header line itself, beside the back chevron
-          // — the same slot and the same serif the dashboard greeting uses, so
-          // every tab's title lands on one line across the app.
-          child: AppHeader(
-            onBack: () => GoRouter.of(context).pop(),
-            child: Text(tr('settings.title'), style: dashHeadline()),
-          ),
+        // The title sits on the header line itself, beside the back chevron —
+        // the same slot and the same serif the dashboard greeting uses, so
+        // every tab's title lands on one line across the app. Drill-ins render
+        // the identical bar with only this text swapped.
+        header: SettingsHeader(
+          title: tr('settings.title'),
+          // The root's back leaves the tab entirely, so it pops the ROUTER,
+          // not the nested navigator.
+          onBack: () => GoRouter.of(context).pop(),
         ),
         child: ListView(
-          padding: SettingsSpacing.page,
+          padding: SettingsSpacing.rowList,
           children: [
             // ── Preferences ─────────────────────────────────────────────
             SettingsGroup(
@@ -220,9 +219,19 @@ class _SettingsList extends ConsumerWidget {
 /// The focused editor a preference row pushes onto the stack.
 enum _EditorKind { goal, cooking, region }
 
+extension on _EditorKind {
+  /// The screen's name — the same l10n key its settings row uses, so the bar
+  /// title reads as the row the user just tapped.
+  String get title => switch (this) {
+    _EditorKind.goal => tr('settings.rows.goalPace'),
+    _EditorKind.cooking => tr('settings.rows.cooking'),
+    _EditorKind.region => tr('settings.rows.region'),
+  };
+}
+
 /// Focused profile editor screen — pushed from a settings row. Renders ONE of
-/// the goal / cooking / region editors. Back header mirrors the web shell's
-/// ArrowLeft + "Settings" link.
+/// the goal / cooking / region editors under the shared settings bar, whose
+/// only difference from the root's is the title.
 class _ProfileScreen extends ConsumerWidget {
   const _ProfileScreen({required this.kind});
 
@@ -237,7 +246,7 @@ class _ProfileScreen extends ConsumerWidget {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: const SettingsBackBar(),
+        header: SettingsHeader(title: kind.title),
         child:
             userId == null
                 ? _Centered(
@@ -269,7 +278,6 @@ class _ProfileScreen extends ConsumerWidget {
     _EditorKind.goal => ProfileForm(profile: profile),
     _EditorKind.cooking => InstantCommitEditor(
       profile: profile,
-      title: tr('settings.rows.cooking'),
       subtitle: tr('settings.profilePanel.cookingSubtitle'),
       child: const Cooking(),
     ),

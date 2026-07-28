@@ -12,7 +12,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/settings_spacing.dart';
-import '../widgets/settings_back_bar.dart';
+import '../widgets/settings_header.dart';
 
 /// Pushed delete-account screen: plain-language consequences and a type-to-
 /// confirm gate before the irreversible deletion.
@@ -77,19 +77,16 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: SettingsBackBar(onBack: () => Navigator.of(context).maybePop()),
+        header: SettingsHeader(
+          title: tr('settings.account.deleteScreenTitle'),
+        ),
         child: SingleChildScrollView(
           padding: SettingsSpacing.page,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // The one editorial serif moment, left-aligned like the settings
-              // root — the sub-page continues the parent's title.
-              Text(
-                tr('settings.account.deleteScreenTitle'),
-                style: dashHeadline(),
-              ),
-              const SizedBox(height: NhamSpacing.sp3),
+              // No title here — it lives in the header bar. This is the
+              // consequence line that used to sit under it.
               Text(
                 tr('settings.account.deleteConsequence'),
                 style: dashBody(),

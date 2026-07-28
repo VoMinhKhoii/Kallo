@@ -120,17 +120,15 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
         children: [
           ListView(
             padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp4,
+              NhamSpacing.sp3, // the app-wide 12 content inset
               NhamSpacing.sp2,
-              NhamSpacing.sp4,
+              NhamSpacing.sp3,
               NhamSpacing.sp16,
             ),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             children: [
-              // One left-aligned serif title per sub-page, same token as the
-              // settings root — the drill-in reads as a continuation of it.
-              Text(tr('settings.rows.goalPace'), style: dashHeadline()),
-              const SizedBox(height: NhamSpacing.sp1),
+              // No title here — it lives in the header bar. This is the
+              // subtitle that used to sit under it.
               Padding(
                 padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
                 child: Text(

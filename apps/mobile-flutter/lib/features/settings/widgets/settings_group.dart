@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
 import '../logic/settings_spacing.dart';
 
 /// Flat, Threads-calm settings primitives.
@@ -33,9 +32,10 @@ class SettingsGroup extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          // Left-aligned with each row's label gutter (row horizontal padding).
+          // Left-aligned with each row's icon gutter (the row's own padding),
+          // so label and rows share one left edge at the app-wide 12 inset.
           padding: const EdgeInsets.only(
-            left: NhamSpacing.sp3,
+            left: SettingsSpacing.rowPadH,
             bottom: SettingsSpacing.label,
           ),
           child: Text(label, style: dashMeta()),

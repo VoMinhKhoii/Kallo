@@ -1,9 +1,6 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../data/session_provider.dart';
 import '../features/circle/data/circle_providers.dart';
 import '../features/onboarding/providers/onboarding_providers.dart';
 import '../theme/nham_colors.dart';
@@ -15,7 +12,8 @@ import 'sidebar_nav_list.dart';
 /// `MobileNav` Sheet (`components/app/mobile-nav.tsx`).
 ///
 /// Layout (top → bottom):
-///   • Header: display name (15px) + email (11.5px), bottom hairline.
+///   • Header: the brand wordmark, bottom hairline. No identity block — the
+///     drawer navigates, and Settings → Profile is where you are.
 ///   • Scrollable nav list (px-3 py-3, gap-1 between rows).
 ///   • Pinned footer: optional onboarding nudge and the Settings row. Sign out
 ///     is not here — it is the bottom-most row of the Settings screen.
@@ -30,12 +28,6 @@ class Sidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(currentSessionProvider);
-    final user = session?.user;
-    final email = user?.email;
-    final displayName = _deriveName(user);
-    final label = displayName ?? _accountFallback();
-
     final onboardingIncomplete = ref.watch(onboardingResumeProvider);
 
     final bottomInset = MediaQuery.of(context).padding.bottom;
@@ -52,8 +44,8 @@ class Sidebar extends ConsumerWidget {
         bottom: false,
         child: Column(
           children: [
-            // ── Header: brand + avatar + name + email ──────────────────────
-            SidebarHeader(label: label, email: email),
+            // ── Header: the wordmark alone ────────────────────────────────
+            const SidebarHeader(),
 
             // ── Scrollable nav list ───────────────────────────────────────
             Expanded(
@@ -75,15 +67,4 @@ class Sidebar extends ConsumerWidget {
       ),
     );
   }
-
-  static String? _deriveName(User? user) {
-    final meta = user?.userMetadata;
-    final raw = (meta?['displayName'] ?? meta?['full_name'] ?? meta?['name']);
-    if (raw is String && raw.trim().isNotEmpty) return raw.trim();
-    final email = user?.email;
-    if (email != null && email.contains('@')) return email.split('@').first;
-    return email;
-  }
-
-  static String _accountFallback() => tr('app.userMenu.account');
 }
