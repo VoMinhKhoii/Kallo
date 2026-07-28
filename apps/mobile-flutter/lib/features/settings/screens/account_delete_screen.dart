@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/api_client.dart';
+import '../../../data/billing/entitlements_provider.dart';
 import '../../../data/session_provider.dart';
 import '../../../shared/widgets/nham_primitives.dart';
 import '../../../shared/widgets/scroll_separator.dart';
 import '../../../shared/widgets/top_toast.dart';
+import '../../paywall/store_subscriptions.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -74,12 +76,13 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userId = ref.watch(entitlementsUserIdProvider);
+    final entitlement = ref.watch(entitlementsProvider(userId)).valueOrNull;
+
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: SettingsHeader(
-          title: tr('settings.account.deleteScreenTitle'),
-        ),
+        header: SettingsHeader(title: tr('settings.account.deleteScreenTitle')),
         child: SingleChildScrollView(
           padding: SettingsSpacing.page,
           child: Column(
@@ -87,17 +90,44 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
             children: [
               // No title here — it lives in the header bar. This is the
               // consequence line that used to sit under it.
-              Text(
-                tr('settings.account.deleteConsequence'),
-                style: dashBody(),
+              Text(tr('settings.account.deleteConsequence'), style: dashBody()),
+              const SizedBox(height: NhamSpacing.sp3),
+              Container(
+                padding: const EdgeInsets.all(NhamSpacing.sp3),
+                decoration: BoxDecoration(
+                  color: NhamColors.danger.withValues(alpha: 0.06),
+                  border: Border.all(
+                    color: NhamColors.danger.withValues(alpha: 0.3),
+                  ),
+                  borderRadius: BorderRadius.circular(NhamRadii.xxxl),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      tr('settings.account.deleteSubscriptionWarning'),
+                      style: dashBody(),
+                    ),
+                    if (entitlement?.managementUrl != null) ...[
+                      const SizedBox(height: NhamSpacing.sp2),
+                      NhamButton(
+                        title: tr('settings.account.deleteManageSubscription'),
+                        variant: NhamButtonVariant.secondary,
+                        onPressed:
+                            () => openStoreSubscriptions(
+                              context,
+                              entitlement!.managementUrl!,
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
               const SizedBox(height: NhamSpacing.sp5),
               Text(
                 tr(
                   'settings.account.deleteConfirmLabel',
-                  namedArgs: {
-                    'word': tr('settings.account.deleteConfirmWord'),
-                  },
+                  namedArgs: {'word': tr('settings.account.deleteConfirmWord')},
                 ),
                 style: dashMeta(),
               ),
@@ -175,7 +205,10 @@ class _DeleteButton extends StatelessWidget {
                     )
                     : Text(
                       tr('settings.account.deleteConfirmAction'),
-                      style: dashBody(weight: FontWeight.w500, color: Colors.white),
+                      style: dashBody(
+                        weight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
                     ),
           ),
         ),

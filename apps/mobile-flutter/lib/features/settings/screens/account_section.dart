@@ -53,7 +53,8 @@ class AccountSection extends ConsumerStatefulWidget {
 
 class _AccountSectionState extends ConsumerState<AccountSection> {
   bool _exporting = false;
-  bool _retrying = false; // manual retry of the initial identity fetch in flight
+  bool _retrying =
+      false; // manual retry of the initial identity fetch in flight
 
   // ── Linked sign-in methods state ──────────────────────────────────────
   List<UserIdentity>? _identities;
@@ -143,20 +144,21 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     HapticFeedback.lightImpact();
     final confirmed = await showCupertinoModalPopup<bool>(
       context: context,
-      builder: (sheetContext) => CupertinoActionSheet(
-        title: Text(tr('settings.account.disconnectConfirmTitle')),
-        actions: [
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.of(sheetContext).pop(true),
-            child: Text(tr('settings.account.disconnect')),
+      builder:
+          (sheetContext) => CupertinoActionSheet(
+            title: Text(tr('settings.account.disconnectConfirmTitle')),
+            actions: [
+              CupertinoActionSheetAction(
+                isDestructiveAction: true,
+                onPressed: () => Navigator.of(sheetContext).pop(true),
+                child: Text(tr('settings.account.disconnect')),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(sheetContext).pop(false),
+              child: Text(tr('settings.account.cancel')),
+            ),
           ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(sheetContext).pop(false),
-          child: Text(tr('settings.account.cancel')),
-        ),
-      ),
     );
     if (confirmed != true) return;
     setState(() => _busyProvider = identity.provider);
@@ -192,8 +194,9 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         busy: _busyProvider == key,
         // Can't remove the last sign-in method (lockout), or mid-action.
         enabled: _busyProvider == null && total > 1,
-        onTap: () =>
-            _disconnect(_identities!.firstWhere((i) => i.provider == key)),
+        onTap:
+            () =>
+                _disconnect(_identities!.firstWhere((i) => i.provider == key)),
       );
     }
     return SettingsRow(
@@ -213,7 +216,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       final pretty = const JsonEncoder.withIndent('  ').convert(data);
       final dir = await getTemporaryDirectory();
       final stamp = DateTime.now().toIso8601String().split('T').first;
-      final file = File('${dir.path}/nham-data-$stamp.json');
+      final file = File('${dir.path}/kallo-data-$stamp.json');
       await file.writeAsString(pretty);
       await Share.shareXFiles([XFile(file.path)]);
     } catch (_) {
@@ -289,9 +292,6 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       ),
     );
 
-    return SettingsGroup(
-      label: tr('settings.account.title'),
-      children: rows,
-    );
+    return SettingsGroup(label: tr('settings.account.title'), children: rows);
   }
 }

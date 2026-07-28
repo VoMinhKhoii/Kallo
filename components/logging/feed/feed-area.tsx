@@ -21,6 +21,7 @@ interface FeedAreaProps {
   isDateNavigationPending?: boolean;
   onInitialMealApplied?: () => void;
   onSelectDate: (date: string) => void;
+  onPaymentRequired?: () => void;
 }
 
 // "Fix with words" (natural-language refine) is hidden for now. It currently
@@ -40,6 +41,7 @@ export function FeedArea({
   isDateNavigationPending = false,
   onInitialMealApplied,
   onSelectDate,
+  onPaymentRequired,
 }: FeedAreaProps) {
   const feed = useFeedController({
     selectedDate,
@@ -48,6 +50,7 @@ export function FeedArea({
     initialMeal,
     isDateNavigationPending,
     onInitialMealApplied,
+    onPaymentRequired,
   });
   const { day } = feed;
 

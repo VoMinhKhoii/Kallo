@@ -31,6 +31,11 @@ jobs:
       # base64("user:personal_access_token") for HTTPS access to the match repo.
       MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
       NHAM_KEYCHAIN_PASSWORD: ${{ secrets.NHAM_KEYCHAIN_PASSWORD }}
+      KALLO_REVENUECAT_APPLE_API_KEY: ${{ secrets.KALLO_REVENUECAT_APPLE_API_KEY }}
+      KALLO_BUILD_PROFILE: app_store_release
+      # Mobile must traverse Cloudflare; the raw run.app origin rejects requests
+      # without the private origin header, and the old internal service is retired.
+      KALLO_API_BASE_URL: https://kallo.fit
       FASTLANE_DISABLE_COLORS: '1'
       LANG: en_US.UTF-8
       LC_ALL: en_US.UTF-8
@@ -43,13 +48,25 @@ jobs:
         run: |
           missing=()
           for v in ASC_KEY_ID ASC_ISSUER_ID MATCH_GIT_URL MATCH_PASSWORD \
-                   MATCH_GIT_BASIC_AUTHORIZATION NHAM_KEYCHAIN_PASSWORD ASC_KEY_P8_BASE64; do
+                   MATCH_GIT_BASIC_AUTHORIZATION NHAM_KEYCHAIN_PASSWORD ASC_KEY_P8_BASE64 \
+                   KALLO_REVENUECAT_APPLE_API_KEY; do
             [ -z "${!v}" ] && missing+=("$v")
           done
           if [ ${#missing[@]} -ne 0 ]; then
             echo "::error::Missing required secrets: ${missing[*]} — see apps/docs/mobile/releasing.md → CI."
             exit 1
           fi
+          case "$KALLO_REVENUECAT_APPLE_API_KEY" in
+            sk_*|atk_*)
+              echo "::error::KALLO_REVENUECAT_APPLE_API_KEY must be a client-public SDK key, never a RevenueCat secret key."
+              exit 1
+              ;;
+            appl_*) ;;
+            *)
+              echo "::error::KALLO_REVENUECAT_APPLE_API_KEY must start with appl_ for an iOS release build."
+              exit 1
+              ;;
+          esac
 
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1

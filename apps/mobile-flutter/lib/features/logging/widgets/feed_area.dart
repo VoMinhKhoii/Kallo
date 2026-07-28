@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../shared/widgets/scroll_separator.dart';
@@ -242,7 +243,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     _scrollToAnswer();
   }
 
-  void _failAttempt(bool retryable) {
+  void _failAttempt(bool retryable, {bool paymentRequired = false}) {
     final text = _inFlightText;
     setState(() {
       _failedText = text;
@@ -253,6 +254,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       _inputController.setText(text);
     }
     ref.read(streamAnalysisProvider.notifier).reset();
+    if (paymentRequired && mounted) {
+      context.push('/paywall');
+    }
   }
 
   /// An action failed: surface it as the composer's inline error line.
@@ -277,7 +281,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         prev,
         next,
         onRevealed: _revealAnswer,
-        onFailed: _failAttempt,
+        onFailed:
+            (retryable) =>
+                _failAttempt(retryable, paymentRequired: next.paymentRequired),
       ),
     );
 
@@ -365,26 +371,25 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         right: 0,
         bottom: 0,
         child: FeedComposer(
-              view: view,
-              calorieTarget: profile.calorieTarget,
-              errorText: _errorText,
-              mode: mode,
-              cheatIntensity: cheatIntensity,
-              onCheatIntensityChange: _setCheatIntensity,
-              userId: widget.profile.userId,
-              stagingRepeat: _stagingRepeat,
-              onRepeatCheat: _repeatCheat,
-              controller: _inputController,
-              onSubmit: _submit,
-              onCancel:
-                  () => ref.read(streamAnalysisProvider.notifier).cancel(),
-              analyzing: stream.isAnalyzing,
-              onModePressed: _openModeSheet,
-              onBarcodePressed: _openBarcodeSheet,
-              noticeDismissed: _noticeDismissedFor == widget.date,
-              onDismissNotice:
-                  () => setState(() => _noticeDismissedFor = widget.date),
-              onHeightChanged: (height) => setState(() => _dockHeight = height),
+          view: view,
+          calorieTarget: profile.calorieTarget,
+          errorText: _errorText,
+          mode: mode,
+          cheatIntensity: cheatIntensity,
+          onCheatIntensityChange: _setCheatIntensity,
+          userId: widget.profile.userId,
+          stagingRepeat: _stagingRepeat,
+          onRepeatCheat: _repeatCheat,
+          controller: _inputController,
+          onSubmit: _submit,
+          onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
+          analyzing: stream.isAnalyzing,
+          onModePressed: _openModeSheet,
+          onBarcodePressed: _openBarcodeSheet,
+          noticeDismissed: _noticeDismissedFor == widget.date,
+          onDismissNotice:
+              () => setState(() => _noticeDismissedFor = widget.date),
+          onHeightChanged: (height) => setState(() => _dockHeight = height),
         ),
       ),
       // The card list. The composer floats over its bottom edge as an

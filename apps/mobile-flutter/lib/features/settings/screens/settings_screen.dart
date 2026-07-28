@@ -27,6 +27,7 @@ import '../widgets/settings_navigator.dart';
 import '../widgets/settings_row.dart';
 import '../widgets/settings_skeleton.dart';
 import '../widgets/sign_out_row.dart';
+import '../widgets/subscription_section.dart';
 import '../../circle/data/circle_providers.dart';
 import 'about_section.dart';
 import 'account_section.dart';
@@ -115,6 +116,9 @@ class _SettingsList extends ConsumerWidget {
                   AutoShareToCircleToggle(value: profile.autoShareToCircle),
               ],
             ),
+
+            const SizedBox(height: SettingsSpacing.group),
+            const SubscriptionSection(),
 
             const SizedBox(height: SettingsSpacing.group),
             // ── Feedback (kept above Account, away from delete-account) ───

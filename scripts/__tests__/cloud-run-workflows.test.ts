@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -47,6 +47,35 @@ describe('Cloud Run prod workflow', () => {
     expect(workflow).toContain(
       'node ./scripts/check-append-only-migrations.mjs'
     );
+  });
+
+  it('wires billing secrets and dark-launch controls into prod', () => {
+    const workflow = readWorkflow('cloud-run-prod.yml');
+
+    for (const secret of [
+      'kallo-prod-supabase-service-role-key',
+      'kallo-prod-revenuecat-customer-delete-api-key',
+      'kallo-prod-revenuecat-rest-api-key',
+      'kallo-prod-revenuecat-webhook-secret',
+    ]) {
+      expect(workflow).toContain(secret);
+    }
+    expect(workflow).toContain('BILLING_ENVIRONMENT=production');
+    expect(workflow).toContain(
+      `BILLING_ENFORCEMENT_ENABLED: \${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}`
+    );
+    expect(workflow).toContain(`TRIAL_DAYS: \${{ vars.TRIAL_DAYS || '7' }}`);
+    expect(workflow).toContain('SUBSCRIPTION_LAUNCH_DATE');
+  });
+
+  it('does not resurrect retired non-production deploy workflows', () => {
+    for (const name of [
+      'cloud-run-internal.yml',
+      'cloud-run-preview.yml',
+      'cloud-run-staging.yml',
+    ]) {
+      expect(existsSync(resolve('.github/workflows', name))).toBe(false);
+    }
   });
 });
 

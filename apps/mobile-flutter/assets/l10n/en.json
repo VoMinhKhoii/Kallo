@@ -1463,6 +1463,8 @@
       "delete": "Delete account",
       "deleteScreenTitle": "Delete account",
       "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
+      "deleteSubscriptionWarning": "Deleting your Kallo account does not cancel an Apple or Google subscription. Cancel it in the store first to prevent future charges. A Kallo web subscription is canceled as part of account deletion. You can still delete immediately.",
+      "deleteManageSubscription": "Manage or cancel subscription",
       "deleteConfirmLabel": "Type {word} to confirm",
       "deleteConfirmWord": "DELETE",
       "deleteConfirmAction": "Delete my account",
@@ -1553,7 +1555,7 @@
     },
     "identity": {
       "title": "Profile",
-      "description": "How you appear across Nhẩm and to your circle.",
+      "description": "How you appear across Kallo and to your circle.",
       "avatarUpload": "Upload photo",
       "avatarChange": "Change photo",
       "avatarRemove": "Remove",
@@ -1568,6 +1570,19 @@
       "nameError": "Couldn't update your name",
       "nameRequired": "Please enter a name.",
       "linkWarning": "Changing your name updates your invite link — old links stop working."
+    },
+    "subscription": {
+      "groupLabel": "Subscription",
+      "row": "Kallo Pro",
+      "statusFree": "Free plan",
+      "statusTrial": "Free trial · {days} days left",
+      "statusTrialLastDay": "Free trial · last day",
+      "statusPremium": "Premium · renews {date}",
+      "statusPremiumExpires": "Premium · until {date}",
+      "statusPremiumCancelled": "Premium · ends {date}",
+      "statusLifetime": "Premium · lifetime",
+      "manage": "Manage subscription",
+      "restore": "Restore purchases"
     }
   },
   "errors": {
@@ -1592,5 +1607,43 @@
       "ageMin": "Age must be at least 13.",
       "ageMax": "Age must be at most 100."
     }
+  },
+  "paywall": {
+    "upsellEyebrow": "Kallo Pro",
+    "upsellTitle": "Describe a meal, know the macros",
+    "upsellBody": "AI meal analysis reads what you ate — dishes, portions, calories and macros — from your own words, in Vietnamese or English.",
+    "expiredEyebrow": "Your free trial has ended",
+    "expiredTitle": "Keep your AI analysis",
+    "expiredBody": "Your free trial is over. Go Premium to keep logging meals with AI analysis — no more counting by hand.",
+    "trialCountdown": "{days} days left in your free trial",
+    "trialCountdownLastDay": "Last day of your free trial",
+    "feature1": "AI reads meals from your own description",
+    "feature2": "Vietnamese dishes, portions and macros",
+    "feature3": "Fast meal logging within fair-use limits",
+    "purchase": "Start Premium",
+    "purchaseTrial": "Subscribe now",
+    "restore": "Restore purchases",
+    "manageActive": "Manage subscription",
+    "alreadyPremiumTitle": "You're on Premium",
+    "alreadyPremiumBody": "AI meal analysis is unlocked. Manage your plan in the store any time.",
+    "alreadyLifetimeBody": "You have lifetime Premium. AI meal analysis is yours to keep.",
+    "unavailableTitle": "Purchases unavailable",
+    "unavailableBody": "In-app purchases aren't available right now. Please try again later.",
+    "loadError": "Couldn't load subscription options.",
+    "purchaseError": "Purchase couldn't be completed. Please try again.",
+    "restoreAccountConflict": "This purchase belongs to another Kallo account. Sign in to the account that originally made the purchase, or contact support.",
+    "restoreError": "Couldn't restore purchases. Please try again.",
+    "restoreNothing": "No previous purchases found to restore.",
+    "verifying": "Confirming your purchase…",
+    "verifyPending": "Payment received — we're still activating Premium. It'll unlock shortly.",
+    "bestValue": "Best value",
+    "perMonth": "/mo",
+    "perYear": "/yr",
+    "packageMonthly": "Monthly",
+    "packageAnnual": "Annual",
+    "packageLifetime": "Lifetime",
+    "legal": "Payment is charged now to your store account. Subscriptions renew automatically unless cancelled at least 24 hours before the period ends.",
+    "terms": "Terms of use",
+    "privacy": "Privacy policy"
   }
 }

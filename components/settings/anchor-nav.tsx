@@ -8,6 +8,7 @@ import {
   FEEDBACK_ANCHOR,
   PREFERENCES_ANCHOR,
   PROFILE_ANCHOR,
+  SUBSCRIPTION_ANCHOR,
 } from './anchors';
 
 interface AnchorItem {
@@ -18,6 +19,7 @@ interface AnchorItem {
 const ANCHORS: readonly AnchorItem[] = [
   { id: PROFILE_ANCHOR, labelKey: 'profile' },
   { id: PREFERENCES_ANCHOR, labelKey: 'preferences' },
+  { id: SUBSCRIPTION_ANCHOR, labelKey: 'subscription' },
   { id: FEEDBACK_ANCHOR, labelKey: 'feedback' },
   { id: ACCOUNT_ANCHOR, labelKey: 'account' },
 ] as const;
