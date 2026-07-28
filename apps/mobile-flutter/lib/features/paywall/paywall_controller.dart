@@ -107,11 +107,14 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
   // poll). Writing `state` after disposal throws, so gate every post-await write
   // on this flag.
   bool _disposed = false;
-  bool _operationInFlight = false;
+  int _operationGeneration = 0;
+  int? _activeOperation;
 
   @override
   PaywallState build() {
     _disposed = false;
+    _operationGeneration += 1;
+    _activeOperation = null;
     // A Supabase token refresh replaces the Session object even though the
     // authenticated user is unchanged. Watch only the selected user id so a
     // refresh cannot reset a ready paywall in the middle of a purchase.
@@ -166,10 +169,10 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
 
   /// Purchase a package, then poll the server for the entitlement flip.
   Future<PaywallActionResult> purchase(Package package) async {
-    if (_operationInFlight) return PaywallActionResult.error;
     final userId = _userId;
     if (userId == null) return PaywallActionResult.error;
-    _operationInFlight = true;
+    final operation = _beginOperation();
+    if (operation == null) return PaywallActionResult.error;
     try {
       // Recheck the server switch at tap time. An offering loaded before an
       // emergency rollback must not remain purchasable from a stale screen.
@@ -211,16 +214,16 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
       }
       return await _pollAfterStoreSuccess(userId: userId);
     } finally {
-      _operationInFlight = false;
+      _endOperation(operation);
     }
   }
 
   /// Restore prior purchases, then poll the server for the entitlement flip.
   Future<PaywallActionResult> restore() async {
-    if (_operationInFlight) return PaywallActionResult.error;
     final userId = _userId;
     if (userId == null) return PaywallActionResult.error;
-    _operationInFlight = true;
+    final operation = _beginOperation();
+    if (operation == null) return PaywallActionResult.error;
     try {
       _set(state.copyWith(phase: PaywallPhase.purchasing));
       final restoreAttempt = await _purchases.restorePurchases(userId);
@@ -232,7 +235,7 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
       }
       return await _pollAfterStoreSuccess(userId: userId);
     } finally {
-      _operationInFlight = false;
+      _endOperation(operation);
     }
   }
 
@@ -240,14 +243,27 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
   /// This is deliberately user-triggered so pending states never become a
   /// permanent spinner or an unbounded background poll.
   Future<PaywallActionResult> retryActivation() async {
-    if (_operationInFlight) return PaywallActionResult.error;
     final userId = _userId;
     if (userId == null) return PaywallActionResult.error;
-    _operationInFlight = true;
+    final operation = _beginOperation();
+    if (operation == null) return PaywallActionResult.error;
     try {
       return await _pollAfterStoreSuccess(userId: userId);
     } finally {
-      _operationInFlight = false;
+      _endOperation(operation);
+    }
+  }
+
+  int? _beginOperation() {
+    if (_activeOperation != null) return null;
+    final operation = _operationGeneration;
+    _activeOperation = operation;
+    return operation;
+  }
+
+  void _endOperation(int operation) {
+    if (_activeOperation == operation) {
+      _activeOperation = null;
     }
   }
 
