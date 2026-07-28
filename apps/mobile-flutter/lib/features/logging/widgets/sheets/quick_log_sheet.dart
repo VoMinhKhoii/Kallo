@@ -95,6 +95,10 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
   void _submit(String text) {
     final meal = text.trim();
     if (meal.isEmpty) return;
+    // Same guard the manual/barcode branch already applies. Parking text for a
+    // session that is already gone leaves it for whoever signs in next; the
+    // router would bounce the navigation below anyway.
+    if (ref.read(currentSessionProvider) == null) return;
     HapticFeedback.mediumImpact(); // commit cue
     ref.read(pendingMealProvider.notifier).state = meal;
     // Resolve the router BEFORE popping: after the pop this sheet's context is

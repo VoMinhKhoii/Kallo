@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'data/analytics.dart';
 import 'data/session_provider.dart';
 import 'features/circle/circle_deep_links.dart';
+import 'features/logging/data/logging_providers.dart';
 import 'router.dart';
 import 'theme/nham_theme.dart';
 
@@ -32,6 +33,25 @@ class NhamApp extends ConsumerWidget {
         analytics.identify(session.user.id);
       } else if (prev?.valueOrNull != null) {
         analytics.reset();
+      }
+
+      // Drop composer state that belongs to the account that just left.
+      //
+      // Every other user-scoped provider is autoDispose; these three are not,
+      // because they are written by one surface and read by another across a
+      // navigation. That makes them the only user-content-bearing state that
+      // outlives a sign-out. A meal parked by the dashboard sheet is normally
+      // claimed the instant the feed builds — but if the router bounces the
+      // navigation (expired session) the feed never mounts and the text stays
+      // parked, where the NEXT account to open logging would claim it and
+      // stage a meal under their own token.
+      //
+      // Keyed on identity change, not merely on sign-out, so a direct account
+      // switch is covered too.
+      if (prev?.valueOrNull?.user.id != session?.user.id) {
+        ref.invalidate(pendingMealProvider);
+        ref.invalidate(mealLogModeProvider);
+        ref.invalidate(cheatIntensityProvider);
       }
     });
 
