@@ -64,6 +64,19 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
     final today = todayDateString();
     final yesterday = addDays(today, -1);
 
+    // A meal composed on the dashboard means TODAY. This screen lives in an
+    // indexedStack branch, so [_selectedDate] survives tab switches — page back
+    // to last Tuesday, hop to the dashboard, log from the FAB, and without this
+    // the feed would claim the text and analyze it against last Tuesday.
+    //
+    // A plain assignment, not setState: we are already inside the build this
+    // provider triggered, and the new value is consumed a few lines down, so
+    // FeedArea is constructed with today on this very frame — before it can
+    // claim the parked meal.
+    if (ref.watch(pendingMealProvider) != null && _selectedDate != today) {
+      _selectedDate = today;
+    }
+
     // The date chip MORPHS in place into the week strip (fixed height, so the
     // feed never shifts) — a buttery cross-dissolve, not a panel that opens
     // below. The scrim catches outside-taps to collapse back to the chip.

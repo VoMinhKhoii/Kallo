@@ -14,11 +14,7 @@ import type {
   HeatmapRange,
 } from '@/lib/types/dashboard';
 import { cn } from '@/lib/utils';
-import {
-  getHeatmapColor,
-  HEATMAP_COLORS,
-  heatmapLegendGradient,
-} from './heatmap-colors';
+import { getHeatmapColor, heatmapLegendGradient } from './heatmap-colors';
 import { HeatmapMonthHeaderRow } from './heatmap-month-headers';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];

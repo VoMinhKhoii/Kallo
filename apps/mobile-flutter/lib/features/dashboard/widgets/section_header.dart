@@ -150,7 +150,7 @@ class _SectionStateState extends State<SectionState> {
                 shape: BoxShape.circle,
               ),
               child: Icon(widget.icon,
-                  size: DashboardIcons.size, color: kInkMuted),
+                  size: NhamIcons.size, color: kInkMuted),
             ),
             const SizedBox(height: DashboardSpacing.section),
           ],

@@ -42,7 +42,11 @@ class QuietActionButton extends StatelessWidget {
         color: NhamColors.hover,
         borderRadius: radius,
         child: InkWell(
-          onTap: onTap,
+          // Gate here, not just on Opacity. `enabled: false` used to dim the
+          // pill and leave it fully tappable, so both call sites restated the
+          // same predicate in `onTap` — two ways to say disabled, one of them
+          // decorative.
+          onTap: (enabled && !busy) ? onTap : null,
           borderRadius: radius,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

@@ -360,29 +360,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     return ScrollSeparator(
       header: MacroSummary(view: view, profile: profile),
 
-      // The card list, with the composer FLOATING over its bottom edge —
-      // the feed scrolls under the dock (reserving `_dockHeight` so the last
-      // card can always clear it) instead of stopping above a solid bar.
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: FeedList(
-              view: view,
-              dockHeight: _dockHeight,
-              scrollController: _scrollController,
-              footer: footer,
-              onRefresh: mealActions.refreshDay,
-              onRetryDay: () => ref.invalidate(loggingDayProvider(_dayArgs)),
-              onRemoveMeal: mealActions.remove,
-              onUpdateMeal: mealActions.update,
-              onLogAgain: mealActions.logAgain,
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: FeedComposer(
+      overlay: Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        child: FeedComposer(
               view: view,
               calorieTarget: profile.calorieTarget,
               errorText: _errorText,
@@ -403,9 +385,22 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
               onDismissNotice:
                   () => setState(() => _noticeDismissedFor = widget.date),
               onHeightChanged: (height) => setState(() => _dockHeight = height),
-            ),
-          ),
-        ],
+        ),
+      ),
+      // The card list. The composer floats over its bottom edge as an
+      // `overlay`, NOT as a child — it owns a multiline field whose own
+      // vertical Scrollable would otherwise reach the hairline listener as a
+      // depth-0 sibling and raise the rule while the feed sat at the top.
+      child: FeedList(
+        view: view,
+        dockHeight: _dockHeight,
+        scrollController: _scrollController,
+        footer: footer,
+        onRefresh: mealActions.refreshDay,
+        onRetryDay: () => ref.invalidate(loggingDayProvider(_dayArgs)),
+        onRemoveMeal: mealActions.remove,
+        onUpdateMeal: mealActions.update,
+        onLogAgain: mealActions.logAgain,
       ),
     );
   }

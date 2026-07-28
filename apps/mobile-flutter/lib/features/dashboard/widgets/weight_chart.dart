@@ -17,7 +17,6 @@ import '../../../shared/widgets/nham_sheet.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
-import '../logic/dashboard_spacing.dart';
 import 'compact_weight_log.dart';
 import '../../../theme/calm_tokens.dart';
 import 'card_skeletons.dart';
@@ -57,7 +56,7 @@ class WeightChart extends ConsumerWidget {
             children: [
               const Icon(
                 LucideIcons.cloudOff,
-                size: DashboardIcons.size,
+                size: NhamIcons.size,
                 color: kInkMuted,
               ),
               const SizedBox(height: NhamSpacing.sp2),

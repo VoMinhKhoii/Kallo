@@ -23,7 +23,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../logging/widgets/sheets/quick_log_sheet.dart';
-import '../logic/dashboard_spacing.dart';
 
 /// Session-scoped FAB position (top-left, in the dashboard content's local
 /// coordinate space). Null → resolve to the default bottom-right resting spot.
@@ -164,7 +163,7 @@ class _FloatingMealTriggerState extends ConsumerState<FloatingMealTrigger> {
                         ),
                         child: const Icon(
                           LucideIcons.utensilsCrossed,
-                          size: DashboardIcons.size,
+                          size: NhamIcons.size,
                           color: Colors.white,
                         ),
                       ),

@@ -30,10 +30,10 @@ class ComposerModeButton extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<ComposerModeButton> createState() => ComposerModeButtonState();
+  State<ComposerModeButton> createState() => _ComposerModeButtonState();
 }
 
-class ComposerModeButtonState extends State<ComposerModeButton> {
+class _ComposerModeButtonState extends State<ComposerModeButton> {
   bool _pressed = false;
 
   @override
@@ -81,10 +81,10 @@ class ComposerBarcodeButton extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<ComposerBarcodeButton> createState() => ComposerBarcodeButtonState();
+  State<ComposerBarcodeButton> createState() => _ComposerBarcodeButtonState();
 }
 
-class ComposerBarcodeButtonState extends State<ComposerBarcodeButton> {
+class _ComposerBarcodeButtonState extends State<ComposerBarcodeButton> {
   bool _pressed = false;
 
   @override
@@ -139,10 +139,10 @@ class ComposerActionButton extends StatefulWidget {
   final bool enabled;
 
   @override
-  State<ComposerActionButton> createState() => ComposerActionButtonState();
+  State<ComposerActionButton> createState() => _ComposerActionButtonState();
 }
 
-class ComposerActionButtonState extends State<ComposerActionButton> {
+class _ComposerActionButtonState extends State<ComposerActionButton> {
   bool _pressed = false;
 
   @override

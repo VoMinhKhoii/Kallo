@@ -27,6 +27,7 @@ class ScrollSeparator extends StatefulWidget {
     super.key,
     required this.header,
     required this.child,
+    this.overlay,
     this.threshold = 1,
   });
 
@@ -35,6 +36,19 @@ class ScrollSeparator extends StatefulWidget {
 
   /// The page body — a scroll view (directly, or behind loading/error states).
   final Widget child;
+
+  /// Chrome floating over the body: a dock, a FAB. It is laid out in a [Stack]
+  /// with [child] but deliberately OUTSIDE the notification listener.
+  ///
+  /// This is not a convenience. `depth != 0` only screens out scrollables
+  /// *nested inside* the body — an overlay is a sibling, so its scrolls arrive
+  /// at depth 0 like the body's own. A multiline `TextField` builds a real
+  /// vertical `Scrollable`, so a composer docked over a feed would drive this
+  /// hairline as the user typed past its max height, with the feed still at
+  /// the top. Passing chrome here instead of stacking it around
+  /// [ScrollSeparator] makes "what counts as the page body" structural rather
+  /// than a runtime guess.
+  final Widget? overlay;
 
   /// Scroll offset past which the hairline shows. Small on purpose: the line
   /// should arrive as soon as anything has slid under the header.
@@ -74,9 +88,16 @@ class _ScrollSeparatorState extends State<ScrollSeparator> {
           ),
         ),
         Expanded(
-          child: NotificationListener<ScrollNotification>(
-            onNotification: _onScroll,
-            child: widget.child,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: _onScroll,
+                  child: widget.child,
+                ),
+              ),
+              if (widget.overlay != null) widget.overlay!,
+            ],
           ),
         ),
       ],

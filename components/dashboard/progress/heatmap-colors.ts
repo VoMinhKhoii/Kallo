@@ -26,37 +26,15 @@ export const HEATMAP_BANDS = {
   under: { onTarget: 0.2, close: 0.3, slight: 0.4, moderate: 0.5 },
 } as const;
 
-/** Label keys that count toward "% on track" — green + light green. */
-export const HEATMAP_ON_TRACK_LABELS = new Set(['onTarget', 'close']);
-
 /**
- * Each band's width in |ratio-1| space, off-target → on-target. `far` is
- * unbounded above, so it takes the same width as `moderate`.
- */
-const LEGEND_WIDTHS = [
-  HEATMAP_BANDS.over.moderate - HEATMAP_BANDS.over.slight, // far
-  HEATMAP_BANDS.over.moderate - HEATMAP_BANDS.over.slight, // moderate
-  HEATMAP_BANDS.over.slight - HEATMAP_BANDS.over.close, // slight
-  HEATMAP_BANDS.over.close - HEATMAP_BANDS.over.onTarget, // close
-  HEATMAP_BANDS.over.onTarget, // onTarget
-] as const;
-
-/** Boundaries of the five legend segments along a 0..1 off→on axis. */
-export function heatmapLegendBoundaries(): number[] {
-  const total = LEGEND_WIDTHS.reduce((a, b) => a + b, 0);
-  const bounds = [0];
-  let acc = 0;
-  for (const w of LEGEND_WIDTHS) {
-    acc += w;
-    bounds.push(acc / total);
-  }
-  return bounds;
-}
-
-/**
- * The legend bar's CSS gradient, with explicit stops. Without them the browser
- * spaces the five colours evenly, which claims each covers a fifth of the
- * scale when red only begins past ±50%.
+ * The legend bar's CSS gradient: five EQUAL discrete segments, one per tier,
+ * each colour emitted at both ends of its slice so the edges are hard.
+ *
+ * Equal on purpose, and kept identical to the Dart twin's `legendStops`. A
+ * legend is a key — it names the vocabulary, it does not measure anything.
+ * Sizing the slices to the bands' widths gave the two warm tiers half the bar,
+ * which reads as "most of your days are bad" before a cell is drawn; and with
+ * the bands now asymmetric there is no single width to be proportional to.
  */
 export function heatmapLegendGradient(): string {
   const ramp = [
@@ -66,14 +44,8 @@ export function heatmapLegendGradient(): string {
     HEATMAP_COLORS.close,
     HEATMAP_COLORS.onTarget,
   ];
-  const bounds = heatmapLegendBoundaries();
-  // Each colour is emitted at BOTH ends of its slice, so the segments have
-  // hard edges. A smooth blend implied a continuum the cells do not have.
   const stops = ramp
-    .map(
-      (c, i) =>
-        `${c} ${bounds[i] * 100}%, ${c} ${bounds[i + 1] * 100}%`,
-    )
+    .map((c, i) => `${c} ${i * 20}%, ${c} ${(i + 1) * 20}%`)
     .join(', ');
   return `linear-gradient(to right, ${stops})`;
 }

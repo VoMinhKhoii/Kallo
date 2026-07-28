@@ -38,13 +38,3 @@ abstract final class DashboardSpacing {
   );
 }
 
-/// One glyph size and one hit target for every icon on the dashboard — the
-/// ring's flame, the FAB, the composer's send arrow and the section-state
-/// glyphs all match now (the 84pt ring illustration is a drawing, not an icon).
-abstract final class DashboardIcons {
-  /// Glyph size for every icon on the surface.
-  static const double size = 16;
-
-  /// Square tap target (and pressed-wash bounds) around an icon-only control.
-  static const double hit = 36;
-}

@@ -330,7 +330,7 @@ class _Dock extends StatelessWidget {
                       size: 84, // an illustration, not an icon
                       strokeWidth: 6,
                       center: const Icon(LucideIcons.flame,
-                          size: DashboardIcons.size, color: kInk),
+                          size: NhamIcons.size, color: kInk),
                     ),
                   ],
                 ),

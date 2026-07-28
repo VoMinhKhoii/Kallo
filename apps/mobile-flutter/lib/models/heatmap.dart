@@ -118,11 +118,16 @@ class HeatmapMonthHeader {
 
   HeatmapMonthHeader copyWith({
     String? month,
+    // Carried explicitly: omitting it silently reset the localized month name
+    // back to the server's English fallback, which is the exact bug `label()`
+    // exists to fix.
+    int? monthIndex,
     int? startColumn,
     int? span,
   }) =>
       HeatmapMonthHeader(
         month: month ?? this.month,
+        monthIndex: monthIndex ?? this.monthIndex,
         startColumn: startColumn ?? this.startColumn,
         span: span ?? this.span,
       );

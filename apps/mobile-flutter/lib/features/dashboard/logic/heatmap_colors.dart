@@ -1,4 +1,6 @@
-/// Vendored from the RN `lib/dashboard/logic/heatmap-colors.ts` — keep in sync.
+/// Vendored twin of `components/dashboard/progress/heatmap-colors.ts` (repo
+/// root, the Next.js app) — keep the bands, the legend stops and the on-track
+/// label set in sync with it.
 ///
 /// Pure helper. The resolved light-theme hex values mirror
 /// `NhamColors.heatmap*` exactly (the RN copy hardcodes the same hexes because
