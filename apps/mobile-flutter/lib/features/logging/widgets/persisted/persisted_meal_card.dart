@@ -8,10 +8,10 @@ import '../../../../theme/nham_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
 import '../confirm_meal_removal.dart';
+import '../meal_time_divider.dart';
 import 'persisted_meal_actions.dart';
 import 'persisted_meal_amount_editor.dart';
 import 'persisted_meal_card_content.dart';
-import 'persisted_meal_time_divider.dart';
 
 /// A saved meal in the day's feed — collapsed by default, expandable.
 ///
@@ -156,7 +156,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
       children: [
         // Time as a centered divider on top of the card (── 1:04 AM ──) —
         // no left timeline gutter, so the card gets the full row width.
-        PersistedMealTimeDivider(time: time),
+        MealTimeDivider(time: time),
         const SizedBox(height: LoggingSpacing.block),
         // Editing swaps the body in place AND hides the action row (the web
         // hides the action bar while editing). While editing the card is not

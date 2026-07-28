@@ -16,6 +16,7 @@ import '../logic/meal_utils.dart';
 import 'count_up.dart';
 import 'entrances.dart';
 import 'meal_stepper_button.dart';
+import 'meal_time_divider.dart';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a stepper
 // can't slip through and save before the user is done adjusting.
@@ -52,6 +53,11 @@ class MealEntry extends StatefulWidget {
 class _MealEntryState extends State<MealEntry> {
   late List<MealItem> _items = widget.parsedMeal.items;
   late final List<MealItem> _original = widget.parsedMeal.items;
+
+  /// An unconfirmed meal has no `loggedAt` yet, so the divider shows when the
+  /// analysis landed. Captured once at mount rather than read in `build`, so
+  /// the time doesn't creep forward every time a stepper rebuilds the card.
+  final DateTime _enteredAt = DateTime.now();
   bool _editing = false;
   bool _confirmCoolingDown = false;
   Timer? _confirmTimer;
@@ -93,6 +99,12 @@ class _MealEntryState extends State<MealEntry> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Same divider a saved card carries, so the timeline doesn't break at
+        // the one card still awaiting confirmation.
+        MealTimeDivider(
+          time: DateFormat.jm(context.locale.toString()).format(_enteredAt),
+        ),
+        const SizedBox(height: LoggingSpacing.block),
         _Card(
           // The reveal replaces the streaming card in place — matching its
           // surface background removes the background flip at the swap.
