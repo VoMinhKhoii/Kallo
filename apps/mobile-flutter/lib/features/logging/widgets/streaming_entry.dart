@@ -7,8 +7,8 @@ import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../logic/format.dart';
 import '../logic/logging_spacing.dart';
+import 'macro_trio.dart';
 import 'entrances.dart';
 
 // Statuses that map to a localized phase label; others fall back to "Analyzing".
@@ -163,16 +163,11 @@ class _CompletedRow extends StatelessWidget {
                 maxLines: 1, style: dashBody(),),
           ),
           const SizedBox(width: NhamSpacing.sp3),
-          Row(
-            children: [
-              Text('P: ${fmtG(item.macros.protein)}', style: dashMeta(tabular: true),),
-              const SizedBox(width: NhamSpacing.sp2),
-              Text('C: ${fmtG(item.macros.carbs)}', style: dashMeta(tabular: true),),
-              const SizedBox(width: NhamSpacing.sp2),
-              Text('F: ${fmtG(item.macros.fat)}', style: dashMeta(tabular: true),),
-              const SizedBox(width: NhamSpacing.sp3), // gap-3
-              Text(fmtKcal(item.macros.calories), style: dashBody(weight: FontWeight.w500, tabular: true),),
-            ],
+          MacroTrio(
+            protein: item.macros.protein,
+            carbs: item.macros.carbs,
+            fat: item.macros.fat,
+            calories: item.macros.calories,
           ),
         ],
       ),

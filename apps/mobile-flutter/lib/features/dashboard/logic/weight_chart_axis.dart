@@ -47,7 +47,7 @@ import 'package:flutter/painting.dart';
   return (min: min, max: max, step: step);
 }
 
-/// Short, localized x tick labels keyed by point index — e.g. `Jun 9` … `Now`.
+/// Short numeric x tick labels keyed by point index — e.g. `6/7` … `Now`.
 ///
 /// [dates] are the `YYYY-MM-DD` strings parallel to the plotted weights; when
 /// they are missing (older server, see `WeightSummaryData.weightDates`) the
@@ -68,15 +68,13 @@ Map<int, String> weightXTickLabels({
   final hasDates = dates.length == pointCount;
   final lastIndex = pointCount - 1;
 
-  // Tried widest-first. A narrow axis buys back ticks by shortening the date
-  // ("Jun 9" → "9/6") BEFORE it starts dropping them — four marks in a terse
-  // format read better than two in a pretty one.
-  final formats = <DateFormat>[
-    DateFormat.MMMd(locale),
-    DateFormat('d/M', locale),
-  ];
+  // Numeric day/month, every locale. `DateFormat.MMMd` renders Vietnamese as
+  // "6 thg 7" — three tokens for one tick, which both reads badly and eats the
+  // width four ticks need. "6/7" is unambiguous at a glance and the same size
+  // in every language.
+  final format = DateFormat('d/M', locale);
 
-  Map<int, String> labelsFor(int wanted, DateFormat format) {
+  Map<int, String> labelsFor(int wanted) {
     final labels = <int, String>{};
     for (var i = 0; i < wanted; i++) {
       final index = (lastIndex * i / (wanted - 1)).round();
@@ -103,18 +101,15 @@ Map<int, String> weightXTickLabels({
 
   // Without dates there is nothing to tick but the two ends.
   if (!hasDates) {
-    final ends = labelsFor(2, formats.first);
+    final ends = labelsFor(2);
     return ends.length >= 2 ? ends : {lastIndex: tr('dashboard.now')};
   }
 
-  // Aim for 5, hold the line at 4 by trying the compact format, and only then
-  // give ticks up.
+  // Aim for 5, thin only when the labels genuinely will not fit.
   for (var wanted = 5; wanted >= 2; wanted--) {
-    for (final format in formats) {
-      final labels = labelsFor(wanted, format);
-      if (labels.length < 2) continue;
-      if (fits(labels) || labels.length == 2) return labels;
-    }
+    final labels = labelsFor(wanted);
+    if (labels.length < 2) continue;
+    if (fits(labels) || labels.length == 2) return labels;
   }
   return {lastIndex: tr('dashboard.now')};
 }

@@ -43,6 +43,7 @@ List<MonthLabelBox> layoutMonthLabels({
   required double gap,
   required double gridWidth,
   required TextStyle style,
+  required String locale,
   required TextScaler textScaler,
 }) {
   if (headers.isEmpty || gridWidth <= 0) return const [];
@@ -58,7 +59,8 @@ List<MonthLabelBox> layoutMonthLabels({
     final columns = header.startColumn + header.span - startColumn;
     if (columns < kMinLabelColumns) continue;
 
-    final textWidth = _measure(header.month, style, textScaler);
+    final label = header.label(locale);
+    final textWidth = _measure(label, style, textScaler);
     final spanWidth = columns * cellSize + (columns - 1) * gap;
     // Too narrow to label: the name would spill more than one column past the
     // month's own columns and read as belonging to its neighbour.
@@ -69,7 +71,7 @@ List<MonthLabelBox> layoutMonthLabels({
 
     boxes.add(
       MonthLabelBox(
-        month: header.month,
+        month: label,
         left: left,
         // +1px so the measured text never ellipsizes on a rounding edge.
         width: math.min(textWidth + 1, gridWidth - left),

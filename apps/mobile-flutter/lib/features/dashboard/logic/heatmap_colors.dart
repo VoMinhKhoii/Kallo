@@ -50,42 +50,21 @@ abstract final class HeatmapBands {
   static const double slightUnder = 0.40;
   static const double moderateUnder = 0.50;
 
-  /// Each band's width in `|ratio - 1|` space, ordered off-target →
-  /// on-target, taken from the OVER side (the legend shows one axis).
-  /// `far` is unbounded above, so it takes the same width as `moderate`.
-  static const List<double> _legendWidths = [
-    moderateOver - slightOver, // far (shown at moderate's width)
-    moderateOver - slightOver, // moderate
-    slightOver - closeOver, // slight
-    closeOver - onTargetOver, // close
-    onTargetOver, // onTarget
-  ];
-
-  /// Boundaries of the five legend segments along a 0..1 off→on axis.
-  static List<double> get legendBoundaries {
-    final total = _legendWidths.reduce((a, b) => a + b);
-    final bounds = <double>[0];
-    var acc = 0.0;
-    for (final w in _legendWidths) {
-      acc += w;
-      bounds.add(acc / total);
-    }
-    return bounds;
-  }
-
-  /// Gradient stops that render the legend as five DISCRETE segments, each
-  /// sized to its band — every colour repeated at both ends of its slice so
-  /// the transitions are hard.
+  /// Gradient stops that render the legend as five EQUAL discrete segments,
+  /// one per tier.
   ///
-  /// A smooth blend was actively misleading: the cells are five flat colours,
-  /// so a wash implied a continuum that does not exist, and it gave `far`
-  /// almost no width because it sat on the very edge.
-  static List<double> get legendStops {
-    final b = legendBoundaries;
-    return [
-      for (var i = 0; i < 5; i++) ...[b[i], b[i + 1]],
-    ];
-  }
+  /// Equal on purpose. A legend is a key — it names the vocabulary, it does not
+  /// measure anything. Sizing the slices to the bands' widths in ratio space
+  /// made the two warm tiers occupy nearly half the bar, which read as "most of
+  /// your days are bad" before a single cell had been drawn. Nobody can read a
+  /// band width off a 6px bar anyway.
+  static const List<double> legendStops = [
+    0.0, 0.2, // far
+    0.2, 0.4, // moderate
+    0.4, 0.6, // slight
+    0.6, 0.8, // close
+    0.8, 1.0, // onTarget
+  ];
 
   /// The label keys that count toward "% on track" — green + light green.
   /// The score reads these rather than re-deriving a threshold, so it can

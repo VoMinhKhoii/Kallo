@@ -47,6 +47,7 @@ void main() {
           gridWidth: 14 * 12 + 13 * 2,
           style: _style,
           textScaler: TextScaler.noScaling,
+          locale: 'en',
         );
 
     test('drops a sliver month that shares a column with the next', () {

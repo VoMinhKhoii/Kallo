@@ -23,7 +23,12 @@ export function layoutMonthHeaders(
     const startColumn = Math.max(header.startColumn, freeColumn);
     const span = header.startColumn + header.span - startColumn;
     if (span < MIN_LABEL_COLUMNS) continue;
-    placed.push({ month: header.month, startColumn, span });
+    placed.push({
+      month: header.month,
+      monthIndex: header.monthIndex,
+      startColumn,
+      span,
+    });
     freeColumn = startColumn + span;
   }
 

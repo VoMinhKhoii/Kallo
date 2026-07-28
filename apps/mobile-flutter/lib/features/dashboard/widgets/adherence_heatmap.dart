@@ -8,6 +8,8 @@
 /// positioning lives in `logic/heatmap_month_labels.dart`.
 library;
 
+import 'dart:ui' as ui;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,7 +37,11 @@ List<String> _weekdayInitials(String locale) {
 }
 
 const double _gap90d = 2; // GAP['90d']
-const double _dayLabelWidth = 16;
+/// Floor for the weekday gutter; the real width is measured, because narrow
+/// weekday names are not one character in every language — Vietnamese renders
+/// `T2`…`T7`, `CN`, which wrapped to two lines inside a fixed 16.
+const double _minDayLabelWidth = 16;
+const double _dayLabelPadRight = 4;
 const double _dayLabelGutter = NhamSpacing.sp1; // gap-1 (4px)
 const double _monthStripHeight = 16; // h-4
 const double _bubbleHalfW = 60;
@@ -164,11 +170,26 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     return (percent: percent, loggedDays: total);
   }
 
-  double _cellSize(double contentWidth, int numWeeks) {
+  /// The widest weekday label in the active locale, plus its inset.
+  double _dayLabelWidth(List<String> labels, TextStyle style) {
+    var widest = 0.0;
+    for (final label in labels) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: ui.TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+      if (painter.width > widest) widest = painter.width;
+    }
+    final needed = widest + _dayLabelPadRight;
+    return needed > _minDayLabelWidth ? needed.ceilToDouble() : _minDayLabelWidth;
+  }
+
+  double _cellSize(double contentWidth, int numWeeks, double dayLabelWidth) {
     if (numWeeks <= 0) return 10;
     final available =
         contentWidth -
-        _dayLabelWidth -
+        dayLabelWidth -
         _dayLabelGutter -
         (numWeeks - 1) * _gap90d;
     final sq = (available / numWeeks).floorToDouble();
@@ -181,6 +202,8 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     final numWeeks = _numWeeks;
     final dayLabels = _weekdayInitials(context.locale.toString());
     final monthLabelStyle = dashMeta(color: kInkMuted);
+    final dayLabelStyle = dashMeta(color: kInkMuted);
+    final dayLabelWidth = _dayLabelWidth(dayLabels, dayLabelStyle);
 
     return Container(
       padding: const EdgeInsets.all(NhamSpacing.sp4),
@@ -192,7 +215,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
       child: LayoutBuilder(
         builder: (context, constraints) {
           final contentWidth = constraints.maxWidth;
-          final sq = _cellSize(contentWidth, numWeeks);
+          final sq = _cellSize(contentWidth, numWeeks, dayLabelWidth);
           final step = sq + _gap90d;
           final gridWidth =
               numWeeks > 0 ? numWeeks * sq + (numWeeks - 1) * _gap90d : 0.0;
@@ -225,7 +248,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                 children: [
                   // Day labels.
                   SizedBox(
-                    width: _dayLabelWidth,
+                    width: dayLabelWidth,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -238,11 +261,16 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                                       ? _monthStripHeight + NhamSpacing.sp1
                                       : _gap90d,
                             ),
-                            padding: const EdgeInsets.only(right: 4),
+                            padding: const EdgeInsets.only(
+                              right: _dayLabelPadRight,
+                            ),
                             alignment: Alignment.centerRight,
                             child: Text(
                               dayLabels[i],
-                              style: dashMeta(color: kInkMuted),
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.visible,
+                              style: dayLabelStyle,
                             ),
                           ),
                       ],
@@ -271,6 +299,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                               gap: _gap90d,
                               gridWidth: gridWidth,
                               style: monthLabelStyle,
+                              locale: context.locale.toString(),
                               textScaler: MediaQuery.textScalerOf(context),
                             ))
                               Positioned(
@@ -377,14 +406,14 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                         ),
                         child: Container(
                           height: _legendBarHeight,
-                          decoration: BoxDecoration(
-                            // Five discrete segments, each sized to its band —
-                            // the same five flat colours the cells use. Each
-                            // colour is repeated so its slice has hard edges.
+                          decoration: const BoxDecoration(
+                            // Five equal discrete segments, one per tier — the
+                            // same five flat colours the cells use, each
+                            // repeated so its slice has hard edges.
                             gradient: LinearGradient(
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
-                              colors: const [
+                              colors: [
                                 HeatmapColors.far, HeatmapColors.far,
                                 HeatmapColors.moderate, HeatmapColors.moderate,
                                 HeatmapColors.slight, HeatmapColors.slight,
