@@ -1033,6 +1033,10 @@
       "barcodeDesc": "Quét sản phẩm đóng gói"
     },
     "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn…",
+    "quickLog": {
+      "title": "Ghi nhận bữa ăn",
+      "subtitle": "Món sẽ được phân tích ngay trong nhật ký"
+    },
     "cheatIntensity": {
       "label": "Bạn đã ăn nhiều cỡ nào?",
       "helper": "Điều chỉnh mức ước tính",

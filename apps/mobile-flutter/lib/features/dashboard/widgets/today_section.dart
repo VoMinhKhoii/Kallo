@@ -14,6 +14,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../../logging/data/logging_providers.dart' show pendingMealProvider;
 import '../../logging/widgets/count_up.dart';
 import '../data/dashboard_providers.dart';
 import '../data/logging_day.dart';
@@ -101,23 +102,28 @@ class TodaySection extends ConsumerWidget {
 /// three time-of-day-aware suggestion chips that open the meal composer
 /// prefilled. Shown only when the user has never logged a meal (zero today
 /// AND zero history).
-class _FirstRunCard extends StatelessWidget {
+class _FirstRunCard extends ConsumerWidget {
   const _FirstRunCard();
 
   /// Which suggestion set fits the device clock (morning / midday / evening).
-  static String _chipBucket() {
-    final hour = DateTime.now().hour;
-    if (hour < 11) return 'morning';
-    if (hour < 16) return 'midday';
-    return 'evening';
-  }
+  static String _chipBucket() => switch (DateTime.now().hour) {
+        < 11 => 'morning',
+        < 16 => 'midday',
+        _ => 'evening',
+      };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final bucket = _chipBucket();
     final suggestions = [
       for (var i = 1; i <= 3; i++) tr('dashboard.firstRunChips.$bucket$i'),
     ];
+    // Park the text for the feed to claim, then land on it (as the FAB does).
+    void openWithMeal(String meal) {
+      ref.read(pendingMealProvider.notifier).state = meal;
+      context.go('/logging');
+    }
+
     return _FadeInDown(
       child: Container(
         width: double.infinity,
@@ -145,12 +151,7 @@ class _FirstRunCard extends StatelessWidget {
               runSpacing: 6,
               children: [
                 for (final s in suggestions)
-                  _FirstRunChip(
-                    label: s,
-                    // Same prefill handoff the meal FAB uses.
-                    onTap: () => context
-                        .go('/logging?meal=${Uri.encodeComponent(s)}'),
-                  ),
+                  _FirstRunChip(label: s, onTap: () => openWithMeal(s)),
               ],
             ),
           ],

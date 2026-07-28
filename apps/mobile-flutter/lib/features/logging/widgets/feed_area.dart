@@ -100,6 +100,14 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// failed DELETE removes it too (the data was never locally changed).
   final Set<String> _pendingRemovalIds = <String>{};
 
+  /// True from the moment a build sees a meal parked in [pendingMealProvider]
+  /// until that meal has been taken out of the provider. It exists to make the
+  /// hand-off fire EXACTLY once: `build` can run many times (and does — the
+  /// post-frame gap alone can contain several) while the slot still holds the
+  /// same text, and every one of those builds would otherwise schedule its own
+  /// run of the analysis.
+  bool _claimedPendingMeal = false;
+
   LoggingDayArgs get _dayArgs =>
       LoggingDayArgs(widget.profile.userId, widget.date);
 
@@ -119,6 +127,27 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         curve: const Cubic(0.16, 1, 0.3, 1),
       );
     });
+  }
+
+  /// Take the meal parked by an off-feed composer (the dashboard's quick-log
+  /// sheet, a first-run suggestion chip) and run it exactly as if it had been
+  /// typed into the composer below.
+  ///
+  /// Called from a post-frame callback because it writes provider state and
+  /// calls `setState` — neither is legal during the build that spotted it.
+  void _consumePendingMeal() {
+    if (!mounted) return;
+    final text = ref.read(pendingMealProvider);
+    // Empty the slot BEFORE releasing the claim: for the whole window in which
+    // a rebuild could observe a value, the claim is still held, so no second
+    // run can be scheduled. Once both have happened the pair is back to
+    // (null, unclaimed) — ready for the next hand-off, and inert against a hot
+    // reload or a tab switch, which re-run `build` but never refill the slot.
+    ref.read(pendingMealProvider.notifier).state = null;
+    _claimedPendingMeal = false;
+    final meal = text?.trim() ?? '';
+    if (meal.isEmpty) return;
+    _submit(meal);
   }
 
   void _submit(String text) {
@@ -246,6 +275,21 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         onFailed: _failAttempt,
       ),
     );
+
+    // Hand-off from an off-feed composer. WATCHED, not listened to: the feed is
+    // routinely not mounted when the meal is parked (the profile fetch holds it
+    // behind a skeleton), so a listener would miss the transition outright —
+    // watching means the very first build that runs, whenever it runs, sees the
+    // value. It also covers the opposite case, an already-mounted feed on
+    // another tab: writing the provider marks this element dirty and the
+    // resulting build picks it up.
+    final pendingMeal = ref.watch(pendingMealProvider);
+    if (pendingMeal != null && !_claimedPendingMeal) {
+      _claimedPendingMeal = true;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _consumePendingMeal(),
+      );
+    }
 
     final profile = widget.profile;
     final stream = ref.watch(streamAnalysisProvider);

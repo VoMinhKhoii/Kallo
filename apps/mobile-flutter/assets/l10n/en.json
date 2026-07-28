@@ -1033,6 +1033,10 @@
       "barcodeDesc": "Scan a packaged product"
     },
     "cheatPlaceholder": "Korean BBQ buffet, went all out…",
+    "quickLog": {
+      "title": "Log a meal",
+      "subtitle": "We'll analyze it on your feed"
+    },
     "cheatIntensity": {
       "label": "How much did you eat?",
       "helper": "Scales the estimate",

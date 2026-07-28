@@ -163,6 +163,21 @@ Future<void> stageCheatRepeat(
       .refresh();
 }
 
+/// A meal composed somewhere OTHER than the feed — the dashboard's quick-log
+/// sheet, the first-run suggestion chips — parked here on the way to `/logging`.
+///
+/// A session provider rather than a `?meal=` query parameter for two reasons:
+/// `/logging` is a shell branch that is often ALREADY mounted (a query param
+/// would have to be re-read on every rebuild of the same location, with nothing
+/// to mark it consumed), and the feed frequently is NOT mounted yet when the
+/// text is produced — the profile fetch gates it behind a skeleton. Parking the
+/// text lets the feed claim it on its first build, whenever that turns out to
+/// be.
+///
+/// Exactly one consumer: [FeedArea], which nulls the slot the instant it claims
+/// it, so a rebuild, a tab switch back or a hot reload cannot re-fire it.
+final pendingMealProvider = StateProvider<String?>((ref) => null);
+
 /// Session-scoped dismiss state for the once-daily "yesterday looks
 /// under-logged" nudge, keyed by the yesterday date so a fresh day re-prompts.
 /// Mirrors the web's in-memory `yesterdayPromptDismissed` useState — it resets
@@ -250,7 +265,12 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
       } catch (_) {
         ref.invalidate(loggingDayProvider(dayArgs));
       }
-      invalidateMealSurfaces(ref.invalidate, arg, originDate, includeDay: false);
+      invalidateMealSurfaces(
+        ref.invalidate,
+        arg,
+        originDate,
+        includeDay: false,
+      );
     }
   }
 }
