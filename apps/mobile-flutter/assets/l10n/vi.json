@@ -108,8 +108,8 @@
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
       "1d": "Hôm nay",
-      "7d": "7n",
-      "30d": "30n",
+      "7d": "Tuần",
+      "30d": "Tháng",
       "90d": "90 ngày"
     },
     "nutrientGroups": {

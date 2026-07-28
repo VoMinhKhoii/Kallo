@@ -5,9 +5,14 @@ import 'package:flutter/services.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 
-// Today / 7d / 30d — the header-anchored timeframe toggle (90d retired).
+// Today / Week / Month — the header-anchored timeframe toggle (90d retired).
+//
+// All three labels are the same KIND of token on purpose. They used to mix a
+// word with two abbreviations ("Today / 7d / 30d"), which left the first
+// segment crowded and the other two swimming in an equal-width cell. It read
+// worse in Vietnamese, where "7 ngày" had been clipped to "7n" — not something
+// the language actually abbreviates that way.
 const List<String> _ranges = ['1d', '7d', '30d'];
 
 /// A compact, equal-width segmented control (iOS style): a warm track with a
@@ -40,7 +45,7 @@ class NutritionRangeSelector extends StatelessWidget {
     return Opacity(
       opacity: disabled ? 0.6 : 1,
       child: SizedBox(
-        width: 168,
+        width: 180,
         height: 34,
         child: Container(
           padding: const EdgeInsets.all(3),
@@ -124,12 +129,18 @@ class _Segment extends StatelessWidget {
         child: Center(
           child: AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 200),
-            style: NhamTextStyles.sansSemiBold(fontSize: NhamFontSize.xs)
-                .copyWith(
+            // Medium, not semibold — 500 is the weight ceiling.
+            style: dashMeta(
               color: active ? kInk : kInkMuted,
-              fontFeatures: const [FontFeature.tabularFigures()],
+            ).copyWith(fontWeight: active ? FontWeight.w500 : FontWeight.w400),
+            // Words are wider than "7d" was, and Vietnamese wider still, so
+            // the longest label scales down rather than clipping at the top of
+            // the Dynamic Type range. Segmented controls shrink here on iOS
+            // too; the alternative is a truncated word.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(label, maxLines: 1, softWrap: false),
             ),
-            child: Text(label),
           ),
         ),
       ),
