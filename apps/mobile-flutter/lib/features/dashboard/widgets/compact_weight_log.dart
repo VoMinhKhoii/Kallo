@@ -20,6 +20,7 @@ import '../../../shared/widgets/widgets.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
+import '../logic/dashboard_spacing.dart';
 import '../../../theme/calm_tokens.dart';
 
 const double _weightMin = 30;
@@ -198,9 +199,10 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
           ],
           autocorrect: false,
           cursorColor: NhamColors.accent,
-          // Substantial value type — a number entry reads as data, not body
-          // copy.
-          style: dashValue(color: kInk),
+          // Body at medium weight — the surface holds three sizes (Hero /
+          // Body / Meta), so a number entry reads as data via weight, not a
+          // size of its own.
+          style: dashBody(color: kInk, weight: FontWeight.w500, tabular: true),
           decoration: InputDecoration(
             isDense: true,
             filled: true,
@@ -210,6 +212,8 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
             fillColor: hasError
                 ? NhamColors.danger.withValues(alpha: 0.06)
                 : NhamColors.track,
+            // Off the DashboardSpacing scale on purpose: this is the field's
+            // own inset, tuned so the single line clears a 48pt tap target.
             contentPadding: const EdgeInsets.symmetric(
               horizontal: NhamSpacing.sp4,
               vertical: 15,
@@ -225,7 +229,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
             disabledBorder: _border(Colors.transparent),
           ),
         ),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: DashboardSpacing.row * 2),
         // Submit button beneath the field, full width — a clearer, more
         // thumb-friendly target than a cramped side-by-side button.
         SizedBox(
@@ -242,7 +246,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
         ),
         if (_feedback != null)
           Padding(
-            padding: const EdgeInsets.only(top: NhamSpacing.sp2),
+            padding: const EdgeInsets.only(top: DashboardSpacing.row * 2),
             child: Text(
               _feedback!.message,
               style: dashMeta(
@@ -254,7 +258,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
           )
         else if (_validationError != null)
           Padding(
-            padding: const EdgeInsets.only(top: NhamSpacing.sp2),
+            padding: const EdgeInsets.only(top: DashboardSpacing.row * 2),
             child: Text(
               _validationError!,
               style: dashMeta(color: NhamColors.danger),
@@ -262,7 +266,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
           )
         else if (showEditHint)
           Padding(
-            padding: const EdgeInsets.only(top: NhamSpacing.sp2),
+            padding: const EdgeInsets.only(top: DashboardSpacing.row * 2),
             child: Text(
               tr('dashboard.weightCard.editHint'),
               style: dashMeta(color: kInkMuted),

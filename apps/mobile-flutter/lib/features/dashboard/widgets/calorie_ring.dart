@@ -17,8 +17,8 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_typography.dart';
 import '../logic/dashboard_format.dart';
 
 class CalorieRing extends StatefulWidget {
@@ -126,14 +126,21 @@ class _DefaultCenter extends StatelessWidget {
       children: [
         Text(
           formatCount(value, locale),
-          style: NhamTextStyles.serifRegular(fontSize: 17, height: 1)
-              .copyWith(color: NhamColors.text, letterSpacing: 0),
+          // Body at w500, not serif and not Hero: serif on data is wrong, and
+          // the card's ONE hero number is the figure beside the ring, not this
+          // secondary readout inside a 78px circle.
+          style:
+              dashBody(weight: FontWeight.w500, tabular: true).copyWith(height: 1),
         ),
+        // Off the DashboardSpacing scale on purpose: a label hugging its number
+        // inside a fixed circle, not a gap in the stack (mirrors logging).
         const SizedBox(height: 2),
         Text(
-          (over ? tr('dashboard.over') : tr('dashboard.left')).toUpperCase(),
-          style: NhamTextStyles.sansBold(fontSize: 8)
-              .copyWith(letterSpacing: 1.2, color: NhamColors.stone),
+          // Lower-cased explicitly: the strings disagree ("left" vs "Over"),
+          // and the uppercase transform that masked it is gone. Lower also
+          // keeps Vietnamese ("còn lại") inside the fixed ring.
+          (over ? tr('dashboard.over') : tr('dashboard.left')).toLowerCase(),
+          style: dashMeta(),
         ),
       ],
     );

@@ -18,9 +18,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/dashboard.dart';
 import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
 import '../../logging/logic/timeline_utils.dart';
 import '../data/dashboard_providers.dart';
+import '../logic/dashboard_spacing.dart';
 import '../../../theme/calm_tokens.dart';
 
 class WeekStrip extends ConsumerWidget {
@@ -58,7 +58,7 @@ class WeekStrip extends ConsumerWidget {
     final locale = context.locale.toString();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
+      padding: const EdgeInsets.only(bottom: DashboardSpacing.block),
       child: Row(
         children: [
           for (final d in days)
@@ -119,7 +119,8 @@ class _DayCell extends StatelessWidget {
       // Equal margin/padding on every cell keeps the weekday letters aligned;
       // only the SELECTED day gets the solid white chip + soft lift.
       margin: const EdgeInsets.symmetric(horizontal: 3),
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      // The chip's own inset — one row's padding on each side of the cell.
+      padding: const EdgeInsets.symmetric(vertical: DashboardSpacing.row * 2),
       decoration: isSelected
           ? BoxDecoration(
               color: kCardSurface,
@@ -138,14 +139,12 @@ class _DayCell extends StatelessWidget {
           Text(
             weekday,
             maxLines: 1,
-            // 11px medium, tight tracking (mixed-case, locale-safe).
-            style: dashMeta(color: labelColor).copyWith(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              letterSpacing: -0.2,
-            ),
+            // Meta 12 like every other caption on the surface (mixed-case,
+            // locale-safe); medium weight is what marks today, not size.
+            style: dashMeta(color: labelColor)
+                .copyWith(fontWeight: FontWeight.w500),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: DashboardSpacing.row),
           SizedBox(
             width: _ring,
             height: _ring,

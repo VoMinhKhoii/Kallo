@@ -21,9 +21,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../logic/dashboard_spacing.dart';
 
 /// Session-scoped FAB position (top-left, in the dashboard content's local
 /// coordinate space). Null → resolve to the default bottom-right resting spot.
@@ -223,10 +224,8 @@ class _FloatingMealTriggerState extends ConsumerState<FloatingMealTrigger> {
                           ],
                         ),
                         child: Icon(
-                          _expanded
-                              ? LucideIcons.x
-                              : LucideIcons.utensilsCrossed,
-                          size: 20, // h-5 w-5
+                          _expanded ? LucideIcons.x : LucideIcons.utensilsCrossed,
+                          size: DashboardIcons.size,
                           color: Colors.white,
                         ),
                       ),
@@ -290,11 +289,9 @@ class _MealInputBarState extends State<_MealInputBar> {
       padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3), // px-3
       decoration: BoxDecoration(
         color: NhamColors.elev, // bg-card
-        borderRadius: BorderRadius.circular(
-          NhamRadii.containerLg,
-        ), // rounded-2xl
+        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+        // border-nham-border/70 → focus-within:border-nham-accent/50.
         border: Border.all(
-          // border-nham-border/70 → focus-within:border-nham-accent/50.
           color: focused ? NhamColors.accent50 : const Color(0xB3E8E6DC),
         ),
       ),
@@ -307,44 +304,47 @@ class _MealInputBarState extends State<_MealInputBar> {
               maxLength: 300,
               cursorColor: NhamColors.accent,
               onSubmitted: (_) => widget.onSubmit(),
-              style: NhamTextStyles.sansRegular(
-                fontSize: NhamFontSize.sm,
-              ).copyWith(color: NhamColors.text),
+              // Same composer type as the logging MealInput field.
+              style: dashBody(),
               decoration: InputDecoration(
                 counterText: '',
                 isCollapsed: true,
                 border: InputBorder.none,
                 hintText: tr('logging.placeholder'),
-                hintStyle: NhamTextStyles.sansRegular(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: NhamColors.stone),
+                hintStyle: dashBody(color: kInkMuted),
               ),
             ),
           ),
           const SizedBox(width: NhamSpacing.sp2), // gap-2
           // Submit: h-8 w-8 rounded-xl btn → hover btn-hover; disabled track.
           GestureDetector(
+            // Tap target = DashboardIcons.hit; the 32pt visual keeps its size.
+            behavior: HitTestBehavior.opaque,
             onTapDown:
                 hasText ? (_) => setState(() => _sendPressed = true) : null,
             onTapUp:
                 hasText ? (_) => setState(() => _sendPressed = false) : null,
             onTapCancel: () => setState(() => _sendPressed = false),
             onTap: hasText ? widget.onSubmit : null,
-            child: Container(
-              width: 32, // h-8 w-8
-              height: 32,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color:
-                    !hasText
+            child: SizedBox.square(
+              dimension: DashboardIcons.hit,
+              child: Center(
+                child: Container(
+                  width: 32, // h-8 w-8
+                  height: 32,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: !hasText
                         ? NhamColors.track
                         : (_sendPressed ? NhamColors.btnHover : NhamColors.btn),
-                borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // 12
-              ),
-              child: Icon(
-                LucideIcons.arrowUp,
-                size: 16, // h-4 w-4
-                color: hasText ? Colors.white : NhamColors.stone,
+                    borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+                  ),
+                  child: Icon(
+                    LucideIcons.arrowUp,
+                    size: DashboardIcons.size,
+                    color: hasText ? Colors.white : kInkMuted,
+                  ),
+                ),
               ),
             ),
           ),

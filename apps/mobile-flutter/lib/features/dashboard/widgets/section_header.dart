@@ -7,11 +7,14 @@ import 'package:flutter/material.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/calm_tokens.dart';
+import '../logic/dashboard_spacing.dart';
 
-/// The dashboard section label: an 11px bold uppercase taupe eyebrow with wide
-/// tracking. A [range] (or [action]) makes it a space-between row with a
-/// read-only range badge (same eyebrow size, lighter weight) on the trailing
-/// edge.
+/// The dashboard section label: an uppercase Meta caption. A [range] (or
+/// [action]) makes it a space-between row with a read-only range badge on the
+/// trailing edge.
+///
+/// It carries NO margin of its own — the parent stack owns the gap to the card
+/// below it (`DashboardSpacing.block`), so the two never double up.
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
@@ -30,35 +33,20 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Both label and badge are Meta 12, muted — the uppercase is what marks
+    // them as structure. The call site owns the transform (no hidden one).
     final Widget? trailing = action ??
-        (range != null
-            ? Text(range!.toUpperCase(),
-                style: dashEyebrow(
-                    color: kInkMuted, weight: FontWeight.w500))
-            : null);
+        (range != null ? Text(range!.toUpperCase(), style: dashMeta()) : null);
 
-    final label = Text(
-      title.toUpperCase(),
-      style: dashEyebrow(),
-    );
+    final label = Text(title.toUpperCase(), style: dashMeta());
 
-    if (trailing == null) {
-      return _HeaderFadeIn(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
-          child: label,
-        ),
-      );
-    }
+    if (trailing == null) return _HeaderFadeIn(child: label);
 
     return _HeaderFadeIn(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [Flexible(child: label), trailing],
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [Flexible(child: label), trailing],
       ),
     );
   }
@@ -142,7 +130,7 @@ class _SectionStateState extends State<SectionState> {
     final hasAction = widget.actionLabel != null && widget.onAction != null;
     return Container(
       constraints: const BoxConstraints(minHeight: 180),
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: DashboardSpacing.card,
       decoration: BoxDecoration(
         color: kCardSurface,
         borderRadius: BorderRadius.circular(kCardRadius),
@@ -161,9 +149,10 @@ class _SectionStateState extends State<SectionState> {
                 color: kTrack,
                 shape: BoxShape.circle,
               ),
-              child: Icon(widget.icon, size: 22, color: NhamColors.stone),
+              child: Icon(widget.icon,
+                  size: DashboardIcons.size, color: kInkMuted),
             ),
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: DashboardSpacing.section),
           ],
           Text(
             widget.message,
@@ -171,7 +160,7 @@ class _SectionStateState extends State<SectionState> {
             style: dashBody(color: kInkMuted),
           ),
           if (hasAction) ...[
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: DashboardSpacing.section),
             // hover:bg-nham-btn-hover — map web hover to the pressed state.
             GestureDetector(
               onTapDown: (_) => setState(() => _pressed = true),
