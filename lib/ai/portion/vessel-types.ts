@@ -15,9 +15,6 @@ export type ClientVessel = ContainerVessel | PieceVessel;
 
 export type PipelineVessel =
   | (ContainerVessel & {
-      token: string;
-      guardG: { low: number; high: number };
-      midG: number;
       provenance: 'vessel_prior';
     })
   | (PieceVessel & {

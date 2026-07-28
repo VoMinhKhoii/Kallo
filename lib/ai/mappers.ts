@@ -5,7 +5,6 @@ import {
   decideMealLanguage,
   type SupportedOutputLanguage,
 } from './language/detect';
-import type { PieceVessel } from './portion/vessel-types';
 import type { PipelineResult, UserContext } from './types';
 
 type ProfileRow = typeof userProfiles.$inferSelect;
@@ -97,15 +96,6 @@ function toMacros(nutrition: {
   };
 }
 
-function toPieceKind(vessel: {
-  family: string;
-  kind?: PieceVessel['kind'];
-}): PieceVessel['kind'] {
-  if (vessel.family === 'piece-fish') return 'fish';
-  if (vessel.family === 'piece-meat') return 'meat';
-  return vessel.kind ?? 'meat';
-}
-
 /**
  * Maps PipelineResult → ParsedMeal for the /api/analyze-meal response.
  * Uses meal item names (user-facing cooked names) for display, not raw DB ingredient names.
@@ -127,7 +117,7 @@ export function toParsedMeal(result: PipelineResult): ParsedMeal {
             family: 'piece',
             tier: mealItem.vessel.tier,
             count: mealItem.vessel.count,
-            kind: toPieceKind(mealItem.vessel),
+            kind: mealItem.vessel.kind,
           }
         : {
             family: mealItem.vessel.family,

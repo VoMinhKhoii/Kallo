@@ -5,7 +5,7 @@ import {
   DEFAULT_MATCH_CONCURRENCY,
   type IngredientV2MatchResult,
 } from '../matching/top-k-cascade';
-import { attachVesselToResult } from '../portion/vessel-envelope';
+import { attachVesselToMealItems } from '../portion/vessel-envelope';
 import {
   buildMealItemOffsetByName,
   buildPerMealItemOffsetMap,
@@ -99,6 +99,7 @@ export async function analyzeMealV2(
   const call2Temperature = options.call2Temperature ?? 0.4;
   const traceContext = options.traceContext;
   const profile = resolveModelProfile();
+  const vesselEnabled = isPortionVesselEnabled();
   const promptCtx = toPromptPersonalizationContext(userContext);
   const t0 = Date.now();
 
@@ -154,6 +155,7 @@ export async function analyzeMealV2(
       emit,
       topK,
       matchConcurrency,
+      vesselEnabled,
     });
 
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
@@ -278,12 +280,13 @@ export async function analyzeMealV2(
           bridged.unmatched,
           userContext
         );
-        attachVesselToResult(
-          assembled.result,
-          decomposition.mealItems,
-          vesselEnvelopes,
-          isPortionVesselEnabled()
-        );
+        if (vesselEnabled) {
+          attachVesselToMealItems(
+            assembled.result.mealItems,
+            decomposition.mealItems,
+            vesselEnvelopes
+          );
+        }
         return {
           bridged,
           ...assembled,

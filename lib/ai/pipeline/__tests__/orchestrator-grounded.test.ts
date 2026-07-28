@@ -300,7 +300,6 @@ describe('analyzeMealV2 — vessel result surface', () => {
           family: 'bowl',
           tier: 2,
           dishClass: 'soup',
-          token: 'tô',
           provenance: 'vessel_prior',
         });
       } else {

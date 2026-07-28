@@ -105,7 +105,6 @@ describe('isFullyGrounded — conservative qualification', () => {
         decomposition: decomposition(),
         matchResults: [exactMatch('cooked')],
         portionResolutions: [anchor(150)],
-        vesselEnvelopes: [null],
       })
     ).toBe(true);
   });
@@ -116,7 +115,6 @@ describe('isFullyGrounded — conservative qualification', () => {
         decomposition: decomposition(),
         matchResults: [embeddingMatch()],
         portionResolutions: [anchor(150)],
-        vesselEnvelopes: [null],
       })
     ).toBe(false);
   });
@@ -127,7 +125,6 @@ describe('isFullyGrounded — conservative qualification', () => {
         decomposition: decomposition(),
         matchResults: [unmatched()],
         portionResolutions: [anchor(150)],
-        vesselEnvelopes: [null],
       })
     ).toBe(false);
   });
@@ -138,7 +135,6 @@ describe('isFullyGrounded — conservative qualification', () => {
         decomposition: decomposition(),
         matchResults: [exactMatch('cooked')],
         portionResolutions: [llmRange()],
-        vesselEnvelopes: [null],
       })
     ).toBe(false);
   });
@@ -149,7 +145,6 @@ describe('isFullyGrounded — conservative qualification', () => {
         decomposition: decomposition(['bỏ da']),
         matchResults: [exactMatch('cooked')],
         portionResolutions: [anchor(150)],
-        vesselEnvelopes: [null],
       })
     ).toBe(false);
   });
@@ -175,7 +170,6 @@ describe('isFullyGrounded — conservative qualification', () => {
         decomposition: decomp,
         matchResults: [exactMatch('cooked'), unmatched()],
         portionResolutions: [anchor(150), anchor(200)],
-        vesselEnvelopes: [null],
       })
     ).toBe(false);
   });
@@ -186,68 +180,8 @@ describe('isFullyGrounded — conservative qualification', () => {
         decomposition: { isFood: true, mealSlot: null, mealItems: [] },
         matchResults: [],
         portionResolutions: [],
-        vesselEnvelopes: [],
       })
     ).toBe(false);
-  });
-
-  it('allows a fully anchored meal with a precomputed vessel envelope', () => {
-    const decomp = decomposition();
-    decomp.mealItems[0].vesselToken = 'tô';
-    expect(
-      isFullyGrounded({
-        decomposition: decomp,
-        matchResults: [exactMatch('cooked')],
-        portionResolutions: [anchor(150)],
-        vesselEnvelopes: [
-          {
-            family: 'bowl',
-            tier: 2,
-            dishClass: 'solid',
-            token: 'tô',
-            vesselMl: 700,
-            guardG: { low: 250, high: 570 },
-            midG: 394,
-          },
-        ],
-      })
-    ).toBe(true);
-  });
-
-  it('DISQUALIFIES a vessel meal when any ingredient is unanchored', () => {
-    const decomp = decomposition();
-    decomp.mealItems[0].vesselToken = 'tô';
-    expect(
-      isFullyGrounded({
-        decomposition: decomp,
-        matchResults: [exactMatch('cooked')],
-        portionResolutions: [llmRange()],
-        vesselEnvelopes: [
-          {
-            family: 'bowl',
-            tier: 2,
-            dishClass: 'solid',
-            token: 'tô',
-            vesselMl: 700,
-            guardG: { low: 250, high: 570 },
-            midG: 394,
-          },
-        ],
-      })
-    ).toBe(false);
-  });
-
-  it('allows the normal fast-path gate with all-null envelopes', () => {
-    const decomp = decomposition();
-    decomp.mealItems[0].vesselToken = 'tô';
-    expect(
-      isFullyGrounded({
-        decomposition: decomp,
-        matchResults: [exactMatch('cooked')],
-        portionResolutions: [anchor(150)],
-        vesselEnvelopes: [null],
-      })
-    ).toBe(true);
   });
 });
 

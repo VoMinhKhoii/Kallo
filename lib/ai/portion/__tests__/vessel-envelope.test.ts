@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  NULL_BOUNDED_NUTRITION,
+  NULL_NUTRITION_VALUES,
+} from '../../__tests__/test-helpers';
+import type { PipelineMealItem } from '../../types';
+import {
   type DishClass,
   guardBandG,
   midG,
@@ -9,7 +14,7 @@ import {
   type VesselTier,
 } from '../vessel-data';
 import {
-  attachVesselToResult,
+  attachVesselToMealItems,
   classifyDishClass,
   type DishLike,
   resolveVesselEnvelope,
@@ -19,6 +24,13 @@ const dish = (overrides: Partial<DishLike> = {}): DishLike => ({
   name: 'test dish',
   ingredients: [],
   ...overrides,
+});
+
+const mealItem = (name: string): PipelineMealItem => ({
+  name,
+  ingredients: [],
+  boundedNutrition: NULL_BOUNDED_NUTRITION,
+  displayedNutrition: NULL_NUTRITION_VALUES,
 });
 
 describe('vessel token resolution', () => {
@@ -85,29 +97,29 @@ describe('piece tier assets', () => {
   it('matches the generated portion filenames', () => {
     expect(PIECE_TIERS.map((tier) => tier.assets)).toEqual([
       [
-        { file: 'fish-1-chunk.png', aspect: 1.06 },
-        { file: 'meat-1-cubes.png', aspect: 1.83 },
-        { file: 'poultry-1-chunk.png', aspect: 1.02 },
+        { file: 'fish-1-chunk.webp', aspect: 1.06 },
+        { file: 'meat-1-cubes.webp', aspect: 1.83 },
+        { file: 'poultry-1-chunk.webp', aspect: 1.02 },
       ],
       [
-        { file: 'fish-2-lat.png', aspect: 2.19 },
-        { file: 'meat-2-belly-slices.png', aspect: 1.28 },
-        { file: 'poultry-2-wing.png', aspect: 0.95 },
+        { file: 'fish-2-lat.webp', aspect: 2.19 },
+        { file: 'meat-2-belly-slices.webp', aspect: 1.28 },
+        { file: 'poultry-2-wing.webp', aspect: 0.95 },
       ],
       [
-        { file: 'fish-3-khoanh.png', aspect: 1.29 },
-        { file: 'meat-3-chop.png', aspect: 0.82 },
-        { file: 'poultry-3-drumstick.png', aspect: 0.49 },
+        { file: 'fish-3-khoanh.webp', aspect: 1.29 },
+        { file: 'meat-3-chop.webp', aspect: 0.82 },
+        { file: 'poultry-3-drumstick.webp', aspect: 0.49 },
       ],
       [
-        { file: 'fish-4-portion.png', aspect: 2.17 },
-        { file: 'meat-4-steak.png', aspect: 0.74 },
-        { file: 'poultry-4-breast.png', aspect: 0.58 },
+        { file: 'fish-4-portion.webp', aspect: 2.17 },
+        { file: 'meat-4-steak.webp', aspect: 0.74 },
+        { file: 'poultry-4-breast.webp', aspect: 0.58 },
       ],
       [
-        { file: 'fish-5-large.png', aspect: 2.17 },
-        { file: 'meat-5-big-steak.png', aspect: 0.72 },
-        { file: 'poultry-5-quarter.png', aspect: 1.03 },
+        { file: 'fish-5-large.webp', aspect: 2.17 },
+        { file: 'meat-5-big-steak.webp', aspect: 0.72 },
+        { file: 'poultry-5-quarter.webp', aspect: 1.03 },
       ],
     ]);
   });
@@ -401,34 +413,27 @@ describe('vessel gram envelopes', () => {
   });
 });
 
-describe('attachVesselToResult', () => {
+describe('attachVesselToMealItems', () => {
   it('aligns by index and skips absent or unknown vessels', () => {
     const dishes = [
       dish({ name: 'phở', vesselToken: 'tô' }),
       dish({ name: 'second', vesselToken: 'jar' }),
       dish({ name: 'third' }),
     ];
-    const result = {
-      mealItems: [
-        { name: 'PHỞ' },
-        { name: 'second', vessel: 'unchanged' },
-        { name: 'third' },
-      ],
-    };
-    const returned = attachVesselToResult(
-      result,
+    const mealItems = [mealItem('PHỞ'), mealItem('second'), mealItem('third')];
+    attachVesselToMealItems(
+      mealItems,
       dishes,
       dishes.map(resolveVesselEnvelope)
     );
 
-    expect(returned).toBe(result);
-    expect(result.mealItems[0].vessel).toMatchObject({
+    expect(mealItems[0].vessel).toMatchObject({
       family: 'bowl',
       tier: 2,
       dishClass: 'soup',
     });
-    expect(result.mealItems[1].vessel).toBe('unchanged');
-    expect(result.mealItems[2]).not.toHaveProperty('vessel');
+    expect(mealItems[1]).not.toHaveProperty('vessel');
+    expect(mealItems[2]).not.toHaveProperty('vessel');
   });
 
   it('skips envelopes when result items are in a mismatched order', () => {
@@ -436,12 +441,14 @@ describe('attachVesselToResult', () => {
       dish({ name: 'phở', vesselToken: 'tô' }),
       dish({ name: 'cơm tấm', vesselToken: 'đĩa' }),
     ];
-    const result = {
-      mealItems: [{ name: 'cơm tấm' }, { name: 'phở' }],
-    };
+    const mealItems = [mealItem('cơm tấm'), mealItem('phở')];
 
-    attachVesselToResult(result, dishes, dishes.map(resolveVesselEnvelope));
+    attachVesselToMealItems(
+      mealItems,
+      dishes,
+      dishes.map(resolveVesselEnvelope)
+    );
 
-    expect(result.mealItems.every((item) => !('vessel' in item))).toBe(true);
+    expect(mealItems.every((item) => !('vessel' in item))).toBe(true);
   });
 });

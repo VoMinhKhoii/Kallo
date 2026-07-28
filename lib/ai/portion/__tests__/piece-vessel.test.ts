@@ -6,7 +6,7 @@ import {
   resolvePieceVessel,
 } from '../piece-vessel';
 import { nearestPieceTier, PIECE_TIERS, pieceAssetFor } from '../vessel-data';
-import { attachVesselToResult } from '../vessel-envelope';
+import { attachVesselToMealItems } from '../vessel-envelope';
 
 function item(
   ingredients: Array<{ name: string; grams: number; foodGroupEn?: string }>
@@ -335,9 +335,6 @@ describe('resolvePieceVessel', () => {
       family: 'plate',
       tier: 2,
       dishClass: 'solid',
-      token: 'dĩa',
-      guardG: { low: 100, high: 200 },
-      midG: 150,
       provenance: 'vessel_prior',
     };
 
@@ -349,22 +346,12 @@ describe('resolvePieceVessel', () => {
     ).toBeNull();
   });
 
-  it('does not attach anything when the vessel flag seam is disabled', () => {
-    const mealItem = item([{ name: 'cá hồi', grams: 160 }]);
-    const source = dish([{ rawName: 'cá hồi', count: 1, unitToken: 'miếng' }]);
-    mealItem.name = source.name;
-
-    attachVesselToResult({ mealItems: [mealItem] }, [source], [null], false);
-
-    expect(mealItem.vessel).toBeUndefined();
-  });
-
   it('does not attach a piece vessel to a misaligned meal item', () => {
     const mealItem = item([{ name: 'cá hồi', grams: 160 }]);
     const source = dish([{ rawName: 'cá hồi', count: 1, unitToken: 'miếng' }]);
     mealItem.name = 'different dish';
 
-    attachVesselToResult({ mealItems: [mealItem] }, [source], [null]);
+    attachVesselToMealItems([mealItem], [source], [null]);
 
     expect(mealItem.vessel).toBeUndefined();
   });
@@ -379,22 +366,22 @@ describe('nearestPieceTier', () => {
 
   it('selects the fish and meat silhouette families', () => {
     expect(pieceAssetFor(PIECE_TIERS[2], 'fish')).toEqual({
-      file: 'fish-3-khoanh.png',
+      file: 'fish-3-khoanh.webp',
       aspect: 1.29,
     });
     expect(pieceAssetFor(PIECE_TIERS[2], 'meat')).toEqual({
-      file: 'meat-3-chop.png',
+      file: 'meat-3-chop.webp',
       aspect: 0.82,
     });
   });
 
   it('selects the poultry silhouette for every tier', () => {
     expect(PIECE_TIERS.map((tier) => pieceAssetFor(tier, 'poultry'))).toEqual([
-      { file: 'poultry-1-chunk.png', aspect: 1.02 },
-      { file: 'poultry-2-wing.png', aspect: 0.95 },
-      { file: 'poultry-3-drumstick.png', aspect: 0.49 },
-      { file: 'poultry-4-breast.png', aspect: 0.58 },
-      { file: 'poultry-5-quarter.png', aspect: 1.03 },
+      { file: 'poultry-1-chunk.webp', aspect: 1.02 },
+      { file: 'poultry-2-wing.webp', aspect: 0.95 },
+      { file: 'poultry-3-drumstick.webp', aspect: 0.49 },
+      { file: 'poultry-4-breast.webp', aspect: 0.58 },
+      { file: 'poultry-5-quarter.webp', aspect: 1.03 },
     ]);
   });
 

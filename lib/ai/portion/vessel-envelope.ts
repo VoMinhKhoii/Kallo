@@ -96,51 +96,28 @@ export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
   };
 }
 
-export function attachVesselToResult<
-  T extends {
-    mealItems: Array<{
-      name: string;
-      vessel?: unknown;
-      ingredients?: PipelineMealItem['ingredients'];
-    }>;
-  },
->(
-  result: T,
+export function attachVesselToMealItems(
+  mealItems: PipelineMealItem[],
   dishes: DishLike[],
-  envelopes: Array<VesselEnvelope | null>,
-  enabled = true
-): T {
-  if (!enabled) return result;
-
+  envelopes: Array<VesselEnvelope | null>
+): void {
   for (const [index, dish] of dishes.entries()) {
     const envelope = envelopes[index] ?? null;
-    const mealItem = result.mealItems[index];
-    if (
-      envelope &&
-      mealItem &&
-      mealItem.name.toLocaleLowerCase() === dish.name.toLocaleLowerCase()
-    ) {
+    const mealItem = mealItems[index];
+    const namesMatch =
+      mealItem?.name.toLocaleLowerCase() === dish.name.toLocaleLowerCase();
+    if (!mealItem || !namesMatch) continue;
+    if (envelope) {
       mealItem.vessel = {
         family: envelope.family,
         tier: envelope.tier,
         dishClass: envelope.dishClass,
-        token: envelope.token,
-        guardG: envelope.guardG,
-        midG: envelope.midG,
         provenance: 'vessel_prior',
       };
     }
-    if (
-      mealItem?.ingredients &&
-      !mealItem.vessel &&
-      mealItem.name.toLocaleLowerCase() === dish.name.toLocaleLowerCase()
-    ) {
-      mealItem.vessel =
-        resolvePieceVessel(
-          { vessel: mealItem.vessel, ingredients: mealItem.ingredients },
-          dish
-        ) ?? undefined;
+    if (!mealItem.vessel) {
+      const pieceVessel = resolvePieceVessel(mealItem, dish);
+      if (pieceVessel) mealItem.vessel = pieceVessel;
     }
   }
-  return result;
 }

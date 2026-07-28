@@ -75,6 +75,7 @@ describe('prepareGrounding vessel envelopes', () => {
       emit: vi.fn(),
       topK: 3,
       matchConcurrency: 2,
+      vesselEnabled: true,
     });
 
     expect(prepared.vesselEnvelopes[0]).toMatchObject({
@@ -89,7 +90,6 @@ describe('prepareGrounding vessel envelopes', () => {
   });
 
   it('returns only null envelopes when the flag is off', async () => {
-    process.env.PORTION_VESSEL_ENABLED = 'false';
     const decomposition: MealDecompositionV2 = {
       isFood: true,
       mealSlot: 'lunch',
@@ -112,6 +112,7 @@ describe('prepareGrounding vessel envelopes', () => {
       emit: vi.fn(),
       topK: 3,
       matchConcurrency: 2,
+      vesselEnabled: false,
     });
 
     expect(prepared.vesselEnvelopes).toEqual([null]);

@@ -1,32 +1,10 @@
 import { z } from 'zod';
+import {
+  explicitMassSchema,
+  sizeModifierSchema,
+  stateHintSchema,
+} from './portion-evidence-schemas';
 import { boundedEstimateSchema } from './schemas';
-
-// ---------------------------------------------------------------------------
-
-export const stateHintSchema = z.enum([
-  'raw_weight',
-  'cooked_weight',
-  'unspecified',
-]);
-
-export const sizeModifierSchema = z.enum(['small', 'medium', 'large']);
-
-export const explicitMassSchema = z
-  .object({
-    grams: z
-      .number()
-      .positive()
-      .finite()
-      .describe(
-        'Verbatim mass in grams the user typed (e.g. 250 for "250gr").'
-      ),
-    basis: z
-      .enum(['raw', 'cooked'])
-      .describe(
-        '"raw" when the weight was measured before cooking ("cân sống"); "cooked" for as-eaten.'
-      ),
-  })
-  .strict();
 
 /**
  * V2 Call 1 ingredient — pure decomposition. Notably absent: `grams`,

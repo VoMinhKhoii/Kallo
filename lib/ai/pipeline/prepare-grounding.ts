@@ -21,7 +21,6 @@ import {
 import type { MealItemWithCandidates } from '../prompts/grounded-estimation';
 import type { StreamEvent } from '../streaming/types';
 import type { UserContext } from '../types';
-import { isPortionVesselEnabled } from './config/portion-vessel-flag';
 import { isFullyGrounded } from './fast-path';
 import { buildCallTwoPayload, withStageLogV2 } from './grounded-support';
 import type { AnalyzeMealTraceContext } from './orchestrator';
@@ -45,6 +44,7 @@ export async function prepareGrounding(args: {
   emit: (event: StreamEvent) => void;
   topK: number;
   matchConcurrency: number;
+  vesselEnabled: boolean;
 }): Promise<GroundingPreparation> {
   const { decomposition, traceContext, emit } = args;
   const flatIngredients = decomposition.mealItems.flatMap((mi) =>
@@ -75,9 +75,8 @@ export async function prepareGrounding(args: {
   const { resolutions: portionResolutions, anchors: resolvedGramsAnchors } =
     resolvePortionsForCallTwo(flatIngredients, args.userContext.inputLanguage);
 
-  const vesselEnabled = isPortionVesselEnabled();
   const vesselEnvelopes = decomposition.mealItems.map((mealItem) =>
-    vesselEnabled ? resolveVesselEnvelope(mealItem) : null
+    args.vesselEnabled ? resolveVesselEnvelope(mealItem) : null
   );
   const mealItemsWithCandidates: MealItemWithCandidates[] = buildCallTwoPayload(
     decomposition,
@@ -92,7 +91,6 @@ export async function prepareGrounding(args: {
     decomposition,
     matchResults,
     portionResolutions,
-    vesselEnvelopes,
   });
   return {
     matchResults,

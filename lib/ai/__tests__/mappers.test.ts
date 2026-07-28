@@ -39,15 +39,22 @@ function pipelineResult(
 describe('toParsedMeal vessel mapping', () => {
   it('passes through only client vessel fields and keeps grams as the unit', () => {
     const parsed = toParsedMeal(
-      pipelineResult({
-        family: 'bowl',
-        tier: 3,
-        dishClass: 'soup',
-        token: 'tô',
-        guardG: { low: 680, high: 1050 },
-        midG: 850,
-        provenance: 'vessel_prior',
-      })
+      pipelineResult(
+        // Round-tripped through JSON to model a legacy `pending_analyses` row:
+        // staged before token/guardG/midG left PipelineVessel, so it still
+        // carries them. The mapper must ignore the extras, not choke on them.
+        JSON.parse(
+          JSON.stringify({
+            family: 'bowl',
+            tier: 3,
+            dishClass: 'soup',
+            token: 'tô',
+            guardG: { low: 680, high: 1050 },
+            midG: 850,
+            provenance: 'vessel_prior',
+          })
+        )
+      )
     );
 
     expect(parsed.items[0]).toMatchObject({
@@ -66,14 +73,15 @@ describe('toParsedMeal vessel mapping', () => {
     expect(parsed.items[0]?.vessel).toBeUndefined();
   });
 
-  it('coerces a legacy piece family and passes piece metadata through', () => {
+  it('passes real piece vessel metadata through', () => {
     const parsed = toParsedMeal(
       pipelineResult({
-        family: 'piece-fish',
+        family: 'piece',
         tier: 3,
         count: 2,
+        kind: 'fish',
         provenance: 'piece_prior',
-      } as unknown as PipelineResult['mealItems'][number]['vessel'])
+      })
     );
 
     expect(parsed.items[0]?.vessel).toEqual({
@@ -82,35 +90,5 @@ describe('toParsedMeal vessel mapping', () => {
       count: 2,
       kind: 'fish',
     });
-  });
-
-  it('coerces legacy meat and missing piece kinds to meat', () => {
-    for (const vessel of [
-      {
-        family: 'piece-meat',
-        tier: 3,
-        count: 2,
-        provenance: 'piece_prior',
-      },
-      {
-        family: 'piece',
-        tier: 3,
-        count: 2,
-        provenance: 'piece_prior',
-      },
-    ]) {
-      const parsed = toParsedMeal(
-        pipelineResult(
-          vessel as unknown as PipelineResult['mealItems'][number]['vessel']
-        )
-      );
-
-      expect(parsed.items[0]?.vessel).toEqual({
-        family: 'piece',
-        tier: 3,
-        count: 2,
-        kind: 'meat',
-      });
-    }
   });
 });
