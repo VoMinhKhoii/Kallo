@@ -10,6 +10,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/skeleton.dart';
+import '../../../theme/nham_theme.dart';
 import '../logic/dashboard_spacing.dart';
 
 // Re-export the shared skeleton primitives so dashboard widgets can pull the
@@ -109,4 +110,51 @@ class WeightCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       SkeletonCard(children: weightCardSkeletonChildren());
+}
+
+/// The full-page loading skeleton — a week-strip row, the Today card, and the
+/// two lower section cards, all under one shimmer sweep. Mirrors [_Content]'s
+/// padding so the swap to real data doesn't jump.
+class DashboardSkeleton extends StatelessWidget {
+  const DashboardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    // The pulse comes from the caller (one outer SkeletonPulse); every card /
+    // header / bar below inherits it and fades in phase.
+    return ListView(
+      padding: EdgeInsets.only(
+        left: NhamSpacing.sp3,
+        right: NhamSpacing.sp3,
+        top: DashboardSpacing.block,
+        bottom: bottomInset + 76,
+      ),
+      children: const [
+        // Week-strip row — four day pills (the strip's own height, then the
+        // one block gap it carries under itself).
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            SkeletonBar(width: 64, height: 72, radius: 16),
+            SkeletonBar(width: 64, height: 72, radius: 16),
+            SkeletonBar(width: 64, height: 72, radius: 16),
+            SkeletonBar(width: 64, height: 72, radius: 16),
+          ],
+        ),
+        SizedBox(height: DashboardSpacing.block),
+        // Section 1 — Today.
+        DashSkeletonHeader(),
+        TodayCardSkeleton(),
+        SizedBox(height: DashboardSpacing.block),
+        // Section 2 — Progress.
+        DashSkeletonHeader(),
+        WeightCardSkeleton(),
+        SizedBox(height: DashboardSpacing.block),
+        // Section 3 — Consistency.
+        DashSkeletonHeader(),
+        SkeletonCard(children: [SkeletonBar(height: 120, radius: 10)]),
+      ],
+    );
+  }
 }

@@ -57,8 +57,10 @@ class DashboardScreen extends ConsumerWidget {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(NhamSpacing.sp6),
-            child: Text(tr('common.notSignedIn'),
-                style: dashBody(color: kInkMuted)),
+            child: Text(
+              tr('common.notSignedIn'),
+              style: dashBody(color: kInkMuted),
+            ),
           ),
         ),
       );
@@ -69,39 +71,38 @@ class DashboardScreen extends ConsumerWidget {
     final bundle = ref.watch(dashboardBundleProvider(args));
 
     return Screen(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-            child: AppHeader(
-              child: Text(_greeting().tr(), style: dashHeadline()),
-            ),
+      child: ScrollSeparator(
+        header: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          child: AppHeader(
+            child: Text(_greeting().tr(), style: dashHeadline()),
           ),
-          Expanded(
-            child: bundle.when(
-              // Skeleton of the real layout, not a spinner, so the load previews
-              // its own shape; one outer pulse keeps nested pulses in phase.
-              loading: () => const SkeletonPulse(child: _DashboardSkeleton()),
-              error: (_, __) => Center(
+        ),
+        child: bundle.when(
+          // Skeleton of the real layout, not a spinner, so the load previews
+          // its own shape; one outer pulse keeps nested pulses in phase.
+          loading: () => const SkeletonPulse(child: DashboardSkeleton()),
+          error:
+              (_, __) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(NhamSpacing.sp6),
                   child: SectionState(
                     icon: LucideIcons.cloudOff,
                     message: tr('dashboard.todayLoadError'),
                     actionLabel: tr('dashboard.retry'),
-                    onAction: () => ref.invalidate(dashboardBundleProvider(args)),
+                    onAction:
+                        () => ref.invalidate(dashboardBundleProvider(args)),
                   ),
                 ),
               ),
-              data: (data) => _Content(
+          data:
+              (data) => _Content(
                 args: args,
                 todayDate: todayDate,
                 targets: _targetsFor(data),
                 isFirstRun: _isFirstRun(data),
               ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -171,15 +172,17 @@ class _ContentState extends State<_Content> {
   /// The browsable days, oldest → today (future days aren't pageable). Today is
   /// always the last page; the strip centers today at index 3, so the past half
   /// (indices 0..3) is exactly today and the three days before it.
-  late final List<String> _days =
-      buildCenteredStripFromAnchor(widget.todayDate).days.sublist(0, 4);
+  late final List<String> _days = buildCenteredStripFromAnchor(
+    widget.todayDate,
+  ).days.sublist(0, 4);
   late final int _todayPage = _days.length - 1;
 
   // The day whose summary the Today card shows; tapping a strip day or swiping
   // the card changes it. Defaults to today (the last page).
   late int _page = _todayPage;
-  late final PageController _pageController =
-      PageController(initialPage: _todayPage);
+  late final PageController _pageController = PageController(
+    initialPage: _todayPage,
+  );
 
   String get _selectedDate => _days[_page];
 
@@ -246,22 +249,23 @@ class _ContentState extends State<_Content> {
             Padding(
               // The card owns no margin; this stack owns the gap under it.
               padding: const EdgeInsets.only(bottom: DashboardSpacing.block),
-              child: widget.isFirstRun
-                  ? TodaySection(
-                      args: widget.args,
-                      targets: widget.targets,
-                      dateLabel: _dateLabel(widget.todayDate, locale),
-                      isFirstRun: true,
-                    )
-                  : _DayPager(
-                      controller: _pageController,
-                      days: _days,
-                      todayPage: _todayPage,
-                      userId: widget.args.userId,
-                      targets: widget.targets,
-                      onPageChanged: _onPageChanged,
-                      dateLabel: (d) => _dateLabel(d, locale),
-                    ),
+              child:
+                  widget.isFirstRun
+                      ? TodaySection(
+                        args: widget.args,
+                        targets: widget.targets,
+                        dateLabel: _dateLabel(widget.todayDate, locale),
+                        isFirstRun: true,
+                      )
+                      : _DayPager(
+                        controller: _pageController,
+                        days: _days,
+                        todayPage: _todayPage,
+                        userId: widget.args.userId,
+                        targets: widget.targets,
+                        onPageChanged: _onPageChanged,
+                        dateLabel: (d) => _dateLabel(d, locale),
+                      ),
             ),
             // SECTION 2 — Progress.
             _Section(
@@ -428,55 +432,6 @@ class _SizeReporterRender extends RenderProxyBox {
       _last = h;
       onHeight(h);
     }
-  }
-}
-
-/// The full-page loading skeleton — a week-strip row, the Today card, and the
-/// two lower section cards, all under one shimmer sweep. Mirrors [_Content]'s
-/// padding so the swap to real data doesn't jump.
-class _DashboardSkeleton extends StatelessWidget {
-  const _DashboardSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-    // The pulse comes from the caller (one outer SkeletonPulse); every card /
-    // header / bar below inherits it and fades in phase.
-    return ListView(
-      padding: EdgeInsets.only(
-        left: NhamSpacing.sp3,
-        right: NhamSpacing.sp3,
-        top: DashboardSpacing.block,
-        bottom: bottomInset + 76,
-      ),
-      children: const [
-        // Week-strip row — four day pills (the strip's own height, then the
-        // one block gap it carries under itself).
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SkeletonBar(width: 64, height: 72, radius: 16),
-            SkeletonBar(width: 64, height: 72, radius: 16),
-            SkeletonBar(width: 64, height: 72, radius: 16),
-            SkeletonBar(width: 64, height: 72, radius: 16),
-          ],
-        ),
-        SizedBox(height: DashboardSpacing.block),
-        // Section 1 — Today.
-        DashSkeletonHeader(),
-        TodayCardSkeleton(),
-        SizedBox(height: DashboardSpacing.block),
-        // Section 2 — Progress.
-        DashSkeletonHeader(),
-        WeightCardSkeleton(),
-        SizedBox(height: DashboardSpacing.block),
-        // Section 3 — Consistency.
-        DashSkeletonHeader(),
-        SkeletonCard(children: [
-          SkeletonBar(height: 120, radius: 10),
-        ]),
-      ],
-    );
   }
 }
 

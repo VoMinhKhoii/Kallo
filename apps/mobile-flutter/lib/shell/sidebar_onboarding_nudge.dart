@@ -3,13 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/onboarding/providers/onboarding_providers.dart';
+import '../theme/calm_tokens.dart';
 import '../theme/nham_colors.dart';
 import '../theme/nham_theme.dart';
-import '../theme/nham_typography.dart';
 
-/// Mobile onboarding nudge — gradient surface (accent/10 → surface → hover/55),
-/// 16px radius, accent@25 ring, p-16, step counter, title (12px), description
-/// (11px), 1px progress bar (accent over border/40), umber CTA.
+/// Mobile onboarding nudge — the drawer's one attention object: a white card
+/// with an accent ring, a step counter, title, description, progress bar and
+/// the umber CTA.
+///
+/// On the calm scale like everything else: Body 14 for the title, Meta 12 for
+/// the counter and description, `kInk`/`kInkMuted` only. It kept a 10px
+/// uppercase eyebrow and a 13px body at 1.65 leading long after the rest of
+/// the app moved — three sizes none of which were on the scale, and the loose
+/// leading that made every surface read padded.
+///
+/// The ring stays: this is a nudge, not a data card, and the accent hairline
+/// is what separates it from the nav rows above it. The umber CTA stays too —
+/// it is the single primary action on the surface, which is exactly what the
+/// umber is reserved for.
 class OnboardingNudge extends ConsumerWidget {
   const OnboardingNudge({required this.onResume, super.key});
 
@@ -28,7 +39,7 @@ class OnboardingNudge extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(NhamSpacing.sp4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(NhamRadii.xxl),
+        borderRadius: BorderRadius.circular(kCardRadius),
         color: NhamColors.elev,
         border: Border.all(color: const Color(0x40C9A87C), width: 1),
       ),
@@ -39,31 +50,22 @@ class OnboardingNudge extends ConsumerWidget {
             tr(
               'app.onboardingNudge.stepCounter',
               namedArgs: {'current': '$safeStep', 'total': '$_total'},
-            ).toUpperCase(),
-            style: NhamTextStyles.sansMedium(
-              fontSize: NhamFontSize.eyebrow,
-            ).copyWith(
-              color: NhamColors.textMuted,
-              letterSpacing: NhamTracking.wide,
             ),
+            style: dashMeta(),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: NhamSpacing.sp2),
           Text(
             tr('app.onboardingNudge.title'),
-            style: NhamTextStyles.sansSemiBold(
-              fontSize: NhamFontSize.sm,
-              height: NhamLeading.snug,
-            ).copyWith(color: NhamColors.text),
+            // Medium, not semibold — 500 is the weight ceiling; Be Vietnam
+            // Pro reads heavy above it.
+            style: dashBody(weight: FontWeight.w500),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: NhamSpacing.sp1),
           Text(
             tr('app.onboardingNudge.description'),
-            style: NhamTextStyles.sansRegular(
-              fontSize: NhamFontSize.detail,
-              height: NhamLeading.relaxed,
-            ).copyWith(color: NhamColors.textMuted),
+            style: dashMeta(),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: NhamSpacing.sp3),
           ClipRRect(
             borderRadius: BorderRadius.circular(NhamRadii.pill),
             child: Container(
@@ -84,7 +86,7 @@ class OnboardingNudge extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: NhamSpacing.sp3),
           NudgeCta(onTap: onResume),
         ],
       ),
@@ -92,7 +94,7 @@ class OnboardingNudge extends ConsumerWidget {
   }
 }
 
-/// Umber CTA inside the nudge — full-width, radius 8, 11px medium white label,
+/// Umber CTA inside the nudge — full-width, radius 8, Body 14 medium in white,
 /// btn→btnHover press shift over ~150ms.
 class NudgeCta extends StatefulWidget {
   const NudgeCta({required this.onTap, super.key});
@@ -118,7 +120,10 @@ class _NudgeCtaState extends State<NudgeCta> {
         duration: const Duration(milliseconds: 150),
         curve: Curves.easeInOut,
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: NhamSpacing.sp3,
+          vertical: NhamSpacing.sp2,
+        ),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: _pressed ? NhamColors.btnHover : NhamColors.btn,
@@ -133,9 +138,7 @@ class _NudgeCtaState extends State<NudgeCta> {
         ),
         child: Text(
           tr('app.onboardingNudge.cta'),
-          style: NhamTextStyles.sansSemiBold(
-            fontSize: NhamFontSize.detail,
-          ).copyWith(color: Colors.white),
+          style: dashBody(color: Colors.white, weight: FontWeight.w500),
         ),
       ),
     );

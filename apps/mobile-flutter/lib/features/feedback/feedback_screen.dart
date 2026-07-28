@@ -11,6 +11,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../data/api_client.dart';
 import 'feedback_fields.dart';
 import '../../shared/widgets/nham_primitives.dart';
+import '../../shared/widgets/scroll_separator.dart';
 import '../../shared/widgets/quiet_action_button.dart';
 import '../../shell/app_header.dart';
 import '../../theme/calm_tokens.dart';
@@ -203,15 +204,12 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   Widget build(BuildContext context) {
     return Screen(
       bottom: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-            child: AppHeader(onBack: () => Navigator.of(context).pop()),
-          ),
-          Expanded(child: _sent ? _buildSent() : _buildForm()),
-        ],
+      child: ScrollSeparator(
+        header: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          child: AppHeader(onBack: () => Navigator.of(context).pop()),
+        ),
+        child: _sent ? _buildSent() : _buildForm(),
       ),
     );
   }
@@ -223,11 +221,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              LucideIcons.circleCheck,
-              size: 40,
-              color: kInk,
-            ),
+            const Icon(LucideIcons.circleCheck, size: 40, color: kInk),
             const SizedBox(height: NhamSpacing.sp4),
             Text(
               tr('settings.feedback.successTitle'),
@@ -272,10 +266,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         const SizedBox(height: NhamSpacing.sp4),
 
         // Type selector.
-        Text(
-          tr('settings.feedback.typeLabel'),
-          style: dashMeta(),
-        ),
+        Text(tr('settings.feedback.typeLabel'), style: dashMeta()),
         const SizedBox(height: NhamSpacing.sp2),
         Row(
           children: [
@@ -294,10 +285,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         const SizedBox(height: NhamSpacing.sp4),
 
         // Message.
-        Text(
-          tr('settings.feedback.messageLabel'),
-          style: dashMeta(),
-        ),
+        Text(tr('settings.feedback.messageLabel'), style: dashMeta()),
         const SizedBox(height: NhamSpacing.sp2),
         Container(
           decoration: BoxDecoration(
@@ -350,13 +338,14 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         FeedbackScreenshotField(
           file: _image,
           onAdd: _busy ? null : _pickImage,
-          onRemove: _busy
-              ? null
-              : () => setState(() {
-                  _image = null;
-                  _uploadedPath = null;
-                  _uploadedForImagePath = null;
-                }),
+          onRemove:
+              _busy
+                  ? null
+                  : () => setState(() {
+                    _image = null;
+                    _uploadedPath = null;
+                    _uploadedForImagePath = null;
+                  }),
         ),
 
         if (_error != null) ...[
@@ -375,7 +364,9 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             busy: _busy,
             enabled: _message.text.trim().isNotEmpty && !_busy,
             onTap:
-                (_busy || _message.text.trim().isEmpty) ? null : () => _submit(),
+                (_busy || _message.text.trim().isEmpty)
+                    ? null
+                    : () => _submit(),
           ),
         ),
       ],

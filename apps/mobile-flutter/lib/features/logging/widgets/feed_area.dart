@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../shared/widgets/scroll_separator.dart';
 import '../../../models/cheat.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
@@ -302,65 +303,60 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       onDiscardFailed: _discardFailed,
     );
 
-    return Column(
-      children: [
-        MacroSummary(view: view, profile: profile),
+    // The hairline anchors under the macro summary, not under the date strip
+    // above it: the summary does not scroll, so a rule any higher would claim
+    // content had passed beneath it when it had not.
+    return ScrollSeparator(
+      header: MacroSummary(view: view, profile: profile),
 
-        // The card list, with the composer FLOATING over its bottom edge —
-        // the feed scrolls under the dock (reserving `_dockHeight` so the last
-        // card can always clear it) instead of stopping above a solid bar.
-        Expanded(
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: FeedList(
-                  view: view,
-                  dockHeight: _dockHeight,
-                  scrollController: _scrollController,
-                  footer: footer,
-                  onRefresh: mealActions.refreshDay,
-                  onRetryDay:
-                      () => ref.invalidate(loggingDayProvider(_dayArgs)),
-                  onRemoveMeal: mealActions.remove,
-                  onUpdateMeal: mealActions.update,
-                  onLogAgain: mealActions.logAgain,
-                ),
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: FeedComposer(
-                  view: view,
-                  calorieTarget: profile.calorieTarget,
-                  errorText: _errorText,
-                  mode: _mode,
-                  cheatIntensity: _cheatIntensity,
-                  onCheatIntensityChange:
-                      (intensity) =>
-                          setState(() => _cheatIntensity = intensity),
-                  userId: widget.profile.userId,
-                  stagingRepeat: _stagingRepeat,
-                  onRepeatCheat: _repeatCheat,
-                  controller: _inputController,
-                  onSubmit: _submit,
-                  onCancel:
-                      () =>
-                          ref.read(streamAnalysisProvider.notifier).cancel(),
-                  analyzing: stream.isAnalyzing,
-                  onModePressed: _openModeSheet,
-                  onBarcodePressed: _openBarcodeSheet,
-                  noticeDismissed: _noticeDismissedFor == widget.date,
-                  onDismissNotice:
-                      () => setState(() => _noticeDismissedFor = widget.date),
-                  onHeightChanged:
-                      (height) => setState(() => _dockHeight = height),
-                ),
-              ),
-            ],
+      // The card list, with the composer FLOATING over its bottom edge —
+      // the feed scrolls under the dock (reserving `_dockHeight` so the last
+      // card can always clear it) instead of stopping above a solid bar.
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: FeedList(
+              view: view,
+              dockHeight: _dockHeight,
+              scrollController: _scrollController,
+              footer: footer,
+              onRefresh: mealActions.refreshDay,
+              onRetryDay: () => ref.invalidate(loggingDayProvider(_dayArgs)),
+              onRemoveMeal: mealActions.remove,
+              onUpdateMeal: mealActions.update,
+              onLogAgain: mealActions.logAgain,
+            ),
           ),
-        ),
-      ],
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: FeedComposer(
+              view: view,
+              calorieTarget: profile.calorieTarget,
+              errorText: _errorText,
+              mode: _mode,
+              cheatIntensity: _cheatIntensity,
+              onCheatIntensityChange:
+                  (intensity) => setState(() => _cheatIntensity = intensity),
+              userId: widget.profile.userId,
+              stagingRepeat: _stagingRepeat,
+              onRepeatCheat: _repeatCheat,
+              controller: _inputController,
+              onSubmit: _submit,
+              onCancel:
+                  () => ref.read(streamAnalysisProvider.notifier).cancel(),
+              analyzing: stream.isAnalyzing,
+              onModePressed: _openModeSheet,
+              onBarcodePressed: _openBarcodeSheet,
+              noticeDismissed: _noticeDismissedFor == widget.date,
+              onDismissNotice:
+                  () => setState(() => _noticeDismissedFor = widget.date),
+              onHeightChanged: (height) => setState(() => _dockHeight = height),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
