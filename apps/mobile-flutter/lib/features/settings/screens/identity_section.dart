@@ -12,12 +12,15 @@ import '../../../data/api_client.dart';
 import '../../../models/circle.dart';
 import '../../../shared/widgets/nham_primitives.dart';
 import '../../../shared/widgets/profile_avatar.dart';
+import '../../../shared/widgets/scroll_separator.dart';
 import '../../../shared/widgets/skeleton.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../circle/data/circle_providers.dart';
+import '../logic/settings_spacing.dart';
+import '../widgets/settings_back_bar.dart';
 
 const int _maxAvatarBytes = 5 * 1024 * 1024;
 const int _displayNameMax = 50;
@@ -137,39 +140,31 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
 
     return Screen(
       bottom: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _IdentityBackHeader(onBack: () => Navigator.of(context).pop()),
-          Expanded(
-            child: profileAsync.when(
-              loading: () => const _IdentitySkeleton(),
-              error: (_, __) => Center(
-                child: Text(tr('common.error'), style: dashBody()),
-              ),
-              data: (profile) {
-                if (!_seeded) {
-                  _seeded = true;
-                  _name.text = profile.displayName?.trim() ?? '';
-                }
-                return _body(profile);
-              },
-            ),
+      child: ScrollSeparator(
+        header: SettingsBackBar(onBack: () => Navigator.of(context).pop()),
+        child: profileAsync.when(
+          loading: () => const _IdentitySkeleton(),
+          error: (_, __) => Center(
+            child: Text(tr('common.error'), style: dashBody()),
           ),
-        ],
+          data: (profile) {
+            if (!_seeded) {
+              _seeded = true;
+              _name.text = profile.displayName?.trim() ?? '';
+            }
+            return _body(profile);
+          },
+        ),
       ),
     );
   }
 
   Widget _body(CircleProfile profile) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
-        NhamSpacing.sp4,
-        NhamSpacing.sp4,
-        NhamSpacing.sp6,
-      ),
+      padding: SettingsSpacing.page,
       children: [
+        // Same left-aligned serif title as the settings root — the sub-page
+        // reads as "Settings" continuing, not as a new centred screen.
         Text(tr('settings.identity.title'), style: dashHeadline()),
         const SizedBox(height: NhamSpacing.sp2),
         Text(
@@ -270,12 +265,7 @@ class _IdentitySkeleton extends StatelessWidget {
       label: tr('common.loading'),
       child: SkeletonPulse(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            NhamSpacing.sp4,
-            NhamSpacing.sp4,
-            NhamSpacing.sp4,
-            NhamSpacing.sp6,
-          ),
+          padding: SettingsSpacing.page,
           children: const [
             SkeletonBar(width: 120, height: 20, radius: 8),
             SizedBox(height: NhamSpacing.sp2),
@@ -348,44 +338,3 @@ class _PillButton extends StatelessWidget {
   }
 }
 
-/// Back header mirroring the settings drill-in screens.
-class _IdentityBackHeader extends StatelessWidget {
-  const _IdentityBackHeader({required this.onBack});
-
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      excludeSemantics: true,
-      label: tr('settings.title'),
-      onTap: onBack,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onBack,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp4,
-            vertical: NhamSpacing.sp3,
-          ),
-          decoration: const BoxDecoration(
-            color: Color(0xE6FDFCF8), // cream @ 90%
-            border: Border(bottom: BorderSide(color: NhamColors.inputBorder)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(LucideIcons.arrowLeft, size: 16, color: kInkMuted),
-              const SizedBox(width: 6),
-              Text(
-                tr('settings.title'),
-                style: dashBody(weight: FontWeight.w500, color: kInkMuted),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

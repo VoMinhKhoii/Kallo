@@ -17,8 +17,8 @@ import 'sidebar_nav_list.dart';
 /// Layout (top → bottom):
 ///   • Header: display name (15px) + email (11.5px), bottom hairline.
 ///   • Scrollable nav list (px-3 py-3, gap-1 between rows).
-///   • Pinned footer: optional onboarding nudge, account card, Settings row,
-///     Sign-out row.
+///   • Pinned footer: optional onboarding nudge and the Settings row. Sign out
+///     is not here — it is the bottom-most row of the Settings screen.
 ///
 /// The panel chrome (width 88vw≤320, slide animation, scrim) is owned by
 /// [NavDrawer] in `tab_scaffold.dart`; this widget is purely the content.

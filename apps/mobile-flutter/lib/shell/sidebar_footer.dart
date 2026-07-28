@@ -10,7 +10,6 @@ import '../theme/nham_theme.dart';
 import '../theme/nham_typography.dart';
 import 'sidebar_nav_list.dart';
 import 'sidebar_onboarding_nudge.dart';
-import 'sidebar_sign_out_row.dart';
 
 class SidebarFooter extends StatelessWidget {
   const SidebarFooter({
@@ -64,8 +63,9 @@ class SidebarFooter extends StatelessWidget {
               context.push('/settings');
             },
           ),
-          const SizedBox(height: 4),
-          SignOutRow(ref: ref, onClose: onClose),
+          // Sign out is NOT here: it lives at the bottom of Settings, in red,
+          // so the drawer stays pure navigation and the session action sits
+          // with the other account actions.
         ],
       ),
     );

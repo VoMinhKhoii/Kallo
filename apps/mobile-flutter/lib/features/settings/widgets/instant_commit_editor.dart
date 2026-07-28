@@ -10,7 +10,6 @@ import 'profile_form_values.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 
 /// A focused settings editor for non-numeric preferences (cooking habits,
 /// region & language). Toggle/select changes instant-commit — the moment a
@@ -172,15 +171,9 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
         ),
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         children: [
-          Text(
-            widget.title,
-            style: NhamTextStyles.serifRegular(
-              fontSize: NhamFontSize.h3,
-            ).copyWith(
-              letterSpacing: NhamTracking.tight,
-              color: NhamColors.text,
-            ),
-          ),
+          // One left-aligned serif title per sub-page, same token as the
+          // settings root — the drill-in reads as a continuation of it.
+          Text(widget.title, style: dashHeadline()),
           const SizedBox(height: NhamSpacing.sp1),
           Padding(
             padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),

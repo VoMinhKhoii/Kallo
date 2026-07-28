@@ -256,9 +256,11 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calm scale, not the 11px eyebrow: settings holds three sizes (serif
+    // title / body / meta) and field labels are quiet meta, sentence case.
     return Text(
-      text.toUpperCase(),
-      style: dashEyebrow(),
+      text,
+      style: dashMeta(),
     );
   }
 }
@@ -626,8 +628,8 @@ class _HeroTarget extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              label.toUpperCase(),
-              style: dashEyebrow(),
+              label,
+              style: dashMeta(),
             ),
             const SizedBox(height: 2), // gap-0.5
             Text(

@@ -12,7 +12,6 @@ import '../../../features/logging/widgets/count_up.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/profile_providers.dart';
 import '../logic/profile_payload.dart';
 import '../panels/body_metrics.dart';
@@ -128,11 +127,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
             ),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             children: [
-              Text(
-                tr('settings.rows.goalPace'),
-                style: NhamTextStyles.serifRegular(fontSize: NhamFontSize.h3)
-                    .copyWith(letterSpacing: NhamTracking.tight, color: NhamColors.text),
-              ),
+              // One left-aligned serif title per sub-page, same token as the
+              // settings root — the drill-in reads as a continuation of it.
+              Text(tr('settings.rows.goalPace'), style: dashHeadline()),
               const SizedBox(height: NhamSpacing.sp1),
               Padding(
                 padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
