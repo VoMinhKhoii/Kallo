@@ -5,6 +5,13 @@ export type WeightGoalDirection = 'up' | 'down' | 'flat';
 export interface WeightSummaryData {
   range: WeightRange;
   weights: number[];
+  /**
+   * `YYYY-MM-DD` logged dates, parallel to `weights` (same length, same order).
+   * Kept as a sibling array rather than folded into a `{ date, weightKg }[]`
+   * so `weights` stays a bare `number[]` for every existing chart consumer —
+   * clients that don't need dates simply ignore this field.
+   */
+  weightDates: string[];
   currentWeight: number;
   todayWeight: number | null;
   weightPlaceholder: number;

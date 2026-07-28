@@ -15,6 +15,7 @@ import type {
 } from '@/lib/types/dashboard';
 import { cn } from '@/lib/utils';
 import { getHeatmapColor, HEATMAP_COLORS } from './heatmap-colors';
+import { HeatmapMonthHeaderRow } from './heatmap-month-headers';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -70,19 +71,8 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
             maxWidth: `${DAY_LABEL_COL + numWeeks * MAX_SQ[range] + numWeeks * gap}px`,
           }}
         >
-          {/* Row 1 — month headers, placed on the week columns they span. */}
-          {data.monthHeaders.map((header) => (
-            <div
-              key={`${header.month}-${header.startColumn}`}
-              className="truncate pb-1 font-medium text-nham-text-muted text-xs"
-              style={{
-                gridRow: 1,
-                gridColumn: `${header.startColumn + 2} / span ${header.span}`,
-              }}
-            >
-              {header.month}
-            </div>
-          ))}
+          {/* Row 1 — month headers, de-overlapped onto the columns they span. */}
+          <HeatmapMonthHeaderRow headers={data.monthHeaders} />
 
           {/* Gutter — day labels, one per cell row. */}
           {DAY_LABELS.map((d, i) => (

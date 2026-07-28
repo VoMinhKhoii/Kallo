@@ -8,6 +8,11 @@ enum WeightGoalDirection { up, down, flat }
 class WeightSummaryData {
   final String range; // '30d' | '90d'
   final List<double> weights;
+
+  /// `YYYY-MM-DD` logged dates, parallel to [weights] (same length, same
+  /// order). Empty when the server predates the field — callers must treat a
+  /// short or empty list as "no dates" rather than indexing blindly.
+  final List<String> weightDates;
   final double currentWeight;
   final double? todayWeight;
   final double weightPlaceholder;
@@ -25,6 +30,7 @@ class WeightSummaryData {
   const WeightSummaryData({
     required this.range,
     required this.weights,
+    required this.weightDates,
     required this.currentWeight,
     required this.todayWeight,
     required this.weightPlaceholder,
@@ -43,6 +49,11 @@ class WeightSummaryData {
         weights: (json['weights'] as List<dynamic>)
             .map((e) => (e as num).toDouble())
             .toList(),
+        // Backwards compatible: an older server omits `weightDates`, in which
+        // case the chart falls back to positional x labels.
+        weightDates: (json['weightDates'] as List<dynamic>? ?? const [])
+            .map((e) => e as String)
+            .toList(),
         currentWeight: (json['currentWeight'] as num).toDouble(),
         todayWeight: (json['todayWeight'] as num?)?.toDouble(),
         weightPlaceholder: (json['weightPlaceholder'] as num).toDouble(),
@@ -59,6 +70,7 @@ class WeightSummaryData {
   Map<String, dynamic> toJson() => {
         'range': range,
         'weights': weights,
+        'weightDates': weightDates,
         'currentWeight': currentWeight,
         'todayWeight': todayWeight,
         'weightPlaceholder': weightPlaceholder,
@@ -74,6 +86,7 @@ class WeightSummaryData {
   WeightSummaryData copyWith({
     String? range,
     List<double>? weights,
+    List<String>? weightDates,
     double? currentWeight,
     double? Function()? todayWeight,
     double? weightPlaceholder,
@@ -88,6 +101,7 @@ class WeightSummaryData {
       WeightSummaryData(
         range: range ?? this.range,
         weights: weights ?? this.weights,
+        weightDates: weightDates ?? this.weightDates,
         currentWeight: currentWeight ?? this.currentWeight,
         todayWeight:
             todayWeight != null ? todayWeight() : this.todayWeight,

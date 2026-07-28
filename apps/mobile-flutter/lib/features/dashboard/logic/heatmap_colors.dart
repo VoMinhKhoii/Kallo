@@ -29,16 +29,19 @@ abstract final class HeatmapColors {
 ({Color? bg, String labelKey}) getHeatmapColor(double? ratio) {
   if (ratio == null) return (bg: null, labelKey: 'noData');
 
+  // Bands are deliberately wide: two of the five colours read as red, so a
+  // narrow scale painted an ordinary ±20% day as failure. Red now starts at
+  // ±50% — "ate half or double the target" — which is worth noticing.
   final dist = (ratio - 1.0).abs();
-  if (dist <= 0.05) return (bg: HeatmapColors.onTarget, labelKey: 'onTarget');
-  if (dist <= 0.1) return (bg: HeatmapColors.close, labelKey: 'close');
-  if (dist <= 0.2) {
+  if (dist <= 0.1) return (bg: HeatmapColors.onTarget, labelKey: 'onTarget');
+  if (dist <= 0.2) return (bg: HeatmapColors.close, labelKey: 'close');
+  if (dist <= 0.35) {
     return (
       bg: HeatmapColors.slight,
       labelKey: ratio > 1 ? 'slightlyOver' : 'slightlyUnder',
     );
   }
-  if (dist <= 0.3) {
+  if (dist <= 0.5) {
     return (
       bg: HeatmapColors.moderate,
       labelKey: ratio > 1 ? 'over' : 'under',
