@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 
 import '../../../../models/cheat.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_theme.dart';
-import '../../../settings/controls/option_strip.dart';
 import '../../logic/feed/view_state.dart';
 import '../../logic/logging_spacing.dart';
+import '../../logic/meal_log_mode.dart';
+import '../cheat_intensity_row.dart';
 import '../cheat_occasion_chips.dart';
 import '../composer_dock.dart';
 import '../meal_input.dart';
 import '../partial_day_notice.dart';
-import '../sheets/meal_mode_sheet.dart';
 
 /// Everything inside the floating dock: the under-logged notice, the inline
 /// confirm error, cheat mode's per-meal controls, and the meal input itself.
@@ -92,7 +91,7 @@ class FeedComposer extends StatelessWidget {
               disabled: stagingRepeat || analyzing,
               onSelect: onRepeatCheat,
             ),
-            _CheatIntensityRow(
+            CheatIntensityRow(
               value: cheatIntensity,
               onChange: onCheatIntensityChange,
             ),
@@ -130,48 +129,6 @@ class FeedComposer extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// The light/medium/heavy intensity picker shown above the composer in cheat
-/// mode — a quiet label + the shared segmented strip.
-class _CheatIntensityRow extends StatelessWidget {
-  const _CheatIntensityRow({required this.value, required this.onChange});
-
-  final CheatIntensity value;
-  final ValueChanged<CheatIntensity> onChange;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('logging.cheatIntensity.label'.tr(), style: dashMeta()),
-              const SizedBox(height: 2),
-              Text('logging.cheatIntensity.helper'.tr(), style: dashMeta()),
-            ],
-          ),
-        ),
-        const SizedBox(width: NhamSpacing.sp3),
-        SizedBox(
-          width: 200,
-          child: OptionStrip(
-            value: value.name,
-            options: [
-              for (final intensity in CheatIntensity.values)
-                OptionStripItem(
-                  value: intensity.name,
-                  label: 'logging.cheatIntensity.${intensity.name}'.tr(),
-                ),
-            ],
-            onChange: (name) => onChange(CheatIntensity.values.byName(name)),
-          ),
-        ),
-      ],
     );
   }
 }

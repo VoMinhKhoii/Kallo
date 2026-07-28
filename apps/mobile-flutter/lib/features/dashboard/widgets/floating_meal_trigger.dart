@@ -53,7 +53,7 @@ class _FloatingMealTriggerState extends ConsumerState<FloatingMealTrigger> {
 
   void _open() {
     HapticFeedback.lightImpact();
-    showQuickLogSheet(context);
+    showQuickLogSheet(context, ref);
   }
 
   // ── Position helpers ───────────────────────────────────────────────────────

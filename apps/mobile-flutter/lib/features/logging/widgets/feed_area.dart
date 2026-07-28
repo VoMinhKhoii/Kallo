@@ -13,13 +13,14 @@ import '../logic/feed/analysis_actions.dart';
 import '../logic/feed/confirm_actions.dart';
 import '../logic/feed/meal_actions.dart';
 import '../logic/feed/view_state.dart';
+import '../logic/meal_log_mode.dart';
 import 'feed/composer_actions.dart';
 import 'feed/feed_composer.dart';
 import 'feed/feed_footer.dart';
 import 'feed/feed_list.dart';
 import 'feed/macro_summary.dart';
 import 'meal_input.dart';
-import 'sheets/meal_mode_sheet.dart';
+import 'sheets/manual_log_sheet.dart';
 
 const _uuid = Uuid();
 
@@ -39,15 +40,6 @@ class FeedArea extends ConsumerStatefulWidget {
 
 class _FeedAreaState extends ConsumerState<FeedArea> {
   final MealInputController _inputController = MealInputController();
-
-  /// The selected composer mode (the pill on the input bar). Normal and Cheat
-  /// are persistent modes (matching web); manual and barcode are one-shot
-  /// sheets that leave the persistent mode untouched.
-  MealLogMode _mode = MealLogMode.normal;
-
-  /// Indulgence magnitude for cheat mode — scales the slider anchor grams
-  /// server-side. Defaults to medium, like the web picker.
-  CheatIntensity _cheatIntensity = CheatIntensity.medium;
 
   /// True while a "log it again" occasion is being re-staged server-side.
   bool _stagingRepeat = false;
@@ -159,7 +151,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   }
 
   /// Core analyze path shared by fresh submit and retry. Honors the persistent
-  /// composer [_mode] (precise vs cheat) and sends the current [_attemptId].
+  /// composer mode (precise vs cheat) — whichever surface last set it, the feed
+  /// composer or the dashboard's quick-log sheet — and sends the current
+  /// [_attemptId].
   void _runAnalyze(String text) {
     refreshRevealedAnalysisDay(
       ref,
@@ -181,8 +175,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       ref,
       message: text,
       date: widget.date,
-      isCheat: _mode == MealLogMode.cheat,
-      cheatIntensity: _cheatIntensity,
+      isCheat: ref.read(mealLogModeProvider) == MealLogMode.cheat,
+      cheatIntensity: ref.read(cheatIntensityProvider),
       attemptId: _attemptId,
     );
   }
@@ -208,17 +202,28 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// Normal and Cheat are the persistent modes — selecting one keeps the
   /// composer in it and puts the cursor straight back in the field.
   void _setMode(MealLogMode mode) {
-    setState(() => _mode = mode);
+    ref.read(mealLogModeProvider.notifier).state = mode;
     _inputController.focus();
   }
 
+  void _setCheatIntensity(CheatIntensity intensity) {
+    ref.read(cheatIntensityProvider.notifier).state = intensity;
+  }
+
+  // Both one-shots open OVER the feed: there is no sheet of ours in the way, so
+  // the mode sheet's own dismissal is the only thing to wait on.
   Future<void> _openModeSheet() => chooseLogMode(
     context,
-    current: _mode,
+    current: ref.read(mealLogModeProvider),
+    onPersistentMode: _setMode,
+    onManual: _openManualSheet,
+    onBarcode: _openBarcodeSheet,
+  );
+
+  Future<void> _openManualSheet() => showManualLogSheet(
+    context,
     userId: widget.profile.userId,
     date: widget.date,
-    onPersistentMode: _setMode,
-    onBarcode: _openBarcodeSheet,
   );
 
   Future<void> _openBarcodeSheet() => openBarcodeLogSheet(
@@ -292,6 +297,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     }
 
     final profile = widget.profile;
+    final mode = ref.watch(mealLogModeProvider);
+    final cheatIntensity = ref.watch(cheatIntensityProvider);
     final stream = ref.watch(streamAnalysisProvider);
     final dayAsync = ref.watch(loggingDayProvider(_dayArgs));
     final confirmPending = ref.watch(confirmMealProvider(profile.userId));
@@ -379,10 +386,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
               view: view,
               calorieTarget: profile.calorieTarget,
               errorText: _errorText,
-              mode: _mode,
-              cheatIntensity: _cheatIntensity,
-              onCheatIntensityChange:
-                  (intensity) => setState(() => _cheatIntensity = intensity),
+              mode: mode,
+              cheatIntensity: cheatIntensity,
+              onCheatIntensityChange: _setCheatIntensity,
               userId: widget.profile.userId,
               stagingRepeat: _stagingRepeat,
               onRepeatCheat: _repeatCheat,
@@ -424,7 +430,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       message: text,
       date: widget.date,
       isCheat: true,
-      cheatIntensity: _cheatIntensity,
+      cheatIntensity: ref.read(cheatIntensityProvider),
       clarifyAnswer: answer,
       attemptId: _attemptId,
     );

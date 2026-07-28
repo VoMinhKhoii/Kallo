@@ -6,20 +6,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../models/cheat.dart';
 import '../../../../shared/widgets/top_toast.dart';
 import '../../data/logging_providers.dart';
+import '../../logic/meal_log_mode.dart';
 import '../sheets/barcode_scanner_sheet.dart';
-import '../sheets/manual_log_sheet.dart';
 import '../sheets/meal_mode_sheet.dart';
 
 /// The first step: choose how to log. Normal and Cheat set the persistent
-/// composer mode (via [onPersistentMode]) and focus the field; Manual opens the
-/// search-and-grams sheet (a one-shot, not a persistent mode); Barcode opens the
-/// scanner sheet (also one-shot).
+/// composer mode (via [onPersistentMode]) and focus the field; Manual and
+/// Barcode are ONE-SHOTS — they open their own sheet and leave the persistent
+/// mode untouched.
+///
+/// Both one-shots are launched by the CALLER ([onManual] / [onBarcode]) rather
+/// than from here, because where they may legally be opened from differs by
+/// entry point: the feed composer opens them over itself, while the dashboard's
+/// quick-log sheet has to close ITSELF first (a sheet must not stack on a
+/// sheet) and therefore hands the launch back to the surface underneath it.
 Future<void> chooseLogMode(
   BuildContext context, {
   required MealLogMode current,
-  required String userId,
-  required String date,
   required ValueChanged<MealLogMode> onPersistentMode,
+  required VoidCallback onManual,
   required VoidCallback onBarcode,
 }) async {
   final picked = await showMealModeSheet(context, current: current);
@@ -28,7 +33,7 @@ Future<void> chooseLogMode(
     case MealLogMode.normal:
       onPersistentMode(MealLogMode.normal);
     case MealLogMode.manual:
-      showManualLogSheet(context, userId: userId, date: date);
+      onManual();
     case MealLogMode.barcode:
       onBarcode();
     case MealLogMode.cheat:
