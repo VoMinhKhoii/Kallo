@@ -111,9 +111,11 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
 
   @override
   PaywallState build() {
-    // Rebuild the state machine on auth changes so packages or in-flight state
-    // from account A cannot survive into account B's paywall.
-    ref.watch(currentSessionProvider)?.user.id;
+    _disposed = false;
+    // A Supabase token refresh replaces the Session object even though the
+    // authenticated user is unchanged. Watch only the selected user id so a
+    // refresh cannot reset a ready paywall in the middle of a purchase.
+    ref.watch(currentSessionProvider.select((session) => session?.user.id));
     ref.onDispose(() => _disposed = true);
     // Kick off the offerings load once when the paywall mounts.
     Future.microtask(loadOfferings);
@@ -156,7 +158,9 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
       if (!_isCurrentUser(userId)) return;
       _set(state.copyWith(phase: PaywallPhase.ready, packages: packages));
     } catch (_) {
-      _set(state.copyWith(phase: PaywallPhase.loadError));
+      if (_isCurrentUser(userId)) {
+        _set(state.copyWith(phase: PaywallPhase.loadError));
+      }
     }
   }
 

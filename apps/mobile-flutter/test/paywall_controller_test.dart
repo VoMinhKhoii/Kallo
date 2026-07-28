@@ -1,8 +1,116 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/data/billing/purchases_service.dart';
+import 'package:nham_mobile/data/session_provider.dart';
 import 'package:nham_mobile/features/paywall/paywall_controller.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+const _userId = '11111111-1111-1111-1111-111111111111';
+const _userIdB = '22222222-2222-2222-2222-222222222222';
+
+final _testSessionProvider = StateProvider<Session?>(
+  (ref) => _session(userId: _userId, accessToken: 'token-a'),
+);
+
+Session _session({required String userId, required String accessToken}) {
+  return Session(
+    accessToken: accessToken,
+    tokenType: 'bearer',
+    user: User(
+      id: userId,
+      appMetadata: const {},
+      userMetadata: const {},
+      aud: 'authenticated',
+      createdAt: '2026-07-28T00:00:00.000Z',
+    ),
+  );
+}
 
 void main() {
+  test('token refresh does not reset a ready paywall state machine', () async {
+    final container = ProviderContainer(
+      overrides: [
+        currentSessionProvider.overrideWith(
+          (ref) => ref.watch(_testSessionProvider),
+        ),
+        purchasesServiceProvider.overrideWithValue(
+          PurchasesService(apiKey: ''),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final phases = <PaywallPhase>[];
+    final subscription = container.listen(
+      paywallControllerProvider,
+      (_, next) => phases.add(next.phase),
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+    await container.pump();
+    await container.pump();
+    expect(
+      container.read(paywallControllerProvider).phase,
+      PaywallPhase.unavailable,
+    );
+
+    phases.clear();
+    container.read(_testSessionProvider.notifier).state = _session(
+      userId: _userId,
+      accessToken: 'token-b',
+    );
+    await container.pump();
+    await container.pump();
+
+    expect(phases, isEmpty);
+    expect(
+      container.read(paywallControllerProvider).phase,
+      PaywallPhase.unavailable,
+    );
+  });
+
+  test('account switch rebuilds a live paywall for the new owner', () async {
+    final container = ProviderContainer(
+      overrides: [
+        currentSessionProvider.overrideWith(
+          (ref) => ref.watch(_testSessionProvider),
+        ),
+        purchasesServiceProvider.overrideWithValue(
+          PurchasesService(apiKey: ''),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final phases = <PaywallPhase>[];
+    final subscription = container.listen(
+      paywallControllerProvider,
+      (_, next) => phases.add(next.phase),
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+    await container.pump();
+    await container.pump();
+    expect(
+      container.read(paywallControllerProvider).phase,
+      PaywallPhase.unavailable,
+    );
+
+    phases.clear();
+    container.read(_testSessionProvider.notifier).state = _session(
+      userId: _userIdB,
+      accessToken: 'token-b',
+    );
+    await container.pump();
+    await container.pump();
+
+    expect(
+      container.read(paywallControllerProvider).phase,
+      PaywallPhase.unavailable,
+    );
+    expect(phases, [PaywallPhase.loading, PaywallPhase.unavailable]);
+  });
+
   test('provider-confirmed restore defers to server reconciliation', () {
     expect(immediateResultForRestore(RestoreOutcome.restored), isNull);
   });

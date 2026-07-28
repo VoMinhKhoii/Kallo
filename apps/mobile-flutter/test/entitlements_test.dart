@@ -262,6 +262,68 @@ void main() {
 
   group('EntitlementsController account isolation', () {
     test(
+      'reconcile stays alive while an unobserved caller awaits the response',
+      () async {
+        final reconcileResponse = Completer<Map<String, dynamic>>();
+        final api = FakeApiClient(
+          (_) => freeJson(),
+          postHandler: (_) => reconcileResponse.future,
+        );
+        final c = ProviderContainer(
+          overrides: [
+            apiClientProvider.overrideWithValue(api),
+            entitlementsUserIdProvider.overrideWith(
+              (ref) => ref.watch(testUserIdProvider),
+            ),
+          ],
+        );
+        addTearDown(c.dispose);
+
+        final reconcile =
+            c.read(entitlementsProvider(userA).notifier).reconcile();
+        await c.pump();
+        reconcileResponse.complete({...freeJson(), 'purchasesEnabled': true});
+
+        final snapshot = await reconcile;
+
+        expect(snapshot?.purchasesEnabled, isTrue);
+        expect(api.postCalls, 1);
+      },
+    );
+
+    test(
+      'post-purchase polling stays alive without a provider subscription',
+      () async {
+        final reconcileResponse = Completer<Map<String, dynamic>>();
+        final api = FakeApiClient(
+          (_) => freeJson(),
+          postHandler: (_) => reconcileResponse.future,
+        );
+        final c = ProviderContainer(
+          overrides: [
+            apiClientProvider.overrideWithValue(api),
+            entitlementsUserIdProvider.overrideWith(
+              (ref) => ref.watch(testUserIdProvider),
+            ),
+          ],
+        );
+        addTearDown(c.dispose);
+
+        final poll = c
+            .read(entitlementsProvider(userA).notifier)
+            .pollUntilPremium(
+              interval: const Duration(milliseconds: 1),
+              timeout: const Duration(milliseconds: 50),
+            );
+        await c.pump();
+        reconcileResponse.complete(premiumJson());
+
+        expect(await poll, isTrue);
+        expect(api.postCalls, 1);
+      },
+    );
+
+    test(
       'account switch does not expose the previous account snapshot',
       () async {
         final api = FakeApiClient(
