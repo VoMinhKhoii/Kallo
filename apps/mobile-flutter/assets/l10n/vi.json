@@ -589,7 +589,7 @@
     },
     "bodyMetrics": {
       "title": "Chỉ số cơ thể",
-      "subtitle": "Chúng tôi dùng thông tin này để tính mục tiêu calo và dinh dưỡng hàng ngày.",
+      "subtitle": "Tất cả đều không bắt buộc — bạn điền càng nhiều, mục tiêu calo và dinh dưỡng hằng ngày càng sát với bạn.",
       "biologicalSex": "Giới tính sinh học",
       "sexPlaceholder": "Chọn…",
       "male": "Nam",
@@ -633,8 +633,6 @@
       "macroSummary": "Mục tiêu hàng ngày",
       "kcal": "kcal",
       "grams": "g",
-      "aboutYou": "Về bạn",
-      "aboutYouHint": "Những mục này không bắt buộc, nhưng khi bạn điền vào, Nhẩm có thể tính mục tiêu phù hợp hơn ngay trên máy.",
       "unlockTitle": "Điền thông tin cơ bản để mở khóa mục tiêu.",
       "unlockHint": "Khi đã điền giới tính, cân nặng, chiều cao, tuổi và mức vận động, đây sẽ thành mục tiêu calo và bảng macro của bạn."
     },

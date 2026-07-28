@@ -589,7 +589,7 @@
     },
     "bodyMetrics": {
       "title": "Your body metrics",
-      "subtitle": "We use these to calculate your daily calorie and macro targets.",
+      "subtitle": "All optional — the more you fill in, the more tailored your daily calorie and macro targets.",
       "biologicalSex": "Biological sex",
       "sexPlaceholder": "Select…",
       "male": "Male",
@@ -633,8 +633,6 @@
       "macroSummary": "Daily targets",
       "kcal": "kcal",
       "grams": "g",
-      "aboutYou": "About you",
-      "aboutYouHint": "These stay optional, but once you fill them in, Nhẩm can compute more tailored targets locally.",
       "unlockTitle": "Fill the basics to unlock targets.",
       "unlockHint": "Once sex, weight, height, age, and activity are filled, this becomes your live calorie target and macro planner."
     },
