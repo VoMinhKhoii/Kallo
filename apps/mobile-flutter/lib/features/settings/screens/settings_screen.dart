@@ -67,17 +67,17 @@ class _SettingsList extends ConsumerWidget {
       child: ScrollSeparator(
         header: Padding(
           padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-          child: AppHeader(onBack: () => GoRouter.of(context).pop()),
+          // The title sits on the header line itself, beside the back chevron
+          // — the same slot and the same serif the dashboard greeting uses, so
+          // every tab's title lands on one line across the app.
+          child: AppHeader(
+            onBack: () => GoRouter.of(context).pop(),
+            child: Text(tr('settings.title'), style: dashHeadline()),
+          ),
         ),
         child: ListView(
           padding: SettingsSpacing.page,
           children: [
-            // The serif title is the first thing on the page and every row
-            // under it starts on the same left edge — no centred app bar,
-            // nothing sharing its line (the Threads settings shape).
-            Text(tr('settings.title'), style: dashHeadline()),
-            const SizedBox(height: SettingsSpacing.title),
-
             // ── Preferences ─────────────────────────────────────────────
             SettingsGroup(
               label: tr('settings.preferences'),

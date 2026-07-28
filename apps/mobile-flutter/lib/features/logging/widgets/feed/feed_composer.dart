@@ -65,16 +65,6 @@ class FeedComposer extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Under-logged past day: the note rides the TOP of the dock, because
-          // the way to fix the day is to type the meal that is missing from it.
-          if (view.showPartialDayNotice)
-            Padding(
-              padding: const EdgeInsets.only(bottom: LoggingSpacing.block),
-              child: PartialDayNotice(
-                calories: view.dailyCalories,
-                target: calorieTarget,
-              ),
-            ),
           if (errorText != null)
             Padding(
               padding: const EdgeInsets.only(bottom: LoggingSpacing.block),
@@ -104,6 +94,16 @@ class FeedComposer extends StatelessWidget {
             onSubmit: onSubmit,
             onCancel: onCancel,
             analyzing: analyzing,
+            // Under-logged past day: the note rides INSIDE the field's card,
+            // because the way to fix the day is to type the meal missing from
+            // it — message and remedy as one object.
+            notice:
+                view.showPartialDayNotice
+                    ? PartialDayNotice(
+                      calories: view.dailyCalories,
+                      target: calorieTarget,
+                    )
+                    : null,
             modeLabel: mealModeLabel(mode),
             modeIcon: mealModeIcon(mode),
             hintText:

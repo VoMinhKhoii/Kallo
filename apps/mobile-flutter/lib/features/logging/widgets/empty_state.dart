@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/kallo_mark.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../circle/data/circle_providers.dart';
 import 'entrances.dart';
@@ -83,11 +82,12 @@ class _EmptyStateState extends ConsumerState<EmptyState> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // The mark stands on the page itself — the tan keeps it present
-          // without making it the loudest thing on an otherwise empty screen.
+          // The mark stands on the page itself, no plate behind it.
           const ZoomIn(
             delay: Duration(milliseconds: 50),
-            child: KalloMark(height: 28, color: NhamColors.accent),
+            // Ink, the same tint the sidebar's wordmark carries by default —
+            // the mark reads as the brand, not as an accent decoration.
+            child: KalloMark(height: 28, color: kInk),
           ),
           const SizedBox(height: NhamSpacing.sp5),
           FadeInDown(

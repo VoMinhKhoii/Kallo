@@ -152,7 +152,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
           // "On track" = the scale's top two tiers (green + light green),
           // i.e. within ±20% — kept in step with `getHeatmapColor`'s bands so
           // the headline number matches what the grid looks like.
-          if ((cell.ratio! - 1.0).abs() <= 0.2) onTarget++;
+          if ((cell.ratio! - 1.0).abs() <= HeatmapBands.onTrack) onTarget++;
         }
       }
     }
@@ -374,6 +374,10 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                         child: Container(
                           height: _legendBarHeight,
                           decoration: const BoxDecoration(
+                            // Stops come from the band edges, not five equal
+                            // slices — an even bar claimed each colour covered
+                            // a fifth of the scale when green alone spans a
+                            // fifth and red only begins past ±50%.
                             gradient: LinearGradient(
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
@@ -384,7 +388,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                                 HeatmapColors.close,
                                 HeatmapColors.onTarget,
                               ],
-                              stops: [0, 0.25, 0.5, 0.75, 1],
+                              stops: HeatmapBands.legendStops,
                             ),
                           ),
                         ),

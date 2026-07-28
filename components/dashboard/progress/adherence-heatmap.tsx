@@ -14,7 +14,11 @@ import type {
   HeatmapRange,
 } from '@/lib/types/dashboard';
 import { cn } from '@/lib/utils';
-import { getHeatmapColor, HEATMAP_COLORS } from './heatmap-colors';
+import {
+  getHeatmapColor,
+  HEATMAP_COLORS,
+  heatmapLegendGradient,
+} from './heatmap-colors';
 import { HeatmapMonthHeaderRow } from './heatmap-month-headers';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -183,9 +187,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
             </span>
             <div
               className="h-1.5 flex-1 rounded-full"
-              style={{
-                background: `linear-gradient(to right, ${HEATMAP_COLORS.far}, ${HEATMAP_COLORS.moderate}, ${HEATMAP_COLORS.slight}, ${HEATMAP_COLORS.close}, ${HEATMAP_COLORS.onTarget})`,
-              }}
+              style={{ background: heatmapLegendGradient() }}
             />
             <span className="text-nham-text-muted text-xs">
               {t('onTarget')}

@@ -50,9 +50,15 @@ class CircleScreen extends ConsumerWidget {
     return Screen(
       child: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-            child: AppHeader(),
+          // Title on the header line, same slot and same serif as the
+          // dashboard greeting; the add control takes the trailing slot it was
+          // already reserving space for.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+            child: AppHeader(
+              trailing: const CircleAddMenu(),
+              child: Text(tr('groups.page.title'), style: dashHeadline()),
+            ),
           ),
           Expanded(
             child: RefreshIndicator(
@@ -65,8 +71,6 @@ class CircleScreen extends ConsumerWidget {
                 header: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _Header(),
-                    const SizedBox(height: NhamSpacing.sp3),
                     const ViewSwitcher(),
                     const SizedBox(height: NhamSpacing.sp3),
                     const MealInvitesSection(),
@@ -112,17 +116,6 @@ class CircleScreen extends ConsumerWidget {
       await ref.read(sharedMealFeedProvider(selected).future);
     } catch (_) {}
   }
-}
-
-class _Header extends StatelessWidget {
-  const _Header();
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(child: Text(tr('groups.page.title'), style: dashHeadline())),
-      const CircleAddMenu(),
-    ],
-  );
 }
 
 class _GroupHeader extends StatelessWidget {

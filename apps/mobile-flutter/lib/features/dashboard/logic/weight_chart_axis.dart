@@ -67,34 +67,53 @@ Map<int, String> weightXTickLabels({
 
   final hasDates = dates.length == pointCount;
   final lastIndex = pointCount - 1;
-  final format = DateFormat.MMMd(locale);
 
-  String labelFor(int index) {
-    if (index == lastIndex) return tr('dashboard.now');
-    if (!hasDates) return tr('dashboard.start');
-    final parsed = DateTime.tryParse(dates[index]);
-    return parsed == null ? '' : format.format(parsed);
-  }
+  // Tried widest-first. A narrow axis buys back ticks by shortening the date
+  // ("Jun 9" → "9/6") BEFORE it starts dropping them — four marks in a terse
+  // format read better than two in a pretty one.
+  final formats = <DateFormat>[
+    DateFormat.MMMd(locale),
+    DateFormat('d/M', locale),
+  ];
 
-  // Positional ticks (start, quarters, now), thinned until they fit.
-  for (var wanted = hasDates ? 5 : 2; wanted >= 2; wanted--) {
-    final indexes = <int>[];
+  Map<int, String> labelsFor(int wanted, DateFormat format) {
+    final labels = <int, String>{};
     for (var i = 0; i < wanted; i++) {
       final index = (lastIndex * i / (wanted - 1)).round();
-      if (!indexes.contains(index)) indexes.add(index);
+      if (labels.containsKey(index)) continue;
+      if (index == lastIndex) {
+        labels[index] = tr('dashboard.now');
+      } else if (!hasDates) {
+        if (index == 0) labels[index] = tr('dashboard.start');
+      } else {
+        final parsed = DateTime.tryParse(dates[index]);
+        if (parsed != null) labels[index] = format.format(parsed);
+      }
     }
-    final labels = <int, String>{};
-    for (final index in indexes) {
-      final label = labelFor(index);
-      if (label.isNotEmpty) labels[index] = label;
-    }
-    if (labels.length < 2) continue;
+    return labels;
+  }
+
+  bool fits(Map<int, String> labels) {
     final widest = labels.values
         .map((label) => _measure(label, style, textScaler))
         .reduce(math.max);
     // 6px of breathing room between neighbouring labels.
-    if ((widest + 6) * labels.length <= plotWidth || labels.length == 2) {
-      return labels;
+    return (widest + 6) * labels.length <= plotWidth;
+  }
+
+  // Without dates there is nothing to tick but the two ends.
+  if (!hasDates) {
+    final ends = labelsFor(2, formats.first);
+    return ends.length >= 2 ? ends : {lastIndex: tr('dashboard.now')};
+  }
+
+  // Aim for 5, hold the line at 4 by trying the compact format, and only then
+  // give ticks up.
+  for (var wanted = 5; wanted >= 2; wanted--) {
+    for (final format in formats) {
+      final labels = labelsFor(wanted, format);
+      if (labels.length < 2) continue;
+      if (fits(labels) || labels.length == 2) return labels;
     }
   }
   return {lastIndex: tr('dashboard.now')};
