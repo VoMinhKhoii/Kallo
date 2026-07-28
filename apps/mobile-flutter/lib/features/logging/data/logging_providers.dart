@@ -203,6 +203,33 @@ final cheatIntensityProvider = StateProvider<CheatIntensity>(
   (ref) => CheatIntensity.medium,
 );
 
+/// Drops the composer state belonging to an account that is leaving.
+///
+/// The three providers above are the only user-content-bearing state in the
+/// app that is NOT `autoDispose` — they have to survive a navigation, because
+/// one surface writes them and another reads them. That also means they
+/// survive a sign-out unless something clears them, which would hand user A's
+/// parked meal to whoever signs in next.
+///
+/// Lives here rather than inline in the session listener so the identity rule
+/// — the part that actually decides whether to clear — is testable without
+/// standing up the whole app.
+///
+/// Returns true when it cleared, so callers (and tests) can assert on it.
+bool resetComposerStateForAccountChange(
+  WidgetRef ref, {
+  required String? previousUserId,
+  required String? nextUserId,
+}) {
+  // Same account (including a token refresh, which re-emits the same id):
+  // leave a half-typed meal exactly where the user left it.
+  if (previousUserId == nextUserId) return false;
+  ref.invalidate(pendingMealProvider);
+  ref.invalidate(mealLogModeProvider);
+  ref.invalidate(cheatIntensityProvider);
+  return true;
+}
+
 /// Session-scoped dismiss state for the once-daily "yesterday looks
 /// under-logged" nudge, keyed by the yesterday date so a fresh day re-prompts.
 /// Mirrors the web's in-memory `yesterdayPromptDismissed` useState — it resets

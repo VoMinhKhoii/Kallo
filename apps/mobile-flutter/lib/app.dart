@@ -35,24 +35,14 @@ class NhamApp extends ConsumerWidget {
         analytics.reset();
       }
 
-      // Drop composer state that belongs to the account that just left.
-      //
-      // Every other user-scoped provider is autoDispose; these three are not,
-      // because they are written by one surface and read by another across a
-      // navigation. That makes them the only user-content-bearing state that
-      // outlives a sign-out. A meal parked by the dashboard sheet is normally
-      // claimed the instant the feed builds — but if the router bounces the
-      // navigation (expired session) the feed never mounts and the text stays
-      // parked, where the NEXT account to open logging would claim it and
-      // stage a meal under their own token.
-      //
-      // Keyed on identity change, not merely on sign-out, so a direct account
-      // switch is covered too.
-      if (prev?.valueOrNull?.user.id != session?.user.id) {
-        ref.invalidate(pendingMealProvider);
-        ref.invalidate(mealLogModeProvider);
-        ref.invalidate(cheatIntensityProvider);
-      }
+      // Composer state belongs to the account that wrote it — see
+      // [resetComposerStateForAccountChange] for why these three providers are
+      // the ones that need clearing.
+      resetComposerStateForAccountChange(
+        ref,
+        previousUserId: prev?.valueOrNull?.user.id,
+        nextUserId: session?.user.id,
+      );
     });
 
     // Wraps the app so a single invite-deep-link listener lives for the whole

@@ -15,20 +15,24 @@ import 'package:nham_mobile/models/cheat.dart';
 /// navigation on an expired session — would be claimed by the NEXT account to
 /// open the feed and staged under their token.
 ///
-/// These tests pin the invalidation, not the listener wiring in `app.dart`;
-/// they fail if someone makes the providers stateful in a way that survives it.
+/// These drive [resetComposerStateForAccountChange], the same function the
+/// `sessionProvider` listener in `app.dart` calls, so they cover the identity
+/// rule that decides WHETHER to clear — not merely the invalidation itself.
 void main() {
   group('composer state is scoped to the account that wrote it', () {
-    test('a parked meal does not survive invalidation', () {
+    test('signing out drops a parked meal', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
       container.read(pendingMealProvider.notifier).state = 'pho bo, one bowl';
-      expect(container.read(pendingMealProvider), 'pho bo, one bowl');
 
-      // What the sessionProvider listener does when the user id changes.
-      container.invalidate(pendingMealProvider);
+      final cleared = resetComposerStateForAccountChange(
+        _Ref(container),
+        previousUserId: 'user-a',
+        nextUserId: null,
+      );
 
+      expect(cleared, isTrue);
       expect(
         container.read(pendingMealProvider),
         isNull,
@@ -36,7 +40,7 @@ void main() {
       );
     });
 
-    test('mode and intensity fall back to their defaults', () {
+    test('switching accounts resets mode and intensity to their defaults', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -44,13 +48,50 @@ void main() {
       container.read(cheatIntensityProvider.notifier).state =
           CheatIntensity.heavy;
 
-      container.invalidate(mealLogModeProvider);
-      container.invalidate(cheatIntensityProvider);
+      resetComposerStateForAccountChange(
+        _Ref(container),
+        previousUserId: 'user-a',
+        nextUserId: 'user-b',
+      );
 
       // Otherwise a fresh sign-in silently composes in cheat mode at someone
       // else's intensity, which changes how the estimate is scaled server-side.
       expect(container.read(mealLogModeProvider), MealLogMode.normal);
       expect(container.read(cheatIntensityProvider), CheatIntensity.medium);
     });
+
+    test('a token refresh for the SAME account keeps the draft', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(pendingMealProvider.notifier).state = 'half-typed lunch';
+
+      // Supabase re-emits the session on refresh with the same user id. That
+      // is not an account change, and discarding someone's half-typed meal
+      // because their token rotated would be its own bug.
+      final cleared = resetComposerStateForAccountChange(
+        _Ref(container),
+        previousUserId: 'user-a',
+        nextUserId: 'user-a',
+      );
+
+      expect(cleared, isFalse);
+      expect(container.read(pendingMealProvider), 'half-typed lunch');
+    });
   });
+}
+
+/// Minimal [WidgetRef] stand-in: the function under test only ever calls
+/// `invalidate`, so a container-backed shim keeps this a plain unit test
+/// rather than dragging in a widget pump.
+class _Ref implements WidgetRef {
+  _Ref(this._container);
+  final ProviderContainer _container;
+
+  @override
+  void invalidate(ProviderOrFamily provider) => _container.invalidate(provider);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnsupportedError('not needed by these tests');
 }
