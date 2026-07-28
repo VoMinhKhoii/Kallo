@@ -212,11 +212,13 @@ class EntitlementsController
       return EntitlementState.free;
     }
 
-    final snapshot = await AsyncValue.guard(_reconcile);
-    if (!_isCurrent(operation)) return null;
+    return _keepAliveWhile(() async {
+      final snapshot = await AsyncValue.guard(_reconcile);
+      if (!_isCurrent(operation)) return null;
 
-    state = snapshot;
-    return snapshot.valueOrNull;
+      state = snapshot;
+      return snapshot.valueOrNull;
+    });
   }
 
   /// After a successful purchase/restore, poll the server until the tier flips
@@ -232,29 +234,40 @@ class EntitlementsController
     final operation = _captureOperation();
     if (operation == null) return false;
 
-    final deadline = DateTime.now().add(timeout);
+    return _keepAliveWhile(() async {
+      final deadline = DateTime.now().add(timeout);
 
-    // Reconcile with the provider once after the store action. Follow-up
-    // checks are local entitlement reads so a slow webhook does not amplify
-    // into repeated RevenueCat API calls.
-    final reconciled = await AsyncValue.guard(_reconcile);
-    if (!_isCurrent(operation)) return false;
-    state = reconciled;
-    if (reconciled.valueOrNull?.isPremium ?? false) return true;
-
-    while (DateTime.now().isBefore(deadline)) {
-      final remaining = deadline.difference(DateTime.now());
-      if (remaining <= Duration.zero) break;
-      await Future<void>.delayed(remaining < interval ? remaining : interval);
+      // Reconcile with the provider once after the store action. Follow-up
+      // checks are local entitlement reads so a slow webhook does not amplify
+      // into repeated RevenueCat API calls.
+      final reconciled = await AsyncValue.guard(_reconcile);
       if (!_isCurrent(operation)) return false;
+      state = reconciled;
+      if (reconciled.valueOrNull?.isPremium ?? false) return true;
 
-      final snapshot = await AsyncValue.guard(_fetch);
-      if (!_isCurrent(operation)) return false;
-      state = snapshot;
-      if (snapshot.valueOrNull?.isPremium ?? false) return true;
+      while (DateTime.now().isBefore(deadline)) {
+        final remaining = deadline.difference(DateTime.now());
+        if (remaining <= Duration.zero) break;
+        await Future<void>.delayed(remaining < interval ? remaining : interval);
+        if (!_isCurrent(operation)) return false;
+
+        final snapshot = await AsyncValue.guard(_fetch);
+        if (!_isCurrent(operation)) return false;
+        state = snapshot;
+        if (snapshot.valueOrNull?.isPremium ?? false) return true;
+      }
+
+      return _isCurrent(operation) && (state.valueOrNull?.isPremium ?? false);
+    });
+  }
+
+  Future<T> _keepAliveWhile<T>(Future<T> Function() operation) async {
+    final keepAlive = ref.keepAlive();
+    try {
+      return await operation();
+    } finally {
+      keepAlive.close();
     }
-
-    return _isCurrent(operation) && (state.valueOrNull?.isPremium ?? false);
   }
 
   String? _captureOperation() {
