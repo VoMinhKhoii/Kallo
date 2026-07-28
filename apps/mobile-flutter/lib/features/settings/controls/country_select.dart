@@ -161,8 +161,8 @@ class _CountrySelectState extends State<CountrySelect> {
                             height: 1,
                             color:
                                 _clearPressed
-                                    ? NhamColors.text
-                                    : NhamColors.textWarm,
+                                    ? kInk
+                                    : kInkMuted,
                           ),
                         ),
                       ),

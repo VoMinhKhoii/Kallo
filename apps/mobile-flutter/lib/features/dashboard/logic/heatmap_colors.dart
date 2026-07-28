@@ -24,33 +24,73 @@ abstract final class HeatmapColors {
   static const Color cheatFill = Color(0xFFF3E6D2);
 }
 
-/// The band edges, as `|ratio - 1|`. The classifier below and the legend bar
-/// both read these, so the bar can never again advertise a scale the cells
-/// don't actually use.
+/// The band edges, as `|ratio - 1|`. The classifier below, the legend bar and
+/// the "% on track" score all read these, so none can drift from the others.
 ///
-/// Deliberately wide: two of the five colours read as red, so a narrow scale
-/// painted an ordinary ±20% day as failure. Red starts at ±50% — "ate half or
-/// double the target" — which is worth noticing.
+/// Deliberately wide AND asymmetric: two of the five colours read as red, so a
+/// narrow symmetric scale painted an ordinary day as failure in both
+/// directions.
 abstract final class HeatmapBands {
-  static const double onTarget = 0.10;
-  static const double close = 0.20;
-  static const double slight = 0.35;
-  static const double moderate = 0.50;
+  /// OVER target — eating more than planned is the signal worth keeping sharp.
+  static const double onTargetOver = 0.10;
+  static const double closeOver = 0.20;
+  static const double slightOver = 0.35;
+  static const double moderateOver = 0.50;
 
-  /// Where each band ENDS along a 0..1 "off target → on target" axis, for the
-  /// legend. Derived from the edges above by mapping distance onto position
-  /// (`1 - dist / moderate`) so every colour occupies its true share of the
-  /// bar instead of an equal fifth.
-  static const List<double> legendStops = [
-    0.0, // far — everything past `moderate` collapses onto the left edge
-    (moderate - slight) / moderate / 2, // moderate band's midpoint
-    1 - (slight + close) / 2 / moderate, // slight band's midpoint
-    1 - (close + onTarget) / 2 / moderate, // close band's midpoint
-    1.0, // onTarget
+  /// UNDER target — deliberately more forgiving than the over side.
+  ///
+  /// The bands used to be symmetric, which read the two directions as equally
+  /// bad. They are not. Eating 20% under target is a light day; eating 20%
+  /// over is the thing a tracker exists to surface. More importantly, most
+  /// under-target days are **under-LOGGED**, not under-eaten — a forgotten
+  /// snack looks identical to a deficit — so punishing that side coloured
+  /// ordinary days as failure and made the grid read as a wall of warm cells.
+  static const double onTargetUnder = 0.20;
+  static const double closeUnder = 0.30;
+  static const double slightUnder = 0.40;
+  static const double moderateUnder = 0.50;
+
+  /// Each band's width in `|ratio - 1|` space, ordered off-target →
+  /// on-target, taken from the OVER side (the legend shows one axis).
+  /// `far` is unbounded above, so it takes the same width as `moderate`.
+  static const List<double> _legendWidths = [
+    moderateOver - slightOver, // far (shown at moderate's width)
+    moderateOver - slightOver, // moderate
+    slightOver - closeOver, // slight
+    closeOver - onTargetOver, // close
+    onTargetOver, // onTarget
   ];
 
-  /// The score band for "% on track" — the top two tiers, green + light green.
-  static const double onTrack = close;
+  /// Boundaries of the five legend segments along a 0..1 off→on axis.
+  static List<double> get legendBoundaries {
+    final total = _legendWidths.reduce((a, b) => a + b);
+    final bounds = <double>[0];
+    var acc = 0.0;
+    for (final w in _legendWidths) {
+      acc += w;
+      bounds.add(acc / total);
+    }
+    return bounds;
+  }
+
+  /// Gradient stops that render the legend as five DISCRETE segments, each
+  /// sized to its band — every colour repeated at both ends of its slice so
+  /// the transitions are hard.
+  ///
+  /// A smooth blend was actively misleading: the cells are five flat colours,
+  /// so a wash implied a continuum that does not exist, and it gave `far`
+  /// almost no width because it sat on the very edge.
+  static List<double> get legendStops {
+    final b = legendBoundaries;
+    return [
+      for (var i = 0; i < 5; i++) ...[b[i], b[i + 1]],
+    ];
+  }
+
+  /// The label keys that count toward "% on track" — green + light green.
+  /// The score reads these rather than re-deriving a threshold, so it can
+  /// never drift from the colours on screen.
+  static const Set<String> onTrackLabels = {'onTarget', 'close'};
 }
 
 /// Resolved fill + i18n label key for a cell's adherence [ratio]
@@ -58,27 +98,28 @@ abstract final class HeatmapBands {
 ({Color? bg, String labelKey}) getHeatmapColor(double? ratio) {
   if (ratio == null) return (bg: null, labelKey: 'noData');
 
+  final over = ratio > 1;
   final dist = (ratio - 1.0).abs();
-  if (dist <= HeatmapBands.onTarget) {
+  // Asymmetric on purpose — see HeatmapBands.onTargetUnder.
+  final onTarget =
+      over ? HeatmapBands.onTargetOver : HeatmapBands.onTargetUnder;
+  final close = over ? HeatmapBands.closeOver : HeatmapBands.closeUnder;
+  final slight = over ? HeatmapBands.slightOver : HeatmapBands.slightUnder;
+  final moderate =
+      over ? HeatmapBands.moderateOver : HeatmapBands.moderateUnder;
+
+  if (dist <= onTarget) {
     return (bg: HeatmapColors.onTarget, labelKey: 'onTarget');
   }
-  if (dist <= HeatmapBands.close) {
-    return (bg: HeatmapColors.close, labelKey: 'close');
-  }
-  if (dist <= HeatmapBands.slight) {
+  if (dist <= close) return (bg: HeatmapColors.close, labelKey: 'close');
+  if (dist <= slight) {
     return (
       bg: HeatmapColors.slight,
-      labelKey: ratio > 1 ? 'slightlyOver' : 'slightlyUnder',
+      labelKey: over ? 'slightlyOver' : 'slightlyUnder',
     );
   }
-  if (dist <= HeatmapBands.moderate) {
-    return (
-      bg: HeatmapColors.moderate,
-      labelKey: ratio > 1 ? 'over' : 'under',
-    );
+  if (dist <= moderate) {
+    return (bg: HeatmapColors.moderate, labelKey: over ? 'over' : 'under');
   }
-  return (
-    bg: HeatmapColors.far,
-    labelKey: ratio > 1 ? 'farOver' : 'farUnder',
-  );
+  return (bg: HeatmapColors.far, labelKey: over ? 'farOver' : 'farUnder');
 }

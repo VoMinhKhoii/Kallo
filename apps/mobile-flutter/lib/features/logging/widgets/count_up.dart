@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/nham_text.dart';
 
 /// Counts a number up from [from] to [value] over [duration] on first build
 /// (and re-counts whenever [value] changes), formatting each frame with [format].
@@ -15,8 +14,7 @@ class CountUpText extends StatefulWidget {
     this.from = 0,
     this.duration = const Duration(milliseconds: 600),
     this.curve = Curves.easeOut,
-    this.variant = NhamTextVariant.body,
-    this.style,
+    required this.style,
     this.enabled = true,
   });
 
@@ -25,8 +23,12 @@ class CountUpText extends StatefulWidget {
   final double from;
   final Duration duration;
   final Curve curve;
-  final NhamTextVariant variant;
-  final TextStyle? style;
+
+  /// Required, not defaulted. This used to fall back to a [NhamTextVariant]
+  /// whose size a caller's `style:` silently overrode — the merge trap the
+  /// design doc warns about. Every call site already passes a `dash*` token;
+  /// making it required stops a future one from quietly rendering at 16.
+  final TextStyle style;
 
   /// When false the value renders directly with no animation (reduced motion /
   /// non-reveal contexts).
@@ -85,20 +87,13 @@ class _CountUpTextState extends State<CountUpText>
   @override
   Widget build(BuildContext context) {
     if (!widget.enabled) {
-      return NhamText(
-        widget.format(widget.value),
-        variant: widget.variant,
-        style: widget.style,
-      );
+      return Text(widget.format(widget.value), style: widget.style);
     }
     return AnimatedBuilder(
       animation: _anim,
       builder:
-          (context, _) => NhamText(
-            widget.format(_anim.value),
-            variant: widget.variant,
-            style: widget.style,
-          ),
+          (context, _) =>
+              Text(widget.format(_anim.value), style: widget.style),
     );
   }
 }

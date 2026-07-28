@@ -149,10 +149,14 @@ class _HeatmapBodyState extends State<_HeatmapBody>
             cell.ratio != null &&
             !cell.hasCheatMeal) {
           total++;
-          // "On track" = the scale's top two tiers (green + light green),
-          // i.e. within ±20% — kept in step with `getHeatmapColor`'s bands so
-          // the headline number matches what the grid looks like.
-          if ((cell.ratio! - 1.0).abs() <= HeatmapBands.onTrack) onTarget++;
+          // Ask the classifier, don't re-derive a threshold: the bands are
+          // asymmetric now, so a single number cannot express "green or
+          // light green" any more.
+          if (HeatmapBands.onTrackLabels.contains(
+            getHeatmapColor(cell.ratio).labelKey,
+          )) {
+            onTarget++;
+          }
         }
       }
     }
@@ -373,20 +377,19 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                         ),
                         child: Container(
                           height: _legendBarHeight,
-                          decoration: const BoxDecoration(
-                            // Stops come from the band edges, not five equal
-                            // slices — an even bar claimed each colour covered
-                            // a fifth of the scale when green alone spans a
-                            // fifth and red only begins past ±50%.
+                          decoration: BoxDecoration(
+                            // Five discrete segments, each sized to its band —
+                            // the same five flat colours the cells use. Each
+                            // colour is repeated so its slice has hard edges.
                             gradient: LinearGradient(
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
-                              colors: [
-                                HeatmapColors.far,
-                                HeatmapColors.moderate,
-                                HeatmapColors.slight,
-                                HeatmapColors.close,
-                                HeatmapColors.onTarget,
+                              colors: const [
+                                HeatmapColors.far, HeatmapColors.far,
+                                HeatmapColors.moderate, HeatmapColors.moderate,
+                                HeatmapColors.slight, HeatmapColors.slight,
+                                HeatmapColors.close, HeatmapColors.close,
+                                HeatmapColors.onTarget, HeatmapColors.onTarget,
                               ],
                               stops: HeatmapBands.legendStops,
                             ),

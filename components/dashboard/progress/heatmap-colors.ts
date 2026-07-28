@@ -15,31 +15,43 @@ export const HEATMAP_COLORS = {
  * double the target" — which is worth noticing.
  */
 export const HEATMAP_BANDS = {
-  onTarget: 0.1,
-  close: 0.2,
-  slight: 0.35,
-  moderate: 0.5,
+  /** OVER target — the signal worth keeping sharp. */
+  over: { onTarget: 0.1, close: 0.2, slight: 0.35, moderate: 0.5 },
+  /**
+   * UNDER target — deliberately more forgiving. Most under-target days are
+   * under-LOGGED rather than under-eaten (a forgotten snack is
+   * indistinguishable from a deficit), so treating both directions equally
+   * coloured ordinary days as failure.
+   */
+  under: { onTarget: 0.2, close: 0.3, slight: 0.4, moderate: 0.5 },
 } as const;
 
-/** The score band for "% on track" — the top two tiers. */
-export const HEATMAP_ON_TRACK_BAND = HEATMAP_BANDS.close;
+/** Label keys that count toward "% on track" — green + light green. */
+export const HEATMAP_ON_TRACK_LABELS = new Set(['onTarget', 'close']);
 
 /**
- * Where each colour sits along a 0..1 "off target → on target" axis, derived
- * from the edges above (`1 - dist / moderate`) so every colour occupies its
- * true share of the legend rather than an equal fifth.
+ * Each band's width in |ratio-1| space, off-target → on-target. `far` is
+ * unbounded above, so it takes the same width as `moderate`.
  */
-export const HEATMAP_LEGEND_STOPS = [
-  0,
-  (HEATMAP_BANDS.moderate - HEATMAP_BANDS.slight) / HEATMAP_BANDS.moderate / 2,
-  1 -
-    (HEATMAP_BANDS.slight + HEATMAP_BANDS.close) / 2 / HEATMAP_BANDS.moderate,
-  1 -
-    (HEATMAP_BANDS.close + HEATMAP_BANDS.onTarget) /
-      2 /
-      HEATMAP_BANDS.moderate,
-  1,
+const LEGEND_WIDTHS = [
+  HEATMAP_BANDS.over.moderate - HEATMAP_BANDS.over.slight, // far
+  HEATMAP_BANDS.over.moderate - HEATMAP_BANDS.over.slight, // moderate
+  HEATMAP_BANDS.over.slight - HEATMAP_BANDS.over.close, // slight
+  HEATMAP_BANDS.over.close - HEATMAP_BANDS.over.onTarget, // close
+  HEATMAP_BANDS.over.onTarget, // onTarget
 ] as const;
+
+/** Boundaries of the five legend segments along a 0..1 off→on axis. */
+export function heatmapLegendBoundaries(): number[] {
+  const total = LEGEND_WIDTHS.reduce((a, b) => a + b, 0);
+  const bounds = [0];
+  let acc = 0;
+  for (const w of LEGEND_WIDTHS) {
+    acc += w;
+    bounds.push(acc / total);
+  }
+  return bounds;
+}
 
 /**
  * The legend bar's CSS gradient, with explicit stops. Without them the browser
@@ -54,8 +66,14 @@ export function heatmapLegendGradient(): string {
     HEATMAP_COLORS.close,
     HEATMAP_COLORS.onTarget,
   ];
+  const bounds = heatmapLegendBoundaries();
+  // Each colour is emitted at BOTH ends of its slice, so the segments have
+  // hard edges. A smooth blend implied a continuum the cells do not have.
   const stops = ramp
-    .map((c, i) => `${c} ${HEATMAP_LEGEND_STOPS[i] * 100}%`)
+    .map(
+      (c, i) =>
+        `${c} ${bounds[i] * 100}%, ${c} ${bounds[i + 1] * 100}%`,
+    )
     .join(', ');
   return `linear-gradient(to right, ${stops})`;
 }
@@ -66,25 +84,28 @@ export function getHeatmapColor(ratio: number | null): {
 } {
   if (ratio === null) return { bg: 'transparent', labelKey: 'noData' };
 
+  const over = ratio > 1;
   const dist = Math.abs(ratio - 1.0);
-  if (dist <= HEATMAP_BANDS.onTarget) {
+  // Asymmetric on purpose — see HEATMAP_BANDS.under.
+  const b = over ? HEATMAP_BANDS.over : HEATMAP_BANDS.under;
+  if (dist <= b.onTarget) {
     return { bg: HEATMAP_COLORS.onTarget, labelKey: 'onTarget' };
   }
-  if (dist <= HEATMAP_BANDS.close) {
+  if (dist <= b.close) {
     return { bg: HEATMAP_COLORS.close, labelKey: 'close' };
   }
-  if (dist <= HEATMAP_BANDS.slight)
+  if (dist <= b.slight)
     return {
       bg: HEATMAP_COLORS.slight,
-      labelKey: ratio > 1 ? 'slightlyOver' : 'slightlyUnder',
+      labelKey: over ? 'slightlyOver' : 'slightlyUnder',
     };
-  if (dist <= HEATMAP_BANDS.moderate)
+  if (dist <= b.moderate)
     return {
       bg: HEATMAP_COLORS.moderate,
-      labelKey: ratio > 1 ? 'over' : 'under',
+      labelKey: over ? 'over' : 'under',
     };
   return {
     bg: HEATMAP_COLORS.far,
-    labelKey: ratio > 1 ? 'farOver' : 'farUnder',
+    labelKey: over ? 'farOver' : 'farUnder',
   };
 }
