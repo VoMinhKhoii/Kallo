@@ -56,7 +56,7 @@ class AggressionSlider extends StatelessWidget {
               ],
             ),
             textAlign: TextAlign.center,
-            style: dashValue(),
+            style: dashBody(weight: FontWeight.w500),
           ),
           const SizedBox(height: NhamSpacing.sp3),
           SliderTheme(

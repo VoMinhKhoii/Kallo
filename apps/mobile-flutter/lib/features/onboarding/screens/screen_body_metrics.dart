@@ -247,17 +247,10 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // "About you" header block (mb-4 before the grid).
-              Text(
-                tr('onboarding.bodyMetrics.aboutYou').toUpperCase(),
-                style: dashEyebrow(),
-              ),
-              const SizedBox(height: NhamSpacing.sp1), // mt-1
-              Text(
-                tr('onboarding.bodyMetrics.aboutYouHint'),
-                style: dashMeta(),
-              ),
-              const SizedBox(height: NhamSpacing.sp4), // mb-4
+              // No "About you" header: it repeated the subtitle above the
+              // card almost word for word, and its ALL-CAPS eyebrow was a
+              // fourth type size on the screen. The subtitle now carries the
+              // "optional" half of what it used to say.
               _buildGrid(),
             ],
           ),

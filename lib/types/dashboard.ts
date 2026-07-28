@@ -29,7 +29,10 @@ export interface HeatmapCell {
 }
 
 export interface HeatmapMonthHeader {
+  /** English short name. Web renders this; mobile localizes from monthIndex. */
   month: string;
+  /** 1-12. Lets a client format the month in its own locale. */
+  monthIndex: number;
   startColumn: number;
   span: number;
 }

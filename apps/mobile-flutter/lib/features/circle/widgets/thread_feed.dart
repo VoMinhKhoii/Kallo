@@ -60,9 +60,9 @@ class ThreadFeed extends ConsumerWidget {
   Widget _list(Widget body) => ListView(
     physics: const AlwaysScrollableScrollPhysics(),
     padding: const EdgeInsets.fromLTRB(
-      NhamSpacing.sp5,
+      NhamSpacing.sp3,
       NhamSpacing.sp2,
-      NhamSpacing.sp5,
+      NhamSpacing.sp3,
       NhamSpacing.sp8,
     ),
     children: [header, const SizedBox(height: NhamSpacing.sp3), body],
@@ -111,9 +111,9 @@ class ThreadFeed extends ConsumerWidget {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
-        NhamSpacing.sp5,
+        NhamSpacing.sp3,
         NhamSpacing.sp2,
-        NhamSpacing.sp5,
+        NhamSpacing.sp3,
         NhamSpacing.sp8,
       ),
       children: children,

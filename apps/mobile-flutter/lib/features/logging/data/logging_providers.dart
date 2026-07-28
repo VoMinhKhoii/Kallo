@@ -17,6 +17,7 @@ import '../../../data/api_client.dart';
 import '../../../models/cheat.dart';
 // Prefixed: dashboard_providers also exports a `loggingDayProvider`.
 import '../../dashboard/data/dashboard_providers.dart' as dash;
+import '../logic/meal_log_mode.dart';
 import 'logging_keys.dart';
 import 'logging_models.dart';
 
@@ -163,6 +164,45 @@ Future<void> stageCheatRepeat(
       .refresh();
 }
 
+/// A meal composed somewhere OTHER than the feed — the dashboard's quick-log
+/// sheet, the first-run suggestion chips — parked here on the way to `/logging`.
+///
+/// A session provider rather than a `?meal=` query parameter for two reasons:
+/// `/logging` is a shell branch that is often ALREADY mounted (a query param
+/// would have to be re-read on every rebuild of the same location, with nothing
+/// to mark it consumed), and the feed frequently is NOT mounted yet when the
+/// text is produced — the profile fetch gates it behind a skeleton. Parking the
+/// text lets the feed claim it on its first build, whenever that turns out to
+/// be.
+///
+/// Exactly one consumer: [FeedArea], which nulls the slot the instant it claims
+/// it, so a rebuild, a tab switch back or a hot reload cannot re-fire it.
+final pendingMealProvider = StateProvider<String?>((ref) => null);
+
+/// The persistent composer mode — the pill on the input bar.
+///
+/// Session state rather than a field on [FeedArea] because a meal can now be
+/// composed from TWO places (the feed composer and the dashboard's quick-log
+/// sheet) and both must mean the same thing by "cheat". Holding it here is what
+/// lets the quick-log sheet offer the real mode selector: the mode the user
+/// picks in the sheet IS the mode `startMealAnalysis` runs in when the feed
+/// claims the parked text — no second value to smuggle across the hand-off, and
+/// no way for the two surfaces to disagree.
+///
+/// Only `normal` and `cheat` are ever stored: `manual` and `barcode` are
+/// one-shot sheets that deliberately leave the persistent mode untouched.
+final mealLogModeProvider = StateProvider<MealLogMode>(
+  (ref) => MealLogMode.normal,
+);
+
+/// Indulgence magnitude for cheat mode — scales the slider anchor grams
+/// server-side. Defaults to medium, like the web picker. Lifted alongside
+/// [mealLogModeProvider] for the same reason: it is read at analyze time,
+/// whichever surface composed the meal.
+final cheatIntensityProvider = StateProvider<CheatIntensity>(
+  (ref) => CheatIntensity.medium,
+);
+
 /// Session-scoped dismiss state for the once-daily "yesterday looks
 /// under-logged" nudge, keyed by the yesterday date so a fresh day re-prompts.
 /// Mirrors the web's in-memory `yesterdayPromptDismissed` useState — it resets
@@ -250,7 +290,12 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
       } catch (_) {
         ref.invalidate(loggingDayProvider(dayArgs));
       }
-      invalidateMealSurfaces(ref.invalidate, arg, originDate, includeDay: false);
+      invalidateMealSurfaces(
+        ref.invalidate,
+        arg,
+        originDate,
+        includeDay: false,
+      );
     }
   }
 }

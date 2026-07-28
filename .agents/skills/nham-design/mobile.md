@@ -10,9 +10,12 @@ or the web scale here.
 Throughline: **hierarchy comes from weight + colour, not size**; a compact,
 uniform vertical rhythm; exactly one editorial serif moment per viewport.
 
-**Live across the app.** Dashboard, Nutrition, Logging, Onboarding, and Settings
-all run on this system; Auth is a deliberate **light-touch** (see _Status_). Do
-all new mobile UI work against this doc.
+**Live across the app** and validated on device. Logging, Dashboard, Settings,
+Feedback and the shell run the full system — three sizes, two colours, one
+named spacing rhythm per surface; Circle and Nutrition are partly ported and
+Auth is a deliberate **light-touch** (see _Status_). Do all new mobile UI work
+against this doc, and read _Traps_ before porting a surface — every entry there
+shipped a visible bug first.
 
 ## Font
 
@@ -170,49 +173,125 @@ can usually just retry.
 
 ## Status / migration
 
-**Palette + token adoption** — settled, unchanged by the density work:
+**Validated on device.** The density rules below are the default for all new
+mobile UI — no longer provisional.
 
-- ✅ **Dashboard, Nutrition, Logging, Onboarding, Settings** — on `kInk` +
-  `kInkMuted` and the calm `dash*` scale.
-- 🔸 **Auth** — a deliberate **light-touch**: body / labels / buttons are on the
-  calm sans tokens and the two-colour palette, but its serif brand identity is
-  preserved intact (the "Nhẩm" wordmark, the italic tagline, and the form titles
-  stay serif — that is the one surface where serif is the point, not an accent).
+| Surface | Type + colour | Named spacing | Notes |
+|---------|---------------|---------------|-------|
+| **Logging** | ✅ 17/14/12 | `logging/logic/logging_spacing.dart` (8px block) | the reference implementation |
+| **Dashboard** | ✅ 40/14/12 + Lora 22 | `dashboard/logic/dashboard_spacing.dart` (12px) | Hero replaces Value here |
+| **Settings** | ✅ 22/14/12 | `settings/logic/settings_spacing.dart` | rows split 4+8 (below) |
+| **Feedback** | ✅ | uses the 12px default | |
+| **Shell / drawer** | ✅ | `NhamSpacing` directly | selected state matches web |
+| **Circle** | 🔸 header + add-menu + padding only | 12px root inset | the feed's 35 files are unported |
+| **Nutrition** | 🔸 range selector + padding | 12px root inset | `dashEyebrow` + raw sizes remain |
+| **Logging `sheets/`** | ❌ | — | 4 files, 35 `NhamText` calls, still the old scale |
+| **Onboarding / Auth** | 🔸 palette only | deliberately wider (32–40) | narrative screens, not data |
 
-Two shared-widget paths still carry pre-calm styling where a call site didn't
-override them: `lib/shared/widgets/nham_text.dart` (its `NhamTextVariant`
-defaults) and the logging `mealQuote` serif variant. These are intentional and
-out of the calm token set; migrate the shared widget separately if desired.
+The `nham_text.dart` `NhamTextVariant` defaults and the logging `mealQuote`
+serif remain outside the calm set on purpose.
 
-### ⚠️ The density rules below are PROVISIONAL
+### Two app-wide changes worth remembering
 
-The *at-most-three-sizes* rule, the `LoggingSpacing` rhythm, `LoggingIcons`,
-never-margin-a-card, and status-colour-on-the-affordance are implemented on
-**logging only** and have **not yet been validated on a physical device**.
+| Change | Scope |
+|--------|-------|
+| `dashBody` leading 1.45 → 1.3, `dashMeta` 1.35 → 1.25 | every surface |
+| Text scaling capped at 1.3x (`app.dart`) | every surface |
 
-Two of the changes are already **app-wide** and reach surfaces that were never
-designed around them — check these first when validating:
+If a screen ever "feels big" again, the leading is still the first lever — two
+numbers in `calm_tokens.dart` that move every screen at once.
 
-| Change | Scope | Risk |
-|--------|-------|------|
-| `dashBody` leading 1.45 → 1.3, `dashMeta` 1.35 → 1.25 | every surface | dashboard / settings / circle / onboarding / auth / nutrition now read tighter than when they were designed |
-| Text scaling capped at 1.3x | every surface | a user above 130% sees text stop growing |
+## Shared widgets the system now owns
 
-Do **not** port the density rules to another surface until logging is signed off
-on hardware. If it is rejected, the leading is the first thing to revert — it is
-two numbers in `calm_tokens.dart` and it moves every screen at once.
+Reach for these before writing a local variant:
 
-### Porting a surface (once logging is signed off)
+- **`shared/widgets/scroll_separator.dart`** — a header hairline that only
+  exists once content has scrolled. Wraps header + scroll view and listens to
+  bubbled `ScrollNotification`, so any scrollable works and a body that swaps
+  skeleton→error→list needs no re-plumbing. On every page.
+  *Anchor it where the scroll actually starts.* Logging puts it under the macro
+  summary, not the date strip, because the summary doesn't move — a rule above
+  a static block claims content passed beneath it when none did.
+- **`shared/widgets/quiet_action_button.dart`** — the warm-wash pill for
+  "commit what I just typed". NOT the umber `NhamButton`, which is reserved for
+  the one primary action per surface; a form's own submit is not that one.
+- **`logging/widgets/macro_trio.dart`** — P/C/F + kcal as fixed columns. Packed
+  left-to-right, the columns drift with the digits and a card of ingredients
+  reads ragged.
+- **`logging/widgets/meal_time_divider.dart`** — the `── 1:04 AM ──` rule.
+  Unsaved cards pass the moment they were entered, so the timeline doesn't
+  break at the card being worked on.
 
-1. Inventory it: `grep -rhoE "NhamTextVariant\.[a-zA-Z]+|dash[A-Z][a-zA-Z]*\(" <dir> | sort | uniq -c`.
-2. Map every hit onto Value 17 / Body 14 / Meta 12. More than three sizes on one
-   screen means the mapping is wrong, not that the screen is special.
-3. Replace `NhamText(variant:)` with plain `Text(style: dash*())`. Watch the
-   merge trap: a call site passing **both** keeps the override and silently
-   drops the variant's size.
-4. Name the surface's gaps in one constants file, the way
-   `logging/logic/logging_spacing.dart` does. Presentational surfaces keep the
-   12px default; only a dense scrolling list earns tighter.
+### The drawer's selected state
+
+Selected = `NhamColors.hover` (#F0EAE0) wash + `kInk` + semibold. Idle =
+`kInkMuted`. This is web parity
+(`components/app/navigation/mobile/mobile-nav-list.tsx`). Flutter had it
+*inverted* — solid umber with white content, and ink when idle, i.e. the colour
+web reserves for selected. Two consequences: a selected row keeps its full wash
+while pressed (hover@40 over an opaque wash renders *lighter*, i.e. inverted
+feedback), and the badge dot is always tan (white vanished on the wash).
+
+## Traps — each of these shipped a visible bug
+
+**`NhamText` merges.** `base.merge(style)`, so a `dash*` override silently
+beats the variant's size. It also upper-cases `eyebrow` and `macroLabel`
+*inside the widget*, and defaults `macroValue` to `TextAlign.right`. Moving a
+call site to plain `Text` drops the transform silently — check the rendered
+word, not just the size. A widget whose `style` defaults to a variant is the
+same trap latent: make `style` required.
+
+**`InputDecorationTheme` wins.** The app theme sets `filled: true` and an
+`OutlineInputBorder` on `enabledBorder`. Clearing only `border` leaves the
+field painting its own box *inside* your container — the nested-card look. Set
+`border`, `enabledBorder`, `focusedBorder`, `disabledBorder` **and**
+`filled: false`, plus `contentPadding` (the theme's is 16/12).
+
+**Narrow weekday names are not one character.** Vietnamese renders `T2`…`T7`,
+`CN`. A fixed 16px gutter wrapped them into a column of stacked letters.
+Measure the widest label; don't assume.
+
+**`DateFormat.MMMd` is three tokens in Vietnamese** — "6 thg 7". On a dense
+axis use numeric `d/M`: same width in every language.
+
+**Server strings are not localized.** The heatmap's month names were built with
+a hardcoded `en-US`, so Vietnamese users read "May / Jun / Jul". Send a number,
+format it client-side.
+
+**Vendored twins drift.** `dashboard/logic/heatmap_colors.dart` and
+`components/dashboard/progress/heatmap-colors.ts` are byte-identical copies.
+Edit both.
+
+**A legend is a key, not a measure.** Sizing the adherence legend's segments to
+their real band widths gave the two warm tiers half the bar, reading as "most
+of your days are bad" before a cell was drawn. Five equal segments.
+
+**Adherence bands are asymmetric** (`HeatmapBands`): under-target runs
+20/30/40/50 against over-target's 10/20/35/50. Most under-target days are
+under-*logged*, not under-eaten — a forgotten snack is indistinguishable from a
+deficit — so punishing both directions equally painted ordinary days as
+failure.
+
+### Row content vs card content
+
+A dashboard **card's edge** sits at 12. Text inside it is further in by the
+card's own padding. A settings **row is not a card**, so its content column
+lands where a card's edge lands — 12 — not 12 plus the row's padding. Settings
+splits that 12 as **4 (list) + 8 (row)** so the net inset matches every other
+tab while the pressed fill still floats inside the screen edge.
+
+### Porting a surface
+
+1. Inventory it: `grep -rhoE "NhamTextVariant\.[a-zA-Z]+|dash[A-Z][a-zA-Z]*\(|fontSize: [0-9.]+" <dir> | sort | uniq -c`.
+2. Map every hit onto three sizes. More than three on one screen means the
+   mapping is wrong, not that the screen is special. Hero 40 and the Lora 22
+   greeting are the documented exemptions — one editorial moment per viewport.
+3. Replace `NhamText(variant:)` with plain `Text(style: dash*())`, minding the
+   merge and uppercase traps above.
+4. Name the surface's gaps in one constants file. Presentational surfaces keep
+   the 12px default; only a dense scrolling list earns tighter.
 5. Strip card-owned bottom margins — the parent stack owns every gap.
 6. One glyph size + one hit target for icon-only controls.
-7. Re-check on device at 100% **and** at the smallest Dynamic Type step.
+7. Audit the third colour: `grep -rn "NhamColors.stone\|textWarm\|textSoft" <dir>`.
+8. Re-check on device at 100%, at the smallest Dynamic Type step, **and in
+   Vietnamese** — which is where every localization trap above surfaced.

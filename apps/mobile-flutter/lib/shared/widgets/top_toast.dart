@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../theme/calm_tokens.dart';
 import '../../theme/nham_colors.dart';
 import '../../theme/nham_theme.dart';
-import '../../theme/nham_typography.dart';
 
 /// A top-toast's tone — sets the leading icon + its color.
 enum TopToastVariant { success, error }
 
 /// Show a brief toast pinned to the TOP of the screen (matches the web's
-/// top-anchored toasts) — a cream pill that slides+fades in, holds, then leaves.
+/// top-anchored toasts) — a white pill that slides+fades in, holds, then leaves.
 /// Used for save confirmations, quiet acknowledgements, and error notices
 /// (`variant: TopToastVariant.error`).
 ///
@@ -114,9 +114,12 @@ class _TopToastState extends State<_TopToast>
 
     final pill = Container(
       margin: const EdgeInsets.symmetric(
-        horizontal: NhamSpacing.sp4,
+        horizontal: NhamSpacing.sp3,
         vertical: NhamSpacing.sp2,
       ),
+      // 16 horizontal / 12 vertical — the same optical card inset the rest of
+      // the app uses; the action side gives back half so the tappable label
+      // sits on the pill's edge without the row reading lopsided.
       padding: EdgeInsets.fromLTRB(
         NhamSpacing.sp4,
         NhamSpacing.sp3,
@@ -124,10 +127,12 @@ class _TopToastState extends State<_TopToast>
         NhamSpacing.sp3,
       ),
       decoration: BoxDecoration(
-        color: NhamColors.cardCream,
+        // Solid white, not the retired cream — #FFFCF8 read yellow against
+        // the neutral #F9F9F7 canvas.
+        color: kCardSurface,
         borderRadius: BorderRadius.circular(NhamRadii.pill),
-        border: Border.all(color: NhamColors.border),
-        boxShadow: const [NhamShadows.md],
+        border: Border.all(color: kHairline),
+        boxShadow: kCardShadows,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -136,19 +141,18 @@ class _TopToastState extends State<_TopToast>
             widget.variant == TopToastVariant.error
                 ? LucideIcons.circleAlert
                 : LucideIcons.check,
+            // Status colour rides the icon, never the copy.
             size: 16,
             color: widget.variant == TopToastVariant.error
                 ? NhamColors.danger
-                : NhamColors.text,
+                : kInk,
           ),
           const SizedBox(width: NhamSpacing.sp2),
           Flexible(
             child: Text(
               widget.message,
               textAlign: hasAction ? TextAlign.left : TextAlign.center,
-              style: NhamTextStyles.sansMedium(
-                fontSize: NhamFontSize.sm,
-              ).copyWith(color: NhamColors.text),
+              style: dashBody(),
             ),
           ),
           if (hasAction) ...[
@@ -161,11 +165,11 @@ class _TopToastState extends State<_TopToast>
                   horizontal: NhamSpacing.sp2,
                   vertical: NhamSpacing.sp1,
                 ),
+                // Medium is the weight ceiling — semibold read thick in
+                // Be Vietnam Pro.
                 child: Text(
                   widget.actionLabel!,
-                  style: NhamTextStyles.sansSemiBold(
-                    fontSize: NhamFontSize.sm,
-                  ).copyWith(color: NhamColors.text),
+                  style: dashBody(weight: FontWeight.w500),
                 ),
               ),
             ),

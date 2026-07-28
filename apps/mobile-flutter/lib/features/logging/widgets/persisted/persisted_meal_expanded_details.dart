@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../macro_trio.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
@@ -43,20 +44,11 @@ class PersistedMealExpandedDetails extends StatelessWidget {
                             overflow: TextOverflow.ellipsis, style: dashBody(),),
                         ),
                         const SizedBox(width: NhamSpacing.sp3), // gap-3
-                        Row(
-                          children: [
-                            Text(
-                              'P: ${fmtG(group.nutrition.proteinG)}', style: dashMeta(tabular: true),),
-                            const SizedBox(width: NhamSpacing.sp2),
-                            Text(
-                              'C: ${fmtG(group.nutrition.carbohydrateG)}', style: dashMeta(tabular: true),),
-                            const SizedBox(width: NhamSpacing.sp2),
-                            Text(
-                              'F: ${fmtG(group.nutrition.fatG)}', style: dashMeta(tabular: true),),
-                            const SizedBox(width: NhamSpacing.sp3), // gap-3
-                            Text(
-                              fmtKcal(group.nutrition.caloriesKcal), style: dashBody(weight: FontWeight.w500, tabular: true),),
-                          ],
+                        MacroTrio(
+                          protein: group.nutrition.proteinG,
+                          carbs: group.nutrition.carbohydrateG,
+                          fat: group.nutrition.fatG,
+                          calories: group.nutrition.caloriesKcal,
                         ),
                       ],
                     ),

@@ -12,6 +12,7 @@
     "search": "Search",
     "noResults": "No results found",
     "confirm": "Confirm",
+    "dismiss": "Dismiss",
     "close": "Close",
     "or": "or",
     "optional": "Optional",
@@ -107,8 +108,8 @@
     "range": {
       "label": "Nutrition range",
       "1d": "Today",
-      "7d": "7d",
-      "30d": "30d",
+      "7d": "Week",
+      "30d": "Month",
       "90d": "90 days"
     },
     "nutrientGroups": {
@@ -588,7 +589,7 @@
     },
     "bodyMetrics": {
       "title": "Your body metrics",
-      "subtitle": "We use these to calculate your daily calorie and macro targets.",
+      "subtitle": "All optional — the more you fill in, the more tailored your daily calorie and macro targets.",
       "biologicalSex": "Biological sex",
       "sexPlaceholder": "Select…",
       "male": "Male",
@@ -632,8 +633,6 @@
       "macroSummary": "Daily targets",
       "kcal": "kcal",
       "grams": "g",
-      "aboutYou": "About you",
-      "aboutYouHint": "These stay optional, but once you fill them in, Nhẩm can compute more tailored targets locally.",
       "unlockTitle": "Fill the basics to unlock targets.",
       "unlockHint": "Once sex, weight, height, age, and activity are filled, this becomes your live calorie target and macro planner."
     },
@@ -946,7 +945,6 @@
     "now": "Now",
     "goal": "Goal",
     "start": "Start",
-    "weekPrefix": "W",
     "projected": "Projected",
     "insufficientWeightData": "First entry in — log again tomorrow to draw your trend.",
     "noWeightData": "Log your first weight to start tracking your trend.",
@@ -1033,6 +1031,10 @@
       "barcodeDesc": "Scan a packaged product"
     },
     "cheatPlaceholder": "Korean BBQ buffet, went all out…",
+    "quickLog": {
+      "title": "Log a meal",
+      "subtitle": "We'll analyze it on your feed"
+    },
     "cheatIntensity": {
       "label": "How much did you eat?",
       "helper": "Scales the estimate",
@@ -1128,11 +1130,36 @@
     "feedEmpty": "No meals yet today. What did you eat?",
     "todaysMeals": "Today's meals",
     "emptyState": {
-      "title": "What did you eat?",
-      "title2": "What's on your plate?",
-      "title3": "What did you have?",
-      "title4": "Ready to log a meal?",
-      "title5": "What's for this meal?"
+      "morning1": "What's for breakfast?",
+      "morning1Named": "What's for breakfast, {name}?",
+      "morning2": "How did the day start?",
+      "morning2Named": "How did the day start, {name}?",
+      "morning3": "First meal of the day?",
+      "morning3Named": "First meal of the day, {name}?",
+      "lunch1": "Time for lunch?",
+      "lunch1Named": "Time for lunch, {name}?",
+      "lunch2": "What's on the plate?",
+      "lunch2Named": "What's on the plate, {name}?",
+      "lunch3": "Eaten yet?",
+      "lunch3Named": "Eaten yet, {name}?",
+      "afternoon1": "Anything since lunch?",
+      "afternoon1Named": "Anything since lunch, {name}?",
+      "afternoon2": "A snack to log?",
+      "afternoon2Named": "A snack to log, {name}?",
+      "afternoon3": "How's the afternoon going?",
+      "afternoon3Named": "How's the afternoon going, {name}?",
+      "evening1": "What's for dinner?",
+      "evening1Named": "What's for dinner, {name}?",
+      "evening2": "How was dinner?",
+      "evening2Named": "How was dinner, {name}?",
+      "evening3": "Let's close out the day.",
+      "evening3Named": "Let's close out the day, {name}.",
+      "lateNight1": "A late bite?",
+      "lateNight1Named": "A late bite, {name}?",
+      "lateNight2": "One last thing to log?",
+      "lateNight2Named": "One last thing to log, {name}?",
+      "lateNight3": "Still up. Still hungry?",
+      "lateNight3Named": "Still up, {name}. Still hungry?"
     },
     "feedArea": {
       "savedMeal": "Meal saved",
@@ -1230,8 +1257,7 @@
   },
   "groups": {
     "page": {
-      "title": "Your circle",
-      "subtitle": "What your friends are eating today.",
+      "title": "Circle",
       "addFriend": "Add friend",
       "createGroup": "Create group",
       "friendsEmptyTitle": "No shared meals yet",

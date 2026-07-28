@@ -6,7 +6,6 @@ import '../../../shared/widgets/decimal_input.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../controls/aggression_slider.dart';
 import '../controls/custom_select.dart';
 import '../logic/number_format.dart';
@@ -256,9 +255,11 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calm scale, not the 11px eyebrow: settings holds three sizes (serif
+    // title / body / meta) and field labels are quiet meta, sentence case.
     return Text(
-      text.toUpperCase(),
-      style: dashEyebrow(),
+      text,
+      style: dashMeta(),
     );
   }
 }
@@ -587,9 +588,10 @@ class _HeroTarget extends StatelessWidget {
             children: [
               Text(
                 groupThousands(calories),
-                style: NhamTextStyles.serifRegular(fontSize: 36, height: 44 / 36)
-                    // tracking-tighter = -0.05em ≈ -1.8px at 36px
-                    .copyWith(letterSpacing: -1.8, color: NhamColors.text),
+                // The one big number on this panel — Hero, not a bespoke 36pt
+                // serif. Serif on a data figure is the design doc's own
+                // counter-example, and Hero already carries its own tracking.
+                style: dashHero(),
               ),
               Text(
                 ' ${t('kcal')}',
@@ -626,13 +628,13 @@ class _HeroTarget extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              label.toUpperCase(),
-              style: dashEyebrow(),
+              label,
+              style: dashMeta(),
             ),
             const SizedBox(height: 2), // gap-0.5
             Text(
               '${grams}g',
-              style: dashValue(),
+              style: dashBody(weight: FontWeight.w500),
             ),
           ],
         ),

@@ -59,8 +59,8 @@ abstract final class LoggingSpacing {
 /// row-removes and composer controls all match them now.
 abstract final class LoggingIcons {
   /// Glyph size for every icon-only control.
-  static const double size = 16;
+  static const double size = NhamIcons.size;
 
   /// Square tap target (and pressed-wash bounds) around that glyph.
-  static const double hit = 36;
+  static const double hit = NhamIcons.hit;
 }

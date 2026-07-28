@@ -61,7 +61,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           Align(
             alignment: Alignment.topLeft,
             child: Padding(
-              padding: const EdgeInsets.all(NhamSpacing.sp2),
+              padding: const EdgeInsets.all(NhamSpacing.sp3),
               child: IconButton(
                 icon: const Icon(LucideIcons.x, size: 22),
                 color: NhamColors.textMuted,
@@ -72,7 +72,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           ),
           Center(
             child: Padding(
-              padding: const EdgeInsets.all(NhamSpacing.sp5),
+              padding: const EdgeInsets.all(NhamSpacing.sp3),
               child: previewAsync.when(
                 loading: () => const ConnectPreviewSkeleton(),
                 error: (error, _) => _errorFor(error),

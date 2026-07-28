@@ -186,9 +186,17 @@ export async function loadWeightSummaryAction(input: {
     toNumber(latestOverall?.weightKg) ?? profileWeight ?? 65;
   const todayWeightRow = rows.find((row) => row.loggedDate === todayDate);
   const todayWeight = toNumber(todayWeightRow?.weightKg);
-  const weights = rows
-    .map((row) => toNumber(row.weightKg))
-    .filter((value): value is number => value !== null);
+  // Logged points, kept as parallel arrays: `weights` stays a bare number[]
+  // for existing consumers while `weightDates` carries the calendar day each
+  // point belongs to (charts label their x axis from it).
+  const loggedPoints = rows
+    .map((row) => ({ date: row.loggedDate, weight: toNumber(row.weightKg) }))
+    .filter(
+      (point): point is { date: string; weight: number } =>
+        point.weight !== null
+    );
+  const weights = loggedPoints.map((point) => point.weight);
+  const weightDates = loggedPoints.map((point) => point.date);
 
   const periodStartWeight = weights[0] ?? currentWeight;
   const firstRangeRow = rows[0];
@@ -221,6 +229,7 @@ export async function loadWeightSummaryAction(input: {
   return {
     range: parsed.range,
     weights,
+    weightDates,
     currentWeight,
     todayWeight,
     weightPlaceholder: currentWeight,

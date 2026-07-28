@@ -9,7 +9,6 @@ import '../../../shell/app_header.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/chat_group_providers.dart';
 import '../data/circle_providers.dart';
 import '../data/feed_providers.dart';
@@ -49,54 +48,54 @@ class CircleScreen extends ConsumerWidget {
             ?.title ??
         '';
     return Screen(
-      child: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-            child: AppHeader(),
+      child: ScrollSeparator(
+        // Title on the header line, same slot and same serif as the
+        // dashboard greeting; the add control takes the trailing slot it was
+        // already reserving space for.
+        header: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          child: AppHeader(
+            trailing: const CircleAddMenu(),
+            child: Text(tr('groups.page.title'), style: dashHeadline()),
           ),
-          Expanded(
-            child: RefreshIndicator(
-              color: NhamColors.accent,
-              backgroundColor: NhamColors.elev,
-              onRefresh: () => _refresh(ref, selected),
-              child: ThreadFeed(
-                scope: selected,
-                feed: feed,
-                header: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _Header(),
-                    const SizedBox(height: NhamSpacing.sp3),
-                    const ViewSwitcher(),
-                    const SizedBox(height: NhamSpacing.sp3),
-                    const MealInvitesSection(),
-                    if (selected != null) ...[
-                      const SizedBox(height: NhamSpacing.sp3),
-                      _GroupHeader(
-                        groupId: selected,
-                        name: name,
-                        count: group?.members.length,
-                      ),
-                    ],
-                  ],
-                ),
-                onRetry: () => ref.invalidate(sharedMealFeedProvider(selected)),
-                onAddFriend: () => showAddFriendSheet(context),
-                emptyTitleKey:
-                    selected == null
-                        ? 'groups.page.friendsEmptyTitle'
-                        : 'groups.page.groupNoActivity',
-                emptyDescriptionKey:
-                    selected == null
-                        ? 'groups.page.friendsNoMealToday'
-                        : 'groups.page.groupNoActivity',
-                emptyNamedArgs: {'name': name},
-                showAddFriend: selected == null,
-              ),
+        ),
+        child: RefreshIndicator(
+          color: NhamColors.accent,
+          backgroundColor: NhamColors.elev,
+          onRefresh: () => _refresh(ref, selected),
+          child: ThreadFeed(
+            scope: selected,
+            feed: feed,
+            header: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const ViewSwitcher(),
+                const SizedBox(height: NhamSpacing.sp3),
+                const MealInvitesSection(),
+                if (selected != null) ...[
+                  const SizedBox(height: NhamSpacing.sp3),
+                  _GroupHeader(
+                    groupId: selected,
+                    name: name,
+                    count: group?.members.length,
+                  ),
+                ],
+              ],
             ),
+            onRetry: () => ref.invalidate(sharedMealFeedProvider(selected)),
+            onAddFriend: () => showAddFriendSheet(context),
+            emptyTitleKey:
+                selected == null
+                    ? 'groups.page.friendsEmptyTitle'
+                    : 'groups.page.groupNoActivity',
+            emptyDescriptionKey:
+                selected == null
+                    ? 'groups.page.friendsNoMealToday'
+                    : 'groups.page.groupNoActivity',
+            emptyNamedArgs: {'name': name},
+            showAddFriend: selected == null,
           ),
-        ],
+        ),
       ),
     );
   }
@@ -113,40 +112,6 @@ class CircleScreen extends ConsumerWidget {
       await ref.read(sharedMealFeedProvider(selected).future);
     } catch (_) {}
   }
-}
-
-class _Header extends StatelessWidget {
-  const _Header();
-  @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              tr('groups.page.title'),
-              style: NhamTextStyles.serifRegular(
-                fontSize: NhamFontSize.h3,
-              ).copyWith(
-                color: NhamColors.text,
-                letterSpacing: NhamTracking.tight,
-              ),
-            ),
-            const SizedBox(height: NhamSpacing.sp1),
-            Text(
-              tr('groups.page.subtitle'),
-              style: NhamTextStyles.sansRegular(
-                fontSize: NhamFontSize.sm,
-              ).copyWith(color: NhamColors.textMuted),
-            ),
-          ],
-        ),
-      ),
-      const CircleAddMenu(),
-    ],
-  );
 }
 
 class _GroupHeader extends StatelessWidget {

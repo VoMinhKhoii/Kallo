@@ -1,5 +1,4 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -10,32 +9,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../logic/logging_spacing.dart';
-
-/// How a meal gets logged. `normal` = describe it in words (AI); `cheat` = the
-/// slider-estimate flow for hard-to-count occasions; `manual` = search foods +
-/// grams; `barcode` = scan a packaged product.
-enum MealLogMode { normal, cheat, manual, barcode }
-
-/// Single source of truth for whether barcode logging is offered. iOS-only for
-/// now — Android support (permission copy, device testing) is unscoped. Both
-/// entry points (this mode sheet's row and the composer icon in `feed_area`)
-/// gate on this so they can't drift apart.
-bool get isBarcodeLoggingSupported =>
-    defaultTargetPlatform == TargetPlatform.iOS;
-
-IconData mealModeIcon(MealLogMode mode) => switch (mode) {
-  MealLogMode.normal => LucideIcons.zap, // lightning
-  MealLogMode.cheat => LucideIcons.pizza,
-  MealLogMode.manual => LucideIcons.pencil,
-  MealLogMode.barcode => LucideIcons.scanBarcode,
-};
-
-String mealModeLabel(MealLogMode mode) => switch (mode) {
-  MealLogMode.normal => 'logging.modeSelector.normal'.tr(),
-  MealLogMode.cheat => 'logging.modeSelector.cheat'.tr(),
-  MealLogMode.manual => 'logging.modeSelector.manual'.tr(),
-  MealLogMode.barcode => 'logging.modeSelector.barcode'.tr(),
-};
+import '../../logic/meal_log_mode.dart';
 
 /// Opens the "select mode" chooser — the first step before the composer. Minimal
 /// list (bare colored icon · title · description · check), mirroring the Claude

@@ -3,10 +3,8 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -30,12 +28,15 @@ void _showErrorToast(BuildContext context, String message) =>
     showTopToast(context, message, variant: TopToastVariant.error);
 
 /// Account section of the settings list: linked sign-in methods, export data,
-/// sign out (with a confirmation sheet), and permanent account deletion.
-/// Account deletion is an App Store requirement whenever the app offers account
-/// creation.
+/// and permanent account deletion. Account deletion is an App Store requirement
+/// whenever the app offers account creation.
+///
+/// Sign out is deliberately NOT here: it is the bottom-most row of the whole
+/// settings screen (`widgets/sign_out_row.dart`), so the session action people
+/// reach for by habit isn't stacked against the irreversible delete row.
 ///
 /// All rows live under ONE [SettingsGroup] — the linked-account rows and the
-/// export/sign-out/delete actions share the section — so the linked-account
+/// export/delete actions share the section — so the linked-account
 /// async state (identities, in-flight link/unlink) is held here rather than in a
 /// nested widget.
 ///
@@ -52,7 +53,6 @@ class AccountSection extends ConsumerStatefulWidget {
 
 class _AccountSectionState extends ConsumerState<AccountSection> {
   bool _exporting = false;
-  bool _signingOut = false;
   bool _retrying = false; // manual retry of the initial identity fetch in flight
 
   // ── Linked sign-in methods state ──────────────────────────────────────
@@ -223,48 +223,15 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     }
   }
 
-  Future<void> _confirmSignOut() async {
-    HapticFeedback.lightImpact(); // sheet-open cue
-    final confirmed = await showCupertinoModalPopup<bool>(
-      context: context,
-      builder:
-          (sheetContext) => CupertinoActionSheet(
-            title: Text(tr('settings.account.signOutConfirmTitle')),
-            actions: [
-              CupertinoActionSheetAction(
-                isDestructiveAction: true,
-                onPressed: () => Navigator.of(sheetContext).pop(true),
-                child: Text(tr('settings.account.signOut')),
-              ),
-            ],
-            cancelButton: CupertinoActionSheetAction(
-              onPressed: () => Navigator.of(sheetContext).pop(false),
-              child: Text(tr('settings.account.cancel')),
-            ),
-          ),
-    );
-    if (confirmed != true || _signingOut) return;
-    setState(() => _signingOut = true);
-    try {
-      await ref.read(authControllerProvider).signOut();
-      if (!mounted) return;
-      context.go('/sign-in');
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _signingOut = false);
-      _showErrorToast(context, tr('app.userMenu.signOutError'));
-    }
-  }
-
   void _openDelete() {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const AccountDeleteScreen()),
+      CupertinoPageRoute<void>(builder: (_) => const AccountDeleteScreen()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final busy = _exporting || _signingOut;
+    final busy = _exporting;
 
     final rows = <Widget>[];
 
@@ -310,14 +277,6 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         busy: _exporting,
         enabled: !busy,
         onTap: _export,
-      ),
-    );
-    rows.add(
-      SettingsRow(
-        icon: LucideIcons.logOut,
-        label: tr('settings.account.signOut'),
-        enabled: !busy,
-        onTap: _confirmSignOut,
       ),
     );
     rows.add(

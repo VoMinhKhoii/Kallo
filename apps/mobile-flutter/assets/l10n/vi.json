@@ -12,6 +12,7 @@
     "search": "Tìm kiếm",
     "noResults": "Không tìm thấy kết quả",
     "confirm": "Xác nhận",
+    "dismiss": "Bỏ qua",
     "close": "Đóng",
     "or": "hoặc",
     "optional": "Tùy chọn",
@@ -107,8 +108,8 @@
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
       "1d": "Hôm nay",
-      "7d": "7n",
-      "30d": "30n",
+      "7d": "Tuần",
+      "30d": "Tháng",
       "90d": "90 ngày"
     },
     "nutrientGroups": {
@@ -588,7 +589,7 @@
     },
     "bodyMetrics": {
       "title": "Chỉ số cơ thể",
-      "subtitle": "Chúng tôi dùng thông tin này để tính mục tiêu calo và dinh dưỡng hàng ngày.",
+      "subtitle": "Tất cả đều không bắt buộc — bạn điền càng nhiều, mục tiêu calo và dinh dưỡng hằng ngày càng sát với bạn.",
       "biologicalSex": "Giới tính sinh học",
       "sexPlaceholder": "Chọn…",
       "male": "Nam",
@@ -632,8 +633,6 @@
       "macroSummary": "Mục tiêu hàng ngày",
       "kcal": "kcal",
       "grams": "g",
-      "aboutYou": "Về bạn",
-      "aboutYouHint": "Những mục này không bắt buộc, nhưng khi bạn điền vào, Nhẩm có thể tính mục tiêu phù hợp hơn ngay trên máy.",
       "unlockTitle": "Điền thông tin cơ bản để mở khóa mục tiêu.",
       "unlockHint": "Khi đã điền giới tính, cân nặng, chiều cao, tuổi và mức vận động, đây sẽ thành mục tiêu calo và bảng macro của bạn."
     },
@@ -946,7 +945,6 @@
     "now": "Hiện tại",
     "goal": "Mục tiêu",
     "start": "Bắt đầu",
-    "weekPrefix": "T",
     "projected": "Dự kiến",
     "insufficientWeightData": "Đã ghi ngày đầu tiên — ghi lại vào ngày mai để vẽ xu hướng.",
     "noWeightData": "Ghi cân nặng đầu tiên để bắt đầu theo dõi xu hướng.",
@@ -1033,6 +1031,10 @@
       "barcodeDesc": "Quét sản phẩm đóng gói"
     },
     "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn…",
+    "quickLog": {
+      "title": "Ghi nhận bữa ăn",
+      "subtitle": "Món sẽ được phân tích ngay trong nhật ký"
+    },
     "cheatIntensity": {
       "label": "Bạn đã ăn nhiều cỡ nào?",
       "helper": "Điều chỉnh mức ước tính",
@@ -1128,11 +1130,36 @@
     "feedEmpty": "Chưa có bữa ăn hôm nay. Bạn đã ăn gì?",
     "todaysMeals": "Bữa ăn hôm nay",
     "emptyState": {
-      "title": "Bạn đã ăn gì?",
-      "title2": "Hôm nay ăn gì?",
-      "title3": "Bữa này có món gì?",
-      "title4": "Ghi lại bữa ăn nhé?",
-      "title5": "Bạn vừa ăn gì?"
+      "morning1": "Sáng nay ăn gì?",
+      "morning1Named": "Sáng nay {name} ăn gì?",
+      "morning2": "Ngày mới bắt đầu thế nào?",
+      "morning2Named": "Ngày mới của {name} thế nào?",
+      "morning3": "Bữa đầu tiên trong ngày?",
+      "morning3Named": "Bữa đầu tiên của {name} hôm nay?",
+      "lunch1": "Trưa nay ăn gì?",
+      "lunch1Named": "Trưa nay {name} ăn gì?",
+      "lunch2": "Bữa trưa có món gì?",
+      "lunch2Named": "Bữa trưa của {name} có món gì?",
+      "lunch3": "Ăn trưa chưa?",
+      "lunch3Named": "{name} ăn trưa chưa?",
+      "afternoon1": "Từ trưa tới giờ ăn gì chưa?",
+      "afternoon1Named": "Từ trưa tới giờ {name} ăn gì chưa?",
+      "afternoon2": "Có ăn vặt gì không?",
+      "afternoon2Named": "{name} có ăn vặt gì không?",
+      "afternoon3": "Chiều nay thế nào?",
+      "afternoon3Named": "Chiều nay của {name} thế nào?",
+      "evening1": "Tối nay ăn gì?",
+      "evening1Named": "Tối nay {name} ăn gì?",
+      "evening2": "Bữa tối thế nào?",
+      "evening2Named": "Bữa tối của {name} thế nào?",
+      "evening3": "Ghi nốt cho trọn ngày nhé.",
+      "evening3Named": "Ghi nốt cho trọn ngày nhé, {name}.",
+      "lateNight1": "Khuya rồi, ăn gì không?",
+      "lateNight1Named": "Khuya rồi, {name} ăn gì không?",
+      "lateNight2": "Còn món nào chưa ghi?",
+      "lateNight2Named": "{name} còn món nào chưa ghi?",
+      "lateNight3": "Thức khuya có đói không?",
+      "lateNight3Named": "Thức khuya, {name} có đói không?"
     },
     "feedArea": {
       "savedMeal": "Đã lưu bữa ăn",
@@ -1230,8 +1257,7 @@
   },
   "groups": {
     "page": {
-      "title": "Vòng kết nối của bạn",
-      "subtitle": "Hôm nay bạn bè đang ăn gì.",
+      "title": "Vòng kết nối",
       "addFriend": "Thêm bạn",
       "createGroup": "Tạo nhóm",
       "friendsEmptyTitle": "Chưa có bữa ăn được chia sẻ",
