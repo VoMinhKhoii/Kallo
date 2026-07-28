@@ -88,6 +88,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// first frame.
   double _dockHeight = 120;
 
+  /// The day whose under-logged note has been dismissed. Keyed by date, not a
+  /// bare bool: the condition is still true after dismissal — the user has
+  /// simply read it — so paging to another day shows that day's note again.
+  String? _noticeDismissedFor;
+
   /// Meals swiped away but still inside the undo window. They are filtered out
   /// of the rendered feed (so a mid-window refetch can't resurrect the card)
   /// without ever mutating the day cache — Undo just removes the id, and a
@@ -345,6 +350,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                   analyzing: stream.isAnalyzing,
                   onModePressed: _openModeSheet,
                   onBarcodePressed: _openBarcodeSheet,
+                  noticeDismissed: _noticeDismissedFor == widget.date,
+                  onDismissNotice:
+                      () => setState(() => _noticeDismissedFor = widget.date),
                   onHeightChanged:
                       (height) => setState(() => _dockHeight = height),
                 ),

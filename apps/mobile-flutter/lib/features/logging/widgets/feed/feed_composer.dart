@@ -34,6 +34,8 @@ class FeedComposer extends StatelessWidget {
     required this.onModePressed,
     required this.onBarcodePressed,
     required this.onHeightChanged,
+    required this.onDismissNotice,
+    required this.noticeDismissed,
   });
 
   final FeedViewState view;
@@ -57,6 +59,13 @@ class FeedComposer extends StatelessWidget {
   final VoidCallback onModePressed;
   final VoidCallback onBarcodePressed;
   final ValueChanged<double> onHeightChanged;
+
+  /// Dismisses the under-logged note for the day on screen.
+  final VoidCallback onDismissNotice;
+
+  /// True once the note has been dismissed for THIS day. The underlying
+  /// condition stays true, so this is the only thing that hides it.
+  final bool noticeDismissed;
 
   @override
   Widget build(BuildContext context) {
@@ -98,10 +107,11 @@ class FeedComposer extends StatelessWidget {
             // because the way to fix the day is to type the meal missing from
             // it — message and remedy as one object.
             notice:
-                view.showPartialDayNotice
+                view.showPartialDayNotice && !noticeDismissed
                     ? PartialDayNotice(
                       calories: view.dailyCalories,
                       target: calorieTarget,
+                      onDismiss: onDismissNotice,
                     )
                     : null,
             modeLabel: mealModeLabel(mode),

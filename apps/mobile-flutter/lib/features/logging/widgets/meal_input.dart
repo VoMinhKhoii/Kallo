@@ -158,8 +158,8 @@ class _MealInputState extends State<MealInput>
           offset: const Offset(0, 4),
         );
         return Container(
-          // No padding here — the notice band must reach the card's edges, so
-          // the inset moves inward onto the field/controls column below.
+          // No padding here — the notice sets its own inset, so the field and
+          // controls carry theirs on the column below.
           decoration: BoxDecoration(
             // Opaque: the feed reads through the DOCK, never through the field.
             color: NhamColors.elev,
@@ -169,19 +169,26 @@ class _MealInputState extends State<MealInput>
             // card off the feed scrolling behind it.
             boxShadow: [NhamShadows.md, NhamShadows.xs, glow],
           ),
-          // Clip so the notice band takes the card's own top corners rather
-          // than squaring them off.
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-            child: child,
-          ),
+          child: child,
         );
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (widget.notice != null) widget.notice!,
+          // Inset on its own rounded block, sitting within the card rather
+          // than spanning it — the card's border stays visible all the way
+          // around it.
+          if (widget.notice != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                NhamSpacing.sp1,
+                NhamSpacing.sp1,
+                NhamSpacing.sp1,
+                0,
+              ),
+              child: widget.notice!,
+            ),
           Padding(
             padding: LoggingSpacing.composer,
             child: Column(
