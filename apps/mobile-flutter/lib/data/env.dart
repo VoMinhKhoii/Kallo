@@ -17,20 +17,22 @@
 /// `SUPABASE_ANON_KEY` matches the key `main.dart` already reads for init.
 abstract final class Env {
   /// Supabase project URL. Required — `SupabaseService.initialize` consumes it.
-  static const String supabaseUrl =
-      String.fromEnvironment('SUPABASE_URL');
+  static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 
   /// Supabase publishable (anon) key. Required. Same dart-define `main.dart`
   /// passes to `SupabaseService.initialize`.
-  static const String supabasePublishableKey =
-      String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const String supabasePublishableKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+  );
 
   /// Base URL for the REST + SSE surface (`/api/...`). Required.
   ///
   /// Local dev: `http://localhost:3000` for the iOS simulator. A physical
   /// device must use the host machine's LAN IP (e.g. `http://192.168.1.20:3000`).
-  static const String apiBaseUrl =
-      String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:3000');
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:3000',
+  );
 
   /// Public web origin used for links shown to or shared by the user (invite
   /// links). Distinct from [apiBaseUrl]: the API may live on a backend host
@@ -44,17 +46,33 @@ abstract final class Env {
   /// `serverClientId` and registered in Supabase's Google provider "Authorized
   /// Client IDs". Empty unless configured; native Google sign-in is a guarded
   /// no-op without it (so dev without Google config still boots).
-  static const String googleWebClientId =
-      String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+  static const String googleWebClientId = String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+  );
 
   /// Google **iOS** OAuth client ID — passed to `google_sign_in` as `clientId`
   /// (iOS only). Its reversed form is the Info.plist URL scheme.
-  static const String googleIosClientId =
-      String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
+  static const String googleIosClientId = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
+  );
+
+  /// RevenueCat **Apple** platform API key (public SDK key, `appl_…`). Empty
+  /// unless configured; the purchases service then reports
+  /// `purchasesAvailable = false` and the paywall shows a graceful unavailable
+  /// state instead of crashing. Injected via `--dart-define`.
+  static const String revenueCatAppleApiKey = String.fromEnvironment(
+    'REVENUECAT_APPLE_API_KEY',
+  );
+
+  /// RevenueCat **Google** platform API key (public SDK key, `goog_…`). Empty
+  /// unless configured — same graceful-unavailable behavior as
+  /// [revenueCatAppleApiKey].
+  static const String revenueCatGoogleApiKey = String.fromEnvironment(
+    'REVENUECAT_GOOGLE_API_KEY',
+  );
 
   /// PostHog project key. Empty => analytics is a complete no-op (RN parity).
-  static const String posthogKey =
-      String.fromEnvironment('POSTHOG_KEY');
+  static const String posthogKey = String.fromEnvironment('POSTHOG_KEY');
 
   /// PostHog host. Defaults to the US cloud (RN parity).
   static const String posthogHost = String.fromEnvironment(

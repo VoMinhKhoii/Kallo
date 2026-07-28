@@ -1,0 +1,45 @@
+name: Account deletion retry
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  retry-provider-erasure:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - run: bun install --frozen-lockfile
+      - name: Retry due RevenueCat erasures
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          REVENUECAT_PROJECT_ID: ${{ vars.REVENUECAT_PROJECT_ID }}
+          BILLING_ENVIRONMENT: production
+        run: |
+          database_url="$(gcloud secrets versions access latest --secret=kallo-prod-database-url)"
+          service_key="$(gcloud secrets versions access latest --secret=kallo-prod-supabase-service-role-key)"
+          revenuecat_key="$(gcloud secrets versions access latest --secret=kallo-prod-revenuecat-customer-delete-api-key)"
+          echo "::add-mask::$database_url"
+          echo "::add-mask::$service_key"
+          echo "::add-mask::$revenuecat_key"
+          DATABASE_URL="$database_url" \
+          SUPABASE_SERVICE_ROLE_KEY="$service_key" \
+          REVENUECAT_CUSTOMER_DELETE_API_KEY="$revenuecat_key" \
+          bun --conditions=react-server scripts/process-account-deletions.ts

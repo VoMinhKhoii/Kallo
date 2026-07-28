@@ -43,6 +43,8 @@ dependencies:
   # Inbound deep links (invite links). Already present transitively via
   # supabase_flutter; promoted to a direct dep for the invite-link listener.
   app_links: ^7.1.1
+  purchases_flutter: ^10.4.1
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

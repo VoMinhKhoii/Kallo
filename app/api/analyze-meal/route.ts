@@ -1,5 +1,4 @@
 import type { NextRequest } from 'next/server';
-import { getTranslations } from 'next-intl/server';
 import { createGeminiClient } from '@/lib/ai/gemini';
 import {
   buildAiRequestContext,
@@ -9,7 +8,6 @@ import {
 import { logUnmatchedIngredients } from '@/lib/ai/matching';
 import { analyzeMeal } from '@/lib/ai/pipeline';
 import { estimateCheatMeal } from '@/lib/ai/pipeline/cheat-estimate';
-import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import {
   logPipelineEnd,
   logPipelineStart,
@@ -17,17 +15,13 @@ import {
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
 import { db } from '@/lib/db';
-import { analysisGuardEvents } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
-import {
-  buildAnalysisGuardEvent,
-  checkAnalysisGuards,
-} from '@/lib/rate-limit/analysis-guards';
 import { withDeadline } from '@/lib/with-deadline';
+import { acquireAnalysisGuard } from './analysis-guard';
+import { getBillingAccessError } from './billing-access';
 import { upsertPendingAnalysis } from './persist-analysis';
 import {
   createGuardRelease,
-  getRequestIp,
+  resolveGeminiConfig,
   validateRequest,
 } from './request-validation';
 import { toStreamErrorEvent } from './stream-errors';
@@ -35,8 +29,6 @@ import { emitUnresolvedOutcome } from './unresolved-response';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
-
-const analyzeMealRoute = '/api/analyze-meal';
 
 // Bound the awaited `pendingAnalyses` insert so a stalled DB connection (the
 // `max: 2` pool can starve under a saturated Supabase pooler) can't leave the
@@ -62,53 +54,32 @@ export async function POST(request: NextRequest) {
     cheatIntensity,
     attemptId,
     profile,
-    geminiConfig,
   } = validation.data;
+
+  // Fail before both provider spend and rate-limit consumption. The server's
+  // entitlement state is authoritative; clients never self-grant access.
+  const billingError = await getBillingAccessError({
+    userId,
+    profileCreatedAt: profile.createdAt,
+    locale: locale ?? profile.preferredLocale ?? 'en',
+  });
+  if (billingError) return billingError;
+
+  const providerConfig = resolveGeminiConfig();
+  if (!providerConfig.ok) return providerConfig.error;
+  const geminiConfig = providerConfig.config;
 
   const userContext = buildAiRequestContext(buildUserContext(profile), {
     mealText: message,
     requestLocale: locale,
     profileLocale: profile.preferredLocale,
   });
-  const ip = getRequestIp(request);
-
-  const guard = await checkAnalysisGuards({
+  const guard = await acquireAnalysisGuard(
+    request,
     userId,
-    ip,
-    route: analyzeMealRoute,
-    db,
-  });
-
-  if (!guard.allowed) {
-    if (readBooleanEnv('ANALYSIS_GUARD_EVENT_LOGGING_ENABLED', true)) {
-      try {
-        await db.insert(analysisGuardEvents).values(
-          buildAnalysisGuardEvent({
-            userId,
-            ip,
-            route: analyzeMealRoute,
-            reason: guard.reason,
-            retryAfterSeconds: guard.retryAfterSeconds,
-          })
-        );
-      } catch (error) {
-        console.error(
-          '[analyze-meal] Failed to log analysis guard event:',
-          error
-        );
-      }
-    }
-
-    const t = await getTranslations({
-      locale: locale ?? profile.preferredLocale ?? 'en',
-      namespace: 'errors',
-    });
-    return Response.json(Errors.rateLimited(t('rateLimited')).toJSON(), {
-      status: guard.status,
-      headers: { 'Retry-After': String(guard.retryAfterSeconds) },
-    });
-  }
-
+    locale ?? profile.preferredLocale ?? 'en'
+  );
+  if (!guard.allowed) return guard.error;
   const releaseGuard = createGuardRelease(guard.release);
 
   // Awaited so child trace inserts have a parent row to FK against

@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/client';
  * stays presentational; behavior (server actions, cookie clearing, blob
  * download, redirect) is preserved verbatim.
  */
-export function useAccountActions() {
+export function useAccountActions(expectedUserId: string) {
   const t = useTranslations('settings.account');
   const exportAction = useAsyncAction();
   const signOutAction = useAsyncAction();
@@ -20,7 +20,7 @@ export function useAccountActions() {
   const handleExport = () =>
     exportAction.run(
       async () => {
-        const data = await exportMyDataAction();
+        const data = await exportMyDataAction({ expectedUserId });
         const blob = new Blob([JSON.stringify(data, null, 2)], {
           type: 'application/json',
         });
@@ -28,7 +28,7 @@ export function useAccountActions() {
         const date = data.exportedAt.slice(0, 10);
         const anchor = document.createElement('a');
         anchor.href = url;
-        anchor.download = `nham-data-${date}.json`;
+        anchor.download = `kallo-data-${date}.json`;
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
@@ -56,7 +56,7 @@ export function useAccountActions() {
   const handleDelete = () =>
     deleteAction.run(
       async () => {
-        await deleteAccountAction();
+        await deleteAccountAction({ expectedUserId });
         // The account (and all data) is gone — leave the app entirely.
         document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
         window.location.assign('/');

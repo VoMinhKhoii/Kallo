@@ -46,8 +46,8 @@ if [[ -z "$ENVF" ]]; then
     "$APP_DIR/.env.local" \
     "$APP_DIR"/../../.env.local \
     "$APP_DIR"/../../../../.env.local \
-    "$HOME"/Documents/nham/.env.local \
-    "$HOME"/Documents/nham/.claude/worktrees/*/.env.local ; do
+    "$HOME"/Documents/Kallo/.env.local \
+    "$HOME"/Documents/Kallo/.claude/worktrees/*/.env.local ; do
     [[ -f "$c" ]] && { ENVF="$c"; break; }
   done
 fi
@@ -76,6 +76,7 @@ WEB_BASE_URL="${WEB_BASE_URL:-https://kallo.fit}"
 if [[ -n "${ENVF:-}" && -f "${ENVF:-}" ]]; then
   [[ -z "${GOOGLE_WEB_CLIENT_ID:-}" ]] && GOOGLE_WEB_CLIENT_ID="$(grep -E '^GOOGLE_WEB_CLIENT_ID=' "$ENVF" | head -1 | cut -d= -f2-)"
   [[ -z "${GOOGLE_IOS_CLIENT_ID:-}" ]] && GOOGLE_IOS_CLIENT_ID="$(grep -E '^GOOGLE_IOS_CLIENT_ID=' "$ENVF" | head -1 | cut -d= -f2-)"
+  [[ -z "${REVENUECAT_APPLE_API_KEY:-}" ]] && REVENUECAT_APPLE_API_KEY="$(grep -E '^REVENUECAT_APPLE_API_KEY=' "$ENVF" | head -1 | cut -d= -f2-)"
 fi
 
 # --- pick / boot a simulator --------------------------------------------------
@@ -113,6 +114,7 @@ run=(flutter run -d "$SIM_UDID"
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
   --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}"
   --dart-define=GOOGLE_IOS_CLIENT_ID="${GOOGLE_IOS_CLIENT_ID:-}")
+run+=(--dart-define=REVENUECAT_APPLE_API_KEY="${REVENUECAT_APPLE_API_KEY:-}")
 
 # `flutter run` quits as soon as stdin hits EOF, and on quit it DETACHES the
 # engine — leaving a debug build on-screen as a blank white/black window. That's

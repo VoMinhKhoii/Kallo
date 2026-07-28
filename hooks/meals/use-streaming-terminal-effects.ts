@@ -15,6 +15,9 @@ interface UseStreamingTerminalEffectsParams {
   lastAnalysisIdRef: RefObject<string | null>;
   lastErrorRef: RefObject<string | null>;
   onAnalysisComplete?: (analysisId: string) => void;
+  // Pre-stream 402: AI analysis is locked. The surface opens the paywall
+  // instead of showing an error toast.
+  onPaymentRequired?: () => void;
 }
 
 /**
@@ -123,6 +126,7 @@ export function useStreamingTerminalEffects({
   lastAnalysisIdRef,
   lastErrorRef,
   onAnalysisComplete,
+  onPaymentRequired,
 }: UseStreamingTerminalEffectsParams) {
   const { status, result, cheatSpec, analysisId, error, reset } = stream;
 
@@ -177,6 +181,28 @@ export function useStreamingTerminalEffects({
     lastAnalysisIdRef,
     lastErrorRef,
     onAnalysisComplete,
+    setStreamingMsgId,
+    setMessages,
+  ]);
+
+  // Terminal: pre-stream 402 — AI analysis is locked. Drop the in-flight
+  // streaming bubble (no error toast) and open the paywall. Mirrors the error
+  // path's cleanup but routes to the upgrade surface instead.
+  useEffect(() => {
+    if (status !== 'paymentRequired' || !streamingMsgId) return;
+
+    const msgId = streamingMsgId;
+    setStreamingMsgId(null);
+
+    setMessages((prev) => prev.filter((msg) => msg.id !== msgId));
+
+    onPaymentRequired?.();
+    reset();
+  }, [
+    status,
+    reset,
+    streamingMsgId,
+    onPaymentRequired,
     setStreamingMsgId,
     setMessages,
   ]);

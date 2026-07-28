@@ -18,6 +18,12 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.test.{ts,tsx}'],
-    exclude: [...configDefaults.exclude, '**/.next/**'],
+    exclude: [
+      ...configDefaults.exclude,
+      '**/.next/**',
+      // Flutter app is Dart; its gitignored build/ dir vendors third-party
+      // TS test files (RevenueCat pod checkouts) that are not ours to run.
+      'apps/mobile-flutter/**',
+    ],
   },
 });

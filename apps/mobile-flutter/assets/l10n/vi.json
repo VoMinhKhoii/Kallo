@@ -1422,6 +1422,8 @@
       "delete": "Xóa tài khoản",
       "deleteScreenTitle": "Xóa tài khoản",
       "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
+      "deleteSubscriptionWarning": "Xóa tài khoản Kallo không hủy gói đăng ký qua Apple hoặc Google. Hãy hủy trong cửa hàng trước để tránh phí về sau. Gói Kallo trên web sẽ được hủy trong quá trình xóa tài khoản. Bạn vẫn có thể xóa ngay.",
+      "deleteManageSubscription": "Quản lý hoặc hủy gói",
       "deleteConfirmLabel": "Nhập {word} để xác nhận",
       "deleteConfirmWord": "XOA",
       "deleteConfirmAction": "Xóa tài khoản của tôi",
@@ -1512,7 +1514,7 @@
     },
     "identity": {
       "title": "Hồ sơ",
-      "description": "Cách bạn xuất hiện trên Nhẩm và với vòng kết nối.",
+      "description": "Cách bạn xuất hiện trên Kallo và với vòng kết nối.",
       "avatarUpload": "Tải ảnh lên",
       "avatarChange": "Đổi ảnh",
       "avatarRemove": "Gỡ ảnh",
@@ -1527,6 +1529,19 @@
       "nameError": "Không thể cập nhật tên",
       "nameRequired": "Vui lòng nhập tên.",
       "linkWarning": "Đổi tên sẽ đổi liên kết mời — liên kết cũ sẽ không dùng được nữa."
+    },
+    "subscription": {
+      "groupLabel": "Gói đăng ký",
+      "row": "Kallo Pro",
+      "statusFree": "Gói miễn phí",
+      "statusTrial": "Dùng thử · còn {days} ngày",
+      "statusTrialLastDay": "Dùng thử · ngày cuối",
+      "statusPremium": "Premium · gia hạn {date}",
+      "statusPremiumExpires": "Premium · đến {date}",
+      "statusPremiumCancelled": "Premium · kết thúc {date}",
+      "statusLifetime": "Premium · trọn đời",
+      "manage": "Quản lý gói đăng ký",
+      "restore": "Khôi phục giao dịch"
     }
   },
   "errors": {
@@ -1551,5 +1566,43 @@
       "ageMin": "Tuổi phải từ 13 trở lên.",
       "ageMax": "Tuổi phải từ 100 trở xuống."
     }
+  },
+  "paywall": {
+    "upsellEyebrow": "Kallo Pro",
+    "upsellTitle": "Mô tả bữa ăn, biết ngay dinh dưỡng",
+    "upsellBody": "Phân tích bữa ăn bằng AI đọc ra món ăn, khẩu phần, calo và macro từ chính lời bạn mô tả, bằng tiếng Việt hay tiếng Anh.",
+    "expiredEyebrow": "Thời gian dùng thử đã kết thúc",
+    "expiredTitle": "Giữ lại phân tích AI của bạn",
+    "expiredBody": "Thời gian dùng thử đã hết. Nâng cấp Premium để tiếp tục ghi bữa ăn bằng phân tích AI — không phải tính tay nữa.",
+    "trialCountdown": "Còn {days} ngày dùng thử miễn phí",
+    "trialCountdownLastDay": "Ngày dùng thử miễn phí cuối cùng",
+    "feature1": "AI đọc bữa ăn từ lời bạn mô tả",
+    "feature2": "Món Việt, khẩu phần và macro",
+    "feature3": "Ghi bữa ăn nhanh trong giới hạn sử dụng hợp lý",
+    "purchase": "Bắt đầu Premium",
+    "purchaseTrial": "Đăng ký ngay",
+    "restore": "Khôi phục giao dịch",
+    "manageActive": "Quản lý gói đăng ký",
+    "alreadyPremiumTitle": "Bạn đang dùng Premium",
+    "alreadyPremiumBody": "Phân tích bữa ăn bằng AI đã được mở khóa. Bạn có thể quản lý gói trong cửa hàng bất cứ lúc nào.",
+    "alreadyLifetimeBody": "Bạn có Premium trọn đời. Phân tích bữa ăn bằng AI luôn thuộc về bạn.",
+    "unavailableTitle": "Không thể mua hàng",
+    "unavailableBody": "Mua hàng trong ứng dụng hiện chưa khả dụng. Vui lòng thử lại sau.",
+    "loadError": "Không tải được các gói đăng ký.",
+    "purchaseError": "Không hoàn tất được giao dịch. Vui lòng thử lại.",
+    "restoreAccountConflict": "Giao dịch này thuộc về một tài khoản Kallo khác. Hãy đăng nhập vào tài khoản đã mua ban đầu hoặc liên hệ hỗ trợ.",
+    "restoreError": "Không khôi phục được giao dịch. Vui lòng thử lại.",
+    "restoreNothing": "Không tìm thấy giao dịch trước đó để khôi phục.",
+    "verifying": "Đang xác nhận giao dịch…",
+    "verifyPending": "Đã nhận thanh toán — chúng tôi đang kích hoạt Premium. Sẽ mở khóa trong giây lát.",
+    "bestValue": "Đáng giá nhất",
+    "perMonth": "/tháng",
+    "perYear": "/năm",
+    "packageMonthly": "Hằng tháng",
+    "packageAnnual": "Hằng năm",
+    "packageLifetime": "Trọn đời",
+    "legal": "Thanh toán được tính ngay vào tài khoản cửa hàng của bạn. Gói tự động gia hạn trừ khi bạn hủy ít nhất 24 giờ trước khi kỳ hiện tại kết thúc.",
+    "terms": "Điều khoản sử dụng",
+    "privacy": "Chính sách riêng tư"
   }
 }

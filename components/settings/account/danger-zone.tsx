@@ -1,5 +1,6 @@
 'use client';
 
+import { ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { SettingsGroup, SettingsRow } from '@/components/settings/group';
@@ -7,6 +8,7 @@ import { SettingsGroup, SettingsRow } from '@/components/settings/group';
 interface DangerZoneProps {
   onDelete: () => void;
   deleting: boolean;
+  managementUrl: string | null;
 }
 
 /**
@@ -16,7 +18,11 @@ interface DangerZoneProps {
  * buttons, with confirm disabled until the typed word matches exactly. The
  * group border stays `nham-danger` permanently (SettingsGroup danger variant).
  */
-export function DangerZone({ onDelete, deleting }: DangerZoneProps) {
+export function DangerZone({
+  onDelete,
+  deleting,
+  managementUrl,
+}: DangerZoneProps) {
   const t = useTranslations('settings.account');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmText, setConfirmText] = useState('');
@@ -51,6 +57,20 @@ export function DangerZone({ onDelete, deleting }: DangerZoneProps) {
           <p className="text-[13.5px] text-nham-text leading-relaxed">
             {t('deleteConsequence')}
           </p>
+          {managementUrl && (
+            <div className="mt-3 rounded-xl bg-nham-danger/5 p-3 text-[13px] text-nham-text">
+              <p>{t('deleteSubscriptionWarning')}</p>
+              <a
+                href={managementUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 font-medium text-nham-danger underline-offset-2 hover:underline"
+              >
+                {t('deleteManageSubscription')}
+                <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          )}
           <label className="mt-3 block">
             <span className="text-[12px] text-nham-text-muted">
               {t('deleteConfirmLabel', { word: confirmWord })}

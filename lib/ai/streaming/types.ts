@@ -122,4 +122,8 @@ export type StreamStatus =
   | 'connecting'
   | PipelineStage
   | 'done'
-  | 'error';
+  | 'error'
+  // Pre-stream 402: the analyze endpoint reported the AI-analysis feature is
+  // locked (trial expired / not entitled). The logging surface surfaces the
+  // paywall instead of a generic error toast.
+  | 'paymentRequired';

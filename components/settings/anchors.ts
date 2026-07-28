@@ -5,6 +5,7 @@
  */
 export const PROFILE_ANCHOR = 'settings-profile';
 export const PREFERENCES_ANCHOR = 'settings-preferences';
+export const SUBSCRIPTION_ANCHOR = 'settings-subscription';
 export const FEEDBACK_ANCHOR = 'settings-feedback';
 export const ACCOUNT_ANCHOR = 'settings-account';
 
