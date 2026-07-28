@@ -176,10 +176,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     final data = widget.data;
     final numWeeks = _numWeeks;
     final dayLabels = _weekdayInitials(context.locale.toString());
-    final monthLabelStyle = dashEyebrow(
-      color: kInkMuted,
-      weight: FontWeight.w600,
-    );
+    final monthLabelStyle = dashMeta(color: kInkMuted);
 
     return Container(
       padding: const EdgeInsets.all(NhamSpacing.sp4),
@@ -241,10 +238,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                             alignment: Alignment.centerRight,
                             child: Text(
                               dayLabels[i],
-                              style: dashEyebrow(
-                                color: kInkMuted,
-                                weight: FontWeight.w600,
-                              ),
+                              style: dashMeta(color: kInkMuted),
                             ),
                           ),
                       ],

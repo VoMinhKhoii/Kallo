@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/countries.dart';
 
 /// Port of the web inline `CountrySelect` (regional.tsx). A searchable,
@@ -158,9 +157,7 @@ class _CountrySelectState extends State<CountrySelect> {
                         ),
                         child: Text(
                           '×', // ×
-                          style: NhamTextStyles.sansRegular(
-                            fontSize: 16,
-                          ).copyWith(
+                          style: dashBody().copyWith(
                             height: 1,
                             color:
                                 _clearPressed

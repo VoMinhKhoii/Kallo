@@ -88,7 +88,10 @@ class WeightChartCanvas extends StatelessWidget {
       for (var i = 0; i < weights.length; i++) FlSpot(i.toDouble(), weights[i]),
     ];
 
-    final axisLabel = dashMeta(color: kInkMuted).copyWith(fontSize: 9);
+    // Meta 12, not a bespoke 9 — the tick thinning below measures each label
+    // and drops ticks until they fit, so the axis adapts instead of needing
+    // its own size.
+    final axisLabel = dashMeta(color: kInkMuted);
     final gridLine = FlLine(
       color: NhamColors.border.withValues(alpha: 0.5),
       strokeWidth: 1,
