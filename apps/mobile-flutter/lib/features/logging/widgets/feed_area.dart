@@ -37,6 +37,7 @@ import 'sheets/barcode_scanner_sheet.dart';
 import 'sheets/manual_log_sheet.dart';
 import 'meal_entry.dart';
 import 'meal_input.dart';
+import 'partial_day_notice.dart';
 import 'sheets/meal_mode_sheet.dart';
 import 'persisted/persisted_meal_card.dart';
 import '../data/persisted_meal_mutations.dart';
@@ -557,21 +558,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           ),
         ),
 
-        // Under-logged past day: a quiet note that it's set aside from trends.
-        if (showPartialDayNotice)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp3,
-              0,
-              NhamSpacing.sp3,
-              LoggingSpacing.block,
-            ),
-            child: _PartialDayNotice(
-              calories: dailyCalories,
-              target: profile.calorieTarget,
-            ),
-          ),
-
         // The card list, with the composer FLOATING over its bottom edge —
         // the feed scrolls under the dock (reserving `_dockHeight` so the last
         // card can always clear it) instead of stopping above a solid bar.
@@ -579,22 +565,36 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           child: Stack(
             children: [
               Positioned.fill(
-                child: _buildList(
-                  isEmpty: isEmpty,
-                  isLoading: isLoading,
-                  hasError: dayAsync.hasError,
-                  persistedMeals: persistedMeals,
-                  pendingConfirmations: pendingConfirmations,
-                  isStreaming: isStreaming,
-                  isRevealing: isRevealing,
-                  isCheatRevealing: isCheatRevealing,
-                  stream: stream,
-                  hasFooterItems: hasFooterItems,
-                  confirmPending: confirmPending,
-                  failedText: _failedText,
-                  failedRetryable: _failedRetryable,
-                  onRetry: _retry,
-                  onDiscardFailed: _discardFailed,
+                // Drag-to-dismiss for every feed scroll view. `onDrag` alone is
+                // not enough: it needs a ScrollUpdateNotification carrying
+                // dragDetails, which never arrives when the drag is pure
+                // overscroll (dragging DOWN from the top clamps, so pixels
+                // never move and only an OverscrollNotification fires). A drag
+                // START always fires, whether or not the offset survives.
+                child: NotificationListener<ScrollStartNotification>(
+                  onNotification: (n) {
+                    if (n.depth == 0 && n.dragDetails != null) {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                    }
+                    return false;
+                  },
+                  child: _buildList(
+                    isEmpty: isEmpty,
+                    isLoading: isLoading,
+                    hasError: dayAsync.hasError,
+                    persistedMeals: persistedMeals,
+                    pendingConfirmations: pendingConfirmations,
+                    isStreaming: isStreaming,
+                    isRevealing: isRevealing,
+                    isCheatRevealing: isCheatRevealing,
+                    stream: stream,
+                    hasFooterItems: hasFooterItems,
+                    confirmPending: confirmPending,
+                    failedText: _failedText,
+                    failedRetryable: _failedRetryable,
+                    onRetry: _retry,
+                    onDiscardFailed: _discardFailed,
+                  ),
                 ),
               ),
               Positioned(
@@ -607,6 +607,19 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Under-logged past day: the note rides the TOP of the
+                      // dock, because the way to fix the day is to type the
+                      // meal that is missing from it.
+                      if (showPartialDayNotice)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: LoggingSpacing.block,
+                          ),
+                          child: PartialDayNotice(
+                            calories: dailyCalories,
+                            target: profile.calorieTarget,
+                          ),
+                        ),
                       if (_errorText != null)
                         Padding(
                           padding: const EdgeInsets.only(
@@ -717,6 +730,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       if (hasFooterItems) {
         return SingleChildScrollView(
           controller: _scrollController,
+          // Without this the default physics refuse the drag outright whenever
+          // the content is shorter than the viewport (setCanDrag(false)), so no
+          // scroll notification ever fires and the keyboard cannot be dragged
+          // away on a near-empty day.
+          physics: const AlwaysScrollableScrollPhysics(),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           // The macro block above owns the top gap; the bottom reserves the
           // floating dock's height so the last card can clear it.
@@ -752,6 +770,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       // the empty state is centered.
       if (isLoading) {
         return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: EdgeInsets.fromLTRB(
             NhamSpacing.sp3,
@@ -764,6 +783,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       }
 
       return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Padding(
           padding: EdgeInsets.fromLTRB(
@@ -1199,49 +1219,6 @@ class _Footer extends StatelessWidget {
             onDiscard: onDiscardFailed,
           ),
       ],
-    );
-  }
-}
-
-/// A past-day under-logged note: Lora-italic terracotta title + a DM Sans body
-/// that names the gap and invites folding the day back in. Ported from the web
-/// `PartialDayNotice` (the strings shipped translated but were never rendered).
-class _PartialDayNotice extends StatelessWidget {
-  const _PartialDayNotice({required this.calories, required this.target});
-
-  final int calories;
-  final int target;
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = context.locale.toString();
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(NhamSpacing.sp3),
-      decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.borderSoft),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'logging.feedArea.partialDayNotice.title'.tr(),
-            style: dashBody(weight: FontWeight.w500).merge(const TextStyle(color: NhamColors.danger)),
-          ),
-          const SizedBox(height: 4), // mt-1
-          Text(
-            'logging.feedArea.partialDayNotice.body'.tr(
-              namedArgs: {
-                'calories': formatCount(calories, locale),
-                'target': formatCount(target, locale),
-              },
-            ),
-            style: dashMeta(),
-          ),
-        ],
-      ),
     );
   }
 }
