@@ -65,8 +65,11 @@ class LoggingDaySkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The last ghost drops its trailing gap, the way the real list's separator
+    // sits only BETWEEN cards — otherwise the skeleton is one block taller
+    // than the day it stands in for, and the swap to real data jumps.
     Widget ghostCard(bool isLast) => Padding(
-      padding: const EdgeInsets.only(bottom: LoggingSpacing.block),
+      padding: EdgeInsets.only(bottom: isLast ? 0 : LoggingSpacing.block),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

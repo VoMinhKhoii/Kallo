@@ -57,6 +57,13 @@ class FeedFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final pendingConfirmations = view.pendingConfirmations;
     final hasFailed = failedText != null;
+    // The index of the last pending entry that actually RENDERS. An entry with
+    // neither a cheatSpec nor a parsedMeal draws nothing, so comparing against
+    // `length - 1` would hand `isLast` to no one whenever such an entry sits
+    // at the end of the list.
+    final lastRendered = pendingConfirmations.lastIndexWhere(
+      (p) => p.cheatSpec != null || p.parsedMeal != null,
+    );
     // The footer's cards carry no margins of their own, so the stack spaces
     // them at the same block gap the card list uses above.
     return Column(
@@ -85,7 +92,7 @@ class FeedFooter extends StatelessWidget {
                   !view.isRevealing &&
                   !view.isCheatRevealing &&
                   !hasFailed &&
-                  i == pendingConfirmations.length - 1,
+                  i == lastRendered,
               onConfirm:
                   (edits) => onConfirm(pendingConfirmations[i].id, edits),
             ),
