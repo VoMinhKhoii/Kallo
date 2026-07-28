@@ -9,7 +9,6 @@ import '../../../shell/app_header.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/chat_group_providers.dart';
 import '../data/circle_providers.dart';
 import '../data/feed_providers.dart';
@@ -119,31 +118,8 @@ class _Header extends StatelessWidget {
   const _Header();
   @override
   Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              tr('groups.page.title'),
-              style: NhamTextStyles.serifRegular(
-                fontSize: NhamFontSize.h3,
-              ).copyWith(
-                color: NhamColors.text,
-                letterSpacing: NhamTracking.tight,
-              ),
-            ),
-            const SizedBox(height: NhamSpacing.sp1),
-            Text(
-              tr('groups.page.subtitle'),
-              style: NhamTextStyles.sansRegular(
-                fontSize: NhamFontSize.sm,
-              ).copyWith(color: NhamColors.textMuted),
-            ),
-          ],
-        ),
-      ),
+      Expanded(child: Text(tr('groups.page.title'), style: dashHeadline())),
       const CircleAddMenu(),
     ],
   );

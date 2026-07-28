@@ -1254,8 +1254,7 @@
   },
   "groups": {
     "page": {
-      "title": "Your circle",
-      "subtitle": "What your friends are eating today.",
+      "title": "Circle",
       "addFriend": "Add friend",
       "createGroup": "Create group",
       "friendsEmptyTitle": "No shared meals yet",

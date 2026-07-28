@@ -1,9 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/calm_tokens.dart';
 import '../theme/nham_colors.dart';
 import '../theme/nham_theme.dart';
-import '../theme/nham_typography.dart';
+
+/// The drawer's ONE glyph size — nav rows and the footer rows below them.
+/// (`sidebar_footer.dart` still hard-codes its own 16; it should adopt this.)
+const double kSidebarIconSize = 16;
 
 /// One drawer nav destination — mirrors the web `NavItemConfig`
 /// (`components/app/nav-items.ts`): href, i18n label key, Lucide icon, and the
@@ -23,9 +27,19 @@ class NavItem {
   final bool adminOnly;
 }
 
-/// A primary nav row. Active = full-width umber pill, white icon+label, 8px
-/// radius, subtle btn@20% shadow. Inactive = espresso text with a hover@60%
-/// press fill animated over ~150ms (transition-colors).
+/// A primary nav row, matched to web `mobile-nav-list.tsx`.
+///
+/// Selected = the warm hover wash (`NhamColors.hover` #F0EAE0) behind `kInk` at
+/// semibold; idle = `kInkMuted` on no fill, with a hover@40% press wash animated
+/// over ~150ms (`transition-colors`). Flutter used to invert this — a solid
+/// umber pill with white content and a drop shadow, i.e. the strongest possible
+/// treatment for a row that is merely "where you already are". The wash is the
+/// selection language everywhere else in the app (segmented controls, selected
+/// cards), so nav now speaks it too, and the shadow is gone: a nav row is not a
+/// floating card.
+///
+/// A selected row keeps its wash while pressed — the wash *is* the press-weight
+/// colour, and hover@40/50 over it would read lighter, not deeper.
 class NavRow extends StatefulWidget {
   const NavRow({
     required this.item,
@@ -52,9 +66,9 @@ class _NavRowState extends State<NavRow> {
   @override
   Widget build(BuildContext context) {
     final active = widget.active;
-    final Color contentColor = active ? Colors.white : NhamColors.text;
+    final Color contentColor = active ? kInk : kInkMuted;
     final Color? fill =
-        active ? NhamColors.btn : (_pressed ? NhamColors.hover40 : null);
+        active ? NhamColors.hover : (_pressed ? NhamColors.hover40 : null);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -69,34 +83,28 @@ class _NavRowState extends State<NavRow> {
         decoration: BoxDecoration(
           color: fill,
           borderRadius: BorderRadius.circular(NhamRadii.md),
-          boxShadow:
-              active
-                  ? const [
-                    BoxShadow(
-                      color: Color(0x33695E4E),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ]
-                  : null,
         ),
         child: Row(
           children: [
-            Icon(widget.item.icon, size: 20, color: contentColor),
+            Icon(widget.item.icon, size: kSidebarIconSize, color: contentColor),
             const SizedBox(width: 12),
             Text(
               tr(widget.item.labelKey),
-              style: NhamTextStyles.sansMedium(
-                fontSize: 14,
-              ).copyWith(color: contentColor),
+              style: dashBody(
+                color: contentColor,
+                weight: active ? FontWeight.w600 : FontWeight.w500,
+              ),
             ),
             if (widget.showBadge) ...[
               const Spacer(),
+              // Always tan, selected or not (web parity). It used to flip to
+              // white on the umber pill; against the new #F0EAE0 wash white
+              // would simply disappear.
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(
-                  color: active ? Colors.white : NhamColors.accent,
+                decoration: const BoxDecoration(
+                  color: NhamColors.accent,
                   shape: BoxShape.circle,
                 ),
               ),

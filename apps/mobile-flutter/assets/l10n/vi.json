@@ -1254,8 +1254,7 @@
   },
   "groups": {
     "page": {
-      "title": "Vòng kết nối của bạn",
-      "subtitle": "Hôm nay bạn bè đang ăn gì.",
+      "title": "Vòng kết nối",
       "addFriend": "Thêm bạn",
       "createGroup": "Tạo nhóm",
       "friendsEmptyTitle": "Chưa có bữa ăn được chia sẻ",

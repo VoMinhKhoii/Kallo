@@ -87,7 +87,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
             child: AppHeader(
               trailing: NutritionRangeSelector(
                 resolvedRange: async.valueOrNull?.resolvedRange ?? '7d',
@@ -103,7 +103,12 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                   .refetch(),
               color: NhamColors.accent,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+                padding: const EdgeInsets.fromLTRB(
+                  NhamSpacing.sp3,
+                  NhamSpacing.sp4,
+                  NhamSpacing.sp3,
+                  NhamSpacing.sp10,
+                ),
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
                 ),

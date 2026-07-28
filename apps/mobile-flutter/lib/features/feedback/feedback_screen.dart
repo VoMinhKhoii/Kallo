@@ -217,7 +217,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   Widget _buildSent() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
+        padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -258,9 +258,9 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   Widget _buildForm() {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
+        NhamSpacing.sp3,
         NhamSpacing.sp2,
-        NhamSpacing.sp4,
+        NhamSpacing.sp3,
         NhamSpacing.sp6,
       ),
       children: [
