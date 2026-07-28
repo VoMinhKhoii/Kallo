@@ -1,9 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/quiet_action_button.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
 
 /// The quiet Cancel text button — exits the amount editor without a network
 /// call. Disabled (null onTap) while a save is in flight.
@@ -39,42 +38,12 @@ class AmountEditorSaveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: enabled ? 1 : 0.6,
-      child: Material(
-        color: NhamColors.hover,
-        borderRadius: BorderRadius.circular(NhamRadii.xl),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(NhamRadii.xl),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (saving) ...[
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: NhamColors.text,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                ],
-                Text(
-                  saving
-                      ? 'logging.persistedMealCard.savingEdit'.tr()
-                      : 'logging.persistedMealCard.saveEdit'.tr(),
-                  style:
-                      dashBody(color: NhamColors.text, weight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return QuietActionButton(
+      label: 'logging.persistedMealCard.saveEdit'.tr(),
+      busyLabel: 'logging.persistedMealCard.savingEdit'.tr(),
+      busy: saving,
+      enabled: enabled,
+      onTap: onTap,
     );
   }
 }

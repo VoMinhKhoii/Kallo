@@ -10,6 +10,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/api_client.dart';
 import '../../shared/widgets/nham_primitives.dart';
+import '../../shared/widgets/quiet_action_button.dart';
 import '../../shell/app_header.dart';
 import '../../theme/calm_tokens.dart';
 import '../../theme/nham_colors.dart';
@@ -224,7 +225,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             const Icon(
               LucideIcons.circleCheck,
               size: 40,
-              color: NhamColors.text,
+              color: kInk,
             ),
             const SizedBox(height: NhamSpacing.sp4),
             Text(
@@ -271,8 +272,8 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
         // Type selector.
         Text(
-          tr('settings.feedback.typeLabel').toUpperCase(),
-          style: dashEyebrow(),
+          tr('settings.feedback.typeLabel'),
+          style: dashMeta(),
         ),
         const SizedBox(height: NhamSpacing.sp2),
         Row(
@@ -293,8 +294,8 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
         // Message.
         Text(
-          tr('settings.feedback.messageLabel').toUpperCase(),
-          style: dashEyebrow(),
+          tr('settings.feedback.messageLabel'),
+          style: dashMeta(),
         ),
         const SizedBox(height: NhamSpacing.sp2),
         Container(
@@ -314,14 +315,23 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             maxLength: _maxMessageLength,
             // Rebuild so the submit button + counter track what's typed.
             onChanged: (_) => setState(() {}),
-            cursorColor: NhamColors.text,
+            cursorColor: kInk,
             style: dashBody(),
             decoration: InputDecoration(
               isDense: true,
               counterText: '',
+              // All four, plus filled:false. The app theme sets `filled: true`
+              // and an OutlineInputBorder on `enabledBorder`, so clearing only
+              // `border` left the field painting its own box INSIDE this
+              // container — the nested-card look.
+              filled: false,
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
               hintText: tr('settings.feedback.placeholder.$_type'),
-              hintStyle: dashBody(color: NhamColors.textMuted),
+              hintStyle: dashBody(color: kInkMuted),
             ),
           ),
         ),
@@ -354,11 +364,18 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         ],
 
         const SizedBox(height: NhamSpacing.sp5),
-        NhamButton(
-          title: tr('settings.feedback.submit'),
-          loading: _busy,
-          disabled: _message.text.trim().isEmpty,
-          onPressed: _submit,
+        // The quiet confirm the logging card's Save uses, parked at the end of
+        // its row — not a full-width umber CTA. The umber is spent on one
+        // primary action per surface, and a feedback form's submit isn't it.
+        Align(
+          alignment: Alignment.centerRight,
+          child: QuietActionButton(
+            label: tr('settings.feedback.submit'),
+            busy: _busy,
+            enabled: _message.text.trim().isNotEmpty && !_busy,
+            onTap:
+                (_busy || _message.text.trim().isEmpty) ? null : () => _submit(),
+          ),
         ),
       ],
     );
@@ -395,7 +412,7 @@ class _TypeChip extends StatelessWidget {
                 : NhamColors.elev,
             borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
             border: Border.all(
-              color: selected ? NhamColors.text.withValues(alpha: 0.3) : NhamColors.borderSoft,
+              color: selected ? kInk.withValues(alpha: 0.3) : NhamColors.borderSoft,
             ),
           ),
           child: Column(
@@ -403,13 +420,13 @@ class _TypeChip extends StatelessWidget {
               Icon(
                 type.icon,
                 size: 18,
-                color: selected ? NhamColors.text : NhamColors.textMuted,
+                color: selected ? kInk : kInkMuted,
               ),
               const SizedBox(height: 6),
               Text(
                 tr('settings.feedback.types.${type.value}'),
                 style: dashMeta(
-                  color: selected ? NhamColors.text : NhamColors.textMuted,
+                  color: selected ? kInk : kInkMuted,
                 ),
               ),
             ],
@@ -477,7 +494,7 @@ class _ScreenshotField extends StatelessWidget {
                   child: Icon(
                     LucideIcons.x,
                     size: 16,
-                    color: NhamColors.textMuted,
+                    color: kInkMuted,
                   ),
                 ),
               ),
@@ -508,12 +525,12 @@ class _ScreenshotField extends StatelessWidget {
               const Icon(
                 LucideIcons.imagePlus,
                 size: 16,
-                color: NhamColors.textMuted,
+                color: kInkMuted,
               ),
               const SizedBox(width: 8),
               Text(
                 tr('settings.feedback.addScreenshot'),
-                style: dashBody(color: NhamColors.textMuted),
+                style: dashBody(color: kInkMuted),
               ),
             ],
           ),
