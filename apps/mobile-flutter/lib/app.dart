@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'data/analytics.dart';
 import 'data/session_provider.dart';
 import 'features/circle/circle_deep_links.dart';
+import 'features/logging/data/logging_providers.dart';
 import 'router.dart';
 import 'theme/nham_theme.dart';
 
@@ -33,6 +34,15 @@ class NhamApp extends ConsumerWidget {
       } else if (prev?.valueOrNull != null) {
         analytics.reset();
       }
+
+      // Composer state belongs to the account that wrote it — see
+      // [resetComposerStateForAccountChange] for why these three providers are
+      // the ones that need clearing.
+      resetComposerStateForAccountChange(
+        ref,
+        previousUserId: prev?.valueOrNull?.user.id,
+        nextUserId: session?.user.id,
+      );
     });
 
     // Wraps the app so a single invite-deep-link listener lives for the whole
