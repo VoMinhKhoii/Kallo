@@ -167,17 +167,48 @@ jobs:
         if: steps.prompt.outputs.ready == 'true'
         run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
 
+      - name: Probe the endpoint
+        if: steps.prompt.outputs.ready == 'true'
+        run: |
+          # One cheap round trip to separate "credentials/endpoint are wrong"
+          # from "the audit itself failed". Never fails the job.
+          set +e
+          echo 'Reply with exactly: OK' \
+            | claude -p --output-format json --model "$ANTHROPIC_MODEL" > probe.json 2>probe.err
+          code=$?
+          set -e
+          echo "probe exit: $code"
+          echo "::group::Probe output"
+          head -c 2000 probe.json; echo
+          echo "--- stderr ---"
+          head -c 1000 probe.err
+          echo "::endgroup::"
+
       - name: Run scan
         if: steps.prompt.outputs.ready == 'true'
         run: |
-          # Read-only tools only: no shell, no writes, no network.
+          # The CLI writes its error envelope to stdout and exits non-zero, so
+          # a bare failure here would abort the job before the formatter — which
+          # exists to classify exactly that — ever runs. Tolerate the exit code
+          # and let "Format report" decide; the job is failed at the end.
+          set +e
           claude -p \
             --output-format json \
             --model "$ANTHROPIC_MODEL" \
             --max-turns 60 \
             --allowed-tools "Read,Grep,Glob" \
             --disallowed-tools "Bash,Write,Edit,NotebookEdit,WebFetch,WebSearch,Task" \
-            < prompt.md > security-scan.json
+            < prompt.md > security-scan.json 2>scan.err
+          code=$?
+          set -e
+          echo "claude exit: $code"
+          if [ "$code" -ne 0 ]; then
+            echo "::group::Raw scan output"
+            head -c 4000 security-scan.json; echo
+            echo "--- stderr ---"
+            head -c 2000 scan.err
+            echo "::endgroup::"
+          fi
 
       - name: Format report
         id: report
@@ -198,8 +229,11 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+      # A broken scan is a red run, not a findings issue — the failed run is
+      # the signal, and filing "the scanner is down" under a security-findings
+      # label would bury real findings.
       - name: Report findings
-        if: steps.report.outputs.has_findings == 'true'
+        if: steps.report.outputs.status == 'findings' || steps.report.outputs.status == 'unstructured'
         env:
           GH_TOKEN: ${{ github.token }}
           SCOPE: ${{ steps.scope.outputs.scope }}
@@ -224,3 +258,13 @@ jobs:
             echo "Opened a new tracking issue"
           fi
           echo "::notice::Security scan ($SCOPE): $SUMMARY"
+
+      # Last, so the report is written and uploaded before the job goes red.
+      - name: Fail if the scan did not complete
+        if: steps.report.outputs.status == 'failed'
+        env:
+          SUMMARY: ${{ steps.report.outputs.summary }}
+        run: |
+          echo "::error::Security scan did not complete: $SUMMARY"
+          echo "See the 'Raw scan output' group above and the uploaded artifact."
+          exit 1

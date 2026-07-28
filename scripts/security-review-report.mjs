@@ -16,6 +16,7 @@
  *   GITHUB_OUTPUT  when set, receives has_findings / findings_count / summary
  *
  * Outputs:
+ *   status         'findings' | 'clean' | 'unstructured' | 'failed'
  *   has_findings   'true' when the report needs a human
  *   findings_count number of parsed findings
  *   summary        one-line severity tally
@@ -159,7 +160,12 @@ function main() {
       reportPath,
       `## Security scan failed\n\n${header()}\n\n${error}\n`
     );
-    emit({ has_findings: 'true', findings_count: 0, summary: 'scan failed' });
+    emit({
+      status: 'failed',
+      has_findings: 'true',
+      findings_count: 0,
+      summary: 'scan failed',
+    });
     return;
   }
 
@@ -173,6 +179,7 @@ function main() {
       `## Security scan (unstructured output)\n\n${header()}\n\nThe scan did not emit the expected JSON block. Raw output below.\n\n---\n\n${prose(text)}\n`
     );
     emit({
+      status: 'unstructured',
       has_findings: 'true',
       findings_count: 0,
       summary: 'unstructured output',
@@ -185,7 +192,12 @@ function main() {
       reportPath,
       `## Security scan: no findings\n\n${header()}\n\nNo exploitable issues were identified.\n`
     );
-    emit({ has_findings: 'false', findings_count: 0, summary: 'no findings' });
+    emit({
+      status: 'clean',
+      has_findings: 'false',
+      findings_count: 0,
+      summary: 'no findings',
+    });
     return;
   }
 
@@ -207,6 +219,7 @@ function main() {
 
   writeFileSync(reportPath, `${body}\n`);
   emit({
+    status: 'findings',
     has_findings: 'true',
     findings_count: sorted.length,
     summary,
