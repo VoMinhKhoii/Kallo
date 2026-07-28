@@ -366,6 +366,7 @@ function snapshot(
   return {
     providerSyncedAt: fixedNow,
     environment,
+    providerCustomerId: userId,
     grants: [
       {
         entitlementKey: 'premium',

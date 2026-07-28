@@ -281,6 +281,20 @@ async function reconcileRevenueCatGrantsInTransaction(
   // any grant from this stale response, including a previously unseen row.
   if (!accepted) return;
 
+  // Account-isolation boundary for non-authoritative reads. A CustomerInfo
+  // snapshot is fetched by the caller's app-user-id, so its canonical customer
+  // must be the caller. If RevenueCat instead returns a customer owned by a
+  // different user (an alias/transfer we have not been told about by an
+  // authoritative event), refuse to first-claim or expire any grant from it —
+  // only a TRANSFER/purchase webhook may cross the ownership boundary. This
+  // stops a caller whose snapshot surfaces another user's receipt from
+  // claiming a not-yet-recorded grant before the owner's row exists, and keeps
+  // isolation independent of the RevenueCat dashboard restore setting. The
+  // watermark above is already advanced, so this is an idempotent no-op.
+  if (!ownershipClaimed && snapshot.providerCustomerId !== userId) {
+    return;
+  }
+
   const notNewer = or(
     isNull(entitlementGrants.providerSyncedAt),
     lte(entitlementGrants.providerSyncedAt, snapshot.providerSyncedAt)

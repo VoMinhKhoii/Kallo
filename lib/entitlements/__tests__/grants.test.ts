@@ -326,6 +326,7 @@ describe('reconcileRevenueCatGrants', () => {
   const newlyCreatedEmptyCustomer = {
     providerSyncedAt: fixedNow,
     environment: 'production' as const,
+    providerCustomerId: userId,
     customerCreated: true,
     grants: [],
   };
@@ -378,6 +379,7 @@ describe('reconcileRevenueCatGrants', () => {
     const snapshot = {
       providerSyncedAt: new Date('2026-06-02T00:00:00.000Z'),
       environment: 'production' as const,
+      providerCustomerId: userId,
       grants: [
         {
           entitlementKey: 'premium' as const,
@@ -434,6 +436,7 @@ describe('reconcileRevenueCatGrants', () => {
       {
         providerSyncedAt: newer,
         environment: 'production',
+        providerCustomerId: userId,
         customerCreated: false,
         grants: [],
       },
@@ -455,10 +458,11 @@ describe('reconcileRevenueCatGrants', () => {
     const snapshot = {
       providerSyncedAt: new Date('2026-06-02T00:00:00.000Z'),
       environment: 'production' as const,
+      providerCustomerId: userId,
       grants: [
         {
           entitlementKey: 'premium' as const,
-          externalRef: 'customer:original-owner:premium',
+          externalRef: `customer:${userId}:premium`,
           productId: 'kallo_premium_monthly',
           store: 'app_store',
           startsAt: fixedNow,
@@ -480,6 +484,52 @@ describe('reconcileRevenueCatGrants', () => {
     expect(query.params).toContain(userId);
   });
 
+  it('does not first-claim a foreign customer grant on non-authoritative reconciliation', async () => {
+    // The snapshot's canonical RevenueCat customer is a DIFFERENT user than the
+    // caller (e.g. another account's receipt surfaced in this lookup). Without
+    // an authoritative TRANSFER/purchase event, ordinary reconciliation must
+    // neither insert nor expire any grant — otherwise the caller could claim a
+    // grant whose owning row does not exist yet, before the real owner's row is
+    // recorded. This isolation must not depend on the RevenueCat dashboard
+    // "Keep with original App User ID" setting.
+    const state: CustomerQuarantineState = {
+      hasActiveGrant: false,
+      customerMissingSince: null,
+      providerSyncedAt: null,
+      destructiveGrantUpdates: 0,
+    };
+    const snapshot = {
+      providerSyncedAt: new Date('2026-06-02T00:00:00.000Z'),
+      environment: 'production' as const,
+      providerCustomerId: 'original-owner',
+      grants: [
+        {
+          entitlementKey: 'premium' as const,
+          externalRef: 'customer:original-owner:premium',
+          productId: 'kallo_premium_monthly',
+          store: 'app_store',
+          startsAt: fixedNow,
+          expiresAt: new Date('2026-07-01T00:00:00.000Z'),
+          willRenew: true,
+          managementUrl: null,
+        },
+      ],
+    };
+
+    await reconcileRevenueCatGrants(userId, snapshot, {
+      db: makeCustomerQuarantineDb(state),
+      now,
+    });
+
+    // No grant insert (conflict set never captured) and no destructive update.
+    expect(state.grantConflictSet).toBeUndefined();
+    expect(state.destructiveGrantUpdates).toBe(0);
+    // The provider watermark still advances so the read is not reprocessed.
+    expect(state.providerSyncedAt).toEqual(
+      new Date('2026-06-02T00:00:00.000Z')
+    );
+  });
+
   it('allows ownership movement only for an explicit transfer', async () => {
     const state: CustomerQuarantineState = {
       hasActiveGrant: false,
@@ -493,6 +543,7 @@ describe('reconcileRevenueCatGrants', () => {
       {
         providerSyncedAt: new Date('2026-06-02T00:00:00.000Z'),
         environment: 'production',
+        providerCustomerId: 'original-owner',
         grants: [
           {
             entitlementKey: 'premium',
@@ -536,6 +587,7 @@ describe('reconcileRevenueCatGrants', () => {
       {
         providerSyncedAt: new Date('2026-06-03T00:00:00.000Z'),
         environment: 'production',
+        providerCustomerId: userId,
         grants: [
           {
             entitlementKey: 'premium',

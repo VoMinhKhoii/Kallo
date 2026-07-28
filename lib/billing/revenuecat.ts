@@ -75,6 +75,13 @@ export interface RevenueCatGrantSnapshot {
 export interface RevenueCatSnapshot {
   providerSyncedAt: Date;
   environment: BillingEnvironment;
+  /**
+   * RevenueCat's canonical customer id (`subscriber.original_app_user_id`) for
+   * this lookup. Non-authoritative reconciliation trusts a snapshot only when
+   * this matches the caller, so a snapshot that surfaces another user's receipt
+   * can never first-claim a grant outside an authoritative provider event.
+   */
+  providerCustomerId: string;
   grants: RevenueCatGrantSnapshot[];
   /** RevenueCat created an empty customer while answering this lookup. */
   customerCreated?: boolean;
@@ -282,7 +289,12 @@ export function parseRevenueCatSnapshot(
     });
   }
 
-  return { providerSyncedAt, environment: billingEnvironment, grants };
+  return {
+    providerSyncedAt,
+    environment: billingEnvironment,
+    providerCustomerId,
+    grants,
+  };
 }
 
 export async function fetchRevenueCatSnapshot(
