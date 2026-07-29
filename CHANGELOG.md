@@ -1,11 +1,7 @@
 # Changelog
 
-## [2.0.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.8.0...v2.0.0) (2026-07-29)
+## [1.9.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.8.0...v1.9.0) (2026-07-29)
 
-
-### ⚠ BREAKING CHANGES
-
-* **logging:** remove the precise-clarify ask-back UX on web and mobile
 
 ### Features
 
