@@ -213,8 +213,7 @@ export async function getEntitlementState(
     tier,
     reconciliationRequired:
       revenueCatProjectionIsStale(winner, now) ||
-      (winner === null &&
-        rows.some((grant) => grantNeedsReconciliation(grant, now))),
+      rows.some((grant) => grantNeedsReconciliation(grant, now)),
     isLifetime: winner?.expiresAt === null && winner !== null,
     expiresAt: winner?.expiresAt ?? null,
     willRenew: winner?.willRenew ?? false,

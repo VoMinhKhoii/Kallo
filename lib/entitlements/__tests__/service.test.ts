@@ -293,6 +293,26 @@ describe('getEntitlementState — grants', () => {
     expect(state.reconciliationRequired).toBe(false);
   });
 
+  it('reconciles an expired RevenueCat grant alongside an active promo', async () => {
+    const promo = makeGrant({
+      source: 'promo',
+      externalRef: 'promo-ref',
+    });
+    const expiredRevenueCat = makeGrant({
+      expiresAt: new Date('2026-08-05T00:00:00.000Z'),
+      externalRef: 'revenuecat-ref',
+    });
+
+    const state = await getEntitlementState(
+      { userId, profileCreatedAt: oldSignup },
+      { db: makeDb([promo, expiredRevenueCat]), now }
+    );
+
+    expect(state.tier).toBe('premium');
+    expect(state.source).toBe('promo');
+    expect(state.reconciliationRequired).toBe(true);
+  });
+
   it.each([
     { expiresAt: new Date('2026-09-01T00:00:00.000Z') },
     { expiresAt: null },
