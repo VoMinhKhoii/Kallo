@@ -164,11 +164,17 @@ Deletion requires a server-verified authentication method used within the last
 pagination, cleans local audit data, and persists a provider-erasure outbox job
 before deleting the Supabase Auth user. It then erases RevenueCat immediately;
 transient provider failures leave the local account deleted and are retried
-hourly by `.github/workflows/account-deletion-retry.yml`. This avoids canceling
-a web subscription while leaving a live Kallo account after a later failure.
-RevenueCat `200`, queued `202`, and already-absent `404` results are idempotent
-successes. RevenueCat customer deletion does not cancel Apple/Google store
-subscriptions, but does cancel RevenueCat Billing subscriptions immediately.
+hourly by `.github/workflows/account-deletion-retry.yml`. Concurrent deletion
+requests reuse one outbox row and atomically claim the immediate provider
+attempt through a recoverable, fenced processing lease; stale processors cannot
+overwrite the current owner's state. Scheduled retry runs do not overlap.
+Successful erasure scrubs the user UUID from the payload and retains a
+short-lived hashed completion tombstone until normal billing retention prunes
+it. This avoids duplicate erasure calls or canceling a web subscription while
+leaving a live Kallo account after a later failure. RevenueCat `200`, queued
+`202`, and already-absent `404` results are idempotent successes. RevenueCat
+customer deletion does not cancel Apple/Google store subscriptions, but does
+cancel RevenueCat Billing subscriptions immediately.
 
 ## Owner dashboard setup checklist
 

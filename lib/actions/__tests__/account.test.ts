@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  mockAuthUserIsConfirmedAbsent,
   mockCreateAdminClient,
   mockDeleteUser,
   mockDbDelete,
@@ -8,7 +9,8 @@ const {
   mockDeleteWhere,
   mockGetUser,
   mockGetClaims,
-  mockMarkDeletionReady,
+  mockHeaders,
+  mockClaimDeletionJob,
   mockPrepareDeletion,
   mockProcessDeletion,
   mockSignOut,
@@ -16,6 +18,7 @@ const {
   mockStorageList,
   mockStorageRemove,
 } = vi.hoisted(() => ({
+  mockAuthUserIsConfirmedAbsent: vi.fn(),
   mockCreateAdminClient: vi.fn(),
   mockDeleteUser: vi.fn(),
   mockDbDelete: vi.fn(),
@@ -23,13 +26,18 @@ const {
   mockDeleteWhere: vi.fn(),
   mockGetUser: vi.fn(),
   mockGetClaims: vi.fn(),
-  mockMarkDeletionReady: vi.fn(),
+  mockHeaders: vi.fn(),
+  mockClaimDeletionJob: vi.fn(),
   mockPrepareDeletion: vi.fn(),
   mockProcessDeletion: vi.fn(),
   mockSignOut: vi.fn(),
   mockStorageFrom: vi.fn(),
   mockStorageList: vi.fn(),
   mockStorageRemove: vi.fn(),
+}));
+
+vi.mock('next/headers', () => ({
+  headers: mockHeaders,
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -47,7 +55,8 @@ vi.mock('@/lib/supabase/admin', () => ({
 }));
 
 vi.mock('@/lib/account-deletion/jobs', () => ({
-  markAccountDeletionReady: mockMarkDeletionReady,
+  authUserIsConfirmedAbsent: mockAuthUserIsConfirmedAbsent,
+  claimAccountDeletionJob: mockClaimDeletionJob,
   prepareAccountDeletion: mockPrepareDeletion,
   processAccountDeletionJob: mockProcessDeletion,
 }));
@@ -67,6 +76,14 @@ const input = { expectedUserId: user.id };
 describe('deleteAccountAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuthUserIsConfirmedAbsent.mockImplementation(
+      (candidate: unknown, error: { status?: number; code?: string } | null) =>
+        !candidate &&
+        (!error || error.status === 404 || error.code === 'user_not_found')
+    );
+    mockHeaders.mockResolvedValue(
+      new Headers({ authorization: 'Bearer mobile-access-token' })
+    );
     mockGetUser.mockResolvedValue({ data: { user }, error: null });
     mockGetClaims.mockResolvedValue({
       data: {
@@ -90,7 +107,9 @@ describe('deleteAccountAction', () => {
     mockDeleteWhere.mockResolvedValue(undefined);
     mockDeleteUser.mockResolvedValue({ error: null });
     mockPrepareDeletion.mockResolvedValue({ id: 'job-1', userId: user.id });
-    mockMarkDeletionReady.mockResolvedValue(undefined);
+    mockClaimDeletionJob.mockResolvedValue(
+      new Date('2026-07-29T00:00:00.000Z')
+    );
     mockProcessDeletion.mockResolvedValue(undefined);
     mockSignOut.mockResolvedValue(undefined);
   });
@@ -117,10 +136,13 @@ describe('deleteAccountAction', () => {
       success: true,
     });
     expect(mockDeleteUser).toHaveBeenCalledWith(user.id);
-    expect(mockProcessDeletion).toHaveBeenCalledWith({
-      id: 'job-1',
-      userId: user.id,
-    });
+    expect(mockProcessDeletion).toHaveBeenCalledWith(
+      {
+        id: 'job-1',
+        userId: user.id,
+      },
+      expect.any(Date)
+    );
   });
 
   it('does not delete auth when the first billing cleanup fails', async () => {
@@ -143,6 +165,30 @@ describe('deleteAccountAction', () => {
     expect(mockDeleteWhere).toHaveBeenCalledTimes(1);
     expect(mockPrepareDeletion).toHaveBeenCalledWith(user.id);
     expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
+  it('treats a concurrent already-deleted account as idempotent success', async () => {
+    mockDeleteUser.mockResolvedValue({
+      error: { status: 404, code: 'user_not_found' },
+    });
+
+    await expect(deleteAccountAction(input)).resolves.toEqual({
+      success: true,
+    });
+    expect(mockPrepareDeletion).toHaveBeenCalledWith(user.id);
+    expect(mockClaimDeletionJob).not.toHaveBeenCalled();
+    expect(mockProcessDeletion).not.toHaveBeenCalled();
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets only the outbox claimant call RevenueCat during a race', async () => {
+    mockClaimDeletionJob.mockResolvedValue(null);
+
+    await expect(deleteAccountAction(input)).resolves.toEqual({
+      success: true,
+    });
+    expect(mockClaimDeletionJob).toHaveBeenCalledWith('job-1');
+    expect(mockProcessDeletion).not.toHaveBeenCalled();
   });
 
   it('finishes deletion when raced post-delete audit cleanup fails', async () => {
@@ -221,6 +267,24 @@ describe('deleteAccountAction', () => {
     });
     expect(mockCreateAdminClient).not.toHaveBeenCalled();
     expect(mockPrepareDeletion).not.toHaveBeenCalled();
+  });
+
+  it('passes the stateless mobile bearer token to the claims verifier', async () => {
+    await expect(deleteAccountAction(input)).resolves.toEqual({
+      success: true,
+    });
+
+    expect(mockGetClaims).toHaveBeenCalledWith('mobile-access-token');
+  });
+
+  it('uses the cookie-backed session when no bearer token is present', async () => {
+    mockHeaders.mockResolvedValue(new Headers());
+
+    await expect(deleteAccountAction(input)).resolves.toEqual({
+      success: true,
+    });
+
+    expect(mockGetClaims).toHaveBeenCalledWith(undefined);
   });
 
   it('rejects stale-tab data export before reading another account', async () => {
