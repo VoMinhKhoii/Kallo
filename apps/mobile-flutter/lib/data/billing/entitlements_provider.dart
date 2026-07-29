@@ -96,7 +96,9 @@ class EntitlementsController
 
     final operation = _captureOperation();
     if (operation == null) {
-      state = const AsyncData(EntitlementState.free);
+      if (!_disposed) {
+        state = const AsyncData(EntitlementState.free);
+      }
       return EntitlementState.free;
     }
 
@@ -126,7 +128,9 @@ class EntitlementsController
   Future<EntitlementState?> reconcile() async {
     final operation = _captureAuthoritativeOperation();
     if (operation == null) {
-      state = const AsyncData(EntitlementState.free);
+      if (!_disposed) {
+        state = const AsyncData(EntitlementState.free);
+      }
       return EntitlementState.free;
     }
 
@@ -174,9 +178,17 @@ class EntitlementsController
         // Reconcile with the provider once after the store action. Follow-up
         // checks are local entitlement reads so a slow webhook does not
         // amplify into repeated RevenueCat API calls.
-        final reconciled = await AsyncValue.guard(_reconcile);
+        final previous = state.valueOrNull;
+        final reconcileBudget = deadline.difference(DateTime.now());
+        if (reconcileBudget <= Duration.zero) return false;
+        final reconciled = await AsyncValue.guard(
+          () => _reconcile().timeout(reconcileBudget),
+        );
         if (!_isCurrent(operation)) return false;
-        state = reconciled;
+        state =
+            reconciled.hasError && previous != null
+                ? AsyncData(previous)
+                : reconciled;
         if (reconciled.valueOrNull?.isPremium ?? false) return true;
 
         while (DateTime.now().isBefore(deadline)) {
@@ -186,14 +198,22 @@ class EntitlementsController
             remaining < interval ? remaining : interval,
           );
           if (!_isCurrent(operation)) return false;
+          final requestBudget = deadline.difference(DateTime.now());
+          if (requestBudget <= Duration.zero) break;
 
-          final snapshot = await AsyncValue.guard(_fetch);
+          final previous = state.valueOrNull;
+          final snapshot = await AsyncValue.guard(
+            () => _fetch().timeout(requestBudget),
+          );
           if (!_isCurrent(operation)) return false;
-          state = snapshot;
+          state =
+              snapshot.hasError && previous != null
+                  ? AsyncData(previous)
+                  : snapshot;
           if (snapshot.valueOrNull?.isPremium ?? false) return true;
         }
 
-        return _isCurrent(operation) && (state.valueOrNull?.isPremium ?? false);
+        return false;
       });
     } finally {
       _endAuthoritativeOperation();
