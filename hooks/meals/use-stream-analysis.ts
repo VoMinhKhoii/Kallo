@@ -226,6 +226,22 @@ export function useStreamAnalysis() {
             typeof body?.error === 'string'
               ? body.error
               : (body?.error?.message ?? `Request failed (${response.status})`);
+
+          // A pre-stream 402 means the AI-analysis feature is locked. Surface a
+          // distinct state so the logging surface opens the paywall rather than
+          // showing a generic error toast. Keyed on the HTTP status; the body
+          // (code 'feature_locked', feature, reason) is parsed defensively but
+          // the status alone is authoritative.
+          if (response.status === 402) {
+            setState((prev) => ({
+              ...prev,
+              status: 'paymentRequired',
+              error: errorMsg,
+              isAnalyzing: false,
+            }));
+            return;
+          }
+
           setState((prev) => ({
             ...prev,
             status: 'error',

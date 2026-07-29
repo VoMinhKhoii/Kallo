@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../logic/logging_spacing.dart';
 import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
@@ -34,7 +35,7 @@ class PersistedMealCardContent extends StatelessWidget {
     final n = meal.nutrition;
 
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: NhamColors.elev,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),
@@ -93,13 +94,10 @@ class PersistedMealCardContent extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  NhamText(
-                    'P: ${fmtG(n.proteinG)}  C: ${fmtG(n.carbohydrateG)}  F: ${fmtG(n.fatG)}',
-                    variant: NhamTextVariant.captionTabular,
-                  ),
-                  NhamText(
+                  Text(
+                    'P: ${fmtG(n.proteinG)}  C: ${fmtG(n.carbohydrateG)}  F: ${fmtG(n.fatG)}', style: dashMeta(tabular: true),),
+                  Text(
                     fmtKcal(n.caloriesKcal),
-                    variant: NhamTextVariant.numStrong,
                     style: dashValue(),
                   ),
                 ],

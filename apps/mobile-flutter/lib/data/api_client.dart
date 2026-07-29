@@ -290,12 +290,15 @@ class ApiClient {
 
     if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
       // Drain + surface as a terminal error, mirroring the RN `error` branch.
+      // The HTTP status rides along so a `402 Payment Required` (feature locked
+      // — post Phase E) can route the consumer to the paywall.
       final res = await http.Response.fromStream(streamed);
       final apiErr = _toApiError(res);
       yield StreamErrorEvent(
         code: apiErr.code,
         message: apiErr.message,
         retryable: apiErr.retryable,
+        status: res.statusCode,
       );
       return;
     }

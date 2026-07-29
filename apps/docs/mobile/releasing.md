@@ -56,13 +56,19 @@ The Key ID / Issuer ID / Team ID are baked into the `Fastfile` (they're useless 
 The `beta` lane injects the **prod** backend via `--dart-define` (mirrors the RN EAS "production"
 profile — all client-public values):
 
-- `API_BASE_URL=https://nham-internal-714321235532.asia-southeast3.run.app`
+- `API_BASE_URL=https://kallo.fit` — mobile must traverse Cloudflare; the raw
+  `run.app` origin requires a private header the app does not carry.
 - `SUPABASE_URL=<API_BASE_URL>/api/supabase-proxy` — auth is proxied through Cloud Run because
   some VN ISPs blackhole the supabase.co Cloudflare edge (prod project stays `oudpzhfzirgjbhrzcett…`)
 - `SUPABASE_ANON_KEY=sb_publishable_…`
 - `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` — native Google sign-in (baked into the
   Fastfile defaults; the iOS client ID's reversed form is also the URL scheme in
   `ios/Runner/Info.plist`).
+- `REVENUECAT_APPLE_API_KEY` — Kallo's client-public RevenueCat iOS SDK key,
+  supplied by `KALLO_REVENUECAT_APPLE_API_KEY` for release builds.
+  Release builds require the `appl_` prefix and reject RevenueCat secret-key
+  prefixes (`sk_` / `atk_`); `test_` keys are only for explicitly configured
+  local Test Store builds.
 
 Override via `NHAM_API_BASE_URL`, `NHAM_SUPABASE_URL`, `NHAM_SUPABASE_KEY`,
 `NHAM_GOOGLE_WEB_CLIENT_ID`, `NHAM_GOOGLE_IOS_CLIENT_ID`.
@@ -97,7 +103,7 @@ Also: the archive **builds from a `/tmp` mirror** for the same [iCloud codesign 
 
 ## Export compliance
 
-`ios/Runner/Info.plist` sets `ITSAppUsesNonExemptEncryption = false` — Nhẩm uses only standard
+`ios/Runner/Info.plist` sets `ITSAppUsesNonExemptEncryption = false` — Kallo uses only standard
 HTTPS/TLS (API + Supabase auth), which is exempt. This makes App Store Connect **skip** the
 encryption + France export-compliance questionnaire on every build.
 
@@ -160,6 +166,14 @@ never mints a new certificate (which would burn Apple's cert cap). The `signing`
    | `MATCH_PASSWORD` | the passphrase from step 2 |
    | `MATCH_GIT_BASIC_AUTHORIZATION` | `base64 "<gh-user>:<PAT-with-repo-scope>"` — lets CI read the match repo |
    | `NHAM_KEYCHAIN_PASSWORD` | any string; password for the ephemeral CI keychain |
+   | `KALLO_REVENUECAT_APPLE_API_KEY` | client-public RevenueCat iOS SDK key (`appl_...`) |
+
+   The workflow always creates the `app_store_release` profile against
+   `https://kallo.fit`. The retired internal service must not be revived just
+   for billing tests. Until a separately approved QA backend exists, test the
+   complete sandbox server flow locally (or through a short-lived tunnel);
+   TestFlight store transactions are sandbox transactions and production
+   entitlement reconciliation intentionally rejects them.
 
 Client-public values (`API_BASE_URL`, `SUPABASE_*`, the Google client IDs, team/app id) are baked
 into the `Fastfile` defaults — no secrets needed.

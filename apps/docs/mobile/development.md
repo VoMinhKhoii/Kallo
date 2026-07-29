@@ -77,8 +77,16 @@ the [release lanes](./releasing.md) all build from a `/tmp` mirror for this reas
 Runtime config comes from compile-time `--dart-define`s, read in
 [`lib/data/env.dart`](../../mobile-flutter/lib/data/env.dart). Required: `SUPABASE_URL`,
 `SUPABASE_ANON_KEY`, `API_BASE_URL` (defaults to `http://localhost:3000`). Optional:
-`POSTHOG_KEY`, `POSTHOG_HOST`, and `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` (native
-Google sign-in — empty disables the Google button without blocking startup).
+`POSTHOG_KEY`, `POSTHOG_HOST`, `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` (native
+Google sign-in — empty disables the Google button without blocking startup), and
+`REVENUECAT_APPLE_API_KEY` / `REVENUECAT_GOOGLE_API_KEY` (RevenueCat public SDK keys for
+in-app subscriptions — the platform key is picked per-OS in
+[`lib/data/billing/purchases_service.dart`](../../mobile-flutter/lib/data/billing/purchases_service.dart);
+release-capable keys must use the matching `appl_` / `goog_` prefix, while
+`test_` is accepted only in debug builds; secret-looking or wrong-platform keys
+are rejected before SDK configuration. When the current platform's key is empty the purchases service reports
+`purchasesAvailable = false` and the paywall renders a graceful "unavailable" state, so a
+dev build without RevenueCat config still boots).
 
 > **Native Google sign-in setup.** `GOOGLE_WEB_CLIENT_ID` is the Google Cloud **Web**
 > OAuth client ID (passed to `google_sign_in` as `serverClientId`); it must also be added
@@ -92,7 +100,7 @@ Google sign-in — empty disables the Google button without blocking startup).
 | Environment | API_BASE_URL | Supabase |
 |-------------|--------------|----------|
 | **dev** (sim) | `http://localhost:3000` | dev project (`jqgmcnlfxzzhrvrzpoye…`) |
-| **prod** (TestFlight) | `https://nham-internal-…run.app` | `…run.app/api/supabase-proxy` (proxied to the prod project `oudpzhfzirgjbhrzcett…`) |
+| **prod** (TestFlight/App Store) | `https://kallo.fit` | `https://kallo.fit/api/supabase-proxy` (proxied to the prod project `oudpzhfzirgjbhrzcett…`) |
 
 Prod auth rides the Cloud Run host's `/api/supabase-proxy` route instead of
 `supabase.co` directly, because some VN ISPs blackhole the Supabase Cloudflare

@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
@@ -66,9 +65,8 @@ class _TerminalPrimaryButtonState extends State<TerminalPrimaryButton> {
               children: [
                 Icon(widget.icon, size: 14, color: Colors.white),
                 const SizedBox(width: 6),
-                NhamText(
+                Text(
                   widget.label,
-                  variant: NhamTextVariant.body,
                   style: dashBody(color: Colors.white, weight: FontWeight.w500),
                 ),
               ],
@@ -110,9 +108,8 @@ class _TerminalDiscardButtonState extends State<TerminalDiscardButton> {
             color: _pressed ? NhamColors.hover : Colors.transparent,
             borderRadius: BorderRadius.circular(NhamRadii.xl),
           ),
-          child: NhamText(
+          child: Text(
             'logging.discard'.tr(),
-            variant: NhamTextVariant.body,
             style: dashBody(color: kInkMuted, weight: FontWeight.w500),
           ),
         ),

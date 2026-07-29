@@ -177,7 +177,7 @@ class _CustomSelectState extends State<CustomSelect>
                     child: const Icon(
                       LucideIcons.chevronDown,
                       size: 16,
-                      color: NhamColors.textWarm,
+                      color: kInkMuted,
                     ),
                   ),
                 ],

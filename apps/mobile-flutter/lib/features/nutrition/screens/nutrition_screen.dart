@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../shared/widgets/scroll_separator.dart';
 import '../../../data/session_provider.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
@@ -65,53 +66,53 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     // A refetch that fails while we still hold a prior overview keeps the
     // content on screen (copyWithPrevious) and surfaces the failure as a top
     // toast instead of nuking what the user is reading.
-    ref.listen<AsyncValue<NutritionOverview>>(
-      nutritionOverviewProvider(_arg),
-      (prev, next) {
-        if (next.hasError && next.hasValue) {
-          showTopToast(
-            context,
-            tr('nutrition.errors.overviewToast'),
-            variant: TopToastVariant.error,
-          );
-        }
-      },
-    );
+    ref.listen<AsyncValue<NutritionOverview>>(nutritionOverviewProvider(_arg), (
+      prev,
+      next,
+    ) {
+      if (next.hasError && next.hasValue) {
+        showTopToast(
+          context,
+          tr('nutrition.errors.overviewToast'),
+          variant: TopToastVariant.error,
+        );
+      }
+    });
 
     final async = ref.watch(nutritionOverviewProvider(_arg));
     // `isFetching`: a refetch in flight while previous data is shown.
     final isFetching = async.isLoading && async.hasValue;
 
     return Screen(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: AppHeader(
-              trailing: NutritionRangeSelector(
-                resolvedRange: async.valueOrNull?.resolvedRange ?? '7d',
-                onRangeChange: (range) => setState(() => _range = range),
-                disabled: isFetching,
-              ),
+      child: ScrollSeparator(
+        header: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          child: AppHeader(
+            trailing: NutritionRangeSelector(
+              resolvedRange: async.valueOrNull?.resolvedRange ?? '7d',
+              onRangeChange: (range) => setState(() => _range = range),
+              disabled: isFetching,
             ),
           ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () => ref
-                  .read(nutritionOverviewProvider(_arg).notifier)
-                  .refetch(),
-              color: NhamColors.accent,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
-                ),
-                child: _buildBody(async, isFetching),
-              ),
+        ),
+        child: RefreshIndicator(
+          onRefresh:
+              () =>
+                  ref.read(nutritionOverviewProvider(_arg).notifier).refetch(),
+          color: NhamColors.accent,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              NhamSpacing.sp3,
+              NhamSpacing.sp4,
+              NhamSpacing.sp3,
+              NhamSpacing.sp10,
             ),
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            child: _buildBody(async, isFetching),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -163,8 +164,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         if (foodNutrients.isNotEmpty) ...[
           const SizedBox(height: 12),
           _SuggestedFoodsButton(
-            onTap: () =>
-                showSuggestedFoodsSheet(context, nutrients: foodNutrients),
+            onTap:
+                () =>
+                    showSuggestedFoodsSheet(context, nutrients: foodNutrients),
           ),
         ],
         if (vitamins.isNotEmpty) ...[
@@ -225,12 +227,13 @@ class _NutrientGrid extends StatelessWidget {
               ),
               const SizedBox(width: gap),
               Expanded(
-                child: right == null
-                    ? const SizedBox.shrink()
-                    : NutrientGridCard(
-                        card: right,
-                        barDelay: Duration(milliseconds: 60 * (i + 1)),
-                      ),
+                child:
+                    right == null
+                        ? const SizedBox.shrink()
+                        : NutrientGridCard(
+                          card: right,
+                          barDelay: Duration(milliseconds: 60 * (i + 1)),
+                        ),
               ),
             ],
           ),
@@ -275,11 +278,18 @@ class _SuggestedFoodsButtonState extends State<_SuggestedFoodsButton> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(LucideIcons.sparkles, size: 18, color: NhamColors.surface),
+              const Icon(
+                LucideIcons.sparkles,
+                size: 18,
+                color: NhamColors.surface,
+              ),
               const SizedBox(width: NhamSpacing.sp2),
               Text(
                 tr('nutrition.suggestedFoods.button'),
-                style: dashBody(color: NhamColors.surface, weight: FontWeight.w600),
+                style: dashBody(
+                  color: NhamColors.surface,
+                  weight: FontWeight.w600,
+                ),
               ),
             ],
           ),

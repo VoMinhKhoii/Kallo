@@ -38,6 +38,7 @@ export function useFeedController(args: {
   initialMeal: string | undefined;
   isDateNavigationPending: boolean;
   onInitialMealApplied: (() => void) | undefined;
+  onPaymentRequired: (() => void) | undefined;
 }) {
   const {
     selectedDate,
@@ -46,6 +47,7 @@ export function useFeedController(args: {
     initialMeal,
     isDateNavigationPending,
     onInitialMealApplied,
+    onPaymentRequired,
   } = args;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -161,6 +163,7 @@ export function useFeedController(args: {
     lastAnalysisIdRef,
     lastErrorRef,
     onAnalysisComplete: handleAnalysisComplete,
+    onPaymentRequired,
   });
 
   const { pendingMessages, displayMessages, unconfirmedMessages } =

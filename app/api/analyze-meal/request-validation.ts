@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import type { NextRequest } from 'next/server';
+import type { NextRequest, NextResponse } from 'next/server';
 import {
   type GeminiProviderConfig,
   resolveGeminiProvider,
@@ -42,8 +42,21 @@ export function createGuardRelease(
   };
 }
 
+type GeminiConfigResult =
+  | { ok: true; config: GeminiProviderConfig }
+  | { ok: false; error: NextResponse };
+
+export function resolveGeminiConfig(): GeminiConfigResult {
+  try {
+    return { ok: true, config: resolveGeminiProvider() };
+  } catch (error) {
+    console.error('[analyze-meal] AI provider misconfigured:', error);
+    return { ok: false, error: serializeError(Errors.internal()) };
+  }
+}
+
 /**
- * Pre-stream validation: auth, input, profile, config.
+ * Pre-stream validation: auth, input, and profile.
  * Returns structured JSON error responses before SSE starts.
  *
  * Auth verification and body parsing run in parallel to reduce latency by
@@ -93,14 +106,6 @@ export async function validateRequest(request: NextRequest) {
       );
     }
 
-    let geminiConfig: GeminiProviderConfig;
-    try {
-      geminiConfig = resolveGeminiProvider();
-    } catch (error) {
-      console.error('[analyze-meal] AI provider misconfigured:', error);
-      throw Errors.internal();
-    }
-
     return {
       data: {
         userId: user.id,
@@ -120,7 +125,6 @@ export async function validateRequest(request: NextRequest) {
         cheatIntensity: parsed.data.cheatIntensity,
         attemptId: parsed.data.attemptId,
         profile,
-        geminiConfig,
       },
     };
   } catch (error) {

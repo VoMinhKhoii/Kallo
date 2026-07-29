@@ -5,12 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../features/onboarding/widgets/onboarding_dialog.dart';
+import '../theme/calm_tokens.dart';
 import '../theme/nham_colors.dart';
 import '../theme/nham_theme.dart';
-import '../theme/nham_typography.dart';
 import 'sidebar_nav_list.dart';
+import 'sidebar_nav_row.dart' show kSidebarIconSize;
 import 'sidebar_onboarding_nudge.dart';
-import 'sidebar_sign_out_row.dart';
 
 class SidebarFooter extends StatelessWidget {
   const SidebarFooter({
@@ -64,16 +64,17 @@ class SidebarFooter extends StatelessWidget {
               context.push('/settings');
             },
           ),
-          const SizedBox(height: 4),
-          SignOutRow(ref: ref, onClose: onClose),
+          // Sign out is NOT here: it lives at the bottom of Settings, in red,
+          // so the drawer stays pure navigation and the session action sits
+          // with the other account actions.
         ],
       ),
     );
   }
 }
 
-/// Footer Settings row — radius 12, 16px icon, 13px medium label; active =
-/// umber fill + white; inactive = espresso text w/ hover@60% press fill.
+/// Footer Settings row — visually identical to [NavRow] above it: the warm
+/// hover wash + ink + semibold when active, muted when idle.
 class FooterRow extends StatefulWidget {
   const FooterRow({
     required this.icon,
@@ -98,9 +99,12 @@ class _FooterRowState extends State<FooterRow> {
   @override
   Widget build(BuildContext context) {
     final active = widget.active;
-    final Color contentColor = active ? Colors.white : NhamColors.text;
+    // Identical to NavRow above it — this row sits in the same column and had
+    // been left on the old inverted scheme (umber fill + white content, ink
+    // when idle), so the drawer read as two different components.
+    final Color contentColor = active ? kInk : kInkMuted;
     final Color? fill =
-        active ? NhamColors.btn : (_pressed ? NhamColors.hover40 : null);
+        active ? NhamColors.hover : (_pressed ? NhamColors.hover40 : null);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -115,17 +119,18 @@ class _FooterRowState extends State<FooterRow> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: fill,
-          borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+          borderRadius: BorderRadius.circular(NhamRadii.md),
         ),
         child: Row(
           children: [
-            Icon(widget.icon, size: 16, color: contentColor),
+            Icon(widget.icon, size: kSidebarIconSize, color: contentColor),
             const SizedBox(width: 12),
             Text(
               widget.label,
-              style: NhamTextStyles.sansMedium(
-                fontSize: 13,
-              ).copyWith(color: contentColor),
+              style: dashBody(
+                color: contentColor,
+                weight: active ? FontWeight.w600 : FontWeight.w500,
+              ),
             ),
           ],
         ),

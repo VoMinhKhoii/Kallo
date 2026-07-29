@@ -1447,3 +1447,214 @@ export const userFeedback = pgTable(
     ),
   ]
 );
+
+// ---------------------------------------------------------------------------
+// Billing & Entitlements
+//
+// Source of truth for premium access. Rows are written ONLY by the
+// RevenueCat webhook (RC manages all three purchase platforms: Apple IAP,
+// Google Play Billing, and Paddle-powered web checkout) and admin/promo
+// tooling — never from client input. The source CHECKs deliberately allow
+// values for rails we may bolt on later (e.g. a VietQR gateway) so adding
+// one is a new webhook writer, not a constraint migration.
+// Server-side gating (lib/entitlements/) reads exclusively from these
+// tables; clients get a derived view via GET /api/v1/account/entitlements.
+// ---------------------------------------------------------------------------
+
+export const entitlementGrants = pgTable(
+  'entitlement_grants',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    // Tier key ('premium'). New tiers = new keys; no schema change needed.
+    entitlementKey: text('entitlement_key').notNull(),
+    source: text('source').notNull(),
+    // The purchase environment is part of the grant's trust boundary. Prod and
+    // non-prod temporarily share one database, so every read/write must isolate
+    // PRODUCTION from SANDBOX rows.
+    environment: text('environment').notNull(),
+    // RC's event.store lowercased (app_store, play_store, mac_app_store,
+    // rc_billing, paddle, stripe, promotional, ...). NO check constraint — RC
+    // adds stores over time. Used to route the "manage subscription" deep link
+    // on the settings screen; NOT a gating input.
+    store: text('store'),
+    // Store product identifier (App Store / Play / Paddle product id as
+    // reported by RC) — for support/debugging, not for gating decisions.
+    productId: text('product_id'),
+    startsAt: timestamp('starts_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // NULL = lifetime (never expires).
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    status: text('status').notNull().default('active'),
+    // Auto-renewing subscription that will renew at expiresAt. Always false
+    // for lifetime grants. A canceled-but-not-expired sub is
+    // status='active' + willRenew=false (access runs to period end).
+    willRenew: boolean('will_renew').notNull().default(false),
+    // Stable id at the source (RC original transaction / subscription id) —
+    // upsert key so webhook retries and renewals update one row instead of
+    // stacking duplicates.
+    externalRef: text('external_ref').notNull(),
+    // RevenueCat's request_date_ms for the canonical snapshot that produced
+    // this row. Webhook deliveries may race or arrive out of order, so writers
+    // only replace a row when this timestamp is at least as new.
+    providerSyncedAt: timestamp('provider_synced_at', { withTimezone: true }),
+    // Provider-owned subscription management URL. RevenueCat chooses the
+    // correct App Store / Play / Paddle portal, including cross-platform cases.
+    managementUrl: text('management_url'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'entitlement_grants_source_check',
+      sql`${table.source} IN ('revenuecat', 'polar', 'payos', 'promo')`
+    ),
+    check(
+      'entitlement_grants_environment_check',
+      sql`${table.environment} IN ('production', 'sandbox')`
+    ),
+    check(
+      'entitlement_grants_status_check',
+      sql`${table.status} IN ('active', 'canceled', 'expired', 'refunded')`
+    ),
+    unique('entitlement_grants_source_external_ref_unique').on(
+      table.source,
+      table.externalRef,
+      table.environment
+    ),
+    index('entitlement_grants_user_status_idx').on(table.userId, table.status),
+  ]
+);
+
+// One monotonic watermark per customer/provider. Grant-row timestamps are not
+// sufficient by themselves: an older snapshot could otherwise insert a grant
+// that did not exist when a newer empty snapshot was applied first.
+export const billingProviderSyncs = pgTable(
+  'billing_provider_syncs',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    source: text('source').notNull(),
+    environment: text('environment').notNull(),
+    providerSyncedAt: timestamp('provider_synced_at', {
+      withTimezone: true,
+    }).notNull(),
+    // RevenueCat TRANSFER and other provider events have their own ordering
+    // clock. Keep it separate from CustomerInfo.request_date so a delayed
+    // ownership event can never override a newer transfer-back.
+    ownershipEventAt: timestamp('ownership_event_at', {
+      withTimezone: true,
+    }),
+    // Provider event id + semantic priority deterministically break equal-ms
+    // ties. TRANSFER outranks paired lifecycle/redemption events; event id is
+    // the final convergence key for equal-time events of the same class.
+    ownershipEventId: text('ownership_event_id'),
+    ownershipEventPriority: integer('ownership_event_priority')
+      .notNull()
+      .default(0),
+    // True after the latest accepted ownership event transferred the receipt
+    // away from this App User ID. Background CustomerInfo reads may advance
+    // their own watermark, but cannot revive grants while this is set.
+    ownershipRevoked: boolean('ownership_revoked').notNull().default(false),
+    // Persistent safety latch set when RevenueCat's get-or-create endpoint
+    // creates an empty customer for an account that still has active grants.
+    // Follow-up 200/empty responses remain non-destructive until a valid
+    // non-empty snapshot clears this timestamp.
+    customerMissingSince: timestamp('customer_missing_since', {
+      withTimezone: true,
+    }),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'billing_provider_syncs_source_check',
+      sql`${table.source} IN ('revenuecat', 'polar', 'payos')`
+    ),
+    check(
+      'billing_provider_syncs_environment_check',
+      sql`${table.environment} IN ('production', 'sandbox')`
+    ),
+    unique('billing_provider_syncs_user_source_unique').on(
+      table.userId,
+      table.source,
+      table.environment
+    ),
+  ]
+);
+
+export const billingWebhookEvents = pgTable(
+  'billing_webhook_events',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    source: text('source').notNull(),
+    // Provider event id; together with source + deploymentEnvironment this is
+    // the idempotency barrier. A redelivery to the same deployment inserts
+    // nothing and is skipped before any grant mutation.
+    externalEventId: text('external_event_id').notNull(),
+    eventType: text('event_type').notNull(),
+    // Nullable, deliberately no FK: events can reference users we cannot
+    // resolve (deleted accounts, transfers) and must still be recorded.
+    userId: uuid('user_id'),
+    rawPayload: jsonb('raw_payload').notNull(),
+    // NULL until the handler finished applying the event to grants.
+    processedAt: timestamp('processed_at', { withTimezone: true }),
+    processingError: text('processing_error'),
+    // Provider metadata used for ordering, environment isolation, and
+    // operations. These are columns (not only raw JSON) so pending/retryable
+    // events can be inspected without parsing payloads.
+    eventTimestamp: timestamp('event_timestamp', { withTimezone: true }),
+    environment: text('environment'),
+    // The Kallo deployment that processed this delivery. RevenueCat can send
+    // one event to more than one configured webhook, while prod and non-prod
+    // temporarily share a database, so this is part of the idempotency key.
+    deploymentEnvironment: text('deployment_environment').notNull(),
+    providerAppId: text('provider_app_id'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    lastAttemptAt: timestamp('last_attempt_at', { withTimezone: true }),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }),
+    deadLetteredAt: timestamp('dead_lettered_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'billing_webhook_events_source_check',
+      sql`${table.source} IN ('revenuecat', 'polar', 'payos')`
+    ),
+    check(
+      'billing_webhook_events_deployment_environment_check',
+      sql`${table.deploymentEnvironment} IN ('production', 'sandbox')`
+    ),
+    unique('billing_webhook_events_source_event_unique').on(
+      table.source,
+      table.externalEventId,
+      table.deploymentEnvironment
+    ),
+    index('billing_webhook_events_user_idx').on(table.userId),
+    index('billing_webhook_events_created_idx').on(
+      sql`${table.createdAt} DESC`
+    ),
+    index('billing_webhook_events_pending_idx')
+      .on(
+        table.source,
+        table.deploymentEnvironment,
+        table.nextAttemptAt,
+        table.createdAt
+      )
+      .where(
+        sql`${table.processedAt} IS NULL AND ${table.deadLetteredAt} IS NULL`
+      ),
+  ]
+);

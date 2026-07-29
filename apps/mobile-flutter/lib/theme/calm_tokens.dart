@@ -96,6 +96,8 @@ TextStyle dashValue({Color color = kInk}) => TextStyle(
     );
 
 /// 14 / 400·500 — meal names, callout detail, the "/ target" denominator.
+/// Leading 1.3: these are scannable rows, not prose. 1.45 read airy enough
+/// that cards looked padded even after their gaps were tightened.
 TextStyle dashBody({
   Color color = kInk,
   FontWeight weight = FontWeight.w400,
@@ -105,18 +107,20 @@ TextStyle dashBody({
       fontFamily: NhamTextStyles.sansFamily,
       fontSize: 14,
       fontWeight: weight,
-      height: 1.45,
+      height: 1.3,
       color: color,
       fontFeatures: tabular ? _tnum : null,
     );
 
 /// 12 / 400 — secondary captions, stat values (quiet, Threads-light meta).
+/// Leading 1.25 — meta lines are short and rarely wrap; the extra leading only
+/// grew the rows around them.
 TextStyle dashMeta({Color color = kInkMuted, bool tabular = false}) =>
     TextStyle(
       fontFamily: NhamTextStyles.sansFamily,
       fontSize: 12,
       fontWeight: FontWeight.w400,
-      height: 1.35,
+      height: 1.25,
       color: color,
       fontFeatures: tabular ? _tnum : null,
     );

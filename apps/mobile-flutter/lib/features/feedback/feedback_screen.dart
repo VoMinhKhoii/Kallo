@@ -9,7 +9,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/api_client.dart';
+import 'feedback_fields.dart';
 import '../../shared/widgets/nham_primitives.dart';
+import '../../shared/widgets/scroll_separator.dart';
+import '../../shared/widgets/quiet_action_button.dart';
 import '../../shell/app_header.dart';
 import '../../theme/calm_tokens.dart';
 import '../../theme/nham_colors.dart';
@@ -22,14 +25,14 @@ const String _appVersion = '1.0.1';
 const int _maxMessageLength = 4000;
 const int _maxScreenshotBytes = 5 * 1024 * 1024;
 
-const _feedbackTypes = <_FeedbackType>[
-  _FeedbackType('bug', LucideIcons.bug),
-  _FeedbackType('ingredient', LucideIcons.sprout),
-  _FeedbackType('idea', LucideIcons.lightbulb),
+const _feedbackTypes = <FeedbackType>[
+  FeedbackType('bug', LucideIcons.bug),
+  FeedbackType('ingredient', LucideIcons.sprout),
+  FeedbackType('idea', LucideIcons.lightbulb),
 ];
 
-class _FeedbackType {
-  const _FeedbackType(this.value, this.icon);
+class FeedbackType {
+  const FeedbackType(this.value, this.icon);
   final String value;
   final IconData icon;
 }
@@ -201,15 +204,12 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   Widget build(BuildContext context) {
     return Screen(
       bottom: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-            child: AppHeader(onBack: () => Navigator.of(context).pop()),
-          ),
-          Expanded(child: _sent ? _buildSent() : _buildForm()),
-        ],
+      child: ScrollSeparator(
+        header: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          child: AppHeader(onBack: () => Navigator.of(context).pop()),
+        ),
+        child: _sent ? _buildSent() : _buildForm(),
       ),
     );
   }
@@ -217,15 +217,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   Widget _buildSent() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
+        padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              LucideIcons.circleCheck,
-              size: 40,
-              color: NhamColors.text,
-            ),
+            const Icon(LucideIcons.circleCheck, size: 40, color: kInk),
             const SizedBox(height: NhamSpacing.sp4),
             Text(
               tr('settings.feedback.successTitle'),
@@ -258,9 +254,9 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   Widget _buildForm() {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
+        NhamSpacing.sp3,
         NhamSpacing.sp2,
-        NhamSpacing.sp4,
+        NhamSpacing.sp3,
         NhamSpacing.sp6,
       ),
       children: [
@@ -270,17 +266,14 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         const SizedBox(height: NhamSpacing.sp4),
 
         // Type selector.
-        Text(
-          tr('settings.feedback.typeLabel').toUpperCase(),
-          style: dashEyebrow(),
-        ),
+        Text(tr('settings.feedback.typeLabel'), style: dashMeta()),
         const SizedBox(height: NhamSpacing.sp2),
         Row(
           children: [
             for (var i = 0; i < _feedbackTypes.length; i++) ...[
               if (i > 0) const SizedBox(width: NhamSpacing.sp2),
               Expanded(
-                child: _TypeChip(
+                child: FeedbackTypeChip(
                   type: _feedbackTypes[i],
                   selected: _type == _feedbackTypes[i].value,
                   onTap: () => setState(() => _type = _feedbackTypes[i].value),
@@ -292,10 +285,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         const SizedBox(height: NhamSpacing.sp4),
 
         // Message.
-        Text(
-          tr('settings.feedback.messageLabel').toUpperCase(),
-          style: dashEyebrow(),
-        ),
+        Text(tr('settings.feedback.messageLabel'), style: dashMeta()),
         const SizedBox(height: NhamSpacing.sp2),
         Container(
           decoration: BoxDecoration(
@@ -314,14 +304,23 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             maxLength: _maxMessageLength,
             // Rebuild so the submit button + counter track what's typed.
             onChanged: (_) => setState(() {}),
-            cursorColor: NhamColors.text,
+            cursorColor: kInk,
             style: dashBody(),
             decoration: InputDecoration(
               isDense: true,
               counterText: '',
+              // All four, plus filled:false. The app theme sets `filled: true`
+              // and an OutlineInputBorder on `enabledBorder`, so clearing only
+              // `border` left the field painting its own box INSIDE this
+              // container — the nested-card look.
+              filled: false,
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
               hintText: tr('settings.feedback.placeholder.$_type'),
-              hintStyle: dashBody(color: NhamColors.textMuted),
+              hintStyle: dashBody(color: kInkMuted),
             ),
           ),
         ),
@@ -336,16 +335,17 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         const SizedBox(height: NhamSpacing.sp2),
 
         // Screenshot.
-        _ScreenshotField(
+        FeedbackScreenshotField(
           file: _image,
           onAdd: _busy ? null : _pickImage,
-          onRemove: _busy
-              ? null
-              : () => setState(() {
-                  _image = null;
-                  _uploadedPath = null;
-                  _uploadedForImagePath = null;
-                }),
+          onRemove:
+              _busy
+                  ? null
+                  : () => setState(() {
+                    _image = null;
+                    _uploadedPath = null;
+                    _uploadedForImagePath = null;
+                  }),
         ),
 
         if (_error != null) ...[
@@ -354,171 +354,22 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         ],
 
         const SizedBox(height: NhamSpacing.sp5),
-        NhamButton(
-          title: tr('settings.feedback.submit'),
-          loading: _busy,
-          disabled: _message.text.trim().isEmpty,
-          onPressed: _submit,
+        // The quiet confirm the logging card's Save uses, parked at the end of
+        // its row — not a full-width umber CTA. The umber is spent on one
+        // primary action per surface, and a feedback form's submit isn't it.
+        Align(
+          alignment: Alignment.centerRight,
+          child: QuietActionButton(
+            label: tr('settings.feedback.submit'),
+            busy: _busy,
+            enabled: _message.text.trim().isNotEmpty && !_busy,
+            onTap:
+                (_busy || _message.text.trim().isEmpty)
+                    ? null
+                    : () => _submit(),
+          ),
         ),
       ],
-    );
-  }
-}
-
-class _TypeChip extends StatelessWidget {
-  const _TypeChip({
-    required this.type,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final _FeedbackType type;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: tr('settings.feedback.types.${type.value}'),
-      excludeSemantics: true,
-      onTap: onTap,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
-          decoration: BoxDecoration(
-            color: selected
-                ? NhamColors.hover
-                : NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            border: Border.all(
-              color: selected ? NhamColors.text.withValues(alpha: 0.3) : NhamColors.borderSoft,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                type.icon,
-                size: 18,
-                color: selected ? NhamColors.text : NhamColors.textMuted,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                tr('settings.feedback.types.${type.value}'),
-                style: dashMeta(
-                  color: selected ? NhamColors.text : NhamColors.textMuted,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ScreenshotField extends StatelessWidget {
-  const _ScreenshotField({
-    required this.file,
-    required this.onAdd,
-    required this.onRemove,
-  });
-
-  final XFile? file;
-  final VoidCallback? onAdd;
-  final VoidCallback? onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final selected = file;
-    if (selected != null) {
-      return Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
-          vertical: 10,
-        ),
-        decoration: BoxDecoration(
-          color: NhamColors.elev,
-          borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-          border: Border.all(color: NhamColors.borderSoft),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(NhamRadii.sm),
-              child: Image.file(
-                File(selected.path),
-                width: 36,
-                height: 36,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                selected.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: dashBody(),
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: tr('settings.feedback.removeScreenshot'),
-              excludeSemantics: true,
-              onTap: onRemove,
-              child: GestureDetector(
-                onTap: onRemove,
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
-                  child: Icon(
-                    LucideIcons.x,
-                    size: 16,
-                    color: NhamColors.textMuted,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Semantics(
-      button: true,
-      label: tr('settings.feedback.addScreenshot'),
-      excludeSemantics: true,
-      onTap: onAdd,
-      child: GestureDetector(
-        onTap: onAdd,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
-            vertical: 10,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            border: Border.all(color: NhamColors.borderSoft),
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                LucideIcons.imagePlus,
-                size: 16,
-                color: NhamColors.textMuted,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                tr('settings.feedback.addScreenshot'),
-                style: dashBody(color: NhamColors.textMuted),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

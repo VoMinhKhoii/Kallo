@@ -53,6 +53,12 @@ Supabase-specific features are maintained as hand-authored SQL migration files:
 
 These files are never generated or touched by `drizzle-kit`. Create them with `supabase migration new <name>`.
 
+One narrow failure-boundary exception is allowed for a newly created
+server-only table: append only `ENABLE ROW LEVEL SECURITY` and `REVOKE` to its
+generated create-table migration when a later migration failure could otherwise
+leave the table client-accessible. Policies, functions, and triggers still live
+in a separate Domain B migration. Document the exception in the migration.
+
 ## File Locations
 
 | Path | Purpose |
@@ -95,6 +101,8 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260708111205_chat_groups_rls.sql` | B (Manual) | RLS policies + `updated_at` trigger for the chat groups tables |
 | `20260708141431_add_chat_group_members_last_read_at.sql` | A (Drizzle) | `chat_group_members.last_read_at` — per-member read marker driving the unread indicator |
 | `20260708141500_chat_group_members_last_read_rls.sql` | B (Manual) | RLS UPDATE policy so a member can bump their own `last_read_at` |
+| `20260728123331_add_billing_reconciliation.sql` | A + deny boundary | RevenueCat grants, CustomerInfo + deterministic ownership watermarks, webhook replay state, indexes, constraints, and same-transaction RLS/revokes |
+| `20260728123400_harden_billing_trial_anchor.sql` | B (Manual) | Preserve the server-created trial anchor when profiles are updated |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

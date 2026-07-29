@@ -1406,6 +1406,7 @@
       "label": "On this page",
       "profile": "Profile",
       "preferences": "Preferences",
+      "subscription": "Subscription",
       "feedback": "Feedback",
       "account": "Account"
     },
@@ -1459,6 +1460,8 @@
       "deleteDescription": "Permanently remove your account and everything in it.",
       "deleteAction": "Delete account",
       "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
+      "deleteSubscriptionWarning": "Deleting your Kallo account does not cancel an Apple or Google subscription. Cancel it in the store first to prevent future charges. A Kallo web subscription is canceled as part of account deletion. You can still delete immediately.",
+      "deleteManageSubscription": "Manage or cancel subscription",
       "deleteConfirmLabel": "Type {word} to confirm",
       "deleteConfirmWord": "DELETE",
       "deleteConfirmAction": "Delete my account",
@@ -1481,7 +1484,7 @@
     },
     "identity": {
       "title": "Profile",
-      "description": "How you appear across Nhẩm and to your circle.",
+      "description": "How you appear across Kallo and to your circle.",
       "avatarLabel": "Profile photo",
       "avatarUpload": "Upload photo",
       "avatarChange": "Change photo",
@@ -1510,6 +1513,8 @@
     "profileNotFound": "Profile not found. Please sign in again.",
     "pipelineTimeout": "Analysis took too long. Please try again.",
     "rateLimited": "The service is busy. Please wait a moment and try again.",
+    "featureLockedTrialExpired": "Your free trial has ended — upgrade to keep analyzing meals with AI.",
+    "featureLockedNotEntitled": "Upgrade to Kallo Premium to analyze meals with AI.",
     "internal": "Something went wrong. Please try again."
   },
   "validation": {
@@ -1525,6 +1530,70 @@
       "ageInt": "Age must be a whole number.",
       "ageMin": "Age must be at least 13.",
       "ageMax": "Age must be at most 100."
+    }
+  },
+  "billing": {
+    "paywall": {
+      "eyebrow": "Kallo Premium",
+      "titleLead": "Estimate every meal,",
+      "titleAccent": "instantly",
+      "subtitle": "Unlock AI meal analysis — describe a dish in your own words and get a bounded calorie and macro estimate in seconds.",
+      "trialCountdown": "You have {days} {days, plural, one {day} other {days}} left on your trial.",
+      "perk1": "AI analysis of any Vietnamese meal you describe",
+      "perk2": "Real food-composition data behind every estimate",
+      "perk3": "Bounded calorie and macro ranges, never fake precision",
+      "planMonthly": "Monthly",
+      "planAnnual": "Annual",
+      "planLifetime": "Lifetime",
+      "cadenceMonth": "/ month",
+      "cadenceYear": "/ year",
+      "cadenceOnce": "once",
+      "annualHint": "Best value",
+      "choosePlan": "Choose",
+      "opening": "Opening…",
+      "unavailable": "Purchases aren't available right now. Please try again later.",
+      "finetext": "Cancel anytime. Prices shown include applicable taxes.",
+      "successToast": "Welcome to Kallo Premium.",
+      "successPendingToast": "Payment received — your premium access will appear shortly.",
+      "pendingToast": "Payment is pending. We’ll unlock Premium after the store confirms it.",
+      "pendingTitle": "Activation is still pending",
+      "pendingBody": "We have not confirmed Premium yet. You will not be charged again here; check once more after the store finishes processing.",
+      "pendingCta": "Check again",
+      "errorToast": "Something went wrong with the purchase. Please try again.",
+      "sessionChangedToast": "Your signed-in account changed. Refresh this page before purchasing.",
+      "successTitle": "You're all set",
+      "successBody": "Premium is active. AI meal analysis is unlocked across the app.",
+      "successCta": "Start estimating"
+    },
+    "settings": {
+      "title": "Subscription",
+      "description": "Your plan, renewal, and how to manage it.",
+      "loading": "Loading your plan…",
+      "loadError": "We couldn't load your subscription. Please refresh.",
+      "freePlan": "Free plan",
+      "freeDescription": "Upgrade to unlock AI meal analysis.",
+      "trialPlan": "Free trial",
+      "trialRemaining": "{days} {days, plural, one {day} other {days}} left in your trial.",
+      "premiumPlan": "Kallo Premium",
+      "premiumDescription": "AI meal analysis is unlocked.",
+      "lifetimePlan": "Kallo Premium — Lifetime",
+      "lifetimeDescription": "You have lifetime access. No renewal, ever.",
+      "renewsOn": "Renews on {date}.",
+      "expiresOn": "Access ends on {date}.",
+      "upgradeCta": "Upgrade",
+      "manageAppStore": "Manage in App Store",
+      "managePlayStore": "Manage in Google Play",
+      "manageWeb": "Manage subscription",
+      "manageUnavailable": "We found an active subscription, but its management link is temporarily unavailable. Please try again shortly.",
+      "lifetimeSubscriptionWarning": "A separate renewable subscription is still active. Cancel it to avoid another charge; your lifetime access will remain.",
+      "manageWebEmail": "To update or cancel your subscription, contact billing from {email}.",
+      "manageWebGeneric": "To update or cancel your subscription, contact billing support.",
+      "expiryTitle": "Your subscription is ending soon",
+      "expiryBody": "Access ends in {days} {days, plural, one {day} other {days}}. Renew to keep AI meal analysis."
+    },
+    "trialBanner": {
+      "daysRemaining": "{days} {days, plural, one {day} other {days}} left in your free trial",
+      "upgrade": "Upgrade"
     }
   }
 }

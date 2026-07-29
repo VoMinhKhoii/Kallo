@@ -48,11 +48,17 @@ class WeightChart extends ConsumerWidget {
             children: weightCardSkeletonChildren(),
           ),
         ),
-        error: (_, __) => _MinHeight(
+        error: (_, __) => Container(
+          constraints: const BoxConstraints(minHeight: 200),
+          alignment: Alignment.center,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(LucideIcons.cloudOff, size: 22, color: NhamColors.stone),
+              const Icon(
+                LucideIcons.cloudOff,
+                size: NhamIcons.size,
+                color: kInkMuted,
+              ),
               const SizedBox(height: NhamSpacing.sp2),
               Text(
                 tr('dashboard.progressLoadError'),
@@ -66,17 +72,6 @@ class WeightChart extends ConsumerWidget {
       ),
     );
   }
-}
-
-class _MinHeight extends StatelessWidget {
-  const _MinHeight({required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext context) => Container(
-        constraints: const BoxConstraints(minHeight: 200),
-        alignment: Alignment.center,
-        child: child,
-      );
 }
 
 class _Body extends StatelessWidget {
@@ -134,6 +129,7 @@ class _Body extends StatelessWidget {
 
         WeightChartCanvas(
           weights: data.weights,
+          weightDates: data.weightDates,
           periodElapsedDays: data.periodElapsedDays,
           projectedEndWeight: data.projectedEndWeight,
           canProject: data.canProject,

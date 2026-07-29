@@ -12,7 +12,6 @@ import '../../../features/logging/widgets/count_up.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/profile_providers.dart';
 import '../logic/profile_payload.dart';
 import '../panels/body_metrics.dart';
@@ -121,19 +120,15 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
         children: [
           ListView(
             padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp4,
+              NhamSpacing.sp3, // the app-wide 12 content inset
               NhamSpacing.sp2,
-              NhamSpacing.sp4,
+              NhamSpacing.sp3,
               NhamSpacing.sp16,
             ),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             children: [
-              Text(
-                tr('settings.rows.goalPace'),
-                style: NhamTextStyles.serifRegular(fontSize: NhamFontSize.h3)
-                    .copyWith(letterSpacing: NhamTracking.tight, color: NhamColors.text),
-              ),
-              const SizedBox(height: NhamSpacing.sp1),
+              // No title here — it lives in the header bar. This is the
+              // subtitle that used to sit under it.
               Padding(
                 padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
                 child: Text(

@@ -8,6 +8,7 @@ import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../logic/logging_spacing.dart';
 import '../logic/slider_nutrition.dart';
 
 /// Dot/track color per slider axis — mirrors the web `CHEAT_SLIDER_COLORS` so
@@ -94,71 +95,67 @@ class _CheatSliderCardState extends State<CheatSliderCard> {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _Card(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header: the occasion quote + the cheat badge.
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: NhamText(
-                        widget.rawInput,
-                        variant: NhamTextVariant.mealQuote,
-                        style: const TextStyle(fontSize: 17, height: 1.625),
-                      ),
+    // No bottom margin — the feed's footer stack owns the gap below.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header: the occasion quote + the cheat badge.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: NhamText(
+                      widget.rawInput,
+                      variant: NhamTextVariant.mealQuote,
+                      style: const TextStyle(fontSize: 17, height: 1.625),
                     ),
-                    const SizedBox(width: NhamSpacing.sp3),
-                    CheatBadge(label: 'logging.cheatSliders.badge'.tr()),
-                  ],
-                ),
-                const SizedBox(height: NhamSpacing.sp3),
+                  ),
+                  const SizedBox(width: NhamSpacing.sp3),
+                  CheatBadge(label: 'logging.cheatSliders.badge'.tr()),
+                ],
+              ),
+              const SizedBox(height: NhamSpacing.sp3),
 
-                // Live calorie + macro readout — updates as sliders move.
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.end,
-                  spacing: NhamSpacing.sp3,
-                  runSpacing: 2,
-                  children: [
-                    NhamText(
-                      '≈ ${resolved.caloriesKcal} ${'logging.cheatSliders.kcal'.tr()}',
-                      variant: NhamTextVariant.numStrong,
-                      style: dashValue().copyWith(fontSize: 22),
-                    ),
-                    NhamText(
-                      macroLine.toString(),
-                      variant: NhamTextVariant.captionTabular,
-                      style: dashMeta(tabular: true),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: NhamSpacing.sp4),
-
-                for (final (index, slider) in widget.spec.sliders.indexed) ...[
-                  if (index > 0) const SizedBox(height: NhamSpacing.sp4),
-                  _CheatSliderRow(
-                    slider: slider,
-                    level: _levels[slider.key] ?? slider.defaultLevel,
-                    onChange:
-                        (level) => setState(() => _levels[slider.key] = level),
+              // Live calorie + macro readout — updates as sliders move.
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.end,
+                spacing: NhamSpacing.sp3,
+                runSpacing: 2,
+                children: [
+                  Text(
+                    '≈ ${resolved.caloriesKcal} ${'logging.cheatSliders.kcal'.tr()}',
+                    style: dashValue(),
+                  ),
+                  Text(
+                    macroLine.toString(),
+                    style: dashMeta(tabular: true),
                   ),
                 ],
+              ),
+              const SizedBox(height: NhamSpacing.sp4),
+
+              for (final (index, slider) in widget.spec.sliders.indexed) ...[
+                if (index > 0) const SizedBox(height: NhamSpacing.sp4),
+                _CheatSliderRow(
+                  slider: slider,
+                  level: _levels[slider.key] ?? slider.defaultLevel,
+                  onChange:
+                      (level) => setState(() => _levels[slider.key] = level),
+                ),
               ],
-            ),
+            ],
           ),
-          const SizedBox(height: NhamSpacing.sp3),
-          _SaveButton(
-            disabled: widget.busy,
-            onTap: widget.busy ? null : () => widget.onConfirm(_levels),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: LoggingSpacing.block),
+        _SaveButton(
+          disabled: widget.busy,
+          onTap: widget.busy ? null : () => widget.onConfirm(_levels),
+        ),
+      ],
     );
   }
 }
@@ -197,7 +194,9 @@ class _CheatSliderRow extends StatelessWidget {
 
     final valueText =
         onStop
-            ? (stopLabel(rounded).isNotEmpty ? stopLabel(rounded) : slider.label)
+            ? (stopLabel(rounded).isNotEmpty
+                ? stopLabel(rounded)
+                : slider.label)
             : 'logging.cheatSliders.between'.tr(
               namedArgs: {
                 'low': stopLabel(betweenLow),
@@ -243,9 +242,8 @@ class _CheatSliderRow extends StatelessWidget {
           children: [
             Icon(cheatSliderIcon(slider.key), size: 16, color: color),
             const SizedBox(width: 6),
-            NhamText(
+            Text(
               slider.label,
-              variant: NhamTextVariant.body,
               style: dashBody(weight: FontWeight.w500),
             ),
           ],
@@ -319,12 +317,9 @@ class _StopLabel extends StatelessWidget {
             ? trackWidth - labelWidth
             : (center - labelWidth / 2).clamp(0.0, trackWidth - labelWidth);
 
-    final style = dashMeta(
-      color: exact || between ? kInk : kInkMuted,
-    ).copyWith(
-      fontSize: 11,
+    final style = dashMeta(color: exact || between ? kInk : kInkMuted).copyWith(
       height: 1.25,
-      fontWeight: exact ? FontWeight.w600 : FontWeight.w400,
+      fontWeight: exact ? FontWeight.w500 : FontWeight.w400,
     );
 
     return Positioned(
@@ -369,42 +364,39 @@ class _ClarifyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = question.options ?? const <String>[];
-    return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
-      child: _Card(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (rawInput.isNotEmpty) ...[
-              NhamText(
-                rawInput,
-                variant: NhamTextVariant.mealQuote,
-                style: const TextStyle(fontSize: 17, height: 1.625),
-              ),
-              const SizedBox(height: NhamSpacing.sp3),
-            ],
+    // No bottom margin — the feed's footer stack owns the gap below.
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (rawInput.isNotEmpty) ...[
             NhamText(
-              question.prompt,
-              variant: NhamTextVariant.body,
-              style: dashBody(),
+              rawInput,
+              variant: NhamTextVariant.mealQuote,
+              style: const TextStyle(fontSize: 17, height: 1.625),
             ),
-            if (options.isNotEmpty) ...[
-              const SizedBox(height: NhamSpacing.sp3),
-              Wrap(
-                spacing: NhamSpacing.sp2,
-                runSpacing: NhamSpacing.sp2,
-                children: [
-                  for (final option in options)
-                    _ClarifyChip(
-                      label: option,
-                      disabled: busy || onClarify == null,
-                      onTap: () => onClarify?.call(option),
-                    ),
-                ],
-              ),
-            ],
+            const SizedBox(height: NhamSpacing.sp3),
           ],
-        ),
+          Text(
+            question.prompt,
+            style: dashBody(),
+          ),
+          if (options.isNotEmpty) ...[
+            const SizedBox(height: NhamSpacing.sp3),
+            Wrap(
+              spacing: NhamSpacing.sp2,
+              runSpacing: NhamSpacing.sp2,
+              children: [
+                for (final option in options)
+                  _ClarifyChip(
+                    label: option,
+                    disabled: busy || onClarify == null,
+                    onTap: () => onClarify?.call(option),
+                  ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -463,9 +455,8 @@ class _ClarifyChipState extends State<_ClarifyChip> {
                 color: _pressed ? NhamColors.accent60 : NhamColors.borderSoft,
               ),
             ),
-            child: NhamText(
+            child: Text(
               widget.label,
-              variant: NhamTextVariant.body,
               style: dashBody(),
             ),
           ),
@@ -496,9 +487,8 @@ class CheatBadge extends StatelessWidget {
         children: [
           const Icon(LucideIcons.partyPopper, size: 12, color: kInk),
           const SizedBox(width: 4),
-          NhamText(
+          Text(
             label,
-            variant: NhamTextVariant.pillLabel,
             style: dashMeta(color: kInk),
           ),
         ],
@@ -554,9 +544,8 @@ class _SaveButtonState extends State<_SaveButton> {
               children: [
                 const Icon(LucideIcons.check, size: 14, color: Colors.white),
                 const SizedBox(width: 6),
-                NhamText(
+                Text(
                   'logging.cheatSliders.confirm'.tr(),
-                  variant: NhamTextVariant.body,
                   style: dashBody(color: Colors.white, weight: FontWeight.w500),
                 ),
               ],
@@ -577,7 +566,7 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: NhamColors.elev,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),

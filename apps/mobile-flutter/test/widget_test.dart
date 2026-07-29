@@ -70,4 +70,30 @@ void main() {
       findsOneWidget,
     );
   });
+
+  test('localized user-facing copy uses the Kallo brand', () {
+    final legacyBrand = RegExp(r'\b(?:Nhẩm|Nham)\b');
+
+    Iterable<String> strings(Object? value) sync* {
+      if (value is String) {
+        yield value;
+      } else if (value is Map) {
+        for (final nested in value.values) {
+          yield* strings(nested);
+        }
+      } else if (value is Iterable) {
+        for (final nested in value) {
+          yield* strings(nested);
+        }
+      }
+    }
+
+    for (final translations in assetLoader.translations.values) {
+      expect(
+        strings(translations).where(legacyBrand.hasMatch),
+        isEmpty,
+        reason: 'Localized product copy must use the Kallo brand.',
+      );
+    }
+  });
 }

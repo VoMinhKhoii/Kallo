@@ -13,20 +13,16 @@ This repo deploys a single production service via `cloud-run-prod.yml`:
 
 ## Deployment Model
 
-All code and migrations hitting the **shared database** must go through the manual staging workflow:
+1. A pull request runs CI and builds an immutable image.
+2. After review and verification, merge to `main`.
+3. A successful `main` CI run triggers `cloud-run-prod.yml`.
+4. The prod job acquires its GCS lease, validates and applies pending
+   append-only migrations, deploys a no-traffic candidate, smoke-tests it, and
+   only then promotes traffic.
 
-1. Developer pushes PR → CI runs (build, lint, tests)
-2. CI passes → no automatic deployment (previews disabled)
-3. Developer manually triggers **staging deployment** from GitHub Actions UI
-   - Enters a branch, tag, commit SHA, or plain PR number
-   - Acquires GCS lease to prevent concurrent deploys
-   - Pushes migrations from the PR branch
-   - Deploys service to `nham-staging`
-   - Posts the staging URL back to the PR when `ref` is `pr-<number>` or ends with `#<number>`
-4. Once staging is validated, PR is merged to main
-5. Main merge → `nham-internal` **automatically** deploys with latest schema (already validated on staging)
-
-The deploy path is structured so we can later split staging and production without redesigning the whole pipeline.
+There is currently no persistent staging, internal, or preview deployment.
+Sandbox billing tests run locally (or through an explicitly approved temporary
+tunnel) until a separate QA lane is designed.
 
 ## What the workflows expect
 
@@ -75,11 +71,18 @@ Create or confirm these resources:
 - Runtime service account for Cloud Run revisions
 - GCS bucket for staging lease state
 - Secret Manager secrets:
-  - `nham-nonprod-database-url`
-  - `nham-nonprod-gemini-api-key`
+  - `kallo-prod-database-url`
+  - `kallo-prod-gemini-api-key`
+  - `kallo-prod-analysis-guard-hash-secret`
+  - `kallo-prod-origin-shared-secret`
+  - `kallo-prod-supabase-service-role-key`
+  - `kallo-prod-revenuecat-customer-delete-api-key`
+  - `kallo-prod-revenuecat-rest-api-key`
+  - `kallo-prod-revenuecat-webhook-secret`
 
-The workflows create Cloud Run services on first deploy, so you do not need to
-pre-create `nham-internal` or preview services manually.
+The prod workflow creates `kallo-prod` on first deploy, so the service itself
+does not need to be pre-created. All required secrets must exist before merge;
+otherwise the automatic prod deploy stops during pre-deploy validation.
 
 ## GCS preview seed bucket setup
 
@@ -277,22 +280,32 @@ gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
 Create the secrets if they do not exist:
 
 ```bash
-printf '%s' 'postgres://...' | gcloud secrets create nham-nonprod-database-url \
+printf '%s' 'postgres://...' | gcloud secrets create kallo-prod-database-url \
   --data-file=-
 
-printf '%s' 'your-gemini-api-key' | gcloud secrets create nham-nonprod-gemini-api-key \
+printf '%s' 'your-gemini-api-key' | gcloud secrets create kallo-prod-gemini-api-key \
   --data-file=-
+
+printf '%s' 'your-prod-service-role-key' | gcloud secrets create \
+  kallo-prod-supabase-service-role-key --data-file=-
+
+printf '%s' 'your-revenuecat-v2-customer-key' | gcloud secrets create \
+  kallo-prod-revenuecat-customer-delete-api-key --data-file=-
+printf '%s' 'your-revenuecat-v1-app-key' | gcloud secrets create \
+  kallo-prod-revenuecat-rest-api-key --data-file=-
+printf '%s' 'your-random-webhook-authorization-secret' | gcloud secrets create \
+  kallo-prod-revenuecat-webhook-secret --data-file=-
 ```
 
 If the secrets already exist, add a new version instead:
 
 ```bash
 printf '%s' 'postgres://...' | gcloud secrets versions add \
-  nham-nonprod-database-url \
+  kallo-prod-database-url \
   --data-file=-
 
 printf '%s' 'your-gemini-api-key' | gcloud secrets versions add \
-  nham-nonprod-gemini-api-key \
+  kallo-prod-gemini-api-key \
   --data-file=-
 ```
 
@@ -353,6 +366,15 @@ In **GitHub → Settings → Secrets and variables → Actions → Variables**, 
 | `GCP_WIF_PROVIDER` | Full WIF provider resource path |
 | `GCP_DEPLOYER_SERVICE_ACCOUNT` | Full deployer SA email |
 | `GCP_RUNTIME_SERVICE_ACCOUNT` | Full runtime SA email |
+| `REVENUECAT_PROJECT_ID` | RevenueCat project ID used for customer erasure |
+| `REVENUECAT_ALLOWED_APP_IDS` | Comma-separated production RevenueCat app IDs |
+| `REVENUECAT_WEB_API_KEY` | Client-public RevenueCat Billing web key; blank until web billing is configured |
+| `REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT` | Keep `false` until the production webhook is environment-filtered and verified |
+| `BILLING_ENFORCEMENT_ENABLED` | Keep `false` through dark launch and sandbox validation |
+| `BILLING_PURCHASES_ENABLED` | Keep `false` through dark launch; independent new-checkout kill-switch |
+| `BILLING_SANDBOX_USER_IDS` | Dedicated App Review account UUIDs only; blank for normal production users |
+| `SUBSCRIPTION_LAUNCH_DATE` | Valid ISO launch date; required before enforcement can be `true` |
+| `TRIAL_DAYS` | Positive integer; defaults to `7` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Non-prod public Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Non-prod public Supabase anon key |
 | `GCS_SEED_BUCKET` | Private preview seed artifact bucket |
@@ -395,22 +417,26 @@ That means:
 
 ## 8. Cloud Run defaults used by the workflows
 
-### Internal service: `nham-internal`
+### Production service: `kallo-prod`
 
 - CPU: `1`
-- Memory: `1Gi`
-- Concurrency: `20`
+- Memory: `2Gi`
+- Concurrency: `80`
 - Timeout: `60`
-- Min instances: `1`
-- Max instances: `10`
-- Public URL enabled
+- Min instances: `0`
+- Max instances: `20`
+- Public ingress, sealed by the Cloudflare origin lock
 - Secret-backed runtime env:
   - `DATABASE_URL`
-  - `GEMINI_API_KEY` (kept during the Vertex AI rollout as a rollback fallback;
-    see "Vertex AI provider" below)
-- Plain runtime env:
-  - `AI_PROVIDER=vertex`
-  - `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`
+  - `GEMINI_API_KEY`
+  - `ANALYSIS_GUARD_HASH_SECRET`
+  - `ORIGIN_SHARED_SECRET`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `REVENUECAT_CUSTOMER_DELETE_API_KEY`
+  - `REVENUECAT_REST_API_KEY`
+  - `REVENUECAT_WEBHOOK_SECRET`
+- Plain runtime env includes the production billing boundary, RevenueCat app
+  allowlist/project/public web key, and the explicit dark-launch controls.
 
 ### Preview services: `nham-pr-<number>` (disabled by default)
 
@@ -425,11 +451,13 @@ That means:
   - shared mode uses Secret Manager-backed `nham-nonprod-database-url`
   - branch mode injects the per-branch URL with `--update-env-vars`
 - `GEMINI_API_KEY` stays Secret Manager-backed in both modes
+- Preview services are retired. If a temporary QA lane is designed later, it
+  must not inherit production Auth-admin or provider-erasure credentials.
 
 ### Vertex AI provider
 
-Deployed services (`nham-internal`, `nham-staging`) call Gemini through **Vertex
-AI** via Application Default Credentials. Local dev and the helper scripts in
+The production service calls Gemini through **Vertex AI** via Application
+Default Credentials. Local dev and the helper scripts in
 `scripts/` continue to use the Google AI Studio API key from `GEMINI_API_KEY`.
 
 The selection is controlled by `AI_PROVIDER` in `lib/ai/gemini.ts:resolveGeminiProvider`:

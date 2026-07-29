@@ -25,7 +25,6 @@ class RegionEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return InstantCommitEditor(
       profile: profile,
-      title: tr('settings.rows.region'),
       subtitle: tr('settings.profilePanel.regionalSubtitle'),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

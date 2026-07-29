@@ -7,7 +7,8 @@ import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../logic/format.dart';
+import '../logic/logging_spacing.dart';
+import 'macro_trio.dart';
 import 'entrances.dart';
 
 // Statuses that map to a localized phase label; others fall back to "Analyzing".
@@ -101,48 +102,46 @@ class _StreamingEntryState extends State<StreamingEntry>
     final hasItems =
         widget.completedItems.isNotEmpty || pendingNames.isNotEmpty;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
-      child: _Card(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // The typed text as a Lora quote — shown instantly.
-            if (hasQuote) ...[
-              NhamText(
-                widget.rawInput!,
-                variant: NhamTextVariant.mealQuote,
-                style: const TextStyle(fontSize: 17, height: 28 / 17),
-              ),
-              const SizedBox(height: NhamSpacing.sp2),
-            ],
-            // Items stream out: resolved rows first, then detected names.
-            if (hasItems) ...[
-              for (var i = 0; i < widget.completedItems.length; i++)
-                FadeInLeft(
-                  key: ValueKey(widget.completedItems[i].id),
-                  offset: 8,
-                  delay: Duration(milliseconds: i * 40),
-                  child: _CompletedRow(item: widget.completedItems[i]),
-                ),
-              for (var i = 0; i < pendingNames.length; i++)
-                FadeInLeft(
-                  key: ValueKey('${pendingNames[i]}-$i'),
-                  offset: 8,
-                  child: _PendingNameRow(name: pendingNames[i]),
-                ),
-              const SizedBox(height: NhamSpacing.sp1),
-            ],
-            // The ONE loading state: the current step.
-            Row(
-              children: [
-                RotationTransition(turns: _spin, child: const _Spinner()),
-                const SizedBox(width: NhamSpacing.sp2), // gap-2
-                NhamText(phaseLabel, variant: NhamTextVariant.phaseLabel),
-              ],
+    // No bottom margin — the feed's footer stack owns the gap below.
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // The typed text as a Lora quote — shown instantly.
+          if (hasQuote) ...[
+            NhamText(
+              widget.rawInput!,
+              variant: NhamTextVariant.mealQuote,
+              style: const TextStyle(fontSize: 17, height: 28 / 17),
             ),
+            const SizedBox(height: NhamSpacing.sp2),
           ],
-        ),
+          // Items stream out: resolved rows first, then detected names.
+          if (hasItems) ...[
+            for (var i = 0; i < widget.completedItems.length; i++)
+              FadeInLeft(
+                key: ValueKey(widget.completedItems[i].id),
+                offset: 8,
+                delay: Duration(milliseconds: i * 40),
+                child: _CompletedRow(item: widget.completedItems[i]),
+              ),
+            for (var i = 0; i < pendingNames.length; i++)
+              FadeInLeft(
+                key: ValueKey('${pendingNames[i]}-$i'),
+                offset: 8,
+                child: _PendingNameRow(name: pendingNames[i]),
+              ),
+            const SizedBox(height: NhamSpacing.sp1),
+          ],
+          // The ONE loading state: the current step.
+          Row(
+            children: [
+              RotationTransition(turns: _spin, child: const _Spinner()),
+              const SizedBox(width: NhamSpacing.sp2), // gap-2
+              Text(phaseLabel, style: dashMeta(),),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -156,28 +155,19 @@ class _CompletedRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8), // py-2
+      padding: const EdgeInsets.symmetric(vertical: LoggingSpacing.row),
       child: Row(
         children: [
           Expanded(
-            child: NhamText(item.name,
-                variant: NhamTextVariant.itemName, maxLines: 1),
+            child: Text(item.name,
+                maxLines: 1, style: dashBody(),),
           ),
           const SizedBox(width: NhamSpacing.sp3),
-          Row(
-            children: [
-              NhamText('P: ${fmtG(item.macros.protein)}',
-                  variant: NhamTextVariant.macroTiny),
-              const SizedBox(width: NhamSpacing.sp2),
-              NhamText('C: ${fmtG(item.macros.carbs)}',
-                  variant: NhamTextVariant.macroTiny),
-              const SizedBox(width: NhamSpacing.sp2),
-              NhamText('F: ${fmtG(item.macros.fat)}',
-                  variant: NhamTextVariant.macroTiny),
-              const SizedBox(width: NhamSpacing.sp3), // gap-3
-              NhamText(fmtKcal(item.macros.calories),
-                  variant: NhamTextVariant.calorieBold),
-            ],
+          MacroTrio(
+            protein: item.macros.protein,
+            carbs: item.macros.carbs,
+            fat: item.macros.fat,
+            calories: item.macros.calories,
           ),
         ],
       ),
@@ -194,12 +184,11 @@ class _PendingNameRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8), // py-2
-      child: NhamText(
+      padding: const EdgeInsets.symmetric(vertical: LoggingSpacing.row),
+      child: Text(
         name,
-        variant: NhamTextVariant.itemName,
         maxLines: 1,
-        style: const TextStyle(color: kInkMuted),
+        style: dashBody().merge(const TextStyle(color: kInkMuted)),
       ),
     );
   }
@@ -247,7 +236,7 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: NhamColors.elev, // solid white card on neutral canvas
         borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 16

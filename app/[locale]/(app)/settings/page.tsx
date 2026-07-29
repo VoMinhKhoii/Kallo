@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { SubscriptionSettings } from '@/components/billing/subscription-settings';
 import { AccountPanel } from '@/components/settings/account/account-panel';
 import { SettingsAnchorNav } from '@/components/settings/anchor-nav';
 import {
   ACCOUNT_ANCHOR,
   FEEDBACK_ANCHOR,
   PROFILE_ANCHOR,
+  SUBSCRIPTION_ANCHOR,
 } from '@/components/settings/anchors';
 import { FeedbackPanel } from '@/components/settings/feedback/feedback-panel';
 import { SettingsGroup } from '@/components/settings/group';
@@ -30,11 +32,17 @@ export async function generateMetadata({
   };
 }
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const t = await getTranslations('settings');
   const tProfile = await getTranslations('settings.profilePage');
   const tAccount = await getTranslations('settings.account');
   const tFeedback = await getTranslations('settings.feedback');
+  const tBilling = await getTranslations('billing.settings');
 
   const [profile, supabase] = await Promise.all([
     getOnboardingProfile(),
@@ -42,6 +50,7 @@ export default async function SettingsPage() {
   ]);
   const { data } = await supabase.auth.getUser();
   const email = data.user?.email ?? null;
+  const userId = data.user?.id ?? null;
 
   return (
     <div className="mx-auto w-full max-w-5xl px-3 py-4 font-sans-display sm:px-5 sm:py-8 lg:flex lg:gap-8">
@@ -85,6 +94,29 @@ export default async function SettingsPage() {
           </section>
         )}
 
+        {/* Subscription section — current plan + upgrade/manage. */}
+        {userId && (
+          <section
+            id={SUBSCRIPTION_ANCHOR}
+            aria-label={tBilling('title')}
+            className="mt-8 scroll-mt-20"
+          >
+            <div className="mb-4">
+              <h2 className="font-normal font-serif text-nham-text text-xl tracking-tight">
+                {tBilling('title')}
+              </h2>
+              <p className="mt-1 text-[#7B6F62] text-[14px]">
+                {tBilling('description')}
+              </p>
+            </div>
+            <SubscriptionSettings
+              userId={userId}
+              locale={locale}
+              email={email}
+            />
+          </section>
+        )}
+
         {/* Feedback section — kept above Account so it doesn't sit below the
             delete-account danger zone. */}
         <section
@@ -109,7 +141,7 @@ export default async function SettingsPage() {
             title={tAccount('title')}
             description={tAccount('description')}
           />
-          <AccountPanel email={email} />
+          {userId && <AccountPanel userId={userId} email={email} />}
         </section>
       </div>
     </div>

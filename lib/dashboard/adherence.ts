@@ -113,11 +113,14 @@ function buildMonthHeaders(
       month: 'short',
       timeZone: 'UTC',
     });
+    // The client localizes from this; `month` above stays for web, which has
+    // its own i18n and reads the string.
+    const monthIndex = current.getUTCMonth() + 1;
     const column = Math.floor(daysBetween(startWeek, current) / 7);
     const existing = headers.get(month);
 
     if (!existing) {
-      headers.set(month, { month, startColumn: column, span: 1 });
+      headers.set(month, { month, monthIndex, startColumn: column, span: 1 });
       continue;
     }
 

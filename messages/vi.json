@@ -1406,6 +1406,7 @@
       "label": "Trong trang này",
       "profile": "Hồ sơ",
       "preferences": "Tùy chỉnh",
+      "subscription": "Gói đăng ký",
       "feedback": "Góp ý",
       "account": "Tài khoản"
     },
@@ -1459,6 +1460,8 @@
       "deleteDescription": "Xóa vĩnh viễn tài khoản và mọi dữ liệu bên trong.",
       "deleteAction": "Xóa tài khoản",
       "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
+      "deleteSubscriptionWarning": "Xóa tài khoản Kallo không hủy gói đăng ký qua Apple hoặc Google. Hãy hủy trong cửa hàng trước để tránh phí về sau. Gói Kallo trên web sẽ được hủy trong quá trình xóa tài khoản. Bạn vẫn có thể xóa ngay.",
+      "deleteManageSubscription": "Quản lý hoặc hủy gói",
       "deleteConfirmLabel": "Nhập {word} để xác nhận",
       "deleteConfirmWord": "XÓA",
       "deleteConfirmAction": "Xóa tài khoản của tôi",
@@ -1481,7 +1484,7 @@
     },
     "identity": {
       "title": "Hồ sơ",
-      "description": "Cách bạn xuất hiện trên Nhẩm và với vòng kết nối.",
+      "description": "Cách bạn xuất hiện trên Kallo và với vòng kết nối.",
       "avatarLabel": "Ảnh đại diện",
       "avatarUpload": "Tải ảnh lên",
       "avatarChange": "Đổi ảnh",
@@ -1510,6 +1513,8 @@
     "profileNotFound": "Không tìm thấy hồ sơ. Vui lòng đăng nhập lại.",
     "pipelineTimeout": "Phân tích mất quá lâu. Vui lòng thử lại.",
     "rateLimited": "Hệ thống đang bận. Vui lòng đợi một chút rồi thử lại.",
+    "featureLockedTrialExpired": "Tuần dùng thử của bạn đã kết thúc — nâng cấp để tiếp tục phân tích bữa ăn bằng AI.",
+    "featureLockedNotEntitled": "Nâng cấp lên Kallo Premium để phân tích bữa ăn bằng AI.",
     "internal": "Đã xảy ra lỗi. Vui lòng thử lại."
   },
   "validation": {
@@ -1525,6 +1530,70 @@
       "ageInt": "Tuổi phải là số nguyên.",
       "ageMin": "Tuổi phải từ 13 trở lên.",
       "ageMax": "Tuổi phải từ 100 trở xuống."
+    }
+  },
+  "billing": {
+    "paywall": {
+      "eyebrow": "Kallo Premium",
+      "titleLead": "Ước lượng mọi bữa ăn,",
+      "titleAccent": "tức thì",
+      "subtitle": "Mở khóa phân tích bữa ăn bằng AI — mô tả món ăn theo cách của bạn và nhận ước lượng calo cùng macro trong vài giây.",
+      "trialCountdown": "Bạn còn {days} ngày dùng thử.",
+      "perk1": "AI phân tích mọi bữa ăn Việt bạn mô tả",
+      "perk2": "Dữ liệu thành phần thực phẩm thật sau mỗi ước lượng",
+      "perk3": "Khoảng calo và macro có biên, không phóng đại độ chính xác",
+      "planMonthly": "Hàng tháng",
+      "planAnnual": "Hàng năm",
+      "planLifetime": "Trọn đời",
+      "cadenceMonth": "/ tháng",
+      "cadenceYear": "/ năm",
+      "cadenceOnce": "một lần",
+      "annualHint": "Tiết kiệm nhất",
+      "choosePlan": "Chọn",
+      "opening": "Đang mở…",
+      "unavailable": "Hiện chưa thể mua. Vui lòng thử lại sau.",
+      "finetext": "Hủy bất cứ lúc nào. Giá đã bao gồm thuế nếu có.",
+      "successToast": "Chào mừng đến với Kallo Premium.",
+      "successPendingToast": "Đã nhận thanh toán — quyền premium sẽ xuất hiện trong giây lát.",
+      "pendingToast": "Thanh toán đang chờ xử lý. Premium sẽ mở sau khi cửa hàng xác nhận.",
+      "pendingTitle": "Kích hoạt vẫn đang chờ",
+      "pendingBody": "Kallo chưa xác nhận Premium. Bạn sẽ không bị tính phí thêm tại đây; hãy kiểm tra lại sau khi cửa hàng xử lý xong.",
+      "pendingCta": "Kiểm tra lại",
+      "errorToast": "Có lỗi khi mua. Vui lòng thử lại.",
+      "sessionChangedToast": "Tài khoản đăng nhập đã thay đổi. Hãy tải lại trang trước khi mua.",
+      "successTitle": "Xong rồi",
+      "successBody": "Premium đã kích hoạt. Phân tích bữa ăn bằng AI đã được mở khóa trong toàn ứng dụng.",
+      "successCta": "Bắt đầu ước lượng"
+    },
+    "settings": {
+      "title": "Gói đăng ký",
+      "description": "Gói của bạn, kỳ gia hạn và cách quản lý.",
+      "loading": "Đang tải gói của bạn…",
+      "loadError": "Không tải được gói đăng ký. Vui lòng làm mới.",
+      "freePlan": "Gói miễn phí",
+      "freeDescription": "Nâng cấp để mở khóa phân tích bữa ăn bằng AI.",
+      "trialPlan": "Dùng thử miễn phí",
+      "trialRemaining": "Còn {days} ngày dùng thử.",
+      "premiumPlan": "Kallo Premium",
+      "premiumDescription": "Phân tích bữa ăn bằng AI đã được mở khóa.",
+      "lifetimePlan": "Kallo Premium — Trọn đời",
+      "lifetimeDescription": "Bạn có quyền truy cập trọn đời. Không bao giờ phải gia hạn.",
+      "renewsOn": "Gia hạn vào {date}.",
+      "expiresOn": "Quyền truy cập kết thúc vào {date}.",
+      "upgradeCta": "Nâng cấp",
+      "manageAppStore": "Quản lý trong App Store",
+      "managePlayStore": "Quản lý trong Google Play",
+      "manageWeb": "Quản lý gói đăng ký",
+      "manageUnavailable": "Kallo tìm thấy một gói đang hoạt động nhưng liên kết quản lý tạm thời chưa có. Vui lòng thử lại sau.",
+      "lifetimeSubscriptionWarning": "Một gói tự gia hạn khác vẫn đang hoạt động. Hãy hủy để tránh bị tính phí tiếp; quyền trọn đời vẫn được giữ.",
+      "manageWebEmail": "Để cập nhật hoặc hủy gói, liên hệ bộ phận thanh toán từ {email}.",
+      "manageWebGeneric": "Để cập nhật hoặc hủy gói, liên hệ hỗ trợ thanh toán.",
+      "expiryTitle": "Gói của bạn sắp kết thúc",
+      "expiryBody": "Quyền truy cập kết thúc sau {days} ngày. Gia hạn để giữ phân tích bữa ăn bằng AI."
+    },
+    "trialBanner": {
+      "daysRemaining": "Còn {days} ngày dùng thử miễn phí",
+      "upgrade": "Nâng cấp"
     }
   }
 }
