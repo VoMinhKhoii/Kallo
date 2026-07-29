@@ -4,10 +4,13 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/data/api_client.dart';
+import 'package:nham_mobile/data/billing/entitlements_provider.dart';
 import 'package:nham_mobile/data/billing/purchases_service.dart';
 import 'package:nham_mobile/data/session_provider.dart';
 import 'package:nham_mobile/features/paywall/paywall_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'paywall_test_support.dart';
 
 const _userId = '11111111-1111-1111-1111-111111111111';
 const _userIdB = '22222222-2222-2222-2222-222222222222';
@@ -20,7 +23,7 @@ class _PendingEntitlementsApi extends ApiClient {
   final posts = <Completer<Map<String, dynamic>>>[];
 
   @override
-  Future<T> get<T>(String path) async => _premiumEntitlement() as T;
+  Future<T> get<T>(String path) async => premiumEntitlement() as T;
 
   @override
   Future<T> post<T>(String path, [Object? body]) {
@@ -29,20 +32,6 @@ class _PendingEntitlementsApi extends ApiClient {
     return response.future.then((value) => value as T);
   }
 }
-
-Map<String, dynamic> _premiumEntitlement() => {
-  'tier': 'premium',
-  'purchasesEnabled': true,
-  'isLifetime': false,
-  'expiresAt': '2026-08-01T00:00:00.000Z',
-  'willRenew': true,
-  'source': 'app_store',
-  'hasActiveSubscription': true,
-  'trial': {'active': false, 'endsAt': null, 'daysRemaining': 0},
-  'features': {
-    'ai_analysis': {'allowed': true, 'reason': 'entitled'},
-  },
-};
 
 Session _session({required String userId, required String accessToken}) {
   return Session(
@@ -144,6 +133,114 @@ void main() {
   });
 
   test(
+    'transient pre-purchase check failure keeps packages retryable',
+    () async {
+      final api = PaywallEntitlementsApi(failPrePurchaseCheck: true);
+      final purchases = PaywallPurchasesService();
+      final container = ProviderContainer(
+        overrides: [
+          currentSessionProvider.overrideWith(
+            (ref) => ref.watch(_testSessionProvider),
+          ),
+          apiClientProvider.overrideWithValue(api),
+          purchasesServiceProvider.overrideWithValue(purchases),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final subscription = container.listen(
+        paywallControllerProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
+      addTearDown(subscription.close);
+      await container.pump();
+      await container.pump();
+      await container.pump();
+
+      expect(
+        container.read(paywallControllerProvider).phase,
+        PaywallPhase.ready,
+      );
+      expect(container.read(paywallControllerProvider).packages, hasLength(1));
+      expect(api.postCalls, 0);
+
+      final result = await container
+          .read(paywallControllerProvider.notifier)
+          .purchase(monthlyPackage);
+
+      expect(result, PaywallActionResult.error);
+      expect(
+        container.read(paywallControllerProvider).phase,
+        PaywallPhase.ready,
+      );
+      expect(container.read(paywallControllerProvider).packages, hasLength(1));
+      expect(purchases.purchaseCalls, 0);
+      expect(api.postCalls, 0);
+      expect(
+        container.read(entitlementsProvider(_userId)),
+        isA<AsyncData<EntitlementState>>(),
+      );
+    },
+  );
+
+  test('commerce disable blocks store; reconcile follows success', () async {
+    final api = PaywallEntitlementsApi();
+    final purchases = PaywallPurchasesService();
+    final container = ProviderContainer(
+      overrides: [
+        currentSessionProvider.overrideWith(
+          (ref) => ref.watch(_testSessionProvider),
+        ),
+        apiClientProvider.overrideWithValue(api),
+        purchasesServiceProvider.overrideWithValue(purchases),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final subscription = container.listen(
+      paywallControllerProvider,
+      (_, _) {},
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+    await container.pump();
+    await container.pump();
+    await container.pump();
+
+    expect(api.postCalls, 0);
+    api.purchasesEnabled = false;
+
+    final disabled = await container
+        .read(paywallControllerProvider.notifier)
+        .purchase(monthlyPackage);
+
+    expect(disabled, PaywallActionResult.error);
+    expect(
+      container.read(paywallControllerProvider).phase,
+      PaywallPhase.unavailable,
+    );
+    expect(purchases.purchaseCalls, 0);
+    expect(api.postCalls, 0);
+
+    api.purchasesEnabled = true;
+    await container
+        .read(entitlementsProvider(_userId).notifier)
+        .refreshSnapshot();
+    await container.read(paywallControllerProvider.notifier).loadOfferings();
+    expect(container.read(paywallControllerProvider).phase, PaywallPhase.ready);
+
+    final result = await container
+        .read(paywallControllerProvider.notifier)
+        .purchase(monthlyPackage);
+
+    expect(result, PaywallActionResult.unlocked);
+    expect(purchases.purchaseCalls, 1);
+    expect(api.getCalls, 4);
+    expect(api.postCalls, 1);
+  });
+
+  test(
     'old account completion cannot block or unlock the new account operation',
     () async {
       final api = _PendingEntitlementsApi();
@@ -186,7 +283,7 @@ void main() {
       await container.pump();
       expect(api.posts, hasLength(2));
 
-      api.posts.first.complete(_premiumEntitlement());
+      api.posts.first.complete(premiumEntitlement());
       expect(await oldAccountOperation, PaywallActionResult.error);
 
       expect(
@@ -197,7 +294,7 @@ void main() {
       );
       expect(api.posts, hasLength(2));
 
-      api.posts.last.complete(_premiumEntitlement());
+      api.posts.last.complete(premiumEntitlement());
       expect(await newAccountOperation, PaywallActionResult.unlocked);
     },
   );

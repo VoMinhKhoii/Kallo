@@ -192,17 +192,44 @@ class EntitlementsController
 
   /// Re-fetch the snapshot, surfacing loading/error through the AsyncValue.
   Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    await refreshSnapshot();
+  }
+
+  /// Fetch the server-owned entitlement state without asking RevenueCat to
+  /// reconcile. Use this for pre-purchase commerce checks; provider
+  /// reconciliation is reserved for recovery and post-store verification.
+  ///
+  /// Returns `null` on a transport/server failure so callers can distinguish
+  /// "could not verify" from an explicit `purchasesEnabled: false`.
+  Future<EntitlementState?> refreshSnapshot() async {
     final operation = _captureOperation();
     if (operation == null) {
       state = const AsyncData(EntitlementState.free);
-      return;
+      return EntitlementState.free;
     }
 
-    state = const AsyncValue.loading();
-    final snapshot = await AsyncValue.guard(_fetch);
-    if (_isCurrent(operation)) {
-      state = snapshot;
-    }
+    return _keepAliveWhile(() async {
+      final previous = state.valueOrNull;
+      try {
+        final snapshot = await _fetch();
+        if (!_isCurrent(operation)) return null;
+
+        state = AsyncData(snapshot);
+        return snapshot;
+      } catch (error, stackTrace) {
+        if (!_isCurrent(operation)) return null;
+
+        // A pre-purchase safety refresh must not erase the last known-good
+        // entitlement snapshot. The caller still receives null and blocks this
+        // attempt, while the real screen keeps its packages available to retry.
+        state =
+            previous == null
+                ? AsyncError(error, stackTrace)
+                : AsyncData(previous);
+        return null;
+      }
+    });
   }
 
   Future<EntitlementState?> reconcile() async {

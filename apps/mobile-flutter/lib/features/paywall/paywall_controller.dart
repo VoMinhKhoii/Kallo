@@ -118,7 +118,16 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
     // A Supabase token refresh replaces the Session object even though the
     // authenticated user is unchanged. Watch only the selected user id so a
     // refresh cannot reset a ready paywall in the middle of a purchase.
-    ref.watch(currentSessionProvider.select((session) => session?.user.id));
+    final userId = ref.watch(
+      currentSessionProvider.select((session) => session?.user.id),
+    );
+    // The paywall consumes the entitlement snapshot across load, tap-time
+    // verification, and post-store polling. Keep the auto-dispose family
+    // member alive for that whole screen lifetime so a tap cannot recreate it
+    // and issue a duplicate background fetch beside the explicit refresh.
+    if (userId != null) {
+      ref.listen(entitlementsProvider(userId), (_, _) {});
+    }
     ref.onDispose(() => _disposed = true);
     // Kick off the offerings load once when the paywall mounts.
     Future.microtask(loadOfferings);
@@ -145,15 +154,13 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
     }
     _set(state.copyWith(phase: PaywallPhase.loading));
     try {
-      final entitlement =
-          await ref.read(entitlementsProvider(userId).notifier).reconcile();
+      final entitlement = await ref.read(entitlementsProvider(userId).future);
       if (!_isCurrentUser(userId)) return;
-      if (entitlement?.purchasesEnabled != true &&
-          entitlement?.isPremium != true) {
+      if (!entitlement.purchasesEnabled && !entitlement.isPremium) {
         _set(state.copyWith(phase: PaywallPhase.unavailable));
         return;
       }
-      if (entitlement?.isPremium == true) {
+      if (entitlement.isPremium) {
         _set(state.copyWith(phase: PaywallPhase.ready, packages: const []));
         return;
       }
@@ -174,12 +181,23 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
     final operation = _beginOperation();
     if (operation == null) return PaywallActionResult.error;
     try {
-      // Recheck the server switch at tap time. An offering loaded before an
-      // emergency rollback must not remain purchasable from a stale screen.
+      // Recheck the server switch at tap time without running a provider
+      // reconciliation. Reconciliation is rate-limited and belongs after a
+      // store action; the server-owned snapshot is enough to enforce the
+      // emergency commerce switch here.
       final entitlement =
-          await ref.read(entitlementsProvider(userId).notifier).reconcile();
+          await ref
+              .read(entitlementsProvider(userId).notifier)
+              .refreshSnapshot();
       if (!_isCurrentUser(userId)) return PaywallActionResult.error;
-      if (entitlement?.purchasesEnabled != true) {
+      if (entitlement == null) {
+        // A transient verification failure is not evidence that commerce was
+        // disabled. Keep the loaded packages retryable instead of replacing
+        // the paywall with the permanent unavailable state.
+        _set(state.copyWith(phase: PaywallPhase.ready, clearBusy: true));
+        return PaywallActionResult.error;
+      }
+      if (!entitlement.purchasesEnabled) {
         _set(state.copyWith(phase: PaywallPhase.unavailable));
         return PaywallActionResult.error;
       }
