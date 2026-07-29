@@ -108,7 +108,7 @@ export function PortionPickerBody({
         <button
           type="button"
           onClick={onApply}
-          className="rounded-lg bg-nham-btn px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-nham-btn-hover"
+          className="rounded-lg bg-nham-btn px-4 py-2 font-medium text-nham-surface text-sm transition-colors hover:bg-nham-btn-hover"
         >
           {t('apply')}
         </button>

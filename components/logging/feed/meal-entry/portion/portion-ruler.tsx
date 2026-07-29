@@ -148,7 +148,7 @@ export function PortionRuler({
         </SliderPrimitive.Track>
         <SliderPrimitive.Thumb
           aria-valuetext={ariaValueText}
-          className="block size-4 shrink-0 rounded-full border border-nham-text/30 bg-white shadow-sm outline-hidden transition-[box-shadow] hover:ring-4 hover:ring-nham-text/10 focus-visible:ring-4 focus-visible:ring-nham-accent/30"
+          className="block size-4 shrink-0 rounded-full border border-nham-text/30 bg-nham-surface shadow-sm outline-hidden transition-[box-shadow] hover:ring-4 hover:ring-nham-text/10 focus-visible:ring-4 focus-visible:ring-nham-accent/30"
         />
       </SliderPrimitive.Root>
 

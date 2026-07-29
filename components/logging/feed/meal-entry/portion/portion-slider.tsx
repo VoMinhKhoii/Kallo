@@ -35,7 +35,7 @@ export function PortionSlider({
       </SliderPrimitive.Track>
       <SliderPrimitive.Thumb
         aria-valuetext={ariaValueText}
-        className="block size-4 shrink-0 rounded-full border border-nham-accent bg-white shadow-sm outline-hidden transition-[box-shadow] hover:ring-4 hover:ring-nham-accent/20 focus-visible:ring-4 focus-visible:ring-nham-accent/30"
+        className="block size-4 shrink-0 rounded-full border border-nham-accent bg-nham-surface shadow-sm outline-hidden transition-[box-shadow] hover:ring-4 hover:ring-nham-accent/20 focus-visible:ring-4 focus-visible:ring-nham-accent/30"
       />
     </SliderPrimitive.Root>
   );

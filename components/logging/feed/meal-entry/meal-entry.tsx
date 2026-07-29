@@ -186,7 +186,7 @@ export function MealEntry({
                         isEditing={isEditing}
                         onQuantityChange={handleQuantityChange}
                       />
-                      {item.vessel && (
+                      {!confirmed && item.vessel && (
                         <PortionPicker
                           item={item}
                           items={items}

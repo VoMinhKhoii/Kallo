@@ -1,9 +1,18 @@
 -- Add bánh ướt (steamed rice sheets) to vietnamese_food_composition.
--- Bánh ướt (and its thicker filled sibling bánh cuốn) are absent from VN FCT
--- 2007. They are the same rice-flour batter steamed as thin sheets, so USDA
--- "Rice noodles, cooked" is used as a proxy (identical cooked rice-flour base).
+-- Bánh ướt is absent from VN FCT 2007. It is plain rice-flour batter steamed
+-- into thin sheets, so USDA "Rice noodles, cooked" is used as a proxy
+-- (identical cooked rice-flour base).
+-- "Bánh cuốn" is an alias on purpose, even though that dish carries a filling.
+-- Matching is INGREDIENT-level, not dish-level: Call 1 decomposes "bánh cuốn
+-- chả lụa" into the sheet plus its filling and toppings as separate
+-- ingredients, so this row only ever supplies the sheet — which really is plain
+-- rice batter. The filling is costed on its own rows (see the
+-- gvn-banh-cuon-full fixture, which expects 14-30 g protein). Keeping the alias
+-- here also feeds the embedding text, catching near misses like "vỏ bánh cuốn"
+-- that the exact-match table in lib/ai/matching/aliases.ts does not cover.
 -- Data source: USDA FoodData Central (NDB 20134 / FDC ID 168914).
--- Embeddings will be generated on next pipeline run or via backfill script.
+-- The embedding is left NULL here and filled by scripts/backfill_embeddings.ts,
+-- which the prod deploy runs whenever any row still lacks one.
 
 SET search_path TO public, extensions;
 
