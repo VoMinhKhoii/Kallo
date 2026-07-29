@@ -31,17 +31,17 @@
   },
   "metadata": {
     "root": {
-      "title": "Nhẩm — Vietnamese Meal Tracker",
+      "title": "Kallo — Vietnamese Meal Tracker",
       "description": "Track Vietnamese meals with AI-powered nutrition analysis"
     },
     "dashboard": {
-      "title": "Dashboard — Nhẩm"
+      "title": "Dashboard — Kallo"
     },
     "nutrition": {
-      "title": "Nutrition — Nhẩm"
+      "title": "Nutrition — Kallo"
     },
     "groups": {
-      "title": "Groups — Nhẩm"
+      "title": "Groups — Kallo"
     }
   },
   "shared": {
@@ -828,18 +828,18 @@
       "step1TextMobile": "Describe your meal naturally in Vietnamese, English, or both.",
       "step2Label": "Step 2",
       "step2Title": "We break it into real ingredients",
-      "step2Text": "Nhẩm maps your description to Vietnamese ingredients and dish components from a curated nutrition dataset.",
-      "step2TextMobile": "Nhẩm maps your text to real Vietnamese ingredients and dish components.",
+      "step2Text": "Kallo maps your description to Vietnamese ingredients and dish components from a curated nutrition dataset.",
+      "step2TextMobile": "Kallo maps your text to real Vietnamese ingredients and dish components.",
       "step3Label": "Step 3",
       "step3Title": "Personal context sharpens the estimate",
       "step3Text": "Region, cooking habits, and nutrition goals help the AI understand hidden calories and likely portion adjustments.",
       "step3TextMobile": "Region, cooking habits, and goals help the AI tighten the estimate.",
       "step4Label": "Step 4",
       "step4Title": "You get a useful, bounded result",
-      "step4Text": "Instead of fake precision, Nhẩm gives a realistic calorie and macro range you can actually use.",
+      "step4Text": "Instead of fake precision, Kallo gives a realistic calorie and macro range you can actually use.",
       "step4TextMobile": "Get a realistic calorie and macro range instead of fake precision.",
       "cta": "Start tracking now",
-      "whyLabel": "Why Nhẩm works better",
+      "whyLabel": "Why Kallo works better",
       "whyTitle": "Built around how Vietnamese meals are actually eaten",
       "feature1Title": "Vietnamese-first ingredient matching",
       "feature1Text": "Matches meals against Vietnamese food composition data instead of forcing Western substitutes.",
@@ -901,7 +901,7 @@
       "blog": "Blog",
       "contact": "Contact",
       "privacy": "Privacy",
-      "copyright": "© {year} Nhẩm. All rights reserved.",
+      "copyright": "© {year} Kallo. All rights reserved.",
       "terms": "Terms",
       "privacyLink": "Privacy policy",
       "security": "Security"
@@ -1000,7 +1000,7 @@
     "caloriesLogged": "kcal logged",
     "mealReceiptsHint": "Your meal receipts will show up here",
     "firstRunQuestion": "What did you eat today?",
-    "firstRunHint": "Describe your first meal — Nhẩm estimates the rest.",
+    "firstRunHint": "Describe your first meal — Kallo estimates the rest.",
     "firstRunChips": {
       "morning1": "1 tô phở bò + quẩy",
       "morning2": "2 trứng ốp la + bánh mì",
@@ -1066,7 +1066,7 @@
       "subtitle": "Nutrition for packaged products, via Open Food Facts",
       "scanning": "Center the barcode inside the frame",
       "torch": "Flashlight",
-      "cameraDenied": "Camera access is off. Enable it for Nhẩm in Settings > Privacy > Camera, or enter the barcode below.",
+      "cameraDenied": "Camera access is off. Enable it for Kallo in Settings > Privacy > Camera, or enter the barcode below.",
       "cameraError": "The camera isn't available on this device.",
       "manualEntry": "Enter barcode manually",
       "backToCamera": "Back to camera",
@@ -1343,7 +1343,7 @@
       "errorShare": "Couldn't share to your circle. Try again.",
       "errorUnshare": "Couldn't update sharing. Try again.",
       "shareCard": "Share card",
-      "shareCardTitle": "My meal on Nhẩm"
+      "shareCardTitle": "My meal on Kallo"
     },
     "shareMeal": {
       "title": "Share this meal",
@@ -1458,7 +1458,7 @@
       "unlinkError": "Couldn't disconnect that account. Please try again.",
       "loadError": "Couldn't load your sign-in methods.",
       "signOut": "Sign out",
-      "signOutConfirmTitle": "Sign out of Nhẩm?",
+      "signOutConfirmTitle": "Sign out of Kallo?",
       "cancel": "Cancel",
       "delete": "Delete account",
       "deleteScreenTitle": "Delete account",
@@ -1534,12 +1534,12 @@
       "placeholder": {
         "bug": "What went wrong? What did you expect to happen?",
         "ingredient": "Which ingredient or food is missing?",
-        "idea": "What would make Nhẩm better for you?"
+        "idea": "What would make Kallo better for you?"
       },
       "addScreenshot": "Add a screenshot",
       "removeScreenshot": "Remove screenshot",
       "screenshotTooLarge": "That image is over 5 MB. Please pick a smaller one.",
-      "photoPermission": "Nhẩm needs photo access to attach a screenshot. Enable it in Settings.",
+      "photoPermission": "Kallo needs photo access to attach a screenshot. Enable it in Settings.",
       "submit": "Send feedback",
       "successTitle": "Thanks — we got it",
       "successBody": "Your feedback is with the team. We read every one.",
