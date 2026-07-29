@@ -2,70 +2,103 @@ import 'dart:math';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../shared/widgets/kallo_mark.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../circle/data/circle_providers.dart';
 import 'entrances.dart';
 
-// The "what did you eat?" prompt has several phrasings; one is chosen at random
-// per visit so the empty feed feels alive instead of canned.
-const _titleKeys = [
-  'logging.emptyState.title',
-  'logging.emptyState.title2',
-  'logging.emptyState.title3',
-  'logging.emptyState.title4',
-  'logging.emptyState.title5',
-];
+/// The prompt buckets, in the order the day runs through them. Each bucket has
+/// three phrasings; one is drawn per visit so an empty day never feels canned.
+///
+/// Every phrasing ships TWICE: `<bucket><n>` (name-less) and `<bucket><n>Named`
+/// (with `{name}`). The name-less form is the one that always works, so the
+/// prompt can render on the very first frame — the display name arrives over
+/// the network and may never arrive at all.
+const _prompts = <String, int>{
+  'morning': 3,
+  'lunch': 3,
+  'afternoon': 3,
+  'evening': 3,
+  'lateNight': 3,
+};
 
-/// The empty feed: an icon tile and a single rotating "What did you eat?"
-/// prompt. Staggered icon→title entrance (mirrors the web: icon scale delay 50,
-/// title 100).
-class EmptyState extends StatefulWidget {
+/// Which bucket [hour] (0–23) falls in. Late night is the wrap-around case:
+/// everything from 22:00 until breakfast starts.
+String _bucketForHour(int hour) {
+  if (hour >= 5 && hour < 11) return 'morning';
+  if (hour >= 11 && hour < 15) return 'lunch';
+  if (hour >= 15 && hour < 18) return 'afternoon';
+  if (hour >= 18 && hour < 22) return 'evening';
+  return 'lateNight';
+}
+
+/// The empty feed: the Kallo mark, bare — no plate, no tile — over a single
+/// serif question tuned to the time of day, and to the person when we know who
+/// they are. This is the logging tab's one editorial moment; the rest of the
+/// surface is sans-serif data.
+class EmptyState extends ConsumerStatefulWidget {
   const EmptyState({super.key});
 
   @override
-  State<EmptyState> createState() => _EmptyStateState();
+  ConsumerState<EmptyState> createState() => _EmptyStateState();
 }
 
-class _EmptyStateState extends State<EmptyState> {
-  late final String _titleKey = _titleKeys[Random().nextInt(_titleKeys.length)];
+class _EmptyStateState extends ConsumerState<EmptyState> {
+  /// Drawn ONCE, in initState: the display name lands a frame or two later and
+  /// rebuilds us, and a prompt that reshuffled at that moment would read as a
+  /// glitch rather than a greeting.
+  late final String _key = _drawKey();
+
+  static String _drawKey() {
+    final bucket = _bucketForHour(DateTime.now().hour);
+    final index = Random().nextInt(_prompts[bucket]!) + 1;
+    return 'logging.emptyState.$bucket$index';
+  }
+
+  /// The name to greet, or null when we should stay impersonal. Long or
+  /// multi-word labels collapse to the first word — "Time for lunch, Khoa"
+  /// reads like a person talking; the full legal name does not.
+  String? get _name {
+    // Never awaited: loading and error both surface as null, and the name-less
+    // prompt is already on screen by then.
+    final label = ref.watch(myCircleProfileProvider).valueOrNull?.label.trim();
+    if (label == null || label.isEmpty) return null;
+    final first = label.split(RegExp(r'\s+')).first;
+    return (first.isEmpty || first.length > 16) ? null : first;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final name = _name;
+    final prompt = name == null
+        ? _key.tr()
+        : '${_key}Named'.tr(namedArgs: {'name': name});
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp10), // py-10
+      padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Icon tile — w-10 h-10 rounded-xl bg-border/30, UtensilsCrossed 20px.
-          ZoomIn(
-            delay: const Duration(milliseconds: 50),
-            child: Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: NhamColors.borderFaint, // border @ 30%
-                borderRadius: BorderRadius.circular(NhamRadii.xl), // rounded-xl
-              ),
-              child: const Icon(
-                LucideIcons.utensilsCrossed,
-                size: 20,
-                color: NhamColors.textMuted,
-              ),
-            ),
+          // The mark stands on the page itself, no plate behind it.
+          const ZoomIn(
+            delay: Duration(milliseconds: 50),
+            // Ink, the same tint the sidebar's wordmark carries by default —
+            // the mark reads as the brand, not as an accent decoration.
+            child: KalloMark(height: 28, color: kInk),
           ),
-          const SizedBox(height: NhamSpacing.sp4), // gap-4
+          const SizedBox(height: NhamSpacing.sp5),
           FadeInDown(
             delay: const Duration(milliseconds: 100),
-            child: NhamText(
-              _titleKey.tr(),
-              variant: NhamTextVariant.h4,
-              textAlign: TextAlign.center,
-              style: const TextStyle(letterSpacing: NhamTracking.tight),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp6),
+              child: Text(
+                prompt,
+                textAlign: TextAlign.center,
+                style: dashHeadline(),
+              ),
             ),
           ),
         ],

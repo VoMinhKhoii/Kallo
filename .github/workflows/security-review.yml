@@ -1,0 +1,79 @@
+# Claude Code Security Review — per-PR
+#
+# Runs anthropics/claude-code-security-review against the PR diff, but pointed at
+# DeepSeek V4 Pro instead of Anthropic models. The action never sets
+# ANTHROPIC_BASE_URL itself, and job-level env reaches composite-action steps, so
+# the env block below redirects both of the action's code paths: the `claude` CLI
+# (claudecode/github_action_audit.py) and the Python `anthropic` SDK used for
+# false-positive filtering (claudecode/claude_api_client.py).
+#
+# Behaviour deliberately mirrors .coderabbit.yaml's auto_review: comments on the
+# PR, re-reviews on every push, includes drafts, skips release PRs, and never
+# blocks the merge. CodeQL stays the hard gate.
+
+name: Security Review
+
+on:
+  pull_request:
+    branches: [main, staging]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  security-review:
+    name: Security Review (DeepSeek V4 Pro)
+    runs-on: ubuntu-latest
+    # Never turn the check red: a finding is a comment, not a merge block.
+    continue-on-error: true
+    timeout-minutes: 30
+    # Fork PRs cannot read secrets. Release PRs mirror .coderabbit.yaml's
+    # ignore_title_keywords.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !startsWith(github.event.pull_request.title, 'chore(main): release') &&
+      !startsWith(github.event.pull_request.title, 'chore: release')
+    env:
+      # --- the one fix: talk to DeepSeek, not Anthropic ---
+      ANTHROPIC_BASE_URL: https://api.deepseek.com/anthropic
+      ANTHROPIC_AUTH_TOKEN: ${{ secrets.DEEPSEEK_API_KEY }}
+      ANTHROPIC_MODEL: deepseek-v4-pro
+      ANTHROPIC_SMALL_FAST_MODEL: deepseek-v4-flash
+      # Keep the CLI off Anthropic-only endpoints that don't exist on DeepSeek.
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+      DISABLE_AUTOUPDATER: "1"
+      DISABLE_TELEMETRY: "1"
+      DISABLE_ERROR_REPORTING: "1"
+    steps:
+      - name: Require DeepSeek credentials
+        run: |
+          if [ -z "${ANTHROPIC_AUTH_TOKEN}" ]; then
+            echo "::error::DEEPSEEK_API_KEY secret is not set. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Scan PR diff
+        uses: anthropics/claude-code-security-review@0c6a49f1fa56a1d472575da86a94dbc1edb78eda # main
+        with:
+          # The action forwards this to ANTHROPIC_API_KEY (x-api-key); combined
+          # with ANTHROPIC_AUTH_TOKEN above, either auth header works on DeepSeek.
+          claude-api-key: ${{ secrets.DEEPSEEK_API_KEY }}
+          # Sets CLAUDE_MODEL, which drives both `claude --model` and the SDK
+          # filtering client.
+          claude-model: deepseek-v4-pro
+          comment-pr: true
+          upload-results: true
+          # CodeRabbit re-reviews each push; the action otherwise caches one run per PR.
+          run-every-commit: true
+          claudecode-timeout: 20
+          # Build output, vendored data and prose only. supabase/migrations is
+          # deliberately in scope — RLS policies are the point.
+          exclude-directories: node_modules,.next,public,data,messages,docs,.planning,.gsd,.tuturuuu,.agents

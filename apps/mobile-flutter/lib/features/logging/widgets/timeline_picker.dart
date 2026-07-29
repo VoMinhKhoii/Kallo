@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
-import '../../../shared/widgets/nham_text.dart';
 import '../../../shell/app_header.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
@@ -64,12 +63,11 @@ class _TimelineChipState extends State<TimelineChip> {
                   size: 14, color: NhamColors.textMuted),
               const SizedBox(width: NhamSpacing.sp2), // gap-2
               Flexible(
-                child: NhamText(
+                child: Text(
                   formatted,
-                  variant: NhamTextVariant.chipText,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: kInk),
+                  style: dashMeta().merge(const TextStyle(color: kInk)),
                 ),
               ),
               if (hasMeal) ...[
@@ -518,15 +516,13 @@ class _DayCellState extends State<_DayCell> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              NhamText(
+              Text(
                 dayName,
-                variant: NhamTextVariant.macroLabel,
-                style: dashEyebrow(color: labelColor),
+                style: dashMeta(color: labelColor),
               ),
               const SizedBox(height: 2), // gap-0.5
-              NhamText(
+              Text(
                 dayNum,
-                variant: NhamTextVariant.numInline,
                 style: dashBody(
                   color: labelColor,
                   weight: FontWeight.w500,

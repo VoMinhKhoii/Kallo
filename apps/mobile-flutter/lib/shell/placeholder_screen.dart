@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../shared/widgets/widgets.dart';
+import '../theme/calm_tokens.dart';
 import '../theme/nham_theme.dart';
 import 'app_header.dart';
 
@@ -37,7 +38,7 @@ class PlaceholderScreen extends StatelessWidget {
           ),
           Expanded(
             child: Center(
-              child: NhamText(tr(titleKey), variant: NhamTextVariant.h4),
+              child: Text(tr(titleKey), style: dashHeadline()),
             ),
           ),
         ],

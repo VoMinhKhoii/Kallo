@@ -14,10 +14,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../../logging/data/logging_providers.dart' show pendingMealProvider;
 import '../../logging/widgets/count_up.dart';
 import '../data/dashboard_providers.dart';
 import '../data/logging_day.dart';
 import '../logic/dashboard_format.dart';
+import '../logic/dashboard_spacing.dart';
 import 'calorie_ring.dart';
 import '../../../theme/calm_tokens.dart';
 import 'section_header.dart';
@@ -81,7 +83,7 @@ class TodaySection extends ConsumerWidget {
       loading: () => const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SkeletonHeader(),
+          DashSkeletonHeader(),
           TodayCardSkeleton(),
         ],
       ),
@@ -100,26 +102,33 @@ class TodaySection extends ConsumerWidget {
 /// three time-of-day-aware suggestion chips that open the meal composer
 /// prefilled. Shown only when the user has never logged a meal (zero today
 /// AND zero history).
-class _FirstRunCard extends StatelessWidget {
+class _FirstRunCard extends ConsumerWidget {
   const _FirstRunCard();
 
   /// Which suggestion set fits the device clock (morning / midday / evening).
-  static String _chipBucket() {
-    final hour = DateTime.now().hour;
-    if (hour < 11) return 'morning';
-    if (hour < 16) return 'midday';
-    return 'evening';
-  }
+  static String _chipBucket() => switch (DateTime.now().hour) {
+        < 11 => 'morning',
+        < 16 => 'midday',
+        _ => 'evening',
+      };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final bucket = _chipBucket();
     final suggestions = [
       for (var i = 1; i <= 3; i++) tr('dashboard.firstRunChips.$bucket$i'),
     ];
+    // Park the text for the feed to claim, then land on it (as the FAB does).
+    void openWithMeal(String meal) {
+      ref.read(pendingMealProvider.notifier).state = meal;
+      context.go('/logging');
+    }
+
     return _FadeInDown(
       child: Container(
         width: double.infinity,
+        // Deliberately NOT DashboardSpacing.card: this is the one editorial
+        // empty state (serif question + hint + chips) and its air is the point.
         padding: const EdgeInsets.symmetric(
             vertical: NhamSpacing.sp6, horizontal: NhamSpacing.sp4),
         decoration: BoxDecoration(
@@ -131,23 +140,18 @@ class _FirstRunCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(tr('dashboard.firstRunQuestion'), style: dashHeadline()),
-            const SizedBox(height: NhamSpacing.sp2),
+            const SizedBox(height: DashboardSpacing.row * 2),
             Text(
               tr('dashboard.firstRunHint'),
               style: dashBody(color: kInkMuted),
             ),
-            const SizedBox(height: NhamSpacing.sp4),
+            const SizedBox(height: DashboardSpacing.section),
             Wrap(
               spacing: 6,
               runSpacing: 6,
               children: [
                 for (final s in suggestions)
-                  _FirstRunChip(
-                    label: s,
-                    // Same prefill handoff the meal FAB uses.
-                    onTap: () => context
-                        .go('/logging?meal=${Uri.encodeComponent(s)}'),
-                  ),
+                  _FirstRunChip(label: s, onTap: () => openWithMeal(s)),
               ],
             ),
           ],
@@ -250,7 +254,7 @@ class _Dock extends StatelessWidget {
           // eyebrow treatment + flush alignment as the Progress / Consistency
           // headers so all three sections share one rhythm (12px title→card).
           Padding(
-            padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
+            padding: const EdgeInsets.only(bottom: DashboardSpacing.block),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -261,17 +265,15 @@ class _Dock extends StatelessWidget {
                             ? tr('dashboard.caloriesOverTarget')
                             : tr('dashboard.caloriesRemaining'))
                         .toUpperCase(),
-                    style: dashEyebrow(),
+                    style: dashMeta(),
                   ),
                 ),
-                Text(dateLabel.toUpperCase(),
-                    style: dashEyebrow(
-                        color: kInkMuted, weight: FontWeight.w500)),
+                Text(dateLabel.toUpperCase(), style: dashMeta()),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.all(NhamSpacing.sp4),
+            padding: DashboardSpacing.card,
             decoration: BoxDecoration(
               color: kCardSurface, // solid white
               borderRadius: BorderRadius.circular(kCardRadius),
@@ -313,7 +315,7 @@ class _Dock extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: NhamSpacing.sp1),
+                          const SizedBox(height: DashboardSpacing.row),
                           Text(
                             '${_fmt(calories, locale)} ${tr('dashboard.caloriesLogged')}',
                             style: dashMeta(color: kInkMuted),
@@ -325,19 +327,19 @@ class _Dock extends StatelessWidget {
                     CalorieRing(
                       current: calories.toDouble(),
                       target: targets.calorieTarget,
-                      size: 84,
+                      size: 84, // an illustration, not an icon
                       strokeWidth: 6,
-                      center:
-                          const Icon(LucideIcons.flame, size: 22, color: kInk),
+                      center: const Icon(LucideIcons.flame,
+                          size: NhamIcons.size, color: kInk),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: NhamSpacing.sp4),
+                const SizedBox(height: DashboardSpacing.section),
 
                 // (b) Macro bars — full width.
                 for (var i = 0; i < macroBars.length; i++) ...[
-                  if (i > 0) const SizedBox(height: NhamSpacing.sp2_5),
+                  if (i > 0) const SizedBox(height: DashboardSpacing.row * 2),
                   _MacroRow(bar: macroBars[i], idx: i),
                 ],
 
@@ -366,8 +368,8 @@ class _Separator extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         height: 1,
-        margin: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3_5),
-        color: const Color(0xFFE4E1DC), // soft neutral grey hairline
+        margin: const EdgeInsets.symmetric(vertical: DashboardSpacing.section),
+        color: kHairline, // the one border colour
       );
 }
 
@@ -391,7 +393,7 @@ class _MacroRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.visible,
             softWrap: false,
-            style: dashEyebrow(color: kInk),
+            style: dashMeta(color: kInk),
           ),
         ),
         const SizedBox(width: NhamSpacing.sp3),
@@ -508,7 +510,7 @@ class _EmptyMeals extends StatelessWidget {
             textAlign: TextAlign.center,
             style: dashBody(weight: FontWeight.w600),
           ),
-          const SizedBox(height: NhamSpacing.sp1),
+          const SizedBox(height: DashboardSpacing.row),
           Text(
             tr('dashboard.mealReceiptsHint'),
             textAlign: TextAlign.center,
@@ -531,14 +533,13 @@ class _MealList extends StatelessWidget {
       children: [
         // Header row.
         Padding(
-          padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
+          padding: const EdgeInsets.only(bottom: DashboardSpacing.row * 2),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(tr('dashboard.recentMeals').toUpperCase(),
-                  style: dashEyebrow()),
+              Text(tr('dashboard.recentMeals').toUpperCase(), style: dashMeta()),
               Text(
                 tr('dashboard.mealsLogged',
                     namedArgs: {'count': '${meals.length}'}),
@@ -547,10 +548,9 @@ class _MealList extends StatelessWidget {
             ],
           ),
         ),
-        for (var i = 0; i < meals.length; i++) ...[
-          if (i > 0) const SizedBox(height: NhamSpacing.sp1_5),
-          _MealRow(meal: meals[i]),
-        ],
+        // No separator: each row carries DashboardSpacing.row top and bottom,
+        // so neighbours sit `row * 2` apart without a second gap owner.
+        for (final meal in meals) _MealRow(meal: meal),
       ],
     );
   }
@@ -563,7 +563,7 @@ class _MealRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(vertical: DashboardSpacing.row),
       // Baseline-align the name and kcal so the row reads on one line; the meal
       // name sits at content-left (aligned with the macro labels above) and
       // kcal in the shared right column (aligned with the macro values).

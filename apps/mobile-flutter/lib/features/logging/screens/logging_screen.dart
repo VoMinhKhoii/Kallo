@@ -3,13 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/session_provider.dart';
-import '../../../shared/widgets/nham_text.dart';
+import '../../../shared/widgets/nham_primitives.dart';
 import '../../../shared/widgets/skeleton.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
+import '../logic/logging_spacing.dart';
 import '../widgets/feed_area.dart';
 import '../widgets/partial_yesterday_prompt.dart';
 import '../widgets/timeline_picker.dart';
@@ -37,7 +39,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
 
     if (userId == null) {
       return _centered(
-        NhamText('common.notSignedIn'.tr(), variant: NhamTextVariant.small),
+        Text('common.notSignedIn'.tr(), style: dashMeta(),),
       );
     }
 
@@ -62,60 +64,74 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
     final today = todayDateString();
     final yesterday = addDays(today, -1);
 
+    // A meal composed on the dashboard means TODAY. This screen lives in an
+    // indexedStack branch, so [_selectedDate] survives tab switches — page back
+    // to last Tuesday, hop to the dashboard, log from the FAB, and without this
+    // the feed would claim the text and analyze it against last Tuesday.
+    //
+    // A plain assignment, not setState: we are already inside the build this
+    // provider triggered, and the new value is consumed a few lines down, so
+    // FeedArea is constructed with today on this very frame — before it can
+    // claim the parked meal.
+    if (ref.watch(pendingMealProvider) != null && _selectedDate != today) {
+      _selectedDate = today;
+    }
+
     // The date chip MORPHS in place into the week strip (fixed height, so the
     // feed never shifts) — a buttery cross-dissolve, not a panel that opens
     // below. The scrim catches outside-taps to collapse back to the chip.
-    return ColoredBox(
-      color: NhamColors.surface,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                NhamSpacing.sp3,
-                0,
-                NhamSpacing.sp3,
-                NhamSpacing.sp1,
-              ),
-              child: DateMorph(
-                dates: mealDates,
-                today: today,
-                selectedDate: _selectedDate,
-                expanded: _pickerExpanded,
-                onSelectDate: (date) => setState(() => _selectedDate = date),
-                onExpand: () => setState(() => _pickerExpanded = true),
-                onCollapse: () => setState(() => _pickerExpanded = false),
-              ),
+    //
+    // [Screen] (not a bare ColoredBox + SafeArea) because it also carries the
+    // tap-anywhere-to-unfocus gesture every other surface gets: the composer's
+    // keyboard used to stay up forever, since nothing on this tab dropped focus
+    // on a background tap. Interactive descendants — the feed's cards, the
+    // composer, and the picker scrim below — win their own taps in the gesture
+    // arena, so only genuinely empty surface dismisses.
+    return Screen(
+      bottom: false,
+      child: Column(
+        children: [
+          Padding(
+            // No bottom inset — the macro summary below owns the one
+            // block gap, so the date strip never double-spaces it.
+            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+            child: DateMorph(
+              dates: mealDates,
+              today: today,
+              selectedDate: _selectedDate,
+              expanded: _pickerExpanded,
+              onSelectDate: (date) => setState(() => _selectedDate = date),
+              onExpand: () => setState(() => _pickerExpanded = true),
+              onCollapse: () => setState(() => _pickerExpanded = false),
             ),
-            // A once-daily nudge when *yesterday* was under-logged — only while
-            // viewing today, and only until dismissed this session.
-            if (_selectedDate == today &&
-                !ref.watch(yesterdayPromptDismissedProvider(yesterday)))
-              PartialYesterdayPrompt(
-                userId: userId,
-                yesterday: yesterday,
-                calorieTarget: profile.calorieTarget,
-                onOpenDay: (date) => setState(() => _selectedDate = date),
-              ),
-            Expanded(
-              child: Stack(
-                children: [
+          ),
+          // A once-daily nudge when *yesterday* was under-logged — only while
+          // viewing today, and only until dismissed this session.
+          if (_selectedDate == today &&
+              !ref.watch(yesterdayPromptDismissedProvider(yesterday)))
+            PartialYesterdayPrompt(
+              userId: userId,
+              yesterday: yesterday,
+              calorieTarget: profile.calorieTarget,
+              onOpenDay: (date) => setState(() => _selectedDate = date),
+            ),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: FeedArea(profile: profile, date: _selectedDate),
+                ),
+                if (_pickerExpanded)
                   Positioned.fill(
-                    child: FeedArea(profile: profile, date: _selectedDate),
-                  ),
-                  if (_pickerExpanded)
-                    Positioned.fill(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onTap: () => setState(() => _pickerExpanded = false),
-                      ),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: () => setState(() => _pickerExpanded = false),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -153,9 +169,9 @@ class _LoggingSkeleton extends StatelessWidget {
                 const Padding(
                   padding: EdgeInsets.fromLTRB(
                     NhamSpacing.sp3,
-                    NhamSpacing.sp2,
+                    LoggingSpacing.block,
                     NhamSpacing.sp3,
-                    NhamSpacing.sp1,
+                    LoggingSpacing.block,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -165,14 +181,13 @@ class _LoggingSkeleton extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: NhamSpacing.sp2),
                 for (var i = 0; i < 3; i++)
                   const Padding(
                     padding: EdgeInsets.fromLTRB(
                       NhamSpacing.sp3,
-                      NhamSpacing.sp2,
+                      0,
                       NhamSpacing.sp3,
-                      NhamSpacing.sp2,
+                      LoggingSpacing.block,
                     ),
                     child: SkeletonBar(height: 96, radius: 16),
                   ),

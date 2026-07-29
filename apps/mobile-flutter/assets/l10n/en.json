@@ -12,6 +12,7 @@
     "search": "Search",
     "noResults": "No results found",
     "confirm": "Confirm",
+    "dismiss": "Dismiss",
     "close": "Close",
     "or": "or",
     "optional": "Optional",
@@ -107,8 +108,8 @@
     "range": {
       "label": "Nutrition range",
       "1d": "Today",
-      "7d": "7d",
-      "30d": "30d",
+      "7d": "Week",
+      "30d": "Month",
       "90d": "90 days"
     },
     "nutrientGroups": {
@@ -588,7 +589,7 @@
     },
     "bodyMetrics": {
       "title": "Your body metrics",
-      "subtitle": "We use these to calculate your daily calorie and macro targets.",
+      "subtitle": "All optional — the more you fill in, the more tailored your daily calorie and macro targets.",
       "biologicalSex": "Biological sex",
       "sexPlaceholder": "Select…",
       "male": "Male",
@@ -632,8 +633,6 @@
       "macroSummary": "Daily targets",
       "kcal": "kcal",
       "grams": "g",
-      "aboutYou": "About you",
-      "aboutYouHint": "These stay optional, but once you fill them in, Nhẩm can compute more tailored targets locally.",
       "unlockTitle": "Fill the basics to unlock targets.",
       "unlockHint": "Once sex, weight, height, age, and activity are filled, this becomes your live calorie target and macro planner."
     },
@@ -946,7 +945,6 @@
     "now": "Now",
     "goal": "Goal",
     "start": "Start",
-    "weekPrefix": "W",
     "projected": "Projected",
     "insufficientWeightData": "First entry in — log again tomorrow to draw your trend.",
     "noWeightData": "Log your first weight to start tracking your trend.",
@@ -1033,6 +1031,10 @@
       "barcodeDesc": "Scan a packaged product"
     },
     "cheatPlaceholder": "Korean BBQ buffet, went all out…",
+    "quickLog": {
+      "title": "Log a meal",
+      "subtitle": "We'll analyze it on your feed"
+    },
     "cheatIntensity": {
       "label": "How much did you eat?",
       "helper": "Scales the estimate",
@@ -1128,11 +1130,36 @@
     "feedEmpty": "No meals yet today. What did you eat?",
     "todaysMeals": "Today's meals",
     "emptyState": {
-      "title": "What did you eat?",
-      "title2": "What's on your plate?",
-      "title3": "What did you have?",
-      "title4": "Ready to log a meal?",
-      "title5": "What's for this meal?"
+      "morning1": "What's for breakfast?",
+      "morning1Named": "What's for breakfast, {name}?",
+      "morning2": "How did the day start?",
+      "morning2Named": "How did the day start, {name}?",
+      "morning3": "First meal of the day?",
+      "morning3Named": "First meal of the day, {name}?",
+      "lunch1": "Time for lunch?",
+      "lunch1Named": "Time for lunch, {name}?",
+      "lunch2": "What's on the plate?",
+      "lunch2Named": "What's on the plate, {name}?",
+      "lunch3": "Eaten yet?",
+      "lunch3Named": "Eaten yet, {name}?",
+      "afternoon1": "Anything since lunch?",
+      "afternoon1Named": "Anything since lunch, {name}?",
+      "afternoon2": "A snack to log?",
+      "afternoon2Named": "A snack to log, {name}?",
+      "afternoon3": "How's the afternoon going?",
+      "afternoon3Named": "How's the afternoon going, {name}?",
+      "evening1": "What's for dinner?",
+      "evening1Named": "What's for dinner, {name}?",
+      "evening2": "How was dinner?",
+      "evening2Named": "How was dinner, {name}?",
+      "evening3": "Let's close out the day.",
+      "evening3Named": "Let's close out the day, {name}.",
+      "lateNight1": "A late bite?",
+      "lateNight1Named": "A late bite, {name}?",
+      "lateNight2": "One last thing to log?",
+      "lateNight2Named": "One last thing to log, {name}?",
+      "lateNight3": "Still up. Still hungry?",
+      "lateNight3Named": "Still up, {name}. Still hungry?"
     },
     "feedArea": {
       "savedMeal": "Meal saved",
@@ -1163,10 +1190,6 @@
     "failedAttempt": {
       "message": "We couldn't read this one. Your note is safe — give it another try.",
       "tryAgain": "Try again"
-    },
-    "clarify": {
-      "answerHint": "Type your answer…",
-      "send": "Send"
     },
     "mealEntry": {
       "edit": "Edit",
@@ -1234,8 +1257,7 @@
   },
   "groups": {
     "page": {
-      "title": "Your circle",
-      "subtitle": "What your friends are eating today.",
+      "title": "Circle",
       "addFriend": "Add friend",
       "createGroup": "Create group",
       "friendsEmptyTitle": "No shared meals yet",
@@ -1441,6 +1463,8 @@
       "delete": "Delete account",
       "deleteScreenTitle": "Delete account",
       "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
+      "deleteSubscriptionWarning": "Deleting your Kallo account does not cancel an Apple or Google subscription. Cancel it in the store first to prevent future charges. A Kallo web subscription is canceled as part of account deletion. You can still delete immediately.",
+      "deleteManageSubscription": "Manage or cancel subscription",
       "deleteConfirmLabel": "Type {word} to confirm",
       "deleteConfirmWord": "DELETE",
       "deleteConfirmAction": "Delete my account",
@@ -1531,7 +1555,7 @@
     },
     "identity": {
       "title": "Profile",
-      "description": "How you appear across Nhẩm and to your circle.",
+      "description": "How you appear across Kallo and to your circle.",
       "avatarUpload": "Upload photo",
       "avatarChange": "Change photo",
       "avatarRemove": "Remove",
@@ -1546,6 +1570,19 @@
       "nameError": "Couldn't update your name",
       "nameRequired": "Please enter a name.",
       "linkWarning": "Changing your name updates your invite link — old links stop working."
+    },
+    "subscription": {
+      "groupLabel": "Subscription",
+      "row": "Kallo Pro",
+      "statusFree": "Free plan",
+      "statusTrial": "Free trial · {days} days left",
+      "statusTrialLastDay": "Free trial · last day",
+      "statusPremium": "Premium · renews {date}",
+      "statusPremiumExpires": "Premium · until {date}",
+      "statusPremiumCancelled": "Premium · ends {date}",
+      "statusLifetime": "Premium · lifetime",
+      "manage": "Manage subscription",
+      "restore": "Restore purchases"
     }
   },
   "errors": {
@@ -1570,5 +1607,43 @@
       "ageMin": "Age must be at least 13.",
       "ageMax": "Age must be at most 100."
     }
+  },
+  "paywall": {
+    "upsellEyebrow": "Kallo Pro",
+    "upsellTitle": "Describe a meal, know the macros",
+    "upsellBody": "AI meal analysis reads what you ate — dishes, portions, calories and macros — from your own words, in Vietnamese or English.",
+    "expiredEyebrow": "Your free trial has ended",
+    "expiredTitle": "Keep your AI analysis",
+    "expiredBody": "Your free trial is over. Go Premium to keep logging meals with AI analysis — no more counting by hand.",
+    "trialCountdown": "{days} days left in your free trial",
+    "trialCountdownLastDay": "Last day of your free trial",
+    "feature1": "AI reads meals from your own description",
+    "feature2": "Vietnamese dishes, portions and macros",
+    "feature3": "Fast meal logging within fair-use limits",
+    "purchase": "Start Premium",
+    "purchaseTrial": "Subscribe now",
+    "restore": "Restore purchases",
+    "manageActive": "Manage subscription",
+    "alreadyPremiumTitle": "You're on Premium",
+    "alreadyPremiumBody": "AI meal analysis is unlocked. Manage your plan in the store any time.",
+    "alreadyLifetimeBody": "You have lifetime Premium. AI meal analysis is yours to keep.",
+    "unavailableTitle": "Purchases unavailable",
+    "unavailableBody": "In-app purchases aren't available right now. Please try again later.",
+    "loadError": "Couldn't load subscription options.",
+    "purchaseError": "Purchase couldn't be completed. Please try again.",
+    "restoreAccountConflict": "This purchase belongs to another Kallo account. Sign in to the account that originally made the purchase, or contact support.",
+    "restoreError": "Couldn't restore purchases. Please try again.",
+    "restoreNothing": "No previous purchases found to restore.",
+    "verifying": "Confirming your purchase…",
+    "verifyPending": "Payment received — we're still activating Premium. It'll unlock shortly.",
+    "bestValue": "Best value",
+    "perMonth": "/mo",
+    "perYear": "/yr",
+    "packageMonthly": "Monthly",
+    "packageAnnual": "Annual",
+    "packageLifetime": "Lifetime",
+    "legal": "Payment is charged now to your store account. Subscriptions renew automatically unless cancelled at least 24 hours before the period ends.",
+    "terms": "Terms of use",
+    "privacy": "Privacy policy"
   }
 }

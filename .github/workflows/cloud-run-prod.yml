@@ -54,6 +54,10 @@ jobs:
       # non-prod project. Coupling prod validation to that would hard-fail every
       # prod deploy the moment the split lands.
       KALLO_PROD_PROJECT_ID: ${{ secrets.KALLO_PROD_PROJECT_ID }}
+      BILLING_ENFORCEMENT_ENABLED: ${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}
+      BILLING_PURCHASES_ENABLED: ${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}
+      SUBSCRIPTION_LAUNCH_DATE: ${{ vars.SUBSCRIPTION_LAUNCH_DATE }}
+      TRIAL_DAYS: ${{ vars.TRIAL_DAYS || '7' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -96,6 +100,34 @@ jobs:
           gcloud secrets describe kallo-prod-gemini-api-key
           gcloud secrets describe kallo-prod-analysis-guard-hash-secret
           gcloud secrets describe kallo-prod-origin-shared-secret
+          gcloud secrets describe kallo-prod-supabase-service-role-key
+          gcloud secrets describe kallo-prod-revenuecat-customer-delete-api-key
+          gcloud secrets describe kallo-prod-revenuecat-rest-api-key
+          gcloud secrets describe kallo-prod-revenuecat-webhook-secret
+          [ -n "${{ vars.REVENUECAT_ALLOWED_APP_IDS }}" ]
+          [ -n "${{ vars.REVENUECAT_PROJECT_ID }}" ]
+          case "$BILLING_ENFORCEMENT_ENABLED" in
+            true|false) ;;
+            *) echo "BILLING_ENFORCEMENT_ENABLED must be true or false." >&2; exit 1 ;;
+          esac
+          case "$BILLING_PURCHASES_ENABLED" in
+            true|false) ;;
+            *) echo "BILLING_PURCHASES_ENABLED must be true or false." >&2; exit 1 ;;
+          esac
+          [[ "$TRIAL_DAYS" =~ ^[1-9][0-9]*$ ]] || {
+            echo "TRIAL_DAYS must be a positive integer." >&2
+            exit 1
+          }
+          if [ "$BILLING_ENFORCEMENT_ENABLED" = "true" ]; then
+            [ -n "$SUBSCRIPTION_LAUNCH_DATE" ] || {
+              echo "SUBSCRIPTION_LAUNCH_DATE is required when billing enforcement is enabled." >&2
+              exit 1
+            }
+            node -e "const value=process.env.SUBSCRIPTION_LAUNCH_DATE; if (Number.isNaN(new Date(value).getTime())) process.exit(1)" || {
+              echo "SUBSCRIPTION_LAUNCH_DATE must be a valid ISO date." >&2
+              exit 1
+            }
+          fi
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
           # Guard against pointing prod at the wrong Supabase project. assert-state
           # is intentionally NOT run here: its seeded-food / no-orphaned-users
@@ -193,8 +225,8 @@ jobs:
             --timeout=60
             --min-instances=0
             --max-instances=20
-            --set-secrets=DATABASE_URL=kallo-prod-database-url:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest,USDA_API_KEY=kallo-prod-usda-api-key:latest
-            --update-env-vars=^|^AI_PROVIDER=vertex|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|PIPELINE_V2_ENABLED=true
+            --set-secrets=DATABASE_URL=kallo-prod-database-url:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest,SUPABASE_SERVICE_ROLE_KEY=kallo-prod-supabase-service-role-key:latest,REVENUECAT_CUSTOMER_DELETE_API_KEY=kallo-prod-revenuecat-customer-delete-api-key:latest,REVENUECAT_REST_API_KEY=kallo-prod-revenuecat-rest-api-key:latest,REVENUECAT_WEBHOOK_SECRET=kallo-prod-revenuecat-webhook-secret:latest,USDA_API_KEY=kallo-prod-usda-api-key:latest
+            --update-env-vars=^|^AI_PROVIDER=vertex|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|PIPELINE_V2_ENABLED=true|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|SUBSCRIPTION_LAUNCH_DATE=${{ vars.SUBSCRIPTION_LAUNCH_DATE }}|TRIAL_DAYS=${{ vars.TRIAL_DAYS || '7' }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false
       - name: Resolve smoke URL
         # Existing service → the candidate was deployed with --no-traffic, so smoke
         # its tagged URL (the live service URL still serves the old revision).

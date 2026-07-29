@@ -109,9 +109,6 @@ export function useConfirmHandlers(args: {
           isStreaming: true,
           streamingPhase: 'waiting',
           attemptId,
-          // Anchor carried on the card so a clarify round-trip keeps it (the
-          // terminal effect spreads ...msg, preserving this field).
-          inheritLoggedAt: meal.loggedAt,
         },
       ]);
       scrollToBottom();

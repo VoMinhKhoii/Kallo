@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../logic/logging_spacing.dart';
 
-/// A 28x28 (w-7 h-7) stepper button inside a 40pt tap target: rounded-md,
+/// A 28x28 (w-7 h-7) stepper button inside the shared logging tap target:
+/// rounded-md,
 /// border/60, white fill. Pressed → bg-nham-hover (the web hover:bg-nham-hover
 /// touch affordance). Shared by the pending-meal entry and the saved-meal amount
 /// editor so the ±10g stepper looks and feels identical in both.
@@ -34,11 +36,12 @@ class _MealStepperButtonState extends State<MealStepperButton> {
       onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
       onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
       onTap: widget.onTap,
-      // 40pt tap target around the 28pt visual stepper (kept under 44 so two
-      // steppers + the count value still fit a narrow row without overflow).
+      // The shared logging hit target around the 28pt visual stepper (kept
+      // under 44 so two steppers + the count value still fit a narrow row
+      // without overflow).
       child: SizedBox(
-        width: 40,
-        height: 40,
+        width: LoggingIcons.hit,
+        height: LoggingIcons.hit,
         child: Center(
           child: Opacity(
             opacity: widget.disabled ? 0.4 : 1, // opacity-40
@@ -52,7 +55,11 @@ class _MealStepperButtonState extends State<MealStepperButton> {
                 borderRadius: BorderRadius.circular(NhamRadii.md),
                 border: Border.all(color: NhamColors.borderSoft),
               ),
-              child: Icon(widget.icon, size: 10, color: NhamColors.textMuted),
+              child: Icon(
+                widget.icon,
+                size: LoggingIcons.size,
+                color: NhamColors.text,
+              ),
             ),
           ),
         ),

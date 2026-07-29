@@ -2,16 +2,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../data/logging_models.dart';
+import '../../logic/logging_spacing.dart';
 import '../confirm_meal_removal.dart';
+import '../meal_time_divider.dart';
 import 'persisted_meal_actions.dart';
 import 'persisted_meal_amount_editor.dart';
 import 'persisted_meal_card_content.dart';
-import 'persisted_meal_time_divider.dart';
 
 /// A saved meal in the day's feed — collapsed by default, expandable.
 ///
@@ -94,11 +94,14 @@ class _PersistedMealCardState extends State<PersistedMealCard>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.trash2, size: 18, color: Colors.white),
+            const Icon(
+              LucideIcons.trash2,
+              size: LoggingIcons.size,
+              color: Colors.white,
+            ),
             const SizedBox(width: 6),
-            NhamText(
+            Text(
               'logging.remove'.tr(),
-              variant: NhamTextVariant.body,
               style: dashBody(color: Colors.white, weight: FontWeight.w500),
             ),
           ],
@@ -129,13 +132,14 @@ class _PersistedMealCardState extends State<PersistedMealCard>
           (g) => g.ingredients.any((i) => i.estimatedGrams != null),
         );
 
-    final Widget? editorBody = _editing && widget.onUpdate != null
-        ? PersistedMealAmountEditor(
-            meal: meal,
-            onCancel: () => setState(() => _editing = false),
-            onSave: widget.onUpdate!,
-          )
-        : null;
+    final Widget? editorBody =
+        _editing && widget.onUpdate != null
+            ? PersistedMealAmountEditor(
+              meal: meal,
+              onCancel: () => setState(() => _editing = false),
+              onSave: widget.onUpdate!,
+            )
+            : null;
 
     final cardBody = PersistedMealCardContent(
       meal: meal,
@@ -145,31 +149,30 @@ class _PersistedMealCardState extends State<PersistedMealCard>
       editorBody: editorBody,
     );
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Time as a centered divider on top of the card (── 1:04 AM ──) —
-          // no left timeline gutter, so the card gets the full row width.
-          PersistedMealTimeDivider(time: time),
-          const SizedBox(height: NhamSpacing.sp2), // mb-2
-          // Editing swaps the body in place AND hides the action row (the web
-          // hides the action bar while editing). While editing the card is not
-          // swipe-dismissible — a stray swipe must not delete the meal mid-edit.
-          _editing ? cardBody : _maybeDismissible(cardBody),
-          if (!_editing) ...[
-            const SizedBox(height: NhamSpacing.sp1_5),
-            PersistedMealActions(
-              meal: meal,
-              onRemove: widget.onRemove,
-              onEditAmounts:
-                  canEdit ? () => setState(() => _editing = true) : null,
-              onLogAgain: widget.onLogAgain,
-            ),
-          ],
+    // No bottom margin: the feed's list separator owns the gap to the next
+    // card, so a card never adds spacing of its own.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Time as a centered divider on top of the card (── 1:04 AM ──) —
+        // no left timeline gutter, so the card gets the full row width.
+        MealTimeDivider(time: time),
+        const SizedBox(height: LoggingSpacing.block),
+        // Editing swaps the body in place AND hides the action row (the web
+        // hides the action bar while editing). While editing the card is not
+        // swipe-dismissible — a stray swipe must not delete the meal mid-edit.
+        _editing ? cardBody : _maybeDismissible(cardBody),
+        if (!_editing) ...[
+          const SizedBox(height: LoggingSpacing.actions),
+          PersistedMealActions(
+            meal: meal,
+            onRemove: widget.onRemove,
+            onEditAmounts:
+                canEdit ? () => setState(() => _editing = true) : null,
+            onLogAgain: widget.onLogAgain,
+          ),
         ],
-      ),
+      ],
     );
   }
 }

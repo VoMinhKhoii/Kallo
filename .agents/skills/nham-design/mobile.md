@@ -10,9 +10,12 @@ or the web scale here.
 Throughline: **hierarchy comes from weight + colour, not size**; a compact,
 uniform vertical rhythm; exactly one editorial serif moment per viewport.
 
-**Live across the app.** Dashboard, Nutrition, Logging, Onboarding, and Settings
-all run on this system; Auth is a deliberate **light-touch** (see _Status_). Do
-all new mobile UI work against this doc.
+**Live across the app** and validated on device. Logging, Dashboard, Settings,
+Feedback and the shell run the full system — three sizes, two colours, one
+named spacing rhythm per surface; Circle and Nutrition are partly ported and
+Auth is a deliberate **light-touch** (see _Status_). Do all new mobile UI work
+against this doc, and read _Traps_ before porting a surface — every entry there
+shipped a visible bug first.
 
 ## Font
 
@@ -23,17 +26,46 @@ all new mobile UI work against this doc.
 
 ## Type scale
 
-| Role | Size | Weight | Tracking | Used for |
-|------|------|--------|----------|----------|
-| Hero | 40 | 500 (medium) | −1.0 | the ONE big number per card (calories remaining, weight) |
-| Value | 17 | 500 | — | ring-centre number, metric values |
-| Body | 14 | 400 | — | meal names, primary detail, the `/target` denominator |
-| Meta | 12 | 400 | — | captions, units, stat values, dates |
-| Eyebrow | 11 | 500 | +0.3, UPPERCASE | section labels (muted) |
-| Greeting | 22 | 400 | −0.3 | Lora serif — the single editorial moment per viewport |
+| Role | Size | Weight | Leading | Tracking | Used for |
+|------|------|--------|---------|----------|----------|
+| Hero | 40 | 500 (medium) | 1.05 | −1.0 | the ONE big number per card (calories remaining, weight) |
+| Value | 17 | 500 | 1.1 | — | ring-centre number, metric values |
+| Body | 14 | 400 | 1.3 | — | meal names, primary detail, the `/target` denominator |
+| Meta | 12 | 400 | 1.25 | — | captions, units, stat values, dates |
+| Eyebrow | 11 | 500 | 1.3 | +0.3, UPPERCASE | section labels (muted) |
+| Greeting | 22 | 400 | — | −0.3 | Lora serif — the single editorial moment per viewport |
 
 Medium (500) is the **weight ceiling for data** — Be Vietnam Pro reads heavy, so
 semibold felt thick; body/meta stay regular (400). Serif is never bold.
+
+**Leading is tight on purpose.** Body sits at 1.3 and meta at 1.25, not the
+1.45/1.35 they started at. These are scannable data rows, not prose — the loose
+leading made cards read padded even once their gaps were tightened, and it is
+the first lever to reach for when a screen "feels big" (before touching sizes,
+which are already below iOS's 17pt default body).
+
+### One scale per surface
+
+A screen picks **at most three sizes**. The logging feed is the reference
+implementation: Value 17 for the one figure per card, Body 14 for content, Meta
+12 for everything quiet — with the serif quote at 17 as the single editorial
+moment. Anything outside those three needs a comment saying why.
+
+Do NOT mix `NhamTextVariant` with `dash*` on the same screen. `NhamText` does
+`base.merge(style)`, so a `dash*` override silently beats the variant's size and
+weight — which is how one card ended up rendering collapsed kcal at 17/500 and
+its total kcal three lines below at 16/700. On calm surfaces, use plain `Text`
+with a `dash*` token.
+
+### Text scaling
+
+Dynamic Type is respected but **capped at 1.3x** (`MediaQuery.withClampedTextScaling`
+in `app.dart`). Past that the feed's fixed-width columns — macro labels, gram
+readouts, stepper values — overflow their rows. There is deliberately **no lower
+bound**: users who prefer smaller text get it, and nothing breaks below 1.0.
+
+When judging whether a screen "feels too big", check the device's Text Size
+setting first — at 130% every number below is 30% larger than spec.
 
 ## Colour — neutral canvas, exactly two text colours
 
@@ -65,8 +97,72 @@ No third "disabled" tier. The old `kInkSecondary` (taupe) / `kInkDisabled`
 
 `12px` (`NhamSpacing.sp3`) between **all** major stacked components:
 greeting ↔ week strip ↔ card title ↔ card ↔ card. Card padding `16` (`sp4`),
-card radius `22`. Within-card gaps (e.g. meal rows) are tighter and deliberate;
+card radius `22`. Card padding is **16 horizontal / 12 vertical** where the card
+opens or closes on text (`LoggingSpacing.card`): the first and last lines each
+carry ~4px of line-height slack above and below their glyphs, so a flat 16 reads
+top-heavy. Equal *optically*, not geometrically — that is the one that matters.
+
+The composer goes further (`LoggingSpacing.composer`, 4 sides / 10 top / 4
+bottom — only the edge above running text keeps its room): it stacks two more
+insets of its own — the field's min-height centring its single line, and the send
+button's 44pt tap target wrapping a 32pt visual. Count every inset in the stack
+before setting the outermost one; a control-dense card needs less than a
+text-only one to land in the same place. Within-card gaps (e.g. meal rows) are tighter and deliberate;
 the 12px rule governs the *between-component* rhythm.
+
+This is the default for **presentational** surfaces — the dashboard, settings,
+onboarding. A dense scrolling **list** surface may run tighter; the logging feed
+does, at 8px, and names it (see *Spacing — one rhythm per surface* below). Going
+tighter than 12 is a per-surface decision that must be captured in a named token
+set, never improvised gap by gap.
+
+## Spacing — one rhythm per surface
+
+Gaps resolve to a small named set, not per-widget guesses. The logging feed's
+`LoggingSpacing` is the pattern to copy.
+
+**It deliberately overrides the 12px default above**: `block` is 8, not 12,
+including for card ↔ card. The logging feed is a dense scrolling list where the
+default rhythm left the day feeling padded — and every card there also carries a
+time divider and an action row, which already separate them. Presentational
+surfaces stay at 12; this is the documented exception, not a new default.
+
+| Token | Value | Used for |
+|-------|-------|----------|
+| `block` | 8 | between the big blocks — header ↔ list ↔ composer, and card ↔ card |
+| `section` | 12 | inside a card: above/below every hairline, between sections |
+| `row` | 4 | vertical padding on one item row (so neighbours sit `block` apart) |
+| `actions` | 2 | a card ↔ the action icons under it (they carry their own inset) |
+
+**A card never carries a bottom margin.** The parent stack owns the gap — a list
+separator or a `Column`'s `spacing`. Margins on both sides silently double, which
+is how cards ended up 20px apart when the separator said 8.
+
+### Icons
+
+One glyph size and one hit target per surface. Logging uses `LoggingIcons.size`
+16 on `LoggingIcons.hit` 36 for every icon-only control — chevrons, steppers,
+row-removes, composer controls, send/stop. The pressed wash hugs the glyph rather
+than filling the hit box: the target can grow for accessibility without the press
+affordance growing with it.
+
+The logging page now holds the three sizes with **no exceptions** — the calorie
+ring's label was the last holdout at 8px and is on Meta 12 like every other
+caption. Lower-case, not the old uppercase: it keeps Vietnamese ("còn lại")
+inside the fixed 78px ring, which uppercase at 12 would not.
+
+Note the trap that hid there. `NhamText` upper-cases its `eyebrow` and
+`macroLabel` variants *in the widget*, so a call site moving to plain `Text`
+silently loses the transform — and any casing inconsistency in the strings
+(`"left"` vs `"Over"`) stops being masked. Normalise casing at the call site
+when you port, or check the rendered word, not just the size.
+
+### Status colour
+
+Errors stay red on the **affordance**, not the copy: the alert icon and the
+terracotta action button carry the signal while the message itself reads in
+`kInkMuted`. A whole card of red text reads as an alarm for something the user
+can usually just retry.
 
 ## Reference implementation (source of truth)
 
@@ -77,14 +173,125 @@ the 12px rule governs the *between-component* rhythm.
 
 ## Status / migration
 
-- ✅ **Dashboard, Nutrition, Logging, Onboarding, Settings** — live on this system
-  (`kInk` + `kInkMuted`, the calm scale).
-- 🔸 **Auth** — a deliberate **light-touch**: body / labels / buttons are on the
-  calm sans tokens and the two-colour palette, but its serif brand identity is
-  preserved intact (the "Nhẩm" wordmark, the italic tagline, and the form titles
-  stay serif — that is the one surface where serif is the point, not an accent).
+**Validated on device.** The density rules below are the default for all new
+mobile UI — no longer provisional.
 
-Two shared-widget paths still carry pre-calm styling where a call site didn't
-override them: `lib/shared/widgets/nham_text.dart` (its `NhamTextVariant`
-defaults) and the logging `mealQuote` serif variant. These are intentional and
-out of the calm token set; migrate the shared widget separately if desired.
+| Surface | Type + colour | Named spacing | Notes |
+|---------|---------------|---------------|-------|
+| **Logging** | ✅ 17/14/12 | `logging/logic/logging_spacing.dart` (8px block) | the reference implementation |
+| **Dashboard** | ✅ 40/14/12 + Lora 22 | `dashboard/logic/dashboard_spacing.dart` (12px) | Hero replaces Value here |
+| **Settings** | ✅ 22/14/12 | `settings/logic/settings_spacing.dart` | rows split 4+8 (below) |
+| **Feedback** | ✅ | uses the 12px default | |
+| **Shell / drawer** | ✅ | `NhamSpacing` directly | selected state matches web |
+| **Circle** | 🔸 header + add-menu + padding only | 12px root inset | the feed's 35 files are unported |
+| **Nutrition** | 🔸 range selector + padding | 12px root inset | `dashEyebrow` + raw sizes remain |
+| **Logging `sheets/`** | ❌ | — | 4 files, 35 `NhamText` calls, still the old scale |
+| **Onboarding / Auth** | 🔸 palette only | deliberately wider (32–40) | narrative screens, not data |
+
+The `nham_text.dart` `NhamTextVariant` defaults and the logging `mealQuote`
+serif remain outside the calm set on purpose.
+
+### Two app-wide changes worth remembering
+
+| Change | Scope |
+|--------|-------|
+| `dashBody` leading 1.45 → 1.3, `dashMeta` 1.35 → 1.25 | every surface |
+| Text scaling capped at 1.3x (`app.dart`) | every surface |
+
+If a screen ever "feels big" again, the leading is still the first lever — two
+numbers in `calm_tokens.dart` that move every screen at once.
+
+## Shared widgets the system now owns
+
+Reach for these before writing a local variant:
+
+- **`shared/widgets/scroll_separator.dart`** — a header hairline that only
+  exists once content has scrolled. Wraps header + scroll view and listens to
+  bubbled `ScrollNotification`, so any scrollable works and a body that swaps
+  skeleton→error→list needs no re-plumbing. On every page.
+  *Anchor it where the scroll actually starts.* Logging puts it under the macro
+  summary, not the date strip, because the summary doesn't move — a rule above
+  a static block claims content passed beneath it when none did.
+- **`shared/widgets/quiet_action_button.dart`** — the warm-wash pill for
+  "commit what I just typed". NOT the umber `NhamButton`, which is reserved for
+  the one primary action per surface; a form's own submit is not that one.
+- **`logging/widgets/macro_trio.dart`** — P/C/F + kcal as fixed columns. Packed
+  left-to-right, the columns drift with the digits and a card of ingredients
+  reads ragged.
+- **`logging/widgets/meal_time_divider.dart`** — the `── 1:04 AM ──` rule.
+  Unsaved cards pass the moment they were entered, so the timeline doesn't
+  break at the card being worked on.
+
+### The drawer's selected state
+
+Selected = `NhamColors.hover` (#F0EAE0) wash + `kInk` + semibold. Idle =
+`kInkMuted`. This is web parity
+(`components/app/navigation/mobile/mobile-nav-list.tsx`). Flutter had it
+*inverted* — solid umber with white content, and ink when idle, i.e. the colour
+web reserves for selected. Two consequences: a selected row keeps its full wash
+while pressed (hover@40 over an opaque wash renders *lighter*, i.e. inverted
+feedback), and the badge dot is always tan (white vanished on the wash).
+
+## Traps — each of these shipped a visible bug
+
+**`NhamText` merges.** `base.merge(style)`, so a `dash*` override silently
+beats the variant's size. It also upper-cases `eyebrow` and `macroLabel`
+*inside the widget*, and defaults `macroValue` to `TextAlign.right`. Moving a
+call site to plain `Text` drops the transform silently — check the rendered
+word, not just the size. A widget whose `style` defaults to a variant is the
+same trap latent: make `style` required.
+
+**`InputDecorationTheme` wins.** The app theme sets `filled: true` and an
+`OutlineInputBorder` on `enabledBorder`. Clearing only `border` leaves the
+field painting its own box *inside* your container — the nested-card look. Set
+`border`, `enabledBorder`, `focusedBorder`, `disabledBorder` **and**
+`filled: false`, plus `contentPadding` (the theme's is 16/12).
+
+**Narrow weekday names are not one character.** Vietnamese renders `T2`…`T7`,
+`CN`. A fixed 16px gutter wrapped them into a column of stacked letters.
+Measure the widest label; don't assume.
+
+**`DateFormat.MMMd` is three tokens in Vietnamese** — "6 thg 7". On a dense
+axis use numeric `d/M`: same width in every language.
+
+**Server strings are not localized.** The heatmap's month names were built with
+a hardcoded `en-US`, so Vietnamese users read "May / Jun / Jul". Send a number,
+format it client-side.
+
+**Vendored twins drift.** `dashboard/logic/heatmap_colors.dart` and
+`components/dashboard/progress/heatmap-colors.ts` are byte-identical copies.
+Edit both.
+
+**A legend is a key, not a measure.** Sizing the adherence legend's segments to
+their real band widths gave the two warm tiers half the bar, reading as "most
+of your days are bad" before a cell was drawn. Five equal segments.
+
+**Adherence bands are asymmetric** (`HeatmapBands`): under-target runs
+20/30/40/50 against over-target's 10/20/35/50. Most under-target days are
+under-*logged*, not under-eaten — a forgotten snack is indistinguishable from a
+deficit — so punishing both directions equally painted ordinary days as
+failure.
+
+### Row content vs card content
+
+A dashboard **card's edge** sits at 12. Text inside it is further in by the
+card's own padding. A settings **row is not a card**, so its content column
+lands where a card's edge lands — 12 — not 12 plus the row's padding. Settings
+splits that 12 as **4 (list) + 8 (row)** so the net inset matches every other
+tab while the pressed fill still floats inside the screen edge.
+
+### Porting a surface
+
+1. Inventory it: `grep -rhoE "NhamTextVariant\.[a-zA-Z]+|dash[A-Z][a-zA-Z]*\(|fontSize: [0-9.]+" <dir> | sort | uniq -c`.
+2. Map every hit onto three sizes. More than three on one screen means the
+   mapping is wrong, not that the screen is special. Hero 40 and the Lora 22
+   greeting are the documented exemptions — one editorial moment per viewport.
+3. Replace `NhamText(variant:)` with plain `Text(style: dash*())`, minding the
+   merge and uppercase traps above.
+4. Name the surface's gaps in one constants file. Presentational surfaces keep
+   the 12px default; only a dense scrolling list earns tighter.
+5. Strip card-owned bottom margins — the parent stack owns every gap.
+6. One glyph size + one hit target for icon-only controls.
+7. Audit the third colour: `grep -rn "NhamColors.stone\|textWarm\|textSoft" <dir>`.
+8. Re-check on device at 100%, at the smallest Dynamic Type step, **and in
+   Vietnamese** — which is where every localization trap above surfaced.

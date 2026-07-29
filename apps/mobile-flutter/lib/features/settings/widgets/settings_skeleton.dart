@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/skeleton.dart';
 import '../../../theme/nham_theme.dart';
+import '../logic/settings_spacing.dart';
 
 /// Profile-load skeleton for the settings editor — a stack of label + field
 /// rows mirroring the form the editor renders.
@@ -15,7 +16,8 @@ class SettingsSkeleton extends StatelessWidget {
       label: tr('common.loading'),
       child: SkeletonPulse(
         child: ListView(
-          padding: const EdgeInsets.all(NhamSpacing.sp5),
+          // Same inset as the editor it stands in for — the swap doesn't jump.
+          padding: SettingsSpacing.page,
           children: [
             for (var i = 0; i < 4; i++) ...[
               if (i > 0) const SizedBox(height: NhamSpacing.sp5),

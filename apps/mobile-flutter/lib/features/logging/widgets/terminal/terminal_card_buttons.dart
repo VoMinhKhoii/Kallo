@@ -1,16 +1,15 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 
-/// Solid-umber primary pill shared by the terminal feed cards — the
-/// failed-attempt "Try again" and the precise-clarify "Send". Icon + label, a
-/// pressed-state [AnimatedContainer] that deepens the shadow, and an optional
-/// [busy] state that dims to 0.5 and swallows taps (the in-flight clarify
-/// submit). The resting look mirrors the confirm button.
+/// Solid-umber primary pill for the terminal feed cards — currently the
+/// failed-attempt "Try again". Icon + label, a pressed-state
+/// [AnimatedContainer] that deepens the shadow, and an optional [busy] state
+/// that dims to 0.5 and swallows taps (an in-flight resubmit). The resting look
+/// mirrors the confirm button.
 class TerminalPrimaryButton extends StatefulWidget {
   const TerminalPrimaryButton({
     super.key,
@@ -66,9 +65,8 @@ class _TerminalPrimaryButtonState extends State<TerminalPrimaryButton> {
               children: [
                 Icon(widget.icon, size: 14, color: Colors.white),
                 const SizedBox(width: 6),
-                NhamText(
+                Text(
                   widget.label,
-                  variant: NhamTextVariant.body,
                   style: dashBody(color: Colors.white, weight: FontWeight.w500),
                 ),
               ],
@@ -110,9 +108,8 @@ class _TerminalDiscardButtonState extends State<TerminalDiscardButton> {
             color: _pressed ? NhamColors.hover : Colors.transparent,
             borderRadius: BorderRadius.circular(NhamRadii.xl),
           ),
-          child: NhamText(
+          child: Text(
             'logging.discard'.tr(),
-            variant: NhamTextVariant.body,
             style: dashBody(color: kInkMuted, weight: FontWeight.w500),
           ),
         ),

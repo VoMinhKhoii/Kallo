@@ -4,12 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
 import type { CheatSliderSpec } from '@/lib/types/cheat';
-import type { MealItem, ParsedMeal, PreciseClarify } from '@/lib/types/meal';
-
-// The precise-mode clarify prompt lives in lib/types/meal alongside ChatMessage
-// (which carries it on a finalized clarify card); re-exported here so existing
-// stream-layer imports keep resolving from this module.
-export type { PreciseClarify };
+import type { MealItem, ParsedMeal } from '@/lib/types/meal';
 
 export interface StreamAnalysisState {
   status: StreamStatus;
@@ -18,8 +13,6 @@ export interface StreamAnalysisState {
   result: ParsedMeal | null;
   /** Cheat-meal slider spec (when mode='cheat'); replaces `result`. */
   cheatSpec: CheatSliderSpec | null;
-  /** Precise-mode clarify prompt (when the pipeline couldn't resolve a portion). */
-  clarify: PreciseClarify | null;
   analysisId: string | null;
   error: string | null;
   isAnalyzing: boolean;
@@ -46,14 +39,16 @@ export interface StreamAnalyzeInput {
 
 /**
  * Terminal events end the SSE stream with no follow-up frame: a durable
- * `analysis_complete`, a fatal `error`, a precise-mode `clarify`, or a cheat
- * `cheat_estimate` carrying a clarifyingQuestion (the vague-input fallback).
+ * `analysis_complete`, a fatal `error`, or a cheat `cheat_estimate` carrying a
+ * clarifyingQuestion (the vague-input fallback).
+ *
+ * Anything else the server may emit is NOT terminal here: the stream closing
+ * after it settles as "ended unexpectedly", i.e. a retryable failed attempt.
  */
 function isTerminalEvent(event: StreamEvent): boolean {
   return (
     event.type === 'analysis_complete' ||
     event.type === 'error' ||
-    event.type === 'clarify' ||
     (event.type === 'cheat_estimate' && event.spec.clarifyingQuestion != null)
   );
 }
@@ -73,7 +68,6 @@ const INITIAL_STATE: StreamAnalysisState = {
   completedItems: [],
   result: null,
   cheatSpec: null,
-  clarify: null,
   analysisId: null,
   error: null,
   isAnalyzing: false,
@@ -153,21 +147,6 @@ export function useStreamAnalysis() {
                 }
               : { ...prev, cheatSpec: event.spec };
 
-          case 'clarify':
-            // Terminal, like a cheat clarifyingQuestion: the stream ends with
-            // no analysis_complete. Settle isAnalyzing and expose the prompt
-            // so the UI can collect an answer and resubmit with clarifyAnswer.
-            return {
-              ...prev,
-              clarify: {
-                question: event.question,
-                mealItemId: event.mealItemId,
-                reason: event.reason,
-              },
-              status: 'done',
-              isAnalyzing: false,
-            };
-
           case 'analysis_complete':
             return {
               ...prev,
@@ -184,6 +163,8 @@ export function useStreamAnalysis() {
               isAnalyzing: false,
             };
 
+          // Any event type this client does not consume (e.g. server frames
+          // added for other clients) is skipped without touching state.
           default:
             return prev;
         }
@@ -245,6 +226,22 @@ export function useStreamAnalysis() {
             typeof body?.error === 'string'
               ? body.error
               : (body?.error?.message ?? `Request failed (${response.status})`);
+
+          // A pre-stream 402 means the AI-analysis feature is locked. Surface a
+          // distinct state so the logging surface opens the paywall rather than
+          // showing a generic error toast. Keyed on the HTTP status; the body
+          // (code 'feature_locked', feature, reason) is parsed defensively but
+          // the status alone is authoritative.
+          if (response.status === 402) {
+            setState((prev) => ({
+              ...prev,
+              status: 'paymentRequired',
+              error: errorMsg,
+              isAnalyzing: false,
+            }));
+            return;
+          }
+
           setState((prev) => ({
             ...prev,
             status: 'error',

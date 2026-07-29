@@ -1,22 +1,24 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/amount_editor_totals.dart';
 import '../../logic/format.dart';
+import '../../logic/logging_spacing.dart';
 import '../../logic/meal_utils.dart';
 import 'persisted_meal_amount_editor_buttons.dart';
 import 'persisted_meal_amount_editor_row.dart';
 
 /// Persist a set of amount edits: gram overrides keyed by `meal_items` id, and
 /// per-row removals. Resolves on success; throws so the editor can stay open.
-typedef AmountEditSave = Future<void> Function({
-  required List<Map<String, dynamic>> edits,
-  required List<String> removeIds,
-});
+typedef AmountEditSave =
+    Future<void> Function({
+      required List<Map<String, dynamic>> edits,
+      required List<String> removeIds,
+    });
 
 /// The saved-meal amount editor — swaps in place for the read-only expanded body.
 /// Per-ingredient ±10g steppers, remove-toggle with strikethrough, live-scaling
@@ -66,8 +68,8 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
         for (final r in _rows)
           (r.id == id && r.grams != null)
               ? r.copyWith(
-                  grams: (r.grams! + delta).clamp(minDishGrams, double.infinity),
-                )
+                grams: (r.grams! + delta).clamp(minDishGrams, double.infinity),
+              )
               : r,
       ];
     });
@@ -77,8 +79,7 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
     if (_saving) return;
     setState(() {
       _rows = [
-        for (final r in _rows)
-          r.id == id ? r.copyWith(removed: !r.removed) : r,
+        for (final r in _rows) r.id == id ? r.copyWith(removed: !r.removed) : r,
       ];
     });
   }
@@ -118,13 +119,15 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
     // meal instead). Mirrors the web's canSave gate.
     final canSave = _rows.any((r) => !r.removed);
 
+    // Same rhythm as the read-only expanded body it replaces, so toggling
+    // Edit changes the controls in the rows and nothing else.
     return Padding(
-      padding: const EdgeInsets.only(top: NhamSpacing.sp5), // mt-5
+      padding: const EdgeInsets.only(top: LoggingSpacing.section),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
-          const SizedBox(height: NhamSpacing.sp4), // pt-4
+          const SizedBox(height: LoggingSpacing.section),
           for (final row in _rows)
             PersistedMealAmountEditorRow(
               name: _names[row.id] ?? '',
@@ -132,34 +135,30 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
               onStep: _step,
               onToggleRemove: _toggleRemove,
             ),
-          const SizedBox(height: NhamSpacing.sp4),
+          const SizedBox(height: LoggingSpacing.section),
           const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
-          const SizedBox(height: NhamSpacing.sp3), // pt-3
+          const SizedBox(height: LoggingSpacing.section),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              NhamText('logging.persistedMealCard.total'.tr(),
-                  variant: NhamTextVariant.calorieBold),
+              Text(
+                'logging.persistedMealCard.total'.tr(), style: dashBody(weight: FontWeight.w500, tabular: true),),
               Row(
                 children: [
-                  NhamText(
-                    'P: ${fmtG(totals.proteinG)}  C: ${fmtG(totals.carbohydrateG)}  F: ${fmtG(totals.fatG)}',
-                    variant: NhamTextVariant.captionTabular,
-                  ),
+                  Text(
+                    'P: ${fmtG(totals.proteinG)}  C: ${fmtG(totals.carbohydrateG)}  F: ${fmtG(totals.fatG)}', style: dashMeta(tabular: true),),
                   const SizedBox(width: NhamSpacing.sp4), // gap-4
-                  NhamText(fmtKcal(totals.caloriesKcal),
-                      variant: NhamTextVariant.numStrong),
+                  Text(
+                    fmtKcal(totals.caloriesKcal), style: dashValue(),),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: NhamSpacing.sp4),
+          const SizedBox(height: LoggingSpacing.section),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              AmountEditorCancelButton(
-                onTap: _saving ? null : widget.onCancel,
-              ),
+              AmountEditorCancelButton(onTap: _saving ? null : widget.onCancel),
               const SizedBox(width: NhamSpacing.sp2),
               AmountEditorSaveButton(
                 saving: _saving,

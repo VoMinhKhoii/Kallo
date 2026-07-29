@@ -2,11 +2,13 @@
 ///
 /// A clean, uniform line chart: round-number weight values in a left gutter with
 /// a subtle gridline at each step, the plot filling from the gutter to the right
-/// edge; week ticks (W1..Now), a short dotted forecast tail, a faint "today"
-/// marker, and a dot at every logged point with the most recent emphasized.
+/// edge; short localized date ticks (…"Jun 9", "Now"), a short dotted forecast
+/// tail, a faint "today" marker, and a dot at every logged point with the most
+/// recent emphasized.
 ///
 /// The forecast (`projectedEndWeight` / `canProject`) is computed once
 /// server-side and passed in as data — the chart only positions and draws it.
+/// Axis maths (Y domain + x tick labels) lives in `logic/weight_chart_axis.dart`.
 library;
 
 import 'dart:math' as math;
@@ -18,63 +20,27 @@ import 'package:flutter/material.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/calm_tokens.dart';
+import '../logic/weight_chart_axis.dart';
 
 const double _chartAspect = 1.95; // canvas width : height (framed chart)
 const int _rangeDays = 30; // mobile resolves the weight window to 30 days
-
-/// A tight, uniform, round-number Y axis fitted to [values]: pick a step that
-/// yields a handful of evenly spaced gridlines, snap the bounds outward to whole
-/// steps, and widen to at least ~two steps so a flat series still reads. Mirrors
-/// the web chart's axis so both platforms bucket identically.
-({double min, double max, double step}) _niceYAxis(List<double> values) {
-  final rawMin = values.reduce(math.min);
-  final rawMax = values.reduce(math.max);
-  final span = math.max(rawMax - rawMin, 0.5);
-  final step = span <= 2
-      ? 0.5
-      : span <= 5
-          ? 1.0
-          : span <= 12
-              ? 2.0
-              : 5.0;
-  var min = (rawMin / step).floorToDouble() * step;
-  var max = (rawMax / step).ceilToDouble() * step;
-  if (max - min < step * 1.5) {
-    min -= step;
-    max += step;
-  }
-  return (min: min, max: max, step: step);
-}
-
-/// W1..W4 + Now tick labels over the 30-day window, keyed by point index.
-/// Positional (a quarter of the logged points each), matching the web
-/// `buildXTicks` — not calendar weeks.
-Map<int, String> _xTickLabels(List<double> weights) {
-  if (weights.length == 1) return {0: tr('dashboard.start')};
-  final count = weights.length;
-  final step = count ~/ 4;
-  final ticks = <int>[];
-  for (final t in [0, step, step * 2, step * 3, count - 1]) {
-    if (!ticks.contains(t)) ticks.add(t);
-  }
-  return {
-    for (var i = 0; i < ticks.length; i++)
-      ticks[i]: i == ticks.length - 1
-          ? tr('dashboard.now')
-          : '${tr('dashboard.weekPrefix')}${i + 1}',
-  };
-}
+const double _leftGutter = 34; // reservedSize of the Y-label gutter
 
 class WeightChartCanvas extends StatelessWidget {
   const WeightChartCanvas({
     super.key,
     required this.weights,
+    required this.weightDates,
     required this.periodElapsedDays,
     required this.projectedEndWeight,
     required this.canProject,
   });
 
   final List<double> weights;
+
+  /// `YYYY-MM-DD` strings parallel to [weights]; empty on an older server, in
+  /// which case the x axis degrades to "Start"/"Now".
+  final List<String> weightDates;
   final int? periodElapsedDays;
   final double projectedEndWeight;
   final bool canProject;
@@ -114,16 +80,18 @@ class WeightChartCanvas extends StatelessWidget {
         : lastIndex.toDouble();
 
     final axis =
-        _niceYAxis([...weights, if (showForecast) projectedEndWeight]);
+        niceYAxis([...weights, if (showForecast) projectedEndWeight]);
     final yStep = axis.step;
     final maxX = isSinglePoint ? 1.0 : forecastDay;
 
-    final xLabels = _xTickLabels(weights);
     final actualSpots = <FlSpot>[
       for (var i = 0; i < weights.length; i++) FlSpot(i.toDouble(), weights[i]),
     ];
 
-    final axisLabel = dashMeta(color: kInkMuted).copyWith(fontSize: 9);
+    // Meta 12, not a bespoke 9 — the tick thinning below measures each label
+    // and drops ticks until they fit, so the axis adapts instead of needing
+    // its own size.
+    final axisLabel = dashMeta(color: kInkMuted);
     final gridLine = FlLine(
       color: NhamColors.border.withValues(alpha: 0.5),
       strokeWidth: 1,
@@ -131,152 +99,173 @@ class WeightChartCanvas extends StatelessWidget {
 
     return AspectRatio(
       aspectRatio: _chartAspect,
-      child: LineChart(
-        LineChartData(
-          minX: 0,
-          maxX: maxX,
-          minY: axis.min,
-          maxY: axis.max,
-          clipData: const FlClipData.all(),
-          backgroundColor: Colors.transparent,
-          // Uniform gridline at every round-number Y step (spans the plot,
-          // which fills from the label gutter to the right edge).
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: yStep,
-            getDrawingHorizontalLine: (_) => gridLine,
-          ),
-          borderData: FlBorderData(
-            show: true,
-            border: Border.all(color: NhamColors.border.withValues(alpha: 0.5)),
-          ),
-          titlesData: FlTitlesData(
-            show: true,
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            // Round-number weight values in a left gutter — outside the plot,
-            // so they never sit on top of the line.
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 34,
-                interval: yStep,
-                getTitlesWidget: (value, meta) => SideTitleWidget(
-                  meta: meta,
-                  child: Text(
-                    yStep >= 1
-                        ? value.toStringAsFixed(0)
-                        : value.toStringAsFixed(1),
-                    style: axisLabel,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.visible,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final xLabels = weightXTickLabels(
+            pointCount: weights.length,
+            dates: weightDates,
+            locale: context.locale.toString(),
+            plotWidth: math.max(constraints.maxWidth - _leftGutter, 1),
+            style: axisLabel,
+            textScaler: MediaQuery.textScalerOf(context),
+          );
+          return LineChart(
+            LineChartData(
+              minX: 0,
+              maxX: maxX,
+              minY: axis.min,
+              maxY: axis.max,
+              clipData: const FlClipData.all(),
+              backgroundColor: Colors.transparent,
+              // Uniform gridline at every round-number Y step (spans the plot,
+              // which fills from the label gutter to the right edge).
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: yStep,
+                getDrawingHorizontalLine: (_) => gridLine,
+              ),
+              // Left + bottom axis lines only — the card already carries a
+              // shadow, and a full box around the plot reads heavy.
+              borderData: FlBorderData(
+                show: true,
+                border: Border(
+                  left: BorderSide(
+                    color: NhamColors.border.withValues(alpha: 0.5),
+                  ),
+                  bottom: BorderSide(
+                    color: NhamColors.border.withValues(alpha: 0.5),
                   ),
                 ),
               ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 18,
-                interval: 1,
-                getTitlesWidget: (value, meta) {
-                  final i = value.round();
-                  final label = xLabels[i];
-                  if (label == null || (value - i).abs() > 0.01) {
-                    return const SizedBox.shrink();
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(label, style: axisLabel),
-                  );
-                },
-              ),
-            ),
-          ),
-          // "Today" marker at the most recent logged weight.
-          extraLinesData: ExtraLinesData(
-            verticalLines: [
-              VerticalLine(
-                x: lastIndex.toDouble(),
-                color: NhamColors.accent.withValues(alpha: 0.35),
-                strokeWidth: 1,
-              ),
-            ],
-          ),
-          lineTouchData: LineTouchData(
-            handleBuiltInTouches: true,
-            getTouchedSpotIndicator: (barData, indexes) => indexes
-                .map(
-                  (i) => TouchedSpotIndicatorData(
-                    const FlLine(color: Colors.transparent),
-                    FlDotData(
-                      getDotPainter: (spot, pct, bar, idx) =>
-                          FlDotCirclePainter(
-                        radius: 4,
-                        color: NhamColors.accent,
-                        strokeWidth: 2,
-                        strokeColor: Colors.white,
+              titlesData: FlTitlesData(
+                show: true,
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                // Round-number weight values in a left gutter — outside the plot,
+                // so they never sit on top of the line.
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: _leftGutter,
+                    interval: yStep,
+                    getTitlesWidget: (value, meta) => SideTitleWidget(
+                      meta: meta,
+                      child: Text(
+                        yStep >= 1
+                            ? value.toStringAsFixed(0)
+                            : value.toStringAsFixed(1),
+                        style: axisLabel,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
                       ),
                     ),
                   ),
-                )
-                .toList(),
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => kCardSurface,
-              tooltipBorder: const BorderSide(color: kHairline),
-              tooltipRoundedRadius: NhamRadii.md,
-              getTooltipItems: (touchedSpots) => touchedSpots.map((s) {
-                // Skip the dotted forecast bar (drawn first when present).
-                if (showForecast && s.barIndex == 0) return null;
-                return LineTooltipItem(
-                  '${s.y.toStringAsFixed(1)} $kg',
-                  dashMeta(color: kInk, tabular: true),
-                );
-              }).toList(),
-            ),
-          ),
-          lineBarsData: [
-            // Forecast (dotted) — drawn first so the solid line sits on top.
-            if (showForecast)
-              LineChartBarData(
-                spots: [
-                  FlSpot(lastIndex.toDouble(), currentW),
-                  FlSpot(forecastDay, projectedEndWeight),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 18,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) {
+                      final i = value.round();
+                      final label = xLabels[i];
+                      if (label == null || (value - i).abs() > 0.01) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(label, style: axisLabel),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              // "Today" marker at the most recent logged weight.
+              extraLinesData: ExtraLinesData(
+                verticalLines: [
+                  VerticalLine(
+                    x: lastIndex.toDouble(),
+                    color: NhamColors.accent.withValues(alpha: 0.35),
+                    strokeWidth: 1,
+                  ),
                 ],
-                isCurved: false,
-                color: NhamColors.accent.withValues(alpha: 0.6),
-                barWidth: 2,
-                dashArray: const [3, 3],
-                dotData: const FlDotData(show: false),
               ),
-            // Actual — straight segments, a dot at every point, today emphasized.
-            LineChartBarData(
-              spots: actualSpots,
-              isCurved: false,
-              color: NhamColors.accent,
-              barWidth: 2,
-              isStrokeCapRound: false,
-              isStrokeJoinRound: false,
-              dotData: FlDotData(
-                show: true,
-                getDotPainter: (spot, pct, bar, idx) => idx == lastIndex
-                    ? const _TodayDotPainter(color: NhamColors.accent)
-                    : FlDotCirclePainter(
-                        radius: 3,
-                        color: NhamColors.accent,
-                        strokeColor: Colors.white,
-                        strokeWidth: 1.5,
+              lineTouchData: LineTouchData(
+                handleBuiltInTouches: true,
+                getTouchedSpotIndicator: (barData, indexes) => indexes
+                    .map(
+                      (i) => TouchedSpotIndicatorData(
+                        const FlLine(color: Colors.transparent),
+                        FlDotData(
+                          getDotPainter: (spot, pct, bar, idx) =>
+                              FlDotCirclePainter(
+                            radius: 4,
+                            color: NhamColors.accent,
+                            strokeWidth: 2,
+                            strokeColor: Colors.white,
+                          ),
+                        ),
                       ),
+                    )
+                    .toList(),
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (_) => kCardSurface,
+                  tooltipBorder: const BorderSide(color: kHairline),
+                  tooltipRoundedRadius: NhamRadii.md,
+                  getTooltipItems: (touchedSpots) => touchedSpots.map((s) {
+                    // Skip the dotted forecast bar (drawn first when present).
+                    if (showForecast && s.barIndex == 0) return null;
+                    return LineTooltipItem(
+                      '${s.y.toStringAsFixed(1)} $kg',
+                      dashMeta(color: kInk, tabular: true),
+                    );
+                  }).toList(),
+                ),
               ),
+              lineBarsData: [
+                // Forecast (dotted) — drawn first so the solid line sits on top.
+                if (showForecast)
+                  LineChartBarData(
+                    spots: [
+                      FlSpot(lastIndex.toDouble(), currentW),
+                      FlSpot(forecastDay, projectedEndWeight),
+                    ],
+                    isCurved: false,
+                    color: NhamColors.accent.withValues(alpha: 0.6),
+                    barWidth: 2,
+                    dashArray: const [3, 3],
+                    dotData: const FlDotData(show: false),
+                  ),
+                // Actual — straight segments, a dot at every point, today emphasized.
+                LineChartBarData(
+                  spots: actualSpots,
+                  isCurved: false,
+                  color: NhamColors.accent,
+                  barWidth: 2,
+                  isStrokeCapRound: false,
+                  isStrokeJoinRound: false,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, pct, bar, idx) => idx == lastIndex
+                        ? const _TodayDotPainter(color: NhamColors.accent)
+                        : FlDotCirclePainter(
+                            radius: 3,
+                            color: NhamColors.accent,
+                            strokeColor: Colors.white,
+                            strokeWidth: 1.5,
+                          ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        duration: const Duration(milliseconds: 1500),
-        curve: Curves.easeInOut,
+            duration: const Duration(milliseconds: 1500),
+            curve: Curves.easeInOut,
+          );
+        },
       ),
     );
   }

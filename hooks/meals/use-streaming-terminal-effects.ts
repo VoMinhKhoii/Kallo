@@ -15,26 +15,28 @@ interface UseStreamingTerminalEffectsParams {
   lastAnalysisIdRef: RefObject<string | null>;
   lastErrorRef: RefObject<string | null>;
   onAnalysisComplete?: (analysisId: string) => void;
+  // Pre-stream 402: AI analysis is locked. The surface opens the paywall
+  // instead of showing an error toast.
+  onPaymentRequired?: () => void;
 }
 
 /**
- * The five ways an analysis stream can settle, made exclusive by construction so
+ * The four ways an analysis stream can settle, made exclusive by construction so
  * one effect (not three racing ones) can finalize the streaming card:
  *   - `meal`            a precise `result` + durable analysisId.
  *   - `cheat`           a full cheat `cheatSpec` + durable analysisId.
  *   - `cheat-clarify`   a cheat spec carrying a clarifyingQuestion, no analysisId
  *                       (the vague-input fallback — client must re-ask).
- *   - `precise-clarify` a precise `clarify` question, nothing staged (no id).
  *   - `error`           a fatal `error`.
  *
  * `analysisId` is present only on `meal`/`cheat` (the durable ones): it both
  * dedupes the transition (via `lastAnalysisId`) and drives `onAnalysisComplete`.
- * `error` is deduped via `lastError`. The clarify kinds carry no id and rely on
+ * `error` is deduped via `lastError`. `cheat-clarify` carries no id and relies on
  * the streamingMsgId-null + stream.reset() one-shot instead. `patch` is the
  * exact field set each original effect wrote onto the finalized card.
  */
 type Terminal = {
-  kind: 'meal' | 'cheat' | 'cheat-clarify' | 'precise-clarify' | 'error';
+  kind: 'meal' | 'cheat' | 'cheat-clarify' | 'error';
   msgId: string;
   /** Durable analysis id — only `meal`/`cheat`. Triggers dedupe + onComplete. */
   analysisId?: string;
@@ -52,7 +54,7 @@ type Terminal = {
 function deriveTerminal(
   s: Pick<
     StreamAnalysisState,
-    'status' | 'result' | 'cheatSpec' | 'clarify' | 'analysisId' | 'error'
+    'status' | 'result' | 'cheatSpec' | 'analysisId' | 'error'
   >,
   streamingMsgId: string | null,
   lastAnalysisId: string | null,
@@ -80,25 +82,6 @@ function deriveTerminal(
   }
 
   if (s.status !== 'done') return null;
-
-  // Precise-mode clarify: the pipeline settled on a single question and staged
-  // nothing (no analysisId). Mutually exclusive with the payload cases below —
-  // the pipeline emits either a clarify OR a result/cheat_estimate, never both.
-  if (s.clarify && s.analysisId == null) {
-    return {
-      kind: 'precise-clarify',
-      msgId: streamingMsgId,
-      patch: {
-        isStreaming: false,
-        streamingPhase: undefined,
-        streamingItems: undefined,
-        streamingCompletedItems: undefined,
-        parsedMeal: undefined,
-        cheatSpec: undefined,
-        preciseClarify: s.clarify,
-      },
-    };
-  }
 
   // Payload terminals: a precise `result` meal, a full cheat `cheatSpec`, or a
   // cheat spec carrying a clarifyingQuestion (finalizes WITHOUT an analysisId).
@@ -143,20 +126,20 @@ export function useStreamingTerminalEffects({
   lastAnalysisIdRef,
   lastErrorRef,
   onAnalysisComplete,
+  onPaymentRequired,
 }: UseStreamingTerminalEffectsParams) {
-  const { status, result, cheatSpec, clarify, analysisId, error, reset } =
-    stream;
+  const { status, result, cheatSpec, analysisId, error, reset } = stream;
 
-  // Single terminal effect. `deriveTerminal` makes the five settle-paths
+  // Single terminal effect. `deriveTerminal` makes the four settle-paths
   // exclusive, so the shared epilogue (clear streamingMsgId → patch the card →
   // reset the stream → scroll) runs exactly once per transition. The one-shot
   // guards are preserved verbatim: the analysisId/error refs are written BEFORE
   // any state update so a strict-mode re-invocation (same committed state) sees
-  // the guard and bails; the clarify kinds carry no id and instead trip on the
+  // the guard and bails; `cheat-clarify` carries no id and instead trips on the
   // streamingMsgId-null + reset() the epilogue applies.
   useEffect(() => {
     const terminal = deriveTerminal(
-      { status, result, cheatSpec, clarify, analysisId, error },
+      { status, result, cheatSpec, analysisId, error },
       streamingMsgId,
       lastAnalysisIdRef.current,
       lastErrorRef.current
@@ -181,7 +164,7 @@ export function useStreamingTerminalEffects({
       )
     );
 
-    // Durable analyses notify the invalidation layer; clarify/error don't.
+    // Durable analyses notify the invalidation layer; cheat-clarify/error don't.
     if (terminal.analysisId) onAnalysisComplete?.(terminal.analysisId);
 
     reset();
@@ -190,7 +173,6 @@ export function useStreamingTerminalEffects({
     status,
     result,
     cheatSpec,
-    clarify,
     analysisId,
     error,
     reset,
@@ -199,6 +181,28 @@ export function useStreamingTerminalEffects({
     lastAnalysisIdRef,
     lastErrorRef,
     onAnalysisComplete,
+    setStreamingMsgId,
+    setMessages,
+  ]);
+
+  // Terminal: pre-stream 402 — AI analysis is locked. Drop the in-flight
+  // streaming bubble (no error toast) and open the paywall. Mirrors the error
+  // path's cleanup but routes to the upgrade surface instead.
+  useEffect(() => {
+    if (status !== 'paymentRequired' || !streamingMsgId) return;
+
+    const msgId = streamingMsgId;
+    setStreamingMsgId(null);
+
+    setMessages((prev) => prev.filter((msg) => msg.id !== msgId));
+
+    onPaymentRequired?.();
+    reset();
+  }, [
+    status,
+    reset,
+    streamingMsgId,
+    onPaymentRequired,
     setStreamingMsgId,
     setMessages,
   ]);

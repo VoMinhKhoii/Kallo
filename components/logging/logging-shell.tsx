@@ -10,6 +10,8 @@ import {
   useState,
   useTransition,
 } from 'react';
+import { PaywallDialog } from '@/components/billing/paywall-dialog';
+import { TrialBanner } from '@/components/billing/trial-banner';
 import { FeedArea } from '@/components/logging/feed/feed-area';
 import { MobileTimelinePicker } from '@/components/logging/sidebar/mobile-timeline-picker';
 import { TimelineSidebar } from '@/components/logging/sidebar/timeline-sidebar';
@@ -36,12 +38,15 @@ interface LoggingShellProps {
   profile: LoggingProfile;
   initialMeal?: string;
   initialDate?: string;
+  // Signed-in user's email — pre-fills the web checkout in the paywall.
+  email?: string | null;
 }
 
 export function LoggingShell({
   profile,
   initialMeal,
   initialDate,
+  email,
 }: LoggingShellProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -49,6 +54,10 @@ export function LoggingShell({
 
   const today = useMemo(() => todayDateString(), []);
   const [selectedDate, setSelectedDate] = useState(() => initialDate ?? today);
+  // Paywall opened by a pre-stream 402 from the analyze endpoint. The
+  // TrialBanner owns its OWN paywall for the upgrade CTA; this one covers the
+  // hard-locked (trial-expired / not-entitled) case where the banner is hidden.
+  const [paywallOpen, setPaywallOpen] = useState(false);
   const lastUrlDateRef = useRef(initialDate ?? today);
   const [isDateNavigationPending, startDateNavigationTransition] =
     useTransition();
@@ -133,16 +142,28 @@ export function LoggingShell({
         isRetrying={isFetching && !isPending}
       />
       <TimelineSidebar {...timelineState} />
-      <FeedArea
-        selectedDate={selectedDate}
-        today={today}
-        profile={profile}
-        initialMeal={initialMeal}
-        isDateNavigationPending={isDateNavigationPending}
-        onInitialMealApplied={
-          initialMeal ? handleInitialMealApplied : undefined
-        }
-        onSelectDate={handleSelectDate}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+        <TrialBanner userId={profile.userId} email={email} />
+        <FeedArea
+          selectedDate={selectedDate}
+          today={today}
+          profile={profile}
+          initialMeal={initialMeal}
+          isDateNavigationPending={isDateNavigationPending}
+          onInitialMealApplied={
+            initialMeal ? handleInitialMealApplied : undefined
+          }
+          onSelectDate={handleSelectDate}
+          onPaymentRequired={() => setPaywallOpen(true)}
+        />
+      </div>
+
+      <PaywallDialog
+        key={profile.userId}
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
+        userId={profile.userId}
+        email={email}
       />
     </div>
   );

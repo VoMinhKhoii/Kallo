@@ -4,8 +4,11 @@
 /// grid of rounded cells, tinted via the vendored heatmap colors. Fixed at the
 /// 90-day window. No hover tooltip: tapping a logged/partial cell shows its
 /// label in a small bubble above the cell. The cell grid is a [CustomPaint]
-/// (the RN SVG `<Rect>` grid); the legend is a diverging gradient bar.
+/// ([HeatmapGridPainter]); the legend is a diverging gradient bar. Month-strip
+/// positioning lives in `logic/heatmap_month_labels.dart`.
 library;
+
+import 'dart:ui' as ui;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +20,8 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
 import '../logic/heatmap_colors.dart';
+import '../logic/heatmap_month_labels.dart';
+import 'heatmap_grid_painter.dart';
 import '../../../theme/calm_tokens.dart';
 
 /// Monday-first narrow weekday initials for [locale] (en → M T W T F S S; vi →
@@ -32,10 +37,13 @@ List<String> _weekdayInitials(String locale) {
 }
 
 const double _gap90d = 2; // GAP['90d']
-const double _dayLabelWidth = 16;
+/// Floor for the weekday gutter; the real width is measured, because narrow
+/// weekday names are not one character in every language — Vietnamese renders
+/// `T2`…`T7`, `CN`, which wrapped to two lines inside a fixed 16.
+const double _minDayLabelWidth = 16;
+const double _dayLabelPadRight = 4;
 const double _dayLabelGutter = NhamSpacing.sp1; // gap-1 (4px)
 const double _monthStripHeight = 16; // h-4
-const double _cellRadius = 3; // rounded-[3px]
 const double _bubbleHalfW = 60;
 const double _legendBarHeight = 6;
 
@@ -147,7 +155,14 @@ class _HeatmapBodyState extends State<_HeatmapBody>
             cell.ratio != null &&
             !cell.hasCheatMeal) {
           total++;
-          if ((cell.ratio! - 1.0).abs() <= 0.1) onTarget++;
+          // Ask the classifier, don't re-derive a threshold: the bands are
+          // asymmetric now, so a single number cannot express "green or
+          // light green" any more.
+          if (HeatmapBands.onTrackLabels.contains(
+            getHeatmapColor(cell.ratio).labelKey,
+          )) {
+            onTarget++;
+          }
         }
       }
     }
@@ -155,11 +170,26 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     return (percent: percent, loggedDays: total);
   }
 
-  double _cellSize(double contentWidth, int numWeeks) {
+  /// The widest weekday label in the active locale, plus its inset.
+  double _dayLabelWidth(List<String> labels, TextStyle style) {
+    var widest = 0.0;
+    for (final label in labels) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: ui.TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+      if (painter.width > widest) widest = painter.width;
+    }
+    final needed = widest + _dayLabelPadRight;
+    return needed > _minDayLabelWidth ? needed.ceilToDouble() : _minDayLabelWidth;
+  }
+
+  double _cellSize(double contentWidth, int numWeeks, double dayLabelWidth) {
     if (numWeeks <= 0) return 10;
     final available =
         contentWidth -
-        _dayLabelWidth -
+        dayLabelWidth -
         _dayLabelGutter -
         (numWeeks - 1) * _gap90d;
     final sq = (available / numWeeks).floorToDouble();
@@ -171,6 +201,9 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     final data = widget.data;
     final numWeeks = _numWeeks;
     final dayLabels = _weekdayInitials(context.locale.toString());
+    final monthLabelStyle = dashMeta(color: kInkMuted);
+    final dayLabelStyle = dashMeta(color: kInkMuted);
+    final dayLabelWidth = _dayLabelWidth(dayLabels, dayLabelStyle);
 
     return Container(
       padding: const EdgeInsets.all(NhamSpacing.sp4),
@@ -182,7 +215,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
       child: LayoutBuilder(
         builder: (context, constraints) {
           final contentWidth = constraints.maxWidth;
-          final sq = _cellSize(contentWidth, numWeeks);
+          final sq = _cellSize(contentWidth, numWeeks, dayLabelWidth);
           final step = sq + _gap90d;
           final gridWidth =
               numWeeks > 0 ? numWeeks * sq + (numWeeks - 1) * _gap90d : 0.0;
@@ -215,7 +248,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                 children: [
                   // Day labels.
                   SizedBox(
-                    width: _dayLabelWidth,
+                    width: dayLabelWidth,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -228,14 +261,16 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                                       ? _monthStripHeight + NhamSpacing.sp1
                                       : _gap90d,
                             ),
-                            padding: const EdgeInsets.only(right: 4),
+                            padding: const EdgeInsets.only(
+                              right: _dayLabelPadRight,
+                            ),
                             alignment: Alignment.centerRight,
                             child: Text(
                               dayLabels[i],
-                              style: dashEyebrow(
-                                color: kInkMuted,
-                                weight: FontWeight.w600,
-                              ),
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.visible,
+                              style: dayLabelStyle,
                             ),
                           ),
                       ],
@@ -246,29 +281,37 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Month headers strip.
+                      // Month headers strip. Positions come from
+                      // `layoutMonthLabels`, which shifts colliding headers
+                      // and drops the ones too narrow to label — two months
+                      // can otherwise share a startColumn and paint on top of
+                      // each other.
                       SizedBox(
                         height: _monthStripHeight,
                         width: gridWidth,
                         child: Stack(
                           children: [
-                            for (final h
-                                in data?.monthHeaders ??
-                                    const <HeatmapMonthHeader>[])
+                            for (final box in layoutMonthLabels(
+                              headers:
+                                  data?.monthHeaders ??
+                                  const <HeatmapMonthHeader>[],
+                              cellSize: sq,
+                              gap: _gap90d,
+                              gridWidth: gridWidth,
+                              style: monthLabelStyle,
+                              locale: context.locale.toString(),
+                              textScaler: MediaQuery.textScalerOf(context),
+                            ))
                               Positioned(
                                 top: 0,
-                                left: h.startColumn * step,
-                                width:
-                                    h.span * sq +
-                                    (h.span - 1 > 0 ? h.span - 1 : 0) * _gap90d,
+                                left: box.left,
+                                width: box.width,
                                 child: Text(
-                                  h.month,
+                                  box.month,
                                   maxLines: 1,
+                                  softWrap: false,
                                   overflow: TextOverflow.clip,
-                                  style: dashEyebrow(
-                                    color: kInkMuted,
-                                    weight: FontWeight.w600,
-                                  ),
+                                  style: monthLabelStyle,
                                 ),
                               ),
                           ],
@@ -296,7 +339,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                               builder:
                                   (context, _) => CustomPaint(
                                     size: Size(gridWidth, gridHeight),
-                                    painter: _GridPainter(
+                                    painter: HeatmapGridPainter(
                                       data: data,
                                       numWeeks: numWeeks,
                                       sq: sq,
@@ -364,17 +407,20 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                         child: Container(
                           height: _legendBarHeight,
                           decoration: const BoxDecoration(
+                            // Five equal discrete segments, one per tier — the
+                            // same five flat colours the cells use, each
+                            // repeated so its slice has hard edges.
                             gradient: LinearGradient(
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
                               colors: [
-                                HeatmapColors.far,
-                                HeatmapColors.moderate,
-                                HeatmapColors.slight,
-                                HeatmapColors.close,
-                                HeatmapColors.onTarget,
+                                HeatmapColors.far, HeatmapColors.far,
+                                HeatmapColors.moderate, HeatmapColors.moderate,
+                                HeatmapColors.slight, HeatmapColors.slight,
+                                HeatmapColors.close, HeatmapColors.close,
+                                HeatmapColors.onTarget, HeatmapColors.onTarget,
                               ],
-                              stops: [0, 0.25, 0.5, 0.75, 1],
+                              stops: HeatmapBands.legendStops,
                             ),
                           ),
                         ),
@@ -453,127 +499,4 @@ class _HeatmapBodyState extends State<_HeatmapBody>
         return '${tr('dashboard.adherenceHeatmap.$labelKey')} · $pct%';
     }
   }
-}
-
-/// One cell's solid fill + optional stroke (+ centered dot for cheat days).
-/// Three solid states (no fractional opacity multipliers): logged = scale
-/// colour, unlogged/partial = neutral track (partial gets a hairline ring),
-/// out-of-range = barely-there cream. A cheat day replaces its intensity
-/// colour with the calm warm ring + fill + accent dot (web parity, never red).
-({Color fill, Color? stroke, bool dot}) _cellRectProps(HeatmapCell? cell) {
-  final ratio = cell?.ratio;
-  final isLogged = cell?.status == HeatmapCellStatus.logged && ratio != null;
-  if (isLogged) {
-    if (cell!.hasCheatMeal) {
-      return (
-        fill: HeatmapColors.cheatFill,
-        stroke: HeatmapColors.cheat,
-        dot: true,
-      );
-    }
-    return (fill: getHeatmapColor(ratio).bg ?? kTrack, stroke: null, dot: false);
-  }
-  final isMuted =
-      cell?.status == HeatmapCellStatus.future ||
-      cell?.status == HeatmapCellStatus.outside;
-  if (isMuted) {
-    return (fill: kPage, stroke: null, dot: false); // out-of-range
-  }
-  final isPartial = cell?.status == HeatmapCellStatus.partial;
-  return (fill: kTrack, stroke: isPartial ? kHairline : null, dot: false);
-}
-
-class _GridPainter extends CustomPainter {
-  _GridPainter({
-    required this.data,
-    required this.numWeeks,
-    required this.sq,
-    required this.step,
-    required this.reveal,
-    required this.totalMs,
-  });
-
-  final HeatmapData? data;
-  final int numWeeks;
-  final double sq;
-  final double step;
-
-  /// Global reveal progress 0→1 across the whole stagger timeline.
-  final double reveal;
-  final int totalMs;
-
-  // Per-cell tween window (web: duration 0.16s) and stagger increments.
-  static const double _cellMs = 160;
-  static const double _weekStaggerMs = 10; // wi * 0.01s
-  static const double _dayStaggerMs = 5; // di * 0.005s
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final fillPaint = Paint()..style = PaintingStyle.fill;
-    final strokePaint =
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1;
-
-    final elapsed = reveal * totalMs;
-
-    for (var wi = 0; wi < numWeeks; wi++) {
-      for (var di = 0; di < 7; di++) {
-        // Local progress for this cell, eased.
-        final delay = wi * _weekStaggerMs + di * _dayStaggerMs;
-        final raw = ((elapsed - delay) / _cellMs).clamp(0.0, 1.0);
-        final p = Curves.easeOut.transform(raw);
-        if (p <= 0) continue;
-        final scale = 0.6 + 0.4 * p; // scale 0.6 → 1
-        final cellAlpha = p; // opacity 0 → 1
-
-        final cell =
-            (data != null &&
-                    di < data!.cells.length &&
-                    wi < data!.cells[di].length)
-                ? data!.cells[di][wi]
-                : null;
-        final props = _cellRectProps(cell);
-
-        // Scale about the cell center.
-        final cx = wi * step + sq / 2;
-        final cy = di * step + sq / 2;
-        final half = (sq * scale) / 2;
-        final rect = Rect.fromLTWH(
-          cx - half,
-          cy - half,
-          sq * scale,
-          sq * scale,
-        );
-        final rrect = RRect.fromRectAndRadius(
-          rect,
-          const Radius.circular(_cellRadius),
-        );
-
-        // Solid fill; cellAlpha is only the per-cell reveal fade (→ 1).
-        fillPaint.color = props.fill.withValues(alpha: cellAlpha);
-        canvas.drawRRect(rrect, fillPaint);
-
-        if (props.stroke != null) {
-          strokePaint.color = props.stroke!.withValues(alpha: cellAlpha);
-          canvas.drawRRect(rrect, strokePaint);
-        }
-
-        // Cheat-day marker: a small centered accent dot (web's ● overlay).
-        if (props.dot) {
-          fillPaint.color = HeatmapColors.cheat.withValues(alpha: cellAlpha);
-          canvas.drawCircle(Offset(cx, cy), (sq * scale) * 0.12, fillPaint);
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_GridPainter old) =>
-      old.data != data ||
-      old.numWeeks != numWeeks ||
-      old.sq != sq ||
-      old.step != step ||
-      old.reveal != reveal ||
-      old.totalMs != totalMs;
 }

@@ -4,10 +4,14 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../logic/settings_spacing.dart';
 
 /// Width of the leading icon column — all labels start at `padding + _kGutter`.
 const double _kGutter = 22;
-const double _kRowPadH = NhamSpacing.sp3; // 12
+
+/// Half of the app-wide 12 content inset; the list padding owns the other 4.
+/// See [SettingsSpacing.rowList].
+const double _kRowPadH = SettingsSpacing.rowPadH; // 8
 const double _kRowPadV = NhamSpacing.sp2_5; // 10
 const double _kIconGap = NhamSpacing.sp3; // 12 — icon column → label
 

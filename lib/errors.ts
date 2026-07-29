@@ -28,6 +28,33 @@ export class AppError extends Error {
   }
 }
 
+// FeatureLockedError — a 402 with the extra `feature` + `reason` fields the
+// client keys on to open the paywall. Extends AppError so serializeError and
+// the isAppError guard keep working; overrides toJSON to add the two fields.
+export class FeatureLockedError extends AppError {
+  constructor(
+    public readonly feature: string,
+    public readonly reason: FeatureLockedReason,
+    userMessage: string
+  ) {
+    super('feature_locked', 402, false, userMessage);
+    this.name = 'FeatureLockedError';
+  }
+
+  toJSON() {
+    return {
+      error: {
+        code: this.code,
+        status: this.status,
+        retryable: this.retryable,
+        message: this.userMessage,
+        feature: this.feature,
+        reason: this.reason,
+      },
+    };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Type guard & serialization
 // ---------------------------------------------------------------------------
@@ -64,8 +91,12 @@ const DEFAULT_MESSAGES = {
   profileNotFound: 'Profile not found. Please sign in again.',
   pipelineTimeout: 'Analysis took too long. Please try again.',
   rateLimited: 'The service is busy. Please wait a moment and try again.',
+  featureLocked: 'Upgrade to keep using this feature.',
   internal: 'Something went wrong. Please try again.',
 } as const;
+
+// Reasons a gated feature is locked, mirrored from the entitlement service.
+export type FeatureLockedReason = 'trial_expired' | 'not_entitled';
 
 export const Errors = {
   notAuthenticated: (message?: string) =>
@@ -105,6 +136,17 @@ export const Errors = {
       429,
       true,
       message ?? DEFAULT_MESSAGES.rateLimited
+    ),
+
+  featureLocked: (
+    feature: string,
+    reason: FeatureLockedReason,
+    message?: string
+  ) =>
+    new FeatureLockedError(
+      feature,
+      reason,
+      message ?? DEFAULT_MESSAGES.featureLocked
     ),
 
   internal: (cause?: unknown, message?: string) =>

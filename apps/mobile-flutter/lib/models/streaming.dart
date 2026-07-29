@@ -27,7 +27,6 @@ sealed class StreamEvent {
       'item_macros' => ItemMacrosEvent.fromJson(json),
       'result' => ResultEvent.fromJson(json),
       'cheat_estimate' => CheatEstimateEvent.fromJson(json),
-      'clarify' => ClarifyEvent.fromJson(json),
       'analysis_complete' => AnalysisCompleteEvent.fromJson(json),
       'error' => StreamErrorEvent.fromJson(json),
       _ => throw ArgumentError('Unknown StreamEvent type: $type'),
@@ -42,8 +41,6 @@ sealed class StreamEvent {
   /// Terminal frames:
   ///  - [AnalysisCompleteEvent] — the durable, confirmable result.
   ///  - [StreamErrorEvent] — a fatal error.
-  ///  - [ClarifyEvent] — a precise-mode clarify: ends WITHOUT analysis_complete
-  ///    (nothing is staged; the client re-asks with `clarifyAnswer`).
   ///  - [CheatEstimateEvent] ONLY when it carries a `clarifyingQuestion` — the
   ///    same re-ask round-trip. A plain cheat spec is confirmable, so the stream
   ///    continues on to analysis_complete.
@@ -67,15 +64,15 @@ class StageEvent extends StreamEvent {
   const StageEvent({required this.stage, this.message});
 
   factory StageEvent.fromJson(Map<String, dynamic> json) => StageEvent(
-        stage: PipelineStage.values.byName(json['stage'] as String),
-        message: json['message'] as String?,
-      );
+    stage: PipelineStage.values.byName(json['stage'] as String),
+    message: json['message'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {
-        'type': 'stage',
-        'stage': stage.name,
-        'message': message,
-      };
+    'type': 'stage',
+    'stage': stage.name,
+    'message': message,
+  };
 }
 
 /// Single meal item name discovered during decomposition streaming.
@@ -91,17 +88,17 @@ class ItemNameEvent extends StreamEvent {
   });
 
   factory ItemNameEvent.fromJson(Map<String, dynamic> json) => ItemNameEvent(
-        name: json['name'] as String,
-        index: json['index'] as int,
-        mealItemId: json['mealItemId'] as String,
-      );
+    name: json['name'] as String,
+    index: json['index'] as int,
+    mealItemId: json['mealItemId'] as String,
+  );
 
   Map<String, dynamic> toJson() => {
-        'type': 'item_name',
-        'name': name,
-        'index': index,
-        'mealItemId': mealItemId,
-      };
+    'type': 'item_name',
+    'name': name,
+    'index': index,
+    'mealItemId': mealItemId,
+  };
 }
 
 /// Single meal item with macros estimated during nutrition streaming.
@@ -109,10 +106,7 @@ class ItemMacrosEvent extends StreamEvent {
   final String mealItemId;
   final MealItem item;
 
-  const ItemMacrosEvent({
-    required this.mealItemId,
-    required this.item,
-  });
+  const ItemMacrosEvent({required this.mealItemId, required this.item});
 
   factory ItemMacrosEvent.fromJson(Map<String, dynamic> json) =>
       ItemMacrosEvent(
@@ -121,10 +115,10 @@ class ItemMacrosEvent extends StreamEvent {
       );
 
   Map<String, dynamic> toJson() => {
-        'type': 'item_macros',
-        'mealItemId': mealItemId,
-        'item': item.toJson(),
-      };
+    'type': 'item_macros',
+    'mealItemId': mealItemId,
+    'item': item.toJson(),
+  };
 }
 
 /// Final display-optimized result for the client.
@@ -134,13 +128,10 @@ class ResultEvent extends StreamEvent {
   const ResultEvent({required this.data});
 
   factory ResultEvent.fromJson(Map<String, dynamic> json) => ResultEvent(
-        data: ParsedMeal.fromJson(json['data'] as Map<String, dynamic>),
-      );
+    data: ParsedMeal.fromJson(json['data'] as Map<String, dynamic>),
+  );
 
-  Map<String, dynamic> toJson() => {
-        'type': 'result',
-        'data': data.toJson(),
-      };
+  Map<String, dynamic> toJson() => {'type': 'result', 'data': data.toJson()};
 }
 
 /// Cheat-meal slider spec (mode='cheat'); replaces `result`. When the spec
@@ -157,53 +148,15 @@ class CheatEstimateEvent extends StreamEvent {
       );
 
   Map<String, dynamic> toJson() => {
-        'type': 'cheat_estimate',
-        'spec': spec.toJson(),
-      };
+    'type': 'cheat_estimate',
+    'spec': spec.toJson(),
+  };
 
   /// Terminal only when the spec carries a clarifying question — then the stream
   /// ends WITHOUT analysis_complete and the client re-asks. A plain spec is
   /// confirmable and the stream continues.
   @override
   bool get isTerminal => spec.clarifyingQuestion != null;
-}
-
-/// Precise-mode clarify -- the pipeline finished but >=1 ingredient's portion
-/// or food match couldn't be resolved, so the server asks ONE targeted question
-/// and stops. TERMINAL with NO analysis_complete: nothing is staged for confirm;
-/// the client re-submits with `clarifyAnswer` (mirrors the cheat clarify
-/// round-trip). The `question` arrives already localized by the server.
-class ClarifyEvent extends StreamEvent {
-  final String question;
-
-  /// Run-scoped meal-item id of the unresolved item, when known.
-  final String? mealItemId;
-
-  /// 'unresolved_portion' | 'ambiguous_food'. Kept as a raw string so an
-  /// unfamiliar reason from a newer server never crashes the parse.
-  final String reason;
-
-  const ClarifyEvent({
-    required this.question,
-    this.mealItemId,
-    required this.reason,
-  });
-
-  factory ClarifyEvent.fromJson(Map<String, dynamic> json) => ClarifyEvent(
-        question: json['question'] as String,
-        mealItemId: json['mealItemId'] as String?,
-        reason: json['reason'] as String,
-      );
-
-  Map<String, dynamic> toJson() => {
-        'type': 'clarify',
-        'question': question,
-        if (mealItemId != null) 'mealItemId': mealItemId,
-        'reason': reason,
-      };
-
-  @override
-  bool get isTerminal => true;
 }
 
 /// Analysis stored durably -- safe to confirm and persist.
@@ -213,14 +166,12 @@ class AnalysisCompleteEvent extends StreamEvent {
   const AnalysisCompleteEvent({required this.analysisId});
 
   factory AnalysisCompleteEvent.fromJson(Map<String, dynamic> json) =>
-      AnalysisCompleteEvent(
-        analysisId: json['analysisId'] as String,
-      );
+      AnalysisCompleteEvent(analysisId: json['analysisId'] as String);
 
   Map<String, dynamic> toJson() => {
-        'type': 'analysis_complete',
-        'analysisId': analysisId,
-      };
+    'type': 'analysis_complete',
+    'analysisId': analysisId,
+  };
 
   @override
   bool get isTerminal => true;
@@ -232,10 +183,14 @@ class StreamErrorEvent extends StreamEvent {
   final String message;
   final bool retryable;
 
+  /// HTTP status when this error came from a non-2xx SSE response.
+  final int? status;
+
   const StreamErrorEvent({
     required this.code,
     required this.message,
     required this.retryable,
+    this.status,
   });
 
   factory StreamErrorEvent.fromJson(Map<String, dynamic> json) =>
@@ -243,14 +198,18 @@ class StreamErrorEvent extends StreamEvent {
         code: json['code'] as String,
         message: json['message'] as String,
         retryable: json['retryable'] as bool,
+        status: json['status'] is int ? json['status'] as int : null,
       );
 
+  bool get isPaymentRequired => status == 402;
+
   Map<String, dynamic> toJson() => {
-        'type': 'error',
-        'code': code,
-        'message': message,
-        'retryable': retryable,
-      };
+    'type': 'error',
+    'code': code,
+    'message': message,
+    'retryable': retryable,
+    if (status != null) 'status': status,
+  };
 
   @override
   bool get isTerminal => true;

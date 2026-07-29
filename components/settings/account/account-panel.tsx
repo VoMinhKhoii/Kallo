@@ -3,6 +3,7 @@
 import { Download, LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { SettingsGroup, SettingsRow } from '@/components/settings/group';
+import { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { DangerZone } from './danger-zone';
 import { LinkedAccounts } from './linked-accounts';
 import { useAccountActions } from './use-account-actions';
@@ -17,7 +18,13 @@ import { useAccountActions } from './use-account-actions';
  * terracotta `nham-danger`, never the cold shadcn `destructive`. Sign out lives
  * here as well as in the user menu so the settings area is self-sufficient.
  */
-export function AccountPanel({ email }: { email: string | null }) {
+export function AccountPanel({
+  userId,
+  email,
+}: {
+  userId: string;
+  email: string | null;
+}) {
   const t = useTranslations('settings.account');
   const {
     exportPending,
@@ -26,7 +33,8 @@ export function AccountPanel({ email }: { email: string | null }) {
     handleExport,
     handleSignOut,
     handleDelete,
-  } = useAccountActions();
+  } = useAccountActions(userId);
+  const { data: entitlements } = useEntitlements(userId);
 
   return (
     <div className="font-sans-display">
@@ -71,7 +79,11 @@ export function AccountPanel({ email }: { email: string | null }) {
         </SettingsRow>
       </SettingsGroup>
 
-      <DangerZone onDelete={handleDelete} deleting={deletePending} />
+      <DangerZone
+        onDelete={handleDelete}
+        deleting={deletePending}
+        managementUrl={entitlements?.managementUrl ?? null}
+      />
     </div>
   );
 }
