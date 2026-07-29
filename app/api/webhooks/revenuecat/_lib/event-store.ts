@@ -138,12 +138,15 @@ export async function failWebhookEvent(
     .update(billingWebhookEvents)
     .set({
       processingError: message,
+      // A raw Date in a sql`` fragment bypasses drizzle's column codec and the
+      // postgres driver rejects it (ERR_INVALID_ARG_TYPE); serialize to ISO +
+      // cast so retry backoff and dead-lettering of transient failures persist.
       nextAttemptAt: permanent
         ? null
-        : sql`${now} + (LEAST(3600, POWER(2, ${billingWebhookEvents.attemptCount})::integer) * interval '1 second')`,
+        : sql`${now.toISOString()}::timestamptz + (LEAST(3600, POWER(2, ${billingWebhookEvents.attemptCount})::integer) * interval '1 second')`,
       deadLetteredAt: permanent
         ? now
-        : sql`CASE WHEN ${billingWebhookEvents.attemptCount} >= ${MAX_ATTEMPTS} THEN ${now} ELSE NULL END`,
+        : sql`CASE WHEN ${billingWebhookEvents.attemptCount} >= ${MAX_ATTEMPTS} THEN ${now.toISOString()}::timestamptz ELSE NULL END`,
     })
     .where(eq(billingWebhookEvents.id, eventRowId));
 }

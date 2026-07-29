@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { and, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { getBillingEnvironment } from '@/lib/billing/revenuecat';
@@ -8,9 +9,17 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 const PREPARED = 'ACCOUNT_DELETION_PREPARED';
 const READY = 'ACCOUNT_DELETION_READY';
+const PROCESSING = 'ACCOUNT_DELETION_PROCESSING';
+const COMPLETED = 'ACCOUNT_DELETION_COMPLETED';
+const PROCESSING_LEASE_MS = 10 * 60 * 1000;
 const payloadSchema = z.object({
   accountDeletion: z.object({ userId: z.string().uuid() }),
 });
+
+function accountDeletionExternalEventId(userId: string): string {
+  const digest = createHash('sha256').update(userId).digest('hex');
+  return `account-deletion:${digest}`;
+}
 
 export function authUserIsConfirmedAbsent(
   user: unknown,
@@ -32,11 +41,12 @@ export async function prepareAccountDeletion(
   database: AppDb = appDb
 ): Promise<AccountDeletionJob> {
   const environment = getBillingEnvironment();
+  const externalEventId = accountDeletionExternalEventId(userId);
   const rows = await database
     .insert(billingWebhookEvents)
     .values({
       source: 'revenuecat',
-      externalEventId: `account-deletion:${userId}`,
+      externalEventId,
       eventType: PREPARED,
       userId: null,
       rawPayload: { accountDeletion: { userId } },
@@ -44,58 +54,102 @@ export async function prepareAccountDeletion(
       environment,
       nextAttemptAt: new Date(),
     })
-    .onConflictDoUpdate({
+    .onConflictDoNothing({
       target: [
         billingWebhookEvents.source,
         billingWebhookEvents.externalEventId,
         billingWebhookEvents.deploymentEnvironment,
       ],
-      set: {
-        eventType: PREPARED,
-        rawPayload: { accountDeletion: { userId } },
-        processedAt: null,
-        processingError: null,
-        deadLetteredAt: null,
-        nextAttemptAt: new Date(),
-      },
     })
     .returning({ id: billingWebhookEvents.id });
-  const id = rows[0]?.id;
+  const existingRows =
+    rows.length > 0
+      ? rows
+      : await database
+          .select({ id: billingWebhookEvents.id })
+          .from(billingWebhookEvents)
+          .where(
+            and(
+              eq(billingWebhookEvents.source, 'revenuecat'),
+              eq(billingWebhookEvents.externalEventId, externalEventId),
+              eq(billingWebhookEvents.deploymentEnvironment, environment)
+            )
+          )
+          .limit(1);
+  const id = existingRows[0]?.id;
   if (!id) throw new Error('account_deletion_job_not_persisted');
   return { id, userId };
 }
 
-export async function markAccountDeletionReady(
+export async function claimAccountDeletionJob(
   jobId: string,
   database: AppDb = appDb
-): Promise<void> {
-  await database
+): Promise<Date | null> {
+  const now = new Date();
+  const rows = await database
     .update(billingWebhookEvents)
-    .set({ eventType: READY, nextAttemptAt: new Date() })
-    .where(eq(billingWebhookEvents.id, jobId));
+    .set({
+      eventType: PROCESSING,
+      lastAttemptAt: now,
+      processingError: null,
+      nextAttemptAt: new Date(now.getTime() + PROCESSING_LEASE_MS),
+    })
+    .where(
+      and(
+        eq(billingWebhookEvents.id, jobId),
+        inArray(billingWebhookEvents.eventType, [PREPARED, READY, PROCESSING]),
+        or(
+          isNull(billingWebhookEvents.nextAttemptAt),
+          lte(billingWebhookEvents.nextAttemptAt, now)
+        )
+      )
+    )
+    .returning({ id: billingWebhookEvents.id });
+  return rows.length === 1 ? now : null;
 }
 
 /** Provider erasure is retryable after local account deletion has committed. */
 export async function processAccountDeletionJob(
   job: AccountDeletionJob,
+  claimedAt: Date,
   database: AppDb = appDb
 ): Promise<void> {
   try {
     await deleteRevenueCatCustomer(job.userId);
     await database
-      .delete(billingWebhookEvents)
-      .where(eq(billingWebhookEvents.id, job.id));
+      .update(billingWebhookEvents)
+      .set({
+        eventType: COMPLETED,
+        rawPayload: { accountDeletion: { completed: true } },
+        processedAt: new Date(),
+        processingError: null,
+        nextAttemptAt: null,
+      })
+      .where(
+        and(
+          eq(billingWebhookEvents.id, job.id),
+          eq(billingWebhookEvents.eventType, PROCESSING),
+          eq(billingWebhookEvents.lastAttemptAt, claimedAt)
+        )
+      );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'provider_error';
     await database
       .update(billingWebhookEvents)
       .set({
+        eventType: READY,
         attemptCount: sql`${billingWebhookEvents.attemptCount} + 1`,
         lastAttemptAt: new Date(),
         processingError: message.slice(0, 500),
         nextAttemptAt: sql`now() + interval '1 hour'`,
       })
-      .where(eq(billingWebhookEvents.id, job.id));
+      .where(
+        and(
+          eq(billingWebhookEvents.id, job.id),
+          eq(billingWebhookEvents.eventType, PROCESSING),
+          eq(billingWebhookEvents.lastAttemptAt, claimedAt)
+        )
+      );
     throw error;
   }
 }
@@ -116,7 +170,7 @@ export async function retryAccountDeletionJobs(
       and(
         eq(billingWebhookEvents.source, 'revenuecat'),
         eq(billingWebhookEvents.deploymentEnvironment, environment),
-        inArray(billingWebhookEvents.eventType, [PREPARED, READY]),
+        inArray(billingWebhookEvents.eventType, [PREPARED, READY, PROCESSING]),
         isNull(billingWebhookEvents.processedAt),
         or(
           isNull(billingWebhookEvents.nextAttemptAt),
@@ -148,10 +202,14 @@ export async function retryAccountDeletionJobs(
         failed += 1;
         continue;
       }
-      await markAccountDeletionReady(job.id, database);
+    }
+    const claimedAt = await claimAccountDeletionJob(job.id, database);
+    if (!claimedAt) {
+      skipped += 1;
+      continue;
     }
     try {
-      await processAccountDeletionJob(job, database);
+      await processAccountDeletionJob(job, claimedAt, database);
       processed += 1;
     } catch {
       failed += 1;

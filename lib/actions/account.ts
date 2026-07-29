@@ -1,9 +1,11 @@
 'use server';
 
 import { eq, inArray, sql } from 'drizzle-orm';
+import { headers } from 'next/headers';
 import { z } from 'zod';
 import {
-  markAccountDeletionReady,
+  authUserIsConfirmedAbsent,
+  claimAccountDeletionJob,
   prepareAccountDeletion,
   processAccountDeletionJob,
 } from '@/lib/account-deletion/jobs';
@@ -23,6 +25,10 @@ import { createClient } from '@/lib/supabase/server';
 const accountActionInputSchema = z
   .object({ expectedUserId: z.string().uuid() })
   .strict();
+const bearerHeaderSchema = z
+  .string()
+  .regex(/^Bearer [^\s]+$/)
+  .transform((value) => value.slice('Bearer '.length));
 
 /**
  * Resolve the current authenticated user WITHOUT requiring a completed
@@ -31,12 +37,20 @@ const accountActionInputSchema = z
  * here — it throws `profileNotFound` for profile-less accounts.
  */
 async function requireUser() {
+  const requestHeaders = await headers();
+  const bearerToken = bearerHeaderSchema.safeParse(
+    requestHeaders.get('authorization')
+  );
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
     throw Errors.notAuthenticated();
   }
-  return { user: data.user, supabase };
+  return {
+    user: data.user,
+    supabase,
+    bearerToken: bearerToken.success ? bearerToken.data : undefined,
+  };
 }
 
 async function requireExpectedUser(
@@ -55,7 +69,13 @@ async function requireExpectedUser(
     );
   }
   if (options.recentAuth) {
-    const { data, error } = await session.supabase.auth.getClaims();
+    // Stateless mobile clients authenticate through an Authorization header,
+    // so the server-side Supabase client has no persisted session for
+    // getClaims() to discover. Pass the already server-validated bearer token
+    // explicitly; cookie-backed web clients continue to use their session.
+    const { data, error } = await session.supabase.auth.getClaims(
+      session.bearerToken
+    );
     const latestAuthentication = data?.claims.amr
       ?.filter(
         (entry): entry is { method: string; timestamp: number } =>
@@ -277,25 +297,41 @@ export async function deleteAccountAction(
   const deletionJob = await prepareAccountDeletion(user.id);
 
   const { error } = await admin.auth.admin.deleteUser(user.id);
-  if (error) {
+  const accountAlreadyDeleted =
+    error !== null && authUserIsConfirmedAbsent(null, error);
+  if (error && !accountAlreadyDeleted) {
     throw Errors.internal(
       error,
       'Could not delete your account. Please try again.'
     );
   }
 
-  await markAccountDeletionReady(deletionJob.id).catch((jobError) => {
-    console.error(
-      '[account-delete] Failed to mark erasure job ready:',
-      jobError
+  // A concurrent request may have deleted Auth after this request verified the
+  // session. In that case the winning request owns the immediate provider
+  // attempt; this request returns the same successful outcome and leaves the
+  // shared PREPARED outbox for the winner or scheduled retry worker. This
+  // avoids a false 500 and duplicate RevenueCat deletion calls.
+  if (!accountAlreadyDeleted) {
+    const claimedAt = await claimAccountDeletionJob(deletionJob.id).catch(
+      (jobError) => {
+        console.error(
+          '[account-delete] Failed to mark erasure job ready:',
+          jobError
+        );
+        return null;
+      }
     );
-  });
-  await processAccountDeletionJob(deletionJob).catch((providerError) => {
-    console.error(
-      '[account-delete] RevenueCat erasure queued for retry:',
-      providerError
-    );
-  });
+    if (claimedAt) {
+      await processAccountDeletionJob(deletionJob, claimedAt).catch(
+        (providerError) => {
+          console.error(
+            '[account-delete] RevenueCat erasure queued for retry:',
+            providerError
+          );
+        }
+      );
+    }
+  }
 
   // Repeat after deletion to remove a webhook that raced the first pass. The
   // account is already gone at this point, so a transient cleanup failure is

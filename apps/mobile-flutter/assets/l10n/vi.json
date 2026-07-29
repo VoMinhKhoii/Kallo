@@ -31,17 +31,17 @@
   },
   "metadata": {
     "root": {
-      "title": "Nhẩm — Trình theo dõi bữa ăn Việt",
+      "title": "Kallo — Trình theo dõi bữa ăn Việt",
       "description": "Theo dõi bữa ăn Việt với phân tích dinh dưỡng bằng AI"
     },
     "dashboard": {
-      "title": "Tổng quan — Nhẩm"
+      "title": "Tổng quan — Kallo"
     },
     "nutrition": {
-      "title": "Dinh dưỡng — Nhẩm"
+      "title": "Dinh dưỡng — Kallo"
     },
     "groups": {
-      "title": "Nhóm — Nhẩm"
+      "title": "Nhóm — Kallo"
     }
   },
   "shared": {
@@ -828,18 +828,18 @@
       "step1TextMobile": "Mô tả bữa ăn tự nhiên bằng tiếng Việt, tiếng Anh hoặc cả hai.",
       "step2Label": "Bước 2",
       "step2Title": "Chúng tôi tách nó thành nguyên liệu thật",
-      "step2Text": "Nhẩm ánh xạ mô tả của bạn sang nguyên liệu và thành phần món ăn Việt từ bộ dữ liệu dinh dưỡng được tuyển chọn.",
-      "step2TextMobile": "Nhẩm ánh xạ mô tả sang nguyên liệu và thành phần món ăn Việt thật.",
+      "step2Text": "Kallo ánh xạ mô tả của bạn sang nguyên liệu và thành phần món ăn Việt từ bộ dữ liệu dinh dưỡng được tuyển chọn.",
+      "step2TextMobile": "Kallo ánh xạ mô tả sang nguyên liệu và thành phần món ăn Việt thật.",
       "step3Label": "Bước 3",
       "step3Title": "Ngữ cảnh cá nhân làm ước tính chính xác hơn",
       "step3Text": "Vùng miền, thói quen nấu ăn và mục tiêu dinh dưỡng giúp AI hiểu calo ẩn và điều chỉnh khẩu phần hợp lý hơn.",
       "step3TextMobile": "Vùng miền, thói quen nấu ăn và mục tiêu giúp AI siết chặt ước tính.",
       "step4Label": "Bước 4",
       "step4Title": "Bạn nhận được kết quả có ích, có biên độ",
-      "step4Text": "Thay vì độ chính xác giả, Nhẩm trả về khoảng calo và macro thực tế để bạn dễ ra quyết định hơn.",
+      "step4Text": "Thay vì độ chính xác giả, Kallo trả về khoảng calo và macro thực tế để bạn dễ ra quyết định hơn.",
       "step4TextMobile": "Nhận khoảng calo và macro thực tế thay vì độ chính xác giả.",
       "cta": "Bắt đầu theo dõi",
-      "whyLabel": "Vì sao Nhẩm tốt hơn",
+      "whyLabel": "Vì sao Kallo tốt hơn",
       "whyTitle": "Được xây dựng theo cách bữa ăn Việt thực sự diễn ra",
       "feature1Title": "Khớp nguyên liệu theo ngữ cảnh Việt Nam",
       "feature1Text": "Đối chiếu món ăn với dữ liệu thành phần thực phẩm Việt thay vì ép sang món thay thế phương Tây.",
@@ -901,7 +901,7 @@
       "blog": "Blog",
       "contact": "Liên hệ",
       "privacy": "Quyền riêng tư",
-      "copyright": "© {year} Nhẩm. Mọi quyền được bảo lưu.",
+      "copyright": "© {year} Kallo. Mọi quyền được bảo lưu.",
       "terms": "Điều khoản",
       "privacyLink": "Chính sách riêng tư",
       "security": "Bảo mật"
@@ -1000,7 +1000,7 @@
     "caloriesLogged": "kcal đã ghi",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
     "firstRunQuestion": "Hôm nay bạn đã ăn gì?",
-    "firstRunHint": "Mô tả bữa đầu tiên — Nhẩm lo phần còn lại.",
+    "firstRunHint": "Mô tả bữa đầu tiên — Kallo lo phần còn lại.",
     "firstRunChips": {
       "morning1": "1 tô phở bò + quẩy",
       "morning2": "2 trứng ốp la + bánh mì",
@@ -1066,7 +1066,7 @@
       "subtitle": "Dinh dưỡng sản phẩm đóng gói, từ Open Food Facts",
       "scanning": "Căn chỉnh mã vạch vào khung",
       "torch": "Đèn pin",
-      "cameraDenied": "Chưa cấp quyền camera. Hãy bật camera cho Nhẩm trong Cài đặt > Quyền riêng tư > Camera, hoặc nhập mã vạch bên dưới.",
+      "cameraDenied": "Chưa cấp quyền camera. Hãy bật camera cho Kallo trong Cài đặt > Quyền riêng tư > Camera, hoặc nhập mã vạch bên dưới.",
       "cameraError": "Camera không khả dụng trên thiết bị này.",
       "manualEntry": "Nhập mã vạch thủ công",
       "backToCamera": "Quay lại camera",
@@ -1302,7 +1302,7 @@
       "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
       "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại.",
       "shareCard": "Chia sẻ thẻ",
-      "shareCardTitle": "Bữa ăn của tôi trên Nhẩm"
+      "shareCardTitle": "Bữa ăn của tôi trên Kallo"
     },
     "shareMeal": {
       "title": "Chia sẻ bữa ăn này",
@@ -1417,7 +1417,7 @@
       "unlinkError": "Không thể hủy liên kết tài khoản đó. Vui lòng thử lại.",
       "loadError": "Không tải được phương thức đăng nhập.",
       "signOut": "Đăng xuất",
-      "signOutConfirmTitle": "Đăng xuất khỏi Nhẩm?",
+      "signOutConfirmTitle": "Đăng xuất khỏi Kallo?",
       "cancel": "Hủy",
       "delete": "Xóa tài khoản",
       "deleteScreenTitle": "Xóa tài khoản",
@@ -1493,12 +1493,12 @@
       "placeholder": {
         "bug": "Điều gì đã xảy ra? Bạn mong đợi điều gì?",
         "ingredient": "Nguyên liệu hoặc món ăn nào đang thiếu?",
-        "idea": "Điều gì sẽ giúp Nhẩm tốt hơn cho bạn?"
+        "idea": "Điều gì sẽ giúp Kallo tốt hơn cho bạn?"
       },
       "addScreenshot": "Thêm ảnh chụp màn hình",
       "removeScreenshot": "Bỏ ảnh chụp màn hình",
       "screenshotTooLarge": "Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.",
-      "photoPermission": "Nhẩm cần quyền truy cập ảnh để đính kèm ảnh chụp màn hình. Hãy bật trong Cài đặt.",
+      "photoPermission": "Kallo cần quyền truy cập ảnh để đính kèm ảnh chụp màn hình. Hãy bật trong Cài đặt.",
       "submit": "Gửi góp ý",
       "successTitle": "Cảm ơn — chúng tôi đã nhận được",
       "successBody": "Góp ý của bạn đã đến đội ngũ. Chúng tôi đọc từng góp ý một.",

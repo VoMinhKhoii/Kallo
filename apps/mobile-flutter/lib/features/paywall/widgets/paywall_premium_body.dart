@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../data/billing/entitlements_provider.dart';
+import '../../../data/billing/entitlement_state.dart';
 import '../../../shared/widgets/nham_primitives.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';

@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/data/api_client.dart';
+import 'package:nham_mobile/data/billing/entitlement_state.dart';
 import 'package:nham_mobile/data/billing/entitlements_provider.dart';
 
 /// ApiClient stand-in: replays a canned entitlements body per GET, counting
@@ -102,7 +103,7 @@ void main() {
 
     test('parses an active trial with days remaining', () {
       final e = EntitlementState.fromJson({
-        'tier': 'premium',
+        'tier': 'free',
         'purchasesEnabled': true,
         'isLifetime': false,
         'expiresAt': null,
@@ -239,6 +240,104 @@ void main() {
       expect(
         c.read(entitlementsProvider(userA)).valueOrNull?.isPremium,
         isTrue,
+      );
+    });
+
+    test(
+      'preserves the last snapshot during a transient poll failure',
+      () async {
+        final recovery = Completer<Map<String, dynamic>>();
+        final api = FakeApiClient((index) {
+          if (index == 0) return freeJson();
+          if (index == 1) throw StateError('transient poll failure');
+          return recovery.future;
+        }, postHandler: (_) => freeJson());
+        final c = makeContainer(api);
+        await c.read(entitlementsProvider(userA).future);
+
+        final poll = c
+            .read(entitlementsProvider(userA).notifier)
+            .pollUntilPremium(
+              interval: const Duration(milliseconds: 1),
+              timeout: const Duration(seconds: 2),
+            );
+        while (api.getCalls < 3) {
+          await Future<void>.delayed(const Duration(milliseconds: 1));
+        }
+
+        final preserved = c.read(entitlementsProvider(userA));
+        expect(preserved, isA<AsyncData<EntitlementState>>());
+        expect(preserved.valueOrNull?.isPremium, isFalse);
+
+        recovery.complete(premiumJson());
+        expect(await poll, isTrue);
+        expect(
+          c.read(entitlementsProvider(userA)).valueOrNull?.isPremium,
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'does not confirm cached premium after transient reconcile failure',
+      () async {
+        final api = FakeApiClient(
+          (index) => index == 0 ? premiumJson() : freeJson(),
+          postHandler: (_) => throw StateError('transient reconcile failure'),
+        );
+        final c = makeContainer(api);
+        final initial = await c.read(entitlementsProvider(userA).future);
+        expect(initial.isPremium, isTrue);
+
+        final premium = await c
+            .read(entitlementsProvider(userA).notifier)
+            .pollUntilPremium(
+              interval: const Duration(milliseconds: 1),
+              timeout: const Duration(milliseconds: 20),
+            );
+
+        expect(premium, isFalse);
+        expect(api.postCalls, 1);
+        expect(api.getCalls, greaterThan(1));
+        expect(
+          c.read(entitlementsProvider(userA)).valueOrNull?.isPremium,
+          isFalse,
+        );
+      },
+    );
+
+    test('bounds a hung reconcile by the polling deadline', () async {
+      final hungReconcile = Completer<Map<String, dynamic>>();
+      final api = FakeApiClient(
+        (_) => freeJson(),
+        postHandler: (_) => hungReconcile.future,
+      );
+      final c = makeContainer(api);
+      await c.read(entitlementsProvider(userA).future);
+      final stopwatch = Stopwatch()..start();
+
+      final premium = await c
+          .read(entitlementsProvider(userA).notifier)
+          .pollUntilPremium(
+            interval: const Duration(milliseconds: 1),
+            timeout: const Duration(milliseconds: 20),
+          );
+      stopwatch.stop();
+
+      expect(premium, isFalse);
+      expect(stopwatch.elapsed, lessThan(const Duration(milliseconds: 500)));
+      expect(api.postCalls, 1);
+      expect(api.getCalls, 1);
+      expect(
+        c.read(entitlementsProvider(userA)).valueOrNull?.isPremium,
+        isFalse,
+      );
+
+      hungReconcile.complete(premiumJson());
+      await c.pump();
+      expect(
+        c.read(entitlementsProvider(userA)).valueOrNull?.isPremium,
+        isFalse,
       );
     });
 

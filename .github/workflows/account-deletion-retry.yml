@@ -9,6 +9,10 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: account-deletion-retry-production
+  cancel-in-progress: false
+
 jobs:
   retry-provider-erasure:
     runs-on: ubuntu-latest
