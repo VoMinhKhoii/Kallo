@@ -143,6 +143,17 @@ describe('decomposedIngredientV2Schema', () => {
 });
 
 describe('mealDecompositionV2Schema', () => {
+  const vesselDish = {
+    name: 'phở bò tái',
+    cookingMethod: 'nấu',
+    ingredients: [
+      {
+        rawName: 'bánh phở',
+        canonicalName: 'Bánh phở',
+      },
+    ],
+  };
+
   it('parses a typical Vietnamese meal', () => {
     const parsed = mealDecompositionV2Schema.parse({
       isFood: true,
@@ -176,6 +187,52 @@ describe('mealDecompositionV2Schema', () => {
       'bỏ da',
       'bỏ mỡ',
     ]);
+  });
+
+  it('parses a dish with vesselToken and vesselSize', () => {
+    const parsed = mealDecompositionV2Schema.parse({
+      isFood: true,
+      mealSlot: null,
+      mealItems: [
+        {
+          ...vesselDish,
+          vesselToken: 'tô',
+          vesselSize: 'large',
+        },
+      ],
+    });
+    expect(parsed.mealItems[0].vesselToken).toBe('tô');
+    expect(parsed.mealItems[0].vesselSize).toBe('large');
+  });
+
+  it('parses a dish without optional vessel fields', () => {
+    const parsed = mealDecompositionV2Schema.parse({
+      isFood: true,
+      mealSlot: null,
+      mealItems: [vesselDish],
+    });
+    expect(parsed.mealItems[0].vesselToken).toBeUndefined();
+    expect(parsed.mealItems[0].vesselSize).toBeUndefined();
+  });
+
+  it('rejects vesselToken on an ingredient', () => {
+    expect(() =>
+      decomposedIngredientV2Schema.parse({
+        rawName: 'bánh phở',
+        canonicalName: 'Bánh phở',
+        vesselToken: 'tô',
+      })
+    ).toThrow();
+  });
+
+  it('rejects an invalid dish vesselSize enum value', () => {
+    expect(() =>
+      mealDecompositionV2Schema.parse({
+        isFood: true,
+        mealSlot: null,
+        mealItems: [{ ...vesselDish, vesselSize: 'huge' }],
+      })
+    ).toThrow();
   });
 
   it('parses non-food input', () => {

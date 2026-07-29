@@ -722,6 +722,8 @@ describe('loadPendingAnalysesByDate', () => {
     expect(pending[0]?.rawInput).toBe('Phở bò');
     expect(pending[0]?.loggedAt).toBe(LOGGED_AT.toISOString());
     expect(pending[0]?.parsedMeal?.mealName).toBe('Phở bò');
+    expect(pending[0]?.parsedMeal?.items[0]?.unit).toBe('g');
+    expect(pending[0]?.parsedMeal?.items[0]?.vessel).toBeUndefined();
   });
 
   it('returns a cheat pending row as cheatSpec without crashing on missing mealItems', async () => {

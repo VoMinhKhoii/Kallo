@@ -3,6 +3,7 @@ import type {
   MealInputLanguage,
   SupportedOutputLanguage,
 } from './language/detect';
+import type { PipelineVessel } from './portion/vessel-types';
 
 // ---------------------------------------------------------------------------
 // Primitives
@@ -191,6 +192,8 @@ export interface MatchedIngredient {
   ingredientId?: string;
   ingredientName: string;
   foodCompositionId: string;
+  /** Authoritative DB food-group taxonomy from the winning composition row. */
+  foodGroupEn?: string;
   matchedName: string;
   similarity: number;
   confidence: MatchConfidence;
@@ -299,6 +302,8 @@ export interface NutritionAdjustment {
 export interface ProcessedIngredient {
   ingredientName: string;
   foodCompositionId: string | null;
+  /** Authoritative DB food-group taxonomy; absent on legacy/unmatched rows. */
+  foodGroupEn?: string;
   estimatedGrams: number;
   /**
    * Grams used internally for DB-row nutrition scaling. Equals
@@ -324,6 +329,7 @@ export interface PipelineMealItem {
   ingredients: ProcessedIngredient[];
   boundedNutrition: BoundedNutrition;
   displayedNutrition: NutritionValues;
+  vessel?: PipelineVessel;
 }
 
 /** Full pipeline result for a successful analysis */

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { NULL_NUTRITION_VALUES } from '../../__tests__/test-helpers';
 import type { IngredientV2MatchResult } from '../../matching/top-k-cascade';
+import { summarizeV2Anomalies } from '../anomaly-v2';
 import { bridgeV2ToV1 } from '../bridge';
 import { ZERO_TRIPLE } from '../bridge-verdicts';
+import { resolveCompletenessGate } from '../completeness-gate';
 import { __testing as nutritionTesting } from '../nutrition';
 import type { GroundedEstimation, MealDecompositionV2 } from '../schemas-v2';
 
@@ -640,5 +642,69 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
     expect(out.plausibility[0].unresolvedReason).toBe('ambiguous_food');
     // Unresolved ingredients contribute no matched row.
     expect(out.matched).toHaveLength(0);
+  });
+});
+
+describe('bridgeV2ToV1 — carb-staple floor (bánh ướt chả bò)', () => {
+  it('routes an unmatched staple with C≈0 to unresolved_portion via the gate', () => {
+    const v2: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'Bánh ướt chả bò',
+          cookingMethod: 'hấp',
+          ingredients: [
+            { rawName: 'bánh ướt', canonicalName: 'Bánh ướt' },
+            { rawName: 'chả bò', canonicalName: 'Chả bò' },
+          ],
+        },
+      ],
+    };
+    // No candidates for either ingredient ⇒ acceptedCandidate null (unmatched).
+    const matches: IngredientV2MatchResult[] = [
+      { ingredientIndex: 0, candidates: [] },
+      { ingredientIndex: 1, candidates: [] },
+    ];
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'Bánh ướt chả bò',
+          ingredients: [
+            {
+              ingredientName: 'bánh ướt',
+              grams: 250,
+              // The bug: the LLM assigned P/F but C≈0 to a starch base.
+              caloriesKcal: { low: 120, mid: 135, high: 150 },
+              proteinG: { low: 14, mid: 15, high: 16 },
+              carbohydrateG: { low: 0, mid: 0, high: 1 },
+              fatG: { low: 11, mid: 12, high: 13 },
+            },
+            {
+              ingredientName: 'chả bò',
+              grams: 60,
+              caloriesKcal: { low: 130, mid: 140, high: 150 },
+              proteinG: { low: 12, mid: 13, high: 14 },
+              carbohydrateG: { low: 1, mid: 2, high: 3 },
+              fatG: { low: 8, mid: 9, high: 10 },
+            },
+          ],
+        },
+      ],
+    };
+    const out = bridgeV2ToV1({ v2, matches, grounded, mealContext: 'm' });
+
+    const banhUot = out.plausibility.find(
+      (p) => p.ingredientName === 'bánh ướt'
+    );
+    expect(banhUot?.state).toBe('unresolved_estimate');
+
+    const unresolved = resolveCompletenessGate({
+      failedMealItemNames: [],
+      plausibility: out.plausibility,
+      anomalySummary: summarizeV2Anomalies([]),
+    });
+    expect(unresolved?.ingredientName).toBe('bánh ướt');
+    expect(unresolved?.reason).toBe('unresolved_portion');
   });
 });

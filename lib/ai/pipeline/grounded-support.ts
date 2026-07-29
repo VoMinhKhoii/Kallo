@@ -23,6 +23,7 @@
 import { randomUUID } from 'node:crypto';
 import { capitalizeFirst } from '@/lib/utils';
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
+import type { VesselEnvelope } from '../portion/vessel-envelope';
 import type { MealItemWithCandidates } from '../prompts/grounded-estimation';
 import type { PromptPersonalizationContext } from '../prompts/types';
 import {
@@ -324,11 +325,13 @@ export function buildCallTwoPayload(
    * and > 0, becomes the Call-2 ANCHOR so the LLM does not re-estimate weight.
    * Indexed in the same flat order as `matchResults`.
    */
-  resolvedGramsByFlatIdx?: Array<number | null>
+  resolvedGramsByFlatIdx?: Array<number | null>,
+  vesselEnvelopes?: Array<VesselEnvelope | null>
 ): MealItemWithCandidates[] {
   let flatIdx = 0;
-  return decomposition.mealItems.map((mi) => ({
+  return decomposition.mealItems.map((mi, mealItemIndex) => ({
     mealItem: mi,
+    vesselEnvelope: vesselEnvelopes?.[mealItemIndex] ?? null,
     ingredients: mi.ingredients.map((ing) => {
       const matchResult = matchResults[flatIdx];
       const anchor = resolvedGramsByFlatIdx?.[flatIdx] ?? null;

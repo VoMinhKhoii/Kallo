@@ -24,6 +24,15 @@ export function recalculateTotals(items: MealItem[]): MacroBreakdown {
   );
 }
 
+function scaleMacros(macros: MacroBreakdown, ratio: number): MacroBreakdown {
+  return {
+    calories: macros.calories * ratio,
+    protein: macros.protein * ratio,
+    carbs: macros.carbs * ratio,
+    fat: macros.fat * ratio,
+  };
+}
+
 export function applyQuantityChange(
   items: MealItem[],
   originalItems: MealItem[],
@@ -44,12 +53,7 @@ export function applyQuantityChange(
     return {
       ...item,
       quantity: newQuantity,
-      macros: {
-        calories: originalItem.macros.calories * ratio,
-        protein: originalItem.macros.protein * ratio,
-        carbs: originalItem.macros.carbs * ratio,
-        fat: originalItem.macros.fat * ratio,
-      },
+      macros: scaleMacros(originalItem.macros, ratio),
     };
   });
 }

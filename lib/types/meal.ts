@@ -1,3 +1,5 @@
+import type { ClientVessel } from '@/lib/ai/portion/vessel-types';
+
 export interface MacroBreakdown {
   calories: number;
   protein: number;
@@ -11,6 +13,7 @@ export interface MealItem {
   quantity: number;
   unit: string;
   macros: MacroBreakdown;
+  vessel?: ClientVessel;
 }
 
 export interface ParsedMeal {

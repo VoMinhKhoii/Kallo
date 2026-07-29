@@ -68,6 +68,8 @@ export interface PortionPrior {
   unitType: UnitType;
   locale: Locale;
   form: FoodForm;
+  /** Optional human-readable unit + concept label for prompt rendering. */
+  promptLabel?: string;
   /** Grams for ONE unit of this type (per-unit; resolver multiplies by count). */
   perUnit: GramsBand;
   confidence: 'high' | 'medium' | 'low';

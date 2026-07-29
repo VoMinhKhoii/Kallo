@@ -9,6 +9,7 @@ import type { GroundedEstimation, MealDecompositionV2 } from '../schemas-v2';
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 const userContext: UserContext = {
@@ -242,6 +243,68 @@ describe('analyzeMealV2 — no candidates → unmatched, LLM macros flow through
       expect(ing.boundedNutrition.fatG?.mid).toBeCloseTo(34, 1);
       expect(ing.boundedNutrition.proteinG?.mid).toBeCloseTo(32, 1);
       expect(result.data.unmatchedIngredients).toHaveLength(1);
+    }
+  });
+});
+
+describe('analyzeMealV2 — vessel result surface', () => {
+  it.each([
+    { enabled: false, env: 'false' },
+    { enabled: true, env: 'true' },
+  ])('attaches vessel metadata only when flag enabled=$enabled', async ({
+    enabled,
+    env,
+  }) => {
+    vi.stubEnv('PORTION_VESSEL_ENABLED', env);
+    const call1: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'phở bò',
+          cookingMethod: 'ninh',
+          vesselToken: 'tô',
+          ingredients: [{ rawName: 'phở bò', canonicalName: 'Phở bò' }],
+        },
+      ],
+    };
+    const call2: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'phở bò',
+          ingredients: [
+            {
+              ingredientName: 'phở bò',
+              grams: 500,
+              caloriesKcal: { low: 400, mid: 450, high: 500 },
+              proteinG: { low: 20, mid: 25, high: 30 },
+              carbohydrateG: { low: 50, mid: 55, high: 60 },
+              fatG: { low: 10, mid: 12, high: 14 },
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = await analyzeMealV2(
+      '1 tô phở bò',
+      userContext,
+      createSourceAwareMockDb({}),
+      geminiReturning(call1, call2)
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      if (enabled) {
+        expect(result.data.mealItems[0].vessel).toMatchObject({
+          family: 'bowl',
+          tier: 2,
+          dishClass: 'soup',
+          provenance: 'vessel_prior',
+        });
+      } else {
+        expect(result.data.mealItems[0]).not.toHaveProperty('vessel');
+      }
     }
   });
 });

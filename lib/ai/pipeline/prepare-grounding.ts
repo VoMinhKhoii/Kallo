@@ -14,6 +14,10 @@ import {
 } from '../matching/top-k-cascade';
 import { resolvePortionsForCallTwo } from '../portion/ingredient-portion';
 import type { PortionResolution } from '../portion/types';
+import {
+  resolveVesselEnvelope,
+  type VesselEnvelope,
+} from '../portion/vessel-envelope';
 import type { MealItemWithCandidates } from '../prompts/grounded-estimation';
 import type { StreamEvent } from '../streaming/types';
 import type { UserContext } from '../types';
@@ -26,6 +30,7 @@ export interface GroundingPreparation {
   matchResults: IngredientV2MatchResult[];
   portionResolutions: PortionResolution[];
   resolvedGramsAnchors: Array<number | null>;
+  vesselEnvelopes: Array<VesselEnvelope | null>;
   mealItemsWithCandidates: MealItemWithCandidates[];
   fullyGrounded: boolean;
 }
@@ -39,6 +44,7 @@ export async function prepareGrounding(args: {
   emit: (event: StreamEvent) => void;
   topK: number;
   matchConcurrency: number;
+  vesselEnabled: boolean;
 }): Promise<GroundingPreparation> {
   const { decomposition, traceContext, emit } = args;
   const flatIngredients = decomposition.mealItems.flatMap((mi) =>
@@ -69,10 +75,14 @@ export async function prepareGrounding(args: {
   const { resolutions: portionResolutions, anchors: resolvedGramsAnchors } =
     resolvePortionsForCallTwo(flatIngredients, args.userContext.inputLanguage);
 
+  const vesselEnvelopes = decomposition.mealItems.map((mealItem) =>
+    args.vesselEnabled ? resolveVesselEnvelope(mealItem) : null
+  );
   const mealItemsWithCandidates: MealItemWithCandidates[] = buildCallTwoPayload(
     decomposition,
     matchResults,
-    resolvedGramsAnchors
+    resolvedGramsAnchors,
+    vesselEnvelopes
   );
   // D2 fast path: when EVERY ingredient is fully grounded (exact-match +
   // server anchor, no prep notes), Call 2 is skipped and the estimation is
@@ -86,6 +96,7 @@ export async function prepareGrounding(args: {
     matchResults,
     portionResolutions,
     resolvedGramsAnchors,
+    vesselEnvelopes,
     mealItemsWithCandidates,
     fullyGrounded,
   };

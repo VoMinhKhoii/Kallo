@@ -85,6 +85,8 @@ export interface MatchInfo {
   ingredientId?: string;
   ingredientName: string;
   foodCompositionId: string;
+  /** Authoritative DB food-group taxonomy, attached with row metadata. */
+  foodGroupEn?: string;
   matchedName: string;
   similarity: number;
   confidence: MatchConfidence;

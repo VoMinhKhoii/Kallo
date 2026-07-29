@@ -154,6 +154,48 @@ jobs:
         run: yes | supabase db push --db-url "$PROD_DATABASE_URL_ENCODED"
       - name: Verify migrations applied
         run: node ./scripts/cloud-run/shared-db.mjs assert-migrations-applied --db-url "$PROD_DATABASE_URL" --migrations-dir ./supabase/migrations
+      # Curation migrations insert food rows with a NULL embedding, and every
+      # match function filters `WHERE vfc.embedding IS NOT NULL` — so an
+      # un-embedded row is silently invisible to the matcher. The script selects
+      # only `WHERE embedding IS NULL`, making it idempotent and resumable: a run
+      # that fails or times out is simply retried by the next deploy.
+      #
+      # Gate on the DB rather than on which migrations are pending: asking for
+      # the actual NULL count is authoritative, and it also catches rows left
+      # behind by an earlier partial run that a migration-list check would miss.
+      # Most deploys carry no curation, so this skips the install and the Gemini
+      # calls entirely.
+      - name: Check for rows needing embeddings
+        id: embed_check
+        run: |
+          # pipefail: without it the pipe below would report tr's status, so a
+          # failed psql would silently yield an empty count.
+          set -euo pipefail
+          pending="$(psql "$PROD_DATABASE_URL_ENCODED" -X -v ON_ERROR_STOP=1 -A -t \
+            -c 'SELECT count(*) FROM vietnamese_food_composition WHERE embedding IS NULL' \
+            | tr -d '[:space:]')"
+          echo "Rows needing embeddings: $pending"
+          echo "pending=$pending" >> "$GITHUB_OUTPUT"
+      # A failure here deliberately fails the deploy: a curated row that never
+      # gets embedded is dead weight, and a silently skipped backfill is worse
+      # than a red build. The timeout bounds the 35s-per-batch rate-limit sleep
+      # so a stuck run releases the prod lease promptly rather than holding it
+      # for the job's full 110 minutes.
+      - uses: ./.github/actions/setup-bun
+        if: steps.embed_check.outputs.pending != '0'
+      - name: Backfill food embeddings
+        if: steps.embed_check.outputs.pending != '0'
+        timeout-minutes: 15
+        env:
+          DATABASE_URL: ${{ env.PROD_DATABASE_URL }}
+        run: |
+          if ! gemini_key="$(gcloud secrets versions access latest --secret=kallo-prod-gemini-api-key)"; then
+            echo "::error::Cannot read kallo-prod-gemini-api-key. Grant the deployer service account roles/secretmanager.secretAccessor on that secret (see docs/GOOGLE_CLOUD_RUN.md)."
+            exit 1
+          fi
+          echo "::add-mask::$gemini_key"
+          export GEMINI_API_KEY="$gemini_key"
+          bun scripts/backfill_embeddings.ts
       - name: Resolve image digest
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"

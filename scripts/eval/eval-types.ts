@@ -1,11 +1,17 @@
 import { z } from 'zod';
 
 const macroRangeSchema = z.tuple([z.number().min(0), z.number().min(0)]);
+const vesselExpectationSchema = z.object({
+  family: z.enum(['bowl', 'plate', 'cup']),
+  tier: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+});
 
 const expectationSchema = z.object({
   isFood: z.boolean(),
   staples: z.array(z.string().min(1)).optional(),
   kcalRange: z.tuple([z.number(), z.number()]).optional(),
+  /** Ordered per-meal-item vessel expectations; null asserts no vessel. */
+  expectVessel: z.array(vesselExpectationSchema).min(1).nullable().optional(),
   /**
    * Golden-set macro bands (grams, meal total, checked against the mid
    * estimate). Bands are deliberately generous (±25-35%) — wide enough not to
@@ -118,6 +124,10 @@ export interface EvalCaseResult {
     carbohydrateG: { low: number; mid: number; high: number } | null;
     fatG: { low: number; mid: number; high: number } | null;
   } | null;
+  vessels: Array<{
+    family: 'bowl' | 'plate' | 'cup' | 'piece';
+    tier: 1 | 2 | 3 | 4 | 5;
+  } | null>;
   silentZeroViolations: SilentZeroViolation[];
   error: string | null;
   timedOut: boolean;

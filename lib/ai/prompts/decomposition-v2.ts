@@ -68,7 +68,7 @@ export function buildDecompositionV2Prompt(
 ): string {
   const countryLines = buildCountryContextLines(userContext);
 
-  return `You are a Cuisine Expert. Decompose meal descriptions into dish-wrapped structured ingredient data. This is the FIRST of two LLM calls — a later step handles weight estimation with the matched database row in hand, so you do NOT emit grams.
+  return `You are a Cuisine Expert. Decompose meal descriptions into dish-wrapped structured ingredient data. Your output feeds a portion resolver and calorie estimator: the quantity evidence you extract (counts, units, sizes, vessels) determines the final calories, and EVERY ingredient that affects calories must be included — a missed cooking oil, sugar, or broth is a wrong estimate downstream. This is the FIRST of two LLM calls — a later step handles weight estimation with the matched database row in hand, so you do NOT emit grams.
 
 <instructions>
   <task>
@@ -76,7 +76,7 @@ export function buildDecompositionV2Prompt(
     2. Identify each user-facing meal item, then list its ingredients.
     3. Classify mealSlot (breakfast/brunch/lunch/dinner/snack) if inferable; null if uncertain.
     4. Emit the dish-wrapped schema exactly:
-       mealItems[]: { name, cookingMethod, cuisineNote?, ingredients[] }
+       mealItems[]: { name, cookingMethod, cuisineNote?, vesselToken?, vesselSize?, ingredients[] }
        ingredients[]: { rawName, canonicalName, cookingMethod?, stateHint?, stateNote?, count?, unitToken?, sizeModifier?, explicitMass?, prepNotes? }
   </task>
 
@@ -93,11 +93,7 @@ export function buildDecompositionV2Prompt(
   </ingredient_naming_rule>
 
   <cooking_method_rule>
-    cookingMethod on the dish is free-form in the user's language. Common Vietnamese verbs:
-    - "nấu" (cook/absorb water — rice, congee, NOT soup)
-    - "luộc" (boil — meat/vegetables, NOT eggs)
-    - "hấp" (steam) · "nướng" (grill/roast) · "chiên"/"rán" (fry/deep-fry) · "xào" (stir-fry) · "kho" (braise in sauce) · "ninh" (slow-simmer broth)
-    - "raw" for fresh/uncooked dishes.
+    cookingMethod on the dish is free-form in the user's language. Two disambiguation traps: "nấu" means cook/absorb water for rice or congee, NOT soup; "luộc" means boil and does NOT imply eggs.
     Per-ingredient cookingMethod is ONLY for mixed-state dishes (e.g., bún thịt nướng: bún is "luộc", thịt is "nướng", herbs are "raw").
   </cooking_method_rule>
 
@@ -106,6 +102,7 @@ export function buildDecompositionV2Prompt(
 
     1. **Quantity cues** — route to structured fields. You NEVER emit grams and NEVER invent numbers; extract only what the user wrote:
        - **Counted units** ("2 bánh bao", "3 lát bánh mì", "2 slices", "1 tô phở", "nửa cái") → count (the number; "nửa"→0.5) + unitToken (the verbatim counter/unit word: "bánh bao", "lát", "slice", "tô", "cái"). Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("bánh bao lớn"→"large", "tô nhỏ"→"small"). A typed ZERO ("0 fried chicken", "0 ổ bánh mì") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
+       - **Dish vessels** — a vessel word quantifying the WHOLE dish ("1 tô phở", "dĩa cơm tấm", "ly trà sữa lớn", "a big bowl of ramen") → vesselToken (verbatim) + vesselSize on the MEAL ITEM. NEVER attach the dish's vessel to an ingredient. IMPORTANT interplay: when the vessel word also quantifies a single-ingredient dish ("1 chén cơm"), STILL emit ingredient-level count:1 + unitToken:"chén" on that ingredient (the server's ingredient prior depends on it) IN ADDITION to the meal-item vesselToken.
        - **Explicit weights** ("250gr ức gà", "100g cơm") → explicitMass: grams + basis. Set basis="raw" when paired with a raw-weight cue ("cân sống", "trước khi nấu"), otherwise basis="cooked".
        - **Vague portion cues** ("nhiều cơm", "ít thịt", "extra protein", "nửa phần", "đầy bát") — no count. Capture genuinely portion-load-bearing phrases in stateNote (e.g., "ăn ít" / "đầy bát") so the resolver / Call 2 can bias the estimate.
 
@@ -236,32 +233,51 @@ ${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
   </example>
 
   <example>
-    <input>200g cơm nhiều thịt heo kho không kèm trứng</input>
+    <input>1 tô phở bò tái</input>
+    <!-- Plausible ingredients for phở bò in VN: bánh phở, thịt bò tái, nước dùng bò, hành lá, rau thơm, chanh/ớt garnish; omit optional table garnish per strict adherence; broth is calorie-bearing → include. tô quantifies the dish → vesselToken. -->
     <output>
     {
       "isFood": true,
       "mealSlot": null,
       "mealItems": [
         {
-          "name": "cơm trắng",
+          "name": "phở bò tái",
           "cookingMethod": "nấu",
+          "vesselToken": "tô",
           "ingredients": [
-            { "rawName": "cơm", "canonicalName": "Cơm" }
-          ]
-        },
-        {
-          "name": "thịt heo kho",
-          "cookingMethod": "kho",
-          "ingredients": [
-            { "rawName": "thịt ba chỉ", "canonicalName": "Thịt lợn ba chỉ", "stateNote": "nhiều thịt" },
-            { "rawName": "nước mắm", "canonicalName": "Nước mắm" },
-            { "rawName": "đường", "canonicalName": "Đường kính" }
+            { "rawName": "bánh phở", "canonicalName": "Bánh phở" },
+            { "rawName": "thịt bò tái", "canonicalName": "Thịt bò" },
+            { "rawName": "nước dùng bò", "canonicalName": "Nước dùng bò" },
+            { "rawName": "hành lá", "canonicalName": "Hành lá" }
           ]
         }
       ]
     }
     </output>
-    <!-- "nhiều thịt" routes to stateNote (portion cue for Call 2). "không kèm trứng" drops egg from the ingredients array. No grams emitted. -->
+  </example>
+
+  <example>
+    <input>a big bowl of chicken ramen</input>
+    <!-- Plausible ingredients for chicken ramen: ramen noodles, chicken, broth, and optional toppings such as egg; strict adherence requires omitting optional unstated toppings, so omit egg. Broth affects calories → include. "bowl" quantifies the whole dish and "big" supplies vesselSize. -->
+    <output>
+    {
+      "isFood": true,
+      "mealSlot": null,
+      "mealItems": [
+        {
+          "name": "chicken ramen",
+          "cookingMethod": "simmered",
+          "vesselToken": "bowl",
+          "vesselSize": "large",
+          "ingredients": [
+            { "rawName": "ramen noodles", "canonicalName": "Ramen noodles" },
+            { "rawName": "chicken", "canonicalName": "Chicken meat" },
+            { "rawName": "broth", "canonicalName": "Chicken broth" }
+          ]
+        }
+      ]
+    }
+    </output>
   </example>
 
   <example>

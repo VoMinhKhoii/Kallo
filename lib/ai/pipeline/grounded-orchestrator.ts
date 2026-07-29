@@ -5,6 +5,7 @@ import {
   DEFAULT_MATCH_CONCURRENCY,
   type IngredientV2MatchResult,
 } from '../matching/top-k-cascade';
+import { attachVesselToMealItems } from '../portion/vessel-envelope';
 import {
   buildMealItemOffsetByName,
   buildPerMealItemOffsetMap,
@@ -17,6 +18,7 @@ import { initV2BudgetAccounting } from './budget-telemetry';
 import { createChunkEmitContext, runCallTwo } from './call-two';
 import { resolveCompletenessGate } from './completeness-gate';
 import { resolveModelProfile } from './config/model-profile';
+import { isPortionVesselEnabled } from './config/portion-vessel-flag';
 import { handleError, nonFoodResponse } from './errors';
 import {
   createGeminiEstimator,
@@ -97,6 +99,7 @@ export async function analyzeMealV2(
   const call2Temperature = options.call2Temperature ?? 0.4;
   const traceContext = options.traceContext;
   const profile = resolveModelProfile();
+  const vesselEnabled = isPortionVesselEnabled();
   const promptCtx = toPromptPersonalizationContext(userContext);
   const t0 = Date.now();
 
@@ -140,6 +143,7 @@ export async function analyzeMealV2(
     const {
       matchResults,
       portionResolutions,
+      vesselEnvelopes,
       mealItemsWithCandidates,
       fullyGrounded,
     } = await prepareGrounding({
@@ -151,6 +155,7 @@ export async function analyzeMealV2(
       emit,
       topK,
       matchConcurrency,
+      vesselEnabled,
     });
 
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
@@ -268,15 +273,23 @@ export async function analyzeMealV2(
           bridged.decomposition,
           bridged.matched
         );
+        const assembled = assembleResult(
+          bridged.decomposition,
+          reconciled,
+          bridged.matched,
+          bridged.unmatched,
+          userContext
+        );
+        if (vesselEnabled) {
+          attachVesselToMealItems(
+            assembled.result.mealItems,
+            decomposition.mealItems,
+            vesselEnvelopes
+          );
+        }
         return {
           bridged,
-          ...assembleResult(
-            bridged.decomposition,
-            reconciled,
-            bridged.matched,
-            bridged.unmatched,
-            userContext
-          ),
+          ...assembled,
         };
       }
     );

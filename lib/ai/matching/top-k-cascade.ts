@@ -319,7 +319,9 @@ export async function matchTopKPerIngredient(
     for (const r of results) {
       for (const c of r.candidates) {
         const id = c.info.foodCompositionId;
-        c.nutrition = nutritionMap.get(id) ?? null;
+        const foodData = nutritionMap.get(id);
+        c.nutrition = foodData ?? null;
+        if (foodData?.foodGroupEn) c.info.foodGroupEn = foodData.foodGroupEn;
         c.inediblePct = inedibleMap.get(id) ?? null;
       }
     }

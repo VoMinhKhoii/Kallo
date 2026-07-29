@@ -49,6 +49,7 @@ function observed(): Omit<EvalCaseResult, 'checks' | 'pass' | 'expectClarify'> {
     ],
     mealKcal: { low: 400, mid: 500, high: 600 },
     mealMacros: null,
+    vessels: [],
     silentZeroViolations: [],
     error: null,
     timedOut: false,
@@ -90,6 +91,34 @@ describe('eval scoring', () => {
     expect(
       result.checks.find((check) => check.name === 'staple:phở')?.pass
     ).toBe(false);
+  });
+
+  it('scores ordered vessel expectations and explicit absence', () => {
+    const withVessel = observed();
+    withVessel.vessels = [{ family: 'bowl', tier: 2 }];
+    const vesselFixture = {
+      ...fixture,
+      expect: {
+        ...fixture.expect,
+        expectClarify: false,
+        expectVessel: [{ family: 'bowl', tier: 2 }],
+      },
+    } satisfies EvalFixtureCase;
+    expect(scoreCase(vesselFixture, withVessel).pass).toBe(true);
+
+    withVessel.vessels = [{ family: 'bowl', tier: 3 }];
+    expect(scoreCase(vesselFixture, withVessel).pass).toBe(false);
+
+    const withoutVessel = observed();
+    const noVesselFixture = {
+      ...fixture,
+      expect: {
+        ...fixture.expect,
+        expectClarify: false,
+        expectVessel: null,
+      },
+    } satisfies EvalFixtureCase;
+    expect(scoreCase(noVesselFixture, withoutVessel).pass).toBe(true);
   });
 
   it('computes aggregate rates and nearest-rank latency percentiles', () => {

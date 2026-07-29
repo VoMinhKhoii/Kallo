@@ -229,12 +229,23 @@ export function bridgeV2ToV1(args: {
         ground.proteinG == null &&
         ground.carbohydrateG == null;
 
+      // Carb density for the carb-staple floor. Matched: DB per-100g carbs.
+      // Unmatched: scale Call 2's absolute carb mid back to a per-100g density.
+      const carbsPer100g = acceptedCandidate
+        ? (acceptedCandidate.nutrition?.carbohydrateG ?? null)
+        : ground?.carbohydrateG != null &&
+            resolvedGrams != null &&
+            resolvedGrams > 0
+          ? (ground.carbohydrateG.mid / resolvedGrams) * 100
+          : null;
+
       const state = resolverUnresolved
         ? 'unresolved_estimate'
         : classifyIngredientPlausibility({
             grams: resolvedGrams,
             hasNutrition: ground != null,
             caloriesPer100g: acceptedCandidate?.nutrition?.caloriesKcal ?? null,
+            carbsPer100g,
             name: ing.rawName || ing.canonicalName,
             emittedCaloricMacrosMissing: unmatchedCaloricMacrosMissing,
           });
@@ -274,6 +285,7 @@ export function bridgeV2ToV1(args: {
         matchedPartialByFlatIdx.set(flatIngredientIdx, {
           ingredientName: ing.rawName,
           foodCompositionId: acceptedCandidate.info.foodCompositionId,
+          foodGroupEn: acceptedCandidate.info.foodGroupEn,
           matchedName: acceptedCandidate.info.matchedName,
           similarity: acceptedCandidate.info.similarity,
           confidence: acceptedCandidate.info.confidence,

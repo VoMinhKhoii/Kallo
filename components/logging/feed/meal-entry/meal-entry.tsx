@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry/meal-entry-item';
+import { PortionPicker } from '@/components/logging/feed/meal-entry/portion/portion-picker';
 import { TimeDivider } from '@/components/logging/feed/time-divider';
 import {
   applyQuantityChange,
@@ -178,13 +179,21 @@ export function MealEntry({
                 {/* Items list */}
                 <div className="mb-4 space-y-1">
                   {items.map((item, idx) => (
-                    <MealEntryItem
-                      key={item.id}
-                      item={item}
-                      index={idx}
-                      isEditing={isEditing}
-                      onQuantityChange={handleQuantityChange}
-                    />
+                    <div key={item.id}>
+                      <MealEntryItem
+                        item={item}
+                        index={idx}
+                        isEditing={isEditing}
+                        onQuantityChange={handleQuantityChange}
+                      />
+                      {!confirmed && item.vessel && (
+                        <PortionPicker
+                          item={item}
+                          items={items}
+                          onApply={setItems}
+                        />
+                      )}
+                    </div>
                   ))}
                 </div>
 

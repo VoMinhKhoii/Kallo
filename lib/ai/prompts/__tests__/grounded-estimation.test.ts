@@ -3,11 +3,16 @@ import type {
   DecomposedDishV2,
   DecomposedIngredientV2,
 } from '../../pipeline/schemas-v2';
+import { PORTION_PRIORS } from '../../portion/priors';
 import {
   buildGroundedEstimationPrompt,
   type MatchCandidate,
   type MealItemWithCandidates,
 } from '../grounded-estimation';
+import {
+  buildStaticPrefix,
+  renderPriorLines,
+} from '../grounded-estimation-rules';
 import type { PromptPersonalizationContext } from '../types';
 
 const baseUserContext: PromptPersonalizationContext = {
@@ -66,6 +71,10 @@ function mealItemWithIng(
 }
 
 describe('grounded-estimation prompt structure', () => {
+  it('keeps the vessel-less extracted prefix byte-stable', () => {
+    expect(buildStaticPrefix(false)).toMatchSnapshot();
+  });
+
   it('STATIC PREFIX comes before user_context which comes before ingredient_data', () => {
     const out = buildGroundedEstimationPrompt({
       originalPrompt: 'test prompt',
@@ -230,5 +239,64 @@ describe('grounded-estimation prompt structure', () => {
     expect(out).toMatch(/&quot;/);
     expect(out).toMatch(/&lt;/);
     expect(out).toMatch(/&gt;/);
+  });
+
+  it('renders vessel envelope attributes and the vessel rule', () => {
+    const mealItem = mealItemWithIng([candidate()]);
+    mealItem.mealItem.vesselSize = 'medium';
+    mealItem.vesselEnvelope = {
+      family: 'bowl',
+      tier: 2,
+      dishClass: 'soup',
+      token: 'tô',
+      vesselMl: 700,
+      guardG: { low: 470, high: 730 },
+      midG: 595,
+    };
+    const out = buildGroundedEstimationPrompt({
+      originalPrompt: 'một tô phở',
+      mealItems: [mealItem],
+      userContext: baseUserContext,
+    });
+    expect(out).toContain(
+      'vessel="tô" vessel_size="medium" vessel_ml="700" dish_class="soup" serve_total_guard_g="470-730"'
+    );
+    expect(out).toContain('<vessel_rule>');
+  });
+
+  it('omits the vessel rule when no envelope is present', () => {
+    const out = buildGroundedEstimationPrompt({
+      originalPrompt: 'ức gà',
+      mealItems: [mealItemWithIng([candidate()])],
+      userContext: baseUserContext,
+    });
+    expect(out).not.toContain('<vessel_rule>');
+  });
+});
+
+describe('renderPriorLines', () => {
+  it('contains one rendered line for every portion prior', () => {
+    const lines = renderPriorLines().split('\n');
+    expect(lines).toHaveLength(PORTION_PRIORS.length);
+    for (const prior of PORTION_PRIORS) {
+      expect(
+        lines.some((line) =>
+          line.includes(
+            `≈ ${prior.perUnit.mid}g (${prior.perUnit.low}–${prior.perUnit.high}g)`
+          )
+        )
+      ).toBe(true);
+    }
+  });
+
+  it('renders a unique label for every portion prior', () => {
+    const labels = renderPriorLines()
+      .split('\n')
+      .map((line) => line.match(/- 1 (.+) ≈/)?.[1]);
+
+    expect(labels).not.toContain(undefined);
+    expect(new Set(labels).size).toBe(labels.length);
+    expect(labels).toContain('lát bánh mì');
+    expect(labels).toContain('ổ bánh mì');
   });
 });

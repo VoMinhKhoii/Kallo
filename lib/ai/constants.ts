@@ -1,4 +1,5 @@
 import type { Goal, ProteinPortion, RicePortion } from '@/lib/onboarding/types';
+import { PORTION_PRIORS } from './portion/priors';
 import type { GoalAdjustedNutrient, NutritionValues } from './types';
 
 /** All NutritionValues keys — useful for iteration */
@@ -122,10 +123,18 @@ export function convertCookedToRaw(
 }
 
 /** User-facing portion descriptions used in LLM prompts */
+const riceBowlPrior = PORTION_PRIORS.find(
+  (prior) =>
+    prior.conceptId === 'cooked-rice' &&
+    prior.unitType === 'container' &&
+    prior.form === 'cooked'
+);
+const riceBowlMidG = riceBowlPrior?.perUnit.mid ?? 200;
+
 export const RICE_PORTION_DESCRIPTION: Record<RicePortion, string> = {
-  small: '~1 small bowl (~100g cooked rice)',
-  medium: '~1–1.5 bowls (~150g cooked rice)',
-  large: '~2+ bowls (~250g cooked rice)',
+  small: `~1 small bowl (~${riceBowlMidG * 0.7}–${riceBowlMidG * 0.8}g cooked rice)`,
+  medium: `~1 bowl (~${riceBowlMidG}g cooked rice)`,
+  large: `~1.5–2 bowls (~${riceBowlMidG * 1.5}–${riceBowlMidG * 2}g cooked rice)`,
 };
 
 export const PROTEIN_PORTION_DESCRIPTION: Record<ProteinPortion, string> = {
