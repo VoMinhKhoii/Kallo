@@ -61,6 +61,7 @@ export async function POST() {
       userId: profile.userId,
       purchasesEnabled,
       tier: state.tier,
+      reconciliationRequired: state.reconciliationRequired,
       isLifetime: state.isLifetime,
       expiresAt: state.expiresAt?.toISOString() ?? null,
       willRenew: state.willRenew,

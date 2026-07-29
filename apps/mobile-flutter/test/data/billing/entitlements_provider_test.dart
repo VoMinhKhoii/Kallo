@@ -72,6 +72,23 @@ class _BuildRaceApi extends ApiClient {
   }
 }
 
+class _HungThenSuccessfulPostApi extends ApiClient {
+  final hungPost = Completer<Map<String, dynamic>>();
+  var postCalls = 0;
+
+  @override
+  Future<T> get<T>(String path) async => _freeEntitlement() as T;
+
+  @override
+  Future<T> post<T>(String path, [Object? body]) {
+    postCalls += 1;
+    if (postCalls == 1) {
+      return hungPost.future.then((value) => value as T);
+    }
+    return Future<T>.value(_premiumEntitlement() as T);
+  }
+}
+
 Map<String, dynamic> _freeEntitlement() => {
   'tier': 'free',
   'purchasesEnabled': true,
@@ -234,5 +251,40 @@ void main() {
       container.read(entitlementsProvider(_userId)).valueOrNull?.isPremium,
       isTrue,
     );
+  });
+
+  test('timed-out reconciliation releases the controller for retry', () async {
+    final api = _HungThenSuccessfulPostApi();
+    final container = ProviderContainer(
+      overrides: [
+        apiClientProvider.overrideWithValue(api),
+        entitlementsUserIdProvider.overrideWithValue(_userId),
+        entitlementRequestTimeoutProvider.overrideWithValue(
+          const Duration(milliseconds: 5),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final subscription = container.listen(
+      entitlementsProvider(_userId),
+      (_, _) {},
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+    await container.read(entitlementsProvider(_userId).future);
+
+    final first =
+        await container
+            .read(entitlementsProvider(_userId).notifier)
+            .reconcile();
+    expect(first, isNull);
+
+    final retried =
+        await container
+            .read(entitlementsProvider(_userId).notifier)
+            .reconcile();
+    expect(retried?.isPremium, isTrue);
+    expect(api.postCalls, 2);
   });
 }

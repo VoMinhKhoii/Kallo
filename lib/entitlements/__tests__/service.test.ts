@@ -26,7 +26,7 @@ function makeGrant(overrides: Partial<GrantRow>): GrantRow {
     status: 'active',
     willRenew: true,
     externalRef: 'ext_ref',
-    providerSyncedAt: null,
+    providerSyncedAt: fixedNow,
     managementUrl: null,
     createdAt: new Date('2026-08-01T00:00:00.000Z'),
     updatedAt: new Date('2026-08-01T00:00:00.000Z'),
@@ -201,6 +201,7 @@ describe('getEntitlementState — grants', () => {
     expect(state.isLifetime).toBe(false);
     expect(state.expiresAt?.toISOString()).toBe('2026-09-01T00:00:00.000Z');
     expect(state.willRenew).toBe(true);
+    expect(state.reconciliationRequired).toBe(false);
     expect(state.source).toBe('revenuecat');
     // The winning grant's store passes through for the settings deep link.
     expect(state.store).toBe('app_store');
@@ -208,6 +209,31 @@ describe('getEntitlementState — grants', () => {
       allowed: true,
       reason: 'entitled',
     });
+  });
+
+  it('stale active RevenueCat grant requests a provider refresh', async () => {
+    const grant = makeGrant({
+      providerSyncedAt: new Date('2026-08-09T11:59:59.999Z'),
+    });
+    const state = await getEntitlementState(
+      { userId, profileCreatedAt: oldSignup },
+      { db: makeDb([grant]), now }
+    );
+
+    expect(state.tier).toBe('premium');
+    expect(state.reconciliationRequired).toBe(true);
+  });
+
+  it('fresh active RevenueCat grant does not request a provider refresh', async () => {
+    const grant = makeGrant({
+      providerSyncedAt: new Date('2026-08-09T12:00:00.001Z'),
+    });
+    const state = await getEntitlementState(
+      { userId, profileCreatedAt: oldSignup },
+      { db: makeDb([grant]), now }
+    );
+
+    expect(state.reconciliationRequired).toBe(false);
   });
 
   it('expired-by-clock grant with stale active status → not entitled (trial_expired)', async () => {
@@ -224,11 +250,67 @@ describe('getEntitlementState — grants', () => {
 
     // trial (start 08-01) ended 08-08, now 08-10 → expired.
     expect(state.tier).toBe('free');
+    expect(state.reconciliationRequired).toBe(true);
     expect(state.expiresAt).toBeNull();
     expect(state.features.ai_analysis).toEqual({
       allowed: false,
       reason: 'trial_expired',
     });
+  });
+
+  it.each([
+    {
+      name: 'canceled subscription',
+      overrides: {
+        status: 'active',
+        willRenew: false,
+        expiresAt: new Date('2026-08-05T00:00:00.000Z'),
+      },
+    },
+    {
+      name: 'provider-confirmed expiration',
+      overrides: {
+        status: 'expired',
+        willRenew: true,
+        expiresAt: new Date('2026-08-05T00:00:00.000Z'),
+      },
+    },
+    {
+      name: 'non-RevenueCat grant',
+      overrides: {
+        source: 'promo',
+        status: 'active',
+        willRenew: true,
+        expiresAt: new Date('2026-08-05T00:00:00.000Z'),
+      },
+    },
+  ])('does not request reconciliation for $name', async ({ overrides }) => {
+    const state = await getEntitlementState(
+      { userId, profileCreatedAt: oldSignup },
+      { db: makeDb([makeGrant(overrides)]), now }
+    );
+
+    expect(state.reconciliationRequired).toBe(false);
+  });
+
+  it('reconciles an expired RevenueCat grant alongside an active promo', async () => {
+    const promo = makeGrant({
+      source: 'promo',
+      externalRef: 'promo-ref',
+    });
+    const expiredRevenueCat = makeGrant({
+      expiresAt: new Date('2026-08-05T00:00:00.000Z'),
+      externalRef: 'revenuecat-ref',
+    });
+
+    const state = await getEntitlementState(
+      { userId, profileCreatedAt: oldSignup },
+      { db: makeDb([promo, expiredRevenueCat]), now }
+    );
+
+    expect(state.tier).toBe('premium');
+    expect(state.source).toBe('promo');
+    expect(state.reconciliationRequired).toBe(true);
   });
 
   it.each([

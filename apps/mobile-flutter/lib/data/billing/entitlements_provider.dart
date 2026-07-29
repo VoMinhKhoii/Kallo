@@ -16,6 +16,10 @@ import '../api_client.dart';
 import '../session_provider.dart';
 import 'entitlement_state.dart';
 
+final entitlementRequestTimeoutProvider = Provider<Duration>(
+  (_) => const Duration(seconds: 20),
+);
+
 /// Fetches + caches the server entitlement snapshot. `refresh()` re-fetches;
 /// `pollUntilPremium()` runs the post-purchase backoff poll.
 class EntitlementsController
@@ -59,17 +63,17 @@ class EntitlementsController
 
   Future<EntitlementState> _fetch() async {
     final api = ref.read(apiClientProvider);
-    final json = await api.get<Map<String, dynamic>>(
-      '/api/v1/account/entitlements',
-    );
+    final json = await api
+        .get<Map<String, dynamic>>('/api/v1/account/entitlements')
+        .timeout(ref.read(entitlementRequestTimeoutProvider));
     return EntitlementState.fromJson(json);
   }
 
   Future<EntitlementState> _reconcile() async {
     final api = ref.read(apiClientProvider);
-    final json = await api.post<Map<String, dynamic>>(
-      '/api/v1/account/entitlements/reconcile',
-    );
+    final json = await api
+        .post<Map<String, dynamic>>('/api/v1/account/entitlements/reconcile')
+        .timeout(ref.read(entitlementRequestTimeoutProvider));
     return EntitlementState.fromJson(json);
   }
 

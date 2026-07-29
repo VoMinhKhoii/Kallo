@@ -19,6 +19,16 @@ reconciliation endpoint is the recovery path after a purchase, restore, or
 missed webhook. Both fetch canonical CustomerInfo from RC and project it into
 the same server-owned grant tables.
 
+Flutter refreshes the server snapshot once on authenticated launch/account
+switch and at most once every fifteen minutes on app resume. The server marks a
+snapshot for reconciliation when an expired RevenueCat grant still says it will
+renew or when an active RevenueCat projection has not been provider-confirmed
+for 24 hours. Only then does Flutter invoke the provider recovery path. This
+heals delayed webhooks, missed refunds/revocations, and TestFlight sandbox
+renewals without spending RevenueCat/rate-limit budget on healthy launches.
+Failed lifecycle checks preserve the last server snapshot and observe the same
+bounded retry cadence.
+
 ```
 Apple / Google / RevenueCat Billing
         │  purchase, renewal, cancel, refund, expiration
@@ -264,7 +274,9 @@ in **production** they do NOT mutate grants (recorded as
 binary uses Apple's sandbox during TestFlight/App Review; add only the dedicated
 review account UUID to `BILLING_SANDBOX_USER_IDS`. That account reconciles its
 sandbox CustomerInfo on production without making sandbox grants valid for any
-normal production account.
+normal production account. Because the production webhook intentionally ignores
+sandbox lifecycle events, the Flutter launch/resume recovery check is what keeps
+that allowlisted account aligned across accelerated sandbox renewals.
 
 ## Rollout runbook
 
