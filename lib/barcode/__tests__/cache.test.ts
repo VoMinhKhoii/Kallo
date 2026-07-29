@@ -229,7 +229,9 @@ describe('cacheBarcodeProduct', () => {
     expect(captured[0]).toMatchObject({
       id: 'off_8934563138162',
       namePrimary: 'Hảo Hảo',
-      searchText: 'hảo hảo',
     });
+    // The search columns are trigger-owned; the insert must not supply them.
+    expect(captured[0]).not.toHaveProperty('searchText');
+    expect(captured[0]).not.toHaveProperty('searchTextAscii');
   });
 });

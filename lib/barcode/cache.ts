@@ -160,8 +160,11 @@ export async function cacheBarcodeProduct(params: {
       fatG: product.fatG !== null ? String(product.fatG) : null,
       fiberG: product.fiberG !== null ? String(product.fiberG) : null,
       sodiumMg: product.sodiumMg !== null ? String(product.sodiumMg) : null,
-      searchText: namePrimary.toLowerCase(),
-      searchTextAscii: namePrimary.toLowerCase(),
+      // search_text / search_text_ascii are owned by the
+      // `on_food_composition_search_text` trigger (migration 20260301022622):
+      // it derives search_text from the name columns and unaccents
+      // search_text_ascii in Postgres. Supplying them here would be dead
+      // writes that mask where the real fold happens.
     })
     .onConflictDoNothing({ target: vietnameseFoodComposition.id });
 }

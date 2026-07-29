@@ -104,6 +104,7 @@ jobs:
           gcloud secrets describe kallo-prod-revenuecat-customer-delete-api-key
           gcloud secrets describe kallo-prod-revenuecat-rest-api-key
           gcloud secrets describe kallo-prod-revenuecat-webhook-secret
+          gcloud secrets describe kallo-prod-usda-api-key
           [ -n "${{ vars.REVENUECAT_ALLOWED_APP_IDS }}" ]
           [ -n "${{ vars.REVENUECAT_PROJECT_ID }}" ]
           case "$BILLING_ENFORCEMENT_ENABLED" in
