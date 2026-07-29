@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import '../../data/billing/entitlement_state.dart';
 import '../../data/billing/entitlements_provider.dart';
 import '../../data/billing/purchases_service.dart';
 import '../../data/session_provider.dart';
@@ -103,18 +104,22 @@ PaywallActionResult resultAfterEntitlementPoll(bool premium) {
 }
 
 class PaywallController extends AutoDisposeNotifier<PaywallState> {
+  static const _preStoreReconcileReuseWindow = Duration(minutes: 1);
+
   // AutoDispose: the paywall can be popped mid-await (offerings fetch, purchase,
   // poll). Writing `state` after disposal throws, so gate every post-await write
   // on this flag.
   bool _disposed = false;
   int _operationGeneration = 0;
   int? _activeOperation;
+  DateTime? _lastPreStoreReconciledAt;
 
   @override
   PaywallState build() {
     _disposed = false;
     _operationGeneration += 1;
     _activeOperation = null;
+    _lastPreStoreReconciledAt = null;
     // A Supabase token refresh replaces the Session object even though the
     // authenticated user is unchanged. Watch only the selected user id so a
     // refresh cannot reset a ready paywall in the middle of a purchase.
@@ -181,21 +186,27 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
     final operation = _beginOperation();
     if (operation == null) return PaywallActionResult.error;
     try {
-      // Recheck the server switch at tap time without running a provider
-      // reconciliation. Reconciliation is rate-limited and belongs after a
-      // store action; the server-owned snapshot is enough to enforce the
-      // emergency commerce switch here.
-      final entitlement =
-          await ref
-              .read(entitlementsProvider(userId).notifier)
-              .refreshSnapshot();
+      // Reconcile at the final pre-store boundary to recover a missed webhook.
+      // A recent successful reconcile can be reused for one server rate-limit
+      // window; the lightweight snapshot fetch still rechecks the emergency
+      // commerce switch before every StoreKit call.
+      final entitlement = await _preStoreEntitlement(userId);
       if (!_isCurrentUser(userId)) return PaywallActionResult.error;
       if (entitlement == null) {
-        // A transient verification failure is not evidence that commerce was
-        // disabled. Keep the loaded packages retryable instead of replacing
-        // the paywall with the permanent unavailable state.
+        // A transient reconciliation failure is not evidence that commerce
+        // was disabled. Block this attempt but keep packages retryable.
         _set(state.copyWith(phase: PaywallPhase.ready, clearBusy: true));
         return PaywallActionResult.error;
+      }
+      if (entitlement.isPremium) {
+        _set(
+          state.copyWith(
+            phase: PaywallPhase.ready,
+            packages: const [],
+            clearBusy: true,
+          ),
+        );
+        return PaywallActionResult.unlocked;
       }
       if (!entitlement.purchasesEnabled) {
         _set(state.copyWith(phase: PaywallPhase.unavailable));
@@ -270,6 +281,22 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
     } finally {
       _endOperation(operation);
     }
+  }
+
+  Future<EntitlementState?> _preStoreEntitlement(String userId) async {
+    final entitlements = ref.read(entitlementsProvider(userId).notifier);
+    final lastReconcile = _lastPreStoreReconciledAt;
+    if (lastReconcile != null &&
+        DateTime.now().difference(lastReconcile) <
+            _preStoreReconcileReuseWindow) {
+      return entitlements.refreshSnapshot();
+    }
+
+    final entitlement = await entitlements.reconcile();
+    if (entitlement?.purchasesEnabled == true && _isCurrentUser(userId)) {
+      _lastPreStoreReconciledAt = DateTime.now();
+    }
+    return entitlement;
   }
 
   int? _beginOperation() {

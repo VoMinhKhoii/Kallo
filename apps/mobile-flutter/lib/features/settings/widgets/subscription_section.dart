@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../data/billing/entitlement_state.dart';
 import '../../../data/billing/entitlements_provider.dart';
 import '../../../data/billing/purchases_service.dart';
 import '../../../data/session_provider.dart';

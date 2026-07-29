@@ -3,9 +3,13 @@ import 'package:nham_mobile/data/billing/purchases_service.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 class PaywallEntitlementsApi extends ApiClient {
-  PaywallEntitlementsApi({this.failPrePurchaseCheck = false});
+  PaywallEntitlementsApi({
+    this.failPrePurchaseCheck = false,
+    this.premiumBeforePurchase = false,
+  });
 
   final bool failPrePurchaseCheck;
+  final bool premiumBeforePurchase;
   bool purchasesEnabled = true;
   int getCalls = 0;
   int postCalls = 0;
@@ -13,7 +17,13 @@ class PaywallEntitlementsApi extends ApiClient {
   @override
   Future<T> get<T>(String path) async {
     getCalls += 1;
-    if (failPrePurchaseCheck && getCalls == 2) {
+    return freeEntitlement(purchasesEnabled: purchasesEnabled) as T;
+  }
+
+  @override
+  Future<T> post<T>(String path, [Object? body]) async {
+    postCalls += 1;
+    if (failPrePurchaseCheck && postCalls == 1) {
       throw ApiError(
         'UPSTREAM_UNAVAILABLE',
         503,
@@ -21,19 +31,20 @@ class PaywallEntitlementsApi extends ApiClient {
         'Could not verify purchases.',
       );
     }
+    if (premiumBeforePurchase || postCalls > 1) {
+      return premiumEntitlement() as T;
+    }
     return freeEntitlement(purchasesEnabled: purchasesEnabled) as T;
-  }
-
-  @override
-  Future<T> post<T>(String path, [Object? body]) async {
-    postCalls += 1;
-    return premiumEntitlement() as T;
   }
 }
 
 class PaywallPurchasesService extends PurchasesService {
-  PaywallPurchasesService() : super(apiKey: '');
+  PaywallPurchasesService({
+    List<PurchaseOutcome> outcomes = const [PurchaseOutcome.success],
+  }) : outcomes = [...outcomes],
+       super(apiKey: '');
 
+  final List<PurchaseOutcome> outcomes;
   int purchaseCalls = 0;
 
   @override
@@ -48,7 +59,9 @@ class PaywallPurchasesService extends PurchasesService {
     Package package,
   ) async {
     purchaseCalls += 1;
-    return const PurchaseAttempt(PurchaseOutcome.success);
+    final outcome =
+        outcomes.isEmpty ? PurchaseOutcome.success : outcomes.removeAt(0);
+    return PurchaseAttempt(outcome);
   }
 }
 

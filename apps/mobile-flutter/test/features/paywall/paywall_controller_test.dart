@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/data/api_client.dart';
+import 'package:nham_mobile/data/billing/entitlement_state.dart';
 import 'package:nham_mobile/data/billing/entitlements_provider.dart';
 import 'package:nham_mobile/data/billing/purchases_service.dart';
 import 'package:nham_mobile/data/session_provider.dart';
@@ -176,13 +177,49 @@ void main() {
       );
       expect(container.read(paywallControllerProvider).packages, hasLength(1));
       expect(purchases.purchaseCalls, 0);
-      expect(api.postCalls, 0);
+      expect(api.postCalls, 1);
       expect(
         container.read(entitlementsProvider(_userId)),
         isA<AsyncData<EntitlementState>>(),
       );
     },
   );
+
+  test('provider-premium reconciliation prevents another store call', () async {
+    final api = PaywallEntitlementsApi(premiumBeforePurchase: true);
+    final purchases = PaywallPurchasesService();
+    final container = ProviderContainer(
+      overrides: [
+        currentSessionProvider.overrideWith(
+          (ref) => ref.watch(_testSessionProvider),
+        ),
+        apiClientProvider.overrideWithValue(api),
+        purchasesServiceProvider.overrideWithValue(purchases),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final subscription = container.listen(
+      paywallControllerProvider,
+      (_, _) {},
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+    await container.pump();
+    await container.pump();
+    await container.pump();
+
+    expect(container.read(paywallControllerProvider).packages, hasLength(1));
+
+    final result = await container
+        .read(paywallControllerProvider.notifier)
+        .purchase(monthlyPackage);
+
+    expect(result, PaywallActionResult.unlocked);
+    expect(purchases.purchaseCalls, 0);
+    expect(api.postCalls, 1);
+    expect(container.read(paywallControllerProvider).packages, isEmpty);
+  });
 
   test('commerce disable blocks store; reconcile follows success', () async {
     final api = PaywallEntitlementsApi();
@@ -221,9 +258,10 @@ void main() {
       PaywallPhase.unavailable,
     );
     expect(purchases.purchaseCalls, 0);
-    expect(api.postCalls, 0);
+    expect(api.postCalls, 1);
 
     api.purchasesEnabled = true;
+    api.postCalls = 0;
     await container
         .read(entitlementsProvider(_userId).notifier)
         .refreshSnapshot();
@@ -236,8 +274,8 @@ void main() {
 
     expect(result, PaywallActionResult.unlocked);
     expect(purchases.purchaseCalls, 1);
-    expect(api.getCalls, 4);
-    expect(api.postCalls, 1);
+    expect(api.getCalls, 2);
+    expect(api.postCalls, 2);
   });
 
   test(
