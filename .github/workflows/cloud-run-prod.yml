@@ -128,16 +128,13 @@ jobs:
       # only `WHERE embedding IS NULL`, making it idempotent and resumable: a run
       # that fails or times out is simply retried by the next deploy.
       #
-      # Both steps are continue-on-error by design. Embeddings are additive and
-      # the app is fully functional without them, so neither a Gemini outage, a
-      # quota ceiling, nor a missing IAM grant may ever block a prod ship. The
-      # timeout bounds the 35s-per-batch rate-limit sleep so a large backlog
-      # cannot hold the prod lease open; the remainder lands on the next deploy.
+      # A failure here deliberately fails the deploy: a curated row that never
+      # gets embedded is dead weight, and a silently skipped backfill is worse
+      # than a red build. The timeout bounds the 35s-per-batch rate-limit sleep
+      # so a stuck run releases the prod lease promptly rather than holding it
+      # for the job's full 110 minutes.
       - uses: ./.github/actions/setup-bun
-        continue-on-error: true
       - name: Backfill food embeddings
-        id: backfill
-        continue-on-error: true
         timeout-minutes: 15
         env:
           DATABASE_URL: ${{ env.PROD_DATABASE_URL }}
@@ -149,14 +146,6 @@ jobs:
           echo "::add-mask::$gemini_key"
           export GEMINI_API_KEY="$gemini_key"
           bun scripts/backfill_embeddings.ts
-      # continue-on-error keeps the job green, which would otherwise bury a failed
-      # backfill in a passing run. Surface it as a run-summary annotation instead:
-      # visible at a glance, still not deploy-blocking. Progress is per-batch, so
-      # whatever succeeded is durable and the next deploy retries only the rest.
-      - name: Flag incomplete embedding backfill
-        if: steps.backfill.outcome != 'success'
-        run: |
-          echo "::warning title=Embedding backfill incomplete::Newly curated food rows have no embedding and are invisible to the matcher (match functions filter WHERE embedding IS NOT NULL). The deploy shipped normally. The next prod deploy retries automatically, or run scripts/backfill_embeddings.ts manually against prod."
       - name: Resolve image digest
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
