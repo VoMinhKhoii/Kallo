@@ -136,6 +136,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         continue-on-error: true
       - name: Backfill food embeddings
+        id: backfill
         continue-on-error: true
         timeout-minutes: 15
         env:
@@ -148,6 +149,14 @@ jobs:
           echo "::add-mask::$gemini_key"
           export GEMINI_API_KEY="$gemini_key"
           bun scripts/backfill_embeddings.ts
+      # continue-on-error keeps the job green, which would otherwise bury a failed
+      # backfill in a passing run. Surface it as a run-summary annotation instead:
+      # visible at a glance, still not deploy-blocking. Progress is per-batch, so
+      # whatever succeeded is durable and the next deploy retries only the rest.
+      - name: Flag incomplete embedding backfill
+        if: steps.backfill.outcome != 'success'
+        run: |
+          echo "::warning title=Embedding backfill incomplete::Newly curated food rows have no embedding and are invisible to the matcher (match functions filter WHERE embedding IS NOT NULL). The deploy shipped normally. The next prod deploy retries automatically, or run scripts/backfill_embeddings.ts manually against prod."
       - name: Resolve image digest
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
