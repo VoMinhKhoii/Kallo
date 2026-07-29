@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show Session;
 
 import 'data/analytics.dart';
-import 'data/billing/entitlements_provider.dart';
+import 'data/billing/entitlement_lifecycle_sync.dart';
 import 'data/billing/purchases_service.dart';
 import 'data/session_provider.dart';
 import 'features/circle/circle_deep_links.dart';
@@ -47,9 +47,9 @@ class _NhamAppState extends ConsumerState<NhamApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       // Store changes can happen outside the app (renewal, cancellation,
-      // billing recovery). Invalidate the server snapshot on every resume so
-      // active consumers refresh before making another gating decision.
-      ref.invalidate(entitlementsProvider);
+      // billing recovery). Refresh at a bounded cadence and let the server
+      // request RevenueCat recovery only when its projection is stale.
+      _synchronizeEntitlements(ref.read(currentSessionProvider)?.user.id);
     }
   }
 
@@ -63,12 +63,17 @@ class _NhamAppState extends ConsumerState<NhamApp> with WidgetsBindingObserver {
     // creating an anonymous RevenueCat alias; the next authenticated UUID is
     // switched in through the serialized purchase service.
     ref.listen(sessionProvider, (prev, next) {
+      final previousUserId = prev?.valueOrNull?.user.id;
+      final nextUserId = next.valueOrNull?.user.id;
       _syncSession(
         ref,
         next.valueOrNull,
-        previousUserId: prev?.valueOrNull?.user.id,
+        previousUserId: previousUserId,
         hadPriorSession: prev?.valueOrNull != null,
       );
+      if (previousUserId != nextUserId) {
+        _synchronizeEntitlements(nextUserId);
+      }
     });
 
     // Run once with the already-restored session so a launch with an existing
@@ -84,6 +89,7 @@ class _NhamAppState extends ConsumerState<NhamApp> with WidgetsBindingObserver {
         previousUserId: null,
         hadPriorSession: false,
       );
+      _synchronizeEntitlements(ref.read(currentSessionProvider)?.user.id);
     }
 
     // Wraps the app so a single invite-deep-link listener lives for the whole
@@ -109,6 +115,10 @@ class _NhamAppState extends ConsumerState<NhamApp> with WidgetsBindingObserver {
         locale: context.locale,
       ),
     );
+  }
+
+  void _synchronizeEntitlements(String? userId) {
+    unawaited(ref.read(entitlementLifecycleSyncProvider).synchronize(userId));
   }
 }
 

@@ -61,6 +61,7 @@ class EntitlementState {
   const EntitlementState({
     required this.tier,
     required this.purchasesEnabled,
+    required this.reconciliationRequired,
     required this.isLifetime,
     required this.expiresAt,
     required this.willRenew,
@@ -75,6 +76,7 @@ class EntitlementState {
 
   final EntitlementTier tier;
   final bool purchasesEnabled;
+  final bool reconciliationRequired;
   final bool isLifetime;
   final DateTime? expiresAt;
   final bool willRenew;
@@ -104,6 +106,7 @@ class EntitlementState {
               ? EntitlementTier.premium
               : EntitlementTier.free,
       purchasesEnabled: json['purchasesEnabled'] == true,
+      reconciliationRequired: json['reconciliationRequired'] == true,
       isLifetime: json['isLifetime'] == true,
       expiresAt: _parseDate(json['expiresAt']),
       willRenew: json['willRenew'] == true,
@@ -124,6 +127,7 @@ class EntitlementState {
   static const free = EntitlementState(
     tier: EntitlementTier.free,
     purchasesEnabled: false,
+    reconciliationRequired: false,
     isLifetime: false,
     expiresAt: null,
     willRenew: false,

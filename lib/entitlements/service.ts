@@ -34,6 +34,7 @@ export interface FeatureAccess {
 
 export interface EntitlementState {
   tier: Tier;
+  reconciliationRequired: boolean;
   isLifetime: boolean;
   expiresAt: Date | null;
   willRenew: boolean;
@@ -73,6 +74,36 @@ function grantIsActive(
 }
 
 type GrantRow = typeof entitlementGrants.$inferSelect;
+const revenueCatFreshnessWindowMs = 24 * 60 * 60 * 1000;
+
+// A provider refresh is useful only when our last authoritative RevenueCat
+// projection has expired locally but still says the subscription will renew.
+// This is the signature of a delayed/missed renewal webhook (including
+// accelerated TestFlight sandbox renewals). Canceled subscriptions have
+// willRenew=false and must simply expire without contacting the provider.
+function grantNeedsReconciliation(grant: GrantRow, now: Date): boolean {
+  return (
+    grant.source === 'revenuecat' &&
+    grant.status === 'active' &&
+    grant.willRenew &&
+    grant.expiresAt !== null &&
+    grant.expiresAt.getTime() <= now.getTime() &&
+    (grant.entitlementKey === 'premium' ||
+      grant.entitlementKey === 'billing_subscription')
+  );
+}
+
+function revenueCatProjectionIsStale(
+  grant: GrantRow | null,
+  now: Date
+): boolean {
+  if (grant?.source !== 'revenuecat') return false;
+  if (grant.providerSyncedAt === null) return true;
+  return (
+    now.getTime() - grant.providerSyncedAt.getTime() >=
+    revenueCatFreshnessWindowMs
+  );
+}
 
 // Winning grant: a lifetime grant (expiresAt null) beats all; otherwise the
 // grant with the furthest-out expiresAt wins.
@@ -180,6 +211,10 @@ export async function getEntitlementState(
 
   return {
     tier,
+    reconciliationRequired:
+      revenueCatProjectionIsStale(winner, now) ||
+      (winner === null &&
+        rows.some((grant) => grantNeedsReconciliation(grant, now))),
     isLifetime: winner?.expiresAt === null && winner !== null,
     expiresAt: winner?.expiresAt ?? null,
     willRenew: winner?.willRenew ?? false,

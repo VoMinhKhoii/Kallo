@@ -91,6 +91,16 @@ void main() {
       expect(e.expiresAt, DateTime.utc(2026, 8, 1));
       expect(e.aiAnalysis.allowed, isTrue);
       expect(e.aiAnalysis.reason, FeatureReason.entitled);
+      expect(e.reconciliationRequired, isFalse);
+    });
+
+    test('parses the server reconciliation recovery hint', () {
+      final e = EntitlementState.fromJson({
+        ...freeJson(),
+        'reconciliationRequired': true,
+      });
+
+      expect(e.reconciliationRequired, isTrue);
     });
 
     test('parses lifetime (no expiry)', () {
@@ -168,6 +178,7 @@ void main() {
       expect(e.isPremium, isFalse);
       expect(e.isLifetime, isFalse);
       expect(e.willRenew, isFalse);
+      expect(e.reconciliationRequired, isFalse);
       expect(e.trial.active, isFalse);
       expect(e.trial.daysRemaining, 0);
       expect(e.aiAnalysis.allowed, isFalse);
