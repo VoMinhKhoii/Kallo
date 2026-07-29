@@ -43,7 +43,10 @@ export async function claimRevenueCatOwnershipEvent(
         billingProviderSyncs.environment,
       ],
       set: {
-        providerSyncedAt: sql`GREATEST(${billingProviderSyncs.providerSyncedAt}, ${input.providerSyncedAt})`,
+        // Interpolated Dates are serialized to ISO + cast to timestamptz:
+        // a raw Date in a sql`` fragment bypasses drizzle's column codec and
+        // the postgres driver cannot bind it (throws ERR_INVALID_ARG_TYPE).
+        providerSyncedAt: sql`GREATEST(${billingProviderSyncs.providerSyncedAt}, ${input.providerSyncedAt.toISOString()}::timestamptz)`,
         ownershipEventAt: input.eventAt,
         ownershipEventId: input.eventId,
         ownershipEventPriority: input.eventPriority,
@@ -53,13 +56,13 @@ export async function claimRevenueCatOwnershipEvent(
       },
       setWhere: sql`
         ${billingProviderSyncs.ownershipEventAt} IS NULL
-        OR ${billingProviderSyncs.ownershipEventAt} < ${input.eventAt}
+        OR ${billingProviderSyncs.ownershipEventAt} < ${input.eventAt.toISOString()}::timestamptz
         OR (
-          ${billingProviderSyncs.ownershipEventAt} = ${input.eventAt}
+          ${billingProviderSyncs.ownershipEventAt} = ${input.eventAt.toISOString()}::timestamptz
           AND ${billingProviderSyncs.ownershipEventPriority} < ${input.eventPriority}
         )
         OR (
-          ${billingProviderSyncs.ownershipEventAt} = ${input.eventAt}
+          ${billingProviderSyncs.ownershipEventAt} = ${input.eventAt.toISOString()}::timestamptz
           AND ${billingProviderSyncs.ownershipEventPriority} = ${input.eventPriority}
           AND COALESCE(${billingProviderSyncs.ownershipEventId}, '') < ${input.eventId}
         )
