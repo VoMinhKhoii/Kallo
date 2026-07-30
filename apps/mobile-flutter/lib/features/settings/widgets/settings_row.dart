@@ -185,7 +185,7 @@ class _SettingsRowState extends State<SettingsRow> {
       return Text(widget.value!, style: dashMeta(tabular: true));
     }
     if (widget.showChevron) {
-      return const Icon(LucideIcons.chevronRight, size: 16, color: kInkMuted);
+      return const Icon(LucideIcons.chevronRight300, size: 16, color: kInkMuted);
     }
     return const SizedBox.shrink();
   }

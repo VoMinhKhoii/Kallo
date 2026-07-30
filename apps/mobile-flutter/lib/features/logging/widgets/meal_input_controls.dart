@@ -108,7 +108,7 @@ class _ComposerBarcodeButtonState extends State<ComposerBarcodeButton> {
               scale: _pressed ? 0.96 : 1,
               duration: const Duration(milliseconds: 200),
               child: const Icon(
-                LucideIcons.scanBarcode,
+                LucideIcons.scanBarcode300,
                 size: LoggingIcons.size,
                 color: NhamColors.btn,
               ),

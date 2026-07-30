@@ -145,10 +145,10 @@ void main() {
       const _FeedHost(),
       overrides: [apiClientProvider.overrideWithValue(api)],
     );
-    await tester.tap(find.byIcon(LucideIcons.heart));
+    await tester.tap(find.byIcon(LucideIcons.heart300));
     await tester.pump();
     expect(find.text('3'), findsOneWidget);
-    expect(tester.widget<Icon>(find.byIcon(LucideIcons.heart)).fill, 1);
+    expect(tester.widget<Icon>(find.byIcon(LucideIcons.heart300)).fill, 1);
     response.complete({'reacted': true, 'count': 4});
     await tester.pumpAndSettle();
     expect(find.text('4'), findsOneWidget);
@@ -165,13 +165,13 @@ void main() {
       const _FeedHost(),
       overrides: [apiClientProvider.overrideWithValue(api)],
     );
-    await tester.tap(find.byIcon(LucideIcons.heart));
+    await tester.tap(find.byIcon(LucideIcons.heart300));
     await tester.pump();
     expect(find.text('3'), findsOneWidget);
     response.completeError(ApiError('NOPE', 500, false, 'failed'));
     await tester.pumpAndSettle();
     expect(find.text('2'), findsOneWidget);
-    expect(tester.widget<Icon>(find.byIcon(LucideIcons.heart)).fill, 0);
+    expect(tester.widget<Icon>(find.byIcon(LucideIcons.heart300)).fill, 0);
   });
 
   testWidgets('earlier replies line obeys the hidden reply count', (

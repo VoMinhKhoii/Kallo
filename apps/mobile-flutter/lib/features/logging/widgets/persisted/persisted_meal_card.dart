@@ -95,7 +95,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              LucideIcons.trash2,
+              LucideIcons.trash2300,
               size: LoggingIcons.size,
               color: Colors.white,
             ),

@@ -113,7 +113,7 @@ class _AppMenuButtonState extends ConsumerState<AppMenuButton> {
                     borderRadius: BorderRadius.circular(NhamRadii.sm),
                   ),
                   child: const Icon(
-                    LucideIcons.menu,
+                    LucideIcons.menu300,
                     size: NhamIcons.size,
                     color: NhamColors.text,
                   ),

@@ -225,7 +225,7 @@ class _FoodChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (reserved) ...[
-              const Icon(LucideIcons.check, size: 13, color: NhamColors.text),
+              const Icon(LucideIcons.check300, size: 13, color: NhamColors.text),
               const SizedBox(width: 4),
             ],
             Flexible(
@@ -258,7 +258,7 @@ class _RefreshButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.refreshCw, size: 13, color: kInkMuted),
+            const Icon(LucideIcons.refreshCw300, size: 13, color: kInkMuted),
             const SizedBox(width: 5),
             Text(
               tr('nutrition.suggestedFoods.refresh'),

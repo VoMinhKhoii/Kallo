@@ -55,7 +55,7 @@ class SidebarFooter extends StatelessWidget {
             const SizedBox(height: 12),
           ],
           FooterRow(
-            icon: LucideIcons.settings,
+            icon: LucideIcons.settings300,
             label: tr('app.mainSidebar.settings'),
             active: isActiveRoute(location, '/settings'),
             onTap: () {

@@ -280,7 +280,7 @@ class _ItemRow extends StatelessWidget {
               children: [
                 if (editing) ...[
                   MealStepperButton(
-                    icon: LucideIcons.minus, // lucide Minus
+                    icon: LucideIcons.minus300, // lucide Minus
                     disabled: minusDisabled,
                     onTap:
                         minusDisabled ? null : () => onChange(item.id, -step),
@@ -296,7 +296,7 @@ class _ItemRow extends StatelessWidget {
                   ),
                   const SizedBox(width: 2),
                   MealStepperButton(
-                    icon: LucideIcons.plus, // lucide Plus
+                    icon: LucideIcons.plus300, // lucide Plus
                     onTap: () => onChange(item.id, step),
                   ),
                   const SizedBox(width: NhamSpacing.sp2), // gap-2
@@ -390,8 +390,8 @@ class _EditPill extends StatelessWidget {
             children: [
               Icon(
                 editing
-                    ? LucideIcons.check
-                    : LucideIcons.pencil, // Check / Pencil
+                    ? LucideIcons.check300
+                    : LucideIcons.pencil300, // Check / Pencil
                 size: 12,
                 color: editing ? NhamColors.text : NhamColors.textMuted,
               ),
@@ -485,7 +485,7 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(LucideIcons.check, size: 14, color: fg),
+                Icon(LucideIcons.check300, size: 14, color: fg),
                 const SizedBox(width: 6), // gap-1.5
                 Text(
                   'logging.confirm'.tr(),

@@ -53,7 +53,7 @@ class _PersistedMealChevronToggleState
             child: RotationTransition(
               turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
               child: const Icon(
-                LucideIcons.chevronDown, // lucide ChevronDown
+                LucideIcons.chevronDown300, // lucide ChevronDown
                 // Same glyph size and ink as the action icons beneath the card.
                 size: LoggingIcons.size,
                 color: NhamColors.text,

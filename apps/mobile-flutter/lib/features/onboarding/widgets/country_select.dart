@@ -92,7 +92,7 @@ class _CountrySelectState extends State<CountrySelect> {
             ),
             const SizedBox(width: NhamSpacing.sp2),
             const Icon(
-              LucideIcons.chevronDown,
+              LucideIcons.chevronDown300,
               size: 16,
               color: NhamColors.textHelp,
             ),
@@ -165,7 +165,7 @@ class _CountrySheetState extends State<_CountrySheet> {
                     filled: true,
                     fillColor: NhamColors.track,
                     prefixIcon: const Icon(
-                      LucideIcons.search,
+                      LucideIcons.search300,
                       size: 16,
                       color: NhamColors.textHelp,
                     ),
@@ -312,7 +312,7 @@ class _OptionRowState extends State<_OptionRow> {
             ),
             if (widget.selected) ...[
               const SizedBox(width: NhamSpacing.sp2),
-              const Icon(LucideIcons.check, size: 16, color: NhamColors.text),
+              const Icon(LucideIcons.check300, size: 16, color: NhamColors.text),
             ],
           ],
         ),

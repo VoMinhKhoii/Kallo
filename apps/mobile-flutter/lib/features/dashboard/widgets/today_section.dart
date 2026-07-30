@@ -88,7 +88,7 @@ class TodaySection extends ConsumerWidget {
         ],
       ),
       error: (_, __) => SectionState(
-        icon: LucideIcons.cloudOff,
+        icon: LucideIcons.cloudOff300,
         message: tr('dashboard.todayLoadError'),
         actionLabel: tr('dashboard.retry'),
         onAction: () => ref.invalidate(provider),
@@ -329,7 +329,7 @@ class _Dock extends StatelessWidget {
                       target: targets.calorieTarget,
                       size: 84, // an illustration, not an icon
                       strokeWidth: 6,
-                      center: const Icon(LucideIcons.flame,
+                      center: const Icon(LucideIcons.flame300,
                           size: NhamIcons.size, color: kInk),
                     ),
                   ],

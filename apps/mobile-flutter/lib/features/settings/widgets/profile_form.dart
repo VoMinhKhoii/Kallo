@@ -437,7 +437,7 @@ class _SavedConfirmation extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        const Icon(LucideIcons.check, size: 16, color: NhamColors.success),
+        const Icon(LucideIcons.check300, size: 16, color: NhamColors.success),
         const SizedBox(width: 8),
         Text(
           tr('settings.saved'),

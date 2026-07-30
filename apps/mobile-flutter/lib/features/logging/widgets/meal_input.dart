@@ -228,7 +228,7 @@ class _MealInputState extends State<MealInput>
                   children: [
                     if (widget.onModePressed != null && !widget.analyzing)
                       ComposerModeButton(
-                        icon: widget.modeIcon ?? LucideIcons.zap,
+                        icon: widget.modeIcon ?? LucideIcons.zap300,
                         label: widget.modeLabel ??
                             'logging.modeSelector.button'.tr(),
                         onTap: widget.onModePressed!,
@@ -240,14 +240,14 @@ class _MealInputState extends State<MealInput>
                         widget.analyzing &&
                         widget.onCancel != null)
                       ComposerActionButton(
-                        icon: LucideIcons.square, // lucide Square (filled)
+                        icon: LucideIcons.square300, // lucide Square (filled)
                         iconSize: LoggingIcons.size,
                         label: 'common.cancel'.tr(),
                         onTap: widget.onCancel,
                       )
                     else
                       ComposerActionButton(
-                        icon: LucideIcons.arrowUp, // lucide ArrowUp
+                        icon: LucideIcons.arrowUp300, // lucide ArrowUp
                         iconSize: LoggingIcons.size,
                         label: 'logging.submit'.tr(),
                         enabled: _canSubmit,

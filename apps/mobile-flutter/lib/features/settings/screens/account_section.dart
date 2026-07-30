@@ -245,7 +245,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     if (_identities == null && _loadFailed) {
       rows.add(
         SettingsRow(
-          icon: LucideIcons.refreshCw,
+          icon: LucideIcons.refreshCw300,
           label: tr('settings.account.loadError'),
           busy: _retrying,
           enabled: !_retrying,
@@ -276,7 +276,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
 
     rows.add(
       SettingsRow(
-        icon: LucideIcons.download,
+        icon: LucideIcons.download300,
         label: tr('settings.account.exportTitle'),
         busy: _exporting,
         enabled: !busy,
@@ -285,7 +285,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     );
     rows.add(
       SettingsRow(
-        icon: LucideIcons.trash2,
+        icon: LucideIcons.trash2300,
         label: tr('settings.account.delete'),
         danger: true,
         enabled: !busy,

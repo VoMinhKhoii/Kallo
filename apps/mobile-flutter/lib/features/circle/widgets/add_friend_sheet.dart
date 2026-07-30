@@ -171,7 +171,7 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _FieldLabel(
-              icon: LucideIcons.user, label: tr('groups.invite.appearTitle')),
+              icon: LucideIcons.user300, label: tr('groups.invite.appearTitle')),
           const SizedBox(height: NhamSpacing.sp1_5),
           Row(
             children: [
@@ -193,7 +193,7 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
               ),
               const SizedBox(width: NhamSpacing.sp2),
               _IconAction(
-                icon: LucideIcons.check,
+                icon: LucideIcons.check300,
                 semanticsLabel: tr('groups.invite.save'),
                 loading: _saving,
                 onTap: _save,
@@ -201,7 +201,7 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
               ),
               const SizedBox(width: NhamSpacing.sp2),
               _IconAction(
-                icon: LucideIcons.x,
+                icon: LucideIcons.x300,
                 semanticsLabel: tr('groups.invite.cancel'),
                 onTap: () => setState(() => _editing = false),
               ),
@@ -221,7 +221,7 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _FieldLabel(
-            icon: LucideIcons.user, label: tr('groups.invite.appearTitle')),
+            icon: LucideIcons.user300, label: tr('groups.invite.appearTitle')),
         const SizedBox(height: NhamSpacing.sp1_5),
         Row(
           children: [
@@ -254,7 +254,7 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
             ),
             const SizedBox(width: NhamSpacing.sp2),
             _IconAction(
-              icon: LucideIcons.pencil,
+              icon: LucideIcons.pencil300,
               semanticsLabel: tr('groups.invite.appearEdit'),
               onTap: () {
                 _controller.text = _current;
@@ -356,7 +356,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _FieldLabel(
-              icon: LucideIcons.pencil, label: tr('groups.invite.editTitle')),
+              icon: LucideIcons.pencil300, label: tr('groups.invite.editTitle')),
           const SizedBox(height: NhamSpacing.sp1_5),
           Row(
             children: [
@@ -381,7 +381,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
               ),
               const SizedBox(width: NhamSpacing.sp2),
               _IconAction(
-                icon: LucideIcons.check,
+                icon: LucideIcons.check300,
                 semanticsLabel: tr('groups.invite.save'),
                 loading: _saving,
                 disabled: !canSave,
@@ -390,7 +390,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
               ),
               const SizedBox(width: NhamSpacing.sp2),
               _IconAction(
-                icon: LucideIcons.x,
+                icon: LucideIcons.x300,
                 semanticsLabel: tr('groups.invite.cancel'),
                 onTap: () => setState(() => _editing = false),
               ),
@@ -414,7 +414,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _FieldLabel(
-            icon: LucideIcons.link2, label: tr('groups.invite.yourLink')),
+            icon: LucideIcons.link2300, label: tr('groups.invite.yourLink')),
         const SizedBox(height: NhamSpacing.sp1_5),
         Row(
           children: [
@@ -440,7 +440,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
             ),
             const SizedBox(width: NhamSpacing.sp2),
             _IconAction(
-              icon: LucideIcons.pencil,
+              icon: LucideIcons.pencil300,
               semanticsLabel: tr('groups.invite.editTitle'),
               onTap: () {
                 _controller.text = widget.profile.handle;
@@ -629,7 +629,7 @@ class _CopyButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.copy, size: 14, color: NhamColors.text),
+            const Icon(LucideIcons.copy300, size: 14, color: NhamColors.text),
             const SizedBox(width: NhamSpacing.sp1_5),
             Text(
               tr('groups.invite.copy'),

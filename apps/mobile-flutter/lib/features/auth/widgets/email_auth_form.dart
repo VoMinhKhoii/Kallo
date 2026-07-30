@@ -86,7 +86,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(
-                    LucideIcons.arrowLeft,
+                    LucideIcons.arrowLeft300,
                     size: 16,
                     color: NhamColors.textMuted,
                   ),

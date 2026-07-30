@@ -318,7 +318,7 @@ class _ScannerView extends StatelessWidget {
           ),
           const SizedBox(height: NhamSpacing.sp2),
           _QuietButton(
-            icon: LucideIcons.keyboard,
+            icon: LucideIcons.keyboard300,
             label: 'logging.barcode.manualEntry'.tr(),
             onTap: onEnterManually,
           ),
@@ -442,7 +442,7 @@ class _TorchButton extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                on ? LucideIcons.flashlight : LucideIcons.flashlightOff,
+                on ? LucideIcons.flashlight300 : LucideIcons.flashlightOff300,
                 size: 18,
                 color: Colors.white,
               ),
@@ -473,7 +473,7 @@ class _CameraErrorState extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            denied ? LucideIcons.cameraOff : LucideIcons.camera,
+            denied ? LucideIcons.cameraOff300 : LucideIcons.camera300,
             size: 28,
             color: NhamColors.danger,
           ),
@@ -489,7 +489,7 @@ class _CameraErrorState extends StatelessWidget {
           ),
           const SizedBox(height: NhamSpacing.sp3),
           _QuietButton(
-            icon: LucideIcons.keyboard,
+            icon: LucideIcons.keyboard300,
             label: 'logging.barcode.manualEntry'.tr(),
             onTap: onEnterManually,
           ),
@@ -536,7 +536,7 @@ class _ManualEntryView extends StatelessWidget {
             decoration: InputDecoration(
               isDense: true,
               prefixIcon: const Icon(
-                LucideIcons.scanBarcode,
+                LucideIcons.scanBarcode300,
                 size: 18,
                 color: NhamColors.textMuted,
               ),
@@ -560,7 +560,7 @@ class _ManualEntryView extends StatelessWidget {
           const SizedBox(height: NhamSpacing.sp2),
           Center(
             child: _QuietButton(
-              icon: LucideIcons.camera,
+              icon: LucideIcons.camera300,
               label: 'logging.barcode.backToCamera'.tr(),
               onTap: onBackToCamera,
             ),
@@ -658,7 +658,7 @@ class _ErrorCard extends StatelessWidget {
                 Row(
                   children: [
                     const Icon(
-                      LucideIcons.scanBarcode,
+                      LucideIcons.scanBarcode300,
                       size: 18,
                       color: NhamColors.danger,
                     ),
@@ -691,7 +691,7 @@ class _ErrorCard extends StatelessWidget {
           const SizedBox(height: NhamSpacing.sp2),
           if (showDescribeFallback) ...[
             _OutlineButton(
-              icon: LucideIcons.pencilLine,
+              icon: LucideIcons.pencilLine300,
               label: 'logging.barcode.logByText'.tr(),
               onTap: onDescribeInstead,
             ),
@@ -699,7 +699,7 @@ class _ErrorCard extends StatelessWidget {
           ],
           Center(
             child: _QuietButton(
-              icon: LucideIcons.keyboard,
+              icon: LucideIcons.keyboard300,
               label: 'logging.barcode.manualEntry'.tr(),
               onTap: onEnterManually,
             ),

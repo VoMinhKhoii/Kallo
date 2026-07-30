@@ -122,7 +122,7 @@ class FeedbackScreenshotField extends StatelessWidget {
                 child: const Padding(
                   padding: EdgeInsets.all(4),
                   child: Icon(
-                    LucideIcons.x,
+                    LucideIcons.x300,
                     size: 16,
                     color: kInkMuted,
                   ),
@@ -153,7 +153,7 @@ class FeedbackScreenshotField extends StatelessWidget {
           child: Row(
             children: [
               const Icon(
-                LucideIcons.imagePlus,
+                LucideIcons.imagePlus300,
                 size: 16,
                 color: kInkMuted,
               ),

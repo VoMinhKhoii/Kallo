@@ -58,7 +58,7 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
             const SizedBox(width: NhamSpacing.sp2),
             if (showSteppers) ...[
               MealStepperButton(
-                icon: LucideIcons.minus,
+                icon: LucideIcons.minus300,
                 disabled: minusDisabled,
                 onTap: minusDisabled ? null : () => onStep(row.id, -10),
               ),
@@ -73,7 +73,7 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
               ),
               const SizedBox(width: 2),
               MealStepperButton(
-                icon: LucideIcons.plus,
+                icon: LucideIcons.plus300,
                 onTap: () => onStep(row.id, 10),
               ),
               const SizedBox(width: 2),
@@ -119,7 +119,7 @@ class _RemoveToggle extends StatelessWidget {
           height: LoggingIcons.hit,
           child: Center(
             child: Icon(
-              LucideIcons.x,
+              LucideIcons.x300,
               size: LoggingIcons.size,
               color: removed ? NhamColors.danger : NhamColors.text,
             ),

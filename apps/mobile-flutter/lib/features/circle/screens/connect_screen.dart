@@ -63,7 +63,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             child: Padding(
               padding: const EdgeInsets.all(NhamSpacing.sp3),
               child: IconButton(
-                icon: const Icon(LucideIcons.x, size: NhamIcons.size),
+                icon: const Icon(LucideIcons.x300, size: NhamIcons.size),
                 color: NhamColors.textMuted,
                 onPressed: () =>
                     context.canPop() ? context.pop() : context.go('/circle'),

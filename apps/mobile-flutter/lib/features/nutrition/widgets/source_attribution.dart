@@ -21,7 +21,7 @@ class SourceAttribution extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
-            LucideIcons.shieldCheck,
+            LucideIcons.shieldCheck300,
             size: 13,
             color: kInkMuted,
           ),
@@ -34,7 +34,7 @@ class SourceAttribution extends StatelessWidget {
             ),
           ),
           const SizedBox(width: NhamSpacing.sp1),
-          const Icon(LucideIcons.info, size: 13, color: kInkMuted),
+          const Icon(LucideIcons.info300, size: 13, color: kInkMuted),
         ],
       ),
     );

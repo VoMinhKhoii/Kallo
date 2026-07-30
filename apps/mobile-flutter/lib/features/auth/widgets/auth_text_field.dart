@@ -205,7 +205,7 @@ class _RevealToggleState extends State<_RevealToggle> {
         onTapCancel: () => setState(() => _pressed = false),
         onTap: widget.onTap,
         child: Icon(
-          widget.revealed ? LucideIcons.eyeOff : LucideIcons.eye,
+          widget.revealed ? LucideIcons.eyeOff300 : LucideIcons.eye300,
           size: 16,
           color: color,
         ),

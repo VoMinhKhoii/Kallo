@@ -40,7 +40,7 @@ class CircleErrorCard extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.only(top: NhamSpacing.sp0_5),
                 child: Icon(
-                  LucideIcons.circleAlert,
+                  LucideIcons.circleAlert300,
                   size: 20,
                   color: NhamColors.danger,
                 ),
@@ -139,7 +139,7 @@ class _RetryPillState extends State<_RetryPill>
               RotationTransition(
                 turns: _spin,
                 child: const Icon(
-                  LucideIcons.refreshCw,
+                  LucideIcons.refreshCw300,
                   size: 16,
                   color: NhamColors.danger,
                 ),

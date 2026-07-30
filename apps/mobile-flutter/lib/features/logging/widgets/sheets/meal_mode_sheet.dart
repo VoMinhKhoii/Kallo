@@ -157,7 +157,7 @@ class _ModeRowState extends State<_ModeRow> {
             ),
             if (widget.selected)
               const Icon(
-                LucideIcons.check,
+                LucideIcons.check300,
                 size: LoggingIcons.size,
                 color: NhamColors.text,
               ),

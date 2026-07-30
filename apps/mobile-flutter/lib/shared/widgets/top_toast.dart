@@ -139,8 +139,8 @@ class _TopToastState extends State<_TopToast>
         children: [
           Icon(
             widget.variant == TopToastVariant.error
-                ? LucideIcons.circleAlert
-                : LucideIcons.check,
+                ? LucideIcons.circleAlert300
+                : LucideIcons.check300,
             // Status colour rides the icon, never the copy.
             size: 16,
             color: widget.variant == TopToastVariant.error

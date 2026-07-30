@@ -83,28 +83,28 @@ class _SettingsList extends ConsumerWidget {
               label: tr('settings.preferences'),
               children: [
                 SettingsRow(
-                  icon: LucideIcons.user,
+                  icon: LucideIcons.user300,
                   label: tr('settings.identity.title'),
                   subline: _identitySubline(ref),
                   showChevron: true,
                   onTap: () => _openIdentity(context),
                 ),
                 SettingsRow(
-                  icon: LucideIcons.target,
+                  icon: LucideIcons.target300,
                   label: tr('settings.rows.goalPace'),
                   subline: _goalPaceSubline(context, profile),
                   showChevron: true,
                   onTap: () => _push(context, _EditorKind.goal),
                 ),
                 SettingsRow(
-                  icon: LucideIcons.utensilsCrossed,
+                  icon: LucideIcons.utensilsCrossed300,
                   label: tr('settings.rows.cooking'),
                   subline: tr('settings.profilePanel.cookingSubtitle'),
                   showChevron: true,
                   onTap: () => _push(context, _EditorKind.cooking),
                 ),
                 SettingsRow(
-                  icon: LucideIcons.globe,
+                  icon: LucideIcons.globe300,
                   label: tr('settings.rows.region'),
                   subline: _regionSubline(context, profile),
                   showChevron: true,
@@ -126,7 +126,7 @@ class _SettingsList extends ConsumerWidget {
               label: tr('settings.feedback.groupLabel'),
               children: [
                 SettingsRow(
-                  icon: LucideIcons.messageSquare,
+                  icon: LucideIcons.messageSquare300,
                   label: tr('settings.feedback.rowLabel'),
                   subline: tr('settings.feedback.rowSubline'),
                   showChevron: true,

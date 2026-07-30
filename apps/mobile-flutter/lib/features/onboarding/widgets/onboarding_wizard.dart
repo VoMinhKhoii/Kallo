@@ -37,9 +37,9 @@ double? _parseAggression(String? raw, double fallback) {
 /// The modal entrance animation (scale/opacity/y) is intentionally NOT here: it
 /// belongs to the dialog presentation ([showOnboardingDialog]), not the wizard.
 ///
-/// Icons are Lucide one-for-one: `X`→[LucideIcons.x],
-/// `ArrowLeft`→[LucideIcons.arrowLeft], `ArrowRight`→[LucideIcons.arrowRight],
-/// `SkipForward`→[LucideIcons.skipForward].
+/// Icons are Lucide one-for-one: `X`→[LucideIcons.x300],
+/// `ArrowLeft`→[LucideIcons.arrowLeft300], `ArrowRight`→[LucideIcons.arrowRight300],
+/// `SkipForward`→[LucideIcons.skipForward300].
 class OnboardingWizard extends ConsumerStatefulWidget {
   const OnboardingWizard({
     super.key,
@@ -295,7 +295,7 @@ class _CloseButtonState extends State<_CloseButton> {
           color: _pressed ? NhamColors.borderHalf : Colors.transparent,
         ),
         child: Icon(
-          LucideIcons.x,
+          LucideIcons.x300,
           size: NhamIcons.size,
           color: _pressed ? NhamColors.text : NhamColors.textHelp,
         ),
@@ -546,7 +546,7 @@ class _BackButtonState extends State<_BackButton> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(LucideIcons.arrowLeft, size: 16, color: color),
+          Icon(LucideIcons.arrowLeft300, size: 16, color: color),
           const SizedBox(width: NhamSpacing.sp2),
           Text(
             tr('common.back'),
@@ -609,7 +609,7 @@ class _SkipButtonState extends State<_SkipButton> {
                 ),
               )
             else
-              Icon(LucideIcons.skipForward, size: 14, color: textColor),
+              Icon(LucideIcons.skipForward300, size: 14, color: textColor),
           ],
         ),
       ),
@@ -680,7 +680,7 @@ class _NextButtonState extends State<_NextButton> {
                   ),
                 )
               else
-                const Icon(LucideIcons.arrowRight,
+                const Icon(LucideIcons.arrowRight300,
                     size: 16, color: NhamColors.cream),
             ],
           ),

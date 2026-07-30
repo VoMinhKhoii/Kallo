@@ -232,7 +232,7 @@ class _CalorieSwap extends StatelessWidget {
                 if (!active) ...[
                   const SizedBox(width: NhamSpacing.sp1),
                   const Icon(
-                    LucideIcons.arrowUpDown,
+                    LucideIcons.arrowUpDown300,
                     size: 12,
                     color: kInkMuted,
                   ),
@@ -317,7 +317,7 @@ class _MacroLegend extends StatelessWidget {
         if (dev != null) ...[
           const SizedBox(width: NhamSpacing.sp1),
           Icon(
-            dev >= 0 ? LucideIcons.arrowUp : LucideIcons.arrowDown,
+            dev >= 0 ? LucideIcons.arrowUp300 : LucideIcons.arrowDown300,
             size: 12,
             color: kInkMuted,
           ),
@@ -355,7 +355,7 @@ class _CalorieTarget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            over ? LucideIcons.arrowUp : LucideIcons.arrowDown,
+            over ? LucideIcons.arrowUp300 : LucideIcons.arrowDown300,
             size: 15,
             color: kInkMuted,
           ),

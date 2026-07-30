@@ -68,7 +68,7 @@ class _SignOutRowState extends ConsumerState<SignOutRow> {
   @override
   Widget build(BuildContext context) {
     return SettingsRow(
-      icon: LucideIcons.logOut,
+      icon: LucideIcons.logOut300,
       label: tr('settings.account.signOut'),
       danger: true,
       busy: _signingOut,

@@ -51,7 +51,7 @@ class _AppHeaderBackButtonState extends State<AppHeaderBackButton> {
                 borderRadius: BorderRadius.circular(NhamRadii.sm),
               ),
               child: const Icon(
-                LucideIcons.chevronLeft,
+                LucideIcons.chevronLeft300,
                 size: NhamIcons.size,
                 color: NhamColors.text,
               ),

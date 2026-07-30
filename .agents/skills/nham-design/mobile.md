@@ -163,6 +163,18 @@ chevrons, steppers, row-removes, composer controls, send/stop, settings rows.
 pressed wash hugs the glyph rather than filling the hit box: the target can grow
 for accessibility without the press affordance growing with it.
 
+**Stroke weight is 1.5, not Lucide's default 2.0.** Every glyph comes from the
+`300` constants (`LucideIcons.user300`, not `LucideIcons.user`) — the package
+ships each stroke weight as a separate font family over the same codepoints. At
+2.0 a 24pt glyph out-weighs the 14pt label beside it and the row reads
+icon-first; 1.5 matches Be Vietnam Pro's stem at w400. 1.0 (`200`) goes lighter
+than the text and the ring glyphs (target, info) turn fragile.
+
+Use the const constants, never a runtime-built `IconData`. `IconData`'s
+constructor params are `@mustBeConst` so that `--tree-shake-icons` (on by
+default for release builds) can strip unused glyphs; a runtime-restroked icon
+fails that build or ships the whole Lucide font.
+
 24 is for glyphs that stand alone. A glyph sitting **inside a text run** — a
 chip, a meta row, a badge, an inline affirmation — is a different role and stays
 at its local 12–16; blanket-24 there makes dense rows top-heavy. The size was 16

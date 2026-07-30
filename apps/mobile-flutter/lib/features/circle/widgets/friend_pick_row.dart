@@ -55,7 +55,7 @@ class FriendPickRow extends StatelessWidget {
                 ),
               ),
               if (selected)
-                const Icon(LucideIcons.check, size: 16, color: NhamColors.btn),
+                const Icon(LucideIcons.check300, size: 16, color: NhamColors.btn),
             ],
           ),
         ),

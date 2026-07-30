@@ -103,7 +103,7 @@ class _DismissButton extends StatelessWidget {
           child: Align(
             alignment: Alignment.topRight,
             child: Icon(
-              LucideIcons.x,
+              LucideIcons.x300,
               size: LoggingIcons.size,
               color: Colors.white.withValues(alpha: 0.7),
             ),

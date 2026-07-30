@@ -108,7 +108,7 @@ class _LangButtonState extends State<_LangButton> {
               if (widget.selected) ...[
                 const SizedBox(width: NhamSpacing.sp3),
                 const Icon(
-                  LucideIcons.check,
+                  LucideIcons.check300,
                   size: 16,
                   color: NhamColors.text,
                 ),

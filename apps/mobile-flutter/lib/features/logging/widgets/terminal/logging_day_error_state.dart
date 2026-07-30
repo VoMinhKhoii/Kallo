@@ -36,7 +36,7 @@ class LoggingDayErrorState extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.only(top: 2), // mt-0.5
                 child: Icon(
-                  LucideIcons.circleAlert, // lucide AlertCircle
+                  LucideIcons.circleAlert300, // lucide AlertCircle
                   size: 20,
                   color: NhamColors.danger,
                 ),
@@ -90,7 +90,7 @@ class _RetryPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              LucideIcons.refreshCw, // lucide RefreshCw
+              LucideIcons.refreshCw300, // lucide RefreshCw
               size: 16,
               color: NhamColors.danger,
             ),

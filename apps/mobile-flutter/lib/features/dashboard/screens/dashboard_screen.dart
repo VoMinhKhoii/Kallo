@@ -87,7 +87,7 @@ class DashboardScreen extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(NhamSpacing.sp6),
                   child: SectionState(
-                    icon: LucideIcons.cloudOff,
+                    icon: LucideIcons.cloudOff300,
                     message: tr('dashboard.todayLoadError'),
                     actionLabel: tr('dashboard.retry'),
                     onAction:
