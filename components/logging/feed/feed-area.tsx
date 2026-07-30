@@ -131,10 +131,15 @@ export function FeedArea({
             feed.isStagingRepeat || feed.stream.isAnalyzing
           }
           onSelectCheatOccasion={feed.handleRepeatCheat}
+          relog={feed.relog}
           onSubmit={
             feed.loggingMode === 'manual'
               ? feed.handleManualSubmit
-              : feed.handleSubmit
+              : // Staged relog picks take precedence over free text: the picks
+                // are deterministic and the text survives for a second submit.
+                feed.relog.hasStagedRelog
+                ? feed.relog.handleRelogSubmit
+                : feed.handleSubmit
           }
           onCancel={feed.handleCancel}
           disabled={feed.stream.isAnalyzing}

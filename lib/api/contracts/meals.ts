@@ -160,6 +160,64 @@ export const duplicateMealBodySchema = duplicateMealSchema.omit({
 export type DuplicateMealInput = z.infer<typeof duplicateMealSchema>;
 export type DuplicateMealBody = z.infer<typeof duplicateMealBodySchema>;
 
+/**
+ * Query params for `GET /api/v1/meals/relog/candidates` →
+ * `loadRelogCandidatesAction`. The `/`-picker's search: an empty `q` returns
+ * the user's top dishes and meals by the frequency×recency score, so there is
+ * no separate "recents" endpoint.
+ *
+ * `q` is normalized to NFC because Vietnamese typed through Telex/VNI can
+ * arrive decomposed, and the stored names are composed — comparing the two
+ * forms byte-wise would silently miss.
+ */
+export const relogCandidatesQuerySchema = z.object({
+  q: z
+    .string()
+    .trim()
+    .max(60)
+    .default('')
+    .transform((value) => value.normalize('NFC')),
+  limit: z.coerce.number().int().min(1).max(12).default(8),
+});
+
+export type RelogCandidatesQuery = z.infer<typeof relogCandidatesQuerySchema>;
+
+/**
+ * Full input for `relogMealItemsAction` → `POST /api/v1/meals/relog`.
+ *
+ * Every entry is a REFERENCE, never a payload: no nutrition, grams or names
+ * cross the wire. The server re-resolves each one under `WHERE user_id = …`, so
+ * a tampered or stale client can only ever point at its own rows (or at
+ * nothing, which errors). A `dish` ref names one `meal_items` group; a `meal`
+ * ref expands server-side into every dish of that meal.
+ *
+ * `newMealId` is the client-generated id so the optimistic card and the
+ * persisted row share a stable React key (mirrors confirm/manual/duplicate).
+ */
+export const relogItemsSchema = z.object({
+  newMealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
+  items: z
+    .array(
+      z.discriminatedUnion('kind', [
+        z.object({
+          kind: z.literal('dish'),
+          sourceMealId: z.string().uuid('sourceMealId phải là UUID hợp lệ.'),
+          mealItemOrder: z.number().int().min(0).max(10_000),
+        }),
+        z.object({
+          kind: z.literal('meal'),
+          sourceMealId: z.string().uuid('sourceMealId phải là UUID hợp lệ.'),
+        }),
+      ])
+    )
+    .min(1)
+    .max(20),
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+export type RelogItemsInput = z.infer<typeof relogItemsSchema>;
+
 export type {
   ConfirmMealResponse,
   LoggingDayData,
@@ -169,3 +227,10 @@ export type {
   PersistedMealItemGroup,
   RecentCheatOccasion,
 } from '@/lib/actions/meals/types';
+export type {
+  RelogCandidate,
+  RelogCandidatesResponse,
+  RelogDishCandidate,
+  RelogMealCandidate,
+  RelogRef,
+} from '@/lib/logging/relog/relog';

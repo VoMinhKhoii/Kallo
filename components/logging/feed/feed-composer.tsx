@@ -8,10 +8,16 @@ import {
   MealInput,
   type MealInputHandle,
 } from '@/components/logging/input/meal-input';
+import { RelogPickerPopup } from '@/components/logging/input/relog/relog-picker-popup';
+import { StagedList } from '@/components/logging/input/relog/staged-list';
+import type { useRelogComposer } from '@/hooks/meals/relog/use-relog-composer';
 import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
 import type { CheatIntensity } from '@/lib/types/cheat';
 
+const RELOG_LISTBOX_ID = 'relog-picker-listbox';
+
 interface FeedComposerProps {
+  relog: ReturnType<typeof useRelogComposer>;
   inputRef: RefObject<MealInputHandle | null>;
   isCheat: boolean;
   cheatOccasions: RecentCheatOccasion[];
@@ -33,6 +39,7 @@ interface FeedComposerProps {
  * (empty day) down to the bottom once cards take the height above it.
  */
 export function FeedComposer({
+  relog,
   inputRef,
   isCheat,
   cheatOccasions,
@@ -48,6 +55,13 @@ export function FeedComposer({
   selectedDate,
   onBarcodeSuccess,
 }: FeedComposerProps) {
+  const {
+    relogPicker,
+    relogCandidates,
+    relogStaged,
+    hasStagedRelog,
+    isRelogEnabled,
+  } = relog;
   return (
     <motion.div
       layout
@@ -73,6 +87,38 @@ export function FeedComposer({
           onChangeIntensity={onChangeIntensity}
           selectedDate={selectedDate}
           onBarcodeSuccess={onBarcodeSuccess}
+          hasExternalContent={hasStagedRelog}
+          onTextareaKeyDown={relogPicker.handleKeyDown}
+          onTextareaSync={relogPicker.syncFromTextarea}
+          isPopupOpen={relogPicker.isOpen}
+          popupListboxId={RELOG_LISTBOX_ID}
+          popupActiveDescendantId={`${RELOG_LISTBOX_ID}-${relogPicker.highlighted}`}
+          aboveSlot={
+            // MealInput renders aboveSlot in every non-manual mode, so this
+            // gate is what keeps the staged list out of cheat mode.
+            isRelogEnabled ? (
+              <StagedList
+                entries={relogStaged.entries}
+                totals={relogStaged.totals}
+                disabled={disabled}
+                // The typed text is kept, not discarded, when both are present.
+                showTextHint={hasStagedRelog}
+                onRemove={relogStaged.remove}
+              />
+            ) : null
+          }
+          popupSlot={
+            relogPicker.isOpen ? (
+              <RelogPickerPopup
+                listboxId={RELOG_LISTBOX_ID}
+                query={relogPicker.query}
+                candidates={relogCandidates}
+                highlighted={relogPicker.highlighted}
+                onHighlight={relogPicker.setHighlighted}
+                onSelect={relogPicker.select}
+              />
+            ) : null
+          }
         />
       </div>
     </motion.div>

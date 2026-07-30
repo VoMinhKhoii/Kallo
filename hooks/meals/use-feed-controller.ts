@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
 import type { MealInputHandle } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
+import { useRelogComposer } from '@/hooks/meals/relog/use-relog-composer';
 import { useClarifyHandlers } from '@/hooks/meals/use-clarify-handlers';
 import { useConfirmHandlers } from '@/hooks/meals/use-confirm-handlers';
 import { useFeedDay } from '@/hooks/meals/use-feed-day';
@@ -147,6 +148,16 @@ export function useFeedController(args: {
     scrollToBottom,
   });
 
+  // The `/` relog picker + its staged list. Normal mode only — manual and cheat
+  // own the composer's slots themselves.
+  const relog = useRelogComposer({
+    userId: profile.userId,
+    selectedDate,
+    loggingMode,
+    inputRef,
+    scrollToBottom,
+  });
+
   const { handleAnalysisComplete, handleBarcodeSuccess } = useFeedInvalidation({
     userId: profile.userId,
     selectedDate,
@@ -224,6 +235,7 @@ export function useFeedController(args: {
     handleLogAgain,
     handleSubmit,
     handleManualSubmit,
+    relog,
     handleBarcodeSuccess,
     handleCancel,
     loggingMode,
