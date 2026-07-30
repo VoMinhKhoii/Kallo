@@ -156,13 +156,54 @@ Left sidebar **Redirect Rules** (under Rules):
 
 ---
 
-## 7. Email — support@kallo.fit (free)
+## 7. Email — inbound support@kallo.fit (free)
 
 Left sidebar **Email** → **Email Routing** → **Get started** → enable. Cloudflare
 adds the needed MX + SPF/DKIM/DMARC DNS records automatically. Then **Create
 address** → `support@kallo.fit` → **Send to** your personal inbox → verify that
 inbox via the email Cloudflare sends. (Used by the OpenFoodFacts contact + the
 legal-page mailto links.)
+
+This is **receiving only**. Outbound is §7b.
+
+---
+
+## 7b. Email — outbound via Resend
+
+Every email the app sends — auth confirmations, password resets, email-change
+confirmations, and the landing-page waitlist — is composed in this repo
+(`lib/email/templates/`) and delivered by Resend.
+
+**1. Verify a sending subdomain.** In Resend → **Domains** → **Add Domain** →
+`send.kallo.fit`. Use the **subdomain**, not the apex: §7 already put an SPF
+record on `kallo.fit` for Cloudflare Email Routing, and stacking a second
+`include:` on it is the classic way to break inbound and outbound at once.
+Add the SPF/DKIM/DMARC records Resend shows to Cloudflare DNS as **DNS-only**
+(grey cloud), then click **Verify**.
+
+**2. Create the API key** (Resend → **API Keys**, sending permission only).
+That value becomes `RESEND_API_KEY` / the `kallo-prod-resend-api-key` secret.
+
+**3. Enable the Supabase hook.** Supabase dashboard → **Authentication** →
+**Hooks** → **Send Email** → type **HTTPS** → URI
+`https://kallo.fit/api/auth/send-email` → **Generate secret**. Copy the
+`v1,whsec_…` value into the `kallo-prod-send-email-hook-secret` GCP secret
+(`SEND_EMAIL_HOOK_SECRET`). Once the hook is on, GoTrue stops sending mail
+itself and the dashboard's own email templates are no longer used.
+
+Raise **Authentication → Rate Limits → Emails per hour** from the default 2 at
+the same time; it now only guards the hook, not delivery.
+
+**4. Let Supabase through the WAF.** §6 turned on Bot Fight Mode and a rate
+limiting rule. Supabase's hook POSTs come from its servers, not a browser, so
+add a **WAF → Custom rule** that **skips** managed rules, bot fight mode and
+rate limiting when `http.request.uri.path eq "/api/auth/send-email"`. The
+route authenticates itself with a Standard Webhooks signature, so skipping the
+edge checks does not open it up. Without this the hook is silently blocked and
+nobody can confirm an account.
+
+**Rollback.** Turning the Send Email hook off in the dashboard immediately
+reverts auth email to Supabase's own sender — no deploy required.
 
 ---
 
@@ -176,6 +217,11 @@ Configuration**:
 
 Google & Apple sign-in are already wired on this project — nothing to recreate.
 (Apple: the Services ID must stay **first** in the provider's Client IDs list.)
+
+Emailed links keep pointing at `https://kallo.fit/auth/verify?token_hash=…`
+(never `…supabase.co/auth/v1/verify`, which is unreachable on many VN networks).
+That link is now built by `lib/email/auth-email.ts` rather than a dashboard
+template, so the templates in the dashboard no longer need hand-editing.
 
 ---
 

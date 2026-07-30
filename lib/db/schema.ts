@@ -1658,3 +1658,58 @@ export const billingWebhookEvents = pgTable(
       ),
   ]
 );
+
+/**
+ * Landing-page waitlist, with double opt-in.
+ *
+ * A row is created unconfirmed and only counts once the emailed link is
+ * followed. Deliberately has no `user_id`: the whole point is capturing people
+ * who have not signed up. Written exclusively server-side (see the companion
+ * RLS migration — anon and authenticated get nothing at all), because every
+ * column here is either PII or a bearer credential.
+ */
+export const waitlistSignups = pgTable(
+  'waitlist_signups',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    // Lowercased + NFC-normalised before insert; unique so a re-submit updates
+    // the pending row instead of creating a second one.
+    email: text('email').notNull(),
+    locale: text('locale').notNull().default('en'),
+    // Where the signup came from, e.g. 'hero'. Free-form but length-capped.
+    source: text('source'),
+    // SHA-256 of the confirmation token — the plaintext only ever exists in the
+    // email, so a database leak can't be used to confirm addresses.
+    confirmationTokenHash: text('confirmation_token_hash'),
+    confirmationSentAt: timestamp('confirmation_sent_at', {
+      withTimezone: true,
+    }),
+    confirmationExpiresAt: timestamp('confirmation_expires_at', {
+      withTimezone: true,
+    }),
+    // Null until the emailed link is followed. This is the real membership flag.
+    confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
+    // HMAC of the submitter's IP (same pepper as the analysis guards), used for
+    // rate limiting. Never the raw address.
+    ipHash: text('ip_hash'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('waitlist_signups_email_key').on(table.email),
+    uniqueIndex('waitlist_signups_token_key').on(table.confirmationTokenHash),
+    // Per-IP rate-limit lookup: "how many signups from this IP since T".
+    index('waitlist_signups_ip_created_idx').on(
+      table.ipHash,
+      sql`${table.createdAt} DESC`
+    ),
+    check(
+      'waitlist_signups_locale_check',
+      sql`${table.locale} IN ('en', 'vi')`
+    ),
+  ]
+);

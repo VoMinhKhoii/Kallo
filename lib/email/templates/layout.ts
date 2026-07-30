@@ -1,0 +1,93 @@
+import { SITE_URL } from '@/lib/site';
+
+/**
+ * Shared shell for every transactional email.
+ *
+ * Email clients are not browsers: no CSS variables (so the `--nham-*` tokens
+ * from app/globals.css are inlined as literal hex here, the same constraint the
+ * Satori OG route lives under), no external stylesheets, and table layout is
+ * still the only thing Outlook renders predictably. Everything is inline.
+ */
+
+/** The brand palette, frozen as literals. Mirrors app/globals.css `:root`. */
+export const EMAIL_COLORS = {
+  surface: '#f9f9f7',
+  text: '#141413',
+  textSoft: '#3d3d3a',
+  textMuted: '#6e6d66',
+  accent: '#c9a87c',
+  border: '#e8e6dc',
+  button: '#695e4e',
+  buttonText: '#f9f9f7',
+} as const;
+
+export type EmailLocale = 'en' | 'vi';
+
+const FOOTER_COPY: Record<EmailLocale, { tagline: string; sentBy: string }> = {
+  en: {
+    tagline: 'Vietnamese meal tracking, without the guesswork.',
+    sentBy: 'You received this because someone used this address on Kallo.',
+  },
+  vi: {
+    tagline: 'Theo dõi bữa ăn Việt, không còn phải đoán.',
+    sentBy: 'Bạn nhận được email này vì địa chỉ này được dùng trên Kallo.',
+  },
+};
+
+/** Escape a value before interpolating it into email HTML. */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** A single primary call-to-action button. */
+export function button(label: string, url: string): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0"><tr><td style="border-radius:999px;background:${EMAIL_COLORS.button}"><a href="${escapeHtml(url)}" style="display:inline-block;padding:14px 32px;font-family:Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;color:${EMAIL_COLORS.buttonText};text-decoration:none;border-radius:999px">${escapeHtml(label)}</a></td></tr></table>`;
+}
+
+/** A muted paragraph, used for the fallback link and expiry notes. */
+export function muted(text: string): string {
+  return `<p style="margin:0 0 12px;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:${EMAIL_COLORS.textMuted}">${text}</p>`;
+}
+
+/** A body paragraph. */
+export function paragraph(text: string): string {
+  return `<p style="margin:0 0 16px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:${EMAIL_COLORS.textSoft}">${text}</p>`;
+}
+
+/**
+ * Wrap body markup in the branded shell.
+ *
+ * @param locale  — picks the footer copy.
+ * @param heading — the H1 shown above the body (already plain text).
+ * @param body    — pre-built HTML from the helpers above.
+ */
+export function renderLayout(
+  locale: EmailLocale,
+  heading: string,
+  body: string
+): string {
+  const footer = FOOTER_COPY[locale];
+  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light"></head><body style="margin:0;padding:0;background:${EMAIL_COLORS.surface}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${EMAIL_COLORS.surface};padding:32px 16px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid ${EMAIL_COLORS.border};border-radius:16px;padding:36px 32px">
+<tr><td>
+<p style="margin:0 0 24px;font-family:Georgia,'Times New Roman',serif;font-size:22px;letter-spacing:0.02em;color:${EMAIL_COLORS.text}">Kallo</p>
+<h1 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:26px;line-height:1.25;color:${EMAIL_COLORS.text}">${escapeHtml(heading)}</h1>
+${body}
+</td></tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;padding:20px 8px"><tr><td>
+<p style="margin:0 0 6px;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:${EMAIL_COLORS.textMuted}">${escapeHtml(footer.tagline)}</p>
+<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:${EMAIL_COLORS.textMuted}">${escapeHtml(footer.sentBy)} · <a href="${SITE_URL}" style="color:${EMAIL_COLORS.textMuted}">kallo.fit</a></p>
+</td></tr></table>
+</td></tr></table></body></html>`;
+}
+
+/** Build the plain-text alternative from already-plain lines. */
+export function renderText(locale: EmailLocale, lines: string[]): string {
+  return [...lines, '', '—', FOOTER_COPY[locale].tagline, SITE_URL].join('\n');
+}

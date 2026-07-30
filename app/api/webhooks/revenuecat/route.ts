@@ -13,11 +13,9 @@ import {
 import {
   allowedRevenueCatAppIds,
   isInformationalRevenueCatEvent,
-  readBoundedWebhookBody,
+  readRevenueCatBody,
   revenueCatBodySchema,
-  timingSafeMatch,
   verifyRevenueCatHmac,
-  WebhookPayloadTooLargeError,
 } from '@/app/api/webhooks/revenuecat/_lib/request';
 import {
   type BillingEnvironment,
@@ -27,6 +25,10 @@ import {
 } from '@/lib/billing/revenuecat';
 import { type AppDb, db as appDb } from '@/lib/db';
 import { reconcileRevenueCatGrantSnapshots } from '@/lib/entitlements/grants';
+import {
+  timingSafeMatch,
+  WebhookPayloadTooLargeError,
+} from '@/lib/security/webhook-request';
 
 export const runtime = 'nodejs';
 
@@ -75,7 +77,7 @@ export async function handleRevenueCatWebhook(
 
   let rawBody: string;
   try {
-    rawBody = await readBoundedWebhookBody(request);
+    rawBody = await readRevenueCatBody(request);
   } catch (error) {
     if (error instanceof WebhookPayloadTooLargeError) {
       return NextResponse.json({ error: 'payload_too_large' }, { status: 413 });

@@ -11,6 +11,7 @@ import {
   ProblemSection,
   SolutionSection,
 } from '@/components/landing-page';
+import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
 import { safeNextPath } from '@/lib/auth/safe-next';
 import { createClient } from '@/lib/supabase/server';
 
@@ -52,6 +53,7 @@ export default async function Home({
       <AuthDialog />
       <Suspense fallback={null}>
         <OAuthErrorToast />
+        <WaitlistStatusToast />
       </Suspense>
     </AuthProvider>
   );

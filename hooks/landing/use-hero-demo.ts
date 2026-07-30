@@ -3,52 +3,54 @@
 import { useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  getLabFixture,
-  LAB_AUTOPLAY_ID,
-  type LabDemoFixture,
-} from '@/components/landing-lab/fixtures';
-
-export type LabPhase = 'typing' | 'matching' | 'estimating' | 'result';
+  getHeroFixture,
+  HERO_AUTOPLAY_ID,
+  type HeroDemoFixture,
+} from '@/components/landing-page/hero/hero-demo-fixtures';
 
 /**
- * The coarse state the globe reacts to (spin speed per phase).
+ * The staged "type → match → estimate → result" demo that plays inside the
+ * landing hero's phone mock.
+ *
+ * Extracted from the hero component so the markup stays presentational: the
+ * timers, the phase machine and the reduced-motion shortcut are all state, and
+ * they were the bulk of what pushed hero.tsx past the size gate.
  */
-export type LabMood = 'idle' | 'typing' | 'analyzing' | 'result';
+
+export type DemoPhase = 'typing' | 'matching' | 'estimating' | 'result';
 
 const TYPING_SPEED_MS = 45;
 const MATCH_MS = 700;
 const ESTIMATE_MS = 800;
 
-export interface LabDemo {
-  fixture: LabDemoFixture;
-  phase: LabPhase;
-  mood: LabMood;
+export interface HeroDemo {
+  fixture: HeroDemoFixture;
+  phase: DemoPhase;
+  /** The meal text as it has been typed out so far. */
   typedText: string;
-  /** True once the canned autoplay finishes and the bar becomes a real control. */
+  /** True once the canned demo finished and the input bar becomes real. */
   interactive: boolean;
   inputValue: string;
   setInputValue: (value: string) => void;
-  selectChip: (id: string) => void;
-  submitText: (text: string) => void;
+  /** True while the staged analysis is running (input stays disabled). */
   isAnalyzing: boolean;
   showResult: boolean;
-  prefersReducedMotion: boolean;
+  /** Run a custom meal string the visitor typed. */
+  submitText: (text: string) => void;
+  /** Run one of the preset chips. */
+  selectChip: (id: string) => void;
 }
 
-/**
- * The playable derivation demo, lifted from the production hero
- * (hooks/landing/use-hero-demo.ts) so the lab prototype shares one
- * state machine: type the meal, run the staged phases, reveal the card.
- * Reduced motion skips straight to the result with no typing or delays.
- */
-export function useLabDemo(): LabDemo {
-  const prefersReducedMotion = useReducedMotion() ?? false;
+export function useHeroDemo(): HeroDemo {
+  const prefersReducedMotion = useReducedMotion();
 
-  const [fixture, setFixture] = useState<LabDemoFixture>(() =>
-    getLabFixture(LAB_AUTOPLAY_ID)
+  // The meal currently being demonstrated (autoplay starts on the canned one).
+  const [fixture, setFixture] = useState<HeroDemoFixture>(() =>
+    getHeroFixture(HERO_AUTOPLAY_ID)
   );
-  const [phase, setPhase] = useState<LabPhase>('typing');
+  const [phase, setPhase] = useState<DemoPhase>('typing');
   const [typedText, setTypedText] = useState('');
+  // Once the canned demo finishes, the input bar becomes a real control.
   const [interactive, setInteractive] = useState(false);
   const [inputValue, setInputValue] = useState('');
 
@@ -60,8 +62,10 @@ export function useLabDemo(): LabDemo {
     timers.current = [];
   }, []);
 
+  // Drive one analysis: type the meal, run the staged phases, reveal the card.
+  // Reduced motion skips straight to the result with no typing or delays.
   const runDemo = useCallback(
-    (next: LabDemoFixture, { autoplay }: { autoplay: boolean }) => {
+    (next: HeroDemoFixture, { autoplay }: { autoplay: boolean }) => {
       clearTimers();
       setFixture(next);
 
@@ -104,18 +108,11 @@ export function useLabDemo(): LabDemo {
     [clearTimers, prefersReducedMotion]
   );
 
-  // Autoplay once on mount, deferred a tick so no state is set
-  // synchronously inside the effect body.
+  // Autoplay once on mount.
   // biome-ignore lint/correctness/useExhaustiveDependencies: run exactly once
   useEffect(() => {
-    const kickoff = setTimeout(
-      () => runDemo(getLabFixture(LAB_AUTOPLAY_ID), { autoplay: true }),
-      0
-    );
-    return () => {
-      clearTimeout(kickoff);
-      clearTimers();
-    };
+    runDemo(getHeroFixture(HERO_AUTOPLAY_ID), { autoplay: true });
+    return clearTimers;
   }, []);
 
   const submitText = useCallback(
@@ -129,47 +126,33 @@ export function useLabDemo(): LabDemo {
         {
           id: 'custom',
           text: trimmed,
-          chipLabel: trimmed,
           rows: fixture.rows,
-          totalRange: fixture.totalRange,
+          total: fixture.total,
         },
         { autoplay: false }
       );
     },
-    [fixture.rows, fixture.totalRange, runDemo]
+    [fixture.rows, fixture.total, runDemo]
   );
 
   const selectChip = useCallback(
     (id: string) => {
       setInputValue('');
-      runDemo(getLabFixture(id), { autoplay: false });
+      runDemo(getHeroFixture(id), { autoplay: false });
     },
     [runDemo]
   );
 
-  const isAnalyzing = phase === 'matching' || phase === 'estimating';
-
-  const mood: LabMood =
-    phase === 'typing'
-      ? 'typing'
-      : isAnalyzing
-        ? 'analyzing'
-        : phase === 'result'
-          ? 'result'
-          : 'idle';
-
   return {
     fixture,
     phase,
-    mood,
     typedText,
     interactive,
     inputValue,
     setInputValue,
-    selectChip,
-    submitText,
-    isAnalyzing,
+    isAnalyzing: phase === 'matching' || phase === 'estimating',
     showResult: phase === 'result',
-    prefersReducedMotion,
+    submitText,
+    selectChip,
   };
 }

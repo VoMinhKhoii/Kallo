@@ -173,8 +173,10 @@ minimum_password_length = 6
 password_requirements = ""
 
 [auth.rate_limit]
-# Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+# Number of emails that can be sent per hour. This gates GoTrue's own sender;
+# with [auth.hook.send_email] enabled, delivery goes through Resend instead and
+# this is just a guard against a runaway loop hammering the hook.
+email_sent = 30
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -211,15 +213,32 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
+# Send Email hook — the app composes and delivers every auth email itself.
+#
+# With this enabled GoTrue stops sending (and stops using SMTP entirely): it
+# POSTs the payload to the URI below, which renders a branded bilingual message
+# and hands it to Resend. Templates live in `lib/email/templates/`, the handler
+# in `app/api/auth/send-email/route.ts`.
+#
+# `host.docker.internal` lets the Auth container reach `next dev` on the host.
+# Deployed projects set this in the dashboard (Authentication → Hooks) pointing
+# at https://kallo.fit/api/auth/send-email, where the same secret must be set as
+# SEND_EMAIL_HOOK_SECRET on Cloud Run.
+[auth.hook.send_email]
+enabled = true
+uri = "http://host.docker.internal:3000/api/auth/send-email"
+secrets = "env(SEND_EMAIL_HOOK_SECRET)"
+
+# SMTP fallback, intentionally left off. It only takes effect if the hook above
+# is disabled — which is also the one-switch rollback if Resend ever fails.
 # [auth.email.smtp]
 # enabled = true
-# host = "smtp.sendgrid.net"
+# host = "smtp.resend.com"
 # port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# user = "resend"
+# pass = "env(RESEND_API_KEY)"
+# admin_email = "hello@send.kallo.fit"
+# sender_name = "Kallo"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
