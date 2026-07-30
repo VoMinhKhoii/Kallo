@@ -259,7 +259,7 @@ class _SaveBarState extends State<_SaveBar>
                           colors: [
                             NhamColors.surface,
                             NhamColors.surface,
-                            Color(0x00F9F9F7), // surface @ 0
+                            NhamColors.surface0,
                           ],
                           stops: [0, 0.55, 1], // from-55%
                         ),

@@ -22,6 +22,7 @@ abstract final class NhamColors {
   // the whole point of this token, and at the old value it would now sit
   // *lighter* than the page — a track that reads raised instead of recessed.
   static const Color track = Color(0xFFEDECE7); // warm segmented/track
+  static const Color track50 = Color(0x80EDECE7); // track @ 50%
 
   // ── Text ─────────────────────────────────────────────────────────────
   static const Color text = Color(0xFF141413); // near-black ink
@@ -38,10 +39,18 @@ abstract final class NhamColors {
   static const Color borderHalf = Color(0x80E2DFD4); // hairline @ 50%
   static const Color borderFaint = Color(0x4DE2DFD4); // hairline @ 30%
   static const Color borderBiscotti40 = Color(0x66E2DFD4); // hairline @ 40%
+  static const Color border70 = Color(0xB3E2DFD4); // hairline @ 70%
+  static const Color border15 = Color(0x26E2DFD4); // hairline @ 15%
 
   // ── Translucent surfaces ─────────────────────────────────────────────
   static const Color elevTranslucent = Color(0xCCFFFFFF); // card/elev @ 80%
   static const Color surface80 = Color(0xCCF1F1EE); // canvas @ 80%
+  // Scrim ramp (composer dock). These MUST stay the same hue as [surface] —
+  // a scrim that fades toward a stale canvas colour is a visible seam, which
+  // is the exact thing the ramp exists to remove.
+  static const Color surface0 = Color(0x00F1F1EE); // canvas @ 0%
+  static const Color surface35 = Color(0x59F1F1EE); // canvas @ 35%
+  static const Color surface85 = Color(0xD9F1F1EE); // canvas @ 85%
   static const Color cardWhite55 = Color(0x8CFFFFFF); // card white @ 55%
   static const Color cardWhite40 = Color(0x66FFFFFF); // card white @ 40%
   static const Color cardWhite30 = Color(0x4DFFFFFF); // card white @ 30%

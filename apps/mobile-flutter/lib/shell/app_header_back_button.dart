@@ -33,19 +33,29 @@ class _AppHeaderBackButtonState extends State<AppHeaderBackButton> {
           HapticFeedback.selectionClick();
           widget.onBack();
         },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeInOut,
+        // 44 is the hit area; the wash is the NhamIcons.hit box nested inside
+        // it, so the affordance hugs the glyph instead of filling the target —
+        // same structure as AppMenuButton, which sits right beside this.
+        child: SizedBox(
           width: 44,
           height: 44,
-          decoration: BoxDecoration(
-            color: _pressed ? NhamColors.pressWash : null,
-            borderRadius: BorderRadius.circular(NhamRadii.sm),
-          ),
-          child: const Icon(
-            LucideIcons.chevronLeft,
-            size: NhamIcons.size,
-            color: NhamColors.text,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeInOut,
+              width: NhamIcons.hit,
+              height: NhamIcons.hit,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _pressed ? NhamColors.pressWash : null,
+                borderRadius: BorderRadius.circular(NhamRadii.sm),
+              ),
+              child: const Icon(
+                LucideIcons.chevronLeft,
+                size: NhamIcons.size,
+                color: NhamColors.text,
+              ),
+            ),
           ),
         ),
       ),

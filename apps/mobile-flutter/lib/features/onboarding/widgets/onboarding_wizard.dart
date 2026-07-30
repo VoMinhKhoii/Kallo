@@ -248,7 +248,7 @@ class _Header extends StatelessWidget {
       ),
       decoration: const BoxDecoration(
         // border @60%
-        border: Border(bottom: BorderSide(color: Color(0x99E8E6DC))),
+        border: Border(bottom: BorderSide(color: NhamColors.borderSoft)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -289,10 +289,10 @@ class _CloseButtonState extends State<_CloseButton> {
       onTapCancel: () => setState(() => _pressed = false),
       onTap: widget.onTap,
       child: Container(
-        padding: const EdgeInsets.all(NhamSpacing.sp2),
+        padding: const EdgeInsets.all((NhamIcons.hit - NhamIcons.size) / 2),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: _pressed ? const Color(0x80E8E6DC) : Colors.transparent,
+          color: _pressed ? NhamColors.borderHalf : Colors.transparent,
         ),
         child: Icon(
           LucideIcons.x,
@@ -490,8 +490,8 @@ class _Footer extends StatelessWidget {
         vertical: NhamSpacing.sp4,
       ),
       decoration: const BoxDecoration(
-        color: Color(0x80F5F4F0), // bg-[#F5F4F0]/50
-        border: Border(top: BorderSide(color: Color(0x99E8E6DC))), // /60
+        color: NhamColors.track50,
+        border: Border(top: BorderSide(color: NhamColors.borderSoft)), // /60
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -587,7 +587,7 @@ class _SkipButtonState extends State<_SkipButton> {
           vertical: 10,
         ),
         decoration: BoxDecoration(
-          color: _pressed ? const Color(0x80E8E6DC) : Colors.transparent,
+          color: _pressed ? NhamColors.borderHalf : Colors.transparent,
           borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // rounded-xl
         ),
         child: Row(

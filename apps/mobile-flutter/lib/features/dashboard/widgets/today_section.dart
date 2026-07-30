@@ -185,7 +185,7 @@ class _FirstRunChipState extends State<_FirstRunChip> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: _pressed ? const Color(0x26E8E6DC) : NhamColors.elev,
+          color: _pressed ? NhamColors.border15 : NhamColors.elev,
           borderRadius: BorderRadius.circular(NhamRadii.pill),
           border: Border.all(
             color: _pressed ? NhamColors.accent50 : NhamColors.borderSoft,
