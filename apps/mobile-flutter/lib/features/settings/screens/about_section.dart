@@ -25,18 +25,18 @@ class AboutSection extends StatelessWidget {
       label: tr('settings.about.title'),
       children: [
         SettingsRow(
-          icon: LucideIcons.info,
+          icon: LucideIcons.info300,
           label: tr('settings.about.version'),
           value: _appVersion,
         ),
         SettingsRow(
-          icon: LucideIcons.shieldCheck,
+          icon: LucideIcons.shieldCheck300,
           label: tr('settings.about.privacy'),
           subline: _privacyUrl,
           onTap: () => _copyLink(context, _privacyUrl),
         ),
         SettingsRow(
-          icon: LucideIcons.fileText,
+          icon: LucideIcons.fileText300,
           label: tr('settings.about.terms'),
           subline: _termsUrl,
           onTap: () => _copyLink(context, _termsUrl),

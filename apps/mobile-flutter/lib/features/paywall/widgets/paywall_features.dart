@@ -51,7 +51,7 @@ class PaywallTrialCountdown extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(LucideIcons.clock, size: 15, color: NhamColors.accentDark),
+          const Icon(LucideIcons.clock300, size: 15, color: NhamColors.accentDark),
           const SizedBox(width: NhamSpacing.sp2),
           Flexible(
             child: Text(
@@ -80,7 +80,7 @@ class _FeatureRow extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.only(top: 1),
           child: Icon(
-            LucideIcons.check,
+            LucideIcons.check300,
             size: 17,
             color: NhamColors.accentDark,
           ),

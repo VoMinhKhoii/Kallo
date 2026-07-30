@@ -5,12 +5,24 @@ import 'dart:ui';
 /// Transcribed from the web's `globals.css` `:root` tokens (the canonical
 /// `--nham-*` values). Visual direction: neutral canvas / ink / hairline with
 /// warm interaction washes; tan accent kept for non-text moments only.
+///
+/// DELIBERATE DIVERGENCE FROM WEB: the canvas is `#F1F1EE`, not the web's
+/// `#f9f9f7`. At one step off white every surface in the system — white cards,
+/// hairlines, washes — had almost nothing to separate from, and the app read
+/// uniformly subtle on a phone. The surfaces tuned against the old canvas moved
+/// with it: `track` and `border` both darkened to keep their step below the
+/// page, and `pressWash` replaces the warm washes where a control is
+/// transparent. Do NOT "resync" these to `globals.css` without re-deciding it.
 abstract final class NhamColors {
   // ── Core surfaces ────────────────────────────────────────────────────
-  static const Color surface = Color(0xFFF9F9F7); // app background — neutral canvas
+  static const Color surface = Color(0xFFF1F1EE); // app background — neutral canvas
   static const Color elev = Color(0xFFFFFFFF); // cards / sheets
   static const Color hover = Color(0xFFF0EAE0); // warm hover/select wash
-  static const Color track = Color(0xFFF5F4F0); // warm segmented/track
+  // Moved by the SAME delta as [surface] (−8/−8/−9): the canvas↔track step is
+  // the whole point of this token, and at the old value it would now sit
+  // *lighter* than the page — a track that reads raised instead of recessed.
+  static const Color track = Color(0xFFEDECE7); // warm segmented/track
+  static const Color track50 = Color(0x80EDECE7); // track @ 50%
 
   // ── Text ─────────────────────────────────────────────────────────────
   static const Color text = Color(0xFF141413); // near-black ink
@@ -22,15 +34,23 @@ abstract final class NhamColors {
   static const Color accentDark = Color(0xFFB89968);
 
   // ── Borders ──────────────────────────────────────────────────────────
-  static const Color border = Color(0xFFE8E6DC); // neutral hairline
-  static const Color borderSoft = Color(0x99E8E6DC); // hairline @ 60%
-  static const Color borderHalf = Color(0x80E8E6DC); // hairline @ 50%
-  static const Color borderFaint = Color(0x4DE8E6DC); // hairline @ 30%
-  static const Color borderBiscotti40 = Color(0x66E8E6DC); // hairline @ 40%
+  static const Color border = Color(0xFFE2DFD4); // neutral hairline
+  static const Color borderSoft = Color(0x99E2DFD4); // hairline @ 60%
+  static const Color borderHalf = Color(0x80E2DFD4); // hairline @ 50%
+  static const Color borderFaint = Color(0x4DE2DFD4); // hairline @ 30%
+  static const Color borderBiscotti40 = Color(0x66E2DFD4); // hairline @ 40%
+  static const Color border70 = Color(0xB3E2DFD4); // hairline @ 70%
+  static const Color border15 = Color(0x26E2DFD4); // hairline @ 15%
 
   // ── Translucent surfaces ─────────────────────────────────────────────
   static const Color elevTranslucent = Color(0xCCFFFFFF); // card/elev @ 80%
-  static const Color surface80 = Color(0xCCF9F9F7); // canvas @ 80%
+  static const Color surface80 = Color(0xCCF1F1EE); // canvas @ 80%
+  // Scrim ramp (composer dock). These MUST stay the same hue as [surface] —
+  // a scrim that fades toward a stale canvas colour is a visible seam, which
+  // is the exact thing the ramp exists to remove.
+  static const Color surface0 = Color(0x00F1F1EE); // canvas @ 0%
+  static const Color surface35 = Color(0x59F1F1EE); // canvas @ 35%
+  static const Color surface85 = Color(0xD9F1F1EE); // canvas @ 85%
   static const Color cardWhite55 = Color(0x8CFFFFFF); // card white @ 55%
   static const Color cardWhite40 = Color(0x66FFFFFF); // card white @ 40%
   static const Color cardWhite30 = Color(0x4DFFFFFF); // card white @ 30%
@@ -72,11 +92,36 @@ abstract final class NhamColors {
   static const Color placeholderMuted40 = Color(0x666E6D66); // 40%
 
   // ── Hover alpha variants ─────────────────────────────────────────────
+  // Only for washes over an OPAQUE LIGHTER surface (a white card, a field). On
+  // the canvas itself they no longer register — see [pressWash].
   static const Color hover40 = Color(0x66F0EAE0); // 40%
   static const Color hover50 = Color(0x80F0EAE0); // 50%
 
-  // ── Danger alpha variant ─────────────────────────────────────────────
-  static const Color danger70 = Color(0xB3D37B69); // 70%
+  /// Press wash for controls that sit transparent on the canvas.
+  ///
+  /// The warm [hover] washes are a lighter cream than the canvas, so on a
+  /// transparent-background control they composite to within ~3 points of the
+  /// page — an invisible press. This is the same interaction in the neutral
+  /// direction: ink at 6%, which darkens legibly over any surface in the
+  /// system. Warm washes stay warm where they cover something lighter.
+  static const Color pressWash = Color(0x0F141413); // ink @ 6%
+
+  // ── Danger alpha variants ────────────────────────────────────────────
+  // Washes and hairlines behind destructive UI. These existed as hardcoded
+  // hexes at six call sites, which is how they silently kept the old terracotta
+  // when [danger] moved; they are tokens now so the next change carries them.
+  static const Color danger70 = Color(0xB3D11A1A); // 70%
+  static const Color danger30 = Color(0x4DD11A1A); // 30% — danger hairline
+  static const Color danger10 = Color(0x1AD11A1A); // 10% — pressed/fill wash
+  static const Color danger06 = Color(0x0FD11A1A); // 6% — quiet error card fill
+
+  /// Cheat-meal marker, for a GLYPH standing on its own.
+  ///
+  /// The cheat language is tan, but [accent] is 2.2:1 on a white sheet — fine
+  /// as a *fill* behind an ink glyph (which is how the cheat cards and the
+  /// heatmap use it), below the 3:1 non-text minimum as a mark in its own
+  /// right. Same warm family, deep enough to read at 4.5:1.
+  static const Color cheatMark = Color(0xFF8B7355);
 
   // ── Macros ───────────────────────────────────────────────────────────
   static const Color macroProtein = Color(0xFFC9A87C);
@@ -91,7 +136,36 @@ abstract final class NhamColors {
   static const Color successDark = Color(0xFF14855A); // deeper emerald — figures
   static const Color successFaint = Color(0xFFEAF7F0); // mint — met-card fill
   static const Color successBorder = Color(0x331FA971); // emerald @ 20% — hairline
-  static const Color danger = Color(0xFFD37B69); // terracotta
+  /// Destructive actions — delete, remove, sign out — and error text.
+  ///
+  /// A plain red, not the old terracotta `#D37B69`. The terracotta was a warm
+  /// desaturated accent that sat closer to the tan palette than to a warning:
+  /// it read as decorative rather than destructive, and at 2.7:1 on the canvas
+  /// it was the weakest text colour in the app. This is **4.8:1 — WCAG AA for
+  /// normal text** — and unmistakably red.
+  ///
+  /// The obvious picks miss AA on this canvas: iOS system red `#FF3B30` is
+  /// 3.1:1 and Tailwind red-600 `#DC2626` is 4.27:1, both below the 4.5
+  /// threshold. `danger` is a TEXT colour here (delete/sign-out row labels,
+  /// error copy, `NhamButtonVariant.danger`), so it has to clear it outright
+  /// rather than lean on the large-text exemption.
+  ///
+  /// [danger] is for ACTIONS and ERRORS only. "Your numbers are off" is
+  /// [offTarget], and the heatmap keeps its own scale — see both below.
+  static const Color danger = Color(0xFFD11A1A);
+
+  /// Over/under target — the calorie ring's overflow arc, the exceed state on a
+  /// target bar, a nutrient figure past its limit, a "short by" figure.
+  ///
+  /// This keeps the terracotta that [danger] used to be, on purpose. Being over
+  /// your calories is information, not a destructive act, and the ring's own
+  /// docs say "never red, never a pill" — a dashboard that turns pure red when
+  /// you go 10 kcal over is alarming in a way the old shared colour never was.
+  /// It only looked like `danger` because both were terracotta; splitting the
+  /// token is what lets destructive UI go properly red without dragging the
+  /// dashboard along.
+  static const Color offTarget = Color(0xFFD37B69);
+  static const Color offTarget70 = Color(0xB3D37B69); // 70% — bar tick
 
   // ── Adherence heatmap diverging scale ────────────────────────────────
   static const Color heatmapOnTarget = Color(0xFF7CA368);
@@ -102,8 +176,8 @@ abstract final class NhamColors {
   static const Color heatmapBarMiss = Color(0xFFD4C9AD);
 
   // ── Settings + onboarding neutral/cream palette ──────────────────────
-  static const Color inputBorder = Color(0xFFE8E6DC); // unified neutral hairline
-  static const Color inputBorder40 = Color(0x66E8E6DC);
+  static const Color inputBorder = Color(0xFFE2DFD4); // unified neutral hairline
+  static const Color inputBorder40 = Color(0x66E2DFD4);
   static const Color textWarm = Color(0xFF7B6F62);
   static const Color textHelp = Color(0xFF8B8682);
   static const Color textSelected = Color(0xFF6F6556);

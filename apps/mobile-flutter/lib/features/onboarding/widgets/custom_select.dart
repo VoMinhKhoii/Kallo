@@ -150,7 +150,7 @@ class _CustomSelectState extends State<CustomSelect>
                 RotationTransition(
                   turns: Tween<double>(begin: 0, end: 0.5).animate(_chevron),
                   child: const Icon(
-                    LucideIcons.chevronDown,
+                    LucideIcons.chevronDown300,
                     size: 16,
                     color: NhamColors.textHelp,
                   ),
@@ -310,7 +310,7 @@ class _OptionRowState extends State<_OptionRow> {
               ),
             ),
             if (widget.selected)
-              const Icon(LucideIcons.check, size: 16, color: NhamColors.text)
+              const Icon(LucideIcons.check300, size: 16, color: NhamColors.text)
             else
               const SizedBox(width: 16, height: 16),
           ],

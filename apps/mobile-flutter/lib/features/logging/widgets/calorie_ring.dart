@@ -13,9 +13,9 @@ import '../../../theme/nham_colors.dart';
 /// `cubic-bezier(0.16, 1, 0.3, 1)`.
 ///
 /// Over target: the base arc completes in tan, then an overflow arc continues
-/// past 12 o'clock in ~40%-alpha terracotta — never red, never a pill. The
-/// default in-ring content shows the calories `left`, flipping to `over` when
-/// past target. [center] overrides that content.
+/// past 12 o'clock in ~40%-alpha [NhamColors.offTarget] — never red, never a
+/// pill. The default in-ring content shows the calories `left`, flipping to
+/// `over` when past target. [center] overrides that content.
 class CalorieRing extends StatefulWidget {
   const CalorieRing({
     super.key,
@@ -182,14 +182,14 @@ class _RingPainter extends CustomPainter {
       base,
     );
 
-    // Over target — the overflow arc continues in terracotta @ ~40% alpha.
+    // Over target — the overflow arc continues in offTarget @ ~40% alpha.
     if (ratio > 1) {
       final overflow = (ratio - 1).clamp(0, 1).toDouble();
       final over = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round
-        ..color = NhamColors.danger.withValues(alpha: 0.4);
+        ..color = NhamColors.offTarget.withValues(alpha: 0.4);
       canvas.drawArc(rect, _start, 2 * math.pi * overflow, false, over);
     }
   }

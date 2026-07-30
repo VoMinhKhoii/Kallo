@@ -40,7 +40,7 @@ class GroupMembersList extends ConsumerWidget {
                   'groups.info.removeLabel',
                   namedArgs: {'name': member.label},
                 ),
-                icon: const Icon(LucideIcons.x, size: 16),
+                icon: const Icon(LucideIcons.x300, size: 16),
                 onPressed: () => _confirmRemove(context, ref, member),
               ),
           ],

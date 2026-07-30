@@ -26,7 +26,7 @@ class PaywallPremiumBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Icon(LucideIcons.sparkles, size: 32, color: NhamColors.accent),
+        const Icon(LucideIcons.sparkles300, size: 32, color: NhamColors.accent),
         const SizedBox(height: NhamSpacing.sp4),
         Text(
           tr('paywall.alreadyPremiumTitle'),

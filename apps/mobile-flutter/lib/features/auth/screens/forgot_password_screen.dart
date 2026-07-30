@@ -145,7 +145,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              LucideIcons.mailCheck,
+              LucideIcons.mailCheck300,
               size: 20,
               color: Color(0xFFA88B63),
             ),
@@ -202,7 +202,7 @@ class _BackHeader extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                LucideIcons.arrowLeft,
+                LucideIcons.arrowLeft300,
                 size: 16,
                 color: NhamColors.textMuted,
               ),

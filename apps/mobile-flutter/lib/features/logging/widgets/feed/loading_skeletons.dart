@@ -26,7 +26,7 @@ class MacroSummarySkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          skeletonBar(_labelWidths[i], 12, const Color(0xB3E8E6DC)), // border/70
+          skeletonBar(_labelWidths[i], 12, NhamColors.border70), // border/70
           const SizedBox(height: NhamSpacing.sp2), // mb-2
           skeletonBar(64, 20, NhamColors.track), // h-5 w-16 track skeleton pill
         ],
@@ -73,7 +73,7 @@ class LoggingDaySkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          skeletonBar(64, 12, const Color(0xB3E8E6DC)), // border/70 time bar
+          skeletonBar(64, 12, NhamColors.border70), // border/70 time bar
           const SizedBox(height: NhamSpacing.sp2), // mb-2
           Container(
             padding: const EdgeInsets.all(NhamSpacing.sp4), // p-5→16
@@ -91,7 +91,7 @@ class LoggingDaySkeleton extends StatelessWidget {
                       (_, c) => skeletonBar(
                         c.maxWidth * 2 / 3,
                         20,
-                        const Color(0xB3E8E6DC),
+                        NhamColors.border70,
                       ),
                 ),
                 const SizedBox(height: NhamSpacing.sp4), // mb-4

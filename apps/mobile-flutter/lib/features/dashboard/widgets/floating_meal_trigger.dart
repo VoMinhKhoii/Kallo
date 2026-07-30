@@ -162,7 +162,7 @@ class _FloatingMealTriggerState extends ConsumerState<FloatingMealTrigger> {
                           ],
                         ),
                         child: const Icon(
-                          LucideIcons.utensilsCrossed,
+                          LucideIcons.utensilsCrossed300,
                           size: NhamIcons.size,
                           color: Colors.white,
                         ),

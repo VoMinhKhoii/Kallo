@@ -259,7 +259,7 @@ class _SaveBarState extends State<_SaveBar>
                           colors: [
                             NhamColors.surface,
                             NhamColors.surface,
-                            Color(0x00F9F9F7), // surface @ 0
+                            NhamColors.surface0,
                           ],
                           stops: [0, 0.55, 1], // from-55%
                         ),
@@ -437,7 +437,7 @@ class _SavedConfirmation extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        const Icon(LucideIcons.check, size: 16, color: NhamColors.success),
+        const Icon(LucideIcons.check300, size: 16, color: NhamColors.success),
         const SizedBox(width: 8),
         Text(
           tr('settings.saved'),

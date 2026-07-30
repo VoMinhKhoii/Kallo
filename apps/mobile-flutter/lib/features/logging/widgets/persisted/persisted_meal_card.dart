@@ -32,7 +32,7 @@ class PersistedMealCard extends StatefulWidget {
   final PersistedMeal meal;
   final bool isLast;
 
-  /// iOS trailing-swipe removal (terracotta, never red) — fired when the card is
+  /// iOS trailing-swipe removal (destructive red) — fired when the card is
   /// dismissed. Null disables the swipe.
   final VoidCallback? onRemove;
 
@@ -74,8 +74,8 @@ class _PersistedMealCardState extends State<PersistedMealCard>
     super.dispose();
   }
 
-  /// Wrap the card in a trailing-swipe-to-remove Dismissible (terracotta, never
-  /// red) when [onRemove] is set; otherwise return the card untouched.
+  /// Wrap the card in a trailing-swipe-to-remove Dismissible (destructive red)
+  /// when [onRemove] is set; otherwise return the card untouched.
   Widget _maybeDismissible(Widget card) {
     final onRemove = widget.onRemove;
     if (onRemove == null) return card;
@@ -95,7 +95,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              LucideIcons.trash2,
+              LucideIcons.trash2300,
               size: LoggingIcons.size,
               color: Colors.white,
             ),

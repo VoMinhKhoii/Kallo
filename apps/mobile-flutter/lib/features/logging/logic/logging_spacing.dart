@@ -59,8 +59,20 @@ abstract final class LoggingSpacing {
 /// row-removes and composer controls all match them now.
 abstract final class LoggingIcons {
   /// Glyph size for every icon-only control.
-  static const double size = NhamIcons.size;
+  ///
+  /// Deliberately NOT [NhamIcons.size]. The app-wide glyph is 24, which suits a
+  /// row-leading icon that carries its label; these are dense clusters of
+  /// icon-only controls — five actions under a card, steppers flanking a
+  /// number, a chevron on the card edge — where 24 crowds the card and the
+  /// controls start to out-weigh the meal they belong to. This surface stays
+  /// compact, and the divergence is the point rather than an oversight.
+  static const double size = 16;
 
-  /// Square tap target (and pressed-wash bounds) around that glyph.
+  /// Square tap target around that glyph — the app-wide target, unchanged.
   static const double hit = NhamIcons.hit;
+
+  /// The visible wash behind a selected/pressed control: it hugs the glyph
+  /// instead of filling [hit], so the tap target can stay 36 for accessibility
+  /// without the chosen state reading as a 36pt block under the card.
+  static const double wash = 28;
 }

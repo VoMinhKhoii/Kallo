@@ -5,9 +5,9 @@ import '../theme/calm_tokens.dart';
 import '../theme/nham_colors.dart';
 import '../theme/nham_theme.dart';
 
-/// The drawer's ONE glyph size — nav rows and the footer rows below them.
-/// (`sidebar_footer.dart` still hard-codes its own 16; it should adopt this.)
-const double kSidebarIconSize = 16;
+/// The drawer's ONE glyph size — nav rows and the footer rows below them,
+/// which import this rather than restating it.
+const double kSidebarIconSize = NhamIcons.size;
 
 /// One drawer nav destination — mirrors the web `NavItemConfig`
 /// (`components/app/nav-items.ts`): href, i18n label key, Lucide icon, and the
@@ -30,7 +30,7 @@ class NavItem {
 /// A primary nav row, matched to web `mobile-nav-list.tsx`.
 ///
 /// Selected = the warm hover wash (`NhamColors.hover` #F0EAE0) behind `kInk` at
-/// semibold; idle = `kInkMuted` on no fill, with a hover@40% press wash animated
+/// semibold; idle = `kInkMuted` on no fill, with a `pressWash` press animated
 /// over ~150ms (`transition-colors`). Flutter used to invert this — a solid
 /// umber pill with white content and a drop shadow, i.e. the strongest possible
 /// treatment for a row that is merely "where you already are". The wash is the
@@ -67,8 +67,11 @@ class _NavRowState extends State<NavRow> {
   Widget build(BuildContext context) {
     final active = widget.active;
     final Color contentColor = active ? kInk : kInkMuted;
+    // Selected keeps the warm wash. An idle row presses on the drawer panel,
+    // which paints the canvas — the warm wash is lighter than that and would
+    // not register, so the press is the neutral ink one.
     final Color? fill =
-        active ? NhamColors.hover : (_pressed ? NhamColors.hover40 : null);
+        active ? NhamColors.hover : (_pressed ? NhamColors.pressWash : null);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

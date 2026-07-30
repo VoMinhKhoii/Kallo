@@ -37,7 +37,7 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
 
     final rows = <Widget>[
       SettingsRow(
-        icon: LucideIcons.sparkles,
+        icon: LucideIcons.sparkles300,
         label: tr('settings.subscription.row'),
         subline: _statusSubline(context, entitlementAsync),
         showChevron: true,
@@ -50,7 +50,7 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
         entitlement?.managementUrl != null) {
       rows.add(
         SettingsRow(
-          icon: LucideIcons.externalLink,
+          icon: LucideIcons.externalLink300,
           label: tr('settings.subscription.manage'),
           onTap:
               () =>
@@ -61,7 +61,7 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
 
     rows.add(
       SettingsRow(
-        icon: LucideIcons.refreshCw,
+        icon: LucideIcons.refreshCw300,
         label: tr('settings.subscription.restore'),
         busy: _restoring,
         enabled: !_restoring,

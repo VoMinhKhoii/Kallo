@@ -116,7 +116,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                 decoration: InputDecoration(
                   isDense: true,
                   prefixIcon: const Icon(
-                    LucideIcons.search,
+                    LucideIcons.search300,
                     size: 18,
                     color: NhamColors.textMuted,
                   ),
@@ -345,7 +345,7 @@ class _SelectedItemRow extends StatelessWidget {
           ),
           IconButton(
             onPressed: disabled ? null : onRemove,
-            icon: const Icon(LucideIcons.x, size: 16),
+            icon: const Icon(LucideIcons.x300, size: 16),
             color: NhamColors.textMuted50,
             tooltip: 'logging.manualLogging.removeItem'.tr(),
             visualDensity: VisualDensity.compact,
@@ -526,7 +526,7 @@ class _ResultTileState extends State<_ResultTile> {
               ),
               const SizedBox(width: NhamSpacing.sp1),
               const Icon(
-                LucideIcons.circlePlus,
+                LucideIcons.circlePlus300,
                 size: 18,
                 color: NhamColors.text,
               ),

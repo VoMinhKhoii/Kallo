@@ -331,7 +331,7 @@ class _ServingPicker extends StatelessWidget {
         Row(
           children: [
             _StepperButton(
-              icon: LucideIcons.minus,
+              icon: LucideIcons.minus300,
               label: 'logging.barcode.decreaseServings'.tr(),
               onTap: disabled || servings <= 1 ? null : () => onAdjust(-1),
             ),
@@ -344,7 +344,7 @@ class _ServingPicker extends StatelessWidget {
               ),
             ),
             _StepperButton(
-              icon: LucideIcons.plus,
+              icon: LucideIcons.plus300,
               label: 'logging.barcode.increaseServings'.tr(),
               onTap:
                   disabled || servings >= maxServings
@@ -421,7 +421,7 @@ class _GramsPicker extends StatelessWidget {
         Row(
           children: [
             _StepperButton(
-              icon: LucideIcons.minus,
+              icon: LucideIcons.minus300,
               label: 'logging.barcode.decreaseGrams'.tr(),
               onTap: disabled || grams <= 1 ? null : () => onAdjust(-gramStep),
             ),
@@ -439,7 +439,7 @@ class _GramsPicker extends StatelessWidget {
             ),
             const SizedBox(width: NhamSpacing.sp2),
             _StepperButton(
-              icon: LucideIcons.plus,
+              icon: LucideIcons.plus300,
               label: 'logging.barcode.increaseGrams'.tr(),
               onTap:
                   disabled || grams >= maxFoodItemGrams
@@ -628,7 +628,7 @@ class _BackLink extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                LucideIcons.arrowLeft,
+                LucideIcons.arrowLeft300,
                 size: 16,
                 color: NhamColors.textMuted,
               ),

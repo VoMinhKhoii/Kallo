@@ -182,7 +182,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
                 runSpacing: NhamSpacing.sp2,
                 children: [
                   _PillButton(
-                    icon: LucideIcons.upload,
+                    icon: LucideIcons.upload300,
                     label: profile.hasCustomAvatar
                         ? tr('settings.identity.avatarChange')
                         : tr('settings.identity.avatarUpload'),
@@ -190,7 +190,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
                   ),
                   if (profile.hasCustomAvatar)
                     _PillButton(
-                      icon: LucideIcons.x,
+                      icon: LucideIcons.x300,
                       label: tr('settings.identity.avatarRemove'),
                       onTap: _busy ? null : _removeAvatar,
                       subdued: true,
@@ -237,7 +237,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
         Align(
           alignment: Alignment.centerLeft,
           child: _PillButton(
-            icon: LucideIcons.check,
+            icon: LucideIcons.check300,
             label: tr('settings.identity.nameSave'),
             onTap: _busy ? null : () => unawaited(_saveName(profile)),
           ),

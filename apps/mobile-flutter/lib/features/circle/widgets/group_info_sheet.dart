@@ -127,7 +127,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                               IconButton(
                                 onPressed: _renaming ? null : _rename,
                                 tooltip: tr('groups.info.renameSave'),
-                                icon: const Icon(LucideIcons.check),
+                                icon: const Icon(LucideIcons.check300),
                               ),
                             ],
                           )
@@ -154,7 +154,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                                     setState(() => _editingName = true);
                                   },
                                   icon: const Icon(
-                                    LucideIcons.pencil,
+                                    LucideIcons.pencil300,
                                     size: 16,
                                   ),
                                 ),
@@ -186,7 +186,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                         const Divider(height: NhamSpacing.sp6, color: kHairline),
                         TextButton.icon(
                           onPressed: _leave,
-                          icon: const Icon(LucideIcons.logOut, size: 16),
+                          icon: const Icon(LucideIcons.logOut300, size: 16),
                           label: Text(tr('groups.feed.leave')),
                         ),
                       ],

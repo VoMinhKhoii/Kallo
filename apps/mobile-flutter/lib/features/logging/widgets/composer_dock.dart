@@ -89,13 +89,17 @@ class _ComposerDockState extends State<ComposerDock> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    // NhamColors.surface (#F9F9F7) at 0 / 35 / 85 / 100%
-                    // alpha. Eased, not linear: a straight alpha ramp still
-                    // reads as a visible seam where it meets transparency.
+                    // NhamColors.surface at 0 / 35 / 85 / 100% alpha. Eased,
+                    // not linear: a straight alpha ramp still reads as a
+                    // visible seam where it meets transparency. All four stops
+                    // come from the token — the first three used to restate
+                    // the hex, so moving the canvas left the ramp fading
+                    // toward the *old* colour, i.e. the seam it exists to
+                    // remove.
                     colors: [
-                      Color(0x00F9F9F7),
-                      Color(0x59F9F9F7),
-                      Color(0xD9F9F9F7),
+                      NhamColors.surface0,
+                      NhamColors.surface35,
+                      NhamColors.surface85,
                       NhamColors.surface,
                     ],
                     stops: [0, 0.45, 0.8, 1],

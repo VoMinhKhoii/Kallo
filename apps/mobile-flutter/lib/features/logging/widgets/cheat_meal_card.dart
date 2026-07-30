@@ -27,7 +27,7 @@ class CheatMealCard extends StatefulWidget {
 
   final PersistedMeal meal;
 
-  /// Removal (terracotta, never red) — fired by the trailing swipe or the
+  /// Removal (destructive red) — fired by the trailing swipe or the
   /// remove icon beneath the card. Null disables both.
   final VoidCallback? onRemove;
 
@@ -86,7 +86,7 @@ class _CheatMealCardState extends State<CheatMealCard>
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              LucideIcons.trash2,
+              LucideIcons.trash2300,
               size: LoggingIcons.size,
               color: Colors.white,
             ),
@@ -234,7 +234,7 @@ class _CheatMealCardState extends State<CheatMealCard>
           Align(
             alignment: Alignment.centerRight,
             child: MealActionIconButton(
-              icon: LucideIcons.trash2,
+              icon: LucideIcons.trash2300,
               label: 'logging.remove'.tr(),
               danger: true,
               onTap: () async {
@@ -294,7 +294,7 @@ class _ChevronToggleState extends State<_ChevronToggle> {
               child: RotationTransition(
                 turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
                 child: const Icon(
-                  LucideIcons.chevronDown,
+                  LucideIcons.chevronDown300,
                   // Same glyph size/ink as the action icons beneath the card.
                   size: LoggingIcons.size,
                   color: NhamColors.text,

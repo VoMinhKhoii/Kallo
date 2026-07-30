@@ -5,9 +5,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/settings_spacing.dart';
-
-/// Width of the leading icon column — all labels start at `padding + _kGutter`.
-const double _kGutter = 22;
+import 'settings_row_leading.dart';
 
 /// Half of the app-wide 12 content inset; the list padding owns the other 4.
 /// See [SettingsSpacing.rowList].
@@ -21,9 +19,13 @@ const double _kIconGap = NhamSpacing.sp3; // 12 — icon column → label
 /// * a static info row (trailing [value] text, no [onTap]),
 /// * an account action row ([danger] tint, [busy] spinner, [enabled] gating).
 ///
-/// At rest the row is transparent on the cream page. Press fades a soft rounded
-/// hover fill in and darkens the icon from muted to espresso — the calm tap
-/// affordance, no card required.
+/// At rest the row is transparent on the page, with the glyph in full ink
+/// beside its label — the icon is content, not decoration. Press fades a soft
+/// rounded ink wash in behind the whole row: the calm tap affordance, no card
+/// required. (The icon used to carry that signal by darkening from muted to
+/// ink; with the glyph already ink at rest, the wash is the whole affordance,
+/// which is why it is a neutral ink wash and not the warm one — the warm wash
+/// is lighter than the page and would not register.)
 class SettingsRow extends StatefulWidget {
   const SettingsRow({
     super.key,
@@ -43,8 +45,8 @@ class SettingsRow extends StatefulWidget {
          'SettingsRow needs an icon or a leading widget',
        );
 
-  /// Lucide glyph for the gutter — muted at rest, ink on press. Omit when
-  /// supplying a custom [leading] (e.g. a brand mark that keeps its own colour).
+  /// Lucide glyph for the gutter — ink (red on a [danger] row). Omit
+  /// when supplying a custom [leading] (e.g. a brand mark with its own colour).
   final IconData? icon;
 
   /// Custom leading widget occupying the icon gutter instead of [icon] — used
@@ -77,16 +79,13 @@ class _SettingsRowState extends State<SettingsRow> {
 
   @override
   Widget build(BuildContext context) {
-    // Icon: muted grey at rest, espresso on press (terracotta for danger rows).
-    final Color restColor = widget.danger ? NhamColors.danger : kInkMuted;
-    final Color activeColor = widget.danger ? NhamColors.danger : kInk;
-    // Label is primary data — espresso "black" (terracotta for danger rows).
-    final Color labelColor = widget.danger ? NhamColors.danger : kInk;
-    final Color iconColor = _pressed ? activeColor : restColor;
+    // Icon and label are both primary content — one ink (red on a
+    // danger row), no press-state colour change.
+    final Color inkColor = widget.danger ? NhamColors.danger : kInk;
     final Color fill =
         widget.danger
-            ? const Color(0x1AD37B69) // danger @ 10%
-            : NhamColors.hover50;
+            ? NhamColors.danger10
+            : NhamColors.pressWash;
 
     final row = Container(
       padding: const EdgeInsets.symmetric(
@@ -97,29 +96,39 @@ class _SettingsRowState extends State<SettingsRow> {
         color: _pressed ? fill : Colors.transparent,
         borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
       ),
+      // The OUTER row stays centred so the chevron / value / switch sits on the
+      // row's mid-line, where a trailing control belongs on a two-line row. The
+      // INNER row is top-anchored so the icon lines up with the TITLE and the
+      // subline hangs below it.
       child: Row(
         children: [
-          SizedBox(
-            width: _kGutter,
-            child: widget.leading != null
-                ? Center(child: widget.leading)
-                : Icon(widget.icon, size: 18, color: iconColor),
-          ),
-          const SizedBox(width: _kIconGap),
           Expanded(
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.label, style: dashBody(color: labelColor)),
-                if (widget.subline != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.subline!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: dashMeta(),
+                SettingsRowLeading(
+                  icon: widget.icon,
+                  leading: widget.leading,
+                  color: inkColor,
+                ),
+                const SizedBox(width: _kIconGap),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(widget.label, style: dashBody(color: inkColor)),
+                      if (widget.subline != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.subline!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: dashMeta(),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
+                ),
               ],
             ),
           ),
@@ -176,7 +185,7 @@ class _SettingsRowState extends State<SettingsRow> {
       return Text(widget.value!, style: dashMeta(tabular: true));
     }
     if (widget.showChevron) {
-      return const Icon(LucideIcons.chevronRight, size: 16, color: kInkMuted);
+      return const Icon(LucideIcons.chevronRight300, size: 16, color: kInkMuted);
     }
     return const SizedBox.shrink();
   }

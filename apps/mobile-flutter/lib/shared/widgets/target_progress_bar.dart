@@ -99,7 +99,7 @@ class _TargetProgressBarState extends State<TargetProgressBar>
     final fillColor = !_hasValue
         ? NhamColors.stone50
         : widget.showExceed
-            ? NhamColors.danger
+            ? NhamColors.offTarget
             : widget.fillColor ?? NhamColors.text;
 
     final bar = LayoutBuilder(
@@ -154,7 +154,7 @@ class _TargetProgressBarState extends State<TargetProgressBar>
                   height: 7,
                   child: ColoredBox(
                     color: widget.showExceed
-                        ? NhamColors.danger70
+                        ? NhamColors.offTarget70
                         : NhamColors.stone70,
                   ),
                 ),

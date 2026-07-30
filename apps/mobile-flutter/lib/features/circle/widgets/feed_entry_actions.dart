@@ -69,7 +69,7 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
           toggled: reactions.mine,
           child: _Action(
             onTap: _toggling ? null : _toggle,
-            icon: LucideIcons.heart,
+            icon: LucideIcons.heart300,
             fill: reactions.mine ? 1 : 0,
             label: '${reactions.count}',
           ),
@@ -78,7 +78,7 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
           const SizedBox(width: 18),
           _Action(
             onTap: _logging ? null : _log,
-            icon: LucideIcons.copy,
+            icon: LucideIcons.copy300,
             label: tr('groups.feed.logCopy'),
           ),
         ],

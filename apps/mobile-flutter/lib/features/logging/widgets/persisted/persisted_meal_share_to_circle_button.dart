@@ -128,12 +128,12 @@ class _PersistedMealShareToCircleButtonState
         // "Share card" appears only once the meal is shared (web parity).
         if (_shared && _shareId != null)
           MealActionIconButton(
-            icon: LucideIcons.share2,
+            icon: LucideIcons.share2300,
             label: tr('groups.shareControl.shareCard'),
             onTap: _shareCard,
           ),
         MealActionIconButton(
-          icon: _shared ? LucideIcons.check : LucideIcons.users,
+          icon: _shared ? LucideIcons.check300 : LucideIcons.users300,
           label: label,
           active: _shared,
           pending: _pending,

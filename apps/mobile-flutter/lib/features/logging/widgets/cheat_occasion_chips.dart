@@ -123,7 +123,7 @@ class _OccasionChipState extends State<_OccasionChip> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                  LucideIcons.cookie,
+                  LucideIcons.cookie300,
                   size: 12,
                   color: NhamColors.textMuted,
                 ),

@@ -142,7 +142,7 @@ class _GroupHeader extends StatelessWidget {
       IconButton(
         tooltip: tr('groups.info.title'),
         onPressed: () => _showGroupInfoSheet(context, groupId),
-        icon: const Icon(LucideIcons.info, size: 18, color: kInkMuted),
+        icon: const Icon(LucideIcons.info300, size: 18, color: kInkMuted),
       ),
     ],
   );

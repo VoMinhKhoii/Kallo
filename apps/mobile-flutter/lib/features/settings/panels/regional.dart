@@ -27,14 +27,14 @@ class Regional extends StatelessWidget {
         ),
         const SizedBox(height: NhamSpacing.sp5),
         _CountryField(
-          icon: LucideIcons.globe,
+          icon: LucideIcons.globe300,
           label: tr('onboarding.origin.countryOfOrigin'),
           value: v.countryOfOrigin,
           onChange: (s) => form.update((f) => f.countryOfOrigin = s),
         ),
         const SizedBox(height: NhamSpacing.sp4),
         _CountryField(
-          icon: LucideIcons.mapPin,
+          icon: LucideIcons.mapPin300,
           label: tr('onboarding.origin.countryOfResidence'),
           value: v.countryOfResidence,
           onChange: (s) => form.update((f) => f.countryOfResidence = s),

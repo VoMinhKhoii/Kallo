@@ -59,7 +59,7 @@ class _TimelineChipState extends State<TimelineChip> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(LucideIcons.calendar,
+              const Icon(LucideIcons.calendar300,
                   size: 14, color: NhamColors.textMuted),
               const SizedBox(width: NhamSpacing.sp2), // gap-2
               Flexible(
@@ -309,7 +309,7 @@ class _TimelineStripState extends State<TimelineStrip> {
       child: Row(
         children: [
           _NavButton(
-            icon: LucideIcons.chevronLeft,
+            icon: LucideIcons.chevronLeft300,
             onTap: _scrollPrev,
             color: NhamColors.textMuted,
           ),
@@ -334,7 +334,7 @@ class _TimelineStripState extends State<TimelineStrip> {
           ),
           const SizedBox(width: 4),
           _NavButton(
-            icon: LucideIcons.chevronRight,
+            icon: LucideIcons.chevronRight300,
             onTap: _canNavigateNext ? _scrollNext : null,
             color: _canNavigateNext
                 ? NhamColors.textMuted

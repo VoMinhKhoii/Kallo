@@ -60,7 +60,7 @@ class _AutoShareToCircleToggleState
   @override
   Widget build(BuildContext context) {
     return SettingsRow(
-      icon: LucideIcons.users,
+      icon: LucideIcons.users300,
       label: tr('settings.sharing.autoShareLabel'),
       subline: tr('settings.sharing.autoShareHint'),
       // The static row provides no toggle semantics of its own — name the
