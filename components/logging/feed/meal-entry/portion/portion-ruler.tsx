@@ -90,7 +90,9 @@ export function PortionRuler({
     // Capped and centred so the glyphs stay a sensible size on a wide drawer.
     // The cap is on the whole ruler, not just the glyph row, so the row keeps
     // sharing its width — and therefore its column centres — with the track.
-    <div className="mx-auto max-w-[340px]">
+    // 360px / 5 columns puts the ceiling on a glyph at 72px, which is what
+    // `sizes` below is set to.
+    <div className="mx-auto max-w-[360px]">
       <div
         className="mb-1 grid"
         style={{
@@ -126,7 +128,7 @@ export function PortionRuler({
                   src={`/portions/${asset.file}`}
                   alt=""
                   fill
-                  sizes="64px"
+                  sizes="72px"
                   className="object-contain object-bottom"
                 />
               </span>
