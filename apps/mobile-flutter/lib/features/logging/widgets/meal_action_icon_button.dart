@@ -66,28 +66,34 @@ class MealActionIconButton extends StatelessWidget {
             child: SizedBox.square(
               dimension: LoggingIcons.hit,
               child: Center(
-                child: Container(
+                // [Ink], not a Container: ink reactions paint onto the ancestor
+                // Material, so an opaque Container here would sit ON TOP of the
+                // splash and swallow the press feedback on a selected action.
+                // Ink paints its decoration into that same Material, below the
+                // splash.
+                child: Ink(
                   width: LoggingIcons.wash,
                   height: LoggingIcons.wash,
-                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: active ? NhamColors.hover : Colors.transparent,
                     borderRadius: BorderRadius.circular(NhamRadii.md),
                   ),
-                  child:
-                      pending
-                          ? SizedBox.square(
-                            dimension: 13,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                  child: Center(
+                    child:
+                        pending
+                            ? SizedBox.square(
+                              dimension: 13,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: foreground,
+                              ),
+                            )
+                            : Icon(
+                              icon,
+                              size: LoggingIcons.size,
                               color: foreground,
                             ),
-                          )
-                          : Icon(
-                            icon,
-                            size: LoggingIcons.size,
-                            color: foreground,
-                          ),
+                  ),
                 ),
               ),
             ),

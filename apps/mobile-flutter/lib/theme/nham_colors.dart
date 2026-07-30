@@ -110,10 +110,18 @@ abstract final class NhamColors {
   // Washes and hairlines behind destructive UI. These existed as hardcoded
   // hexes at six call sites, which is how they silently kept the old terracotta
   // when [danger] moved; they are tokens now so the next change carries them.
-  static const Color danger70 = Color(0xB3DC2626); // 70%
-  static const Color danger30 = Color(0x4DDC2626); // 30% — danger hairline
-  static const Color danger10 = Color(0x1ADC2626); // 10% — pressed/fill wash
-  static const Color danger06 = Color(0x0FDC2626); // 6% — quiet error card fill
+  static const Color danger70 = Color(0xB3D11A1A); // 70%
+  static const Color danger30 = Color(0x4DD11A1A); // 30% — danger hairline
+  static const Color danger10 = Color(0x1AD11A1A); // 10% — pressed/fill wash
+  static const Color danger06 = Color(0x0FD11A1A); // 6% — quiet error card fill
+
+  /// Cheat-meal marker, for a GLYPH standing on its own.
+  ///
+  /// The cheat language is tan, but [accent] is 2.2:1 on a white sheet — fine
+  /// as a *fill* behind an ink glyph (which is how the cheat cards and the
+  /// heatmap use it), below the 3:1 non-text minimum as a mark in its own
+  /// right. Same warm family, deep enough to read at 4.5:1.
+  static const Color cheatMark = Color(0xFF8B7355);
 
   // ── Macros ───────────────────────────────────────────────────────────
   static const Color macroProtein = Color(0xFFC9A87C);
@@ -133,12 +141,18 @@ abstract final class NhamColors {
   /// A plain red, not the old terracotta `#D37B69`. The terracotta was a warm
   /// desaturated accent that sat closer to the tan palette than to a warning:
   /// it read as decorative rather than destructive, and at 2.7:1 on the canvas
-  /// it was the weakest text colour in the app. This is 4.2:1 and unmistakably
-  /// red.
+  /// it was the weakest text colour in the app. This is **4.8:1 — WCAG AA for
+  /// normal text** — and unmistakably red.
+  ///
+  /// The obvious picks miss AA on this canvas: iOS system red `#FF3B30` is
+  /// 3.1:1 and Tailwind red-600 `#DC2626` is 4.27:1, both below the 4.5
+  /// threshold. `danger` is a TEXT colour here (delete/sign-out row labels,
+  /// error copy, `NhamButtonVariant.danger`), so it has to clear it outright
+  /// rather than lean on the large-text exemption.
   ///
   /// [danger] is for ACTIONS and ERRORS only. "Your numbers are off" is
   /// [offTarget], and the heatmap keeps its own scale — see both below.
-  static const Color danger = Color(0xFFDC2626);
+  static const Color danger = Color(0xFFD11A1A);
 
   /// Over/under target — the calorie ring's overflow arc, the exceed state on a
   /// target bar, a nutrient figure past its limit, a "short by" figure.

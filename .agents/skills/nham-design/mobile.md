@@ -96,14 +96,19 @@ one terracotta token and are now two:
 
 | Token | Hex | Role |
 |-------|-----|------|
-| `danger` | `#DC2626` | destructive actions (delete, remove, sign out) and error text — a plain red |
+| `danger` | `#D11A1A` | destructive actions (delete, remove, sign out) and error text — a plain red |
 | `offTarget` | `#D37B69` | over/under target: the ring's overflow arc, an exceeded target bar, a nutrient past its limit |
 
 The old shared `#D37B69` was a warm desaturated accent that read as decorative
 rather than destructive, and at 2.7:1 on the canvas it was the weakest text
 colour in the app. Splitting the token is what lets destructive UI go properly
-red (4.2:1) without the dashboard turning alarming the moment you go 10 kcal
-over — the ring's own rule is still "never red, never a pill". The heatmap keeps
+red without the dashboard turning alarming the moment you go 10 kcal over — the
+ring's own rule is still "never red, never a pill".
+
+`danger` is a **text** colour (row labels, error copy, the danger button), so it
+clears WCAG AA for normal text at **4.8:1** on the canvas. The obvious reds do
+not: iOS system red `#FF3B30` is 3.1:1 and Tailwind red-600 `#DC2626` is 4.27:1.
+Check any replacement against `kPage`, not against white. The heatmap keeps
 its own five-stop scale; `heatmapFar` shares the terracotta by coincidence, not
 by reference.
 
