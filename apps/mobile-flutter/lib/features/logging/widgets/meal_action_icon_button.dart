@@ -46,8 +46,7 @@ class MealActionIconButton extends StatelessWidget {
         toggled: toggled,
         label: label,
         child: Material(
-          color: active ? NhamColors.hover : Colors.transparent,
-          borderRadius: BorderRadius.circular(NhamRadii.md),
+          color: Colors.transparent,
           child: InkResponse(
             onTap:
                 enabled
@@ -56,30 +55,40 @@ class MealActionIconButton extends StatelessWidget {
                       onTap!();
                     }
                     : null,
-            // The pressed wash hugs the glyph rather than filling the whole
-            // hit box — the tap target stays [LoggingIcons.hit], the visible
-            // splash is the smaller square inside it.
-            radius: LoggingIcons.hit / 2,
+            // Both washes — the selected fill and the pressed splash — hug the
+            // glyph rather than filling the hit box. The tap target stays
+            // [LoggingIcons.hit] for accessibility; a selected action reads as
+            // a small chip around its icon, not a 36pt block under the card.
+            radius: LoggingIcons.wash / 2,
             containedInkWell: true,
             highlightShape: BoxShape.rectangle,
             borderRadius: BorderRadius.circular(NhamRadii.md),
             child: SizedBox.square(
               dimension: LoggingIcons.hit,
               child: Center(
-                child:
-                    pending
-                        ? SizedBox.square(
-                          dimension: 13,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
+                child: Container(
+                  width: LoggingIcons.wash,
+                  height: LoggingIcons.wash,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: active ? NhamColors.hover : Colors.transparent,
+                    borderRadius: BorderRadius.circular(NhamRadii.md),
+                  ),
+                  child:
+                      pending
+                          ? SizedBox.square(
+                            dimension: 13,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: foreground,
+                            ),
+                          )
+                          : Icon(
+                            icon,
+                            size: LoggingIcons.size,
                             color: foreground,
                           ),
-                        )
-                        : Icon(
-                          icon,
-                          size: LoggingIcons.size,
-                          color: foreground,
-                        ),
+                ),
               ),
             ),
           ),

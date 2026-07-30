@@ -53,7 +53,7 @@ class NutrientGridCard extends StatelessWidget {
     }
 
     final Color figureColor = showExceed
-        ? NhamColors.danger
+        ? NhamColors.offTarget
         : isLimited || pct == null
             ? kInkMuted
             : adequate

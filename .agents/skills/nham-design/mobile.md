@@ -89,7 +89,23 @@ surface-tinted cards that would read grey on the canvas become solid white.
 
 `NhamColors` mirrors these plus `textSoft #3D3D3A` (long body), `hover #F0EAE0`
 (warm select wash), and the unchanged accent `#C9A87C`, button umber `#695E4E`,
-`danger #D37B69`, `success`, and macro colours.
+`success`, and macro colours.
+
+**Red means "this destroys something", not "your numbers are off."** Those were
+one terracotta token and are now two:
+
+| Token | Hex | Role |
+|-------|-----|------|
+| `danger` | `#DC2626` | destructive actions (delete, remove, sign out) and error text — a plain red |
+| `offTarget` | `#D37B69` | over/under target: the ring's overflow arc, an exceeded target bar, a nutrient past its limit |
+
+The old shared `#D37B69` was a warm desaturated accent that read as decorative
+rather than destructive, and at 2.7:1 on the canvas it was the weakest text
+colour in the app. Splitting the token is what lets destructive UI go properly
+red (4.2:1) without the dashboard turning alarming the moment you go 10 kcal
+over — the ring's own rule is still "never red, never a pill". The heatmap keeps
+its own five-stop scale; `heatmapFar` shares the terracotta by coincidence, not
+by reference.
 
 No third "disabled" tier. The old `kInkSecondary` (taupe) / `kInkDisabled`
 (stone) constants have been **deleted** — every surface is on `kInk` + `kInkMuted`.

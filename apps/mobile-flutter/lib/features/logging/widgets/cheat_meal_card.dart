@@ -27,7 +27,7 @@ class CheatMealCard extends StatefulWidget {
 
   final PersistedMeal meal;
 
-  /// Removal (terracotta, never red) — fired by the trailing swipe or the
+  /// Removal (destructive red) — fired by the trailing swipe or the
   /// remove icon beneath the card. Null disables both.
   final VoidCallback? onRemove;
 

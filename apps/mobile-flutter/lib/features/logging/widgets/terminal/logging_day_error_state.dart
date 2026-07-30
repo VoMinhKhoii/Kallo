@@ -14,7 +14,7 @@ class LoggingDayErrorState extends StatelessWidget {
   const LoggingDayErrorState({super.key, required this.onRetry});
   final VoidCallback onRetry;
 
-  static const _dangerFill = Color(0x1AD37B69); // nham-danger @ 10%
+  static const _dangerFill = NhamColors.danger10;
 
   @override
   Widget build(BuildContext context) {

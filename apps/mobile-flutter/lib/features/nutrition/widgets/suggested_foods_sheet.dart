@@ -119,7 +119,7 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
               Text(
                 tr('nutrition.suggestedFoods.short',
                     namedArgs: {'value': shortBy.toString()}),
-                style: dashMeta(color: NhamColors.danger, tabular: true),
+                style: dashMeta(color: NhamColors.offTarget, tabular: true),
               ),
           ],
         ),

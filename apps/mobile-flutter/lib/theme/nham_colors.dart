@@ -106,8 +106,14 @@ abstract final class NhamColors {
   /// system. Warm washes stay warm where they cover something lighter.
   static const Color pressWash = Color(0x0F141413); // ink @ 6%
 
-  // ── Danger alpha variant ─────────────────────────────────────────────
-  static const Color danger70 = Color(0xB3D37B69); // 70%
+  // ── Danger alpha variants ────────────────────────────────────────────
+  // Washes and hairlines behind destructive UI. These existed as hardcoded
+  // hexes at six call sites, which is how they silently kept the old terracotta
+  // when [danger] moved; they are tokens now so the next change carries them.
+  static const Color danger70 = Color(0xB3DC2626); // 70%
+  static const Color danger30 = Color(0x4DDC2626); // 30% — danger hairline
+  static const Color danger10 = Color(0x1ADC2626); // 10% — pressed/fill wash
+  static const Color danger06 = Color(0x0FDC2626); // 6% — quiet error card fill
 
   // ── Macros ───────────────────────────────────────────────────────────
   static const Color macroProtein = Color(0xFFC9A87C);
@@ -122,7 +128,30 @@ abstract final class NhamColors {
   static const Color successDark = Color(0xFF14855A); // deeper emerald — figures
   static const Color successFaint = Color(0xFFEAF7F0); // mint — met-card fill
   static const Color successBorder = Color(0x331FA971); // emerald @ 20% — hairline
-  static const Color danger = Color(0xFFD37B69); // terracotta
+  /// Destructive actions — delete, remove, sign out — and error text.
+  ///
+  /// A plain red, not the old terracotta `#D37B69`. The terracotta was a warm
+  /// desaturated accent that sat closer to the tan palette than to a warning:
+  /// it read as decorative rather than destructive, and at 2.7:1 on the canvas
+  /// it was the weakest text colour in the app. This is 4.2:1 and unmistakably
+  /// red.
+  ///
+  /// [danger] is for ACTIONS and ERRORS only. "Your numbers are off" is
+  /// [offTarget], and the heatmap keeps its own scale — see both below.
+  static const Color danger = Color(0xFFDC2626);
+
+  /// Over/under target — the calorie ring's overflow arc, the exceed state on a
+  /// target bar, a nutrient figure past its limit, a "short by" figure.
+  ///
+  /// This keeps the terracotta that [danger] used to be, on purpose. Being over
+  /// your calories is information, not a destructive act, and the ring's own
+  /// docs say "never red, never a pill" — a dashboard that turns pure red when
+  /// you go 10 kcal over is alarming in a way the old shared colour never was.
+  /// It only looked like `danger` because both were terracotta; splitting the
+  /// token is what lets destructive UI go properly red without dragging the
+  /// dashboard along.
+  static const Color offTarget = Color(0xFFD37B69);
+  static const Color offTarget70 = Color(0xB3D37B69); // 70% — bar tick
 
   // ── Adherence heatmap diverging scale ────────────────────────────────
   static const Color heatmapOnTarget = Color(0xFF7CA368);

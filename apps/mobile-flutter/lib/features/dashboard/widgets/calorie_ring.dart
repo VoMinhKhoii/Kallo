@@ -181,14 +181,14 @@ class _RingPainter extends CustomPainter {
       ..color = NhamColors.accent;
     canvas.drawArc(rect, _start, _tau * ratio.clamp(0, 1).toDouble(), false, base);
 
-    // Over target — the overflow arc continues in terracotta @ ~40% alpha.
+    // Over target — the overflow arc continues in offTarget @ ~40% alpha.
     if (ratio > 1) {
       final overflow = (ratio - 1).clamp(0, 1).toDouble();
       final over = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round
-        ..color = NhamColors.danger.withValues(alpha: 0.4);
+        ..color = NhamColors.offTarget.withValues(alpha: 0.4);
       canvas.drawArc(rect, _start, _tau * overflow, false, over);
     }
   }

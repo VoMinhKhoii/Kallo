@@ -45,7 +45,7 @@ class SettingsRow extends StatefulWidget {
          'SettingsRow needs an icon or a leading widget',
        );
 
-  /// Lucide glyph for the gutter — ink (terracotta on a [danger] row). Omit
+  /// Lucide glyph for the gutter — ink (red on a [danger] row). Omit
   /// when supplying a custom [leading] (e.g. a brand mark with its own colour).
   final IconData? icon;
 
@@ -79,12 +79,12 @@ class _SettingsRowState extends State<SettingsRow> {
 
   @override
   Widget build(BuildContext context) {
-    // Icon and label are both primary content — one ink (terracotta on a
+    // Icon and label are both primary content — one ink (red on a
     // danger row), no press-state colour change.
     final Color inkColor = widget.danger ? NhamColors.danger : kInk;
     final Color fill =
         widget.danger
-            ? const Color(0x1AD37B69) // danger @ 10%
+            ? NhamColors.danger10
             : NhamColors.pressWash;
 
     final row = Container(

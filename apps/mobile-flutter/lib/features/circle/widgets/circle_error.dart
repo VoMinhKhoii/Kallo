@@ -30,9 +30,9 @@ class CircleErrorCard extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 448),
           padding: const EdgeInsets.all(NhamSpacing.sp4),
           decoration: BoxDecoration(
-            color: const Color(0x0FD37B69), // danger @ 6%
+            color: NhamColors.danger06,
             borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-            border: Border.all(color: const Color(0x4DD37B69)), // danger @ 30%
+            border: Border.all(color: NhamColors.danger30),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,7 +130,7 @@ class _RetryPillState extends State<_RetryPill>
             vertical: NhamSpacing.sp2,
           ),
           decoration: BoxDecoration(
-            color: const Color(0x1AD37B69), // danger @ 10%
+            color: NhamColors.danger10,
             borderRadius: BorderRadius.circular(NhamRadii.pill),
           ),
           child: Row(

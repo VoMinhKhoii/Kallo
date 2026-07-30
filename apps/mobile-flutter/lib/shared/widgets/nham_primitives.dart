@@ -130,12 +130,12 @@ class _NhamButtonState extends State<NhamButton> {
         border = Border.all(color: NhamColors.border);
       case NhamButtonVariant.danger:
         // hover:bg-nham-danger/10
-        bg = _pressed ? const Color(0x1AD37B69) : Colors.transparent;
+        bg = _pressed ? NhamColors.danger10 : Colors.transparent;
       case NhamButtonVariant.ghost:
         bg = _pressed ? NhamColors.pressWash : Colors.transparent;
     }
 
-    // Label color: primary → white, danger → terracotta, else espresso text.
+    // Label color: primary → white, danger → red, else espresso text.
     final Color labelColor = switch (variant) {
       NhamButtonVariant.primary => NhamColors.elev,
       NhamButtonVariant.danger => NhamColors.danger,

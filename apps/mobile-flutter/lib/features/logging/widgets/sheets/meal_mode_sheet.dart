@@ -56,7 +56,7 @@ class _MealModeSheet extends StatelessWidget {
                 ),
                 _ModeRow(
                   icon: mealModeIcon(MealLogMode.cheat),
-                  iconColor: NhamColors.danger, // terracotta — 3.1:1
+                  iconColor: NhamColors.danger, // destructive red
                   title: 'logging.modeSelector.cheat'.tr(),
                   desc: 'logging.modeSelector.cheatDesc'.tr(),
                   selected: current == MealLogMode.cheat,
