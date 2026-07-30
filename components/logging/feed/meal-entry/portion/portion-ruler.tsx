@@ -15,6 +15,7 @@ import {
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { PIECE_TIERS, pieceAssetFor } from '@/lib/ai/portion/vessel-data';
 import type { PieceVessel } from '@/lib/ai/portion/vessel-types';
+import { cn } from '@/lib/utils';
 
 interface PortionRulerProps {
   anchors: PortionAnchor[];
@@ -113,9 +114,10 @@ export function PortionRuler({
               onClick={() => onChange(anchor.value)}
               aria-label={`${countPrefix}${anchor.label} (${tier.sizeLabel})`}
               aria-pressed={selected}
-              className={`flex items-end justify-center transition-opacity ${
+              className={cn(
+                'flex items-end justify-center transition-opacity',
                 selected ? 'opacity-100' : 'opacity-50 hover:opacity-80'
-              }`}
+              )}
             >
               <span
                 className="relative block max-w-full"
