@@ -132,7 +132,7 @@ class _NhamButtonState extends State<NhamButton> {
         // hover:bg-nham-danger/10
         bg = _pressed ? const Color(0x1AD37B69) : Colors.transparent;
       case NhamButtonVariant.ghost:
-        bg = _pressed ? NhamColors.hover40 : Colors.transparent;
+        bg = _pressed ? NhamColors.pressWash : Colors.transparent;
     }
 
     // Label color: primary → white, danger → terracotta, else espresso text.

@@ -29,6 +29,8 @@ import 'nham_typography.dart';
 // ── Surfaces (all solid, 100% opacity) — semantic aliases onto NhamColors ──
 const Color kPage = NhamColors.surface; // app page — neutral canvas
 const Color kCardSurface = NhamColors.elev; // cards — solid white
+// Tracks the canvas: whenever [kPage] moves, this moves with it by the same
+// delta, or the "recessed" surface ends up lighter than the page it sits on.
 const Color kTrack = NhamColors.track; // ring/bar tracks — the ONLY low-contrast surface (warm)
 const Color kHairline = NhamColors.border; // the one border (neutral hairline, solid)
 const Color kFieldFill = NhamColors.elev; // input fills read white on the neutral canvas
@@ -115,11 +117,20 @@ TextStyle dashBody({
 /// 12 / 400 — secondary captions, stat values (quiet, Threads-light meta).
 /// Leading 1.25 — meta lines are short and rarely wrap; the extra leading only
 /// grew the rows around them.
-TextStyle dashMeta({Color color = kInkMuted, bool tabular = false}) =>
+///
+/// [weight] exists for the one case where Meta-12 is NOT secondary: a section
+/// header in ink. At w400 it reads as small body text sitting above the rows
+/// rather than labelling them, since size is then the only thing separating it
+/// from a 14 label of the same colour.
+TextStyle dashMeta({
+  Color color = kInkMuted,
+  FontWeight weight = FontWeight.w400,
+  bool tabular = false,
+}) =>
     TextStyle(
       fontFamily: NhamTextStyles.sansFamily,
       fontSize: 12,
-      fontWeight: FontWeight.w400,
+      fontWeight: weight,
       height: 1.25,
       color: color,
       fontFeatures: tabular ? _tnum : null,

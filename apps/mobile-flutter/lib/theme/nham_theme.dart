@@ -23,21 +23,23 @@ abstract final class NhamSpacing {
   static const double sp20 = 80;
 }
 
-/// Border-radius scale.
 /// One glyph size and one hit target for every icon-only control in the app.
 ///
-/// App-wide on purpose: the design doc states 16/36 as a system rule, not a
+/// App-wide on purpose: the design doc states this as a system rule, not a
 /// per-surface decision, and the two per-surface copies of it were byte
 /// identical with zero overrides between them.
 abstract final class NhamIcons {
-  /// Glyph size.
-  static const double size = 16;
+  /// Glyph size. 24 — Material's own default, and the size a row glyph has to
+  /// be to carry its row rather than trail it (the Threads settings reference).
+  /// 16 read as a decoration beside 14pt labels.
+  static const double size = 24;
 
   /// Square tap target around the glyph. The pressed wash hugs the glyph, so
   /// the target can grow for accessibility without the affordance growing too.
   static const double hit = 36;
 }
 
+/// Border-radius scale.
 abstract final class NhamRadii {
   static const double sm = 6;
   static const double md = 8;

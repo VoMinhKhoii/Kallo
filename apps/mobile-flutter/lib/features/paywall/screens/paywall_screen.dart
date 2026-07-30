@@ -100,7 +100,7 @@ class _CloseHeader extends StatelessWidget {
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: onClose,
-            child: const Icon(LucideIcons.x, size: 22, color: kInkMuted),
+            child: const Icon(LucideIcons.x, size: NhamIcons.size, color: kInkMuted),
           ),
         ),
       ),

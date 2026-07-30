@@ -7,7 +7,7 @@ import '../theme/nham_theme.dart';
 
 /// The drawer's ONE glyph size — nav rows and the footer rows below them.
 /// (`sidebar_footer.dart` still hard-codes its own 16; it should adopt this.)
-const double kSidebarIconSize = 16;
+const double kSidebarIconSize = NhamIcons.size;
 
 /// One drawer nav destination — mirrors the web `NavItemConfig`
 /// (`components/app/nav-items.ts`): href, i18n label key, Lucide icon, and the

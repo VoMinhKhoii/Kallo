@@ -17,6 +17,7 @@ import '../../../shared/widgets/brand/google_logo.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../widgets/settings_group.dart';
 import '../widgets/settings_row.dart';
+import '../widgets/settings_row_leading.dart';
 import 'account_delete_screen.dart';
 
 /// OAuth redirect for the manual-link browser flow — reuses the `nham://`
@@ -255,7 +256,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       rows.add(
         _providerRow(
           OAuthProvider.google,
-          const GoogleLogo(size: 18),
+          const GoogleLogo(size: kSettingsRowIcon),
           tr('settings.account.connectGoogle'),
           tr('settings.account.googleConnected'),
         ),
@@ -265,7 +266,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         rows.add(
           _providerRow(
             OAuthProvider.apple,
-            const AppleLogo(size: 18),
+            const AppleLogo(size: kSettingsRowIcon),
             tr('settings.account.connectApple'),
             tr('settings.account.appleConnected'),
           ),

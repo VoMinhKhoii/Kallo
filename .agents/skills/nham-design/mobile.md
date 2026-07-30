@@ -70,7 +70,8 @@ setting first — at 130% every number below is 30% larger than spec.
 ## Colour — neutral canvas, exactly two text colours
 
 The palette is a **neutral canvas / ink / hairline** system (the old cream /
-espresso / biscotti trio is retired). Interaction washes stay **warm**, and the
+espresso / biscotti trio is retired). Interaction washes stay **warm** (with one
+carve-out for the press wash, below), and the
 tan accent survives only on **non-text** moments — ring/chart strokes, the streak
 Flame, focus/press rings, and the one deliberate italic-accent phrase. Tan never
 colours running text or ordinary icons; former gold text/marks become ink or
@@ -79,10 +80,10 @@ surface-tinted cards that would read grey on the canvas become solid white.
 
 | Token | Hex | Role |
 |-------|-----|------|
-| `kPage` | `#F9F9F7` | app canvas — neutral gray-white |
+| `kPage` | `#F1F1EE` | app canvas — neutral gray |
 | `kCardSurface` | `#FFFFFF` | cards / sheets — solid white |
-| `kTrack` | `#F5F4F0` | ring/bar tracks (warm), the only low-contrast surface |
-| `kHairline` | `#E8E6DC` | the one border — neutral hairline |
+| `kTrack` | `#EDECE7` | ring/bar tracks (warm), the only low-contrast surface |
+| `kHairline` | `#E2DFD4` | the one border — neutral hairline |
 | `kInk` | `#141413` | primary data — numbers, meal names, macro labels |
 | `kInkMuted` | `#6E6D66` | everything secondary — labels, units, captions, dates |
 
@@ -92,6 +93,21 @@ surface-tinted cards that would read grey on the canvas become solid white.
 
 No third "disabled" tier. The old `kInkSecondary` (taupe) / `kInkDisabled`
 (stone) constants have been **deleted** — every surface is on `kInk` + `kInkMuted`.
+
+**The canvas is grey, not near-white, and this is load-bearing.** `kPage` was
+`#F9F9F7` — one step off `#FFFFFF`, which left white cards, hairlines and every
+wash with almost nothing to separate from; the app read uniformly subtle on a
+phone. `kTrack` and `kHairline` moved down with it by the same delta to keep
+their step below the page (at the old value `kTrack` would have been *lighter*
+than the canvas — a track reading raised instead of recessed). This deliberately
+forks from the web's `--nham-surface`; do not "resync" the two without
+re-deciding it.
+
+**Press wash.** Warm washes are for *selection* and for anything covering a
+lighter surface. A control that sits **transparent on the canvas** presses with
+`NhamColors.pressWash` (ink @ 6%) instead: the warm washes are lighter than the
+canvas, so on the page they composite to within ~3 points of it and the press
+simply doesn't register. Warm for selected, ink for pressed-on-page.
 
 ## Spacing — one 12px rhythm
 
@@ -140,11 +156,23 @@ is how cards ended up 20px apart when the separator said 8.
 
 ### Icons
 
-One glyph size and one hit target per surface. Logging uses `LoggingIcons.size`
-16 on `LoggingIcons.hit` 36 for every icon-only control — chevrons, steppers,
-row-removes, composer controls, send/stop. The pressed wash hugs the glyph rather
-than filling the hit box: the target can grow for accessibility without the press
-affordance growing with it.
+One glyph size and one hit target, app-wide: `NhamIcons.size` **24** on
+`NhamIcons.hit` 36 for every icon-only control and every row-leading glyph —
+chevrons, steppers, row-removes, composer controls, send/stop, settings rows.
+(`LoggingIcons.size`/`.hit` are aliases of these, not independent values.) The
+pressed wash hugs the glyph rather than filling the hit box: the target can grow
+for accessibility without the press affordance growing with it.
+
+24 is for glyphs that stand alone. A glyph sitting **inside a text run** — a
+chip, a meta row, a badge, an inline affirmation — is a different role and stays
+at its local 12–16; blanket-24 there makes dense rows top-heavy. The size was 16
+everywhere until it read as decoration beside 14pt labels rather than as content.
+
+A row-leading glyph is centred on the **title's first line**, not on the row.
+Rows with a subline are two lines tall, and centring across both leaves the icon
+floating in the gap. See `settings_row_leading.dart` — the `OverflowBox` there is
+load-bearing, not incidental: a 24 glyph is taller than an 18.2 title line, and a
+plain `Center` in a tight `SizedBox` would hand the icon a squashed box.
 
 The logging page now holds the three sizes with **no exceptions** — the calorie
 ring's label was the last holdout at 8px and is on Meta 12 like every other
@@ -231,6 +259,13 @@ Selected = `NhamColors.hover` (#F0EAE0) wash + `kInk` + semibold. Idle =
 web reserves for selected. Two consequences: a selected row keeps its full wash
 while pressed (hover@40 over an opaque wash renders *lighter*, i.e. inverted
 feedback), and the badge dot is always tan (white vanished on the wash).
+
+Open question since the canvas went grey: the drawer panel paints `kPage`
+(`shell/sidebar.dart`), and the warm wash is now much closer to it, so the
+selected row leans harder on ink + semibold than on the wash. If it reads mushy,
+the fix is to paint the drawer `kCardSurface` — a slide-in panel is a sheet, and
+sheets are white in this system — not to darken `hover`, which is mostly used on
+white.
 
 ## Traps — each of these shipped a visible bug
 

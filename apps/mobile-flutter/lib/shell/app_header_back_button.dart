@@ -39,12 +39,12 @@ class _AppHeaderBackButtonState extends State<AppHeaderBackButton> {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: _pressed ? NhamColors.hover40 : null,
+            color: _pressed ? NhamColors.pressWash : null,
             borderRadius: BorderRadius.circular(NhamRadii.sm),
           ),
           child: const Icon(
             LucideIcons.chevronLeft,
-            size: 22,
+            size: NhamIcons.size,
             color: NhamColors.text,
           ),
         ),

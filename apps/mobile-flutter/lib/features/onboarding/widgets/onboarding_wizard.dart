@@ -296,7 +296,7 @@ class _CloseButtonState extends State<_CloseButton> {
         ),
         child: Icon(
           LucideIcons.x,
-          size: 20,
+          size: NhamIcons.size,
           color: _pressed ? NhamColors.text : NhamColors.textHelp,
         ),
       ),

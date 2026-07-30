@@ -157,7 +157,7 @@ class _ComposerActionButtonState extends State<ComposerActionButton> {
         onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
         onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
         onTap: widget.onTap,
-        // 44pt minimum tap target (HIG) around the 32pt visual button.
+        // 44pt minimum tap target (HIG) around the visual button.
         child: SizedBox(
           width: 44,
           height: 44,
@@ -170,8 +170,11 @@ class _ComposerActionButtonState extends State<ComposerActionButton> {
               child: Opacity(
                 opacity: widget.enabled ? 1 : 0.3,
                 child: Container(
-                  width: 32,
-                  height: 32,
+                  // Sized off the glyph, not a magic number: the pill has to
+                  // keep visible padding around the icon, and the icon is now
+                  // the app-wide 24 rather than 16.
+                  width: widget.iconSize + NhamSpacing.sp3,
+                  height: widget.iconSize + NhamSpacing.sp3,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: _pressed ? NhamColors.btnHover : NhamColors.btn,

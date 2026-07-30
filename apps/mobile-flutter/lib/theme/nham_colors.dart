@@ -5,12 +5,23 @@ import 'dart:ui';
 /// Transcribed from the web's `globals.css` `:root` tokens (the canonical
 /// `--nham-*` values). Visual direction: neutral canvas / ink / hairline with
 /// warm interaction washes; tan accent kept for non-text moments only.
+///
+/// DELIBERATE DIVERGENCE FROM WEB: the canvas is `#F1F1EE`, not the web's
+/// `#f9f9f7`. At one step off white every surface in the system — white cards,
+/// hairlines, washes — had almost nothing to separate from, and the app read
+/// uniformly subtle on a phone. The surfaces tuned against the old canvas moved
+/// with it: `track` and `border` both darkened to keep their step below the
+/// page, and `pressWash` replaces the warm washes where a control is
+/// transparent. Do NOT "resync" these to `globals.css` without re-deciding it.
 abstract final class NhamColors {
   // ── Core surfaces ────────────────────────────────────────────────────
-  static const Color surface = Color(0xFFF9F9F7); // app background — neutral canvas
+  static const Color surface = Color(0xFFF1F1EE); // app background — neutral canvas
   static const Color elev = Color(0xFFFFFFFF); // cards / sheets
   static const Color hover = Color(0xFFF0EAE0); // warm hover/select wash
-  static const Color track = Color(0xFFF5F4F0); // warm segmented/track
+  // Moved by the SAME delta as [surface] (−8/−8/−9): the canvas↔track step is
+  // the whole point of this token, and at the old value it would now sit
+  // *lighter* than the page — a track that reads raised instead of recessed.
+  static const Color track = Color(0xFFEDECE7); // warm segmented/track
 
   // ── Text ─────────────────────────────────────────────────────────────
   static const Color text = Color(0xFF141413); // near-black ink
@@ -22,15 +33,15 @@ abstract final class NhamColors {
   static const Color accentDark = Color(0xFFB89968);
 
   // ── Borders ──────────────────────────────────────────────────────────
-  static const Color border = Color(0xFFE8E6DC); // neutral hairline
-  static const Color borderSoft = Color(0x99E8E6DC); // hairline @ 60%
-  static const Color borderHalf = Color(0x80E8E6DC); // hairline @ 50%
-  static const Color borderFaint = Color(0x4DE8E6DC); // hairline @ 30%
-  static const Color borderBiscotti40 = Color(0x66E8E6DC); // hairline @ 40%
+  static const Color border = Color(0xFFE2DFD4); // neutral hairline
+  static const Color borderSoft = Color(0x99E2DFD4); // hairline @ 60%
+  static const Color borderHalf = Color(0x80E2DFD4); // hairline @ 50%
+  static const Color borderFaint = Color(0x4DE2DFD4); // hairline @ 30%
+  static const Color borderBiscotti40 = Color(0x66E2DFD4); // hairline @ 40%
 
   // ── Translucent surfaces ─────────────────────────────────────────────
   static const Color elevTranslucent = Color(0xCCFFFFFF); // card/elev @ 80%
-  static const Color surface80 = Color(0xCCF9F9F7); // canvas @ 80%
+  static const Color surface80 = Color(0xCCF1F1EE); // canvas @ 80%
   static const Color cardWhite55 = Color(0x8CFFFFFF); // card white @ 55%
   static const Color cardWhite40 = Color(0x66FFFFFF); // card white @ 40%
   static const Color cardWhite30 = Color(0x4DFFFFFF); // card white @ 30%
@@ -72,8 +83,19 @@ abstract final class NhamColors {
   static const Color placeholderMuted40 = Color(0x666E6D66); // 40%
 
   // ── Hover alpha variants ─────────────────────────────────────────────
+  // Only for washes over an OPAQUE LIGHTER surface (a white card, a field). On
+  // the canvas itself they no longer register — see [pressWash].
   static const Color hover40 = Color(0x66F0EAE0); // 40%
   static const Color hover50 = Color(0x80F0EAE0); // 50%
+
+  /// Press wash for controls that sit transparent on the canvas.
+  ///
+  /// The warm [hover] washes are a lighter cream than the canvas, so on a
+  /// transparent-background control they composite to within ~3 points of the
+  /// page — an invisible press. This is the same interaction in the neutral
+  /// direction: ink at 6%, which darkens legibly over any surface in the
+  /// system. Warm washes stay warm where they cover something lighter.
+  static const Color pressWash = Color(0x0F141413); // ink @ 6%
 
   // ── Danger alpha variant ─────────────────────────────────────────────
   static const Color danger70 = Color(0xB3D37B69); // 70%
@@ -102,8 +124,8 @@ abstract final class NhamColors {
   static const Color heatmapBarMiss = Color(0xFFD4C9AD);
 
   // ── Settings + onboarding neutral/cream palette ──────────────────────
-  static const Color inputBorder = Color(0xFFE8E6DC); // unified neutral hairline
-  static const Color inputBorder40 = Color(0x66E8E6DC);
+  static const Color inputBorder = Color(0xFFE2DFD4); // unified neutral hairline
+  static const Color inputBorder40 = Color(0x66E2DFD4);
   static const Color textWarm = Color(0xFF7B6F62);
   static const Color textHelp = Color(0xFF8B8682);
   static const Color textSelected = Color(0xFF6F6556);
