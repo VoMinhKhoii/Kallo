@@ -103,7 +103,7 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              LucideIcons.mail,
+              LucideIcons.mail300,
               size: 24,
               color: NhamColors.textMuted,
             ),

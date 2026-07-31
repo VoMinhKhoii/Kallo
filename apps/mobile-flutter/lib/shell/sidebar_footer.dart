@@ -55,7 +55,7 @@ class SidebarFooter extends StatelessWidget {
             const SizedBox(height: 12),
           ],
           FooterRow(
-            icon: LucideIcons.settings,
+            icon: LucideIcons.settings300,
             label: tr('app.mainSidebar.settings'),
             active: isActiveRoute(location, '/settings'),
             onTap: () {
@@ -104,7 +104,7 @@ class _FooterRowState extends State<FooterRow> {
     // when idle), so the drawer read as two different components.
     final Color contentColor = active ? kInk : kInkMuted;
     final Color? fill =
-        active ? NhamColors.hover : (_pressed ? NhamColors.hover40 : null);
+        active ? NhamColors.hover : (_pressed ? NhamColors.pressWash : null);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

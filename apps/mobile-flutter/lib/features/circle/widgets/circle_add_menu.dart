@@ -36,7 +36,7 @@ class CircleAddMenu extends StatelessWidget {
   Widget build(BuildContext context) => IconButton(
     tooltip: tr('groups.page.addFriend'),
     onPressed: () => _openActions(context),
-    icon: const Icon(LucideIcons.userPlus, size: 18, color: kInk),
+    icon: const Icon(LucideIcons.userPlus300, size: 18, color: kInk),
   );
 
   Future<void> _openActions(BuildContext context) async {

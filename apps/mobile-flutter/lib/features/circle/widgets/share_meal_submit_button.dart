@@ -46,7 +46,7 @@ class SubmitButton extends StatelessWidget {
                   ),
                 )
               else
-                const Icon(LucideIcons.users, size: 16, color: Colors.white),
+                const Icon(LucideIcons.users300, size: 16, color: Colors.white),
               const SizedBox(width: NhamSpacing.sp2),
               Text(
                 label,

@@ -279,7 +279,7 @@ class _SuggestedFoodsButtonState extends State<_SuggestedFoodsButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                LucideIcons.sparkles,
+                LucideIcons.sparkles300,
                 size: 18,
                 color: NhamColors.surface,
               ),

@@ -59,7 +59,7 @@ class _LanguageFieldState extends State<_LanguageField> {
         Row(
           children: [
             const Icon(
-              LucideIcons.languages,
+              LucideIcons.languages300,
               size: 16,
               color: NhamColors.textMuted,
             ),

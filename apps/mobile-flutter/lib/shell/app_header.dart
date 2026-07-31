@@ -109,12 +109,12 @@ class _AppMenuButtonState extends ConsumerState<AppMenuButton> {
                   height: 36,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: _pressed ? NhamColors.hover40 : null,
+                    color: _pressed ? NhamColors.pressWash : null,
                     borderRadius: BorderRadius.circular(NhamRadii.sm),
                   ),
                   child: const Icon(
-                    LucideIcons.menu,
-                    size: 22,
+                    LucideIcons.menu300,
+                    size: NhamIcons.size,
                     color: NhamColors.text,
                   ),
                 ),

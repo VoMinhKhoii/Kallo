@@ -1,14 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../theme/calm_tokens.dart';
-import '../../theme/nham_colors.dart';
-import '../../theme/nham_theme.dart';
+import 'top_toast_pill.dart';
 
-/// A top-toast's tone — sets the leading icon + its color.
-enum TopToastVariant { success, error }
+// The tone enum lives with the pill that renders it; re-exported so callers
+// keep importing one file for `showTopToast` + `TopToastVariant`.
+export 'top_toast_pill.dart' show TopToastVariant;
 
 /// Show a brief toast pinned to the TOP of the screen (matches the web's
 /// top-anchored toasts) — a white pill that slides+fades in, holds, then leaves.
@@ -48,6 +46,8 @@ Future<void> showTopToast(
   return completer.future;
 }
 
+/// The toast's lifecycle: slide+fade in, hold for [duration], leave. The pill
+/// it wraps is presentational only ([TopToastPill]).
 class _TopToast extends StatefulWidget {
   const _TopToast({
     required this.message,
@@ -112,77 +112,19 @@ class _TopToastState extends State<_TopToast>
   Widget build(BuildContext context) {
     final hasAction = widget.actionLabel != null;
 
-    final pill = Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: NhamSpacing.sp3,
-        vertical: NhamSpacing.sp2,
-      ),
-      // 16 horizontal / 12 vertical — the same optical card inset the rest of
-      // the app uses; the action side gives back half so the tappable label
-      // sits on the pill's edge without the row reading lopsided.
-      padding: EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
-        NhamSpacing.sp3,
-        hasAction ? NhamSpacing.sp2 : NhamSpacing.sp4,
-        NhamSpacing.sp3,
-      ),
-      decoration: BoxDecoration(
-        // Solid white, not the retired cream — #FFFCF8 read yellow against
-        // the neutral #F9F9F7 canvas.
-        color: kCardSurface,
-        borderRadius: BorderRadius.circular(NhamRadii.pill),
-        border: Border.all(color: kHairline),
-        boxShadow: kCardShadows,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            widget.variant == TopToastVariant.error
-                ? LucideIcons.circleAlert
-                : LucideIcons.check,
-            // Status colour rides the icon, never the copy.
-            size: 16,
-            color: widget.variant == TopToastVariant.error
-                ? NhamColors.danger
-                : kInk,
-          ),
-          const SizedBox(width: NhamSpacing.sp2),
-          Flexible(
-            child: Text(
-              widget.message,
-              textAlign: hasAction ? TextAlign.left : TextAlign.center,
-              style: dashBody(),
-            ),
-          ),
-          if (hasAction) ...[
-            const SizedBox(width: NhamSpacing.sp2),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _onAction,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: NhamSpacing.sp2,
-                  vertical: NhamSpacing.sp1,
-                ),
-                // Medium is the weight ceiling — semibold read thick in
-                // Be Vietnam Pro.
-                child: Text(
-                  widget.actionLabel!,
-                  style: dashBody(weight: FontWeight.w500),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-
     final content = FadeTransition(
       opacity: _c,
       child: SlideTransition(
         position: _slide,
-        child: Align(alignment: Alignment.topCenter, child: pill),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: TopToastPill(
+            message: widget.message,
+            variant: widget.variant,
+            actionLabel: widget.actionLabel,
+            onAction: _onAction,
+          ),
+        ),
       ),
     );
 

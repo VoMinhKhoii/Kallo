@@ -26,9 +26,9 @@ const int _maxMessageLength = 4000;
 const int _maxScreenshotBytes = 5 * 1024 * 1024;
 
 const _feedbackTypes = <FeedbackType>[
-  FeedbackType('bug', LucideIcons.bug),
-  FeedbackType('ingredient', LucideIcons.sprout),
-  FeedbackType('idea', LucideIcons.lightbulb),
+  FeedbackType('bug', LucideIcons.bug300),
+  FeedbackType('ingredient', LucideIcons.sprout300),
+  FeedbackType('idea', LucideIcons.lightbulb300),
 ];
 
 class FeedbackType {
@@ -221,7 +221,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.circleCheck, size: 40, color: kInk),
+            const Icon(LucideIcons.circleCheck300, size: 40, color: kInk),
             const SizedBox(height: NhamSpacing.sp4),
             Text(
               tr('settings.feedback.successTitle'),

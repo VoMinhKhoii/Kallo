@@ -168,7 +168,7 @@ class _EmptyState extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp10),
     child: Column(
       children: [
-        const Icon(LucideIcons.users, color: kInkMuted, size: 24),
+        const Icon(LucideIcons.users300, color: kInkMuted, size: 24),
         const SizedBox(height: NhamSpacing.sp3),
         Text(
           tr(titleKey, namedArgs: namedArgs),
@@ -184,7 +184,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: NhamSpacing.sp3),
           TextButton.icon(
             onPressed: onAdd,
-            icon: const Icon(LucideIcons.userPlus, size: 16),
+            icon: const Icon(LucideIcons.userPlus300, size: 16),
             label: Text(tr('groups.page.addFriend')),
           ),
         ],

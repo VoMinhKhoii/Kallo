@@ -24,10 +24,10 @@ Color cheatSliderColor(CheatSliderKey key) => switch (key) {
 /// One food-domain icon per axis — encodes the slider's identity (and shares
 /// its accent color), matching the web `CHEAT_SLIDER_ICONS`.
 IconData cheatSliderIcon(CheatSliderKey key) => switch (key) {
-  CheatSliderKey.protein => LucideIcons.drumstick,
-  CheatSliderKey.carbs => LucideIcons.wheat,
-  CheatSliderKey.fat => LucideIcons.droplet,
-  CheatSliderKey.drinks => LucideIcons.beer,
+  CheatSliderKey.protein => LucideIcons.drumstick300,
+  CheatSliderKey.carbs => LucideIcons.wheat300,
+  CheatSliderKey.fat => LucideIcons.droplet300,
+  CheatSliderKey.drinks => LucideIcons.beer300,
 };
 
 /// The interactive cheat-meal estimate: the occasion as a Lora quote, a live
@@ -485,7 +485,7 @@ class CheatBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(LucideIcons.partyPopper, size: 12, color: kInk),
+          const Icon(LucideIcons.partyPopper300, size: 12, color: kInk),
           const SizedBox(width: 4),
           Text(
             label,
@@ -542,7 +542,7 @@ class _SaveButtonState extends State<_SaveButton> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(LucideIcons.check, size: 14, color: Colors.white),
+                const Icon(LucideIcons.check300, size: 14, color: Colors.white),
                 const SizedBox(width: 6),
                 Text(
                   'logging.cheatSliders.confirm'.tr(),

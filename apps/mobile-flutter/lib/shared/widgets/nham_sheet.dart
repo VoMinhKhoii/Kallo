@@ -127,7 +127,7 @@ class NhamSheetHeader extends StatelessWidget {
                 onPressed: closeEnabled
                     ? (onClose ?? () => Navigator.of(context).pop())
                     : null,
-                icon: const Icon(LucideIcons.x, size: 22),
+                icon: const Icon(LucideIcons.x300, size: NhamIcons.size),
                 color: NhamColors.textMuted,
                 tooltip: 'common.cancel'.tr(),
               ),

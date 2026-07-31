@@ -20,10 +20,10 @@ bool get isBarcodeLoggingSupported =>
     defaultTargetPlatform == TargetPlatform.iOS;
 
 IconData mealModeIcon(MealLogMode mode) => switch (mode) {
-  MealLogMode.normal => LucideIcons.zap, // lightning
-  MealLogMode.cheat => LucideIcons.pizza,
-  MealLogMode.manual => LucideIcons.pencil,
-  MealLogMode.barcode => LucideIcons.scanBarcode,
+  MealLogMode.normal => LucideIcons.zap300, // lightning
+  MealLogMode.cheat => LucideIcons.pizza300,
+  MealLogMode.manual => LucideIcons.pencil300,
+  MealLogMode.barcode => LucideIcons.scanBarcode300,
 };
 
 String mealModeLabel(MealLogMode mode) => switch (mode) {

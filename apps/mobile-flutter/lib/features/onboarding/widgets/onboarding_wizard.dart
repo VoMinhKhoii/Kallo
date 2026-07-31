@@ -37,9 +37,9 @@ double? _parseAggression(String? raw, double fallback) {
 /// The modal entrance animation (scale/opacity/y) is intentionally NOT here: it
 /// belongs to the dialog presentation ([showOnboardingDialog]), not the wizard.
 ///
-/// Icons are Lucide one-for-one: `X`→[LucideIcons.x],
-/// `ArrowLeft`→[LucideIcons.arrowLeft], `ArrowRight`→[LucideIcons.arrowRight],
-/// `SkipForward`→[LucideIcons.skipForward].
+/// Icons are Lucide one-for-one: `X`→[LucideIcons.x300],
+/// `ArrowLeft`→[LucideIcons.arrowLeft300], `ArrowRight`→[LucideIcons.arrowRight300],
+/// `SkipForward`→[LucideIcons.skipForward300].
 class OnboardingWizard extends ConsumerStatefulWidget {
   const OnboardingWizard({
     super.key,
@@ -248,7 +248,7 @@ class _Header extends StatelessWidget {
       ),
       decoration: const BoxDecoration(
         // border @60%
-        border: Border(bottom: BorderSide(color: Color(0x99E8E6DC))),
+        border: Border(bottom: BorderSide(color: NhamColors.borderSoft)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -289,14 +289,14 @@ class _CloseButtonState extends State<_CloseButton> {
       onTapCancel: () => setState(() => _pressed = false),
       onTap: widget.onTap,
       child: Container(
-        padding: const EdgeInsets.all(NhamSpacing.sp2),
+        padding: const EdgeInsets.all((NhamIcons.hit - NhamIcons.size) / 2),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: _pressed ? const Color(0x80E8E6DC) : Colors.transparent,
+          color: _pressed ? NhamColors.borderHalf : Colors.transparent,
         ),
         child: Icon(
-          LucideIcons.x,
-          size: 20,
+          LucideIcons.x300,
+          size: NhamIcons.size,
           color: _pressed ? NhamColors.text : NhamColors.textHelp,
         ),
       ),
@@ -490,8 +490,8 @@ class _Footer extends StatelessWidget {
         vertical: NhamSpacing.sp4,
       ),
       decoration: const BoxDecoration(
-        color: Color(0x80F5F4F0), // bg-[#F5F4F0]/50
-        border: Border(top: BorderSide(color: Color(0x99E8E6DC))), // /60
+        color: NhamColors.track50,
+        border: Border(top: BorderSide(color: NhamColors.borderSoft)), // /60
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -546,7 +546,7 @@ class _BackButtonState extends State<_BackButton> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(LucideIcons.arrowLeft, size: 16, color: color),
+          Icon(LucideIcons.arrowLeft300, size: 16, color: color),
           const SizedBox(width: NhamSpacing.sp2),
           Text(
             tr('common.back'),
@@ -587,7 +587,7 @@ class _SkipButtonState extends State<_SkipButton> {
           vertical: 10,
         ),
         decoration: BoxDecoration(
-          color: _pressed ? const Color(0x80E8E6DC) : Colors.transparent,
+          color: _pressed ? NhamColors.borderHalf : Colors.transparent,
           borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // rounded-xl
         ),
         child: Row(
@@ -609,7 +609,7 @@ class _SkipButtonState extends State<_SkipButton> {
                 ),
               )
             else
-              Icon(LucideIcons.skipForward, size: 14, color: textColor),
+              Icon(LucideIcons.skipForward300, size: 14, color: textColor),
           ],
         ),
       ),
@@ -680,7 +680,7 @@ class _NextButtonState extends State<_NextButton> {
                   ),
                 )
               else
-                const Icon(LucideIcons.arrowRight,
+                const Icon(LucideIcons.arrowRight300,
                     size: 16, color: NhamColors.cream),
             ],
           ),

@@ -11,27 +11,27 @@ const List<NavItem> _navItems = [
   NavItem(
     href: '/dashboard',
     labelKey: 'app.mainSidebar.dashboard',
-    icon: LucideIcons.layoutDashboard,
+    icon: LucideIcons.layoutDashboard300,
   ),
   NavItem(
     href: '/nutrition',
     labelKey: 'app.mainSidebar.nutrition',
-    icon: LucideIcons.activity,
+    icon: LucideIcons.activity300,
   ),
   NavItem(
     href: '/logging',
     labelKey: 'app.mainSidebar.logging',
-    icon: LucideIcons.utensilsCrossed,
+    icon: LucideIcons.utensilsCrossed300,
   ),
   NavItem(
     href: '/circle',
     labelKey: 'app.mainSidebar.groups',
-    icon: LucideIcons.users,
+    icon: LucideIcons.users300,
   ),
   NavItem(
     href: '/admin',
     labelKey: 'app.mainSidebar.admin',
-    icon: LucideIcons.shieldCheck,
+    icon: LucideIcons.shieldCheck300,
     adminOnly: true,
   ),
 ];

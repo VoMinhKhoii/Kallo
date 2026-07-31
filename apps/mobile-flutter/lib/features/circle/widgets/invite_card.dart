@@ -160,14 +160,14 @@ class _InviteCardState extends ConsumerState<InviteCard> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               InviteAction(
-                icon: LucideIcons.x,
+                icon: LucideIcons.x300,
                 label: tr('groups.invites.dismiss'),
                 onTap: _busy ? null : _dismiss,
                 filled: false,
               ),
               const SizedBox(width: NhamSpacing.sp2),
               InviteAction(
-                icon: LucideIcons.check,
+                icon: LucideIcons.check300,
                 label: tr('groups.invites.accept'),
                 onTap: _busy ? null : _accept,
                 filled: true,

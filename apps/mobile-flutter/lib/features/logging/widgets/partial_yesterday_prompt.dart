@@ -168,7 +168,7 @@ class _OpenButtonState extends State<_OpenButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                LucideIcons.arrowLeft,
+                LucideIcons.arrowLeft300,
                 size: 16,
                 color: NhamColors.text,
               ),
@@ -218,7 +218,7 @@ class _DismissButtonState extends State<_DismissButton> {
             shape: BoxShape.circle,
           ),
           child: Icon(
-            LucideIcons.x,
+            LucideIcons.x300,
             size: 16,
             color: _pressed ? NhamColors.text : NhamColors.textMuted,
           ),

@@ -55,7 +55,7 @@ class WeightChart extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                LucideIcons.cloudOff,
+                LucideIcons.cloudOff300,
                 size: NhamIcons.size,
                 color: kInkMuted,
               ),
@@ -202,7 +202,7 @@ class _LogButton extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(LucideIcons.plus, size: 16, color: Colors.white),
+                  const Icon(LucideIcons.plus300, size: 16, color: Colors.white),
                   const SizedBox(width: 5),
                   Text(
                     tr('dashboard.weightCard.logWeight'),

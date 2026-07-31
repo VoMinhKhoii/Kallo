@@ -62,7 +62,7 @@ class FailedAttemptCard extends StatelessWidget {
               if (retryable) ...[
                 Expanded(
                   child: TerminalPrimaryButton(
-                    icon: LucideIcons.refreshCw,
+                    icon: LucideIcons.refreshCw300,
                     label: 'logging.failedAttempt.tryAgain'.tr(),
                     onTap: onRetry,
                   ),
