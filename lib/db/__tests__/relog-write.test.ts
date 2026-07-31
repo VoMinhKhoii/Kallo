@@ -12,7 +12,7 @@
  *
  * Run: bun --env-file=.env.local vitest run lib/db/__tests__/relog-write.test.ts
  */
-import { sql } from 'drizzle-orm';
+import { inArray, sql } from 'drizzle-orm';
 import postgres from 'postgres';
 import {
   afterAll,
@@ -23,9 +23,11 @@ import {
   it,
   vi,
 } from 'vitest';
-import { encodeDbUrl } from '@/lib/db';
+import { relogMealItemsAction } from '@/lib/actions/meals/relog/relog-items';
+import { db, encodeDbUrl } from '@/lib/db';
+import { meals } from '@/lib/db/schema';
 
-// ─── Prerequisite probe (before importing the module under test) ─────────────
+// ─── Prerequisite probe ──────────────────────────────────────────────────────
 
 async function resolveSeedUserId(databaseUrl: string): Promise<string | null> {
   const client = postgres(encodeDbUrl(databaseUrl), { prepare: false, max: 1 });
@@ -45,8 +47,24 @@ async function resolveSeedUserId(databaseUrl: string): Promise<string | null> {
   }
 }
 
+/**
+ * OPT-IN, and deliberately so — this file is the only one here that COMMITS.
+ *
+ * relog-candidates.test.ts seeds inside a rolled-back transaction, but the
+ * action under test opens its own `db.transaction` and so cannot be nested in
+ * an outer one. Committing means real writes for a borrowed `auth.users` row,
+ * and `insertDefaultCircleShare` fires the AFTER INSERT trigger that fans a
+ * `meal_shared` event into that account's circle feed. Rows are cleaned up per
+ * test, but a fan-out is not something a test run should do to a real account.
+ *
+ * Point DATABASE_URL at a scratch database you own, then set RELOG_WRITE_TEST=1
+ * to acknowledge it. Without the flag this file skips, so the documented
+ * `vitest run lib/db/__tests__/` against a real project stays safe.
+ */
 const databaseUrl = process.env.DATABASE_URL;
-const seedUserId = databaseUrl ? await resolveSeedUserId(databaseUrl) : null;
+const optedIn = process.env.RELOG_WRITE_TEST === '1';
+const seedUserId =
+  databaseUrl && optedIn ? await resolveSeedUserId(databaseUrl) : null;
 const describe = seedUserId ? describeBase : describeBase.skip;
 
 const OWNER = seedUserId ?? '00000000-0000-0000-0000-000000000001';
@@ -60,10 +78,9 @@ vi.mock('@/lib/auth', () => ({
   })),
 }));
 
-const { relogMealItemsAction } = await import(
-  '@/lib/actions/meals/relog/relog-items'
-);
-const { db } = await import('@/lib/db');
+// The module under test is imported statically above; `vi.mock` is hoisted
+// above imports, so the auth stub is in place before it loads. (A top-level
+// `await import()` here instead breaks module init under `bun … vitest`.)
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -148,18 +165,23 @@ if (seedUserId) {
   });
   afterEach(async () => {
     actingUserId = OWNER;
-    if (createdMealIds.length > 0) {
-      await db.execute(
-        sql`DELETE FROM meals WHERE id IN ${sql.raw(
-          `('${createdMealIds.join("','")}')`
-        )}`
-      );
-      createdMealIds.length = 0;
-    }
+    await deleteCreatedMeals();
   });
   afterAll(async () => {
-    await db.execute(sql`DELETE FROM meals WHERE user_id = ${OWNER}`);
+    // Defensive only — afterEach already drains the list. Scoped to ids this
+    // file created, NEVER to `user_id`: the seed user is a real borrowed
+    // account, and a user-scoped delete would wipe their actual meal history.
+    await deleteCreatedMeals();
   });
+}
+
+/** Drop every meal this file created, by id. meal_items and meal_shares go
+ *  with them via ON DELETE CASCADE. */
+async function deleteCreatedMeals() {
+  if (createdMealIds.length === 0) return;
+  const ids = [...createdMealIds];
+  createdMealIds.length = 0;
+  await db.delete(meals).where(inArray(meals.id, ids));
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
