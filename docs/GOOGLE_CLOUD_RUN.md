@@ -380,7 +380,7 @@ In **GitHub → Settings → Secrets and variables → Actions → Variables**, 
 | `GCP_RUNTIME_SERVICE_ACCOUNT` | Full runtime SA email |
 | `REVENUECAT_PROJECT_ID` | RevenueCat project ID used for customer erasure |
 | `REVENUECAT_ALLOWED_APP_IDS` | Comma-separated production RevenueCat app IDs |
-| `REVENUECAT_WEB_API_KEY` | Client-public RevenueCat Billing web key; blank until web billing is configured |
+| `REVENUECAT_WEB_API_KEY` | Client-public RevenueCat Web SDK key (Paddle-backed checkout); blank until web billing is configured |
 | `REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT` | Keep `false` until the production webhook is environment-filtered and verified |
 | `BILLING_ENFORCEMENT_ENABLED` | Keep `false` through dark launch and sandbox validation |
 | `BILLING_PURCHASES_ENABLED` | Keep `false` through dark launch; independent new-checkout kill-switch |

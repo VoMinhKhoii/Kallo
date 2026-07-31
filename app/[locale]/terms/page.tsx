@@ -17,7 +17,7 @@ const sections = [
   },
   {
     title: 'Subscriptions and renewal',
-    body: 'Monthly and annual Premium plans renew automatically at the price and cadence shown before purchase until canceled. Payment is charged to the store or web-billing account you select. Cancel through the management link in Settings or through Apple, Google, or the web billing portal. Cancellation stops future renewal but normally preserves access through the paid period.',
+    body: 'Monthly and annual Premium plans renew automatically at the price and cadence shown before purchase until canceled. Web purchases are sold by Paddle.com Market Limited as merchant of record; mobile purchases are billed by Apple or Google. Cancel through the management link in Settings, or through Apple, Google, or the Paddle customer portal. Cancellation stops future renewal but normally preserves access through the paid period.',
   },
   {
     title: 'Trials, plan changes, and pending payments',
@@ -29,7 +29,7 @@ const sections = [
   },
   {
     title: 'Refunds and taxes',
-    body: 'Prices may include or exclude taxes as shown at checkout. Refunds are governed by the store or payment provider and applicable law. Kallo applies access changes after the provider confirms a refund, reversal, expiration, or other billing event.',
+    body: 'Prices may include or exclude taxes as shown at checkout; for web purchases Paddle collects and remits any applicable sales tax or VAT as merchant of record. Refunds are governed by the store or payment provider and applicable law. Kallo applies access changes after the provider confirms a refund, reversal, expiration, or other billing event.',
   },
   {
     title: 'Account deletion',

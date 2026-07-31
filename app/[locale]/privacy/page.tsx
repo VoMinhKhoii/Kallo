@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const sections = [
   {
     title: 'Information you provide',
-    body: 'We process account details, profile and goal settings, meal descriptions, nutrition estimates, weight records, feedback, and support messages that you choose to provide. Payment card details are handled by Apple, Google, RevenueCat Billing, Stripe, or their payment partners; Kallo does not store complete card numbers.',
+    body: 'We process account details, profile and goal settings, meal descriptions, nutrition estimates, weight records, feedback, and support messages that you choose to provide. Payment card details are handled by Apple, Google, Paddle, or their payment partners; Kallo does not store complete card numbers.',
   },
   {
     title: 'How we use information',
@@ -17,7 +17,7 @@ const sections = [
   },
   {
     title: 'Billing providers',
-    body: 'RevenueCat coordinates subscription status across Apple App Store, Google Play, and RevenueCat Billing for web checkout. RevenueCat, Stripe, and the applicable store receive a Kallo account identifier plus purchase and subscription metadata needed to complete purchases, restore access, manage renewals, detect refunds, and prevent duplicate entitlement grants.',
+    body: 'RevenueCat coordinates subscription status across Apple App Store, Google Play, and Paddle for web checkout. Paddle.com Market Limited is the merchant of record for web purchases. RevenueCat, Paddle, and the applicable store receive a Kallo account identifier plus purchase and subscription metadata needed to complete purchases, restore access, manage renewals, detect refunds, and prevent duplicate entitlement grants.',
   },
   {
     title: 'Other service providers',

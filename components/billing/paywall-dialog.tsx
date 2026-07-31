@@ -26,7 +26,7 @@ interface PaywallDialogProps {
   onOpenChange: (open: boolean) => void;
   /** The Supabase user id — the RC appUserId the webhook keys grants on. */
   userId: string;
-  /** Legacy checkout-prefill input; RevenueCat Billing owns email collection. */
+  /** Legacy checkout-prefill input; the Paddle checkout owns email collection. */
   email?: string | null;
 }
 

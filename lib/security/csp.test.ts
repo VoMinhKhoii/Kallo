@@ -42,6 +42,22 @@ describe('buildCsp', () => {
     expect(csp).toContain('wss://abc.supabase.co');
   });
 
+  it('lets the Paddle checkout iframe and RevenueCat API through', async () => {
+    const csp = await build('n', false);
+    expect(csp).toContain("frame-src 'self' https://*.paddle.com");
+    expect(csp).toContain('https://pay.rev.cat');
+    expect(csp).toContain('https://api.revenuecat.com');
+  });
+
+  it('keeps host allowlists out of script-src, which strict-dynamic ignores', async () => {
+    const csp = await build('n', false);
+    const scriptSrc = csp
+      .split('; ')
+      .find((directive) => directive.startsWith('script-src'));
+    expect(scriptSrc).not.toContain('paddle.com');
+    expect(scriptSrc).not.toContain('rev.cat');
+  });
+
   it('locks down framing, base-uri, objects, and form-action', async () => {
     const csp = await build('n', false);
     expect(csp).toContain("frame-ancestors 'none'");

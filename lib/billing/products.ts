@@ -1,10 +1,15 @@
 import type { EntitlementKey } from '@/lib/entitlements/features';
 
 // Maps RevenueCat store product identifiers to the entitlement they grant.
-// RC reports the underlying store product id (App Store / Play / web billing) on
-// each purchase; the webhook (Phase B) resolves it here to decide which grant
-// to write. Lifetime products produce a grant with expiresAt = NULL.
+// RC reports the underlying store product id (App Store / Play / Paddle) on
+// each purchase; the webhook resolves it here to decide which grant to write.
+// Lifetime products produce a grant with expiresAt = NULL.
 //
+// Matching is exact by design — an id that is not in this catalog resolves to
+// null and grants nothing. Paddle-imported products carry whatever identifier
+// RevenueCat assigned at import; if that is the Paddle price id (`pri_…`)
+// rather than a canonical id, it must be added here or a paying customer gets
+// no grant. See the Paddle checklist in docs/BILLING.md.
 export const PRODUCT_ENTITLEMENTS: Record<
   string,
   { entitlementKey: EntitlementKey; lifetime: boolean }

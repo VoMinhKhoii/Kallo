@@ -291,9 +291,9 @@ export async function deleteAccountAction(
     );
   }
 
-  // Persist the provider-erasure job before deleting Auth. RevenueCat Billing
-  // cancellation/erasure happens only after the local account is committed;
-  // transient provider failures are retried by the scheduled worker.
+  // Persist the provider-erasure job before deleting Auth. RevenueCat customer
+  // erasure happens only after the local account is committed; transient
+  // provider failures are retried by the scheduled worker.
   const deletionJob = await prepareAccountDeletion(user.id);
 
   const { error } = await admin.auth.admin.deleteUser(user.id);
