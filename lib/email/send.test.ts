@@ -42,7 +42,7 @@ describe('sendEmail', () => {
   });
 
   it('passes the sender, reply-to and idempotency key through', async () => {
-    vi.stubEnv('EMAIL_FROM', 'Kallo <hello@send.kallo.fit>');
+    vi.stubEnv('EMAIL_FROM', 'Kallo <notifications@mail.kallo.fit>');
     vi.stubEnv('EMAIL_REPLY_TO', 'support@kallo.fit');
     sendMock.mockResolvedValue({ data: { id: 'email_2' }, error: null });
 
@@ -55,7 +55,7 @@ describe('sendEmail', () => {
 
     expect(sendMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: 'Kallo <hello@send.kallo.fit>',
+        from: 'Kallo <notifications@mail.kallo.fit>',
         replyTo: 'support@kallo.fit',
         to: 'a@b.co',
         text: 'Hi',

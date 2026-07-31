@@ -1,7 +1,7 @@
 /**
  * Addressing + budget constants for every outbound email.
  *
- * The sender lives on a dedicated subdomain (`send.kallo.fit` by default)
+ * The sender lives on a dedicated subdomain (`mail.kallo.fit` by default)
  * rather than the apex: Cloudflare Email Routing already owns the apex SPF
  * record for inbound `support@kallo.fit`, and a second `include:` on the same
  * record is the classic way to silently break both (see
@@ -9,7 +9,7 @@
  */
 
 /** Fallbacks keep local dev working with nothing configured. */
-const DEFAULT_FROM = 'Kallo <hello@send.kallo.fit>';
+const DEFAULT_FROM = 'Kallo <notifications@mail.kallo.fit>';
 const DEFAULT_REPLY_TO = 'support@kallo.fit';
 
 /**

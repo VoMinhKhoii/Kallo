@@ -175,7 +175,7 @@ confirmations, and the landing-page waitlist — is composed in this repo
 (`lib/email/templates/`) and delivered by Resend.
 
 **1. Verify a sending subdomain.** In Resend → **Domains** → **Add Domain** →
-`send.kallo.fit`. Use the **subdomain**, not the apex: §7 already put an SPF
+`mail.kallo.fit`. Use the **subdomain**, not the apex: §7 already put an SPF
 record on `kallo.fit` for Cloudflare Email Routing, and stacking a second
 `include:` on it is the classic way to break inbound and outbound at once.
 Add the SPF/DKIM/DMARC records Resend shows to Cloudflare DNS as **DNS-only**

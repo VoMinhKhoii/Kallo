@@ -237,7 +237,7 @@ secrets = "env(SEND_EMAIL_HOOK_SECRET)"
 # port = 587
 # user = "resend"
 # pass = "env(RESEND_API_KEY)"
-# admin_email = "hello@send.kallo.fit"
+# admin_email = "notifications@mail.kallo.fit"
 # sender_name = "Kallo"
 
 # Uncomment to customize email template
