@@ -11,10 +11,6 @@ interface StagedListProps {
   entries: RelogStagedEntry[];
   totals: IngredientMacrosPer100g;
   disabled?: boolean;
-  /** Free text is present alongside the staged picks; submit will relog the
-   *  picks and leave the text untouched, so say so rather than silently
-   *  dropping what was typed. */
-  showTextHint?: boolean;
   onRemove: (stageId: string) => void;
 }
 
@@ -24,7 +20,6 @@ export function StagedList({
   entries,
   totals,
   disabled,
-  showTextHint,
   onRemove,
 }: StagedListProps) {
   const t = useTranslations('logging.relog');
@@ -73,12 +68,6 @@ export function StagedList({
             </span>
           </div>
         </div>
-      )}
-
-      {showTextHint && (
-        <p className="font-serif text-nham-text-muted/80 text-xs italic">
-          {t('textIgnoredHint')}
-        </p>
       )}
     </div>
   );

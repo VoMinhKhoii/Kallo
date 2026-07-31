@@ -15,12 +15,27 @@ export function useRelogSubmit(args: {
   relogMeal: ReturnType<typeof useRelogMeal>;
   selectedDate: string;
   scrollToBottom: () => void;
+  getText: () => string;
+  setText: (text: string, caret?: number) => void;
+  /** Relog is normal-mode only. Checked HERE as well as in the caller's submit
+   *  precedence: entries survive a mode switch (only their UI is hidden), so a
+   *  caller that forgot the gate would otherwise relog dishes out of cheat
+   *  mode. */
+  enabled: boolean;
 }) {
-  const { staged, relogMeal, selectedDate, scrollToBottom } = args;
+  const {
+    staged,
+    relogMeal,
+    selectedDate,
+    scrollToBottom,
+    getText,
+    setText,
+    enabled,
+  } = args;
   const t = useTranslations('logging.feedArea');
 
   return useCallback(() => {
-    if (staged.entries.length === 0 || relogMeal.isPending) return;
+    if (!enabled || staged.entries.length === 0 || relogMeal.isPending) return;
 
     relogMeal.mutate(
       {
@@ -32,10 +47,12 @@ export function useRelogSubmit(args: {
       },
       {
         onSuccess: () => {
-          // Clear only after the save lands. On failure the staged rows must
-          // survive so the user can drop a dead reference and retry, rather
-          // than losing everything they picked.
-          staged.clear();
+          // Only after the save lands, and only the mention text: anything the
+          // user typed around the picks is theirs and survives. On failure
+          // nothing is touched, so a dead reference can be dropped and retried
+          // rather than losing everything they picked.
+          const remaining = staged.consume(getText());
+          setText(remaining, remaining.length);
           toast.success(t('savedMeal'));
         },
         onError: (error) => {
@@ -44,5 +61,14 @@ export function useRelogSubmit(args: {
       }
     );
     scrollToBottom();
-  }, [staged, relogMeal, selectedDate, scrollToBottom, t]);
+  }, [
+    enabled,
+    staged,
+    relogMeal,
+    selectedDate,
+    scrollToBottom,
+    getText,
+    setText,
+    t,
+  ]);
 }

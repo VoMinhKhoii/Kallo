@@ -147,6 +147,7 @@ function Harness({
       onTextareaKeyDown={relogPicker.handleKeyDown}
       onTextareaSync={relogPicker.syncFromTextarea}
       isPopupOpen={relogPicker.isOpen}
+      mentionSegments={relog.mentionSegments}
       popupListboxId="relog-listbox"
       popupActiveDescendantId={`relog-listbox-${relogPicker.highlighted}`}
       aboveSlot={
@@ -155,7 +156,6 @@ function Harness({
           <StagedList
             entries={relogStaged.entries}
             totals={relogStaged.totals}
-            showTextHint={hasStagedRelog}
             onRemove={relogStaged.remove}
           />
         ) : null
@@ -197,6 +197,16 @@ function type(textarea: HTMLTextAreaElement, value: string) {
 
 const key = (textarea: HTMLTextAreaElement, k: string) =>
   fireEvent.keyDown(textarea, { key: k });
+
+/** A picked dish now appears TWICE — as tinted text in the input and as a
+ *  staged row — so queries scope to the row's unique remove button. */
+const stagedRow = (name: string) =>
+  screen.queryByRole('button', { name: `Bỏ ${name}` });
+/** The blue runs the mirror paints behind the textarea. */
+const mentionText = () =>
+  Array.from(document.querySelectorAll('.text-nham-mention')).map(
+    (el) => el.textContent
+  );
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -244,19 +254,51 @@ describe('relog `/` flow', () => {
     expect(loadCandidates).not.toHaveBeenCalled();
   });
 
-  it('stages a dish on Enter, strips the token, and shows the total', async () => {
+  it('writes the pick into the input as tinted text and stages it', async () => {
     const { textarea } = renderHarness();
     type(textarea, 'xem /pho');
     await screen.findAllByRole('option');
 
     key(textarea, 'Enter');
 
-    // Token spliced out; the rest of the sentence survives.
-    await waitFor(() => expect(textarea.value).toBe('xem '));
+    // The token is replaced by the dish name in place — the pick is visible
+    // prose in the composer, not something that vanished into a list.
+    await waitFor(() => expect(textarea.value).toBe('xem Phở bò '));
     expect(screen.queryByRole('listbox')).toBeNull();
-    expect(screen.getByText('Phở bò')).toBeVisible();
+    expect(mentionText()).toEqual(['Phở bò']);
+    expect(stagedRow('Phở bò')).toBeVisible();
     // With a single staged dish the row kcal and the total are both 420.
     expect(screen.getAllByText('420 kcal')).toHaveLength(2);
+  });
+
+  it('hands the glyphs to the mirror only while a mention exists', async () => {
+    const { textarea } = renderHarness();
+    // Plain typing keeps the textarea's own ink.
+    type(textarea, 'phở bò');
+    expect(textarea.className).toContain('text-nham-text');
+    expect(textarea.className).not.toContain('text-transparent');
+
+    type(textarea, '/');
+    await screen.findAllByRole('option');
+    key(textarea, 'Enter');
+
+    await waitFor(() =>
+      expect(textarea.className).toContain('text-transparent')
+    );
+  });
+
+  it('drops a mention when its text is edited away', async () => {
+    const { textarea } = renderHarness();
+    type(textarea, '/');
+    await screen.findAllByRole('option');
+    key(textarea, 'Enter');
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
+
+    // Breaking the name must drop the reference too — a half-deleted dish
+    // silently logging a whole one is the failure this guards.
+    type(textarea, 'Ph');
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeNull());
+    expect(mentionText()).toEqual([]);
   });
 
   it('moves the highlight with the arrows before selecting', async () => {
@@ -273,7 +315,7 @@ describe('relog `/` flow', () => {
     );
     key(textarea, 'Enter');
 
-    await waitFor(() => expect(screen.getByText('Phở gà')).toBeVisible());
+    await waitFor(() => expect(stagedRow('Phở gà')).toBeVisible());
   });
 
   it('crosses from the last dish into the first meal without a dead stop', async () => {
@@ -285,9 +327,7 @@ describe('relog `/` flow', () => {
     key(textarea, 'ArrowDown'); // index 2 = the meals group's first row
     key(textarea, 'Enter');
 
-    await waitFor(() =>
-      expect(screen.getByText('phở bò với trà đá')).toBeVisible()
-    );
+    await waitFor(() => expect(stagedRow('phở bò với trà đá')).toBeVisible());
   });
 
   it('sums the staged totals across several picks', async () => {
@@ -295,15 +335,16 @@ describe('relog `/` flow', () => {
     type(textarea, '/');
     await screen.findAllByRole('option');
     key(textarea, 'Enter');
-    await waitFor(() => expect(screen.getByText('Phở bò')).toBeVisible());
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
 
-    type(textarea, '/');
+    type(textarea, `${textarea.value}/`);
     await screen.findAllByRole('option');
     key(textarea, 'ArrowDown');
     key(textarea, 'Enter');
 
     // 420 + 380
     await waitFor(() => expect(screen.getByText('800 kcal')).toBeVisible());
+    expect(mentionText()).toEqual(['Phở bò', 'Phở gà']);
   });
 
   it('removes a staged row and updates the total', async () => {
@@ -311,11 +352,14 @@ describe('relog `/` flow', () => {
     type(textarea, '/');
     await screen.findAllByRole('option');
     key(textarea, 'Enter');
-    await waitFor(() => expect(screen.getByText('Phở bò')).toBeVisible());
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
 
     fireEvent.click(screen.getByRole('button', { name: 'Bỏ Phở bò' }));
 
-    await waitFor(() => expect(screen.queryByText('Phở bò')).toBeNull());
+    // Removing the row also removes its text from the composer.
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeNull());
+    expect(textarea.value).toBe('');
+    expect(mentionText()).toEqual([]);
   });
 
   it('closes on Escape and does not re-open while typing the same token', async () => {
@@ -341,10 +385,10 @@ describe('relog `/` flow', () => {
     type(textarea, '/');
     await screen.findAllByRole('option');
     key(textarea, 'Enter');
-    await waitFor(() => expect(screen.getByText('Phở bò')).toBeVisible());
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
 
-    // Free text alongside the staged pick.
-    type(textarea, 'thêm trà đá');
+    // Free text typed alongside the pick.
+    type(textarea, `${textarea.value}thêm trà đá`);
     key(textarea, 'Enter');
 
     await waitFor(() => expect(relogItems).toHaveBeenCalled());
@@ -355,8 +399,9 @@ describe('relog `/` flow', () => {
         mealItemOrder: 0,
       },
     ]);
-    // The typed text is preserved for a second, deliberate submit.
-    expect(textarea.value).toBe('thêm trà đá');
+    // Only the mention text is consumed; what the user typed is theirs and
+    // survives for a second, deliberate submit.
+    await waitFor(() => expect(textarea.value).toBe('thêm trà đá'));
   });
 
   it('enables submit from a staged pick alone, with the composer empty', async () => {
@@ -376,7 +421,7 @@ describe('relog `/` flow', () => {
     type(first.textarea, '/');
     await screen.findAllByRole('option');
     key(first.textarea, 'Enter');
-    await waitFor(() => expect(screen.getByText('Phở bò')).toBeVisible());
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
     // The staged draft is debounced; let it flush.
     await act(async () => {
       await new Promise((r) => setTimeout(r, 600));
@@ -384,7 +429,7 @@ describe('relog `/` flow', () => {
     first.unmount();
 
     renderHarness();
-    expect(await screen.findByText('Phở bò')).toBeVisible();
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
   });
 
   it('keeps a staged draft out of cheat mode entirely', async () => {
@@ -396,7 +441,7 @@ describe('relog `/` flow', () => {
     type(first.textarea, '/');
     await screen.findAllByRole('option');
     key(first.textarea, 'Enter');
-    await waitFor(() => expect(screen.getByText('Phở bò')).toBeVisible());
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
     await act(async () => {
       await new Promise((r) => setTimeout(r, 600));
     });
@@ -407,14 +452,20 @@ describe('relog `/` flow', () => {
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));
     });
-    expect(screen.queryByText('Phở bò')).toBeNull();
-    // ...and submit must not be armed by the hidden draft.
-    expect(screen.getByRole('button', { name: 'Phân tích' })).toBeDisabled();
+    expect(stagedRow('Phở bò')).toBeNull();
+    // The mention TEXT is still in the composer — it is ordinary text now, and
+    // untinted here — so submit stays armed. What must not happen is a relog.
+    expect(mentionText()).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'Phân tích' }));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(relogItems).not.toHaveBeenCalled();
     cheat.unmount();
 
     // Back in normal mode the draft is still there.
     renderHarness();
-    expect(await screen.findByText('Phở bò')).toBeVisible();
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
   });
 
   it('does not open the picker in cheat mode', async () => {

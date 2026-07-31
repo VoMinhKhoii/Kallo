@@ -1198,7 +1198,7 @@
       "noHistory": "Chưa có món nào trong lịch sử",
       "resultCount": "{count} kết quả",
       "removeStaged": "Bỏ {name}",
-      "textIgnoredHint": "Văn bản được giữ lại — gửi lại để phân tích"
+      "macroSplit": "P {protein}g · C {carbs}g · F {fat}g"
     }
   },
   "groups": {

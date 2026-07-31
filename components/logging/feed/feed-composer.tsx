@@ -91,6 +91,7 @@ export function FeedComposer({
           onTextareaKeyDown={relogPicker.handleKeyDown}
           onTextareaSync={relogPicker.syncFromTextarea}
           isPopupOpen={relogPicker.isOpen}
+          mentionSegments={relog.mentionSegments}
           popupListboxId={RELOG_LISTBOX_ID}
           popupActiveDescendantId={`${RELOG_LISTBOX_ID}-${relogPicker.highlighted}`}
           aboveSlot={
@@ -101,8 +102,6 @@ export function FeedComposer({
                 entries={relogStaged.entries}
                 totals={relogStaged.totals}
                 disabled={disabled}
-                // The typed text is kept, not discarded, when both are present.
-                showTextHint={hasStagedRelog}
                 onRemove={relogStaged.remove}
               />
             ) : null

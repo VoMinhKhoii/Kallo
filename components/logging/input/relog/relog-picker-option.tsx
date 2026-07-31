@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { formatKcal } from '@/lib/logging/manual-logging';
+import { useEffect, useRef } from 'react';
+import { formatKcal, formatMacro } from '@/lib/logging/manual-logging';
 import type { RelogCandidate } from '@/lib/logging/relog/relog';
 import { cn } from '@/lib/utils';
 
@@ -13,9 +14,9 @@ interface RelogPickerOptionProps {
   onSelect: () => void;
 }
 
-/** One row of the `/` picker. Dishes and meals differ only in their subtitle —
- *  ingredient count vs dish count — so they share this row rather than
- *  duplicating the layout twice. */
+/** One row of the `/` picker. Dishes and meals share this layout — the subtitle
+ *  is the macro split either way, so what you are about to log is visible
+ *  before you commit to it. */
 export function RelogPickerOption({
   candidate,
   id,
@@ -24,16 +25,25 @@ export function RelogPickerOption({
   onSelect,
 }: RelogPickerOptionProps) {
   const t = useTranslations('logging.relog');
+  const ref = useRef<HTMLDivElement>(null);
 
-  const subtitle =
-    candidate.kind === 'dish'
-      ? t('ingredientCount', { count: candidate.ingredientCount })
-      : t('dishCount', { count: candidate.dishCount });
+  // Keep the highlighted row in view. The listbox never holds focus (the
+  // textarea does, via aria-activedescendant), so the browser does no
+  // scrolling of its own — arrowing past the fold would otherwise walk the
+  // selection somewhere the user cannot see.
+  useEffect(() => {
+    if (isHighlighted) {
+      // Optional-called: jsdom has no scrollIntoView, and this is presentation
+      // only — never worth throwing a render over.
+      ref.current?.scrollIntoView?.({ block: 'nearest' });
+    }
+  }, [isHighlighted]);
 
   return (
     // Keyboard is handled on the textarea that owns focus; this listbox is
     // never focused itself (aria-activedescendant pattern).
     <div
+      ref={ref}
       id={id}
       role="option"
       aria-selected={isHighlighted}
@@ -49,14 +59,16 @@ export function RelogPickerOption({
         isHighlighted && 'bg-nham-hover/30'
       )}
     >
-      <div className="min-w-0 flex-1">
-        <span className="block truncate font-sans-display text-nham-text text-sm">
-          {candidate.name}
-        </span>
-        <span className="block truncate font-sans-display text-nham-text-muted/70 text-xs">
-          {subtitle}
-        </span>
-      </div>
+      <span className="min-w-0 flex-1 truncate font-sans-display text-nham-text text-sm">
+        {candidate.name}
+      </span>
+      <span className="shrink-0 font-sans-display text-nham-text-muted/70 text-xs tabular-nums">
+        {t('macroSplit', {
+          protein: formatMacro(candidate.proteinG),
+          carbs: formatMacro(candidate.carbohydrateG),
+          fat: formatMacro(candidate.fatG),
+        })}
+      </span>
       <span className="shrink-0 font-sans-display text-nham-text-muted text-xs tabular-nums">
         {t('optionKcal', { kcal: formatKcal(candidate.caloriesKcal) })}
       </span>

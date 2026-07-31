@@ -2,7 +2,7 @@
 
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { formatKcal } from '@/lib/logging/manual-logging';
+import { formatKcal, formatMacro } from '@/lib/logging/manual-logging';
 import type { RelogStagedEntry } from '@/lib/logging/relog/relog';
 
 interface StagedRowProps {
@@ -11,24 +11,23 @@ interface StagedRowProps {
   onRemove: () => void;
 }
 
-/** One staged pick. A meal stays a SINGLE row reading "n món" rather than
- *  exploding into its dishes: removing it is then one click, and the staged
- *  list keeps the shape the user picked in. */
+/** One staged pick: name on the left, then its macro split and calories on the
+ *  right. A meal stays a SINGLE row rather than exploding into its dishes, so
+ *  removing it is one click and the list keeps the shape it was picked in. */
 export function StagedRow({ entry, disabled, onRemove }: StagedRowProps) {
   const t = useTranslations('logging.relog');
-
-  const detail =
-    entry.ref.kind === 'meal'
-      ? t('dishCount', { count: entry.partCount })
-      : t('ingredientCount', { count: entry.partCount });
 
   return (
     <div className="flex items-center gap-2">
       <span className="min-w-0 flex-1 truncate font-sans-display text-nham-text text-sm">
         {entry.label}
       </span>
-      <span className="shrink-0 font-sans-display text-nham-text-muted/70 text-xs">
-        {detail}
+      <span className="shrink-0 font-sans-display text-nham-text-muted/70 text-xs tabular-nums">
+        {t('macroSplit', {
+          protein: formatMacro(entry.summary.proteinG),
+          carbs: formatMacro(entry.summary.carbohydrateG),
+          fat: formatMacro(entry.summary.fatG),
+        })}
       </span>
       <span className="w-14 shrink-0 text-right font-sans-display text-nham-text-muted text-xs tabular-nums">
         {t('rowKcal', { kcal: formatKcal(entry.summary.caloriesKcal) })}

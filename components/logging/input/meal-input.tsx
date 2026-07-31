@@ -14,6 +14,7 @@ import {
   CheatModePicker,
   type InputMode,
 } from '@/components/logging/input/cheat-mode-picker';
+import { ComposerTextField } from '@/components/logging/input/composer-text-field';
 import { ManualLoggingControls } from '@/components/logging/input/manual-logging-controls';
 import {
   createEmptyRow,
@@ -29,7 +30,9 @@ import {
   writeDraft,
   writeManualRowsDraft,
 } from '@/lib/logging/meal-input-draft';
+import type { MentionSegment } from '@/lib/logging/relog/mentions';
 import type { CheatIntensity } from '@/lib/types/cheat';
+import { cn } from '@/lib/utils';
 import { BarcodeScannerDialog } from './barcode-scanner-dialog';
 
 export interface MealInputHandle {
@@ -82,6 +85,10 @@ interface MealInputProps {
   popupListboxId?: string;
   popupActiveDescendantId?: string;
   isPopupOpen?: boolean;
+  /** Coloured runs to paint behind the textarea. When non-empty the textarea's
+   *  own glyphs go transparent and this mirror becomes what the user sees —
+   *  the only way to tint part of a textarea's value. */
+  mentionSegments?: MentionSegment[];
 }
 
 export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
@@ -104,6 +111,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       popupListboxId,
       popupActiveDescendantId,
       isPopupOpen,
+      mentionSegments,
     },
     ref
   ) {
@@ -307,37 +315,18 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
               <label htmlFor="meal-input" className="sr-only">
                 {placeholder}
               </label>
-              {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: the
-                  combobox aria-* below are gated on the same `isPopupOpen` as
-                  role="combobox", which the rule cannot see statically. The
-                  invalid pairing (combobox aria on a plain textarea) never
-                  actually renders. This is the standard ARIA "mention" pattern:
-                  a combobox nested inside a free-text field. */}
-              <textarea
-                ref={textareaRef}
-                id="meal-input"
-                rows={1}
+              <ComposerTextField
+                textareaRef={textareaRef}
                 defaultValue={readDraft()}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                // Caret can move without the value changing (arrows, clicks),
-                // and an overlay keyed off the caret has to see that.
-                onKeyUp={onTextareaSync}
-                onClick={onTextareaSync}
                 placeholder={placeholder}
                 disabled={disabled}
-                // Combobox semantics only WHILE a popup is open: announcing the
-                // composer as a combobox permanently would mislabel its primary
-                // use, which is free-text meal entry. This is the standard ARIA
-                // "mention" pattern — a combobox nested in a free-text field.
-                role={isPopupOpen ? 'combobox' : undefined}
-                aria-expanded={isPopupOpen ? true : undefined}
-                aria-controls={isPopupOpen ? popupListboxId : undefined}
-                aria-autocomplete={isPopupOpen ? 'list' : undefined}
-                aria-activedescendant={
-                  isPopupOpen ? popupActiveDescendantId : undefined
-                }
-                className="flex-1 resize-none bg-transparent py-1.5 font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                onSync={onTextareaSync}
+                mentionSegments={mentionSegments}
+                isPopupOpen={isPopupOpen}
+                popupListboxId={popupListboxId}
+                popupActiveDescendantId={popupActiveDescendantId}
               />
               {selectedDate && onBarcodeSuccess && (
                 <button

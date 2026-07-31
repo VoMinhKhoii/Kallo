@@ -5,7 +5,6 @@ import {
   parseSlashToken,
   type RelogCandidate,
   type SlashToken,
-  stripSlashToken,
 } from '@/lib/logging/relog/relog';
 
 export interface SlashPickerApi {
@@ -33,7 +32,14 @@ interface Options {
   /** Replace the composer text and place the caret — the component's existing
    *  imperative setter, so draft persistence and auto-resize stay in one place. */
   setText: (text: string, caret?: number) => void;
-  onSelect: (candidate: RelogCandidate) => void;
+  /** Commit a pick. Receives the current composer text and the token being
+   *  replaced; returns the text to write back (or null if the pick was
+   *  refused, e.g. the staged cap). */
+  onSelect: (
+    candidate: RelogCandidate,
+    value: string,
+    token: SlashToken
+  ) => { value: string; caret: number } | null;
   /** Relog is normal-mode only; manual/cheat have their own controls. */
   enabled: boolean;
 }
@@ -107,13 +113,15 @@ export function useSlashPicker({
     (candidate: RelogCandidate) => {
       const el = getTextarea();
       if (el && token) {
-        const stripped = stripSlashToken(el.value, token);
-        setText(stripped.value, stripped.caret);
+        // The owner replaces the `/token` with the picked label and hands back
+        // the resulting text — the pick becomes visible, tinted prose in the
+        // composer rather than disappearing into a list elsewhere.
+        const next = onSelect(candidate, el.value, token);
+        if (next) setText(next.value, next.caret);
       }
       setToken(null);
       dismissedAt.current = null;
       setHighlighted(0);
-      onSelect(candidate);
     },
     [getTextarea, onSelect, setText, token]
   );

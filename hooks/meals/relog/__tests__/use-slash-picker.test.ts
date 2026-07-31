@@ -24,7 +24,22 @@ const OPTIONS = [candidate('Phở bò'), candidate('Phở gà'), candidate('Trà
 function setup(opts: { enabled?: boolean } = {}) {
   const el = document.createElement('textarea');
   document.body.appendChild(el);
-  const onSelect = vi.fn();
+  // Mirrors what useStagedEntries does: replace the token with the label and
+  // hand the result back for the picker to write.
+  const onSelect = vi.fn(
+    (
+      candidate: RelogCandidate,
+      value: string,
+      token: { start: number; end: number }
+    ) => {
+      const next =
+        value.slice(0, token.start) +
+        candidate.name +
+        ' ' +
+        value.slice(token.end);
+      return { value: next, caret: token.start + candidate.name.length + 1 };
+    }
+  );
   const setText = vi.fn((text: string, caret?: number) => {
     el.value = text;
     if (caret !== undefined) el.setSelectionRange(caret, caret);
@@ -125,16 +140,17 @@ describe('useSlashPicker', () => {
     const { consumed } = press('Enter');
 
     expect(consumed).toBe(true);
-    expect(onSelect).toHaveBeenCalledWith(OPTIONS[1]);
-    expect(el.value).toBe('xem ');
-    expect(el.selectionStart).toBe(4);
+    expect(onSelect.mock.calls[0][0]).toBe(OPTIONS[1]);
+    // The pick lands as text in the composer rather than vanishing into a list.
+    expect(el.value).toBe('xem Phở gà ');
+    expect(el.selectionStart).toBe(11);
   });
 
   it('selects on Tab as well', () => {
     const { type, press, onSelect } = setup();
     type('/pho');
     press('Tab');
-    expect(onSelect).toHaveBeenCalledWith(OPTIONS[0]);
+    expect(onSelect.mock.calls[0][0]).toBe(OPTIONS[0]);
   });
 
   it('preserves text to the right of the token when selecting', () => {
@@ -142,7 +158,7 @@ describe('useSlashPicker', () => {
     // Caret sits after "/pho"; " và cơm" trails it and must survive.
     type('/pho và cơm', 4);
     press('Enter');
-    expect(el.value).toBe(' và cơm');
+    expect(el.value).toBe('Phở bò  và cơm');
   });
 
   it('closes the picker after a selection', () => {
