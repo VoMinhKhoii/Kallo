@@ -36,6 +36,16 @@ describe('Cloud Run prod workflow', () => {
     );
   });
 
+  it('verifies curated broth rows are present and embedded before rollout', () => {
+    const workflow = readWorkflow('cloud-run-prod.yml');
+
+    expect(workflow).toContain('Verify curated broth embeddings');
+    expect(workflow).toContain(
+      'count(vfc.id) FILTER (WHERE vfc.embedding IS NOT NULL)::int'
+    );
+    expect(workflow).toContain('The curated broth data is incomplete');
+  });
+
   it('scopes the deploy-time append-only check to pending migrations only', () => {
     const workflow = readWorkflow('cloud-run-prod.yml');
 

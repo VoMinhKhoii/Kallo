@@ -4,27 +4,13 @@
 -- the trigger rebuild search_text/search_text_ascii, while clearing embedding
 -- queues the rows for the external gemini-embedding-001 backfill that runs
 -- after migrations in the production deploy workflow.
+--
+-- Supabase runs migrations before seed.sql. Fresh CI resets seed only the 526
+-- FAO rows, while the USDA reference rows are imported separately, so this
+-- migration must be a no-op when those rows are absent. The production deploy
+-- verifies that all 18 curated rows exist and are embedded before rollout.
 
 SET search_path TO public, extensions;
-
-DO $$
-BEGIN
-  IF (
-    SELECT count(*)
-    FROM vietnamese_food_composition
-    WHERE id IN (
-      'usda_6008_raw', 'usda_6170_raw', 'usda_6172_raw',
-      'usda_6174_raw', 'usda_6183_raw', 'usda_6188_raw',
-      'usda_6194_raw', 'usda_6413_raw', 'usda_6432_raw',
-      'usda_6475_raw', 'usda_6476_raw', 'usda_6480_raw',
-      'usda_6481_raw', 'usda_6611_raw', 'usda_6615_raw',
-      'usda_6700_raw', 'usda_6963_raw', 'usda_6970_raw'
-    )
-  ) <> 18 THEN
-    RAISE EXCEPTION
-      'Expected all 18 curated broth rows to exist before updating';
-  END IF;
-END $$;
 
 UPDATE vietnamese_food_composition AS vfc
 SET

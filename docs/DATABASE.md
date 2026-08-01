@@ -275,6 +275,10 @@ The seed file inserts all 526 VTN FCT 2007 records into `vietnamese_food_composi
 Data-curation migrations that change food names should set the affected
 `embedding` values to `NULL`. The production Cloud Run deploy detects those rows
 after applying migrations and runs the backfill before deploying the new revision.
+Because Supabase applies migrations before `seed.sql`, curation migrations for
+separately imported USDA rows must tolerate those rows being absent in a fresh
+FAO-only reset. The production deploy then asserts that all curated broth rows
+exist and have non-null embeddings before rollout.
 For a local or targeted repair, pass the affected IDs to `backfill_embeddings.ts`
 with `--ids` so existing non-null vectors are regenerated from the new names.
 

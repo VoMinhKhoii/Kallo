@@ -198,6 +198,30 @@ jobs:
           echo "::add-mask::$gemini_key"
           export GEMINI_API_KEY="$gemini_key"
           bun scripts/backfill_embeddings.ts
+      - name: Verify curated broth embeddings
+        run: |
+          set -euo pipefail
+          status="$(psql "$PROD_DATABASE_URL_ENCODED" -X -v ON_ERROR_STOP=1 -A -t -F '|' \
+            -c "WITH curated(id) AS (\
+              VALUES\
+                ('usda_6008_raw'), ('usda_6170_raw'), ('usda_6172_raw'),\
+                ('usda_6174_raw'), ('usda_6183_raw'), ('usda_6188_raw'),\
+                ('usda_6194_raw'), ('usda_6413_raw'), ('usda_6432_raw'),\
+                ('usda_6475_raw'), ('usda_6476_raw'), ('usda_6480_raw'),\
+                ('usda_6481_raw'), ('usda_6611_raw'), ('usda_6615_raw'),\
+                ('usda_6700_raw'), ('usda_6963_raw'), ('usda_6970_raw')\
+            )\
+            SELECT count(vfc.id)::int,\
+              count(vfc.id) FILTER (WHERE vfc.embedding IS NOT NULL)::int\
+            FROM curated\
+            LEFT JOIN vietnamese_food_composition AS vfc ON vfc.id = curated.id" \
+            | tr -d '[:space:]')"
+          IFS='|' read -r present embedded <<< "$status"
+          echo "Curated broth rows present: $present/18; embedded: $embedded/18"
+          if [[ "$present" != "18" || "$embedded" != "18" ]]; then
+            echo "::error::The curated broth data is incomplete or still missing embeddings."
+            exit 1
+          fi
       - name: Resolve image digest
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
