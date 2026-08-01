@@ -77,10 +77,16 @@ export async function signUpForWaitlist(
   const token = issueConfirmationToken(now);
 
   // Everything that decides "do we send an email?" happens inside one
-  // transaction, serialised per address by an advisory lock, so two concurrent
-  // submits of the same address can't both pass the rate limit and both mail.
+  // transaction. Two advisory locks serialise the checks that a concurrent
+  // request could otherwise race: one per-address (so two submits of the same
+  // email can't both pass the cooldown and both mail) and one per-IP (so the
+  // per-IP quota can't be bypassed by firing N distinct emails at once, each
+  // reading the same pre-insert count). Both are transaction-scoped.
   const shouldSend = await db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${email}))`);
+    if (ipHash) {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${ipHash}))`);
+    }
 
     await assertIpQuota(tx, ipHash, now);
 
@@ -141,12 +147,24 @@ export async function signUpForWaitlist(
   if (!shouldSend) return;
 
   // Outside the transaction on purpose: a provider hiccup must not roll back a
-  // stored signup, and the row is what the retry path reads.
-  await send({
-    to: email,
-    message: waitlistConfirmEmail(locale, confirmationUrl(token.token)),
-    tags: [{ name: 'kind', value: 'waitlist_confirm' }],
-  });
+  // stored signup, and the row is what the retry path reads. But the row was
+  // stamped `confirmationSentAt: now` so the cooldown protects against
+  // mail-bombing during this window — if the send then fails, that stamp would
+  // wrongly block a legitimate immediate retry. So clear it on failure (the
+  // token stays valid) and rethrow, leaving the row retryable.
+  try {
+    await send({
+      to: email,
+      message: waitlistConfirmEmail(locale, confirmationUrl(token.token)),
+      tags: [{ name: 'kind', value: 'waitlist_confirm' }],
+    });
+  } catch (error) {
+    await db
+      .update(waitlistSignups)
+      .set({ confirmationSentAt: null })
+      .where(eq(waitlistSignups.confirmationTokenHash, token.tokenHash));
+    throw error;
+  }
 }
 
 /** Throws `rateLimited` when this IP has submitted too often. */

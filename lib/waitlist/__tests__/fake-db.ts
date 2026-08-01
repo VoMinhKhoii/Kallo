@@ -13,6 +13,13 @@ export interface FakeDb {
   db: AppDb;
   /** Queue the rows the next `select(...)` chain should resolve to. */
   queueSelect: (rows: unknown[]) => void;
+  /**
+   * Queue the rows the next `update(...).returning()` resolves to. Defaults to
+   * a single row when nothing is queued, so an update reads as "one row
+   * changed" unless a test explicitly models a zero-row update (e.g. a lost
+   * race on a single-use token).
+   */
+  queueUpdate: (rows: unknown[]) => void;
   /** Rows passed to `insert(...).values(...)`, in order. */
   inserts: Record<string, unknown>[];
   /** Patches passed to `update(...).set(...)`, in order. */
@@ -48,6 +55,7 @@ function chain(
 
 export function createFakeDb(): FakeDb {
   const selectQueue: unknown[][] = [];
+  const updateQueue: unknown[][] = [];
   const inserts: Record<string, unknown>[] = [];
   const updates: Record<string, unknown>[] = [];
   let transactionCount = 0;
@@ -57,7 +65,9 @@ export function createFakeDb(): FakeDb {
     select: vi.fn(() => chain(selectQueue.shift() ?? [])),
     insert: vi.fn(() => chain([], (values) => inserts.push(values))),
     update: vi.fn(() =>
-      chain([{ id: 'row-1' }], (values) => updates.push(values))
+      chain(updateQueue.shift() ?? [{ id: 'row-1' }], (values) =>
+        updates.push(values)
+      )
     ),
   };
 
@@ -72,6 +82,7 @@ export function createFakeDb(): FakeDb {
   return {
     db,
     queueSelect: (rows) => selectQueue.push(rows),
+    queueUpdate: (rows) => updateQueue.push(rows),
     inserts,
     updates,
     transactions: () => transactionCount,

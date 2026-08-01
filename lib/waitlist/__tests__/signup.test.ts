@@ -133,6 +133,20 @@ describe('signUpForWaitlist', () => {
     expect(sendEmail).not.toHaveBeenCalled();
   });
 
+  it('clears confirmationSentAt and rethrows when the send fails', async () => {
+    // A failed provider call must leave the row retryable: the transaction
+    // stamped confirmationSentAt=now, so without this rollback the cooldown
+    // would silently block an immediate retry.
+    queueFreshAddress();
+    sendEmail.mockRejectedValueOnce(new Error('resend down'));
+
+    await expect(run()).rejects.toThrow('resend down');
+
+    // The compensating update clears the sent marker so retry is unblocked.
+    const rollback = fake.updates.at(-1);
+    expect(rollback).toMatchObject({ confirmationSentAt: null });
+  });
+
   it('sends nothing for an already-confirmed address', async () => {
     fake.queueSelect([{ count: 0 }]);
     fake.queueSelect([

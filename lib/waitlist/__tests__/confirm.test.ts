@@ -58,6 +58,20 @@ describe('confirmWaitlistSignup', () => {
     expect(fake.updates[0].confirmationExpiresAt).toBeNull();
   });
 
+  it('reports already (not invalid) and skips the email when it loses the confirm race', async () => {
+    // Both requests SELECT the same pending row, but the guarded UPDATE only
+    // matches while the token hash is still set — the loser's update touches
+    // zero rows. That is the idempotent already-confirmed outcome, and only
+    // the winner sends the welcome email.
+    fake.queueSelect([pendingRow()]);
+    fake.queueUpdate([]); // guarded UPDATE matched nothing — lost the race
+
+    const result = await run();
+
+    expect(result).toEqual({ status: 'already', locale: 'vi' });
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
   it('looks the row up by hash, not by the raw token', async () => {
     fake.queueSelect([pendingRow()]);
     const hash = hashConfirmationToken(TOKEN);

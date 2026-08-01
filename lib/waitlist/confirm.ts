@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import type { WaitlistStatus } from '@/lib/api/contracts/waitlist';
 import { type AppDb, db as appDb } from '@/lib/db';
 import { waitlistSignups } from '@/lib/db/schema';
@@ -64,8 +64,11 @@ export async function confirmWaitlistSignup(
     return { status: 'expired', locale };
   }
 
-  // Single-use: clearing the hash invalidates the link, and the unique index on
-  // that column means a second confirm can only ever find NULL, not this row.
+  // Single-use, race-safe: the UPDATE also requires the hash to still be set,
+  // so of two concurrent requests carrying the same token only the first
+  // matches a row — the second updates zero rows and falls through to the
+  // guard below. Without the isNotNull guard both would UPDATE by id and both
+  // would fire the welcome email.
   const updated = await db
     .update(waitlistSignups)
     .set({
@@ -74,10 +77,17 @@ export async function confirmWaitlistSignup(
       confirmationExpiresAt: null,
       updatedAt: now,
     })
-    .where(eq(waitlistSignups.id, row.id))
+    .where(
+      and(
+        eq(waitlistSignups.id, row.id),
+        isNotNull(waitlistSignups.confirmationTokenHash)
+      )
+    )
     .returning({ id: waitlistSignups.id });
 
-  if (updated.length === 0) return { status: 'invalid', locale };
+  // Lost the race (or already confirmed between our SELECT and UPDATE): the
+  // other request owns the welcome email, so report the idempotent outcome.
+  if (updated.length === 0) return { status: 'already', locale };
 
   // Best-effort: the person is confirmed either way, so a mail failure must not
   // turn a successful confirmation into an error page.
