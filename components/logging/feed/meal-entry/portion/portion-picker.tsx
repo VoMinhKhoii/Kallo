@@ -137,7 +137,7 @@ export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
       <PopoverContent
         align="start"
         sideOffset={8}
-        className="w-80 rounded-xl border-nham-border/60 bg-card p-4 text-nham-text shadow-lg shadow-nham-text/[0.06]"
+        className="w-96 rounded-xl border-nham-border/60 bg-card p-4 text-nham-text shadow-lg shadow-nham-text/[0.06]"
       >
         {body}
       </PopoverContent>
