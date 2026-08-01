@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { relogCandidatesKeys } from '@/hooks/meals/relog/use-relog-candidates';
 import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
 import { saveManualMealAction } from '@/lib/actions/manual-meals';
@@ -68,10 +69,12 @@ export function useConfirmMeal(userId: string) {
     onError: (error, _vars, context) =>
       rollbackOptimisticMeal(queryClient, error, context),
     onSettled: (_data, error, variables) =>
-      // The extra key refreshes the "log it again" chips so a newly-saved
-      // cheat occasion appears.
+      // Extra keys: the "log it again" cheat chips (so a newly-saved cheat
+      // occasion appears) and the relog picker candidates (a confirmed meal —
+      // including a confirmed relog — gains an occurrence and re-ranks).
       settleMealSave(queryClient, userId, variables.originDate, error, [
         ['recent-cheat-occasions'],
+        relogCandidatesKeys.all,
       ]),
   });
 }

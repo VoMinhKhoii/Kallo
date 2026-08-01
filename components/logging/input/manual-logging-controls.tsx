@@ -5,6 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useIngredientSearch } from '@/hooks/meals/use-ingredient-search';
 import {
+  formatKcal,
+  formatMacro,
   type IngredientSearchResult,
   type ManualMealRow,
   rowMacros,
@@ -20,16 +22,6 @@ interface ManualLoggingControlsProps {
   onRowChange: (id: string, patch: Partial<Omit<ManualMealRow, 'id'>>) => void;
   onRowAdd: (afterId?: string) => string;
   onRowRemove: (id: string) => void;
-}
-
-function formatKcal(value: number | null): string {
-  if (value == null) return '—';
-  return String(Math.round(value));
-}
-
-function formatMacro(value: number | null): string {
-  if (value == null) return '—';
-  return value < 10 ? value.toFixed(1) : String(Math.round(value));
 }
 
 function StateBadge({ state }: { state: string }) {

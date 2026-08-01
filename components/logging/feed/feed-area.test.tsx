@@ -91,6 +91,46 @@ vi.mock('@/hooks/meals/use-recent-cheat-occasions', () => ({
   useRecentCheatOccasions: () => ({ data: [] }),
 }));
 
+// Mocked at the hook level like the other composer hooks above, so this file
+// keeps testing FeedArea's own behaviour rather than the relog picker's.
+vi.mock('@/hooks/meals/relog/use-relog-composer', () => ({
+  useRelogComposer: () => ({
+    relogPicker: {
+      isOpen: false,
+      query: '',
+      highlighted: 0,
+      setHighlighted: vi.fn(),
+      setOptions: vi.fn(),
+      syncFromTextarea: vi.fn(),
+      handleKeyDown: () => false,
+      select: vi.fn(),
+      close: vi.fn(),
+    },
+    relogCandidates: {
+      dishes: [],
+      meals: [],
+      options: [],
+      isLoading: false,
+      isFetching: false,
+    },
+    relogStaged: {
+      entries: [],
+      totals: {
+        caloriesKcal: null,
+        proteinG: null,
+        carbohydrateG: null,
+        fatG: null,
+      },
+      add: vi.fn(),
+      remove: vi.fn(),
+      clear: vi.fn(),
+      isFull: false,
+    },
+    handleNormalSubmit: vi.fn(),
+    hasStagedRelog: false,
+  }),
+}));
+
 vi.mock('@/lib/actions/meals/cheat', () => ({
   stageCheatRepeatAction: vi.fn(),
 }));

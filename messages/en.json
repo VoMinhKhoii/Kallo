@@ -1181,6 +1181,24 @@
       "previousWeek": "Previous week",
       "nextWeek": "Next week",
       "openCalendar": "Open calendar"
+    },
+    "relog": {
+      "pickerLabel": "Logged dishes and meals",
+      "groupDishes": "Dishes",
+      "groupMeals": "Meals",
+      "ingredientCount": "{count} ingredients",
+      "dishCount": "{count} dishes",
+      "optionKcal": "{kcal} kcal",
+      "rowKcal": "{kcal} kcal",
+      "total": "Total",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "searching": "Searching...",
+      "noResults": "No dishes found",
+      "noHistory": "Nothing logged yet",
+      "resultCount": "{count} results",
+      "removeStaged": "Remove {name}",
+      "macroSplit": "P {protein}g · C {carbs}g · F {fat}g"
     }
   },
   "groups": {
