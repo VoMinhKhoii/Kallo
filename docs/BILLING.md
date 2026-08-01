@@ -313,10 +313,18 @@ does, and approval has lead time — start it early.
    grant.
 8. Attach the products to the existing `premium` entitlement and to the packages
    in the current `default` offering.
-9. Copy the public Web SDK key into `REVENUECAT_WEB_API_KEY`. If its prefix is
-   not `rcb_`, widen `WEB_CLIENT_KEY_PATTERN` in
-   `app/api/v1/account/billing-config/route.ts` — a mismatch silently reports
-   `available: false` and the paywall stays "unavailable".
+9. Copy the **public** Web SDK key into `REVENUECAT_WEB_API_KEY`. A
+   Paddle-backed config issues it with a `pdl_` prefix (`rcb_` is RevenueCat
+   Billing); both are accepted by `WEB_CLIENT_KEY_PATTERN` in
+   `app/api/v1/account/billing-config/route.ts`. Any other shape is withheld
+   and the paywall reports `available: false`.
+
+   > **Do not confuse this with the Paddle server secret**, which now shares the
+   > `pdl_` prefix (`pdl_sdbx_apikey_…` / `pdl_live_apikey_…`). That value is
+   > the one from step 3 and belongs only in RevenueCat's dashboard — never in
+   > `REVENUECAT_WEB_API_KEY`, which is served to the browser. The pattern
+   > rejects it because of the underscores in `_apikey_`; that guard is
+   > covered by a test and must not be loosened.
 10. Review prices and tax treatment with the account owner before publishing; do
    not infer them from mobile store fees. Paddle handles tax as merchant of
    record.

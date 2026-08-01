@@ -18,6 +18,8 @@ beforeEach(() => {
 describe('GET /api/v1/account/billing-config', () => {
   it.each([
     'rcb_publicClient123',
+    // Paddle-backed web config — the shape RevenueCat issues for Kallo today.
+    'pdl_RiMPLBuAhksjLUoUkOgYyiQYhsnz',
     'test_publicClient123',
   ])('exposes supported public RevenueCat key %s', async (apiKey) => {
     process.env.REVENUECAT_WEB_API_KEY = apiKey;
@@ -37,6 +39,11 @@ describe('GET /api/v1/account/billing-config', () => {
     'atk_secretApiKey',
     'appl_wrongPlatform',
     'not-a-revenuecat-key',
+    // Paddle's SERVER secret shares the `pdl_` prefix with the public web key.
+    // Only the underscores in `_apikey_` keep it out — if this pattern is ever
+    // loosened, a misconfigured env var would ship the secret to every browser.
+    'pdl_sdbx_apikey_01exampleid_examplesecretvalue',
+    'pdl_live_apikey_01exampleid_examplesecretvalue',
   ])('never exposes unsupported or secret-looking key %s', async (apiKey) => {
     process.env.REVENUECAT_WEB_API_KEY = apiKey;
 
