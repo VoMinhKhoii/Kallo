@@ -2,9 +2,9 @@ import {
   Activity,
   LayoutDashboard,
   type LucideIcon,
+  NotebookPen,
   ShieldCheck,
   Users2,
-  UtensilsCrossed,
 } from 'lucide-react';
 
 export interface NavItemConfig {
@@ -32,7 +32,7 @@ export const NAV_ITEMS: readonly NavItemConfig[] = [
     id: 'logging',
     href: '/logging',
     labelKey: 'logging',
-    icon: UtensilsCrossed,
+    icon: NotebookPen,
   },
   {
     id: 'groups',
