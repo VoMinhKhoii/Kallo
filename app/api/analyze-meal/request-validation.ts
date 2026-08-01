@@ -12,12 +12,8 @@ import type { AnalysisGuardAllowedResult } from '@/lib/rate-limit/analysis-guard
 import { createClient } from '@/lib/supabase/server';
 import { mealMessageSchema } from '@/lib/validation';
 
-export function getRequestIp(request: NextRequest) {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  const forwardedIp = forwardedFor?.split(',')[0]?.trim();
-
-  return forwardedIp || request.headers.get('x-real-ip');
-}
+// Shared with the waitlist route; the implementation lives in lib/security.
+export { getRequestIp } from '@/lib/security/request-ip';
 
 export function createGuardRelease(
   release: AnalysisGuardAllowedResult['release']

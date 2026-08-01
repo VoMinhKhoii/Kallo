@@ -1,5 +1,9 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import { z } from 'zod';
+import {
+  readBoundedWebhookBody,
+  timingSafeMatch,
+} from '@/lib/security/webhook-request';
 
 export const MAX_WEBHOOK_BYTES = 256 * 1024;
 
@@ -29,13 +33,6 @@ export const revenueCatBodySchema = z
 
 export type RevenueCatEvent = z.infer<typeof revenueCatEventSchema>;
 export type RevenueCatWebhookBody = z.infer<typeof revenueCatBodySchema>;
-
-export function timingSafeMatch(first: string, second: string): boolean {
-  const firstBuffer = Buffer.from(first);
-  const secondBuffer = Buffer.from(second);
-  if (firstBuffer.length !== secondBuffer.length) return false;
-  return timingSafeEqual(firstBuffer, secondBuffer);
-}
 
 export function verifyRevenueCatHmac(
   rawBody: string,
@@ -102,36 +99,7 @@ export function payloadForAudit(body: RevenueCatWebhookBody) {
   };
 }
 
-export class WebhookPayloadTooLargeError extends Error {}
-
-export async function readBoundedWebhookBody(
-  request: Request
-): Promise<string> {
-  const contentLength = request.headers.get('content-length');
-  if (
-    contentLength &&
-    /^\d+$/.test(contentLength) &&
-    Number(contentLength) > MAX_WEBHOOK_BYTES
-  ) {
-    throw new WebhookPayloadTooLargeError();
-  }
-
-  if (!request.body) return '';
-  const reader = request.body.getReader();
-  const decoder = new TextDecoder();
-  let totalBytes = 0;
-  let rawBody = '';
-
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    totalBytes += value.byteLength;
-    if (totalBytes > MAX_WEBHOOK_BYTES) {
-      await reader.cancel();
-      throw new WebhookPayloadTooLargeError();
-    }
-    rawBody += decoder.decode(value, { stream: true });
-  }
-
-  return rawBody + decoder.decode();
+/** Read this webhook's body under RevenueCat's own size cap. */
+export function readRevenueCatBody(request: Request): Promise<string> {
+  return readBoundedWebhookBody(request, MAX_WEBHOOK_BYTES);
 }

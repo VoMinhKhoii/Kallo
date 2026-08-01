@@ -744,6 +744,18 @@
       "cta": "Bắt đầu ngay",
       "ctaSecondary": "Xem cách hoạt động",
       "beta": "Đang thử nghiệm · làm tại Việt Nam",
+      "waitlist": {
+        "label": "Địa chỉ email",
+        "placeholder": "ban@email.com",
+        "submit": "Vào danh sách chờ",
+        "submitting": "Đang gửi…",
+        "success": "Kiểm tra hộp thư",
+        "successBody": "Chúng tôi vừa gửi bạn một liên kết. Nhấn vào đó để xác nhận chỗ của bạn — chỉ còn bước đó thôi.",
+        "invalidEmail": "Nhập địa chỉ email hợp lệ.",
+        "error": "Đã có lỗi xảy ra. Vui lòng thử lại.",
+        "rateLimited": "Bạn thử hơi nhiều lần. Vui lòng đợi một lát rồi thử lại.",
+        "privacy": "Một email để xác nhận, một email khi tới lượt bạn. Không gì khác."
+      },
       "demo": {
         "today": "Hôm nay",
         "date": "Nhật ký bữa ăn",
@@ -869,6 +881,12 @@
       "terms": "Điều khoản",
       "privacyLink": "Chính sách riêng tư",
       "security": "Bảo mật"
+    },
+    "waitlistStatus": {
+      "confirmed": "Bạn đã có tên trong danh sách. Chúng tôi sẽ báo khi tới lượt bạn.",
+      "already": "Bạn đã có trong danh sách — không cần làm gì thêm.",
+      "expired": "Liên kết đã hết hạn. Nhập lại email để nhận liên kết mới.",
+      "invalid": "Liên kết không hợp lệ. Nhập lại email để nhận liên kết mới."
     }
   },
   "dashboard": {
