@@ -215,7 +215,7 @@ be assumed to cancel the Paddle subscription either — see the note above.
    `kallo_premium_annual`, and `kallo_premium_lifetime`. Google reports the
    subscription products with their exact `:monthly` and `:annual` base plans.
    Web products are imported from Paddle and may carry Paddle price ids
-   instead — see step 6 of the Paddle checklist.
+   instead — see step 7 of the Paddle checklist.
 4. Build an **offering** with the three packages.
 5. In Project settings → General, set **Restore behavior** to **Keep with
    original App User ID**. Kallo requires login before purchase; this prevents
@@ -272,24 +272,29 @@ does, and approval has lead time — start it early.
    price (`billing_cycle: null`). A Paddle **price** maps to a RevenueCat
    **product**, so one Paddle product with three prices yields three RC
    products.
-5. RevenueCat → add the Paddle config with that API key, then **Product catalog
-   → Products → Import** the three prices.
-6. **Record the RevenueCat product identifiers the import produces.** If RC lets
+5. RevenueCat → **Web** in the lower section of the project sidebar (not
+   *Integrations*, which is analytics destinations, and not *Project settings*)
+   → create a web config for **Paddle** → **Set secret** → paste the Paddle API
+   key → **Set**. There is no sandbox/production toggle here: the environment
+   follows whichever Paddle account issued the key.
+6. **Product catalog → Products → Import**, pick the Paddle config, and import
+   the three prices.
+7. **Record the RevenueCat product identifiers the import produces.** If RC lets
    you set them, use the canonical ids from `lib/billing/products.ts`. If RC
    assigns the Paddle price id (`pri_…`), those ids must be added to the catalog
    in `lib/billing/products.ts` — `canonicalProductId()` matches exactly and
    refuses anything unknown, so an unmapped id means a paying customer gets no
    grant.
-7. Attach the products to the existing `premium` entitlement and to the packages
+8. Attach the products to the existing `premium` entitlement and to the packages
    in the current `default` offering.
-8. Copy the public Web SDK key into `REVENUECAT_WEB_API_KEY`. If its prefix is
+9. Copy the public Web SDK key into `REVENUECAT_WEB_API_KEY`. If its prefix is
    not `rcb_`, widen `WEB_CLIENT_KEY_PATTERN` in
    `app/api/v1/account/billing-config/route.ts` — a mismatch silently reports
    `available: false` and the paywall stays "unavailable".
-9. Review prices and tax treatment with the account owner before publishing; do
+10. Review prices and tax treatment with the account owner before publishing; do
    not infer them from mobile store fees. Paddle handles tax as merchant of
    record.
-10. Never surface or promote web pricing inside the iOS app without a separate
+11. Never surface or promote web pricing inside the iOS app without a separate
    App Review policy check.
 
 ## Sandbox test plan
