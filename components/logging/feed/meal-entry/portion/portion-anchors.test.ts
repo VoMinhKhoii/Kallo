@@ -3,11 +3,15 @@ import {
   anchorPositions,
   claimedAnchor,
   committedPieceTier,
+  glyphRowAspect,
+  glyphWidthRatio,
   nearestAnchor,
   type PortionAnchor,
   positionBreaks,
   rulerStep,
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
+import { PIECE_TIERS, pieceAssetFor } from '@/lib/ai/portion/vessel-data';
+import type { PieceVessel } from '@/lib/ai/portion/vessel-types';
 
 const anchors: PortionAnchor[] = [
   { tier: 1, value: 100, label: 'small' },
@@ -61,6 +65,81 @@ describe('anchor position helpers', () => {
   it('spaces five anchors at the legacy fixed positions', () => {
     expect(anchorPositions(5)).toEqual([10, 30, 50, 70, 90]);
     expect(positionBreaks(5)).toEqual([0, 100, 300, 500, 700, 900, 1000]);
+  });
+});
+
+describe('glyphWidthRatio', () => {
+  const kinds: PieceVessel['kind'][] = ['fish', 'meat', 'poultry'];
+  /** Glyph geometry in column units: width is the ratio, height follows aspect. */
+  const glyph = (tierIndex: number, kind: PieceVessel['kind']) => {
+    const tier = PIECE_TIERS[tierIndex];
+    const { aspect } = pieceAssetFor(tier, kind);
+    const width = glyphWidthRatio(tier.grams, aspect);
+    return { width, height: width / aspect, area: width * (width / aspect) };
+  };
+  const everyGlyph = kinds.flatMap((kind) =>
+    PIECE_TIERS.map((_, index) => ({ kind, ...glyph(index, kind) }))
+  );
+
+  it('keeps every silhouette inside its column', () => {
+    // The bug this replaces: a tier-5 fish was 130px wide in a ~54px column,
+    // overlapping tier 4 and spilling off the right of the row.
+    expect(everyGlyph).toHaveLength(15);
+    for (const { width } of everyGlyph) {
+      expect(width).toBeGreaterThan(0);
+      expect(width).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('lets the widest silhouette fill its column exactly', () => {
+    // A slack normaliser would shrink every glyph for no reason.
+    expect(Math.max(...everyGlyph.map((g) => g.width))).toBeCloseTo(1, 10);
+  });
+
+  it('never grows a glyph taller than its column is wide', () => {
+    // Row height is pinned to the tallest glyph, so this bounds the picker.
+    for (const { height } of everyGlyph) {
+      expect(height).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('sizes the row to the tallest glyph, with no slack and no clipping', () => {
+    const columns = PIECE_TIERS.length;
+    // Row height in column widths, recovered from the aspect the row is given.
+    const rowHeight = columns / glyphRowAspect(columns);
+    const tallest = Math.max(...everyGlyph.map((g) => g.height));
+    expect(rowHeight).toBeCloseTo(tallest, 10);
+    for (const { height } of everyGlyph) {
+      expect(height).toBeLessThanOrEqual(rowHeight);
+    }
+  });
+
+  it('grows visual area strictly across the tiers, for every kind', () => {
+    for (const kind of kinds) {
+      const areas = PIECE_TIERS.map((_, index) => glyph(index, kind).area);
+      for (let i = 1; i < areas.length; i += 1) {
+        expect(areas[i]).toBeGreaterThan(areas[i - 1]);
+      }
+    }
+  });
+
+  it('gives equal grams equal area whatever the art’s shape', () => {
+    // Height alone used to carry the amount, so a wide fillet read as far more
+    // food than a compact drumstick of the same weight.
+    for (const [index] of PIECE_TIERS.entries()) {
+      const [fish, meat, poultry] = kinds.map(
+        (kind) => glyph(index, kind).area
+      );
+      expect(meat).toBeCloseTo(fish, 10);
+      expect(poultry).toBeCloseTo(fish, 10);
+    }
+  });
+
+  it('scales area as grams^(2/3) — the cbrt law the ruler always meant', () => {
+    const smallest = glyph(0, 'fish');
+    const largest = glyph(PIECE_TIERS.length - 1, 'fish');
+    const grams = PIECE_TIERS.at(-1)!.grams / PIECE_TIERS[0].grams;
+    expect(largest.area / smallest.area).toBeCloseTo(grams ** (2 / 3), 10);
   });
 });
 

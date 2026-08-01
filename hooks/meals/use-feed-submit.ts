@@ -7,13 +7,14 @@ import type {
   StreamAnalysisState,
   StreamAnalyzeInput,
 } from '@/hooks/meals/use-stream-analysis';
+import type { RelogRef } from '@/lib/logging/relog/relog';
 import type { CheatIntensity } from '@/lib/types/cheat';
 import type { ChatMessage } from '@/lib/types/meal';
 import { mealTextSchema } from '@/lib/validation';
 
 interface UseFeedSubmitParams {
   stream: StreamAnalysisState & {
-    analyze: (input: StreamAnalyzeInput) => Promise<void>;
+    analyze: (input: StreamAnalyzeInput) => Promise<boolean>;
     reset: () => void;
   };
   selectedDate: string;
@@ -48,15 +49,35 @@ export function useFeedSubmit({
   isCheat,
   cheatIntensity,
 }: UseFeedSubmitParams) {
-  const handleSubmit = async () => {
-    if (stream.isAnalyzing) return;
-    const parsed = mealTextSchema.safeParse(inputRef.current?.getText());
+  /**
+   * Analyze the composer's free text. `override` serves the combined-relog
+   * case: the caller passes the composer text with the picked-dish mentions
+   * stripped out (so the AI only ever sees genuinely new food) plus the picks
+   * as `refs`, which the server resolves deterministically and merges into the
+   * result — the relogged dishes are never re-analyzed.
+   *
+   * Returns whether the analysis DURABLY staged (an `analysis_complete`
+   * arrived). `false` means the input was empty/invalid, a request was already
+   * in flight, or the stream errored/clarified/ended early — in every one of
+   * those cases the caller must NOT clear staged relog picks, or they'd vanish
+   * behind a submit that produced no confirmable card.
+   */
+  const handleSubmit = async (override?: {
+    message: string;
+    refs?: RelogRef[];
+  }): Promise<boolean> => {
+    if (stream.isAnalyzing) return false;
+    const parsed = mealTextSchema.safeParse(
+      override ? override.message : inputRef.current?.getText()
+    );
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? 'Vui lòng nhập món ăn.');
-      return;
+      return false;
     }
     const text = parsed.data;
+    const refs = override?.refs;
 
+    let durablyStaged = false;
     await guard(async () => {
       const assistantMsgId = generateId();
       // Stable per-attempt id: a clarify re-run of this card reuses it so the
@@ -90,11 +111,12 @@ export function useFeedSubmit({
       inputRef.current?.clear();
       scrollToBottom();
 
-      await stream.analyze({
+      durablyStaged = await stream.analyze({
         message: text,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
         attemptId,
+        ...(refs && refs.length > 0 ? { refs } : {}),
         ...(isCheat
           ? {
               mode: 'cheat' as const,
@@ -103,6 +125,7 @@ export function useFeedSubmit({
           : {}),
       });
     });
+    return durablyStaged;
   };
 
   return { handleSubmit };

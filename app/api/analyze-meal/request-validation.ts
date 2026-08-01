@@ -120,6 +120,9 @@ export async function validateRequest(request: NextRequest) {
         clarifyAnswer: parsed.data.clarifyAnswer,
         cheatIntensity: parsed.data.cheatIntensity,
         attemptId: parsed.data.attemptId,
+        // Combined relog picks (precise mode only). Resolved + merged after the
+        // pipeline runs on `message` alone — never fed into the AI.
+        refs: parsed.data.refs,
         profile,
       },
     };

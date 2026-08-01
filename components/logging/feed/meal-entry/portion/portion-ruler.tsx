@@ -5,6 +5,8 @@ import { Slider as SliderPrimitive } from 'radix-ui';
 import { useState } from 'react';
 import {
   anchorPositions,
+  glyphRowAspect,
+  glyphWidthRatio,
   interpolate,
   POSITION_MAX,
   type PortionAnchor,
@@ -13,18 +15,7 @@ import {
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { PIECE_TIERS, pieceAssetFor } from '@/lib/ai/portion/vessel-data';
 import type { PieceVessel } from '@/lib/ai/portion/vessel-types';
-
-const MIN_GLYPH_PX = 20;
-const MAX_GLYPH_PX = 60;
-const CBRT_MIN = Math.cbrt(PIECE_TIERS[0].grams);
-const CBRT_MAX = Math.cbrt(PIECE_TIERS[PIECE_TIERS.length - 1].grams);
-
-/** Silhouette height grows as cbrt(per-piece grams), clamped so tier 1 stays
- * recognizable and tier 5 never dominates. Count-independent by design. */
-function glyphHeight(grams: number): number {
-  const t = (Math.cbrt(grams) - CBRT_MIN) / (CBRT_MAX - CBRT_MIN);
-  return MIN_GLYPH_PX + t * (MAX_GLYPH_PX - MIN_GLYPH_PX);
-}
+import { cn } from '@/lib/utils';
 
 interface PortionRulerProps {
   anchors: PortionAnchor[];
@@ -44,12 +35,18 @@ interface PortionRulerProps {
 /**
  * Integrated piece ruler: one continuous track with equal-spaced anchors. Each
  * anchor carries a bottom-aligned silhouette above the track, a 1px tick on it,
- * and a gram label below — all sharing one column. The Radix slider runs in
- * position space (0–POSITION_MAX); grams map to/from it piecewise-linearly over
- * (0, min) (anchor positions, anchor values) (100%, max), so anchors sit at
- * fixed positions while grams stay continuous between them. Position is held
- * here so a drag never snaps back through the lossy grams round-trip; it
- * resyncs whenever grams change from outside (e.g. an anchor tap).
+ * and a gram label below — all sharing one column.
+ *
+ * The silhouettes sit in an n-column grid rather than being absolutely
+ * positioned, because n equal columns have their centres at exactly
+ * `anchorPositions(n)`: the glyphs line up with the ticks and labels for free,
+ * and a glyph physically cannot spill into its neighbour.
+ *
+ * The Radix slider runs in position space (0–POSITION_MAX); grams map to/from it
+ * piecewise-linearly over (0, min) (anchor positions, anchor values) (100%, max),
+ * so anchors sit at fixed positions while grams stay continuous between them.
+ * Position is held here so a drag never snaps back through the lossy grams
+ * round-trip; it resyncs whenever grams change from outside (e.g. an anchor tap).
  */
 export function PortionRuler({
   anchors,
@@ -91,37 +88,52 @@ export function PortionRuler({
   };
 
   return (
-    <div>
-      <div className="relative mb-1 h-[64px]">
-        {anchors.map((anchor, index) => {
+    // Capped and centred so the glyphs stay a sensible size on a wide drawer.
+    // The cap is on the whole ruler, not just the glyph row, so the row keeps
+    // sharing its width — and therefore its column centres — with the track.
+    // 360px / 5 columns puts the ceiling on a glyph at 72px, which is what
+    // `sizes` below is set to.
+    <div className="mx-auto max-w-[360px]">
+      <div
+        className="mb-1 grid"
+        style={{
+          gridTemplateColumns: `repeat(${anchors.length}, minmax(0, 1fr))`,
+          aspectRatio: glyphRowAspect(anchors.length),
+        }}
+      >
+        {anchors.map((anchor) => {
           const tier = PIECE_TIERS[anchor.tier - 1];
           const asset = pieceAssetFor(tier, kind);
-          const height = Math.round(glyphHeight(tier.grams));
           const selected = anchor.tier === claimedTier;
           return (
+            // Stretched to the row height (the tallest glyph) so the tap targets
+            // tile the row instead of shrinking to a 20px silhouette.
             <button
               key={anchor.tier}
               type="button"
               onClick={() => onChange(anchor.value)}
               aria-label={`${countPrefix}${anchor.label} (${tier.sizeLabel})`}
               aria-pressed={selected}
-              style={{ left: `${positions[index]}%` }}
-              className={`absolute bottom-0 flex -translate-x-1/2 items-end justify-center transition-opacity ${
+              className={cn(
+                'flex items-end justify-center transition-opacity',
                 selected ? 'opacity-100' : 'opacity-50 hover:opacity-80'
-              }`}
+              )}
             >
-              <div
-                className="relative"
-                style={{ width: Math.round(height * asset.aspect), height }}
+              <span
+                className="relative block max-w-full"
+                style={{
+                  width: `${glyphWidthRatio(tier.grams, asset.aspect) * 100}%`,
+                  aspectRatio: asset.aspect,
+                }}
               >
                 <Image
                   src={`/portions/${asset.file}`}
                   alt=""
                   fill
-                  sizes="48px"
+                  sizes="72px"
                   className="object-contain object-bottom"
                 />
-              </div>
+              </span>
             </button>
           );
         })}

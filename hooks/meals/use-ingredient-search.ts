@@ -1,7 +1,7 @@
 'use client';
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import type {
   IngredientSearchResponse,
   IngredientSearchResult,
@@ -9,15 +9,6 @@ import type {
 
 const DEBOUNCE_MS = 300;
 const SEARCH_LIMIT = 10;
-
-function useDebouncedValue(value: string, delayMs: number): string {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delayMs);
-    return () => clearTimeout(timer);
-  }, [value, delayMs]);
-  return debounced;
-}
 
 async function fetchIngredients(q: string): Promise<IngredientSearchResult[]> {
   const params = new URLSearchParams({ limit: String(SEARCH_LIMIT) });

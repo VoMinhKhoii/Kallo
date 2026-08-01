@@ -1199,6 +1199,24 @@
       "previousWeek": "Tuần trước",
       "nextWeek": "Tuần sau",
       "openCalendar": "Mở lịch"
+    },
+    "relog": {
+      "pickerLabel": "Món và bữa đã ghi",
+      "groupDishes": "Món",
+      "groupMeals": "Bữa ăn",
+      "ingredientCount": "{count} nguyên liệu",
+      "dishCount": "{count} món",
+      "optionKcal": "{kcal} kcal",
+      "rowKcal": "{kcal} kcal",
+      "total": "Tổng cộng",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "searching": "Đang tìm...",
+      "noResults": "Không tìm thấy món nào",
+      "noHistory": "Chưa có món nào trong lịch sử",
+      "resultCount": "{count} kết quả",
+      "removeStaged": "Bỏ {name}",
+      "macroSplit": "P {protein}g · C {carbs}g · F {fat}g"
     }
   },
   "groups": {

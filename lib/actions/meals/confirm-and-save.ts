@@ -167,7 +167,17 @@ export async function confirmAndSaveMealAction(input: {
             (sum, ing) => sum + ing.estimatedGrams,
             0
           );
-          const ratio = totalGrams > 0 ? edit.newGrams / totalGrams : 0;
+          // A dish with unknown/zero base weight can't be gram-scaled: there's
+          // no ratio to apply. Record the new grams but leave nutrition intact
+          // rather than multiplying it to zero (which silently nuked relogged
+          // items whose source row had null `estimated_grams`).
+          if (totalGrams <= 0) {
+            for (const ingredient of mealItem.ingredients) {
+              ingredient.estimatedGrams = edit.newGrams;
+            }
+            continue;
+          }
+          const ratio = edit.newGrams / totalGrams;
           for (const ingredient of mealItem.ingredients) {
             ingredient.estimatedGrams *= ratio;
             scaleIngredient(ingredient, ratio);
@@ -178,10 +188,13 @@ export async function confirmAndSaveMealAction(input: {
         const ingredient = mealItem.ingredients[edit.ingredientIndex];
         if (!ingredient) continue;
 
-        const ratio =
-          ingredient.estimatedGrams > 0
-            ? edit.newGrams / ingredient.estimatedGrams
-            : 0;
+        // Same guard for a single-ingredient edit: no base weight ⇒ no ratio,
+        // so set the grams but keep the authoritative nutrition.
+        if (ingredient.estimatedGrams <= 0) {
+          ingredient.estimatedGrams = edit.newGrams;
+          continue;
+        }
+        const ratio = edit.newGrams / ingredient.estimatedGrams;
         ingredient.estimatedGrams = edit.newGrams;
         scaleIngredient(ingredient, ratio);
       }

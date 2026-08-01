@@ -6,6 +6,18 @@
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { NutritionValues } from '@/lib/ai/types';
 
+/** Round a kcal value for display; unknown renders as an em dash, never 0. */
+export function formatKcal(value: number | null): string {
+  if (value == null) return '—';
+  return String(Math.round(value));
+}
+
+/** Grams of a macro: one decimal under 10g, whole numbers above. */
+export function formatMacro(value: number | null): string {
+  if (value == null) return '—';
+  return value < 10 ? value.toFixed(1) : String(Math.round(value));
+}
+
 /** Per-100g macro snapshot carried with every search result so the client can
  *  compute row/total macros live without another round-trip. */
 export interface IngredientMacrosPer100g {

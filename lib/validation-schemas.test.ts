@@ -156,6 +156,36 @@ describe('mealMessageSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts refs alongside free text (combined precise relog)', () => {
+    const result = mealMessageSchema.safeParse({
+      ...mealBody('2 boiled eggs'),
+      refs: [
+        {
+          kind: 'dish',
+          sourceMealId: '11111111-1111-4111-8111-111111111111',
+          mealItemOrder: 0,
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects refs when mode is cheat (would silently drop the picks)', () => {
+    // The cheat branch returns before the relog merge, so accepting cheat+refs
+    // would quietly discard the user's picks — reject instead.
+    const result = mealMessageSchema.safeParse({
+      ...mealBody('bữa xả'),
+      mode: 'cheat',
+      refs: [
+        {
+          kind: 'meal',
+          sourceMealId: '22222222-2222-4222-8222-222222222222',
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('weightLogSchema', () => {

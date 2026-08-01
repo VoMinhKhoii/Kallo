@@ -15,7 +15,10 @@ export function useMealPrefill(args: {
   isAnalyzing: boolean;
   inputRef: RefObject<MealInputHandle | null>;
   onInitialMealApplied: (() => void) | undefined;
-  handleSubmit: () => Promise<void> | void;
+  // The return is ignored here — prefill only fires the submit, it doesn't
+  // branch on whether the analysis started. Typed as returning a promise
+  // (awaited fire-and-forget) so `useFeedSubmit`'s `Promise<boolean>` assigns.
+  handleSubmit: () => Promise<unknown>;
 }) {
   const {
     initialMeal,
