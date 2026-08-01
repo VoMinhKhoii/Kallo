@@ -6,12 +6,14 @@
  *
  * Usage:
  *   bun --env-file=.env.local scripts/backfill_embeddings.ts
+ *   bun --env-file=.env.local scripts/backfill_embeddings.ts \
+ *     --ids=usda_6008_raw,usda_6170_raw
  *
  * Requires env vars: GEMINI_API_KEY, DATABASE_URL
  */
 
 import { GoogleGenAI } from '@google/genai';
-import { isNull, sql } from 'drizzle-orm';
+import { inArray, isNull, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { encodeDbUrl } from '@/lib/db';
@@ -23,6 +25,24 @@ const MAX_RETRIES = 5;
 // Free tier: 100 embed requests/min. Each text counts as 1 request.
 // With BATCH_SIZE=50, sleep 35s between batches to stay under limit.
 const BATCH_DELAY_MS = 35_000;
+
+const idsArg = process.argv.find((arg) => arg.startsWith('--ids='));
+const requestedIds = idsArg
+  ? [
+      ...new Set(
+        idsArg
+          .slice('--ids='.length)
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean)
+      ),
+    ]
+  : [];
+
+if (idsArg && requestedIds.length === 0) {
+  console.error('--ids must contain at least one food composition id');
+  process.exit(1);
+}
 
 if (!process.env.DATABASE_URL || !process.env.GEMINI_API_KEY) {
   console.error(
@@ -110,9 +130,23 @@ async function main() {
         typeEn: vietnameseFoodComposition.typeEn,
       })
       .from(vietnameseFoodComposition)
-      .where(isNull(vietnameseFoodComposition.embedding));
+      .where(
+        requestedIds.length > 0
+          ? inArray(vietnameseFoodComposition.id, requestedIds)
+          : isNull(vietnameseFoodComposition.embedding)
+      );
 
-    console.log(`Found ${rows.length} rows without embeddings`);
+    console.log(
+      requestedIds.length > 0
+        ? `Found ${rows.length}/${requestedIds.length} requested rows to re-embed`
+        : `Found ${rows.length} rows without embeddings`
+    );
+
+    if (requestedIds.length > 0 && rows.length !== requestedIds.length) {
+      const found = new Set(rows.map((row) => row.id));
+      const missing = requestedIds.filter((id) => !found.has(id));
+      throw new Error(`Requested food rows not found: ${missing.join(', ')}`);
+    }
 
     if (rows.length === 0) {
       console.log('Nothing to do');
