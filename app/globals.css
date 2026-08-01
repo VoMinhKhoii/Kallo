@@ -454,3 +454,13 @@ body[data-meal-streaming] [data-app-sidebar] {
   filter: saturate(0.7);
   pointer-events: none;
 }
+
+/* [TRIAL — icon weight] Lucide ships a default 2px stroke, which reads heavy
+   next to our 14px calm type and is inconsistent with the mobile app (which
+   uses the thin weight-300 glyphs). Render every Lucide glyph at 1.5px to match
+   the Claude/Threads/Linear look. Inline `stroke-width="2"` is a presentation
+   attribute, so this stylesheet rule wins without touching any call site.
+   Delete this block to revert. */
+svg.lucide {
+  stroke-width: 1.5;
+}

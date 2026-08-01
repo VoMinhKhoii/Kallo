@@ -21,7 +21,7 @@ const List<NavItem> _navItems = [
   NavItem(
     href: '/logging',
     labelKey: 'app.mainSidebar.logging',
-    icon: LucideIcons.utensilsCrossed300,
+    icon: LucideIcons.notebookPen300,
   ),
   NavItem(
     href: '/circle',
