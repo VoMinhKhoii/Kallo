@@ -263,11 +263,37 @@ does, and approval has lead time — start it early.
    as merchant of record.
 2. Paddle → **Checkout settings**: if no default payment link is set, enter
    `https://pay.rev.cat`.
-3. Create a Paddle API key with read on products, prices, subscriptions, and
-   transactions; write on transactions and client-side tokens; and
-   **Customer portal sessions (Write)**. Without that last scope RevenueCat
-   cannot mint `management_url` and the settings "manage subscription" link
-   degrades to `manageUnavailable`.
+3. Create a Paddle API key with **exactly** these permissions. A missing scope
+   fails at "Connect to Paddle" with the unhelpfully generic *"API key is
+   invalid, expired, revoked, or lacks the required permissions"* — it is
+   almost always a missing scope, not a bad key. Paddle allows editing an
+   existing key's permissions, so this is recoverable without regenerating.
+
+   | Permission | Read | Write |
+   |---|:--:|:--:|
+   | Addresses | ✅ | |
+   | Adjustments | ✅ | |
+   | Businesses | ✅ | |
+   | Client-side tokens | ✅ | ✅ |
+   | Customer portal sessions | ✅ | ✅ |
+   | Customers | ✅ | |
+   | Discounts | ✅ | |
+   | Notification settings | ✅ | ✅ |
+   | Notifications | ✅ | |
+   | Payment methods | ✅ | |
+   | Prices | ✅ | |
+   | Products | ✅ | |
+   | Subscriptions | ✅ | |
+   | Transactions | ✅ | ✅ |
+
+   Two of these carry consequences worth knowing:
+   - **Customer portal sessions (Write)** — Paddle only embeds an authenticated
+     session token in the management URL when this is granted. Without it
+     RevenueCat cannot mint `management_url` and the settings "manage
+     subscription" link degrades to `manageUnavailable`.
+   - **Notification settings (Write)** — required by *Automatic* purchase
+     tracking, where RevenueCat creates the webhook destination inside the
+     Paddle account for you.
 4. Create the prices: monthly and annual recurring, plus lifetime as a one-time
    price (`billing_cycle: null`). A Paddle **price** maps to a RevenueCat
    **product**, so one Paddle product with three prices yields three RC
