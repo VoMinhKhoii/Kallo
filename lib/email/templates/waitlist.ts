@@ -56,14 +56,14 @@ const WELCOME: Record<EmailLocale, WelcomeCopy> = {
   en: {
     subject: 'You’re on the Kallo waitlist',
     heading: 'You’re on the list',
-    body: 'Thanks for confirming. Kallo reads a meal the way you’d describe it to a friend — in Vietnamese, English, or both — and estimates the nutrition from Vietnamese food-composition data. We’ll email you when your spot opens.',
+    body: 'Thanks for confirming. Kallo is a text-first macros analyst, aiming for better precision and more reliable results. We’ll email you when your spot opens.',
     cta: 'See what we’re building',
     note: 'Want off the list? Just reply to this email and we’ll remove you.',
   },
   vi: {
     subject: 'Bạn đã có tên trong danh sách chờ Kallo',
     heading: 'Bạn đã có tên trong danh sách',
-    body: 'Cảm ơn bạn đã xác nhận. Kallo hiểu bữa ăn theo cách bạn kể cho bạn bè — tiếng Việt, tiếng Anh, hay cả hai — rồi ước tính dinh dưỡng từ dữ liệu thành phần thực phẩm Việt Nam. Chúng tôi sẽ báo khi tới lượt bạn.',
+    body: 'Cảm ơn bạn đã xác nhận. Kallo là công cụ phân tích macro ưu tiên văn bản, hướng tới độ chính xác cao hơn và kết quả đáng tin cậy hơn. Chúng tôi sẽ báo khi tới lượt bạn.',
     cta: 'Xem chúng tôi đang làm gì',
     note: 'Muốn rời danh sách? Chỉ cần trả lời email này.',
   },

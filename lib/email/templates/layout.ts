@@ -9,16 +9,23 @@ import { SITE_URL } from '@/lib/site';
  * still the only thing Outlook renders predictably. Everything is inline.
  */
 
-/** The brand palette, frozen as literals. Mirrors app/globals.css `:root`. */
+/**
+ * The brand palette for email, frozen as literals. This is the DARK ("inverse")
+ * treatment: espresso card, cream wordmark + text, tan accent button — the
+ * reverse of the app's light surface. Values are literal hex because email
+ * clients have no CSS variables (the same constraint the Satori OG route lives
+ * under). Brand palette: cream #FEFBF6, espresso #2C2416, tan #C9A87C, umber #695E4E.
+ */
 export const EMAIL_COLORS = {
-  surface: '#f9f9f7',
-  text: '#141413',
-  textSoft: '#3d3d3a',
-  textMuted: '#6e6d66',
-  accent: '#c9a87c',
-  border: '#e8e6dc',
-  button: '#695e4e',
-  buttonText: '#f9f9f7',
+  surface: '#211b10', // page backdrop — a shade darker than the card for depth
+  card: '#2c2416', // espresso card
+  text: '#fefbf6', // cream headings/body
+  textSoft: '#e7e0d2', // softened cream for body copy
+  textMuted: '#b8ad97', // muted warm grey for notes + fallback link
+  accent: '#c9a87c', // tan
+  border: '#4a3f2c', // warm umber card border
+  button: '#c9a87c', // tan CTA — pops on the dark card
+  buttonText: '#2c2416', // espresso text on the tan button
 } as const;
 
 export type EmailLocale = 'en' | 'vi';
@@ -83,9 +90,9 @@ export function renderLayout(
   body: string
 ): string {
   const footer = FOOTER_COPY[locale];
-  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light"></head><body style="margin:0;padding:0;background:${EMAIL_COLORS.surface}">
+  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="dark only"><meta name="supported-color-schemes" content="dark"><style>:root{color-scheme:dark only;supported-color-schemes:dark}</style></head><body style="margin:0;padding:0;background:${EMAIL_COLORS.surface}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${EMAIL_COLORS.surface};padding:32px 16px"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid ${EMAIL_COLORS.border};border-radius:16px;padding:36px 32px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:${EMAIL_COLORS.card};border:1px solid ${EMAIL_COLORS.border};border-radius:16px;padding:36px 32px">
 <tr><td>
 <img src="${SITE_URL}/email-logo.png" width="140" height="52" alt="Kallo" style="display:block;margin:0 0 24px;border:0;outline:none;text-decoration:none;height:auto" />
 <h1 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:26px;line-height:1.25;color:${EMAIL_COLORS.text}">${escapeHtml(heading)}</h1>
