@@ -1,11 +1,7 @@
 'use server';
 
 import { randomUUID } from 'node:crypto';
-import { and, asc, eq, inArray } from 'drizzle-orm';
-import {
-  RelogResolutionError,
-  resolveRelogDishes,
-} from '@/lib/actions/meals/relog/expand-refs';
+import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import {
   buildMealItemGroupsFromRows,
@@ -23,7 +19,6 @@ import { requireAuthAndProfile } from '@/lib/auth';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { mealItems, meals } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
 import {
   buildRelogRawInput,
   weakestConfidence,
@@ -62,7 +57,6 @@ export async function relogMealItemsAction(
   const parsed = relogItemsSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  const sourceIds = [...new Set(parsed.items.map((i) => i.sourceMealId))];
   const loggedAt = getUtcInstantForLocalDate(
     parsed.loggedDate,
     parsed.timezoneOffset
@@ -72,65 +66,14 @@ export async function relogMealItemsAction(
   const mealSlot = inferMealSlot(loggedAt);
 
   return await db.transaction(async (tx) => {
-    const sourceMeals = await tx
-      .select({
-        id: meals.id,
-        entryMode: meals.entryMode,
-        portionFactor: meals.portionFactor,
-        confidenceOverall: meals.confidenceOverall,
-      })
-      .from(meals)
-      .where(and(eq(meals.userId, user.id), inArray(meals.id, sourceIds)))
-      // Lock the sources so a concurrent delete can't land between this read
-      // and the copy below (mirrors duplicateMealAction).
-      .for('update');
-
-    if (sourceMeals.length !== sourceIds.length) {
-      throw Errors.validationFailed(
-        'Món ăn không tồn tại hoặc không thuộc về bạn.'
-      );
-    }
-    // Re-assert what the candidate query already filtered on. A stale or
-    // hand-crafted reference must not be able to reach a source the picker
-    // would never have offered.
-    for (const source of sourceMeals) {
-      if (source.entryMode === 'cheat') {
-        throw Errors.validationFailed(
-          'Không thể ghi lại bữa xả theo cách này.'
-        );
-      }
-      // A split share's rows are ALREADY halved, so copying them verbatim under
-      // the full dish name would log half a portion as a whole one.
-      if (Number(source.portionFactor) !== 1) {
-        throw Errors.validationFailed(
-          'Không thể ghi lại món đã chia đôi. Hãy ghi lại cả bữa.'
-        );
-      }
-    }
-
-    const sourceRows = await tx
-      .select()
-      .from(mealItems)
-      .where(inArray(mealItems.mealId, sourceIds))
-      // Deterministic intra-dish order: loadMealsByDate selects without an
-      // ORDER BY, so this is not inherited and must be stated here.
-      .orderBy(
-        asc(mealItems.mealItemOrder),
-        asc(mealItems.createdAt),
-        asc(mealItems.id)
-      );
-
-    let dishes: ReturnType<
-      typeof resolveRelogDishes<(typeof sourceRows)[number]>
-    >;
-    try {
-      dishes = resolveRelogDishes(parsed.items, sourceRows);
-    } catch (error) {
-      if (error instanceof RelogResolutionError) {
-        throw Errors.validationFailed(error.message);
-      }
-      throw error;
-    }
+    // Lock the sources (FOR UPDATE) so a concurrent delete can't land between
+    // this read and the copy below (mirrors duplicateMealAction).
+    const { dishes, sourceConfidences } = await resolveRelogSources(
+      tx,
+      user.id,
+      parsed.items,
+      { lock: true }
+    );
 
     // Re-sequence to the flattened dish index. MANDATORY, not cosmetic:
     // buildMealItemGroupsFromRows keys groups on `${order}:${name}`, so two
@@ -151,9 +94,7 @@ export async function relogMealItemsAction(
     // Same derivation the optimistic client card uses — one source of truth.
     const rawInput = buildRelogRawInput(dishes.map((d) => d.name));
     // A composed meal is no more confident than its least confident part.
-    const confidenceOverall = weakestConfidence(
-      sourceMeals.map((m) => m.confidenceOverall)
-    );
+    const confidenceOverall = weakestConfidence(sourceConfidences);
 
     const [meal] = await tx
       .insert(meals)

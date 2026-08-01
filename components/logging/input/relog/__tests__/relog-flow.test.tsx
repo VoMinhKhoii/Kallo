@@ -68,13 +68,13 @@ vi.mock('next-intl', async () => {
 });
 
 const loadCandidates = vi.hoisted(() => vi.fn());
-const relogItems = vi.hoisted(() => vi.fn());
+const stageRelog = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/actions/meals/relog/load-candidates', () => ({
   loadRelogCandidatesAction: loadCandidates,
 }));
-vi.mock('@/lib/actions/meals/relog/relog-items', () => ({
-  relogMealItemsAction: relogItems,
+vi.mock('@/lib/actions/meals/relog/stage-relog-analysis', () => ({
+  stageRelogAnalysisAction: stageRelog,
 }));
 
 const dish = (name: string, kcal: number, order = 0): RelogDishCandidate => ({
@@ -114,18 +114,29 @@ const RESULTS: RelogCandidatesResponse = {
 /** The composer as the feed wires it — MealInput plus the two relog slots. */
 function Harness({
   onSubmitted,
+  onAiSubmit,
   mode = 'normal',
 }: {
   onSubmitted?: () => void;
+  onAiSubmit?: (override?: {
+    message: string;
+    refs?: unknown[];
+  }) => boolean | undefined;
   mode?: InputMode;
 } = {}) {
   const inputRef = useRef<MealInputHandle>(null);
   const relog = useRelogComposer({
-    userId: 'user-1',
     selectedDate: '2026-07-30',
     loggingMode: mode,
     inputRef,
     scrollToBottom: () => {},
+    setMessages: () => {},
+    handleSubmit: (override) => {
+      const started = onAiSubmit?.(override);
+      // The real useFeedSubmit resolves to whether the analysis started; let a
+      // test force `false` by returning it from the spy (default true).
+      return Promise.resolve(started === undefined ? true : Boolean(started));
+    },
   });
   const {
     relogPicker,
@@ -140,7 +151,7 @@ function Harness({
       ref={inputRef}
       mode={mode}
       onSubmit={() => {
-        relog.handleRelogSubmit();
+        void relog.handleNormalSubmit();
         onSubmitted?.();
       }}
       hasExternalContent={hasStagedRelog}
@@ -176,13 +187,20 @@ function Harness({
   );
 }
 
-function renderHarness(onSubmitted?: () => void, mode: InputMode = 'normal') {
+function renderHarness(
+  onSubmitted?: () => void,
+  mode: InputMode = 'normal',
+  onAiSubmit?: (override?: {
+    message: string;
+    refs?: unknown[];
+  }) => boolean | undefined
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
   const view = render(
     <QueryClientProvider client={client}>
-      <Harness onSubmitted={onSubmitted} mode={mode} />
+      <Harness onSubmitted={onSubmitted} onAiSubmit={onAiSubmit} mode={mode} />
     </QueryClientProvider>
   );
   const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
@@ -212,7 +230,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
   loadCandidates.mockResolvedValue(RESULTS);
-  relogItems.mockResolvedValue({ mealId: 'new-meal', meal: {} });
+  stageRelog.mockResolvedValue({
+    analysisId: 'analysis-1',
+    parsedMeal: { mealName: 'Phở bò', items: [], totalMacros: {} },
+    rawInput: 'Phở bò',
+    loggedAt: '2026-07-30T08:00:00.000Z',
+  });
 });
 
 describe('relog `/` flow', () => {
@@ -379,9 +402,59 @@ describe('relog `/` flow', () => {
     expect(textarea.value).toBe('/phob');
   });
 
-  it('submits the staged references, not the typed text', async () => {
-    const onSubmitted = vi.fn();
-    const { textarea } = renderHarness(onSubmitted);
+  it('pure relog: stages a review card from the picks alone (no AI)', async () => {
+    const onAiSubmit = vi.fn();
+    const { textarea } = renderHarness(undefined, 'normal', onAiSubmit);
+    type(textarea, '/');
+    await screen.findAllByRole('option');
+    key(textarea, 'Enter');
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
+
+    key(textarea, 'Enter');
+
+    // Deterministic staging, not the AI path.
+    await waitFor(() => expect(stageRelog).toHaveBeenCalled());
+    expect(onAiSubmit).not.toHaveBeenCalled();
+    expect(stageRelog.mock.calls[0][0].items).toEqual([
+      {
+        kind: 'dish',
+        sourceMealId: '11111111-1111-4111-8111-111111111111',
+        mealItemOrder: 0,
+      },
+    ]);
+    // The mention text is consumed once staged.
+    await waitFor(() => expect(textarea.value).toBe(''));
+  });
+
+  it('restores the picks when a combined submit fails to durably stage', async () => {
+    // handleSubmit resolves false when the stream errors, clarifies, or ends
+    // without an analysis_complete. The picks must survive so the user can
+    // retry — silently dropping them is the failure this guards.
+    const onAiSubmit = vi.fn();
+    const { textarea } = renderHarness(undefined, 'normal', onAiSubmit);
+    // Make the AI submit report "did not durably stage".
+    onAiSubmit.mockReturnValue(false);
+
+    type(textarea, '/');
+    await screen.findAllByRole('option');
+    key(textarea, 'Enter');
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
+
+    type(textarea, `${textarea.value}và cơm`);
+    key(textarea, 'Enter');
+
+    await waitFor(() => expect(onAiSubmit).toHaveBeenCalled());
+    // Failed durable stage ⇒ the pick is restored (still staged), not consumed,
+    // and the AI carried only the free text with the pick as a ref.
+    expect(stagedRow('Phở bò')).toBeVisible();
+    expect(onAiSubmit.mock.calls[0][0].message).toBe('và cơm');
+    expect(onAiSubmit.mock.calls[0][0].refs).toHaveLength(1);
+    expect(stageRelog).not.toHaveBeenCalled();
+  });
+
+  it('combined: free text runs the AI with the picks passed as refs', async () => {
+    const onAiSubmit = vi.fn();
+    const { textarea } = renderHarness(undefined, 'normal', onAiSubmit);
     type(textarea, '/');
     await screen.findAllByRole('option');
     key(textarea, 'Enter');
@@ -391,17 +464,19 @@ describe('relog `/` flow', () => {
     type(textarea, `${textarea.value}thêm trà đá`);
     key(textarea, 'Enter');
 
-    await waitFor(() => expect(relogItems).toHaveBeenCalled());
-    expect(relogItems.mock.calls[0][0].items).toEqual([
+    // The picks NEVER re-analyze: only the free text goes to the AI, the picks
+    // ride along as refs for the server to merge deterministically.
+    await waitFor(() => expect(onAiSubmit).toHaveBeenCalled());
+    expect(stageRelog).not.toHaveBeenCalled();
+    const override = onAiSubmit.mock.calls[0][0];
+    expect(override.message).toBe('thêm trà đá');
+    expect(override.refs).toEqual([
       {
         kind: 'dish',
         sourceMealId: '11111111-1111-4111-8111-111111111111',
         mealItemOrder: 0,
       },
     ]);
-    // Only the mention text is consumed; what the user typed is theirs and
-    // survives for a second, deliberate submit.
-    await waitFor(() => expect(textarea.value).toBe('thêm trà đá'));
   });
 
   it('enables submit from a staged pick alone, with the composer empty', async () => {
@@ -460,7 +535,7 @@ describe('relog `/` flow', () => {
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));
     });
-    expect(relogItems).not.toHaveBeenCalled();
+    expect(stageRelog).not.toHaveBeenCalled();
     cheat.unmount();
 
     // Back in normal mode the draft is still there.

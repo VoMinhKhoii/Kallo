@@ -9,7 +9,11 @@
  *   - `export type` re-exports of the actions' return types (erased at runtime).
  */
 import { z } from 'zod';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import {
+  dateStringSchema,
+  relogRefSchema,
+  timezoneOffsetSchema,
+} from '@/lib/validation';
 
 export { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 
@@ -196,27 +200,29 @@ export type RelogCandidatesQuery = z.infer<typeof relogCandidatesQuerySchema>;
  */
 export const relogItemsSchema = z.object({
   newMealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
-  items: z
-    .array(
-      z.discriminatedUnion('kind', [
-        z.object({
-          kind: z.literal('dish'),
-          sourceMealId: z.string().uuid('sourceMealId phải là UUID hợp lệ.'),
-          mealItemOrder: z.number().int().min(0).max(10_000),
-        }),
-        z.object({
-          kind: z.literal('meal'),
-          sourceMealId: z.string().uuid('sourceMealId phải là UUID hợp lệ.'),
-        }),
-      ])
-    )
-    .min(1)
-    .max(20),
+  items: z.array(relogRefSchema).min(1).max(20),
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,
 });
 
 export type RelogItemsInput = z.infer<typeof relogItemsSchema>;
+
+/**
+ * Input for `stageRelogAnalysisAction` — the WEB pure-relog path. Instead of
+ * writing a meal directly (as `relogMealItemsAction` does for mobile), it
+ * stages a `pending_analyses` row so the picks land in the same editable review
+ * card AI meals use. Same reference-only `items` as the relog contract; carries
+ * `attemptId` (not `newMealId`) because the meal id is minted at confirm time,
+ * and the attempt id lets a re-stage of the same card upsert its pending row.
+ */
+export const stageRelogAnalysisSchema = z.object({
+  items: relogItemsSchema.shape.items,
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+  attemptId: z.string().uuid().optional(),
+});
+
+export type StageRelogAnalysisInput = z.infer<typeof stageRelogAnalysisSchema>;
 
 export type {
   ConfirmMealResponse,

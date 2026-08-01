@@ -1,22 +1,31 @@
 'use client';
 
-import { type RefObject, useCallback } from 'react';
+import {
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+  useCallback,
+} from 'react';
 import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
 import type { MealInputHandle } from '@/components/logging/input/meal-input';
 import { useRelogCandidates } from '@/hooks/meals/relog/use-relog-candidates';
-import { useRelogMeal } from '@/hooks/meals/relog/use-relog-meal';
 import { useRelogSubmit } from '@/hooks/meals/relog/use-relog-submit';
 import { useSlashPicker } from '@/hooks/meals/relog/use-slash-picker';
 import { useStagedEntries } from '@/hooks/meals/relog/use-staged-entries';
 import type { MentionSegment } from '@/lib/logging/relog/mentions';
-import type { RelogCandidate, SlashToken } from '@/lib/logging/relog/relog';
+import type {
+  RelogCandidate,
+  RelogRef,
+  SlashToken,
+} from '@/lib/logging/relog/relog';
+import type { ChatMessage } from '@/lib/types/meal';
 
 const NO_SEGMENTS: MentionSegment[] = [];
 
 /**
  * Composes the relog slice for the feed controller: the `/` picker, its
  * candidate search, the picked dishes (which live as tinted text inside the
- * composer), and the submit path.
+ * composer), and the unified normal-mode submit.
  *
  * Relog is NORMAL-MODE ONLY — manual and cheat own the composer's slots
  * themselves, and mixing a third payload into them would make submit
@@ -24,17 +33,30 @@ const NO_SEGMENTS: MentionSegment[] = [];
  * so nothing the user picked is lost by toggling modes.
  */
 export function useRelogComposer(args: {
-  userId: string;
   selectedDate: string;
   loggingMode: InputMode;
   inputRef: RefObject<MealInputHandle | null>;
   scrollToBottom: () => void;
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  /** The AI submit (useFeedSubmit). Relog delegates text-only submits to it and
+   *  routes the combined case through it with `refs`. Resolves to whether the
+   *  analysis started. */
+  handleSubmit: (override?: {
+    message: string;
+    refs?: RelogRef[];
+  }) => Promise<boolean>;
 }) {
-  const { userId, selectedDate, loggingMode, inputRef, scrollToBottom } = args;
+  const {
+    selectedDate,
+    loggingMode,
+    inputRef,
+    scrollToBottom,
+    setMessages,
+    handleSubmit,
+  } = args;
   const enabled = loggingMode === 'normal';
 
   const staged = useStagedEntries();
-  const relogMeal = useRelogMeal(userId);
 
   const getTextarea = useCallback(
     () => inputRef.current?.getTextarea() ?? null,
@@ -80,13 +102,14 @@ export function useRelogComposer(args: {
     [getTextarea, setText, staged]
   );
 
-  const handleRelogSubmit = useRelogSubmit({
+  const handleNormalSubmit = useRelogSubmit({
     staged,
-    relogMeal,
     selectedDate,
     scrollToBottom,
     getText: () => getTextarea()?.value ?? '',
     setText,
+    setMessages,
+    handleSubmit,
     enabled,
   });
 
@@ -94,8 +117,9 @@ export function useRelogComposer(args: {
     relogPicker: { ...picker, syncFromTextarea },
     relogCandidates: candidates,
     relogStaged: { ...staged, remove: removeStaged },
-    relogMeal,
-    handleRelogSubmit,
+    /** The unified normal-mode submit: text-only → AI, picks-only → staged relog
+     *  card, text+picks → AI with the picks merged server-side. */
+    handleNormalSubmit,
     /** Coloured runs for the composer's mirror. Empty outside normal mode, so
      *  the textarea keeps its ordinary ink there. */
     mentionSegments: enabled ? staged.segments : NO_SEGMENTS,

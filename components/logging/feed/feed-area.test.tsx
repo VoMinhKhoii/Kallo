@@ -126,8 +126,7 @@ vi.mock('@/hooks/meals/relog/use-relog-composer', () => ({
       clear: vi.fn(),
       isFull: false,
     },
-    relogMeal: { mutate: vi.fn(), isPending: false },
-    handleRelogSubmit: vi.fn(),
+    handleNormalSubmit: vi.fn(),
     hasStagedRelog: false,
   }),
 }));

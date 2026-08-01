@@ -149,13 +149,16 @@ export function useFeedController(args: {
   });
 
   // The `/` relog picker + its staged list. Normal mode only — manual and cheat
-  // own the composer's slots themselves.
+  // own the composer's slots themselves. Submit is unified: text-only meals go
+  // through the AI path, pure picks stage a deterministic review card, and a
+  // mix of the two analyzes the text alone with the picks merged server-side.
   const relog = useRelogComposer({
-    userId: profile.userId,
     selectedDate,
     loggingMode,
     inputRef,
     scrollToBottom,
+    setMessages,
+    handleSubmit,
   });
 
   const { handleAnalysisComplete, handleBarcodeSuccess } = useFeedInvalidation({
