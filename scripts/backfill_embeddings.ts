@@ -13,7 +13,7 @@
  */
 
 import { GoogleGenAI } from '@google/genai';
-import { inArray, isNull, sql } from 'drizzle-orm';
+import { and, inArray, isNull, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { encodeDbUrl } from '@/lib/db';
@@ -118,6 +118,21 @@ async function updateBatch(
   );
 }
 
+async function countMissingEmbeddings(ids?: string[]): Promise<number> {
+  const scope = ids?.length
+    ? and(
+        inArray(vietnameseFoodComposition.id, ids),
+        isNull(vietnameseFoodComposition.embedding)
+      )
+    : isNull(vietnameseFoodComposition.embedding);
+  const [result] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(vietnameseFoodComposition)
+    .where(scope);
+
+  return Number(result?.count ?? 0);
+}
+
 async function main() {
   try {
     const rows = await db
@@ -176,6 +191,21 @@ async function main() {
       }
     }
 
+    const remaining = await countMissingEmbeddings(
+      requestedIds.length > 0 ? requestedIds : undefined
+    );
+    if (remaining > 0) {
+      const scope = requestedIds.length > 0 ? 'requested' : 'food';
+      throw new Error(
+        `Embedding backfill incomplete: ${remaining} ${scope} row(s) still have NULL embeddings`
+      );
+    }
+
+    console.log(
+      requestedIds.length > 0
+        ? `Verified ${requestedIds.length} requested row(s) have embeddings.`
+        : 'Verified all food rows have embeddings.'
+    );
     console.log(`Done. ${processed} embeddings generated.`);
   } finally {
     await client.end();

@@ -8,7 +8,7 @@
 -- Supabase runs migrations before seed.sql. Fresh CI resets seed only the 526
 -- FAO rows, while the USDA reference rows are imported separately, so this
 -- migration must be a no-op when those rows are absent. The production deploy
--- verifies that all 18 curated rows exist and are embedded before rollout.
+-- backfill verifies that no rows in its scope remain without embeddings.
 
 SET search_path TO public, extensions;
 

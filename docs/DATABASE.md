@@ -277,8 +277,8 @@ Data-curation migrations that change food names should set the affected
 after applying migrations and runs the backfill before deploying the new revision.
 Because Supabase applies migrations before `seed.sql`, curation migrations for
 separately imported USDA rows must tolerate those rows being absent in a fresh
-FAO-only reset. The production deploy then asserts that all curated broth rows
-exist and have non-null embeddings before rollout.
+FAO-only reset. The backfill script verifies that no rows in its scope still have
+NULL embeddings before the deploy can continue.
 For a local or targeted repair, pass the affected IDs to `backfill_embeddings.ts`
 with `--ids` so existing non-null vectors are regenerated from the new names.
 
