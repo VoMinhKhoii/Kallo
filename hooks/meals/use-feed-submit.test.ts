@@ -29,6 +29,7 @@ describe('useFeedSubmit', () => {
           clear,
           focus: vi.fn(),
           setText: vi.fn(),
+          getTextarea: () => null,
         },
       },
       setMessages: (updater) => {

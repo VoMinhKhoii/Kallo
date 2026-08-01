@@ -29,7 +29,7 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
 
 - **Gates before signing off**: `bunx @biomejs/biome check .` (auto-fix with `--write`), `bun check:filesize`, tests for new features/fixes (Vitest).
 - **Zod validation** for all external inputs (API params, form data, URL params); React Hook Form + `@hookform/resolvers` for forms.
-- **Pre-read docs**: `docs/DATABASE.md` before DB/migration work; `docs/DATA.md` before food-data work; `docs/superpowers/specs/2026-05-08-pipeline-latency-budget.md` before touching `analyzeMeal`, the matching cascade, or the Gemini wrapper.
+- **Pre-read docs**: `docs/DATABASE.md` before DB/migration work; `docs/DATA.md` before food-data work; `docs/EMAIL.md` before touching anything that sends email (auth emails run through our own Supabase hook, not Supabase's mailer); `docs/superpowers/specs/2026-05-08-pipeline-latency-budget.md` before touching `analyzeMeal`, the matching cascade, or the Gemini wrapper.
 - **Context7 MCP** for up-to-date library docs — required research before locking designs around third-party behavior (state ownership, routing, persistence).
 - **Conventional Commits** (`feat:`, `fix:`, `chore:`, …) drive [release-please](https://github.com/googleapis/release-please) version bumps: `feat!:`/`BREAKING CHANGE` = major (rare — when unsure, downgrade), `feat:` = minor, everything else = patch. Override with a `Release-As: x.y.z` footer or by editing the Release PR. Never hand-edit `CHANGELOG.md` or the version.
 - **Branches**: `<type>/<short-kebab-slug>` (≤40 chars), e.g. `feat/jwt-user-auth`. When `EnterWorktree` creates a branch, pass an explicit conforming `name`.

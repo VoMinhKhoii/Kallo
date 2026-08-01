@@ -37,7 +37,7 @@ export interface LabDemo {
 
 /**
  * The playable derivation demo, lifted from the production hero
- * (components/landing-page/hero.tsx) so the lab prototype shares one
+ * (hooks/landing/use-hero-demo.ts) so the lab prototype shares one
  * state machine: type the meal, run the staged phases, reveal the card.
  * Reduced motion skips straight to the result with no typing or delays.
  */

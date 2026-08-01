@@ -132,6 +132,62 @@ export function rulerStep(
   return Math.max(1, Math.ceil(steepest));
 }
 
+const LARGEST_PIECE_GRAMS = PIECE_TIERS[PIECE_TIERS.length - 1].grams;
+
+/**
+ * Relative visual area of a piece portion. A silhouette is a 2D projection of a
+ * 3D amount, so its *area* — not its height — is what has to scale as
+ * `grams^(2/3)` for twice the food to look twice as big. Sizing height alone (as
+ * the ruler used to) only holds if every asset shares an aspect ratio: at
+ * aspect 2.17 a tier-5 fish came out 130px wide in a ~54px column, overlapping
+ * its neighbour and spilling off the row.
+ */
+function pieceAreaRatio(grams: number): number {
+  return (grams / LARGEST_PIECE_GRAMS) ** (2 / 3);
+}
+
+/**
+ * Widest unnormalised glyph across every piece asset. Dividing by it makes the
+ * single widest silhouette exactly fill its column and every other one narrower,
+ * so no glyph can overflow its column whatever the art's aspect ratios are.
+ */
+const WIDEST_PIECE_GLYPH = Math.max(
+  ...PIECE_TIERS.flatMap((tier) =>
+    tier.assets.map((asset) =>
+      Math.sqrt(pieceAreaRatio(tier.grams) * asset.aspect)
+    )
+  )
+);
+
+/**
+ * Ruler glyph width as a fraction (0–1] of its grid column, for art of the given
+ * aspect at the given per-piece grams. Height follows from `aspect-ratio`, so
+ * the pair encodes area while staying resolution-independent — the row scales
+ * with the picker instead of hard-coding pixels. Count-independent by design.
+ */
+export function glyphWidthRatio(grams: number, aspect: number): number {
+  return Math.sqrt(pieceAreaRatio(grams) * aspect) / WIDEST_PIECE_GLYPH;
+}
+
+/** Tallest glyph any kind can produce, in column widths. */
+const TALLEST_PIECE_GLYPH = Math.max(
+  ...PIECE_TIERS.flatMap((tier) =>
+    tier.assets.map(
+      (asset) => glyphWidthRatio(tier.grams, asset.aspect) / asset.aspect
+    )
+  )
+);
+
+/**
+ * `aspect-ratio` for the glyph row, so its height is always the tallest glyph
+ * the tallest kind can produce. Without it the row would size to its own
+ * content and the picker would change height between a flat fillet and an
+ * upright drumstick; pinning it keeps one silhouette baseline for every meal.
+ */
+export function glyphRowAspect(columnCount: number): number {
+  return columnCount / TALLEST_PIECE_GLYPH;
+}
+
 /** Piecewise-linear interpolation of `x` from the `xs` domain onto `ys`. */
 export function interpolate(
   x: number,

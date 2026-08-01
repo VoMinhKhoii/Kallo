@@ -744,6 +744,18 @@
       "cta": "Get started",
       "ctaSecondary": "See how it works",
       "beta": "In beta · built in Vietnam",
+      "waitlist": {
+        "label": "Email address",
+        "placeholder": "you@email.com",
+        "submit": "Join the waitlist",
+        "submitting": "Joining…",
+        "success": "Check your inbox",
+        "successBody": "We sent you a link. Tap it to confirm your spot — that's the only thing left to do.",
+        "invalidEmail": "Enter a valid email address.",
+        "error": "Something went wrong. Please try again.",
+        "rateLimited": "Too many tries. Please wait a moment and try again.",
+        "privacy": "One email to confirm, one when your spot opens. Nothing else."
+      },
       "demo": {
         "today": "Today",
         "date": "Meal log",
@@ -869,6 +881,12 @@
       "terms": "Terms",
       "privacyLink": "Privacy policy",
       "security": "Security"
+    },
+    "waitlistStatus": {
+      "confirmed": "You're on the list. We'll email you when your spot opens.",
+      "already": "You're already on the list — nothing more to do.",
+      "expired": "That link has expired. Enter your email again to get a new one.",
+      "invalid": "That link isn't valid. Enter your email again to get a new one."
     }
   },
   "dashboard": {
@@ -1181,6 +1199,24 @@
       "previousWeek": "Previous week",
       "nextWeek": "Next week",
       "openCalendar": "Open calendar"
+    },
+    "relog": {
+      "pickerLabel": "Logged dishes and meals",
+      "groupDishes": "Dishes",
+      "groupMeals": "Meals",
+      "ingredientCount": "{count} ingredients",
+      "dishCount": "{count} dishes",
+      "optionKcal": "{kcal} kcal",
+      "rowKcal": "{kcal} kcal",
+      "total": "Total",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "searching": "Searching...",
+      "noResults": "No dishes found",
+      "noHistory": "Nothing logged yet",
+      "resultCount": "{count} results",
+      "removeStaged": "Remove {name}",
+      "macroSplit": "P {protein}g · C {carbs}g · F {fat}g"
     }
   },
   "groups": {

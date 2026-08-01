@@ -1,5 +1,5 @@
 {
-  "note": "Ratchet baseline for scripts/check-file-sizes.mjs. Frozen legacy oversize files: may shrink, never grow. Do not add entries by hand — split the file instead (see AGENTS.md \"File & Folder Organization\").",
+  "note": "Ratchet baseline for scripts/check-file-sizes.mjs. Frozen legacy oversize files: may shrink, never grow. Do not add entries by hand \u2014 split the file instead (see AGENTS.md \"File & Folder Organization\").",
   "files": {
     "apps/mobile-flutter/lib/features/logging/widgets/feed_area.dart": 1719,
     "apps/mobile-flutter/lib/features/onboarding/screens/screen_body_metrics.dart": 1002,
@@ -26,7 +26,6 @@
     "apps/mobile-flutter/lib/models/dashboard.dart": 474,
     "apps/mobile-flutter/lib/features/logging/widgets/cheat_meal_card.dart": 460,
     "app/api/og/macro-card/[shareId]/route.tsx": 446,
-    "components/landing-page/hero.tsx": 441,
     "apps/mobile-flutter/lib/features/settings/controls/country_select.dart": 422,
     "apps/mobile-flutter/lib/features/circle/screens/connect_screen.dart": 412,
     "apps/mobile-flutter/lib/features/logging/widgets/meal_input.dart": 409,

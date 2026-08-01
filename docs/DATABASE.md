@@ -103,6 +103,7 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260708141500_chat_group_members_last_read_rls.sql` | B (Manual) | RLS UPDATE policy so a member can bump their own `last_read_at` |
 | `20260728123331_add_billing_reconciliation.sql` | A + deny boundary | RevenueCat grants, CustomerInfo + deterministic ownership watermarks, webhook replay state, indexes, constraints, and same-transaction RLS/revokes |
 | `20260728123400_harden_billing_trial_anchor.sql` | B (Manual) | Preserve the server-created trial anchor when profiles are updated |
+| `20260801120000_curate_broth_search_names.sql` | B (Manual) | Curated Vietnamese broth names/variants; queues targeted embedding regeneration |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
@@ -262,6 +263,7 @@ The `db` instance uses `postgres-js` under the hood with `DATABASE_URL` from env
 | Command | Description |
 |---------|-------------|
 | `bun --env-file=.env.local scripts/backfill_embeddings.ts` | Backfill embeddings via Gemini API (rate-limited) |
+| `bun --env-file=.env.local scripts/backfill_embeddings.ts --ids=<id,...>` | Force-regenerate embeddings for specific food rows |
 
 ## Seeding Reference Data
 
@@ -269,6 +271,16 @@ The `db` instance uses `postgres-js` under the hood with `DATABASE_URL` from env
 The seed file inserts all 526 VTN FCT 2007 records into `vietnamese_food_composition`.
 
 **After seeding**, `dbr:reset` automatically runs the embedding backfill via Gemini API. This takes ~5 minutes due to rate limiting (100 req/min free tier). Use `dbr:reset:nobackfill` to skip this step if embeddings are not needed.
+
+Data-curation migrations that change food names should set the affected
+`embedding` values to `NULL`. The production Cloud Run deploy detects those rows
+after applying migrations and runs the backfill before deploying the new revision.
+Because Supabase applies migrations before `seed.sql`, curation migrations for
+separately imported USDA rows must tolerate those rows being absent in a fresh
+FAO-only reset. The backfill script verifies that no rows in its scope still have
+NULL embeddings before the deploy can continue.
+For a local or targeted repair, pass the affected IDs to `backfill_embeddings.ts`
+with `--ids` so existing non-null vectors are regenerated from the new names.
 
 ## Known Quirks & Gotchas
 

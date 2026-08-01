@@ -599,6 +599,56 @@ describe('confirmAndSaveMealAction', () => {
     const mealRow = capturedValues[0] as Record<string, unknown>;
     expect(mealRow.caloriesKcal).toBe(1040); // baseline 520 → 2x
   });
+
+  it('keeps nutrition intact when a gram edit targets a zero-base dish', async () => {
+    // A relogged item whose source row had null `estimated_grams` reaches the
+    // pipeline result with estimatedGrams 0. A gram edit on it must NOT scale
+    // its (authoritative, copied) macros to zero — it records the new grams and
+    // leaves nutrition unchanged.
+    const capturedValues: unknown[] = [];
+    const pipelineResult = JSON.parse(
+      JSON.stringify(samplePipelineResult)
+    ) as PipelineResult;
+    // Single-ingredient dish with unknown weight but real, frozen macros.
+    pipelineResult.mealItems[0].ingredients = [
+      {
+        ...pipelineResult.mealItems[0].ingredients[0],
+        estimatedGrams: 0,
+        rawEquivalentGrams: 0,
+        boundedNutrition: makeBoundedNutrition({
+          caloriesKcal: { low: 215, mid: 215, high: 215 },
+          carbohydrateG: { low: 51, mid: 51, high: 51 },
+        }),
+      },
+    ];
+
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_2,
+            userId: mockUser.id,
+            rawInput: 'Khoai lang',
+            pipelineResult,
+            loggedAt: LOGGED_AT,
+          },
+        ]),
+      }),
+    });
+    mockTxInsert.mockImplementation(mockInsertRouting(capturedValues));
+
+    await confirmAndSaveMealAction({
+      analysisId: UUID_2,
+      edits: [{ mealItemOrder: 0, newGrams: 150 }],
+    });
+
+    const mealItemRows = capturedValues[1] as Record<string, unknown>[];
+    const firstItem = mealItemRows[0] as Record<string, unknown>;
+    // Grams recorded, macros preserved (NOT zeroed).
+    expect(firstItem.estimatedGrams).toBe(150);
+    expect(firstItem.caloriesKcal).toBe(215);
+    expect(firstItem.carbohydrateG).toBe(51);
+  });
 });
 
 describe('loadMealsByDate', () => {

@@ -55,6 +55,13 @@ jobs:
   migrations:
     name: Validate Migrations
     runs-on: ubuntu-latest
+    # This job runs `supabase start` (Postgres only; gotrue is excluded), which
+    # still parses the whole config.toml up front. The [auth.hook.send_email]
+    # block declares secrets = "env(SEND_EMAIL_HOOK_SECRET)", so the CLI rejects
+    # the config unless that var is a well-formed "v1,whsec_<base64>" value. The
+    # job never sends mail, so a dummy that only satisfies the format is correct.
+    env:
+      SEND_EMAIL_HOOK_SECRET: v1,whsec_Y2ktbWlncmF0aW9uLXZhbGlkYXRlLW9ubHktZHVtbXk=
     steps:
       - uses: actions/checkout@v4
         with:

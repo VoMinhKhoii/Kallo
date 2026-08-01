@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
+import type { RelogRef } from '@/lib/logging/relog/relog';
 import type { CheatSliderSpec } from '@/lib/types/cheat';
 import type { MealItem, ParsedMeal } from '@/lib/types/meal';
 
@@ -35,6 +36,10 @@ export interface StreamAnalyzeInput {
   /** Stable per-attempt id. Reused across re-analyses of one card so the server
    *  upserts the same staging row instead of orphaning its predecessor. */
   attemptId?: string;
+  /** Combined relog: picks staged alongside free text. Only `message` runs the
+   *  AI pipeline; the server resolves these deterministically and merges them
+   *  into the result before staging, so relogged dishes are never re-analyzed. */
+  refs?: RelogRef[];
 }
 
 /**
@@ -174,7 +179,7 @@ export function useStreamAnalysis() {
   );
 
   const analyze = useCallback(
-    async (input: StreamAnalyzeInput) => {
+    async (input: StreamAnalyzeInput): Promise<boolean> => {
       // Cancel any in-flight request
       abortRef.current?.abort();
 
@@ -190,6 +195,11 @@ export function useStreamAnalysis() {
 
       // Inactivity watchdog — hoisted so catch/finally can read/clear it.
       let receivedTerminal = false;
+      // Whether the analysis DURABLY staged (an `analysis_complete` arrived), as
+      // opposed to erroring, clarifying, or ending unexpectedly. Returned to the
+      // caller so a combined relog submit only consumes its staged picks once the
+      // pending row exists — an error/clarify keeps the picks in the composer.
+      let durablyStaged = false;
       let timedOut = false;
       let watchdog: ReturnType<typeof setTimeout> | undefined;
       const clearWatchdog = () => {
@@ -216,7 +226,7 @@ export function useStreamAnalysis() {
         });
 
         // Stale request check
-        if (thisRequestId !== requestIdRef.current) return;
+        if (thisRequestId !== requestIdRef.current) return false;
 
         // Non-200 responses come as JSON (pre-stream validation errors)
         // Error body may be structured { error: { code, message, ... } } or legacy { error: "string" }
@@ -239,7 +249,7 @@ export function useStreamAnalysis() {
               error: errorMsg,
               isAnalyzing: false,
             }));
-            return;
+            return false;
           }
 
           setState((prev) => ({
@@ -248,7 +258,7 @@ export function useStreamAnalysis() {
             error: errorMsg,
             isAnalyzing: false,
           }));
-          return;
+          return false;
         }
 
         const reader = response.body?.getReader();
@@ -259,7 +269,7 @@ export function useStreamAnalysis() {
             error: 'No response stream available',
             isAnalyzing: false,
           }));
-          return;
+          return false;
         }
 
         const decoder = new TextDecoder('utf-8');
@@ -274,7 +284,7 @@ export function useStreamAnalysis() {
           // Stale request check
           if (thisRequestId !== requestIdRef.current) {
             reader.cancel();
-            return;
+            return false;
           }
 
           const chunk = decoder.decode(value, { stream: true });
@@ -284,6 +294,7 @@ export function useStreamAnalysis() {
             if (isTerminalEvent(event)) {
               receivedTerminal = true;
             }
+            if (event.type === 'analysis_complete') durablyStaged = true;
             processEvent(event, thisRequestId, requestIdRef);
           }
 
@@ -299,6 +310,7 @@ export function useStreamAnalysis() {
             if (isTerminalEvent(event)) {
               receivedTerminal = true;
             }
+            if (event.type === 'analysis_complete') durablyStaged = true;
             processEvent(event, thisRequestId, requestIdRef);
           }
         }
@@ -318,7 +330,7 @@ export function useStreamAnalysis() {
         }
       } catch (error) {
         // Stale request — ignore
-        if (thisRequestId !== requestIdRef.current) return;
+        if (thisRequestId !== requestIdRef.current) return false;
 
         if (error instanceof DOMException && error.name === 'AbortError') {
           // The watchdog aborted a silent, un-terminated stream — surface it as
@@ -332,7 +344,7 @@ export function useStreamAnalysis() {
               isAnalyzing: false,
             }));
           }
-          return;
+          return false;
         }
 
         setState((prev) => ({
@@ -345,6 +357,10 @@ export function useStreamAnalysis() {
       } finally {
         clearWatchdog();
       }
+      // Reached only on the normal (non-early-return) completion path. True only
+      // if an `analysis_complete` arrived; error/clarify/unexpected-end leave it
+      // false so a combined relog submit keeps its staged picks.
+      return durablyStaged;
     },
     [processEvent]
   );

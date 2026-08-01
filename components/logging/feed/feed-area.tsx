@@ -131,10 +131,15 @@ export function FeedArea({
             feed.isStagingRepeat || feed.stream.isAnalyzing
           }
           onSelectCheatOccasion={feed.handleRepeatCheat}
+          relog={feed.relog}
           onSubmit={
             feed.loggingMode === 'manual'
               ? feed.handleManualSubmit
-              : feed.handleSubmit
+              : // Normal mode routes through one unified handler: it picks
+                // text-only AI, pure-relog staging, or the combined merge based
+                // on what's typed and staged. Cheat submits ride the same path
+                // (no picks staged in cheat mode → straight to the estimator).
+                feed.relog.handleNormalSubmit
           }
           onCancel={feed.handleCancel}
           disabled={feed.stream.isAnalyzing}

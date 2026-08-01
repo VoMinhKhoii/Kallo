@@ -15,8 +15,10 @@ import {
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
 import { db } from '@/lib/db';
+import { buildRelogRawInput } from '@/lib/logging/relog/relog';
 import { withDeadline } from '@/lib/with-deadline';
 import { acquireAnalysisGuard } from './analysis-guard';
+import { applyRelogRefs } from './apply-relog-refs';
 import { getBillingAccessError } from './billing-access';
 import { upsertPendingAnalysis } from './persist-analysis';
 import {
@@ -53,6 +55,7 @@ export async function POST(request: NextRequest) {
     clarifyAnswer,
     cheatIntensity,
     attemptId,
+    refs,
     profile,
   } = validation.data;
 
@@ -249,6 +252,21 @@ export async function POST(request: NextRequest) {
           return;
         }
 
+        // Combined relog: fold the user's picks into the AI result AFTER the
+        // pipeline ran on the free text alone. Deterministic copy — the picks
+        // never entered `analyzeMeal`, so their goal-adjusted numbers are
+        // reproduced, not re-estimated. Merging here (before preview + staging)
+        // makes the `result` event, the pending row, and confirm all see one
+        // combined meal with no extra client round-trip. `rawInput` folds in the
+        // relog dish names so the saved meal's history text isn't just the free
+        // text (which would drop the relogged dishes from the label).
+        let rawInput = message;
+        if (refs && refs.length > 0) {
+          const applied = await applyRelogRefs(result.data, refs, userId);
+          result.data = applied.result;
+          rawInput = buildRelogRawInput([message, ...applied.dishNames]);
+        }
+
         const meal = toParsedMeal(result.data);
         const hasNutrition = meal.items?.some(
           (item) => item.macros.calories !== 0 || item.macros.protein !== 0
@@ -284,7 +302,7 @@ export async function POST(request: NextRequest) {
           upsertPendingAnalysis({
             userId,
             pipelineResult: result.data,
-            rawInput: message,
+            rawInput,
             entryMode: 'precise',
             loggedAt,
             attemptId,
