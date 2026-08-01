@@ -141,7 +141,14 @@ export function resolveAuthEmails(
   }
 
   const mapping = LINK_ACTIONS[action];
-  if (!mapping || !user.email || !data.token_hash) return [];
+  if (!mapping) {
+    // A GoTrue action we don't map (e.g. a new type after an upgrade) would
+    // otherwise drop the email with no trace. app/api/auth/send-email/route.test
+    // locks the known set, so this only fires on genuinely new vocabulary.
+    console.warn(`[auth-email] no template for action: ${action}`);
+    return [];
+  }
+  if (!user.email || !data.token_hash) return [];
 
   return [
     {

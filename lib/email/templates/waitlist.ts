@@ -4,6 +4,7 @@ import {
   button,
   type EmailLocale,
   escapeHtml,
+  fallbackLink,
   muted,
   paragraph,
   renderLayout,
@@ -82,9 +83,7 @@ export function waitlistConfirmEmail(
       paragraph(escapeHtml(copy.body)),
       button(copy.cta, url),
       muted(escapeHtml(copy.note)),
-      muted(
-        `${escapeHtml(copy.fallback)}<br><a href="${escapeHtml(url)}" style="color:#6e6d66;word-break:break-all">${escapeHtml(url)}</a>`
-      ),
+      fallbackLink(copy.fallback, url),
     ].join('')
   );
 

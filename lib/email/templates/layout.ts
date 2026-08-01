@@ -54,6 +54,17 @@ export function muted(text: string): string {
   return `<p style="margin:0 0 12px;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:${EMAIL_COLORS.textMuted}">${text}</p>`;
 }
 
+/**
+ * The "button not working?" escape hatch shown under every CTA: a muted label
+ * plus the raw URL as a fallback link. Every link email needs it, so the one
+ * place that knows how to render it lives here rather than in each template.
+ */
+export function fallbackLink(label: string, url: string): string {
+  return muted(
+    `${escapeHtml(label)}<br><a href="${escapeHtml(url)}" style="color:${EMAIL_COLORS.textMuted};word-break:break-all">${escapeHtml(url)}</a>`
+  );
+}
+
 /** A body paragraph. */
 export function paragraph(text: string): string {
   return `<p style="margin:0 0 16px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:${EMAIL_COLORS.textSoft}">${text}</p>`;
@@ -76,7 +87,7 @@ export function renderLayout(
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${EMAIL_COLORS.surface};padding:32px 16px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid ${EMAIL_COLORS.border};border-radius:16px;padding:36px 32px">
 <tr><td>
-<p style="margin:0 0 24px;font-family:Georgia,'Times New Roman',serif;font-size:22px;letter-spacing:0.02em;color:${EMAIL_COLORS.text}">Kallo</p>
+<img src="${SITE_URL}/email-logo.png" width="140" height="52" alt="Kallo" style="display:block;margin:0 0 24px;border:0;outline:none;text-decoration:none;height:auto" />
 <h1 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:26px;line-height:1.25;color:${EMAIL_COLORS.text}">${escapeHtml(heading)}</h1>
 ${body}
 </td></tr></table>

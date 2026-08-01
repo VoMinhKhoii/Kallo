@@ -3,6 +3,7 @@ import {
   button,
   type EmailLocale,
   escapeHtml,
+  fallbackLink,
   muted,
   paragraph,
   renderLayout,
@@ -144,9 +145,7 @@ export function authLinkEmail({
       paragraph(escapeHtml(copy.body)),
       button(copy.cta, url),
       muted(escapeHtml(copy.note)),
-      muted(
-        `${escapeHtml(FALLBACK_LABEL[locale])}<br><a href="${escapeHtml(url)}" style="color:#6e6d66;word-break:break-all">${escapeHtml(url)}</a>`
-      ),
+      fallbackLink(FALLBACK_LABEL[locale], url),
     ].join('')
   );
 

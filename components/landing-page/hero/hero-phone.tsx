@@ -1,9 +1,10 @@
 'use client';
 
-import { ArrowRight, Sparkles } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { Sparkles } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
-import { HERO_CHIP_IDS } from '@/components/landing-page/hero/hero-demo-fixtures';
+import { HeroContextBadge } from '@/components/landing-page/hero/hero-context-badge';
+import { HeroInputBar } from '@/components/landing-page/hero/hero-input-bar';
 import { HeroResultCard } from '@/components/landing-page/hero/hero-result-card';
 import type { HeroDemo } from '@/hooks/landing/use-hero-demo';
 
@@ -20,19 +21,8 @@ export function HeroPhone({
   onSave: () => void;
 }) {
   const t = useTranslations('landing.hero');
-  const prefersReducedMotion = useReducedMotion();
-  const {
-    fixture,
-    phase,
-    typedText,
-    interactive,
-    inputValue,
-    setInputValue,
-    isAnalyzing,
-    showResult,
-    submitText,
-    selectChip,
-  } = demo;
+  const { fixture, phase, typedText, interactive, isAnalyzing, showResult } =
+    demo;
   const inputDisabled = !interactive || isAnalyzing || phase === 'typing';
 
   return (
@@ -103,72 +93,14 @@ export function HeroPhone({
         </div>
 
         {/* Input Bar — real once the canned demo finishes */}
-        <div className="absolute right-4 bottom-5 left-4 z-20 sm:right-5 sm:bottom-6 sm:left-5">
-          {interactive && (
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {HERO_CHIP_IDS.map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => selectChip(id)}
-                  disabled={isAnalyzing || phase === 'typing'}
-                  className="rounded-full border border-nham-border/60 bg-white/90 px-2.5 py-1 font-medium text-[10px] text-nham-text-muted shadow-sm backdrop-blur-sm transition-colors hover:border-nham-accent hover:text-nham-text disabled:opacity-50 sm:text-[11px]"
-                >
-                  {t(`demo.chips.${id}`)}
-                </button>
-              ))}
-            </div>
-          )}
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              submitText(inputValue);
-            }}
-            className="flex h-12 items-center justify-between rounded-full border border-nham-border/30 bg-white px-2 pl-4 shadow-[0_8px_30px_rgba(0,0,0,0.08)] sm:h-14 sm:pl-5"
-          >
-            <input
-              value={inputValue}
-              onChange={(event) => setInputValue(event.target.value)}
-              disabled={inputDisabled}
-              placeholder={t('demo.inputPlaceholder')}
-              aria-label={t('demo.inputPlaceholder')}
-              className="min-w-0 flex-1 bg-transparent text-nham-text text-sm outline-none placeholder:text-nham-text-muted/70 disabled:cursor-default sm:text-base"
-            />
-            <button
-              type="submit"
-              disabled={inputDisabled}
-              aria-label={t('demo.send')}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-nham-ink shadow-lg transition-transform active:scale-95 disabled:opacity-50 sm:h-10 sm:w-10"
-            >
-              <ArrowRight className="h-4 w-4 text-white" />
-            </button>
-          </form>
-        </div>
+        <HeroInputBar demo={demo} disabled={inputDisabled} />
 
         {/* Gradient Overlay for Bottom Fade */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-[#FAF9F7] to-transparent" />
       </div>
 
       {/* Floating Context Badge — beside the message bubble */}
-      {showResult && (
-        <motion.div
-          initial={
-            prefersReducedMotion ? { opacity: 1 } : { opacity: 0, x: 20 }
-          }
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="absolute top-[38%] left-[calc(100%+1rem)] z-30 hidden w-[170px] -translate-y-1/2 rounded-2xl border border-nham-border/40 bg-white/95 p-3 shadow-xl backdrop-blur-md xl:block"
-        >
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <span className="font-bold text-[9px] text-nham-text-muted uppercase tracking-wider">
-              {t('demo.smartContext')}
-            </span>
-          </div>
-          <p className="font-medium text-[10px] text-nham-text leading-relaxed">
-            {t('demo.smartContextText')}
-          </p>
-        </motion.div>
-      )}
+      {showResult && <HeroContextBadge />}
     </div>
   );
 }
