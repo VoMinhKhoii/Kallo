@@ -36,6 +36,20 @@ describe('Cloud Run prod workflow', () => {
     );
   });
 
+  it('delegates embedding completion verification to the backfill script', () => {
+    const workflow = readWorkflow('cloud-run-prod.yml');
+    const backfill = readFileSync(
+      resolve('scripts/backfill_embeddings.ts'),
+      'utf8'
+    );
+
+    expect(workflow).not.toContain('Verify curated broth embeddings');
+    expect(workflow).not.toContain('usda_6008_raw');
+    expect(workflow).toContain('bun scripts/backfill_embeddings.ts');
+    expect(backfill).toContain('countMissingEmbeddings');
+    expect(backfill).toContain('Embedding backfill incomplete');
+  });
+
   it('scopes the deploy-time append-only check to pending migrations only', () => {
     const workflow = readWorkflow('cloud-run-prod.yml');
 

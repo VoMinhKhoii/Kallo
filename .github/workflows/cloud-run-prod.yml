@@ -178,11 +178,12 @@ jobs:
             | tr -d '[:space:]')"
           echo "Rows needing embeddings: $pending"
           echo "pending=$pending" >> "$GITHUB_OUTPUT"
-      # A failure here deliberately fails the deploy: a curated row that never
-      # gets embedded is dead weight, and a silently skipped backfill is worse
-      # than a red build. The timeout bounds the 35s-per-batch rate-limit sleep
-      # so a stuck run releases the prod lease promptly rather than holding it
-      # for the job's full 110 minutes.
+      # A failure here deliberately fails the deploy: a row that never gets
+      # embedded is dead weight, and a silently skipped backfill is worse than a
+      # red build. The script verifies that no rows in its scope remain NULL after
+      # the batches complete. The timeout bounds the 35s-per-batch rate-limit
+      # sleep so a stuck run releases the prod lease promptly rather than holding
+      # it for the job's full 110 minutes.
       - uses: ./.github/actions/setup-bun
         if: steps.embed_check.outputs.pending != '0'
       - name: Backfill food embeddings
