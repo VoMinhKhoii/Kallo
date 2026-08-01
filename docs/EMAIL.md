@@ -5,7 +5,7 @@ repo. Nothing is templated in a third-party dashboard.
 
 ## Layout
 
-```
+```text
 lib/email/config.ts          — sender identity, send timeout, "is it configured?"
 lib/email/client.ts          — lazy Resend client (importable with no API key)
 lib/email/send.ts            — the only send seam: sendEmail({ to, message, … })

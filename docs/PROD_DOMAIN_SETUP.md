@@ -218,7 +218,7 @@ Configuration**:
 Google & Apple sign-in are already wired on this project — nothing to recreate.
 (Apple: the Services ID must stay **first** in the provider's Client IDs list.)
 
-Emailed links keep pointing at `https://kallo.fit/auth/verify?token_hash=…`
+Emailed links keep pointing at `https://kallo.fit/auth/verify?token_hash=…&type=…`
 (never `…supabase.co/auth/v1/verify`, which is unreachable on many VN networks).
 That link is now built by `lib/email/auth-email.ts` rather than a dashboard
 template, so the templates in the dashboard no longer need hand-editing.

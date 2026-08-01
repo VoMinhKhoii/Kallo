@@ -50,7 +50,7 @@ export function HeroInputBar({
           event.preventDefault();
           submitText(inputValue);
         }}
-        className="flex h-12 items-center justify-between rounded-full border border-nham-border/30 bg-white px-2 pl-4 shadow-[0_8px_30px_rgba(0,0,0,0.08)] sm:h-14 sm:pl-5"
+        className="flex h-12 items-center justify-between rounded-full border border-nham-border/30 bg-white px-2 pl-4 shadow-[0_8px_30px_rgba(0,0,0,0.08)] focus-within:border-nham-accent focus-within:ring-2 focus-within:ring-nham-accent/40 sm:h-14 sm:pl-5"
       >
         <input
           value={inputValue}
