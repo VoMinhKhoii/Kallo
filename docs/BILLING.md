@@ -452,6 +452,18 @@ independently; existing grants are untouched.
   somehow buys renewable subscriptions on more than one store, access remains
   correct but the app cannot display every store's cancellation link. Treat
   duplicate subscriptions as a support/refund case and monitor provider data.
+- **No in-app plan switching, and on web no self-serve switching at all.** The
+  paywall stops offering packages once the tier is `premium`
+  (`paywall-dialog.tsx`), so an existing subscriber cannot be charged twice by
+  accident. Apple and Google absorb this: their management surfaces let a
+  customer move between plans in the same subscription group, and on mobile a
+  paywall purchase *is* the upgrade because the store prorates it. Paddle does
+  not — plan changes there are a server-side `PATCH /subscriptions/{id}` that
+  replaces the price item with an explicit proration mode, and its customer
+  portal covers payment methods, invoices, and cancellation but not switching.
+  So a monthly web subscriber's only route to annual today is to cancel and
+  resubscribe. Closing this means a new authenticated endpoint plus a proration
+  policy; deliberately out of scope for the checkout rail.
 - **No VietQR / direct-bank web payment yet.** Web checkout goes through
   Paddle's card/wallet methods. The entitlement model (`source`, `store`) is
   designed to allow adding another gateway later without schema changes; the

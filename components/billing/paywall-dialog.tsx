@@ -172,7 +172,13 @@ export function PaywallDialog({
   if (entitlements && !entitlements.purchasesEnabled) return null;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    // Non-modal while a checkout is open. Paddle mounts its checkout on
+    // `document.body`, outside this dialog's portal, and a modal Radix dialog
+    // sets `pointer-events: none` on the body and traps focus in its own
+    // subtree — which leaves the payment form visible but completely
+    // uninteractive. `handleOpenChange` already refuses to close mid-purchase,
+    // so dropping modality here costs nothing but the scroll lock.
+    <Dialog modal={!purchasing} open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[min(90dvh,48rem)] max-w-md gap-0 overflow-y-auto overscroll-contain rounded-2xl border-nham-border/70 bg-nham-surface p-0">
         {succeeded || activationPending ? (
           <PaywallStatus
