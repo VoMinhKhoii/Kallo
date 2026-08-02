@@ -30,14 +30,36 @@ const GOOGLE_BASE_PLAN_PRODUCTS: Record<string, string> = {
   'kallo_premium_annual:annual': 'kallo_premium_annual',
 };
 
+// RevenueCat imports Paddle prices under their opaque Paddle price id, so the
+// web catalog cannot be keyed on our canonical names the way Apple and Google
+// are. Every id RevenueCat can report for a web purchase must appear here: an
+// id missing from this map resolves to null, the paywall hides the package,
+// and — worse — a completed Paddle purchase projects no grant.
+//
+// Sandbox and production are separate Paddle accounts and therefore have
+// SEPARATE price ids. Both belong in this map; adding the production account
+// later is a code change, not just a dashboard change.
+const PADDLE_PRICE_PRODUCTS: Record<string, string> = {
+  // Sandbox (Kallo Paddle sandbox account)
+  pri_01kyy23rh7qjch1798kfwqx8x8: 'kallo_premium_monthly',
+  pri_01kyy258p8ay94vzvyznz6k9r0: 'kallo_premium_annual',
+  pri_01kyy26yps3tt1zf1vjhhcvkp8: 'kallo_premium_lifetime',
+};
+
 /** Resolve only exact catalog identifiers to their canonical product id. */
 export function canonicalProductId(productId: string): string | null {
   if (CANONICAL_PRODUCT_IDS.has(productId)) return productId;
-  return GOOGLE_BASE_PLAN_PRODUCTS[productId] ?? null;
+  return (
+    GOOGLE_BASE_PLAN_PRODUCTS[productId] ??
+    PADDLE_PRICE_PRODUCTS[productId] ??
+    null
+  );
 }
 
 export function isAllowedWebProduct(productId: string): boolean {
-  return CANONICAL_PRODUCT_IDS.has(productId);
+  return (
+    CANONICAL_PRODUCT_IDS.has(productId) || productId in PADDLE_PRICE_PRODUCTS
+  );
 }
 
 export function isAllowedMobileProduct(productId: string): boolean {
