@@ -21,6 +21,17 @@ import '../../logic/relog/slash_token.dart';
 /// [syncMentions] re-derives those offsets after every edit and DROPS any
 /// mention whose text the user broke — that is what stops a half-deleted dish
 /// name from still logging a dish.
+/// A picked dish reads as the composer's own inline notice does — the
+/// under-logged band that sits in this same card (`PartialDayNotice`): muted
+/// grey behind white copy.
+///
+/// Reusing that pairing keeps the composer to one "this is not your prose"
+/// treatment instead of inventing a second, and it retires the palette's one
+/// deliberate blue. The contrast is already argued there: [NhamColors.textMuted]
+/// is the lightest grey that still clears 4.5:1 against white (~5.2:1).
+const Color mentionBackground = NhamColors.textMuted;
+const Color mentionForeground = Colors.white;
+
 /// A composer value plus the picks located inside it, taken before a submit
 /// clears the field so a failed run can hand both back.
 class MentionSnapshot {
@@ -184,7 +195,8 @@ class MentionTextEditingController extends TextEditingController {
       );
     }
     final mentionStyle = (style ?? const TextStyle()).copyWith(
-      color: NhamColors.mention,
+      color: mentionForeground,
+      backgroundColor: mentionBackground,
     );
     return TextSpan(
       style: style,

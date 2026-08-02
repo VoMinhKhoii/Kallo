@@ -33,15 +33,6 @@ abstract final class NhamColors {
   static const Color accent = Color(0xFFC9A87C); // signature tan
   static const Color accentDark = Color(0xFFB89968);
 
-  /// The one deliberate exception to "no default blue": relog mentions in the
-  /// composer. A picked dish is a REFERENCE to stored data, not typed prose,
-  /// and the warm palette has no hue that reads as "this token is not free
-  /// text" without also reading as a warning. Scoped to that one use.
-  ///
-  /// Mirrors the web `--nham-mention` in `app/globals.css`; keep the two in
-  /// step.
-  static const Color mention = Color(0xFF4A90D9);
-
   // ── Borders ──────────────────────────────────────────────────────────
   static const Color border = Color(0xFFE2DFD4); // neutral hairline
   static const Color borderSoft = Color(0x99E2DFD4); // hairline @ 60%

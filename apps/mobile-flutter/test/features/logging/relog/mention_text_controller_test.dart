@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:nham_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:nham_mobile/models/relog.dart';
+import 'package:nham_mobile/theme/calm_tokens.dart';
 import 'package:nham_mobile/theme/nham_colors.dart';
 
 RelogDishCandidate _dish(String name, {int order = 0}) => RelogDishCandidate(
@@ -207,10 +208,29 @@ void main() {
       final children = span.children!.cast<TextSpan>();
       expect(children.map((s) => s.text).join(), c.text,
           reason: 'the painted spans must reproduce the value exactly');
+
+      // The pick reads like the composer's own inline notice: white on the
+      // muted grey band, not tinted prose.
       final tinted = children.where(
-        (s) => s.style?.color == NhamColors.mention,
+        (s) =>
+            s.style?.backgroundColor == mentionBackground &&
+            s.style?.color == mentionForeground,
       );
       expect(tinted.map((s) => s.text), ['Phở bò']);
+
+      // Everything around it keeps the field's ordinary ink and no band.
+      final plain = children.where((s) => s.text != 'Phở bò');
+      expect(plain, isNotEmpty);
+      for (final segment in plain) {
+        expect(segment.style?.backgroundColor, isNull);
+      }
+    });
+
+    test('the mention pairing matches the under-logged notice exactly', () {
+      // PartialDayNotice paints `kInkMuted` behind `Colors.white`; the two must
+      // not drift, or the composer grows a second "not your prose" treatment.
+      expect(mentionBackground, kInkMuted);
+      expect(mentionForeground, Colors.white);
     });
 
     testWidgets('leaves plain prose to the default span', (tester) async {
