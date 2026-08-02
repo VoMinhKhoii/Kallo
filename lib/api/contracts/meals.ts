@@ -208,10 +208,12 @@ export const relogItemsSchema = z.object({
 export type RelogItemsInput = z.infer<typeof relogItemsSchema>;
 
 /**
- * Input for `stageRelogAnalysisAction` — the WEB pure-relog path. Instead of
- * writing a meal directly (as `relogMealItemsAction` does for mobile), it
- * stages a `pending_analyses` row so the picks land in the same editable review
- * card AI meals use. Same reference-only `items` as the relog contract; carries
+ * Input for `stageRelogAnalysisAction` — the pure-relog path shared by both
+ * clients (the web composer calls the action; Flutter posts to
+ * `/api/v1/meals/relog/stage`). Instead of writing a meal directly (as
+ * `relogMealItemsAction` does), it stages a `pending_analyses` row so the picks
+ * land in the same editable review card AI meals use. Same reference-only
+ * `items` as the relog contract; carries
  * `attemptId` (not `newMealId`) because the meal id is minted at confirm time,
  * and the attempt id lets a re-stage of the same card upsert its pending row.
  */

@@ -1,0 +1,107 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../../../../models/relog.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/nham_colors.dart';
+import '../../../../theme/nham_theme.dart';
+import '../../logic/format.dart';
+
+/// One row of the `/` picker. Dishes and meals share this layout — the subtitle
+/// is the macro split either way, so what you are about to log is visible
+/// before you commit to it.
+///
+/// The web fits name, macro split and kcal on ONE line; a phone does not, and
+/// squeezing them would ellipsize the dish name — which is the one thing the
+/// row exists to show. The split moves to a second line at Meta 12, matching
+/// the manual-log sheet's result tile.
+class RelogPickerOption extends StatefulWidget {
+  const RelogPickerOption({
+    super.key,
+    required this.candidate,
+    required this.onSelect,
+  });
+
+  final RelogCandidate candidate;
+  final VoidCallback onSelect;
+
+  @override
+  State<RelogPickerOption> createState() => _RelogPickerOptionState();
+}
+
+class _RelogPickerOptionState extends State<RelogPickerOption> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = widget.candidate.summary;
+    final macroSplit = 'logging.relog.macroSplit'.tr(
+      namedArgs: {
+        'protein': fmtMacroValue(summary.proteinG),
+        'carbs': fmtMacroValue(summary.carbohydrateG),
+        'fat': fmtMacroValue(summary.fatG),
+      },
+    );
+
+    return Semantics(
+      button: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => _setPressed(true),
+        onTapUp: (_) => _setPressed(false),
+        onTapCancel: () => _setPressed(false),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          widget.onSelect();
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          decoration: BoxDecoration(
+            // The popup is a white sheet, so the warm select wash reads here
+            // (the ink press wash is for controls sitting on the canvas).
+            color: _pressed ? NhamColors.hover40 : Colors.transparent,
+            borderRadius: BorderRadius.circular(NhamRadii.md),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: NhamSpacing.sp2,
+            vertical: NhamSpacing.sp2,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.candidate.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: dashBody(),
+                    ),
+                    Text(macroSplit, style: dashMeta(tabular: true)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: NhamSpacing.sp2),
+              Text(
+                'logging.relog.optionKcal'.tr(
+                  namedArgs: {'kcal': fmtKcalValue(summary.caloriesKcal)},
+                ),
+                maxLines: 1,
+                softWrap: false,
+                style: dashMeta(tabular: true),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -1,0 +1,143 @@
+import type { NextRequest } from 'next/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const stageRelogAnalysisAction = vi.fn();
+
+vi.mock('@/lib/actions/meals/relog/stage-relog-analysis', () => ({
+  stageRelogAnalysisAction,
+}));
+
+const { POST } = await import('@/app/api/v1/meals/relog/stage/route');
+
+function makeRequest(body: unknown): NextRequest {
+  return { json: async () => body } as unknown as NextRequest;
+}
+
+const SOURCE_MEAL_ID = '2b8e2f6a-4f9f-4d38-9f6e-1a2b3c4d5e6f';
+const ATTEMPT_ID = '7c3d9a1e-5b2f-4c8a-9e1d-3f6a8b2c4d5e';
+
+const validBody = {
+  items: [{ kind: 'dish', sourceMealId: SOURCE_MEAL_ID, mealItemOrder: 0 }],
+  loggedDate: '2026-07-02',
+  timezoneOffset: -420,
+  attemptId: ATTEMPT_ID,
+};
+
+const staged = {
+  analysisId: 'analysis-1',
+  parsedMeal: { items: [] },
+  rawInput: 'Cà phê sữa đá',
+  loggedAt: '2026-07-02T03:00:00.000Z',
+};
+
+beforeEach(() => {
+  stageRelogAnalysisAction.mockReset();
+  stageRelogAnalysisAction.mockResolvedValue(staged);
+});
+
+describe('POST /api/v1/meals/relog/stage', () => {
+  it('stages the picked references and returns the pending analysis', async () => {
+    const res = await POST(makeRequest(validBody));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(staged);
+    expect(stageRelogAnalysisAction).toHaveBeenCalledWith(validBody);
+  });
+
+  it('accepts a meal reference, which carries no mealItemOrder', async () => {
+    const res = await POST(
+      makeRequest({
+        ...validBody,
+        items: [{ kind: 'meal', sourceMealId: SOURCE_MEAL_ID }],
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(stageRelogAnalysisAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [{ kind: 'meal', sourceMealId: SOURCE_MEAL_ID }],
+      })
+    );
+  });
+
+  it('strips client-supplied nutrition — references only cross the wire', async () => {
+    await POST(
+      makeRequest({
+        ...validBody,
+        items: [
+          {
+            kind: 'dish',
+            sourceMealId: SOURCE_MEAL_ID,
+            mealItemOrder: 0,
+            // A tampered client trying to dictate the saved numbers.
+            caloriesKcal: 99_999,
+            name: 'not the stored name',
+          },
+        ],
+      })
+    );
+
+    const [input] = stageRelogAnalysisAction.mock.calls[0];
+    expect(input.items[0]).toEqual({
+      kind: 'dish',
+      sourceMealId: SOURCE_MEAL_ID,
+      mealItemOrder: 0,
+    });
+  });
+
+  it('rejects a non-UUID sourceMealId with 400 before staging', async () => {
+    const res = await POST(
+      makeRequest({
+        ...validBody,
+        items: [{ kind: 'dish', sourceMealId: 'nope', mealItemOrder: 0 }],
+      })
+    );
+
+    expect(res.status).toBe(400);
+    const { error } = await res.json();
+    expect(error.code).toBe('VALIDATION_FAILED');
+    expect(stageRelogAnalysisAction).not.toHaveBeenCalled();
+  });
+
+  it('rejects an empty pick list with 400', async () => {
+    const res = await POST(makeRequest({ ...validBody, items: [] }));
+
+    expect(res.status).toBe(400);
+    expect(stageRelogAnalysisAction).not.toHaveBeenCalled();
+  });
+
+  it('rejects more than 20 staged picks with 400', async () => {
+    const res = await POST(
+      makeRequest({
+        ...validBody,
+        items: Array.from({ length: 21 }, () => ({
+          kind: 'meal',
+          sourceMealId: SOURCE_MEAL_ID,
+        })),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect(stageRelogAnalysisAction).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unauthenticated request with 401', async () => {
+    const { Errors } = await import('@/lib/errors');
+    stageRelogAnalysisAction.mockRejectedValueOnce(Errors.notAuthenticated());
+
+    const res = await POST(makeRequest(validBody));
+    expect(res.status).toBe(401);
+  });
+
+  it('propagates a dead-reference validation error as 400', async () => {
+    const { Errors } = await import('@/lib/errors');
+    stageRelogAnalysisAction.mockRejectedValueOnce(
+      Errors.validationFailed('Món không còn tồn tại.')
+    );
+
+    const res = await POST(makeRequest(validBody));
+    expect(res.status).toBe(400);
+    const { error } = await res.json();
+    expect(error.code).toBe('VALIDATION_FAILED');
+  });
+});

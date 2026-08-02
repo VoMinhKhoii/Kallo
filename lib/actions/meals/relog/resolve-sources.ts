@@ -1,8 +1,8 @@
 // Shared authorization + resolution seam for relog. Both the direct writer
-// (`relogMealItemsAction`, still used by the mobile client) and the web staging
-// paths (`stageRelogAnalysisAction`, the mixed `/api/analyze-meal` merge) call
-// this so the security re-assertions live in exactly one place: a stale or
-// hand-crafted reference can never reach a source the picker would not offer.
+// (`relogMealItemsAction`) and the staging paths (`stageRelogAnalysisAction`,
+// the mixed `/api/analyze-meal` merge) call this so the security re-assertions
+// live in exactly one place: a stale or hand-crafted reference can never reach
+// a source the picker would not offer.
 //
 // Tenant isolation: Drizzle runs on the owner connection and BYPASSES RLS, so
 // the explicit `user_id` predicate here is the real boundary. Item rows are

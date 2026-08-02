@@ -19,6 +19,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' show MediaType;
 import 'package:supabase_flutter/supabase_flutter.dart' show Session;
 
+import '../models/relog.dart';
 import '../models/streaming.dart';
 import '../services/supabase_service.dart';
 import 'env.dart';
@@ -114,6 +115,14 @@ class StreamAnalyzeInput {
   /// only when set — a null attemptId always inserts a fresh row server-side.
   final String? attemptId;
 
+  /// Relog picks riding alongside free text (precise mode only). The server
+  /// runs the pipeline on [message] ALONE and merges these deterministically
+  /// afterwards, so a relogged dish is copied verbatim, never re-estimated.
+  ///
+  /// The server rejects `mode: 'cheat'` together with refs rather than silently
+  /// dropping them, so callers must keep this empty outside normal mode.
+  final List<RelogRef>? refs;
+
   const StreamAnalyzeInput({
     required this.message,
     required this.loggedDate,
@@ -124,6 +133,7 @@ class StreamAnalyzeInput {
     this.cheatType,
     this.clarifyAnswer,
     this.attemptId,
+    this.refs,
   });
 
   Map<String, dynamic> toJson() => {
@@ -136,6 +146,8 @@ class StreamAnalyzeInput {
     if (cheatType != null) 'cheatType': cheatType,
     if (clarifyAnswer != null) 'clarifyAnswer': clarifyAnswer,
     if (attemptId != null) 'attemptId': attemptId,
+    if (refs != null && refs!.isNotEmpty)
+      'refs': refs!.map((ref) => ref.toJson()).toList(),
   };
 }
 

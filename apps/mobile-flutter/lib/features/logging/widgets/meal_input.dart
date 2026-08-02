@@ -8,6 +8,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/logging_spacing.dart';
 import 'meal_input_controls.dart';
+import 'relog/mention_text_controller.dart';
 
 /// Imperative handle for [MealInput] — the RN `MealInputHandle`
 /// (`getText` / `clear` / `focus` / `setText`). The feed clears the field on
@@ -37,6 +38,11 @@ class MealInput extends StatefulWidget {
     this.hintText,
     this.notice,
     this.analyzing = false,
+    this.textController,
+    this.onSync,
+    this.aboveSlot,
+    this.popupSlot,
+    this.hasExternalContent = false,
   });
 
   final MealInputController controller;
@@ -69,6 +75,29 @@ class MealInput extends StatefulWidget {
   /// it read as one object.
   final Widget? notice;
 
+  /// The field's text controller, supplied when the caller needs to read or
+  /// tint what is in it — the feed passes its [MentionTextEditingController] so
+  /// relog picks render as tinted runs inside the real field. Omitted (the
+  /// quick-log sheet) the composer owns a plain one of its own.
+  final MentionTextEditingController? textController;
+
+  /// Fired whenever the value OR the caret may have moved. The relog picker
+  /// keys off the token immediately left of the caret, and the caret moves
+  /// without the text changing (taps, selection handles).
+  final VoidCallback? onSync;
+
+  /// Content stacked above the field inside the card — the staged relog picks.
+  final Widget? aboveSlot;
+
+  /// Content stacked above the whole card — the `/` picker. Separate from
+  /// [aboveSlot] so the picker sits outside the card's border, the way it
+  /// floats over the composer on the web.
+  final Widget? popupSlot;
+
+  /// Arms submit even with the field empty, because [aboveSlot] holds something
+  /// submittable (a staged pick with no typed text is a complete meal).
+  final bool hasExternalContent;
+
   @override
   State<MealInput> createState() => _MealInputState();
 }
@@ -78,7 +107,16 @@ class _MealInputState extends State<MealInput>
   static const double _maxHeight = 200;
   static const double _minHeight = 24;
 
-  final TextEditingController _controller = TextEditingController();
+  /// Owned only when the caller didn't supply one — a controller belongs to
+  /// whoever created it, and disposing a borrowed one would break the feed the
+  /// moment the composer rebuilt.
+  late final MentionTextEditingController _ownedController =
+      MentionTextEditingController();
+  bool _ownsController = false;
+
+  MentionTextEditingController get _controller =>
+      widget.textController ?? _ownedController;
+
   final FocusNode _focusNode = FocusNode();
 
   // Border + shadow crossfade on focus over 300ms.
@@ -91,6 +129,7 @@ class _MealInputState extends State<MealInput>
   void initState() {
     super.initState();
     widget.controller._state = this;
+    _ownsController = widget.textController == null;
     _controller.addListener(_onChanged);
     _focusNode.addListener(_onFocusChange);
   }
@@ -102,18 +141,34 @@ class _MealInputState extends State<MealInput>
       oldWidget.controller._state = null;
       widget.controller._state = this;
     }
+    // Move the listener with the controller, or a swapped-in field would go
+    // silent: no mention reconciliation, no `/` picker, no submit arming.
+    if (oldWidget.textController != widget.textController) {
+      (oldWidget.textController ?? _ownedController)
+          .removeListener(_onChanged);
+      _ownsController = widget.textController == null;
+      _controller.addListener(_onChanged);
+    }
   }
 
   @override
   void dispose() {
     widget.controller._state = null;
-    _controller.dispose();
+    _controller.removeListener(_onChanged);
+    if (_ownsController) _ownedController.dispose();
     _focusNode.dispose();
     _focus.dispose();
     super.dispose();
   }
 
-  void _onChanged() => setState(() {});
+  /// One handler for every "the value or the caret may have moved" signal. The
+  /// mentions are re-located FIRST so a broken label has already dropped its
+  /// reference by the time the picker re-reads the token.
+  void _onChanged() {
+    _controller.syncMentions();
+    widget.onSync?.call();
+    setState(() {});
+  }
 
   void _onFocusChange() {
     if (_focusNode.hasFocus) {
@@ -123,14 +178,10 @@ class _MealInputState extends State<MealInput>
     }
   }
 
-  void _setText(String text) {
-    _controller.value = TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
-    );
-  }
+  void _setText(String text) => _controller.setTextAndSync(text);
 
-  bool get _canSubmit => _controller.text.trim().isNotEmpty;
+  bool get _canSubmit =>
+      _controller.text.trim().isNotEmpty || widget.hasExternalContent;
 
   void _submit() {
     if (_canSubmit) {
@@ -141,6 +192,18 @@ class _MealInputState extends State<MealInput>
 
   @override
   Widget build(BuildContext context) {
+    final card = _buildCard(context);
+    if (widget.popupSlot == null) return card;
+    // The picker sits OUTSIDE the card's border, above it — the composer stays
+    // one object and the picker reads as a sheet floating over the feed.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [widget.popupSlot!, card],
+    );
+  }
+
+  Widget _buildCard(BuildContext context) {
     return AnimatedBuilder(
       animation: _focus,
       builder: (context, child) {
@@ -195,6 +258,9 @@ class _MealInputState extends State<MealInput>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
+                // The staged relog picks, above the field but inside the card:
+                // they are part of what this composer will submit.
+                if (widget.aboveSlot != null) widget.aboveSlot!,
                 // Line 1 — the composer field, full width.
                 ConstrainedBox(
                   constraints: const BoxConstraints(

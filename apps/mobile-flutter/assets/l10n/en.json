@@ -1253,6 +1253,23 @@
       "removeItem": "Remove food",
       "save": "Save meal",
       "relatedMatch": "related"
+    },
+    "relog": {
+      "pickerLabel": "Logged dishes and meals",
+      "groupDishes": "Dishes",
+      "groupMeals": "Meals",
+      "macroSplit": "P {protein}g · C {carbs}g · F {fat}g",
+      "optionKcal": "{kcal} kcal",
+      "rowKcal": "{kcal} kcal",
+      "total": "Total",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "searching": "Searching...",
+      "noResults": "No dishes found",
+      "noHistory": "Nothing logged yet",
+      "removeStaged": "Remove {name}",
+      "closePicker": "Close",
+      "stagedFull": "You can stage up to {max} at a time."
     }
   },
   "groups": {

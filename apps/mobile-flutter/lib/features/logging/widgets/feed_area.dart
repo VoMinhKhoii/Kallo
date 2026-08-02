@@ -1,3 +1,5 @@
+import 'dart:async' show Timer, unawaited;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,21 +8,27 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../shared/widgets/scroll_separator.dart';
+import '../../../shared/widgets/top_toast.dart';
 import '../../../models/cheat.dart';
+import '../../../models/relog.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
+import '../data/relog_providers.dart';
 import '../data/stream_analysis_controller.dart';
 import '../logic/feed/analysis_actions.dart';
 import '../logic/feed/confirm_actions.dart';
 import '../logic/feed/meal_actions.dart';
 import '../logic/feed/view_state.dart';
 import '../logic/meal_log_mode.dart';
+import '../logic/relog/composer_submit_plan.dart';
+import '../logic/relog/slash_picker_state.dart';
 import 'feed/composer_actions.dart';
 import 'feed/feed_composer.dart';
 import 'feed/feed_footer.dart';
 import 'feed/feed_list.dart';
 import 'feed/macro_summary.dart';
 import 'meal_input.dart';
+import 'relog/mention_text_controller.dart';
 import 'sheets/manual_log_sheet.dart';
 
 const _uuid = Uuid();
@@ -41,6 +49,32 @@ class FeedArea extends ConsumerStatefulWidget {
 
 class _FeedAreaState extends ConsumerState<FeedArea> {
   final MealInputController _inputController = MealInputController();
+
+  /// The composer's text AND the relog picks living inside it as tinted runs.
+  /// Owned here, not by [MealInput], because the submit path reads the picks
+  /// and the free text around them.
+  final MentionTextEditingController _textController =
+      MentionTextEditingController();
+
+  /// Whether the `/` picker is open, and on which token. Relog is normal-mode
+  /// only — manual and cheat own the composer's slots themselves, and the
+  /// server rejects a cheat submission carrying picks.
+  SlashPickerState _picker = const SlashPickerState();
+
+  /// The DEBOUNCED query behind [_picker] — what the search actually asks for.
+  /// Null whenever the picker is closed.
+  String? _relogQuery;
+  Timer? _relogDebounce;
+
+  /// True while a pure-relog submit is staging server-side; guards the double
+  /// tap that beats the rebuild.
+  bool _stagingRelog = false;
+
+  /// The composer as it stood when a COMBINED submit (free text + picks) went
+  /// out. That submit sends the free text alone and clears the field, so on any
+  /// failure the picks must come back intact for a retry rather than vanishing
+  /// behind a submit that produced no confirmable card.
+  MentionSnapshot? _relogSnapshot;
 
   /// True while a "log it again" occasion is being re-staged server-side.
   bool _stagingRepeat = false;
@@ -106,8 +140,73 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
 
   @override
   void dispose() {
+    _relogDebounce?.cancel();
+    _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // ── Relog: the `/` picker ────────────────────────────────────────────────
+
+  /// One handler for every "the value or the caret may have moved" signal.
+  ///
+  /// The mentions have already been re-located by the controller; this decides
+  /// whether a `/` token is open at the caret and, if so, what to search for.
+  void _onComposerSync() {
+    final enabled = ref.read(mealLogModeProvider) == MealLogMode.normal;
+    final next = _picker.sync(
+      enabled ? _textController.activeToken : null,
+    );
+    if (next == _picker) return;
+    final queryChanged = next.query != _picker.query;
+    setState(() => _picker = next);
+    if (queryChanged) _scheduleRelogQuery(next.query);
+  }
+
+  /// Debounce the search so typing a dish name is one request, not eight.
+  /// Opening the picker (`/` with nothing after it) resolves immediately —
+  /// that list is the user's staples and is almost always already cached.
+  void _scheduleRelogQuery(String? query) {
+    _relogDebounce?.cancel();
+    if (query == null) {
+      if (_relogQuery != null) setState(() => _relogQuery = null);
+      return;
+    }
+    final trimmed = query.trim();
+    if (_relogQuery == null || trimmed.isEmpty) {
+      setState(() => _relogQuery = trimmed);
+      return;
+    }
+    _relogDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _relogQuery = trimmed);
+    });
+  }
+
+  void _closeRelogPicker(SlashPickerState next) {
+    _relogDebounce?.cancel();
+    setState(() {
+      _picker = next;
+      _relogQuery = null;
+    });
+  }
+
+  /// Commit a pick: its label is written into the composer as a tinted run and
+  /// its reference is staged.
+  void _selectRelogCandidate(RelogCandidate candidate) {
+    final token = _picker.token;
+    if (token == null) return;
+    final added = _textController.addMention(candidate, token, _uuid.v4());
+    if (!added && mounted) {
+      showTopToast(
+        context,
+        'logging.relog.stagedFull'.tr(
+          namedArgs: {'max': '$kRelogMaxStaged'},
+        ),
+      );
+    }
+    // close(), not dismiss(): a pick is not a refusal, so the next `/` — even
+    // one landing at the same offset — must open normally.
+    _closeRelogPicker(_picker.close());
   }
 
   /// Bring the footer (streaming card / revealed answer) into view.
@@ -140,10 +239,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     _claimedPendingMeal = false;
     final meal = text?.trim() ?? '';
     if (meal.isEmpty) return;
-    _submit(meal);
+    _submitPlain(meal);
   }
 
-  void _submit(String text) {
+  /// Analyze a meal that did NOT come from this composer — the dashboard's
+  /// quick-log sheet, a first-run suggestion chip. It carries no relog picks by
+  /// construction, so it bypasses the unified submit entirely.
+  void _submitPlain(String text) {
     // A fresh logging attempt: mint a new attempt id. Retries and cheat-clarify
     // resubmits reuse the existing id instead (see _retry / _clarifyCheat) so
     // the server upserts one staging row per attempt.
@@ -151,11 +253,74 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     _runAnalyze(text);
   }
 
+  /// The composer's unified submit. One handler covers all three shapes, so a
+  /// single submit always produces exactly one review card:
+  ///
+  ///  - text only, no picks      → the ordinary AI analysis.
+  ///  - picks only, no free text → stage a deterministic relog analysis and
+  ///                               surface its review card (no AI, no spend).
+  ///  - free text AND picks      → analyze the text alone and send the picks as
+  ///                               `refs`; the server merges the copied dishes
+  ///                               in, so relogged items are never re-analyzed.
+  void _submitComposer(String text) {
+    final plan = planComposerSubmit(
+      isNormal: ref.read(mealLogModeProvider) == MealLogMode.normal,
+      staged: _textController.entries,
+      text: text,
+      freeText: _textController.freeText,
+    );
+    switch (plan) {
+      case PlainAnalysis(:final text):
+        _submitPlain(text);
+      case PureRelog(:final refs):
+        if (_stagingRelog) return;
+        unawaited(_submitPureRelog(refs));
+      case CombinedAnalysis(:final freeText, :final refs):
+        _attemptId = _uuid.v4();
+        // _runAnalyze clears the composer to show the streaming card, which
+        // drops the mentions with it — snapshot first so a failed run can hand
+        // them back.
+        _relogSnapshot = _textController.snapshot();
+        _runAnalyze(freeText, refs: refs);
+    }
+  }
+
+  /// Pure relog: stage a deterministic analysis and let the day refetch surface
+  /// its review card. Nothing is written to the day until the user confirms it,
+  /// exactly as with an AI meal.
+  Future<void> _submitPureRelog(List<RelogRef> refs) async {
+    setState(() => _stagingRelog = true);
+    try {
+      await stageRelogAnalysis(
+        ref,
+        userId: widget.profile.userId,
+        date: widget.date,
+        items: refs,
+        // A FRESH id, never the feed's `_attemptId`. The server upserts pending
+        // analyses on (user_id, attempt_id), so reusing the id of a revealed
+        // but unconfirmed AI card would overwrite that card's row with this
+        // relog. Double submits are held off by [_stagingRelog] instead.
+        attemptId: _uuid.v4(),
+      );
+      // Only after staging lands, and only the mention text: anything typed
+      // around the picks is the user's. On failure nothing is touched, so a
+      // dead reference can be dropped and retried without losing every pick.
+      _textController.consumeMentions();
+      // `_attemptId` is deliberately untouched: it belongs to whatever AI
+      // attempt is on screen, and a relog is a separate card.
+      _scrollToAnswer();
+    } catch (_) {
+      if (mounted) showTopToast(context, 'errors.internal'.tr());
+    } finally {
+      if (mounted) setState(() => _stagingRelog = false);
+    }
+  }
+
   /// Core analyze path shared by fresh submit and retry. Honors the persistent
   /// composer mode (precise vs cheat) — whichever surface last set it, the feed
   /// composer or the dashboard's quick-log sheet — and sends the current
   /// [_attemptId].
-  void _runAnalyze(String text) {
+  void _runAnalyze(String text, {List<RelogRef>? refs}) {
     refreshRevealedAnalysisDay(
       ref,
       userId: widget.profile.userId,
@@ -179,6 +344,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       isCheat: ref.read(mealLogModeProvider) == MealLogMode.cheat,
       cheatIntensity: ref.read(cheatIntensityProvider),
       attemptId: _attemptId,
+      refs: refs,
     );
   }
 
@@ -239,18 +405,30 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   void _revealAnswer() {
     _revealRawInput = _inFlightText;
     _inFlightText = null;
+    // A combined submit reached a confirmable card, so its picks are logged —
+    // the composer was already cleared, and the snapshot is now spent.
+    _relogSnapshot = null;
     HapticFeedback.lightImpact();
     _scrollToAnswer();
   }
 
   void _failAttempt(bool retryable, {bool paymentRequired = false}) {
     final text = _inFlightText;
+    final snapshot = _relogSnapshot;
     setState(() {
       _failedText = text;
       _failedRetryable = retryable;
       _inFlightText = null;
+      _relogSnapshot = null;
     });
-    if (text != null && _inputController.getText().trim().isEmpty) {
+    if (snapshot != null) {
+      // A combined submit that never staged. Restore the composer VERBATIM —
+      // text and picks — rather than the stripped text the AI saw, or the
+      // picks would be gone and the retry would log only the free text.
+      if (_textController.text.trim().isEmpty) {
+        _textController.restore(snapshot);
+      }
+    } else if (text != null && _inputController.getText().trim().isEmpty) {
       _inputController.setText(text);
     }
     ref.read(streamAnalysisProvider.notifier).reset();
@@ -381,7 +559,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           stagingRepeat: _stagingRepeat,
           onRepeatCheat: _repeatCheat,
           controller: _inputController,
-          onSubmit: _submit,
+          textController: _textController,
+          onSync: _onComposerSync,
+          onRemoveStaged: _textController.removeMention,
+          relogQuery: _relogQuery,
+          onSelectRelog: _selectRelogCandidate,
+          onDismissRelog: () => _closeRelogPicker(_picker.dismiss()),
+          onSubmit: _submitComposer,
           onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
           analyzing: stream.isAnalyzing,
           onModePressed: _openModeSheet,

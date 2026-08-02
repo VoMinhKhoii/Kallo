@@ -22,8 +22,11 @@ import type { ParsedMeal } from '@/lib/types/meal';
  * incurs). Mirrors `stageCheatRepeatAction`, which likewise stages a pending
  * card from a plain server action without streaming.
  *
- * The mobile client keeps the instant-save `relogMealItemsAction`; this is the
- * web replacement for that path.
+ * BOTH clients go through here: the web composer calls this action directly and
+ * the Flutter composer posts to `/api/v1/meals/relog/stage`, so a pure-relog
+ * submit produces the same editable card on either surface. The instant-save
+ * `relogMealItemsAction` remains for callers that want a committed meal with no
+ * review step.
  *
  * The resolve runs in a short transaction with `FOR UPDATE` on the source meals
  * (like the direct writer): without it, a concurrent split-share could halve a

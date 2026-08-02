@@ -1253,6 +1253,23 @@
       "removeItem": "Xóa món",
       "save": "Lưu bữa ăn",
       "relatedMatch": "liên quan"
+    },
+    "relog": {
+      "pickerLabel": "Món và bữa đã ghi",
+      "groupDishes": "Món",
+      "groupMeals": "Bữa ăn",
+      "macroSplit": "P {protein}g · C {carbs}g · F {fat}g",
+      "optionKcal": "{kcal} kcal",
+      "rowKcal": "{kcal} kcal",
+      "total": "Tổng cộng",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "searching": "Đang tìm...",
+      "noResults": "Không tìm thấy món nào",
+      "noHistory": "Chưa có món nào trong lịch sử",
+      "removeStaged": "Bỏ {name}",
+      "closePicker": "Đóng",
+      "stagedFull": "Mỗi lần chỉ ghi lại được tối đa {max} món."
     }
   },
   "groups": {

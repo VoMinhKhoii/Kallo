@@ -64,9 +64,15 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
               ),
               const SizedBox(width: 2), // gap-0.5
               SizedBox(
-                width: 36,
+                // Wide enough for `1000g` at Meta 12: the steppers move grams
+                // in 10s with no cap, so four digits is reachable and a
+                // wrapped value would grow the whole editor row.
+                width: 44,
                 child: Text(
                   '${grams.round()}g',
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.clip,
                   textAlign: TextAlign.center,
                   style: dashMeta(color: kInk, tabular: true),
                 ),

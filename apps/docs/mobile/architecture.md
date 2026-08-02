@@ -49,6 +49,14 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
 - **logging** — date timeline, calorie ring, streaming meal analysis (SSE), meal input/cards.
   Composer modes: normal (AI), cheat meal (AI slider estimate — intensity strip, clarify
   fallback, "log it again" chips via `/api/v1/meals/cheat-*`), manual, barcode.
+  Normal mode also carries **relog**: typing `/` opens a picker of dishes and meals you
+  have logged before (`/api/v1/meals/relog/candidates`), and a pick becomes tinted text
+  inside the field plus a staged reference. Picks alone stage a deterministic review card
+  (`/api/v1/meals/relog/stage`, no AI); picks alongside free text ride the analyze stream
+  as `refs` and are merged server-side. Either way the server copies the stored
+  `meal_items` rows verbatim — past meals hold goal-adjusted macros that cannot be
+  re-derived. Tinting comes from `MentionTextEditingController.buildTextSpan`, not the
+  web's mirror-element overlay.
 - **nutrition** — editorial overview, 7/30/90 toggle, macro composition, nutrient rows.
 - **settings** — two-level nav → profile form (body metrics, cooking, regional).
 

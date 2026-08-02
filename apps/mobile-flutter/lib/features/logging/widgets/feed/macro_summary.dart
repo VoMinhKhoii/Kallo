@@ -115,6 +115,12 @@ class _MacroRow extends StatelessWidget {
   const _MacroRow({required this.data});
   final _MacroBarData data;
 
+  /// Wide enough for `1024/350g` at Meta 12 — the web's `w-14` (56) was sized
+  /// for its 11px type and wrapped `120/135g` onto a second line here at 12.
+  /// The width comes out of the bar, which is [Expanded]; past this the value
+  /// clips rather than reflowing the row.
+  static const double _valueColumn = 72;
+
   @override
   Widget build(BuildContext context) {
     final pct =
@@ -139,9 +145,15 @@ class _MacroRow extends StatelessWidget {
         Expanded(child: MacroBar(pct: pct, color: data.color)),
         const SizedBox(width: NhamSpacing.sp3),
         SizedBox(
-          width: 56, // w-14
+          width: _valueColumn,
           child: Text(
-            '${data.current}/${data.target}g', style: dashMeta(tabular: true),),
+            '${data.current}/${data.target}g',
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.clip,
+            textAlign: TextAlign.right,
+            style: dashMeta(tabular: true),
+          ),
         ),
       ],
     );
