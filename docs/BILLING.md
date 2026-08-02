@@ -162,6 +162,7 @@ The 402 body:
 | `REVENUECAT_CUSTOMER_DELETE_API_KEY` | required for account deletion | Server-only v2 secret key restricted to `customer_information:customers:read_write`; used only to erase the authenticated user's RevenueCat customer. |
 | `REVENUECAT_PROJECT_ID` | required for account deletion | Public RevenueCat project identifier used by the v2 customer deletion endpoint. |
 | `REVENUECAT_WEB_API_KEY` | unset → web purchases unavailable | Runtime public Web SDK key returned only to an authenticated web client. Issued by RevenueCat for the Web app regardless of which billing engine (Paddle) backs it. |
+| `REVENUECAT_WEB_API_KEY_SANDBOX` | unset | Public Web SDK key for the **sandbox** Paddle config. Required on production only if `BILLING_SANDBOX_USER_IDS` is non-empty: those users reconcile the sandbox environment, so serving them the production key would open checkout in a catalog the grant projection never reads. Without it they are served no key at all (fail closed). A wholly sandbox deployment does not need it. |
 | `REVENUECAT_APPLE_API_KEY` | unset → iOS purchases unavailable | Client-public iOS SDK key. A Test Store key may be used locally. |
 | `REVENUECAT_GOOGLE_API_KEY` | unset → Android purchases unavailable | Client-public Android SDK key. A Test Store key may be used locally. |
 | `REVENUECAT_WEBHOOK_SECRET` | unset → webhook returns 503 | Shared secret; RC echoes it verbatim in the `Authorization` header |

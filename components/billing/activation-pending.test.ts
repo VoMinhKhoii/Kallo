@@ -3,6 +3,7 @@ import {
   clearActivationPending,
   hasActivationPending,
   markActivationPending,
+  recordActivationRecoveryAttempt,
 } from './activation-pending';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -43,5 +44,38 @@ describe('activation pending marker', () => {
       'not-a-number'
     );
     expect(hasActivationPending('user-a')).toBe(false);
+  });
+
+  it('survives a recovery attempt that did not find the purchase', () => {
+    // The provider can still be ingesting the transaction. One miss must not
+    // retire the only signal that the user paid.
+    markActivationPending('user-a');
+    recordActivationRecoveryAttempt('user-a');
+    expect(hasActivationPending('user-a')).toBe(true);
+  });
+
+  it('retires after a bounded number of failed recoveries', () => {
+    markActivationPending('user-a');
+    recordActivationRecoveryAttempt('user-a');
+    recordActivationRecoveryAttempt('user-a');
+    // Third attempt exhausts the budget, so it cannot keep spending reconciles
+    // against the 20/hr and 100/day per-user ceilings.
+    recordActivationRecoveryAttempt('user-a');
+    expect(hasActivationPending('user-a')).toBe(false);
+    expect(window.localStorage.length).toBe(0);
+  });
+
+  it('counting an attempt on a cleared marker does not resurrect it', () => {
+    recordActivationRecoveryAttempt('user-a');
+    expect(hasActivationPending('user-a')).toBe(false);
+  });
+
+  it('reads the legacy bare-timestamp format written by an older deploy', () => {
+    // An activation in flight across a deploy must not be silently dropped.
+    window.localStorage.setItem(
+      'kallo.billing.activationPending.user-a',
+      String(Date.now())
+    );
+    expect(hasActivationPending('user-a')).toBe(true);
   });
 });

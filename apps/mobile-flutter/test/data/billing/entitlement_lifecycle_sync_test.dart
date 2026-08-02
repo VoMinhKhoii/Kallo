@@ -194,8 +194,28 @@ void main() {
     await operation;
 
     expect(api.postCalls, 1);
-    // Cleared either way, so it cannot spend budget on every launch for a day.
+    // Recovery found the purchase, so the signal is spent.
     expect(pendingStore.pending, isFalse);
+  });
+
+  test('a recovery that still finds nothing keeps the signal', () async {
+    // The provider can still be ingesting the transaction. Retiring the marker
+    // on the first miss would strand a paying user on free forever.
+    final api = _LifecycleApi(
+      reconciliationRequired: false,
+      reconcileYieldsPremium: false,
+    );
+    final pendingStore = _FakePendingStore(pending: true);
+    final container = _makeContainer(api, pendingStore: pendingStore);
+    final sync = container.read(entitlementLifecycleSyncProvider);
+
+    final operation = sync.synchronize(userA);
+    api.initialGet.complete(_entitlement());
+    await operation;
+
+    expect(api.postCalls, 1);
+    expect(pendingStore.pending, isTrue);
+    expect(pendingStore.attempts, 1);
   });
 }
 
@@ -225,6 +245,7 @@ class _FakePendingStore implements ActivationPendingStore {
 
   bool pending;
   var clears = 0;
+  var attempts = 0;
 
   @override
   Future<void> mark(String userId) async => pending = true;
@@ -237,12 +258,21 @@ class _FakePendingStore implements ActivationPendingStore {
 
   @override
   Future<bool> isPending(String userId) async => pending;
+
+  @override
+  Future<void> recordRecoveryAttempt(String userId) async => attempts += 1;
 }
 
 class _LifecycleApi extends ApiClient {
-  _LifecycleApi({required this.reconciliationRequired});
+  _LifecycleApi({
+    required this.reconciliationRequired,
+    this.reconcileYieldsPremium = true,
+  });
 
   final bool reconciliationRequired;
+
+  /// False models a provider that has not ingested the transaction yet.
+  final bool reconcileYieldsPremium;
   final initialGet = Completer<Map<String, dynamic>>();
   var getCalls = 0;
   var postCalls = 0;
@@ -261,7 +291,9 @@ class _LifecycleApi extends ApiClient {
   @override
   Future<T> post<T>(String path, [Object? body]) {
     postCalls += 1;
-    return Future<T>.value(_entitlement(premium: true) as T);
+    return Future<T>.value(
+      _entitlement(premium: reconcileYieldsPremium) as T,
+    );
   }
 }
 

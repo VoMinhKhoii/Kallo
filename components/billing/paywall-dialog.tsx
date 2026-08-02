@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   entitlementsKeys,
+  fetchEntitlements,
   reconcileEntitlements,
   useEntitlements,
 } from '@/hooks/billing/use-entitlements';
@@ -19,6 +20,7 @@ import {
 } from '@/lib/billing/web-purchases';
 import {
   clearActivationPending,
+  hasActivationPending,
   markActivationPending,
 } from './activation-pending';
 import { pollUntilPremium } from './paywall-activation';
@@ -58,7 +60,17 @@ export function PaywallDialog({
   const offeringsQuery = useQuery({
     queryKey: ['billing', 'offerings', userId],
     queryFn: async () => {
-      const current = await reconcileEntitlements(userId);
+      // A cheap server read is enough to avoid offering packages to someone who
+      // is already premium. Spend a provider reconcile only when the server
+      // asks for one, or when an earlier checkout is still unaccounted for:
+      // the endpoint allows 3/min, and the post-purchase activation poll needs
+      // that budget far more than the paywall's opening frame does.
+      const needsProvider =
+        entitlements?.reconciliationRequired === true ||
+        hasActivationPending(userId);
+      const current = needsProvider
+        ? await reconcileEntitlements(userId)
+        : await fetchEntitlements(userId);
       queryClient.setQueryData(entitlementsKeys.user(userId), current);
       if (current.tier === 'premium') return null;
       return getOfferings(userId);
@@ -83,27 +95,27 @@ export function PaywallDialog({
     async (rcPackage: Package) => {
       if (purchasing) return;
       setPendingId(rcPackage.identifier);
+      // Record the attempt BEFORE handing control to the provider. The likeliest
+      // interruption is the user paying and then closing the tab, which never
+      // resolves the promise below — a marker written after it would be missing
+      // in exactly the case it exists for. An abandoned checkout costs one
+      // wasted reconcile; a lost one costs a customer their money.
+      markActivationPending(userId);
       try {
         const result = await purchasePackage(userId, rcPackage, {
           selectedLocale: locale,
         });
 
         if (result.status === 'cancelled') {
-          // User dismissed the checkout — stay silent.
+          // Explicitly dismissed, so no money moved and nothing needs healing.
+          clearActivationPending(userId);
           return;
         }
         if (result.status === 'payment_pending') {
-          markActivationPending(userId);
           setActivationPending(true);
           toast.success(t('pendingToast'));
           return;
         }
-
-        // Money has moved. Record that before polling, so a reload, a crash, or
-        // a closed tab mid-activation still leaves the lifecycle sync a reason
-        // to contact the provider later — the server cannot infer this state
-        // when no grant row exists.
-        markActivationPending(userId);
 
         // Both a fresh success and an already-owned account should settle into
         // premium; poll the server until the webhook catches up.

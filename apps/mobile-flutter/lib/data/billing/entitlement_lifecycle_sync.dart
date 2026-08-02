@@ -137,10 +137,14 @@ final entitlementLifecycleSyncProvider = Provider<EntitlementLifecycleSync>((
         }
 
         final recovered = await controller.reconcile();
-        // Either it landed, or the provider agrees there is nothing to grant.
-        // Both end the retry; a marker that survives its own recovery attempt
-        // would spend reconcile budget on every launch for a day.
-        await pendingStore.clear(userId);
+        if (recovered?.isPremium ?? false) {
+          await pendingStore.clear(userId);
+        } else {
+          // The provider may simply not have ingested the transaction yet, so
+          // one miss must not retire the signal. Count it instead; the marker
+          // retires itself once its bounded attempts are spent.
+          await pendingStore.recordRecoveryAttempt(userId);
+        }
         return recovered != null;
       } finally {
         subscription.close();

@@ -219,9 +219,18 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
           busyPackageId: package.identifier,
         ),
       );
+      // Record the attempt BEFORE handing control to the store. The likeliest
+      // interruption is a purchase whose app is backgrounded or killed before
+      // the future below completes — a marker written afterwards would be
+      // missing in exactly the case it exists for. An abandoned checkout costs
+      // one wasted reconcile; a lost one costs a customer their money.
+      final pendingStore = ref.read(activationPendingStoreProvider);
+      await pendingStore.mark(userId);
       final result = await _purchases.purchasePackage(userId, package);
       if (!_isCurrentUser(userId)) return PaywallActionResult.error;
       if (result.isCancelled) {
+        // Explicitly dismissed, so no money moved and nothing needs healing.
+        await pendingStore.clear(userId);
         _set(state.copyWith(phase: PaywallPhase.ready, clearBusy: true));
         return PaywallActionResult.cancelled;
       }
@@ -319,10 +328,9 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
     required String userId,
   }) async {
     _set(state.copyWith(phase: PaywallPhase.verifying, clearBusy: true));
-    // The store confirmed a transaction. Record that before polling, so a
-    // backgrounded or killed app still leaves the launch/resume sync a reason
-    // to contact the provider later — the server cannot infer this state when
-    // no grant row exists.
+    // `purchase` already marked the attempt before the store call; `restore`
+    // and `retryActivation` arrive here without one, and both can equally
+    // surface a transaction the server has not projected yet.
     final pendingStore = ref.read(activationPendingStoreProvider);
     await pendingStore.mark(userId);
     final premium =

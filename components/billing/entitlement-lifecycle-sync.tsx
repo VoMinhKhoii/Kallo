@@ -10,6 +10,7 @@ import {
 import {
   clearActivationPending,
   hasActivationPending,
+  recordActivationRecoveryAttempt,
 } from './activation-pending';
 import {
   createEntitlementLifecycleSync,
@@ -38,10 +39,14 @@ export function EntitlementLifecycleSync({ userId }: { userId: string }) {
       reconcile: async (id, signal) => {
         const data = await reconcileEntitlements(id, signal);
         queryClient.setQueryData(entitlementsKeys.user(id), data);
-        // Either it landed, or the provider agrees there is nothing to grant.
-        // Both end the retry: a marker that survives its own recovery attempt
-        // would spend reconcile budget on every visit for a day.
-        clearActivationPending(id);
+        if (data.tier === 'premium') {
+          clearActivationPending(id);
+        } else {
+          // The provider may simply not have ingested the transaction yet, so
+          // one miss must not retire the signal. Count it instead; the marker
+          // retires itself once its bounded attempts are spent.
+          recordActivationRecoveryAttempt(id);
+        }
         return data;
       },
       // The server cannot flag a first purchase that never projected — it has
