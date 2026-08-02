@@ -1162,10 +1162,6 @@
       "alcohol": "cồn",
       "between": "Giữa {low} và {high}"
     },
-    "clarify": {
-      "portion": "Bạn đã ăn bao nhiêu {ingredient} trong {mealItem}? Ước lượng khối lượng hoặc khẩu phần giúp ước tính chính xác hơn.",
-      "food": "Ý bạn là loại {ingredient} nào trong {mealItem}?"
-    },
     "cheatRepeat": {
       "title": "Ghi lại lần nữa"
     },

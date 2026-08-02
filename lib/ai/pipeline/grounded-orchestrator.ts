@@ -58,8 +58,6 @@ export interface AnalyzeMealV2Options {
   traceContext?: AnalyzeMealTraceContext;
   /** Read-only internals used by the offline eval harness. */
   onDiagnostics?: (diagnostics: V2PipelineDiagnostics) => void;
-  /** Precise-mode clarify reply, threaded into the Call-1 user message on re-analysis. */
-  clarifyAnswer?: string;
   /**
    * Call-2 provider adapter (D3 seam). Offline-eval-only override for the
    * bakeoff harness (`--estimator gemini|claude|openai`). When omitted the
@@ -124,7 +122,6 @@ export async function analyzeMealV2(
       emit,
       promptCtx,
       profile,
-      clarifyAnswer: options.clarifyAnswer,
       onAttemptComplete: budget.decompositionRecorder,
     });
     if (stage1.nonFood) {
@@ -361,11 +358,10 @@ export async function analyzeMealV2(
       },
     });
 
-    // Chunk-failure → plausibility → anomaly clarify (see completeness-gate).
+    // Transient chunk failure → retryable error (see completeness-gate). A
+    // shaky portion no longer gates: it ships and the picker corrects it.
     const unresolved = resolveCompletenessGate({
       failedMealItemNames: call2.failedMealItemNames,
-      plausibility: bridged.plausibility,
-      anomalySummary,
     });
     return unresolved
       ? { success: true, data: assembly.result, unresolved }

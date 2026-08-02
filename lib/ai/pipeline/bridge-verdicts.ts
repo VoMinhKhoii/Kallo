@@ -19,10 +19,12 @@
  *     Net effect: the yield-factor table is bypassed for every v2 ingredient.
  */
 
+import { NUTRITION_KEYS } from '../constants';
 import type {
   BoundedEstimate,
   DecomposedIngredient,
   DecomposedMealItem,
+  MatchedIngredient,
 } from '../types';
 import type { VerdictPerIngredient } from './bridge';
 import type {
@@ -237,4 +239,18 @@ export function v2DishToV1(
     cuisineNote: v2.cuisineNote,
     ingredients,
   };
+}
+
+
+
+/**
+ * All-zeros nutrition per 100g, derived from `NUTRITION_KEYS` so adding a new
+ * nutrient field doesn't need a touch here. Used as a last-resort fallback
+ * when a matched candidate somehow has no nutrition row attached (should not
+ * happen post-Phase 5 batch fetch; safety net for partial failure modes).
+ */
+export function buildNullNutrition(): MatchedIngredient['nutritionPer100g'] {
+  return Object.fromEntries(
+    NUTRITION_KEYS.map((k) => [k, 0])
+  ) as unknown as MatchedIngredient['nutritionPer100g'];
 }

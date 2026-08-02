@@ -33,21 +33,6 @@ type StreamedMealItemIds = ReturnType<
   >['getStreamedMealItemIds']
 >;
 
-/**
- * Append a precise-mode clarify reply to the original meal text as an extra
- * data line, so Call 1 re-decomposes with the portion/food answer in hand.
- * Both halves are user-authored DATA — the decomposition system prompt's
- * delimiter rule guards against embedded instructions.
- */
-function buildClarifiedDecompositionInput(
-  rawInput: string,
-  clarifyAnswer: string
-): string {
-  const answer = clarifyAnswer.trim();
-  if (!answer) return rawInput;
-  return `${rawInput}\n(clarification: ${answer})`;
-}
-
 export type GroundedDecompositionResult =
   | { nonFood: true }
   | {
@@ -75,8 +60,6 @@ export async function runGroundedDecomposition(args: {
   emit: (event: StreamEvent) => void;
   promptCtx: PromptPersonalizationContext;
   profile: ModelProfile;
-  /** Reply to a prior precise-mode clarify question; woven into the Call-1 message. */
-  clarifyAnswer?: string;
   /** Per-attempt token/error recorder (analysis model-budget guards). */
   onAttemptComplete?: (usage: EstimatorAttemptUsage) => void;
 }): Promise<GroundedDecompositionResult> {
@@ -94,12 +77,7 @@ export async function runGroundedDecomposition(args: {
   const prewarm = prewarmEnabled
     ? createV2SpeculativeMatcher(db, gemini, prewarmAbort.signal)
     : () => {};
-  // Weave a clarify reply into the Call-1 user message so the re-analysis
-  // reasons with the answer (mirrors cheat mode threading clarifyAnswer into
-  // its prompt). Sanitized to keep it DATA, never instructions.
-  const decompositionInput = args.clarifyAnswer
-    ? buildClarifiedDecompositionInput(rawInput, args.clarifyAnswer)
-    : rawInput;
+  const decompositionInput = rawInput;
 
   const bufferedItemNameEvents: Array<
     Extract<StreamEvent, { type: 'item_name' }>

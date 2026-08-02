@@ -1,9 +1,11 @@
 /**
  * Per-ingredient plausibility classification for the v2 grounded pipeline.
  *
- * Phase 1 replaces the silent-zero mechanism (grams=1, kcal=0 rows) with an
- * explicit classification so the completeness gates can decide whether a
- * result is safe to persist or must trigger a clarify round-trip.
+ * Phase 1 replaced the silent-zero mechanism (grams=1, kcal=0 rows) with an
+ * explicit classification. This is now a TELEMETRY signal only — there is no
+ * clarify round-trip. An `unresolved_estimate` ingredient still ships on its
+ * best estimate and the user corrects the portion in the UI; only the bridge's
+ * no-data carve-out (no portion / no macro anchor) withholds a row.
  *
  * The four classes:
  *   - 'ok'                       — resolved with a sensible portion + nutrition.
@@ -13,7 +15,7 @@
  *                                  legitimately ≤5g. Small grams is expected.
  *   - 'unresolved_estimate'      — the portion or nutrition could not be
  *                                  resolved (missing grams, no match + no
- *                                  macros). These block a silent persist.
+ *                                  macros). Flagged for telemetry, not blocked.
  *
  * Deliberately NOT a blanket `grams <= 5` rule: a 3g pinch of salt and a 3g
  * "chicken breast" are both small, but only the first is plausible. We lean on
@@ -60,12 +62,17 @@ export interface PlausibilityInput {
 }
 
 /** Foods whose correct calorie contribution is ~zero regardless of volume. */
+// FULLY anchored (^…$), not \b-bounded. A loose head-noun match let any
+// caloric variant inherit the zero: "coconut water", "sweetened green tea",
+// "peach green tea", "black coffee 3-in-1". A modifier blocklist alone can
+// never be complete, so the allowlist of qualifiers is the real guard and
+// `hasCaloricModifier` is defense-in-depth behind it.
 const NONCALORIC_PATTERNS: RegExp[] = [
-  /\bwater\b/i,
-  /nướ?c\s*(lọc|suối|khoáng|đun|trắng)/i, // nước lọc/suối/khoáng
-  /\bblack\s*coffee\b/i,
-  /cà\s*phê\s*đen/i,
-  /\b(plain|black|green|herbal)\s*tea\b/i,
+  /^(plain|mineral|sparkling|still|filtered|tap|iced?|warm|hot|cold)?\s*water$/i,
+  /^nướ?c\s*(lọc|suối|khoáng|đun|trắng)(\s*(sôi|nguội|ấm|để\s*nguội))*$/i,
+  /^black\s*coffee$/i,
+  /^cà\s*phê\s*đen(\s*(đá|nóng))*$/i,
+  /^((plain|black|green|herbal|unsweetened)\s+)*tea$/i,
   // Anchored to bare trà + noncaloric qualifiers only. Unanchored /trà.../
   // matched "trà sữa"/"trà đào" (very caloric) and reopened the silent-zero
   // hole; qualifiers cover "trà đá không đường"-style names.
@@ -75,6 +82,28 @@ const NONCALORIC_PATTERNS: RegExp[] = [
   /^ice(\s*cubes?)?$/i,
   /^đá(\s*(viên|lạnh))?$/i,
 ];
+
+/**
+ * Explicit sugar-free markers. Stripped BEFORE the caloric-modifier test so
+ * "trà đá không đường" is not disqualified by the bare word "đường".
+ */
+const SUGAR_FREE = /(không\s*đường|unsweetened|sugar[-\s]?free|no\s+sugar)/gi;
+
+/**
+ * Modifiers that make an otherwise-noncaloric drink caloric. The NONCALORIC
+ * head nouns (water/coffee/tea/nước) are matched loosely, so without this a
+ * caloric variant inherits the zero: `/\bwater\b/` matched "coconut water",
+ * `/\bblack\s*coffee\b/` matched "black coffee with sugar", and
+ * `/\bgreen\s*tea\b/` matched "green tea latte" — each a silent zero on a real
+ * drink. Same failure mode the anchored `trà` pattern above already guards.
+ */
+const CALORIC_MODIFIER =
+  /(sữa|đường|mật\s*ong|kem|sy-?rô|syrup|sugar|milk|honey|cream|latte|mocha|boba|trân\s*châu|dừa|coconut|nướ?c\s*ép|juice)/i;
+
+/** True when a noncaloric-looking name carries a caloric modifier. */
+function hasCaloricModifier(name: string): boolean {
+  return CALORIC_MODIFIER.test(name.replace(SUGAR_FREE, ' '));
+}
 
 /**
  * Concentrated foods that are routinely used in ≤5g amounts. Matching a name
@@ -116,6 +145,21 @@ const CONCENTRATED_PATTERNS: RegExp[] = [
 ];
 
 /**
+ * Vietnamese-safe word boundary. JS `\b` treats diacritic letters (đ, ế, ơ) as
+ * non-word characters, so `\bmiến\b` never matches — which is why these lists
+ * used bare substring matching. But `miến` (glass noodle) is a strict PREFIX of
+ * `miếng` (the "piece/slice" classifier), so "miếng vịt" tripped the carb-staple
+ * floor and blanked the whole meal. Match only at real word edges instead; the
+ * lookarounds subsume `\b` for the ASCII tokens too.
+ */
+function viWord(token: string): RegExp {
+  return new RegExp(
+    `(?<![\\p{L}\\p{M}\\p{N}])(?:${token})(?![\\p{L}\\p{M}\\p{N}])`,
+    'iu'
+  );
+}
+
+/**
  * Carb-staple names: rice/noodle/bread bases whose correct carb density is
  * high (tens of g/100g). A near-zero carb emission on one of these is the
  * bánh-ướt-chả-bò bug class — the LLM assigned P/F but C≈0 to an unmatched
@@ -123,25 +167,25 @@ const CONCENTRATED_PATTERNS: RegExp[] = [
  * exempt list) makes the carb-staple floor check bite.
  */
 const CARB_STAPLE_PATTERNS: RegExp[] = [
-  /cơm/i,
-  /xôi/i,
-  /gạo/i,
-  /\brice\b/i,
-  /bánh\s*(ướt|cuốn|phở|canh|hỏi|đa|tráng)/i,
-  /phở/i,
-  /bún/i,
-  /miến/i,
-  /hủ\s*tiếu/i,
-  /hu\s*tieu/i,
-  /mì/i,
-  /nui/i,
-  /\bnoodles?\b/i,
-  /\bvermicelli\b/i,
-  /\bpasta\b/i,
-  /\bspaghetti\b/i,
-  /bánh\s*m[ìỳ]/i,
-  /\bbread\b/i,
-  /\bbaguette\b/i,
+  viWord('cơm'),
+  viWord('xôi'),
+  viWord('gạo'),
+  viWord('rice'),
+  viWord('bánh\\s*(?:ướt|cuốn|phở|canh|hỏi|đa|tráng)'),
+  viWord('phở'),
+  viWord('bún'),
+  viWord('miến'),
+  viWord('hủ\\s*tiếu'),
+  viWord('hu\\s*tieu'),
+  viWord('mì'),
+  viWord('nui'),
+  viWord('noodles?'),
+  viWord('vermicelli'),
+  viWord('pasta'),
+  viWord('spaghetti'),
+  viWord('bánh\\s*m[ìỳ]'),
+  viWord('bread'),
+  viWord('baguette'),
 ];
 /**
  * Names that match a CARB_STAPLE_PATTERN by substring but are legitimately
@@ -150,19 +194,24 @@ const CARB_STAPLE_PATTERNS: RegExp[] = [
  * noodles; mì chính is MSG; mì căn is seitan; giấm gạo / rượu gạo are
  * vinegar / rice wine, not a starch base.
  */
+// Boundary-anchored like the staple list itself: bare substrings let unrelated
+// words suppress a real staple failure ("stockfish noodles" was exempted by
+// `stock`, "bánh mì wineberry" by `wine`). `m[ìi]` accepts the mixed-diacritic
+// spellings ("mì chinh"/"mi chính") the model emits, which a bare `mì` missed
+// and which then produced false staple telemetry.
 const CARB_STAPLE_EXEMPT_PATTERNS: RegExp[] = [
-  /konjac/i,
-  /shirataki/i,
-  /nướ?c\s*(dùng|lèo)/i,
-  /\bbroth\b/i,
-  /\bstock\b/i,
-  /\bsoup\b/i,
-  /mì\s*chính/i,
-  /mì\s*căn/i,
-  /giấm/i,
-  /\bvinegar\b/i,
-  /rượu/i,
-  /\bwine\b/i,
+  viWord('konjac'),
+  viWord('shirataki'),
+  viWord('nướ?c\\s*(?:dùng|lèo)'),
+  viWord('broth'),
+  viWord('stock'),
+  viWord('soup'),
+  viWord('m[ìi]\\s*ch[íi]nh'),
+  viWord('m[ìi]\\s*c[ăa]n'),
+  viWord('giấm'),
+  viWord('vinegar'),
+  viWord('rượu'),
+  viWord('wine'),
 ];
 /**
  * Carb-density floor for staples, on the MID bound. Density is portion-
@@ -182,7 +231,10 @@ const SMALL_PORTION_MAX_GRAMS = 5;
 const NEAR_ZERO_KCAL = 1;
 
 function matchesAny(name: string, patterns: RegExp[]): boolean {
-  return patterns.some((p) => p.test(name));
+  // NFC so a decomposed name from the model still matches the composed literals
+  // in the pattern lists (same convention as matching/aliases.ts).
+  const normalized = name.normalize('NFC');
+  return patterns.some((p) => p.test(normalized));
 }
 
 function hasResolvedGrams(grams: number | null): grams is number {
@@ -213,8 +265,10 @@ export function classifyIngredientPlausibility(
     caloriesPer100g != null ? (caloriesPer100g * grams) / 100 : null;
   const densityIsNearZero =
     caloriesPer100g != null && caloriesPer100g < NEAR_ZERO_KCAL;
+  // A caloric modifier disqualifies the name-based match, but NOT the measured
+  // one: a DB row at <1 kcal/100g is evidence, not a heuristic.
   if (
-    matchesAny(name, NONCALORIC_PATTERNS) ||
+    (matchesAny(name, NONCALORIC_PATTERNS) && !hasCaloricModifier(name)) ||
     (totalKcal != null && densityIsNearZero && totalKcal < NEAR_ZERO_KCAL)
   ) {
     return 'genuinely_noncaloric';
@@ -224,7 +278,7 @@ export function classifyIngredientPlausibility(
   // grams and Call 2 emitted SOMETHING (hasNutrition — fatG is always present),
   // but the caloric macro triple the server does NOT anchor for unmatched foods
   // was omitted. Defense-in-depth: never trust the prompt. A ZERO_TRIPLE row
-  // here would be a silent zero-macro persist, so route to clarify instead.
+  // here would be a silent zero-macro persist; the bridge withholds the row.
   // Non-caloric names already returned above, so this only bites real foods.
   if (input.emittedCaloricMacrosMissing) {
     return 'unresolved_estimate';
@@ -234,7 +288,7 @@ export function classifyIngredientPlausibility(
   // must carry real carbs. `undefined` skips the check (backward-compat). When
   // provided, MATCHED carbs come from the DB row and UNMATCHED carbs are the
   // scaled Call 2 mid; either way a density below the floor is implausible for
-  // a staple → route to clarify. Non-null-vs-null semantics: a known low
+  // a staple → flag it. Non-null-vs-null semantics: a known low
   // density trips outright; a null density (carb triple omitted for an
   // unmatched staple) only trips when calories are ALSO absent, so a matched
   // staple with a null DB carb but a real energy density still passes.
