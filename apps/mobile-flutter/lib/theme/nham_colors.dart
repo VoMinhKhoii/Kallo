@@ -15,7 +15,9 @@ import 'dart:ui';
 /// transparent. Do NOT "resync" these to `globals.css` without re-deciding it.
 abstract final class NhamColors {
   // ── Core surfaces ────────────────────────────────────────────────────
-  static const Color surface = Color(0xFFF1F1EE); // app background — neutral canvas
+  static const Color surface = Color(
+    0xFFF1F1EE,
+  ); // app background — neutral canvas
   static const Color elev = Color(0xFFFFFFFF); // cards / sheets
   static const Color hover = Color(0xFFF0EAE0); // warm hover/select wash
   // Moved by the SAME delta as [surface] (−8/−8/−9): the canvas↔track step is
@@ -32,6 +34,15 @@ abstract final class NhamColors {
   // ── Accent ───────────────────────────────────────────────────────────
   static const Color accent = Color(0xFFC9A87C); // signature tan
   static const Color accentDark = Color(0xFFB89968);
+
+  // ── Relog mentions ───────────────────────────────────────────────────
+  // A picked dish inside the composer reads exactly as that same card's inline
+  // under-logged notice does (`PartialDayNotice`): white on the muted grey
+  // band. One "this is not your prose" treatment per surface, and no second
+  // hue — [textMuted] is the lightest grey that still clears 4.5:1 against
+  // white (~5.2:1), which is why the notice already uses it.
+  static const Color mentionBackground = textMuted;
+  static const Color mentionForeground = Color(0xFFFFFFFF);
 
   // ── Borders ──────────────────────────────────────────────────────────
   static const Color border = Color(0xFFE2DFD4); // neutral hairline
@@ -133,9 +144,13 @@ abstract final class NhamColors {
   // Fresh emerald for "on target" cards — brighter + cleaner than the olive
   // sage, reads modern against the warm cream surface.
   static const Color successAccent = Color(0xFF1FA971); // emerald — text + bar
-  static const Color successDark = Color(0xFF14855A); // deeper emerald — figures
+  static const Color successDark = Color(
+    0xFF14855A,
+  ); // deeper emerald — figures
   static const Color successFaint = Color(0xFFEAF7F0); // mint — met-card fill
-  static const Color successBorder = Color(0x331FA971); // emerald @ 20% — hairline
+  static const Color successBorder = Color(
+    0x331FA971,
+  ); // emerald @ 20% — hairline
   /// Destructive actions — delete, remove, sign out — and error text.
   ///
   /// A plain red, not the old terracotta `#D37B69`. The terracotta was a warm
@@ -176,7 +191,9 @@ abstract final class NhamColors {
   static const Color heatmapBarMiss = Color(0xFFD4C9AD);
 
   // ── Settings + onboarding neutral/cream palette ──────────────────────
-  static const Color inputBorder = Color(0xFFE2DFD4); // unified neutral hairline
+  static const Color inputBorder = Color(
+    0xFFE2DFD4,
+  ); // unified neutral hairline
   static const Color inputBorder40 = Color(0x66E2DFD4);
   static const Color textWarm = Color(0xFF7B6F62);
   static const Color textHelp = Color(0xFF8B8682);

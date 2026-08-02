@@ -16,12 +16,13 @@ import 'package:nham_mobile/theme/calm_tokens.dart';
 import '../../../l10n_test_loader.dart';
 
 Widget _wrap(Widget child, {double textScale = 1.0}) => EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('vi')],
-      path: 'assets/l10n',
-      fallbackLocale: const Locale('en'),
-      assetLoader: const FsL10nLoader(),
-      child: Builder(
-        builder: (context) => MaterialApp(
+  supportedLocales: const [Locale('en'), Locale('vi')],
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  assetLoader: const FsL10nLoader(),
+  child: Builder(
+    builder:
+        (context) => MaterialApp(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
@@ -30,8 +31,8 @@ Widget _wrap(Widget child, {double textScale = 1.0}) => EasyLocalization(
             child: Scaffold(body: SingleChildScrollView(child: child)),
           ),
         ),
-      ),
-    );
+  ),
+);
 
 /// A settled day with three-digit macro figures — the shape that wrapped the
 /// `current/target g` readout onto a second line.
@@ -77,11 +78,12 @@ double _renderedWidth(String text, {double textScale = 1.0}) {
 }
 
 /// The width the value's fixed column actually gives it.
-double _columnWidth(WidgetTester tester, Finder text) => tester
-    .widget<SizedBox>(
-      find.ancestor(of: text, matching: find.byType(SizedBox)).first,
-    )
-    .width!;
+double _columnWidth(WidgetTester tester, Finder text) =>
+    tester
+        .widget<SizedBox>(
+          find.ancestor(of: text, matching: find.byType(SizedBox)).first,
+        )
+        .width!;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -89,18 +91,17 @@ void main() {
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/shared_preferences'),
-      (call) async => call.method == 'getAll' ? <String, Object>{} : null,
-    );
+          const MethodChannel('plugins.flutter.io/shared_preferences'),
+          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
+        );
     await EasyLocalization.ensureInitialized();
     // Measure against the real typeface, not the test font (whose glyphs are
     // all one em wide) — the column width is a claim about Be Vietnam Pro.
-    final loader = FontLoader('BeVietnamPro')
-      ..addFont(
-        File('assets/google_fonts/BeVietnamPro-Regular.ttf')
-            .readAsBytes()
-            .then(ByteData.sublistView),
-      );
+    final loader = FontLoader('BeVietnamPro')..addFont(
+      File(
+        'assets/google_fonts/BeVietnamPro-Regular.ttf',
+      ).readAsBytes().then(ByteData.sublistView),
+    );
     await loader.load();
   });
 
@@ -122,10 +123,7 @@ void main() {
 
   testWidgets('still holds one line at a raised text scale', (tester) async {
     await tester.pumpWidget(
-      _wrap(
-        const MacroSummary(view: _view, profile: _profile),
-        textScale: 1.3,
-      ),
+      _wrap(const MacroSummary(view: _view, profile: _profile), textScale: 1.3),
     );
     await tester.pumpAndSettle();
 
@@ -137,8 +135,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the value column fits the widest realistic figure',
-      (tester) async {
+  testWidgets('the value column fits the widest realistic figure', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _wrap(const MacroSummary(view: _view, profile: _profile)),
     );
@@ -152,6 +151,33 @@ void main() {
       _renderedWidth('1024/350g'),
       lessThanOrEqualTo(column),
       reason: 'the value column clips the widest realistic figure',
+    );
+  });
+
+  testWidgets('scales the value down rather than truncating it', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(const MacroSummary(view: _view, profile: _profile)),
+    );
+    await tester.pumpAndSettle();
+
+    // At the 1.3 Dynamic Type cap the widest figure no longer fits the column.
+    // Without the FittedBox it would CLIP, and "1024/350g" truncated to
+    // "1024/35" reads as a real — but wrong — number.
+    expect(
+      _renderedWidth('1024/350g', textScale: 1.3),
+      greaterThan(_columnWidth(tester, find.text('120/135g'))),
+      reason: 'if this ever fits, the scale-down is no longer load-bearing',
+    );
+    expect(
+      find.ancestor(
+        of: find.text('120/135g'),
+        matching: find.byWidgetPredicate(
+          (w) => w is FittedBox && w.fit == BoxFit.scaleDown,
+        ),
+      ),
+      findsOneWidget,
     );
   });
 }

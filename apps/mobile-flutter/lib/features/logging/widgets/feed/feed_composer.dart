@@ -93,94 +93,106 @@ class FeedComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isNormal = mode == MealLogMode.normal;
-    final staged = textController.entries;
     return ComposerDock(
       onHeightChanged: onHeightChanged,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (errorText != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: LoggingSpacing.block),
-              child: Text(
-                errorText!,
-                // Grey copy; the red lives on the affordances.
-                style: dashMeta(),
-              ),
-            ),
-          // Cheat mode's per-meal controls sit above the composer: the
-          // light/medium/heavy intensity strip and the "log it again" chips
-          // (the web keeps both above the input too).
-          if (mode == MealLogMode.cheat) ...[
-            CheatOccasionChips(
-              userId: userId,
-              disabled: stagingRepeat || analyzing,
-              onSelect: onRepeatCheat,
-            ),
-            CheatIntensityRow(
-              value: cheatIntensity,
-              onChange: onCheatIntensityChange,
-            ),
-            const SizedBox(height: LoggingSpacing.block),
-          ],
-          MealInput(
-            controller: controller,
-            textController: textController,
-            onSync: onSync,
-            onSubmit: onSubmit,
-            onCancel: onCancel,
-            analyzing: analyzing,
-            // A pick alone is a complete meal, so it arms submit even with
-            // nothing else typed.
-            hasExternalContent: isNormal && staged.isNotEmpty,
-            popupSlot:
-                isNormal && relogQuery != null
-                    ? RelogPickerSection(
-                      query: relogQuery!,
-                      onSelect: onSelectRelog,
-                      onDismiss: onDismissRelog,
-                    )
-                    : null,
-            // Gated on the mode, not just the count: the picks survive a mode
-            // switch (only their UI hides), so an ungated list would appear
-            // over the CHEAT composer.
-            aboveSlot:
-                isNormal && staged.isNotEmpty
-                    ? RelogStagedList(
-                      entries: staged,
-                      totals: sumStagedMacros(staged),
-                      disabled: analyzing,
-                      onRemove: onRemoveStaged,
-                    )
-                    : null,
-            // Under-logged past day: the note rides INSIDE the field's card,
-            // because the way to fix the day is to type the meal missing from
-            // it — message and remedy as one object.
-            notice:
-                view.showPartialDayNotice && !noticeDismissed
-                    ? PartialDayNotice(
-                      calories: view.dailyCalories,
-                      target: calorieTarget,
-                      onDismiss: onDismissNotice,
-                    )
-                    : null,
-            modeLabel: mealModeLabel(mode),
-            modeIcon: mealModeIcon(mode),
-            hintText:
-                mode == MealLogMode.cheat
-                    ? 'logging.cheatPlaceholder'.tr()
-                    : null,
-            onModePressed: onModePressed,
-            // iOS-only for now (matches the mode sheet's gating); null hides
-            // the composer icon entirely. Gated via the shared
-            // `isBarcodeLoggingSupported` (same source of truth as the mode
-            // sheet).
-            onBarcodePressed:
-                isBarcodeLoggingSupported ? onBarcodePressed : null,
-          ),
-        ],
+      // The staged panel is derived from the CONTROLLER, which changes without
+      // the feed rebuilding: removing a pick, or editing a tinted label until
+      // it no longer matches, drops that reference here and nowhere else.
+      // Listening keeps the panel honest — otherwise a dropped pick keeps its
+      // row, telling the user a dish will be logged when it will not. Scoped to
+      // the dock so a keystroke never rebuilds the feed behind it.
+      child: ListenableBuilder(
+        listenable: textController,
+        builder: (context, _) => _buildDock(context),
       ),
+    );
+  }
+
+  Widget _buildDock(BuildContext context) {
+    final isNormal = mode == MealLogMode.normal;
+    final staged = textController.entries;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (errorText != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: LoggingSpacing.block),
+            child: Text(
+              errorText!,
+              // Grey copy; the red lives on the affordances.
+              style: dashMeta(),
+            ),
+          ),
+        // Cheat mode's per-meal controls sit above the composer: the
+        // light/medium/heavy intensity strip and the "log it again" chips
+        // (the web keeps both above the input too).
+        if (mode == MealLogMode.cheat) ...[
+          CheatOccasionChips(
+            userId: userId,
+            disabled: stagingRepeat || analyzing,
+            onSelect: onRepeatCheat,
+          ),
+          CheatIntensityRow(
+            value: cheatIntensity,
+            onChange: onCheatIntensityChange,
+          ),
+          const SizedBox(height: LoggingSpacing.block),
+        ],
+        MealInput(
+          controller: controller,
+          textController: textController,
+          onSync: onSync,
+          onSubmit: onSubmit,
+          onCancel: onCancel,
+          analyzing: analyzing,
+          // A pick alone is a complete meal, so it arms submit even with
+          // nothing else typed.
+          hasExternalContent: isNormal && staged.isNotEmpty,
+          popupSlot:
+              isNormal && relogQuery != null
+                  ? RelogPickerSection(
+                    query: relogQuery!,
+                    onSelect: onSelectRelog,
+                    onDismiss: onDismissRelog,
+                  )
+                  : null,
+          // Gated on the mode, not just the count: the picks survive a mode
+          // switch (only their UI hides), so an ungated list would appear
+          // over the CHEAT composer.
+          aboveSlot:
+              isNormal && staged.isNotEmpty
+                  ? RelogStagedList(
+                    entries: staged,
+                    totals: sumStagedMacros(staged),
+                    disabled: analyzing,
+                    onRemove: onRemoveStaged,
+                  )
+                  : null,
+          // Under-logged past day: the note rides INSIDE the field's card,
+          // because the way to fix the day is to type the meal missing from
+          // it — message and remedy as one object.
+          notice:
+              view.showPartialDayNotice && !noticeDismissed
+                  ? PartialDayNotice(
+                    calories: view.dailyCalories,
+                    target: calorieTarget,
+                    onDismiss: onDismissNotice,
+                  )
+                  : null,
+          modeLabel: mealModeLabel(mode),
+          modeIcon: mealModeIcon(mode),
+          hintText:
+              mode == MealLogMode.cheat
+                  ? 'logging.cheatPlaceholder'.tr()
+                  : null,
+          onModePressed: onModePressed,
+          // iOS-only for now (matches the mode sheet's gating); null hides
+          // the composer icon entirely. Gated via the shared
+          // `isBarcodeLoggingSupported` (same source of truth as the mode
+          // sheet).
+          onBarcodePressed: isBarcodeLoggingSupported ? onBarcodePressed : null,
+        ),
+      ],
     );
   }
 }

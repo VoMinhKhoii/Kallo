@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:nham_mobile/features/logging/logic/relog/mentions.dart';
 import 'package:nham_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:nham_mobile/models/relog.dart';
 import 'package:nham_mobile/theme/calm_tokens.dart';
@@ -213,8 +214,8 @@ void main() {
       // muted grey band, not tinted prose.
       final tinted = children.where(
         (s) =>
-            s.style?.backgroundColor == mentionBackground &&
-            s.style?.color == mentionForeground,
+            s.style?.backgroundColor == NhamColors.mentionBackground &&
+            s.style?.color == NhamColors.mentionForeground,
       );
       expect(tinted.map((s) => s.text), ['Phở bò']);
 
@@ -229,8 +230,8 @@ void main() {
     test('the mention pairing matches the under-logged notice exactly', () {
       // PartialDayNotice paints `kInkMuted` behind `Colors.white`; the two must
       // not drift, or the composer grows a second "not your prose" treatment.
-      expect(mentionBackground, kInkMuted);
-      expect(mentionForeground, Colors.white);
+      expect(NhamColors.mentionBackground, kInkMuted);
+      expect(NhamColors.mentionForeground, Colors.white);
     });
 
     testWidgets('leaves plain prose to the default span', (tester) async {

@@ -81,7 +81,9 @@ class MacroSummary extends StatelessWidget {
                         ),
                         const SizedBox(height: 4), // gap-1
                         Text(
-                          '${formatCount(view.dailyCalories, context.locale.toString())} / ${formatCount(profile.calorieTarget, context.locale.toString())} kcal', style: dashMeta(tabular: true),),
+                          '${formatCount(view.dailyCalories, context.locale.toString())} / ${formatCount(profile.calorieTarget, context.locale.toString())} kcal',
+                          style: dashMeta(tabular: true),
+                        ),
                       ],
                     ),
                     const SizedBox(width: NhamSpacing.sp4), // gap-4
@@ -118,7 +120,7 @@ class _MacroRow extends StatelessWidget {
   /// Wide enough for `1024/350g` at Meta 12 — the web's `w-14` (56) was sized
   /// for its 11px type and wrapped `120/135g` onto a second line here at 12.
   /// The width comes out of the bar, which is [Expanded]; past this the value
-  /// clips rather than reflowing the row.
+  /// scales down rather than reflowing the row.
   static const double _valueColumn = 72;
 
   @override
@@ -146,13 +148,20 @@ class _MacroRow extends StatelessWidget {
         const SizedBox(width: NhamSpacing.sp3),
         SizedBox(
           width: _valueColumn,
-          child: Text(
-            '${data.current}/${data.target}g',
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.clip,
-            textAlign: TextAlign.right,
-            style: dashMeta(tabular: true),
+          // Scale down rather than clip. The column fits the widest realistic
+          // figure at 1.0, but Dynamic Type runs to 1.3 app-wide, and a
+          // truncated number misreads as a smaller one ("1024/350g" →
+          // "1024/35") — worse than the wrap this replaced.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              '${data.current}/${data.target}g',
+              maxLines: 1,
+              softWrap: false,
+              textAlign: TextAlign.right,
+              style: dashMeta(tabular: true),
+            ),
           ),
         ),
       ],

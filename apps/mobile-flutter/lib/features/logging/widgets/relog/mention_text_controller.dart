@@ -8,13 +8,12 @@ import '../../logic/relog/slash_token.dart';
 /// The composer's text controller, aware of the relog picks living inside its
 /// own value.
 ///
-/// The web has to paint a mirror `<div>` behind a transparent-text `<textarea>`
-/// to tint part of the value (`components/logging/input/relog/mention-overlay.tsx`)
-/// — a browser textarea cannot colour a run of its own text. Flutter can:
-/// overriding [buildTextSpan] tints the runs in the real field, so the caret,
-/// the selection and the glyphs never drift out of register with each other.
-/// That is the one deliberate divergence from the web implementation, and it
-/// removes the whole class of alignment bugs the mirror exists to manage.
+/// The web paints a mirror `<div>` behind a transparent-text `<textarea>` to
+/// tint part of the value (`input/relog/mention-overlay.tsx`) because a browser
+/// textarea cannot colour a run of its own text. Flutter can: overriding
+/// [buildTextSpan] styles the runs in the REAL field, so caret, selection and
+/// glyphs can never drift out of register — the whole class of bugs the mirror
+/// exists to manage.
 ///
 /// The value is the single source of truth for what the user sees; [mentions]
 /// is the parallel list of references plus each one's offset into it.
@@ -32,15 +31,6 @@ import '../../logic/relog/slash_token.dart';
 const Color mentionBackground = NhamColors.textMuted;
 const Color mentionForeground = Colors.white;
 
-/// A composer value plus the picks located inside it, taken before a submit
-/// clears the field so a failed run can hand both back.
-class MentionSnapshot {
-  final String text;
-  final List<RelogMention> mentions;
-
-  const MentionSnapshot({required this.text, required this.mentions});
-}
-
 class MentionTextEditingController extends TextEditingController {
   MentionTextEditingController({super.text});
 
@@ -53,9 +43,8 @@ class MentionTextEditingController extends TextEditingController {
 
   bool get isFull => _mentions.length >= kRelogMaxStaged;
 
-  /// The `/` token open at the caret, or null. Null whenever there is a
-  /// selection range rather than a caret, since there is no single insertion
-  /// point to complete into.
+  /// The `/` token open at the caret, or null — including whenever there is a
+  /// selection range, which has no single insertion point to complete into.
   SlashToken? get activeToken {
     final selection = value.selection;
     if (!selection.isValid || !selection.isCollapsed) return null;
@@ -76,6 +65,15 @@ class MentionTextEditingController extends TextEditingController {
     if (unchanged) return;
     _mentions = reconciled;
     notifyListeners();
+  }
+
+  /// Write [next] with the caret at its end — every mutation that rewrites the
+  /// whole value goes through here.
+  void _setValueAtEnd(String next) {
+    value = TextEditingValue(
+      text: next,
+      selection: TextSelection.collapsed(offset: next.length),
+    );
   }
 
   /// Insert a pick at [token], staging its reference and writing the label into
@@ -111,56 +109,39 @@ class MentionTextEditingController extends TextEditingController {
       next,
       _mentions.where((m) => m.stageId != stageId).toList(),
     );
-    value = TextEditingValue(
-      text: next,
-      selection: TextSelection.collapsed(offset: next.length),
-    );
+    _setValueAtEnd(next);
     notifyListeners();
   }
 
   /// The free text the user typed AROUND the picks — what the AI should see.
   String get freeText => stripMentions(text, _mentions);
 
-  /// Clear the picks and remove their text, keeping anything typed alongside.
-  /// Used after a submit that durably staged: the mentions have been logged, so
-  /// their text has served its purpose, but free text is the user's.
+  /// Drop the picks and their text after a submit that durably staged, keeping
+  /// whatever the user typed alongside — that part is theirs.
   void consumeMentions() {
     if (_mentions.isEmpty) return;
     final next = stripMentions(text, _mentions);
     _mentions = const [];
-    value = TextEditingValue(
-      text: next,
-      selection: TextSelection.collapsed(offset: next.length),
-    );
+    _setValueAtEnd(next);
     notifyListeners();
   }
 
-  /// The text AND its picks, captured before a submit that clears the field.
-  ///
-  /// A combined submit sends the free text alone, so the composer is cleared
-  /// the instant the streaming card appears. If that run never durably stages,
-  /// the picks must come back intact for a retry — and the mentions cannot be
-  /// recovered from the text alone, because [clear] drops them.
-  MentionSnapshot snapshot() => MentionSnapshot(text: text, mentions: _mentions);
+  /// The text AND its picks, captured before a submit that clears the field —
+  /// the picks must come back intact if that run never durably stages.
+  MentionSnapshot snapshot() =>
+      MentionSnapshot(text: text, mentions: _mentions);
 
-  /// Put a [snapshot] back. The mentions are re-located against the restored
-  /// text rather than trusted, so a snapshot can never resurrect an offset that
-  /// no longer points at its label.
+  /// Put a snapshot back. Mentions are RE-LOCATED against the restored text
+  /// rather than trusted, so a stale offset can never resurrect a reference.
   void restore(MentionSnapshot snap) {
-    value = TextEditingValue(
-      text: snap.text,
-      selection: TextSelection.collapsed(offset: snap.text.length),
-    );
+    _setValueAtEnd(snap.text);
     _mentions = reconcileMentions(snap.text, snap.mentions);
     notifyListeners();
   }
 
   /// Replace the whole value, then re-locate the mentions in it.
   void setTextAndSync(String next) {
-    value = TextEditingValue(
-      text: next,
-      selection: TextSelection.collapsed(offset: next.length),
-    );
+    _setValueAtEnd(next);
     _mentions = reconcileMentions(next, _mentions);
     notifyListeners();
   }
@@ -184,10 +165,17 @@ class MentionTextEditingController extends TextEditingController {
         withComposing: withComposing,
       );
     }
-    // While an IME composing region is live the framework underlines it through
-    // the default span; mentions are settled text, so hand that frame back
-    // rather than fighting the composing decoration.
-    if (withComposing && !value.composing.isCollapsed && value.isComposingRangeValid) {
+    // Bail only when a composing region OVERLAPS a pick, where the framework's
+    // underline and our band would fight over the same glyphs. Bailing on ANY
+    // composing region would strobe the band: Vietnamese IMEs compose per
+    // syllable, so it would drop on nearly every keystroke.
+    final composing = value.composing;
+    if (withComposing &&
+        value.isComposingRangeValid &&
+        !composing.isCollapsed &&
+        _mentions.any(
+          (m) => composing.start < m.end && m.start < composing.end,
+        )) {
       return super.buildTextSpan(
         context: context,
         style: style,
@@ -195,8 +183,8 @@ class MentionTextEditingController extends TextEditingController {
       );
     }
     final mentionStyle = (style ?? const TextStyle()).copyWith(
-      color: mentionForeground,
-      backgroundColor: mentionBackground,
+      color: NhamColors.mentionForeground,
+      backgroundColor: NhamColors.mentionBackground,
     );
     return TextSpan(
       style: style,

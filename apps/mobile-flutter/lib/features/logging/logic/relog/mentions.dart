@@ -10,6 +10,18 @@ library;
 import '../../../../models/relog.dart';
 import 'slash_token.dart';
 
+/// A composer value plus the picks located inside it, captured before a submit
+/// clears the field so a failed run can hand both back.
+///
+/// The mentions cannot be recovered from the text alone — clearing the field
+/// drops them — so a combined submit snapshots the pair.
+class MentionSnapshot {
+  final String text;
+  final List<RelogMention> mentions;
+
+  const MentionSnapshot({required this.text, required this.mentions});
+}
+
 /// A staged pick plus where its label currently sits in the composer text.
 class RelogMention extends RelogStagedEntry {
   /// Index of the label's first character in the field value.
@@ -155,9 +167,7 @@ List<MentionSegment> buildMentionSegments(
     pos = mention.end;
   }
   if (pos < value.length) {
-    segments.add(
-      MentionSegment(text: value.substring(pos), isMention: false),
-    );
+    segments.add(MentionSegment(text: value.substring(pos), isMention: false));
   }
   return segments;
 }

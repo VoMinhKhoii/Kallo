@@ -118,6 +118,22 @@ void _stage(MentionTextEditingController controller, String name) {
   );
 }
 
+/// A parent that never rebuilds its child — like FeedArea between setStates.
+/// Without it the enclosing pump would refresh the panel for free and hide a
+/// missing listener.
+class _StaticHost extends StatefulWidget {
+  const _StaticHost({required this.child});
+  final Widget child;
+
+  @override
+  State<_StaticHost> createState() => _StaticHostState();
+}
+
+class _StaticHostState extends State<_StaticHost> {
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -283,6 +299,60 @@ void main() {
         find.byType(ComposerActionButton),
       );
       expect(send.enabled, isFalse);
+    });
+
+    testWidgets('removing one actually clears the row from the panel',
+        (tester) async {
+      // Wired the way FeedArea wires it: the remove handler mutates the
+      // controller and NOTHING else. The panel is rebuilt from
+      // `textController.entries`, so if the composer doesn't listen to the
+      // controller the reference is dropped while its row stays on screen —
+      // telling the user a dish will be logged when it won't.
+      _stage(textController, 'Phở bò');
+      await tester.pumpWidget(
+        _wrap(
+          _StaticHost(
+            child: FeedComposer(
+              view: _view,
+              calorieTarget: 2000,
+              errorText: null,
+              mode: MealLogMode.normal,
+              cheatIntensity: CheatIntensity.medium,
+              onCheatIntensityChange: (_) {},
+              userId: 'user-1',
+              stagingRepeat: false,
+              onRepeatCheat: (_) {},
+              controller: inputController,
+              onSubmit: (_) {},
+              onCancel: () {},
+              analyzing: false,
+              onModePressed: () {},
+              onBarcodePressed: () {},
+              onHeightChanged: (_) {},
+              onDismissNotice: () {},
+              noticeDismissed: true,
+              textController: textController,
+              onSync: () {},
+              onRemoveStaged: textController.removeMention,
+              relogQuery: null,
+              onSelectRelog: (_) {},
+              onDismissRelog: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(RelogStagedList), findsOneWidget);
+
+      await tester.tap(find.bySemanticsLabel(RegExp('Remove Phở bò')));
+      await tester.pumpAndSettle();
+
+      expect(textController.entries, isEmpty, reason: 'the ref must drop');
+      expect(
+        find.byType(RelogStagedList),
+        findsNothing,
+        reason: 'the row must go with it',
+      );
     });
 
     testWidgets('removing one reports its stage id', (tester) async {

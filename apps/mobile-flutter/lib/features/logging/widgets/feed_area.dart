@@ -21,6 +21,7 @@ import '../logic/feed/meal_actions.dart';
 import '../logic/feed/view_state.dart';
 import '../logic/meal_log_mode.dart';
 import '../logic/relog/composer_submit_plan.dart';
+import '../logic/relog/mentions.dart' show MentionSnapshot;
 import '../logic/relog/slash_picker_state.dart';
 import 'feed/composer_actions.dart';
 import 'feed/feed_composer.dart';
@@ -154,9 +155,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// whether a `/` token is open at the caret and, if so, what to search for.
   void _onComposerSync() {
     final enabled = ref.read(mealLogModeProvider) == MealLogMode.normal;
-    final next = _picker.sync(
-      enabled ? _textController.activeToken : null,
-    );
+    final next = _picker.sync(enabled ? _textController.activeToken : null);
     if (next == _picker) return;
     final queryChanged = next.query != _picker.query;
     setState(() => _picker = next);
@@ -199,9 +198,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     if (!added && mounted) {
       showTopToast(
         context,
-        'logging.relog.stagedFull'.tr(
-          namedArgs: {'max': '$kRelogMaxStaged'},
-        ),
+        'logging.relog.stagedFull'.tr(namedArgs: {'max': '$kRelogMaxStaged'}),
       );
     }
     // close(), not dismiss(): a pick is not a refusal, so the next `/` — even
@@ -354,7 +351,23 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     // Reuse the failed attempt's id so the retry supersedes its staging row
     // (kept on error precisely for this). Fall back to a fresh id defensively.
     _attemptId ??= _uuid.v4();
-    _runAnalyze(text);
+
+    // Re-derive the picks from the composer the failure restored them into.
+    // `_failedText` is the free text ALONE — the mentions were stripped out of
+    // it before the first attempt — so retrying with it and no refs would
+    // silently log the typed text WITHOUT the dishes the user picked.
+    final staged =
+        ref.read(mealLogModeProvider) == MealLogMode.normal
+            ? _textController.entries
+            : const <RelogStagedEntry>[];
+    if (staged.isEmpty) {
+      _runAnalyze(text);
+      return;
+    }
+    // _runAnalyze clears the composer again, so re-snapshot: a second failure
+    // would otherwise have nothing to hand back.
+    _relogSnapshot = _textController.snapshot();
+    _runAnalyze(text, refs: [for (final entry in staged) entry.ref]);
   }
 
   /// Discard a failed attempt: drop the card and retire its attempt id (the raw

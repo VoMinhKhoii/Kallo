@@ -54,8 +54,11 @@ final relogCandidatesProvider = FutureProvider.autoDispose
 /// carries only references: no nutrition, grams or names cross the wire, and
 /// the server re-resolves each one under the authenticated user.
 ///
-/// [attemptId] is the composer's per-attempt id, reused so a double-tapped
-/// submit upserts ONE pending row instead of staging the same picks twice.
+/// [attemptId] must be FRESH per staged relog, never the feed's current attempt
+/// id: the server upserts pending analyses on `(user_id, attempt_id)`, so
+/// reusing the id of a revealed-but-unconfirmed AI card would overwrite that
+/// card's row with this relog. Double submits are held off by the caller's
+/// in-flight flag instead — the same guard web uses.
 Future<void> stageRelogAnalysis(
   WidgetRef ref, {
   required String userId,
@@ -70,9 +73,17 @@ Future<void> stageRelogAnalysis(
     'timezoneOffset': timezoneOffsetMinutes(),
     if (attemptId != null) 'attemptId': attemptId,
   });
-  await ref
-      .read(loggingDayProvider(LoggingDayArgs(userId, date)).notifier)
-      .refresh();
+  // The stage COMMITTED the moment the POST returned. A refetch that fails
+  // afterwards (flaky network) must not surface as a staging failure: the
+  // caller would keep the picks, the user would resubmit, and a fresh attempt
+  // id would stage a SECOND pending row — two review cards for one meal. Fall
+  // back to invalidation, as `logMealAgain` does for the same reason.
+  final day = LoggingDayArgs(userId, date);
+  try {
+    await ref.read(loggingDayProvider(day).notifier).refresh();
+  } catch (_) {
+    ref.invalidate(loggingDayProvider(day));
+  }
   // The picks just gained an occurrence, which is what the candidate ranking
   // scores on — drop the cached searches so the next `/` reflects it. Done here
   // rather than in `invalidateMealSurfaces` because that lives in
