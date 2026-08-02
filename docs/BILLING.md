@@ -288,10 +288,11 @@ does, and approval has lead time — start it early.
    | Transactions | ✅ | ✅ |
 
    Two of these carry consequences worth knowing:
-   - **Customer portal sessions (Write)** — Paddle only embeds an authenticated
-     session token in the management URL when this is granted. Without it
-     RevenueCat cannot mint `management_url` and the settings "manage
-     subscription" link degrades to `manageUnavailable`.
+   - **Customer portal sessions (Write)** — without it RevenueCat cannot mint
+     `management_url` at all and the settings "manage subscription" link
+     degrades to `manageUnavailable`. Granting it does *not* make the link
+     authenticated; see "Known limitations" for what the customer actually
+     sees.
    - **Notification settings (Write)** — required by *Automatic* purchase
      tracking, where RevenueCat creates the webhook destination inside the
      Paddle account for you.
@@ -343,7 +344,13 @@ does, and approval has lead time — start it early.
 - **Paddle sandbox checkout**: run the web flow end-to-end against the sandbox
   Paddle account with Paddle's test cards. Confirm the grant lands with
   `store='paddle'`, the settings management link opens the Paddle customer
-  portal, and a portal cancellation flips `will_renew` to false.
+  portal, and a portal cancellation flips `will_renew` to false. Verified
+  2026-08-02 for monthly, annual, and lifetime. The portal cancellation is the
+  one to re-run after any change to the projection: RevenueCat set
+  `unsubscribe_detected_at` within seconds, and reconciling left the customer
+  on `tier=premium` with `willRenew=false` and `expiresAt` unmoved — cancelled
+  but still entitled until the period ends, which is the behaviour a
+  premature revoke would silently break.
 - **Paddle lifetime (blocking for the lifetime plan only)**: RevenueCat reports
   one-time purchases under `non_subscriptions`, and
   `nonSubscriptionForProduct` requires an exact `purchase_date` match against
@@ -351,10 +358,14 @@ does, and approval has lead time — start it early.
   `expires_at = NULL`. If the timestamps do not match exactly the grant is
   dropped and the customer pays for nothing — ship monthly/annual only until
   the matcher is relaxed.
-- **Paddle account deletion**: delete a Kallo account holding an active Paddle
-  subscription and check in the Paddle dashboard whether it was canceled. The
-  deletion copy currently promises nothing; if RevenueCat does cancel it, the
-  copy and this runbook can say so.
+- **Paddle account deletion — measured 2026-08-02: deletion does NOT cancel
+  billing.** A Kallo account holding an active annual Paddle subscription was
+  deleted; the Paddle subscription stayed `status=active` with no
+  `scheduled_change` and a live `next_billed_at`. Deleting the RevenueCat
+  customer does not reach Paddle. This is why the deletion copy tells the
+  customer to cancel first and promises nothing — a customer who deletes
+  without cancelling keeps getting charged with no account left to see it
+  from. Re-measure before changing that copy.
 - **CSP**: with `Content-Security-Policy-Report-Only` active, run a checkout and
   read the violation reports. Narrow `BILLING_FRAME_ORIGINS` /
   `BILLING_CONNECT_ORIGINS` in `lib/security/csp.ts` to the hosts they name.
@@ -449,6 +460,18 @@ independently; existing grants are untouched.
   rare store-validation outage, the device SDK may show temporary access
   before the server projection does; never weaken environment isolation to
   remove this availability tradeoff.
+- **The web "manage subscription" link costs the customer an email round-trip.**
+  Paddle authenticates its customer portal with a `?token=pga_…` JWT that a
+  freshly minted `POST /customers/{id}/portal-sessions` returns and that expires
+  in 24 hours. The `management_url` RevenueCat reports is the bare
+  `https://sandbox-customer-portal.paddle.com/cpl_…?action=overview` link with
+  no token, so opening it lands on Paddle's sign-in wall, which emails a magic
+  link. Measured 2026-08-02 with the portal-session scope granted, so this is
+  Paddle/RevenueCat behaviour and not a misconfiguration. Cancellation still
+  works and still reaches us (verified below); it just is not one click. Apple
+  and Google have no equivalent step, so expect more web cancellation support
+  mail than mobile. Closing this would mean minting portal sessions ourselves
+  from the Paddle API at click time instead of trusting `management_url`.
 - **Multiple stores**: CustomerInfo exposes one management URL. If a customer
   somehow buys renewable subscriptions on more than one store, access remains
   correct but the app cannot display every store's cancellation link. Treat
