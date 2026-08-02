@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'activation_pending.dart';
 import 'entitlements_provider.dart';
 
 typedef ReconcileEntitlements = Future<bool> Function(String userId);
@@ -120,9 +121,27 @@ final entitlementLifecycleSyncProvider = Provider<EntitlementLifecycleSync>((
         final controller = ref.read(provider.notifier);
         final snapshot = await controller.refreshSnapshot();
         if (snapshot == null) return false;
-        if (!snapshot.reconciliationRequired) return true;
 
-        return await controller.reconcile() != null;
+        final pendingStore = ref.read(activationPendingStoreProvider);
+        if (snapshot.isPremium) {
+          await pendingStore.clear(userId);
+          if (!snapshot.reconciliationRequired) return true;
+        }
+
+        // The server cannot flag a first purchase that never projected — it has
+        // no grant row to derive staleness from. The local marker covers
+        // exactly that hole; everything else keys on the server's own signal.
+        if (!snapshot.reconciliationRequired &&
+            !await pendingStore.isPending(userId)) {
+          return true;
+        }
+
+        final recovered = await controller.reconcile();
+        // Either it landed, or the provider agrees there is nothing to grant.
+        // Both end the retry; a marker that survives its own recovery attempt
+        // would spend reconcile budget on every launch for a day.
+        await pendingStore.clear(userId);
+        return recovered != null;
       } finally {
         subscription.close();
       }

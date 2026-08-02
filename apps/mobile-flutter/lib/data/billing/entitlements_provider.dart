@@ -179,21 +179,41 @@ class EntitlementsController
       return await _keepAliveWhile(() async {
         final deadline = DateTime.now().add(timeout);
 
-        // Reconcile with the provider once after the store action. Follow-up
-        // checks are local entitlement reads so a slow webhook does not
-        // amplify into repeated RevenueCat API calls.
-        final previous = state.valueOrNull;
-        final reconcileBudget = deadline.difference(DateTime.now());
-        if (reconcileBudget <= Duration.zero) return false;
-        final reconciled = await AsyncValue.guard(
-          () => _reconcile().timeout(reconcileBudget),
-        );
-        if (!_isCurrent(operation)) return false;
-        state =
-            reconciled.hasError && previous != null
-                ? AsyncData(previous)
-                : reconciled;
-        if (reconciled.valueOrNull?.isPremium ?? false) return true;
+        // Reconcile with the provider at most twice. Everything between is a
+        // local entitlement read so a slow webhook does not amplify into
+        // repeated RevenueCat API calls.
+        Future<bool?> reconcileOnce() async {
+          final budget = deadline.difference(DateTime.now());
+          if (budget <= Duration.zero) return null;
+          final previous = state.valueOrNull;
+          final reconciled = await AsyncValue.guard(
+            () => _reconcile().timeout(budget),
+          );
+          if (!_isCurrent(operation)) return null;
+          state =
+              reconciled.hasError && previous != null
+                  ? AsyncData(previous)
+                  : reconciled;
+          return reconciled.valueOrNull?.isPremium ?? false;
+        }
+
+        final first = await reconcileOnce();
+        if (first == null) return false;
+        if (first) return true;
+
+        // The first reconcile fires the instant the store call resolves, which
+        // is the moment the provider is LEAST likely to have recorded the
+        // purchase — an observed sandbox purchase landed ~5s after the
+        // reconcile that preceded it, leaving that call to find nothing and the
+        // rest of the window re-reading a database nobody had written to. Spend
+        // one more provider call before giving up, so activation does not
+        // depend on the webhook winning a race.
+        var retried = false;
+        final retryAt = timeout ~/ 2;
+        // Never spend the retry on a sliver of window it cannot use: if the
+        // first reconcile ate most of the budget there is no point paying for
+        // a second call whose response cannot arrive in time.
+        final retryFloor = timeout ~/ 4;
 
         while (DateTime.now().isBefore(deadline)) {
           final remaining = deadline.difference(DateTime.now());
@@ -204,6 +224,16 @@ class EntitlementsController
           if (!_isCurrent(operation)) return false;
           final requestBudget = deadline.difference(DateTime.now());
           if (requestBudget <= Duration.zero) break;
+
+          if (!retried &&
+              requestBudget <= retryAt &&
+              requestBudget >= retryFloor) {
+            retried = true;
+            final again = await reconcileOnce();
+            if (again == null) return false;
+            if (again) return true;
+            continue;
+          }
 
           final previous = state.valueOrNull;
           final snapshot = await AsyncValue.guard(

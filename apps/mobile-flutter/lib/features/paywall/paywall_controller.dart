@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import '../../data/billing/activation_pending.dart';
 import '../../data/billing/entitlement_state.dart';
 import '../../data/billing/entitlements_provider.dart';
 import '../../data/billing/purchases_service.dart';
@@ -318,10 +319,17 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
     required String userId,
   }) async {
     _set(state.copyWith(phase: PaywallPhase.verifying, clearBusy: true));
+    // The store confirmed a transaction. Record that before polling, so a
+    // backgrounded or killed app still leaves the launch/resume sync a reason
+    // to contact the provider later — the server cannot infer this state when
+    // no grant row exists.
+    final pendingStore = ref.read(activationPendingStoreProvider);
+    await pendingStore.mark(userId);
     final premium =
         await ref
             .read(entitlementsProvider(userId).notifier)
             .pollUntilPremium();
+    if (premium) await pendingStore.clear(userId);
     if (!_isCurrentUser(userId)) return PaywallActionResult.error;
     // Leave the state on `verifying`→`ready` so the screen can dismiss / toast.
     _set(

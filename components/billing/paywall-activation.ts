@@ -66,6 +66,10 @@ export async function pollUntilPremium(
   // up, so activation does not depend on the webhook winning a race.
   let retried = false;
   const retryAt = POLL_DEADLINE_MS / 2;
+  // Never spend the retry on a sliver of window it cannot use: if the first
+  // reconcile ate most of the budget there is no point paying for a second call
+  // whose response cannot arrive in time.
+  const retryFloor = POLL_DEADLINE_MS / 4;
 
   while (remaining() > 0) {
     if (!isCurrent()) return false;
@@ -74,7 +78,7 @@ export async function pollUntilPremium(
     );
     if (!isCurrent() || remaining() <= 0) return false;
 
-    if (!retried && remaining() <= retryAt) {
+    if (!retried && remaining() <= retryAt && remaining() >= retryFloor) {
       retried = true;
       if (await reconcileOnce()) return true;
       if (!isCurrent()) return false;

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/data/api_client.dart';
+import 'package:nham_mobile/data/billing/activation_pending.dart';
 import 'package:nham_mobile/data/billing/entitlement_lifecycle_sync.dart';
 import 'package:nham_mobile/data/billing/entitlements_provider.dart';
 
@@ -178,19 +179,64 @@ void main() {
     expect(api.getCalls, 2);
     expect(api.postCalls, 0);
   });
+
+  test('a purchase the server never projected still recovers', () async {
+    // `reconciliationRequired` is derived from existing grant rows, so a first
+    // purchase that never projected leaves no rows and no signal. Without the
+    // local marker this user would sit on free forever.
+    final api = _LifecycleApi(reconciliationRequired: false);
+    final pendingStore = _FakePendingStore(pending: true);
+    final container = _makeContainer(api, pendingStore: pendingStore);
+    final sync = container.read(entitlementLifecycleSyncProvider);
+
+    final operation = sync.synchronize(userA);
+    api.initialGet.complete(_entitlement());
+    await operation;
+
+    expect(api.postCalls, 1);
+    // Cleared either way, so it cannot spend budget on every launch for a day.
+    expect(pendingStore.pending, isFalse);
+  });
 }
 
-ProviderContainer _makeContainer(_LifecycleApi api) {
+ProviderContainer _makeContainer(
+  _LifecycleApi api, {
+  _FakePendingStore? pendingStore,
+}) {
   final container = ProviderContainer(
     overrides: [
       apiClientProvider.overrideWithValue(api),
       entitlementsUserIdProvider.overrideWithValue(
         '11111111-1111-1111-1111-111111111111',
       ),
+      // Keeps these tests off the platform channel; the real store is keychain
+      // backed and silently unavailable in a plain unit test.
+      activationPendingStoreProvider.overrideWithValue(
+        pendingStore ?? _FakePendingStore(),
+      ),
     ],
   );
   addTearDown(container.dispose);
   return container;
+}
+
+class _FakePendingStore implements ActivationPendingStore {
+  _FakePendingStore({this.pending = false});
+
+  bool pending;
+  var clears = 0;
+
+  @override
+  Future<void> mark(String userId) async => pending = true;
+
+  @override
+  Future<void> clear(String userId) async {
+    pending = false;
+    clears += 1;
+  }
+
+  @override
+  Future<bool> isPending(String userId) async => pending;
 }
 
 class _LifecycleApi extends ApiClient {
