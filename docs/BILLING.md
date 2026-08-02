@@ -358,6 +358,18 @@ does, and approval has lead time — start it early.
   `expires_at = NULL`. If the timestamps do not match exactly the grant is
   dropped and the customer pays for nothing — ship monthly/annual only until
   the matcher is relaxed.
+- **Paddle refund — measured 2026-08-02, and it proves the fail-closed branch
+  is load-bearing.** Refunds are not issued on request: `POST /adjustments`
+  creates the adjustment as `pending_approval`, and approval is a Paddle
+  dashboard action with no public API (`/adjustments/{id}/approve` is 404).
+  Once approved, RevenueCat set `subscriptions[…].refunded_at` in the same
+  second — but the `entitlements.premium` object was **still present**, still
+  carrying its original future expiry. A projection that trusted the
+  entitlement object would have left a refunded customer on premium
+  indefinitely. `parseRevenueCatSnapshot` requires a non-refunded backing
+  transaction (`lib/billing/revenuecat.ts`), so it emitted zero grants and the
+  user dropped to `tier=free`, `hasActiveSubscription=false`. Never relax that
+  check to trust `entitlements` alone.
 - **Paddle account deletion — measured 2026-08-02: deletion does NOT cancel
   billing.** A Kallo account holding an active annual Paddle subscription was
   deleted; the Paddle subscription stayed `status=active` with no
