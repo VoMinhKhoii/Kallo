@@ -241,8 +241,6 @@ export function v2DishToV1(
   };
 }
 
-
-
 /**
  * All-zeros nutrition per 100g, derived from `NUTRITION_KEYS` so adding a new
  * nutrient field doesn't need a touch here. Used as a last-resort fallback

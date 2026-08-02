@@ -252,8 +252,7 @@ export function bridgeV2ToV1(args: {
             // Unmatched-only by contract: a matched ingredient's omitted
             // triple is correctly re-derived from the DB row.
             emittedCaloricMacrosMissing:
-              macroSource.kind === 'none' &&
-              macroSource.reason === 'no_anchor',
+              macroSource.kind === 'none' && macroSource.reason === 'no_anchor',
           });
       plausibilityPartialByFlatIdx.set(flatIngredientIdx, {
         mealItemIdx,

@@ -835,7 +835,6 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
     expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(0);
   });
 
-
   it('withholds a row only when there is nothing to scale', () => {
     // Call 2 dropped the ingredient entirely (verdict='missing'): no grams and
     // no macros, so neither a matched nor a nutrition row can be synthesized.
