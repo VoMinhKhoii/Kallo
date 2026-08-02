@@ -57,6 +57,15 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
   `meal_items` rows verbatim — past meals hold goal-adjusted macros that cannot be
   re-derived. Tinting comes from `MentionTextEditingController.buildTextSpan`, not the
   web's mirror-element overlay.
+  Portion clarity (`logic/portion/` + `widgets/portion/`): every staged dish the pipeline
+  resolved a vessel for carries a `≈ tô vừa` assumption line under it, opening a picker
+  sheet — true-to-scale silhouettes from `assets/portions/` riding a **tape ruler** that
+  scrolls under a fixed needle, with a bowl / plate / cup branch and a fish / meat /
+  poultry branch sharing one control (`widgets/portion/ruler/`). Ports
+  `components/logging/feed/meal-entry/portion/`, and deliberately diverges on the control
+  itself: web keeps its plain slider, mobile scrolls the scale (see
+  `widgets/portion/ruler/portion_ruler_strip.dart`). The vessel rides in on the SSE
+  `result` frame and on restored `/api/v1/meals/pending` rows.
 - **nutrition** — editorial overview, 7/30/90 toggle, macro composition, nutrient rows.
 - **settings** — two-level nav → profile form (body metrics, cooking, regional).
 

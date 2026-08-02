@@ -8,12 +8,51 @@ import '../logic/logging_spacing.dart';
 import '../logic/meal_utils.dart';
 import 'macro_trio.dart';
 import 'meal_stepper_button.dart';
+import 'portion/portion_assumption_line.dart';
 
-/// One dish inside an unconfirmed meal card: its name, its macros, and —
-/// while the card is being edited — the steppers that change its amount.
+/// One dish inside an unconfirmed meal card: its name, its macros, the steppers
+/// that change its amount while the card is being edited, and — underneath —
+/// the quiet portion-assumption line whenever the pipeline resolved a vessel.
+///
+/// The assumption line is a SIBLING of the row, not part of it: it belongs to
+/// the dish, not to the edit affordance, and stays put when Edit is toggled —
+/// exactly as `meal-entry.tsx` renders the picker outside `MealEntryItem`.
 class MealEntryItemRow extends StatelessWidget {
   const MealEntryItemRow({
     super.key,
+    required this.item,
+    required this.editing,
+    required this.onChange,
+    required this.onAdjustPortion,
+  });
+
+  final MealItem item;
+  final bool editing;
+  final void Function(String itemId, double delta) onChange;
+
+  /// Opens the portion picker for this dish.
+  final ValueChanged<MealItem> onAdjustPortion;
+
+  @override
+  Widget build(BuildContext context) {
+    final vessel = item.vessel;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _Row(item: item, editing: editing, onChange: onChange),
+        if (vessel != null)
+          PortionAssumptionLine(
+            vessel: vessel,
+            grams: item.quantity.round(),
+            onTap: () => onAdjustPortion(item),
+          ),
+      ],
+    );
+  }
+}
+
+class _Row extends StatelessWidget {
+  const _Row({
     required this.item,
     required this.editing,
     required this.onChange,
@@ -54,10 +93,10 @@ class MealEntryItemRow extends StatelessWidget {
               style: dashBody().merge(
                 struck
                     ? const TextStyle(
-                      decoration: TextDecoration.lineThrough,
-                      decorationColor: kInkMuted,
-                      color: kInkMuted,
-                    )
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: kInkMuted,
+                        color: kInkMuted,
+                      )
                     : null,
               ),
             ),
@@ -79,15 +118,14 @@ class MealEntryItemRow extends StatelessWidget {
               carbs: item.macros.carbs,
               fat: item.macros.fat,
               calories: item.macros.calories,
-              splitReplacement:
-                  editing
-                      ? _QuantityStepper(
-                        quantity: item.quantity,
-                        minusDisabled: minusDisabled,
-                        onChange: (delta) => onChange(item.id, delta),
-                        step: step,
-                      )
-                      : null,
+              splitReplacement: editing
+                  ? _QuantityStepper(
+                      quantity: item.quantity,
+                      minusDisabled: minusDisabled,
+                      onChange: (delta) => onChange(item.id, delta),
+                      step: step,
+                    )
+                  : null,
             ),
           ),
         ],

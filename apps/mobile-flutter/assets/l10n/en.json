@@ -1199,6 +1199,14 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total"
     },
+    "portionPicker": {
+      "title": "Portion size",
+      "assumption": "≈ {label}",
+      "adjust": "Adjust portion, currently {label}",
+      "custom": "Custom portion",
+      "apply": "Apply",
+      "cancel": "Cancel"
+    },
     "persistedMealCard": {
       "toggleDetails": "Toggle meal details",
       "total": "Total",

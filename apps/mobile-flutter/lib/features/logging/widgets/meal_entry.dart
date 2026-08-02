@@ -15,6 +15,7 @@ import 'meal_entry_confirm_button.dart';
 import 'meal_entry_header.dart';
 import 'meal_entry_item_row.dart';
 import 'meal_time_divider.dart';
+import 'portion/portion_picker_sheet.dart';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a stepper
 // can't slip through and save before the user is done adjusting.
@@ -71,15 +72,53 @@ class _MealEntryState extends State<MealEntry> {
 
   void _change(String itemId, double delta) {
     HapticFeedback.selectionClick();
+    _edit(() => applyQuantityChange(_items, _original, itemId, delta));
+  }
+
+  /// Every quantity edit — stepper or portion picker — lands here: it snaps the
+  /// totals (only the reveal counts up) and re-arms the confirm debounce, so a
+  /// fast tap can't save before the user is done adjusting.
+  void _edit(List<MealItem> Function() mutate) {
     setState(() {
-      _countUp = false; // a manual edit snaps; only the reveal counts up
-      _items = applyQuantityChange(_items, _original, itemId, delta);
+      _countUp = false;
+      _items = mutate();
       _confirmCoolingDown = true;
     });
     _confirmTimer?.cancel();
     _confirmTimer = Timer(_confirmDebounce, () {
       if (mounted) setState(() => _confirmCoolingDown = false);
     });
+  }
+
+  /// Opens the portion picker for one dish and commits the exact grams it
+  /// previewed, alongside the vessel tier that amount may honestly claim.
+  Future<void> _adjustPortion(MealItem item) async {
+    final vessel = item.vessel;
+    if (vessel == null) return;
+    final pick = await showPortionPicker(
+      context,
+      vessel: vessel,
+      grams: item.quantity.round(),
+      kcalPerGram:
+          item.quantity > 0 ? item.macros.calories / item.quantity : 0,
+    );
+    if (pick == null || !mounted) return;
+    // Read the item back out of state: the sheet was open across an await, so
+    // the captured `item` may be a stale copy.
+    final current = _items.firstWhere(
+      (it) => it.id == item.id,
+      orElse: () => item,
+    );
+    _edit(
+      () => applyQuantityChange(
+        _items,
+        _original,
+        item.id,
+        pick.grams - current.quantity,
+      ).map((it) {
+        return it.id == item.id ? it.copyWith(vessel: pick.vessel) : it;
+      }).toList(),
+    );
   }
 
   bool get _confirmDisabled => widget.busy || (_editing && _confirmCoolingDown);
@@ -137,6 +176,7 @@ class _MealEntryState extends State<MealEntry> {
                             item: item,
                             editing: _editing,
                             onChange: _change,
+                            onAdjustPortion: _adjustPortion,
                           ),
                         )
                       else
@@ -148,6 +188,7 @@ class _MealEntryState extends State<MealEntry> {
                             item: item,
                             editing: _editing,
                             onChange: _change,
+                            onAdjustPortion: _adjustPortion,
                           ),
                         ),
                   ],
