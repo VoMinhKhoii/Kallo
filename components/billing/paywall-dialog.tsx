@@ -17,6 +17,10 @@ import {
   type Package,
   purchasePackage,
 } from '@/lib/billing/web-purchases';
+import {
+  clearActivationPending,
+  markActivationPending,
+} from './activation-pending';
 import { pollUntilPremium } from './paywall-activation';
 import { PaywallOffer } from './paywall-offer';
 import { PaywallStatus } from './paywall-status';
@@ -89,10 +93,17 @@ export function PaywallDialog({
           return;
         }
         if (result.status === 'payment_pending') {
+          markActivationPending(userId);
           setActivationPending(true);
           toast.success(t('pendingToast'));
           return;
         }
+
+        // Money has moved. Record that before polling, so a reload, a crash, or
+        // a closed tab mid-activation still leaves the lifecycle sync a reason
+        // to contact the provider later — the server cannot infer this state
+        // when no grant row exists.
+        markActivationPending(userId);
 
         // Both a fresh success and an already-owned account should settle into
         // premium; poll the server until the webhook catches up.
@@ -105,6 +116,7 @@ export function PaywallDialog({
         );
         if (activationAttempt.current !== attempt) return;
         if (flipped) {
+          clearActivationPending(userId);
           setSucceeded(true);
           toast.success(t('successToast'));
         } else {
@@ -156,6 +168,7 @@ export function PaywallDialog({
       );
       if (activationAttempt.current !== attempt) return;
       if (flipped) {
+        clearActivationPending(userId);
         setActivationPending(false);
         setSucceeded(true);
       }

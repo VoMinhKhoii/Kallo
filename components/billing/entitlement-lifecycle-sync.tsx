@@ -8,6 +8,10 @@ import {
   reconcileEntitlements,
 } from '@/hooks/billing/use-entitlements';
 import {
+  clearActivationPending,
+  hasActivationPending,
+} from './activation-pending';
+import {
   createEntitlementLifecycleSync,
   type EntitlementLifecycleSync as LifecycleSync,
 } from './entitlement-lifecycle';
@@ -28,13 +32,24 @@ export function EntitlementLifecycleSync({ userId }: { userId: string }) {
       refresh: async (id, signal) => {
         const data = await fetchEntitlements(id, signal);
         queryClient.setQueryData(entitlementsKeys.user(id), data);
+        if (data.tier === 'premium') clearActivationPending(id);
         return data;
       },
       reconcile: async (id, signal) => {
         const data = await reconcileEntitlements(id, signal);
         queryClient.setQueryData(entitlementsKeys.user(id), data);
+        // Either it landed, or the provider agrees there is nothing to grant.
+        // Both end the retry: a marker that survives its own recovery attempt
+        // would spend reconcile budget on every visit for a day.
+        clearActivationPending(id);
         return data;
       },
+      // The server cannot flag a first purchase that never projected — it has
+      // no grant row to derive staleness from. The local marker covers exactly
+      // that hole; everything else still keys on the server's own signal.
+      shouldRecover: (snapshot) =>
+        snapshot.reconciliationRequired ||
+        (snapshot.tier !== 'premium' && hasActivationPending(snapshot.userId)),
     });
   }
 

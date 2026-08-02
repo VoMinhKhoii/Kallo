@@ -85,6 +85,34 @@ describe('paywall activation polling', () => {
     expect(fetchEntitlements.mock.calls.length).toBe(pollsAfterDeadline);
   });
 
+  it('retries the provider once when the purchase lands after the first reconcile', async () => {
+    // The observed sandbox failure: the first reconcile ran ~5s before the
+    // provider recorded the purchase, so it correctly found nothing. Local
+    // reads can never discover a grant the database does not have, so without
+    // a second provider call activation depends entirely on the webhook.
+    reconcileEntitlements
+      .mockResolvedValueOnce(snapshot('free'))
+      .mockResolvedValueOnce(snapshot('premium'));
+    fetchEntitlements.mockResolvedValue(snapshot('free'));
+
+    const result = pollUntilPremium(new QueryClient(), 'user-a');
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    await expect(result).resolves.toBe(true);
+    expect(reconcileEntitlements).toHaveBeenCalledTimes(2);
+  });
+
+  it('never spends more than two provider calls per activation', async () => {
+    reconcileEntitlements.mockResolvedValue(snapshot('free'));
+    fetchEntitlements.mockResolvedValue(snapshot('free'));
+
+    const result = pollUntilPremium(new QueryClient(), 'user-a');
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    await expect(result).resolves.toBe(false);
+    expect(reconcileEntitlements).toHaveBeenCalledTimes(2);
+  });
+
   it('does not let a hung request outlive the polling window', async () => {
     // Without a per-request budget this reconcile would never settle and the
     // paywall would spin forever.

@@ -68,6 +68,29 @@ describe('entitlement lifecycle sync', () => {
     expect(reconcile).toHaveBeenCalledWith('user-a', expect.any(AbortSignal));
   });
 
+  it('recovers when the caller overrides, even though the server sees nothing', async () => {
+    // The gap this closes: `reconciliationRequired` is derived from existing
+    // grant rows, so a first purchase that never projected leaves no rows, no
+    // winning grant, and no signal — the user would sit on free forever.
+    const refresh = vi.fn(async () => snapshot({ tier: 'free' }));
+    const reconcile = vi.fn(async () => snapshot({ tier: 'premium' }));
+    const sync = createEntitlementLifecycleSync({
+      refresh,
+      reconcile,
+      shouldRecover: (s) => s.reconciliationRequired || s.tier !== 'premium',
+    });
+
+    await sync.synchronize('user-a');
+
+    expect(reconcile).toHaveBeenCalledTimes(1);
+  });
+
+  it('still defers to the server signal by default', async () => {
+    const { sync, reconcile } = harness({ requiresReconciliation: false });
+    await sync.synchronize('user-a');
+    expect(reconcile).not.toHaveBeenCalled();
+  });
+
   it('runs at most once per fifteen minutes across lifecycle signals', async () => {
     const { sync, refresh, advance } = harness();
 

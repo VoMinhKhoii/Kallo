@@ -38,20 +38,34 @@ export async function pollUntilPremium(
   const deadline = Date.now() + POLL_DEADLINE_MS;
   const remaining = () => deadline - Date.now();
 
-  // Recovery is provider-backed once. The remaining checks are cheap local DB
-  // reads while the signed webhook catches up; do not hammer RevenueCat every
-  // two seconds from each browser.
-  try {
-    if (!isCurrent()) return false;
-    const reconciled = await withBudget(remaining(), (signal) =>
-      reconcileEntitlements(userId, signal)
-    );
-    if (!isCurrent()) return false;
-    queryClient.setQueryData(entitlementsKeys.user(userId), reconciled);
-    if (reconciled.tier === 'premium') return true;
-  } catch {
-    // A webhook may still land even if the explicit recovery request failed.
-  }
+  const reconcileOnce = async (): Promise<boolean> => {
+    try {
+      const reconciled = await withBudget(remaining(), (signal) =>
+        reconcileEntitlements(userId, signal)
+      );
+      if (!isCurrent()) return false;
+      queryClient.setQueryData(entitlementsKeys.user(userId), reconciled);
+      return reconciled.tier === 'premium';
+    } catch {
+      // A webhook may still land even if the explicit recovery request failed.
+      return false;
+    }
+  };
+
+  // Recovery is provider-backed at most twice; everything between is a cheap
+  // local read while the signed webhook catches up. Do not hammer RevenueCat
+  // every two seconds from each browser.
+  if (!isCurrent()) return false;
+  if (await reconcileOnce()) return true;
+
+  // The first reconcile fires the instant checkout resolves, which is the
+  // moment the provider is LEAST likely to have recorded the purchase — an
+  // observed sandbox purchase landed ~5s after the reconcile that preceded it,
+  // leaving that call to find nothing and the rest of the window to re-read a
+  // database nobody had written to. Spend one more provider call before giving
+  // up, so activation does not depend on the webhook winning a race.
+  let retried = false;
+  const retryAt = POLL_DEADLINE_MS / 2;
 
   while (remaining() > 0) {
     if (!isCurrent()) return false;
@@ -59,6 +73,14 @@ export async function pollUntilPremium(
       setTimeout(resolve, Math.min(POLL_INTERVAL_MS, remaining()))
     );
     if (!isCurrent() || remaining() <= 0) return false;
+
+    if (!retried && remaining() <= retryAt) {
+      retried = true;
+      if (await reconcileOnce()) return true;
+      if (!isCurrent()) return false;
+      continue;
+    }
+
     try {
       // Imperative fetch so the read does not depend on an active observer.
       const data = await withBudget(remaining(), (signal) =>

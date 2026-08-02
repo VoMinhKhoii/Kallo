@@ -25,6 +25,13 @@ export interface EntitlementLifecycleSyncDeps {
     userId: string,
     signal: AbortSignal
   ) => Promise<EntitlementsResponse>;
+  /**
+   * Whether the cheap snapshot warrants spending provider budget. Defaults to
+   * the server's own `reconciliationRequired`, which is derived from existing
+   * grant rows and so cannot see a first purchase that never projected —
+   * callers override this to add that case.
+   */
+  shouldRecover?: (snapshot: EntitlementsResponse) => boolean;
   now?: () => number;
   minimumIntervalMs?: number;
   operationTimeoutMs?: number;
@@ -49,6 +56,7 @@ export function createEntitlementLifecycleSync(
   const {
     refresh,
     reconcile,
+    shouldRecover = (snapshot) => snapshot.reconciliationRequired,
     now = () => Date.now(),
     minimumIntervalMs = MINIMUM_INTERVAL_MS,
     operationTimeoutMs = OPERATION_TIMEOUT_MS,
@@ -71,7 +79,7 @@ export function createEntitlementLifecycleSync(
 
     try {
       const snapshot = await refresh(userId, controller.signal);
-      if (!stillOwned() || !snapshot.reconciliationRequired) return;
+      if (!stillOwned() || !shouldRecover(snapshot)) return;
       await reconcile(userId, controller.signal);
     } catch {
       // Swallowed by design — see `synchronize`.
