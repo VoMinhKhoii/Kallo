@@ -73,29 +73,35 @@ export default async function DocPage({
   const { previous, next } = getNeighbours(path);
 
   return (
+    // The middle track takes all the space the TOC leaves and centres the
+    // measure inside it, so the reading column sits in the middle of the page
+    // and the rail is pinned to the right edge — rather than both hugging the
+    // sidebar with dead space trailing off to the right.
     <div className="flex gap-10">
-      <article className="min-w-0 max-w-[36rem] flex-1 py-10">
-        <DocsBreadcrumbs sectionId={section.id} />
+      <div className="flex min-w-0 flex-1 justify-center">
+        <article className="w-full min-w-0 max-w-[36rem] py-10">
+          <DocsBreadcrumbs sectionId={section.id} />
 
-        <h1 className="mt-3 text-balance font-normal font-serif text-h2 text-nham-text">
-          {frontmatter.title}
-        </h1>
-        <p className="mt-4 text-pretty text-base text-nham-text-muted leading-relaxed">
-          {frontmatter.description}
-        </p>
-        {frontmatter.lastUpdated && (
-          <LastUpdated date={frontmatter.lastUpdated} locale={locale} />
-        )}
+          <h1 className="mt-3 text-balance font-normal font-serif text-h2 text-nham-text">
+            {frontmatter.title}
+          </h1>
+          <p className="mt-4 text-pretty text-base text-nham-text-muted leading-relaxed">
+            {frontmatter.description}
+          </p>
+          {frontmatter.lastUpdated && (
+            <LastUpdated date={frontmatter.lastUpdated} locale={locale} />
+          )}
 
-        <div className="mt-10">
-          <Content />
-        </div>
+          <div className="mt-10">
+            <Content />
+          </div>
 
-        <DocsPager
-          next={links.find((link) => link.slug === next)}
-          previous={links.find((link) => link.slug === previous)}
-        />
-      </article>
+          <DocsPager
+            next={links.find((link) => link.slug === next)}
+            previous={links.find((link) => link.slug === previous)}
+          />
+        </article>
+      </div>
 
       <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-56 shrink-0 overflow-y-auto py-10 xl:block">
         <DocsToc entries={toc} />

@@ -65,7 +65,7 @@ export function DocsTh(props: ComponentPropsWithoutRef<'th'>) {
 export function DocsTd(props: ComponentPropsWithoutRef<'td'>) {
   return (
     <td
-      className="border-nham-border/60 border-b px-4 py-3 align-top text-base text-nham-text-soft leading-relaxed last:border-0"
+      className="border-nham-border/60 border-b px-4 py-3 align-top text-base text-nham-text leading-relaxed last:border-0"
       {...props}
     />
   );

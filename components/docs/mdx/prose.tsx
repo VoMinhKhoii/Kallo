@@ -46,10 +46,7 @@ export function DocsH3({ children, ...props }: ComponentPropsWithoutRef<'h3'>) {
 
 export function DocsParagraph(props: ComponentPropsWithoutRef<'p'>) {
   return (
-    <p
-      className="mt-4 text-base text-nham-text-soft leading-[1.75]"
-      {...props}
-    />
+    <p className="mt-4 text-base text-nham-text leading-[1.75]" {...props} />
   );
 }
 
@@ -87,10 +84,7 @@ export function DocsOrderedList(props: ComponentPropsWithoutRef<'ol'>) {
 
 export function DocsListItem(props: ComponentPropsWithoutRef<'li'>) {
   return (
-    <li
-      className="pl-1 text-base text-nham-text-soft leading-[1.75]"
-      {...props}
-    />
+    <li className="pl-1 text-base text-nham-text leading-[1.75]" {...props} />
   );
 }
 
@@ -105,7 +99,7 @@ export function DocsStrong(props: ComponentPropsWithoutRef<'strong'>) {
 export function DocsBlockquote(props: ComponentPropsWithoutRef<'blockquote'>) {
   return (
     <blockquote
-      className="mt-6 border-nham-accent border-l-2 pl-5 font-serif text-base text-nham-text-muted italic leading-relaxed"
+      className="mt-6 border-nham-accent border-l-2 pl-5 font-serif text-base text-nham-text italic leading-relaxed"
       {...props}
     />
   );

@@ -41,13 +41,13 @@ export default async function DocsHubPage({
   const sections = await getDocsTree(locale as Locale);
 
   return (
-    <div className="max-w-[36rem] py-14">
+    <div className="mx-auto max-w-[36rem] py-14">
       {/* The signature headline treatment: second clause in Lora italic 300,
           tan. One per surface. */}
       <h1 className="text-balance font-normal font-serif text-h1 text-nham-text">
         {t('title')} <span className="italic-accent">{t('titleAccent')}</span>
       </h1>
-      <p className="mt-5 max-w-2xl text-pretty text-base text-nham-text-soft leading-relaxed">
+      <p className="mt-5 max-w-2xl text-pretty text-base text-nham-text-muted leading-relaxed">
         {t('subtitle')}
       </p>
 
