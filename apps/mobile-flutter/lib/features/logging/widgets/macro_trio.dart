@@ -36,19 +36,20 @@ class MacroTrio extends StatelessWidget {
   final double? fat;
   final double? calories;
 
-  /// Fits the widest realistic cell — `C: 999g` measures 44.9 in Be Vietnam Pro
-  /// at Meta 12 — with the remainder scaling down past that.
-  static const double _cell = 48;
+  /// Fits `C: 105g` (41.1 in Be Vietnam Pro at Meta 12) — three digits, which
+  /// is what the day's totals reach. `C: 999g` at 44.9 scales down a hair
+  /// rather than getting its own width; a per-item macro never goes there.
+  static const double _cell = 40;
 
-  /// Fits `1234 kcal` (66.1 measured at Body 14 medium). The previous 62 was
-  /// documented as holding `9999 kcal`; that string is really 70.5, and even
-  /// `240 kcal` at 60.4 cleared 62 by 1.6pt — so any text scale above ~1.03
-  /// clipped the unit off three-digit rows while leaving their neighbours
-  /// intact. Four-digit dish rows scale down; four digits belong to the totals
-  /// line, which is not this widget.
-  /// Shared with the `/` picker's option rows so a kcal figure sits at the
-  /// same x whether you are choosing a dish or reading one back.
-  static const double kcalColumn = 66;
+  /// Sized for the LARGEST kcal any row shows: the totals line's
+  /// `1794 kcal` at Value 17 measures 78.7. Sizing it for the item rows
+  /// instead (64.8 at Body 14) would force the total to scale down to their
+  /// size, and the total is meant to carry more weight than its parts.
+  ///
+  /// Shared with [MealTotalsRow] and the `/` picker's options, so a kcal figure
+  /// sits at the same x whether you are choosing a dish, reading one back, or
+  /// looking at the day's total.
+  static const double kcalColumn = 80;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +61,7 @@ class MacroTrio extends StatelessWidget {
         _Cell(label: 'C:', value: fmtG(carbs)),
         const SizedBox(width: NhamSpacing.sp1),
         _Cell(label: 'F:', value: fmtG(fat)),
-        const SizedBox(width: NhamSpacing.sp3),
+        const SizedBox(width: NhamSpacing.sp2),
         SizedBox(
           width: kcalColumn,
           child: Align(
@@ -82,14 +83,15 @@ class MacroTrio extends StatelessWidget {
   }
 }
 
-/// The card's bottom line: a label on the left, the day-style macro string and
-/// the kcal total on the right.
+/// The card's bottom line: a label on the left, then the summed macros and kcal
+/// in the SAME columns [MacroTrio] uses.
 ///
-/// Not a [MacroTrio] — the totals read as one summed string (`P: 67g  C: 59g
-/// F: 32g`) rather than as three columns, because there is no row below it to
-/// line up with. It carries the same no-clipping rule though: both halves are
-/// unbounded text inside a fixed-width row, so at a large text scale the kcal
-/// figure had nowhere to go.
+/// Shares the geometry rather than interpolating one `P: 67g  C: 105g  F: 16g`
+/// run, because a single run sits wherever its own width puts it — so the
+/// totals never lined up with the item rows they sum. Its kcal keeps Value 17
+/// against the rows' Body 14: the total should read heavier than its parts,
+/// which is why [MacroTrio.kcalColumn] is sized for this line and not for
+/// them.
 class MealTotalsRow extends StatelessWidget {
   const MealTotalsRow({
     super.key,
@@ -109,9 +111,8 @@ class MealTotalsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Flexible(
+        Expanded(
           child: Text(
             label,
             maxLines: 1,
@@ -120,29 +121,29 @@ class MealTotalsRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: NhamSpacing.sp3),
-        // The numbers are the point of the line — they take the width they
-        // need and scale down together rather than either half being cut.
-        Flexible(
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
+        // The SAME cells the item rows use, not an interpolated string. A
+        // single `P: 67g  C: 105g  F: 16g` run sits wherever its own width puts
+        // it, so the totals never lined up with the rows they sum. Sharing the
+        // geometry makes the column true down the whole card.
+        _Cell(label: 'P:', value: fmtG(protein)),
+        const SizedBox(width: NhamSpacing.sp1),
+        _Cell(label: 'C:', value: fmtG(carbs)),
+        const SizedBox(width: NhamSpacing.sp1),
+        _Cell(label: 'F:', value: fmtG(fat)),
+        const SizedBox(width: NhamSpacing.sp2),
+        SizedBox(
+          width: MacroTrio.kcalColumn,
+          child: Align(
             alignment: Alignment.centerRight,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'P: ${fmtG(protein)}  C: ${fmtG(carbs)}  F: ${fmtG(fat)}',
-                  maxLines: 1,
-                  softWrap: false,
-                  style: dashMeta(tabular: true),
-                ),
-                const SizedBox(width: NhamSpacing.sp4),
-                Text(
-                  fmtKcal(calories),
-                  maxLines: 1,
-                  softWrap: false,
-                  style: dashValue(),
-                ),
-              ],
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                fmtKcal(calories),
+                maxLines: 1,
+                softWrap: false,
+                style: dashValue(),
+              ),
             ),
           ),
         ),

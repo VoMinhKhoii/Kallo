@@ -100,11 +100,26 @@ void main() {
   });
 
   testWidgets('keeps it at the app\'s largest text scale too', (tester) async {
-    // `app.dart` clamps scaling at 1.3. At that size `240 kcal` wants 78.5pt in
-    // a 66pt column — it must SHRINK, never lose the unit.
+    // `app.dart` clamps scaling at 1.3. The column is 80pt — sized for the
+    // totals line — so an ordinary three-digit row now rides that out without
+    // shrinking at all.
     await tester.pumpWidget(_row('Cơm trắng', 5, 54, 0, 240, textScale: 1.3));
     expect(find.text('240 kcal'), findsOneWidget);
-    final scale = _paintedScale(tester, find.text('240 kcal'));
+    expect(
+      _paintedScale(tester, find.text('240 kcal')),
+      moreOrLessEquals(1.0, epsilon: 0.02),
+      reason: 'the wider column absorbs 1.3x outright',
+    );
+  });
+
+  testWidgets('a four-digit row shrinks rather than losing its unit', (
+    tester,
+  ) async {
+    // Past what the column can absorb, the value is taken in — never clipped.
+    // A clipped `1794 kcal` renders as `1794`, which reads as a different unit.
+    await tester.pumpWidget(_row('Cơm trắng', 5, 54, 0, 1794, textScale: 1.3));
+    expect(find.text('1794 kcal'), findsOneWidget);
+    final scale = _paintedScale(tester, find.text('1794 kcal'));
     expect(scale, lessThan(1.0), reason: 'it had to be taken in');
     expect(
       scale,
@@ -241,5 +256,58 @@ void main() {
       );
       expect(find.text('1794 kcal'), findsOneWidget);
     }
+  });
+
+  testWidgets('the totals line shares the item rows\' columns', (tester) async {
+    // The point of the change: `Total` is the sum of the rows above it, so its
+    // P/C/F must sit in the same columns. It used to be one interpolated run,
+    // which landed wherever its own width put it.
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: SizedBox(
+            width: _rowWidth,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: Text('Cơm gà')),
+                    SizedBox(width: NhamSpacing.sp3),
+                    MacroTrio(protein: 49, carbs: 61, fat: 9, calories: 526),
+                  ],
+                ),
+                MealTotalsRow(
+                  label: 'Total',
+                  protein: 51,
+                  carbs: 105,
+                  fat: 16,
+                  calories: 776,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    for (final label in ['P:', 'C:', 'F:']) {
+      final xs =
+          [
+            0,
+            1,
+          ].map((i) => tester.getTopLeft(find.text(label).at(i)).dx).toSet();
+      expect(
+        xs,
+        hasLength(1),
+        reason: '$label sits at a different x on the totals line: \$xs',
+      );
+    }
+    // And both kcal figures end on the same right edge, despite the total
+    // being set two sizes larger.
+    expect({
+      tester.getTopRight(find.text('526 kcal')).dx.roundToDouble(),
+      tester.getTopRight(find.text('776 kcal')).dx.roundToDouble(),
+    }, hasLength(1));
   });
 }
