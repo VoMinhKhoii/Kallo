@@ -10,8 +10,15 @@ import { cn } from '@/lib/utils';
  * eyebrow) so long-form pages don't accumulate uppercase noise, and the label
  * text comes from MDX so it is already in the page's language.
  *
- * Colours stay warm: terracotta for a caution, sage for a tip, the neutral
- * track wash for a plain note. No pure red, no pure green.
+ * Caution and tip use conventional red and green rather than the brand's warm
+ * terracotta and sage. That is a deliberate, scoped exception to the "no pure
+ * red, no pure green" rule, not drift: docs are a reading surface where a
+ * warning has to be spotted while skimming, and the warm pair read as muted at
+ * this size. It applies to `components/docs/` only — in-product alerts keep
+ * terracotta and sage, so please don't "fix" this back.
+ *
+ * The saturated *label* carries the signal; the tint stays light so a page with
+ * several callouts doesn't turn into a traffic light.
  */
 
 type CalloutTone = 'note' | 'caution' | 'tip';
@@ -22,12 +29,12 @@ const TONES: Record<CalloutTone, { container: string; label: string }> = {
     label: 'text-nham-text',
   },
   caution: {
-    container: 'border-nham-danger/30 bg-nham-danger/8',
-    label: 'text-nham-danger',
+    container: 'border-red-200 bg-red-50',
+    label: 'text-red-700',
   },
   tip: {
-    container: 'border-nham-success-border bg-nham-success-faint',
-    label: 'text-nham-success-dark',
+    container: 'border-green-200 bg-green-50',
+    label: 'text-green-700',
   },
 };
 
