@@ -26,6 +26,29 @@ void main() {
     });
   });
 
+  group('unmarkPicks', () {
+    // Review flagged `replaceAll` as prefix-unsafe: replace `/Phở` before
+    // `/Phở bò` and the longer label's text is supposedly corrupted. It is not,
+    // and the reason is worth pinning — the replacement is a strict DELETION of
+    // the leading slash, so stripping it via a shorter prefix strips it from
+    // the longer string that starts with that prefix too. Both orders converge.
+    test('is order-independent across prefix-colliding labels', () {
+      const text = '/Phở bò và /Phở';
+      expect(
+        unmarkPicks(text, [_pick('/Phở'), _pick('/Phở bò')]),
+        'Phở bò và Phở',
+      );
+      expect(
+        unmarkPicks(text, [_pick('/Phở bò'), _pick('/Phở')]),
+        'Phở bò và Phở',
+      );
+    });
+
+    test('leaves a label that never carried a marker alone', () {
+      expect(unmarkPicks('Phở bò', [_pick('Phở bò')]), 'Phở bò');
+    });
+  });
+
   group('combinedRelogLabel', () {
     test('reads as the typed text THEN the picks', () {
       // What the server writes for the same submit:
