@@ -44,7 +44,12 @@ happens on our servers **after** the model returns, so the underlying estimate i
 never bent toward your goal.
 </Callout>
 
-Your content is **not** used to train shared AI models.
+Your content is **not** used to train shared AI models. Kallo calls Gemini
+through Vertex AI on Google Cloud, where the enterprise terms say prompts and
+responses are not used to train Google's models. Google does cache inputs for up
+to 24 hours to reduce latency, and may retain a request for up to 30 days if a
+safety classifier flags it as suspicious — detail in the
+[privacy policy](/docs/legal/privacy).
 
 ## Getting your data out
 

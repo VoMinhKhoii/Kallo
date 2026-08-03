@@ -1,7 +1,7 @@
 ---
 title: Privacy policy
 description: What Kallo collects, what actually reaches the AI model, how long it is kept, and the control you have over it.
-lastUpdated: '2026-08-02'
+lastUpdated: '2026-08-03'
 ---
 
 This policy describes how `{{LEGAL_ENTITY}}` ("Kallo", "we") collects, uses,
@@ -105,6 +105,29 @@ rather than by convention.
 
 We do **not** use your content to train shared AI models.
 
+### What happens to it on Google's side
+
+Production Kallo calls Gemini through **Vertex AI on Google Cloud** — the
+enterprise service, not the consumer Gemini app. Under Google Cloud's terms,
+prompts and responses are **not used to train or fine-tune Google's models**.
+
+There are two exceptions, and we state them because they are real:
+
+- **Caching for up to 24 hours.** Google caches inputs to reduce latency on
+  subsequent requests. The cached copy sits in the data centre that served the
+  request.
+- **Abuse monitoring for up to 30 days.** If automated safety classifiers flag a
+  request as suspicious, Google may retain that prompt to investigate a policy
+  violation. That data is still **not** used to train models.
+
+Kallo calls Vertex AI's **global endpoint**, so a request may be served from any
+region Google operates in. That means your meal description — and only the meal
+description plus the four fields above — can leave Vietnam while it is being
+processed. See section 9.
+
+Developer machines and internal scripts use a different connection (Google AI
+Studio) with test data, not your account data.
+
 ## 4. Why we use it
 
 | Purpose | Data involved |
@@ -137,7 +160,7 @@ advertising.
 | Provider | Role | Data reached |
 | --- | --- | --- |
 | Supabase | Authentication, database, file storage | Account, all app data, avatars and feedback screenshots |
-| Google (Gemini / Vertex AI) | AI meal analysis | Meal text, country, cooking habits, language |
+| Google Cloud (Vertex AI, Gemini) | AI meal analysis | Meal text, country, cooking habits, language |
 | Google Cloud Run | Application hosting | Request traffic, server logs |
 | Google Cloud Translate | Translating ingredient data | Ingredient names |
 | Cloudflare | Content delivery, attack protection | Request metadata, IP address |
@@ -198,9 +221,17 @@ will notify you as applicable law requires.
 ## 9. International transfers
 
 The providers listed in section 5 may process data in countries other than where
-you live. Where data leaves Vietnam, we do so in line with personal data
-protection law, including preparing and retaining a transfer impact assessment
-where required.
+you live. Specifically:
+
+- **Application servers** run in Google Cloud Run's `asia-southeast3` region
+  (Ho Chi Minh City).
+- **AI meal analysis** goes through Vertex AI's global endpoint, so it may be
+  processed in any region Google operates in, including outside Vietnam. Only
+  the four fields listed in section 3 travel this path.
+- **Every other provider** processes data in the regions it operates.
+
+Where data leaves Vietnam, we do so in line with personal data protection law,
+including preparing and retaining a transfer impact assessment where required.
 
 ## 10. Your rights
 

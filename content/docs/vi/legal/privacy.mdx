@@ -1,7 +1,7 @@
 ---
 title: Chính sách quyền riêng tư
 description: Kallo thu thập dữ liệu gì, gửi những gì tới mô hình AI, giữ trong bao lâu, và bạn kiểm soát ra sao.
-lastUpdated: '2026-08-02'
+lastUpdated: '2026-08-03'
 ---
 
 Chính sách này mô tả cách `{{LEGAL_ENTITY}}` ("Kallo", "chúng tôi") thu thập, sử
@@ -108,6 +108,31 @@ chỉ bằng quy ước.
 
 Chúng tôi **không** dùng nội dung của bạn để huấn luyện mô hình AI dùng chung.
 
+### Điều gì xảy ra với dữ liệu đó ở phía Google
+
+Kallo bản chạy thật gọi Gemini qua **Vertex AI trên Google Cloud** — dịch vụ
+doanh nghiệp, không phải ứng dụng Gemini dành cho người dùng cuối. Theo điều
+khoản Google Cloud, câu lệnh và kết quả **không được dùng để huấn luyện hay
+tinh chỉnh mô hình của Google**.
+
+Có hai ngoại lệ, và chúng tôi nêu rõ vì chúng có thật:
+
+- **Bộ nhớ đệm tối đa 24 giờ.** Google lưu tạm nội dung đầu vào để giảm độ trễ
+  cho các yêu cầu kế tiếp. Bản lưu tạm nằm tại trung tâm dữ liệu đã xử lý yêu
+  cầu đó.
+- **Giám sát lạm dụng tối đa 30 ngày.** Nếu bộ phân loại an toàn tự động đánh
+  dấu một yêu cầu là đáng ngờ, Google có thể lưu câu lệnh đó để điều tra vi
+  phạm chính sách. Dữ liệu này vẫn **không** được dùng để huấn luyện mô hình.
+
+Kallo gọi **điểm cuối toàn cầu** của Vertex AI, nên yêu cầu có thể được xử lý ở
+bất kỳ vùng nào Google vận hành. Nghĩa là mô tả bữa ăn của bạn — và chỉ mô tả
+bữa ăn cùng bốn trường ở trên — có thể rời khỏi Việt Nam trong lúc xử lý. Xem
+thêm mục 9.
+
+Bản chạy trên máy của lập trình viên và các script nội bộ dùng một đường kết nối
+khác (Google AI Studio) với dữ liệu thử nghiệm, không phải dữ liệu tài khoản của
+bạn.
+
 ## 4. Chúng tôi dùng dữ liệu để làm gì
 
 | Mục đích | Dữ liệu liên quan |
@@ -140,7 +165,7 @@ mục đích quảng cáo của bên thứ ba.
 | Nhà cung cấp | Vai trò | Dữ liệu tiếp cận |
 | --- | --- | --- |
 | Supabase | Xác thực, cơ sở dữ liệu, lưu trữ tệp | Tài khoản, toàn bộ dữ liệu ứng dụng, ảnh đại diện và ảnh góp ý |
-| Google (Gemini / Vertex AI) | Phân tích bữa ăn bằng AI | Mô tả bữa ăn, quốc gia, thói quen nấu, ngôn ngữ |
+| Google Cloud (Vertex AI, Gemini) | Phân tích bữa ăn bằng AI | Mô tả bữa ăn, quốc gia, thói quen nấu, ngôn ngữ |
 | Google Cloud Run | Hạ tầng vận hành ứng dụng | Lưu lượng truy cập, nhật ký máy chủ |
 | Google Cloud Translate | Dịch dữ liệu nguyên liệu | Tên nguyên liệu |
 | Cloudflare | Phân phối nội dung, chống tấn công | Siêu dữ liệu yêu cầu, địa chỉ IP |
@@ -206,9 +231,18 @@ nhân của bạn, chúng tôi sẽ thông báo theo quy định pháp luật á
 ## 9. Chuyển dữ liệu ra nước ngoài
 
 Các nhà cung cấp nêu ở mục 5 có thể xử lý dữ liệu tại quốc gia khác nơi bạn cư
-trú. Khi chuyển dữ liệu ra khỏi Việt Nam, chúng tôi thực hiện theo yêu cầu của
-pháp luật về bảo vệ dữ liệu cá nhân, bao gồm việc lập và lưu hồ sơ đánh giá tác
-động chuyển dữ liệu khi được yêu cầu.
+trú. Cụ thể:
+
+- **Máy chủ ứng dụng** chạy tại vùng `asia-southeast3` (TP. Hồ Chí Minh) của
+  Google Cloud Run.
+- **Phân tích bữa ăn bằng AI** đi qua điểm cuối toàn cầu của Vertex AI, nên có
+  thể được xử lý ở bất kỳ vùng nào Google vận hành — kể cả ngoài Việt Nam. Chỉ
+  bốn trường nêu ở mục 3 đi theo đường này.
+- **Các nhà cung cấp còn lại** xử lý dữ liệu tại vùng do họ vận hành.
+
+Khi chuyển dữ liệu ra khỏi Việt Nam, chúng tôi thực hiện theo yêu cầu của pháp
+luật về bảo vệ dữ liệu cá nhân, bao gồm việc lập và lưu hồ sơ đánh giá tác động
+chuyển dữ liệu khi được yêu cầu.
 
 ## 10. Quyền của bạn
 
