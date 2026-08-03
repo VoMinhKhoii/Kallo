@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:nham_mobile/features/logging/data/logging_models.dart';
 import 'package:nham_mobile/features/logging/logic/feed/view_state.dart';
+import 'package:nham_mobile/features/logging/widgets/feed/macro_bar.dart';
 import 'package:nham_mobile/features/logging/widgets/feed/macro_summary.dart';
 import 'package:nham_mobile/theme/calm_tokens.dart';
 
@@ -28,7 +29,17 @@ Widget _wrap(Widget child, {double textScale = 1.0}) => EasyLocalization(
           locale: context.locale,
           home: MediaQuery(
             data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
-            child: Scaffold(body: SingleChildScrollView(child: child)),
+            child: Scaffold(
+              // A real phone, not the 800pt test surface. The bar is the only
+              // flexible column, so every width claim here is meaningless
+              // unless the row is as tight as it is on a device.
+              body: Center(
+                child: SizedBox(
+                  width: _phoneWidth,
+                  child: SingleChildScrollView(child: child),
+                ),
+              ),
+            ),
           ),
         ),
   ),
@@ -66,6 +77,9 @@ const _profile = LoggingProfile(
 /// Height of a single `dashMeta` line (12 / 1.25), plus slack for rounding. A
 /// wrapped value is 30+, so this cleanly separates one line from two.
 const _oneLineMax = 22.0;
+
+/// iPhone 14/15 logical width — the narrow end of what this ships on.
+const _phoneWidth = 390.0;
 
 double _renderedWidth(String text, {double textScale = 1.0}) {
   final painter = TextPainter(
@@ -151,6 +165,55 @@ void main() {
       _renderedWidth('1024/350g'),
       lessThanOrEqualTo(column),
       reason: 'the value column clips the widest realistic figure',
+    );
+  });
+
+  testWidgets('makes the bar the widest column in its row', (tester) async {
+    // At 390pt the bar was the SHORTEST of the three — 71.3pt, against a 76pt
+    // label box holding a 54pt label, and a 72pt value box. It is the only
+    // thing in the row that reads at a glance, so it should be the longest.
+    //
+    // The floor is absolute on purpose: "wider than its neighbours" alone would
+    // still pass if the row grew, and this is a claim about a phone.
+    await tester.pumpWidget(
+      _wrap(const MacroSummary(view: _view, profile: _profile)),
+    );
+    await tester.pumpAndSettle();
+
+    final bar = tester.getSize(find.byType(MacroBar).first).width;
+    final label = _columnWidth(tester, find.text('Protein'));
+    final value = _columnWidth(tester, find.text('120/135g'));
+
+    expect(bar, greaterThan(label));
+    expect(bar, greaterThan(value));
+    expect(
+      bar,
+      greaterThanOrEqualTo(95),
+      reason:
+          'the bar is back down to $bar at ${_phoneWidth}pt — it was 71.3 '
+          'before the label column and gaps were measured',
+    );
+  });
+
+  testWidgets('scales a macro label down instead of clipping it', (
+    tester,
+  ) async {
+    // The label column is measured at scale 1.0, so Vietnamese — "Chất béo",
+    // the widest at ~55 — has to shrink rather than clip once Dynamic Type is
+    // raised. It previously had 20pt of slack it did not need.
+    await tester.pumpWidget(
+      _wrap(const MacroSummary(view: _view, profile: _profile)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.ancestor(
+        of: find.text('Protein'),
+        matching: find.byWidgetPredicate(
+          (w) => w is FittedBox && w.fit == BoxFit.scaleDown,
+        ),
+      ),
+      findsOneWidget,
     );
   });
 
