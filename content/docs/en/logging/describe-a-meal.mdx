@@ -11,38 +11,40 @@ ingredients, weights and nutrition for you to check and confirm.
 
 There is no required syntax. But a few habits make results noticeably better.
 
-### Keep Vietnamese diacritics
-
-`bò`, `bơ` and `bổ` are three different things. Kallo relies on the marks to
-tell them apart, so writing without them degrades results significantly.
-
 ### Say how it was cooked
 
 Cooking method moves fat more than almost anything else:
 
-- `cá kho` and `cá chiên` — same fish, clearly different.
-- `rau luộc` and `rau xào` — the difference is the oil.
-- `gà nướng` and `gà rán` — a large gap.
+- `grilled salmon` and `fried salmon` — same fish, clearly different.
+- `steamed broccoli` and `stir-fried broccoli` — the difference is the oil.
+- `roast chicken` and `fried chicken` — a large gap.
 
 ### Give weights when you know them
 
-A specific number always beats a guess. `50gr nạc dăm luộc` is used as written,
-with no estimation applied.
+A specific number always beats a guess. `150g grilled chicken breast` is used as
+written, with no estimation applied.
 
 ### Write the whole meal in one go
 
-`cơm tấm sườn bì chả + canh chua + 1 ly trà đá` gives better results than three
-separate entries, because Kallo sees the whole meal at once and groups the
-dishes correctly.
+`grilled chicken breast + rice + steamed broccoli + an iced tea` gives better
+results than four separate entries, because Kallo sees the whole meal at once
+and groups the dishes correctly.
 
 <MealExample
-  input="cơm tấm sườn bì chả, thêm trứng ốp la"
+  input="grilled chicken breast with rice, plus a fried egg"
   totalLabel="Total"
   dishes={[
-    { name: 'Cơm tấm sườn bì chả', protein: 38, carbs: 84, fat: 27, calories: 730 },
-    { name: 'Trứng ốp la', protein: 7, carbs: 1, fat: 9, calories: 110 },
+    { name: 'Grilled chicken breast with rice', protein: 46, carbs: 62, fat: 12, calories: 540 },
+    { name: 'Fried egg', protein: 7, carbs: 1, fat: 9, calories: 110 },
   ]}
 />
+
+<Callout label="If you write in Vietnamese">
+Kallo takes Vietnamese, English, or a mix. When you do write Vietnamese, keep
+the diacritics: `bò` is beef, `bơ` is butter and `bổ` is nutritious, and Kallo
+relies on the marks to tell them apart. Writing without them degrades results
+significantly.
+</Callout>
 
 ## What happens when you send
 
@@ -75,7 +77,7 @@ to the figure shown.
 
 Sometimes you get a question rather than a number. That is intentional.
 
-`1 tô canh` could be 200ml or 700ml — too wide a gap to guess. Rather than
+`a bowl of soup` could be 200ml or 700ml — too wide a gap to guess. Rather than
 quietly picking something in the middle, Kallo asks which bowl you used, and
 offers reference sizes with pictures to choose from.
 
