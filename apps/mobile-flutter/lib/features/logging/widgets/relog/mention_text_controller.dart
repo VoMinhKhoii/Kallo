@@ -20,12 +20,10 @@ import '../../logic/relog/slash_token.dart';
 /// [syncMentions] re-derives those offsets after every edit and DROPS any
 /// mention whose text the user broke — that is what stops a half-deleted dish
 /// name from still logging a dish.
-/// A committed pick keeps the `/` it was summoned with and is painted in
-/// [NhamColors.mention] — nothing else. No fill, no chip, no macro preview: the
-/// sentence reads `/Phở bò và 2 quả trứng`, so the token is visibly a reference
-/// rather than prose even before you register the colour.
-const String mentionPrefix = '/';
-
+/// A committed pick keeps the `/` it was summoned with (see [mentionPrefix])
+/// and is painted in [NhamColors.mention] — nothing else. No fill, no chip, no
+/// macro preview: the sentence reads `/Phở bò và 2 quả trứng`, so the token is
+/// visibly a reference rather than prose even before you register the colour.
 class MentionTextEditingController extends TextEditingController {
   MentionTextEditingController({super.text});
 

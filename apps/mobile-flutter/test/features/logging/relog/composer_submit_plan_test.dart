@@ -3,10 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/features/logging/logic/relog/composer_submit_plan.dart';
 import 'package:nham_mobile/models/relog.dart';
 
-RelogStagedEntry _entry(String label, {int order = 0}) => RelogStagedEntry(
-  stageId: 'stage-$label',
+/// A committed pick, labelled the way the composer labels one: `/Name`.
+RelogStagedEntry _entry(String name, {int order = 0}) => RelogStagedEntry(
+  stageId: 'stage-$name',
   ref: RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: order),
-  label: label,
+  label: '/$name',
 );
 
 void main() {
@@ -25,7 +26,7 @@ void main() {
     final plan = planComposerSubmit(
       isNormal: true,
       staged: [_entry('Phở bò'), _entry('Cà phê', order: 1)],
-      text: 'Phở bò Cà phê ',
+      text: '/Phở bò /Cà phê ',
       freeText: '',
     );
     expect(plan, isA<PureRelog>());
@@ -39,7 +40,7 @@ void main() {
     final plan = planComposerSubmit(
       isNormal: true,
       staged: [_entry('Phở bò')],
-      text: 'Phở bò và 2 quả trứng',
+      text: '/Phở bò và 2 quả trứng',
       freeText: 'và 2 quả trứng',
     );
     expect(plan, isA<CombinedAnalysis>());
@@ -52,6 +53,27 @@ void main() {
     expect(
       combined.refs.single,
       const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 0),
+    );
+    // The pick's NAME travels with its ref so the card can be labelled the way
+    // the server will label it. Without this the card reads "và 2 quả trứng"
+    // and then grows the dish back once the persisted card replaces it.
+    expect(combined.pickNames, ['Phở bò']);
+  });
+
+  test('pick names line up with their refs, in composer order', () {
+    final plan =
+        planComposerSubmit(
+              isNormal: true,
+              staged: [_entry('Phở bò'), _entry('Cà phê', order: 1)],
+              text: '/Phở bò /Cà phê và bánh mì',
+              freeText: 'và bánh mì',
+            )
+            as CombinedAnalysis;
+    expect(plan.pickNames, ['Phở bò', 'Cà phê']);
+    expect(
+      plan.refs.map((r) => (r as RelogDishRef).mealItemOrder),
+      [0, 1],
+      reason: 'a name that drifted off its ref would mislabel the card',
     );
   });
 

@@ -5,6 +5,12 @@
 /// left of the caret is an open mention token.
 library;
 
+/// The character that opens a token, and that a committed pick KEEPS: a pick
+/// reads as `/Phở bò`, the same shape that summoned it. Lives here rather than
+/// in the composer because both the tokenizer and the card's label derivation
+/// need to agree on it.
+const String mentionPrefix = '/';
+
 /// Vietnamese dish names contain spaces ("Cà phê sữa đá"), so the token cannot
 /// stop at whitespace. Bound it instead, so a long sentence that happens to
 /// start with `/` eventually closes the popup.

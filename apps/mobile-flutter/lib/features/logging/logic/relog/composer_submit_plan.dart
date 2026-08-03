@@ -6,6 +6,7 @@
 library;
 
 import '../../../../models/relog.dart';
+import 'relog_label.dart';
 
 sealed class ComposerSubmitPlan {
   const ComposerSubmitPlan();
@@ -31,7 +32,13 @@ class PureRelog extends ComposerSubmitPlan {
 class CombinedAnalysis extends ComposerSubmitPlan {
   final String freeText;
   final List<RelogRef> refs;
-  const CombinedAnalysis(this.freeText, this.refs);
+
+  /// The picks' display names, positionally aligned with [refs]. Carried here
+  /// rather than re-derived at the call site so the card's label can never
+  /// disagree with what was actually sent.
+  final List<String> pickNames;
+
+  const CombinedAnalysis(this.freeText, this.refs, this.pickNames);
 }
 
 /// Decide what a submit means.
@@ -49,5 +56,7 @@ ComposerSubmitPlan planComposerSubmit({
   if (!isNormal || staged.isEmpty) return PlainAnalysis(text);
   final refs = [for (final entry in staged) entry.ref];
   if (freeText.isEmpty) return PureRelog(refs);
-  return CombinedAnalysis(freeText, refs);
+  return CombinedAnalysis(freeText, refs, [
+    for (final entry in staged) relogPickName(entry),
+  ]);
 }

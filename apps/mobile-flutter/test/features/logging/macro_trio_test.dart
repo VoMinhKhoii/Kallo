@@ -1,0 +1,245 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:nham_mobile/features/logging/widgets/macro_trio.dart';
+import 'package:nham_mobile/theme/calm_tokens.dart';
+import 'package:nham_mobile/theme/nham_theme.dart';
+
+/// The width a meal row actually gets inside the card on a 390pt phone: the
+/// feed's gutter plus the card's own padding. Every claim below is about that
+/// width — on the default 800pt test surface nothing here would ever clip.
+const double _rowWidth = 334;
+
+/// How many lines the card gives a dish name. A test knob only so the
+/// "second line" claim can be shown to fail at one line.
+int _nameLines = 2;
+
+/// One meal row, laid out the way the persisted card lays it out.
+Widget _row(
+  String name,
+  double p,
+  double c,
+  double f,
+  double kcal, {
+  double textScale = 1.0,
+}) => MediaQuery(
+  data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
+  child: Directionality(
+    textDirection: TextDirection.ltr,
+    child: Center(
+      child: SizedBox(
+        width: _rowWidth,
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                name,
+                maxLines: _nameLines,
+                overflow: TextOverflow.ellipsis,
+                style: dashBody(),
+              ),
+            ),
+            const SizedBox(width: NhamSpacing.sp3),
+            MacroTrio(protein: p, carbs: c, fat: f, calories: kcal),
+          ],
+        ),
+      ),
+    ),
+  ),
+);
+
+/// The card's bottom line at the width it really gets.
+const Widget _totalsRow = Directionality(
+  textDirection: TextDirection.ltr,
+  child: Center(
+    child: SizedBox(
+      width: _rowWidth,
+      child: MealTotalsRow(
+        label: 'Total',
+        protein: 67,
+        carbs: 59,
+        fat: 32,
+        calories: 1794,
+      ),
+    ),
+  ),
+);
+
+/// How much a FittedBox took [finder] in: its PAINTED width (global, so
+/// ancestor transforms apply) over the width it laid itself out at. 1.0 means
+/// nothing scaled it; below 1.0 means it was shrunk to fit rather than clipped.
+double _paintedScale(WidgetTester tester, Finder finder) =>
+    tester.getRect(finder).width / tester.getSize(finder).width;
+
+void main() {
+  setUpAll(() async {
+    // Measure against the real typeface. With the test font (every glyph one em
+    // wide) these widths are fiction, and the whole point here is real widths.
+    final loader = FontLoader('BeVietnamPro')..addFont(
+      File(
+        'assets/google_fonts/BeVietnamPro-Regular.ttf',
+      ).readAsBytes().then(ByteData.sublistView),
+    );
+    await loader.load();
+  });
+
+  testWidgets('keeps the unit on a three-digit kcal figure', (tester) async {
+    // The reported bug: `240 kcal` measures 60.4 against a 62pt column, so it
+    // fit by 1.6pt at scale 1.0 and lost ` kcal` the moment anything nudged it.
+    // A bare `240` beside a neighbouring `31 kcal` reads as a different unit,
+    // not as truncation.
+    await tester.pumpWidget(_row('Cơm trắng', 5, 54, 0, 240));
+    expect(find.text('240 kcal'), findsOneWidget);
+    expect(
+      _paintedScale(tester, find.text('240 kcal')),
+      moreOrLessEquals(1.0, epsilon: 0.02),
+    );
+  });
+
+  testWidgets('keeps it at the app\'s largest text scale too', (tester) async {
+    // `app.dart` clamps scaling at 1.3. At that size `240 kcal` wants 78.5pt in
+    // a 66pt column — it must SHRINK, never lose the unit.
+    await tester.pumpWidget(_row('Cơm trắng', 5, 54, 0, 240, textScale: 1.3));
+    expect(find.text('240 kcal'), findsOneWidget);
+    final scale = _paintedScale(tester, find.text('240 kcal'));
+    expect(scale, lessThan(1.0), reason: 'it had to be taken in');
+    expect(
+      scale,
+      greaterThan(0.7),
+      reason: 'but not to the point of illegible',
+    );
+  });
+
+  testWidgets('every row in a card lands its columns at the same x', (
+    tester,
+  ) async {
+    // The fixed cells exist for this. A value that ellipsizes in one row and
+    // not the next is what made the card read as ragged.
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(1.3)),
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: SizedBox(
+              width: _rowWidth,
+              child: Column(
+                children: [
+                  for (final r in const [
+                    (3.0, 4.0, 0.0, 31.0),
+                    (5.0, 54.0, 0.0, 240.0),
+                    (37.0, 0.0, 14.0, 268.0),
+                  ])
+                    Row(
+                      children: [
+                        const Expanded(child: Text('x')),
+                        const SizedBox(width: NhamSpacing.sp3),
+                        MacroTrio(
+                          protein: r.$1,
+                          carbs: r.$2,
+                          fat: r.$3,
+                          calories: r.$4,
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    for (final label in ['P:', 'C:', 'F:']) {
+      final xs =
+          tester
+              .widgetList<Text>(find.text(label))
+              .toList()
+              .asMap()
+              .keys
+              .map((i) => tester.getTopLeft(find.text(label).at(i)).dx)
+              .toSet();
+      expect(xs, hasLength(1), reason: '$label drifted between rows: $xs');
+    }
+    // And the kcal figures all end on the same right edge.
+    final rights =
+        ['31 kcal', '240 kcal', '268 kcal']
+            .map((t) => tester.getTopRight(find.text(t)).dx.roundToDouble())
+            .toSet();
+    expect(rights, hasLength(1), reason: 'ragged kcal edge: $rights');
+  });
+
+  testWidgets('a long dish name gets a second line before it gives up', (
+    tester,
+  ) async {
+    // "Top blade áp chảo" needs 128pt; the name column is ~96. On one line it
+    // ellipsized to "Top blade á…", losing the words that identify the dish.
+    await tester.pumpWidget(_row('Top blade áp chảo', 37, 0, 14, 268));
+    final width = tester.getSize(find.text('Top blade áp chảo')).width;
+    final painter = TextPainter(
+      text: TextSpan(
+        text: 'Top blade áp chảo',
+        style: tester.widget<Text>(find.text('Top blade áp chảo')).style,
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: _nameLines,
+    )..layout(maxWidth: width);
+    expect(
+      painter.didExceedMaxLines,
+      isFalse,
+      reason: 'the whole name must fit within the lines it is allowed',
+    );
+
+    // And it genuinely needed the second one — at one line this same name is
+    // the "Top blade á…" from the report.
+    final oneLine = TextPainter(
+      text: TextSpan(
+        text: 'Top blade áp chảo',
+        style: tester.widget<Text>(find.text('Top blade áp chảo')).style,
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout(maxWidth: width);
+    expect(oneLine.didExceedMaxLines, isTrue);
+  });
+
+  testWidgets('no row overflows its width at any allowed text scale', (
+    tester,
+  ) async {
+    for (final scale in [1.0, 1.15, 1.3]) {
+      await tester.pumpWidget(
+        _row('Top blade áp chảo', 37, 999, 14, 1234, textScale: scale),
+      );
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'overflowed at text scale $scale',
+      );
+    }
+  });
+
+  testWidgets('the totals line survives the largest text scale', (
+    tester,
+  ) async {
+    // Same card, same failure mode: an unbounded macro string beside an
+    // unbounded kcal figure, inside a row with nowhere to give.
+    const totals = _totalsRow;
+    for (final scale in [1.0, 1.3]) {
+      await tester.pumpWidget(
+        MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+          child: totals,
+        ),
+      );
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'totals overflowed at text scale $scale',
+      );
+      expect(find.text('1794 kcal'), findsOneWidget);
+    }
+  });
+}

@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import type { StagedEntriesApi } from '@/hooks/meals/relog/use-staged-entries';
 import { stageRelogAnalysisAction } from '@/lib/actions/meals/relog/stage-relog-analysis';
 import { stripMentions } from '@/lib/logging/relog/mentions';
-import type { RelogRef } from '@/lib/logging/relog/relog';
+import { buildRelogRawInput, type RelogRef } from '@/lib/logging/relog/relog';
 import type { ChatMessage } from '@/lib/types/meal';
 
 /**
@@ -38,6 +38,8 @@ export function useRelogSubmit(args: {
   handleSubmit: (override?: {
     message: string;
     refs?: RelogRef[];
+    /** What the card should SAY, when that differs from the analyzed text. */
+    label?: string;
   }) => Promise<boolean>;
   /** Relog is normal-mode only. Checked HERE as well as at the call site:
    *  entries survive a mode switch (only their UI is hidden), so a caller that
@@ -88,7 +90,17 @@ export function useRelogSubmit(args: {
     // instead of vanishing behind a submit that produced no confirmable card.
     if (freeText.length > 0) {
       const snapshot = getText();
-      const durablyStaged = await handleSubmit({ message: freeText, refs });
+      // The card's label is derived the way the SERVER derives the persisted
+      // one — same helper, same order — so the streaming card, the confirmable
+      // card and the saved meal all read as the same meal.
+      const durablyStaged = await handleSubmit({
+        message: freeText,
+        refs,
+        label: buildRelogRawInput([
+          freeText,
+          ...staged.entries.map((entry) => entry.label),
+        ]),
+      });
       if (durablyStaged) {
         staged.consume('');
       } else {

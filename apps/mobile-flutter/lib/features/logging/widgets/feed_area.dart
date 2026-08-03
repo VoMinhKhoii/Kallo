@@ -22,6 +22,7 @@ import '../logic/feed/view_state.dart';
 import '../logic/meal_log_mode.dart';
 import '../logic/relog/composer_submit_plan.dart';
 import '../logic/relog/mentions.dart' show MentionSnapshot;
+import '../logic/relog/relog_label.dart';
 import '../logic/relog/slash_picker_state.dart';
 import 'feed/composer_actions.dart';
 import 'feed/feed_composer.dart';
@@ -85,7 +86,28 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
 
   /// The text of the run currently in flight — restored to the composer if it
   /// fails, so a failed analysis never destroys what the user typed.
+  ///
+  /// This is the STRIPPED free text on a combined submit: the picks were pulled
+  /// out of it before the AI saw them. Use [_inFlightLabel] for anything the
+  /// user reads.
   String? _inFlightText;
+
+  /// The relogged picks riding along with [_inFlightText], by display name.
+  /// Empty for a plain submit.
+  List<String> _inFlightPicks = const [];
+
+  /// What the in-flight run's card should SAY: the typed text plus the picks,
+  /// derived the way the server derives `meals.raw_input` for a combined submit
+  /// (`analyze-meal/route.ts` → `buildRelogRawInput([message, ...dishNames])`).
+  ///
+  /// Without this the card is labelled with the free text alone — a submit of
+  /// "/Phở bò và 2 quả trứng" reads "và 2 quả trứng" through streaming AND on
+  /// the confirmable card, then silently grows the dish back the moment the
+  /// persisted card replaces it.
+  String? get _inFlightLabel =>
+      _inFlightText == null
+          ? null
+          : combinedRelogLabel(_inFlightText!, _inFlightPicks);
 
   /// A failed attempt, rendered as a feed card with "Try again" (terracotta).
   String? _failedText;
@@ -272,13 +294,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       case PureRelog(:final refs):
         if (_stagingRelog) return;
         unawaited(_submitPureRelog(refs));
-      case CombinedAnalysis(:final freeText, :final refs):
+      case CombinedAnalysis(:final freeText, :final refs, :final pickNames):
         _attemptId = _uuid.v4();
         // _runAnalyze clears the composer to show the streaming card, which
         // drops the mentions with it — snapshot first so a failed run can hand
         // them back.
         _relogSnapshot = _textController.snapshot();
-        _runAnalyze(freeText, refs: refs);
+        _runAnalyze(freeText, refs: refs, pickNames: pickNames);
     }
   }
 
@@ -317,7 +339,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// composer mode (precise vs cheat) — whichever surface last set it, the feed
   /// composer or the dashboard's quick-log sheet — and sends the current
   /// [_attemptId].
-  void _runAnalyze(String text, {List<RelogRef>? refs}) {
+  void _runAnalyze(
+    String text, {
+    List<RelogRef>? refs,
+    List<String> pickNames = const [],
+  }) {
     refreshRevealedAnalysisDay(
       ref,
       userId: widget.profile.userId,
@@ -331,6 +357,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       _failedRetryable = true;
       _revealRawInput = null;
       _inFlightText = text;
+      _inFlightPicks = pickNames;
     });
     _inputController.clear();
     _scrollToAnswer();
@@ -374,11 +401,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         // planner cannot classify this as picks-only. Retry it as plain text
         // rather than silently doing nothing.
         _runAnalyze(text);
-      case CombinedAnalysis(:final freeText, :final refs):
+      case CombinedAnalysis(:final freeText, :final refs, :final pickNames):
         // _runAnalyze clears the composer again, so re-snapshot: a second
         // failure would otherwise have nothing to hand back.
         _relogSnapshot = _textController.snapshot();
-        _runAnalyze(freeText, refs: refs);
+        _runAnalyze(freeText, refs: refs, pickNames: pickNames);
     }
   }
 
@@ -428,8 +455,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// The revealed answer landed: it becomes the confirmable card, carrying the
   /// user's own words across.
   void _revealAnswer() {
-    _revealRawInput = _inFlightText;
+    _revealRawInput = _inFlightLabel;
     _inFlightText = null;
+    _inFlightPicks = const [];
     // A combined submit reached a confirmable card, so its picks are logged —
     // the composer was already cleared, and the snapshot is now spent.
     _relogSnapshot = null;
@@ -444,6 +472,10 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       _failedText = text;
       _failedRetryable = retryable;
       _inFlightText = null;
+      // The picks go back to the COMPOSER (below), not into the failed card —
+      // leaving them here would label a retry with dishes the retry re-derives
+      // from the restored mentions anyway.
+      _inFlightPicks = const [];
       _relogSnapshot = null;
     });
     if (snapshot != null) {
@@ -552,7 +584,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     final footer = FeedFooter(
       view: view,
       stream: stream,
-      streamingRawInput: _inFlightText,
+      streamingRawInput: _inFlightLabel,
       confirmPending: confirmPending,
       onConfirm: confirmActions.confirmPending,
       onConfirmReveal: confirmActions.confirmReveal,

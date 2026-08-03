@@ -65,6 +65,13 @@ export function useFeedSubmit({
   const handleSubmit = async (override?: {
     message: string;
     refs?: RelogRef[];
+    /** What the CARD should say, when that differs from what the AI is sent.
+     *  A combined relog submits the free text alone but must still read as the
+     *  whole meal — the server labels the persisted row
+     *  `buildRelogRawInput([message, ...dishNames])`, so a card labelled with
+     *  the free text alone silently grows the relogged dishes back the moment
+     *  the persisted card replaces it. */
+    label?: string;
   }): Promise<boolean> => {
     if (stream.isAnalyzing) return false;
     const parsed = mealTextSchema.safeParse(
@@ -76,6 +83,8 @@ export function useFeedSubmit({
     }
     const text = parsed.data;
     const refs = override?.refs;
+    // Falls back to the analyzed text, so every non-relog submit is unchanged.
+    const label = override?.label ?? text;
 
     let durablyStaged = false;
     await guard(async () => {
@@ -90,7 +99,7 @@ export function useFeedSubmit({
       const userMessage: ChatMessage = {
         id: generateId(),
         role: 'user',
-        content: text,
+        content: label,
         loggedDate: selectedDate,
         timestamp: new Date(),
       };
@@ -99,7 +108,7 @@ export function useFeedSubmit({
         id: assistantMsgId,
         role: 'assistant',
         content: '',
-        userInput: text,
+        userInput: label,
         loggedDate: selectedDate,
         timestamp: new Date(),
         isStreaming: true,
