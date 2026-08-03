@@ -2,7 +2,11 @@
 // an ordered, flat list of dishes with their source ingredient rows. Kept out of
 // relog-items.ts (a 'use server' transaction writer) so the tricky part — meal
 // expansion, ordering and the missing-ref rules — is testable on plain data.
-import { RELOG_MAX_DISHES, type RelogRef } from '@/lib/logging/relog/relog';
+import {
+  RELOG_MAX_DISHES,
+  RELOG_MAX_ROWS,
+  type RelogRef,
+} from '@/lib/logging/relog/relog';
 
 /** The subset of a `meal_items` row this step needs to group and order. */
 export interface SourceItemRow {
@@ -62,6 +66,34 @@ export function resolveRelogDishes<T extends SourceItemRow>(
   }
 
   const resolved: ResolvedDish<T>[] = [];
+  let rowCount = 0;
+  // Both caps are checked INSIDE the loop, so a pathological expansion is
+  // refused as soon as it crosses the line rather than after the whole array
+  // has been materialised.
+  const push = (dish: ResolvedDish<T>) => {
+    resolved.push(dish);
+    rowCount += dish.rows.length;
+    // A meal ref expands to many dishes, so the staged-entry cap in the
+    // contract does not bound this. Refuse rather than truncate — silently
+    // dropping the tail of a meal is exactly the kind of quiet wrongness relog
+    // exists to avoid.
+    if (resolved.length > RELOG_MAX_DISHES) {
+      throw new RelogResolutionError(
+        `Không thể ghi lại quá ${RELOG_MAX_DISHES} món trong một bữa.`
+      );
+    }
+    // The dish cap counts GROUPS; the writer inserts one row per ingredient
+    // (`relog-items.ts` flatMaps `dish.rows`) and the staging path folds every
+    // row into one jsonb blob. Without this, ingredient-heavy meals could pass
+    // the group cap and still be a several-hundred-row insert inside one
+    // `FOR UPDATE` transaction.
+    if (rowCount > RELOG_MAX_ROWS) {
+      throw new RelogResolutionError(
+        `Không thể ghi lại quá ${RELOG_MAX_ROWS} nguyên liệu trong một bữa.`
+      );
+    }
+  };
+
   for (const ref of refs) {
     if (ref.kind === 'dish') {
       const key = `${ref.sourceMealId}:${ref.mealItemOrder}`;
@@ -71,7 +103,7 @@ export function resolveRelogDishes<T extends SourceItemRow>(
           'Món ăn không còn trong lịch sử. Hãy bỏ món đó rồi thử lại.'
         );
       }
-      resolved.push({ name: group[0].mealItemName, rows: group });
+      push({ name: group[0].mealItemName, rows: group });
       continue;
     }
     const keys = dishOrderByMeal.get(ref.sourceMealId) ?? [];
@@ -82,18 +114,10 @@ export function resolveRelogDishes<T extends SourceItemRow>(
     }
     for (const key of keys) {
       const group = byDish.get(key) as T[];
-      resolved.push({ name: group[0].mealItemName, rows: group });
+      push({ name: group[0].mealItemName, rows: group });
     }
   }
 
-  // A meal ref expands to many dishes, so the staged-entry cap in the contract
-  // does not bound this. Refuse rather than truncate — silently dropping the
-  // tail of a meal is exactly the kind of quiet wrongness relog exists to avoid.
-  if (resolved.length > RELOG_MAX_DISHES) {
-    throw new RelogResolutionError(
-      `Không thể ghi lại quá ${RELOG_MAX_DISHES} món trong một bữa.`
-    );
-  }
   // Defence in depth: a zero-item meal would read as a cheat meal downstream
   // and render as a 0-kcal ghost card.
   if (resolved.length === 0) {

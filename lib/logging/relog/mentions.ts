@@ -80,9 +80,33 @@ export function stripMentions(value: string, mentions: RelogMention[]): string {
     out =
       out.slice(0, mention.start) +
       out.slice(mention.start + mention.label.length);
+    out = collapseSeam(out, mention.start);
   }
-  // Collapse the whitespace the removals left behind.
-  return out.replace(/[ \t]{2,}/g, ' ').trim();
+  return out.trim();
+}
+
+const isSpaceOrTab = (char: string | undefined) => char === ' ' || char === '\t';
+
+/**
+ * Collapse the whitespace run that a removal just joined at `index` down to a
+ * single space.
+ *
+ * Only at the SEAM. Collapsing the whole value (what this used to do) rewrites
+ * any surviving mention whose label contains a double space — and a `meal`
+ * candidate's label is `raw_input`, i.e. free user text, so that is reachable.
+ * `reconcileMentions` would then fail to find that label and silently drop its
+ * reference, leaving the user a staged row for a dish that will never be
+ * logged.
+ */
+function collapseSeam(value: string, index: number): string {
+  let start = index;
+  while (start > 0 && isSpaceOrTab(value[start - 1])) start--;
+  let end = index;
+  while (end < value.length && isSpaceOrTab(value[end])) end++;
+  if (end === start) return value;
+  // A single space is always safe here; the caller's trim() removes it when the
+  // seam sits at either boundary.
+  return `${value.slice(0, start)} ${value.slice(end)}`;
 }
 
 export interface MentionSegment {

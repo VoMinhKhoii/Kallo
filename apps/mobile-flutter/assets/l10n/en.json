@@ -1267,6 +1267,7 @@
       "searching": "Searching...",
       "noResults": "No dishes found",
       "noHistory": "Nothing logged yet",
+      "searchFailed": "Couldn't load your dishes",
       "removeStaged": "Remove {name}",
       "closePicker": "Close",
       "stagedFull": "You can stage up to {max} at a time."

@@ -47,11 +47,19 @@ function selectSourceRows(executor: Executor, sourceIds: string[]) {
  * Resolve relog references to an ordered dish list, re-asserting ownership and
  * the picker's candidacy rules.
  *
- * `opts.lock` takes `FOR UPDATE` on the source meals so a concurrent delete
- * can't land between this read and a copy that follows in the SAME
- * transaction — set it only when called inside `db.transaction` (the direct
- * writer). The staging paths run outside a transaction and only READ to
- * snapshot numbers into the pending row, so they leave it off.
+ * `opts.lock` takes `FOR UPDATE` on the source meals so nothing can land
+ * between the eligibility re-check below and the row read that follows it in
+ * the SAME transaction. Set it only when called inside `db.transaction` — which
+ * is what ALL THREE callers do: the direct writer (`relogMealItemsAction`), the
+ * pure-relog staging path (`stageRelogAnalysisAction`) and the combined merge
+ * (`applyRelogRefs`).
+ *
+ * The staging paths need it as much as the writer does, which is why they take
+ * it: without the lock a concurrent split-share could halve a source's
+ * `meal_items` and set `portion_factor < 1` between the check and the read, and
+ * the halved rows would be snapshotted under the full dish name. They may
+ * commit before their pending row is written — by then the numbers are frozen
+ * in memory and nothing after commit can change them.
  */
 export async function resolveRelogSources(
   executor: Executor,

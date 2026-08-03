@@ -1,7 +1,9 @@
 import type { NextRequest } from 'next/server';
+import { guardRelogRequest } from '@/app/api/v1/meals/relog/_guard';
 import { stageRelogAnalysisAction } from '@/lib/actions/meals/relog/stage-relog-analysis';
 import { stageRelogAnalysisSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
+import { requireAuthAndProfile } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
@@ -17,11 +19,23 @@ export const runtime = 'nodejs';
  *
  *  The body carries only references, never nutrition. */
 export async function POST(req: NextRequest) {
+  let release: (() => Promise<void> | void) | undefined;
   try {
+    const { user } = await requireAuthAndProfile();
+    const guard = await guardRelogRequest(
+      'write',
+      'meals-relog-stage',
+      user.id
+    );
+    if (guard.blocked) return guard.blocked;
+    release = guard.release;
+
     const body = stageRelogAnalysisSchema.parse(await req.json());
     const result = await stageRelogAnalysisAction(body);
     return Response.json(result);
   } catch (error) {
     return handleRouteError(error);
+  } finally {
+    await release?.();
   }
 }

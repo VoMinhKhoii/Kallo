@@ -14,6 +14,7 @@ import 'package:nham_mobile/features/logging/widgets/meal_input.dart';
 import 'package:nham_mobile/features/logging/widgets/meal_input_controls.dart';
 import 'package:nham_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:nham_mobile/features/logging/widgets/relog/relog_picker_option.dart';
+import 'package:nham_mobile/features/logging/widgets/relog/relog_picker_popup.dart';
 import 'package:nham_mobile/features/logging/widgets/relog/relog_staged_list.dart';
 import 'package:nham_mobile/models/cheat.dart';
 import 'package:nham_mobile/models/relog.dart';
@@ -247,6 +248,50 @@ void main() {
     await tester.enterText(find.byType(TextField), 'ăn 1/2 quả');
     await tester.pumpAndSettle();
     expect(picker.isOpen, isFalse);
+  });
+
+  testWidgets('a failed search says so instead of "nothing logged yet"',
+      (tester) async {
+    // Falling through to the empty copy tells someone with a year of meals
+    // that they have never logged anything, and hides that a retry would work.
+    await tester.pumpWidget(
+      _wrap(
+        RelogPickerPopup(
+          candidates: const RelogCandidatesResponse(),
+          isLoading: false,
+          hasError: true,
+          onRetry: () {},
+          query: 'pho',
+          onSelect: (_) {},
+          onDismiss: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't load your dishes"), findsOneWidget);
+    expect(find.text('No dishes found'), findsNothing);
+    expect(find.text('Nothing logged yet'), findsNothing);
+    expect(find.text('Try again'), findsOneWidget);
+  });
+
+  testWidgets('an empty history offers no retry — there is nothing to retry',
+      (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        RelogPickerPopup(
+          candidates: const RelogCandidatesResponse(),
+          isLoading: false,
+          query: '',
+          onSelect: (_) {},
+          onDismiss: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nothing logged yet'), findsOneWidget);
+    expect(find.text('Try again'), findsNothing);
   });
 
   testWidgets('no picker while no token is open', (tester) async {

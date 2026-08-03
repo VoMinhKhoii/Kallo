@@ -125,6 +125,27 @@ describe('stripMentions', () => {
     ]);
     expect(result).toBe('và nữa');
   });
+
+  it('does not rewrite a surviving mention that contains a double space', () => {
+    // A `meal` candidate's label is `raw_input` — free user text, so a double
+    // space is reachable. Collapsing whitespace across the WHOLE value (what
+    // this used to do) rewrote the survivor's label, and the next reconcile
+    // then dropped its reference while its staged row stayed on screen.
+    const kept = 'phở bò  với trà đá';
+    const value = `${kept} Phở gà `;
+    const survivor = mention(kept, 0);
+
+    const out = stripMentions(value, [mention('Phở gà', kept.length + 1)]);
+
+    expect(out).toContain(kept);
+    expect(reconcileMentions(out, [survivor])).toHaveLength(1);
+  });
+
+  it('still collapses the gap the removal itself left behind', () => {
+    expect(stripMentions('sáng Phở bò nay', [mention('Phở bò', 5)])).toBe(
+      'sáng nay'
+    );
+  });
 });
 
 describe('buildMentionSegments', () => {

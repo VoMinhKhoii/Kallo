@@ -172,7 +172,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       return;
     }
     final trimmed = query.trim();
-    if (_relogQuery == null || trimmed.isEmpty) {
+    if (SlashPickerState.resolvesImmediately(_relogQuery, trimmed)) {
       setState(() => _relogQuery = trimmed);
       return;
     }
@@ -356,18 +356,30 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     // `_failedText` is the free text ALONE — the mentions were stripped out of
     // it before the first attempt — so retrying with it and no refs would
     // silently log the typed text WITHOUT the dishes the user picked.
-    final staged =
-        ref.read(mealLogModeProvider) == MealLogMode.normal
-            ? _textController.entries
-            : const <RelogStagedEntry>[];
-    if (staged.isEmpty) {
-      _runAnalyze(text);
-      return;
+    //
+    // Same three-way decision as a fresh submit, so it goes through the same
+    // planner. `freeText` IS the failed text here: what failed was already the
+    // stripped message, which is exactly what should be re-analyzed.
+    final plan = planComposerSubmit(
+      isNormal: ref.read(mealLogModeProvider) == MealLogMode.normal,
+      staged: _textController.entries,
+      text: text,
+      freeText: text,
+    );
+    switch (plan) {
+      case PlainAnalysis(:final text):
+        _runAnalyze(text);
+      case PureRelog():
+        // Unreachable: `text` is the non-empty message that failed, so the
+        // planner cannot classify this as picks-only. Retry it as plain text
+        // rather than silently doing nothing.
+        _runAnalyze(text);
+      case CombinedAnalysis(:final freeText, :final refs):
+        // _runAnalyze clears the composer again, so re-snapshot: a second
+        // failure would otherwise have nothing to hand back.
+        _relogSnapshot = _textController.snapshot();
+        _runAnalyze(freeText, refs: refs);
     }
-    // _runAnalyze clears the composer again, so re-snapshot: a second failure
-    // would otherwise have nothing to hand back.
-    _relogSnapshot = _textController.snapshot();
-    _runAnalyze(text, refs: [for (final entry in staged) entry.ref]);
   }
 
   /// Discard a failed attempt: drop the card and retire its attempt id (the raw
@@ -436,11 +448,14 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     });
     if (snapshot != null) {
       // A combined submit that never staged. Restore the composer VERBATIM —
-      // text and picks — rather than the stripped text the AI saw, or the
-      // picks would be gone and the retry would log only the free text.
-      if (_textController.text.trim().isEmpty) {
-        _textController.restore(snapshot);
-      }
+      // text AND picks — rather than the stripped text the AI saw, or the retry
+      // would log the free text without the dishes the user picked.
+      //
+      // UNCONDITIONALLY, unlike the plain-text branch below. A reference the
+      // user cannot get back is worse than overwriting whatever they typed
+      // while the analysis was in flight — and the snapshot still contains that
+      // free text, so nothing is actually lost. Web restores the same way.
+      _textController.restore(snapshot);
     } else if (text != null && _inputController.getText().trim().isEmpty) {
       _inputController.setText(text);
     }

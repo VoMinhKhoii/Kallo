@@ -6,6 +6,7 @@ import '../../../../models/relog.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
+import '../../../../shared/widgets/quiet_action_button.dart';
 import '../../logic/logging_spacing.dart';
 import 'relog_picker_group.dart';
 
@@ -26,6 +27,8 @@ class RelogPickerPopup extends StatelessWidget {
     required this.query,
     required this.onSelect,
     required this.onDismiss,
+    this.hasError = false,
+    this.onRetry,
   });
 
   final RelogCandidatesResponse candidates;
@@ -34,6 +37,12 @@ class RelogPickerPopup extends StatelessWidget {
   final ValueChanged<RelogCandidate> onSelect;
   final VoidCallback onDismiss;
 
+  /// The search itself failed. Distinct from "no results": telling someone with
+  /// a year of meals that they have never logged anything is worse than saying
+  /// nothing, and it is not a state retyping can fix.
+  final bool hasError;
+  final VoidCallback? onRetry;
+
   /// Web's `max-h-72`. Tall enough for ~4 rows; past that the list scrolls
   /// rather than pushing the composer off the keyboard.
   static const double _maxHeight = 288;
@@ -41,11 +50,15 @@ class RelogPickerPopup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEmpty = candidates.isEmpty;
-    // Distinguish "you have no history yet" from "nothing matched that" — the
-    // first is a state the user cannot fix by retyping.
+    // Three different nothings, and they are not interchangeable: the search
+    // failed, nothing matched what you typed, or you have no history at all.
+    // Only the middle one is fixed by retyping.
+    final showError = hasError && isEmpty && !isLoading;
     final emptyMessage =
         isLoading
             ? 'logging.relog.searching'.tr()
+            : showError
+            ? 'logging.relog.searchFailed'.tr()
             : query.isNotEmpty
             ? 'logging.relog.noResults'.tr()
             : 'logging.relog.noHistory'.tr();
@@ -76,7 +89,20 @@ class RelogPickerPopup extends StatelessWidget {
                             NhamSpacing.sp3,
                             NhamSpacing.sp3,
                           ),
-                          child: Text(emptyMessage, style: dashMeta()),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(emptyMessage, style: dashMeta()),
+                              ),
+                              // Retry only on failure — there is nothing to
+                              // retry when the history is genuinely empty.
+                              if (showError && onRetry != null)
+                                QuietActionButton(
+                                  label: 'common.retry'.tr(),
+                                  onTap: onRetry!,
+                                ),
+                            ],
+                          ),
                         )
                         : ListView(
                           shrinkWrap: true,

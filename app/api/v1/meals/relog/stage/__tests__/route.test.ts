@@ -2,10 +2,16 @@ import type { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const stageRelogAnalysisAction = vi.fn();
+const requireAuthAndProfile = vi.fn();
+const checkAnalysisGuards = vi.fn();
 
 vi.mock('@/lib/actions/meals/relog/stage-relog-analysis', () => ({
   stageRelogAnalysisAction,
 }));
+
+vi.mock('@/lib/auth', () => ({ requireAuthAndProfile }));
+
+vi.mock('@/lib/rate-limit/analysis-guards', () => ({ checkAnalysisGuards }));
 
 const { POST } = await import('@/app/api/v1/meals/relog/stage/route');
 
@@ -30,9 +36,19 @@ const staged = {
   loggedAt: '2026-07-02T03:00:00.000Z',
 };
 
+const release = vi.fn();
+
 beforeEach(() => {
   stageRelogAnalysisAction.mockReset();
+  requireAuthAndProfile.mockReset();
+  checkAnalysisGuards.mockReset();
+  release.mockReset();
   stageRelogAnalysisAction.mockResolvedValue(staged);
+  requireAuthAndProfile.mockResolvedValue({
+    user: { id: 'user-123' },
+    profile: {},
+  });
+  checkAnalysisGuards.mockResolvedValue({ allowed: true, release });
 });
 
 describe('POST /api/v1/meals/relog/stage', () => {
@@ -99,6 +115,29 @@ describe('POST /api/v1/meals/relog/stage', () => {
     expect(stageRelogAnalysisAction).not.toHaveBeenCalled();
   });
 
+  it('rejects a request with no attemptId', async () => {
+    // The upsert keys on (user_id, attempt_id) and NULLs never conflict, so an
+    // optional attemptId would let a client insert unbounded pending rows.
+    const { attemptId, ...withoutAttempt } = validBody;
+    expect(attemptId).toBeDefined();
+
+    const res = await POST(makeRequest(withoutAttempt));
+
+    expect(res.status).toBe(400);
+    const { error } = await res.json();
+    expect(error.code).toBe('VALIDATION_FAILED');
+    expect(stageRelogAnalysisAction).not.toHaveBeenCalled();
+  });
+
+  it('rejects a non-UUID attemptId', async () => {
+    const res = await POST(
+      makeRequest({ ...validBody, attemptId: 'not-a-uuid' })
+    );
+
+    expect(res.status).toBe(400);
+    expect(stageRelogAnalysisAction).not.toHaveBeenCalled();
+  });
+
   it('rejects an empty pick list with 400', async () => {
     const res = await POST(makeRequest({ ...validBody, items: [] }));
 
@@ -121,12 +160,64 @@ describe('POST /api/v1/meals/relog/stage', () => {
     expect(stageRelogAnalysisAction).not.toHaveBeenCalled();
   });
 
-  it('rejects an unauthenticated request with 401', async () => {
+  it('rejects an unauthenticated request with 401, before staging', async () => {
     const { Errors } = await import('@/lib/errors');
-    stageRelogAnalysisAction.mockRejectedValueOnce(Errors.notAuthenticated());
+    requireAuthAndProfile.mockRejectedValueOnce(Errors.notAuthenticated());
 
     const res = await POST(makeRequest(validBody));
     expect(res.status).toBe(401);
+    expect(checkAnalysisGuards).not.toHaveBeenCalled();
+    expect(stageRelogAnalysisAction).not.toHaveBeenCalled();
+  });
+
+  describe('rate limiting', () => {
+    it('throttles per user before doing any database work', async () => {
+      checkAnalysisGuards.mockResolvedValue({
+        allowed: false,
+        status: 429,
+        reason: 'per_user_minute',
+        retryAfterSeconds: 42,
+      });
+
+      const res = await POST(makeRequest(validBody));
+
+      expect(res.status).toBe(429);
+      expect(res.headers.get('Retry-After')).toBe('42');
+      expect(
+        stageRelogAnalysisAction,
+        'a throttled request must not reach the staging transaction'
+      ).not.toHaveBeenCalled();
+    });
+
+    it('guards on the authenticated user, never a client-supplied id', async () => {
+      await POST(makeRequest(validBody));
+
+      expect(checkAnalysisGuards).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-123',
+          route: 'meals-relog-stage',
+        })
+      );
+    });
+
+    it('releases the in-flight slot even when staging throws', async () => {
+      const { Errors } = await import('@/lib/errors');
+      stageRelogAnalysisAction.mockRejectedValueOnce(
+        Errors.validationFailed('Món không còn tồn tại.')
+      );
+
+      const res = await POST(makeRequest(validBody));
+
+      expect(res.status).toBe(400);
+      // Leaking the slot would lock the user out of relog until the stale
+      // in-flight sweep catches up.
+      expect(release).toHaveBeenCalled();
+    });
+
+    it('releases the in-flight slot on success', async () => {
+      await POST(makeRequest(validBody));
+      expect(release).toHaveBeenCalled();
+    });
   });
 
   it('propagates a dead-reference validation error as 400', async () => {

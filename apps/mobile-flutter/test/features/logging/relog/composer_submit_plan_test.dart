@@ -71,6 +71,36 @@ void main() {
     expect((plan as PlainAnalysis).text, 'đám cưới');
   });
 
+  group('retry', () {
+    // A retry replays the FAILED message, which was already the stripped free
+    // text — so `text` and `freeText` are the same string.
+    test('re-attaches the picks instead of logging the text alone', () {
+      final plan = planComposerSubmit(
+        isNormal: true,
+        staged: [_entry('Phở bò')],
+        text: 'và 2 quả trứng',
+        freeText: 'và 2 quả trứng',
+      );
+
+      expect(
+        plan,
+        isA<CombinedAnalysis>(),
+        reason: 'retrying without refs silently drops the picked dishes',
+      );
+      expect((plan as CombinedAnalysis).refs, hasLength(1));
+    });
+
+    test('stays a plain analysis when the picks are gone', () {
+      final plan = planComposerSubmit(
+        isNormal: true,
+        staged: const [],
+        text: 'phở bò một tô',
+        freeText: 'phở bò một tô',
+      );
+      expect(plan, isA<PlainAnalysis>());
+    });
+  });
+
   test('a meal pick stages as a meal reference', () {
     final plan = planComposerSubmit(
       isNormal: true,

@@ -54,24 +54,28 @@ final relogCandidatesProvider = FutureProvider.autoDispose
 /// carries only references: no nutrition, grams or names cross the wire, and
 /// the server re-resolves each one under the authenticated user.
 ///
-/// [attemptId] must be FRESH per staged relog, never the feed's current attempt
-/// id: the server upserts pending analyses on `(user_id, attempt_id)`, so
-/// reusing the id of a revealed-but-unconfirmed AI card would overwrite that
-/// card's row with this relog. Double submits are held off by the caller's
-/// in-flight flag instead — the same guard web uses.
+/// [attemptId] is REQUIRED, and must be FRESH per staged relog.
+///
+/// Required because the server upserts on `(user_id, attempt_id)` and NULLs
+/// never conflict — omitting it would make every call insert another fat
+/// pending row that nothing collects promptly.
+///
+/// Fresh because reusing the id of a revealed-but-unconfirmed AI card would
+/// make that upsert overwrite the card's row with this relog. Double submits
+/// are held off by the caller's in-flight flag instead — the guard web uses.
 Future<void> stageRelogAnalysis(
   WidgetRef ref, {
   required String userId,
   required String date,
   required List<RelogRef> items,
-  String? attemptId,
+  required String attemptId,
 }) async {
   final api = ref.read(apiClientProvider);
   await api.post<Map<String, dynamic>>('/api/v1/meals/relog/stage', {
     'items': items.map((item) => item.toJson()).toList(),
     'loggedDate': date,
     'timezoneOffset': timezoneOffsetMinutes(),
-    if (attemptId != null) 'attemptId': attemptId,
+    'attemptId': attemptId,
   });
   // The stage COMMITTED the moment the POST returned. A refetch that fails
   // afterwards (flaky network) must not surface as a staging failure: the

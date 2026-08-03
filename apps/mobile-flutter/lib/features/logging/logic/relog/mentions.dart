@@ -100,8 +100,6 @@ List<RelogMention> reconcileMentions(
   );
 }
 
-final _runsOfSpace = RegExp(r'[ \t]{2,}');
-
 /// Remove every mention's text, leaving whatever the user typed around them.
 ///
 /// Applied after a successful submit: the mentions have been logged, so their
@@ -114,9 +112,35 @@ String stripMentions(String value, List<RelogMention> mentions) {
   for (final mention in ordered) {
     if (mention.start < 0 || mention.end > out.length) continue;
     out = out.substring(0, mention.start) + out.substring(mention.end);
+    out = _collapseSeam(out, mention.start);
   }
-  // Collapse the whitespace the removals left behind.
-  return out.replaceAll(_runsOfSpace, ' ').trim();
+  return out.trim();
+}
+
+bool _isSpaceOrTab(String char) => char == ' ' || char == '\t';
+
+/// Collapse the whitespace run that a removal just joined at [index] down to a
+/// single space.
+///
+/// Only at the SEAM. Collapsing the whole value (what this used to do) rewrites
+/// any surviving mention whose label contains a double space — and a `meal`
+/// candidate's label is `raw_input`, i.e. free user text, so that is reachable.
+/// [reconcileMentions] would then fail to find that label and silently drop its
+/// reference, leaving the user a staged row for a dish that will never be
+/// logged.
+String _collapseSeam(String value, int index) {
+  var start = index;
+  while (start > 0 && _isSpaceOrTab(value[start - 1])) {
+    start--;
+  }
+  var end = index;
+  while (end < value.length && _isSpaceOrTab(value[end])) {
+    end++;
+  }
+  if (end == start) return value;
+  // A single space is always safe here; the caller's trim() removes it when the
+  // seam sits at either boundary.
+  return '${value.substring(0, start)} ${value.substring(end)}';
 }
 
 /// One run of the composer text, either plain or part of a mention.

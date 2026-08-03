@@ -179,21 +179,25 @@ void main() {
       );
     });
 
-    test('omits attemptId entirely when there is none', () async {
-      api.handler = (method, path, __) =>
-          method == 'POST'
-              ? {'analysisId': 'a'}
-              : <String, dynamic>{'meals': [], 'pendingConfirmations': []};
+    test('always sends an attemptId — the server requires one', () async {
+      // Without it the server's (user_id, attempt_id) upsert degenerates into
+      // an INSERT per call, since NULLs never conflict.
+      api.handler =
+          (method, path, __) =>
+              method == 'POST'
+                  ? {'analysisId': 'a'}
+                  : <String, dynamic>{'meals': [], 'pendingConfirmations': []};
 
       await stageRelogAnalysis(
         _Ref(container),
         userId: 'user-1',
         date: '2026-07-02',
         items: const [RelogMealRef(sourceMealId: 'meal-9')],
+        attemptId: 'attempt-9',
       );
 
       final body = api.requests.first.$3! as Map<String, dynamic>;
-      expect(body.containsKey('attemptId'), isFalse);
+      expect(body['attemptId'], 'attempt-9');
     });
   });
 }

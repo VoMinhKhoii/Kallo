@@ -40,14 +40,18 @@ class _RelogPickerSectionState extends ConsumerState<RelogPickerSection> {
     final resolved = async.valueOrNull;
     if (resolved != null) _lastResolved = resolved;
 
-    // An error is not an empty history: fall back to whatever was last shown
-    // and let the empty copy speak only when there is genuinely nothing.
+    // An error is not an empty history: fall back to whatever was last shown,
+    // and when there is nothing to fall back to, say the search FAILED rather
+    // than letting the empty copy tell someone with a year of meals that they
+    // have never logged anything.
     final candidates =
         resolved ?? _lastResolved ?? const RelogCandidatesResponse();
 
     return RelogPickerPopup(
       candidates: candidates,
       isLoading: async.isLoading,
+      hasError: async.hasError,
+      onRetry: () => ref.invalidate(relogCandidatesProvider(widget.query)),
       query: widget.query,
       onSelect: widget.onSelect,
       onDismiss: widget.onDismiss,

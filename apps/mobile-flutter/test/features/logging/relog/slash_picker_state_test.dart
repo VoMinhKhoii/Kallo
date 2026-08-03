@@ -33,6 +33,26 @@ void main() {
     expect(state.isOpen, isFalse);
   });
 
+  group('query debounce', () {
+    test('opening the picker resolves immediately', () {
+      // `/` with nothing after it asks for the staples — a cached list, and the
+      // moment the popup appears. Debouncing it would show an empty box first.
+      expect(SlashPickerState.resolvesImmediately(null, ''), isTrue);
+      expect(SlashPickerState.resolvesImmediately(null, 'pho'), isTrue);
+    });
+
+    test('backspacing to an empty query resolves immediately', () {
+      expect(SlashPickerState.resolvesImmediately('pho', ''), isTrue);
+      expect(SlashPickerState.resolvesImmediately('pho', '   '), isTrue);
+    });
+
+    test('typing on into an open picker is debounced', () {
+      // Every keystroke here is otherwise a pair of unindexed scans.
+      expect(SlashPickerState.resolvesImmediately('', 'p'), isFalse);
+      expect(SlashPickerState.resolvesImmediately('ph', 'pho'), isFalse);
+    });
+  });
+
   group('dismissal', () {
     test('dismiss closes without touching the text', () {
       final open = _type(closed, '/pho');

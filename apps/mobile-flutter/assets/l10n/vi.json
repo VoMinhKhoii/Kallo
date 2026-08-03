@@ -1267,6 +1267,7 @@
       "searching": "Đang tìm...",
       "noResults": "Không tìm thấy món nào",
       "noHistory": "Chưa có món nào trong lịch sử",
+      "searchFailed": "Không tải được danh sách món",
       "removeStaged": "Bỏ {name}",
       "closePicker": "Đóng",
       "stagedFull": "Mỗi lần chỉ ghi lại được tối đa {max} món."

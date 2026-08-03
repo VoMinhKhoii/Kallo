@@ -216,12 +216,20 @@ export type RelogItemsInput = z.infer<typeof relogItemsSchema>;
  * `items` as the relog contract; carries
  * `attemptId` (not `newMealId`) because the meal id is minted at confirm time,
  * and the attempt id lets a re-stage of the same card upsert its pending row.
+ *
+ * `attemptId` is REQUIRED, unlike the analyze-meal request's optional one. That
+ * upsert keys on `(user_id, attempt_id)` and NULLs never conflict in Postgres,
+ * so an omitted id makes every call a fresh INSERT of a fat `pipelineResult`
+ * row — and the only reaper is a lazy, >7-days-expired sweep on the user's own
+ * day load. Requiring it caps a client to one live pending row per attempt.
+ * Costs nothing: both callers already mint one (web `use-relog-submit.ts`,
+ * Flutter `relog_providers.dart`).
  */
 export const stageRelogAnalysisSchema = z.object({
   items: relogItemsSchema.shape.items,
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,
-  attemptId: z.string().uuid().optional(),
+  attemptId: z.string().uuid('attemptId phải là UUID hợp lệ.'),
 });
 
 export type StageRelogAnalysisInput = z.infer<typeof stageRelogAnalysisSchema>;

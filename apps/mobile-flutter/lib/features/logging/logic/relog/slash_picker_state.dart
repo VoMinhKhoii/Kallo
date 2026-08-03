@@ -45,6 +45,17 @@ class SlashPickerState {
   /// (including one at the same offset) opens normally.
   SlashPickerState close() => const SlashPickerState();
 
+  /// Whether a query change should hit the search NOW or wait out the debounce.
+  ///
+  /// Typing a dish name is debounced — otherwise every keystroke is a pair of
+  /// unindexed scans. But OPENING the picker must feel instant: `/` with
+  /// nothing after it, and backspacing back to it, both ask for the user's
+  /// staples, which is one cached list rather than a search.
+  ///
+  /// [current] is the query already being shown (null when the picker is shut).
+  static bool resolvesImmediately(String? current, String next) =>
+      current == null || next.trim().isEmpty;
+
   @override
   bool operator ==(Object other) =>
       other is SlashPickerState &&
