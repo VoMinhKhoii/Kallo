@@ -17,7 +17,7 @@ export function DocsBreadcrumbs({ sectionId }: { sectionId: string }) {
         <li>
           <Link
             className="rounded-sm transition-colors hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
-            href="/docs"
+            href="/docs/overview"
           >
             {t('breadcrumb.home')}
           </Link>

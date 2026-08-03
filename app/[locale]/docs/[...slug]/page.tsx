@@ -77,10 +77,10 @@ export default async function DocPage({
     // SCREEN rather than centred in whatever the rail leaves over. The left
     // track is an empty spacer that exists only to balance the rail; without
     // it the reading column drifts left by half the rail's width.
-    <div className="xl:grid xl:grid-cols-[14rem_minmax(0,36rem)_14rem] xl:justify-center xl:gap-10">
+    <div className="xl:grid xl:grid-cols-[14rem_minmax(0,40rem)_14rem] xl:justify-center xl:gap-10">
       <div aria-hidden="true" className="hidden xl:block" />
 
-      <article className="mx-auto w-full min-w-0 max-w-[36rem] py-10 xl:mx-0">
+      <article className="mx-auto w-full min-w-0 max-w-[40rem] py-10 xl:mx-0">
         <DocsBreadcrumbs sectionId={section.id} />
 
         {/* Centred header block: title, revision stamp, rule. The rule is the

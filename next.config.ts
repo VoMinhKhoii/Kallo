@@ -38,6 +38,17 @@ const nextConfig: NextConfig = {
         destination: '/:locale/docs/legal/privacy',
         permanent: true,
       },
+      // The docs hub was removed — the footer carries the full tree, so a
+      // landing page listing it again was a second copy of the same thing.
+      // /docs stays a working URL because it is the one people type, and the
+      // landing footer, the header lockup and every breadcrumb used to point
+      // at it. Not `permanent`: if a hub ever comes back, a 308 cached in
+      // every visitor's browser would be very hard to undo.
+      {
+        source: '/:locale(en|vi)/docs',
+        destination: '/:locale/docs/overview',
+        permanent: false,
+      },
     ];
   },
 };

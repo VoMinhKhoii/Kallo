@@ -28,7 +28,7 @@ export async function DocsHeader({
       <div className="mx-auto flex h-16 max-w-[90rem] items-center gap-3 px-4 sm:px-6">
         <Link
           className="flex items-center gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
-          href="/docs"
+          href="/docs/overview"
         >
           <KalloWordmark className="h-4 w-auto text-nham-text" />
           <span

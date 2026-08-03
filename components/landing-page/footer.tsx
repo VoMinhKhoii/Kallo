@@ -65,7 +65,7 @@ export async function Footer() {
               <li>
                 <Link
                   className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
-                  href="/docs"
+                  href="/docs/overview"
                 >
                   {t('docs')}
                 </Link>

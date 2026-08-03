@@ -9,15 +9,10 @@ import { SITE_URL } from '@/lib/site';
 // The docs paths are derived from the docs nav rather than listed by hand, so
 // adding a page cannot leave the sitemap behind. /privacy and /terms are gone:
 // they now live under /docs/legal and the old paths 308 there (next.config.ts).
-const PUBLIC_PATHS = [
-  '',
-  '/docs',
-  ...DOCS_SLUGS.map((slug) => `/docs/${slug}`),
-];
+const PUBLIC_PATHS = ['', ...DOCS_SLUGS.map((slug) => `/docs/${slug}`)];
 
 function priorityFor(path: string): number {
   if (path === '') return 1;
-  if (path === '/docs') return 0.7;
 
   return 0.5;
 }
