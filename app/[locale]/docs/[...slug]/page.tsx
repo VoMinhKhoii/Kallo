@@ -73,39 +73,40 @@ export default async function DocPage({
   const { previous, next } = getNeighbours(path);
 
   return (
-    // The middle track takes all the space the TOC leaves and centres the
-    // measure inside it, so the reading column sits in the middle of the page
-    // and the rail is pinned to the right edge — rather than both hugging the
-    // sidebar with dead space trailing off to the right.
-    <div className="flex gap-10">
-      <div className="flex min-w-0 flex-1 justify-center">
-        <article className="w-full min-w-0 max-w-[36rem] py-10">
-          <DocsBreadcrumbs sectionId={section.id} />
+    // Three tracks of equal outer width, so the measure sits centred on the
+    // SCREEN rather than centred in whatever the rail leaves over. The left
+    // track is an empty spacer that exists only to balance the rail; without
+    // it the reading column drifts left by half the rail's width.
+    <div className="xl:grid xl:grid-cols-[14rem_minmax(0,36rem)_14rem] xl:justify-center xl:gap-10">
+      <div aria-hidden="true" className="hidden xl:block" />
 
-          {/* Centred header block: title, revision stamp, rule. The rule is
-              the page's one horizontal division — everything above it is
-              masthead, everything below is the document. */}
-          <div className="mt-3 text-center">
-            <h1 className="text-balance font-bold font-serif text-h2 text-nham-text">
-              {frontmatter.title}
-            </h1>
-            <LastUpdated date={frontmatter.lastUpdated} locale={locale} />
-          </div>
+      <article className="mx-auto w-full min-w-0 max-w-[36rem] py-10 xl:mx-0">
+        <DocsBreadcrumbs sectionId={section.id} />
 
-          <hr className="mt-8 border-nham-border border-t" />
+        {/* Centred header block: title, revision stamp, rule. The rule is the
+            page's one horizontal division — everything above it is masthead,
+            everything below is the document, so it is full-strength ink
+            rather than the hairline used between rows. */}
+        <div className="mt-3 text-center">
+          <h1 className="text-balance font-bold font-serif text-h1 text-nham-text">
+            {frontmatter.title}
+          </h1>
+          <LastUpdated date={frontmatter.lastUpdated} locale={locale} />
+        </div>
 
-          <div className="mt-10">
-            <Content />
-          </div>
+        <hr className="mt-8 border-nham-text border-t" />
 
-          <DocsPager
-            next={links.find((link) => link.slug === next)}
-            previous={links.find((link) => link.slug === previous)}
-          />
-        </article>
-      </div>
+        <div className="mt-10">
+          <Content />
+        </div>
 
-      <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-56 shrink-0 overflow-y-auto py-10 xl:block">
+        <DocsPager
+          next={links.find((link) => link.slug === next)}
+          previous={links.find((link) => link.slug === previous)}
+        />
+      </article>
+
+      <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] overflow-y-auto py-10 xl:block">
         <DocsToc entries={toc} />
       </aside>
     </div>
