@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { locales } from '@/i18n/config';
@@ -69,5 +69,37 @@ describe('docs navigation', () => {
     it('returns nothing for an unknown slug', () => {
       expect(getNeighbours('not/a/page')).toEqual({});
     });
+  });
+});
+
+describe('docs frontmatter', () => {
+  it('stamps every page in every locale with a valid lastUpdated', () => {
+    // Every doc page renders a revision stamp under its title, so a missing or
+    // malformed date leaves a visible hole. The type in loader.ts says the
+    // field is required, but MDX frontmatter is never type-checked against it
+    // — this test is the only thing that actually enforces it.
+    const bad: string[] = [];
+
+    for (const locale of locales) {
+      for (const slug of DOCS_SLUGS) {
+        const file = path.join(CONTENT_ROOT, locale, `${slug}.mdx`);
+        if (!existsSync(file)) continue;
+
+        const source = readFileSync(file, 'utf8');
+        const match = source.match(/^lastUpdated:\s*'(\d{4}-\d{2}-\d{2})'$/m);
+
+        if (!match) {
+          bad.push(`${locale}/${slug}.mdx`);
+          continue;
+        }
+
+        const parsed = new Date(`${match[1]}T00:00:00Z`);
+        if (Number.isNaN(parsed.getTime())) {
+          bad.push(`${locale}/${slug}.mdx (unparseable: ${match[1]})`);
+        }
+      }
+    }
+
+    expect(bad).toEqual([]);
   });
 });

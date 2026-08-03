@@ -13,7 +13,7 @@ declare module '*.mdx' {
   export const frontmatter: {
     title: string;
     description: string;
-    lastUpdated?: string;
+    lastUpdated: string;
   };
 
   const MDXComponent: ComponentType<Record<string, unknown>>;

@@ -1,11 +1,9 @@
 import { getTranslations } from 'next-intl/server';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { DocsLocaleToggle } from '@/components/docs/docs-locale-toggle';
-import { DocsMobileNav } from '@/components/docs/docs-mobile-nav';
 import { DocsSearch } from '@/components/docs/docs-search';
 import { Link } from '@/i18n/navigation';
 import type { DocsSearchEntry } from '@/lib/docs/search-index';
-import type { DocsNavSection } from '@/lib/docs/tree';
 
 /**
  * The docs bar — the thing that makes /docs read as a separate surface from
@@ -19,10 +17,8 @@ import type { DocsNavSection } from '@/lib/docs/tree';
  * it — the "Tài liệu" label sits after a thin divider instead.
  */
 export async function DocsHeader({
-  sections,
   searchEntries,
 }: {
-  sections: DocsNavSection[];
   searchEntries: DocsSearchEntry[];
 }) {
   const t = await getTranslations('docs');
@@ -30,8 +26,6 @@ export async function DocsHeader({
   return (
     <header className="sticky top-0 z-40 border-nham-border border-b bg-nham-surface">
       <div className="mx-auto flex h-16 max-w-[90rem] items-center gap-3 px-4 sm:px-6">
-        <DocsMobileNav sections={sections} />
-
         <Link
           className="flex items-center gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
           href="/docs"

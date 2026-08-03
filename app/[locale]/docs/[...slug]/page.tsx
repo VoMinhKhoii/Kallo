@@ -82,15 +82,17 @@ export default async function DocPage({
         <article className="w-full min-w-0 max-w-[36rem] py-10">
           <DocsBreadcrumbs sectionId={section.id} />
 
-          <h1 className="mt-3 text-balance font-normal font-serif text-h2 text-nham-text">
-            {frontmatter.title}
-          </h1>
-          <p className="mt-4 text-pretty text-base text-nham-text-muted leading-relaxed">
-            {frontmatter.description}
-          </p>
-          {frontmatter.lastUpdated && (
+          {/* Centred header block: title, revision stamp, rule. The rule is
+              the page's one horizontal division — everything above it is
+              masthead, everything below is the document. */}
+          <div className="mt-3 text-center">
+            <h1 className="text-balance font-bold font-serif text-h2 text-nham-text">
+              {frontmatter.title}
+            </h1>
             <LastUpdated date={frontmatter.lastUpdated} locale={locale} />
-          )}
+          </div>
+
+          <hr className="mt-8 border-nham-border border-t" />
 
           <div className="mt-10">
             <Content />

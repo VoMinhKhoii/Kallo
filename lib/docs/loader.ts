@@ -17,10 +17,12 @@ export interface DocFrontmatter {
   title: string;
   description: string;
   /**
-   * Hand-maintained, `YYYY-MM-DD`. Deliberately NOT derived from git mtime —
-   * a formatting pass must never restamp a legal document.
+   * Hand-maintained, `YYYY-MM-DD`. Required on every page — the docs render a
+   * revision stamp under each title, so a missing one leaves a hole. It is
+   * deliberately NOT derived from git mtime: a formatting pass must never
+   * restamp a legal document.
    */
-  lastUpdated?: string;
+  lastUpdated: string;
 }
 
 export interface DocModule {
