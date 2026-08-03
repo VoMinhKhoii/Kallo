@@ -45,7 +45,7 @@ export function DocsSidebar({
                   <Link
                     aria-current={isActive ? 'page' : undefined}
                     className={cn(
-                      'block rounded-lg px-3 py-1.5 font-sans-display text-2xs leading-snug transition-colors',
+                      'block rounded-lg px-3 py-1.5 font-sans-display text-base leading-snug transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
                       isActive
                         ? 'bg-nham-hover font-semibold text-nham-text'
