@@ -29,10 +29,10 @@ is handled by Supabase Auth.
 
 ### Profile and goals
 
-Display name, handle, avatar, preferred language; weight, height, age,
-biological sex and activity level; your goal (cutting, bulking or maintaining),
-how aggressive it is, and the calorie and macro targets derived from it; country
-of origin and country of residence.
+Display name, handle, avatar, the language you picked; weight, height, age,
+biological sex and activity level; your goal of cutting, bulking or maintaining,
+the pace you set for it, and the calorie and macro targets derived from those;
+the country you grew up in and the country you live in.
 
 ### Cooking habits
 
@@ -42,10 +42,11 @@ estimates match how you actually cook.
 
 ### Meal log
 
-The sentence you type, when you logged it, the meal slot, the entry mode
-(precise or cheat), the dishes and ingredients recognised, estimated weights,
-cooking method, match confidence, alcohol where relevant, cheat-slider
-positions, and all 28 nutrient values computed for each meal and each item.
+The sentence you write to describe a meal, when you logged it, the meal slot,
+the entry mode (Normal, Manual or Cheat meal), the dishes and ingredients Kallo
+recognises, estimated weights, cooking method, ingredient-match confidence,
+alcohol where relevant, the slider positions when you use Cheat meal, and all 28
+nutrient values computed for each meal and each item.
 
 ### Weight over time
 
@@ -89,11 +90,11 @@ vaguely elsewhere.
 When you request a meal analysis, the AI model receives **only**:
 
 - Your meal description.
-- Your country of origin and country of residence.
+- The country you grew up in and the country you live in.
 - Your cooking habits.
 - The language you want the result in.
 
-The model does **not** receive your weight goal, goal aggression, calorie or
+The model does **not** know your weight goal, your pace, your calorie or
 macro targets, weight, height, age, sex, email, name, or meal history.
 
 <Callout label="Why this matters" tone="tip">
