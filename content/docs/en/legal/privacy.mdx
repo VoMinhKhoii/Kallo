@@ -237,9 +237,11 @@ will notify you as applicable law requires.
 The providers listed in section 5 may process data in countries other than where
 you live. Specifically:
 
-- **Application servers** run on Google Cloud Run in the `asia-southeast3`
-  region (Bangkok, Thailand). Google Cloud has no region in Vietnam, so
-  application data is processed outside Vietnam.
+- **Application servers** run on Google Cloud Run in the `asia-southeast1`
+  region (Singapore). Google Cloud has no region in Vietnam, so application data
+  is processed outside Vietnam.
+- **The database**, operated by Supabase, is also in Singapore, next to the
+  application servers.
 - **AI meal analysis** goes through Vertex AI's global endpoint, so it may be
   processed in any region Google operates in, including outside Vietnam. Only
   the four fields listed in section 3 travel this path.

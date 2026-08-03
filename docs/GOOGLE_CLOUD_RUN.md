@@ -485,13 +485,14 @@ Prerequisites the Cloud Run service account needs **before** flipping
 1. Vertex AI API enabled on the project: `gcloud services enable aiplatform.googleapis.com`.
 2. `roles/aiplatform.user` granted to the runtime service account (see
    "Runtime service account" above).
-3. `GOOGLE_CLOUD_LOCATION=global`. The Cloud Run services run in
-   `asia-southeast3` (Bangkok, Thailand), but Vertex AI has no regional
-   endpoint there and
-   `gemini-3.1-flash-lite` is currently only published on the `global` endpoint.
-   Using `global` also avoids per-region model-availability skew across our two
-   STABLE models (`gemini-3.1-flash-lite`, `gemini-2.5-flash-lite`,
-   `gemini-embedding-001`).
+3. `GOOGLE_CLOUD_LOCATION=global`. `gemini-3.1-flash-lite` is currently only
+   published on the `global` endpoint, so no regional endpoint would serve it
+   whatever region we picked. Using `global` also avoids per-region
+   model-availability skew across our STABLE models (`gemini-3.1-flash-lite`,
+   `gemini-2.5-flash-lite`, `gemini-embedding-001`). For the record, Cloud Run
+   itself runs **prod in `asia-southeast1` (Singapore)**, co-located with the
+   Supabase database, while internal and staging run in `asia-southeast3`
+   (Bangkok, Thailand) — see `docs/PROD_DOMAIN_SETUP.md`.
 
 Rollback is a single env-var flip: set `AI_PROVIDER=ai-studio` on the Cloud Run
 service and redeploy (or `gcloud run services update --update-env-vars`). The
