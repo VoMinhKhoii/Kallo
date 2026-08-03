@@ -300,7 +300,7 @@ void main() {
       expect(
         xs,
         hasLength(1),
-        reason: '$label sits at a different x on the totals line: \$xs',
+        reason: '$label sits at a different x on the totals line: $xs',
       );
     }
     // And both kcal figures end on the same right edge, despite the total
