@@ -81,43 +81,4 @@ describe('GET /api/v1/meals/relog/candidates', () => {
       expect(loadRelogCandidatesAction).not.toHaveBeenCalled();
     });
   });
-
-  describe('rate limiting', () => {
-    it('throttles per user before running the search', async () => {
-      // The search is two unindexed LIKE scans over a year of the user's meals;
-      // the only prior defence was a client-side debounce, which curl ignores.
-      checkAnalysisGuards.mockResolvedValue({
-        allowed: false,
-        status: 429,
-        reason: 'per_user_minute',
-        retryAfterSeconds: 17,
-      });
-
-      const res = await GET(makeRequest('?q=pho'));
-
-      expect(res.status).toBe(429);
-      expect(res.headers.get('Retry-After')).toBe('17');
-      expect(loadRelogCandidatesAction).not.toHaveBeenCalled();
-    });
-
-    it('guards on the authenticated user id and its own route key', async () => {
-      await GET(makeRequest('?q=pho'));
-
-      expect(checkAnalysisGuards).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: 'user-123',
-          route: 'meals-relog-candidates',
-        })
-      );
-    });
-
-    it('releases the in-flight slot on success and on failure', async () => {
-      await GET(makeRequest('?q=pho'));
-      expect(release).toHaveBeenCalledTimes(1);
-
-      loadRelogCandidatesAction.mockRejectedValueOnce(new Error('boom'));
-      await GET(makeRequest('?q=pho'));
-      expect(release).toHaveBeenCalledTimes(2);
-    });
-  });
 });

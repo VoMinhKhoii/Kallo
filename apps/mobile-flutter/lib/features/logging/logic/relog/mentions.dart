@@ -65,13 +65,31 @@ bool isInsideMention(int offset, List<RelogMention> mentions) =>
 /// string each time) is what keeps duplicate picks of the same dish distinct:
 /// two "Cà phê sữa đá" mentions claim the first and second occurrence
 /// respectively, instead of both collapsing onto the first.
+///
+/// That cursor makes the walk ORDER-DEPENDENT, so the sort below is load-
+/// bearing, not tidiness: handed a pick that sits earlier in the sentence than
+/// one already in the list, an unsorted walk runs the cursor past it and drops
+/// it — the reference vanishes while its `/label` stays in the text and reaches
+/// the AI as prose. Owning the ordering HERE rather than at each call site is
+/// what stops that being re-introduced by the next caller.
+///
+/// The sort is STABLE (Dart's `List.sort` is not, hence the decorate step), so
+/// a newly inserted pick that ties with the mention it displaced keeps the
+/// caller's intended precedence.
 List<RelogMention> reconcileMentions(
   String value,
   List<RelogMention> mentions,
 ) {
+  final indexed = [
+    for (var i = 0; i < mentions.length; i++) (i, mentions[i]),
+  ]..sort((a, b) {
+    final byStart = a.$2.start.compareTo(b.$2.start);
+    return byStart != 0 ? byStart : a.$1.compareTo(b.$1);
+  });
+
   final surviving = <RelogMention>[];
   var cursor = 0;
-  for (final mention in mentions) {
+  for (final (_, mention) in indexed) {
     if (mention.label.isEmpty) continue;
     final index = value.indexOf(mention.label, cursor);
     if (index == -1) continue;

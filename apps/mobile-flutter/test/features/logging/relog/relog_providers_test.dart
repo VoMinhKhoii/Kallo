@@ -57,6 +57,8 @@ const _candidatesJson = {
 };
 
 void main() {
+  _cacheKeyIdentity();
+
   late FakeApiClient api;
   late ProviderContainer container;
 
@@ -74,7 +76,11 @@ void main() {
       () async {
         api.handler = (_, __, ___) => _candidatesJson;
 
-        await container.read(relogCandidatesProvider('').future);
+        await container.read(
+          relogCandidatesProvider(
+            const RelogCandidatesArgs('user-1', ''),
+          ).future,
+        );
 
         expect(
           api.requests.single.$2,
@@ -87,7 +93,11 @@ void main() {
     test('encodes a Vietnamese query rather than sending it raw', () async {
       api.handler = (_, __, ___) => _candidatesJson;
 
-      await container.read(relogCandidatesProvider('cà phê sữa').future);
+      await container.read(
+        relogCandidatesProvider(
+          const RelogCandidatesArgs('user-1', 'cà phê sữa'),
+        ).future,
+      );
 
       final path = api.requests.single.$2;
       expect(path, contains('q=c%C3%A0+ph%C3%AA+s%E1%BB%AFa'));
@@ -97,7 +107,11 @@ void main() {
     test('trims the query before sending it', () async {
       api.handler = (_, __, ___) => _candidatesJson;
 
-      await container.read(relogCandidatesProvider('  pho  ').future);
+      await container.read(
+        relogCandidatesProvider(
+          const RelogCandidatesArgs('user-1', '  pho  '),
+        ).future,
+      );
 
       expect(api.requests.single.$2, contains('q=pho&'));
     });
@@ -106,7 +120,9 @@ void main() {
       api.handler = (_, __, ___) => _candidatesJson;
 
       final result = await container.read(
-        relogCandidatesProvider('pho').future,
+        relogCandidatesProvider(
+          const RelogCandidatesArgs('user-1', 'pho'),
+        ).future,
       );
 
       expect(result.dishes.single.name, 'Phở bò');
@@ -132,7 +148,9 @@ void main() {
         api.handler = (_, __, ___) => _candidatesJson;
 
         final result = await container.read(
-          relogCandidatesProvider('pho').future,
+          relogCandidatesProvider(
+            const RelogCandidatesArgs('user-1', 'pho'),
+          ).future,
         );
 
         expect(
@@ -229,4 +247,34 @@ class _Ref implements WidgetRef {
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnsupportedError('not needed by these tests');
+}
+
+// The five-minute keep-alive means a signed-out account's meal names, macros
+// and source ids can outlive its session. Keyed on the query alone, the next
+// account to sign in on this device gets them served from cache without a
+// request — the server's ownership checks stop a copy, not a disclosure.
+void _cacheKeyIdentity() {
+  group('RelogCandidatesArgs', () {
+    test('the same query for two accounts is two cache entries', () {
+      expect(
+        const RelogCandidatesArgs('user-a', 'pho'),
+        isNot(const RelogCandidatesArgs('user-b', 'pho')),
+      );
+      expect(
+        const RelogCandidatesArgs('user-a', 'pho').hashCode,
+        isNot(const RelogCandidatesArgs('user-b', 'pho').hashCode),
+      );
+    });
+
+    test('the same account and query is ONE entry, so caching still works', () {
+      expect(
+        const RelogCandidatesArgs('user-a', 'pho'),
+        const RelogCandidatesArgs('user-a', 'pho'),
+      );
+      expect(
+        const RelogCandidatesArgs('user-a', 'pho').hashCode,
+        const RelogCandidatesArgs('user-a', 'pho').hashCode,
+      );
+    });
+  });
 }

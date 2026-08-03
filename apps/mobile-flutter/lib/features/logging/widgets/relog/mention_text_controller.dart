@@ -88,14 +88,18 @@ class MentionTextEditingController extends TextEditingController {
     // `stripMentions` as a stray character in what the AI sees.
     final display = '$mentionPrefix${candidate.name}';
     final inserted = insertMention(text, token, display);
+    // FIRST in the list, not last. `reconcileMentions` sorts by offset, and the
+    // new pick ties with any existing mention that started exactly where this
+    // one was spliced in — the tie has to break in favour of the newcomer,
+    // because the splice is what pushed the other one right.
     _mentions = reconcileMentions(inserted.value, [
-      ..._mentions,
       RelogMention(
         stageId: stageId,
         ref: candidate.ref,
         label: display,
         start: inserted.start,
       ),
+      ..._mentions,
     ]);
     value = TextEditingValue(
       text: inserted.value,

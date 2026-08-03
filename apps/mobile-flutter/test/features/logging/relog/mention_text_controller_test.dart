@@ -102,6 +102,32 @@ void main() {
       expect(c.entries.length, 1);
     });
 
+    test('a pick made BEFORE an existing one keeps both references', () {
+      _type(c, '/pho');
+      _pick(c, _dish('Phở bò'), 'a');
+
+      // Back to the very start of the line and pick again — the composer is
+      // ordinary text, so this is just as reachable as appending.
+      final next = '/ca ${c.text}';
+      c.value = TextEditingValue(
+        text: next,
+        selection: const TextSelection.collapsed(offset: 3),
+      );
+      c.syncMentions();
+      c.addMention(_dish('Cà phê', order: 1), c.activeToken!, 'b');
+
+      expect(
+        c.entries.map((e) => e.stageId),
+        ['b', 'a'],
+        reason: 'the earlier pick must survive AND read in composer order',
+      );
+      expect(
+        c.freeText,
+        isEmpty,
+        reason: 'a dropped pick leaks its /label to the AI as prose',
+      );
+    });
+
     test(
       'refuses a pick past the staged cap rather than dropping it silently',
       () {

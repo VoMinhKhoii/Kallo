@@ -139,6 +139,7 @@ class FeedComposer extends StatelessWidget {
           popupSlot:
               isNormal && relogQuery != null
                   ? RelogPickerSection(
+                    userId: userId,
                     query: relogQuery!,
                     onSelect: onSelectRelog,
                     onDismiss: onDismissRelog,

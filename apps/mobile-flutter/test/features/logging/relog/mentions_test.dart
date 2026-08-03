@@ -91,7 +91,32 @@ void main() {
       ]);
       // 'Phở bò' is claimed at 11; the cursor has passed 'Bún chả' by then, so
       // the second mention finds no occurrence at or after it and is dropped.
+      // The offsets here are STALE, not merely unordered — sorting by a start
+      // that no longer describes the text cannot rescue them.
       expect(out.map((m) => m.label), ['Phở bò']);
+    });
+
+    // The cursor only moves forward, so a caller that hands over a pick made
+    // EARLIER in the sentence than one already staged would have it walked past
+    // and dropped — the reference gone while its label sits in the text, headed
+    // for the AI as prose. Sorting inside the walk is what makes callers safe.
+    test('keeps a mention the caller listed out of composer order', () {
+      final out = reconcileMentions('Cà phê Phở bò', [
+        _mention('Phở bò', 7),
+        _mention('Cà phê', 0),
+      ]);
+      expect(out.map((m) => m.label), ['Cà phê', 'Phở bò']);
+      expect(out.map((m) => m.start), [0, 7]);
+    });
+
+    // A pick spliced in exactly where another one started: the splice is what
+    // pushed the old one right, so the newcomer — listed first — takes the slot.
+    test('breaks an offset tie in favour of the earlier-listed mention', () {
+      final out = reconcileMentions('Cà phê Phở bò', [
+        _mention('Cà phê', 0),
+        _mention('Phở bò', 0),
+      ]);
+      expect(out.map((m) => m.label), ['Cà phê', 'Phở bò']);
     });
   });
 

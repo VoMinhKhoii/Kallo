@@ -50,23 +50,45 @@ const RELOG_GUARD_LIMITS = {
 
 export type RelogGuardKind = keyof typeof RELOG_GUARD_LIMITS;
 
-export interface RelogGuardOutcome {
-  /** Present when throttled — hand it straight back to the client. */
-  blocked?: Response;
-  /**
-   * The caller MUST invoke this in a `finally`. The in-flight counter is what
-   * enforces `concurrentUser`, so leaking it locks the user out of relog until
-   * the stale-counter sweep catches up.
-   */
-  release?: () => Promise<void> | void;
-}
+/**
+ * ONE counter key for every relog write, shared by staging and the instant
+ * save.
+ *
+ * `checkAnalysisGuards` keys its window and in-flight counters on the route
+ * string, so giving each write action its own would hand a user an independent
+ * `concurrentUser: 1` budget per action — two simultaneous transactions, each
+ * holding `FOR UPDATE` on its source meals, against a pool that defaults to 2.
+ * Exported as a constant precisely so a new write path cannot quietly invent a
+ * third key.
+ */
+export const RELOG_WRITE_ROUTE = 'meals-relog-write';
 
-/** Throttle one relog request. */
-export async function guardRelogRequest(
+/**
+ * Run `work` under the relog throttle for `userId`.
+ *
+ * Lives in `lib/` and wraps the WORK rather than decorating a route, because
+ * the REST routes are not the only entry point: the web composer calls
+ * `loadRelogCandidatesAction` / `stageRelogAnalysisAction` as Server Actions
+ * directly, and a guard that only wrapped the routes left that path completely
+ * unthrottled — an authenticated caller could drive the unindexed candidate
+ * scan and the `FOR UPDATE` write path as fast as they liked. Guarding inside
+ * the action puts every client behind ONE limiter, and makes it impossible to
+ * add a new caller that forgets to.
+ *
+ * Throws `Errors.rateLimited(…)` when throttled: a Server Action has no
+ * `Response` to hand back, and `serializeError` turns the thrown error into the
+ * same 429 + `Retry-After` the routes used to build by hand.
+ *
+ * The release runs in a `finally` here rather than at each call site — the
+ * in-flight counter is what enforces `concurrentUser`, so leaking it locks the
+ * user out of relog until the stale-counter sweep catches up.
+ */
+export async function withRelogGuard<T>(
   kind: RelogGuardKind,
   route: string,
-  userId: string
-): Promise<RelogGuardOutcome> {
+  userId: string,
+  work: () => Promise<T>
+): Promise<T> {
   const guard = await checkAnalysisGuards({
     userId,
     route,
@@ -74,12 +96,12 @@ export async function guardRelogRequest(
   });
 
   if (!guard.allowed) {
-    return {
-      blocked: Response.json(Errors.rateLimited().toJSON(), {
-        status: guard.status,
-        headers: { 'Retry-After': String(guard.retryAfterSeconds) },
-      }),
-    };
+    throw Errors.rateLimited(undefined, guard.retryAfterSeconds);
   }
-  return { release: guard.release };
+
+  try {
+    return await work();
+  } finally {
+    await guard.release?.();
+  }
 }

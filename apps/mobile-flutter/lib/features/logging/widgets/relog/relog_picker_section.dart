@@ -16,10 +16,15 @@ import 'relog_picker_popup.dart';
 class RelogPickerSection extends ConsumerStatefulWidget {
   const RelogPickerSection({
     super.key,
+    required this.userId,
     required this.query,
     required this.onSelect,
     required this.onDismiss,
   });
+
+  /// Whose history to search. Part of the cache key, so a second account on
+  /// this device can never be handed the first one's meals from a warm entry.
+  final String userId;
 
   /// The debounced token text. Empty means "show my staples", which is a real
   /// result set server-side, not a blank state.
@@ -36,7 +41,9 @@ class _RelogPickerSectionState extends ConsumerState<RelogPickerSection> {
 
   @override
   Widget build(BuildContext context) {
-    final async = ref.watch(relogCandidatesProvider(widget.query));
+    final async = ref.watch(
+      relogCandidatesProvider(RelogCandidatesArgs(widget.userId, widget.query)),
+    );
     final resolved = async.valueOrNull;
     if (resolved != null) _lastResolved = resolved;
 
@@ -51,7 +58,12 @@ class _RelogPickerSectionState extends ConsumerState<RelogPickerSection> {
       candidates: candidates,
       isLoading: async.isLoading,
       hasError: async.hasError,
-      onRetry: () => ref.invalidate(relogCandidatesProvider(widget.query)),
+      onRetry:
+          () => ref.invalidate(
+            relogCandidatesProvider(
+              RelogCandidatesArgs(widget.userId, widget.query),
+            ),
+          ),
       query: widget.query,
       onSelect: widget.onSelect,
       onDismiss: widget.onDismiss,

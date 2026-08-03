@@ -16,6 +16,33 @@ import '../../../models/relog.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 
+/// Family key for [relogCandidatesProvider]: the OWNER plus the query.
+///
+/// The user id is not decoration. What comes back is the signed-in user's own
+/// meal history — dish names, macros, source meal ids — and the entry is held
+/// for five minutes after the picker closes. Keyed on the query alone, a second
+/// account signing in on the same device hits a warm cache and is handed the
+/// previous account's meals with no request made. The server's ownership checks
+/// stop it being COPIED; they cannot stop it being SHOWN.
+///
+/// `ingredientSearchProvider` keys on its query alone and is right to: it
+/// searches the shared food catalogue, which belongs to nobody. Anything
+/// user-scoped follows `recentCheatOccasionsProvider` and carries the id.
+class RelogCandidatesArgs {
+  const RelogCandidatesArgs(this.userId, this.query);
+  final String userId;
+  final String query;
+
+  @override
+  bool operator ==(Object other) =>
+      other is RelogCandidatesArgs &&
+      other.userId == userId &&
+      other.query == query;
+
+  @override
+  int get hashCode => Object.hash(userId, query);
+}
+
 /// Candidate search for the `/` picker. Deterministic and server-side — the
 /// query text goes straight to SQL, so there is nothing to filter here.
 ///
@@ -25,7 +52,8 @@ import 'logging_providers.dart';
 /// idiom) so backspacing through a word — and reopening the picker — resolves
 /// from cache instead of refetching.
 final relogCandidatesProvider = FutureProvider.autoDispose
-    .family<RelogCandidatesResponse, String>((ref, query) async {
+    .family<RelogCandidatesResponse, RelogCandidatesArgs>((ref, args) async {
+      final query = args.query;
       final link = ref.keepAlive();
       Timer? timer;
       ref.onDispose(() => timer?.cancel());

@@ -102,10 +102,15 @@ export function useStagedEntries(): StagedEntriesApi {
       const entry = toStagedEntry(candidate, crypto.randomUUID());
       // Re-derive every offset from the new text rather than trusting the
       // insertion point alone — mentions after it all shifted right.
+      //
+      // FIRST in the list, not last. `reconcileMentions` sorts by offset, and
+      // the new pick ties with any existing mention that started exactly where
+      // this one was spliced in — the tie has to break in favour of the
+      // newcomer, because the splice is what pushed the other one right.
       setEntries(
         reconcileMentions(inserted.value, [
-          ...entries,
           { ...entry, start: inserted.start },
+          ...entries,
         ])
       );
       setValue(inserted.value);

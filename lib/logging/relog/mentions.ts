@@ -26,6 +26,20 @@ export interface RelogMention extends RelogStagedEntry {
  * string each time) is what keeps duplicate picks of the same dish distinct:
  * two "Cà phê sữa đá" mentions claim the first and second occurrence
  * respectively, instead of both collapsing onto the first.
+ *
+ * That cursor makes the walk ORDER-DEPENDENT, so the sort below is load-
+ * bearing, not tidiness: handed a pick that sits earlier in the sentence than
+ * one already in the list, an unsorted walk runs the cursor past it and drops
+ * it — the reference vanishes while its `/label` stays in the text and reaches
+ * the AI as prose. Owning the ordering HERE rather than at each call site is
+ * what stops that being re-introduced by the next caller.
+ *
+ * `Array.prototype.sort` is stable (ES2019), so a newly inserted pick that ties
+ * with the mention it displaced keeps the caller's intended precedence.
+ *
+ * Kept in lockstep with the Dart port in
+ * `apps/mobile-flutter/lib/features/logging/logic/relog/mentions.dart` — same
+ * semantics, same tests, both sides.
  */
 export function reconcileMentions(
   value: string,
@@ -33,7 +47,7 @@ export function reconcileMentions(
 ): RelogMention[] {
   const surviving: RelogMention[] = [];
   let cursor = 0;
-  for (const mention of mentions) {
+  for (const mention of [...mentions].sort((a, b) => a.start - b.start)) {
     const index = value.indexOf(mention.label, cursor);
     if (index === -1) continue;
     surviving.push({ ...mention, start: index });
