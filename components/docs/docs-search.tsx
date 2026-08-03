@@ -17,13 +17,51 @@ import { DOCS_SECTIONS } from '@/lib/docs/navigation';
 import type { DocsSearchEntry } from '@/lib/docs/search-index';
 
 /**
+ * Strips Vietnamese diacritics so `dinh duong` finds `Dinh dưỡng`.
+ *
+ * Typing accents needs a Vietnamese keyboard or a fair amount of patience, so
+ * an accent-sensitive palette is unusable for exactly the readers this product
+ * is built for. NFD splits a letter from its marks, the range strip removes
+ * them, and đ/Đ is handled separately because it is a distinct letter rather
+ * than a base plus a combining mark.
+ */
+function foldDiacritics(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase();
+}
+
+/**
+ * cmdk searches an item's `value` plus its `keywords`, so the unaccented forms
+ * ride along as extra keywords rather than replacing the filter. That keeps
+ * `components/ui/command` untouched — `CommandDialog` does not forward a
+ * `filter` prop to the inner `Command`, and the shadcn primitives are
+ * generated files.
+ */
+function searchKeywords(entry: DocsSearchEntry): string[] {
+  return [
+    ...entry.keywords,
+    foldDiacritics(entry.title),
+    foldDiacritics(entry.description),
+    ...entry.keywords.map(foldDiacritics),
+  ];
+}
+
+/**
  * ⌘K / Ctrl-K search over the docs.
  *
  * The trigger is a real button that looks like a field rather than an actual
  * input: the palette owns the text entry, and a second focusable input in the
  * header would put a dead tab stop in front of every reader.
  */
-export function DocsSearch({ entries }: { entries: DocsSearchEntry[] }) {
+interface DocsSearchProps {
+  entries: DocsSearchEntry[];
+}
+
+export function DocsSearch({ entries }: DocsSearchProps) {
   const t = useTranslations('docs.search');
   const tSections = useTranslations('docs.sections');
   const router = useRouter();
@@ -83,7 +121,7 @@ export function DocsSearch({ entries }: { entries: DocsSearchEntry[] }) {
                 {rows.map((entry) => (
                   <CommandItem
                     key={entry.slug}
-                    keywords={entry.keywords}
+                    keywords={searchKeywords(entry)}
                     onSelect={() => go(entry.slug)}
                     value={`${entry.title} ${entry.description}`}
                   >

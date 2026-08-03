@@ -22,7 +22,11 @@ import type { DocsNavSection } from '@/lib/docs/tree';
  * page titles wraps most of them, and the wrapping is what makes a directory
  * hard to scan.
  */
-export async function DocsFooter({ sections }: { sections: DocsNavSection[] }) {
+interface DocsFooterProps {
+  sections: DocsNavSection[];
+}
+
+export async function DocsFooter({ sections }: DocsFooterProps) {
   const t = await getTranslations('docs');
   const tSections = await getTranslations('docs.sections');
   const tFooter = await getTranslations('landing.footer');

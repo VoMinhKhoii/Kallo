@@ -486,7 +486,8 @@ Prerequisites the Cloud Run service account needs **before** flipping
 2. `roles/aiplatform.user` granted to the runtime service account (see
    "Runtime service account" above).
 3. `GOOGLE_CLOUD_LOCATION=global`. The Cloud Run services run in
-   `asia-southeast3` (Saigon), but Vertex AI has no regional endpoint there and
+   `asia-southeast3` (Bangkok, Thailand), but Vertex AI has no regional
+   endpoint there and
    `gemini-3.1-flash-lite` is currently only published on the `global` endpoint.
    Using `global` also avoids per-region model-availability skew across our two
    STABLE models (`gemini-3.1-flash-lite`, `gemini-2.5-flash-lite`,

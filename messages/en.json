@@ -1650,7 +1650,8 @@
     },
     "pager": {
       "previous": "Previous",
-      "next": "Next"
+      "next": "Next",
+      "label": "Page navigation"
     },
     "search": {
       "trigger": "Search the docs",

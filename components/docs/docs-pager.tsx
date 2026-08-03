@@ -11,19 +11,21 @@ import type { DocsNavLink } from '@/lib/docs/tree';
  * icon discipline exists to prevent. The small muted label above each title
  * already says which direction it goes.
  */
-export function DocsPager({
-  previous,
-  next,
-}: {
+interface DocsPagerProps {
   previous?: DocsNavLink;
   next?: DocsNavLink;
-}) {
+}
+
+export function DocsPager({ previous, next }: DocsPagerProps) {
   const t = useTranslations('docs.pager');
 
   if (!(previous || next)) return null;
 
   return (
-    <nav className="mt-16 grid gap-3 border-nham-border border-t pt-8 sm:grid-cols-2">
+    <nav
+      aria-label={t('label')}
+      className="mt-16 grid gap-3 border-nham-border border-t pt-8 sm:grid-cols-2"
+    >
       {previous ? (
         <Link
           className="group rounded-xl border border-nham-border p-card-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"

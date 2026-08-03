@@ -1650,7 +1650,8 @@
     },
     "pager": {
       "previous": "Trang trước",
-      "next": "Trang sau"
+      "next": "Trang sau",
+      "label": "Điều hướng trang"
     },
     "search": {
       "trigger": "Tìm trong tài liệu",

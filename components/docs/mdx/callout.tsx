@@ -48,7 +48,10 @@ interface CalloutProps {
 }
 
 export function Callout({ label, tone = 'note', children }: CalloutProps) {
-  const styles = TONES[tone];
+  // MDX props are not type-checked at build time, so `tone="warning"` from a
+  // content author would otherwise be `undefined` here and take the whole page
+  // down on the next property access.
+  const styles = TONES[tone] ?? TONES.note;
 
   return (
     <aside className={cn('mt-6 rounded-xl border p-card-sm', styles.container)}>

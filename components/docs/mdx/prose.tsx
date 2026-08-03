@@ -1,4 +1,6 @@
 import type { ComponentPropsWithoutRef } from 'react';
+import { Link } from '@/i18n/navigation';
+import { cn } from '@/lib/utils';
 
 /**
  * Long-form prose primitives for docs MDX.
@@ -56,12 +58,36 @@ export function DocsParagraph(props: ComponentPropsWithoutRef<'p'>) {
   );
 }
 
-export function DocsLink({ href, ...props }: ComponentPropsWithoutRef<'a'>) {
+const LINK_CLASS =
+  'rounded-sm underline decoration-nham-border underline-offset-4 transition-colors hover:decoration-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent';
+
+/**
+ * MDX writes internal links as plain `/docs/…`, with no locale prefix — that is
+ * what keeps a page's source identical in both languages. Rendering those
+ * through next-intl's `Link` is what puts the prefix back: a bare `<a>` would
+ * send a reader on `/vi/docs/…` to `/docs/…`, which the middleware then
+ * resolves by *detection*, quietly dropping them into English mid-document.
+ *
+ * Hash links stay plain anchors — that includes the `#` affordance
+ * rehype-autolink-headings injects, which must not become a route change.
+ */
+export function DocsLink({
+  href,
+  className,
+  ...props
+}: ComponentPropsWithoutRef<'a'>) {
   const isExternal = href?.startsWith('http');
+  const isInternal = href?.startsWith('/');
+
+  if (isInternal && href) {
+    return (
+      <Link className={cn(LINK_CLASS, className)} href={href} {...props} />
+    );
+  }
 
   return (
     <a
-      className="rounded-sm underline decoration-nham-border underline-offset-4 transition-colors hover:decoration-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+      className={cn(LINK_CLASS, className)}
       href={href}
       rel={isExternal ? 'noreferrer' : undefined}
       target={isExternal ? '_blank' : undefined}

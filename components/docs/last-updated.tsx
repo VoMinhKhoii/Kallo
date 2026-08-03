@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import type { Locale } from '@/i18n/config';
 
 /**
  * The revision stamp under a page title. Legal documents need it, and the
@@ -9,13 +10,17 @@ import { getTranslations } from 'next-intl/server';
  * inside a `<time>` with the machine-readable value intact and a
  * locale-formatted face.
  */
-export async function LastUpdated({
-  date,
-  locale,
-}: {
+interface LastUpdatedProps {
+  /** Hand-written `YYYY-MM-DD` from frontmatter. */
   date: string;
-  locale: string;
-}) {
+  /**
+   * The app's own union, not `string`: `Intl.DateTimeFormat` throws a
+   * RangeError on an unrecognised language tag, which would fail the render.
+   */
+  locale: Locale;
+}
+
+export async function LastUpdated({ date, locale }: LastUpdatedProps) {
   const t = await getTranslations('docs');
 
   const parsed = new Date(`${date}T00:00:00Z`);

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { hasLocale } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { DocsBreadcrumbs } from '@/components/docs/docs-breadcrumbs';
 import { DocsPager } from '@/components/docs/docs-pager';
 import { DocsToc } from '@/components/docs/docs-toc';
 import { LastUpdated } from '@/components/docs/last-updated';
-import type { Locale } from '@/i18n/config';
 import { routing } from '@/i18n/navigation';
 import { loadDoc } from '@/lib/docs/loader';
 import {
@@ -29,8 +29,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string; slug: string[] }>;
 }): Promise<Metadata> {
   const { locale, slug } = await params;
+  if (!hasLocale(routing.locales, locale)) return {};
+
   const path = slug.join('/');
-  const doc = await loadDoc(locale as Locale, path);
+  const doc = await loadDoc(locale, path);
 
   if (!doc) return {};
 
@@ -41,7 +43,15 @@ export async function generateMetadata({
     description: doc.frontmatter.description,
     // The locale layout deliberately sets no shared openGraph.url, so each
     // page has to declare its own or it inherits the locale root as canonical.
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+      // Every slug is guaranteed to exist in both locales by
+      // generateStaticParams, so the hreflang pair is always complete.
+      languages: {
+        en: `${SITE_URL}/en/docs/${path}`,
+        vi: `${SITE_URL}/vi/docs/${path}`,
+      },
+    },
     openGraph: {
       url,
       title: doc.frontmatter.title,
@@ -56,10 +66,16 @@ export default async function DocPage({
   params: Promise<{ locale: string; slug: string[] }>;
 }) {
   const { locale, slug } = await params;
+  // Narrow the URL segment once. Every downstream call wants the union, and
+  // three separate `as Locale` casts would each be an unchecked promise that
+  // the segment is one of ours.
+  if (!hasLocale(routing.locales, locale)) {
+    notFound();
+  }
   setRequestLocale(locale);
 
   const path = slug.join('/');
-  const doc = await loadDoc(locale as Locale, path);
+  const doc = await loadDoc(locale, path);
   const section = findSectionForSlug(path);
 
   if (!(doc && section)) {
@@ -67,9 +83,9 @@ export default async function DocPage({
   }
 
   const { default: Content, frontmatter } = doc;
-  const toc = await getToc(locale as Locale, path);
+  const toc = await getToc(locale, path);
 
-  const links = await getDocsLinks(locale as Locale);
+  const links = await getDocsLinks(locale);
   const { previous, next } = getNeighbours(path);
 
   return (

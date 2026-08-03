@@ -19,13 +19,15 @@ import { getDocsTree } from '@/lib/docs/tree';
  * rail is rendered by the page rather than here, because its contents are
  * per-document.
  */
+interface DocsLayoutProps {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}
+
 export default async function DocsLayout({
   children,
   params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ locale: string }>;
-}) {
+}: DocsLayoutProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 

@@ -1,4 +1,5 @@
 import type { ComponentPropsWithoutRef } from 'react';
+import { cn } from '@/lib/utils';
 
 /**
  * Code and table primitives for docs MDX.
@@ -14,19 +15,31 @@ import type { ComponentPropsWithoutRef } from 'react';
  * white card sitting a step lighter, exactly as product cards do.
  */
 
-export function DocsInlineCode(props: ComponentPropsWithoutRef<'code'>) {
+export function DocsInlineCode({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<'code'>) {
   return (
     <code
-      className="rounded-md border border-nham-border bg-white px-1.5 py-0.5 font-mono text-caption text-nham-text"
+      className={cn(
+        'rounded-md border border-nham-border bg-white px-1.5 py-0.5 font-mono text-caption text-nham-text',
+        className
+      )}
       {...props}
     />
   );
 }
 
-export function DocsPre(props: ComponentPropsWithoutRef<'pre'>) {
+export function DocsPre({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<'pre'>) {
   return (
     <pre
-      className="mt-6 overflow-x-auto rounded-xl border border-nham-border bg-white p-4 font-mono text-caption text-nham-text leading-relaxed [&_code]:border-0 [&_code]:bg-transparent [&_code]:p-0"
+      className={cn(
+        'mt-6 overflow-x-auto rounded-xl border border-nham-border bg-white p-4 font-mono text-caption text-nham-text leading-relaxed [&_code]:border-0 [&_code]:bg-transparent [&_code]:p-0',
+        className
+      )}
       {...props}
     />
   );
@@ -36,10 +49,16 @@ export function DocsPre(props: ComponentPropsWithoutRef<'pre'>) {
  * Wide tables scroll inside their own container so the page body never
  * scrolls horizontally on a phone.
  */
-export function DocsTable(props: ComponentPropsWithoutRef<'table'>) {
+export function DocsTable({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<'table'>) {
   return (
     <div className="mt-6 overflow-x-auto rounded-xl border border-nham-border bg-white">
-      <table className="w-full border-collapse text-left" {...props} />
+      <table
+        className={cn('w-full border-collapse text-left', className)}
+        {...props}
+      />
     </div>
   );
 }
@@ -48,10 +67,16 @@ export function DocsTable(props: ComponentPropsWithoutRef<'table'>) {
  * The header rule is 2px where body rows get 1px. With no usable fill to set
  * the row apart, weight and rule thickness are what mark it as a header.
  */
-export function DocsTh(props: ComponentPropsWithoutRef<'th'>) {
+export function DocsTh({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<'th'>) {
   return (
     <th
-      className="border-nham-border border-b-2 px-4 py-3 font-semibold text-caption text-nham-text"
+      className={cn(
+        'border-nham-border border-b-2 px-4 py-3 font-semibold text-caption text-nham-text',
+        className
+      )}
       {...props}
     />
   );
@@ -62,10 +87,16 @@ export function DocsTh(props: ComponentPropsWithoutRef<'th'>) {
  * text-vs-photo), and figure alignment is the exception. Pages that genuinely
  * tabulate numbers should ask for it rather than every table paying for it.
  */
-export function DocsTd(props: ComponentPropsWithoutRef<'td'>) {
+export function DocsTd({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<'td'>) {
   return (
     <td
-      className="border-nham-border/60 border-b px-4 py-3 align-top text-base text-nham-text leading-relaxed last:border-0"
+      className={cn(
+        'border-nham-border/60 border-b px-4 py-3 align-top text-base text-nham-text leading-relaxed last:border-0',
+        className
+      )}
       {...props}
     />
   );
