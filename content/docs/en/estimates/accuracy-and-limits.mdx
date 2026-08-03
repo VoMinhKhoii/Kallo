@@ -1,0 +1,96 @@
+---
+title: Accuracy and limits
+description: Where Kallo gets it wrong, by how much, and when not to trust the number.
+lastUpdated: '2026-08-03'
+---
+
+Every nutrition app is estimating. The difference is whether it says so.
+
+This page says so.
+
+## Why a range, not a number
+
+A bowl of noodle soup has no single correct calorie value. It depends on how much noodle
+you got, the cut of meat, how fatty the broth is, and whether you finished the
+liquid.
+
+Kallo computes a plausible range, then collapses it to one figure for your log.
+The number you see is a point inside that range, not a measurement.
+
+> Useful uncertainty, not fake certainty.
+
+## The three biggest sources of error
+
+### 1. Portion size
+
+By far the largest. If Kallo assumes your bowl held 500ml and it actually held
+350ml, every figure is 40% off — even when the ingredient recognition was
+perfect.
+
+**How to reduce it:** answer the vessel question when Kallo asks, and give
+weights when you know them.
+
+### 2. Oil and cooking method
+
+Oil in stir-fried or deep-fried dishes varies enormously between kitchens. The
+same plate of stir-fried greens can differ twofold in fat.
+
+**How to reduce it:** set your oil habit accurately in your
+[profile](/docs/profile-and-targets), and state the cooking method when you
+describe a meal.
+
+### 3. Reference data coverage
+
+Protein, carbohydrate and fat data is reasonably complete. Micronutrients are
+not — many rows leave vitamin and mineral columns empty.
+
+**Consequence:** a micronutrient showing low may mean you ate too little, or that
+the data has no figure. The [Nutrition](/docs/tracking/nutrition) page carries a
+confidence reading precisely so you can tell those apart.
+
+## Where Kallo is strong
+
+- **Vietnamese and Asian food** — the reference data and the recognition were
+  built around it.
+- **Multi-component dishes** — exactly where ingredient-by-ingredient search in
+  other apps becomes impractical.
+- **Repeated meals** — [re-logging](/docs/logging/relog) gives consistent
+  figures across days.
+- **Trends over time** — random error cancels out across many days.
+
+## Where Kallo is weak
+
+- **Unusual, rare or invented dishes** — little reference data to lean on.
+- **Restaurant food with proprietary recipes** — nobody knows how much butter
+  went in.
+- **Micronutrients on a single day** — look at longer windows.
+- **Any day you only partly logged** — missing data is worse than rough data.
+
+## Using the numbers well
+
+<Callout label="The trend is more trustworthy than any single day" tone="tip">
+A single day's error can be 20–30%. The average error across three weeks is far
+smaller, because random errors cancel each other out.
+
+If you are cutting, the thing to watch is your weight trend line against your
+target adherence — not whether yesterday came in 80 kcal over.
+</Callout>
+
+## When not to use Kallo
+
+Kallo is not a medical device. Some situations need accuracy an estimating app
+cannot provide:
+
+- Carbohydrate counting for insulin dosing.
+- A therapeutic diet prescribed by a clinician.
+- Managing an allergy or intolerance — Kallo estimates nutrition, it does
+  **not** verify allergens.
+- Recovering from an eating disorder, where counting can do more harm than good.
+
+In these cases, work with a health professional.
+
+## Helping Kallo improve
+
+If an ingredient is missing or matched wrongly, send feedback from **Settings**.
+It arrives with the technical context needed to reproduce it, and goes straight
+to the team.

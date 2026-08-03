@@ -1,0 +1,93 @@
+---
+title: Độ chính xác và giới hạn
+description: Chỗ nào Kallo sai, sai bao nhiêu, và khi nào đừng tin con số.
+lastUpdated: '2026-08-03'
+---
+
+Mọi ứng dụng dinh dưỡng đều đang ước lượng. Khác biệt là có nói ra hay không.
+
+Trang này nói ra.
+
+## Vì sao có khoảng, không phải một con số
+
+Một tô phở không có một giá trị calo đúng duy nhất. Nó phụ thuộc vào lượng bánh
+phở, phần thịt, độ béo của nước dùng, và việc bạn có húp hết nước hay không.
+
+Kallo tính một khoảng khả dĩ, rồi mới thu về một con số để lưu. Con số bạn thấy
+là một điểm trong khoảng đó, không phải một phép đo.
+
+> Ước lượng có ích, chứ không phải chắc chắn giả tạo.
+
+## Ba nguồn sai số lớn nhất
+
+### 1. Khẩu phần
+
+Đây là nguồn sai lớn nhất, cách biệt. Nếu Kallo cho rằng tô của bạn 500ml mà
+thực tế là 350ml, mọi con số sai 40% — dù việc nhận diện nguyên liệu hoàn toàn
+đúng.
+
+**Cách giảm:** trả lời câu hỏi về vật chứa khi Kallo hỏi, và ghi khối lượng khi
+bạn biết.
+
+### 2. Dầu mỡ và cách chế biến
+
+Lượng dầu trong món xào hoặc chiên dao động rất mạnh giữa các bếp. Cùng một đĩa
+rau xào có thể lệch nhau gấp đôi về chất béo.
+
+**Cách giảm:** đặt đúng thói quen dùng dầu trong
+[hồ sơ](/docs/profile-and-targets), và nói rõ cách nấu khi mô tả.
+
+### 3. Độ phủ của dữ liệu tham chiếu
+
+Dữ liệu đạm, tinh bột và chất béo khá đầy đủ. Vi chất thì không — nhiều dòng dữ
+liệu bỏ trống cột vitamin và khoáng.
+
+**Hệ quả:** một vi chất hiện ở mức thấp có thể là do bạn ăn thiếu, hoặc do dữ
+liệu không có. Trang [Dinh dưỡng](/docs/tracking/nutrition) có chỉ số tin cậy
+đúng để phân biệt hai trường hợp này.
+
+## Nơi Kallo mạnh
+
+- **Món Việt và món châu Á** — dữ liệu tham chiếu và cách nhận diện được xây
+  quanh chúng.
+- **Món nhiều thành phần** — chỗ mà việc tìm từng nguyên liệu trong ứng dụng
+  khác trở nên bất khả thi.
+- **Ăn lặp lại** — [ghi lại món cũ](/docs/logging/relog) cho con số nhất quán
+  giữa các lần.
+- **Xu hướng theo thời gian** — sai số ngẫu nhiên triệt tiêu bớt qua nhiều ngày.
+
+## Nơi Kallo yếu
+
+- **Món lạ, hiếm, hoặc mới sáng tạo** — ít dữ liệu tham chiếu để dựa vào.
+- **Đồ ăn nhà hàng có công thức riêng** — không ai biết họ cho bao nhiêu bơ.
+- **Vi chất ở mức từng ngày** — hãy nhìn theo khoảng dài.
+- **Bất kỳ ngày nào bạn chỉ ghi một phần** — dữ liệu thiếu tệ hơn dữ liệu thô.
+
+## Cách dùng con số cho đúng
+
+<Callout label="Xu hướng đáng tin hơn từng ngày" tone="tip">
+Sai số một ngày có thể 20–30%. Sai số trung bình qua ba tuần thì nhỏ hơn nhiều,
+vì các sai lệch ngẫu nhiên triệt tiêu lẫn nhau.
+
+Nếu bạn đang giảm cân, thứ đáng theo dõi là đường xu hướng cân nặng đối chiếu
+với mức bám chỉ tiêu — chứ không phải việc hôm qua bạn vượt 80 kcal.
+</Callout>
+
+## Khi nào đừng dùng Kallo
+
+Kallo không phải thiết bị y tế. Có những trường hợp cần độ chính xác mà một ứng
+dụng ước lượng không thể đáp ứng:
+
+- Đếm carb để tính liều insulin.
+- Chế độ ăn điều trị do bác sĩ chỉ định.
+- Quản lý dị ứng hoặc không dung nạp thực phẩm — Kallo ước lượng dinh dưỡng, nó
+  **không** xác minh thành phần dị ứng.
+- Đang hồi phục từ rối loạn ăn uống, khi việc đếm số có thể gây hại nhiều hơn
+  lợi.
+
+Trong những trường hợp này, hãy làm việc với chuyên gia y tế.
+
+## Giúp Kallo tốt hơn
+
+Nếu một nguyên liệu bị thiếu hoặc khớp sai, gửi góp ý trong **Cài đặt**. Góp ý
+kèm sẵn ngữ cảnh kỹ thuật để chúng tôi tái hiện, và đến thẳng đội ngũ.
