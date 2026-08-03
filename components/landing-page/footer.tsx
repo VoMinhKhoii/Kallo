@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
+import { Link } from '@/i18n/navigation';
 
 export async function Footer() {
   const t = await getTranslations('landing.footer');
@@ -9,7 +10,7 @@ export async function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="mb-12 grid gap-12 md:grid-cols-4">
           {/* Brand */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-2">
             <div className="mb-4">
               <KalloWordmark className="h-5 w-auto text-nham-text" />
             </div>
@@ -18,9 +19,11 @@ export async function Footer() {
             </p>
           </div>
 
-          {/* Product — real in-page anchors. The dead Company/legal columns
-              (about/blog/contact/faq/terms/privacy/security) are removed, not
-              parked on href="#"; no such pages exist to honestly link to. */}
+          {/* Product — real in-page anchors. The dead Company column
+              (about/blog/contact/faq/security) stays removed rather than parked
+              on href="#"; no such pages exist to honestly link to. The legal
+              pages DO exist now — they live in the docs site — so they are
+              linked below. */}
           <div>
             <h4 className="mb-4 font-medium font-sans-display text-nham-text">
               {t('product')}
@@ -49,6 +52,39 @@ export async function Footer() {
                 >
                   {t('pricing')}
                 </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Resources — the docs site and, inside it, the legal pages. */}
+          <div>
+            <h4 className="mb-4 font-medium font-sans-display text-nham-text">
+              {t('resources')}
+            </h4>
+            <ul className="space-y-3">
+              <li>
+                <Link
+                  className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
+                  href="/docs"
+                >
+                  {t('docs')}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
+                  href="/docs/legal/terms"
+                >
+                  {t('terms')}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
+                  href="/docs/legal/privacy"
+                >
+                  {t('privacyLink')}
+                </Link>
               </li>
             </ul>
           </div>

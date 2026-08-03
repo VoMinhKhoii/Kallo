@@ -1,0 +1,79 @@
+---
+title: Kallo là gì
+description: Một cách ghi nhận bữa ăn bắt đầu từ câu bạn nói, chứ không phải từ ô tìm kiếm.
+---
+
+Hầu hết ứng dụng dinh dưỡng bắt bạn dịch bữa ăn của mình sang ngôn ngữ của
+chúng: tìm từng nguyên liệu, chọn một dòng gần đúng, đoán khẩu phần, lặp lại.
+Với một tô bún bò có mười thứ trong đó, việc này mất nhiều thời gian hơn cả bữa
+ăn.
+
+Kallo bắt đầu từ chỗ khác. Bạn mô tả bữa ăn như khi kể với một người bạn — bằng
+tiếng Việt, tiếng Anh, hoặc trộn cả hai — và Kallo lo phần còn lại.
+
+<MealExample
+  input="1 tô phở bò tái, thêm quẩy"
+  totalLabel="Tổng"
+  dishes={[
+    { name: 'Phở bò tái', protein: 32, carbs: 62, fat: 11, calories: 475 },
+    { name: 'Quẩy', protein: 3, carbs: 16, fat: 6, calories: 125 },
+  ]}
+/>
+
+## Kallo làm gì
+
+**Hiểu câu bạn viết.** Không có ô tìm kiếm, không có danh sách thả xuống. Bạn
+viết "cơm tấm sườn bì chả, ít cơm" và Kallo tách ra thành các món, rồi thành
+nguyên liệu, kèm cách chế biến.
+
+**Đối chiếu với dữ liệu thật.** Mỗi nguyên liệu được khớp với dữ liệu thành phần
+thực phẩm — Bảng thành phần thực phẩm Việt Nam 2007, cùng FAO và USDA — chứ
+không phải do mô hình bịa ra con số.
+
+**Hỏi khi không chắc khẩu phần.** "Một tô" là bao nhiêu gam phụ thuộc vào tô
+nào. Khi thực sự không đủ căn cứ để kết luận, Kallo hỏi bạn dùng cỡ nào thay vì
+đoán bừa.
+
+**Đưa ra con số kèm giới hạn.** Ước lượng luôn là ước lượng. Kallo cho bạn con
+số đủ tốt để ra quyết định, và nói rõ chỗ nào nó không chắc.
+
+## Ghi nhận thủ công, làm cho tử tế
+
+Kallo không cố làm bạn ngừng suy nghĩ về bữa ăn của mình. Bạn vẫn là người biết
+mình đã ăn gì, ăn bao nhiêu, và nói ra điều đó. Thứ Kallo bỏ đi là phần việc vô
+nghĩa ở giữa: dịch bữa ăn của bạn thành mười lượt tìm kiếm, mười lần chọn dòng
+gần đúng, mười lần đoán khẩu phần.
+
+Đó cũng là lý do Kallo bắt đầu từ chữ chứ không phải từ ảnh. Một câu cho bạn
+thấy Kallo hiểu gì, sửa được đúng chỗ sai, và ra cùng kết quả vào lần sau — xem
+[Ước tính hoạt động thế nào](/docs/estimates/how-it-works) để so sánh đầy đủ.
+
+Những cách ghi khác vẫn còn đó, cho những lúc chúng tiện hơn:
+
+- [Ghi nhận thủ công](/docs/logging/manual) — khi bạn có cân và muốn con số chính
+  xác đến từng gam.
+- [Quét mã vạch](/docs/logging/barcode) — cho đồ đóng gói có sẵn nhãn dinh dưỡng.
+- [Ghi lại món cũ](/docs/logging/relog) — cho những bữa bạn ăn đi ăn lại.
+- [Chế độ cheat](/docs/logging/cheat-mode) — cho những bữa không thể liệt kê nổi.
+
+## Kallo không làm gì
+
+- **Không phải thiết bị y tế.** Không chẩn đoán, không điều trị, không thay thế
+  bác sĩ hay chuyên gia dinh dưỡng.
+- **Không hứa độ chính xác tuyệt đối.** Nếu bạn cần số liệu chính xác đến từng
+  gam, hãy cân nguyên liệu và dùng [ghi nhận thủ công](/docs/logging/manual).
+- **Không dùng nội dung của bạn để huấn luyện mô hình dùng chung.** Xem
+  [chính sách quyền riêng tư](/docs/legal/privacy).
+
+## Bắt đầu từ đâu
+
+Nếu bạn mới dùng, hãy đọc theo thứ tự này:
+
+1. [Ghi bữa ăn đầu tiên](/docs/quickstart) — năm phút, không cần thiết lập gì.
+2. [Hồ sơ và mục tiêu](/docs/profile-and-targets) — để các con số nói về cơ thể
+   bạn, không phải về một người trung bình.
+3. [Mô tả bữa ăn](/docs/logging/describe-a-meal) — cách viết để có kết quả tốt
+   nhất.
+
+Nếu bạn tò mò con số từ đâu ra, [Ước tính hoạt động thế nào](/docs/estimates/how-it-works)
+là trang dành cho bạn.

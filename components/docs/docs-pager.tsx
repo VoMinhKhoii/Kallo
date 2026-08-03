@@ -1,0 +1,58 @@
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+import type { DocsNavLink } from '@/lib/docs/tree';
+
+/**
+ * Previous / next in flat reading order, crossing section boundaries so the
+ * docs can be read straight through.
+ *
+ * Deliberately icon-free: `ArrowRight` is on the sanctioned list, but a pair
+ * of arrows on every one of 21 pages is exactly the decoration the brand's
+ * icon discipline exists to prevent. The small muted label above each title
+ * already says which direction it goes.
+ */
+export function DocsPager({
+  previous,
+  next,
+}: {
+  previous?: DocsNavLink;
+  next?: DocsNavLink;
+}) {
+  const t = useTranslations('docs.pager');
+
+  if (!(previous || next)) return null;
+
+  return (
+    <nav className="mt-16 grid gap-3 border-nham-border border-t pt-8 sm:grid-cols-2">
+      {previous ? (
+        <Link
+          className="group rounded-xl border border-nham-border p-card-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+          href={`/docs/${previous.slug}`}
+        >
+          <span className="block font-sans-display text-[11px] text-nham-text-muted">
+            {t('previous')}
+          </span>
+          <span className="mt-1 block font-medium font-sans-display text-[14px] text-nham-text">
+            {previous.title}
+          </span>
+        </Link>
+      ) : (
+        <span />
+      )}
+
+      {next && (
+        <Link
+          className="group rounded-xl border border-nham-border p-card-sm text-right transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent sm:col-start-2"
+          href={`/docs/${next.slug}`}
+        >
+          <span className="block font-sans-display text-[11px] text-nham-text-muted">
+            {t('next')}
+          </span>
+          <span className="mt-1 block font-medium font-sans-display text-[14px] text-nham-text">
+            {next.title}
+          </span>
+        </Link>
+      )}
+    </nav>
+  );
+}

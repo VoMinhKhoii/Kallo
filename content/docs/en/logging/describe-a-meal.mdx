@@ -1,0 +1,109 @@
+---
+title: Describing a meal
+description: How to write so Kallo reads you correctly, and what happens between hitting send and seeing a result.
+---
+
+This is Kallo's main way in. You write a sentence; Kallo returns dishes,
+ingredients, weights and nutrition for you to check and confirm.
+
+## How to write
+
+There is no required syntax. But a few habits make results noticeably better.
+
+### Keep Vietnamese diacritics
+
+`bò`, `bơ` and `bổ` are three different things. Kallo relies on the marks to
+tell them apart, so writing without them degrades results significantly.
+
+### Say how it was cooked
+
+Cooking method moves fat more than almost anything else:
+
+- `cá kho` and `cá chiên` — same fish, clearly different.
+- `rau luộc` and `rau xào` — the difference is the oil.
+- `gà nướng` and `gà rán` — a large gap.
+
+### Give weights when you know them
+
+A specific number always beats a guess. `50gr nạc dăm luộc` is used as written,
+with no estimation applied.
+
+### Write the whole meal in one go
+
+`cơm tấm sườn bì chả + canh chua + 1 ly trà đá` gives better results than three
+separate entries, because Kallo sees the whole meal at once and groups the
+dishes correctly.
+
+<MealExample
+  input="cơm tấm sườn bì chả, thêm trứng ốp la"
+  totalLabel="Total"
+  dishes={[
+    { name: 'Cơm tấm sườn bì chả', protein: 38, carbs: 84, fat: 27, calories: 730 },
+    { name: 'Trứng ốp la', protein: 7, carbs: 1, fat: 9, calories: 110 },
+  ]}
+/>
+
+## What happens when you send
+
+Results stream in rather than appearing all at once. You will see the stages
+follow each other:
+
+<Steps>
+<Step index={1} title="Breaking down the meal">
+Your sentence is separated into dishes, each into ingredients, with cooking
+methods and any portion hints you gave. No grams are produced at this point.
+</Step>
+
+<Step index={2} title="Matching ingredients">
+Each ingredient is looked up in the food composition data. Dish names appear
+first at this stage.
+</Step>
+
+<Step index={3} title="Anchoring the portion">
+The weight gets settled. If you stated one, Kallo uses exactly that. If the dish
+is too ambiguous to settle, this step becomes a question for you.
+</Step>
+
+<Step index={4} title="Estimating nutrition">
+For each matched ingredient, nutrition is computed with bounds, then collapsed
+to the figure shown.
+</Step>
+</Steps>
+
+## When Kallo asks instead
+
+Sometimes you get a question rather than a number. That is intentional.
+
+`1 tô canh` could be 200ml or 700ml — too wide a gap to guess. Rather than
+quietly picking something in the middle, Kallo asks which bowl you used, and
+offers reference sizes with pictures to choose from.
+
+<Callout label="Why ask rather than guess">
+A confident wrong estimate is worse than a question. Kallo has an explicit
+threshold for this: when the plausible weight range is too wide, it stops and
+asks.
+</Callout>
+
+## Adjusting before you save
+
+Tap **Edit** to nudge each item. For ingredients measured in grams or millilitres
+each tap moves 10 units; for countable things, one unit per tap. Totals update
+live.
+
+Dishes served in a vessel — bowls, cups, plates — also get a size picker with
+reference photographs.
+
+Nothing is saved until you confirm.
+
+## When the result is wrong
+
+A few options, in the order worth trying:
+
+1. **Rewrite more specifically.** Add the cooking method, add a weight, split
+   the dishes out.
+2. **Adjust by hand after analysis.** Faster than rewriting if only one item is
+   off.
+3. **Use [manual logging](/docs/logging/manual)** if you weighed the
+   ingredients.
+4. **Send feedback.** If an ingredient is missing or matched wrongly, tell us in
+   Settings — it goes straight to the team.

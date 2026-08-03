@@ -1,0 +1,256 @@
+---
+title: Privacy policy
+description: What Kallo collects, what actually reaches the AI model, how long it is kept, and the control you have over it.
+lastUpdated: '2026-08-02'
+---
+
+This policy describes how `{{LEGAL_ENTITY}}` ("Kallo", "we") collects, uses,
+shares and protects personal data when you use Kallo on the web, iOS and
+Android.
+
+We have tried to write it in plain language and to be specific rather than
+vague — you will find named data types and named providers here, not "our
+partners".
+
+## 1. Who is responsible for your data
+
+The data controller is `{{LEGAL_ENTITY}}`, at `{{BUSINESS_ADDRESS}}`.
+
+For any privacy question, access request or complaint, write to
+[support@kallo.fit](mailto:support@kallo.fit).
+
+## 2. What we collect
+
+### Account information
+
+Your email address, sign-in method (email and password, Google, or Apple), and
+an account identifier. We do **not** store readable passwords — authentication
+is handled by Supabase Auth.
+
+### Profile and goals
+
+Display name, handle, avatar, preferred language; weight, height, age,
+biological sex and activity level; your goal (cutting, bulking or maintaining),
+how aggressive it is, and the calorie and macro targets derived from it; country
+of origin and country of residence.
+
+### Cooking habits
+
+How much oil you typically use, your default rice and protein portions, whether
+you add sugar to braised dishes, and how much broth you drink. These make
+estimates match how you actually cook.
+
+### Meal log
+
+The sentence you type, when you logged it, the meal slot, the entry mode
+(precise or cheat), the dishes and ingredients recognised, estimated weights,
+cooking method, match confidence, alcohol where relevant, cheat-slider
+positions, and all 28 nutrient values computed for each meal and each item.
+
+### Weight over time
+
+Your weight entries and the dates they belong to.
+
+### Circle content
+
+Friendships, meals you share, reactions, replies, portion invites, the groups
+you join and the messages you send in groups or private chats.
+
+### Feedback
+
+Feedback type, your message, any screenshot you attach (stored in a private,
+non-public bucket), plus app version, platform, language and the screen you were
+on.
+
+### Billing
+
+Premium entitlement status, the store you purchased through, product identifier,
+start and expiry, renewal state, and the customer identifier issued by the
+billing provider. **We never receive or store full card numbers** — payment
+details are handled by Apple, Google, RevenueCat Billing or Stripe.
+
+### Waitlist
+
+If you sign up before having an account: email, language, signup source, a
+hashed confirmation token, and a **hash of your IP address** used for abuse
+prevention. We do not retain the raw IP address for this purpose.
+
+### Operational and anti-abuse data
+
+Technical records of each analysis: processing stages, timings, token counts and
+errors. Anti-abuse events are recorded against **HMAC-hashed identifiers**
+rather than raw account identifiers.
+
+## 3. What actually reaches the AI model
+
+This is the section we most want you to read, because it is usually written
+vaguely elsewhere.
+
+When you request a meal analysis, the AI model receives **only**:
+
+- Your meal description.
+- Your country of origin and country of residence.
+- Your cooking habits.
+- The language you want the result in.
+
+The model does **not** receive your weight goal, goal aggression, calorie or
+macro targets, weight, height, age, sex, email, name, or meal history.
+
+<Callout label="Why this matters" tone="tip">
+Goal adjustment happens **on our servers, after** the model returns — not by
+telling the model you are cutting. That keeps your goal from biasing the
+estimate, and the boundary is enforced by the type system in our source code
+rather than by convention.
+</Callout>
+
+We do **not** use your content to train shared AI models.
+
+## 4. Why we use it
+
+| Purpose | Data involved |
+| --- | --- |
+| Authenticate you and keep you signed in | Account, device |
+| Produce nutrition estimates | Meal text, cooking habits, country |
+| Personalise targets and charts | Profile, body metrics, goal, meal log |
+| Show content you share | Circle, shared meals |
+| Maintain Premium access | Billing data from the provider |
+| Prevent abuse, fraud and overload | Rate-limit events, hashed identifiers |
+| Troubleshoot and improve reliability | Operational logs, feedback |
+| Respond to support | Your message, account |
+| Meet legal obligations | As applicable |
+
+Our legal bases are: **performance of a contract** with you (providing the
+service you signed up for), **legitimate interests** (system safety, abuse
+prevention, quality), **your consent** (for example health-related data and
+optional notifications), and **legal obligations**.
+
+Some of what you provide — weight, height, eating habits — may count as
+**sensitive personal data** under Vietnamese law. We process it on the basis of
+your consent, and you can withdraw that consent at any time by deleting the data
+or your account.
+
+**We do not sell your personal data**, and we do not share it for third-party
+advertising.
+
+## 5. Providers that process data for us
+
+| Provider | Role | Data reached |
+| --- | --- | --- |
+| Supabase | Authentication, database, file storage | Account, all app data, avatars and feedback screenshots |
+| Google (Gemini / Vertex AI) | AI meal analysis | Meal text, country, cooking habits, language |
+| Google Cloud Run | Application hosting | Request traffic, server logs |
+| Google Cloud Translate | Translating ingredient data | Ingredient names |
+| Cloudflare | Content delivery, attack protection | Request metadata, IP address |
+| Resend | Authentication and notification email | Email address, message content |
+| RevenueCat | Cross-platform subscription state | Account identifier, purchase metadata |
+| Apple App Store, Google Play | In-app payments | Your payment details, held by the store |
+| Stripe (via RevenueCat Billing) | Web payments | Payment details |
+| Open Food Facts | Packaged product lookup | The barcode you scan |
+
+This list changes as our infrastructure changes; updates are reflected here.
+
+## 6. When you share in Circle
+
+A meal you share is visible to the audience you choose — friends, a group, or a
+private chat — including its description, dishes and nutrition figures.
+
+Friend invites work by link, so anyone holding the link can send a request. You
+can remove a friend at any time. If you enable automatic sharing in Settings,
+new meals are shared without further action — check that setting if you want
+your log to stay private.
+
+Content others have already viewed or copied into their own log may persist
+after you delete your original.
+
+## 7. Retention and deletion
+
+We keep account content while your account is active, and afterwards only for as
+long as needed for security, dispute resolution, legal compliance and backup
+recovery.
+
+You can delete your account in **Settings**. Deletion runs as a scheduled job
+that also erases your customer record at the billing provider.
+
+<Callout label="Before you delete" tone="caution">
+Deleting your Kallo account does **not** cancel a subscription bought through
+Apple or Google. Cancel in the store first if you want charges to stop. A
+subscription bought on the web is cancelled as part of deletion.
+</Callout>
+
+Backups rotate on a cycle, so deleted data may remain in a backup briefly before
+being overwritten. During that window it is no longer used to serve the app.
+
+## 8. Security
+
+We apply several layers of protection:
+
+- Encrypted connections in transit.
+- Row-level authorisation in the database, so one account's data cannot be read
+  from another.
+- Server-side permission checks on every cross-account read in Circle.
+- An origin lock that only accepts traffic arriving through our edge layer.
+- Private storage buckets for avatars and feedback screenshots.
+- Tightly restricted access to server credentials.
+
+No system is perfectly secure. If an incident affects your personal data, we
+will notify you as applicable law requires.
+
+## 9. International transfers
+
+The providers listed in section 5 may process data in countries other than where
+you live. Where data leaves Vietnam, we do so in line with personal data
+protection law, including preparing and retaining a transfer impact assessment
+where required.
+
+## 10. Your rights
+
+Under Decree 13/2023/ND-CP on personal data protection, and under the law where
+you live, you have the right to:
+
+- **Know** what data is processed and how.
+- **Access** and receive a copy of your data.
+- **Correct** inaccurate data.
+- **Withdraw consent** you previously gave.
+- **Delete** your personal data.
+- **Restrict** or **object to** certain processing.
+- **Receive your data** in a portable format.
+- **Complain** to the competent authority.
+- **Claim compensation** for damage, as the law provides.
+
+To exercise any of these, email
+[support@kallo.fit](mailto:support@kallo.fit). We may need to verify your
+identity first, and will respond within the statutory period.
+
+Most requests you can handle yourself immediately: edit your profile, delete an
+individual meal, or delete your whole account — all in **Settings**.
+
+## 11. Children
+
+Kallo is not directed to anyone under 13. In Vietnam, processing the personal
+data of anyone under 16 requires consent from a parent or legal guardian.
+
+If you believe your child has given us data without the necessary consent,
+contact support@kallo.fit and we will delete it.
+
+## 12. Cookies and on-device storage
+
+We use cookies and local storage only as far as necessary:
+
+- Keeping you signed in.
+- Remembering your chosen language.
+- Remembering interface state, such as whether the sidebar is open or collapsed.
+
+We use no advertising cookies and embed no third-party ad-network trackers.
+
+## 13. Changes to this policy
+
+As the service or the law changes, we will update this document and change the
+date at the top. For material changes we will give notice in the app or by email
+before they take effect.
+
+## 14. Contact
+
+Privacy questions and requests:
+[support@kallo.fit](mailto:support@kallo.fit)
+
+Operated by `{{LEGAL_ENTITY}}`, `{{BUSINESS_ADDRESS}}`.

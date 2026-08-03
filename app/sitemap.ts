@@ -1,10 +1,26 @@
 import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/navigation';
+import { DOCS_SLUGS } from '@/lib/docs/navigation';
 import { SITE_URL } from '@/lib/site';
 
 // Only the publicly crawlable, unauthenticated surfaces belong here. Everything
 // behind auth (dashboard, settings, groups, …) is disallowed in robots.ts.
-const PUBLIC_PATHS = ['', '/privacy', '/terms'];
+//
+// The docs paths are derived from the docs nav rather than listed by hand, so
+// adding a page cannot leave the sitemap behind. /privacy and /terms are gone:
+// they now live under /docs/legal and the old paths 308 there (next.config.ts).
+const PUBLIC_PATHS = [
+  '',
+  '/docs',
+  ...DOCS_SLUGS.map((slug) => `/docs/${slug}`),
+];
+
+function priorityFor(path: string): number {
+  if (path === '') return 1;
+  if (path === '/docs') return 0.7;
+
+  return 0.5;
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
@@ -14,7 +30,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${SITE_URL}/${locale}${path}`,
       lastModified,
       changeFrequency: 'monthly' as const,
-      priority: path === '' ? 1 : 0.5,
+      priority: priorityFor(path),
     }))
   );
 }

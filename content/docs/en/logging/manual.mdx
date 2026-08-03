@@ -1,0 +1,61 @@
+---
+title: Manual logging
+description: Pick an ingredient, type the grams. No AI, no estimation — arithmetic straight from the data.
+---
+
+When you have weighed your ingredients, there is nothing to guess. Manual
+logging skips the AI entirely and computes nutrition directly from food
+composition data.
+
+## How to use it
+
+<Steps>
+<Step index={1} title="Switch to manual">
+Pick manual mode in the input area.
+</Step>
+
+<Step index={2} title="Search for the ingredient">
+Type the name. Results come from the same dataset the AI path uses — the Vietnam
+National Food Composition Table 2007, FAO and USDA.
+</Step>
+
+<Step index={3} title="Enter the weight">
+Type the grams. Nutrition is computed from the per-100g values of the row you
+picked.
+</Step>
+
+<Step index={4} title="Add more if needed">
+Repeat for each component, then save the meal.
+</Step>
+</Steps>
+
+## Picking the right row
+
+Search results usually contain several variants of the same ingredient. Two
+things are worth noticing.
+
+**Raw or cooked state.** One row may be raw meat, another cooked. Weight changes
+during cooking, so pick the row that matches what you actually put on the scale.
+
+**Edible portion.** Some rows include inedible parts — bone, shell, stones. If
+you weighed a whole fish, pick the row that accounts for waste; if you weighed
+the fillet, pick the corresponding one.
+
+<Callout label="About Vietnamese search">
+Search understands both accented and unaccented text, but accented gives much
+better results. Typing `bo` returns `bò`, `bơ` and `bổ` alike; typing `bò` does
+not.
+</Callout>
+
+## When this is the right mode
+
+- You cooked from a recipe and weighed each part.
+- You are tracking closely and want estimation error out of the picture.
+- You want to log a single ingredient — one banana, one glass of milk.
+- You have used your AI analyses for the day and still want to log.
+
+## When it is not
+
+If you ate out, manual logging is usually slower and no more accurate — you are
+still guessing how much oil the kitchen used.
+[Describing the meal](/docs/logging/describe-a-meal) fits better there.

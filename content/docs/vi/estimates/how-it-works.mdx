@@ -1,0 +1,77 @@
+---
+title: Ước tính hoạt động thế nào
+description: Con số đến từ đâu — và vì sao Kallo bắt đầu từ chữ, không phải từ ảnh.
+---
+
+Bạn không cần đọc trang này để dùng Kallo. Nhưng nếu bạn muốn biết con số từ đâu
+ra — và vì sao nên tin nó ở mức nào — thì đây.
+
+Có hai điều đáng biết, và cả hai đều là thứ bạn kiểm chứng được ngay trên màn
+hình của mình.
+
+## Con số đến từ dữ liệu, không phải từ trí nhớ của mô hình
+
+**Mô hình AI không tự nghĩ ra các chỉ số dinh dưỡng.** Nó làm việc đọc hiểu:
+tách câu của bạn thành các món, rồi thành nguyên liệu, kèm cách chế biến. Các
+con số thì đến từ dữ liệu thành phần thực phẩm — Bảng thành phần thực phẩm Việt
+Nam 2007, cùng dữ liệu FAO và USDA.
+
+Đó là lý do bạn thấy `cơm tấm sườn bì chả` hiện ra thành bốn thành phần, mỗi
+thành phần một dòng số, chứ không phải một con số duy nhất cho cả đĩa.
+
+<Callout label="Dấu tiếng Việt mang nghĩa thật">
+`bò` là thịt bò, `bơ` là bơ, `bổ` là bổ dưỡng. Kallo không bỏ dấu ở cả câu truy
+vấn lẫn dữ liệu, vì làm vậy sẽ trộn ba thứ này thành một. Đây là lý do viết có
+dấu cho kết quả tốt hơn hẳn.
+</Callout>
+
+## Khi không đủ căn cứ, Kallo hỏi
+
+Phần quyết định phần lớn độ chính xác không phải là nhận ra món gì, mà là khối
+lượng. "Một tô" có thể là 200ml hay 700ml — và chênh lệch đó kéo theo mọi con số
+sau nó.
+
+Nếu bạn đã nói rõ khối lượng, Kallo dùng đúng con số đó. Nếu món quá mơ hồ để
+kết luận, Kallo **dừng lại và hỏi bạn dùng cỡ nào**, kèm hình ảnh tham chiếu —
+thay vì chọn một giá trị ở giữa rồi trình bày như thể nó chắc chắn.
+
+> Ước lượng có ích, chứ không phải chắc chắn giả tạo.
+
+## Vì sao là chữ, không phải ảnh
+
+Kallo bắt đầu từ câu bạn viết. Đó là lựa chọn có chủ đích, không phải vì chưa
+làm kịp tính năng chụp ảnh.
+
+|                       | Mô tả bằng chữ                      | Chụp ảnh                          |
+| --------------------- | ----------------------------------- | --------------------------------- |
+| Bạn thấy được gì      | Từng nguyên liệu, từng con số       | Một con số cho cả đĩa             |
+| Sửa một chi tiết      | Sửa đúng chi tiết đó                | Chụp lại, đoán lại                |
+| Thứ ống kính không thấy | Dầu, nước dùng, đường, phần khuất | Không có cách nào biết            |
+| Lặp lại một bữa       | Cùng câu cho cùng kết quả           | Ánh sáng và góc chụp đổi kết quả  |
+| Nhanh                 | Bạn phải gõ                         | Nhanh hơn                         |
+
+Dòng cuối là cái giá thật, và chúng tôi không giấu nó: gõ một câu chậm hơn giơ
+máy lên chụp. Đổi lại, bạn có thứ mà một tấm ảnh không cho được — bạn nhìn thấy
+Kallo hiểu gì, sửa được đúng chỗ sai, và ngày mai ghi lại bữa đó vẫn ra cùng con
+số.
+
+Nói cách khác, đây là **ghi nhận thủ công làm cho tử tế**: bạn vẫn là người
+quyết định mình đã ăn gì, chỉ là không phải dịch nó ra thành mười lượt tìm kiếm.
+
+<Callout label="Giới hạn thật của cách này" tone="caution">
+Một mô tả chỉ tốt bằng những gì bạn thực sự biết về món ăn. Với đồ nhà nấu, bạn
+biết mình cho bao nhiêu dầu. Với đồ nhà hàng thì không ai biết — và không cách
+ghi nhận nào giải được chuyện đó. Chi tiết ở
+[Độ chính xác và giới hạn](/docs/estimates/accuracy-and-limits).
+</Callout>
+
+## Điều gì không được gửi đi
+
+Mô hình chỉ nhận mô tả bữa ăn, quốc gia, thói quen nấu và ngôn ngữ đầu ra. Mục
+tiêu, chỉ tiêu, cân nặng, tuổi và giới tính của bạn ở lại trên máy chủ. Chi tiết
+ở [Dữ liệu của bạn](/docs/account/your-data).
+
+## Đọc tiếp
+
+[Độ chính xác và giới hạn](/docs/estimates/accuracy-and-limits) nói về chỗ cách
+làm này sai, và sai bao nhiêu.

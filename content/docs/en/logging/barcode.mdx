@@ -1,0 +1,51 @@
+---
+title: Barcode scanning
+description: Packaged food, logged with the camera — figures taken straight from the label.
+---
+
+For packaged food the label already has the numbers. Nothing needs estimating.
+
+## How to use it
+
+<Steps>
+<Step index={1} title="Open the scanner">
+Pick barcode scanning in the input area. Your browser or the app will ask for
+camera permission the first time.
+</Step>
+
+<Step index={2} title="Line the barcode up">
+Hold steady for a moment. If the camera cannot read it — low light, a creased
+label — you can type the digits by hand.
+</Step>
+
+<Step index={3} title="Check the product">
+Kallo looks the code up in the Open Food Facts database and shows the product
+name and its nutrition figures.
+</Step>
+
+<Step index={4} title="Choose how to measure it">
+Three ways: by the **serving** on the label, by the **whole package**, or by a
+**gram amount** you type.
+</Step>
+</Steps>
+
+## When the product is not found
+
+Open Food Facts is community-maintained, and its coverage of Vietnamese products
+is still uneven. If nothing comes back:
+
+- Try [manual logging](/docs/logging/manual) with the main ingredient.
+- Or [describe the meal](/docs/logging/describe-a-meal) in words.
+- Send us feedback so we know which products are missing.
+
+<Callout label="What the scan sends">
+Only the barcode digits are sent to Open Food Facts for the lookup. No image, no
+account information. Details in the [privacy policy](/docs/legal/privacy).
+</Callout>
+
+## About label accuracy
+
+Package figures are rounded and carry a legally permitted tolerance. They are
+usually more accurate than an estimate, but not exact — and the serving on the
+label rarely matches what you actually ate. If you had two thirds of the packet,
+use the gram amount.
