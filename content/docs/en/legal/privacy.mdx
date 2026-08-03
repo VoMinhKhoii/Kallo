@@ -8,9 +8,8 @@ This policy describes how `{{LEGAL_ENTITY}}` ("Kallo", "we") collects, uses,
 shares and protects personal data when you use Kallo on the web, iOS and
 Android.
 
-We have tried to write it in plain language and to be specific rather than
-vague — you will find named data types and named providers here, not "our
-partners".
+It applies to every Kallo account, including accounts without a Premium
+subscription, and to anyone who joins the waitlist before having an account.
 
 ## 1. Who is responsible for your data
 
@@ -84,9 +83,6 @@ rather than raw account identifiers.
 
 ## 3. What actually reaches the AI model
 
-This is the section we most want you to read, because it is usually written
-vaguely elsewhere.
-
 When you request a meal analysis, the AI model receives **only**:
 
 - Your meal description.
@@ -112,7 +108,7 @@ Production Kallo calls Gemini through **Vertex AI on Google Cloud** — the
 enterprise service, not the consumer Gemini app. Under Google Cloud's terms,
 prompts and responses are **not used to train or fine-tune Google's models**.
 
-There are two exceptions, and we state them because they are real:
+There are two exceptions:
 
 - **Caching for up to 24 hours.** Google caches inputs to reduce latency on
   subsequent requests. The cached copy sits in the data centre that served the
