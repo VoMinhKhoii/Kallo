@@ -52,7 +52,7 @@ export function DocsToc({ entries }: { entries: TocEntry[] }) {
   return (
     <nav aria-labelledby="docs-toc-heading">
       <p
-        className="font-sans-display font-semibold text-caption text-nham-text-muted uppercase tracking-[0.14em]"
+        className="font-sans-display font-semibold text-2xs text-nham-text-muted uppercase tracking-[0.14em]"
         id="docs-toc-heading"
       >
         {t('onThisPage')}
@@ -66,7 +66,7 @@ export function DocsToc({ entries }: { entries: TocEntry[] }) {
               <a
                 aria-current={isActive ? 'location' : undefined}
                 className={cn(
-                  '-ml-px block border-l py-0.5 font-sans-display text-caption leading-snug transition-colors',
+                  '-ml-px block border-l py-0.5 font-sans-display text-2xs leading-snug transition-colors',
                   entry.depth === 3 ? 'pl-6' : 'pl-3',
                   isActive
                     ? 'border-nham-accent font-semibold text-nham-text'
