@@ -27,7 +27,7 @@ import {
   validateRequest,
 } from './request-validation';
 import { toStreamErrorEvent } from './stream-errors';
-import { emitUnresolvedOutcome } from './unresolved-response';
+import { emitPartialFailure } from './unresolved-response';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -193,8 +193,7 @@ export async function POST(request: NextRequest) {
           db,
           gemini,
           emit,
-          traceContext,
-          { clarifyAnswer }
+          traceContext
         );
 
         // Check for abort after pipeline completes
@@ -230,19 +229,12 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        // Completeness gate (precise clarify) — MUST run BEFORE the
-        // empty_nutrition gate: a meal whose only ingredients are unresolved
-        // (e.g. "0 fried chicken") assembles to all-zero macros, and the
-        // nutrition gate would swallow the clarify with a generic error.
-        // The pipeline finished but ≥1
-        // ingredient's portion/match couldn't be resolved. Mirror the cheat
-        // clarify early-exit — surface ONE targeted question and stop WITHOUT
-        // persisting an incomplete pending_analyses row. The client re-submits
-        // with `clarifyAnswer`.
+        // Completeness gate — a Call-2 chunk failed after retries, so part of
+        // the meal was never analyzed. Runs BEFORE the empty_nutrition gate so
+        // the failure surfaces as a precise retryable error rather than a
+        // generic one. Nothing is staged for confirm.
         if (result.unresolved) {
-          await emitUnresolvedOutcome({
-            unresolved: result.unresolved,
-            locale: locale ?? profile.preferredLocale ?? 'en',
+          await emitPartialFailure({
             emit,
             requestId,
             db,

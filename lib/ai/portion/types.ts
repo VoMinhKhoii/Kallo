@@ -124,8 +124,10 @@ export interface PortionResolution {
   grams: GramsBand | null;
   provenance: PortionProvenance;
   confidence: 'high' | 'medium' | 'low' | 'none';
-  /** Set when provenance='unresolved' — drives the clarify reason. */
-  unresolvedReason?: 'ambiguous_food' | 'unresolved_portion';
+  /** Set when provenance='unresolved'. Diagnostic label; `explicit_zero` is
+   *  load-bearing — the bridge withholds the row so a typed 0 never yields
+   *  calories. */
+  unresolvedReason?: 'ambiguous_food' | 'unresolved_portion' | 'explicit_zero';
   /** Human note for telemetry (which prior, why null, etc.). */
   note: string;
 }

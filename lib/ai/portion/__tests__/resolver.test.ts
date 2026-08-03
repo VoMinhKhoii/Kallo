@@ -23,7 +23,7 @@ describe('resolvePortion — fallback ladder', () => {
     });
     expect(r.provenance).toBe('unresolved');
     expect(r.grams).toBeNull();
-    expect(r.unresolvedReason).toBe('unresolved_portion');
+    expect(r.unresolvedReason).toBe('explicit_zero');
   });
 
   it('step 0: zero count outranks even an explicit mass', () => {

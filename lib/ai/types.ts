@@ -352,24 +352,21 @@ export interface PipelineError {
 }
 
 /**
- * Phase 1: the pipeline finished but ≥1 ingredient's portion or food match
- * couldn't be resolved. The route emits a precise-mode `clarify` event for
- * the most-impactful item INSTEAD of persisting an under-weighted meal.
+ * A Call-2 chunk failed after retries, so part of the meal was never analyzed.
+ * The route emits a retryable error INSTEAD of persisting a partial meal.
  * Present only on the v2 grounded path; v1 never sets it.
+ *
+ * There is no portion ask-back: an ingredient whose portion looked shaky ships
+ * on its best estimate and the user corrects it with the visual portion picker.
  */
 export interface PipelineUnresolved {
-  /** Owning meal-item name of the most-impactful unresolved ingredient. */
+  /** Owning meal-item name of the failed chunk. */
   mealItemName: string;
-  /** The unresolved ingredient's display name. */
+  /** Display name for the failed item. */
   ingredientName: string;
-  /**
-   * Why it's unresolved — drives the clarify `reason`.
-   * 'processing_incomplete' = a Call-2 chunk failed after retries (transient),
-   * NOT a gap in the user's input — the route emits a retryable error, not a
-   * clarify question about a portion the user already stated.
-   */
-  reason: 'unresolved_portion' | 'ambiguous_food' | 'processing_incomplete';
-  /** Count of unresolved ingredients across the whole meal. */
+  /** Transient infra failure, NOT a gap in the user's input. */
+  reason: 'processing_incomplete';
+  /** Count of meal items whose chunk failed. */
   unresolvedCount: number;
 }
 

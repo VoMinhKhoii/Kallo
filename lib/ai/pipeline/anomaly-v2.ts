@@ -51,8 +51,7 @@ export type AnomalyAction =
   | 'none' // legit_prep_adjustment — informational only
   | 'flag_only' // telemetry only, no mutation (wrong_row/state, implausible grams, macro identity breaks)
   | 'kcal_rederived' // RESERVED (no current producer): standalone kcal := 4P+4C+9F correction
-  | 'route_clarify' // too-wide UNMATCHED interval → fed into the unresolved→clarify gate
-  | 'interval_widened' // unmatched_high_uncertainty within band — visible, no clarify
+  | 'interval_widened' // unmatched_high_uncertainty — uncertainty made visible, never a clarify
   | 'escalation_candidate'; // high-confidence correctness anomaly → gated re-run
 
 export interface V2Anomaly {
@@ -122,10 +121,9 @@ export function classifyV2Anomalies(input: {
       const match = matchedByName.get(ing.ingredientName);
 
       // --- implausible_grams: portion out of physical range -----------------
-      // flag_only (NOT route_clarify): eval showed this fires on plausible
-      // meals; auto-routing to clarify would question meals users stated fine.
-      // The clarify decision stays with bridge plausibility + the unmatched
-      // high-uncertainty rule below.
+      // flag_only: eval showed this fires on plausible meals, so it stays
+      // advisory. Nothing here gates a result — the estimate ships and the
+      // user corrects the portion with the visual picker.
       if (
         grams < V2_ANOMALY_THRESHOLDS.MIN_GRAMS ||
         grams > V2_ANOMALY_THRESHOLDS.MAX_GRAMS
@@ -166,10 +164,12 @@ export function classifyV2Anomalies(input: {
         const width = high - low;
         const widthRatio = width / Math.max(kcalMid, 1);
         if (widthRatio > V2_ANOMALY_THRESHOLDS.UNMATCHED_INTERVAL_WIDTH_RATIO) {
-          // Too wide to trust the number → route to clarify (unresolved).
+          // Too wide to trust the number. Telemeter it at warning severity —
+          // it no longer routes to a clarify, the estimate ships and the user
+          // corrects the portion with the visual picker.
           anomalies.push({
             cause: 'unmatched_high_uncertainty',
-            action: 'route_clarify',
+            action: 'interval_widened',
             severity: 'warning',
             message: `${ing.ingredientName}: unmatched interval too wide (${low.toFixed(0)}–${high.toFixed(0)} kcal, ${(widthRatio * 100).toFixed(0)}% of mid)`,
             ingredientName: ing.ingredientName,
@@ -285,13 +285,6 @@ export interface V2AnomalySummary {
    * was found — the signal the orchestrator's gated escalation seam reads.
    */
   hasEscalationCandidate: boolean;
-  /**
-   * First anomaly whose action is route_clarify (deterministic: classification
-   * order). The orchestrator feeds it into the unresolved→clarify gate when
-   * bridge plausibility found nothing — so "unmatched + interval too wide to
-   * trust" actually asks instead of silently persisting.
-   */
-  firstClarifyAnomaly: { ingredientName: string; mealItemName: string } | null;
 }
 
 /**
@@ -311,21 +304,13 @@ export function summarizeV2Anomalies(anomalies: V2Anomaly[]): V2AnomalySummary {
     none: 0,
     flag_only: 0,
     kcal_rederived: 0,
-    route_clarify: 0,
     interval_widened: 0,
     escalation_candidate: 0,
   } satisfies Record<AnomalyAction, number>;
 
-  let firstClarifyAnomaly: V2AnomalySummary['firstClarifyAnomaly'] = null;
   for (const a of anomalies) {
     causeCounts[a.cause]++;
     actionCounts[a.action]++;
-    if (a.action === 'route_clarify' && !firstClarifyAnomaly) {
-      firstClarifyAnomaly = {
-        ingredientName: a.ingredientName,
-        mealItemName: a.mealItemName,
-      };
-    }
   }
 
   const markers: string[] = [];
@@ -334,7 +319,6 @@ export function summarizeV2Anomalies(anomalies: V2Anomaly[]): V2AnomalySummary {
   }
 
   return {
-    firstClarifyAnomaly,
     causeCounts,
     actionCounts,
     markers,
