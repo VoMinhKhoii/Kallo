@@ -44,6 +44,10 @@ const PADDLE_PRICE_PRODUCTS: Record<string, string> = {
   pri_01kyy23rh7qjch1798kfwqx8x8: 'kallo_premium_monthly',
   pri_01kyy258p8ay94vzvyznz6k9r0: 'kallo_premium_annual',
   pri_01kyy26yps3tt1zf1vjhhcvkp8: 'kallo_premium_lifetime',
+  // Production (Kallo Paddle live account, product pro_01kz49s9ga4n2h57k40zv88bgn)
+  pri_01kz49s9hjsmk53evgrsh55ccr: 'kallo_premium_monthly',
+  pri_01kz49s9jm5m5xhzwktnz4005q: 'kallo_premium_annual',
+  pri_01kz49s9kxp82v1r03caxc1gqh: 'kallo_premium_lifetime',
 };
 
 /** Resolve only exact catalog identifiers to their canonical product id. */

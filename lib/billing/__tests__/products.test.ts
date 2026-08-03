@@ -36,6 +36,45 @@ describe('resolveProduct', () => {
     });
   });
 
+  it('resolves the production Paddle price ids', () => {
+    // Production is a separate Paddle account with its own price ids. An id
+    // missing here means a real customer pays and the grant is dropped, so
+    // these assertions are the only thing standing between a launch-day
+    // catalog typo and silent revenue loss.
+    expect(resolveProduct('pri_01kz49s9hjsmk53evgrsh55ccr')).toEqual({
+      entitlementKey: 'premium',
+      lifetime: false,
+    });
+    expect(resolveProduct('pri_01kz49s9jm5m5xhzwktnz4005q')).toEqual({
+      entitlementKey: 'premium',
+      lifetime: false,
+    });
+    expect(resolveProduct('pri_01kz49s9kxp82v1r03caxc1gqh')).toEqual({
+      entitlementKey: 'premium',
+      lifetime: true,
+    });
+  });
+
+  it('keeps sandbox and production price ids distinct', () => {
+    // Both accounts are in one map, so a copy-paste that pointed a production
+    // id at the wrong plan would still resolve and still look correct here.
+    // Pin the mapping by asserting the pairs differ across environments.
+    const sandbox = [
+      'pri_01kyy23rh7qjch1798kfwqx8x8',
+      'pri_01kyy258p8ay94vzvyznz6k9r0',
+      'pri_01kyy26yps3tt1zf1vjhhcvkp8',
+    ];
+    const production = [
+      'pri_01kz49s9hjsmk53evgrsh55ccr',
+      'pri_01kz49s9jm5m5xhzwktnz4005q',
+      'pri_01kz49s9kxp82v1r03caxc1gqh',
+    ];
+    expect(new Set([...sandbox, ...production]).size).toBe(6);
+    for (const [index, id] of production.entries()) {
+      expect(resolveProduct(id)).toEqual(resolveProduct(sandbox[index]));
+    }
+  });
+
   it('refuses a Paddle price id that is not in the catalog', () => {
     // Opaque ids are easy to mistranscribe (the monthly id ends `x8x8`, which
     // renders as `8×8` in some fonts). A near-miss must grant nothing.
