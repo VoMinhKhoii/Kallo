@@ -23,7 +23,16 @@ class PlainAnalysis extends ComposerSubmitPlan {
 /// its review card. No AI, no provider spend.
 class PureRelog extends ComposerSubmitPlan {
   final List<RelogRef> refs;
-  const PureRelog(this.refs);
+
+  /// The stage ids behind [refs]. Carried so the composer can clear EXACTLY
+  /// what it submitted: the field stays editable while the request is in
+  /// flight, and clearing "whatever is staged now" would drop a pick the user
+  /// made after the POST went out — one that was never staged and will not come
+  /// back. They also identify the selection, so a retry of the same picks can
+  /// reuse its attempt id instead of staging a second card.
+  final List<String> stageIds;
+
+  const PureRelog(this.refs, this.stageIds);
 }
 
 /// Free text AND picks: analyze the text alone and pass the picks as `refs`,
@@ -47,15 +56,26 @@ class CombinedAnalysis extends ComposerSubmitPlan {
 /// their UI hides), so without it a leftover draft would hijack a CHEAT submit
 /// and relog dishes instead of running the estimate — and the server rejects
 /// cheat+refs outright.
+///
+/// It is not enough on its own, though. Suppressing the refs still leaves the
+/// picks' TEXT in the composer, and on this platform that text carries the `/`
+/// the pick was summoned with — so a cheat submit used to send the estimator
+/// `/Phở bò và trứng`, slash and all. The web composer writes bare names and so
+/// has always sent clean prose here; stripping the marker is what makes the two
+/// read the same. The reference is still dropped, on both platforms and by
+/// design: cheat mode cannot carry one.
 ComposerSubmitPlan planComposerSubmit({
   required bool isNormal,
   required List<RelogStagedEntry> staged,
   required String text,
   required String freeText,
 }) {
-  if (!isNormal || staged.isEmpty) return PlainAnalysis(text);
+  if (!isNormal) return PlainAnalysis(unmarkPicks(text, staged));
+  if (staged.isEmpty) return PlainAnalysis(text);
   final refs = [for (final entry in staged) entry.ref];
-  if (freeText.isEmpty) return PureRelog(refs);
+  if (freeText.isEmpty) {
+    return PureRelog(refs, [for (final entry in staged) entry.stageId]);
+  }
   return CombinedAnalysis(freeText, refs, [
     for (final entry in staged) relogPickName(entry),
   ]);

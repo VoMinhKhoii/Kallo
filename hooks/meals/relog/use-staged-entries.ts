@@ -36,7 +36,7 @@ export interface StagedEntriesApi {
   /** Re-locate mentions after the user edited the text. */
   sync: (value: string) => void;
   /** Clear staged picks and return the value with their text removed. */
-  consume: (value: string) => string;
+  consume: (value: string, stageIds?: readonly string[]) => string;
   isFull: boolean;
 }
 
@@ -136,12 +136,30 @@ export function useStagedEntries(): StagedEntriesApi {
     [entries]
   );
 
+  /**
+   * Clear the picks that were SUBMITTED, leaving anything staged since.
+   *
+   * `stageIds` names exactly what went out. The composer stays editable while a
+   * stage request is in flight, so clearing "everything staged now" would also
+   * swallow a pick made after the POST — removed from the composer despite
+   * never having been sent, and unrecoverable. Omitting the argument clears
+   * everything, which is what the combined path wants: it cleared the field on
+   * submit, so nothing there is newer than the request.
+   */
   const consume = useCallback(
-    (current: string) => {
-      const next = stripMentions(current, entries);
-      setEntries([]);
+    (current: string, stageIds?: readonly string[]) => {
+      const ids = stageIds ? new Set(stageIds) : null;
+      const consumed = ids
+        ? entries.filter((entry) => ids.has(entry.stageId))
+        : entries;
+      const kept = ids
+        ? entries.filter((entry) => !ids.has(entry.stageId))
+        : [];
+      const next = stripMentions(current, consumed);
+      const remaining = reconcileMentions(next, kept);
+      setEntries(remaining);
       setValue(next);
-      writeStagedDraft([]);
+      writeStagedDraft(remaining);
       return next;
     },
     [entries]

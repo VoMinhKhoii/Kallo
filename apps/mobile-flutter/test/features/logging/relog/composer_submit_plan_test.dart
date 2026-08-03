@@ -77,6 +77,37 @@ void main() {
     );
   });
 
+  test('cheat mode sends the picks as PROSE, without the `/` marker', () {
+    // Picks survive a mode switch (only their UI hides) and their text is real
+    // text the user can see. Suppressing the refs is not enough on its own: the
+    // labels went to the estimator with their slash attached. Web writes bare
+    // names and has always sent clean prose here.
+    final plan = planComposerSubmit(
+      isNormal: false,
+      staged: [_entry('Phở bò')],
+      text: '/Phở bò và trứng',
+      freeText: 'và trứng',
+    );
+    expect(plan, isA<PlainAnalysis>());
+    expect((plan as PlainAnalysis).text, 'Phở bò và trứng');
+  });
+
+  test('a pure relog carries the stage ids behind its refs', () {
+    // The composer clears exactly what it submitted, and reuses one attempt id
+    // per selection — both need the ids, and deriving them at the call site
+    // instead would let a name drift off the ref it belongs to.
+    final plan =
+        planComposerSubmit(
+              isNormal: true,
+              staged: [_entry('Phở bò'), _entry('Cà phê', order: 1)],
+              text: '/Phở bò /Cà phê ',
+              freeText: '',
+            )
+            as PureRelog;
+    expect(plan.stageIds, ['stage-Phở bò', 'stage-Cà phê']);
+    expect(plan.stageIds.length, plan.refs.length);
+  });
+
   test('cheat mode never carries picks, even with a draft staged', () {
     // The picks survive a mode switch (only their UI hides). Without this gate
     // a leftover draft would relog dishes out of a cheat submit — and the

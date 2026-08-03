@@ -72,6 +72,24 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// tap that beats the rebuild.
   bool _stagingRelog = false;
 
+  /// Attempt ids for pure-relog submits, keyed by the selection they staged.
+  ///
+  /// Retrying the same picks must reuse its id so the server's
+  /// `(user_id, attempt_id)` upsert overwrites the row it already wrote. Without
+  /// that, a stage that commits but loses its response — the composer is left
+  /// untouched, so the user resubmits — writes a SECOND pending row, and one
+  /// meal arrives as two cards to confirm.
+  ///
+  /// An entry is dropped once its stage is known to have landed. Changing the
+  /// picks changes the key, which is what mints a new id for a new meal.
+  final Map<String, String> _pureRelogAttempts = {};
+
+  static String _selectionKey(Set<String> stageIds) =>
+      (stageIds.toList()..sort()).join('|');
+
+  String _attemptIdForSelection(Set<String> stageIds) =>
+      _pureRelogAttempts.putIfAbsent(_selectionKey(stageIds), _uuid.v4);
+
   /// The composer as it stood when a COMBINED submit (free text + picks) went
   /// out. That submit sends the free text alone and clears the field, so on any
   /// failure the picks must come back intact for a retry rather than vanishing
@@ -306,9 +324,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     switch (plan) {
       case PlainAnalysis(:final text):
         _submitPlain(text);
-      case PureRelog(:final refs):
+      case PureRelog(:final refs, :final stageIds):
         if (_stagingRelog) return;
-        unawaited(_submitPureRelog(refs));
+        unawaited(_submitPureRelog(refs, stageIds));
       case CombinedAnalysis(:final freeText, :final refs, :final pickNames):
         _attemptId = _uuid.v4();
         // _runAnalyze clears the composer to show the streaming card, which
@@ -322,24 +340,31 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// Pure relog: stage a deterministic analysis and let the day refetch surface
   /// its review card. Nothing is written to the day until the user confirms it,
   /// exactly as with an AI meal.
-  Future<void> _submitPureRelog(List<RelogRef> refs) async {
+  Future<void> _submitPureRelog(List<RelogRef> refs, List<String> ids) async {
     setState(() => _stagingRelog = true);
+    final selection = ids.toSet();
     try {
       await stageRelogAnalysis(
         ref,
         userId: widget.profile.userId,
         date: widget.date,
         items: refs,
-        // A FRESH id, never the feed's `_attemptId`. The server upserts pending
-        // analyses on (user_id, attempt_id), so reusing the id of a revealed
-        // but unconfirmed AI card would overwrite that card's row with this
-        // relog. Double submits are held off by [_stagingRelog] instead.
-        attemptId: _uuid.v4(),
+        // Never the feed's `_attemptId`: the server upserts pending analyses on
+        // (user_id, attempt_id), so borrowing the id of a revealed-but-
+        // unconfirmed AI card would overwrite that card's row with this relog.
+        //
+        // Stable across retries of the SAME picks, though. A stage that commits
+        // but whose response is lost leaves the composer untouched, so the user
+        // resubmits — and a fresh id there would upsert a SECOND pending row,
+        // giving one meal two review cards to confirm. Keyed on the selection,
+        // so changing the picks does mint a new one.
+        attemptId: _attemptIdForSelection(selection),
       );
-      // Only after staging lands, and only the mention text: anything typed
-      // around the picks is the user's. On failure nothing is touched, so a
-      // dead reference can be dropped and retried without losing every pick.
-      _textController.consumeMentions();
+      // Only what was actually SUBMITTED, and only after staging lands. The
+      // field stays editable throughout, so a pick made while the POST was in
+      // flight is not ours to clear — it was never sent.
+      _textController.consumeMentions(selection);
+      _pureRelogAttempts.remove(_selectionKey(selection));
       // `_attemptId` is deliberately untouched: it belongs to whatever AI
       // attempt is on screen, and a relog is a separate card.
       _scrollToAnswer();
@@ -507,10 +532,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       // text AND picks — rather than the stripped text the AI saw, or the retry
       // would log the free text without the dishes the user picked.
       //
-      // UNCONDITIONALLY, unlike the plain-text branch below. A reference the
-      // user cannot get back is worse than overwriting whatever they typed
-      // while the analysis was in flight — and the snapshot still contains that
-      // free text, so nothing is actually lost. Web restores the same way.
+      // UNCONDITIONALLY, unlike the plain-text branch below — and this DOES
+      // cost something: the snapshot predates the submit, so anything typed
+      // while the analysis was in flight is replaced by it. That is a chosen
+      // trade, not an oversight. A reference cannot be retyped (the picker has
+      // to be reopened and the dish found again), whereas a sentence can, and
+      // the window is one failed analysis long. Web restores the same way, so
+      // the two platforms lose the same keystrokes.
       _textController.restore(snapshot);
     } else if (text != null && _inputController.getText().trim().isEmpty) {
       _inputController.setText(text);

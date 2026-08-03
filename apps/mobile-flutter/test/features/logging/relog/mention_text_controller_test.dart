@@ -232,9 +232,25 @@ void main() {
       _pick(c, _dish('Phở bò'), 'a');
       _type(c, '${c.text}và trứng');
 
-      c.consumeMentions();
+      c.consumeMentions({'a'});
       expect(c.text, 'và trứng');
       expect(c.entries, isEmpty);
+    });
+
+    test('consumes ONLY what was submitted, not what arrived after', () {
+      // The field stays editable while a stage request is in flight. A pick
+      // made after the POST went out was never sent, so clearing it would drop
+      // a reference the server has never heard of — unrecoverable.
+      _type(c, '/pho');
+      _pick(c, _dish('Phở bò'), 'submitted');
+      _type(c, '${c.text}/ca');
+      _pick(c, _dish('Cà phê', order: 1), 'arrived-later');
+
+      c.consumeMentions({'submitted'});
+
+      expect(c.entries.map((e) => e.stageId), ['arrived-later']);
+      expect(c.text.contains('Cà phê'), isTrue);
+      expect(c.text.contains('Phở bò'), isFalse);
     });
 
     test('clear drops the picks with the text', () {

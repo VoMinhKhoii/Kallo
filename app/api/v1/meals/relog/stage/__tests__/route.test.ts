@@ -169,67 +169,7 @@ describe('POST /api/v1/meals/relog/stage', () => {
     expect(checkAnalysisGuards).not.toHaveBeenCalled();
     expect(stageRelogAnalysisAction).not.toHaveBeenCalled();
   });
-
-  <<<<<<< HEAD
-  describe('rate limiting', () =>
-  it('throttles per user before doing any database work', async () => {
-    checkAnalysisGuards.mockResolvedValue({
-      allowed: false,
-      status: 429,
-      reason: 'per_user_minute',
-      retryAfterSeconds: 42,
-    });
-
-    const res = await POST(makeRequest(validBody));
-
-    expect(res.status).toBe(429);
-    expect(res.headers.get('Retry-After')).toBe('42');
-    expect(
-      stageRelogAnalysisAction,
-      'a throttled request must not reach the staging transaction'
-    ).not.toHaveBeenCalled();
-  });
-
-  it('guards on the authenticated user, never a client-supplied id', async () => {
-    await POST(makeRequest(validBody));
-
-    expect(checkAnalysisGuards).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'user-123',
-        // The SAME route key `/relog` uses, on purpose: `checkAnalysisGuards`
-        // keys its window and in-flight counters on this string, so a key of
-        // its own would hand one user a second `concurrentUser: 1` budget —
-        // two write transactions at once, each holding `FOR UPDATE`, against
-        // a pool that defaults to 2 connections.
-        route: 'meals-relog-write',
-      })
-    );
-  });
-
-  it('releases the in-flight slot even when staging throws', async () => {
-    const { Errors } = await import('@/lib/errors');
-    stageRelogAnalysisAction.mockRejectedValueOnce(
-      Errors.validationFailed('Món không còn tồn tại.')
-    );
-
-    const res = await POST(makeRequest(validBody));
-
-    expect(res.status).toBe(400);
-    // Leaking the slot would lock the user out of relog until the stale
-    // in-flight sweep catches up.
-    expect(release).toHaveBeenCalled();
-  });
-
-  it('releases the in-flight slot on success', async () => {
-    await POST(makeRequest(validBody));
-    expect(release).toHaveBeenCalled();
-  });
-  )
-
-  =======
->>>>>>> a71f8e8a (fix(relog): guard both clients at one boundary, and order mentions where it matters)
-  it('propagates a dead-reference validation error as 400', async () =>
-  {
+  it('propagates a dead-reference validation error as 400', async () => {
     const { Errors } = await import('@/lib/errors');
     stageRelogAnalysisAction.mockRejectedValueOnce(
       Errors.validationFailed('Món không còn tồn tại.')
@@ -239,6 +179,5 @@ describe('POST /api/v1/meals/relog/stage', () => {
     expect(res.status).toBe(400);
     const { error } = await res.json();
     expect(error.code).toBe('VALIDATION_FAILED');
-  }
-  )
+  });
 });

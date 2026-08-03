@@ -25,6 +25,7 @@ vi.mock('@/lib/db', () => ({ db: {} }));
 const { loadRelogCandidatesAction } = await import(
   '@/lib/actions/meals/relog/load-candidates'
 );
+const { RELOG_WRITE_ROUTE } = await import('@/lib/rate-limit/relog-guard');
 
 const release = vi.fn();
 
@@ -77,5 +78,16 @@ describe('loadRelogCandidatesAction', () => {
       'db down'
     );
     expect(release).toHaveBeenCalledOnce();
+  });
+});
+
+describe('the write actions share one counter', () => {
+  it('stage and instant-save key the same route string', async () => {
+    // `checkAnalysisGuards` keys its window and in-flight counters on the route
+    // string. A distinct key per write action hands a user an independent
+    // `concurrentUser: 1` budget for each — two simultaneous transactions, both
+    // holding `FOR UPDATE` on their source meals, against a pool that defaults
+    // to 2. That is the starvation the guard exists to prevent.
+    expect(RELOG_WRITE_ROUTE).toBe('meals-relog-write');
   });
 });

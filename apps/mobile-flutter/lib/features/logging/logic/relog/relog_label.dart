@@ -35,14 +35,28 @@ String relogPickName(RelogStagedEntry entry) =>
         ? entry.label.substring(mentionPrefix.length)
         : entry.label;
 
+/// Strip the `/` marker off every pick's label in [text], leaving the names as
+/// ordinary prose.
+///
+/// For a submit that cannot carry references — cheat mode — where the marker
+/// would otherwise reach the model as literal text. The sentence the user is
+/// looking at survives unchanged apart from the token syntax, so nothing they
+/// can see is silently dropped; only the deterministic copy is, which that mode
+/// never supported.
+String unmarkPicks(String text, List<RelogStagedEntry> staged) {
+  var out = text;
+  for (final entry in staged) {
+    if (!entry.label.startsWith(mentionPrefix)) continue;
+    out = out.replaceAll(entry.label, relogPickName(entry));
+  }
+  return out;
+}
+
 /// The label for a combined submit: the typed text, then every pick.
 ///
 /// Returns [freeText] untouched when there are no picks, so the ordinary
 /// text-only path keeps rendering exactly what was typed.
 String combinedRelogLabel(String freeText, List<String> pickNames) {
   if (pickNames.isEmpty) return freeText;
-  return buildRelogRawInput([
-    if (freeText.isNotEmpty) freeText,
-    ...pickNames,
-  ]);
+  return buildRelogRawInput([if (freeText.isNotEmpty) freeText, ...pickNames]);
 }

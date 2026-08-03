@@ -4,6 +4,7 @@ import '../../../../models/relog.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../logic/relog/mentions.dart';
 import '../../logic/relog/slash_token.dart';
+import 'mention_span_builder.dart';
 
 /// The composer's text controller, aware of the relog picks living inside its
 /// own value.
@@ -114,10 +115,20 @@ class MentionTextEditingController extends TextEditingController {
 
   /// Drop the picks and their text after a submit that durably staged, keeping
   /// whatever the user typed alongside — that part is theirs.
-  void consumeMentions() {
-    if (_mentions.isEmpty) return;
-    final next = stripMentions(text, _mentions);
-    _mentions = const [];
+  ///
+  /// [stageIds] names exactly what was submitted. The field stays editable while
+  /// a stage request is in flight, so consuming "everything staged now" would
+  /// also swallow a pick made after the POST went out — removed from the
+  /// composer despite never having been sent, and unrecoverable.
+  void consumeMentions(Set<String> stageIds) {
+    final consumed =
+        _mentions.where((m) => stageIds.contains(m.stageId)).toList();
+    if (consumed.isEmpty) return;
+    final next = stripMentions(text, consumed);
+    _mentions = reconcileMentions(
+      next,
+      _mentions.where((m) => !stageIds.contains(m.stageId)).toList(),
+    );
     _setValueAtEnd(next);
     notifyListeners();
   }
@@ -153,46 +164,17 @@ class MentionTextEditingController extends TextEditingController {
     required BuildContext context,
     TextStyle? style,
     required bool withComposing,
-  }) {
-    if (_mentions.isEmpty) {
-      return super.buildTextSpan(
+  }) =>
+      buildMentionTextSpan(
+        text: text,
+        value: value,
+        mentions: _mentions,
+        style: style,
+        withComposing: withComposing,
+      ) ??
+      super.buildTextSpan(
         context: context,
         style: style,
         withComposing: withComposing,
       );
-    }
-    // Bail only when a composing region OVERLAPS a pick, where the framework's
-    // underline and our tint would fight over the same glyphs. Bailing on ANY
-    // composing region would strobe the colour: Vietnamese IMEs compose per
-    // syllable, so it would drop on nearly every keystroke.
-    final composing = value.composing;
-    if (withComposing &&
-        value.isComposingRangeValid &&
-        !composing.isCollapsed &&
-        _mentions.any(
-          (m) => composing.start < m.end && m.start < composing.end,
-        )) {
-      return super.buildTextSpan(
-        context: context,
-        style: style,
-        withComposing: withComposing,
-      );
-    }
-    // Blue ink, nothing else. A pick is a lightweight token in the sentence —
-    // no fill, no chip, no macros — so the only thing marking it as a reference
-    // rather than prose is the colour.
-    final mentionStyle = (style ?? const TextStyle()).copyWith(
-      color: NhamColors.mention,
-    );
-    return TextSpan(
-      style: style,
-      children: [
-        for (final segment in buildMentionSegments(text, _mentions))
-          TextSpan(
-            text: segment.text,
-            style: segment.isMention ? mentionStyle : null,
-          ),
-      ],
-    );
-  }
 }
