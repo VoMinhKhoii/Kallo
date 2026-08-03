@@ -37,12 +37,14 @@ export function DocsPager({
           </span>
         </Link>
       ) : (
-        <span />
+        // Only a spacer once there are two columns; on one column it would
+        // just add an empty gap row above the next card.
+        <span className="hidden sm:block" />
       )}
 
       {next && (
         <Link
-          className="group rounded-xl border border-nham-border p-card-sm text-right transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent sm:col-start-2"
+          className="group rounded-xl border border-nham-border p-card-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent sm:col-start-2 sm:text-right"
           href={`/docs/${next.slug}`}
         >
           <span className="block font-sans-display text-caption text-nham-text-muted">

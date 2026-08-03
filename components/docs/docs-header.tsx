@@ -30,10 +30,10 @@ export async function DocsHeader({
           className="flex items-center gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
           href="/docs/overview"
         >
-          <KalloWordmark className="h-4 w-auto text-nham-text" />
+          <KalloWordmark className="h-6 w-auto text-nham-text" />
           <span
             aria-hidden="true"
-            className="hidden h-4 w-px bg-nham-border sm:block"
+            className="hidden h-5 w-px bg-nham-border sm:block"
           />
           <span className="hidden font-serif text-base text-nham-text-muted sm:block">
             {t('title')}
