@@ -121,18 +121,22 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   List<RelogRef> _inFlightRefs = const [];
   bool _inFlightCheat = false;
 
-  /// What the in-flight run's card should SAY: the typed text plus the picks,
-  /// derived the way the server derives `meals.raw_input` for a combined submit
-  /// (`analyze-meal/route.ts` → `buildRelogRawInput([message, ...dishNames])`).
+  /// What the in-flight run's card should SAY: the user's OWN sentence with the
+  /// `/` markers taken off.
   ///
-  /// Without this the card is labelled with the free text alone — a submit of
-  /// "/Phở bò và 2 quả trứng" reads "và 2 quả trứng" through streaming AND on
-  /// the confirmable card, then silently grows the dish back the moment the
-  /// persisted card replaces it.
-  String? get _inFlightLabel =>
-      _inFlightText == null
-          ? null
-          : combinedRelogLabel(_inFlightText!, _inFlightPicks);
+  /// Not a reconstruction. Joining `[freeText, ...pickNames]` — which is how
+  /// the server derives `meals.raw_input` — reorders the sentence whenever a
+  /// pick did not come last: typing "/1 cơm gà… + 1 kem vani" came back as
+  /// "+ 1 kem vani, 1 cơm gà…", with the typed remainder hoisted in front of
+  /// the dish it followed. The card is the user reading their own words back,
+  /// so it shows them in the order they wrote them.
+  ///
+  /// The persisted card, once confirmed, still carries the server's joined
+  /// form. That divergence is deliberate: the alternative is a card that reads
+  /// scrambled for the whole time the analysis is on screen.
+  String? _inFlightLabelText;
+
+  String? get _inFlightLabel => _inFlightLabelText ?? _inFlightText;
 
   /// A failed attempt, rendered as a feed card with "Try again" (terracotta).
   String? _failedText;
@@ -143,6 +147,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// analysis because the user changed mode while the error card sat there.
   List<RelogRef> _failedRefs = const [];
   List<String> _failedPicks = const [];
+  String? _failedLabel;
   bool _failedCheat = false;
 
   /// Whether the failed attempt is worth retrying (from the error's `retryable`
@@ -333,7 +338,15 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         // drops the mentions with it — snapshot first so a failed run can hand
         // them back.
         _relogSnapshot = _textController.snapshot();
-        _runAnalyze(freeText, refs: refs, pickNames: pickNames);
+        // The label is taken BEFORE the composer is cleared: it is the sentence
+        // on screen with the `/` markers removed, so the card reads back what
+        // was typed, in that order.
+        _runAnalyze(
+          freeText,
+          refs: refs,
+          pickNames: pickNames,
+          label: unmarkPicks(_textController.text, _textController.entries),
+        );
     }
   }
 
@@ -384,6 +397,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     List<RelogRef>? refs,
     List<String> pickNames = const [],
     bool? isCheat,
+    String? label,
   }) {
     refreshRevealedAnalysisDay(
       ref,
@@ -398,6 +412,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       _failedRetryable = true;
       _revealRawInput = null;
       _inFlightText = text;
+      _inFlightLabelText = label;
       _inFlightPicks = pickNames;
       _inFlightRefs = refs ?? const [];
       // Resolved ONCE, here, and carried with the attempt. Reading it again at
@@ -446,6 +461,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       refs: _failedRefs.isEmpty ? null : _failedRefs,
       pickNames: _failedPicks,
       isCheat: _failedCheat,
+      label: _failedLabel,
     );
   }
 
@@ -459,6 +475,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       // inherits them if anything ever reads them before they are rewritten.
       _failedRefs = const [];
       _failedPicks = const [];
+      _failedLabel = null;
       _failedCheat = false;
       _attemptId = null;
     });
@@ -521,9 +538,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       // is what "Try again" replays.
       _failedRefs = _inFlightRefs;
       _failedPicks = _inFlightPicks;
+      _failedLabel = _inFlightLabelText;
       _failedCheat = _inFlightCheat;
       _inFlightText = null;
       _inFlightPicks = const [];
+      _inFlightLabelText = null;
       _inFlightRefs = const [];
       _relogSnapshot = null;
     });

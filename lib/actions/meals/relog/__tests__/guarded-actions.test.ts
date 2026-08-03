@@ -15,15 +15,27 @@ const checkAnalysisGuards = vi.fn();
 const requireAuthAndProfile = vi.fn();
 const loadRelogDishCandidates = vi.fn();
 const loadRelogMealCandidates = vi.fn();
+const resolveRelogSources = vi.fn();
 
 vi.mock('@/lib/rate-limit/analysis-guards', () => ({ checkAnalysisGuards }));
 vi.mock('@/lib/auth', () => ({ requireAuthAndProfile }));
 vi.mock('@/lib/logging/relog/dish-query', () => ({ loadRelogDishCandidates }));
 vi.mock('@/lib/logging/relog/meal-query', () => ({ loadRelogMealCandidates }));
-vi.mock('@/lib/db', () => ({ db: {} }));
+vi.mock('@/lib/db', () => ({
+  db: { transaction: (fn: (tx: unknown) => unknown) => fn({}) },
+}));
+vi.mock('@/lib/actions/meals/relog/resolve-sources', () => ({
+  resolveRelogSources,
+}));
 
 const { loadRelogCandidatesAction } = await import(
   '@/lib/actions/meals/relog/load-candidates'
+);
+const { stageRelogAnalysisAction } = await import(
+  '@/lib/actions/meals/relog/stage-relog-analysis'
+);
+const { relogMealItemsAction } = await import(
+  '@/lib/actions/meals/relog/relog-items'
 );
 const { RELOG_WRITE_ROUTE } = await import('@/lib/rate-limit/relog-guard');
 
@@ -34,6 +46,7 @@ beforeEach(() => {
   requireAuthAndProfile.mockReset();
   loadRelogDishCandidates.mockReset();
   loadRelogMealCandidates.mockReset();
+  resolveRelogSources.mockReset();
   release.mockReset();
 
   requireAuthAndProfile.mockResolvedValue({ user: { id: 'user-123' } });
@@ -82,12 +95,48 @@ describe('loadRelogCandidatesAction', () => {
 });
 
 describe('the write actions share one counter', () => {
-  it('stage and instant-save key the same route string', async () => {
-    // `checkAnalysisGuards` keys its window and in-flight counters on the route
-    // string. A distinct key per write action hands a user an independent
-    // `concurrentUser: 1` budget for each — two simultaneous transactions, both
-    // holding `FOR UPDATE` on their source meals, against a pool that defaults
-    // to 2. That is the starvation the guard exists to prevent.
-    expect(RELOG_WRITE_ROUTE).toBe('meals-relog-write');
+  // `checkAnalysisGuards` keys its window and in-flight counters on the route
+  // string. A distinct key per write action hands a user an independent
+  // `concurrentUser: 1` budget for each — two simultaneous transactions, both
+  // holding `FOR UPDATE` on their source meals, against a pool that defaults
+  // to 2. That is the starvation the guard exists to prevent.
+  //
+  // Asserted at the CALL SITES, not on the exported constant. Checking
+  // `RELOG_WRITE_ROUTE === 'meals-relog-write'` only restates the constant —
+  // either action could switch to a literal of its own and that assertion would
+  // still pass, which is exactly the regression this needs to catch.
+  //
+  // Both actions are driven until they reach the guard and then fail inside it
+  // (`resolveRelogSources` rejects), because what is under test is the key they
+  // guard WITH, not what they do afterwards.
+  const relogInput = {
+    items: [{ kind: 'meal' as const, sourceMealId: crypto.randomUUID() }],
+    loggedDate: '2026-08-03',
+    timezoneOffset: 0,
+  };
+
+  it('stage keys the shared write route', async () => {
+    resolveRelogSources.mockRejectedValue(new Error('stop here'));
+
+    await expect(
+      stageRelogAnalysisAction({
+        ...relogInput,
+        attemptId: crypto.randomUUID(),
+      })
+    ).rejects.toThrow('stop here');
+
+    expect(checkAnalysisGuards).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-123', route: RELOG_WRITE_ROUTE })
+    );
+  });
+
+  it('instant-save keys the SAME route, not one of its own', async () => {
+    resolveRelogSources.mockRejectedValue(new Error('stop here'));
+
+    await expect(relogMealItemsAction(relogInput)).rejects.toThrow('stop here');
+
+    expect(checkAnalysisGuards).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-123', route: RELOG_WRITE_ROUTE })
+    );
   });
 });

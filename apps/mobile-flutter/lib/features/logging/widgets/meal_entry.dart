@@ -15,6 +15,7 @@ import '../logic/logging_spacing.dart';
 import '../logic/meal_utils.dart';
 import 'count_up.dart';
 import 'entrances.dart';
+import 'macro_trio.dart';
 import 'meal_stepper_button.dart';
 import 'meal_time_divider.dart';
 
@@ -301,45 +302,43 @@ class _ItemRow extends StatelessWidget {
                   ),
                   const SizedBox(width: NhamSpacing.sp2), // gap-2
                 ],
+                // TWO lines. The macro tail is fixed-width, so the name gets
+                // ~96pt on a phone — under half of what an ordinary Vietnamese
+                // dish name needs, and on one line "Sữa chua uống berries"
+                // ellipsised to "Sữa chua uống ber…", losing the part that
+                // identifies it.
                 Expanded(
                   child: Text(
                     item.name,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style:
-                        dashBody().merge(struck
-                            ? const TextStyle(
-                              decoration: TextDecoration.lineThrough,
-                              decorationColor: kInkMuted,
-                              color: kInkMuted,
-                            )
-                            : null),
+                    style: dashBody().merge(
+                      struck
+                          ? const TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            decorationColor: kInkMuted,
+                            color: kInkMuted,
+                          )
+                          : null,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: NhamSpacing.sp3), // gap-3
+          // The SHARED trio, not a hand-rolled Row. Content-sized cells put
+          // `C:` at a different x on every row — `P: 0g` and `P: 49g` are not
+          // the same width — so a card of items read as ragged. MacroTrio pins
+          // each macro to a fixed cell and scales the value down inside it
+          // rather than clipping.
           Opacity(
             opacity: struck ? 0.4 : 1,
-            child: Row(
-              children: [
-                Text(
-                  'P: ${fmtG(item.macros.protein)}',
-                  maxLines: 1, style: dashMeta(tabular: true),),
-                const SizedBox(width: NhamSpacing.sp2),
-                Text(
-                  'C: ${fmtG(item.macros.carbs)}',
-                  maxLines: 1, style: dashMeta(tabular: true),),
-                const SizedBox(width: NhamSpacing.sp2),
-                Text(
-                  'F: ${fmtG(item.macros.fat)}',
-                  maxLines: 1, style: dashMeta(tabular: true),),
-                const SizedBox(width: NhamSpacing.sp3), // gap-3
-                Text(
-                  fmtKcal(item.macros.calories),
-                  maxLines: 1, style: dashBody(weight: FontWeight.w500, tabular: true),),
-              ],
+            child: MacroTrio(
+              protein: item.macros.protein,
+              carbs: item.macros.carbs,
+              fat: item.macros.fat,
+              calories: item.macros.calories,
             ),
           ),
         ],
@@ -400,7 +399,9 @@ class _EditPill extends StatelessWidget {
                 editing
                     ? 'logging.mealEntry.done'.tr()
                     : 'logging.mealEntry.edit'.tr(),
-                style: dashMeta().merge(TextStyle(color: editing ? NhamColors.text : kInkMuted)),
+                style: dashMeta().merge(
+                  TextStyle(color: editing ? NhamColors.text : kInkMuted),
+                ),
               ),
             ],
           ),

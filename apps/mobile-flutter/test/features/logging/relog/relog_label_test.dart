@@ -49,36 +49,34 @@ void main() {
     });
   });
 
-  group('combinedRelogLabel', () {
-    test('reads as the typed text THEN the picks', () {
-      // What the server writes for the same submit:
-      // buildRelogRawInput([message, ...dishNames]).
+  group('the card reads back what was typed', () {
+    test('a pick that came FIRST stays first', () {
+      // The reported bug: the label was rebuilt as `[freeText, ...pickNames]`,
+      // so typing the pick at the start hoisted the typed remainder in front of
+      // it and the card read "+ 1 kem vani, 1 cơm gà…" for a sentence that
+      // began with the dish.
+      const typed = '/1 cơm gà Hải Nam + 1 kem vani';
       expect(
-        combinedRelogLabel('và 2 quả trứng', ['Phở bò']),
-        'và 2 quả trứng, Phở bò',
+        unmarkPicks(typed, [_pick('/1 cơm gà Hải Nam')]),
+        '1 cơm gà Hải Nam + 1 kem vani',
       );
     });
 
-    test('a submit with no picks is labelled with exactly what was typed', () {
-      expect(combinedRelogLabel('phở bò một tô', const []), 'phở bò một tô');
+    test('a pick in the MIDDLE keeps its place', () {
+      expect(
+        unmarkPicks('sáng /Phở bò rồi đi làm', [_pick('/Phở bò')]),
+        'sáng Phở bò rồi đi làm',
+      );
     });
 
-    test('picks alone need no leading comma', () {
-      expect(combinedRelogLabel('', ['Phở bò', 'Cà phê']), 'Phở bò, Cà phê');
-    });
-
-    test('truncates at the column bound the server truncates at', () {
-      // `meals.raw_input` is bounded server-side; a label built here that ran
-      // past it would render one string and persist another.
-      final long = List.filled(60, 'Cà phê sữa đá').join(', ');
-      final label = combinedRelogLabel(long, ['Phở bò']);
-      expect(label.length, kRelogRawInputMax);
-      expect(label.endsWith('…'), isTrue);
-    });
-
-    test('leaves a label that exactly fits unchanged', () {
-      final exact = 'x' * kRelogRawInputMax;
-      expect(combinedRelogLabel(exact, const []), exact);
+    test('several picks keep composer order', () {
+      expect(
+        unmarkPicks('/Phở bò và /Cà phê và bánh mì', [
+          _pick('/Phở bò'),
+          _pick('/Cà phê'),
+        ]),
+        'Phở bò và Cà phê và bánh mì',
+      );
     });
   });
 }

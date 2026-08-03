@@ -46,7 +46,9 @@ class MacroTrio extends StatelessWidget {
   /// clipped the unit off three-digit rows while leaving their neighbours
   /// intact. Four-digit dish rows scale down; four digits belong to the totals
   /// line, which is not this widget.
-  static const double _kcal = 66;
+  /// Shared with the `/` picker's option rows so a kcal figure sits at the
+  /// same x whether you are choosing a dish or reading one back.
+  static const double kcalColumn = 66;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +62,7 @@ class MacroTrio extends StatelessWidget {
         _Cell(label: 'F:', value: fmtG(fat)),
         const SizedBox(width: NhamSpacing.sp3),
         SizedBox(
-          width: _kcal,
+          width: kcalColumn,
           child: Align(
             alignment: Alignment.centerRight,
             child: FittedBox(

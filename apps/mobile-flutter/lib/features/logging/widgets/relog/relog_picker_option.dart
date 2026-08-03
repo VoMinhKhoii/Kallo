@@ -7,6 +7,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../logic/format.dart';
+import '../macro_trio.dart';
 
 /// One row of the `/` picker. Dishes and meals share this layout — the subtitle
 /// is the macro split either way, so what you are about to log is visible
@@ -104,11 +105,15 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
                 ),
               ),
               const SizedBox(width: NhamSpacing.sp2),
-              // Flexible, because a Row lays its non-flex children out FIRST:
-              // at a large text scale an unbounded kcal label would take the
-              // whole width, leave the dish name none, and paint an overflow
-              // stripe across the option.
-              Flexible(
+              // A FIXED cell, not a flexible one. Flexible sizes to content,
+              // so `137 kcal` and `1024 kcal` claim different widths and the
+              // column goes ragged down the list — the same defect the meal
+              // card's trio was just fixed for. The fixed width also bounds the
+              // row: a Row lays its non-flex children out first, so an
+              // unbounded kcal at a large text scale would take the whole width
+              // and leave the dish name none.
+              SizedBox(
+                width: MacroTrio.kcalColumn,
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerRight,

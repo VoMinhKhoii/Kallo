@@ -1,27 +1,14 @@
-/// The card label for a submit that carried relog picks.
+/// Turning the composer's `/`-marked sentence back into ordinary prose.
 ///
-/// Ported from `buildRelogRawInput` in `lib/logging/relog/relog.ts`, and it has
-/// to STAY a port: `meals.raw_input` is what the persisted card shows, and for a
-/// combined submit the server writes `[free text, ...dish names]`
-/// (`app/api/analyze-meal/route.ts`). Deriving the same string client-side is
-/// what stops the card's own label from changing under the user the moment they
-/// confirm it.
+/// The card a submit produces shows the user their OWN words. It does not
+/// rebuild a label out of parts: joining `[free text, ...pick names]` — how the
+/// server derives `meals.raw_input` — reorders the sentence whenever a pick did
+/// not come last, so "/1 cơm gà… + 1 kem vani" came back as "+ 1 kem vani,
+/// 1 cơm gà…". Stripping the markers in place preserves the order for free.
 library;
 
 import '../../../../models/relog.dart';
 import 'slash_token.dart';
-
-/// Mirrors `RELOG_RAW_INPUT_MAX`. The column is bounded server-side, so a label
-/// built here has to truncate identically or a long combined meal would render
-/// one string and persist another.
-const int kRelogRawInputMax = 500;
-
-/// Join [labels] into a card label, truncating to [kRelogRawInputMax].
-String buildRelogRawInput(List<String> labels) {
-  final joined = labels.join(', ');
-  if (joined.length <= kRelogRawInputMax) return joined;
-  return '${joined.substring(0, kRelogRawInputMax - 1)}…';
-}
 
 /// A pick's name without the `/` it was summoned with.
 ///
@@ -50,13 +37,4 @@ String unmarkPicks(String text, List<RelogStagedEntry> staged) {
     out = out.replaceAll(entry.label, relogPickName(entry));
   }
   return out;
-}
-
-/// The label for a combined submit: the typed text, then every pick.
-///
-/// Returns [freeText] untouched when there are no picks, so the ordinary
-/// text-only path keeps rendering exactly what was typed.
-String combinedRelogLabel(String freeText, List<String> pickNames) {
-  if (pickNames.isEmpty) return freeText;
-  return buildRelogRawInput([if (freeText.isNotEmpty) freeText, ...pickNames]);
 }
