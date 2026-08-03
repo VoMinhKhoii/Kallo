@@ -90,11 +90,22 @@ export default async function DocPage({
 
   return (
     // Three tracks of equal outer width, so the measure sits centred on the
-    // SCREEN rather than centred in whatever the rail leaves over. The left
-    // track is an empty spacer that exists only to balance the rail; without
-    // it the reading column drifts left by half the rail's width.
+    // SCREEN rather than centred in whatever the rail leaves over. The rail
+    // takes the first track and the last is an empty spacer that exists only
+    // to balance it; without the spacer the reading column drifts right by
+    // half the rail's width.
+    //
+    // The rail is first in the DOM as well as on the left, so focus order
+    // follows the visual order instead of jumping backwards out of the article
+    // into it. Placing it visually with `col-start` while leaving it last in
+    // the source would be the alternative, and it is the worse one: it buys a
+    // marginally better screen-reader entry at the cost of a tab order that
+    // moves right-to-left. `DocsToc` renders a labelled `nav` landmark, so
+    // skipping past it to the article is one keystroke either way.
     <div className="xl:grid xl:grid-cols-[14rem_minmax(0,40rem)_14rem] xl:justify-center xl:gap-10">
-      <div aria-hidden="true" className="hidden xl:block" />
+      <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] overflow-y-auto py-10 xl:block">
+        <DocsToc entries={toc} />
+      </aside>
 
       <article className="mx-auto w-full min-w-0 max-w-[40rem] py-10 xl:mx-0">
         <DocsBreadcrumbs sectionId={section.id} />
@@ -122,9 +133,7 @@ export default async function DocPage({
         />
       </article>
 
-      <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] overflow-y-auto py-10 xl:block">
-        <DocsToc entries={toc} />
-      </aside>
+      <div aria-hidden="true" className="hidden xl:block" />
     </div>
   );
 }
