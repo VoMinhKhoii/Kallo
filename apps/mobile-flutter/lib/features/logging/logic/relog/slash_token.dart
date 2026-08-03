@@ -58,6 +58,12 @@ final _breaks = RegExp(r'[\n\r\t]');
 ///
 /// The "`/` must start the text or follow whitespace" rule is what keeps
 /// `1/2 quả`, `and/or` and `http://x` from ever opening the picker.
+///
+/// PURE, and deliberately blind to what the composer has already committed: a
+/// pick keeps its `/`, so this will happily report a committed label's own
+/// slash as an open token. Callers holding committed mentions must reject a
+/// token starting inside one — `MentionTextEditingController.activeToken` is
+/// where that happens.
 SlashToken? parseSlashToken(String value, int caret) {
   final end = caret.clamp(0, value.length);
   final left = value.substring(0, end);
@@ -71,7 +77,12 @@ SlashToken? parseSlashToken(String value, int caret) {
   // `/ ` (slash then space) is prose, not a trigger.
   if (query.isNotEmpty && _leadingWhitespace.hasMatch(query)) return null;
   if (query.length > _maxTokenLength) return null;
-  if (query.split(' ').length > _maxTokenWords) return null;
+  // Empty segments don't count: `'cà phê sữa đá '.split(' ')` yields five parts
+  // for four words, so a trailing space would close the picker a word early on
+  // exactly the multi-word Vietnamese names this bound was widened for.
+  if (query.split(' ').where((w) => w.isNotEmpty).length > _maxTokenWords) {
+    return null;
+  }
   // A newline always ends the token.
   if (_breaks.hasMatch(query)) return null;
 

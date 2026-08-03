@@ -21,11 +21,14 @@ void main() {
     expect(state.query, 'pho');
   });
 
-  test('an empty query is open, not closed — those are staples, not nothing', () {
-    final state = _type(closed, '/');
-    expect(state.isOpen, isTrue);
-    expect(state.query, '');
-  });
+  test(
+    'an empty query is open, not closed — those are staples, not nothing',
+    () {
+      final state = _type(closed, '/');
+      expect(state.isOpen, isTrue);
+      expect(state.query, '');
+    },
+  );
 
   test('closes when the token stops parsing', () {
     var state = _type(closed, '/pho');

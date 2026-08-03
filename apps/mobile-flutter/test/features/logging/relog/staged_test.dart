@@ -43,16 +43,23 @@ void main() {
         'sourceMealId',
         'mealItemOrder',
       });
+      // The MEAL reference too — it is the one that stages a whole entry, so a
+      // cached macro added there would travel furthest before anyone noticed.
+      expect(const RelogMealRef(sourceMealId: 'meal-9').toJson().keys.toSet(), {
+        'kind',
+        'sourceMealId',
+      });
     });
   });
 
-  test('a staged entry holds no macros to go stale', () {
+  test('a staged entry is a label over a reference, and nothing else', () {
     const entry = RelogStagedEntry(
       stageId: 's',
       ref: RelogMealRef(sourceMealId: 'meal-1'),
       label: '/Phở bò',
     );
     expect(entry.label, '/Phở bò', reason: 'the slash is part of the token');
+    expect(entry.ref, const RelogMealRef(sourceMealId: 'meal-1'));
   });
 
   test('the staged cap mirrors the server contract', () {

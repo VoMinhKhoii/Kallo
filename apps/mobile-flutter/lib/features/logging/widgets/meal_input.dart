@@ -100,6 +100,13 @@ class _MealInputState extends State<MealInput>
   /// Owned only when the caller didn't supply one — a controller belongs to
   /// whoever created it, and disposing a borrowed one would break the feed the
   /// moment the composer rebuilt.
+  ///
+  /// INVARIANT: a caller either supplies [MealInput.textController] for this
+  /// widget's whole life or never supplies one. `late final` bakes that in — a
+  /// caller that started at null and later passed a controller would strand
+  /// this one undisposed, since [dispose] only frees it while `_ownsController`
+  /// is still true. Both call sites hold to it: the feed owns one controller
+  /// for the life of the screen, and the quick-log sheet passes none.
   late final MentionTextEditingController _ownedController =
       MentionTextEditingController();
   bool _ownsController = false;

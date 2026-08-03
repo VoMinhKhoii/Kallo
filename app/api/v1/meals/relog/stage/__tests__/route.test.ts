@@ -195,7 +195,12 @@ describe('POST /api/v1/meals/relog/stage', () => {
       expect(checkAnalysisGuards).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: 'user-123',
-          route: 'meals-relog-stage',
+          // The SAME route key `/relog` uses, on purpose: `checkAnalysisGuards`
+          // keys its window and in-flight counters on this string, so a key of
+          // its own would hand one user a second `concurrentUser: 1` budget —
+          // two write transactions at once, each holding `FOR UPDATE`, against
+          // a pool that defaults to 2 connections.
+          route: 'meals-relog-write',
         })
       );
     });

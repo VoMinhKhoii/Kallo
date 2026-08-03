@@ -69,17 +69,20 @@ void main() {
   });
 
   group('relogCandidatesProvider', () {
-    test('an empty query asks for the ranked staples, with no q param', () async {
-      api.handler = (_, __, ___) => _candidatesJson;
+    test(
+      'an empty query asks for the ranked staples, with no q param',
+      () async {
+        api.handler = (_, __, ___) => _candidatesJson;
 
-      await container.read(relogCandidatesProvider('').future);
+        await container.read(relogCandidatesProvider('').future);
 
-      expect(
-        api.requests.single.$2,
-        '/api/v1/meals/relog/candidates?limit=8',
-        reason: 'an empty query is not a special case server-side',
-      );
-    });
+        expect(
+          api.requests.single.$2,
+          '/api/v1/meals/relog/candidates?limit=8',
+          reason: 'an empty query is not a special case server-side',
+        );
+      },
+    );
 
     test('encodes a Vietnamese query rather than sending it raw', () async {
       api.handler = (_, __, ___) => _candidatesJson;
@@ -117,67 +120,75 @@ void main() {
       );
       expect(result.meals.single.partCount, 2);
       // Dishes list before meals: the flat option list is what the picker walks.
-      expect(result.options.map((c) => c.name), ['Phở bò', 'phở bò với trà đá']);
+      expect(result.options.map((c) => c.name), [
+        'Phở bò',
+        'phở bò với trà đá',
+      ]);
     });
 
-    test('a dish candidate stages as a dish ref, a meal as a meal ref', () async {
-      api.handler = (_, __, ___) => _candidatesJson;
+    test(
+      'a dish candidate stages as a dish ref, a meal as a meal ref',
+      () async {
+        api.handler = (_, __, ___) => _candidatesJson;
 
-      final result = await container.read(
-        relogCandidatesProvider('pho').future,
-      );
+        final result = await container.read(
+          relogCandidatesProvider('pho').future,
+        );
 
-      expect(
-        result.dishes.single.ref,
-        const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 2),
-      );
-      expect(
-        result.meals.single.ref,
-        const RelogMealRef(sourceMealId: 'meal-9'),
-      );
-    });
+        expect(
+          result.dishes.single.ref,
+          const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 2),
+        );
+        expect(
+          result.meals.single.ref,
+          const RelogMealRef(sourceMealId: 'meal-9'),
+        );
+      },
+    );
   });
 
   group('stageRelogAnalysis', () {
-    test('posts references only, with the attempt id, then refreshes the day',
-        () async {
-      api.handler = (method, path, __) {
-        if (method == 'POST') return {'analysisId': 'analysis-1'};
-        // The awaited day refresh that follows the stage.
-        return <String, dynamic>{'meals': [], 'pendingConfirmations': []};
-      };
+    test(
+      'posts references only, with the attempt id, then refreshes the day',
+      () async {
+        api.handler = (method, path, __) {
+          if (method == 'POST') return {'analysisId': 'analysis-1'};
+          // The awaited day refresh that follows the stage.
+          return <String, dynamic>{'meals': [], 'pendingConfirmations': []};
+        };
 
-      await stageRelogAnalysis(
-        _Ref(container),
-        userId: 'user-1',
-        date: '2026-07-02',
-        items: const [
-          RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 2),
-          RelogMealRef(sourceMealId: 'meal-9'),
-        ],
-        attemptId: 'attempt-1',
-      );
+        await stageRelogAnalysis(
+          _Ref(container),
+          userId: 'user-1',
+          date: '2026-07-02',
+          items: const [
+            RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 2),
+            RelogMealRef(sourceMealId: 'meal-9'),
+          ],
+          attemptId: 'attempt-1',
+        );
 
-      final post = api.requests.first;
-      expect(post.$1, 'POST');
-      expect(post.$2, '/api/v1/meals/relog/stage');
-      final body = post.$3! as Map<String, dynamic>;
-      expect(body['items'], [
-        {'kind': 'dish', 'sourceMealId': 'meal-1', 'mealItemOrder': 2},
-        {'kind': 'meal', 'sourceMealId': 'meal-9'},
-      ]);
-      expect(body['loggedDate'], '2026-07-02');
-      expect(body['attemptId'], 'attempt-1');
-      expect(body.containsKey('timezoneOffset'), isTrue);
+        final post = api.requests.first;
+        expect(post.$1, 'POST');
+        expect(post.$2, '/api/v1/meals/relog/stage');
+        final body = post.$3! as Map<String, dynamic>;
+        expect(body['items'], [
+          {'kind': 'dish', 'sourceMealId': 'meal-1', 'mealItemOrder': 2},
+          {'kind': 'meal', 'sourceMealId': 'meal-9'},
+        ]);
+        expect(body['loggedDate'], '2026-07-02');
+        expect(body['attemptId'], 'attempt-1');
+        expect(body.containsKey('timezoneOffset'), isTrue);
 
-      // The staged card is delivered by refetching the day — nothing renders it
-      // locally, so a missing refresh means the card never appears.
-      expect(
-        api.requests.any((r) => r.$2.startsWith('/api/v1/logging/day')),
-        isTrue,
-        reason: 'the day was not refetched after staging',
-      );
-    });
+        // The staged card is delivered by refetching the day — nothing renders it
+        // locally, so a missing refresh means the card never appears.
+        expect(
+          api.requests.any((r) => r.$2.startsWith('/api/v1/logging/day')),
+          isTrue,
+          reason: 'the day was not refetched after staging',
+        );
+      },
+    );
 
     test('always sends an attemptId — the server requires one', () async {
       // Without it the server's (user_id, attempt_id) upsert degenerates into

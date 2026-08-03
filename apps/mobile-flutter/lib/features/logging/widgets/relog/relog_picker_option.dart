@@ -104,15 +104,25 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
                 ),
               ),
               const SizedBox(width: NhamSpacing.sp2),
-              Text(
-                'logging.relog.optionKcal'.tr(
-                  namedArgs: {'kcal': fmtKcalValue(summary.caloriesKcal)},
-                ),
-                maxLines: 1,
-                softWrap: false,
-                style: dashMeta(
-                  color: NhamColors.bandForeground,
-                  tabular: true,
+              // Flexible, because a Row lays its non-flex children out FIRST:
+              // at a large text scale an unbounded kcal label would take the
+              // whole width, leave the dish name none, and paint an overflow
+              // stripe across the option.
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    'logging.relog.optionKcal'.tr(
+                      namedArgs: {'kcal': fmtKcalValue(summary.caloriesKcal)},
+                    ),
+                    maxLines: 1,
+                    softWrap: false,
+                    style: dashMeta(
+                      color: NhamColors.bandForeground,
+                      tabular: true,
+                    ),
+                  ),
                 ),
               ),
             ],

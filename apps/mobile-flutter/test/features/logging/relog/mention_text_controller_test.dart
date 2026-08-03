@@ -116,6 +116,53 @@ void main() {
     );
   });
 
+  group('the token behind a committed pick', () {
+    test('a committed label does not read as an open token', () {
+      _type(c, '/pho');
+      _pick(c, _dish('Phở bò'), 'a');
+
+      // The caret sits after `/Phở bò `. `parseSlashToken` claims the last `/`
+      // left of it — which is the PICK'S OWN slash, since a pick keeps the
+      // slash it was summoned with. Without a guard the picker re-opens on the
+      // dish just chosen.
+      expect(c.activeToken, isNull);
+    });
+
+    test('nor does one with the user still typing after it', () {
+      _type(c, '/pho');
+      _pick(c, _dish('Phở bò'), 'a');
+      _type(c, '${c.text}và 2 quả trứng');
+      expect(c.activeToken, isNull);
+    });
+
+    test('a SECOND pick cannot eat the first one', () {
+      _type(c, '/pho');
+      _pick(c, _dish('Phở bò'), 'a');
+
+      // What the composer would do if it acted on that phantom token: the
+      // insertion spans the committed label, so the first mention's text is
+      // overwritten and `reconcileMentions` drops its reference — a dish the
+      // user picked silently stops being logged.
+      expect(
+        c.activeToken,
+        isNull,
+        reason: 'no token means the picker never offers the second pick',
+      );
+      expect(c.entries.single.stageId, 'a');
+    });
+
+    test('but a NEW `/` after it still opens', () {
+      _type(c, '/pho');
+      _pick(c, _dish('Phở bò'), 'a');
+      _type(c, '${c.text}/ca');
+
+      final token = c.activeToken;
+      expect(token, isNotNull, reason: 'the guard must not deafen the picker');
+      expect(token!.query, 'ca');
+      expect(token.start, greaterThan(c.mentions.single.end - 1));
+    });
+  });
+
   group('editing', () {
     test('drops a mention whose label the user broke', () {
       _type(c, '/pho');

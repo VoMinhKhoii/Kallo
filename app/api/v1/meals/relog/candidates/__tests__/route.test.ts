@@ -61,7 +61,7 @@ describe('GET /api/v1/meals/relog/candidates', () => {
     });
   });
 
-  it('clamps limit above the contract maximum', async () => {
+  it('rejects a limit above the contract maximum', async () => {
     const res = await GET(makeRequest('?limit=999'));
     expect(res.status).toBe(400);
     expect(loadRelogCandidatesAction).not.toHaveBeenCalled();

@@ -96,6 +96,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// Empty for a plain submit.
   List<String> _inFlightPicks = const [];
 
+  /// The references actually SENT with [_inFlightText], and whether it went out
+  /// as a cheat estimate. Frozen here because a retry must replay the attempt
+  /// that failed — not re-derive one from a composer the user has edited since,
+  /// nor from a mode they have switched in the meantime.
+  List<RelogRef> _inFlightRefs = const [];
+  bool _inFlightCheat = false;
+
   /// What the in-flight run's card should SAY: the typed text plus the picks,
   /// derived the way the server derives `meals.raw_input` for a combined submit
   /// (`analyze-meal/route.ts` → `buildRelogRawInput([message, ...dishNames])`).
@@ -111,6 +118,14 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
 
   /// A failed attempt, rendered as a feed card with "Try again" (terracotta).
   String? _failedText;
+
+  /// The failed attempt's own references, pick names and mode — the exact shape
+  /// that went out. "Try again" replays THIS, so a retry can never attach picks
+  /// the attempt never carried, or resubmit a cheat estimate as a normal
+  /// analysis because the user changed mode while the error card sat there.
+  List<RelogRef> _failedRefs = const [];
+  List<String> _failedPicks = const [];
+  bool _failedCheat = false;
 
   /// Whether the failed attempt is worth retrying (from the error's `retryable`
   /// flag). When false the failed card offers only Discard, no "Try again".
@@ -343,6 +358,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     String text, {
     List<RelogRef>? refs,
     List<String> pickNames = const [],
+    bool? isCheat,
   }) {
     refreshRevealedAnalysisDay(
       ref,
@@ -358,6 +374,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       _revealRawInput = null;
       _inFlightText = text;
       _inFlightPicks = pickNames;
+      _inFlightRefs = refs ?? const [];
+      // Resolved ONCE, here, and carried with the attempt. Reading it again at
+      // retry time would let a mode switch turn a failed cheat estimate into a
+      // normal analysis.
+      _inFlightCheat =
+          isCheat ?? ref.read(mealLogModeProvider) == MealLogMode.cheat;
     });
     _inputController.clear();
     _scrollToAnswer();
@@ -365,7 +387,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       ref,
       message: text,
       date: widget.date,
-      isCheat: ref.read(mealLogModeProvider) == MealLogMode.cheat,
+      isCheat: _inFlightCheat,
       cheatIntensity: ref.read(cheatIntensityProvider),
       attemptId: _attemptId,
       refs: refs,
@@ -379,34 +401,27 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     // (kept on error precisely for this). Fall back to a fresh id defensively.
     _attemptId ??= _uuid.v4();
 
-    // Re-derive the picks from the composer the failure restored them into.
-    // `_failedText` is the free text ALONE — the mentions were stripped out of
-    // it before the first attempt — so retrying with it and no refs would
-    // silently log the typed text WITHOUT the dishes the user picked.
+    // REPLAY the failed attempt — text, references and mode exactly as they
+    // went out — rather than re-planning from the live composer.
     //
-    // Same three-way decision as a fresh submit, so it goes through the same
-    // planner. `freeText` IS the failed text here: what failed was already the
-    // stripped message, which is exactly what should be re-analyzed.
-    final plan = planComposerSubmit(
-      isNormal: ref.read(mealLogModeProvider) == MealLogMode.normal,
-      staged: _textController.entries,
-      text: text,
-      freeText: text,
-    );
-    switch (plan) {
-      case PlainAnalysis(:final text):
-        _runAnalyze(text);
-      case PureRelog():
-        // Unreachable: `text` is the non-empty message that failed, so the
-        // planner cannot classify this as picks-only. Retry it as plain text
-        // rather than silently doing nothing.
-        _runAnalyze(text);
-      case CombinedAnalysis(:final freeText, :final refs, :final pickNames):
-        // _runAnalyze clears the composer again, so re-snapshot: a second
-        // failure would otherwise have nothing to hand back.
-        _relogSnapshot = _textController.snapshot();
-        _runAnalyze(freeText, refs: refs, pickNames: pickNames);
+    // Re-planning read `_textController.entries` and the current mode against
+    // a `_failedText` frozen at the moment of failure, and those two drift: the
+    // composer stays editable while the error card sits there, and picks
+    // survive a mode switch. A cheat submit that failed could come back as a
+    // normal analysis carrying leftover picks the user never sent with it —
+    // and since a cheat message is the RAW composer text, its `/Phở bò` would
+    // reach the AI as prose while the ref copied the same dish again.
+    if (_failedRefs.isNotEmpty) {
+      // _runAnalyze clears the composer again, so re-snapshot: a second failure
+      // would otherwise have nothing to hand back.
+      _relogSnapshot = _textController.snapshot();
     }
+    _runAnalyze(
+      text,
+      refs: _failedRefs.isEmpty ? null : _failedRefs,
+      pickNames: _failedPicks,
+      isCheat: _failedCheat,
+    );
   }
 
   /// Discard a failed attempt: drop the card and retire its attempt id (the raw
@@ -414,6 +429,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   void _discardFailed() {
     setState(() {
       _failedText = null;
+      // Retire the whole record with it. `_failedText == null` already stops
+      // `_retry`, but leaving references behind means the NEXT failed attempt
+      // inherits them if anything ever reads them before they are rewritten.
+      _failedRefs = const [];
+      _failedPicks = const [];
+      _failedCheat = false;
       _attemptId = null;
     });
   }
@@ -471,11 +492,14 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     setState(() {
       _failedText = text;
       _failedRetryable = retryable;
+      // Hand the in-flight attempt's shape to the failed card verbatim — this
+      // is what "Try again" replays.
+      _failedRefs = _inFlightRefs;
+      _failedPicks = _inFlightPicks;
+      _failedCheat = _inFlightCheat;
       _inFlightText = null;
-      // The picks go back to the COMPOSER (below), not into the failed card —
-      // leaving them here would label a retry with dishes the retry re-derives
-      // from the restored mentions anyway.
       _inFlightPicks = const [];
+      _inFlightRefs = const [];
       _relogSnapshot = null;
     });
     if (snapshot != null) {

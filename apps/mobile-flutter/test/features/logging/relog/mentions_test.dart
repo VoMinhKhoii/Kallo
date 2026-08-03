@@ -84,7 +84,7 @@ void main() {
       expect(out.single.stageId, 'a');
     });
 
-    test('preserves order across a reflow', () {
+    test('drops a mention a reflow moved behind the scan cursor', () {
       final out = reconcileMentions('Bún chả và Phở bò', [
         _mention('Phở bò', 0),
         _mention('Bún chả', 20),

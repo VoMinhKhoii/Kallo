@@ -37,11 +37,15 @@ class MentionTextEditingController extends TextEditingController {
   bool get isFull => _mentions.length >= kRelogMaxStaged;
 
   /// The `/` token open at the caret, or null — including whenever there is a
-  /// selection range, which has no single insertion point to complete into.
+  /// selection range (no single insertion point to complete into), or when the
+  /// token turns out to be a committed pick's own slash ([isInsideMention]
+  /// carries that reasoning).
   SlashToken? get activeToken {
     final selection = value.selection;
     if (!selection.isValid || !selection.isCollapsed) return null;
-    return parseSlashToken(text, selection.baseOffset);
+    final token = parseSlashToken(text, selection.baseOffset);
+    if (token == null || isInsideMention(token.start, _mentions)) return null;
+    return token;
   }
 
   /// Re-locate the mentions against the current text. Call after every edit.

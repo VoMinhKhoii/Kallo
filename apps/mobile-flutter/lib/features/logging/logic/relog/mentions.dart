@@ -43,6 +43,16 @@ class RelogMention extends RelogStagedEntry {
   int get end => start + label.length;
 }
 
+/// True when [offset] falls inside one of [mentions]' committed runs.
+///
+/// A pick keeps the `/` it was summoned with, and `parseSlashToken` claims the
+/// last `/` left of the caret — so a caret resting after `/Phở bò ` reports
+/// that pick's own slash as a live token. Acting on it re-opens the picker on
+/// the dish just chosen, and accepting anything would rewrite the committed
+/// label, dropping the reference it stood for.
+bool isInsideMention(int offset, List<RelogMention> mentions) =>
+    mentions.any((m) => offset >= m.start && offset < m.end);
+
 /// Re-locate every mention after the text changed.
 ///
 /// Walks the mentions in order, claiming the next occurrence of each label at
