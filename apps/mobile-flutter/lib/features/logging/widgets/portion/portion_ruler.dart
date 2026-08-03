@@ -5,6 +5,7 @@ import '../../../../models/vessel.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../logic/portion/portion_anchors.dart';
+import '../../logic/portion/ruler_scale.dart';
 import 'portion_glyph_row.dart';
 import 'portion_slider.dart';
 
@@ -61,46 +62,34 @@ class PortionRuler extends StatefulWidget {
 }
 
 class _PortionRulerState extends State<PortionRuler> {
-  late List<double> _breaks = positionBreaks(widget.anchors.length);
-  late List<num> _gramBreaks = _buildGramBreaks();
-  late double _position = _gramsToPosition(widget.grams);
+  late RulerScale _scale = _buildScale();
+  late double _position = _scale.toPosition(widget.grams);
 
   /// Mirrors the grams this widget last emitted, so an outside change (anchor
   /// tap, re-open) resyncs the held position but a drag does not.
   late int _ownGrams = widget.grams;
 
-  List<num> _buildGramBreaks() => [
-    widget.min,
-    ...widget.anchors.map((a) => a.value),
-    widget.max,
-  ];
-
-  int _positionToGrams(double value) =>
-      interpolate(value, _breaks, _gramBreaks).round();
-
-  double _gramsToPosition(int value) =>
-      interpolate(value.toDouble(), _gramBreaks, _breaks);
+  RulerScale _buildScale() =>
+      RulerScale(widget.anchors, widget.min, widget.max);
 
   @override
   void didUpdateWidget(PortionRuler oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.anchors.length != widget.anchors.length ||
-        oldWidget.min != widget.min ||
-        oldWidget.max != widget.max) {
-      _breaks = positionBreaks(widget.anchors.length);
-      _gramBreaks = _buildGramBreaks();
+    final next = _buildScale();
+    if (next.differsFrom(_scale)) {
+      _scale = next;
       _ownGrams = widget.grams;
-      _position = _gramsToPosition(widget.grams);
+      _position = _scale.toPosition(widget.grams);
       return;
     }
     if (widget.grams != _ownGrams) {
       _ownGrams = widget.grams;
-      _position = _gramsToPosition(widget.grams);
+      _position = _scale.toPosition(widget.grams);
     }
   }
 
   void _handlePosition(double next) {
-    final grams = _positionToGrams(next);
+    final grams = _scale.toGrams(next);
     setState(() {
       _position = next;
       _ownGrams = grams;
@@ -111,9 +100,6 @@ class _PortionRulerState extends State<PortionRuler> {
   @override
   Widget build(BuildContext context) {
     final positions = anchorPositions(widget.anchors.length);
-    // One arrow/step press moves at least 1 g in every segment: the step is the
-    // flattest segment's position-per-gram slope, rounded up.
-    final step = rulerStep(_gramBreaks, _breaks);
 
     return ConstrainedBox(
       // Capped and centred so the glyphs stay a sensible size on a wide sheet.
@@ -137,7 +123,7 @@ class _PortionRulerState extends State<PortionRuler> {
                   HapticFeedback.selectionClick();
                   setState(() {
                     _ownGrams = grams;
-                    _position = _gramsToPosition(grams);
+                    _position = _scale.toPosition(grams);
                   });
                   widget.onChanged(grams);
                 },
@@ -151,7 +137,7 @@ class _PortionRulerState extends State<PortionRuler> {
             max: positionMax.toDouble(),
             accent: false,
             ticks: positions,
-            divisions: positionMax ~/ step,
+            divisions: _scale.divisions,
             semanticLabel: widget.sliderLabel,
             semanticValue: widget.sliderValueText,
             onChanged: _handlePosition,
@@ -167,11 +153,18 @@ class _PortionRulerState extends State<PortionRuler> {
                 // way the glyph row does — no absolute positioning needed.
                 for (final anchor in widget.anchors)
                   Expanded(
-                    child: Text(
-                      '${anchor.value} g',
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      style: dashMeta(tabular: true),
+                    // scaleDown rather than clip: a many-piece portion at 1.3x
+                    // Dynamic Type needs more than its column ("3000 g" wants
+                    // 57pt in a 54pt column on a 320pt phone), and a silently
+                    // truncated gram figure is worse than a slightly smaller
+                    // one on the row whose whole job is stating the amount.
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '${formatAnchorGrams(anchor.value)} g',
+                        maxLines: 1,
+                        style: dashMeta(tabular: true),
+                      ),
                     ),
                   ),
               ],

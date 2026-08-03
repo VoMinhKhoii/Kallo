@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../shared/widgets/nham_sheet.dart';
+import '../../../../shared/widgets/nham_sheet_header.dart';
 import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
@@ -33,6 +34,9 @@ class _MealModeSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     return NhamSheetSurface(
+      // Four description rows overflowed a short phone at large Dynamic Type
+      // (104px past the old 9/16 cap) — the last mode was unreachable.
+      scrollable: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

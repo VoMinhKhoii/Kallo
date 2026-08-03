@@ -58,18 +58,16 @@ class PortionPieceBody extends StatelessWidget {
           onChanged: onChanged,
         ),
         const SizedBox(height: NhamSpacing.sp2),
-        // Fixed height so the sheet doesn't jump as the label swaps between a
-        // tier name and "Custom portion".
-        SizedBox(
-          height: 18,
-          child: Text(
-            claimedName ?? 'logging.portionPicker.custom'.tr(),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: dashMeta(
-              weight: claimedName != null ? FontWeight.w500 : FontWeight.w400,
-            ),
+        // No fixed height. Both states are one line of the same style, so the
+        // sheet can't jump between them anyway — and an 18pt box clipped the
+        // descenders off "phần lớn" once Dynamic Type pushed the line to 19.5.
+        Text(
+          claimedName ?? 'logging.portionPicker.custom'.tr(),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: dashMeta(
+            weight: claimedName != null ? FontWeight.w500 : FontWeight.w400,
           ),
         ),
       ],

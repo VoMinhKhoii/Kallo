@@ -116,6 +116,7 @@ abstract final class NhamColors {
   // purpose: that track already carries the silhouette row above it, and an
   // accent bar there competes with the art instead of supporting it.
   static const Color text30 = Color(0x4D141413); // 30%
+  static const Color text25 = Color(0x40141413); // 25% — ruler anchor ticks
   static const Color textMuted50 = Color(0x806E6D66); // 50%
   static const Color textMuted60 = Color(0x996E6D66); // 60%
   static const Color textMuted70 = Color(0xB36E6D66); // 70% — macro-bar labels

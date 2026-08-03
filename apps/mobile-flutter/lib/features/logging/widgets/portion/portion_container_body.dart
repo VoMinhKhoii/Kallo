@@ -67,7 +67,7 @@ class PortionContainerBody extends StatelessWidget {
                     selected: anchor.tier == nearest.tier,
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      onChanged(anchor.value);
+                      onChanged(anchor.value.round());
                     },
                   ),
                 ),
@@ -87,6 +87,10 @@ class PortionContainerBody extends StatelessWidget {
           value: grams.toDouble(),
           min: min.toDouble(),
           max: max.toDouble(),
+          // One division per gram. Without it Flutter gives a continuous
+          // slider a 5–10% semantic increment — ~56 g per screen-reader swipe
+          // on a bowl envelope, where the web's arrow key moves 1 g.
+          divisions: max - min,
           semanticLabel: sliderLabel,
           semanticValue:
               '$grams g — ${nearest.label} (${nearestTier.sizeLabel})',

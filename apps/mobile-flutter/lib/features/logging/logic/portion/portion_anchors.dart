@@ -15,7 +15,12 @@ import 'vessel_data.dart';
 class PortionAnchor {
   /// 1–4 for containers, 1–5 for pieces.
   final int tier;
-  final int value;
+
+  /// Grams at this anchor. Fractional for a fractional piece `count` (1.5
+  /// pieces of a 25 g tier is 37.5 g), exactly as on web where it is a plain
+  /// `number` — an int here would silently re-quantize the whole ruler.
+  final double value;
+
   final String label;
 
   const PortionAnchor({
@@ -23,6 +28,15 @@ class PortionAnchor {
     required this.value,
     required this.label,
   });
+}
+
+/// Renders grams the way JS prints a number: `225 g`, `37.5 g` — never `225.0`.
+/// Both clients label the same anchor with the same string.
+String formatAnchorGrams(double value) {
+  final text = value == value.roundToDouble()
+      ? value.toStringAsFixed(0)
+      : value.toString();
+  return text;
 }
 
 /// Gram envelope around the anchors the picker lets the user roam in.
@@ -55,7 +69,7 @@ List<PortionAnchor> buildContainerAnchors(
     for (var tier = 1; tier <= 4; tier++)
       PortionAnchor(
         tier: tier,
-        value: midG(vessel.family, tier, vessel.dishClass),
+        value: midG(vessel.family, tier, vessel.dishClass).toDouble(),
         label: vesselFamilies[vessel.family]![tier]!.label(locale),
       ),
   ];

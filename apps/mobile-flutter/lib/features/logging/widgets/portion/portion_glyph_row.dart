@@ -37,7 +37,7 @@ class PortionGlyphRow extends StatelessWidget {
                   columnWidth: columnWidth,
                   label: '$countPrefix${anchor.label}',
                   selected: anchor.tier == claimedTier,
-                  onTap: () => onPick(anchor.value),
+                  onTap: () => onPick(anchor.value.round()),
                 ),
               ),
           ],

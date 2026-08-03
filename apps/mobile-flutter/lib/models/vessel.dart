@@ -36,7 +36,12 @@ sealed class ClientVessel {
 
     if (json['family'] == 'piece') {
       final kind = _byNameOrNull(PieceKind.values, json['kind']);
-      final count = (json['count'] as num?)?.toInt();
+      // NOT toInt(). The server's `count` is a plain number and the
+      // decomposition prompt emits fractions ("nửa" → 0.5, "một lát rưỡi" →
+      // 1.5); `resolvePieceVessel` only rejects count < 1, so 1.5 reaches us.
+      // Truncating it built different anchors from web's for the same meal —
+      // different envelope, different claim, a different committed tier.
+      final count = (json['count'] as num?)?.toDouble();
       if (kind == null || count == null || tier < 1 || tier > 5) return null;
       return PieceVessel(tier: tier, count: count, kind: kind);
     }
@@ -92,7 +97,10 @@ class ContainerVessel extends ClientVessel {
 class PieceVessel extends ClientVessel {
   /// 1–5.
   final int tier;
-  final int count;
+
+  /// How many pieces. Fractional by design — see [ClientVessel.fromJson].
+  final double count;
+
   final PieceKind kind;
 
   const PieceVessel({

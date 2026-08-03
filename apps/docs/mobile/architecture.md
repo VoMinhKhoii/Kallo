@@ -75,6 +75,14 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
   auth-gated routing. Riverpod controllers wrap streaming (`stream_analysis_controller.dart`).
 - **Navigation:** `go_router` with a shell route. The shell is a **left slide-in drawer**
   (hamburger), not a bottom tab bar — matching the web mobile nav.
+- **Sheets:** `showNhamSheet` (`shared/widgets/nham_sheet.dart`) + `NhamSheetSurface` +
+  `NhamSheetHeader` (`nham_sheet_header.dart`). `isScrollControlled` defaults to **true** —
+  Material's default caps a sheet at 9/16 of the screen and clips the rest, which pushed
+  action rows off-screen on short phones and in landscape. A sheet whose body is a plain
+  `Column` also passes `scrollable: true` so it caps at 90% height and scrolls past it;
+  sheets that own a `ListView`/`SingleChildScrollView` must not. `test/sheet_overflow_test.dart`
+  pumps every content-hugging sheet at 320×568, 360×640 and landscape, at 1.0x and the
+  1.3x Dynamic Type ceiling, and fails if the primary action can't be reached.
 - **Data:** `api_client.dart` hits `/api/v1`. Note Drizzle decimals serialize as **strings**, and
   targets are **null** for not-fully-onboarded profiles — models tolerate nulls and fall back to
   the same defaults as the web app.

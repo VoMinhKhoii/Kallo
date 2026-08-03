@@ -76,14 +76,20 @@ class _MealEntryState extends State<MealEntry> {
   }
 
   /// Every quantity edit — stepper or portion picker — lands here: it snaps the
-  /// totals (only the reveal counts up) and re-arms the confirm debounce, so a
-  /// fast tap can't save before the user is done adjusting.
-  void _edit(List<MealItem> Function() mutate) {
+  /// totals (only the reveal counts up).
+  ///
+  /// [debounce] re-arms the confirm cooldown. Steppers set it (a fast
+  /// double-tap must not slip through and save mid-adjust); the portion picker
+  /// does not, matching web, where `handleApply` skips the debounce that
+  /// `handleQuantityChange` arms — the sheet dismissal already separates the
+  /// two taps.
+  void _edit(List<MealItem> Function() mutate, {bool debounce = true}) {
     setState(() {
       _countUp = false;
       _items = mutate();
-      _confirmCoolingDown = true;
+      if (debounce) _confirmCoolingDown = true;
     });
+    if (!debounce) return;
     _confirmTimer?.cancel();
     _confirmTimer = Timer(_confirmDebounce, () {
       if (mounted) setState(() => _confirmCoolingDown = false);
@@ -99,8 +105,8 @@ class _MealEntryState extends State<MealEntry> {
       context,
       vessel: vessel,
       grams: item.quantity.round(),
-      kcalPerGram:
-          item.quantity > 0 ? item.macros.calories / item.quantity : 0,
+      itemCalories: item.macros.calories,
+      itemQuantity: item.quantity,
     );
     if (pick == null || !mounted) return;
     // Read the item back out of state: the sheet was open across an await, so
@@ -118,6 +124,7 @@ class _MealEntryState extends State<MealEntry> {
       ).map((it) {
         return it.id == item.id ? it.copyWith(vessel: pick.vessel) : it;
       }).toList(),
+      debounce: false,
     );
   }
 
@@ -163,34 +170,19 @@ class _MealEntryState extends State<MealEntry> {
                 padding: const EdgeInsets.only(bottom: LoggingSpacing.section),
                 child: Column(
                   children: [
+                    // The entrance lives inside the row widget, wrapping the
+                    // dish line only — web's stagger does not carry the
+                    // portion trigger with it.
                     for (final (index, item) in _items.indexed)
-                      // Web: each item enters opacity 0→1, x:-8→0, staggered
-                      // delay index*0.05s (meal-entry-item.tsx:32-35). On
-                      // the reveal the rows were already on screen in the
-                      // streaming card — crossfade in place, don't re-enter.
-                      if (widget.revealing)
-                        FadeIn(
-                          key: ValueKey(item.id),
-                          duration: const Duration(milliseconds: 150),
-                          child: MealEntryItemRow(
-                            item: item,
-                            editing: _editing,
-                            onChange: _change,
-                            onAdjustPortion: _adjustPortion,
-                          ),
-                        )
-                      else
-                        FadeInLeft(
-                          key: ValueKey(item.id),
-                          offset: 8,
-                          delay: Duration(milliseconds: index * 50),
-                          child: MealEntryItemRow(
-                            item: item,
-                            editing: _editing,
-                            onChange: _change,
-                            onAdjustPortion: _adjustPortion,
-                          ),
-                        ),
+                      MealEntryItemRow(
+                        key: ValueKey(item.id),
+                        item: item,
+                        index: index,
+                        editing: _editing,
+                        revealing: widget.revealing,
+                        onChange: _change,
+                        onAdjustPortion: _adjustPortion,
+                      ),
                   ],
                 ),
               ),

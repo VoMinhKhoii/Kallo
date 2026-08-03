@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../models/vessel.dart';
 import '../../../../shared/widgets/nham_sheet.dart';
+import '../../../../shared/widgets/nham_sheet_header.dart';
 import '../../../../shared/widgets/quiet_action_button.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_theme.dart';
@@ -30,14 +31,16 @@ Future<PortionPick?> showPortionPicker(
   BuildContext context, {
   required ClientVessel vessel,
   required int grams,
-  required double kcalPerGram,
+  required double itemCalories,
+  required double itemQuantity,
 }) {
   return showNhamSheet<PortionPick>(
     context,
     builder: (context) => _PortionPickerSheet(
       vessel: vessel,
       grams: grams,
-      kcalPerGram: kcalPerGram,
+      itemCalories: itemCalories,
+      itemQuantity: itemQuantity,
     ),
   );
 }
@@ -46,12 +49,18 @@ class _PortionPickerSheet extends StatefulWidget {
   const _PortionPickerSheet({
     required this.vessel,
     required this.grams,
-    required this.kcalPerGram,
+    required this.itemCalories,
+    required this.itemQuantity,
   });
 
   final ClientVessel vessel;
   final int grams;
-  final double kcalPerGram;
+
+  /// The item's calories and grams, kept unreduced so the preview is the web's
+  /// `calories * grams / quantity` to the digit. Pre-dividing into a
+  /// per-gram rate re-associates the arithmetic and drifts by 1 kcal.
+  final double itemCalories;
+  final double itemQuantity;
 
   @override
   State<_PortionPickerSheet> createState() => _PortionPickerSheetState();
@@ -59,19 +68,24 @@ class _PortionPickerSheet extends StatefulWidget {
 
 class _PortionPickerSheetState extends State<_PortionPickerSheet> {
   List<PortionAnchor>? _anchors;
+  String? _locale;
   late GramEnvelope _envelope;
   late int _grams;
 
-  /// Anchors are locale-dependent (the tier labels), so they're built on the
-  /// first build rather than in initState, where `context.locale` isn't ready.
+  /// Anchors are locale-dependent (the tier labels), so they're built in build
+  /// rather than initState, where `context.locale` isn't ready — and rebuilt
+  /// when the locale changes, so an open sheet can't keep labels in the
+  /// language the user just left. The grams the user has dialled in survive.
   void _ensureAnchors(BuildContext context) {
-    if (_anchors != null) return;
     final locale = context.locale.languageCode == 'vi' ? 'vi' : 'en';
+    if (_anchors != null && _locale == locale) return;
+    final first = _anchors == null;
+    _locale = locale;
     _anchors = buildAnchors(widget.vessel, locale);
     _envelope = gramEnvelope(_anchors!);
     // Open on the item's current amount, clamped into the envelope the picker
     // can actually express.
-    _grams = widget.grams.clamp(_envelope.min, _envelope.max);
+    if (first) _grams = widget.grams.clamp(_envelope.min, _envelope.max);
   }
 
   void _apply() {
@@ -89,8 +103,15 @@ class _PortionPickerSheetState extends State<_PortionPickerSheet> {
     final anchors = _anchors!;
     final title = 'logging.portionPicker.title'.tr();
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    final kcal = widget.itemQuantity > 0
+        ? (widget.itemCalories * _grams) / widget.itemQuantity
+        : 0.0;
 
     return NhamSheetSurface(
+      // Cup glyphs are taller than they are wide, so the container branch runs
+      // ~400pt — past a short phone's height, and past every phone's in
+      // landscape. Scrollable keeps Cancel/Apply reachable instead of clipped.
+      scrollable: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -111,7 +132,7 @@ class _PortionPickerSheetState extends State<_PortionPickerSheet> {
                     grams: _grams,
                     min: _envelope.min,
                     max: _envelope.max,
-                    kcal: _grams * widget.kcalPerGram,
+                    kcal: kcal,
                     sliderLabel: title,
                     onChanged: (grams) => setState(() => _grams = grams),
                   ),
@@ -121,7 +142,7 @@ class _PortionPickerSheetState extends State<_PortionPickerSheet> {
                     grams: _grams,
                     min: _envelope.min,
                     max: _envelope.max,
-                    kcal: _grams * widget.kcalPerGram,
+                    kcal: kcal,
                     sliderLabel: title,
                     onChanged: (grams) => setState(() => _grams = grams),
                   ),

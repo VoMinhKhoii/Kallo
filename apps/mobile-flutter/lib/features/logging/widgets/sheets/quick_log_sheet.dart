@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../data/session_provider.dart';
 import '../../../../models/cheat.dart';
 import '../../../../shared/widgets/nham_sheet.dart';
+import '../../../../shared/widgets/nham_sheet_header.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../data/logging_keys.dart';
 import '../../data/logging_providers.dart';

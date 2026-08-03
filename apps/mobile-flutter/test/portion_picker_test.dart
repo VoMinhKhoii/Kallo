@@ -66,7 +66,7 @@ Future<PortionPick?> _openPicker(
               context,
               vessel: vessel,
               grams: grams,
-              kcalPerGram: 2,
+              itemCalories: 300, itemQuantity: 150,
             );
             returned = true;
           },
@@ -102,6 +102,8 @@ void main() {
         _wrap(
           MealEntryItemRow(
             item: _item(vessel: _fish),
+            index: 0,
+            revealing: false,
             editing: false,
             onChange: (_, _) {},
             onAdjustPortion: (_) {},
@@ -118,6 +120,8 @@ void main() {
         _wrap(
           MealEntryItemRow(
             item: _item(vessel: _fish, quantity: 200),
+            index: 0,
+            revealing: false,
             editing: false,
             onChange: (_, _) {},
             onAdjustPortion: (_) {},
@@ -134,6 +138,8 @@ void main() {
         _wrap(
           MealEntryItemRow(
             item: _item(),
+            index: 0,
+            revealing: false,
             editing: false,
             onChange: (_, _) {},
             onAdjustPortion: (_) {},
@@ -168,7 +174,7 @@ void main() {
                   context,
                   vessel: _fish,
                   grams: 150,
-                  kcalPerGram: 2,
+                  itemCalories: 300, itemQuantity: 150,
                 );
                 returned = true;
               },
@@ -206,7 +212,7 @@ void main() {
                   context,
                   vessel: _fish,
                   grams: 150,
-                  kcalPerGram: 2,
+                  itemCalories: 300, itemQuantity: 150,
                 );
                 returned = true;
               },

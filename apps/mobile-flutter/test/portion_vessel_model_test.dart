@@ -48,6 +48,22 @@ void main() {
       );
     });
 
+    test('keeps a fractional piece count instead of truncating it', () {
+      // The server's `count` is a plain number and the decomposition prompt
+      // emits fractions ("một lát rưỡi" → 1.5); `resolvePieceVessel` rejects
+      // only count < 1, so 1.5 arrives here. Truncating to 1 built a whole
+      // different anchor set from web's for the same meal.
+      final vessel =
+          ClientVessel.fromJson({
+                'family': 'piece',
+                'tier': 3,
+                'count': 1.5,
+                'kind': 'fish',
+              })!
+              as PieceVessel;
+      expect(vessel.count, 1.5);
+    });
+
     test('returns null for anything it cannot render', () {
       expect(ClientVessel.fromJson(null), isNull);
       // A family this build doesn't know (a future server addition).

@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:nham_mobile/features/logging/logic/portion/portion_anchors.dart';
+import 'package:nham_mobile/features/logging/logic/portion/portion_display.dart';
+import 'package:nham_mobile/features/logging/logic/portion/ruler_scale.dart';
 import 'package:nham_mobile/features/logging/logic/portion/vessel_data.dart';
 import 'package:nham_mobile/models/vessel.dart';
 
@@ -132,6 +134,41 @@ void main() {
     });
   });
 
+  group('fractional piece counts', () {
+    const half = PieceVessel(tier: 3, count: 1.5, kind: PieceKind.fish);
+
+    test('scale the anchors exactly, matching web', () {
+      // Web: count * tierGrams, no rounding anywhere.
+      expect(
+        buildPieceAnchors(half, 'en').map((a) => a.value),
+        [45.0, 105.0, 225.0, 375.0, 750.0],
+      );
+    });
+
+    test('claim the tier they land on', () {
+      final anchors = buildPieceAnchors(half, 'en');
+      // 225 g IS 1.5 × the 150 g tier — web claims it, so must we. Truncating
+      // count to 1 made this a "custom portion" 50% off its tier-3 anchor.
+      expect(claimedAnchor(anchors, 225)?.tier, 3);
+      expect((repointVessel(half, anchors, 225) as PieceVessel).tier, 3);
+    });
+
+    test('print like JS numbers — no trailing .0', () {
+      expect(formatAnchorGrams(225), '225');
+      expect(formatAnchorGrams(37.5), '37.5');
+      expect(countPrefixFor(half), '1.5 × ');
+      expect(
+        countPrefixFor(const PieceVessel(tier: 1, count: 3, kind: PieceKind.meat)),
+        '3 × ',
+      );
+      // A single piece carries no prefix at all.
+      expect(
+        countPrefixFor(const PieceVessel(tier: 1, count: 1, kind: PieceKind.meat)),
+        '',
+      );
+    });
+  });
+
   group('glyphWidthRatio', () {
     final everyGlyph = [
       for (final kind in PieceKind.values)
@@ -213,6 +250,50 @@ void main() {
 
     test('ignores zero-width gram segments and never returns 0', () {
       expect(rulerStep([100, 100, 100], [0, 500, 1000]), 1);
+    });
+  });
+
+  group('RulerScale', () {
+    const piece = PieceVessel(tier: 3, count: 1, kind: PieceKind.fish);
+    final anchors = buildPieceAnchors(piece, 'en');
+    final envelope = gramEnvelope(anchors);
+    final scale = RulerScale(anchors, envelope.min, envelope.max);
+
+    test('puts every anchor on its own fixed track position', () {
+      final positions = positionBreaks(anchors.length);
+      for (final (i, anchor) in anchors.indexed) {
+        // Anchor i sits at breakpoint i+1 (breakpoint 0 is the track start).
+        expect(scale.toPosition(anchor.value.round()), closeTo(positions[i + 1], 1e-9));
+      }
+    });
+
+    test('round-trips grams through position space', () {
+      for (final grams in [18, 30, 70, 150, 250, 500, 600]) {
+        expect(scale.toGrams(scale.toPosition(grams)), grams);
+      }
+    });
+
+    test('derives divisions worth at least a gram apiece', () {
+      expect(scale.step, greaterThanOrEqualTo(1));
+      expect(scale.divisions, positionMax ~/ scale.step);
+    });
+
+    test('detects a mid-anchor reshuffle, not just a length change', () {
+      // The trap the widget's resync used to miss: same count, same endpoints,
+      // different middle values.
+      final moved = [
+        anchors.first,
+        PortionAnchor(tier: 2, value: anchors[1].value + 5, label: 'x'),
+        ...anchors.skip(2),
+      ];
+      expect(
+        RulerScale(moved, envelope.min, envelope.max).differsFrom(scale),
+        isTrue,
+      );
+      expect(
+        RulerScale(anchors, envelope.min, envelope.max).differsFrom(scale),
+        isFalse,
+      );
     });
   });
 

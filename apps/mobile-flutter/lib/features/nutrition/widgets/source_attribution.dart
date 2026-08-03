@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/nham_sheet.dart';
+import '../../../shared/widgets/nham_sheet_header.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
 
@@ -46,6 +47,8 @@ void _showCitations(BuildContext context) {
   showNhamSheet<void>(
     context,
     builder: (_) => NhamSheetSurface(
+      // Citation list grows with the data source count — scroll, don't clip.
+      scrollable: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
