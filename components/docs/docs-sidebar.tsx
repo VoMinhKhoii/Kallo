@@ -32,7 +32,7 @@ export function DocsSidebar({
     <nav className="space-y-7">
       {sections.map((section) => (
         <div key={section.id}>
-          <p className="px-3 font-sans-display font-semibold text-2xs text-nham-text-muted uppercase tracking-[0.14em]">
+          <p className="px-3 font-sans-display font-semibold text-base text-nham-text-muted uppercase tracking-[0.14em]">
             {t(section.id)}
           </p>
           <ul className="mt-2 space-y-px">
