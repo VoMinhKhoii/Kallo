@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:nham_mobile/features/logging/logic/portion/portion_anchors.dart';
 import 'package:nham_mobile/features/logging/logic/portion/vessel_data.dart';
+import 'package:nham_mobile/models/vessel.dart';
 
 /// The picker's layout math is driven entirely by the `aspect` numbers declared
 /// alongside each filename in `vessel_data.dart`. A declared asset that isn't
@@ -16,6 +18,9 @@ import 'package:nham_mobile/features/logging/logic/portion/vessel_data.dart';
 /// art, this one keeps the two declarations identical, and the pair covers it.
 
 final _webVesselData = File('../../lib/ai/portion/vessel-data.ts');
+final _webAnchors = File(
+  '../../components/logging/feed/meal-entry/portion/portion-anchors.ts',
+);
 
 List<VesselAsset> get _declaredAssets => [
   for (final family in vesselFamilies.values)
@@ -83,6 +88,76 @@ void main() {
           reason: '${asset.file} aspect drifted from the web declaration',
         );
       }
+    });
+
+    // The two implementations are vendored copies of one design, and the
+    // numbers below decide what a portion is ALLOWED to claim. If they drift,
+    // web and Flutter commit different tiers for the same meal and nothing
+    // else in either test suite notices — each side would still be internally
+    // consistent. This is the only check that compares them.
+    test('shares every load-bearing constant with the web implementation', () {
+      if (!_webVesselData.existsSync() || !_webAnchors.existsSync()) {
+        markTestSkipped('web sources not present');
+        return;
+      }
+      final vesselSource = _webVesselData.readAsStringSync();
+      final anchorSource = _webAnchors.readAsStringSync();
+
+      double webConst(String source, String name) {
+        final match = RegExp(
+          'const $name(?::\\s*number)?\\s*=\\s*([0-9.]+)',
+        ).firstMatch(source);
+        expect(match, isNotNull, reason: '$name missing from the web source');
+        return double.parse(match!.group(1)!);
+      }
+
+      expect(
+        webConst(vesselSource, 'MAX_PIECE_COUNT'),
+        maxPieceCount,
+        reason: 'the plausibility cap drifted',
+      );
+      expect(
+        webConst(anchorSource, 'ENVELOPE_MIN_FACTOR'),
+        envelopeMinFactor,
+        reason: 'the envelope floor drifted',
+      );
+      expect(
+        webConst(anchorSource, 'ENVELOPE_MAX_FACTOR'),
+        envelopeMaxFactor,
+        reason: 'the envelope ceiling drifted',
+      );
+      expect(
+        webConst(anchorSource, 'CLAIM_BAND'),
+        claimBand,
+        reason: 'the claim band drifted — the two clients would now disagree '
+            'about which tier a portion may call itself',
+      );
+      expect(
+        webConst(anchorSource, 'POSITION_MAX'),
+        positionMax.toDouble(),
+        reason: 'the ruler position space drifted',
+      );
+
+      // Tier tables: grams per piece tier, millilitres per container tier.
+      final webGrams = RegExp(r'pieceTier\(\s*(\d+)')
+          .allMatches(vesselSource)
+          .map((m) => int.parse(m.group(1)!))
+          .toList();
+      expect(
+        webGrams,
+        pieceTiers.map((t) => t.grams).toList(),
+        reason: 'piece tier grams drifted',
+      );
+
+      final webMl = RegExp(r'\bml:\s*(\d+)')
+          .allMatches(vesselSource)
+          .map((m) => int.parse(m.group(1)!))
+          .toList();
+      final dartMl = [
+        for (final family in vesselFamilies.values)
+          for (final tier in family.values) tier.ml,
+      ];
+      expect(webMl, dartMl, reason: 'container tier millilitres drifted');
     });
   });
 }

@@ -275,7 +275,11 @@ void main() {
 
     test('derives divisions worth at least a gram apiece', () {
       expect(scale.step, greaterThanOrEqualTo(1));
-      expect(scale.divisions, positionMax ~/ scale.step);
+      // NOT `positionMax ~/ step`. Material spreads `divisions` as equal
+      // intervals, so the grid has to contain the anchor positions — see
+      // RulerScale.divisions and portion_hostile_input_test.dart.
+      expect(positionMax / scale.divisions, lessThanOrEqualTo(scale.step));
+      expect(scale.divisions % (2 * anchors.length), 0);
     });
 
     test('detects a mid-anchor reshuffle, not just a length change', () {

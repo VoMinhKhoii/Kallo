@@ -161,7 +161,12 @@ class _PortionRulerState extends State<PortionRuler> {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        '${formatAnchorGrams(anchor.value)} g',
+                        // The value a TAP commits, not the raw anchor. This
+                        // picker works in integer grams end to end, so a
+                        // fractional count (1.25 pieces → a 37.5 g tier) would
+                        // otherwise label a stop "37.5 g" and hand back 38 g.
+                        // Label what the control actually does.
+                        '${anchor.value.round()} g',
                         maxLines: 1,
                         style: dashMeta(tabular: true),
                       ),

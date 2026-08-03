@@ -98,6 +98,35 @@ void main() {
     await loadAppFonts();
   });
 
+  // Wrapping a sheet body in a scroll view puts a vertical drag recognizer
+  // inside the one `BottomSheet` uses for swipe-to-dismiss. On a sheet whose
+  // content fits, the inner scrollable has nothing to scroll and must not eat
+  // the gesture — otherwise `scrollable: true` silently costs every one of
+  // these sheets its dismiss gesture, which no overflow assertion would catch.
+  testWidgets('a scrollable sheet still dismisses on swipe-down', (
+    tester,
+  ) async {
+    _sizeTo(tester, const Size(390, 844), 1.0);
+    await _openSheet(
+      tester,
+      (c) => () => showPortionPicker(
+        c,
+        vessel: const PieceVessel(tier: 3, count: 1, kind: PieceKind.fish),
+        grams: 150,
+        itemCalories: 300,
+        itemQuantity: 150,
+      ),
+    );
+    expect(find.text('Portion size'), findsOneWidget);
+    await tester.drag(find.text('Portion size'), const Offset(0, 500));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Portion size'),
+      findsNothing,
+      reason: 'the inner scroll view swallowed swipe-to-dismiss',
+    );
+  });
+
   for (final entry in _viewports.entries) {
     for (final scale in _scales) {
       final where = '${entry.key} @${scale}x';

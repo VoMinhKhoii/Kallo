@@ -73,7 +73,9 @@ class MealItem {
         quantity: (json['quantity'] as num).toDouble(),
         unit: json['unit'] as String,
         macros: MacroBreakdown.fromJson(json['macros'] as Map<String, dynamic>),
-        vessel: ClientVessel.fromJson(json['vessel'] as Map<String, dynamic>?),
+        // Passed raw, uncast: a `vessel` that arrives as a list or a string
+        // must yield "no portion line", not throw and fail the whole meal.
+        vessel: ClientVessel.fromJson(json['vessel']),
       );
 
   Map<String, dynamic> toJson() => {

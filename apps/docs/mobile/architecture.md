@@ -66,6 +66,16 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
   itself: web keeps its plain slider, mobile scrolls the scale (see
   `widgets/portion/ruler/portion_ruler_strip.dart`). The vessel rides in on the SSE
   `result` frame and on restored `/api/v1/meals/pending` rows.
+  **Shared with web — keep them in lockstep.** The tier tables, envelope factors and
+  claim band are vendored copies of `lib/ai/portion/vessel-data.ts` and
+  `components/logging/feed/meal-entry/portion/portion-anchors.ts`. Drift means the two
+  clients commit *different tiers for the same meal* while each stays internally
+  consistent, so `test/portion_vessel_assets_test.dart` reads the TypeScript and pins
+  every shared number (asset filenames + aspects, `MAX_PIECE_COUNT`, envelope factors,
+  `CLAIM_BAND`, `POSITION_MAX`, tier grams/ml). Change a number on one side and that test
+  fails. Validation is NOT vendored: `toParsedMeal` (`lib/ai/mappers.ts`) drops any vessel
+  a picker can't safely render, so both clients inherit one guarantee — the Dart parser's
+  own checks are defense in depth for rows written before that guard existed.
 - **nutrition** — editorial overview, 7/30/90 toggle, macro composition, nutrient rows.
 - **settings** — two-level nav → profile form (body metrics, cooking, regional).
 

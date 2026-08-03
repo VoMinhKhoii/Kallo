@@ -25,30 +25,66 @@ T? _byNameOrNull<T extends Enum>(List<T> values, Object? name) {
   return null;
 }
 
+/// A tier index, or null unless it is a whole number inside [min]..[max].
+///
+/// Reads with `is num` rather than an `as num?` cast on purpose: a cast throws
+/// on a type mismatch, and a throw here escapes `MealItem.fromJson` and fails
+/// the ENTIRE meal — one malformed optional field would blank the day's feed
+/// over a decoration. Every field in this file degrades; none of them throw.
+int? _tierOrNull(Object? raw, {required int max}) {
+  if (raw is! num || !raw.isFinite) return null;
+  final value = raw.toInt();
+  if (value != raw) return null; // 2.5 is not a tier
+  return (value < 1 || value > max) ? null : value;
+}
+
+/// A piece count, or null unless it is finite and at least 1.
+///
+/// Fractions ARE valid and must survive: the decomposition prompt emits "một
+/// lát rưỡi" as 1.5, and truncating it would build different anchors from web's
+/// for the same meal. Only the impossible values are rejected.
+///
+/// Mirrors the server's own guard (`lib/ai/portion/piece-vessel.ts` rejects
+/// `count < 1`). Without it, hostile or corrupt values reach the arithmetic and
+/// do real damage: `-1` builds a descending envelope whose `clamp(-18, -600)`
+/// throws while opening the sheet, `NaN`/`Infinity` throw in `gramEnvelope`,
+/// `0` shows a 0 g picker that silently commits 10 g, and `1e9` stages a
+/// 600-billion-gram portion for confirmation.
+double? _countOrNull(Object? raw) {
+  if (raw is! num || !raw.isFinite) return null;
+  final value = raw.toDouble();
+  return (value < 1 || value > maxPieceCount) ? null : value;
+}
+
+/// Beyond this many pieces the vessel stops being a useful affordance and is
+/// almost certainly corruption or a hallucinated number. The picker would
+/// otherwise happily build an envelope around it: `count: 1e9` yields a
+/// 18-billion-to-600-billion-gram range, clamps a normal 150 g dish up to the
+/// floor of that range, and stages it — macros scaled by ~1.2e8 — for the user
+/// to confirm. 100 of the largest cut is already 60 kg of food; nothing real
+/// is past it.
+const double maxPieceCount = 100;
+
 sealed class ClientVessel {
   const ClientVessel();
 
   /// Parses a vessel payload, or returns null when it is absent or unusable.
-  static ClientVessel? fromJson(Map<String, dynamic>? json) {
-    if (json == null) return null;
-    final tier = (json['tier'] as num?)?.toInt();
-    if (tier == null) return null;
+  /// NEVER throws — see [_tierOrNull].
+  static ClientVessel? fromJson(Object? json) {
+    if (json is! Map) return null;
 
     if (json['family'] == 'piece') {
+      final tier = _tierOrNull(json['tier'], max: 5);
       final kind = _byNameOrNull(PieceKind.values, json['kind']);
-      // NOT toInt(). The server's `count` is a plain number and the
-      // decomposition prompt emits fractions ("nửa" → 0.5, "một lát rưỡi" →
-      // 1.5); `resolvePieceVessel` only rejects count < 1, so 1.5 reaches us.
-      // Truncating it built different anchors from web's for the same meal —
-      // different envelope, different claim, a different committed tier.
-      final count = (json['count'] as num?)?.toDouble();
-      if (kind == null || count == null || tier < 1 || tier > 5) return null;
+      final count = _countOrNull(json['count']);
+      if (tier == null || kind == null || count == null) return null;
       return PieceVessel(tier: tier, count: count, kind: kind);
     }
 
+    final tier = _tierOrNull(json['tier'], max: 4);
     final family = _byNameOrNull(ContainerFamily.values, json['family']);
     final dishClass = _byNameOrNull(DishClass.values, json['dishClass']);
-    if (family == null || dishClass == null || tier < 1 || tier > 4) return null;
+    if (tier == null || family == null || dishClass == null) return null;
     return ContainerVessel(family: family, tier: tier, dishClass: dishClass);
   }
 

@@ -39,7 +39,27 @@ class RulerScale {
 
   /// Divisions for the Material slider, which is also the increment an
   /// assistive-technology swipe moves by.
-  int get divisions => positionMax ~/ step;
+  ///
+  /// Must be a multiple of `2 * anchorCount`, and that is not cosmetic.
+  /// Material treats `divisions` as N EQUAL intervals of `positionMax /
+  /// divisions` — it does not step by our `step`. Anchor i sits at
+  /// `(i + 0.5) / n * positionMax`, so the grid contains the anchors only when
+  /// `divisions * (2i + 1) / (2n)` is a whole number for every i, i.e. when
+  /// divisions is a multiple of `2n`.
+  ///
+  /// `positionMax ~/ step` was not: with the ordinary count-1 ruler that gave
+  /// 111 divisions of 9.009, so tapping the 70 g anchor painted the thumb 2.7
+  /// units off its own tick and the first touch snapped the portion to 69 g
+  /// before the user moved a finger.
+  ///
+  /// Rounding UP to the next multiple keeps intervals no coarser than [step],
+  /// preserving the "one press moves at least 1 g" guarantee.
+  int get divisions {
+    final anchorCount = grams.length - 2; // grams = [min, ...anchors, max]
+    final unit = 2 * anchorCount;
+    final atLeast = (positionMax / step).ceil();
+    return ((atLeast + unit - 1) ~/ unit) * unit;
+  }
 
   /// True when [other] describes a different mapping — the ruler resyncs on it.
   /// Compares the VALUES, not just the length: a same-length reshuffle of the

@@ -91,4 +91,71 @@ describe('toParsedMeal vessel mapping', () => {
       kind: 'fish',
     });
   });
+
+  // The vessel is a decoration; it must never be able to break the dish it
+  // decorates. Both clients build an envelope from it and clamp the dish's
+  // grams into that range, so an out-of-range value does real damage: a
+  // negative count throws in Flutter's `clamp` and shows a -600 g portion on
+  // web, and a huge one stages a multi-billion-gram meal for confirmation.
+  // Dropping it here is the correct degradation — the dish just shows no
+  // portion line — and it covers restored `pending_analyses` rows too, since
+  // `loadPendingAnalysesByDate` re-runs this mapper on read.
+  describe('drops vessels a picker cannot safely render', () => {
+    const unusable = [
+      { label: 'zero count', count: 0 },
+      { label: 'negative count', count: -1 },
+      { label: 'fractional-but-below-one count', count: 0.5 },
+      { label: 'absurd count', count: 1e9 },
+      { label: 'NaN count', count: Number.NaN },
+      { label: 'infinite count', count: Number.POSITIVE_INFINITY },
+    ];
+
+    for (const { label, count } of unusable) {
+      it(`drops a piece vessel with a ${label}`, () => {
+        const parsed = toParsedMeal(
+          pipelineResult({
+            family: 'piece',
+            tier: 3,
+            count,
+            kind: 'fish',
+            provenance: 'piece_prior',
+          })
+        );
+        expect(parsed.items[0]?.vessel).toBeUndefined();
+      });
+    }
+
+    it('drops a vessel whose tier is outside its family table', () => {
+      // `VESSEL_FAMILIES.bowl.tiers[9]` is undefined; reading `.asset` off it
+      // throws while rendering the assumption line.
+      const parsed = toParsedMeal(
+        pipelineResult({
+          family: 'bowl',
+          tier: 9 as 1,
+          dishClass: 'soup',
+          provenance: 'vessel_prior',
+        })
+      );
+      expect(parsed.items[0]?.vessel).toBeUndefined();
+    });
+
+    it('keeps the fractional counts the prompt legitimately emits', () => {
+      // "một lát rưỡi" → 1.5. Valid, and both clients must render it.
+      const parsed = toParsedMeal(
+        pipelineResult({
+          family: 'piece',
+          tier: 3,
+          count: 1.5,
+          kind: 'fish',
+          provenance: 'piece_prior',
+        })
+      );
+      expect(parsed.items[0]?.vessel).toEqual({
+        family: 'piece',
+        tier: 3,
+        count: 1.5,
+        kind: 'fish',
+      });
+    });
+  });
 });
