@@ -31,19 +31,11 @@ class RelogMention extends RelogStagedEntry {
     required super.stageId,
     required super.ref,
     required super.label,
-    required super.partCount,
-    required super.summary,
     required this.start,
   });
 
   RelogMention.at(RelogStagedEntry entry, this.start)
-    : super(
-        stageId: entry.stageId,
-        ref: entry.ref,
-        label: entry.label,
-        partCount: entry.partCount,
-        summary: entry.summary,
-      );
+    : super(stageId: entry.stageId, ref: entry.ref, label: entry.label);
 
   RelogMention movedTo(int newStart) => RelogMention.at(this, newStart);
 

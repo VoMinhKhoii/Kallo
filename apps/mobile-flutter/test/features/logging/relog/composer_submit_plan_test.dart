@@ -7,8 +7,6 @@ RelogStagedEntry _entry(String label, {int order = 0}) => RelogStagedEntry(
   stageId: 'stage-$label',
   ref: RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: order),
   label: label,
-  partCount: 3,
-  summary: const RelogMacroSummary(caloriesKcal: 410),
 );
 
 void main() {
@@ -51,10 +49,10 @@ void main() {
     // from.
     expect(combined.freeText, 'và 2 quả trứng');
     expect(combined.freeText.contains('Phở bò'), isFalse);
-    expect(combined.refs.single, const RelogDishRef(
-      sourceMealId: 'meal-1',
-      mealItemOrder: 0,
-    ));
+    expect(
+      combined.refs.single,
+      const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 0),
+    );
   });
 
   test('cheat mode never carries picks, even with a draft staged', () {
@@ -109,8 +107,6 @@ void main() {
           stageId: 's',
           ref: RelogMealRef(sourceMealId: 'meal-9'),
           label: 'bún chả với trà đá',
-          partCount: 2,
-          summary: RelogMacroSummary(caloriesKcal: 700),
         ),
       ],
       text: 'bún chả với trà đá ',

@@ -45,7 +45,7 @@ class RelogPickerGroup extends StatelessWidget {
           // dish names, by size and letter-spacing rather than by opacity.
           child: Text(
             label.toUpperCase(),
-            style: dashEyebrow(color: NhamColors.mentionForeground),
+            style: dashEyebrow(color: NhamColors.bandForeground),
           ),
         ),
         for (final candidate in candidates)

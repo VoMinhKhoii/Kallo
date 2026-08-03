@@ -35,19 +35,30 @@ abstract final class NhamColors {
   static const Color accent = Color(0xFFC9A87C); // signature tan
   static const Color accentDark = Color(0xFFB89968);
 
-  // ── Relog mentions ───────────────────────────────────────────────────
-  // A picked dish inside the composer reads exactly as that same card's inline
-  // under-logged notice does (`PartialDayNotice`): white on the muted grey
-  // band. One "this is not your prose" treatment per surface, and no second
-  // hue — [textMuted] is the lightest grey that still clears 4.5:1 against
-  // white (~5.2:1), which is why the notice already uses it.
-  static const Color mentionBackground = textMuted;
-  static const Color mentionForeground = Color(0xFFFFFFFF);
+  // ── The muted band ───────────────────────────────────────────────────
+  // The surface the composer's inline under-logged notice (`PartialDayNotice`)
+  // and the relog `/` picker both paint: white copy on muted grey. [textMuted]
+  // is the lightest grey that still clears 4.5:1 against white (~5.2:1), which
+  // is why the notice picked it.
+  static const Color bandSurface = textMuted;
+  static const Color bandForeground = Color(0xFFFFFFFF);
 
   /// Only for GLYPHS on the band, never copy. Text there must stay full white
-  /// to hold 4.5:1 against [mentionBackground]; an icon carries no text and is
-  /// not held to it. Matches the under-logged notice's dismiss glyph.
-  static const Color mentionForeground70 = Color(0xB3FFFFFF); // white @ 70%
+  /// to hold 4.5:1 against [bandSurface]; an icon carries no text and is not
+  /// held to it. Matches the under-logged notice's dismiss glyph.
+  static const Color bandForeground70 = Color(0xB3FFFFFF); // white @ 70%
+
+  /// A committed relog pick, rendered inline in the composer as `/Phở bò`.
+  ///
+  /// The one deliberate blue: a pick is a REFERENCE to stored data, not typed
+  /// prose, and the warm palette has no hue that reads "this token is not free
+  /// text" without also reading as a warning.
+  ///
+  /// Darker than the web's `--nham-mention` (#4A90D9) on purpose. That value is
+  /// 3.34:1 on the composer's white field — under AA for 14px body text. This
+  /// one measures 4.86:1 at the same size, which is the bar every other text
+  /// token in this palette is held to.
+  static const Color mention = Color(0xFF2B72C6);
 
   // ── Borders ──────────────────────────────────────────────────────────
   static const Color border = Color(0xFFE2DFD4); // neutral hairline
@@ -123,7 +134,7 @@ abstract final class NhamColors {
   static const Color pressWash = Color(0x0F141413); // ink @ 6%
 
   /// Press wash for controls sitting on an INK surface — the muted-grey band
-  /// ([mentionBackground]) the relog picker and the under-logged notice paint.
+  /// ([bandSurface]) the relog picker and the under-logged notice paint.
   ///
   /// The third case of the same rule: warm for selected, ink for
   /// pressed-on-page, white for pressed-on-ink. Both warm washes and

@@ -89,14 +89,14 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: dashBody(
-                        color: NhamColors.mentionForeground,
+                        color: NhamColors.bandForeground,
                         weight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       macroSplit,
                       style: dashMeta(
-                        color: NhamColors.mentionForeground,
+                        color: NhamColors.bandForeground,
                         tabular: true,
                       ),
                     ),
@@ -111,7 +111,7 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
                 maxLines: 1,
                 softWrap: false,
                 style: dashMeta(
-                  color: NhamColors.mentionForeground,
+                  color: NhamColors.bandForeground,
                   tabular: true,
                 ),
               ),

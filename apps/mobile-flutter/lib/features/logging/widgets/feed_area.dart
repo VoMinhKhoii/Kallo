@@ -589,7 +589,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           controller: _inputController,
           textController: _textController,
           onSync: _onComposerSync,
-          onRemoveStaged: _textController.removeMention,
           relogQuery: _relogQuery,
           onSelectRelog: _selectRelogCandidate,
           onDismissRelog: () => _closeRelogPicker(_picker.dismiss()),

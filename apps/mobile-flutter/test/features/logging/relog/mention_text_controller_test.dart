@@ -1,10 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:nham_mobile/features/logging/logic/relog/mentions.dart';
 import 'package:nham_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:nham_mobile/models/relog.dart';
-import 'package:nham_mobile/theme/calm_tokens.dart';
 import 'package:nham_mobile/theme/nham_colors.dart';
 
 RelogDishCandidate _dish(String name, {int order = 0}) => RelogDishCandidate(
@@ -25,6 +26,17 @@ void _type(MentionTextEditingController c, String value) {
     selection: TextSelection.collapsed(offset: value.length),
   );
   c.syncMentions();
+}
+
+/// WCAG contrast ratio of [color] against white.
+double _contrastOnWhite(Color color) {
+  double channel(double c) =>
+      c <= 0.03928 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
+  final luminance =
+      0.2126 * channel(color.r) +
+      0.7152 * channel(color.g) +
+      0.0722 * channel(color.b);
+  return 1.05 / (luminance + 0.05);
 }
 
 /// Pick a candidate at whatever `/` token is currently open.
@@ -49,8 +61,10 @@ void main() {
       _type(c, '/pho');
       expect(_pick(c, _dish('Phở bò'), 'a'), isTrue);
 
-      expect(c.text, 'Phở bò ');
-      expect(c.entries.single.label, 'Phở bò');
+      // The pick KEEPS the slash it was summoned with — that is the whole
+      // treatment now, plus the colour.
+      expect(c.text, '/Phở bò ');
+      expect(c.entries.single.label, '/Phở bò');
       expect(
         c.entries.single.ref,
         const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 0),
@@ -64,44 +78,49 @@ void main() {
       final token = c.activeToken!;
       c.addMention(_dish('Phở bò'), token, 'a');
 
-      expect(c.text, 'sáng Phở bò rồi');
+      expect(c.text, 'sáng /Phở bò rồi');
     });
 
     test('the caret lands after the inserted label, ready to keep typing', () {
       _type(c, '/pho');
       _pick(c, _dish('Phở bò'), 'a');
-      expect(c.selection.baseOffset, 'Phở bò '.length);
+      expect(c.selection.baseOffset, '/Phở bò '.length);
     });
 
-    test('duplicate picks of the same dish stay independently removable', () {
+    test('duplicate picks of the same dish stay distinct', () {
       _type(c, '/ca');
       _pick(c, _dish('Cà phê'), 'a');
       _type(c, '${c.text}/ca');
       _pick(c, _dish('Cà phê'), 'b');
 
       expect(c.entries.length, 2);
-      c.removeMention('a');
-      expect(c.entries.single.stageId, 'b');
-      expect(c.text.contains('Cà phê'), isTrue, reason: 'one copy remains');
+      expect(c.entries.map((e) => e.stageId), ['a', 'b']);
+
+      // Deleting ONE copy's text drops exactly one reference: two coffees is a
+      // real meal, so the second must survive its twin being removed.
+      _type(c, '/Cà phê ');
+      expect(c.entries.length, 1);
     });
 
-    test('refuses a pick past the staged cap rather than dropping it silently',
-        () {
-      for (var i = 0; i < kRelogMaxStaged; i++) {
+    test(
+      'refuses a pick past the staged cap rather than dropping it silently',
+      () {
+        for (var i = 0; i < kRelogMaxStaged; i++) {
+          _type(c, '${c.text}/x');
+          expect(_pick(c, _dish('Dish $i', order: i), 'stage-$i'), isTrue);
+        }
         _type(c, '${c.text}/x');
-        expect(_pick(c, _dish('Dish $i', order: i), 'stage-$i'), isTrue);
-      }
-      _type(c, '${c.text}/x');
-      expect(_pick(c, _dish('One too many', order: 99), 'over'), isFalse);
-      expect(c.entries.length, kRelogMaxStaged);
-    });
+        expect(_pick(c, _dish('One too many', order: 99), 'over'), isFalse);
+        expect(c.entries.length, kRelogMaxStaged);
+      },
+    );
   });
 
   group('editing', () {
     test('drops a mention whose label the user broke', () {
       _type(c, '/pho');
       _pick(c, _dish('Phở bò'), 'a');
-      _type(c, 'Phở gà ');
+      _type(c, '/Phở gà ');
 
       expect(
         c.entries,
@@ -113,9 +132,9 @@ void main() {
     test('survives text inserted before it', () {
       _type(c, '/pho');
       _pick(c, _dish('Phở bò'), 'a');
-      _type(c, 'sáng nay Phở bò ');
+      _type(c, 'sáng nay /Phở bò ');
 
-      expect(c.entries.single.label, 'Phở bò');
+      expect(c.entries.single.label, '/Phở bò');
       expect(c.mentions.single.start, 9);
     });
 
@@ -164,7 +183,7 @@ void main() {
       expect(c.entries, isEmpty);
 
       c.restore(snap);
-      expect(c.text, 'Phở bò và trứng');
+      expect(c.text, '/Phở bò và trứng');
       expect(
         c.entries.single.ref,
         const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 0),
@@ -186,52 +205,63 @@ void main() {
   });
 
   group('tinting', () {
-    testWidgets('paints mention runs in the mention colour, prose in the base',
-        (tester) async {
-      _type(c, '/pho');
-      _pick(c, _dish('Phở bò'), 'a');
-      _type(c, '${c.text}và trứng');
+    testWidgets(
+      'paints mention runs in the mention colour, prose in the base',
+      (tester) async {
+        _type(c, '/pho');
+        _pick(c, _dish('Phở bò'), 'a');
+        _type(c, '${c.text}và trứng');
 
-      late TextSpan span;
-      await tester.pumpWidget(
-        Builder(
-          builder: (context) {
-            span = c.buildTextSpan(
-              context: context,
-              style: const TextStyle(color: NhamColors.text),
-              withComposing: false,
-            );
-            return const SizedBox();
-          },
-        ),
-      );
+        late TextSpan span;
+        await tester.pumpWidget(
+          Builder(
+            builder: (context) {
+              span = c.buildTextSpan(
+                context: context,
+                style: const TextStyle(color: NhamColors.text),
+                withComposing: false,
+              );
+              return const SizedBox();
+            },
+          ),
+        );
 
-      final children = span.children!.cast<TextSpan>();
-      expect(children.map((s) => s.text).join(), c.text,
-          reason: 'the painted spans must reproduce the value exactly');
+        final children = span.children!.cast<TextSpan>();
+        expect(
+          children.map((s) => s.text).join(),
+          c.text,
+          reason: 'the painted spans must reproduce the value exactly',
+        );
 
-      // The pick reads like the composer's own inline notice: white on the
-      // muted grey band, not tinted prose.
-      final tinted = children.where(
-        (s) =>
-            s.style?.backgroundColor == NhamColors.mentionBackground &&
-            s.style?.color == NhamColors.mentionForeground,
-      );
-      expect(tinted.map((s) => s.text), ['Phở bò']);
+        // Blue ink and NOTHING else — no band, no fill. The slash is inside the
+        // tinted run, so the whole token reads as one reference.
+        final tinted = children.where(
+          (s) => s.style?.color == NhamColors.mention,
+        );
+        expect(tinted.map((s) => s.text), ['/Phở bò']);
+        for (final segment in tinted) {
+          expect(
+            segment.style?.backgroundColor,
+            isNull,
+            reason: 'a pick is tinted text, not a chip',
+          );
+        }
 
-      // Everything around it keeps the field's ordinary ink and no band.
-      final plain = children.where((s) => s.text != 'Phở bò');
-      expect(plain, isNotEmpty);
-      for (final segment in plain) {
-        expect(segment.style?.backgroundColor, isNull);
-      }
-    });
+        // Everything around it keeps the field's ordinary ink.
+        final plain = children.where((s) => s.text != '/Phở bò');
+        expect(plain, isNotEmpty);
+        for (final segment in plain) {
+          expect(segment.style?.color, isNot(NhamColors.mention));
+          expect(segment.style?.backgroundColor, isNull);
+        }
+      },
+    );
 
-    test('the mention pairing matches the under-logged notice exactly', () {
-      // PartialDayNotice paints `kInkMuted` behind `Colors.white`; the two must
-      // not drift, or the composer grows a second "not your prose" treatment.
-      expect(NhamColors.mentionBackground, kInkMuted);
-      expect(NhamColors.mentionForeground, Colors.white);
+    test('the mention blue clears AA on the composer\'s white field', () {
+      // The web's --nham-mention (#4A90D9) measures 3.34:1 on white — under AA
+      // for 14px body text. This one is picked to clear 4.5:1; if someone
+      // syncs it back to the web value, this fails.
+      expect(_contrastOnWhite(NhamColors.mention), greaterThanOrEqualTo(4.5));
     });
 
     testWidgets('leaves plain prose to the default span', (tester) async {

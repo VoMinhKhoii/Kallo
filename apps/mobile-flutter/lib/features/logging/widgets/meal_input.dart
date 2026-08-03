@@ -40,9 +40,7 @@ class MealInput extends StatefulWidget {
     this.analyzing = false,
     this.textController,
     this.onSync,
-    this.aboveSlot,
     this.popupSlot,
-    this.hasExternalContent = false,
   });
 
   final MealInputController controller;
@@ -86,17 +84,9 @@ class MealInput extends StatefulWidget {
   /// without the text changing (taps, selection handles).
   final VoidCallback? onSync;
 
-  /// Content stacked above the field inside the card — the staged relog picks.
-  final Widget? aboveSlot;
-
-  /// Content stacked above the whole card — the `/` picker. Separate from
-  /// [aboveSlot] so the picker sits outside the card's border, the way it
-  /// floats over the composer on the web.
+  /// Content stacked above the whole card — the `/` picker. It sits outside the
+  /// card's border, the way it floats over the composer on the web.
   final Widget? popupSlot;
-
-  /// Arms submit even with the field empty, because [aboveSlot] holds something
-  /// submittable (a staged pick with no typed text is a complete meal).
-  final bool hasExternalContent;
 
   @override
   State<MealInput> createState() => _MealInputState();
@@ -144,8 +134,7 @@ class _MealInputState extends State<MealInput>
     // Move the listener with the controller, or a swapped-in field would go
     // silent: no mention reconciliation, no `/` picker, no submit arming.
     if (oldWidget.textController != widget.textController) {
-      (oldWidget.textController ?? _ownedController)
-          .removeListener(_onChanged);
+      (oldWidget.textController ?? _ownedController).removeListener(_onChanged);
       _ownsController = widget.textController == null;
       _controller.addListener(_onChanged);
     }
@@ -180,8 +169,10 @@ class _MealInputState extends State<MealInput>
 
   void _setText(String text) => _controller.setTextAndSync(text);
 
-  bool get _canSubmit =>
-      _controller.text.trim().isNotEmpty || widget.hasExternalContent;
+  /// A relog pick writes its `/Name` label into the value, so a picks-only
+  /// submission is already non-empty text — there is nothing submittable that
+  /// lives outside the field.
+  bool get _canSubmit => _controller.text.trim().isNotEmpty;
 
   void _submit() {
     if (_canSubmit) {
@@ -258,9 +249,6 @@ class _MealInputState extends State<MealInput>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // The staged relog picks, above the field but inside the card:
-                // they are part of what this composer will submit.
-                if (widget.aboveSlot != null) widget.aboveSlot!,
                 // Line 1 — the composer field, full width.
                 ConstrainedBox(
                   constraints: const BoxConstraints(
@@ -295,7 +283,8 @@ class _MealInputState extends State<MealInput>
                     if (widget.onModePressed != null && !widget.analyzing)
                       ComposerModeButton(
                         icon: widget.modeIcon ?? LucideIcons.zap300,
-                        label: widget.modeLabel ??
+                        label:
+                            widget.modeLabel ??
                             'logging.modeSelector.button'.tr(),
                         onTap: widget.onModePressed!,
                       ),

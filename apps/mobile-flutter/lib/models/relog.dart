@@ -10,8 +10,6 @@
 /// accepted numbers cannot be re-derived.
 library;
 
-import 'ingredient.dart' show IngredientMacrosPer100g;
-
 /// How many candidates the picker asks for per group.
 const int kRelogSearchLimit = 8;
 
@@ -22,10 +20,14 @@ const int kRelogMaxStaged = 20;
 
 double? _num(Object? v) => (v as num?)?.toDouble();
 
-/// Macro summary carried on every candidate so the picker subtitle and the
-/// staged running total render without a second round-trip. These are SUMs of
-/// the stored (already goal-adjusted) row values, so they equal what the
-/// persisted card shows — the numbers agree by construction.
+/// Macro summary carried on every candidate so the picker's subtitle renders
+/// without a second round-trip. These are SUMs of the stored (already
+/// goal-adjusted) row values, so they equal what the persisted card shows — the
+/// numbers agree by construction.
+///
+/// It stops at the picker: once a candidate is picked, nothing display-side
+/// keeps its macros, so there is no cached number that can go stale in the
+/// composer.
 class RelogMacroSummary {
   final double? totalGrams;
   final double? caloriesKcal;
@@ -155,7 +157,10 @@ class RelogCandidatesResponse {
   final List<RelogDishCandidate> dishes;
   final List<RelogMealCandidate> meals;
 
-  const RelogCandidatesResponse({this.dishes = const [], this.meals = const []});
+  const RelogCandidatesResponse({
+    this.dishes = const [],
+    this.meals = const [],
+  });
 
   factory RelogCandidatesResponse.fromJson(Map<String, dynamic> json) =>
       RelogCandidatesResponse(
@@ -230,56 +235,23 @@ class RelogMealRef extends RelogRef {
 }
 
 /// One picked entry. [stageId] is client-minted so duplicate picks of the same
-/// dish stay independently removable — keying on the ref would make "remove"
-/// hit the wrong row. [label] and [summary] are display-only; a stale entry can
-/// render a stale subtitle but can never corrupt a save, because the server
-/// re-resolves nutrition from the reference.
+/// dish stay distinct — keying on the ref would collapse two coffees, which is
+/// a real meal, into one.
+///
+/// A pick carries NO nutrition. The composer shows it as its `/label` and
+/// nothing else, and the server re-resolves the numbers from [ref] when it
+/// copies the rows — so there is no cached macro here to go stale.
 class RelogStagedEntry {
   final String stageId;
   final RelogRef ref;
+
+  /// The text written into the composer, `/` included — also what
+  /// `reconcileMentions` matches on to find this pick again after an edit.
   final String label;
-  final int partCount;
-  final RelogMacroSummary summary;
 
   const RelogStagedEntry({
     required this.stageId,
     required this.ref,
     required this.label,
-    required this.partCount,
-    required this.summary,
   });
-}
-
-/// Freeze a candidate into a staged entry under a client-minted [stageId].
-RelogStagedEntry toStagedEntry(RelogCandidate candidate, String stageId) =>
-    RelogStagedEntry(
-      stageId: stageId,
-      ref: candidate.ref,
-      label: candidate.name,
-      partCount: candidate.partCount,
-      summary: candidate.summary,
-    );
-
-/// Sum staged macros for the totals line. Per nutrient: the sum of non-null
-/// values, or null when no entry carries it — unknown is not zero.
-IngredientMacrosPer100g sumStagedMacros(List<RelogStagedEntry> entries) {
-  double? calories;
-  double? protein;
-  double? carbs;
-  double? fat;
-  double? add(double? total, double? value) =>
-      value == null ? total : (total ?? 0) + value;
-
-  for (final entry in entries) {
-    calories = add(calories, entry.summary.caloriesKcal);
-    protein = add(protein, entry.summary.proteinG);
-    carbs = add(carbs, entry.summary.carbohydrateG);
-    fat = add(fat, entry.summary.fatG);
-  }
-  return IngredientMacrosPer100g(
-    caloriesKcal: calories,
-    proteinG: protein,
-    carbohydrateG: carbs,
-    fatG: fat,
-  );
 }

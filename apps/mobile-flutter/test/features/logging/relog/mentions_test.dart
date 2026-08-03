@@ -4,15 +4,11 @@ import 'package:nham_mobile/features/logging/logic/relog/mentions.dart';
 import 'package:nham_mobile/features/logging/logic/relog/slash_token.dart';
 import 'package:nham_mobile/models/relog.dart';
 
-const _summary = RelogMacroSummary(caloriesKcal: 100);
-
 RelogMention _mention(String label, int start, {String? stageId}) =>
     RelogMention(
       stageId: stageId ?? 'stage-$label-$start',
       ref: const RelogMealRef(sourceMealId: 'meal-1'),
       label: label,
-      partCount: 1,
-      summary: _summary,
       start: start,
     );
 

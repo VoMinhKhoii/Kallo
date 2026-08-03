@@ -76,7 +76,7 @@ class RelogPickerPopup extends StatelessWidget {
           // No border, like the notice: a solid band does not need one. The
           // shadows stay, unlike the notice, because that sits inside the card
           // while this floats over the feed and has to lift off it.
-          color: NhamColors.mentionBackground,
+          color: NhamColors.bandSurface,
           borderRadius: BorderRadius.circular(NhamRadii.containerLg),
           boxShadow: const [NhamShadows.md, NhamShadows.xs],
         ),
@@ -103,7 +103,7 @@ class RelogPickerPopup extends StatelessWidget {
                                 child: Text(
                                   emptyMessage,
                                   style: dashMeta(
-                                    color: NhamColors.mentionForeground,
+                                    color: NhamColors.bandForeground,
                                   ),
                                 ),
                               ),
@@ -183,7 +183,7 @@ class _CloseRow extends StatelessWidget {
             child: Icon(
               LucideIcons.x300,
               size: LoggingIcons.size,
-              color: NhamColors.mentionForeground70,
+              color: NhamColors.bandForeground70,
             ),
           ),
         ),

@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/cheat.dart';
-import '../../../../models/relog.dart';
+import '../../../../models/relog.dart' show RelogCandidate;
 import '../../../../theme/calm_tokens.dart';
 import '../../logic/feed/view_state.dart';
 import '../../logic/logging_spacing.dart';
@@ -14,7 +14,6 @@ import '../meal_input.dart';
 import '../partial_day_notice.dart';
 import '../relog/mention_text_controller.dart';
 import '../relog/relog_picker_section.dart';
-import '../relog/relog_staged_list.dart';
 
 /// Everything inside the floating dock: the under-logged notice, the inline
 /// confirm error, cheat mode's per-meal controls, and the meal input itself.
@@ -41,7 +40,6 @@ class FeedComposer extends StatelessWidget {
     required this.noticeDismissed,
     required this.textController,
     required this.onSync,
-    required this.onRemoveStaged,
     this.relogQuery,
     required this.onSelectRelog,
     required this.onDismissRelog,
@@ -82,7 +80,6 @@ class FeedComposer extends StatelessWidget {
   /// Fired whenever the value or the caret may have moved — what drives the
   /// `/` picker.
   final VoidCallback onSync;
-  final ValueChanged<String> onRemoveStaged;
 
   /// The debounced `/` query, or null when no token is open. Relog is
   /// NORMAL-MODE ONLY: manual and cheat own the composer's slots themselves,
@@ -93,24 +90,18 @@ class FeedComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Nothing here is derived from the controller's own state: a pick lives as
+    // text INSIDE the field, so the value, its tint and the send button's arming
+    // all rebuild from `MealInput`'s own listener. The dock stays out of the
+    // keystroke path entirely.
     return ComposerDock(
       onHeightChanged: onHeightChanged,
-      // The staged panel is derived from the CONTROLLER, which changes without
-      // the feed rebuilding: removing a pick, or editing a tinted label until
-      // it no longer matches, drops that reference here and nowhere else.
-      // Listening keeps the panel honest — otherwise a dropped pick keeps its
-      // row, telling the user a dish will be logged when it will not. Scoped to
-      // the dock so a keystroke never rebuilds the feed behind it.
-      child: ListenableBuilder(
-        listenable: textController,
-        builder: (context, _) => _buildDock(context),
-      ),
+      child: _buildDock(context),
     );
   }
 
   Widget _buildDock(BuildContext context) {
     final isNormal = mode == MealLogMode.normal;
-    final staged = textController.entries;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -145,27 +136,12 @@ class FeedComposer extends StatelessWidget {
           onSubmit: onSubmit,
           onCancel: onCancel,
           analyzing: analyzing,
-          // A pick alone is a complete meal, so it arms submit even with
-          // nothing else typed.
-          hasExternalContent: isNormal && staged.isNotEmpty,
           popupSlot:
               isNormal && relogQuery != null
                   ? RelogPickerSection(
                     query: relogQuery!,
                     onSelect: onSelectRelog,
                     onDismiss: onDismissRelog,
-                  )
-                  : null,
-          // Gated on the mode, not just the count: the picks survive a mode
-          // switch (only their UI hides), so an ungated list would appear
-          // over the CHEAT composer.
-          aboveSlot:
-              isNormal && staged.isNotEmpty
-                  ? RelogStagedList(
-                    entries: staged,
-                    totals: sumStagedMacros(staged),
-                    disabled: analyzing,
-                    onRemove: onRemoveStaged,
                   )
                   : null,
           // Under-logged past day: the note rides INSIDE the field's card,

@@ -20,14 +20,12 @@ import '../../logic/relog/slash_token.dart';
 /// [syncMentions] re-derives those offsets after every edit and DROPS any
 /// mention whose text the user broke — that is what stops a half-deleted dish
 /// name from still logging a dish.
-/// A picked dish reads as the composer's own inline notice does — the
-/// under-logged band that sits in this same card (`PartialDayNotice`): muted
-/// grey behind white copy.
-///
-/// Reusing that pairing keeps the composer to one "this is not your prose"
-/// treatment instead of inventing a second, and it retires the palette's one
-/// deliberate blue. The contrast is already argued there: [NhamColors.textMuted]
-/// is the lightest grey that still clears 4.5:1 against white (~5.2:1).
+/// A committed pick keeps the `/` it was summoned with and is painted in
+/// [NhamColors.mention] — nothing else. No fill, no chip, no macro preview: the
+/// sentence reads `/Phở bò và 2 quả trứng`, so the token is visibly a reference
+/// rather than prose even before you register the colour.
+const String mentionPrefix = '/';
+
 class MentionTextEditingController extends TextEditingController {
   MentionTextEditingController({super.text});
 
@@ -81,11 +79,21 @@ class MentionTextEditingController extends TextEditingController {
   /// insertion point alone — mentions after it have all shifted right.
   bool addMention(RelogCandidate candidate, SlashToken token, String stageId) {
     if (isFull) return false;
-    final inserted = insertMention(text, token, candidate.name);
-    final entry = toStagedEntry(candidate, stageId);
+    // The pick KEEPS its slash — it reads as `/Phở bò`, the same shape you
+    // typed to summon it. The slash has to live INSIDE the mention's label,
+    // not beside it: the label is what `reconcileMentions` matches on, so a
+    // slash outside the run would fall out of the tint and survive
+    // `stripMentions` as a stray character in what the AI sees.
+    final display = '$mentionPrefix${candidate.name}';
+    final inserted = insertMention(text, token, display);
     _mentions = reconcileMentions(inserted.value, [
       ..._mentions,
-      RelogMention.at(entry, inserted.start),
+      RelogMention(
+        stageId: stageId,
+        ref: candidate.ref,
+        label: display,
+        start: inserted.start,
+      ),
     ]);
     value = TextEditingValue(
       text: inserted.value,
@@ -93,21 +101,6 @@ class MentionTextEditingController extends TextEditingController {
     );
     notifyListeners();
     return true;
-  }
-
-  /// Drop one pick and remove its text. Keyed by [stageId], never by the
-  /// reference: picking the same coffee twice is a real meal, and keying on the
-  /// reference would make "remove" hit the wrong row.
-  void removeMention(String stageId) {
-    final target = _mentions.where((m) => m.stageId == stageId).firstOrNull;
-    if (target == null) return;
-    final next = stripMentions(text, [target]);
-    _mentions = reconcileMentions(
-      next,
-      _mentions.where((m) => m.stageId != stageId).toList(),
-    );
-    _setValueAtEnd(next);
-    notifyListeners();
   }
 
   /// The free text the user typed AROUND the picks — what the AI should see.
@@ -163,8 +156,8 @@ class MentionTextEditingController extends TextEditingController {
       );
     }
     // Bail only when a composing region OVERLAPS a pick, where the framework's
-    // underline and our band would fight over the same glyphs. Bailing on ANY
-    // composing region would strobe the band: Vietnamese IMEs compose per
+    // underline and our tint would fight over the same glyphs. Bailing on ANY
+    // composing region would strobe the colour: Vietnamese IMEs compose per
     // syllable, so it would drop on nearly every keystroke.
     final composing = value.composing;
     if (withComposing &&
@@ -179,9 +172,11 @@ class MentionTextEditingController extends TextEditingController {
         withComposing: withComposing,
       );
     }
+    // Blue ink, nothing else. A pick is a lightweight token in the sentence —
+    // no fill, no chip, no macros — so the only thing marking it as a reference
+    // rather than prose is the colour.
     final mentionStyle = (style ?? const TextStyle()).copyWith(
-      color: NhamColors.mentionForeground,
-      backgroundColor: NhamColors.mentionBackground,
+      color: NhamColors.mention,
     );
     return TextSpan(
       style: style,
