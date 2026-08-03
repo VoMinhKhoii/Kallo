@@ -8,11 +8,17 @@ import type { ComponentPropsWithoutRef } from 'react';
  * reading needs more air than a dashboard row), and headings carry no eyebrow
  * — per the design guide, long-form pages drop them entirely.
  *
- * The ramp is 36 / 28 / 19 / 16 (h1 / h2 / h3 / body). It used to be
+ * The ramp is 36 / 28 / 22 / 16 (h1 / h2 / h3 / body). It used to be
  * 36 / 22 / 17 / 16, which failed twice: h3 at 17px sat one pixel off body and
- * relied entirely on weight to register, and h2 at 22px in Lora *regular*
- * carried less visual weight than the 17px semibold h3 beneath it — so a
- * subsection could out-shout the section containing it.
+ * relied entirely on weight to register, and h2 in Lora *regular* carried less
+ * visual weight than the semibold h3 beneath it — so a subsection could
+ * out-shout the section containing it.
+ *
+ * Lora is now reserved for the page title alone; h2 and h3 are Be Vietnam Pro
+ * at semibold. That keeps the serif meaningful (one per page) instead of it
+ * being the generic heading face — and semibold is load-bearing here, because
+ * a 28px sans heading at weight 400 would reintroduce the same inversion the
+ * ramp above was fixed to remove.
  *
  * `scroll-mt-24` keeps the sticky docs header from covering a heading when an
  * anchor link jumps to it. The `#` affordance is appended by
@@ -25,7 +31,7 @@ const ANCHOR =
 export function DocsH2({ children, ...props }: ComponentPropsWithoutRef<'h2'>) {
   return (
     <h2
-      className={`mt-16 scroll-mt-24 font-serif text-h3 text-nham-text ${ANCHOR}`}
+      className={`mt-16 scroll-mt-24 font-semibold text-h3 text-nham-text ${ANCHOR}`}
       {...props}
     >
       {children}

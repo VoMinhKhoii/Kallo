@@ -37,7 +37,7 @@ export function DocsMobileNav({ sections }: { sections: DocsNavSection[] }) {
         side="left"
       >
         <SheetHeader className="p-0">
-          <SheetTitle className="px-3 text-left font-normal font-serif text-base text-nham-text">
+          <SheetTitle className="px-3 text-left font-semibold text-base text-nham-text">
             {t('label')}
           </SheetTitle>
         </SheetHeader>

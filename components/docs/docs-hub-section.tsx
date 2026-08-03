@@ -13,9 +13,7 @@ export function DocsHubSection({ section }: { section: DocsNavSection }) {
 
   return (
     <section>
-      <h2 className="font-normal font-serif text-h4 text-nham-text">
-        {t(section.id)}
-      </h2>
+      <h2 className="font-semibold text-h4 text-nham-text">{t(section.id)}</h2>
       <ul className="mt-4 border-nham-border border-t">
         {section.links.map((link) => (
           <li className="border-nham-border border-b" key={link.slug}>
