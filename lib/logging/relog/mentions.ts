@@ -85,7 +85,8 @@ export function stripMentions(value: string, mentions: RelogMention[]): string {
   return out.trim();
 }
 
-const isSpaceOrTab = (char: string | undefined) => char === ' ' || char === '\t';
+const isSpaceOrTab = (char: string | undefined) =>
+  char === ' ' || char === '\t';
 
 /**
  * Collapse the whitespace run that a removal just joined at `index` down to a
