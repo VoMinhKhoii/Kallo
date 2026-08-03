@@ -38,7 +38,7 @@ export function DocsLocaleToggle() {
             aria-label={label}
             aria-pressed={selected}
             className={cn(
-              'rounded-md px-2 py-1 font-sans-display text-[11px] transition-colors',
+              'rounded-md px-2 py-1 font-sans-display text-caption transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
               selected
                 ? 'bg-nham-hover font-semibold text-nham-text'

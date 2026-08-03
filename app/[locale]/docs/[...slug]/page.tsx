@@ -74,13 +74,13 @@ export default async function DocPage({
 
   return (
     <div className="flex gap-10">
-      <article className="min-w-0 max-w-[45rem] flex-1 py-10">
+      <article className="min-w-0 max-w-[36rem] flex-1 py-10">
         <DocsBreadcrumbs sectionId={section.id} />
 
         <h1 className="mt-3 text-balance font-normal font-serif text-h2 text-nham-text">
           {frontmatter.title}
         </h1>
-        <p className="mt-4 text-pretty text-[17px] text-nham-text-muted leading-relaxed">
+        <p className="mt-4 text-pretty text-base text-nham-text-muted leading-relaxed">
           {frontmatter.description}
         </p>
         {frontmatter.lastUpdated && (

@@ -24,8 +24,10 @@ import { cn } from '@/lib/utils';
 type CalloutTone = 'note' | 'caution' | 'tip';
 
 const TONES: Record<CalloutTone, { container: string; label: string }> = {
+  // White, not `nham-track`: the track wash is #f5f4f0 against a #f9f9f7
+  // canvas — 1.04:1, so the aside had no visible edge at all.
   note: {
-    container: 'border-nham-border bg-nham-track',
+    container: 'border-nham-border bg-white',
     label: 'text-nham-text',
   },
   caution: {
@@ -52,13 +54,13 @@ export function Callout({ label, tone = 'note', children }: CalloutProps) {
     <aside className={cn('mt-6 rounded-xl border p-card-sm', styles.container)}>
       <p
         className={cn(
-          'font-sans-display font-semibold text-[13px]',
+          'font-sans-display font-semibold text-caption',
           styles.label
         )}
       >
         {label}
       </p>
-      <div className="[&>*:first-child]:mt-1 [&>p]:text-[15px]">{children}</div>
+      <div className="[&>*:first-child]:mt-1">{children}</div>
     </aside>
   );
 }

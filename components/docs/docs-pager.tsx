@@ -29,10 +29,10 @@ export function DocsPager({
           className="group rounded-xl border border-nham-border p-card-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
           href={`/docs/${previous.slug}`}
         >
-          <span className="block font-sans-display text-[11px] text-nham-text-muted">
+          <span className="block font-sans-display text-caption text-nham-text-muted">
             {t('previous')}
           </span>
-          <span className="mt-1 block font-medium font-sans-display text-[14px] text-nham-text">
+          <span className="mt-1 block font-medium font-sans-display text-base text-nham-text">
             {previous.title}
           </span>
         </Link>
@@ -45,10 +45,10 @@ export function DocsPager({
           className="group rounded-xl border border-nham-border p-card-sm text-right transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent sm:col-start-2"
           href={`/docs/${next.slug}`}
         >
-          <span className="block font-sans-display text-[11px] text-nham-text-muted">
+          <span className="block font-sans-display text-caption text-nham-text-muted">
             {t('next')}
           </span>
-          <span className="mt-1 block font-medium font-sans-display text-[14px] text-nham-text">
+          <span className="mt-1 block font-medium font-sans-display text-base text-nham-text">
             {next.title}
           </span>
         </Link>

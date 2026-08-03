@@ -23,7 +23,7 @@ export function DocsHubSection({ section }: { section: DocsNavSection }) {
               className="-mx-3 block rounded-lg px-3 py-3.5 transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
               href={`/docs/${link.slug}`}
             >
-              <span className="font-medium font-sans-display text-[15px] text-nham-text">
+              <span className="font-medium font-sans-display text-base text-nham-text">
                 {link.title}
               </span>
             </Link>

@@ -29,7 +29,7 @@ export async function LastUpdated({
   }).format(parsed);
 
   return (
-    <p className="mt-4 font-sans-display text-[12px] text-nham-text-muted">
+    <p className="mt-4 font-sans-display text-caption text-nham-text-muted">
       <time dateTime={date}>{t('lastUpdated', { date: formatted })}</time>
     </p>
   );

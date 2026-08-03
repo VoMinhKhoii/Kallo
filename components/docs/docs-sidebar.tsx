@@ -32,7 +32,7 @@ export function DocsSidebar({
     <nav className="space-y-7">
       {sections.map((section) => (
         <div key={section.id}>
-          <p className="px-3 font-sans-display font-semibold text-[11px] text-nham-text-muted uppercase tracking-[0.14em]">
+          <p className="px-3 font-sans-display font-semibold text-caption text-nham-text-muted uppercase tracking-[0.14em]">
             {t(section.id)}
           </p>
           <ul className="mt-2 space-y-px">
@@ -45,7 +45,7 @@ export function DocsSidebar({
                   <Link
                     aria-current={isActive ? 'page' : undefined}
                     className={cn(
-                      'block rounded-lg px-3 py-1.5 font-sans-display text-[13.5px] leading-snug transition-colors',
+                      'block rounded-lg px-3 py-1.5 font-sans-display text-caption leading-snug transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
                       isActive
                         ? 'bg-nham-hover font-semibold text-nham-text'

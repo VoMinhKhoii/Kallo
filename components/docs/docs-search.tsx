@@ -57,7 +57,7 @@ export function DocsSearch({ entries }: { entries: DocsSearchEntry[] }) {
         type="button"
       >
         <Search className="h-3.5 w-3.5" />
-        <span className="hidden font-sans-display text-[13px] sm:inline">
+        <span className="hidden font-sans-display text-caption sm:inline">
           {t('trigger')}
         </span>
         <Kbd className="hidden sm:inline-flex">⌘K</Kbd>
@@ -88,10 +88,10 @@ export function DocsSearch({ entries }: { entries: DocsSearchEntry[] }) {
                     value={`${entry.title} ${entry.description}`}
                   >
                     <div className="min-w-0">
-                      <p className="font-medium text-[14px] text-nham-text">
+                      <p className="font-medium text-base text-nham-text">
                         {entry.title}
                       </p>
-                      <p className="truncate text-[12px] text-nham-text-muted">
+                      <p className="truncate text-caption text-nham-text-muted">
                         {entry.description}
                       </p>
                     </div>

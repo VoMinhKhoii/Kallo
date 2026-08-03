@@ -41,7 +41,7 @@ export async function DocsHeader({
             aria-hidden="true"
             className="hidden h-4 w-px bg-nham-border sm:block"
           />
-          <span className="hidden font-serif text-[15px] text-nham-text-muted sm:block">
+          <span className="hidden font-serif text-base text-nham-text-muted sm:block">
             {t('title')}
           </span>
         </Link>
@@ -50,7 +50,7 @@ export async function DocsHeader({
           <DocsSearch entries={searchEntries} />
           <DocsLocaleToggle />
           <Link
-            className="hidden h-9 items-center rounded-lg bg-nham-btn px-3.5 font-medium font-sans-display text-[13px] text-nham-surface transition-colors hover:bg-nham-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent sm:flex"
+            className="hidden h-9 items-center rounded-lg bg-nham-btn px-3.5 font-medium font-sans-display text-caption text-nham-surface transition-colors hover:bg-nham-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent sm:flex"
             href="/"
           >
             {t('openApp')}

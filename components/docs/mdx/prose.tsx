@@ -4,10 +4,15 @@ import type { ComponentPropsWithoutRef } from 'react';
  * Long-form prose primitives for docs MDX.
  *
  * Two deliberate departures from the in-app type rules, both scoped to the
- * docs surface: body leading is 1.75 rather than the app's 1.55 (a 720px
- * measure of continuous reading needs more air than a dashboard row), and
- * headings carry no eyebrow — per the design guide, long-form pages drop them
- * entirely.
+ * docs surface: body leading is 1.75 rather than the app's 1.55 (continuous
+ * reading needs more air than a dashboard row), and headings carry no eyebrow
+ * — per the design guide, long-form pages drop them entirely.
+ *
+ * The ramp is 36 / 28 / 19 / 16 (h1 / h2 / h3 / body). It used to be
+ * 36 / 22 / 17 / 16, which failed twice: h3 at 17px sat one pixel off body and
+ * relied entirely on weight to register, and h2 at 22px in Lora *regular*
+ * carried less visual weight than the 17px semibold h3 beneath it — so a
+ * subsection could out-shout the section containing it.
  *
  * `scroll-mt-24` keeps the sticky docs header from covering a heading when an
  * anchor link jumps to it. The `#` affordance is appended by
@@ -15,12 +20,12 @@ import type { ComponentPropsWithoutRef } from 'react';
  */
 
 const ANCHOR =
-  '[&>a.heading-anchor]:ml-2 [&>a.heading-anchor]:font-sans [&>a.heading-anchor]:font-normal [&>a.heading-anchor]:text-nham-stone [&>a.heading-anchor]:no-underline [&>a.heading-anchor]:opacity-0 [&>a.heading-anchor]:transition-opacity hover:[&>a.heading-anchor]:opacity-100';
+  '[&>a.heading-anchor]:ml-2 [&>a.heading-anchor]:font-sans [&>a.heading-anchor]:font-normal [&>a.heading-anchor]:text-nham-text-muted [&>a.heading-anchor]:no-underline [&>a.heading-anchor]:opacity-0 [&>a.heading-anchor]:transition-opacity hover:[&>a.heading-anchor]:opacity-100';
 
 export function DocsH2({ children, ...props }: ComponentPropsWithoutRef<'h2'>) {
   return (
     <h2
-      className={`mt-14 scroll-mt-24 font-serif text-h4 text-nham-text ${ANCHOR}`}
+      className={`mt-16 scroll-mt-24 font-serif text-h3 text-nham-text ${ANCHOR}`}
       {...props}
     >
       {children}
@@ -31,7 +36,7 @@ export function DocsH2({ children, ...props }: ComponentPropsWithoutRef<'h2'>) {
 export function DocsH3({ children, ...props }: ComponentPropsWithoutRef<'h3'>) {
   return (
     <h3
-      className={`mt-10 scroll-mt-24 font-semibold text-[17px] text-nham-text ${ANCHOR}`}
+      className={`mt-10 scroll-mt-24 font-semibold text-h4 text-nham-text ${ANCHOR}`}
       {...props}
     >
       {children}
@@ -65,7 +70,7 @@ export function DocsLink({ href, ...props }: ComponentPropsWithoutRef<'a'>) {
 export function DocsUnorderedList(props: ComponentPropsWithoutRef<'ul'>) {
   return (
     <ul
-      className="mt-4 list-disc space-y-2 pl-5 marker:text-nham-stone"
+      className="mt-4 list-disc space-y-2 pl-5 marker:text-nham-text-muted"
       {...props}
     />
   );
@@ -100,7 +105,7 @@ export function DocsStrong(props: ComponentPropsWithoutRef<'strong'>) {
 export function DocsBlockquote(props: ComponentPropsWithoutRef<'blockquote'>) {
   return (
     <blockquote
-      className="mt-6 border-nham-accent border-l-2 pl-5 font-serif text-[17px] text-nham-text-muted italic leading-relaxed"
+      className="mt-6 border-nham-accent border-l-2 pl-5 font-serif text-base text-nham-text-muted italic leading-relaxed"
       {...props}
     />
   );

@@ -13,7 +13,7 @@ export function DocsBreadcrumbs({ sectionId }: { sectionId: string }) {
 
   return (
     <nav aria-label={t('breadcrumb.label')}>
-      <ol className="flex flex-wrap items-center gap-x-2 font-sans-display text-[13px] text-nham-text-muted">
+      <ol className="flex flex-wrap items-center gap-x-2 font-sans-display text-caption text-nham-text-muted">
         <li>
           <Link
             className="rounded-sm transition-colors hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"

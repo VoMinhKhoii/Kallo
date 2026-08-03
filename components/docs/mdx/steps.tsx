@@ -32,12 +32,12 @@ export function Step({ index, title, children }: StepProps) {
       />
       <span
         aria-hidden="true"
-        className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-nham-border bg-white font-mono text-[11px] text-nham-text-muted tabular-nums"
+        className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-nham-border bg-white font-mono text-caption text-nham-text-muted tabular-nums"
       >
         {index}
       </span>
       <div className="min-w-0 flex-1 pt-0.5">
-        <p className="font-sans-display font-semibold text-[15px] text-nham-text">
+        <p className="font-sans-display font-semibold text-base text-nham-text">
           {title}
         </p>
         <div className="[&>*:first-child]:mt-1.5">{children}</div>
