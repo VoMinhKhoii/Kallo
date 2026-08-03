@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../models/relog.dart';
 import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import 'relog_picker_option.dart';
 
@@ -38,7 +39,14 @@ class RelogPickerGroup extends StatelessWidget {
           ),
           // dashEyebrow does NOT upper-case — the transform lives at the call
           // site (the NhamText casing trap in the mobile design doc).
-          child: Text(label.toUpperCase(), style: dashEyebrow()),
+          //
+          // Full white, not a translucent one: at 11px this is small text, and
+          // white@70% on the band falls under 4.5:1. It still recedes from the
+          // dish names, by size and letter-spacing rather than by opacity.
+          child: Text(
+            label.toUpperCase(),
+            style: dashEyebrow(color: NhamColors.mentionForeground),
+          ),
         ),
         for (final candidate in candidates)
           RelogPickerOption(

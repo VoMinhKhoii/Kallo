@@ -63,9 +63,10 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
           decoration: BoxDecoration(
-            // The popup is a white sheet, so the warm select wash reads here
-            // (the ink press wash is for controls sitting on the canvas).
-            color: _pressed ? NhamColors.hover40 : Colors.transparent,
+            // The popup is an INK band, so the press lightens rather than
+            // warms. The warm hover wash is lighter than the canvas but darker
+            // than nothing on this surface — on the band it would barely move.
+            color: _pressed ? NhamColors.pressWashOnInk : Colors.transparent,
             borderRadius: BorderRadius.circular(NhamRadii.md),
           ),
           padding: const EdgeInsets.symmetric(
@@ -79,13 +80,26 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Both lines full white on the band, exactly as the notice
+                    // pairs its title and body: hierarchy comes from size and
+                    // weight, never opacity, because translucent white here
+                    // drops the smaller line below 4.5:1.
                     Text(
                       widget.candidate.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: dashBody(),
+                      style: dashBody(
+                        color: NhamColors.mentionForeground,
+                        weight: FontWeight.w500,
+                      ),
                     ),
-                    Text(macroSplit, style: dashMeta(tabular: true)),
+                    Text(
+                      macroSplit,
+                      style: dashMeta(
+                        color: NhamColors.mentionForeground,
+                        tabular: true,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -96,7 +110,10 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
                 ),
                 maxLines: 1,
                 softWrap: false,
-                style: dashMeta(tabular: true),
+                style: dashMeta(
+                  color: NhamColors.mentionForeground,
+                  tabular: true,
+                ),
               ),
             ],
           ),

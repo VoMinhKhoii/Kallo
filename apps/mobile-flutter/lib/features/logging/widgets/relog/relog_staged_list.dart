@@ -52,7 +52,11 @@ class RelogStagedList extends StatelessWidget {
             ),
           if (hasTotals) ...[
             const SizedBox(height: LoggingSpacing.row),
-            const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
+            const Divider(
+              height: 1,
+              thickness: 1,
+              color: NhamColors.borderFaint,
+            ),
             Padding(
               padding: const EdgeInsets.only(top: LoggingSpacing.section),
               child: Row(

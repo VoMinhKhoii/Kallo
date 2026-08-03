@@ -67,16 +67,24 @@ class RelogPickerPopup extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: LoggingSpacing.block),
       child: Container(
         decoration: BoxDecoration(
-          color: NhamColors.elev,
+          // The same band the composer's inline under-logged notice paints
+          // (`PartialDayNotice`): white copy on muted grey. The picker sits in
+          // that same card, and what it COMMITS — the tinted mention inside the
+          // field — already renders in this exact pairing, so the picker and its
+          // own output finally read as one thing.
+          //
+          // No border, like the notice: a solid band does not need one. The
+          // shadows stay, unlike the notice, because that sits inside the card
+          // while this floats over the feed and has to lift off it.
+          color: NhamColors.mentionBackground,
           borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-          border: Border.all(color: NhamColors.borderHalf),
           boxShadow: const [NhamShadows.md, NhamShadows.xs],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _Header(onDismiss: onDismiss),
+            _CloseRow(onDismiss: onDismiss),
             Flexible(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: _maxHeight),
@@ -92,7 +100,12 @@ class RelogPickerPopup extends StatelessWidget {
                           child: Row(
                             children: [
                               Expanded(
-                                child: Text(emptyMessage, style: dashMeta()),
+                                child: Text(
+                                  emptyMessage,
+                                  style: dashMeta(
+                                    color: NhamColors.mentionForeground,
+                                  ),
+                                ),
                               ),
                               // Retry only on failure — there is nothing to
                               // retry when the history is genuinely empty.
@@ -134,50 +147,46 @@ class RelogPickerPopup extends StatelessWidget {
   }
 }
 
-/// Title plus the close affordance. A phone keyboard has no Escape, so the
-/// dismissal the web gets from that key needs a visible control here.
-class _Header extends StatelessWidget {
-  const _Header({required this.onDismiss});
+/// The close affordance, alone on its row.
+///
+/// The popup carries no title: the `/` you just typed is the label, and the two
+/// group headers below already say what is in the list.
+///
+/// The button is NOT optional chrome. A phone keyboard has no Escape, and the
+/// picker is an inline sibling in the dock rather than an overlay — no barrier,
+/// no `PopScope`, nothing closes on a tap outside. Without this the only ways
+/// out are picking something or editing your sentence until the `/` breaks,
+/// while a 288px panel holds the composer up. It is also the sole caller of
+/// [SlashPickerState.dismiss], so removing it would strand that suppression
+/// logic entirely.
+class _CloseRow extends StatelessWidget {
+  const _CloseRow({required this.onDismiss});
 
   final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        NhamSpacing.sp3,
-        NhamSpacing.sp2,
-        NhamSpacing.sp1,
-        0,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'logging.relog.pickerLabel'.tr().toUpperCase(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: dashEyebrow(),
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Semantics(
+        button: true,
+        label: 'logging.relog.closePicker'.tr(),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onDismiss,
+          child: const SizedBox(
+            width: LoggingIcons.hit,
+            height: LoggingIcons.hit,
+            // White @ 70% — the notice's own dismiss glyph. The only element on
+            // the band allowed to be translucent: it carries no text, so it is
+            // not held to the 4.5:1 the copy is.
+            child: Icon(
+              LucideIcons.x300,
+              size: LoggingIcons.size,
+              color: NhamColors.mentionForeground70,
             ),
           ),
-          Semantics(
-            button: true,
-            label: 'logging.relog.closePicker'.tr(),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: onDismiss,
-              child: const SizedBox(
-                width: LoggingIcons.hit,
-                height: LoggingIcons.hit,
-                child: Icon(
-                  LucideIcons.x300,
-                  size: LoggingIcons.size,
-                  color: NhamColors.textMuted,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

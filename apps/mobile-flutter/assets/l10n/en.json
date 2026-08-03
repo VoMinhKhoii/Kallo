@@ -1255,7 +1255,6 @@
       "relatedMatch": "related"
     },
     "relog": {
-      "pickerLabel": "Logged dishes and meals",
       "groupDishes": "Dishes",
       "groupMeals": "Meals",
       "macroSplit": "P {protein}g · C {carbs}g · F {fat}g",

@@ -1255,7 +1255,6 @@
       "relatedMatch": "liên quan"
     },
     "relog": {
-      "pickerLabel": "Món và bữa đã ghi",
       "groupDishes": "Món",
       "groupMeals": "Bữa ăn",
       "macroSplit": "P {protein}g · C {carbs}g · F {fat}g",

@@ -18,6 +18,7 @@ import 'package:nham_mobile/features/logging/widgets/relog/relog_picker_popup.da
 import 'package:nham_mobile/features/logging/widgets/relog/relog_staged_list.dart';
 import 'package:nham_mobile/models/cheat.dart';
 import 'package:nham_mobile/models/relog.dart';
+import 'package:nham_mobile/theme/nham_colors.dart';
 
 import '../../../l10n_test_loader.dart';
 
@@ -248,6 +249,68 @@ void main() {
     await tester.enterText(find.byType(TextField), 'ăn 1/2 quả');
     await tester.pumpAndSettle();
     expect(picker.isOpen, isFalse);
+  });
+
+  group('palette', () {
+    testWidgets('paints the under-logged notice band, not a white sheet',
+        (tester) async {
+      await tester.pumpWidget(composer(relogQuery: ''));
+      await tester.pumpAndSettle();
+
+      final decorated = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(RelogPickerPopup),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final decoration = decorated.decoration! as BoxDecoration;
+      expect(decoration.color, NhamColors.mentionBackground);
+      expect(
+        decoration.border,
+        isNull,
+        reason: 'a solid band carries no border, like the notice',
+      );
+    });
+
+    testWidgets('renders its copy in full white, never a translucent one',
+        (tester) async {
+      // Anything less than full white on this band drops under 4.5:1.
+      await tester.pumpWidget(composer(relogQuery: ''));
+      await tester.pumpAndSettle();
+
+      for (final label in ['Phở bò', 'DISHES', '410 kcal']) {
+        expect(
+          tester.widget<Text>(find.text(label)).style?.color,
+          NhamColors.mentionForeground,
+          reason: '"$label" is not full white on the band',
+        );
+      }
+    });
+  });
+
+  testWidgets('keeps a way out now that the header label is gone',
+      (tester) async {
+    // The close button is the ONLY dismissal: the picker is an inline sibling
+    // in the dock, so there is no barrier, no PopScope and no tap-outside.
+    var dismissed = false;
+    await tester.pumpWidget(
+      _wrap(
+        RelogPickerPopup(
+          candidates: const RelogCandidatesResponse(),
+          isLoading: false,
+          query: '',
+          onSelect: (_) {},
+          onDismiss: () => dismissed = true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('LOGGED DISHES AND MEALS'), findsNothing);
+    await tester.tap(find.bySemanticsLabel('Close'));
+    expect(dismissed, isTrue);
   });
 
   testWidgets('a failed search says so instead of "nothing logged yet"',

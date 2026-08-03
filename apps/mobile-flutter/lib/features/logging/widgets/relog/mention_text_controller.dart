@@ -28,9 +28,6 @@ import '../../logic/relog/slash_token.dart';
 /// treatment instead of inventing a second, and it retires the palette's one
 /// deliberate blue. The contrast is already argued there: [NhamColors.textMuted]
 /// is the lightest grey that still clears 4.5:1 against white (~5.2:1).
-const Color mentionBackground = NhamColors.textMuted;
-const Color mentionForeground = Colors.white;
-
 class MentionTextEditingController extends TextEditingController {
   MentionTextEditingController({super.text});
 

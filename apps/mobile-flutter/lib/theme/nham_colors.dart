@@ -44,6 +44,11 @@ abstract final class NhamColors {
   static const Color mentionBackground = textMuted;
   static const Color mentionForeground = Color(0xFFFFFFFF);
 
+  /// Only for GLYPHS on the band, never copy. Text there must stay full white
+  /// to hold 4.5:1 against [mentionBackground]; an icon carries no text and is
+  /// not held to it. Matches the under-logged notice's dismiss glyph.
+  static const Color mentionForeground70 = Color(0xB3FFFFFF); // white @ 70%
+
   // ── Borders ──────────────────────────────────────────────────────────
   static const Color border = Color(0xFFE2DFD4); // neutral hairline
   static const Color borderSoft = Color(0x99E2DFD4); // hairline @ 60%
@@ -116,6 +121,16 @@ abstract final class NhamColors {
   /// direction: ink at 6%, which darkens legibly over any surface in the
   /// system. Warm washes stay warm where they cover something lighter.
   static const Color pressWash = Color(0x0F141413); // ink @ 6%
+
+  /// Press wash for controls sitting on an INK surface — the muted-grey band
+  /// ([mentionBackground]) the relog picker and the under-logged notice paint.
+  ///
+  /// The third case of the same rule: warm for selected, ink for
+  /// pressed-on-page, white for pressed-on-ink. Both warm washes and
+  /// [pressWash] are darker or barely off the band, so neither registers there.
+  /// Deliberately far lighter than [cardWhite30] — at 30%+ this reads as a
+  /// highlight bar rather than a press.
+  static const Color pressWashOnInk = Color(0x1FFFFFFF); // white @ 12%
 
   // ── Danger alpha variants ────────────────────────────────────────────
   // Washes and hairlines behind destructive UI. These existed as hardcoded
