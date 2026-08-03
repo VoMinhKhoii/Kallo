@@ -15,9 +15,10 @@ import { getDocsTree } from '@/lib/docs/tree';
  * sibling of, so /docs is public without touching middleware.
  *
  * There is no left sidebar: the full page tree lives in the footer, and ⌘K
- * search covers jumping without scrolling to it. The right-hand "on this page"
+ * search covers jumping without scrolling to it. The left-hand "on this page"
  * rail is rendered by the page rather than here, because its contents are
- * per-document.
+ * per-document — it occupies the column a section sidebar would have, but it
+ * indexes the current document only.
  */
 interface DocsLayoutProps {
   children: React.ReactNode;
