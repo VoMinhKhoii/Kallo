@@ -880,7 +880,9 @@
       "copyright": "© {year} Kallo. All rights reserved.",
       "terms": "Terms",
       "privacyLink": "Privacy policy",
-      "security": "Security"
+      "security": "Security",
+      "resources": "Resources",
+      "docs": "Docs"
     },
     "waitlistStatus": {
       "confirmed": "You're on the list. We'll email you when your spot opens.",
@@ -1626,6 +1628,42 @@
     "trialBanner": {
       "daysRemaining": "{days} {days, plural, one {day} other {days}} left in your free trial",
       "upgrade": "Upgrade"
+    }
+  },
+  "docs": {
+    "title": "Docs",
+    "openApp": "Open app",
+    "onThisPage": "On this page",
+    "lastUpdated": "Last updated {date}",
+    "menu": {
+      "open": "Open contents",
+      "close": "Close contents",
+      "label": "Docs contents"
+    },
+    "breadcrumb": {
+      "label": "Breadcrumb",
+      "home": "Docs"
+    },
+    "pager": {
+      "previous": "Previous",
+      "next": "Next",
+      "label": "Page navigation"
+    },
+    "search": {
+      "trigger": "Search the docs",
+      "placeholder": "Search pages, sections…",
+      "empty": "No pages found.",
+      "label": "Search documentation",
+      "shortcutHint": "to search"
+    },
+    "sections": {
+      "start": "Getting started",
+      "logging": "Logging",
+      "tracking": "Tracking",
+      "circle": "Circle",
+      "account": "Account",
+      "estimates": "Understanding estimates",
+      "legal": "Legal"
     }
   }
 }
