@@ -10,10 +10,8 @@ import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../logic/format.dart';
 import '../logic/logging_spacing.dart';
 import '../logic/meal_utils.dart';
-import 'count_up.dart';
 import 'entrances.dart';
 import 'macro_trio.dart';
 import 'meal_stepper_button.dart';
@@ -185,32 +183,16 @@ class _MealEntryState extends State<MealEntry> {
                 color: NhamColors.borderFaint,
               ),
               const SizedBox(height: LoggingSpacing.section),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'logging.mealEntry.total'.tr(),
-                    style: dashBody(weight: FontWeight.w500),
-                  ),
-                  Row(
-                    children: [
-                      Text(
-                        'P: ${fmtG(totals.protein)}  C: ${fmtG(totals.carbs)}  F: ${fmtG(totals.fat)}',
-                        style: dashMeta(tabular: true),
-                      ),
-                      const SizedBox(width: NhamSpacing.sp4), // gap-4
-                      CountUpText(
-                        value: totals.calories,
-                        // Reduced motion: the reveal total lands in place.
-                        enabled:
-                            _countUp &&
-                            !MediaQuery.disableAnimationsOf(context),
-                        format: (v) => fmtKcal(v),
-                        style: dashValue(),
-                      ),
-                    ],
-                  ),
-                ],
+              // The SHARED totals row, not an interpolated `P: … C: … F: …`
+              // run. A single run sits wherever its own width puts it, so this
+              // line never lined up with the item rows it sums.
+              MealTotalsRow(
+                label: 'logging.mealEntry.total'.tr(),
+                protein: totals.protein,
+                carbs: totals.carbs,
+                fat: totals.fat,
+                calories: totals.calories,
+                countUp: _countUp,
               ),
             ],
           ),
@@ -332,6 +314,12 @@ class _ItemRow extends StatelessWidget {
           // the same width — so a card of items read as ragged. MacroTrio pins
           // each macro to a fixed cell and scales the value down inside it
           // rather than clipping.
+          //
+          // While EDITING it drops to the kcal column alone: the two steppers
+          // and the quantity readout need 112pt, and the full tail alongside
+          // them left the dish name no width at all — every name vanished and
+          // the row still overflowed its card. The kcal stays in the same
+          // column throughout, so nothing moves when the split comes back.
           Opacity(
             opacity: struck ? 0.4 : 1,
             child: MacroTrio(
@@ -339,6 +327,7 @@ class _ItemRow extends StatelessWidget {
               carbs: item.macros.carbs,
               fat: item.macros.fat,
               calories: item.macros.calories,
+              showSplit: !editing,
             ),
           ),
         ],

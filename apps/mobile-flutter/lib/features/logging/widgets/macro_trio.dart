@@ -3,25 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/format.dart';
+import 'count_up.dart';
+import 'macro_columns.dart';
 
-/// The `P: 65g  C: 0g  F: 2g   280 kcal` tail of a meal row, laid out as FIXED
-/// columns rather than a plain [Row] of variable-width text.
-///
-/// Packed left-to-right, each macro sized to its content, the columns drifted
-/// with the digits: `C:` landed at a different x on every row, so a card of
-/// ingredients read as ragged rather than as a table. Each macro now owns a
-/// fixed cell with its label pinned left and its value pinned right, so both
-/// the labels and the numbers line up down the card.
-///
-/// [dashMeta]/[dashBody] are asked for tabular figures too — same-width digits
-/// keep `1g` and `65g` from shifting anything inside their own cell.
-///
-/// EVERY value scales down inside its cell rather than clipping or ellipsizing.
-/// Fixed columns and a growable text scale are in direct conflict, and losing
-/// the text is the worst way to resolve it: a clipped `240 kcal` renders as a
-/// bare `240`, which reads as a different unit rather than as truncation, and a
-/// value that ellipsizes in one row but not the next is exactly the ragged
-/// column the fixed cells exist to prevent.
+/// The `P: 65g  C: 0g  F: 2g   280 kcal` tail of a meal row, laid out in the
+/// shared [MacroColumns] rather than as a plain [Row] of variable-width text.
 class MacroTrio extends StatelessWidget {
   const MacroTrio({
     super.key,
@@ -29,6 +15,7 @@ class MacroTrio extends StatelessWidget {
     required this.carbs,
     required this.fat,
     required this.calories,
+    this.showSplit = true,
   });
 
   final double? protein;
@@ -36,46 +23,36 @@ class MacroTrio extends StatelessWidget {
   final double? fat;
   final double? calories;
 
-  /// Fits `C: 105g` (41.1 in Be Vietnam Pro at Meta 12) — three digits, which
-  /// is what the day's totals reach. `C: 999g` at 44.9 scales down a hair
-  /// rather than getting its own width; a per-item macro never goes there.
-  static const double _cell = 40;
-
-  /// Sized for the LARGEST kcal any row shows: the totals line's
-  /// `1794 kcal` at Value 17 measures 78.7. Sizing it for the item rows
-  /// instead (64.8 at Body 14) would force the total to scale down to their
-  /// size, and the total is meant to carry more weight than its parts.
+  /// False drops the P/C/F block and keeps only the kcal column, which stays at
+  /// the same x — so a row can give that 136pt to something else without its
+  /// calories moving.
   ///
-  /// Shared with [MealTotalsRow] and the `/` picker's options, so a kcal figure
-  /// sits at the same x whether you are choosing a dish, reading one back, or
-  /// looking at the day's total.
-  static const double kcalColumn = 80;
+  /// For the meal card's EDIT mode: two 36pt steppers and a quantity readout
+  /// need 112pt, and the full tail plus those controls exceeds the card's width
+  /// on every phone — the dish name was squeezed to nothing and the row still
+  /// overflowed. While you are editing, the number that answers "what did that
+  /// change?" is the kcal, and the split comes back on Done.
+  final bool showSplit;
+
+  /// Shared with the `/` picker's options, so a kcal figure sits at the same x
+  /// whether you are choosing a dish, reading one back, or looking at a total.
+  static const double kcalColumn = MacroColumns.kcal;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _Cell(label: 'P:', value: fmtG(protein)),
-        const SizedBox(width: NhamSpacing.sp1),
-        _Cell(label: 'C:', value: fmtG(carbs)),
-        const SizedBox(width: NhamSpacing.sp1),
-        _Cell(label: 'F:', value: fmtG(fat)),
-        const SizedBox(width: NhamSpacing.sp2),
-        SizedBox(
-          width: kcalColumn,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text(
-                fmtKcal(calories),
-                maxLines: 1,
-                softWrap: false,
-                style: dashBody(weight: FontWeight.w500, tabular: true),
-              ),
-            ),
+        if (showSplit) ...[
+          MacroSplit(protein: protein, carbs: carbs, fat: fat),
+          const SizedBox(width: MacroColumns.gap),
+        ],
+        MacroKcal(
+          child: Text(
+            fmtKcal(calories),
+            maxLines: 1,
+            softWrap: false,
+            style: dashBody(weight: FontWeight.w500, tabular: true),
           ),
         ),
       ],
@@ -90,8 +67,7 @@ class MacroTrio extends StatelessWidget {
 /// run, because a single run sits wherever its own width puts it — so the
 /// totals never lined up with the item rows they sum. Its kcal keeps Value 17
 /// against the rows' Body 14: the total should read heavier than its parts,
-/// which is why [MacroTrio.kcalColumn] is sized for this line and not for
-/// them.
+/// which is why [MacroColumns.kcal] is sized for this line and not for them.
 class MealTotalsRow extends StatelessWidget {
   const MealTotalsRow({
     super.key,
@@ -100,6 +76,7 @@ class MealTotalsRow extends StatelessWidget {
     required this.carbs,
     required this.fat,
     required this.calories,
+    this.countUp = false,
   });
 
   final String label;
@@ -108,8 +85,15 @@ class MealTotalsRow extends StatelessWidget {
   final double? fat;
   final double? calories;
 
+  /// Count the total up from zero on first build — the streaming reveal's
+  /// settling beat. Ignored when the platform asks for reduced motion.
+  final bool countUp;
+
   @override
   Widget build(BuildContext context) {
+    final kcal = calories;
+    final animate =
+        countUp && kcal != null && !MediaQuery.disableAnimationsOf(context);
     return Row(
       children: [
         Expanded(
@@ -121,72 +105,24 @@ class MealTotalsRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: NhamSpacing.sp3),
-        // The SAME cells the item rows use, not an interpolated string. A
-        // single `P: 67g  C: 105g  F: 16g` run sits wherever its own width puts
-        // it, so the totals never lined up with the rows they sum. Sharing the
-        // geometry makes the column true down the whole card.
-        _Cell(label: 'P:', value: fmtG(protein)),
-        const SizedBox(width: NhamSpacing.sp1),
-        _Cell(label: 'C:', value: fmtG(carbs)),
-        const SizedBox(width: NhamSpacing.sp1),
-        _Cell(label: 'F:', value: fmtG(fat)),
-        const SizedBox(width: NhamSpacing.sp2),
-        SizedBox(
-          width: MacroTrio.kcalColumn,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text(
-                fmtKcal(calories),
-                maxLines: 1,
-                softWrap: false,
-                style: dashValue(),
-              ),
-            ),
-          ),
+        MacroSplit(protein: protein, carbs: carbs, fat: fat),
+        const SizedBox(width: MacroColumns.gap),
+        MacroKcal(
+          child:
+              animate
+                  ? CountUpText(
+                    value: kcal,
+                    format: fmtKcal,
+                    style: dashValue(),
+                  )
+                  : Text(
+                    fmtKcal(kcal),
+                    maxLines: 1,
+                    softWrap: false,
+                    style: dashValue(),
+                  ),
         ),
       ],
-    );
-  }
-}
-
-class _Cell extends StatelessWidget {
-  const _Cell({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = dashMeta(tabular: true);
-    return SizedBox(
-      width: MacroTrio._cell,
-      child: Row(
-        children: [
-          // The label scales with the value so `C:` can never crowd out the
-          // number it belongs to — both shrink together, and the pair stays
-          // pinned to the cell's two edges.
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(label, maxLines: 1, softWrap: false, style: style),
-            ),
-          ),
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: Text(value, maxLines: 1, softWrap: false, style: style),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
