@@ -8,9 +8,7 @@ import type { HeroTone } from './tone';
 /**
  * The lab's header: wordmark, the light/dark switch, and a Get started that
  * actually opens the auth dialog rather than sitting there as decoration.
- *
- * Separate from `landing-lab/header.tsx` because this one needs AuthProvider
- * above it, and the globe lab has none — mounting this there would throw.
+ * Requires AuthProvider above it.
  */
 export function HeroHeader({
   tone,

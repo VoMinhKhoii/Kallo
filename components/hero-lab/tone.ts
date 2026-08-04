@@ -1,5 +1,3 @@
-import type { LabTone } from '@/components/landing-lab/command-bar';
-
 /**
  * The two grounds the hero lab is explored on. `cream` is the brand default
  * (#f9f9f7 paper); `espresso` is the dark fork, hardcoded rather than routed
@@ -46,11 +44,6 @@ export const HERO_TONE = {
     veil: 'radial-gradient(62% 56% at 50% 44%, color-mix(in srgb, var(--hero-ground) 94%, transparent) 0%, color-mix(in srgb, var(--hero-ground) 70%, transparent) 44%, transparent 80%)',
   },
 } as const;
-
-/** The lab components (header, command bar, derivation card) speak light/dark. */
-export function labTone(tone: HeroTone): LabTone {
-  return tone === 'espresso' ? 'dark' : 'light';
-}
 
 /** The one easing curve every hero-lab motion uses — heavy, decelerating. */
 export const HERO_EASE = [0.32, 0.72, 0, 1] as const;

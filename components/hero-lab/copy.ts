@@ -1,9 +1,8 @@
 /**
  * Copy for the hero lab.
  *
- * Kept separate from `components/landing-lab/copy.ts` so this surface can move
- * without dragging the retiring globe lab with it. Still hardcoded English —
- * it moves into `messages/{en,vi}.json` when a direction is chosen.
+ * Still hardcoded English — it moves into `messages/{en,vi}.json` when a
+ * direction is chosen and this stops being a lab surface.
  */
 export const HERO_COPY = {
   /** Split so `describe` and `derive` can be underlined without the punctuation. */
