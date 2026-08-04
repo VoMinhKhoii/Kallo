@@ -18,7 +18,14 @@ export function DerivationCard({
   demo: LabDemo;
   tone?: LabTone;
 }) {
-  const mutedText = tone === 'dark' ? 'text-[#B8A88E]' : 'text-nham-text-muted';
+  const dark = tone === 'dark';
+  const mutedText = dark ? 'text-[#B8A88E]' : 'text-nham-text-muted';
+  const cardShell = dark
+    ? 'border-white/10 bg-[#241E15] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.7)]'
+    : 'border-nham-border/60 bg-white shadow-[0_20px_50px_-20px_rgba(44,36,22,0.18)]';
+  const hairline = dark ? 'border-white/10' : 'border-nham-hover';
+  const rowText = dark ? 'text-[#D6C9B4]' : 'text-nham-text-soft';
+  const strongText = dark ? 'text-nham-surface' : 'text-nham-text';
 
   return (
     <div className="mx-auto flex min-h-[300px] w-full max-w-xl flex-col items-center gap-4">
@@ -59,8 +66,10 @@ export function DerivationCard({
           }
           className="w-full"
         >
-          <div className="rounded-2xl border border-nham-border/60 bg-white p-5 text-left shadow-[0_20px_50px_-20px_rgba(44,36,22,0.18)]">
-            <div className="mb-3 flex items-center justify-between border-nham-hover border-b pb-3">
+          <div className={`rounded-2xl border p-5 text-left ${cardShell}`}>
+            <div
+              className={`mb-3 flex items-center justify-between border-b pb-3 ${hairline}`}
+            >
               <div className="flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-nham-ink">
                   <Sparkles className="h-2.5 w-2.5 text-nham-accent" />
@@ -84,20 +93,28 @@ export function DerivationCard({
                   }
                   className="flex items-center justify-between gap-3 text-sm"
                 >
-                  <span className="min-w-0 truncate text-nham-text-soft">
+                  <span className={`min-w-0 truncate ${rowText}`}>
                     {row.name}
                   </span>
-                  <span className="shrink-0 font-mono font-semibold text-nham-text tabular-nums">
+                  <span
+                    className={`shrink-0 font-mono font-semibold tabular-nums ${strongText}`}
+                  >
                     {row.cal}
                   </span>
                 </motion.div>
               ))}
 
-              <div className="mt-1 flex items-baseline justify-between border-nham-hover border-t pt-3">
-                <span className="font-serif text-nham-text text-sm">
+              <div
+                className={`mt-1 flex items-baseline justify-between border-t pt-3 ${hairline}`}
+              >
+                <span className={`font-serif text-sm ${strongText}`}>
                   {LAB_COPY.demo.total}
                 </span>
-                <span className="font-mono font-semibold text-[#A9834E] text-lg tabular-nums">
+                <span
+                  className={`font-mono font-semibold text-lg tabular-nums ${
+                    dark ? 'text-nham-accent' : 'text-[#A9834E]'
+                  }`}
+                >
                   {demo.fixture.totalRange}
                   <span className="ml-1 font-sans text-nham-text-muted text-xs">
                     {LAB_COPY.demo.unit}
@@ -107,7 +124,11 @@ export function DerivationCard({
 
               <button
                 type="button"
-                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-nham-ink py-2.5 font-medium text-nham-surface text-xs transition-transform active:scale-[0.98]"
+                className={`mt-2 flex w-full items-center justify-center gap-1.5 rounded-full py-2.5 font-medium text-xs transition-transform active:scale-[0.98] ${
+                  dark
+                    ? 'bg-nham-accent text-[#1C1810]'
+                    : 'bg-nham-ink text-nham-surface'
+                }`}
               >
                 {LAB_COPY.demo.save}
               </button>

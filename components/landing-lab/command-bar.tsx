@@ -12,8 +12,18 @@ export type LabTone = 'light' | 'dark';
  * During autoplay it displays the typed text; once interactive it is a
  * real form driving the same canned derivation.
  */
-export function CommandBar({ demo }: { demo: LabDemo }) {
+export function CommandBar({
+  demo,
+  tone = 'light',
+}: {
+  demo: LabDemo;
+  tone?: LabTone;
+}) {
   const busy = demo.isAnalyzing || demo.phase === 'typing';
+  const shellClass =
+    tone === 'dark'
+      ? 'border-white/12 bg-white/[0.06] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)]'
+      : 'border-nham-border bg-white shadow-[0_20px_50px_-20px_rgba(105,94,78,0.35)]';
 
   return (
     <form
@@ -21,7 +31,7 @@ export function CommandBar({ demo }: { demo: LabDemo }) {
         event.preventDefault();
         demo.submitText(demo.inputValue);
       }}
-      className="mx-auto flex h-14 w-full max-w-2xl items-center gap-3 rounded-full border border-nham-border bg-white py-2 pr-2 pl-5 shadow-[0_20px_50px_-20px_rgba(105,94,78,0.35)] transition-colors focus-within:border-nham-accent focus-within:ring-[3px] focus-within:ring-nham-accent/25 sm:h-16 sm:pl-6"
+      className={`mx-auto flex h-14 w-full max-w-2xl items-center gap-3 rounded-full border py-2 pr-2 pl-5 transition-colors focus-within:border-nham-accent focus-within:ring-[3px] focus-within:ring-nham-accent/25 sm:h-16 sm:pl-6 ${shellClass}`}
     >
       <Sparkles
         aria-hidden
@@ -35,10 +45,16 @@ export function CommandBar({ demo }: { demo: LabDemo }) {
           disabled={busy}
           placeholder={LAB_COPY.demo.placeholder}
           aria-label={LAB_COPY.demo.placeholder}
-          className="min-w-0 flex-1 bg-transparent text-base text-nham-text outline-none placeholder:text-[#B0A695] disabled:cursor-default sm:text-lg"
+          className={`min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-[#B0A695] disabled:cursor-default sm:text-lg ${
+            tone === 'dark' ? 'text-nham-surface' : 'text-nham-text'
+          }`}
         />
       ) : (
-        <div className="min-w-0 flex-1 truncate text-left font-serif text-base text-nham-text sm:text-lg">
+        <div
+          className={`min-w-0 flex-1 truncate text-left font-serif text-base sm:text-lg ${
+            tone === 'dark' ? 'text-nham-surface' : 'text-nham-text'
+          }`}
+        >
           {demo.typedText}
           {demo.phase === 'typing' && (
             <span className="ml-0.5 inline-block h-5 w-0.5 animate-pulse bg-nham-accent align-middle" />
