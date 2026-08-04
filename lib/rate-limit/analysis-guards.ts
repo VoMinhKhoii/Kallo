@@ -6,6 +6,7 @@ import {
   decrementInFlightCounter,
   incrementInFlightCounter,
   incrementWindowCounter,
+  incrementWindowCounters,
   resetStaleInFlightCounter,
 } from './analysis-guard-counters';
 import {
@@ -216,14 +217,32 @@ export async function checkAnalysisGuards(
 
   try {
     await guardDb.transaction(async (tx) => {
-      for (const windowGuard of userWindowGuards) {
-        const windowStart = getAnalysisWindowStart(now, windowGuard.windowKind);
-        const count = await incrementWindowCounter(tx, {
+      // One statement for all three windows, then check them in the SAME order
+      // as before — the reason and Retry-After a caller sees must still be the
+      // first window it exceeded, not whichever row Postgres returned first.
+      //
+      // Checking after incrementing all three is not a behaviour change: this
+      // runs inside a transaction, and throwing rolls every increment back, so
+      // a blocked request has never left a counter raised.
+      const windowStarts = new Map(
+        userWindowGuards.map((guard) => [
+          guard.windowKind,
+          getAnalysisWindowStart(now, guard.windowKind),
+        ])
+      );
+      const counts = await incrementWindowCounters(
+        tx,
+        userWindowGuards.map((guard) => ({
           ...guardKey,
-          windowKind: windowGuard.windowKind,
-          windowStart,
+          windowKind: guard.windowKind,
+          windowStart: windowStarts.get(guard.windowKind) as Date,
           now,
-        });
+        }))
+      );
+
+      for (const windowGuard of userWindowGuards) {
+        const windowStart = windowStarts.get(windowGuard.windowKind) as Date;
+        const count = counts.get(windowGuard.windowKind) ?? 0;
 
         if (count > limits[windowGuard.limitKey]) {
           throw new AnalysisGuardBlockedError(

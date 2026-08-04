@@ -4,7 +4,11 @@ import {
   resolveRelogDishes,
   type SourceItemRow,
 } from '@/lib/actions/meals/relog/expand-refs';
-import { RELOG_MAX_DISHES, type RelogRef } from '@/lib/logging/relog/relog';
+import {
+  RELOG_MAX_DISHES,
+  RELOG_MAX_ROWS,
+  type RelogRef,
+} from '@/lib/logging/relog/relog';
 
 const MEAL_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const MEAL_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -144,6 +148,37 @@ describe('resolveRelogDishes', () => {
     expect(resolveRelogDishes([mealRef(MEAL_A)], many)).toHaveLength(
       RELOG_MAX_DISHES
     );
+  });
+
+  it('throws past the ROW cap even when the dish cap is satisfied', () => {
+    // The dish cap counts groups. A handful of ingredient-heavy dishes clears
+    // it easily and would still be a several-hundred-row insert inside one
+    // FOR UPDATE transaction.
+    const perDish = Math.ceil(RELOG_MAX_ROWS / RELOG_MAX_DISHES) + 2;
+    const fat: Row[] = [];
+    for (let dish = 0; dish < RELOG_MAX_DISHES; dish++) {
+      for (let ing = 0; ing < perDish; ing++) {
+        fat.push(row(MEAL_A, dish, `Món ${dish}`, `nguyên liệu ${ing}`));
+      }
+    }
+    const refs = Array.from({ length: RELOG_MAX_DISHES }, (_, i) =>
+      dishRef(MEAL_A, i)
+    );
+
+    expect(refs.length).toBeLessThanOrEqual(RELOG_MAX_DISHES);
+    expect(fat.length).toBeGreaterThan(RELOG_MAX_ROWS);
+    expect(() => resolveRelogDishes(refs, fat)).toThrow(RelogResolutionError);
+  });
+
+  it('allows a realistic meal well inside both caps', () => {
+    // 6 dishes × 8 ingredients — a large but ordinary Vietnamese meal.
+    const real: Row[] = [];
+    for (let dish = 0; dish < 6; dish++) {
+      for (let ing = 0; ing < 8; ing++) {
+        real.push(row(MEAL_A, dish, `Món ${dish}`, `nguyên liệu ${ing}`));
+      }
+    }
+    expect(resolveRelogDishes([mealRef(MEAL_A)], real)).toHaveLength(6);
   });
 
   it('throws on an empty ref list rather than writing an item-less meal', () => {

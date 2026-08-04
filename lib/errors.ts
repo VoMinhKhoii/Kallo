@@ -28,6 +28,21 @@ export class AppError extends Error {
   }
 }
 
+/**
+ * A 429 that knows how long to wait. Extends AppError so every existing
+ * `isAppError` / `serializeError` path keeps working unchanged; the extra field
+ * only adds the `Retry-After` header when a caller supplied one.
+ */
+export class RateLimitedError extends AppError {
+  constructor(
+    userMessage: string,
+    public readonly retryAfterSeconds?: number
+  ) {
+    super('RATE_LIMITED', 429, true, userMessage);
+    this.name = 'RateLimitedError';
+  }
+}
+
 // FeatureLockedError — a 402 with the extra `feature` + `reason` fields the
 // client keys on to open the paywall. Extends AppError so serializeError and
 // the isAppError guard keep working; overrides toJSON to add the two fields.
@@ -70,7 +85,17 @@ export function isAppError(e: unknown): e is AppError {
  */
 export function serializeError(e: unknown): NextResponse {
   if (isAppError(e)) {
-    return NextResponse.json(e.toJSON(), { status: e.status });
+    return NextResponse.json(e.toJSON(), {
+      status: e.status,
+      // A 429 without `Retry-After` tells the client to back off but not for how
+      // long, so it guesses — and a client that guesses low re-enters the limit
+      // immediately. Carried on the error rather than added by each route so a
+      // throttle stays correct wherever it is thrown from, including a Server
+      // Action that never touches a Response.
+      ...(e instanceof RateLimitedError && e.retryAfterSeconds != null
+        ? { headers: { 'Retry-After': String(e.retryAfterSeconds) } }
+        : {}),
+    });
   }
   const fallback = Errors.internal(e);
   return NextResponse.json(fallback.toJSON(), { status: fallback.status });
@@ -130,12 +155,10 @@ export const Errors = {
 
   conflict: (detail: string) => new AppError('CONFLICT', 409, false, detail),
 
-  rateLimited: (message?: string) =>
-    new AppError(
-      'RATE_LIMITED',
-      429,
-      true,
-      message ?? DEFAULT_MESSAGES.rateLimited
+  rateLimited: (message?: string, retryAfterSeconds?: number) =>
+    new RateLimitedError(
+      message ?? DEFAULT_MESSAGES.rateLimited,
+      retryAfterSeconds
     ),
 
   featureLocked: (
