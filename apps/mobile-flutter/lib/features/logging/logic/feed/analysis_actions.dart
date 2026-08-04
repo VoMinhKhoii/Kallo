@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/api_client.dart';
 import '../../../../models/cheat.dart';
+import '../../../../models/relog.dart';
 import '../../../../models/streaming.dart';
 import '../../data/logging_keys.dart';
 import '../../data/logging_providers.dart';
@@ -14,6 +15,13 @@ import '../../data/stream_analysis_controller.dart';
 /// of a failed attempt, and a cheat-clarify resubmit — they differ only in the
 /// [attemptId] they carry and whether an answer to a clarifying question rides
 /// along.
+///
+/// [refs] carries relog picks made alongside free text. The server analyzes
+/// [message] alone and merges the picks deterministically afterwards, so a
+/// relogged dish is copied verbatim rather than re-estimated. Relog is
+/// normal-mode only — the server REJECTS cheat+refs rather than silently
+/// dropping the picks — so they are dropped here when [isCheat] is set, which
+/// keeps a stale draft from turning a cheat estimate into a 400.
 void startMealAnalysis(
   WidgetRef ref, {
   required String message,
@@ -22,6 +30,7 @@ void startMealAnalysis(
   required CheatIntensity cheatIntensity,
   String? clarifyAnswer,
   String? attemptId,
+  List<RelogRef>? refs,
 }) {
   ref
       .read(streamAnalysisProvider.notifier)
@@ -34,6 +43,7 @@ void startMealAnalysis(
           cheatIntensity: isCheat ? cheatIntensity.name : null,
           clarifyAnswer: clarifyAnswer,
           attemptId: attemptId,
+          refs: isCheat ? null : refs,
         ),
       );
 }

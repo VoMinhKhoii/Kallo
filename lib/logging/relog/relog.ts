@@ -17,6 +17,12 @@ export const RELOG_SEARCH_LIMIT = 8;
 /** Cap on dishes in one relog write, applied AFTER meal refs expand. 20 staged
  *  meals of 15 dishes each would otherwise be one 300-dish insert. */
 export const RELOG_MAX_DISHES = 30;
+/** Cap on INGREDIENT ROWS in one relog write. [RELOG_MAX_DISHES] counts groups
+ *  (rows sharing `meal_item_order`), but the writer inserts one row per
+ *  ingredient — so a few ingredient-heavy meals can satisfy the dish cap and
+ *  still be a several-hundred-row insert. Sized well above any real meal:
+ *  30 dishes of 10 ingredients is already far past what a person logs. */
+export const RELOG_MAX_ROWS = 300;
 /** Max staged entries before expansion — mirrors the Zod contract. */
 export const RELOG_MAX_STAGED = 20;
 
