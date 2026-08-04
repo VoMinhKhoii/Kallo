@@ -19,7 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Pinned to the version in package.json. Left unpinned, setup-biome
+      # finds no version in bun.lock and installs latest, which promotes
+      # nursery rules and fails the job on untouched files.
       - uses: biomejs/setup-biome@v2
+        with:
+          version: 2.4.2
       - run: biome ci .
       - name: File size ratchet
         run: node scripts/check-file-sizes.mjs
