@@ -3,9 +3,9 @@
 import { motion, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { CommandBar, DemoChips } from '@/components/landing-lab/command-bar';
-import { LAB_COPY } from '@/components/landing-lab/copy';
 import { DerivationCard } from '@/components/landing-lab/derivation-card';
 import { type LabDemo, useLabDemo } from '@/hooks/landing-lab/use-demo';
+import { HERO_COPY } from './copy';
 import { HERO_EASE, HERO_TONE, type HeroTone, labTone } from './tone';
 
 interface HeroShellProps {
@@ -64,30 +64,25 @@ export function HeroShell({
           band ? 'pb-44 sm:pb-48' : insetBottom ? 'pb-24' : 'pb-16'
         }`}
       >
-        <motion.span
-          {...rise(0)}
-          className={`eyebrow inline-flex items-center rounded-full border px-3 py-1 ${t.eyebrowShell} ${t.eyebrowText}`}
-        >
-          {LAB_COPY.badge}
-        </motion.span>
-
         <motion.h1
-          {...rise(1)}
-          className={`mt-7 font-serif text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.03] tracking-[-0.03em] ${t.ink}`}
+          {...rise(0)}
+          className={`font-bold font-serif text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.03] tracking-[-0.03em] ${t.ink}`}
         >
-          {LAB_COPY.title}
+          {HERO_COPY.title}
           <br />
-          <span className="italic-accent">{LAB_COPY.titleHighlight}</span>
+          <span className={`font-light italic ${t.headlineSoft}`}>
+            {HERO_COPY.titleHighlight}
+          </span>
         </motion.h1>
 
         <motion.p
-          {...rise(2)}
+          {...rise(1)}
           className={`mt-5 max-w-2xl text-pretty text-base leading-[1.6] ${t.body}`}
         >
-          {LAB_COPY.subtitle}
+          {HERO_COPY.subtitle}
         </motion.p>
 
-        <motion.div {...rise(3)} className="mt-8 w-full">
+        <motion.div {...rise(2)} className="mt-8 w-full">
           <CommandBar demo={demo} tone={lab} />
         </motion.div>
 
@@ -101,8 +96,8 @@ export function HeroShell({
           <DerivationCard demo={demo} tone={lab} />
         </div>
 
-        <motion.p {...rise(6)} className={`mt-2 text-xs sm:text-sm ${t.faint}`}>
-          {LAB_COPY.beta}
+        <motion.p {...rise(4)} className={`mt-2 text-xs sm:text-sm ${t.faint}`}>
+          {HERO_COPY.beta}
         </motion.p>
       </div>
 

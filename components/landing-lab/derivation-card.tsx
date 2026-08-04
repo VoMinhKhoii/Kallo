@@ -112,7 +112,7 @@ export function DerivationCard({
                 </span>
                 <span
                   className={`font-mono font-semibold text-lg tabular-nums ${
-                    dark ? 'text-nham-accent' : 'text-[#A9834E]'
+                    dark ? 'text-nham-surface' : 'text-nham-text'
                   }`}
                 >
                   {demo.fixture.totalRange}

@@ -1,11 +1,9 @@
 'use client';
 
 import { motion, useReducedMotion } from 'motion/react';
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { CommandBar } from '@/components/landing-lab/command-bar';
-import { LAB_COPY } from '@/components/landing-lab/copy';
-import { useLabDemo } from '@/hooks/landing-lab/use-demo';
+import { WaitlistForm } from '@/components/landing-page/waitlist/waitlist-form';
+import { HERO_COPY } from './copy';
 import { LoggedMealCard } from './logged-meal-card';
 import { HERO_MEALS } from './logged-meals';
 import { HERO_EASE, HERO_TONE, type HeroTone } from './tone';
@@ -33,13 +31,13 @@ const RESTING = [
 ];
 
 /**
- * The meal-card hero: the app's real logged-meal cards, and the room behind
- * them changing.
+ * The meal-card hero: the app's real logged-meal cards, each holding a
+ * painting of its own meal.
  *
- * At rest the page is quiet and the cards are exactly what the logging feed
- * shows — a sentence, a time, a macro line, a calorie total. Hovering one
- * floods the whole page with a painting of that meal. Nothing decorative
- * appears until you ask for it.
+ * At rest the cards are exactly what the logging feed shows — a sentence, a
+ * time, the derived rows, a calorie total — on plain card stock. Hovering one
+ * brings that meal's painting up inside the card and dims its neighbours. The
+ * page itself stays put; the change is local to the card you're looking at.
  *
  * The four meals are chosen to answer both halves of the audience in one
  * glance: two eyeballed in plain language, two weighed to the gram.
@@ -52,7 +50,6 @@ export function MealCardHero({
   /** Reserve room under the copy for the lab's switch bar. */
   insetBottom?: boolean;
 }) {
-  const demo = useLabDemo();
   const reduced = useReducedMotion() ?? false;
   const [activeId, setActiveId] = useState<string | null>(null);
   const t = HERO_TONE[tone];
@@ -115,28 +112,6 @@ export function MealCardHero({
           />
         ))}
 
-        {HERO_MEALS.map((meal) => (
-          <motion.div
-            key={meal.id}
-            className="absolute inset-0"
-            style={{ mixBlendMode: dark ? 'screen' : 'multiply' }}
-            initial={false}
-            animate={{
-              opacity: activeId === meal.id ? (dark ? 0.72 : 0.6) : 0,
-              scale: activeId === meal.id ? 1 : 1.07,
-            }}
-            transition={{ duration: reduced ? 0 : 0.9, ease: HERO_EASE }}
-          >
-            <Image
-              src={dark ? meal.art.dark : meal.art.cream}
-              alt=""
-              fill
-              sizes="100vw"
-              className="object-cover"
-            />
-          </motion.div>
-        ))}
-
         <div className="absolute inset-0" style={{ background: t.veil }} />
       </div>
 
@@ -145,35 +120,30 @@ export function MealCardHero({
           insetBottom ? 'pb-24' : 'pb-10'
         }`}
       >
-        <motion.span
-          {...rise(0)}
-          className={`eyebrow inline-flex items-center rounded-full border px-3 py-1 ${t.eyebrowShell} ${t.eyebrowText}`}
-        >
-          {LAB_COPY.badge}
-        </motion.span>
-
         <motion.h1
-          {...rise(1)}
-          className={`mt-6 font-serif text-[clamp(2.375rem,5.4vw,4rem)] leading-[1.03] tracking-[-0.03em] ${t.ink}`}
+          {...rise(0)}
+          className={`font-bold font-serif text-[clamp(2.375rem,5.4vw,4rem)] leading-[1.03] tracking-[-0.03em] ${t.ink}`}
         >
-          {LAB_COPY.title}
+          {HERO_COPY.title}
           <br />
-          <span className="italic-accent">{LAB_COPY.titleHighlight}</span>
+          <span className={`font-light italic ${t.headlineSoft}`}>
+            {HERO_COPY.titleHighlight}
+          </span>
         </motion.h1>
 
         <motion.p
-          {...rise(2)}
+          {...rise(1)}
           className={`mt-5 max-w-2xl text-pretty text-base leading-[1.6] ${t.body}`}
         >
-          {LAB_COPY.subtitle}
+          {HERO_COPY.subtitle}
         </motion.p>
 
-        <motion.div {...rise(3)} className="mt-8 w-full max-w-2xl">
-          <CommandBar demo={demo} tone={dark ? 'dark' : 'light'} />
+        <motion.div {...rise(2)} className="mt-8 w-full max-w-xl">
+          <WaitlistForm />
         </motion.div>
 
         <motion.div
-          {...rise(4)}
+          {...rise(3)}
           className="mt-9 grid w-full grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-2 lg:grid-cols-4"
         >
           {HERO_MEALS.map((meal) => (
@@ -184,23 +154,17 @@ export function MealCardHero({
               active={activeId === meal.id}
               dimmed={activeId !== null && activeId !== meal.id}
               onFocusMeal={() => setActiveId(meal.id)}
-              onSelectMeal={() => {
-                setActiveId(meal.id);
-                demo.submitText(meal.rawInput);
-              }}
+              onSelectMeal={() => setActiveId(meal.id)}
             />
           ))}
         </motion.div>
 
         <motion.div
-          {...rise(5)}
+          {...rise(4)}
           className={`mt-7 space-y-1 text-xs ${t.faint}`}
         >
-          <p>
-            Eyeballed or weighed to the gram — both go in the same way. Hover a
-            meal to see it.
-          </p>
-          <p>{LAB_COPY.beta}</p>
+          <p>{HERO_COPY.cardsHint}</p>
+          <p>{HERO_COPY.beta}</p>
         </motion.div>
       </div>
     </section>

@@ -17,6 +17,9 @@ export const HERO_TONE = {
     eyebrowShell: 'border-nham-border bg-white/70',
     eyebrowText: 'text-nham-text-muted',
     hairline: 'bg-nham-border',
+    /** Second clause of the headline. Grey, not the brand's tan — the lab is
+        deliberately monochrome, see the note in hero-shell. */
+    headlineSoft: 'text-nham-text-muted',
     veil: 'radial-gradient(62% 56% at 50% 44%, rgba(249,249,247,0.95) 0%, rgba(249,249,247,0.72) 44%, rgba(249,249,247,0) 80%)',
   },
   espresso: {
@@ -27,6 +30,7 @@ export const HERO_TONE = {
     eyebrowShell: 'border-white/12 bg-white/[0.06]',
     eyebrowText: 'text-[#B8A88E]',
     hairline: 'bg-white/10',
+    headlineSoft: 'text-nham-surface/55',
     veil: 'radial-gradient(62% 56% at 50% 44%, rgba(28,24,16,0.92) 0%, rgba(28,24,16,0.66) 44%, rgba(28,24,16,0) 80%)',
   },
   /**
@@ -43,6 +47,7 @@ export const HERO_TONE = {
       'border-[color:var(--hero-hairline)] bg-[color:var(--hero-ground)]',
     eyebrowText: 'text-[color:var(--hero-faint)]',
     hairline: 'bg-[color:var(--hero-hairline)]',
+    headlineSoft: 'text-[color:var(--hero-faint)]',
     veil: 'radial-gradient(62% 56% at 50% 44%, color-mix(in srgb, var(--hero-ground) 94%, transparent) 0%, color-mix(in srgb, var(--hero-ground) 70%, transparent) 44%, transparent 80%)',
   },
 } as const;

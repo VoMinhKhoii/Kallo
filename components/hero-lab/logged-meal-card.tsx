@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import {
   formatCaloriesValue,
   formatMacroValue,
@@ -70,12 +71,38 @@ export function LoggedMealCard({
       <button
         type="button"
         onClick={onSelectMeal}
-        className={`flex w-full flex-1 flex-col rounded-2xl border p-4 text-left transition-shadow focus-visible:outline-none ${
+        className={`relative isolate flex w-full flex-1 flex-col overflow-hidden rounded-2xl border p-4 text-left transition-shadow focus-visible:outline-none ${
           dark
             ? 'border-white/12 bg-[#241E15] shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)]'
             : `border-nham-border/60 bg-white ${active ? 'shadow-md' : 'shadow-sm'}`
         }`}
       >
+        {/* The meal's painting, revealed inside the card on hover. It sits
+            below the content in the stacking context, under a veil in the
+            card's own surface colour so the numbers stay readable on top. */}
+        <Image
+          src={dark ? meal.art.dark : meal.art.cream}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 20rem, (min-width: 640px) 45vw, 90vw"
+          style={{ opacity: active ? 1 : 0 }}
+          className={`-z-10 object-cover transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            active ? 'scale-105' : 'scale-100'
+          }`}
+        />
+        <span
+          aria-hidden
+          className="absolute inset-0 -z-10 transition-opacity duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]"
+          style={{
+            opacity: active ? 1 : 0,
+            // Heaviest at the bottom, where the totals row sits; lightest at
+            // the top, where the serif line has the paint mostly to itself.
+            background: dark
+              ? 'linear-gradient(to top, rgba(28,24,16,0.82) 0%, rgba(28,24,16,0.5) 55%, rgba(28,24,16,0.32) 100%)'
+              : 'linear-gradient(to top, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.46) 55%, rgba(255,255,255,0.3) 100%)',
+          }}
+        />
+
         <span
           className={`block font-serif text-[15px] leading-relaxed ${strong}`}
         >

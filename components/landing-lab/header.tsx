@@ -1,5 +1,6 @@
 'use client';
 
+import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import type { LabTone } from './command-bar';
 import { LAB_COPY } from './copy';
 
@@ -19,19 +20,17 @@ export function LabHeader({ tone = 'light' }: { tone?: LabTone }) {
       }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <div
-          className={`font-medium font-serif text-2xl ${
-            dark ? 'text-nham-surface' : 'text-nham-text'
-          }`}
-        >
-          Kallo<span className="text-nham-accent">.</span>
-        </div>
+        {/* Real brand wordmark at the same size the docs header uses, rather
+            than typing "Kallo" in the body serif. */}
+        <KalloWordmark
+          className={`h-6 w-auto ${dark ? 'text-nham-surface' : 'text-nham-text'}`}
+        />
 
         <button
           type="button"
           className={`rounded-xl px-4 py-2 font-medium font-sans-display text-sm transition-transform hover:-translate-y-0.5 ${
             dark
-              ? 'bg-nham-accent text-nham-text'
+              ? 'bg-nham-surface text-nham-text'
               : 'bg-nham-ink text-nham-surface'
           }`}
         >
