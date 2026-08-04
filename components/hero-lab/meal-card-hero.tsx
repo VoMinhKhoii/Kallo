@@ -108,7 +108,7 @@ export function MealCardHero({ tone }: { tone: HeroTone }) {
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-4 pt-24 pb-16 text-center sm:px-6">
         {/* On a phone the promise owns the first screen; the cards are what
             scrolling is for. On lg everything sits in one viewport again. */}
-        <div className="flex min-h-[calc(100dvh-9rem)] flex-col items-center justify-center">
+        <div className="flex min-h-[calc(100dvh-13rem)] flex-col items-center justify-center md:min-h-0">
           <motion.div {...rise(0)}>
             <HeroHeadline ink={t.ink} />
           </motion.div>
@@ -127,7 +127,7 @@ export function MealCardHero({ tone }: { tone: HeroTone }) {
 
         <motion.div
           {...rise(3)}
-          className="mx-auto mt-16 grid w-full max-w-5xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2"
+          className="mx-auto mt-10 grid w-full max-w-7xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 md:mt-12 lg:grid-cols-4"
         >
           {HERO_MEALS.map((meal) => (
             <LoggedMealCard

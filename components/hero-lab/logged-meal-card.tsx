@@ -49,36 +49,24 @@ export function LoggedMealCard({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const totals = mealTotals(meal);
 
-  // The artwork is inverted against its ground — cream gets the chiaroscuro
-  // painting, espresso the light one — so at full strength the card flips tone
-  // and the ink has to flip with it, or it lands on its own value and goes
-  // invisible. Running the paint high is the point: dialled back, only a dark
-  // painting's darkest mass survives on white and you see the dish alone.
-  const lightText = dark ? !active : active;
+  // Hovered, the type is always light: on cream the chiaroscuro painting runs
+  // at full strength and turns the card dark, and on espresso the light
+  // painting is held back far enough that the card stays dark. Two routes to
+  // the same place, which is why nothing has to be laid over the text.
+  const lightText = active ? true : dark;
   const strong = lightText ? 'text-nham-surface' : 'text-nham-text';
-  // The muted line steps up on the artwork; at 10px the resting grey is the
-  // first thing to dissolve into the paint.
   const muted = active
-    ? lightText
-      ? 'text-nham-surface/90'
-      : 'text-nham-text/85'
+    ? 'text-nham-surface/90'
     : dark
       ? 'text-[#B8A88E]'
       : 'text-nham-text-muted';
   const rule = lightText ? 'border-white/25' : 'border-nham-border';
   const ruleFaint = lightText ? 'border-white/20' : 'border-nham-border/50';
 
-  // Not an overlay — a halo on the glyphs themselves, so the paint keeps full
-  // strength while the smallest type holds an edge against it.
-  const legibility = active
-    ? {
-        textShadow: lightText
-          ? '0 1px 3px rgba(12,10,6,0.9), 0 0 12px rgba(12,10,6,0.7)'
-          : '0 1px 3px rgba(255,255,255,0.95), 0 0 12px rgba(255,255,255,0.85)',
-      }
-    : undefined;
-
-  const artOpacity = 0.92;
+  // Espresso keeps its painting dim so the card never brightens under the
+  // type; cream needs the opposite, because a dark painting held back leaves
+  // only its darkest mass and you see the dish floating alone.
+  const artOpacity = dark ? 0.34 : 0.92;
 
   return (
     // The time divider sits outside the card body, exactly as in the feed.
@@ -104,7 +92,6 @@ export function LoggedMealCard({
       </TimeDivider>
 
       <div
-        style={legibility}
         className={`relative isolate flex flex-1 flex-col overflow-hidden rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 ${
           dark
             ? 'border-white/12 bg-[#241E15]'
