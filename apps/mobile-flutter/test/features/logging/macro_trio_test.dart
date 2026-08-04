@@ -106,13 +106,68 @@ void main() {
     // row stayed put — and the totals line, which is where three digits
     // actually happen, read smaller than the rows it sums.
     await tester.pumpWidget(_row('Cơm gà', 51, 105, 16, 776));
-    for (final value in ['51g', '105g', '16g']) {
+    for (final value in ['51', '105', '16']) {
       expect(
         _paintedScale(tester, find.text(value)),
         moreOrLessEquals(1.0, epsilon: 0.005),
         reason: '$value was taken in',
       );
     }
+  });
+
+  testWidgets('the FIGURES carry the column, not the unit', (tester) async {
+    // Also reported: the label was flung to the cell's left edge and the value
+    // to its right, so the gap between them changed with the digit count —
+    // `P: 0g` yawned open beside `P:49g` on the next row. Labels sit tight
+    // against their own figures now, and it is the figures that line up.
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: SizedBox(
+            width: _rowWidth,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: Text('x')),
+                    SizedBox(width: NhamSpacing.sp3),
+                    MacroTrio(protein: 0, carbs: 16, fat: 5, calories: 113),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(child: Text('y')),
+                    SizedBox(width: NhamSpacing.sp3),
+                    MacroTrio(protein: 49, carbs: 105, fat: 9, calories: 526),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Protein `0` and `49`, carbs `16` and `105`, fat `5` and `9` — a
+    // one-digit figure and a two- or three-digit one in the same column. Their
+    // RIGHT edges match: that is what makes the numbers read down the card.
+    for (final pair in [('0', '49'), ('16', '105'), ('5', '9')]) {
+      expect(
+        tester.getTopRight(find.text(pair.$1)).dx,
+        moreOrLessEquals(
+          tester.getTopRight(find.text(pair.$2)).dx,
+          epsilon: 0.5,
+        ),
+        reason: '${pair.$1} and ${pair.$2} do not end on the same x',
+      );
+    }
+
+    // And the label stays beside its figure rather than at the far edge: the
+    // widest gap `P:` can open is the digit field minus one digit.
+    final labelRight = tester.getTopRight(find.text('P:').first).dx;
+    final figureLeft = tester.getTopLeft(find.text('0')).dx;
+    expect(figureLeft - labelRight, lessThan(20));
   });
 
   testWidgets('keeps it at the app\'s largest text scale too', (tester) async {

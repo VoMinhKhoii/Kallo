@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_theme.dart';
-import '../logic/format.dart';
 
 /// The fixed columns every macro readout on the logging tab is laid out in.
 ///
@@ -13,16 +12,31 @@ import '../logic/format.dart';
 /// each row's text decide them, is what makes the column true down the card and
 /// across the card's item rows, its totals line, and the `/` picker's options.
 abstract final class MacroColumns {
-  /// Sized so a THREE-DIGIT macro renders at full size: `C: 105g` measures
-  /// 41.1 in Be Vietnam Pro at Meta 12, and the widest label (`C:` at 12.7)
-  /// leaves 31.3 for the value against `105g`'s 28.4.
+  /// The `P:` box. Fits the widest label (`C:` at 12.7 in Be Vietnam Pro at
+  /// Meta 12) and nothing else, so the label sits tight against its own figure
+  /// instead of being flung to the far side of the cell.
+  static const double label = 14;
+
+  /// The figures, RIGHT-aligned in a box of their own: three tabular digits
+  /// measure 24.5, so `5`, `49` and `105` all end on the same x and the column
+  /// reads as a column.
   ///
-  /// It was 40, which is 1.1 short — so every carb figure that crossed 100g
-  /// shrank to 0.96 while its two-digit neighbours stayed put, and the day's
-  /// totals line (which is where three digits actually happen) read visibly
-  /// smaller than the rows it sums. Scaling is the fallback for the impossible
-  /// case, not the normal rendering path.
-  static const double cell = 44;
+  /// This is what the cell aligns on — not the `g`. Aligning whole strings
+  /// (`5g`, `49g`) lines up the unit and lets the digits fall wherever their
+  /// count puts them, which is the wrong thing to hold still: the number is
+  /// what you read down the card.
+  static const double digits = 25;
+
+  /// The `g`, immediately after the figures.
+  static const double unit = 8;
+
+  /// One macro's full cell.
+  ///
+  /// It used to pin the label to the left edge and the value to the right,
+  /// which put a gap between them that changed size with the number of digits —
+  /// `P: 0g` yawned open while `P:49g` closed up, on adjacent rows of the same
+  /// card.
+  static const double cell = label + digits + unit;
 
   /// Sized for the LARGEST kcal any row shows: the totals line's `1794 kcal` at
   /// Value 17 measures 78.7. Sizing it for the item rows instead (64.8 at Body
@@ -37,11 +51,11 @@ abstract final class MacroColumns {
   static const double split = cell * 3 + NhamSpacing.sp1 * 2;
 }
 
-/// `P: 65g  C: 0g  F: 2g` in the shared cells, each label pinned left and each
-/// value pinned right, so both line up down the card.
+/// `P: 65g  C: 0g  F: 2g` in the shared cells: labels at a fixed x, figures
+/// right-aligned in a field of their own, `g` after them.
 ///
-/// [dashMeta] is asked for tabular figures too — same-width digits keep `1g` and
-/// `65g` from shifting anything inside their own cell.
+/// [dashMeta] is asked for tabular figures too — same-width digits are what let
+/// a right-aligned field line `5`, `49` and `105` up on the same edge.
 class MacroSplit extends StatelessWidget {
   const MacroSplit({
     super.key,
@@ -59,11 +73,11 @@ class MacroSplit extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _Cell(label: 'P:', value: fmtG(protein)),
+        _Cell(label: 'P:', grams: protein),
         const SizedBox(width: NhamSpacing.sp1),
-        _Cell(label: 'C:', value: fmtG(carbs)),
+        _Cell(label: 'C:', grams: carbs),
         const SizedBox(width: NhamSpacing.sp1),
-        _Cell(label: 'F:', value: fmtG(fat)),
+        _Cell(label: 'F:', grams: fat),
       ],
     );
   }
@@ -98,46 +112,60 @@ class MacroKcal extends StatelessWidget {
   }
 }
 
+/// `P:` then the figure then `g`, in three boxes: the label's own width, a
+/// right-aligned digit field, and the unit.
+///
+/// Three boxes rather than two because the alignment the eye wants is on the
+/// DIGITS. A single right-aligned `49g` run lines the unit up and lets the
+/// figures land wherever their digit count puts them; a single left-aligned one
+/// does the reverse. Splitting the unit off holds the figures still and lets
+/// `g` follow them.
 class _Cell extends StatelessWidget {
-  const _Cell({required this.label, required this.value});
+  const _Cell({required this.label, required this.grams});
 
   final String label;
-  final String value;
+  final double? grams;
 
   @override
   Widget build(BuildContext context) {
     final style = dashMeta(tabular: true);
+    final known = grams != null;
+    // An unknown macro has no figure to align — it takes the digit field whole
+    // and drops the unit, rather than rendering a bare `g` after nothing.
+    final figure = known ? '${grams!.round()}' : 'N/A';
+
+    Widget fit(String text, Alignment align) => FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: align,
+      child: Text(text, maxLines: 1, softWrap: false, style: style),
+    );
+
     return SizedBox(
       width: MacroColumns.cell,
       child: Row(
         children: [
-          // `flex: 0` — the label takes the width of `C:` and NOT A POINT
-          // more. A plain [Flexible] defaults to flex 1, so it split the cell
-          // with the value below it: a 12.7pt label held 22 of the 44, the
-          // value got the other 22 against `105g`'s 28.4, and every
-          // three-digit macro rendered at 0.78 while its label sat there at
-          // full size with 9pt of air beside it.
-          //
-          // Still Flexible rather than a bare child: it keeps the loose
-          // constraint, so a label grown by a large text scale scales down
-          // inside the cell instead of overflowing it.
-          Flexible(
-            flex: 0,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
+          SizedBox(
+            width: MacroColumns.label,
+            child: Align(
               alignment: Alignment.centerLeft,
-              child: Text(label, maxLines: 1, softWrap: false, style: style),
+              child: fit(label, Alignment.centerLeft),
             ),
           ),
           Expanded(
             child: Align(
               alignment: Alignment.centerRight,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: Text(value, maxLines: 1, softWrap: false, style: style),
-              ),
+              child: fit(figure, Alignment.centerRight),
             ),
+          ),
+          SizedBox(
+            width: MacroColumns.unit,
+            child:
+                known
+                    ? Align(
+                      alignment: Alignment.centerLeft,
+                      child: fit('g', Alignment.centerLeft),
+                    )
+                    : null,
           ),
         ],
       ),
