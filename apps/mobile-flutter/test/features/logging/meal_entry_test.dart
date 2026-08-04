@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:nham_mobile/features/logging/widgets/meal_entry.dart';
 import 'package:nham_mobile/models/meal.dart';
+import 'package:nham_mobile/theme/nham_colors.dart';
 import 'package:nham_mobile/theme/nham_theme.dart';
 
 import '../../l10n_test_loader.dart';
@@ -21,12 +22,7 @@ const double _phone320 = 320;
 /// the card that overflowed on device.
 const _meal = ParsedMeal(
   mealName: 'Bữa trưa',
-  totalMacros: MacroBreakdown(
-    calories: 776,
-    protein: 51,
-    carbs: 105,
-    fat: 16,
-  ),
+  totalMacros: MacroBreakdown(calories: 776, protein: 51, carbs: 105, fat: 16),
   items: [
     MealItem(
       id: 'i1',
@@ -136,24 +132,34 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('the dish name survives edit mode at ${width.toInt()}pt', (
-      tester,
-    ) async {
+    testWidgets('editing moves nothing at ${width.toInt()}pt', (tester) async {
       await tester.binding.setSurfaceSize(Size(width, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _pumpCard(tester, width: width);
 
       final name = find.text('Sữa chua uống berries');
-      final relaxed = tester.getSize(name).width;
+      final kcal = find.text('526 kcal');
+      // Horizontal only. Rows DO get taller — a stepper carries a 36pt tap
+      // target and the P/C/F line it replaces is half that — but the reported
+      // complaint was sideways: names changing column when you tap Edit.
+      List<double> xs(Finder f) => [
+        tester.getRect(f).left,
+        tester.getRect(f).right,
+      ];
+      final nameBefore = xs(name);
+      final kcalBefore = xs(kcal);
 
       await tester.tap(find.text('Edit'));
       await tester.pumpAndSettle();
       tester.takeException(); // the overflow, if the fix regressed
 
-      // Not merely "greater than zero": with the tail's 136pt split still in
-      // the row, the name's Expanded collapsed to nothing and EVERY item on
-      // the card became an anonymous row of numbers.
-      expect(tester.getSize(name).width, greaterThan(relaxed * 0.9));
+      // The steppers used to sit in FRONT of the name, shoving every dish 112pt
+      // right — on a phone there was nothing to shove into, so names collapsed
+      // to zero width. They now take the P/C/F block's slot instead, which is
+      // the same width whatever is in it, so no column moves.
+      expect(xs(name), nameBefore, reason: 'the name changed column');
+      expect(xs(kcal), kcalBefore, reason: 'the calories changed column');
+      expect(find.text('180'), findsOneWidget, reason: 'no quantity readout');
     });
   }
 
@@ -172,32 +178,36 @@ void main() {
     expect(lefts.toSet(), hasLength(1), reason: 'P: drifted between rows');
   });
 
-  testWidgets('the kcal column does not move when editing starts', (
+  testWidgets('the card says it is editable without a wash on every row', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await _pumpCard(tester, width: _phone390);
 
-    final kcal = find.text('526 kcal');
-    final before = tester.getRect(kcal);
+    Border cardBorder() =>
+        (tester
+                        .widgetList<AnimatedContainer>(
+                          find.byType(AnimatedContainer),
+                        )
+                        .firstWhere(
+                          (c) =>
+                              (c.decoration as BoxDecoration?)?.borderRadius ==
+                              BorderRadius.circular(NhamRadii.containerLg),
+                        )
+                        .decoration
+                    as BoxDecoration)
+                .border!
+            as Border;
+
+    expect(cardBorder().top.color, NhamColors.borderSoft);
 
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
-    tester.takeException();
 
-    // Editing gives the P/C/F split's width to the steppers and the name. The
-    // calories are what answer "what did that change?", so they stay put —
-    // otherwise the number you are watching jumps the moment you tap Edit.
-    //
-    // The ONE thing that moves them is the edit row's own wash inset, which
-    // insets the whole row by sp2 and predates this. Pinning the shift to
-    // exactly that is what makes this a claim about the column rather than
-    // about nothing: drop the split without a fixed kcal column and the figure
-    // slides 136pt right.
-    expect(
-      tester.getRect(kcal).right,
-      closeTo(before.right - NhamSpacing.sp2, 0.01),
-    );
+    // The grey per-row wash is gone. What signals edit mode is the card's own
+    // hairline going to the accent this app already uses for a focused input —
+    // said once, in existing vocabulary, without insetting anything.
+    expect(cardBorder().top.color, NhamColors.accent40);
   });
 }

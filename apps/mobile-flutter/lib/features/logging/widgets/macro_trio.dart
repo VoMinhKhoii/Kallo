@@ -15,7 +15,7 @@ class MacroTrio extends StatelessWidget {
     required this.carbs,
     required this.fat,
     required this.calories,
-    this.showSplit = true,
+    this.splitReplacement,
   });
 
   final double? protein;
@@ -23,16 +23,16 @@ class MacroTrio extends StatelessWidget {
   final double? fat;
   final double? calories;
 
-  /// False drops the P/C/F block and keeps only the kcal column, which stays at
-  /// the same x — so a row can give that 136pt to something else without its
-  /// calories moving.
+  /// Put in the P/C/F block's slot instead of the split, at exactly the same
+  /// width — so the dish name beside it and the kcal after it do not move.
   ///
-  /// For the meal card's EDIT mode: two 36pt steppers and a quantity readout
-  /// need 112pt, and the full tail plus those controls exceeds the card's width
-  /// on every phone — the dish name was squeezed to nothing and the row still
-  /// overflowed. While you are editing, the number that answers "what did that
-  /// change?" is the kcal, and the split comes back on Done.
-  final bool showSplit;
+  /// For the meal card's EDIT mode, which borrows the slot for its `−/+`
+  /// steppers. Putting those controls in FRONT of the name instead pushed every
+  /// name 112pt to the right, and on a phone there was nothing left to push
+  /// into: names collapsed to zero width and the row overflowed anyway.
+  /// Swapping only the middle block keeps the row still — the numbers change
+  /// under your thumb and nothing else does.
+  final Widget? splitReplacement;
 
   /// Shared with the `/` picker's options, so a kcal figure sits at the same x
   /// whether you are choosing a dish, reading one back, or looking at a total.
@@ -43,10 +43,13 @@ class MacroTrio extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (showSplit) ...[
-          MacroSplit(protein: protein, carbs: carbs, fat: fat),
-          const SizedBox(width: MacroColumns.gap),
-        ],
+        SizedBox(
+          width: MacroColumns.split,
+          child:
+              splitReplacement ??
+              MacroSplit(protein: protein, carbs: carbs, fat: fat),
+        ),
+        const SizedBox(width: MacroColumns.gap),
         MacroKcal(
           child: Text(
             fmtKcal(calories),

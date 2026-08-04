@@ -13,10 +13,16 @@ import '../logic/format.dart';
 /// each row's text decide them, is what makes the column true down the card and
 /// across the card's item rows, its totals line, and the `/` picker's options.
 abstract final class MacroColumns {
-  /// Fits `C: 105g` (41.1 in Be Vietnam Pro at Meta 12) — three digits, which
-  /// is what a meal's totals reach. `C: 999g` at 44.9 scales down a hair rather
-  /// than getting its own width; a per-item macro never goes there.
-  static const double cell = 40;
+  /// Sized so a THREE-DIGIT macro renders at full size: `C: 105g` measures
+  /// 41.1 in Be Vietnam Pro at Meta 12, and the widest label (`C:` at 12.7)
+  /// leaves 31.3 for the value against `105g`'s 28.4.
+  ///
+  /// It was 40, which is 1.1 short — so every carb figure that crossed 100g
+  /// shrank to 0.96 while its two-digit neighbours stayed put, and the day's
+  /// totals line (which is where three digits actually happen) read visibly
+  /// smaller than the rows it sums. Scaling is the fallback for the impossible
+  /// case, not the normal rendering path.
+  static const double cell = 44;
 
   /// Sized for the LARGEST kcal any row shows: the totals line's `1794 kcal` at
   /// Value 17 measures 78.7. Sizing it for the item rows instead (64.8 at Body
@@ -105,10 +111,18 @@ class _Cell extends StatelessWidget {
       width: MacroColumns.cell,
       child: Row(
         children: [
-          // The label scales with the value so `C:` can never crowd out the
-          // number it belongs to — both shrink together, and the pair stays
-          // pinned to the cell's two edges.
+          // `flex: 0` — the label takes the width of `C:` and NOT A POINT
+          // more. A plain [Flexible] defaults to flex 1, so it split the cell
+          // with the value below it: a 12.7pt label held 22 of the 44, the
+          // value got the other 22 against `105g`'s 28.4, and every
+          // three-digit macro rendered at 0.78 while its label sat there at
+          // full size with 9pt of air beside it.
+          //
+          // Still Flexible rather than a bare child: it keeps the loose
+          // constraint, so a label grown by a large text scale scales down
+          // inside the cell instead of overflowing it.
           Flexible(
+            flex: 0,
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,

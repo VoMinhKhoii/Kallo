@@ -99,6 +99,22 @@ void main() {
     );
   });
 
+  testWidgets('a three-digit macro renders at full size', (tester) async {
+    // Reported from a device: "every number that reaches 3 digits gets
+    // smaller". The cell was 40 against `C: 105g`'s 41.1, so a carb figure
+    // crossing 100g shrank to 0.96 while its two-digit neighbours in the same
+    // row stayed put — and the totals line, which is where three digits
+    // actually happen, read smaller than the rows it sums.
+    await tester.pumpWidget(_row('Cơm gà', 51, 105, 16, 776));
+    for (final value in ['51g', '105g', '16g']) {
+      expect(
+        _paintedScale(tester, find.text(value)),
+        moreOrLessEquals(1.0, epsilon: 0.005),
+        reason: '$value was taken in',
+      );
+    }
+  });
+
   testWidgets('keeps it at the app\'s largest text scale too', (tester) async {
     // `app.dart` clamps scaling at 1.3. The column is 80pt — sized for the
     // totals line — so an ordinary three-digit row now rides that out without

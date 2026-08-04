@@ -108,6 +108,7 @@ class _MealEntryState extends State<MealEntry> {
           // The reveal replaces the streaming card in place — matching its
           // surface background removes the background flip at the swap.
           color: widget.revealing ? NhamColors.surface : NhamColors.elev,
+          editing: _editing,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -238,74 +239,32 @@ class _ItemRow extends StatelessWidget {
     // count units can reach 0.
     final struck = !isGrams && item.quantity <= 0;
 
-    // Edit mode is ONE transition: the row's wash and inset crossfade over
-    // 150ms and the steppers come with it. No nested per-control fade.
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      padding:
-          editing
-              ? const EdgeInsets.symmetric(
-                vertical: LoggingSpacing.row,
-                horizontal: NhamSpacing.sp2,
-              )
-              : const EdgeInsets.symmetric(vertical: LoggingSpacing.row),
-      decoration:
-          editing
-              ? BoxDecoration(
-                color: NhamColors.surface80, // surface/80
-                borderRadius: BorderRadius.circular(NhamRadii.md), // rounded-md
-              )
-              : null,
+    // No wash, no inset. The row's geometry is IDENTICAL in both modes — only
+    // the middle block's contents change — so tapping Edit doesn't shuffle the
+    // card. What tells you the card is editable is the card itself: its border
+    // goes to the accent the app already uses for a focused input.
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: LoggingSpacing.row),
       child: Row(
         children: [
+          // TWO lines, and the SAME column whether or not you are editing. The
+          // macro tail is fixed-width, so the name gets ~104pt on a phone — on
+          // one line "Sữa chua uống berries" ellipsised to "Sữa chua uống ber…",
+          // losing the part that identifies it.
           Expanded(
-            child: Row(
-              children: [
-                if (editing) ...[
-                  MealStepperButton(
-                    icon: LucideIcons.minus300, // lucide Minus
-                    disabled: minusDisabled,
-                    onTap:
-                        minusDisabled ? null : () => onChange(item.id, -step),
-                  ),
-                  const SizedBox(width: 2), // gap-0.5
-                  SizedBox(
-                    width: 28,
-                    child: Text(
-                      item.quantity.round().toString(),
-                      textAlign: TextAlign.center,
-                      style: dashMeta(color: kInk, tabular: true),
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  MealStepperButton(
-                    icon: LucideIcons.plus300, // lucide Plus
-                    onTap: () => onChange(item.id, step),
-                  ),
-                  const SizedBox(width: NhamSpacing.sp2), // gap-2
-                ],
-                // TWO lines. The macro tail is fixed-width, so the name gets
-                // ~96pt on a phone — under half of what an ordinary Vietnamese
-                // dish name needs, and on one line "Sữa chua uống berries"
-                // ellipsised to "Sữa chua uống ber…", losing the part that
-                // identifies it.
-                Expanded(
-                  child: Text(
-                    item.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: dashBody().merge(
-                      struck
-                          ? const TextStyle(
-                            decoration: TextDecoration.lineThrough,
-                            decorationColor: kInkMuted,
-                            color: kInkMuted,
-                          )
-                          : null,
-                    ),
-                  ),
-                ),
-              ],
+            child: Text(
+              item.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: dashBody().merge(
+                struck
+                    ? const TextStyle(
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: kInkMuted,
+                      color: kInkMuted,
+                    )
+                    : null,
+              ),
             ),
           ),
           const SizedBox(width: NhamSpacing.sp3), // gap-3
@@ -315,11 +274,9 @@ class _ItemRow extends StatelessWidget {
           // each macro to a fixed cell and scales the value down inside it
           // rather than clipping.
           //
-          // While EDITING it drops to the kcal column alone: the two steppers
-          // and the quantity readout need 112pt, and the full tail alongside
-          // them left the dish name no width at all — every name vanished and
-          // the row still overflowed its card. The kcal stays in the same
-          // column throughout, so nothing moves when the split comes back.
+          // Editing swaps the P/C/F block for the steppers IN PLACE. They are
+          // the control for the number the row is about, and they sit in the
+          // middle rather than in front of the name so nothing else moves.
           Opacity(
             opacity: struck ? 0.4 : 1,
             child: MacroTrio(
@@ -327,11 +284,66 @@ class _ItemRow extends StatelessWidget {
               carbs: item.macros.carbs,
               fat: item.macros.fat,
               calories: item.macros.calories,
-              showSplit: !editing,
+              splitReplacement:
+                  editing
+                      ? _QuantityStepper(
+                        quantity: item.quantity,
+                        minusDisabled: minusDisabled,
+                        onChange: (delta) => onChange(item.id, delta),
+                        step: step,
+                      )
+                      : null,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// `−  180  +` for one row, centred in the slot the P/C/F block vacates.
+///
+/// Centred rather than packed left because the block it replaces is wider than
+/// it is (140 against 104): pinning it to either edge would leave a lopsided
+/// gap that reads as a layout bug rather than as a control.
+class _QuantityStepper extends StatelessWidget {
+  const _QuantityStepper({
+    required this.quantity,
+    required this.minusDisabled,
+    required this.onChange,
+    required this.step,
+  });
+
+  final double quantity;
+  final bool minusDisabled;
+  final ValueChanged<double> onChange;
+  final double step;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        MealStepperButton(
+          icon: LucideIcons.minus300, // lucide Minus
+          disabled: minusDisabled,
+          onTap: minusDisabled ? null : () => onChange(-step),
+        ),
+        const SizedBox(width: 2), // gap-0.5
+        SizedBox(
+          width: 28,
+          child: Text(
+            quantity.round().toString(),
+            textAlign: TextAlign.center,
+            style: dashMeta(color: kInk, tabular: true),
+          ),
+        ),
+        const SizedBox(width: 2),
+        MealStepperButton(
+          icon: LucideIcons.plus300, // lucide Plus
+          onTap: () => onChange(step),
+        ),
+      ],
     );
   }
 }
@@ -493,18 +505,35 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
 /// Card: rounded-2xl (16px), border/60 hairline, shadow.sm, padding 16.
 /// [color] lets the reveal match the streaming card's surface background.
 class _Card extends StatelessWidget {
-  const _Card({required this.child, this.color = NhamColors.elev});
+  const _Card({
+    required this.child,
+    this.color = NhamColors.elev,
+    this.editing = false,
+  });
   final Widget child;
   final Color color;
 
+  /// Editing lifts the hairline to the accent this app already uses for a
+  /// focused input, on the WHOLE card.
+  ///
+  /// It replaces a grey wash behind each row, which said "these three rows are
+  /// something" without saying what, cost every row an 8pt inset that shifted
+  /// its contents, and repeated the message once per item. Ringing the card
+  /// states it once, in the app's existing vocabulary for "this is live", and
+  /// moves nothing.
+  final bool editing;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150), // transition-colors
       padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.borderSoft),
+        border: Border.all(
+          color: editing ? NhamColors.accent40 : NhamColors.borderSoft,
+        ),
         boxShadow: const [NhamShadows.sm],
       ),
       child: child,
