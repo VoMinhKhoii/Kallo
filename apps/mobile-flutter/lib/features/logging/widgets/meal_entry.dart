@@ -104,9 +104,6 @@ class _MealEntryState extends State<MealEntry> {
         ),
         const SizedBox(height: LoggingSpacing.block),
         MealEntryCard(
-          // The reveal replaces the streaming card in place — matching its
-          // surface background removes the background flip at the swap.
-          color: widget.revealing ? NhamColors.surface : NhamColors.elev,
           editing: _editing,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

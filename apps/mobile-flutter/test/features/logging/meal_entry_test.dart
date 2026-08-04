@@ -210,4 +210,45 @@ void main() {
     // said once, in existing vocabulary, without insetting anything.
     expect(cardBorder().top.color, NhamColors.accent40);
   });
+
+  testWidgets('the card is white, including on the reveal', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    for (final revealing in [false, true]) {
+      await tester.pumpWidget(
+        _wrap(
+          MealEntry(
+            parsedMeal: _meal,
+            rawInput: 'cơm gà',
+            onConfirm: (_) {},
+            revealing: revealing,
+          ),
+          width: _phone390,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // The reveal path painted `surface` — the CANVAS colour — "to match the
+      // streaming card's background". The streaming card is `elev`, white, so
+      // the two never matched: what it really did was give a meal awaiting
+      // confirmation the same fill as the page behind it, which reads as
+      // transparent. Both cards are white; that is what removes the seam.
+      final decoration =
+          tester
+                  .widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
+                  .firstWhere(
+                    (c) =>
+                        (c.decoration as BoxDecoration?)?.borderRadius ==
+                        BorderRadius.circular(NhamRadii.containerLg),
+                  )
+                  .decoration
+              as BoxDecoration;
+      expect(
+        decoration.color,
+        NhamColors.elev,
+        reason: 'revealing: $revealing',
+      );
+    }
+  });
 }
