@@ -880,7 +880,9 @@
       "copyright": "© {year} Kallo. Mọi quyền được bảo lưu.",
       "terms": "Điều khoản",
       "privacyLink": "Chính sách riêng tư",
-      "security": "Bảo mật"
+      "security": "Bảo mật",
+      "resources": "Tài nguyên",
+      "docs": "Tài liệu"
     },
     "waitlistStatus": {
       "confirmed": "Bạn đã có tên trong danh sách. Chúng tôi sẽ báo khi tới lượt bạn.",
@@ -1161,10 +1163,6 @@
       "kcal": "kcal",
       "alcohol": "cồn",
       "between": "Giữa {low} và {high}"
-    },
-    "clarify": {
-      "portion": "Bạn đã ăn bao nhiêu {ingredient} trong {mealItem}? Ước lượng khối lượng hoặc khẩu phần giúp ước tính chính xác hơn.",
-      "food": "Ý bạn là loại {ingredient} nào trong {mealItem}?"
     },
     "cheatRepeat": {
       "title": "Ghi lại lần nữa"
@@ -1630,6 +1628,42 @@
     "trialBanner": {
       "daysRemaining": "Còn {days} ngày dùng thử miễn phí",
       "upgrade": "Nâng cấp"
+    }
+  },
+  "docs": {
+    "title": "Tài liệu",
+    "openApp": "Mở ứng dụng",
+    "onThisPage": "Trên trang này",
+    "lastUpdated": "Cập nhật lần cuối {date}",
+    "menu": {
+      "open": "Mở mục lục",
+      "close": "Đóng mục lục",
+      "label": "Mục lục tài liệu"
+    },
+    "breadcrumb": {
+      "label": "Đường dẫn",
+      "home": "Tài liệu"
+    },
+    "pager": {
+      "previous": "Trang trước",
+      "next": "Trang sau",
+      "label": "Điều hướng trang"
+    },
+    "search": {
+      "trigger": "Tìm trong tài liệu",
+      "placeholder": "Tìm trang, mục…",
+      "empty": "Không tìm thấy trang nào.",
+      "label": "Tìm kiếm tài liệu",
+      "shortcutHint": "để tìm"
+    },
+    "sections": {
+      "start": "Bắt đầu",
+      "logging": "Ghi nhận",
+      "tracking": "Theo dõi",
+      "circle": "Vòng kết nối",
+      "account": "Tài khoản",
+      "estimates": "Hiểu ước tính",
+      "legal": "Pháp lý"
     }
   }
 }

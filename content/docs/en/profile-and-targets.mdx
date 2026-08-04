@@ -1,0 +1,84 @@
+---
+title: Profile and targets
+description: Body metrics, weight goal and cooking habits — the three things that decide the numbers you see.
+lastUpdated: '2026-08-03'
+---
+
+Your profile does two jobs: it sets your daily **targets**, and it tells Kallo
+**how you cook**. The two are independent, and only one of them ever reaches the
+AI model.
+
+## Initial setup
+
+Setup is three screens and takes about two minutes. You can skip it and come
+back — the sidebar will keep the thread until you finish.
+
+### Screen 1 — Origin and language
+
+The country you grew up in and the country you live in now. This shapes how
+Kallo reads dish names and default portions — the same dish name means a
+noticeably different serving size from one region to the next. You also pick
+your display language here.
+
+### Screen 2 — Body metrics and goal
+
+Weight, height, age, biological sex and activity level. From these Kallo derives
+your **TDEE** — total daily energy expenditure — then applies your goal on top:
+
+- **Cutting** — a target below TDEE.
+- **Bulking** — a target above TDEE.
+- **Maintaining** — a target at TDEE.
+
+The **aggression** slider decides how far. Push it further and change comes
+faster — and gets harder to sustain. Kallo will say plainly when the pace you
+picked is a sharp one.
+
+### Screen 3 — Cooking habits
+
+This is the part most apps skip, and the part that moves estimates most:
+
+- Whether you cook with a lot of oil or a little.
+- Your default rice portion.
+- Your default protein portion.
+- Whether you add sugar to braised dishes.
+- Whether you finish the broth.
+
+The same bowl of noodle soup differs a lot between someone who drinks the broth
+and someone who leaves it.
+
+## An important boundary
+
+<Callout label="Your goal never reaches the AI model" tone="tip">
+When a meal is analysed, the model receives only your meal description, your
+countries and your cooking habits. It does **not** know that you are cutting,
+what your calorie target is, or what you weigh.
+
+Goal adjustment happens on our servers **after** the model returns. That keeps
+your goal from biasing the estimate — a model that knows you are dieting is very
+likely to hand back a comfortable number rather than a true one.
+</Callout>
+
+The full detail is in the [privacy policy](/docs/legal/privacy).
+
+## What goal adjustment does
+
+Every estimate is a range, not a point. When that range is collapsed to the
+single number stored in your log, your goal decides which end it collapses
+toward:
+
+- **Cutting** — the cautious end: the upper bound for calories, carbs and fat,
+  the lower bound for protein.
+- **Bulking** — the opposite.
+
+This is deliberate. If you are cutting, underestimating a meal hurts you more
+than overestimating it.
+
+## Changing things later
+
+Everything above is editable in **Settings** at any time. Changing your weight
+or goal recalculates targets immediately, and you see the new target before you
+save.
+
+Meals you have already logged are **not** recalculated — they keep the figures
+they had when you confirmed them, so your history never rewrites itself behind
+you.

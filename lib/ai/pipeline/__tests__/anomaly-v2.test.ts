@@ -204,7 +204,7 @@ describe('classifyV2Anomalies — cause classification', () => {
     expect(m?.action).toBe('flag_only');
   });
 
-  it('flags unmatched_high_uncertainty and routes a too-wide interval to clarify', () => {
+  it('flags a too-wide unmatched interval as interval_widened (warning), never a clarify', () => {
     // mid 300, low 50, high 800 → width 750, ratio 2.5 > 1.5.
     const result = makeResult([
       makeIngredient({
@@ -224,9 +224,13 @@ describe('classifyV2Anomalies — cause classification', () => {
       unmatched: [{ ingredientName: 'Sốt lạ', mealContext: 'Cơm' }],
       prepNoteIngredientNames: NO_PREP,
     });
+    // A too-wide interval is telemetered at warning severity but never routes
+    // to a clarify — the estimate ships and the picker corrects the portion.
     const u = anomalies.find(
       (a) =>
-        a.cause === 'unmatched_high_uncertainty' && a.action === 'route_clarify'
+        a.cause === 'unmatched_high_uncertainty' &&
+        a.action === 'interval_widened' &&
+        a.severity === 'warning'
     );
     expect(u).toBeDefined();
   });

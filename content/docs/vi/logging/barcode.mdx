@@ -1,0 +1,53 @@
+---
+title: Quét mã vạch
+description: Đồ đóng gói, ghi bằng camera — số liệu lấy thẳng từ nhãn sản phẩm.
+lastUpdated: '2026-08-03'
+---
+
+Với đồ đóng gói, nhãn đã có sẵn số liệu. Không cần ước lượng gì cả.
+
+## Cách dùng
+
+<Steps>
+<Step index={1} title="Mở trình quét">
+Chọn quét mã vạch ở khu vực nhập liệu. Trình duyệt hoặc ứng dụng sẽ xin quyền
+dùng camera lần đầu.
+</Step>
+
+<Step index={2} title="Đưa mã vạch vào khung">
+Giữ yên một chút. Nếu camera không bắt được — ánh sáng yếu, mã bị nhàu — bạn có
+thể gõ dãy số bằng tay.
+</Step>
+
+<Step index={3} title="Kiểm tra sản phẩm">
+Kallo tra cứu mã trong cơ sở dữ liệu Open Food Facts và hiển thị tên sản phẩm
+cùng số liệu dinh dưỡng.
+</Step>
+
+<Step index={4} title="Chọn cách tính lượng">
+Ba cách: theo **khẩu phần** ghi trên nhãn, theo **cả gói**, hoặc theo **số gam**
+bạn tự nhập.
+</Step>
+</Steps>
+
+## Khi không tìm thấy sản phẩm
+
+Open Food Facts là cơ sở dữ liệu do cộng đồng đóng góp, và độ phủ hàng Việt Nam
+chưa đầy đủ. Nếu không tìm thấy:
+
+- Thử [ghi thủ công](/docs/logging/manual) với nguyên liệu chính.
+- Hoặc [mô tả bữa ăn](/docs/logging/describe-a-meal) bằng lời.
+- Gửi góp ý cho chúng tôi để chúng tôi biết sản phẩm nào đang thiếu.
+
+<Callout label="Dữ liệu quét được gửi đi đâu">
+Chỉ dãy số mã vạch được gửi tới Open Food Facts để tra cứu. Không có ảnh, không
+có thông tin tài khoản. Chi tiết ở
+[chính sách quyền riêng tư](/docs/legal/privacy).
+</Callout>
+
+## Về độ chính xác của nhãn
+
+Số liệu trên bao bì được làm tròn và có sai số cho phép theo quy định. Nó thường
+chính xác hơn ước lượng, nhưng không tuyệt đối — và khẩu phần ghi trên nhãn hiếm
+khi trùng với lượng bạn thật sự ăn. Nếu bạn ăn hai phần ba gói, hãy dùng cách
+nhập theo gam.

@@ -72,7 +72,7 @@ export function resolvePortion(
       grams: null,
       provenance: 'unresolved',
       confidence: 'none',
-      unresolvedReason: 'unresolved_portion',
+      unresolvedReason: 'explicit_zero',
       note: 'user typed an explicit ZERO count — contradictory quantity; clarify',
     };
   }

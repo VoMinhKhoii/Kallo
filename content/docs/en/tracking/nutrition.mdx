@@ -1,0 +1,107 @@
+---
+title: Nutrition
+description: Micronutrients over time, the data coverage behind each figure, and which ones are worth your attention.
+lastUpdated: '2026-08-03'
+---
+
+The dashboard handles calories and macros. The **Nutrition** page handles
+micronutrients: minerals and vitamins, read over a period rather than day by
+day.
+
+## How to read this page
+
+Each micronutrient is a card showing your daily average against a reference
+target, with the source of that target. Eight are shown by default and twelve
+more sit behind an expand control, twenty cards in total.
+
+But the percentage is not the important part. The important part is **how much
+data is behind it**.
+
+## Data coverage
+
+Every card carries its own coverage figure, and it answers exactly one question:
+over this period, what share of the calories you ate came from items the food
+composition table **actually has a number for** on that nutrient.
+
+If you ate 2,000 kcal and only 800 of those came from items with calcium data,
+calcium coverage is 40%. The rest is not zero, it is **unknown**.
+
+<Callout label="Why micronutrients are harder than macros">
+Protein, carbohydrate and fat columns are almost always populated. Vitamin and
+mineral columns often are not. A nutrient showing low could mean you genuinely
+ate too little, or it could just mean the reference data does not record it. The
+coverage figure exists so you can tell those apart.
+</Callout>
+
+Kallo splits coverage into four bands, and how a figure is presented changes
+with the band:
+
+| Coverage | What it means |
+| --- | --- |
+| 70% and above | The figure reads normally |
+| 40–69% | Limited data, treat it as indicative |
+| 20–39% | Too thin to conclude from |
+| Below 20% | Not enough data, Kallo draws no conclusion |
+
+Coverage is computed per nutrient and depends only on what you ate. It has
+nothing to do with how many days you managed to log.
+
+## Complete and partial days
+
+That is a separate mechanism, and it handles the time dimension.
+
+A day where you logged breakfast and then forgot drags every figure down even
+though you did not really eat that little. So Kallo marks a logged day
+**partial** when its total calories fall below half of a baseline. The baseline
+is your calorie target if you have set one, otherwise the median of the days you
+have logged.
+
+Long-span figures are computed over complete days only. Partial days are not
+hidden — they are reported separately so you know how many the period contains.
+
+There is a safety valve: if **every** day in the period would be partial, Kallo
+treats them all as complete. Otherwise anyone who logs lightly would see an
+empty page instead of their own data.
+
+## Worth your attention
+
+Kallo highlights **at most two** nutrients, picked by how far below target they
+sit.
+
+A nutrient only qualifies if its coverage is 40% or above and it is under 90% of
+target. That means a nutrient can be genuinely low and still not appear here,
+simply because there is not enough data to say anything. That is deliberate.
+
+### Foods to consider
+
+For each nutrient, Kallo suggests foods rich in it, ranked by amount per 100g
+straight from the food composition table.
+
+That list is **not** based on your eating habits. It is foods high in that
+nutrient generally, after excluding a few categories that would otherwise always
+top a density ranking without helping: dried spices, oils and fats, sweets,
+beverages, breakfast cereals and fortified products. A gram of dried thyme tops
+the vitamin K table, but nobody eats a gram of thyme to close a gap.
+
+## Vitamin D
+
+Vitamin D gets its own card, separate from the rest, because for most people the
+main source is sunlight rather than food. Reading a vitamin D figure off a food
+log the way you read the others leads to the wrong conclusion.
+
+## Macro trends
+
+The page also charts macros over time, useful when you want to see whether your
+protein ratio is holding steady rather than only watching total calories.
+
+## Choosing a period
+
+You can pick 7, 30 or 90 days.
+
+Short periods react quickly but are noisy; long periods are steadier but slower
+to show a change. For micronutrients the longer period is usually more useful:
+nobody hits every nutrient every day, and nobody needs to. A longer period also
+lifts coverage, because more items means more items with data.
+
+When too few days have been logged, Kallo says so outright rather than drawing a
+trend line that means nothing.
