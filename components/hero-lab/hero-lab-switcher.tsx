@@ -6,7 +6,7 @@ import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { HeroHeader } from './hero-header';
 import { MealCardHero } from './meal-card-hero';
-import type { HeroTone } from './tone';
+import { HERO_TONE, type HeroTone } from './tone';
 
 /**
  * The hero lab page.
@@ -25,7 +25,7 @@ export function HeroLabSwitcher({ footer }: { footer: ReactNode }) {
 
   return (
     <AuthProvider>
-      <div className={dark ? 'bg-[#1C1810]' : 'bg-nham-surface'}>
+      <div className={HERO_TONE[tone].ground}>
         <HeroHeader
           tone={tone}
           onToggleTone={() => setTone(dark ? 'cream' : 'espresso')}

@@ -3,7 +3,7 @@
 import { Moon, Sun } from 'lucide-react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
-import type { HeroTone } from './tone';
+import { HERO_TONE, type HeroTone } from './tone';
 
 /**
  * The lab's header: wordmark, the light/dark switch, and a Get started that
@@ -22,11 +22,7 @@ export function HeroHeader({
 
   return (
     <header
-      className={`fixed top-0 right-0 left-0 z-50 border-b backdrop-blur-xl ${
-        dark
-          ? 'border-white/10 bg-[#1C1810]/80'
-          : 'border-nham-border/30 bg-nham-surface/80'
-      }`}
+      className={`fixed top-0 right-0 left-0 z-50 border-b backdrop-blur-xl ${HERO_TONE[tone].headerShell}`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <KalloWordmark

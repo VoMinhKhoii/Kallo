@@ -9,6 +9,7 @@ export type HeroTone = 'cream' | 'espresso';
 export const HERO_TONE = {
   cream: {
     ground: 'bg-nham-surface',
+    headerShell: 'border-nham-border/30 bg-nham-surface/80',
     ink: 'text-nham-text',
     body: 'text-nham-text-soft',
     faint: 'text-nham-text-muted',
@@ -19,6 +20,8 @@ export const HERO_TONE = {
   },
   espresso: {
     ground: 'bg-[#1C1810]',
+    /** Translucent variant of the ground, for the fixed header. */
+    headerShell: 'border-white/10 bg-[#1C1810]/80',
     ink: 'text-nham-surface',
     body: 'text-[#C6B8A3]',
     faint: 'text-[#9C8F7C]',
