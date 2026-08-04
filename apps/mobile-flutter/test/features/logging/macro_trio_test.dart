@@ -177,16 +177,19 @@ void main() {
   });
 
   testWidgets('keeps it at the app\'s largest text scale too', (tester) async {
-    // `app.dart` clamps scaling at 1.3. The column is 80pt — sized for the
-    // totals line — so an ordinary three-digit row now rides that out without
-    // shrinking at all.
+    // `app.dart` clamps scaling at 1.3, where `240 kcal` grows to 78.5 against
+    // a 74pt column. It is taken in a little — NOT clipped, which is the
+    // guarantee that matters and the one the reported bug broke.
+    //
+    // The column used to be 80, which absorbed 1.3x outright. It was narrowed
+    // deliberately: its width is what sets where the P/C/F block stops, and at
+    // 80 the macros sat a visible hole away from the calories on every row. A
+    // 4% reduction at the largest accessibility scale is the price.
     await tester.pumpWidget(_row('Cơm trắng', 5, 54, 0, 240, textScale: 1.3));
     expect(find.text('240 kcal'), findsOneWidget);
-    expect(
-      _paintedScale(tester, find.text('240 kcal')),
-      moreOrLessEquals(1.0, epsilon: 0.02),
-      reason: 'the wider column absorbs 1.3x outright',
-    );
+    final scale = _paintedScale(tester, find.text('240 kcal'));
+    expect(scale, greaterThan(0.9), reason: 'taken in further than intended');
+    expect(scale, lessThanOrEqualTo(1.0));
   });
 
   testWidgets('a four-digit row shrinks rather than losing its unit', (
