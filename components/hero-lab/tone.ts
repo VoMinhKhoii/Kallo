@@ -31,3 +31,31 @@ export const HERO_TONE = {
 
 /** The one easing curve every hero-lab motion uses — heavy, decelerating. */
 export const HERO_EASE = [0.32, 0.72, 0, 1] as const;
+
+export interface CardInk {
+  strong: string;
+  muted: string;
+  rule: string;
+  ruleFaint: string;
+}
+
+/**
+ * Ink for a meal card. Hovered, the type is always light: on cream the
+ * chiaroscuro painting runs at full strength and turns the card dark, and on
+ * espresso the light painting is held back far enough that the card stays
+ * dark. Two routes to the same place, which is why nothing has to be laid
+ * over the text.
+ */
+export function cardInk(dark: boolean, active: boolean): CardInk {
+  const light = active ? true : dark;
+  return {
+    strong: light ? 'text-nham-surface' : 'text-nham-text',
+    muted: active
+      ? 'text-nham-surface/90'
+      : dark
+        ? 'text-[#B8A88E]'
+        : 'text-nham-text-muted',
+    rule: light ? 'border-white/25' : 'border-nham-border',
+    ruleFaint: light ? 'border-white/20' : 'border-nham-border/50',
+  };
+}

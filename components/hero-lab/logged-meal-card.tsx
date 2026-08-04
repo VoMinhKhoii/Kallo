@@ -8,7 +8,9 @@ import {
   formatMacroValue,
 } from '@/components/logging/feed/format-inline-nutrition';
 import { TimeDivider } from '@/components/logging/feed/time-divider';
+import { LoggedMealDetails } from './logged-meal-details';
 import { type HeroMeal, mealTotals } from './logged-meals';
+import { cardInk } from './tone';
 
 /**
  * The app's logged-meal card, on the landing page.
@@ -54,19 +56,7 @@ export function LoggedMealCard({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const totals = mealTotals(meal);
 
-  // Hovered, the type is always light: on cream the chiaroscuro painting runs
-  // at full strength and turns the card dark, and on espresso the light
-  // painting is held back far enough that the card stays dark. Two routes to
-  // the same place, which is why nothing has to be laid over the text.
-  const lightText = active ? true : dark;
-  const strong = lightText ? 'text-nham-surface' : 'text-nham-text';
-  const muted = active
-    ? 'text-nham-surface/90'
-    : dark
-      ? 'text-[#B8A88E]'
-      : 'text-nham-text-muted';
-  const rule = lightText ? 'border-white/25' : 'border-nham-border';
-  const ruleFaint = lightText ? 'border-white/20' : 'border-nham-border/50';
+  const ink = cardInk(dark, active);
 
   // Espresso keeps its painting dim so the card never brightens under the
   // type; cream needs the opposite, because a dark painting held back leaves
@@ -119,7 +109,7 @@ export function LoggedMealCard({
           <button
             type="button"
             onClick={onSelectMeal}
-            className={`min-w-0 text-left font-serif text-[17px] leading-relaxed sm:text-[19px] ${strong}`}
+            className={`min-w-0 text-left font-serif text-[17px] leading-relaxed sm:text-[19px] ${ink.strong}`}
           >
             {meal.rawInput}
           </button>
@@ -142,74 +132,17 @@ export function LoggedMealCard({
 
         {isCollapsed ? (
           <div className="mt-2 flex items-center justify-between font-sans-display">
-            <span className={`text-[11px] tabular-nums ${muted}`}>
+            <span className={`text-[11px] tabular-nums ${ink.muted}`}>
               P: {formatMacroValue(totals.protein)}
               {'  '}C: {formatMacroValue(totals.carbs)}
               {'  '}F: {formatMacroValue(totals.fat)}
             </span>
-            <span className={`font-bold text-sm tabular-nums ${strong}`}>
+            <span className={`font-bold text-sm tabular-nums ${ink.strong}`}>
               {formatCaloriesValue(totals.calories)}
             </span>
           </div>
         ) : (
-          <div className={`mt-5 border-t pt-4 ${rule}`}>
-            <div className="mb-4 space-y-1">
-              {meal.items.map((item) => (
-                <div
-                  key={item.name}
-                  className="flex items-center justify-between gap-2 py-2 font-sans-display text-[13px]"
-                >
-                  <span className={`min-w-0 truncate font-medium ${strong}`}>
-                    {item.name}
-                  </span>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <div
-                      className={`flex gap-1 text-[9px] tabular-nums lg:gap-1 ${muted}`}
-                    >
-                      <span className="text-right">
-                        P:{formatMacroValue(item.protein)}
-                      </span>
-                      <span className="text-right">
-                        C:{formatMacroValue(item.carbs)}
-                      </span>
-                      <span className="text-right">
-                        F:{formatMacroValue(item.fat)}
-                      </span>
-                    </div>
-                    <span
-                      className={`text-right font-bold tabular-nums ${strong}`}
-                    >
-                      {formatCaloriesValue(item.calories)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className={`border-t pt-3 ${ruleFaint}`}>
-              <div className="flex items-center justify-between">
-                <span
-                  className={`font-bold font-sans-display text-[13px] ${strong}`}
-                >
-                  Total
-                </span>
-                <div className="flex items-center gap-4">
-                  <span
-                    className={`font-sans-display text-[11px] tabular-nums ${muted}`}
-                  >
-                    P: {formatMacroValue(totals.protein)}
-                    {'  '}C: {formatMacroValue(totals.carbs)}
-                    {'  '}F: {formatMacroValue(totals.fat)}
-                  </span>
-                  <span
-                    className={`font-bold font-sans-display tabular-nums ${strong}`}
-                  >
-                    {formatCaloriesValue(totals.calories)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <LoggedMealDetails meal={meal} ink={ink} />
         )}
       </div>
     </div>
