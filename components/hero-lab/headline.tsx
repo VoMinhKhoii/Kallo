@@ -17,7 +17,7 @@ export function HeroHeadline({
 }) {
   return (
     <h1
-      className={`font-bold font-serif text-[clamp(2.75rem,6.6vw,5rem)] leading-[1.04] tracking-[-0.03em] ${ink} ${className}`}
+      className={`font-medium font-serif text-[clamp(2.75rem,6.6vw,5rem)] leading-[1.04] tracking-[-0.03em] ${ink} ${className}`}
     >
       {HERO_COPY.headline.map((line, index) => (
         <span key={line.word} className="block">

@@ -43,14 +43,7 @@ const RESTING = [
  * The four meals are chosen to answer both halves of the audience in one
  * glance: two eyeballed in plain language, two weighed to the gram.
  */
-export function MealCardHero({
-  tone,
-  insetBottom = false,
-}: {
-  tone: HeroTone;
-  /** Reserve room under the copy for the lab's switch bar. */
-  insetBottom?: boolean;
-}) {
+export function MealCardHero({ tone }: { tone: HeroTone }) {
   const reduced = useReducedMotion() ?? false;
   const [activeId, setActiveId] = useState<string | null>(null);
   const t = HERO_TONE[tone];
@@ -116,11 +109,7 @@ export function MealCardHero({
         <div className="absolute inset-0" style={{ background: t.veil }} />
       </div>
 
-      <div
-        className={`mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-4 pt-20 text-center sm:px-6 ${
-          insetBottom ? 'pb-24' : 'pb-10'
-        }`}
-      >
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-4 pt-24 pb-16 text-center sm:px-6">
         <motion.div {...rise(0)}>
           <HeroHeadline ink={t.ink} />
         </motion.div>

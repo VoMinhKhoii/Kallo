@@ -80,8 +80,11 @@ export function LoggedMealCard({
         {/* The meal's painting, revealed inside the card on hover. It sits
             below the content in the stacking context, under a veil in the
             card's own surface colour so the numbers stay readable on top. */}
+        {/* Inverted on purpose: the cream page shows the chiaroscuro painting
+            and the espresso page shows the light one, so the artwork reads as
+            a counterweight to its ground instead of disappearing into it. */}
         <Image
-          src={dark ? meal.art.dark : meal.art.cream}
+          src={dark ? meal.art.cream : meal.art.dark}
           alt=""
           fill
           sizes="(min-width: 1024px) 20rem, (min-width: 640px) 45vw, 90vw"
@@ -98,8 +101,8 @@ export function LoggedMealCard({
             // Heaviest at the bottom, where the totals row sits; lightest at
             // the top, where the serif line has the paint mostly to itself.
             background: dark
-              ? 'linear-gradient(to top, rgba(28,24,16,0.82) 0%, rgba(28,24,16,0.5) 55%, rgba(28,24,16,0.32) 100%)'
-              : 'linear-gradient(to top, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.46) 55%, rgba(255,255,255,0.3) 100%)',
+              ? 'linear-gradient(to top, rgba(28,24,16,0.86) 0%, rgba(28,24,16,0.62) 55%, rgba(28,24,16,0.46) 100%)'
+              : 'linear-gradient(to top, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.62) 55%, rgba(255,255,255,0.46) 100%)',
           }}
         />
 
