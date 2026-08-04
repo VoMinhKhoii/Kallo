@@ -34,6 +34,7 @@ export function LoggedMealCard({
   dark,
   active,
   dimmed,
+  offset,
   onFocusMeal,
   onLeaveMeal,
   onSelectMeal,
@@ -42,6 +43,10 @@ export function LoggedMealCard({
   dark: boolean;
   active: boolean;
   dimmed: boolean;
+  /** Drop this card a step on wide screens, so the ragged bottoms that come
+      from meals having different numbers of items read as rhythm rather than
+      as four boxes that failed to line up. */
+  offset: boolean;
   onFocusMeal: () => void;
   onLeaveMeal: () => void;
   onSelectMeal: () => void;
@@ -75,9 +80,9 @@ export function LoggedMealCard({
       onPointerEnter={onFocusMeal}
       onPointerLeave={onLeaveMeal}
       style={{ opacity: dimmed ? 0.5 : 1 }}
-      className={`flex h-full flex-col transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+      className={`flex flex-col transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
         active ? '-translate-y-2' : ''
-      }`}
+      } ${offset ? 'lg:mt-12' : ''}`}
     >
       <TimeDivider timeLabel={meal.timeLabel}>
         <span
@@ -92,7 +97,7 @@ export function LoggedMealCard({
       </TimeDivider>
 
       <div
-        className={`relative isolate flex flex-1 flex-col overflow-hidden rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 ${
+        className={`relative isolate flex flex-col overflow-hidden rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md ${
           dark
             ? 'border-white/12 bg-[#241E15]'
             : 'border-nham-border/60 bg-white'
@@ -147,19 +152,19 @@ export function LoggedMealCard({
             </span>
           </div>
         ) : (
-          <div className={`mt-5 flex-1 border-t pt-4 ${rule}`}>
+          <div className={`mt-5 border-t pt-4 ${rule}`}>
             <div className="mb-4 space-y-1">
               {meal.items.map((item) => (
                 <div
                   key={item.name}
-                  className="flex items-center justify-between py-2 font-sans-display text-[13px]"
+                  className="flex items-center justify-between gap-2 py-2 font-sans-display text-[13px]"
                 >
                   <span className={`min-w-0 truncate font-medium ${strong}`}>
                     {item.name}
                   </span>
-                  <div className="flex shrink-0 items-center gap-3">
+                  <div className="flex shrink-0 items-center gap-1.5">
                     <div
-                      className={`flex gap-2 text-[10px] tabular-nums ${muted}`}
+                      className={`flex gap-1 text-[9px] tabular-nums lg:gap-1 ${muted}`}
                     >
                       <span className="text-right">
                         P:{formatMacroValue(item.protein)}

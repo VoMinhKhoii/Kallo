@@ -49,16 +49,22 @@ export function MealCardHero({ tone }: { tone: HeroTone }) {
   const t = HERO_TONE[tone];
   const dark = tone === 'espresso';
 
-  // There is no hover on a phone, so every card simply wears its painting and
-  // nothing dims. Cycling one at a time was worse: it moves on its own while
-  // you are reading, and you cannot ask for the one you want back.
+  // A phone has no hover, so every card wears its painting and nothing dims.
+  //
+  // `(hover: none)` alone does not detect that. Chrome reports `hover: hover`
+  // in responsive mode at any viewport, and some Android browsers report it on
+  // real hardware, so the art stayed hidden exactly where it was needed. The
+  // width clause is the honest backstop: below md the cards are full-width and
+  // there is nothing to hover between anyway.
   const [touch, setTouch] = useState(false);
   useEffect(() => {
-    const coarse = window.matchMedia('(hover: none)');
-    const sync = () => setTouch(coarse.matches);
+    const query = window.matchMedia(
+      '(hover: none), (pointer: coarse), (max-width: 767px)'
+    );
+    const sync = () => setTouch(query.matches);
     sync();
-    coarse.addEventListener('change', sync);
-    return () => coarse.removeEventListener('change', sync);
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
   }, []);
 
   const rise = (index: number) =>
@@ -105,7 +111,7 @@ export function MealCardHero({ tone }: { tone: HeroTone }) {
         <div className="absolute inset-0" style={{ background: t.veil }} />
       </div>
 
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-4 pt-24 pb-16 text-center sm:px-6">
+      <div className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col items-center justify-center px-4 pt-24 pb-16 text-center sm:px-6">
         {/* On a phone the promise owns the first screen; the cards are what
             scrolling is for. On lg everything sits in one viewport again. */}
         <div className="flex min-h-[calc(100dvh-13rem)] flex-col items-center justify-center md:min-h-0">
@@ -127,11 +133,12 @@ export function MealCardHero({ tone }: { tone: HeroTone }) {
 
         <motion.div
           {...rise(3)}
-          className="mx-auto mt-10 grid w-full max-w-7xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 md:mt-12 lg:grid-cols-4"
+          className="mx-auto mt-10 grid w-full max-w-[100rem] grid-cols-1 items-start gap-x-5 gap-y-8 sm:grid-cols-2 md:mt-12 lg:grid-cols-4"
         >
-          {HERO_MEALS.map((meal) => (
+          {HERO_MEALS.map((meal, index) => (
             <LoggedMealCard
               key={meal.id}
+              offset={index % 2 === 1}
               meal={meal}
               dark={dark}
               active={touch || activeId === meal.id}
