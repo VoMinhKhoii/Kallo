@@ -30,7 +30,12 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
   @override
   Widget build(BuildContext context) {
     final editing = widget.editing;
-    final tappable = widget.onTap != null;
+    // [disabled] used to do nothing but dim the button: it drove the 50%
+    // opacity and left every callback live. The one caller nulls [onTap]
+    // itself, so nothing was reachable — but a widget whose `disabled` flag
+    // does not disable is a trap for the next caller, and this one submits a
+    // meal.
+    final tappable = !widget.disabled && widget.onTap != null;
     final active = _pressed && tappable;
     final fg = editing ? NhamColors.btn : Colors.white;
 
@@ -54,14 +59,14 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
       enabled: tappable,
       excludeSemantics: true,
       label: 'logging.confirm'.tr(),
-      onTap: widget.onTap,
+      onTap: tappable ? widget.onTap : null,
       child: Opacity(
         opacity: widget.disabled ? 0.5 : 1, // opacity-50
         child: GestureDetector(
           onTapDown: tappable ? (_) => setState(() => _pressed = true) : null,
           onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
           onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
-          onTap: widget.onTap,
+          onTap: tappable ? widget.onTap : null,
           child: AnimatedContainer(
             duration: const Duration(
               milliseconds: 200,
