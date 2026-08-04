@@ -49,21 +49,17 @@ export function MealCardHero({ tone }: { tone: HeroTone }) {
   const t = HERO_TONE[tone];
   const dark = tone === 'espresso';
 
-  // No hover on touch, so the row takes itself through the set. The payoff has
-  // to exist on a phone too, or it isn't a real design.
+  // There is no hover on a phone, so every card simply wears its painting and
+  // nothing dims. Cycling one at a time was worse: it moves on its own while
+  // you are reading, and you cannot ask for the one you want back.
+  const [touch, setTouch] = useState(false);
   useEffect(() => {
     const coarse = window.matchMedia('(hover: none)');
-    if (!coarse.matches || reduced) {
-      return;
-    }
-    let index = 0;
-    setActiveId(HERO_MEALS[0].id);
-    const timer = setInterval(() => {
-      index = (index + 1) % HERO_MEALS.length;
-      setActiveId(HERO_MEALS[index].id);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [reduced]);
+    const sync = () => setTouch(coarse.matches);
+    sync();
+    coarse.addEventListener('change', sync);
+    return () => coarse.removeEventListener('change', sync);
+  }, []);
 
   const rise = (index: number) =>
     reduced
@@ -110,33 +106,38 @@ export function MealCardHero({ tone }: { tone: HeroTone }) {
       </div>
 
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-4 pt-24 pb-16 text-center sm:px-6">
-        <motion.div {...rise(0)}>
-          <HeroHeadline ink={t.ink} />
-        </motion.div>
+        {/* On a phone the promise owns the first screen; the cards are what
+            scrolling is for. On lg everything sits in one viewport again. */}
+        <div className="flex min-h-[calc(100dvh-9rem)] flex-col items-center justify-center">
+          <motion.div {...rise(0)}>
+            <HeroHeadline ink={t.ink} />
+          </motion.div>
 
-        <motion.p
-          {...rise(1)}
-          className={`mt-5 max-w-2xl text-pretty text-base leading-[1.6] ${t.body}`}
-        >
-          {HERO_COPY.subtitle}
-        </motion.p>
+          <motion.p
+            {...rise(1)}
+            className={`mt-5 max-w-2xl text-pretty text-base leading-[1.6] ${t.body}`}
+          >
+            {HERO_COPY.subtitle}
+          </motion.p>
 
-        <motion.div {...rise(2)} className="mt-8 w-full">
-          <WaitlistPill tone={tone} />
-        </motion.div>
+          <motion.div {...rise(2)} className="mt-8 w-full">
+            <WaitlistPill tone={tone} />
+          </motion.div>
+        </div>
 
         <motion.div
           {...rise(3)}
-          className="mt-9 grid w-full grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-2 lg:grid-cols-4"
+          className="mx-auto mt-16 grid w-full max-w-5xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2"
         >
           {HERO_MEALS.map((meal) => (
             <LoggedMealCard
               key={meal.id}
               meal={meal}
               dark={dark}
-              active={activeId === meal.id}
-              dimmed={activeId !== null && activeId !== meal.id}
+              active={touch || activeId === meal.id}
+              dimmed={!touch && activeId !== null && activeId !== meal.id}
               onFocusMeal={() => setActiveId(meal.id)}
+              onLeaveMeal={() => setActiveId(null)}
               onSelectMeal={() => setActiveId(meal.id)}
             />
           ))}

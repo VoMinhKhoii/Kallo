@@ -1,6 +1,8 @@
 'use client';
 
+import { ChevronDown } from 'lucide-react';
 import Image from 'next/image';
+import { useState } from 'react';
 import {
   formatCaloriesValue,
   formatMacroValue,
@@ -9,20 +11,23 @@ import { TimeDivider } from '@/components/logging/feed/time-divider';
 import { type HeroMeal, mealTotals } from './logged-meals';
 
 /**
- * The app's own logged-meal card, on the landing page — in its expanded state,
- * so the derivation is visible rather than implied.
+ * The app's logged-meal card, on the landing page.
  *
- * This mirrors `components/logging/feed/persisted/precise-meal-card.tsx` and
- * `meal-details.tsx`: same time divider, same card chrome, same serif raw-input
- * line, the same per-item rows with their macro triples, and the same totals
- * footer — reusing the real `TimeDivider` and the real number formatters so
- * everything is typeset exactly as it is in the product.
+ * Mirrors `components/logging/feed/persisted/precise-meal-card.tsx` and
+ * `meal-details.tsx` element for element: the same time divider, card chrome
+ * and padding, the same serif raw-input line at 17/19px, the same expand
+ * chevron, the same per-dish rows with their macro triple and bold calories,
+ * and the same Total footer — reusing the real `TimeDivider` and the real
+ * number formatters so nothing is retyped by hand.
  *
- * What it drops is everything interactive: the collapse chevron, the amount
- * editor, the refine field and the action bar, which carry TanStack Query
- * mutations, dialogs and authenticated calls that have no business on a
- * marketing page. Showing an affordance that does nothing would be worse than
- * not showing it.
+ * Two deliberate differences. It opens expanded, because the derivation is the
+ * thing worth showing on a landing page. And the action bar is left off: it
+ * carries TanStack Query mutations, share dialogs and authenticated calls that
+ * have no business here, and a row of buttons that did nothing would be worse
+ * than no row at all.
+ *
+ * On hover the meal's own painting fills the card behind the type, dialled
+ * back so the card's surface still sets the contrast.
  */
 export function LoggedMealCard({
   meal,
@@ -30,6 +35,7 @@ export function LoggedMealCard({
   active,
   dimmed,
   onFocusMeal,
+  onLeaveMeal,
   onSelectMeal,
 }: {
   meal: HeroMeal;
@@ -37,20 +43,49 @@ export function LoggedMealCard({
   active: boolean;
   dimmed: boolean;
   onFocusMeal: () => void;
+  onLeaveMeal: () => void;
   onSelectMeal: () => void;
 }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const totals = mealTotals(meal);
-  const muted = dark ? 'text-[#B8A88E]' : 'text-nham-text-muted';
-  const strong = dark ? 'text-nham-surface' : 'text-nham-text';
-  const hairline = dark ? 'border-white/10' : 'border-nham-border';
+
+  // The artwork is inverted against its ground — cream gets the chiaroscuro
+  // painting, espresso the light one — so at full strength the card flips tone
+  // and the ink has to flip with it, or it lands on its own value and goes
+  // invisible. Running the paint high is the point: dialled back, only a dark
+  // painting's darkest mass survives on white and you see the dish alone.
+  const lightText = dark ? !active : active;
+  const strong = lightText ? 'text-nham-surface' : 'text-nham-text';
+  // The muted line steps up on the artwork; at 10px the resting grey is the
+  // first thing to dissolve into the paint.
+  const muted = active
+    ? lightText
+      ? 'text-nham-surface/90'
+      : 'text-nham-text/85'
+    : dark
+      ? 'text-[#B8A88E]'
+      : 'text-nham-text-muted';
+  const rule = lightText ? 'border-white/25' : 'border-nham-border';
+  const ruleFaint = lightText ? 'border-white/20' : 'border-nham-border/50';
+
+  // Not an overlay — a halo on the glyphs themselves, so the paint keeps full
+  // strength while the smallest type holds an edge against it.
+  const legibility = active
+    ? {
+        textShadow: lightText
+          ? '0 1px 3px rgba(12,10,6,0.9), 0 0 12px rgba(12,10,6,0.7)'
+          : '0 1px 3px rgba(255,255,255,0.95), 0 0 12px rgba(255,255,255,0.85)',
+      }
+    : undefined;
+
+  const artOpacity = 0.92;
 
   return (
-    // The time divider sits outside the button: it renders divs, and a div
-    // inside a button is invalid markup that browsers reparent. The wrapper
-    // carries hover, the button carries the click.
+    // The time divider sits outside the card body, exactly as in the feed.
+    // The wrapper carries hover for the artwork.
     <div
       onPointerEnter={onFocusMeal}
-      onFocus={onFocusMeal}
+      onPointerLeave={onLeaveMeal}
       style={{ opacity: dimmed ? 0.5 : 1 }}
       className={`flex h-full flex-col transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
         active ? '-translate-y-2' : ''
@@ -68,90 +103,123 @@ export function LoggedMealCard({
         </span>
       </TimeDivider>
 
-      <button
-        type="button"
-        onClick={onSelectMeal}
-        className={`relative isolate flex w-full flex-1 flex-col overflow-hidden rounded-2xl border p-4 text-left transition-shadow focus-visible:outline-none ${
+      <div
+        style={legibility}
+        className={`relative isolate flex flex-1 flex-col overflow-hidden rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 ${
           dark
-            ? 'border-white/12 bg-[#241E15] shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)]'
-            : `border-nham-border/60 bg-white ${active ? 'shadow-md' : 'shadow-sm'}`
+            ? 'border-white/12 bg-[#241E15]'
+            : 'border-nham-border/60 bg-white'
         }`}
       >
-        {/* The meal's painting, revealed inside the card on hover. It sits
-            below the content in the stacking context, under a veil in the
-            card's own surface colour so the numbers stay readable on top. */}
-        {/* Inverted on purpose: the cream page shows the chiaroscuro painting
-            and the espresso page shows the light one, so the artwork reads as
-            a counterweight to its ground instead of disappearing into it. */}
         <Image
           src={dark ? meal.art.cream : meal.art.dark}
           alt=""
           fill
-          sizes="(min-width: 1024px) 20rem, (min-width: 640px) 45vw, 90vw"
-          style={{ opacity: active ? 1 : 0 }}
+          sizes="(min-width: 1024px) 34rem, (min-width: 640px) 45vw, 90vw"
+          style={{ opacity: active ? artOpacity : 0 }}
           className={`-z-10 object-cover transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
             active ? 'scale-105' : 'scale-100'
           }`}
         />
-        <span
-          aria-hidden
-          className="absolute inset-0 -z-10 transition-opacity duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]"
-          style={{
-            opacity: active ? 1 : 0,
-            // Heaviest at the bottom, where the totals row sits; lightest at
-            // the top, where the serif line has the paint mostly to itself.
-            background: dark
-              ? 'linear-gradient(to top, rgba(28,24,16,0.86) 0%, rgba(28,24,16,0.62) 55%, rgba(28,24,16,0.46) 100%)'
-              : 'linear-gradient(to top, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.62) 55%, rgba(255,255,255,0.46) 100%)',
-          }}
-        />
 
-        <span
-          className={`block font-serif text-[15px] leading-relaxed ${strong}`}
-        >
-          {meal.rawInput}
-        </span>
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3">
+          <button
+            type="button"
+            onClick={onSelectMeal}
+            className={`min-w-0 text-left font-serif text-[17px] leading-relaxed sm:text-[19px] ${strong}`}
+          >
+            {meal.rawInput}
+          </button>
+          <button
+            type="button"
+            aria-label="Toggle details"
+            aria-expanded={!isCollapsed}
+            onClick={() => setIsCollapsed((prev) => !prev)}
+            className={`shrink-0 rounded-full p-1 transition-colors ${
+              dark
+                ? 'text-nham-surface/50 hover:bg-white/10 hover:text-nham-surface'
+                : 'text-nham-text-muted/60 hover:bg-nham-hover/40 hover:text-nham-text'
+            }`}
+          >
+            <ChevronDown
+              className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
+            />
+          </button>
+        </div>
 
-        <span className={`mt-4 block flex-1 border-t pt-3 ${hairline}`}>
-          {meal.items.map((item) => (
-            <span
-              key={item.name}
-              className="flex items-center justify-between gap-2 py-1.5 font-sans-display text-[12px]"
-            >
-              <span className={`min-w-0 truncate font-medium ${strong}`}>
-                {item.name}
-              </span>
-              <span className="flex shrink-0 items-center gap-2">
-                <span
-                  className={`flex gap-1.5 text-[10px] tabular-nums ${muted}`}
-                >
-                  <span>P:{formatMacroValue(item.protein)}</span>
-                  <span>C:{formatMacroValue(item.carbs)}</span>
-                  <span>F:{formatMacroValue(item.fat)}</span>
-                </span>
-                <span className={`font-bold tabular-nums ${strong}`}>
-                  {item.calories}
-                </span>
-              </span>
+        {isCollapsed ? (
+          <div className="mt-2 flex items-center justify-between font-sans-display">
+            <span className={`text-[11px] tabular-nums ${muted}`}>
+              P: {formatMacroValue(totals.protein)}
+              {'  '}C: {formatMacroValue(totals.carbs)}
+              {'  '}F: {formatMacroValue(totals.fat)}
             </span>
-          ))}
-        </span>
+            <span className={`font-bold text-sm tabular-nums ${strong}`}>
+              {formatCaloriesValue(totals.calories)}
+            </span>
+          </div>
+        ) : (
+          <div className={`mt-5 flex-1 border-t pt-4 ${rule}`}>
+            <div className="mb-4 space-y-1">
+              {meal.items.map((item) => (
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between py-2 font-sans-display text-[13px]"
+                >
+                  <span className={`min-w-0 truncate font-medium ${strong}`}>
+                    {item.name}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <div
+                      className={`flex gap-2 text-[10px] tabular-nums ${muted}`}
+                    >
+                      <span className="text-right">
+                        P:{formatMacroValue(item.protein)}
+                      </span>
+                      <span className="text-right">
+                        C:{formatMacroValue(item.carbs)}
+                      </span>
+                      <span className="text-right">
+                        F:{formatMacroValue(item.fat)}
+                      </span>
+                    </div>
+                    <span
+                      className={`text-right font-bold tabular-nums ${strong}`}
+                    >
+                      {formatCaloriesValue(item.calories)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-        <span
-          className={`mt-2 flex items-center justify-between gap-2 border-t pt-3 font-sans-display ${
-            dark ? 'border-white/10' : 'border-nham-border/50'
-          }`}
-        >
-          <span className={`text-[11px] tabular-nums ${muted}`}>
-            P: {formatMacroValue(totals.protein)}
-            {'  '}C: {formatMacroValue(totals.carbs)}
-            {'  '}F: {formatMacroValue(totals.fat)}
-          </span>
-          <span className={`shrink-0 font-bold text-sm tabular-nums ${strong}`}>
-            {formatCaloriesValue(totals.calories)}
-          </span>
-        </span>
-      </button>
+            <div className={`border-t pt-3 ${ruleFaint}`}>
+              <div className="flex items-center justify-between">
+                <span
+                  className={`font-bold font-sans-display text-[13px] ${strong}`}
+                >
+                  Total
+                </span>
+                <div className="flex items-center gap-4">
+                  <span
+                    className={`font-sans-display text-[11px] tabular-nums ${muted}`}
+                  >
+                    P: {formatMacroValue(totals.protein)}
+                    {'  '}C: {formatMacroValue(totals.carbs)}
+                    {'  '}F: {formatMacroValue(totals.fat)}
+                  </span>
+                  <span
+                    className={`font-bold font-sans-display tabular-nums ${strong}`}
+                  >
+                    {formatCaloriesValue(totals.calories)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

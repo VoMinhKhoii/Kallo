@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, MailCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, MailCheck } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -79,17 +79,12 @@ export function WaitlistPill({ tone }: { tone: HeroTone }) {
       className="mx-auto w-full max-w-2xl"
     >
       <div
-        className={`flex h-14 w-full items-center gap-3 rounded-full border py-2 pr-2 pl-5 transition-colors focus-within:border-nham-accent focus-within:ring-[3px] focus-within:ring-nham-accent/25 sm:h-16 sm:pl-6 ${
+        className={`flex w-full flex-col gap-3 rounded-[1.75rem] border p-3 transition-colors focus-within:border-nham-accent focus-within:ring-[3px] focus-within:ring-nham-accent/25 sm:h-16 sm:flex-row sm:items-center sm:gap-3 sm:rounded-full sm:py-2 sm:pr-2 sm:pl-6 ${
           dark
             ? 'border-white/12 bg-white/[0.06] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)]'
             : 'border-nham-border bg-white shadow-[0_20px_50px_-20px_rgba(105,94,78,0.35)]'
         } ${errors.email ? 'border-nham-danger/60' : ''}`}
       >
-        <Sparkles
-          aria-hidden
-          className={`h-[18px] w-[18px] shrink-0 ${dark ? 'text-nham-surface/70' : 'text-nham-stone'}`}
-        />
-
         <label htmlFor="hero-waitlist-email" className="sr-only">
           {t('label')}
         </label>
@@ -101,7 +96,7 @@ export function WaitlistPill({ tone }: { tone: HeroTone }) {
           aria-invalid={errors.email ? true : undefined}
           aria-describedby={errors.email ? 'hero-waitlist-error' : undefined}
           disabled={signup.isPending}
-          className={`min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-[#B0A695] disabled:cursor-default sm:text-lg ${
+          className={`min-w-0 flex-1 bg-transparent px-2 py-2 text-base outline-none placeholder:text-[#B0A695] disabled:cursor-default sm:px-0 sm:py-0 sm:text-lg ${
             dark ? 'text-nham-surface' : 'text-nham-text'
           }`}
           {...register('email')}
@@ -110,7 +105,7 @@ export function WaitlistPill({ tone }: { tone: HeroTone }) {
         <button
           type="submit"
           disabled={signup.isPending}
-          className={`group flex h-10 shrink-0 items-center gap-2 rounded-full px-4 font-medium font-sans-display text-sm transition-[transform,background-color] active:scale-[0.98] disabled:opacity-60 sm:h-11 sm:px-5 ${
+          className={`group flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-full px-5 font-medium font-sans-display text-sm transition-[transform,background-color] active:scale-[0.98] disabled:opacity-60 sm:w-auto ${
             dark
               ? 'bg-nham-surface text-nham-text hover:bg-white'
               : 'bg-nham-ink text-nham-surface hover:bg-nham-ink-hover'
