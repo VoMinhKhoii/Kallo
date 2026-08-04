@@ -2,11 +2,12 @@
 
 import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { WaitlistForm } from '@/components/landing-page/waitlist/waitlist-form';
 import { HERO_COPY } from './copy';
+import { HeroHeadline } from './headline';
 import { LoggedMealCard } from './logged-meal-card';
 import { HERO_MEALS } from './logged-meals';
 import { HERO_EASE, HERO_TONE, type HeroTone } from './tone';
+import { WaitlistPill } from './waitlist-pill';
 
 /** Two slow washes so the page still breathes with nothing hovered. */
 const RESTING = [
@@ -120,16 +121,9 @@ export function MealCardHero({
           insetBottom ? 'pb-24' : 'pb-10'
         }`}
       >
-        <motion.h1
-          {...rise(0)}
-          className={`font-bold font-serif text-[clamp(2.375rem,5.4vw,4rem)] leading-[1.03] tracking-[-0.03em] ${t.ink}`}
-        >
-          {HERO_COPY.title}
-          <br />
-          <span className={`font-light italic ${t.headlineSoft}`}>
-            {HERO_COPY.titleHighlight}
-          </span>
-        </motion.h1>
+        <motion.div {...rise(0)}>
+          <HeroHeadline ink={t.ink} />
+        </motion.div>
 
         <motion.p
           {...rise(1)}
@@ -138,8 +132,8 @@ export function MealCardHero({
           {HERO_COPY.subtitle}
         </motion.p>
 
-        <motion.div {...rise(2)} className="mt-8 w-full max-w-xl">
-          <WaitlistForm />
+        <motion.div {...rise(2)} className="mt-8 w-full">
+          <WaitlistPill tone={tone} />
         </motion.div>
 
         <motion.div

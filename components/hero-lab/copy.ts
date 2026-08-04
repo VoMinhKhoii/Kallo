@@ -6,8 +6,11 @@
  * it moves into `messages/{en,vi}.json` when a direction is chosen.
  */
 export const HERO_COPY = {
-  title: 'You describe,',
-  titleHighlight: 'we derive.',
+  /** Split so `describe` and `derive` can be underlined without the punctuation. */
+  headline: [
+    { lead: 'You', word: 'describe', tail: ',' },
+    { lead: 'we', word: 'derive', tail: '.' },
+  ],
   subtitle:
     "Tell Kallo what you ate the way you'd tell a friend. It helps split into real ingredients and derives calories/macros from trusted data.",
   cardsHint:

@@ -6,6 +6,7 @@ import { CommandBar, DemoChips } from '@/components/landing-lab/command-bar';
 import { DerivationCard } from '@/components/landing-lab/derivation-card';
 import { type LabDemo, useLabDemo } from '@/hooks/landing-lab/use-demo';
 import { HERO_COPY } from './copy';
+import { HeroHeadline } from './headline';
 import { HERO_EASE, HERO_TONE, type HeroTone, labTone } from './tone';
 
 interface HeroShellProps {
@@ -64,16 +65,9 @@ export function HeroShell({
           band ? 'pb-44 sm:pb-48' : insetBottom ? 'pb-24' : 'pb-16'
         }`}
       >
-        <motion.h1
-          {...rise(0)}
-          className={`font-bold font-serif text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.03] tracking-[-0.03em] ${t.ink}`}
-        >
-          {HERO_COPY.title}
-          <br />
-          <span className={`font-light italic ${t.headlineSoft}`}>
-            {HERO_COPY.titleHighlight}
-          </span>
-        </motion.h1>
+        <motion.div {...rise(0)}>
+          <HeroHeadline ink={t.ink} />
+        </motion.div>
 
         <motion.p
           {...rise(1)}
