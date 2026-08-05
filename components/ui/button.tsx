@@ -27,6 +27,12 @@ const buttonVariants = cva(
           'rounded-xl border border-nham-border text-nham-text-soft hover:bg-nham-surface !font-medium text-base',
         'landing-ghost':
           'text-nham-text-soft text-sm hover:text-nham-text h-auto p-0 !font-normal',
+        // The black landing CTA. `hero-dark` is the same ink but dressed for a
+        // button standing on the page — heavy shadow, hover lift, wide
+        // tracking. Sitting inside a card or a header bar it needs none of
+        // that, and borrowing it meant cancelling three utilities per call.
+        'landing-ink':
+          'rounded-xl bg-nham-ink text-nham-surface hover:bg-nham-ink-hover !font-medium text-base',
         'hero-dark':
           'rounded-xl bg-nham-ink text-nham-surface shadow-lg hover:-translate-y-0.5 hover:bg-nham-ink-hover hover:shadow-xl !font-medium tracking-wide text-base',
         'hero-outline':

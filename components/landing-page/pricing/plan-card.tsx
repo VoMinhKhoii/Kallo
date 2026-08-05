@@ -60,12 +60,11 @@ export function PlanCard({
         </p>
       </div>
 
-      {/* Black on every card. The lift and drop shadow the `hero-dark` variant
-          carries are for a button standing on the page, not one sitting inside
-          a card, so both come off here. */}
+      {/* h-11 to match the waitlist button in the hero — the default h-9 is a
+          36px bar spanning a card with 32px padding, which reads squat. */}
       <Button
-        variant="hero-dark"
-        className="mt-6 w-full self-start font-sans-display shadow-none hover:translate-y-0"
+        variant="landing-ink"
+        className="mt-6 h-11 w-full font-sans-display"
         onClick={onSelect}
       >
         {t(`plans.${plan}.cta`)}

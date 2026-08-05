@@ -71,9 +71,9 @@ export function Header() {
           {/* Black, not the brown `header-cta`. This page is black and white
               throughout: the waitlist pill, every plan button, and this. */}
           <Button
-            variant="hero-dark"
+            variant="landing-ink"
             size="header"
-            className="font-sans-display shadow-none hover:translate-y-0"
+            className="font-sans-display text-sm"
             onClick={() => openDialog('sign-up')}
           >
             {t('getStarted')}
