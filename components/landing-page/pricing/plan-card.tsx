@@ -2,13 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { FeatureRow } from './feature-row';
-import {
-  type BillingPeriod,
-  FEATURE_GROUPS,
-  type PlanId,
-  PRICING_FEATURES,
-} from './plans';
+import type { BillingPeriod, PlanId } from './plans';
 
 /** Two segments, sitting in the Premium card where the term is decided. */
 function PeriodToggle({
@@ -47,9 +41,8 @@ function PeriodToggle({
 }
 
 /**
- * One plan, top to bottom: what it's called, what it costs, how to start, and
- * then the same ten features every card lists — so the columns can be read
- * across as well as down.
+ * One plan: what it's called, what it costs, how to start. Nothing else — the
+ * feature list is shared below all three rather than repeated inside each.
  *
  * Only Premium carries the brown button. One primary CTA per surface is a
  * brand rule, and it also states an opinion about which plan is the answer.
@@ -79,17 +72,16 @@ export function PlanCard({
 
   return (
     <div
-      className={`flex flex-col rounded-2xl border bg-white p-6 ${
+      className={`flex flex-col rounded-2xl border bg-white p-6 text-left ${
         featured
           ? 'border-nham-accent/45 shadow-md ring-1 ring-nham-accent/15'
           : 'border-nham-border/60 shadow-sm'
       }`}
     >
-      {/* Fixed-height header so the three prices sit on one line across the
-          row even though only Premium carries a toggle and a per-month note.
-          Only once the cards are side by side — stacked, there is nothing to
-          line up with and the reserved space is just a hole. */}
-      <div className="flex flex-col md:min-h-[10.5rem]">
+      {/* Reserved height so the three prices sit on one line even though only
+          Premium carries a toggle. Only once the cards are side by side —
+          stacked, there is nothing to line up with and it is just a hole. */}
+      <div className="flex flex-col md:min-h-[9rem]">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="font-medium font-sans-display text-nham-text">
             {t(`plans.${plan}.name`)}
@@ -129,23 +121,6 @@ export function PlanCard({
       >
         {t(`plans.${plan}.cta`)}
       </Button>
-
-      <div className="mt-8 space-y-6">
-        {FEATURE_GROUPS.map((group) => (
-          <div key={group}>
-            <h4 className="font-medium font-sans-display text-[11px] text-nham-text-muted">
-              {t(`groups.${group}`)}
-            </h4>
-            <ul className="mt-3 space-y-2.5">
-              {PRICING_FEATURES.filter((f) => f.group === group).map(
-                (feature) => (
-                  <FeatureRow key={feature.id} feature={feature} plan={plan} />
-                )
-              )}
-            </ul>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

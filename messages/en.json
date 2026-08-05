@@ -748,8 +748,8 @@
         }
       },
       "subtitle": "Tell Kallo what you ate the way you'd tell a friend. It helps split into real ingredients and derives calories/macros from trusted data.",
-      "cardsHint": "Eyeballed or weighed to the gram — both go in the same way. Hover a meal to see it.",
-      "cardsHintTouch": "Eyeballed or weighed to the gram — both go in the same way.",
+      "cardsHint": "Eyeballed or weighed to the gram. Hover a meal to see it.",
+      "cardsHintTouch": "Eyeballed or weighed to the gram.",
       "beta": "Free while in beta · born in Vietnam, built for every kitchen",
       "total": "Total",
       "toggleDetails": "Toggle details",
@@ -759,10 +759,10 @@
       },
       "meals": {
         "pho": {
-          "input": "1 tô phở bò tái + quẩy",
+          "input": "big bowl of phở, extra rare beef",
           "items": {
-            "pho": "Phở bò tái (1 tô)",
-            "quay": "Quẩy (1)"
+            "pho": "Phở with rare beef",
+            "quay": "Fried dough stick"
           }
         },
         "bol": {
@@ -803,38 +803,28 @@
       }
     },
     "why": {
-      "eyebrow": "Why text",
       "title": "A photo can't hear you say",
       "titleAccent": "less oil.",
-      "lead": "It isn't only that describing a meal is more accurate. It's that a sentence fits how you actually eat — the substitutions you make, the days you forget, the small changes a camera has no way to see.",
       "adjustments": {
         "oil": {
-          "label": "You type",
-          "input": "cơm tấm sườn, ít dầu mỡ",
-          "effect": "The fat comes down, and the calories with it. A photo of the same plate has no way to know you asked."
+          "input": "chicken curry, went easy on the oil",
+          "effect": "Fat drops, and the calories with it."
         },
         "milk": {
-          "label": "You type",
-          "input": "cà phê sữa, sữa tách béo",
-          "effect": "Skim instead of condensed milk. The same drink on the table, a different macro split on the card."
+          "input": "flat white with skim instead of whole",
+          "effect": "Same cup, different macros."
         },
         "backfill": {
-          "label": "You type",
-          "input": "hôm qua ăn cơm tấm lúc 7 giờ tối",
-          "effect": "Logged to yesterday. Missing a day doesn't mean losing it — you can fill in any past date, with no cut-off."
+          "input": "yesterday around 8pm, two slices of pizza",
+          "effect": "Filed to yesterday. No cut-off."
         }
       },
-      "sourcesTitle": "Real food-composition data underneath",
-      "sourcesBody": "Kallo matches what you wrote against FAO and USDA composition tables, then uses its own AI layer for the parts a table can't hold — portions, preparation, the dish as it's actually cooked at home. Estimates come back as bounded ranges, never invented decimals.",
-      "tradeoff": "Is typing more work than pointing a camera? Yes.",
-      "tradeoffBody": "It's still far less work than looking up every ingredient by hand, and it captures what neither a photo nor a manual entry ever will.",
-      "fallback": "And you only type what's new. Relog brings back the meals you eat every week, and barcode scan handles anything with a label."
+      "tradeoff": "More work than a photo. Less than logging by hand.",
+      "sources": "Matched against FAO and USDA composition data, with an AI layer for portions and preparation. Bounded ranges, never invented decimals."
     },
     "pricing": {
-      "eyebrow": "Pricing",
       "title": "Start free.",
       "titleAccent": "Pay when it earns it.",
-      "subtitle": "Every plan below is the whole app. Premium is what unlocks describing a meal in your own words — the part that costs real money to run.",
       "period": {
         "label": "Billing period",
         "monthly": "Monthly",
@@ -865,8 +855,7 @@
         },
         "joinGroups": {
           "label": "Join groups",
-          "free": "2, view-only",
-          "paid": "unlimited"
+          "free": "2, view-only"
         },
         "friendFeed": {
           "label": "Friends' meals in your feed"
@@ -876,8 +865,7 @@
         },
         "groupSize": {
           "label": "Group size",
-          "free": "up to 10",
-          "paid": "unlimited"
+          "free": "up to 10"
         }
       },
       "plans": {
@@ -904,20 +892,13 @@
           "cta": "Buy lifetime"
         }
       },
-      "everyoneTitle": "On every plan, including Free",
-      "everyone": "Your dashboard and daily macros, weight tracking with trend projection, the consistency heatmap, the nutrition breakdown, goals and targets, your cooking profile, backfilling any past day, and a full export of everything you've logged.",
-      "betaNote": "Kallo is in beta and everything is free right now. These prices take effect when beta ends, and we'll tell you before that happens."
+      "freeTitle": "What Free includes",
+      "paidNote": "Premium and Lifetime include all of it, with unlimited groups and no size cap.",
+      "everyone": "Your dashboard, weight tracking, the consistency heatmap, nutrition breakdown, goals, and a full data export are free on every plan.",
+      "betaNote": "Free while Kallo is in beta. These prices start when beta ends."
     },
     "footer": {
-      "tagline": "Vietnamese meal tracking, powered by AI.",
-      "product": "Product",
-      "why": "Why text",
-      "pricing": "Pricing",
-      "copyright": "© {year} Kallo. All rights reserved.",
-      "terms": "Terms",
-      "privacyLink": "Privacy policy",
-      "resources": "Resources",
-      "docs": "Docs"
+      "copyright": "© {year} Kallo. All rights reserved."
     },
     "waitlistStatus": {
       "confirmed": "You're on the list. We'll email you when your spot opens.",

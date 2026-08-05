@@ -748,8 +748,8 @@
         }
       },
       "subtitle": "Kể cho Kallo nghe bạn vừa ăn gì, như khi kể với bạn bè. Kallo tách thành từng nguyên liệu thật rồi tính calo và macro từ dữ liệu đáng tin cậy.",
-      "cardsHint": "Ước lượng bằng mắt hay cân từng gram — đều nhập giống nhau. Rê chuột vào một bữa để xem.",
-      "cardsHintTouch": "Ước lượng bằng mắt hay cân từng gram — đều nhập giống nhau.",
+      "cardsHint": "Ước lượng bằng mắt hay cân từng gram. Rê chuột vào một bữa để xem.",
+      "cardsHintTouch": "Ước lượng bằng mắt hay cân từng gram.",
       "beta": "Miễn phí trong thời gian thử nghiệm · làm tại Việt Nam, dùng được cho mọi căn bếp",
       "total": "Tổng",
       "toggleDetails": "Mở/đóng chi tiết",
@@ -803,38 +803,28 @@
       }
     },
     "why": {
-      "eyebrow": "Vì sao dùng chữ",
       "title": "Tấm ảnh không nghe được bạn dặn",
       "titleAccent": "ít dầu mỡ.",
-      "lead": "Không chỉ vì mô tả bằng chữ cho kết quả chính xác hơn. Mà vì một câu chữ hợp với cách bạn ăn thật — những lần đổi món, những ngày quên ghi, và những thay đổi nhỏ mà máy ảnh không thể thấy.",
       "adjustments": {
         "oil": {
-          "label": "Bạn gõ",
           "input": "cơm tấm sườn, ít dầu mỡ",
-          "effect": "Lượng chất béo giảm xuống, calo giảm theo. Một tấm ảnh của cùng đĩa cơm đó không thể biết bạn đã dặn."
+          "effect": "Chất béo giảm, calo giảm theo."
         },
         "milk": {
-          "label": "Bạn gõ",
           "input": "cà phê sữa, sữa tách béo",
-          "effect": "Sữa tách béo thay vì sữa đặc. Vẫn là ly cà phê đó, nhưng macro thì khác hẳn."
+          "effect": "Vẫn ly đó, macro khác hẳn."
         },
         "backfill": {
-          "label": "Bạn gõ",
           "input": "hôm qua ăn cơm tấm lúc 7 giờ tối",
-          "effect": "Ghi vào hôm qua. Quên một ngày không có nghĩa là mất ngày đó — bạn điền lại được bất kỳ ngày nào đã qua, không giới hạn."
+          "effect": "Ghi vào hôm qua. Không giới hạn."
         }
       },
-      "sourcesTitle": "Bên dưới là dữ liệu thành phần thực phẩm thật",
-      "sourcesBody": "Kallo đối chiếu những gì bạn viết với bảng thành phần của FAO và USDA, rồi dùng lớp AI riêng cho phần mà bảng số liệu không chứa được — khẩu phần, cách chế biến, món ăn đúng như được nấu ở nhà. Kết quả trả về là khoảng ước lượng có giới hạn, không bịa ra số lẻ.",
-      "tradeoff": "Gõ chữ có mất công hơn giơ máy ảnh không? Có.",
-      "tradeoffBody": "Nhưng vẫn nhẹ hơn nhiều so với tra từng nguyên liệu bằng tay, và nó giữ được những thứ mà cả tấm ảnh lẫn việc nhập thủ công đều bỏ sót.",
-      "fallback": "Và bạn chỉ gõ những gì mới. Ghi lại bữa cũ lo phần bạn ăn hằng tuần, còn quét mã vạch lo mọi thứ có nhãn."
+      "tradeoff": "Mất công hơn chụp ảnh. Nhẹ hơn nhập tay.",
+      "sources": "Đối chiếu với dữ liệu thành phần của FAO và USDA, cùng lớp AI lo khẩu phần và cách chế biến. Khoảng ước lượng có giới hạn, không bịa số lẻ."
     },
     "pricing": {
-      "eyebrow": "Giá",
       "title": "Bắt đầu miễn phí.",
       "titleAccent": "Trả tiền khi thấy xứng đáng.",
-      "subtitle": "Mọi gói bên dưới đều là trọn bộ ứng dụng. Premium mở khoá phần mô tả bữa ăn bằng lời của bạn — phần tốn chi phí thật để vận hành.",
       "period": {
         "label": "Kỳ thanh toán",
         "monthly": "Hằng tháng",
@@ -865,8 +855,7 @@
         },
         "joinGroups": {
           "label": "Tham gia nhóm",
-          "free": "2 nhóm, chỉ xem",
-          "paid": "không giới hạn"
+          "free": "2 nhóm, chỉ xem"
         },
         "friendFeed": {
           "label": "Bữa ăn của bạn bè trong feed"
@@ -876,8 +865,7 @@
         },
         "groupSize": {
           "label": "Số thành viên nhóm",
-          "free": "tối đa 10",
-          "paid": "không giới hạn"
+          "free": "tối đa 10"
         }
       },
       "plans": {
@@ -904,20 +892,13 @@
           "cta": "Mua trọn đời"
         }
       },
-      "everyoneTitle": "Có ở mọi gói, kể cả Miễn phí",
-      "everyone": "Bảng điều khiển và macro hằng ngày, theo dõi cân nặng kèm đường xu hướng, bản đồ đều đặn, phân tích dinh dưỡng, mục tiêu, hồ sơ nấu ăn của bạn, điền bù bất kỳ ngày nào đã qua, và xuất toàn bộ dữ liệu bạn đã ghi.",
-      "betaNote": "Kallo đang thử nghiệm và hiện miễn phí toàn bộ. Mức giá này áp dụng khi kết thúc thử nghiệm, và chúng tôi sẽ báo trước."
+      "freeTitle": "Gói Miễn phí gồm",
+      "paidNote": "Premium và Trọn đời có đủ tất cả, nhóm không giới hạn và không giới hạn thành viên.",
+      "everyone": "Bảng điều khiển, theo dõi cân nặng, bản đồ đều đặn, phân tích dinh dưỡng, mục tiêu và xuất toàn bộ dữ liệu đều miễn phí ở mọi gói.",
+      "betaNote": "Miễn phí trong thời gian Kallo thử nghiệm. Mức giá áp dụng khi kết thúc thử nghiệm."
     },
     "footer": {
-      "tagline": "Theo dõi bữa ăn Việt, được hỗ trợ bởi AI.",
-      "product": "Sản phẩm",
-      "why": "Vì sao",
-      "pricing": "Giá",
-      "copyright": "© {year} Kallo. Mọi quyền được bảo lưu.",
-      "terms": "Điều khoản",
-      "privacyLink": "Chính sách riêng tư",
-      "resources": "Tài nguyên",
-      "docs": "Tài liệu"
+      "copyright": "© {year} Kallo. Mọi quyền được bảo lưu."
     },
     "waitlistStatus": {
       "confirmed": "Bạn đã có tên trong danh sách. Chúng tôi sẽ báo khi tới lượt bạn.",

@@ -3,22 +3,27 @@ import { Suspense } from 'react';
 import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { OAuthErrorToast } from '@/components/auth/oauth-error-toast';
+import { DocsFooter } from '@/components/docs/docs-footer';
 import {
-  Footer,
   Header,
   MealCardHero,
   PricingSection,
   TextFirstSection,
 } from '@/components/landing-page';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
+import type { Locale } from '@/i18n/config';
 import { safeNextPath } from '@/lib/auth/safe-next';
+import { getDocsTree } from '@/lib/docs/tree';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function Home({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ auth?: string; next?: string }>;
 }) {
+  const { locale } = await params;
   const { auth, next: rawNext } = await searchParams;
   const next = safeNextPath(rawNext);
   // Open the auth dialog when arriving from an invite link (?auth=…&next=…).
@@ -39,6 +44,11 @@ export default async function Home({
     }
   }
 
+  // The docs footer, not a marketing one: it is already the full site directory
+  // (including Legal), and its espresso ground is what ends the page — a cream
+  // footer under a cream page needs a rule and still reads as more page.
+  const sections = await getDocsTree(locale as Locale);
+
   return (
     <AuthProvider next={next} initialOpen={initialOpen} initialTab={initialTab}>
       <Header />
@@ -47,7 +57,7 @@ export default async function Home({
         <TextFirstSection />
         <PricingSection />
       </main>
-      <Footer />
+      <DocsFooter sections={sections} />
       <AuthDialog />
       <Suspense fallback={null}>
         <OAuthErrorToast />

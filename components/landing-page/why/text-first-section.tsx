@@ -13,12 +13,10 @@ const ADJUSTMENTS = ['oil', 'milk', 'backfill'] as const;
 /**
  * Why text-first.
  *
- * The case is not only that describing a meal is more accurate than
- * photographing it — it is that a sentence fits how people actually eat.
- * Substitutions, preparation, the Tuesday you forgot: none of it survives a
- * camera. The section ends by conceding the cost (typing is more work) rather
- * than pretending there isn't one, and by pointing at relog and barcode, which
- * are what keep the typing down to whatever is new.
+ * Three sentences somebody would actually type, and what each one changes.
+ * The examples are the argument; prose explaining them would be the same claim
+ * twice. So there is a headline before and two lines after, and nothing else —
+ * the hero sets the density for this page and this section has to match it.
  *
  * Reveals on scroll and then stops. The section it replaces pinned 300vh and
  * drove a four-stage animation off scroll position, which was the worst thing
@@ -38,61 +36,38 @@ export function TextFirstSection() {
       };
 
   return (
-    // Cream canvas with a hairline rule, not a colour change. The whole page
-    // is one sheet of paper; sections are separated the way the design system
-    // separates everything else — by a hairline, so the white cards keep
-    // reading as cards.
+    // One cream sheet, separated by a hairline rather than a colour change, so
+    // the white cards keep reading as cards.
     <section
       id="why"
       className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-surface py-24 md:py-32"
     >
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto max-w-5xl px-6 text-center">
         <motion.div {...reveal}>
-          <p className="eyebrow">{t('eyebrow')}</p>
-          <h2 className="mt-4 max-w-3xl font-normal font-serif text-4xl text-nham-text leading-[1.1] tracking-[-0.02em] md:text-5xl">
+          <h2 className="mx-auto max-w-3xl text-balance font-normal font-serif text-4xl text-nham-text leading-[1.1] tracking-[-0.02em] md:text-5xl">
             {t('title')}{' '}
             <span className="italic-accent">{t('titleAccent')}</span>
           </h2>
-          <p className="mt-6 max-w-2xl font-sans-display text-lg text-nham-text-soft leading-relaxed">
-            {t('lead')}
-          </p>
         </motion.div>
 
         <motion.div
           {...reveal}
-          className="mt-12 grid gap-4 md:mt-16 md:grid-cols-3"
+          className="mt-12 grid gap-4 text-left md:mt-16 md:grid-cols-3"
         >
           {ADJUSTMENTS.map((id) => (
             <AdjustmentCard key={id} id={id} />
           ))}
         </motion.div>
 
-        <motion.div
-          {...reveal}
-          className="mt-14 grid gap-10 border-nham-border/50 border-t pt-12 md:mt-16 md:grid-cols-2 md:gap-14"
-        >
-          <div>
-            <h3 className="font-medium font-sans-display text-nham-text">
-              {t('sourcesTitle')}
-            </h3>
-            <p className="mt-3 font-sans-display text-nham-text-soft leading-relaxed">
-              {t('sourcesBody')}
-            </p>
-          </div>
-
-          <div>
-            {/* The concession, in the brand's italic. Saying the cost out loud
-                is what makes the sentence after it believable. */}
-            <p className="font-serif text-2xl text-nham-text leading-snug">
-              <span className="italic-accent">{t('tradeoff')}</span>
-            </p>
-            <p className="mt-3 font-sans-display text-nham-text-soft leading-relaxed">
-              {t('tradeoffBody')}
-            </p>
-            <p className="mt-4 font-sans-display text-nham-text-muted text-sm leading-relaxed">
-              {t('fallback')}
-            </p>
-          </div>
+        <motion.div {...reveal} className="mt-12 space-y-2">
+          {/* The concession, in the brand's italic. Saying the cost out loud is
+              what makes the line under it believable. */}
+          <p className="italic-accent font-serif text-nham-text text-xl">
+            {t('tradeoff')}
+          </p>
+          <p className="mx-auto max-w-xl font-sans-display text-nham-text-muted text-sm leading-relaxed">
+            {t('sources')}
+          </p>
         </motion.div>
       </div>
     </section>

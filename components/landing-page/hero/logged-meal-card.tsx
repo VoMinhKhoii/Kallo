@@ -11,7 +11,16 @@ import {
 import { TimeDivider } from '@/components/logging/feed/time-divider';
 import { LoggedMealDetails } from './logged-meal-details';
 import { type HeroMeal, mealTotals } from './logged-meals';
-import { cardInk } from './tone';
+
+/**
+ * How far the painting comes up when a card is active.
+ *
+ * The plates are light, so the card stays light underneath them and the type
+ * keeps its normal ink. That is the whole reason this reads better than the
+ * dark set did — no inversion, no card turning into a dark tile mid-page.
+ * Tune this one number if the art fights the text.
+ */
+const ART_OPACITY = 0.65;
 
 /**
  * The app's logged-meal card, on the landing page.
@@ -28,9 +37,6 @@ import { cardInk } from './tone';
  * carries TanStack Query mutations, share dialogs and authenticated calls that
  * have no business here, and a row of buttons that did nothing would be worse
  * than no row at all.
- *
- * On hover the meal's own painting fills the card behind the type and the ink
- * flips light to meet it.
  */
 export function LoggedMealCard({
   meal,
@@ -55,7 +61,6 @@ export function LoggedMealCard({
   const t = useTranslations('landing.hero');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const totals = mealTotals(meal);
-  const ink = cardInk(active);
 
   return (
     // The time divider sits outside the card body, exactly as in the feed.
@@ -80,10 +85,7 @@ export function LoggedMealCard({
           alt=""
           fill
           sizes="(min-width: 1024px) 34rem, (min-width: 640px) 45vw, 90vw"
-          // Near-full strength: dark paint over white subtracts rather than
-          // glows, so holding it back leaves only the darkest mass — the dish
-          // floating alone on a pale card.
-          style={{ opacity: active ? 0.92 : 0 }}
+          style={{ opacity: active ? ART_OPACITY : 0 }}
           className={`-z-10 object-cover transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
             active ? 'scale-105' : 'scale-100'
           }`}
@@ -94,7 +96,7 @@ export function LoggedMealCard({
           <button
             type="button"
             onClick={onSelectMeal}
-            className={`min-w-0 text-left font-serif text-[17px] leading-relaxed sm:text-[19px] ${ink.strong}`}
+            className="min-w-0 text-left font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
           >
             {t(`meals.${meal.id}.input`)}
           </button>
@@ -103,11 +105,7 @@ export function LoggedMealCard({
             aria-label={t('toggleDetails')}
             aria-expanded={!isCollapsed}
             onClick={() => setIsCollapsed((prev) => !prev)}
-            className={`shrink-0 rounded-full p-1 transition-colors ${
-              active
-                ? 'text-nham-surface/70 hover:bg-white/10 hover:text-nham-surface'
-                : 'text-nham-text-muted/60 hover:bg-nham-hover/40 hover:text-nham-text'
-            }`}
+            className="shrink-0 rounded-full p-1 text-nham-text-muted/60 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
           >
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
@@ -117,17 +115,17 @@ export function LoggedMealCard({
 
         {isCollapsed ? (
           <div className="mt-2 flex items-center justify-between font-sans-display">
-            <span className={`text-[11px] tabular-nums ${ink.muted}`}>
+            <span className="text-[11px] text-nham-text-muted tabular-nums">
               P: {formatMacroValue(totals.protein)}
               {'  '}C: {formatMacroValue(totals.carbs)}
               {'  '}F: {formatMacroValue(totals.fat)}
             </span>
-            <span className={`font-bold text-sm tabular-nums ${ink.strong}`}>
+            <span className="font-bold text-nham-text text-sm tabular-nums">
               {formatCaloriesValue(totals.calories)}
             </span>
           </div>
         ) : (
-          <LoggedMealDetails meal={meal} ink={ink} />
+          <LoggedMealDetails meal={meal} />
         )}
       </div>
     </div>

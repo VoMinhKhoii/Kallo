@@ -2,34 +2,21 @@
 
 import { Check, Minus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import {
-  availabilityFor,
-  type PlanId,
-  type PricingFeature,
-  valueKeyFor,
-} from './plans';
+import type { PricingFeature } from './plans';
 
 /**
- * One feature on one plan.
+ * One feature, as Free gets it.
  *
  * A tick on the left for what you get, a dash and a struck-through label for
- * what you don't — so the shape of a plan reads from the left margin alone,
- * before any word is parsed.
+ * what you don't — so the shape of the free tier reads from the left margin
+ * alone, before any word is parsed.
  *
- * Two rows aren't yes-or-no (how many groups, how large) and carry the plan's
- * own wording instead. The source table marked those "✓" on the paid columns,
- * which tells the reader nothing.
+ * Two rows aren't yes-or-no (how many groups, how large) and carry their own
+ * wording instead.
  */
-export function FeatureRow({
-  feature,
-  plan,
-}: {
-  feature: PricingFeature;
-  plan: PlanId;
-}) {
+export function FeatureRow({ feature }: { feature: PricingFeature }) {
   const t = useTranslations('landing.pricing.features');
-  const state = availabilityFor(feature, plan);
-  const absent = state === false;
+  const absent = feature.free === false;
 
   return (
     <li className="flex items-start gap-2.5">
@@ -47,10 +34,10 @@ export function FeatureRow({
         }`}
       >
         {t(`${feature.id}.label`)}
-        {state === 'value' && (
+        {feature.free === 'value' && (
           <span className="text-nham-text-muted">
             {' — '}
-            {t(`${feature.id}.${valueKeyFor(plan)}`)}
+            {t(`${feature.id}.free`)}
           </span>
         )}
       </span>

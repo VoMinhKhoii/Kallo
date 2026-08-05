@@ -4,16 +4,22 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
+import { FeatureRow } from './feature-row';
 import { PlanCard } from './plan-card';
 import type { BillingPeriod } from './plans';
-import { PLAN_IDS } from './plans';
+import { FEATURE_GROUPS, PLAN_IDS, PRICING_FEATURES } from './plans';
 
 /**
  * Pricing.
  *
- * Three plans, and one decision inside the middle one — monthly or yearly.
+ * Three prices, and one decision inside the middle one — monthly or yearly.
  * Lifetime is a separate column rather than a third segment on that toggle,
  * because it isn't a billing term, it's a different thing to buy.
+ *
+ * The feature list appears once, under all three, and describes Free only.
+ * Premium and Lifetime include everything, so a three-column grid would have
+ * been twenty identical ticks; one sentence under the list carries what they
+ * add instead.
  *
  * No "save N%" badge: the annual discount is 32% in đồng and 58% in dollars,
  * so a single number would be a lie in one of the two locales. The per-month
@@ -36,27 +42,22 @@ export function PricingSection() {
 
   return (
     // Cream, not white: the plan cards are white, and white cards on a white
-    // ground only read by their border. On cream they sit the way every other
-    // card in the app sits.
+    // ground only read by their border.
     <section
       id="pricing"
       className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-surface py-24 md:py-32"
     >
-      <div className="mx-auto max-w-6xl px-6">
-        <motion.div {...reveal} className="max-w-2xl">
-          <p className="eyebrow">{t('eyebrow')}</p>
-          <h2 className="mt-4 font-normal font-serif text-4xl text-nham-text leading-[1.1] tracking-[-0.02em] md:text-5xl">
-            {t('title')}{' '}
-            <span className="italic-accent">{t('titleAccent')}</span>
-          </h2>
-          <p className="mt-6 font-sans-display text-lg text-nham-text-soft leading-relaxed">
-            {t('subtitle')}
-          </p>
-        </motion.div>
+      <div className="mx-auto max-w-5xl px-6">
+        <motion.h2
+          {...reveal}
+          className="text-center font-normal font-serif text-4xl text-nham-text leading-[1.1] tracking-[-0.02em] md:text-5xl"
+        >
+          {t('title')} <span className="italic-accent">{t('titleAccent')}</span>
+        </motion.h2>
 
         <motion.div
           {...reveal}
-          className="mt-12 grid items-start gap-5 md:mt-16 md:grid-cols-3"
+          className="mt-12 grid items-start gap-4 md:mt-16 md:grid-cols-3"
         >
           {PLAN_IDS.map((plan) => (
             <PlanCard
@@ -69,22 +70,42 @@ export function PricingSection() {
           ))}
         </motion.div>
 
-        {/* Everything that stays free for everyone. It's a long list and none
-            of it is gated, so it sits here as one line rather than as ten more
-            identical tick rows in all three columns. */}
         <motion.div
           {...reveal}
-          className="mt-12 border-nham-border/50 border-t pt-8"
+          className="mt-14 border-nham-border/50 border-t pt-10"
         >
           <h3 className="font-medium font-sans-display text-nham-text text-sm">
-            {t('everyoneTitle')}
+            {t('freeTitle')}
           </h3>
-          <p className="mt-2 max-w-3xl font-sans-display text-nham-text-soft text-sm leading-relaxed">
-            {t('everyone')}
-          </p>
-          <p className="mt-6 font-sans-display text-nham-text-muted text-xs leading-relaxed">
-            {t('betaNote')}
-          </p>
+
+          <div className="mt-6 grid gap-x-10 gap-y-8 sm:grid-cols-2">
+            {FEATURE_GROUPS.map((group) => (
+              <div key={group}>
+                <h4 className="font-medium font-sans-display text-[11px] text-nham-text-muted">
+                  {t(`groups.${group}`)}
+                </h4>
+                <ul className="mt-3 space-y-2.5">
+                  {PRICING_FEATURES.filter((f) => f.group === group).map(
+                    (feature) => (
+                      <FeatureRow key={feature.id} feature={feature} />
+                    )
+                  )}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 space-y-2 border-nham-border/50 border-t pt-8">
+            <p className="font-sans-display text-nham-text-soft text-sm leading-relaxed">
+              {t('paidNote')}
+            </p>
+            <p className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
+              {t('everyone')}
+            </p>
+            <p className="pt-2 font-sans-display text-nham-text-muted text-xs">
+              {t('betaNote')}
+            </p>
+          </div>
         </motion.div>
       </div>
     </section>

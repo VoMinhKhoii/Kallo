@@ -1,9 +1,13 @@
 /**
- * The hero's ground, and the ink that sits on it.
+ * The hero's ground.
  *
  * Cream only. The lab explored an espresso fork behind a sun/moon switch, and
  * the page ships the brand default instead — so the second ground is gone, and
  * with it every `dark ? … : …` it forced through the card components.
+ *
+ * There is no `cardInk` here any more either. It existed to flip a card's type
+ * to white once its painting turned the card dark; the cards now wear the
+ * light paintings, stay light under them, and keep one ink throughout.
  */
 export const HERO_GROUND = {
   ground: 'bg-nham-surface',
@@ -16,27 +20,3 @@ export const HERO_GROUND = {
 
 /** The one easing curve every hero motion uses — heavy, decelerating. */
 export const HERO_EASE = [0.32, 0.72, 0, 1] as const;
-
-export interface CardInk {
-  strong: string;
-  muted: string;
-  rule: string;
-  ruleFaint: string;
-}
-
-/**
- * Ink for a meal card.
- *
- * At rest the card is plain white stock and takes normal ink. Hovered, its
- * painting runs at near-full strength and turns the card dark, so the type
- * flips light to follow it. That flip is why nothing has to be laid over the
- * text to keep it readable.
- */
-export function cardInk(active: boolean): CardInk {
-  return {
-    strong: active ? 'text-nham-surface' : 'text-nham-text',
-    muted: active ? 'text-nham-surface/90' : 'text-nham-text-muted',
-    rule: active ? 'border-white/25' : 'border-nham-border',
-    ruleFaint: active ? 'border-white/20' : 'border-nham-border/50',
-  };
-}

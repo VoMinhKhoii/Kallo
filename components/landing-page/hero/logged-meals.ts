@@ -37,11 +37,11 @@ export interface HeroMeal {
   /**
    * The painterly still life this meal wears when its card is active.
    *
-   * Cream ground means the dark-painted plate is the one that reads — light
-   * paint on cream subtracts rather than glows, and at low opacity only the
-   * darkest mass survives. The four `-cream` plates in the same folder are the
-   * espresso set from the lab; they are kept deliberately, not stranded, so a
-   * dark ground can be picked back up without regenerating anything.
+   * The `-cream` set — the light paintings the lab drew for the espresso
+   * ground. They read better here than the dark set did: the card stays light
+   * under them, so the type never has to invert and the card never turns into
+   * a dark tile mid-page. The `-dark` plates stay in the same folder rather
+   * than being stranded, so the other direction is one string away.
    */
   art: string;
 }
@@ -55,7 +55,7 @@ export const HERO_MEALS: readonly HeroMeal[] = [
       { id: 'pho', calories: 420, protein: 30, carbs: 50, fat: 10 },
       { id: 'quay', calories: 110, protein: 4, carbs: 12, fat: 3 },
     ],
-    art: '/landing/meals/meal-pho-dark.webp',
+    art: '/landing/meals/meal-pho-cream.webp',
   },
   {
     id: 'bol',
@@ -65,7 +65,7 @@ export const HERO_MEALS: readonly HeroMeal[] = [
       { id: 'pasta', calories: 380, protein: 21, carbs: 40, fat: 15 },
       { id: 'salad', calories: 90, protein: 3, carbs: 8, fat: 4 },
     ],
-    art: '/landing/meals/meal-bol-dark.webp',
+    art: '/landing/meals/meal-bol-cream.webp',
   },
   {
     id: 'chicken',
@@ -76,7 +76,7 @@ export const HERO_MEALS: readonly HeroMeal[] = [
       { id: 'rice', calories: 235, protein: 4, carbs: 52, fat: 1 },
       { id: 'oil', calories: 120, protein: 0, carbs: 0, fat: 14 },
     ],
-    art: '/landing/meals/meal-chicken-dark.webp',
+    art: '/landing/meals/meal-chicken-cream.webp',
   },
   {
     id: 'shake',
@@ -87,7 +87,7 @@ export const HERO_MEALS: readonly HeroMeal[] = [
       { id: 'milk', calories: 88, protein: 9, carbs: 12, fat: 0 },
       { id: 'banana', calories: 105, protein: 1, carbs: 27, fat: 0 },
     ],
-    art: '/landing/meals/meal-shake-dark.webp',
+    art: '/landing/meals/meal-shake-cream.webp',
   },
 ];
 
