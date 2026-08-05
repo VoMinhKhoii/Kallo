@@ -20,8 +20,14 @@ export const PIECE_UNIT_TOKENS = new Set([
   'slice',
   'slices',
   'steak',
+  'steaks',
+  'fillets',
+  'filet',
+  'filets',
   'chunk',
+  'chunks',
   'cut',
+  'cuts',
 ]);
 
 const ANIMAL_PROTEIN =
