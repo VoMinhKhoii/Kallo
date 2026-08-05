@@ -24,19 +24,14 @@ export const PLAN_IDS = ['free', 'premium', 'lifetime'] as const;
 export const PLAN_FEATURES: Record<PlanId, readonly string[]> = {
   free: [
     'barcode',
-    'friendFeed',
+    'manualLogging',
     'joinGroups',
-    'groupSize',
-    'dashboard',
-    'weight',
-    'heatmap',
-    'nutrition',
-    'goals',
-    'export',
+    'friends',
+    'macros',
+    'micros',
   ],
   premium: [
     'textLogging',
-    'manualLogging',
     'visualEdit',
     'relog',
     'cheatMeal',

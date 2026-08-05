@@ -102,9 +102,14 @@ export function PricingSection() {
           </div>
         </motion.div>
 
+        {/* Four named rows the cards hang their blocks on — heading, price,
+            button, features — so each row is as tall as the tallest card and
+            the three columns line up across. Below md the cards stack, the
+            subgrid is off, and the row gap goes back to being the gap between
+            cards. */}
         <motion.div
           {...reveal}
-          className="mt-12 grid items-start gap-5 md:mt-14 md:grid-cols-3"
+          className="mt-12 grid gap-x-5 gap-y-5 md:mt-14 md:grid-cols-3 md:grid-rows-[auto_auto_auto_1fr] md:gap-y-0"
         >
           {PLAN_IDS.map((plan) => (
             <PlanCard

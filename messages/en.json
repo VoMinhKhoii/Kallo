@@ -835,7 +835,8 @@
           "tagline": "Try Kallo",
           "price": "$0",
           "fineprint": "Free for everyone.",
-          "cta": "Get started free"
+          "cta": "Get started free",
+          "inherits": "Includes:"
         },
         "premium": {
           "name": "Premium",
@@ -857,23 +858,18 @@
         }
       },
       "features": {
-        "barcode": "Barcode scan for anything with a label",
-        "friendFeed": "Friends' meals in your feed",
-        "joinGroups": "Join up to 2 groups, view-only",
-        "groupSize": "Groups of up to 10 people",
-        "dashboard": "Daily calories and macros on your dashboard",
-        "weight": "Weight tracking with trend projection",
-        "heatmap": "Consistency heatmap",
-        "nutrition": "Nutrition breakdown over 7 and 30 days",
-        "goals": "Goals and targets from your own numbers",
-        "export": "Full export of everything you log",
-        "textLogging": "Describe a meal in your own words",
+        "barcode": "Barcode scanning",
         "manualLogging": "Manual logging",
+        "joinGroups": "Max 2 groups, view-only",
+        "friends": "10 friends",
+        "macros": "Macros tracking",
+        "micros": "Micros breakdown (7d/30d/90d)",
+        "textLogging": "Describe a meal in your own words",
         "visualEdit": "Visual edit",
         "relog": "Relog a previous meal",
         "cheatMeal": "Cheat meal mode",
         "copySplit": "Copy or split a friend's meal",
-        "unlimitedCircle": "Unlimited groups, no size cap",
+        "unlimitedCircle": "Unlimited groups and friends",
         "payOnce": "One payment instead of a subscription",
         "futureUpdates": "Every future update included"
       },

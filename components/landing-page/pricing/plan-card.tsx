@@ -12,9 +12,12 @@ import { PLAN_FEATURES, type PlanId } from './plans';
  * <the tier below>, plus" and list only the difference, so no line is printed
  * three times.
  *
- * Only Premium carries the brown button. One primary CTA per surface is a
- * brand rule, and it also states an opinion about which plan is the answer —
- * which is why the other two are outlined rather than filled.
+ * Four blocks — heading, price, button, features — laid on a subgrid inherited
+ * from the section. Each row takes the tallest card's height, so the three
+ * prices sit on one line, the three buttons sit on one line and the three
+ * lists start together, whatever the copy does at any width or in any locale.
+ * That is the whole reason for the grid: the alternative is reserving heights
+ * with pixel values guessed per translation.
  */
 export function PlanCard({
   plan,
@@ -30,26 +33,25 @@ export function PlanCard({
 }) {
   const t = useTranslations('landing.pricing');
   const featured = plan === 'premium';
-  const inherits = plan !== 'free';
 
   return (
     <div
-      className={`flex flex-col rounded-3xl border bg-white p-7 text-left sm:p-8 ${
+      className={`flex flex-col rounded-3xl border bg-white p-7 text-left sm:p-8 md:row-span-4 md:grid md:grid-rows-subgrid ${
         featured
           ? 'border-nham-accent/45 shadow-md ring-1 ring-nham-accent/15'
           : 'border-nham-border/60 shadow-sm'
       }`}
     >
-      <h3 className="font-normal font-serif text-3xl text-nham-text">
-        {t(`plans.${plan}.name`)}
-      </h3>
-      <p className="mt-1 font-sans-display text-nham-text-muted text-sm">
-        {t(`plans.${plan}.tagline`)}
-      </p>
+      <div>
+        <h3 className="font-semibold font-serif text-3xl text-nham-text">
+          {t(`plans.${plan}.name`)}
+        </h3>
+        <p className="mt-1 font-sans-display text-nham-text-muted text-sm">
+          {t(`plans.${plan}.tagline`)}
+        </p>
+      </div>
 
-      {/* Reserved height so the three prices land on one line across the row;
-          the fine print runs to two lines on Premium and one elsewhere. */}
-      <div className="mt-7 md:min-h-[5.5rem]">
+      <div className="mt-7">
         <p className="font-bold font-sans-display text-3xl text-nham-text tabular-nums">
           {price}
         </p>
@@ -58,20 +60,21 @@ export function PlanCard({
         </p>
       </div>
 
+      {/* Black on every card. The lift and drop shadow the `hero-dark` variant
+          carries are for a button standing on the page, not one sitting inside
+          a card, so both come off here. */}
       <Button
-        variant={featured ? 'landing-primary' : 'landing-secondary'}
-        className="mt-6 w-full font-sans-display"
+        variant="hero-dark"
+        className="mt-6 w-full self-start font-sans-display shadow-none hover:translate-y-0"
         onClick={onSelect}
       >
         {t(`plans.${plan}.cta`)}
       </Button>
 
       <div className="mt-7 border-nham-border/50 border-t pt-6">
-        {inherits && (
-          <p className="mb-4 font-sans-display font-semibold text-nham-text text-sm">
-            {t(`plans.${plan}.inherits`)}
-          </p>
-        )}
+        <p className="mb-4 font-sans-display font-semibold text-nham-text text-sm">
+          {t(`plans.${plan}.inherits`)}
+        </p>
         <ul className="space-y-3">
           {PLAN_FEATURES[plan].map((id) => (
             <li key={id} className="flex items-start gap-2.5">

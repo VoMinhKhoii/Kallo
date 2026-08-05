@@ -835,7 +835,8 @@
           "tagline": "Dùng thử Kallo",
           "price": "0₫",
           "fineprint": "Miễn phí cho tất cả mọi người.",
-          "cta": "Bắt đầu miễn phí"
+          "cta": "Bắt đầu miễn phí",
+          "inherits": "Bao gồm:"
         },
         "premium": {
           "name": "Premium",
@@ -857,23 +858,18 @@
         }
       },
       "features": {
-        "barcode": "Quét mã vạch cho mọi thứ có nhãn",
-        "friendFeed": "Bữa ăn của bạn bè trong feed",
-        "joinGroups": "Tham gia tối đa 2 nhóm, chỉ xem",
-        "groupSize": "Nhóm tối đa 10 người",
-        "dashboard": "Calo và macro hằng ngày trên bảng điều khiển",
-        "weight": "Theo dõi cân nặng kèm đường xu hướng",
-        "heatmap": "Bản đồ đều đặn",
-        "nutrition": "Phân tích dinh dưỡng theo 7 và 30 ngày",
-        "goals": "Mục tiêu tính từ số liệu của chính bạn",
-        "export": "Xuất toàn bộ dữ liệu bạn đã ghi",
-        "textLogging": "Mô tả bữa ăn bằng lời của bạn",
+        "barcode": "Quét mã vạch",
         "manualLogging": "Nhập thủ công",
+        "joinGroups": "Tối đa 2 nhóm, chỉ xem",
+        "friends": "10 bạn bè",
+        "macros": "Theo dõi macro",
+        "micros": "Phân tích vi chất (7 ngày/30 ngày/90 ngày)",
+        "textLogging": "Mô tả bữa ăn bằng lời của bạn",
         "visualEdit": "Chỉnh trực quan",
         "relog": "Ghi lại bữa đã ăn",
         "cheatMeal": "Chế độ bữa xả",
         "copySplit": "Sao chép hoặc chia bữa của bạn bè",
-        "unlimitedCircle": "Nhóm không giới hạn, không giới hạn thành viên",
+        "unlimitedCircle": "Nhóm và bạn bè không giới hạn",
         "payOnce": "Trả một lần thay vì thuê bao",
         "futureUpdates": "Bao gồm mọi bản cập nhật sau này"
       },

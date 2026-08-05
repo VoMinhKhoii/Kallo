@@ -68,10 +68,12 @@ export function Header() {
           >
             {t('signIn')}
           </Button>
+          {/* Black, not the brown `header-cta`. This page is black and white
+              throughout: the waitlist pill, every plan button, and this. */}
           <Button
-            variant="header-cta"
+            variant="hero-dark"
             size="header"
-            className="font-sans-display"
+            className="font-sans-display shadow-none hover:translate-y-0"
             onClick={() => openDialog('sign-up')}
           >
             {t('getStarted')}
