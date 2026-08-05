@@ -85,8 +85,16 @@ class PortionContainerBody extends StatelessWidget {
           min: min,
           max: max,
           sliderLabel: sliderLabel,
-          valueTextFor: (g) =>
-              '$g g — ${nearestAnchor(anchors, g).label} (${nearestTier.sizeLabel})',
+          // Resolve the tier from the CANDIDATE grams, not from the committed
+          // ones. Reading `nearestTier` here paired the anchor nearest `g` with
+          // the size of the tier nearest `grams`, so dragging across a tier
+          // boundary announced "250 g — đĩa lớn (16 cm)" — this class exists to
+          // stop the sheet naming a vessel the card wouldn't.
+          valueTextFor: (g) {
+            final at = nearestAnchor(anchors, g);
+            final tier = tiers[anchors.indexWhere((a) => a.tier == at.tier)];
+            return '$g g — ${at.label} (${tier.sizeLabel})';
+          },
           glyphBandAspect: 1 / tallest,
           glyphBuilder: (index, column) => PortionVesselGlyph(
             asset: tiers[index].asset,

@@ -69,7 +69,11 @@ class PortionRulerNeedle extends StatelessWidget {
           width: 2,
           height: portionRulerHeight + NhamSpacing.sp1,
           decoration: BoxDecoration(
-            color: NhamColors.accentDark,
+            // The umber CTA colour, NOT `accentDark`. The needle is the one
+            // mark that states the reading, and tan-on-cream measures 2.7:1 —
+            // under the 3:1 floor for a non-text indicator. Umber is 6.3:1 and
+            // is already the app's "this is the actionable thing" colour.
+            color: NhamColors.btn,
             borderRadius: BorderRadius.circular(1),
           ),
         ),
@@ -87,7 +91,7 @@ class _CapPainter extends CustomPainter {
         ..lineTo(size.width, 0)
         ..lineTo(size.width / 2, size.height)
         ..close(),
-      Paint()..color = NhamColors.accentDark,
+      Paint()..color = NhamColors.btn,
     );
   }
 

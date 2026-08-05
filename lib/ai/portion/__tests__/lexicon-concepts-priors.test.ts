@@ -30,6 +30,16 @@ describe('unit lexicon', () => {
     expect(lookupUnit('SLICE')?.locale).toBe('en');
   });
 
+  it('collapses whitespace INSIDE a multi-word token, not just at the ends', () => {
+    // The multi-word entries are the only ones spacing can break, and a
+    // double-spaced token is exactly what a model emits. Trimming alone left
+    // these missing the table entirely.
+    expect(resolveUnitType('phi  lê')).toBe('slice');
+    expect(resolveUnitType('phi\tlê')).toBe('slice');
+    // …and the folded fallback has to agree, for the un-accented typing case.
+    expect(resolveUnitType(' PHI   LE ')).toBe('slice');
+  });
+
   it('unknown token → null (resolver will not guess)', () => {
     expect(resolveUnitType('zorp')).toBeNull();
     expect(resolveUnitType(undefined)).toBeNull();

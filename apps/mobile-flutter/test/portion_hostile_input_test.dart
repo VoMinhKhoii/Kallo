@@ -49,6 +49,13 @@ void main() {
       // Missing discriminators.
       <String, dynamic>{},
       {'family': 'piece'},
+      // Well-typed, but values this build has never heard of. This is the
+      // forward-compatibility claim in `vessel.dart`: a server that adds a
+      // family, a cut or a dish class degrades to "no portion line" on an old
+      // app, it does not take the meal down with it.
+      {'family': 'bucket', 'tier': 2, 'dishClass': 'soup'},
+      {'family': 'piece', 'tier': 3, 'count': 1, 'kind': 'tofu'},
+      {'family': 'bowl', 'tier': 2, 'dishClass': 'stew'},
     ];
 
     for (final (index, bad) in malformed.indexed) {

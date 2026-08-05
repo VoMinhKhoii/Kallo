@@ -72,8 +72,12 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
   int? _lastGraduation;
   bool _selfDriven = false;
 
-  void _ensureController(double viewport) {
-    if (_controller != null) return;
+  @override
+  void initState() {
+    super.initState();
+    // Not built from `build`: the offset depends only on `_pitch`, the
+    // graduation count and the anchors, none of which come from layout, so
+    // creating it here keeps build free of side effects.
     _controller = ScrollController(
       initialScrollOffset: widget.position * _contentWidth,
     )..addListener(_onScroll);
@@ -126,7 +130,6 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewport = constraints.maxWidth;
-        _ensureController(viewport);
         final glyphHeight = _column / widget.glyphBandAspect;
 
         return Stack(
@@ -161,8 +164,13 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
                       ),
                     ),
                     const SizedBox(height: NhamSpacing.sp1),
+                    // Scaled, not fixed. Every child of PortionRulerBand is
+                    // `Positioned`, so the Stack cannot size itself to them and
+                    // the band needs a height — but a flat 18 clipped the gram
+                    // digits at the 1.3x Dynamic Type ceiling, and a clipped
+                    // gram figure reads as a plausible but wrong number.
                     SizedBox(
-                      height: 18,
+                      height: MediaQuery.textScalerOf(context).scale(18),
                       child: PortionRulerBand(
                         majors: widget.majors,
                         width: _contentWidth,

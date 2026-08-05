@@ -82,11 +82,18 @@ export function classifyDishClass(
  * chose. Restricted to a SINGLE-ingredient dish on purpose: in a composed dish
  * one ingredient measured in cups ("phở with a cup of broth") says nothing
  * about what the dish was served in.
+ *
+ * And to a single SERVING. The envelope's guard band and `midG` describe one
+ * vessel, while the dish grams describe `count` of them — so promoting "3 cups
+ * of milk" would fit a three-cup total into a one-cup band and tell the
+ * estimator the portion is far too small. The dish-level `vesselToken` path is
+ * unaffected: that token already describes the dish as served.
  */
 function dishVesselToken(dish: DishLike): string | undefined {
   if (dish.vesselToken) return dish.vesselToken;
   if (dish.ingredients.length !== 1) return undefined;
-  const token = dish.ingredients[0].unitToken;
+  const { unitToken: token, count } = dish.ingredients[0];
+  if (count !== undefined && count > 1) return undefined;
   // Only a real container word — `resolveVesselFromToken` rejects piece and
   // mass units, so "2 steaks" can never become a vessel this way.
   return token && resolveVesselFromToken(token) ? token : undefined;

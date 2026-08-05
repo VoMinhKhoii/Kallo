@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/features/logging/logic/meal_log_mode.dart';
 import 'package:nham_mobile/features/logging/widgets/portion/portion_picker_sheet.dart';
 import 'package:nham_mobile/features/logging/widgets/sheets/meal_mode_sheet.dart';
+import 'package:nham_mobile/features/nutrition/widgets/source_attribution.dart';
 import 'package:nham_mobile/models/vessel.dart';
 
 import 'app_fonts.dart';
@@ -166,6 +167,24 @@ void main() {
           ),
         );
         await _expectReachable(tester, find.text('Apply'), entry.value);
+      });
+
+      testWidgets('citations sheet, $where', (tester) async {
+        _sizeTo(tester, entry.value, scale);
+        // No public opener — the sheet is private to `SourceAttribution`, so
+        // this goes in through the affordance a user actually taps. It is the
+        // third sheet named at the top of this file as having shipped clipped,
+        // and it was the one left without a guard.
+        await tester.pumpWidget(_wrap(const SourceAttribution()));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(SourceAttribution));
+        await tester.pumpAndSettle();
+        // The last citation is what the 9/16 cap ate.
+        await _expectReachable(
+          tester,
+          find.text('nutrition.targetSources.nasem'.tr()),
+          entry.value,
+        );
       });
 
       testWidgets('meal mode sheet, $where', (tester) async {

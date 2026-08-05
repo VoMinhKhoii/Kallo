@@ -502,6 +502,29 @@ describe('container word on the ingredient instead of the dish', () => {
     }
   });
 
+  it('ignores a multi-serving ingredient, whose grams outrun one vessel', () => {
+    // The envelope's guard band and midG describe ONE cup, but "3 cups of
+    // milk" is three of them. Promoting it would fit a ~720 g total into a
+    // one-cup band and tell the estimator the portion is far too small — worse
+    // than the no-affordance behaviour this promotion path exists to fix.
+    expect(
+      resolveVesselEnvelope({
+        name: 'Milk',
+        ingredients: [{ canonicalName: 'Milk', count: 3, unitToken: 'cup' }],
+      })
+    ).toBeNull();
+  });
+
+  it('still promotes a fractional serving', () => {
+    // Half a cup is inside a one-cup envelope, so the guard band still holds.
+    expect(
+      resolveVesselEnvelope({
+        name: 'Milk',
+        ingredients: [{ canonicalName: 'Milk', count: 0.5, unitToken: 'cup' }],
+      })?.family
+    ).toBe('cup');
+  });
+
   it('ignores a composed dish where one ingredient is measured in cups', () => {
     // "phở with a cup of broth" says nothing about what the DISH was served in.
     expect(

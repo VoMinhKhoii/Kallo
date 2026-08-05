@@ -337,7 +337,13 @@ export function isRenderableVessel(vessel: ClientVessel): boolean {
       vessel.count <= MAX_PIECE_COUNT
     );
   }
-  return vessel.tier >= 1 && vessel.tier <= 4;
+  // Bound read off the family's own tier table, like the piece branch above —
+  // a hard-coded 4 goes stale the moment a family gains or loses a tier, and
+  // it goes stale silently.
+  const tiers = VESSEL_FAMILIES[vessel.family]?.tiers;
+  return (
+    !!tiers && vessel.tier >= 1 && vessel.tier <= Object.keys(tiers).length
+  );
 }
 
 /**

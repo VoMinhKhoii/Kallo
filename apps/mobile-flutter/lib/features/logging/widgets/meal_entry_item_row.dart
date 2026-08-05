@@ -41,6 +41,11 @@ class MealEntryItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vessel = item.vessel;
+    final dishLine = MealEntryDishLine(
+      item: item,
+      editing: editing,
+      onChange: onChange,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -52,23 +57,12 @@ class MealEntryItemRow extends StatelessWidget {
         // (meal-entry-item.tsx:32-35). On the reveal the rows were already on
         // screen in the streaming card — crossfade in place, don't re-enter.
         if (revealing)
-          FadeIn(
-            duration: const Duration(milliseconds: 150),
-            child: MealEntryDishLine(
-              item: item,
-              editing: editing,
-              onChange: onChange,
-            ),
-          )
+          FadeIn(duration: const Duration(milliseconds: 150), child: dishLine)
         else
           FadeInLeft(
             offset: 8,
             delay: Duration(milliseconds: index * 50),
-            child: MealEntryDishLine(
-              item: item,
-              editing: editing,
-              onChange: onChange,
-            ),
+            child: dishLine,
           ),
         if (vessel != null)
           PortionAssumptionLine(

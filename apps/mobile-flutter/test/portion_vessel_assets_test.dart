@@ -78,7 +78,11 @@ void main() {
         // Both clients write the pair on adjacent lines: `'file.webp'` then
         // `aspect: N`. Matching the pair catches a filename that moved tiers.
         final pattern = RegExp(
-          "'${RegExp.escape(asset.file)}',?\\s*(?:aspect:\\s*)?([0-9.]+)",
+          // `aspect:` is REQUIRED, not optional. Optional, the capture bound to
+          // whatever number happened to follow the filename — a tier, an `ml`,
+          // anything — and the test could still pass while comparing the wrong
+          // value. A false pass is the exact failure this file exists to catch.
+          "'${RegExp.escape(asset.file)}',?\\s*aspect:\\s*([0-9.]+)",
         );
         final match = pattern.firstMatch(source);
         expect(match, isNotNull, reason: '${asset.file} missing from web data');
@@ -149,15 +153,35 @@ void main() {
         reason: 'piece tier grams drifted',
       );
 
-      final webMl = RegExp(r'\bml:\s*(\d+)')
-          .allMatches(vesselSource)
-          .map((m) => int.parse(m.group(1)!))
-          .toList();
-      final dartMl = [
-        for (final family in vesselFamilies.values)
-          for (final tier in family.values) tier.ml,
-      ];
-      expect(webMl, dartMl, reason: 'container tier millilitres drifted');
+      // Per family, not one flat list. Flattened, the comparison silently
+      // depended on the TypeScript declaration order matching Dart's map
+      // iteration order — a pure reorder failed with an opaque list mismatch,
+      // and two families swapping equal millilitres passed.
+      final familyStarts = <ContainerFamily, int>{
+        for (final family in ContainerFamily.values)
+          family: vesselSource.indexOf(RegExp('\\n  ${family.name}: \\{')),
+      };
+      for (final entry in familyStarts.entries) {
+        expect(
+          entry.value,
+          isNonNegative,
+          reason: '${entry.key.name} block missing from web data',
+        );
+      }
+      final ordered = familyStarts.entries.toList()
+        ..sort((a, b) => a.value.compareTo(b.value));
+      for (final (i, entry) in ordered.indexed) {
+        final end = i + 1 < ordered.length ? ordered[i + 1].value : null;
+        final block = vesselSource.substring(entry.value, end);
+        expect(
+          RegExp(r'\bml:\s*(\d+)')
+              .allMatches(block)
+              .map((m) => int.parse(m.group(1)!))
+              .toList(),
+          [for (final tier in vesselFamilies[entry.key]!.values) tier.ml],
+          reason: '${entry.key.name} tier millilitres drifted',
+        );
+      }
     });
   });
 }

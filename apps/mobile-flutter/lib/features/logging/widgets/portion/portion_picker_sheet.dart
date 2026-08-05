@@ -72,10 +72,18 @@ class _PortionPickerSheetState extends State<_PortionPickerSheet> {
   late GramEnvelope _envelope;
   late int _grams;
 
-  /// Anchors are locale-dependent (the tier labels), so they're built in build
-  /// rather than initState, where `context.locale` isn't ready — and rebuilt
-  /// when the locale changes, so an open sheet can't keep labels in the
-  /// language the user just left. The grams the user has dialled in survive.
+  /// Anchors are locale-dependent (the tier labels), so they're built here
+  /// rather than in `initState`, where `context.locale` isn't ready yet. This
+  /// hook runs after `initState` and before the first `build`, and runs again
+  /// when an inherited dependency such as the locale changes — so an open sheet
+  /// can't keep labels in the language the user just left, and `build` stays
+  /// free of state mutation. The grams the user has dialled in survive.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ensureAnchors(context);
+  }
+
   void _ensureAnchors(BuildContext context) {
     final locale = context.locale.languageCode == 'vi' ? 'vi' : 'en';
     if (_anchors != null && _locale == locale) return;
@@ -99,7 +107,6 @@ class _PortionPickerSheetState extends State<_PortionPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    _ensureAnchors(context);
     final anchors = _anchors!;
     final title = 'logging.portionPicker.title'.tr();
     final bottomInset = MediaQuery.of(context).padding.bottom;

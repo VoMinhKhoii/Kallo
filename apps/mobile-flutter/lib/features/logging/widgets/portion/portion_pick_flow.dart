@@ -32,17 +32,18 @@ Future<List<MealItem>?> pickPortion(
   );
   if (pick == null) return null;
 
-  // Read the quantity back out of the CURRENT list. The sheet was open across
-  // an await, so the captured `item` may be a stale copy of a row a stepper has
-  // moved since — deltas must be computed against what is on screen now.
-  final current = items.firstWhere(
-    (it) => it.id == item.id,
-    orElse: () => item,
-  );
+  // The delta is measured against `items`, which is the same snapshot `item`
+  // came from — the sheet is modal, so nothing can move the row underneath it
+  // while it is open. Deriving it from the list rather than from `item` keeps
+  // that true if the sheet ever stops being modal.
+  final current = items.firstWhere((it) => it.id == item.id, orElse: () => item);
   return applyQuantityChange(
         items,
         original,
         item.id,
+        // Exactly the previewed grams, so the committed amount is the number
+        // the readout showed when Apply was pressed — not that number nudged
+        // by whatever fraction the estimator's original quantity carried.
         pick.grams - current.quantity,
       )
       .map((it) => it.id == item.id ? it.copyWith(vessel: pick.vessel) : it)

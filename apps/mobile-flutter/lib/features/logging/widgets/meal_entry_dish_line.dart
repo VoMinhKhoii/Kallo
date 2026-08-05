@@ -127,10 +127,16 @@ class _QuantityStepper extends StatelessWidget {
         const SizedBox(width: 2), // gap-0.5
         SizedBox(
           width: 28,
-          child: Text(
-            quantity.round().toString(),
-            textAlign: TextAlign.center,
-            style: dashMeta(color: kInk, tabular: true),
+          // Scale down rather than clip. Grams reach four digits on a large
+          // bowl, and a clipped gram figure reads as a plausible wrong number —
+          // the same reason MacroTrio fits its values instead of truncating.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              quantity.round().toString(),
+              textAlign: TextAlign.center,
+              style: dashMeta(color: kInk, tabular: true),
+            ),
           ),
         ),
         const SizedBox(width: 2),

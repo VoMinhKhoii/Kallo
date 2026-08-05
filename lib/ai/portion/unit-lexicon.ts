@@ -15,7 +15,10 @@
 import type { Locale, UnitLexiconEntry, UnitType } from './types';
 
 function normalize(token: string): string {
-  return token.normalize('NFC').toLowerCase().trim();
+  // Internal runs collapse too, not just the ends: the multi-word entries
+  // ("phi lê", "bánh bao") are the only ones whitespace can break, and a
+  // double-spaced token is exactly the kind of thing a model emits.
+  return token.normalize('NFC').toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
 const ENTRIES: UnitLexiconEntry[] = [
