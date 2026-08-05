@@ -4,49 +4,7 @@ import '../../../../models/vessel.dart';
 import '../../logic/portion/portion_anchors.dart';
 import '../../logic/portion/vessel_data.dart';
 
-/// The silhouette row: n equal columns, each glyph bottom-aligned and sized by
-/// area so twice the food looks twice as big.
-class PortionGlyphRow extends StatelessWidget {
-  const PortionGlyphRow({
-    super.key,
-    required this.anchors,
-    required this.kind,
-    required this.countPrefix,
-    required this.claimedTier,
-    required this.onPick,
-  });
-
-  final List<PortionAnchor> anchors;
-  final PieceKind kind;
-  final String countPrefix;
-  final int? claimedTier;
-  final ValueChanged<int> onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columnWidth = constraints.maxWidth / anchors.length;
-        return Row(
-          children: [
-            for (final anchor in anchors)
-              Expanded(
-                child: PortionGlyph(
-                  tier: pieceTiers[anchor.tier - 1],
-                  kind: kind,
-                  columnWidth: columnWidth,
-                  label: '$countPrefix${anchor.label}',
-                  selected: anchor.tier == claimedTier,
-                  onTap: () => onPick(anchor.value.round()),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
+/// The two silhouettes the ruler draws: a piece cut and a container.
 class PortionGlyph extends StatelessWidget {
   const PortionGlyph({
     super.key,
