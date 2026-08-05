@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../logic/portion/portion_anchors.dart';
-import '../../logic/portion/ruler_scale.dart';
+import '../../../logic/portion/portion_anchors.dart';
+import '../../../logic/portion/ruler_scale.dart';
 import 'portion_ruler_face.dart';
 import 'portion_ruler_strip.dart';
 

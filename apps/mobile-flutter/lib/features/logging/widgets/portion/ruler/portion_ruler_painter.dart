@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/nham_colors.dart';
+import '../../../../../theme/nham_colors.dart';
 
 /// Paints the ruler face for the scrolling strip: a top edge with graduations
 /// hanging from it, tall at each vessel tier and short between them.

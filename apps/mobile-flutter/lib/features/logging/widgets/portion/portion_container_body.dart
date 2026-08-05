@@ -10,7 +10,7 @@ import '../../logic/portion/portion_anchors.dart';
 import '../../logic/portion/vessel_data.dart';
 import 'portion_glyphs.dart';
 import 'portion_readout.dart';
-import 'portion_ruler_control.dart';
+import 'ruler/portion_ruler_control.dart';
 
 /// Container layout: the SAME tape ruler the piece branch uses, with bowl /
 /// plate / cup silhouettes on it.

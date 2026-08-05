@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../../theme/nham_colors.dart';
+import '../../../../../theme/nham_theme.dart';
 import 'portion_ruler_face.dart';
 
 /// Lays children at their anchor fractions across [width], each centred on its
