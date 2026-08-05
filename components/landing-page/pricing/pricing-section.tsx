@@ -92,7 +92,7 @@ export function PricingSection() {
       id="pricing"
       className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-surface py-24 md:py-32"
     >
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-[100rem] px-4 sm:px-6">
         <motion.div {...reveal} className="flex flex-col items-center">
           <h2 className="font-normal font-serif text-5xl text-nham-text tracking-[-0.02em] md:text-6xl">
             {t('title')}

@@ -32,7 +32,9 @@ export function Header() {
       transition={{ duration: 0.6 }}
       className="fixed top-0 right-0 left-0 z-50 border-nham-border/30 border-b bg-nham-surface/80 backdrop-blur-xl"
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+      {/* Matches the section measure below it, so the wordmark sits on the
+          same left edge as the first meal card and the first plan. */}
+      <div className="mx-auto flex max-w-[100rem] items-center justify-between px-4 py-5 sm:px-6">
         {/* Logo */}
         <div className="flex items-center gap-2">
           <KalloWordmark className="h-5 w-auto text-nham-text" />

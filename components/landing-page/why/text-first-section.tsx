@@ -42,7 +42,10 @@ export function TextFirstSection() {
       id="why"
       className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-surface py-24 md:py-32"
     >
-      <div className="mx-auto max-w-5xl px-6 text-center">
+      {/* Same measure as the hero, so the page has one width. The blocks
+          inside keep their own max-widths — a headline and two lines of prose
+          set across 1600px would be unreadable however wide the section is. */}
+      <div className="mx-auto max-w-[100rem] px-4 text-center sm:px-6">
         <motion.div {...reveal}>
           <h2 className="mx-auto max-w-3xl text-balance font-normal font-serif text-4xl text-nham-text leading-[1.1] tracking-[-0.02em] md:text-5xl">
             {t('title')}{' '}
