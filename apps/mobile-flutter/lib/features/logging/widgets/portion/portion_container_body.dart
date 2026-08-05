@@ -5,19 +5,23 @@ import 'package:flutter/services.dart';
 
 import '../../../../models/vessel.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../logic/portion/portion_anchors.dart';
+import '../../logic/portion/ruler_scale.dart';
 import '../../logic/portion/vessel_data.dart';
+import 'portion_glyph_row.dart';
 import 'portion_readout.dart';
-import 'portion_slider.dart';
+import 'portion_ruler_face.dart';
+import 'portion_ruler_strip.dart';
 
-/// Container layout: a true-to-scale glyph row whose widths scale as
-/// `cbrt(volume) * aspect` (tap to jump to a tier), the nearest-tier label, the
-/// live gram/kcal readout, and a plain fine-adjustment slider.
+/// Container layout: the SAME tape ruler the piece branch uses, with bowl /
+/// plate / cup silhouettes on it.
 ///
-/// Ported from `components/logging/feed/meal-entry/portion/portion-container-body.tsx`.
-class PortionContainerBody extends StatelessWidget {
+/// It used to be a separate control — a flex-weighted glyph row over a plain
+/// gram slider — which meant one sheet showed two different sliders depending
+/// on what you ate. The scale is shared now; only the art and the tier labels
+/// differ.
+class PortionContainerBody extends StatefulWidget {
   const PortionContainerBody({
     super.key,
     required this.family,
@@ -40,134 +44,118 @@ class PortionContainerBody extends StatelessWidget {
   final ValueChanged<int> onChanged;
 
   @override
+  State<PortionContainerBody> createState() => _PortionContainerBodyState();
+}
+
+class _PortionContainerBodyState extends State<PortionContainerBody> {
+  late RulerScale _scale = _buildScale();
+  late int _ownGrams = widget.grams;
+
+  RulerScale _buildScale() =>
+      RulerScale(widget.anchors, widget.min, widget.max);
+
+  List<VesselTierData> get _tiers => [
+    for (final a in widget.anchors) vesselFamilies[widget.family]![a.tier]!,
+  ];
+
+  /// Glyph widths as a fraction of a column, normalised so the largest vessel
+  /// exactly fills its slot. Volume enters as a cube root — a bowl twice the
+  /// volume reads ~26% wider, not twice as wide — and the aspect turns that
+  /// height-like scale into the width the row lays out on.
+  List<double> get _widthRatios {
+    final largestMl = _tiers.last.ml;
+    final weights = [
+      for (final tier in _tiers)
+        (math.pow(tier.ml / largestMl, 1 / 3) * tier.asset.aspect).toDouble(),
+    ];
+    final widest = weights.reduce(math.max);
+    return [for (final w in weights) w / widest];
+  }
+
+  @override
+  void didUpdateWidget(PortionContainerBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final next = _buildScale();
+    if (next.differsFrom(_scale)) {
+      _scale = next;
+      _ownGrams = widget.grams;
+      return;
+    }
+    if (widget.grams != _ownGrams) _ownGrams = widget.grams;
+  }
+
+  void _emit(int grams) {
+    setState(() => _ownGrams = grams);
+    widget.onChanged(grams);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final tiers = [for (final a in anchors) vesselFamilies[family]![a.tier]!];
-    final largestMl = tiers.last.ml;
-    final nearest = nearestAnchor(anchors, grams);
-    final nearestTier = tiers[anchors.indexWhere((a) => a.tier == nearest.tier)];
+    final ratios = _widthRatios;
+    final tiers = _tiers;
+    final nearest = nearestAnchor(widget.anchors, _ownGrams);
+    final nearestTier = tiers[widget.anchors.indexWhere(
+      (a) => a.tier == nearest.tier,
+    )];
+    // Tallest glyph in column widths — pins the band so the sheet doesn't
+    // change height between a flat platter and an upright cup.
+    final tallest = [
+      for (final (i, tier) in tiers.indexed) ratios[i] / tier.asset.aspect,
+    ].reduce(math.max);
 
     return Column(
       children: [
+        PortionReadout(grams: _ownGrams, kcal: widget.kcal),
+        const SizedBox(height: NhamSpacing.sp3),
         ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 340),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end, // items-end
-            spacing: NhamSpacing.sp2, // gap-2
-            children: [
-              for (final (index, anchor) in anchors.indexed)
-                Expanded(
-                  // Web gives each glyph `flex: cbrt(ml/largestMl) * aspect`.
-                  // Flutter's flex is an int, so the same ratio is carried at
-                  // 1000x — the row is laid out from the ratios, not the units.
-                  flex:
-                      (_glyphWeight(tiers[index], largestMl) * 1000).round(),
-                  child: _GlyphButton(
-                    tier: tiers[index],
-                    label: anchor.label,
-                    selected: anchor.tier == nearest.tier,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      onChanged(anchor.value.round());
-                    },
-                  ),
-                ),
-            ],
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Semantics(
+            slider: true,
+            label: widget.sliderLabel,
+            value: '$_ownGrams g — ${nearest.label} (${nearestTier.sizeLabel})',
+            increasedValue: '${_gramsAfter(1)} g',
+            decreasedValue: '${_gramsAfter(-1)} g',
+            onIncrease: () => _emit(_gramsAfter(1)),
+            onDecrease: () => _emit(_gramsAfter(-1)),
+            child: PortionRulerStrip(
+              majors: anchorPositions(widget.anchors.length),
+              position: _scale.toPosition(_ownGrams) / positionMax,
+              graduations: portionGraduationCount(widget.anchors.length),
+              glyphBandAspect: 1 / tallest,
+              glyphBuilder: (index, column) => PortionVesselGlyph(
+                asset: tiers[index].asset,
+                width: column * ratios[index],
+                label: '${widget.anchors[index].label} '
+                    '(${tiers[index].sizeLabel})',
+                selected: widget.anchors[index].tier == nearest.tier,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  _emit(widget.anchors[index].value.round());
+                },
+              ),
+              labelFor: (index) => tiers[index].sizeLabel,
+              onChanged: (fraction) =>
+                  _emit(_scale.toGrams(fraction * positionMax)),
+            ),
           ),
         ),
-        const SizedBox(height: NhamSpacing.sp4), // mb-4
+        const SizedBox(height: NhamSpacing.sp2),
         Text(
           '${nearest.label} · ${nearestTier.sizeLabel}',
           textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: dashMeta(),
-        ),
-        const SizedBox(height: NhamSpacing.sp1), // mb-1
-        PortionReadout(grams: grams, kcal: kcal),
-        const SizedBox(height: NhamSpacing.sp4), // mb-4
-        PortionSlider(
-          value: grams.toDouble(),
-          min: min.toDouble(),
-          max: max.toDouble(),
-          // One division per gram. Without it Flutter gives a continuous
-          // slider a 5–10% semantic increment — ~56 g per screen-reader swipe
-          // on a bowl envelope, where the web's arrow key moves 1 g.
-          divisions: max - min,
-          // Container anchors are NOT equally spaced in gram space (a tier-4
-          // bowl is far more than 4x a tier-1), so the majors are computed from
-          // where each anchor actually falls in the envelope — unlike the piece
-          // ruler, whose slider runs in position space and spaces them evenly.
-          majors: [
-            for (final anchor in anchors)
-              ((anchor.value - min) / (max - min)).clamp(0.0, 1.0),
-          ],
-          semanticLabel: sliderLabel,
-          semanticValue:
-              '$grams g — ${nearest.label} (${nearestTier.sizeLabel})',
-          onChanged: (value) => onChanged(value.round()),
         ),
       ],
     );
   }
 
-  /// Web's `Math.cbrt(ml / largestMl) * aspect`: volume enters as a cube root
-  /// so a bowl twice the volume reads ~26% wider, not twice as wide, and the
-  /// aspect converts that height-like scale into the width the row lays out on.
-  static double _glyphWeight(VesselTierData tier, int largestMl) =>
-      math.pow(tier.ml / largestMl, 1 / 3) * tier.asset.aspect;
-}
-
-/// One glyph in the container row: the silhouette at its own aspect, bottom
-/// aligned, with the selected tier's accent underline beneath it.
-class _GlyphButton extends StatelessWidget {
-  const _GlyphButton({
-    required this.tier,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final VesselTierData tier;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: '$label (${tier.sizeLabel})',
-      excludeSemantics: true,
-      onTap: onTap,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 150),
-          opacity: selected ? 1 : 0.45,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AspectRatio(
-                aspectRatio: tier.asset.aspect,
-                child: Image.asset(
-                  tier.asset.path,
-                  fit: BoxFit.contain,
-                  alignment: Alignment.bottomCenter,
-                ),
-              ),
-              const SizedBox(height: NhamSpacing.sp1), // mt-1
-              Container(
-                width: 24, // w-6
-                height: 2, // h-0.5
-                decoration: BoxDecoration(
-                  color: selected ? NhamColors.accent : Colors.transparent,
-                  borderRadius: BorderRadius.circular(NhamRadii.pill),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+  int _gramsAfter(int direction) {
+    final step = positionMax / portionGraduationCount(widget.anchors.length);
+    return _scale.toGrams(
+      (_scale.toPosition(_ownGrams) + direction * step)
+          .clamp(0.0, positionMax.toDouble()),
     );
   }
 }

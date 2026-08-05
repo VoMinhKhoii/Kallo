@@ -32,7 +32,15 @@ PortionDisplay portionDisplayFor(
 ) {
   switch (vessel) {
     case ContainerVessel():
-      final tier = vesselFamilies[vessel.family]![vessel.tier]!;
+      // By GRAMS, not by `vessel.tier`. The tier is Call 1's opening guess at
+      // the vessel; the grams are what the estimator actually produced and what
+      // gets committed. When they disagree the card said "medium plate" while
+      // the picker it opened said "side plate · 16 cm" for the same 280 g.
+      // The picker already reads the nearest anchor, so this is the side that
+      // was lying.
+      final anchors = buildContainerAnchors(vessel, locale);
+      final nearest = nearestAnchor(anchors, grams);
+      final tier = vesselFamilies[vessel.family]![nearest.tier]!;
       return PortionDisplay(asset: tier.asset, label: tier.label(locale));
     case PieceVessel():
       // Only claim a tier label the picker would also commit; otherwise state

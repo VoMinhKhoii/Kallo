@@ -18,6 +18,9 @@ import '../../../../theme/nham_colors.dart';
 /// silhouettes above and the gram labels below still line up with the scale and
 /// with each other.
 
+/// Clearance between the silhouettes and the needle's pointer cap.
+const double portionNeedleGap = 6;
+
 /// Height of the ruler band. Replaces the web track's `h-1.5`.
 const double portionRulerHeight = 22;
 

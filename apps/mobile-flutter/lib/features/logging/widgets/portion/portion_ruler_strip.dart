@@ -86,7 +86,11 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
     final graduation = (fraction * widget.graduations).round();
     if (graduation != _lastGraduation) {
       _lastGraduation = graduation;
+      // Haptic AND the platform click: the system selection sound is what makes
+      // a picker read as a physical detent rather than a silent slide, and it
+      // is the only cue a user with haptics disabled gets.
       HapticFeedback.selectionClick();
+      SystemSound.play(SystemSoundType.click);
     }
     widget.onChanged(fraction);
   }
@@ -147,7 +151,8 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
                         child: (i) => widget.glyphBuilder(i, _column),
                       ),
                     ),
-                    const SizedBox(height: NhamSpacing.sp1),
+                    // Clearance for the needle cap — see portionNeedleGap.
+                    const SizedBox(height: portionNeedleGap),
                     CustomPaint(
                       size: Size(_contentWidth, portionRulerHeight),
                       painter: PortionRulerPainter(

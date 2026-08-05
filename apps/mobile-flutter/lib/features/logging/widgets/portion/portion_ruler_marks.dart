@@ -57,7 +57,10 @@ class PortionRulerNeedle extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(height: height - 7),
+        // Start BELOW the silhouette band, not inside it: the pointer used to
+        // touch the art it was measuring, which read as the mark being part of
+        // the food. The gap is what makes it read as pointing AT it.
+        SizedBox(height: height + portionNeedleGap),
         CustomPaint(
           size: const Size(9, 7),
           painter: _CapPainter(),
