@@ -187,7 +187,12 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.bySemanticsLabel('fillet (250 g)'));
+      // The ruler is a tape measure now: only the part of the scale near the
+      // needle is on screen, so scroll the target into view before tapping it.
+      final fillet = find.bySemanticsLabel('fillet (250 g)');
+      await tester.ensureVisible(fillet);
+      await tester.pumpAndSettle();
+      await tester.tap(fillet);
       await tester.pumpAndSettle();
       expect(find.text('fillet'), findsOneWidget);
 

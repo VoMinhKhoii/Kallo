@@ -31,7 +31,7 @@ class PortionGlyphRow extends StatelessWidget {
           children: [
             for (final anchor in anchors)
               Expanded(
-                child: _Glyph(
+                child: PortionGlyph(
                   tier: pieceTiers[anchor.tier - 1],
                   kind: kind,
                   columnWidth: columnWidth,
@@ -47,8 +47,9 @@ class PortionGlyphRow extends StatelessWidget {
   }
 }
 
-class _Glyph extends StatelessWidget {
-  const _Glyph({
+class PortionGlyph extends StatelessWidget {
+  const PortionGlyph({
+    super.key,
     required this.tier,
     required this.kind,
     required this.columnWidth,

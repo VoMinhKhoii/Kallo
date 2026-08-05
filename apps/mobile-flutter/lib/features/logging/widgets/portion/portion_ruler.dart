@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../models/vessel.dart';
-import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_theme.dart';
 import '../../logic/portion/portion_anchors.dart';
 import '../../logic/portion/ruler_scale.dart';
+import '../../logic/portion/vessel_data.dart';
 import 'portion_glyph_row.dart';
-import 'portion_slider.dart';
+import 'portion_ruler_face.dart';
+import 'portion_ruler_strip.dart';
 
 /// Integrated piece ruler: one continuous track with equal-spaced anchors. Each
 /// anchor carries a bottom-aligned silhouette above the track, a 1px tick on
@@ -63,7 +63,6 @@ class PortionRuler extends StatefulWidget {
 
 class _PortionRulerState extends State<PortionRuler> {
   late RulerScale _scale = _buildScale();
-  late double _position = _scale.toPosition(widget.grams);
 
   /// Mirrors the grams this widget last emitted, so an outside change (anchor
   /// tap, re-open) resyncs the held position but a drag does not.
@@ -79,103 +78,76 @@ class _PortionRulerState extends State<PortionRuler> {
     if (next.differsFrom(_scale)) {
       _scale = next;
       _ownGrams = widget.grams;
-      _position = _scale.toPosition(widget.grams);
       return;
     }
-    if (widget.grams != _ownGrams) {
-      _ownGrams = widget.grams;
-      _position = _scale.toPosition(widget.grams);
-    }
+    if (widget.grams != _ownGrams) _ownGrams = widget.grams;
   }
 
   void _handlePosition(double next) {
     final grams = _scale.toGrams(next);
-    setState(() {
-      _position = next;
-      _ownGrams = grams;
-    });
+    setState(() => _ownGrams = grams);
     widget.onChanged(grams);
   }
 
   @override
   Widget build(BuildContext context) {
-    final positions = anchorPositions(widget.anchors.length);
-
     return ConstrainedBox(
-      // Capped and centred so the glyphs stay a sensible size on a wide sheet.
-      // The cap is on the whole ruler, not just the glyph row, so the row keeps
-      // sharing its width — and therefore its column centres — with the track.
       constraints: const BoxConstraints(maxWidth: 360),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: PortionSlider.trackInset,
-            ),
-            child: AspectRatio(
-              aspectRatio: glyphRowAspect(widget.anchors.length),
-              child: PortionGlyphRow(
-                anchors: widget.anchors,
-                kind: widget.kind,
-                countPrefix: widget.countPrefix,
-                claimedTier: widget.claimedTier,
-                onPick: (grams) {
-                  HapticFeedback.selectionClick();
-                  setState(() {
-                    _ownGrams = grams;
-                    _position = _scale.toPosition(grams);
-                  });
-                  widget.onChanged(grams);
-                },
-              ),
-            ),
+      child: Semantics(
+        slider: true,
+        label: widget.sliderLabel,
+        value: widget.sliderValueText,
+        // The strip is a scroll view, so a screen reader gets scroll actions
+        // rather than slider ones. These restate it as the control it is.
+        onIncrease: () => _nudge(1),
+        onDecrease: () => _nudge(-1),
+        // Flutter asserts these accompany `value` whenever the actions exist —
+        // a screen reader announces where a swipe WOULD land.
+        increasedValue: '${_gramsAfter(1)} g',
+        decreasedValue: '${_gramsAfter(-1)} g',
+        child: PortionRulerStrip(
+          majors: anchorPositions(widget.anchors.length),
+          position: _scale.toPosition(_ownGrams) / positionMax,
+          graduations: portionGraduationCount(widget.anchors.length),
+          glyphBandAspect: glyphRowAspect(widget.anchors.length) /
+              widget.anchors.length,
+          glyphBuilder: (index, column) => PortionGlyph(
+            tier: pieceTiers[widget.anchors[index].tier - 1],
+            kind: widget.kind,
+            columnWidth: column,
+            label: '${widget.countPrefix}${widget.anchors[index].label}',
+            selected: widget.anchors[index].tier == widget.claimedTier,
+            onTap: () => _jumpTo(widget.anchors[index]),
           ),
-          const SizedBox(height: NhamSpacing.sp1), // mb-1
-          PortionSlider(
-            value: _position,
-            min: 0,
-            max: positionMax.toDouble(),
-            majors: positions,
-            divisions: _scale.divisions,
-            semanticLabel: widget.sliderLabel,
-            semanticValue: widget.sliderValueText,
-            onChanged: _handlePosition,
-          ),
-          const SizedBox(height: NhamSpacing.sp2), // mt-2
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: PortionSlider.trackInset,
-            ),
-            child: Row(
-              children: [
-                // Equal columns put each label's centre on its tick, the same
-                // way the glyph row does — no absolute positioning needed.
-                for (final anchor in widget.anchors)
-                  Expanded(
-                    // scaleDown rather than clip: a many-piece portion at 1.3x
-                    // Dynamic Type needs more than its column ("3000 g" wants
-                    // 57pt in a 54pt column on a 320pt phone), and a silently
-                    // truncated gram figure is worse than a slightly smaller
-                    // one on the row whose whole job is stating the amount.
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        // The value a TAP commits, not the raw anchor. This
-                        // picker works in integer grams end to end, so a
-                        // fractional count (1.25 pieces → a 37.5 g tier) would
-                        // otherwise label a stop "37.5 g" and hand back 38 g.
-                        // Label what the control actually does.
-                        '${anchor.value.round()} g',
-                        maxLines: 1,
-                        style: dashMeta(tabular: true),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
+          // PER PIECE, not the multiplied total. The silhouette above is ONE
+          // piece, so its label is that piece's weight; the count lives in the
+          // "3 x slice" line and the total in the readout. Showing 450 g under
+          // a single fillet read as the fillet weighing 450 g.
+          labelFor: (index) =>
+              '${pieceTiers[widget.anchors[index].tier - 1].grams} g',
+          onChanged: (fraction) =>
+              _handlePosition(fraction * positionMax),
+        ),
       ),
     );
+  }
+
+  /// The position one graduation away, clamped to the scale.
+  double _positionAfter(int direction) {
+    final step = positionMax / portionGraduationCount(widget.anchors.length);
+    return (_scale.toPosition(_ownGrams) + direction * step)
+        .clamp(0.0, positionMax.toDouble());
+  }
+
+  int _gramsAfter(int direction) => _scale.toGrams(_positionAfter(direction));
+
+  /// One graduation of travel, for assistive technology.
+  void _nudge(int direction) => _handlePosition(_positionAfter(direction));
+
+  void _jumpTo(PortionAnchor anchor) {
+    HapticFeedback.selectionClick();
+    final grams = anchor.value.round();
+    setState(() => _ownGrams = grams);
+    widget.onChanged(grams);
   }
 }
