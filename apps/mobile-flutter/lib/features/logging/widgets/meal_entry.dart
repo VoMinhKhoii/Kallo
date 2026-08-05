@@ -15,7 +15,7 @@ import 'meal_entry_confirm_button.dart';
 import 'meal_entry_header.dart';
 import 'meal_entry_item_row.dart';
 import 'meal_time_divider.dart';
-import 'portion/portion_picker_sheet.dart';
+import 'portion/portion_pick_flow.dart';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a stepper
 // can't slip through and save before the user is done adjusting.
@@ -76,13 +76,8 @@ class _MealEntryState extends State<MealEntry> {
   }
 
   /// Every quantity edit — stepper or portion picker — lands here: it snaps the
-  /// totals (only the reveal counts up).
-  ///
-  /// [debounce] re-arms the confirm cooldown. Steppers set it (a fast
-  /// double-tap must not slip through and save mid-adjust); the portion picker
-  /// does not, matching web, where `handleApply` skips the debounce that
-  /// `handleQuantityChange` arms — the sheet dismissal already separates the
-  /// two taps.
+  /// totals (only the reveal counts up) and, when [debounce] is set, re-arms
+  /// the confirm cooldown so a fast double-tap can't save mid-adjust.
   void _edit(List<MealItem> Function() mutate, {bool debounce = true}) {
     setState(() {
       _countUp = false;
@@ -96,36 +91,16 @@ class _MealEntryState extends State<MealEntry> {
     });
   }
 
-  /// Opens the portion picker for one dish and commits the exact grams it
-  /// previewed, alongside the vessel tier that amount may honestly claim.
+  /// Commits whatever the portion picker previewed. No debounce, matching web's
+  /// `handleApply`: dismissing the sheet already separates this from Confirm.
   Future<void> _adjustPortion(MealItem item) async {
-    final vessel = item.vessel;
-    if (vessel == null) return;
-    final pick = await showPortionPicker(
+    final next = await pickPortion(
       context,
-      vessel: vessel,
-      grams: item.quantity.round(),
-      itemCalories: item.macros.calories,
-      itemQuantity: item.quantity,
+      item: item,
+      items: _items,
+      original: _original,
     );
-    if (pick == null || !mounted) return;
-    // Read the item back out of state: the sheet was open across an await, so
-    // the captured `item` may be a stale copy.
-    final current = _items.firstWhere(
-      (it) => it.id == item.id,
-      orElse: () => item,
-    );
-    _edit(
-      () => applyQuantityChange(
-        _items,
-        _original,
-        item.id,
-        pick.grams - current.quantity,
-      ).map((it) {
-        return it.id == item.id ? it.copyWith(vessel: pick.vessel) : it;
-      }).toList(),
-      debounce: false,
-    );
+    if (next != null && mounted) _edit(() => next, debounce: false);
   }
 
   bool get _confirmDisabled => widget.busy || (_editing && _confirmCoolingDown);
@@ -170,9 +145,7 @@ class _MealEntryState extends State<MealEntry> {
                 padding: const EdgeInsets.only(bottom: LoggingSpacing.section),
                 child: Column(
                   children: [
-                    // The entrance lives inside the row widget, wrapping the
-                    // dish line only — web's stagger does not carry the
-                    // portion trigger with it.
+                    // The stagger lives inside the row — see MealEntryItemRow.
                     for (final (index, item) in _items.indexed)
                       MealEntryItemRow(
                         key: ValueKey(item.id),

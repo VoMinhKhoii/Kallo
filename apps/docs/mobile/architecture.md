@@ -49,16 +49,25 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
 - **logging** — date timeline, calorie ring, streaming meal analysis (SSE), meal input/cards.
   Composer modes: normal (AI), cheat meal (AI slider estimate — intensity strip, clarify
   fallback, "log it again" chips via `/api/v1/meals/cheat-*`), manual, barcode.
+  Normal mode also carries **relog**: typing `/` opens a picker of dishes and meals you
+  have logged before (`/api/v1/meals/relog/candidates`), and a pick becomes tinted text
+  inside the field plus a staged reference. Picks alone stage a deterministic review card
+  (`/api/v1/meals/relog/stage`, no AI); picks alongside free text ride the analyze stream
+  as `refs` and are merged server-side. Either way the server copies the stored
+  `meal_items` rows verbatim — past meals hold goal-adjusted macros that cannot be
+  re-derived. Tinting comes from `MentionTextEditingController.buildTextSpan`, not the
+  web's mirror-element overlay.
   Portion clarity (`logic/portion/` + `widgets/portion/`): every staged dish the pipeline
   resolved a vessel for carries a `≈ tô vừa` assumption line under it, opening a picker
-  sheet — true-to-scale silhouettes from `assets/portions/` over a graduated measuring
-  ruler (accent needle, tall graduations at each vessel tier, one haptic detent per
-  graduation), with a bowl / plate / cup branch and a fish / meat / poultry branch.
-  **The ruler face is a deliberate mobile-only divergence** (`portion_ruler_face.dart`):
-  web's plain Radix slider suits a pointer and a keyboard, but on touch there is no
-  hover, arrow key or focus ring, so the bar carries none of that affordance. Ports
-  `components/logging/feed/meal-entry/portion/`; the vessel rides in on the SSE `result`
-  frame and on restored `/api/v1/meals/pending` rows.
+  sheet — true-to-scale silhouettes from `assets/portions/` riding a **tape measure**:
+  the scale scrolls under a fixed accent needle, tall graduations mark each vessel tier,
+  and every graduation gives one haptic detent plus a click. The bowl / plate / cup branch
+  and the fish / meat / poultry branch share one control (`widgets/portion/ruler/`); only
+  the art and the tier labels differ. **The ruler is a deliberate mobile-only divergence**
+  — web's plain Radix slider suits a pointer and a keyboard, but on touch there is no
+  hover, arrow key or focus ring, so the bar carries none of that affordance. Otherwise a
+  port of `components/logging/feed/meal-entry/portion/`; the vessel rides in on the SSE
+  `result` frame and on restored `/api/v1/meals/pending` rows.
   **Shared with web — keep them in lockstep.** The tier tables, envelope factors and
   claim band are vendored copies of `lib/ai/portion/vessel-data.ts` and
   `components/logging/feed/meal-entry/portion/portion-anchors.ts`. Drift means the two
