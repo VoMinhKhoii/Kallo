@@ -399,8 +399,14 @@ describe('nearestPieceTier', () => {
       'slice',
       'slices',
       'steak',
+      'steaks',
+      'fillets',
+      'filet',
+      'filets',
       'chunk',
+      'chunks',
       'cut',
+      'cuts',
     ]);
   });
 });

@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { AMBIGUOUS, getConcept, resolveConcept } from '../concepts';
+import { PIECE_UNIT_TOKENS } from '../piece-vessel';
 import { applySizeModifier, findPrior } from '../priors';
-import { lookupUnit, resolveUnitType, unitsForLocale } from '../unit-lexicon';
+import {
+  foldCollisions,
+  lookupUnit,
+  resolveUnitType,
+  unitsForLocale,
+} from '../unit-lexicon';
 
 describe('unit lexicon', () => {
   it('maps VN counters to unit types (NOT grams)', () => {
@@ -22,6 +28,16 @@ describe('unit lexicon', () => {
   it('normalizes case + diacritics + whitespace on lookup', () => {
     expect(resolveUnitType('  LÁT ')).toBe('slice');
     expect(lookupUnit('SLICE')?.locale).toBe('en');
+  });
+
+  it('collapses whitespace INSIDE a multi-word token, not just at the ends', () => {
+    // The multi-word entries are the only ones spacing can break, and a
+    // double-spaced token is exactly what a model emits. Trimming alone left
+    // these missing the table entirely.
+    expect(resolveUnitType('phi  lê')).toBe('slice');
+    expect(resolveUnitType('phi\tlê')).toBe('slice');
+    // …and the folded fallback has to agree, for the un-accented typing case.
+    expect(resolveUnitType(' PHI   LE ')).toBe('slice');
   });
 
   it('unknown token → null (resolver will not guess)', () => {
@@ -141,5 +157,65 @@ describe('portion priors', () => {
     expect(applySizeModifier(band, 'small')).toBe(10);
     expect(applySizeModifier(band, undefined)).toBe(20);
     expect(applySizeModifier(band, 'large')).toBe(30);
+  });
+});
+
+/**
+ * The unit lexicon and PIECE_UNIT_TOKENS are two hand-maintained lists of the
+ * same thing — counter words. They drifted: `steak`, `fillet`, `chunk`, `cut`,
+ * `khoanh`, `khứa` and `phi lê` gated the piece picker while being invisible to
+ * the lexicon, so those portions got a silhouette and no unit the resolver
+ * could hang a prior on. Unanchored, the estimate comes back too wide and the
+ * anomaly gate routes the whole meal to clarify — on web that's a question, on
+ * mobile it was a dead stream.
+ *
+ * Neither table is a strict superset of the other by design (the lexicon also
+ * holds containers and masses), but every PIECE token must be a known unit.
+ */
+describe('unit token tables agree', () => {
+  it('types every piece token in the lexicon', () => {
+    const unknown = [...PIECE_UNIT_TOKENS].filter(
+      (token) => resolveUnitType(token) === null
+    );
+    expect(unknown).toEqual([]);
+  });
+
+  it('types a Vietnamese counter typed without its tone marks', () => {
+    // Very common input ("2 lat ca kho"). PIECE_UNIT_TOKENS folds diacritics
+    // and this table did not, so the picker recognised a token the resolver
+    // could not.
+    for (const [accented, bare] of [
+      ['miếng', 'mieng'],
+      ['lát', 'lat'],
+      ['khúc', 'khuc'],
+      ['phi lê', 'phi le'],
+      ['tô', 'to'],
+      ['đĩa', 'dia'],
+    ]) {
+      expect(resolveUnitType(bare), bare).toBe(resolveUnitType(accented));
+      expect(resolveUnitType(bare), bare).not.toBeNull();
+    }
+  });
+
+  it('never folds two different unit types onto one key', () => {
+    expect(foldCollisions()).toEqual([]);
+  });
+
+  it('recognises both the singular and the plural counter', () => {
+    // Neither normalizer strips a trailing "s", so plurals are listed
+    // explicitly or they simply do not match.
+    for (const [singular, plural] of [
+      ['steak', 'steaks'],
+      ['fillet', 'fillets'],
+      ['piece', 'pieces'],
+      ['slice', 'slices'],
+      ['chunk', 'chunks'],
+      ['cut', 'cuts'],
+    ]) {
+      expect(resolveUnitType(singular), singular).not.toBeNull();
+      expect(resolveUnitType(plural), plural).not.toBeNull();
+      expect(PIECE_UNIT_TOKENS.has(singular), singular).toBe(true);
+      expect(PIECE_UNIT_TOKENS.has(plural), plural).toBe(true);
+    }
   });
 });

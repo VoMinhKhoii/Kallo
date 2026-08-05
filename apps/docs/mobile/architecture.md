@@ -57,6 +57,27 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
   `meal_items` rows verbatim — past meals hold goal-adjusted macros that cannot be
   re-derived. Tinting comes from `MentionTextEditingController.buildTextSpan`, not the
   web's mirror-element overlay.
+  Portion clarity (`logic/portion/` + `widgets/portion/`): every staged dish the pipeline
+  resolved a vessel for carries a `≈ tô vừa` assumption line under it, opening a picker
+  sheet — true-to-scale silhouettes from `assets/portions/` riding a **tape measure**:
+  the scale scrolls under a fixed accent needle, tall graduations mark each vessel tier,
+  and every graduation gives one haptic detent plus a click. The bowl / plate / cup branch
+  and the fish / meat / poultry branch share one control (`widgets/portion/ruler/`); only
+  the art and the tier labels differ. **The ruler is a deliberate mobile-only divergence**
+  — web's plain Radix slider suits a pointer and a keyboard, but on touch there is no
+  hover, arrow key or focus ring, so the bar carries none of that affordance. Otherwise a
+  port of `components/logging/feed/meal-entry/portion/`; the vessel rides in on the SSE
+  `result` frame and on restored `/api/v1/meals/pending` rows.
+  **Shared with web — keep them in lockstep.** The tier tables, envelope factors and
+  claim band are vendored copies of `lib/ai/portion/vessel-data.ts` and
+  `components/logging/feed/meal-entry/portion/portion-anchors.ts`. Drift means the two
+  clients commit *different tiers for the same meal* while each stays internally
+  consistent, so `test/portion_vessel_assets_test.dart` reads the TypeScript and pins
+  every shared number (asset filenames + aspects, `MAX_PIECE_COUNT`, envelope factors,
+  `CLAIM_BAND`, `POSITION_MAX`, tier grams/ml). Change a number on one side and that test
+  fails. Validation is NOT vendored: `toParsedMeal` (`lib/ai/mappers.ts`) drops any vessel
+  a picker can't safely render, so both clients inherit one guarantee — the Dart parser's
+  own checks are defense in depth for rows written before that guard existed.
 - **nutrition** — editorial overview, 7/30/90 toggle, macro composition, nutrient rows.
 - **settings** — two-level nav → profile form (body metrics, cooking, regional).
 
@@ -66,6 +87,14 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
   auth-gated routing. Riverpod controllers wrap streaming (`stream_analysis_controller.dart`).
 - **Navigation:** `go_router` with a shell route. The shell is a **left slide-in drawer**
   (hamburger), not a bottom tab bar — matching the web mobile nav.
+- **Sheets:** `showNhamSheet` (`shared/widgets/nham_sheet.dart`) + `NhamSheetSurface` +
+  `NhamSheetHeader` (`nham_sheet_header.dart`). `isScrollControlled` defaults to **true** —
+  Material's default caps a sheet at 9/16 of the screen and clips the rest, which pushed
+  action rows off-screen on short phones and in landscape. A sheet whose body is a plain
+  `Column` also passes `scrollable: true` so it caps at 90% height and scrolls past it;
+  sheets that own a `ListView`/`SingleChildScrollView` must not. `test/sheet_overflow_test.dart`
+  pumps every content-hugging sheet at 320×568, 360×640 and landscape, at 1.0x and the
+  1.3x Dynamic Type ceiling, and fails if the primary action can't be reached.
 - **Data:** `api_client.dart` hits `/api/v1`. Note Drizzle decimals serialize as **strings**, and
   targets are **null** for not-fully-onboarded profiles — models tolerate nulls and fall back to
   the same defaults as the web app.

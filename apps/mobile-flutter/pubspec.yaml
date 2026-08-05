@@ -55,6 +55,11 @@ flutter:
   uses-material-design: true
   assets:
     - assets/l10n/
+    # Vessel silhouettes for the portion picker — the SAME art the web serves
+    # from `public/portions/`. Bundled rather than fetched so a silhouette never
+    # flashes in (or goes missing offline) on the surface whose entire job is to
+    # show the user what the AI assumed.
+    - assets/portions/
     # Bundled brand fonts (OFL). google_fonts resolves the Lora files in here by
     # their API filenames — do NOT rename — so serif renders on a cold offline
     # start instead of falling back while fetching. Runtime fetching is disabled
