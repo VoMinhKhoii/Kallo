@@ -823,79 +823,61 @@
       "sources": "Đối chiếu với dữ liệu thành phần của FAO và USDA, cùng lớp AI lo khẩu phần và cách chế biến. Khoảng ước lượng có giới hạn, không bịa số lẻ."
     },
     "pricing": {
-      "title": "Bắt đầu miễn phí.",
-      "titleAccent": "Trả tiền khi thấy xứng đáng.",
+      "title": "Bảng giá",
       "period": {
         "label": "Kỳ thanh toán",
         "monthly": "Hằng tháng",
         "yearly": "Hằng năm"
       },
-      "groups": {
-        "logging": "Ghi bữa ăn",
-        "circle": "Circle"
-      },
-      "features": {
-        "textLogging": {
-          "label": "Ghi bằng lời của bạn"
-        },
-        "manualLogging": {
-          "label": "Nhập thủ công"
-        },
-        "visualEdit": {
-          "label": "Chỉnh trực quan"
-        },
-        "relog": {
-          "label": "Ghi lại bữa đã ăn"
-        },
-        "barcode": {
-          "label": "Quét mã vạch"
-        },
-        "cheatMeal": {
-          "label": "Chế độ bữa xả"
-        },
-        "joinGroups": {
-          "label": "Tham gia nhóm",
-          "free": "2 nhóm, chỉ xem"
-        },
-        "friendFeed": {
-          "label": "Bữa ăn của bạn bè trong feed"
-        },
-        "copySplit": {
-          "label": "Sao chép hoặc chia bữa của bạn bè"
-        },
-        "groupSize": {
-          "label": "Số thành viên nhóm",
-          "free": "tối đa 10"
-        }
-      },
       "plans": {
         "free": {
           "name": "Miễn phí",
+          "tagline": "Dùng thử Kallo",
           "price": "0₫",
-          "cadence": "trọn đời",
+          "fineprint": "Miễn phí cho tất cả mọi người.",
           "cta": "Bắt đầu miễn phí"
         },
         "premium": {
           "name": "Premium",
-          "trialBadge": "7 ngày miễn phí",
+          "tagline": "Để ghi bằng lời của bạn",
           "priceMonthly": "49K₫",
-          "priceYearly": "399K₫",
-          "cadenceMonth": "/tháng",
-          "cadenceYear": "/năm",
-          "perMonth": "≈ 33K₫ mỗi tháng, thanh toán theo năm",
-          "cta": "Dùng thử miễn phí"
+          "priceYearly": "33K₫",
+          "fineprintMonthly": "Mỗi tháng, thanh toán hằng tháng. 7 ngày đầu miễn phí.",
+          "fineprintYearly": "Mỗi tháng khi trả theo năm (399K₫ trả trước). 49K₫ nếu trả từng tháng. 7 ngày đầu miễn phí.",
+          "cta": "Dùng thử miễn phí",
+          "inherits": "Mọi thứ ở gói Miễn phí, thêm:"
         },
         "lifetime": {
           "name": "Trọn đời",
+          "tagline": "Trả một lần, dùng mãi",
           "price": "799K₫",
-          "cadence": "một lần",
-          "cta": "Mua trọn đời"
+          "fineprint": "Trả một lần. Không gia hạn.",
+          "cta": "Mua trọn đời",
+          "inherits": "Mọi thứ ở gói Premium, thêm:"
         }
       },
-      "freeTitle": "Gói Miễn phí gồm",
-      "paidNote": "Premium và Trọn đời có đủ tất cả, nhóm không giới hạn và không giới hạn thành viên.",
-      "everyone": "Bảng điều khiển, theo dõi cân nặng, bản đồ đều đặn, phân tích dinh dưỡng, mục tiêu và xuất toàn bộ dữ liệu đều miễn phí ở mọi gói.",
-      "betaNote": "Miễn phí trong thời gian Kallo thử nghiệm. Mức giá áp dụng khi kết thúc thử nghiệm."
+      "features": {
+        "barcode": "Quét mã vạch cho mọi thứ có nhãn",
+        "friendFeed": "Bữa ăn của bạn bè trong feed",
+        "joinGroups": "Tham gia tối đa 2 nhóm, chỉ xem",
+        "groupSize": "Nhóm tối đa 10 người",
+        "dashboard": "Calo và macro hằng ngày trên bảng điều khiển",
+        "weight": "Theo dõi cân nặng kèm đường xu hướng",
+        "heatmap": "Bản đồ đều đặn",
+        "nutrition": "Phân tích dinh dưỡng theo 7 và 30 ngày",
+        "goals": "Mục tiêu tính từ số liệu của chính bạn",
+        "export": "Xuất toàn bộ dữ liệu bạn đã ghi",
+        "textLogging": "Mô tả bữa ăn bằng lời của bạn",
+        "manualLogging": "Nhập thủ công",
+        "visualEdit": "Chỉnh trực quan",
+        "relog": "Ghi lại bữa đã ăn",
+        "cheatMeal": "Chế độ bữa xả",
+        "copySplit": "Sao chép hoặc chia bữa của bạn bè",
+        "unlimitedCircle": "Nhóm không giới hạn, không giới hạn thành viên",
+        "payOnce": "Trả một lần thay vì thuê bao",
+        "futureUpdates": "Bao gồm mọi bản cập nhật sau này"
+      },
+      "betaNote": "Kallo miễn phí trong thời gian thử nghiệm. Mức giá này áp dụng khi kết thúc thử nghiệm, và chúng tôi sẽ báo trước."
     },
     "footer": {
       "copyright": "© {year} Kallo. Mọi quyền được bảo lưu."

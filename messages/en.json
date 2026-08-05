@@ -823,79 +823,61 @@
       "sources": "Matched against FAO and USDA composition data, with an AI layer for portions and preparation. Bounded ranges, never invented decimals."
     },
     "pricing": {
-      "title": "Start free.",
-      "titleAccent": "Pay when it earns it.",
+      "title": "Pricing",
       "period": {
         "label": "Billing period",
         "monthly": "Monthly",
         "yearly": "Yearly"
       },
-      "groups": {
-        "logging": "Logging",
-        "circle": "Circle"
-      },
-      "features": {
-        "textLogging": {
-          "label": "Text logging, in your own words"
-        },
-        "manualLogging": {
-          "label": "Manual logging"
-        },
-        "visualEdit": {
-          "label": "Visual edit"
-        },
-        "relog": {
-          "label": "Relog a previous meal"
-        },
-        "barcode": {
-          "label": "Barcode scan"
-        },
-        "cheatMeal": {
-          "label": "Cheat meal mode"
-        },
-        "joinGroups": {
-          "label": "Join groups",
-          "free": "2, view-only"
-        },
-        "friendFeed": {
-          "label": "Friends' meals in your feed"
-        },
-        "copySplit": {
-          "label": "Copy or split a friend's meal"
-        },
-        "groupSize": {
-          "label": "Group size",
-          "free": "up to 10"
-        }
-      },
       "plans": {
         "free": {
           "name": "Free",
+          "tagline": "Try Kallo",
           "price": "$0",
-          "cadence": "forever",
+          "fineprint": "Free for everyone.",
           "cta": "Get started free"
         },
         "premium": {
           "name": "Premium",
-          "trialBadge": "7 days free",
+          "tagline": "For logging in your own words",
           "priceMonthly": "$4.99",
-          "priceYearly": "$24.99",
-          "cadenceMonth": "/month",
-          "cadenceYear": "/year",
-          "perMonth": "≈ $2.08 a month, billed yearly",
-          "cta": "Start free trial"
+          "priceYearly": "$2.08",
+          "fineprintMonthly": "Per month, billed monthly. First 7 days free.",
+          "fineprintYearly": "Per month with the annual discount ($24.99 billed up front). $4.99 if billed monthly. First 7 days free.",
+          "cta": "Start free trial",
+          "inherits": "Everything in Free, plus:"
         },
         "lifetime": {
           "name": "Lifetime",
+          "tagline": "Pay once, keep it",
           "price": "$54.99",
-          "cadence": "once",
-          "cta": "Buy lifetime"
+          "fineprint": "One payment. No renewals, ever.",
+          "cta": "Buy lifetime",
+          "inherits": "Everything in Premium, plus:"
         }
       },
-      "freeTitle": "What Free includes",
-      "paidNote": "Premium and Lifetime include all of it, with unlimited groups and no size cap.",
-      "everyone": "Your dashboard, weight tracking, the consistency heatmap, nutrition breakdown, goals, and a full data export are free on every plan.",
-      "betaNote": "Free while Kallo is in beta. These prices start when beta ends."
+      "features": {
+        "barcode": "Barcode scan for anything with a label",
+        "friendFeed": "Friends' meals in your feed",
+        "joinGroups": "Join up to 2 groups, view-only",
+        "groupSize": "Groups of up to 10 people",
+        "dashboard": "Daily calories and macros on your dashboard",
+        "weight": "Weight tracking with trend projection",
+        "heatmap": "Consistency heatmap",
+        "nutrition": "Nutrition breakdown over 7 and 30 days",
+        "goals": "Goals and targets from your own numbers",
+        "export": "Full export of everything you log",
+        "textLogging": "Describe a meal in your own words",
+        "manualLogging": "Manual logging",
+        "visualEdit": "Visual edit",
+        "relog": "Relog a previous meal",
+        "cheatMeal": "Cheat meal mode",
+        "copySplit": "Copy or split a friend's meal",
+        "unlimitedCircle": "Unlimited groups, no size cap",
+        "payOnce": "One payment instead of a subscription",
+        "futureUpdates": "Every future update included"
+      },
+      "betaNote": "Kallo is free while it is in beta. These prices start when beta ends, and we will tell you before that happens."
     },
     "footer": {
       "copyright": "© {year} Kallo. All rights reserved."

@@ -1,15 +1,14 @@
 /**
- * The pricing matrix.
+ * The pricing matrix, as a stack rather than a grid.
  *
- * Ids and tiering live here; every visible string is a message key under
- * `landing.pricing`, including the prices — each locale carries its own
- * currency, so no component has to branch on locale to format money.
+ * Each tier lists only what it adds to the one before it — Free names what it
+ * has, Premium says "everything in Free, plus…", Lifetime the same again. A
+ * three-column comparison would have repeated Free's whole list twice, because
+ * Premium and Lifetime include all of it.
  *
- * Only Free is tabulated. Premium and Lifetime include everything, so drawing
- * two more columns of identical ticks said nothing twenty times; what they add
- * is one sentence under the list. That also makes this table the answer to a
- * single question — what do you get without paying — instead of a grid the
- * reader has to cross-reference.
+ * Ids only. Every visible string is a message key under `landing.pricing`,
+ * prices included, so each locale carries its own currency and no component
+ * branches on locale to format money.
  *
  * Note this describes the plan Kallo is launching with, not what the code
  * enforces: `lib/entitlements/features.ts` gates exactly one feature,
@@ -18,31 +17,31 @@
  */
 export type PlanId = 'free' | 'premium' | 'lifetime';
 export type BillingPeriod = 'monthly' | 'yearly';
-export type FeatureGroup = 'logging' | 'circle';
-
-export interface PricingFeature {
-  id: string;
-  group: FeatureGroup;
-  /**
-   * `true` — included on Free. `false` — not on Free; rendered as a dash with
-   * the label struck through. `'value'` — Free gets a qualified amount, read
-   * from `landing.pricing.features.<id>.free`.
-   */
-  free: boolean | 'value';
-}
 
 export const PLAN_IDS = ['free', 'premium', 'lifetime'] as const;
-export const FEATURE_GROUPS = ['logging', 'circle'] as const;
 
-export const PRICING_FEATURES: readonly PricingFeature[] = [
-  { id: 'textLogging', group: 'logging', free: false },
-  { id: 'manualLogging', group: 'logging', free: false },
-  { id: 'visualEdit', group: 'logging', free: false },
-  { id: 'relog', group: 'logging', free: false },
-  { id: 'barcode', group: 'logging', free: true },
-  { id: 'cheatMeal', group: 'logging', free: false },
-  { id: 'joinGroups', group: 'circle', free: 'value' },
-  { id: 'friendFeed', group: 'circle', free: true },
-  { id: 'copySplit', group: 'circle', free: false },
-  { id: 'groupSize', group: 'circle', free: 'value' },
-];
+/** Feature keys per tier, resolved against `landing.pricing.features`. */
+export const PLAN_FEATURES: Record<PlanId, readonly string[]> = {
+  free: [
+    'barcode',
+    'friendFeed',
+    'joinGroups',
+    'groupSize',
+    'dashboard',
+    'weight',
+    'heatmap',
+    'nutrition',
+    'goals',
+    'export',
+  ],
+  premium: [
+    'textLogging',
+    'manualLogging',
+    'visualEdit',
+    'relog',
+    'cheatMeal',
+    'copySplit',
+    'unlimitedCircle',
+  ],
+  lifetime: ['payOnce', 'futureUpdates'],
+};

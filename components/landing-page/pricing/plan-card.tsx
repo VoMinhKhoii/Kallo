@@ -1,126 +1,91 @@
 'use client';
 
+import { Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import type { BillingPeriod, PlanId } from './plans';
-
-/** Two segments, sitting in the Premium card where the term is decided. */
-function PeriodToggle({
-  period,
-  onChange,
-}: {
-  period: BillingPeriod;
-  onChange: (next: BillingPeriod) => void;
-}) {
-  const t = useTranslations('landing.pricing.period');
-  const options: BillingPeriod[] = ['monthly', 'yearly'];
-
-  return (
-    <div
-      role="group"
-      aria-label={t('label')}
-      className="inline-flex rounded-full border border-nham-border bg-nham-surface p-0.5"
-    >
-      {options.map((option) => (
-        <button
-          key={option}
-          type="button"
-          aria-pressed={period === option}
-          onClick={() => onChange(option)}
-          className={`rounded-full px-3 py-1 font-sans-display text-xs transition-colors ${
-            period === option
-              ? 'bg-white font-semibold text-nham-text shadow-xs'
-              : 'text-nham-text-muted hover:text-nham-text'
-          }`}
-        >
-          {t(option)}
-        </button>
-      ))}
-    </div>
-  );
-}
+import { PLAN_FEATURES, type PlanId } from './plans';
 
 /**
- * One plan: what it's called, what it costs, how to start. Nothing else — the
- * feature list is shared below all three rather than repeated inside each.
+ * One plan: name, who it's for, what it costs, how to start, then what it adds.
+ *
+ * Free spells out what you get. Premium and Lifetime open with "everything in
+ * <the tier below>, plus" and list only the difference, so no line is printed
+ * three times.
  *
  * Only Premium carries the brown button. One primary CTA per surface is a
- * brand rule, and it also states an opinion about which plan is the answer.
+ * brand rule, and it also states an opinion about which plan is the answer —
+ * which is why the other two are outlined rather than filled.
  */
 export function PlanCard({
   plan,
-  period,
-  onPeriodChange,
+  price,
+  fineprint,
   onSelect,
 }: {
   plan: PlanId;
-  period: BillingPeriod;
-  /** Supplied only for Premium; the term toggle lives on that card. */
-  onPeriodChange?: (next: BillingPeriod) => void;
+  /** Already resolved by the section, since Premium's depends on the term. */
+  price: string;
+  fineprint: string;
   onSelect: () => void;
 }) {
   const t = useTranslations('landing.pricing');
   const featured = plan === 'premium';
-  const yearly = period === 'yearly';
-
-  const price = featured
-    ? t(yearly ? 'plans.premium.priceYearly' : 'plans.premium.priceMonthly')
-    : t(`plans.${plan}.price`);
-  const cadence = featured
-    ? t(yearly ? 'plans.premium.cadenceYear' : 'plans.premium.cadenceMonth')
-    : t(`plans.${plan}.cadence`);
+  const inherits = plan !== 'free';
 
   return (
     <div
-      className={`flex flex-col rounded-2xl border bg-white p-6 text-left ${
+      className={`flex flex-col rounded-3xl border bg-white p-7 text-left sm:p-8 ${
         featured
           ? 'border-nham-accent/45 shadow-md ring-1 ring-nham-accent/15'
           : 'border-nham-border/60 shadow-sm'
       }`}
     >
-      {/* Reserved height so the three prices sit on one line even though only
-          Premium carries a toggle. Only once the cards are side by side —
-          stacked, there is nothing to line up with and it is just a hole. */}
-      <div className="flex flex-col md:min-h-[9rem]">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-medium font-sans-display text-nham-text">
-            {t(`plans.${plan}.name`)}
-          </h3>
-          {featured && (
-            <span className="rounded-full bg-nham-hover px-2 py-0.5 font-medium font-sans-display text-[10px] text-nham-text">
-              {t('plans.premium.trialBadge')}
-            </span>
-          )}
-        </div>
+      <h3 className="font-normal font-serif text-3xl text-nham-text">
+        {t(`plans.${plan}.name`)}
+      </h3>
+      <p className="mt-1 font-sans-display text-nham-text-muted text-sm">
+        {t(`plans.${plan}.tagline`)}
+      </p>
 
-        {onPeriodChange && (
-          <div className="mt-3">
-            <PeriodToggle period={period} onChange={onPeriodChange} />
-          </div>
-        )}
-
-        <div className="mt-auto pt-4">
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-normal font-serif text-4xl text-nham-text tabular-nums">
-              {price}
-            </span>
-            <span className="font-sans-display text-nham-text-muted text-sm">
-              {cadence}
-            </span>
-          </div>
-          <p className="mt-1 min-h-[1.25rem] font-sans-display text-nham-text-muted text-xs">
-            {featured && yearly ? t('plans.premium.perMonth') : ''}
-          </p>
-        </div>
+      {/* Reserved height so the three prices land on one line across the row;
+          the fine print runs to two lines on Premium and one elsewhere. */}
+      <div className="mt-7 md:min-h-[5.5rem]">
+        <p className="font-bold font-sans-display text-3xl text-nham-text tabular-nums">
+          {price}
+        </p>
+        <p className="mt-1.5 font-sans-display text-nham-text-muted text-xs leading-relaxed">
+          {fineprint}
+        </p>
       </div>
 
       <Button
         variant={featured ? 'landing-primary' : 'landing-secondary'}
-        className="mt-5 w-full font-sans-display"
+        className="mt-6 w-full font-sans-display"
         onClick={onSelect}
       >
         {t(`plans.${plan}.cta`)}
       </Button>
+
+      <div className="mt-7 border-nham-border/50 border-t pt-6">
+        {inherits && (
+          <p className="mb-4 font-sans-display font-semibold text-nham-text text-sm">
+            {t(`plans.${plan}.inherits`)}
+          </p>
+        )}
+        <ul className="space-y-3">
+          {PLAN_FEATURES[plan].map((id) => (
+            <li key={id} className="flex items-start gap-2.5">
+              <Check
+                aria-hidden
+                className="mt-0.5 h-4 w-4 shrink-0 text-nham-text-muted"
+              />
+              <span className="font-sans-display text-nham-text-soft text-sm leading-snug">
+                {t(`features.${id}`)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
