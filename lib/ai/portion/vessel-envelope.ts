@@ -66,15 +66,42 @@ export function classifyDishClass(
   return 'solid';
 }
 
+/**
+ * The container word for this dish, whether Call 1 put it on the dish or on the
+ * ingredient.
+ *
+ * The prompt asks for BOTH on a single-ingredient dish quantified by a vessel
+ * ("1 chén cơm" → ingredient `count`+`unitToken` AND meal-item `vesselToken`),
+ * and the model does not always comply: for "3 piece of salmon + 2 steaks +
+ * 1 cup of milk + 1 plate of spaghetti" it emitted `vesselToken: "plate"` on
+ * the spaghetti but put the milk's "cup" only on the ingredient. Milk then fell
+ * through BOTH resolvers — not a dish vessel, and "cup" is not a piece token —
+ * so a plainly-quantified drink got no portion affordance at all.
+ *
+ * Deriving it here makes the outcome independent of which slot the model
+ * chose. Restricted to a SINGLE-ingredient dish on purpose: in a composed dish
+ * one ingredient measured in cups ("phở with a cup of broth") says nothing
+ * about what the dish was served in.
+ */
+function dishVesselToken(dish: DishLike): string | undefined {
+  if (dish.vesselToken) return dish.vesselToken;
+  if (dish.ingredients.length !== 1) return undefined;
+  const token = dish.ingredients[0].unitToken;
+  // Only a real container word — `resolveVesselFromToken` rejects piece and
+  // mass units, so "2 steaks" can never become a vessel this way.
+  return token && resolveVesselFromToken(token) ? token : undefined;
+}
+
 export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
+  const vesselToken = dishVesselToken(dish);
   if (
-    !dish.vesselToken ||
+    !vesselToken ||
     dish.ingredients.some((ingredient) => ingredient.count === 0)
   ) {
     return null;
   }
 
-  const resolved = resolveVesselFromToken(dish.vesselToken, dish.vesselSize);
+  const resolved = resolveVesselFromToken(vesselToken, dish.vesselSize);
   if (!resolved) return null;
 
   const tier =
@@ -89,7 +116,7 @@ export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
     family: resolved.family,
     tier,
     dishClass,
-    token: dish.vesselToken,
+    token: vesselToken,
     vesselMl: VESSEL_FAMILIES[resolved.family].tiers[tier].ml,
     guardG: guardBandG(resolved.family, tier, dishClass),
     midG: midG(resolved.family, tier, dishClass),
