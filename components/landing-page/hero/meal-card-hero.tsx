@@ -9,28 +9,6 @@ import { HERO_MEALS } from './logged-meals';
 import { HERO_EASE, HERO_GROUND } from './tone';
 import { WaitlistPill } from './waitlist-pill';
 
-/** Two slow washes so the page still breathes with nothing hovered. */
-const RESTING = [
-  {
-    tint: '201,168,124',
-    size: '46rem',
-    top: '-14%',
-    left: '-8%',
-    seconds: 54,
-    dx: 80,
-    dy: 50,
-  },
-  {
-    tint: '139,115,85',
-    size: '38rem',
-    top: '46%',
-    left: '64%',
-    seconds: 69,
-    dx: -90,
-    dy: -60,
-  },
-];
-
 /**
  * The meal-card hero: the app's real logged-meal cards, each holding a
  * painting of its own meal.
@@ -77,42 +55,9 @@ export function MealCardHero() {
 
   return (
     <section
-      className={`relative isolate flex min-h-[100dvh] flex-col overflow-hidden ${HERO_GROUND.ground}`}
+      className="relative isolate flex min-h-[100dvh] flex-col overflow-hidden"
       onPointerLeave={() => setActiveId(null)}
     >
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        {RESTING.map((wash) => (
-          <motion.div
-            key={wash.left}
-            className="absolute"
-            style={{
-              width: wash.size,
-              height: wash.size,
-              top: wash.top,
-              left: wash.left,
-              background: `radial-gradient(closest-side, rgba(${wash.tint},0.28), rgba(${wash.tint},0) 72%)`,
-            }}
-            animate={
-              reduced ? undefined : { x: [0, wash.dx, 0], y: [0, wash.dy, 0] }
-            }
-            transition={
-              reduced
-                ? undefined
-                : {
-                    duration: wash.seconds,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: [0.45, 0, 0.55, 1],
-                  }
-            }
-          />
-        ))}
-
-        <div
-          className="absolute inset-0"
-          style={{ background: HERO_GROUND.veil }}
-        />
-      </div>
-
       <div className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col items-center justify-center px-4 pt-24 pb-16 text-center sm:px-6">
         {/* On a phone the promise owns the first screen; the cards are what
             scrolling is for. On lg everything sits in one viewport again. */}

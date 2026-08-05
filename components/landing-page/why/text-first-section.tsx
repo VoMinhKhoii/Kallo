@@ -36,11 +36,12 @@ export function TextFirstSection() {
       };
 
   return (
-    // One cream sheet, separated by a hairline rather than a colour change, so
-    // the white cards keep reading as cards.
+    // Transparent: the cream comes from `body` and the drifting wash sits
+    // behind it. Sections are separated by a hairline rather than a colour
+    // change, so the white cards keep reading as cards.
     <section
       id="why"
-      className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-surface py-24 md:py-32"
+      className="relative scroll-mt-20 border-nham-border/40 border-t py-24 md:py-32"
     >
       {/* Same measure as the hero, so the page has one width. The blocks
           inside keep their own max-widths — a headline and two lines of prose

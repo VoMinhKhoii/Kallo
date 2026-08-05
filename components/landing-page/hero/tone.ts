@@ -8,14 +8,14 @@
  * There is no `cardInk` here any more either. It existed to flip a card's type
  * to white once its painting turned the card dark; the cards now wear the
  * light paintings, stay light under them, and keep one ink throughout.
+ *
+ * The ground and the veil left too — they are the whole page's now, and live
+ * in `../ambient-wash.tsx`. What is left is ink, which is still the hero's.
  */
 export const HERO_GROUND = {
-  ground: 'bg-nham-surface',
   ink: 'text-nham-text',
   body: 'text-nham-text-soft',
   faint: 'text-nham-text-muted',
-  /** Pulls the resting washes back under the type without dulling the edges. */
-  veil: 'radial-gradient(62% 56% at 50% 44%, rgba(249,249,247,0.95) 0%, rgba(249,249,247,0.72) 44%, rgba(249,249,247,0) 80%)',
 } as const;
 
 /** The one easing curve every hero motion uses — heavy, decelerating. */

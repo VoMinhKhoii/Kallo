@@ -86,11 +86,12 @@ export function PricingSection() {
       : t(`plans.${plan}.fineprint`);
 
   return (
-    // Cream, not white: the plan cards are white, and white cards on a white
-    // ground only read by their border.
+    // Transparent, so the drifting wash carries through. The plan cards are
+    // white and need a ground that is not white to read as cards; `body` is
+    // cream, which is exactly that.
     <section
       id="pricing"
-      className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-surface py-24 md:py-32"
+      className="relative scroll-mt-20 border-nham-border/40 border-t py-24 md:py-32"
     >
       <div className="mx-auto max-w-[100rem] px-4 sm:px-6">
         <motion.div {...reveal} className="flex flex-col items-center">

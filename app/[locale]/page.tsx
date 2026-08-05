@@ -5,6 +5,7 @@ import { AuthProvider } from '@/components/auth/auth-provider';
 import { OAuthErrorToast } from '@/components/auth/oauth-error-toast';
 import { DocsFooter } from '@/components/docs/docs-footer';
 import {
+  AmbientWash,
   Header,
   MealCardHero,
   PricingSection,
@@ -51,6 +52,9 @@ export default async function Home({
 
   return (
     <AuthProvider next={next} initialOpen={initialOpen} initialTab={initialTab}>
+      {/* One fixed layer behind everything, so the drift runs the whole way
+          down instead of stopping where the hero ends. */}
+      <AmbientWash />
       <Header />
       <main>
         <MealCardHero />
