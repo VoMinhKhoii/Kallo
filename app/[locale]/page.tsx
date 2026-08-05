@@ -4,12 +4,11 @@ import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { OAuthErrorToast } from '@/components/auth/oauth-error-toast';
 import {
-  CTASection,
   Footer,
   Header,
-  Hero,
-  ProblemSection,
-  SolutionSection,
+  MealCardHero,
+  PricingSection,
+  TextFirstSection,
 } from '@/components/landing-page';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
 import { safeNextPath } from '@/lib/auth/safe-next';
@@ -44,10 +43,9 @@ export default async function Home({
     <AuthProvider next={next} initialOpen={initialOpen} initialTab={initialTab}>
       <Header />
       <main>
-        <Hero />
-        <ProblemSection />
-        <SolutionSection />
-        <CTASection />
+        <MealCardHero />
+        <TextFirstSection />
+        <PricingSection />
       </main>
       <Footer />
       <AuthDialog />

@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import {
   formatCaloriesValue,
   formatMacroValue,
@@ -19,6 +22,8 @@ export function LoggedMealDetails({
   meal: HeroMeal;
   ink: CardInk;
 }) {
+  const t = useTranslations(`landing.hero.meals.${meal.id}.items`);
+  const tTotal = useTranslations('landing.hero');
   const totals = mealTotals(meal);
 
   return (
@@ -26,11 +31,11 @@ export function LoggedMealDetails({
       <div className="mb-4 space-y-1">
         {meal.items.map((item) => (
           <div
-            key={item.name}
+            key={item.id}
             className="flex items-center justify-between gap-2 py-2 font-sans-display text-[13px]"
           >
             <span className={`min-w-0 truncate font-medium ${ink.strong}`}>
-              {item.name}
+              {t(item.id)}
             </span>
             <div className="flex shrink-0 items-center gap-1.5">
               <div
@@ -54,7 +59,7 @@ export function LoggedMealDetails({
         <span
           className={`font-bold font-sans-display text-[13px] ${ink.strong}`}
         >
-          Total
+          {tTotal('total')}
         </span>
         <div className="flex items-center gap-4">
           <span

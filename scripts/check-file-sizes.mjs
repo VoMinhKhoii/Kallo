@@ -49,10 +49,6 @@ const EXEMPT = new Map([
     'pure data catalog of reference nutrition targets',
   ],
   [
-    'components/landing-lab/v3/globe-dishes.ts',
-    'pure data table for the landing globe',
-  ],
-  [
     'lib/ai/prompts/nutrition.ts',
     'prompt text — splitting hurts prompt legibility',
   ],

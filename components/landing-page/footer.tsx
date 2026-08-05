@@ -31,18 +31,10 @@ export async function Footer() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="#features"
+                  href="#why"
                   className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
                 >
-                  {t('features')}
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#how"
-                  className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
-                >
-                  {t('howItWorks')}
+                  {t('why')}
                 </a>
               </li>
               <li>

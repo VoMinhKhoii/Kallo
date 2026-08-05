@@ -730,20 +730,65 @@
       "label": "Ngôn ngữ trang chào"
     },
     "header": {
-      "features": "Tính năng",
-      "howItWorks": "Cách hoạt động",
+      "why": "Vì sao",
       "pricing": "Giá",
+      "docs": "Tài liệu",
       "signIn": "Đăng nhập",
       "getStarted": "Bắt đầu"
     },
     "hero": {
-      "badge": "Thiết kế cho bữa ăn Việt",
-      "title": "Theo dõi bữa ăn Việt",
-      "titleHighlight": "không cần đoán mò",
-      "subtitle": "Mô tả bữa ăn như khi bạn kể với bạn bè — bằng tiếng Việt, tiếng Anh, hoặc cả hai. Kallo hiểu phở, bánh mì và hơn 500 món Việt, cùng cách bạn nấu, rồi ước lượng dinh dưỡng từ dữ liệu thành phần thực phẩm Việt Nam.",
-      "cta": "Bắt đầu ngay",
-      "ctaSecondary": "Xem cách hoạt động",
-      "beta": "Đang thử nghiệm · làm tại Việt Nam",
+      "headline": {
+        "clause1": {
+          "lead": "Bạn",
+          "word": "kể"
+        },
+        "clause2": {
+          "lead": "Kallo",
+          "word": "tính"
+        }
+      },
+      "subtitle": "Kể cho Kallo nghe bạn vừa ăn gì, như khi kể với bạn bè. Kallo tách thành từng nguyên liệu thật rồi tính calo và macro từ dữ liệu đáng tin cậy.",
+      "cardsHint": "Ước lượng bằng mắt hay cân từng gram — đều nhập giống nhau. Rê chuột vào một bữa để xem.",
+      "cardsHintTouch": "Ước lượng bằng mắt hay cân từng gram — đều nhập giống nhau.",
+      "beta": "Miễn phí trong thời gian thử nghiệm · làm tại Việt Nam, dùng được cho mọi căn bếp",
+      "total": "Tổng",
+      "toggleDetails": "Mở/đóng chi tiết",
+      "entry": {
+        "eyeballed": "Ước lượng",
+        "weighed": "Cân"
+      },
+      "meals": {
+        "pho": {
+          "input": "1 tô phở bò tái + quẩy",
+          "items": {
+            "pho": "Phở bò tái (1 tô)",
+            "quay": "Quẩy (1)"
+          }
+        },
+        "bol": {
+          "input": "spaghetti bolognese còn lại, một tô nhỏ + salad",
+          "items": {
+            "pasta": "Spaghetti bolognese",
+            "salad": "Salad + sốt trộn"
+          }
+        },
+        "chicken": {
+          "input": "150g ức gà nướng, 180g cơm gạo thơm, 1 muỗng canh dầu ô liu",
+          "items": {
+            "chicken": "Ức gà (150g)",
+            "rice": "Cơm gạo thơm (180g)",
+            "oil": "Dầu ô liu (1 muỗng canh)"
+          }
+        },
+        "shake": {
+          "input": "40g whey isolate + 250ml sữa tách béo + 1 quả chuối",
+          "items": {
+            "whey": "Whey isolate (40g)",
+            "milk": "Sữa tách béo (250ml)",
+            "banana": "Chuối (1 quả)"
+          }
+        }
+      },
       "waitlist": {
         "label": "Địa chỉ email",
         "placeholder": "ban@email.com",
@@ -755,132 +800,122 @@
         "error": "Đã có lỗi xảy ra. Vui lòng thử lại.",
         "rateLimited": "Bạn thử hơi nhiều lần. Vui lòng đợi một lát rồi thử lại.",
         "privacy": "Một email để xác nhận, một email khi tới lượt bạn. Không gì khác."
-      },
-      "demo": {
-        "today": "Hôm nay",
-        "date": "Nhật ký bữa ăn",
-        "justNow": "Vừa xong",
-        "analysis": "Phân tích dinh dưỡng bằng AI",
-        "totalCalories": "Tổng calo",
-        "inputPlaceholder": "Mô tả bữa ăn của bạn…",
-        "smartContext": "Ngữ cảnh thông minh",
-        "smartContextText": "Dùng vùng miền, thói quen nấu ăn và mô tả bữa ăn để siết chặt ước tính.",
-        "send": "Phân tích bữa ăn",
-        "save": "Lưu bữa ăn này",
-        "phaseMatching": "Đang khớp nguyên liệu…",
-        "phaseEstimating": "Đang ước tính dinh dưỡng…",
-        "chips": {
-          "phoBo": "1 tô phở bò tái + quẩy",
-          "comTam": "Cơm tấm sườn bì chả",
-          "bunCha": "Bún chả Hà Nội"
+      }
+    },
+    "why": {
+      "eyebrow": "Vì sao dùng chữ",
+      "title": "Tấm ảnh không nghe được bạn dặn",
+      "titleAccent": "ít dầu mỡ.",
+      "lead": "Không chỉ vì mô tả bằng chữ cho kết quả chính xác hơn. Mà vì một câu chữ hợp với cách bạn ăn thật — những lần đổi món, những ngày quên ghi, và những thay đổi nhỏ mà máy ảnh không thể thấy.",
+      "adjustments": {
+        "oil": {
+          "label": "Bạn gõ",
+          "input": "cơm tấm sườn, ít dầu mỡ",
+          "effect": "Lượng chất béo giảm xuống, calo giảm theo. Một tấm ảnh của cùng đĩa cơm đó không thể biết bạn đã dặn."
+        },
+        "milk": {
+          "label": "Bạn gõ",
+          "input": "cà phê sữa, sữa tách béo",
+          "effect": "Sữa tách béo thay vì sữa đặc. Vẫn là ly cà phê đó, nhưng macro thì khác hẳn."
+        },
+        "backfill": {
+          "label": "Bạn gõ",
+          "input": "hôm qua ăn cơm tấm lúc 7 giờ tối",
+          "effect": "Ghi vào hôm qua. Quên một ngày không có nghĩa là mất ngày đó — bạn điền lại được bất kỳ ngày nào đã qua, không giới hạn."
         }
-      }
-    },
-    "problem": {
-      "label": "Vì sao app hiện tại thất bại",
-      "title": "Vấn đề của",
-      "titleHighlight": "các app hiện nay",
-      "subtitle": "Được xây dựng cho chế độ ăn phương Tây. Phần lớn app không phân biệt được phở bò với phở gà, hay việc bún bò Huế của bạn có nhiều dầu ớt hơn thường lệ.",
-      "card1Title": "Cơ sở dữ liệu chung chung",
-      "card1Text": "Dữ liệu thực phẩm thiên về phương Tây, khẩu phần sai và thiếu nhiều món Việt.",
-      "card2Title": "Nhập tay rất mệt",
-      "card2Text": "Phải tìm từng nguyên liệu, đoán khẩu phần rồi bỏ cuộc sau vài ngày.",
-      "card3Title": "Thiếu ngữ cảnh nấu nướng",
-      "card3Text": "Xào ít dầu và chiên ngập dầu — cùng nguyên liệu nhưng calo rất khác nhau.",
-      "visual": {
-        "appLabel": "Một app phương Tây điển hình",
-        "query": "mực kho",
-        "result1": "Mực sống",
-        "result1Note": "không kho, không nước sốt",
-        "result2": "Mực chiên giòn",
-        "result2Note": "sai hẳn món",
-        "noMatch": "Không có kết quả khớp cho “mực kho”",
-        "caption": "Hai kết quả suýt soát và một cái nhún vai — cho món ăn có mặt trong hàng triệu gia đình."
       },
-      "quote": "Khi cơ sở dữ liệu không hiểu ẩm thực của bạn, mọi mục tiêu calo đều chỉ là phỏng đoán.",
-      "quoteLabel": "Vấn đề người dùng gặp đi gặp lại"
+      "sourcesTitle": "Bên dưới là dữ liệu thành phần thực phẩm thật",
+      "sourcesBody": "Kallo đối chiếu những gì bạn viết với bảng thành phần của FAO và USDA, rồi dùng lớp AI riêng cho phần mà bảng số liệu không chứa được — khẩu phần, cách chế biến, món ăn đúng như được nấu ở nhà. Kết quả trả về là khoảng ước lượng có giới hạn, không bịa ra số lẻ.",
+      "tradeoff": "Gõ chữ có mất công hơn giơ máy ảnh không? Có.",
+      "tradeoffBody": "Nhưng vẫn nhẹ hơn nhiều so với tra từng nguyên liệu bằng tay, và nó giữ được những thứ mà cả tấm ảnh lẫn việc nhập thủ công đều bỏ sót.",
+      "fallback": "Và bạn chỉ gõ những gì mới. Ghi lại bữa cũ lo phần bạn ăn hằng tuần, còn quét mã vạch lo mọi thứ có nhãn."
     },
-    "solution": {
-      "step1Label": "Bước 1",
-      "step1Title": "Mô tả bạn đã ăn gì",
-      "step1Text": "Nhập bữa ăn đúng như cách bạn thường nói — bằng tiếng Việt, tiếng Anh hoặc trộn cả hai.",
-      "step1TextMobile": "Mô tả bữa ăn tự nhiên bằng tiếng Việt, tiếng Anh hoặc cả hai.",
-      "step2Label": "Bước 2",
-      "step2Title": "Chúng tôi tách nó thành nguyên liệu thật",
-      "step2Text": "Kallo ánh xạ mô tả của bạn sang nguyên liệu và thành phần món ăn Việt từ bộ dữ liệu dinh dưỡng được tuyển chọn.",
-      "step2TextMobile": "Kallo ánh xạ mô tả sang nguyên liệu và thành phần món ăn Việt thật.",
-      "step3Label": "Bước 3",
-      "step3Title": "Ngữ cảnh cá nhân làm ước tính chính xác hơn",
-      "step3Text": "Vùng miền, thói quen nấu ăn và mục tiêu dinh dưỡng giúp AI hiểu calo ẩn và điều chỉnh khẩu phần hợp lý hơn.",
-      "step3TextMobile": "Vùng miền, thói quen nấu ăn và mục tiêu giúp AI siết chặt ước tính.",
-      "step4Label": "Bước 4",
-      "step4Title": "Bạn nhận được một con số đáng tin",
-      "step4Text": "Kallo trả về một con số calo và macro đáng tin, dựa trên dữ liệu thực phẩm Việt thật và cách bạn thực sự nấu.",
-      "step4TextMobile": "Một con số đáng tin, dựa trên dữ liệu thực phẩm Việt thật.",
-      "cta": "Bắt đầu theo dõi",
-      "whyLabel": "Vì sao Kallo tốt hơn",
-      "whyTitle": "Được xây dựng theo cách bữa ăn Việt thực sự diễn ra",
-      "feature1Title": "Khớp nguyên liệu theo ngữ cảnh Việt Nam",
-      "feature1Text": "Đối chiếu món ăn với dữ liệu thành phần thực phẩm Việt thay vì ép sang món thay thế phương Tây.",
-      "feature2Title": "Ước tính có ngữ cảnh",
-      "feature2Text": "Hiểu các chi tiết như ít mỡ hành, thêm nước canh, hay thói quen kho kiểu nhà.",
-      "feature3Title": "Con số bạn tin được",
-      "feature3Text": "Mỗi ước tính đều dựa trên dữ liệu thành phần thực phẩm Việt Nam, để bạn yên tâm ra quyết định.",
-      "profile": {
-        "title": "Hồ sơ cá nhân hóa",
-        "active": "Đang áp dụng",
-        "regionTaste": "Khẩu vị vùng miền",
-        "regionTasteValue": "Miền Nam / thiên ngọt",
-        "braisedDishes": "Món kho",
-        "braisedDishesValue": "Thường ngọt hơn",
-        "chickenSkin": "Da gà",
-        "chickenSkinValue": "Thường ăn",
-        "ricePortion": "Phần cơm",
-        "ricePortionValue": "Tô lớn",
-        "disclaimer": "Các tuỳ chọn này giúp siết chặt ước tính mà không bắt bạn phải nhập mọi chi tiết mỗi lần."
+    "pricing": {
+      "eyebrow": "Giá",
+      "title": "Bắt đầu miễn phí.",
+      "titleAccent": "Trả tiền khi thấy xứng đáng.",
+      "subtitle": "Mọi gói bên dưới đều là trọn bộ ứng dụng. Premium mở khoá phần mô tả bữa ăn bằng lời của bạn — phần tốn chi phí thật để vận hành.",
+      "period": {
+        "label": "Kỳ thanh toán",
+        "monthly": "Hằng tháng",
+        "yearly": "Hằng năm"
       },
-      "receipt": {
-        "title": "Phiếu phân tích",
-        "dbQuery": "Đang truy vấn cơ sở dữ liệu nguyên liệu Việt",
-        "profileTitle": "Ngữ cảnh cá nhân",
-        "regionPref": "Thiên hướng vùng miền",
-        "regionValue": "Miền Nam",
-        "modification": "Điều chỉnh món ăn",
-        "modificationValue": "Ít mỡ hành",
-        "goalStrategy": "Chiến lược mục tiêu",
-        "goalCutting": "Giảm cân",
-        "goalUpperBound": "Tính dôi an toàn",
-        "total": "Tổng ước tính",
-        "upperBoundNote": "Đã tính dôi một chút cho mục tiêu giảm cân"
-      }
-    },
-    "cta": {
-      "title": "Sẵn sàng theo dõi thông minh hơn?",
-      "subtitle": "Tham gia beta và bắt đầu theo dõi bữa ăn Việt với độ chính xác thực sự.",
-      "button": "Bắt đầu miễn phí",
-      "buttonSecondary": "Xem ví dụ phân tích",
-      "feature1": "Cơ sở dữ liệu ưu tiên món Việt",
-      "feature2": "AI hiểu ngữ cảnh nấu nướng",
-      "feature3": "Con số dinh dưỡng đáng tin",
-      "socialProof": "Được người dùng thử nghiệm sớm tin dùng vì không còn phải đoán mò",
-      "trust": "Dữ liệu thành phần món Việt · hiểu cách bạn nấu · tiếng Việt + English"
+      "groups": {
+        "logging": "Ghi bữa ăn",
+        "circle": "Circle"
+      },
+      "features": {
+        "textLogging": {
+          "label": "Ghi bằng lời của bạn"
+        },
+        "manualLogging": {
+          "label": "Nhập thủ công"
+        },
+        "visualEdit": {
+          "label": "Chỉnh trực quan"
+        },
+        "relog": {
+          "label": "Ghi lại bữa đã ăn"
+        },
+        "barcode": {
+          "label": "Quét mã vạch"
+        },
+        "cheatMeal": {
+          "label": "Chế độ bữa xả"
+        },
+        "joinGroups": {
+          "label": "Tham gia nhóm",
+          "free": "2 nhóm, chỉ xem",
+          "paid": "không giới hạn"
+        },
+        "friendFeed": {
+          "label": "Bữa ăn của bạn bè trong feed"
+        },
+        "copySplit": {
+          "label": "Sao chép hoặc chia bữa của bạn bè"
+        },
+        "groupSize": {
+          "label": "Số thành viên nhóm",
+          "free": "tối đa 10",
+          "paid": "không giới hạn"
+        }
+      },
+      "plans": {
+        "free": {
+          "name": "Miễn phí",
+          "price": "0₫",
+          "cadence": "trọn đời",
+          "cta": "Bắt đầu miễn phí"
+        },
+        "premium": {
+          "name": "Premium",
+          "trialBadge": "7 ngày miễn phí",
+          "priceMonthly": "49K₫",
+          "priceYearly": "399K₫",
+          "cadenceMonth": "/tháng",
+          "cadenceYear": "/năm",
+          "perMonth": "≈ 33K₫ mỗi tháng, thanh toán theo năm",
+          "cta": "Dùng thử miễn phí"
+        },
+        "lifetime": {
+          "name": "Trọn đời",
+          "price": "799K₫",
+          "cadence": "một lần",
+          "cta": "Mua trọn đời"
+        }
+      },
+      "everyoneTitle": "Có ở mọi gói, kể cả Miễn phí",
+      "everyone": "Bảng điều khiển và macro hằng ngày, theo dõi cân nặng kèm đường xu hướng, bản đồ đều đặn, phân tích dinh dưỡng, mục tiêu, hồ sơ nấu ăn của bạn, điền bù bất kỳ ngày nào đã qua, và xuất toàn bộ dữ liệu bạn đã ghi.",
+      "betaNote": "Kallo đang thử nghiệm và hiện miễn phí toàn bộ. Mức giá này áp dụng khi kết thúc thử nghiệm, và chúng tôi sẽ báo trước."
     },
     "footer": {
       "tagline": "Theo dõi bữa ăn Việt, được hỗ trợ bởi AI.",
       "product": "Sản phẩm",
-      "features": "Tính năng",
-      "howItWorks": "Cách hoạt động",
+      "why": "Vì sao",
       "pricing": "Giá",
-      "faq": "Câu hỏi thường gặp",
-      "company": "Công ty",
-      "about": "Giới thiệu",
-      "blog": "Blog",
-      "contact": "Liên hệ",
-      "privacy": "Quyền riêng tư",
       "copyright": "© {year} Kallo. Mọi quyền được bảo lưu.",
       "terms": "Điều khoản",
       "privacyLink": "Chính sách riêng tư",
-      "security": "Bảo mật",
       "resources": "Tài nguyên",
       "docs": "Tài liệu"
     },

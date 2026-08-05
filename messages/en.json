@@ -730,20 +730,65 @@
       "label": "Landing page language"
     },
     "header": {
-      "features": "Features",
-      "howItWorks": "How it works",
+      "why": "Why text",
       "pricing": "Pricing",
+      "docs": "Docs",
       "signIn": "Sign in",
       "getStarted": "Get started"
     },
     "hero": {
-      "badge": "Built for Vietnamese meals",
-      "title": "Track Vietnamese meals",
-      "titleHighlight": "without the guesswork",
-      "subtitle": "Describe your meal the way you'd tell a friend — in Vietnamese, English, or both. Kallo knows phở, bánh mì, and 500+ Vietnamese dishes, and how you cook them, then estimates the nutrition from Vietnamese food-composition data.",
-      "cta": "Get started",
-      "ctaSecondary": "See how it works",
-      "beta": "In beta · built in Vietnam",
+      "headline": {
+        "clause1": {
+          "lead": "You",
+          "word": "describe"
+        },
+        "clause2": {
+          "lead": "we",
+          "word": "derive"
+        }
+      },
+      "subtitle": "Tell Kallo what you ate the way you'd tell a friend. It helps split into real ingredients and derives calories/macros from trusted data.",
+      "cardsHint": "Eyeballed or weighed to the gram — both go in the same way. Hover a meal to see it.",
+      "cardsHintTouch": "Eyeballed or weighed to the gram — both go in the same way.",
+      "beta": "Free while in beta · born in Vietnam, built for every kitchen",
+      "total": "Total",
+      "toggleDetails": "Toggle details",
+      "entry": {
+        "eyeballed": "Eyeballed",
+        "weighed": "Weighed"
+      },
+      "meals": {
+        "pho": {
+          "input": "1 tô phở bò tái + quẩy",
+          "items": {
+            "pho": "Phở bò tái (1 tô)",
+            "quay": "Quẩy (1)"
+          }
+        },
+        "bol": {
+          "input": "leftover spaghetti bolognese, small bowl + side salad",
+          "items": {
+            "pasta": "Spaghetti bolognese",
+            "salad": "Side salad + dressing"
+          }
+        },
+        "chicken": {
+          "input": "150g grilled chicken breast, 180g jasmine rice, 1 tbsp olive oil",
+          "items": {
+            "chicken": "Chicken breast (150g)",
+            "rice": "Jasmine rice (180g)",
+            "oil": "Olive oil (1 tbsp)"
+          }
+        },
+        "shake": {
+          "input": "40g whey isolate + 250ml skim milk + 1 banana",
+          "items": {
+            "whey": "Whey isolate (40g)",
+            "milk": "Skim milk (250ml)",
+            "banana": "Banana (1)"
+          }
+        }
+      },
       "waitlist": {
         "label": "Email address",
         "placeholder": "you@email.com",
@@ -755,132 +800,122 @@
         "error": "Something went wrong. Please try again.",
         "rateLimited": "Too many tries. Please wait a moment and try again.",
         "privacy": "One email to confirm, one when your spot opens. Nothing else."
-      },
-      "demo": {
-        "today": "Today",
-        "date": "Meal log",
-        "justNow": "Just now",
-        "analysis": "AI nutrition analysis",
-        "totalCalories": "Total calories",
-        "inputPlaceholder": "Describe your meal…",
-        "smartContext": "Smart context",
-        "smartContextText": "Uses your region, cooking habits, and meal text to tighten estimates.",
-        "send": "Analyze meal",
-        "save": "Save this meal",
-        "phaseMatching": "Matching ingredients…",
-        "phaseEstimating": "Estimating nutrition…",
-        "chips": {
-          "phoBo": "1 tô phở bò tái + quẩy",
-          "comTam": "Cơm tấm sườn bì chả",
-          "bunCha": "Bún chả Hà Nội"
+      }
+    },
+    "why": {
+      "eyebrow": "Why text",
+      "title": "A photo can't hear you say",
+      "titleAccent": "less oil.",
+      "lead": "It isn't only that describing a meal is more accurate. It's that a sentence fits how you actually eat — the substitutions you make, the days you forget, the small changes a camera has no way to see.",
+      "adjustments": {
+        "oil": {
+          "label": "You type",
+          "input": "cơm tấm sườn, ít dầu mỡ",
+          "effect": "The fat comes down, and the calories with it. A photo of the same plate has no way to know you asked."
+        },
+        "milk": {
+          "label": "You type",
+          "input": "cà phê sữa, sữa tách béo",
+          "effect": "Skim instead of condensed milk. The same drink on the table, a different macro split on the card."
+        },
+        "backfill": {
+          "label": "You type",
+          "input": "hôm qua ăn cơm tấm lúc 7 giờ tối",
+          "effect": "Logged to yesterday. Missing a day doesn't mean losing it — you can fill in any past date, with no cut-off."
         }
-      }
-    },
-    "problem": {
-      "label": "Why current apps fail",
-      "title": "The problem with",
-      "titleHighlight": "existing trackers",
-      "subtitle": "Built for Western diets. Most trackers don't know the difference between phở bò and phở gà, or that your bún bò Huế has more chili oil than usual.",
-      "card1Title": "Generic databases",
-      "card1Text": "Western-centric food databases with wrong portions and missing Vietnamese dishes.",
-      "card2Title": "Manual entry is painful",
-      "card2Text": "Searching ingredient by ingredient, guessing portions, and giving up after a few days.",
-      "card3Title": "No cooking context",
-      "card3Text": "A stir-fry with minimal oil vs. deep-fried — same ingredient, very different calories.",
-      "visual": {
-        "appLabel": "A typical Western tracker",
-        "query": "mực kho",
-        "result1": "Squid, raw",
-        "result1Note": "no braising, no sauce",
-        "result2": "Calamari, fried",
-        "result2Note": "wrong dish entirely",
-        "noMatch": "No exact match for “mực kho”",
-        "caption": "Two near-misses and a shrug — for a dish eaten in millions of homes."
       },
-      "quote": "When the food database doesn't understand your cuisine, every calorie target becomes a guess.",
-      "quoteLabel": "What users keep running into"
+      "sourcesTitle": "Real food-composition data underneath",
+      "sourcesBody": "Kallo matches what you wrote against FAO and USDA composition tables, then uses its own AI layer for the parts a table can't hold — portions, preparation, the dish as it's actually cooked at home. Estimates come back as bounded ranges, never invented decimals.",
+      "tradeoff": "Is typing more work than pointing a camera? Yes.",
+      "tradeoffBody": "It's still far less work than looking up every ingredient by hand, and it captures what neither a photo nor a manual entry ever will.",
+      "fallback": "And you only type what's new. Relog brings back the meals you eat every week, and barcode scan handles anything with a label."
     },
-    "solution": {
-      "step1Label": "Step 1",
-      "step1Title": "Describe what you ate",
-      "step1Text": "Type the meal the way you naturally would — in Vietnamese, English, or a mix of both.",
-      "step1TextMobile": "Describe your meal naturally in Vietnamese, English, or both.",
-      "step2Label": "Step 2",
-      "step2Title": "We break it into real ingredients",
-      "step2Text": "Kallo maps your description to Vietnamese ingredients and dish components from a curated nutrition dataset.",
-      "step2TextMobile": "Kallo maps your text to real Vietnamese ingredients and dish components.",
-      "step3Label": "Step 3",
-      "step3Title": "Personal context sharpens the estimate",
-      "step3Text": "Region, cooking habits, and nutrition goals help the AI understand hidden calories and likely portion adjustments.",
-      "step3TextMobile": "Region, cooking habits, and goals help the AI tighten the estimate.",
-      "step4Label": "Step 4",
-      "step4Title": "You get one number you can trust",
-      "step4Text": "Kallo gives you one calorie and macro number you can trust, built from real Vietnamese food data and how you actually cook.",
-      "step4TextMobile": "One number you can trust, built from real Vietnamese food data.",
-      "cta": "Start tracking now",
-      "whyLabel": "Why Kallo works better",
-      "whyTitle": "Built around how Vietnamese meals are actually eaten",
-      "feature1Title": "Vietnamese-first ingredient matching",
-      "feature1Text": "Matches meals against Vietnamese food composition data instead of forcing Western substitutes.",
-      "feature2Title": "Context-aware estimation",
-      "feature2Text": "Understands modifiers like less scallion oil, extra broth, or home-style braising habits.",
-      "feature3Title": "Numbers you can trust",
-      "feature3Text": "Every estimate is grounded in Vietnamese food-composition data, so the numbers hold up when you make decisions.",
-      "profile": {
-        "title": "Personalization profile",
-        "active": "Active",
-        "regionTaste": "Regional taste",
-        "regionTasteValue": "Southern / sweet-leaning",
-        "braisedDishes": "Braised dishes",
-        "braisedDishesValue": "Usually sweeter",
-        "chickenSkin": "Chicken skin",
-        "chickenSkinValue": "Usually eaten",
-        "ricePortion": "Rice portion",
-        "ricePortionValue": "Large bowl",
-        "disclaimer": "These preferences tighten the estimate without forcing you to log every detail every time."
+    "pricing": {
+      "eyebrow": "Pricing",
+      "title": "Start free.",
+      "titleAccent": "Pay when it earns it.",
+      "subtitle": "Every plan below is the whole app. Premium is what unlocks describing a meal in your own words — the part that costs real money to run.",
+      "period": {
+        "label": "Billing period",
+        "monthly": "Monthly",
+        "yearly": "Yearly"
       },
-      "receipt": {
-        "title": "Analysis receipt",
-        "dbQuery": "Querying Vietnamese ingredient database",
-        "profileTitle": "Personal context",
-        "regionPref": "Regional preference",
-        "regionValue": "Southern",
-        "modification": "Meal modifier",
-        "modificationValue": "Less scallion oil",
-        "goalStrategy": "Goal strategy",
-        "goalCutting": "Cutting",
-        "goalUpperBound": "Count conservatively",
-        "total": "Estimated total",
-        "upperBoundNote": "Counted conservatively for cutting"
-      }
-    },
-    "cta": {
-      "title": "Ready to track smarter?",
-      "subtitle": "Join the beta and start tracking Vietnamese meals with real accuracy.",
-      "button": "Get started free",
-      "buttonSecondary": "See a sample analysis",
-      "feature1": "Vietnamese-first database",
-      "feature2": "AI understands cooking context",
-      "feature3": "Nutrition numbers you can trust",
-      "socialProof": "Trusted by early testers who were tired of guessing",
-      "trust": "Vietnamese food-composition data · understands how you cook · tiếng Việt + English"
+      "groups": {
+        "logging": "Logging",
+        "circle": "Circle"
+      },
+      "features": {
+        "textLogging": {
+          "label": "Text logging, in your own words"
+        },
+        "manualLogging": {
+          "label": "Manual logging"
+        },
+        "visualEdit": {
+          "label": "Visual edit"
+        },
+        "relog": {
+          "label": "Relog a previous meal"
+        },
+        "barcode": {
+          "label": "Barcode scan"
+        },
+        "cheatMeal": {
+          "label": "Cheat meal mode"
+        },
+        "joinGroups": {
+          "label": "Join groups",
+          "free": "2, view-only",
+          "paid": "unlimited"
+        },
+        "friendFeed": {
+          "label": "Friends' meals in your feed"
+        },
+        "copySplit": {
+          "label": "Copy or split a friend's meal"
+        },
+        "groupSize": {
+          "label": "Group size",
+          "free": "up to 10",
+          "paid": "unlimited"
+        }
+      },
+      "plans": {
+        "free": {
+          "name": "Free",
+          "price": "$0",
+          "cadence": "forever",
+          "cta": "Get started free"
+        },
+        "premium": {
+          "name": "Premium",
+          "trialBadge": "7 days free",
+          "priceMonthly": "$4.99",
+          "priceYearly": "$24.99",
+          "cadenceMonth": "/month",
+          "cadenceYear": "/year",
+          "perMonth": "≈ $2.08 a month, billed yearly",
+          "cta": "Start free trial"
+        },
+        "lifetime": {
+          "name": "Lifetime",
+          "price": "$54.99",
+          "cadence": "once",
+          "cta": "Buy lifetime"
+        }
+      },
+      "everyoneTitle": "On every plan, including Free",
+      "everyone": "Your dashboard and daily macros, weight tracking with trend projection, the consistency heatmap, the nutrition breakdown, goals and targets, your cooking profile, backfilling any past day, and a full export of everything you've logged.",
+      "betaNote": "Kallo is in beta and everything is free right now. These prices take effect when beta ends, and we'll tell you before that happens."
     },
     "footer": {
       "tagline": "Vietnamese meal tracking, powered by AI.",
       "product": "Product",
-      "features": "Features",
-      "howItWorks": "How it works",
+      "why": "Why text",
       "pricing": "Pricing",
-      "faq": "FAQ",
-      "company": "Company",
-      "about": "About",
-      "blog": "Blog",
-      "contact": "Contact",
-      "privacy": "Privacy",
       "copyright": "© {year} Kallo. All rights reserved.",
       "terms": "Terms",
       "privacyLink": "Privacy policy",
-      "security": "Security",
       "resources": "Resources",
       "docs": "Docs"
     },

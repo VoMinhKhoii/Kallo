@@ -1,7 +1,6 @@
-export { CTASection } from './cta-section';
 export { Footer } from './footer';
 export { Header } from './header';
-export { Hero } from './hero/hero';
+export { MealCardHero } from './hero/meal-card-hero';
 export { LocaleSwitcher } from './locale-switcher';
-export { ProblemSection } from './problem-section';
-export { SolutionSection } from './solution-section';
+export { PricingSection } from './pricing/pricing-section';
+export { TextFirstSection } from './why/text-first-section';

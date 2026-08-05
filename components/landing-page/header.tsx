@@ -5,26 +5,24 @@ import { useTranslations } from 'next-intl';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { LocaleSwitcher } from './locale-switcher';
+import { scrollToAnchorId } from './scroll-to-anchor';
+
+/** The two in-page sections. Docs is a route, so it isn't in here. */
+const ANCHORS = [
+  { id: 'why', key: 'why' },
+  { id: 'pricing', key: 'pricing' },
+] as const;
 
 export function Header() {
   const t = useTranslations('landing.header');
   const { openDialog } = useAuthDialog();
 
-  // Smooth-scroll the in-page anchors, honoring reduced-motion (instant jump
-  // for users who opt out). Offsets for the fixed header via scroll-margin.
   const scrollToAnchor =
     (id: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
-      const target = document.getElementById(id);
-      if (!target) return;
-      const prefersReduced = window.matchMedia(
-        '(prefers-reduced-motion: reduce)'
-      ).matches;
-      target.scrollIntoView({
-        behavior: prefersReduced ? 'auto' : 'smooth',
-        block: 'start',
-      });
+      scrollToAnchorId(id);
     };
 
   return (
@@ -42,27 +40,22 @@ export function Header() {
 
         {/* Nav Links */}
         <nav className="hidden items-center gap-8 md:flex">
-          <a
-            href="#features"
-            onClick={scrollToAnchor('features')}
+          {ANCHORS.map((anchor) => (
+            <a
+              key={anchor.id}
+              href={`#${anchor.id}`}
+              onClick={scrollToAnchor(anchor.id)}
+              className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
+            >
+              {t(anchor.key)}
+            </a>
+          ))}
+          <Link
+            href="/docs/overview"
             className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
           >
-            {t('features')}
-          </a>
-          <a
-            href="#how"
-            onClick={scrollToAnchor('how')}
-            className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
-          >
-            {t('howItWorks')}
-          </a>
-          <a
-            href="#pricing"
-            onClick={scrollToAnchor('pricing')}
-            className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
-          >
-            {t('pricing')}
-          </a>
+            {t('docs')}
+          </Link>
         </nav>
 
         {/* CTA Buttons */}

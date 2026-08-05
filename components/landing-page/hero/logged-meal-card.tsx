@@ -2,6 +2,7 @@
 
 import { ChevronDown } from 'lucide-react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import {
   formatCaloriesValue,
@@ -28,12 +29,11 @@ import { cardInk } from './tone';
  * have no business here, and a row of buttons that did nothing would be worse
  * than no row at all.
  *
- * On hover the meal's own painting fills the card behind the type, dialled
- * back so the card's surface still sets the contrast.
+ * On hover the meal's own painting fills the card behind the type and the ink
+ * flips light to meet it.
  */
 export function LoggedMealCard({
   meal,
-  dark,
   active,
   dimmed,
   offset,
@@ -42,7 +42,6 @@ export function LoggedMealCard({
   onSelectMeal,
 }: {
   meal: HeroMeal;
-  dark: boolean;
   active: boolean;
   dimmed: boolean;
   /** Drop this card a step on wide screens, so the ragged bottoms that come
@@ -53,15 +52,10 @@ export function LoggedMealCard({
   onLeaveMeal: () => void;
   onSelectMeal: () => void;
 }) {
+  const t = useTranslations('landing.hero');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const totals = mealTotals(meal);
-
-  const ink = cardInk(dark, active);
-
-  // Espresso keeps its painting dim so the card never brightens under the
-  // type; cream needs the opposite, because a dark painting held back leaves
-  // only its darkest mass and you see the dish floating alone.
-  const artOpacity = dark ? 0.34 : 0.92;
+  const ink = cardInk(active);
 
   return (
     // The time divider sits outside the card body, exactly as in the feed.
@@ -75,30 +69,21 @@ export function LoggedMealCard({
       } ${offset ? 'lg:mt-12' : ''}`}
     >
       <TimeDivider timeLabel={meal.timeLabel}>
-        <span
-          className={`rounded-full px-2 py-0.5 font-medium font-sans-display text-[10px] ${
-            dark
-              ? 'bg-white/10 text-nham-surface'
-              : 'bg-nham-hover text-nham-text'
-          }`}
-        >
-          {meal.entry}
+        <span className="rounded-full bg-nham-hover px-2 py-0.5 font-medium font-sans-display text-[10px] text-nham-text">
+          {t(`entry.${meal.entry}`)}
         </span>
       </TimeDivider>
 
-      <div
-        className={`relative isolate flex flex-col overflow-hidden rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md ${
-          dark
-            ? 'border-white/12 bg-[#241E15]'
-            : 'border-nham-border/60 bg-white'
-        }`}
-      >
+      <div className="relative isolate flex flex-col overflow-hidden rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
         <Image
-          src={dark ? meal.art.cream : meal.art.dark}
+          src={meal.art}
           alt=""
           fill
           sizes="(min-width: 1024px) 34rem, (min-width: 640px) 45vw, 90vw"
-          style={{ opacity: active ? artOpacity : 0 }}
+          // Near-full strength: dark paint over white subtracts rather than
+          // glows, so holding it back leaves only the darkest mass — the dish
+          // floating alone on a pale card.
+          style={{ opacity: active ? 0.92 : 0 }}
           className={`-z-10 object-cover transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
             active ? 'scale-105' : 'scale-100'
           }`}
@@ -111,16 +96,16 @@ export function LoggedMealCard({
             onClick={onSelectMeal}
             className={`min-w-0 text-left font-serif text-[17px] leading-relaxed sm:text-[19px] ${ink.strong}`}
           >
-            {meal.rawInput}
+            {t(`meals.${meal.id}.input`)}
           </button>
           <button
             type="button"
-            aria-label="Toggle details"
+            aria-label={t('toggleDetails')}
             aria-expanded={!isCollapsed}
             onClick={() => setIsCollapsed((prev) => !prev)}
             className={`shrink-0 rounded-full p-1 transition-colors ${
-              dark
-                ? 'text-nham-surface/50 hover:bg-white/10 hover:text-nham-surface'
+              active
+                ? 'text-nham-surface/70 hover:bg-white/10 hover:text-nham-surface'
                 : 'text-nham-text-muted/60 hover:bg-nham-hover/40 hover:text-nham-text'
             }`}
           >
