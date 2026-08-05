@@ -12,23 +12,22 @@ import { PLAN_FEATURES, type PlanId } from './plans';
  * <the tier below>, plus" and list only the difference, so no line is printed
  * three times.
  *
+ * The card reads its own copy. Nothing above it has to resolve a price any
+ * more now that the period toggle is gone — the fine print under the number
+ * carries the terms instead.
+ *
  * Four blocks — heading, price, button, features — laid on a subgrid inherited
  * from the section. Each row takes the tallest card's height, so the three
  * prices sit on one line, the three buttons sit on one line and the three
  * lists start together, whatever the copy does at any width or in any locale.
- * That is the whole reason for the grid: the alternative is reserving heights
- * with pixel values guessed per translation.
+ * That matters most here: Premium's fine print runs to two lines and the other
+ * two run to one.
  */
 export function PlanCard({
   plan,
-  price,
-  fineprint,
   onSelect,
 }: {
   plan: PlanId;
-  /** Already resolved by the section, since Premium's depends on the term. */
-  price: string;
-  fineprint: string;
   onSelect: () => void;
 }) {
   const t = useTranslations('landing.pricing');
@@ -46,17 +45,17 @@ export function PlanCard({
         <h3 className="font-semibold font-serif text-3xl text-nham-text">
           {t(`plans.${plan}.name`)}
         </h3>
-        <p className="mt-1 font-sans-display text-nham-text-muted text-sm">
+        <p className="mt-1 font-sans-display text-nham-text-soft">
           {t(`plans.${plan}.tagline`)}
         </p>
       </div>
 
-      <div className="mt-7">
-        <p className="font-bold font-sans-display text-3xl text-nham-text tabular-nums">
-          {price}
+      <div className="mt-8">
+        <p className="font-bold font-sans-display text-4xl text-nham-text tabular-nums">
+          {t(`plans.${plan}.price`)}
         </p>
-        <p className="mt-1.5 font-sans-display text-nham-text-muted text-xs leading-relaxed">
-          {fineprint}
+        <p className="mt-4 font-sans-display text-nham-text-muted text-sm leading-relaxed">
+          {t(`plans.${plan}.fineprint`)}
         </p>
       </div>
 
@@ -64,13 +63,13 @@ export function PlanCard({
           36px bar spanning a card with 32px padding, which reads squat. */}
       <Button
         variant="landing-ink"
-        className="mt-6 h-11 w-full font-sans-display"
+        className="mt-8 h-11 w-full font-sans-display"
         onClick={onSelect}
       >
         {t(`plans.${plan}.cta`)}
       </Button>
 
-      <div className="mt-7 border-nham-border/50 border-t pt-6">
+      <div className="mt-8 border-nham-border/50 border-t pt-6">
         <p className="mb-4 font-sans-display font-semibold text-nham-text text-sm">
           {t(`plans.${plan}.inherits`)}
         </p>

@@ -10,13 +10,17 @@
  * prices included, so each locale carries its own currency and no component
  * branches on locale to format money.
  *
+ * There is no billing-period state. Premium quotes the annual rate per month
+ * and the fine print carries the rest — what is billed up front, and what the
+ * monthly alternative costs — which says more than a toggle did and holds
+ * still while you read it.
+ *
  * Note this describes the plan Kallo is launching with, not what the code
  * enforces: `lib/entitlements/features.ts` gates exactly one feature,
  * `ai_analysis`. The section carries a beta note saying prices apply when beta
  * ends, so nothing here claims a paywall that is live.
  */
 export type PlanId = 'free' | 'premium' | 'lifetime';
-export type BillingPeriod = 'monthly' | 'yearly';
 
 export const PLAN_IDS = ['free', 'premium', 'lifetime'] as const;
 

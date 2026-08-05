@@ -824,11 +824,6 @@
     },
     "pricing": {
       "title": "Pricing",
-      "period": {
-        "label": "Billing period",
-        "monthly": "Monthly",
-        "yearly": "Yearly"
-      },
       "plans": {
         "free": {
           "name": "Free",
@@ -841,10 +836,8 @@
         "premium": {
           "name": "Premium",
           "tagline": "For logging in your own words",
-          "priceMonthly": "$4.99",
-          "priceYearly": "$2.08",
-          "fineprintMonthly": "Per month, billed monthly. First 7 days free.",
-          "fineprintYearly": "Per month with the annual discount ($24.99 billed up front). $4.99 if billed monthly. First 7 days free.",
+          "price": "$2.08",
+          "fineprint": "Per month with annual subscription discount ($24.99 billed up front). $4.99 if billed monthly.",
           "cta": "Start free trial",
           "inherits": "Everything in Free, plus:"
         },
@@ -852,7 +845,7 @@
           "name": "Lifetime",
           "tagline": "Pay once, keep it",
           "price": "$54.99",
-          "fineprint": "One payment. No renewals, ever.",
+          "fineprint": "One payment, billed up front. No renewals, ever.",
           "cta": "Buy lifetime",
           "inherits": "Everything in Premium, plus:"
         }

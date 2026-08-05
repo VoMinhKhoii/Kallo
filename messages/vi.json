@@ -824,11 +824,6 @@
     },
     "pricing": {
       "title": "Bảng giá",
-      "period": {
-        "label": "Kỳ thanh toán",
-        "monthly": "Hằng tháng",
-        "yearly": "Hằng năm"
-      },
       "plans": {
         "free": {
           "name": "Miễn phí",
@@ -841,10 +836,8 @@
         "premium": {
           "name": "Premium",
           "tagline": "Để ghi bằng lời của bạn",
-          "priceMonthly": "49K₫",
-          "priceYearly": "33K₫",
-          "fineprintMonthly": "Mỗi tháng, thanh toán hằng tháng. 7 ngày đầu miễn phí.",
-          "fineprintYearly": "Mỗi tháng khi trả theo năm (399K₫ trả trước). 49K₫ nếu trả từng tháng. 7 ngày đầu miễn phí.",
+          "price": "33K₫",
+          "fineprint": "Mỗi tháng khi trả theo năm (399K₫ trả trước). 49K₫ nếu trả từng tháng.",
           "cta": "Dùng thử miễn phí",
           "inherits": "Mọi thứ ở gói Miễn phí, thêm:"
         },
