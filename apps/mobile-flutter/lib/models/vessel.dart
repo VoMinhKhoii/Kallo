@@ -69,7 +69,13 @@ sealed class ClientVessel {
   const ClientVessel();
 
   /// Parses a vessel payload, or returns null when it is absent or unusable.
-  /// NEVER throws — see [_tierOrNull].
+  ///
+  /// NEVER throws — see [_tierOrNull]. The blast radius is wider than it looks:
+  /// `api_client` decodes the whole SSE `result` frame inside a bare
+  /// `catch (_) { return null; }`, so a type error raised here does not surface
+  /// as a parse error. It drops the entire analysis, the socket closes, and the
+  /// user gets a generic failure AFTER the estimating stage with nothing naming
+  /// the cause. Pinned by `test/stream_result_frame_test.dart`.
   static ClientVessel? fromJson(Object? json) {
     if (json is! Map) return null;
 

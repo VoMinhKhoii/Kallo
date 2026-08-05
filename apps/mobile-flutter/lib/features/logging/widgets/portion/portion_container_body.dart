@@ -91,6 +91,14 @@ class PortionContainerBody extends StatelessWidget {
           // slider a 5–10% semantic increment — ~56 g per screen-reader swipe
           // on a bowl envelope, where the web's arrow key moves 1 g.
           divisions: max - min,
+          // Container anchors are NOT equally spaced in gram space (a tier-4
+          // bowl is far more than 4x a tier-1), so the majors are computed from
+          // where each anchor actually falls in the envelope — unlike the piece
+          // ruler, whose slider runs in position space and spaces them evenly.
+          majors: [
+            for (final anchor in anchors)
+              ((anchor.value - min) / (max - min)).clamp(0.0, 1.0),
+          ],
           semanticLabel: sliderLabel,
           semanticValue:
               '$grams g — ${nearest.label} (${nearestTier.sizeLabel})',
