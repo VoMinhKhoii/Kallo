@@ -1,5 +1,4 @@
-import { describe, expect, it } from 'vitest';
-import { scanNutritionLabelWithGemini } from '../estimator/label-ocr';
+import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr';
 
 describe('Live Nutrition Label OCR extraction', () => {
   it('extracts values from real images', async () => {

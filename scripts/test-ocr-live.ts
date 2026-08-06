@@ -36,6 +36,6 @@ async function runTest() {
   }
 }
 
-if (import.meta.main || process.argv[1]?.includes('test-ocr-live')) {
+if (process.argv[1]?.includes('test-ocr-live')) {
   runTest();
 }

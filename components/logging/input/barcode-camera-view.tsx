@@ -1,9 +1,9 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import type { CameraStatus } from '@/hooks/meals/use-barcode-camera-scanner';
 
 interface BarcodeCameraViewProps {
-  cameraStatus: 'idle' | 'initializing' | 'scanning' | 'error';
+  cameraStatus: CameraStatus;
   cameras: Array<{ id: string; label?: string }>;
   selectedCameraId: string | null;
   onCameraChange: (id: string) => void;
