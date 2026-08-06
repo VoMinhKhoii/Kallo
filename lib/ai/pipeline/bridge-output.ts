@@ -94,8 +94,15 @@ export interface CarvedOutIngredient {
   /** Owning meal item's index — disambiguates two items sharing a name. */
   mealItemIdx: number;
   /**
-   * How many ingredients the owning meal item has in total. The gate needs it
-   * to tell "the whole item was withheld" from "one garnish among five".
+   * How many ACTIVE ingredients the owning meal item has — its total minus the
+   * `explicit_zero` ones. The gate needs it to tell "the whole item was
+   * withheld" from "one garnish among five".
+   *
+   * Explicit zeros are excluded because they are never carved out (see
+   * `carvedOut` above), so counting them would make the denominator
+   * unreachable: "1 tô mì gói + 0 gà rán" would leave `carvedFromItem` at 1
+   * against a count of 2 and ship a 0 kcal meal item as if a healthy sibling
+   * had survived.
    */
-  mealItemIngredientCount: number;
+  activeIngredientCount: number;
 }

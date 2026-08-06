@@ -173,6 +173,62 @@ describe('derivePipelineDiagnostics — v2 stage shapes', () => {
     expect(twoItems.rowsByMeal.get('A')?.[0].candidates).toEqual([]);
     expect(twoItems.rowsByMeal.get('B')?.[0].matchedName).toBe('B one');
   });
+
+  it('leaves candidates UNDEFINED when the stage has no record for the index', () => {
+    // A truncated/partial matching stage must not be reported as "retrieval
+    // ran and returned nothing" — that is a different, and much louder,
+    // diagnosis than "this trace never logged the ingredient".
+    const partial = derivePipelineDiagnostics(
+      [
+        stage('decomposition', 1, v2Decomposition),
+        // Only flat index 1 was logged; index 0 (mì gói) is absent entirely.
+        stage('matching', 2, [v2Matching[1]]),
+      ],
+      NO_LLM_CALLS
+    );
+    const rows = partial.rowsByMeal.get('Mì gói sữa');
+    expect(rows?.[0].candidates).toBeUndefined();
+    expect(rows?.[0].confidence).toBe('unmatched');
+    expect(rows?.[1].matchedName).toBe('Sữa bò tươi');
+  });
+
+  it('carries the top candidate viaAlias flag into the row and the header', () => {
+    const aliased = derivePipelineDiagnostics(
+      [
+        stage('decomposition', 1, {
+          isFood: true,
+          mealItems: [
+            {
+              name: 'Bánh mì',
+              cookingMethod: 'nướng',
+              ingredients: [{ rawName: 'bánh mì', canonicalName: 'Bánh mì' }],
+            },
+          ],
+        }),
+        stage('matching', 2, [
+          {
+            ingredientIndex: 0,
+            candidates: [
+              {
+                info: {
+                  ingredientName: 'Bánh mì',
+                  foodCompositionId: 'fao_vn_2007_1012_raw',
+                  matchedName: 'Bánh mỳ',
+                  similarity: 1,
+                  confidence: 'high',
+                  matchType: 'fuzzy',
+                  viaAlias: true,
+                },
+              },
+            ],
+          },
+        ]),
+      ],
+      NO_LLM_CALLS
+    );
+    expect(aliased.rowsByMeal.get('Bánh mì')?.[0].viaAlias).toBe(true);
+    expect(aliased.matchStrategyCounts.alias).toBe(1);
+  });
 });
 
 describe('derivePipelineDiagnostics — v1 stage shapes still parse', () => {

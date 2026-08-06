@@ -39,6 +39,10 @@ jobs:
       STAGING_LEASE_TTL_HOURS: 4
     steps:
       - uses: actions/checkout@v4
+        # Nothing after this runs a git command — the pipeline only reads the
+        # tree — so don't leave the checkout token in the runner's git config.
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup-bun
       - uses: google-github-actions/auth@v3
         with:

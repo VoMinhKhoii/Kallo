@@ -92,14 +92,19 @@ export function deriveV2MatchingDiagnostics(
   for (const item of mealItems) {
     const rows: MatchDiagnosticRow[] = [];
     for (const ing of item.ingredients) {
-      const candidates = (byIndex.get(flatIndex)?.candidates ?? []).map((c) =>
-        toCandidateRow(c.info)
-      );
-      const top = candidates[0] ?? null;
+      // No record for this flat index is NOT "retrieval returned nothing" —
+      // the stage never logged the ingredient at all. `candidates` stays
+      // undefined so the panel does not claim a zero-candidate pool it never
+      // observed (see `MatchDiagnosticRow.candidates`).
+      const result = byIndex.get(flatIndex);
+      const candidates = result?.candidates.map((c) => toCandidateRow(c.info));
+      const top = candidates?.[0] ?? null;
+      const viaAlias = result?.candidates[0]?.info.viaAlias ?? false;
       if (top) {
         matchedCount++;
         if (top.matchType === 'vector') matchStrategyCounts.vector++;
         else if (top.matchType === 'fuzzy') matchStrategyCounts.fuzzy++;
+        if (viaAlias) matchStrategyCounts.alias++;
       }
       rows.push({
         ingredientName: ing.name,
@@ -110,7 +115,7 @@ export function deriveV2MatchingDiagnostics(
         matchType: top?.matchType ?? null,
         source: top?.source ?? null,
         latencyMs: null,
-        viaAlias: false,
+        viaAlias,
         candidates,
       });
       flatIndex++;

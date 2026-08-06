@@ -1,7 +1,7 @@
 /**
  * Gemini API key rotation for round-robin load distribution.
  *
- * Reads GEMINI_API_KEY_1 through GEMINI_API_KEY_10 from environment.
+ * Reads GEMINI_API_KEY_1 through GEMINI_API_KEY_20 from environment.
  * Tracks per-key rate limits and rotates on 429.
  */
 
@@ -20,7 +20,7 @@ const COOLDOWN_MS = 35_000;
 
 export function loadGeminiKeys(): KeySlot[] {
   const slots: KeySlot[] = [];
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= 20; i++) {
     const key = process.env[`GEMINI_API_KEY_${i}`];
     if (key) {
       slots.push({
@@ -48,7 +48,7 @@ export function loadGeminiKeys(): KeySlot[] {
   }
   if (slots.length === 0) {
     throw new Error(
-      'No Gemini key found in env (checked GEMINI_API_KEY_1..10, GEMINI_API_KEY)'
+      'No Gemini key found in env (checked GEMINI_API_KEY_1..20, GEMINI_API_KEY)'
     );
   }
   console.log(`  Loaded ${slots.length} Gemini API keys`);

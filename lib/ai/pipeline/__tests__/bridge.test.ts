@@ -1094,7 +1094,7 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
       ingredientName: 'mì gói',
       reason: 'no_portion',
       mealItemIdx: 0,
-      mealItemIngredientCount: 1,
+      activeIngredientCount: 1,
     });
 
     const gate = resolveCompletenessGate({
@@ -1151,6 +1151,68 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
     ).toBeUndefined();
   });
 
+  it('gates when every ACTIVE ingredient is withheld beside an explicit zero', () => {
+    // "1 đĩa salad, 0 gà rán": the fried chicken is SUPPOSED to be absent, so
+    // it never enters `carvedOut`. If it still counted toward the item's
+    // ingredient total, the withheld lettuce (1) would never reach the
+    // denominator (2) and the whole 0 kcal item would persist unflagged.
+    // Neither ingredient is a carb staple, so only the whole-item rule can
+    // gate here.
+    const out = bridgeV2ToV1({
+      v2: {
+        isFood: true,
+        mealSlot: 'lunch',
+        mealItems: [
+          {
+            name: 'Salad gà',
+            cookingMethod: 'không',
+            ingredients: [
+              { rawName: 'xà lách', canonicalName: 'Xà lách' },
+              { rawName: 'gà rán', canonicalName: 'Gà rán' },
+            ],
+          },
+        ],
+      },
+      matches: [
+        { ingredientIndex: 0, candidates: [] },
+        { ingredientIndex: 1, candidates: [] },
+      ],
+      grounded: { mealItems: [] },
+      mealContext: '1 đĩa salad, 0 gà rán',
+      portionResolutions: [
+        {
+          grams: null,
+          provenance: 'unresolved',
+          confidence: 'none',
+          unresolvedReason: 'unresolved_portion',
+          note: 'no portion signal',
+        },
+        {
+          grams: null,
+          provenance: 'unresolved',
+          confidence: 'none',
+          unresolvedReason: 'explicit_zero',
+          note: 'user typed an explicit zero',
+        },
+      ],
+    });
+
+    expect(out.carvedOut).toHaveLength(1);
+    expect(out.carvedOut[0]).toMatchObject({
+      ingredientName: 'xà lách',
+      mealItemIdx: 0,
+      // 2 ingredients - 1 explicit zero.
+      activeIngredientCount: 1,
+    });
+
+    const gate = resolveCompletenessGate({
+      failedMealItemNames: [],
+      carvedOut: out.carvedOut,
+    });
+    expect(gate?.reason).toBe('no_macro_data');
+    expect(gate?.ingredientName).toBe('xà lách');
+  });
+
   it('ranks a transient chunk failure ahead of a carve-out', () => {
     // Chunk failure is genuinely worth retrying verbatim; a carve-out usually
     // needs the input reworded. Reporting the retryable one first is kinder.
@@ -1162,7 +1224,7 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
           ingredientName: 'mì gói',
           reason: 'no_estimate',
           mealItemIdx: 0,
-          mealItemIngredientCount: 1,
+          activeIngredientCount: 1,
         },
       ],
     });
@@ -1183,7 +1245,7 @@ describe('completeness gate — only MATERIAL carve-outs fail the meal', () => {
             ingredientName: 'hành lá',
             reason: 'no_estimate',
             mealItemIdx: 0,
-            mealItemIngredientCount: 4,
+            activeIngredientCount: 4,
           },
         ],
       })
@@ -1199,14 +1261,14 @@ describe('completeness gate — only MATERIAL carve-outs fail the meal', () => {
           ingredientName: 'xà lách',
           reason: 'no_estimate',
           mealItemIdx: 1,
-          mealItemIngredientCount: 2,
+          activeIngredientCount: 2,
         },
         {
           mealItemName: 'Salad',
           ingredientName: 'cà chua',
           reason: 'no_portion',
           mealItemIdx: 1,
-          mealItemIngredientCount: 2,
+          activeIngredientCount: 2,
         },
       ],
     });
@@ -1225,7 +1287,7 @@ describe('completeness gate — only MATERIAL carve-outs fail the meal', () => {
           ingredientName: 'cơm trắng',
           reason: 'no_portion',
           mealItemIdx: 0,
-          mealItemIngredientCount: 3,
+          activeIngredientCount: 3,
         },
       ],
     });
@@ -1243,14 +1305,14 @@ describe('completeness gate — only MATERIAL carve-outs fail the meal', () => {
           ingredientName: 'rau thơm',
           reason: 'no_estimate',
           mealItemIdx: 0,
-          mealItemIngredientCount: 3,
+          activeIngredientCount: 3,
         },
         {
           mealItemName: 'Cơm tấm',
           ingredientName: 'cơm trắng',
           reason: 'no_portion',
           mealItemIdx: 0,
-          mealItemIngredientCount: 3,
+          activeIngredientCount: 3,
         },
       ],
     });

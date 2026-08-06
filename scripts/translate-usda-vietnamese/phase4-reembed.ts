@@ -120,7 +120,12 @@ export async function runPhase4(opts: Phase4Options): Promise<void> {
 
   const rows = (await db.execute(
     sql.raw(`
-      SELECT id, name_primary, name_alt, name_en, type_vn, type_en,
+      SELECT id,
+             name_primary AS "namePrimary",
+             name_alt     AS "nameAlt",
+             name_en      AS "nameEn",
+             type_vn      AS "typeVn",
+             type_en      AS "typeEn",
              (embedding IS NOT NULL) AS has_embedding
       FROM vietnamese_food_composition
       WHERE source_id = 2 AND (${scopes.join(' OR ')})

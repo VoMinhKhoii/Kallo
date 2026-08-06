@@ -71,8 +71,14 @@ if ((!phase || phase === 1) && !process.env.GOOGLE_TRANSLATE_API_KEY) {
 }
 
 const needsGemini = !phase || phase === 2 || phase === 4;
+// Mirrors loadGeminiKeys(): any slot in _1.._10 counts, not just _1 — an env
+// that starts numbering at _2 is valid and must not be rejected here.
 const hasGeminiKey =
-  !!process.env.GEMINI_API_KEY_1 || !!process.env.GEMINI_API_KEY;
+  !!process.env.GEMINI_API_KEY ||
+  Array.from(
+    { length: 10 },
+    (_, i) => process.env[`GEMINI_API_KEY_${i + 1}`]
+  ).some(Boolean);
 if (needsGemini && !hasGeminiKey) {
   console.error(
     'Missing GEMINI_API_KEY (or GEMINI_API_KEY_1..10) — needed for Phase 2 and Phase 4'

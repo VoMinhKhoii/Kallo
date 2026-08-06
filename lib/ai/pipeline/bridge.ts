@@ -93,7 +93,12 @@ export function bridgeV2ToV1(args: {
     Omit<MatchedIngredient, 'ingredientId'>
   >();
   const unmatched: UnmatchedIngredient[] = [];
-  const carvedOut: CarvedOutIngredient[] = [];
+  // `activeIngredientCount` can only be known once the whole item has been
+  // walked (an explicit zero is discovered per ingredient), so the entries are
+  // collected without it and the denominator is filled in below.
+  const carvedOutPartial: Omit<CarvedOutIngredient, 'activeIngredientCount'>[] =
+    [];
+  const explicitZerosByMealItemIdx = new Map<number, number>();
   const rawMealItems: RawNutritionAdjustment['mealItems'] = [];
   // Per-flat-index plausibility partial (ingredientId attached after id assignment).
   const plausibilityPartialByFlatIdx = new Map<
@@ -224,13 +229,17 @@ export function bridgeV2ToV1(args: {
         console.warn(
           `[bridge] no_data_carveout: dropped "${ing.rawName}" in "${mi.name}" (${macroSource.reason}, state=${state})`
         );
-        if (macroSource.reason !== 'explicit_zero') {
-          carvedOut.push({
+        if (macroSource.reason === 'explicit_zero') {
+          explicitZerosByMealItemIdx.set(
+            mealItemIdx,
+            (explicitZerosByMealItemIdx.get(mealItemIdx) ?? 0) + 1
+          );
+        } else {
+          carvedOutPartial.push({
             mealItemName: mi.name,
             ingredientName: ing.rawName,
             reason: macroSource.reason,
             mealItemIdx,
-            mealItemIngredientCount: mi.ingredients.length,
           });
         }
         v1Ings.push(v2IngredientToV1(ing, cookingMethodForIng, 0, undefined));
@@ -336,6 +345,13 @@ export function bridgeV2ToV1(args: {
   });
 
   const rawNutrition: RawNutritionAdjustment = { mealItems: rawMealItems };
+
+  const carvedOut: CarvedOutIngredient[] = carvedOutPartial.map((c) => ({
+    ...c,
+    activeIngredientCount:
+      v2.mealItems[c.mealItemIdx].ingredients.length -
+      (explicitZerosByMealItemIdx.get(c.mealItemIdx) ?? 0),
+  }));
 
   return {
     decomposition: withIds,

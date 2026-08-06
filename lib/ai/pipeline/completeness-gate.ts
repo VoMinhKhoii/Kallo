@@ -25,7 +25,9 @@ import { isCarbStapleName } from './plausibility';
  * away a 99%-correct meal and made the user re-shoot it — a worse outcome than
  * shipping the garnish at zero. Two shapes ARE material:
  *
- *   (a) the meal item lost EVERY one of its ingredients — this is the mì-gói
+ *   (a) the meal item lost every one of its ACTIVE ingredients (an explicit
+ *       user zero is not one — it never enters the carve-out list, so counting
+ *       it would put the threshold out of reach) — this is the mì-gói
  *       incident shape, where a whole 0g/0kcal "Mì gói" row persisted beside a
  *       healthy "Sữa tươi" row and booked the day at 152 kcal;
  *   (b) the carved-out ingredient is a carb staple — rice/noodles/bread carry
@@ -42,7 +44,7 @@ function isMaterialCarveOut(
   const carvedFromItem =
     carvedCountByMealItemIdx.get(carveOut.mealItemIdx) ?? 0;
   return (
-    carvedFromItem >= carveOut.mealItemIngredientCount ||
+    carvedFromItem >= carveOut.activeIngredientCount ||
     isCarbStapleName(carveOut.ingredientName)
   );
 }

@@ -441,8 +441,11 @@ describe('GeminiClient', () => {
 
       // ...and it re-asks IMMEDIATELY. Backoff exists to relieve provider
       // pressure; a malformed-but-200 response applied none, so sleeping only
-      // burns the shared chunk wall-clock budget. baseDelayMs is huge here so a
-      // regression to exponential backoff blows the elapsed assertion.
+      // burns the shared chunk wall-clock budget. The retry sleep is the ONLY
+      // timer in this path, so spying on it asserts the delay exactly (0)
+      // rather than "some wall-clock threshold nobody crossed today";
+      // baseDelayMs is huge so a regression to exponential backoff is loud.
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
       const client = createGeminiClient(
         { provider: 'ai-studio', apiKey: 'test-key' },
         {
@@ -450,7 +453,6 @@ describe('GeminiClient', () => {
           baseDelayMs: 10_000,
         }
       );
-      const startedAt = Date.now();
       const result = await client.generateStructuredOutput({
         schema: z.object({ name: z.string(), value: z.number() }),
         systemPrompt: 'test',
@@ -459,7 +461,8 @@ describe('GeminiClient', () => {
       });
       expect(result).toEqual({ name: 'test', value: 42 });
       expect(mockGenerateContent).toHaveBeenCalledTimes(2);
-      expect(Date.now() - startedAt).toBeLessThan(1000);
+      expect(setTimeoutSpy.mock.calls.map(([, ms]) => ms)).toEqual([0]);
+      setTimeoutSpy.mockRestore();
     });
 
     it('does not retry on non-retryable 4xx errors', async () => {

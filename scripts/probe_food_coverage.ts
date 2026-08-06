@@ -5,7 +5,8 @@
  * does retrieval fail because no row exists, or because a row exists and
  * scores under the JS acceptance floors?
  *
- * The two have opposite fixes. Absent → insert a curated row (see
+ * The two have opposite fixes. Absent — after checking the English name too,
+ * since untranslated USDA rows keep theirs — → insert a curated row (see
  * `supabase/migrations/20260729130000_add_banh_uot_row.sql`). Present but
  * unreachable → curate `name_primary` / `name_alt` so the lexical arm can
  * find it (see `supabase/migrations/20260801120000_curate_broth_search_names.sql`),
@@ -115,7 +116,13 @@ async function probe(sql: postgres.Sql, query: string): Promise<void> {
       : existing.length > 0
         ? '\n=> PRESENT BUT UNREACHABLE: rows exist, none clear the JS floors.\n' +
           '   Fix by curating name_primary/name_alt, not by lowering thresholds.'
-        : '\n=> ABSENT: no row carries this phrase at all. A curated row is needed.'
+        : '\n=> NO LEXICAL NAME MATCH: no name_primary/name_alt/name_en carries\n' +
+          '   this phrase. That is NOT yet proof the food is absent — an\n' +
+          '   untranslated USDA row keeps its English name_primary, so re-probe\n' +
+          '   the English term and scan the food category before curating.\n' +
+          '   Insert a new row only once that search comes back empty too;\n' +
+          '   otherwise curate the existing row instead (duplicate rows split\n' +
+          '   the retrieval pool and make BOTH harder to reach).'
   );
   console.info(
     '   (The vector arm is not probed here — it needs a live embedding call.\n' +
@@ -125,7 +132,9 @@ async function probe(sql: postgres.Sql, query: string): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const queries = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+  const queries = process.argv
+    .slice(2)
+    .filter((a) => !a.startsWith('--') && a.trim().length > 0);
   if (queries.length === 0) {
     console.error(
       'Usage: bun --env-file=.env.local scripts/probe_food_coverage.ts "mì gói" ...'

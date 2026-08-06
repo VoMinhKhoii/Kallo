@@ -35,6 +35,14 @@
 --     noodles at a perfect score. It lives in PRE_MATCH_ALIASES instead
 --     (lib/ai/matching/aliases.ts) — an exact normalized-key rewrite with no
 --     fuzzy blast radius. `mì ly` is omitted for the same reason ('ly' → 1.0).
+--   * `mì bò` and `mì gà` are omitted from the flavor rows for that same
+--     reason — a bare 'bò' or 'gà' query would score 1.0 against dry instant
+--     noodles and hijack ordinary beef/chicken matches. They are NOT added to
+--     PRE_MATCH_ALIASES either: unlike 'mì tôm', a bare "mì bò"/"mì gà" much
+--     more often means a beef/chicken NOODLE SOUP than an instant packet, so
+--     an exact rewrite would be wrong more often than right. The flavor rows
+--     stay reachable through 'mì gói vị bò' / 'mì ăn liền vị gà' and through
+--     the generic 'mì gói' tie-break.
 --   * Collateral checked and clear at the 0.70 floor: bánh mì 0.375,
 --     bột mì 0.429, mì xào 0.429, mì Quảng 0.333, mì trứng 0.333, miến 0.200,
 --     tôm / tôm sú / tôm biển / ruốc tôm 0.000.
@@ -63,12 +71,12 @@ FROM (
     (
       'usda_6982_raw',
       'Mì ăn liền (mì gói) vị bò, khô',
-      ARRAY['mì gói vị bò', 'mì ăn liền vị bò', 'mì bò']::text[]
+      ARRAY['mì gói vị bò', 'mì ăn liền vị bò']::text[]
     ),
     (
       'usda_6983_raw',
       'Mì ăn liền (mì gói) vị gà, khô',
-      ARRAY['mì gói vị gà', 'mì ăn liền vị gà', 'mì gà']::text[]
+      ARRAY['mì gói vị gà', 'mì ăn liền vị gà']::text[]
     ),
     (
       'usda_27035_raw',
