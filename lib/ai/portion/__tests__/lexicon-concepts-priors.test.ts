@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { INSTANT_NOODLE_ROW, PRE_MATCH_ALIASES } from '../../matching/aliases';
 import { AMBIGUOUS, getConcept, resolveConcept } from '../concepts';
 import { PIECE_UNIT_TOKENS } from '../piece-vessel';
 import { applySizeModifier, findPrior } from '../priors';
@@ -267,11 +268,15 @@ describe('instant noodles — the `1 gói mì` path', () => {
     expect(prior?.perUnit.high).toBeLessThan(150);
   });
 
-  it('has a concept record with no premature DB row link', () => {
+  it('links the concept to the same row the alias targets', () => {
+    // `dbRowName` has no runtime reader — this assertion IS its purpose. It is
+    // the executable drift-guard tying three things that must agree: the
+    // concept registry, the pre-match alias target, and the name that
+    // migration 20260806120000 writes to usda_6583_raw. If someone re-curates
+    // that row's name and updates only the migration, this fails.
     const concept = getConcept('instant-noodle-pack');
     expect(concept?.label).toContain('Mì gói');
-    // No FAO source_id=1 instant-noodle row exists yet; claiming one would
-    // point the matcher at a row that is not there.
-    expect(concept?.dbRowName).toBeUndefined();
+    expect(concept?.dbRowName).toBe(INSTANT_NOODLE_ROW);
+    expect(PRE_MATCH_ALIASES['mì tôm']).toBe(INSTANT_NOODLE_ROW);
   });
 });

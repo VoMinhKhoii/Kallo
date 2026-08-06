@@ -172,3 +172,64 @@ describe('eval CLI', () => {
     expect(() => parseEvalArgs(['--estimator', 'bogus'])).toThrow();
   });
 });
+
+describe('minMealItems — the decomposition-collapse guard', () => {
+  // "1 tô mì gói + sữa" came back as ONE ingredient ("Mì gói sữa") instead of
+  // noodles + milk, which let a single unmatched item swallow a whole meal.
+  // Macro bands cannot catch this — a collapsed item can still land inside
+  // them — so the count is asserted directly.
+  const splitFixture: EvalFixtureCase = {
+    id: 'mi-goi-sua',
+    input: '1 tô mì gói + sữa',
+    tags: ['vi'],
+    tier: 'smoke',
+    expect: { isFood: true, minMealItems: 2 },
+  };
+
+  function withMealItems(names: string[]) {
+    const base = observed();
+    base.ingredients = names.map<EvalIngredientResult>((mealItemName, i) => ({
+      mealItemName,
+      ingredientName: `ing-${i}`,
+      outcome: 'accepted',
+      provenance: 'vector',
+      similarity: 0.9,
+      matchedDbName: `db-${i}`,
+      foodCompositionId: `food-${i}`,
+    }));
+    return base;
+  }
+
+  it('fails when Call 1 collapsed the input into one meal item', () => {
+    const result = scoreCase(splitFixture, withMealItems(['Mì gói sữa']));
+    const check = result.checks.find((c) => c.name === 'minMealItems');
+    expect(check?.pass).toBe(false);
+    expect(check?.actual).toBe(1);
+    expect(result.pass).toBe(false);
+  });
+
+  it('passes when the "+" split into two meal items', () => {
+    const result = scoreCase(
+      splitFixture,
+      withMealItems(['Mì gói', 'Sữa tươi'])
+    );
+    expect(result.checks.find((c) => c.name === 'minMealItems')?.pass).toBe(
+      true
+    );
+  });
+
+  it('counts DISTINCT meal items, not ingredients', () => {
+    // Two ingredients inside one dish is still one meal item.
+    const result = scoreCase(splitFixture, withMealItems(['Mì gói', 'Mì gói']));
+    const check = result.checks.find((c) => c.name === 'minMealItems');
+    expect(check?.actual).toBe(1);
+    expect(check?.pass).toBe(false);
+  });
+
+  it('is skipped entirely when a fixture does not set it', () => {
+    const result = scoreCase(fixture, observed());
+    expect(
+      result.checks.find((c) => c.name === 'minMealItems')
+    ).toBeUndefined();
+  });
+});

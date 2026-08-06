@@ -886,6 +886,49 @@
         "setAt": "2026-07-22",
         "note": "0g-carb silent persist bug (tt 867463e3): bánh ướt was unmatched and Call 2 emitted C:0, persisting P:15/C:0/F:12. The carb band is the real guard — noSilentZeros only checks grams<=1/kcal=0 and did NOT catch this. Bands: sheets 150-300g (C 36-72 at 24g/100g) + chả bò 80-120g + 1 small egg (~60 kcal); the carb FLOOR (30) is the regression guard, the ceiling is portion-variance headroom. Requires the usda_20134_cooked row (add_banh_uot_row migration) for the staples match."
       }
+    },
+    {
+      "id": "gvn-mi-goi-to-regression",
+      "input": "1 tô mì gói",
+      "tags": ["vi", "golden", "unit-bowl", "regression-bug"],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "staples": ["mì gói"],
+        "kcalRange": [280, 520],
+        "macroRanges": {
+          "carbohydrateG": [35, 65],
+          "fatG": [10, 26]
+        },
+        "latencyBudgetMs": 8000,
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "db-anchored",
+        "setAt": "2026-08-06",
+        "note": "Guards BOTH halves of the incident. Floor: the prod bug shipped C:0g / 412 kcal from 4P+9F with carbs omitted. Ceiling: usda_6583_raw is DRY (440 kcal/100g), so emitting a bowl's ~230-260g COOKED mass against it would read ~1000-1150 kcal. A bowl is one 70-90g goi -> 308-396 kcal."
+      }
+    },
+    {
+      "id": "gvn-mi-goi-plus-sua-decomposition",
+      "input": "1 tô mì gói + sữa",
+      "tags": ["vi", "golden", "decomposition", "regression-bug"],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "minMealItems": 2,
+        "kcalRange": [400, 700],
+        "macroRanges": {
+          "carbohydrateG": [45, 85]
+        },
+        "latencyBudgetMs": 8000,
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "db-anchored",
+        "setAt": "2026-08-06",
+        "note": "The verbatim prod input. Call 1 collapsed it into ONE ingredient 'Mi goi sua' instead of noodles + milk, which is what let a single unmatched item swallow the whole meal. Asserts the '+' splits."
+      }
     }
   ]
 }

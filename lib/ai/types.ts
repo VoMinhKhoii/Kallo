@@ -373,6 +373,8 @@ export interface PipelineUnresolved {
   reason: 'processing_incomplete' | 'no_macro_data';
   /** Count of meal items whose chunk failed, or ingredients withheld. */
   unresolvedCount: number;
+  /** Withheld names for the coverage log; see `emitPartialFailure`. */
+  carvedOutNames?: string[];
 }
 
 /** Discriminated union result type */

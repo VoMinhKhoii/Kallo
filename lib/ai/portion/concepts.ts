@@ -15,6 +15,7 @@
  * time; the verification is documented in the concept registry `source`.
  */
 
+import { INSTANT_NOODLE_ROW } from '../matching/aliases';
 import type { ConceptId, FoodConcept } from './types';
 
 function normalize(s: string): string {
@@ -59,11 +60,13 @@ export const CONCEPTS: Record<ConceptId, FoodConcept> = {
   },
   'instant-noodle-pack': {
     id: 'instant-noodle-pack',
-    // No instant-noodle row in FAO source_id=1 (the only `mì` entries are
-    // "Bột mì" / wheat flour). `dbRowName` is deliberately unset until the
-    // composition row lands — the prior still supplies the WEIGHT of a packet,
-    // which is what "1 gói mì" was missing, and nutrition matching owns the row.
+    // VERIFIED against the dev DB: usda_6583_raw "Soup, ramen noodle, any
+    // flavor, dry" (440 kcal, 60.3g carb, 17.6g fat per 100g DRY). The row was
+    // always there but kept its untranslated English name; migration
+    // 20260806120000 curates it to the Vietnamese name referenced here.
+    // Dry-basis, which is why the prior below is a packet weight, not a bowl.
     label: 'Mì gói (instant noodle packet)',
+    dbRowName: INSTANT_NOODLE_ROW,
   },
 };
 

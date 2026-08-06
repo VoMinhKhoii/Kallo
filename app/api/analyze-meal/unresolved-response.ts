@@ -11,6 +11,7 @@
  * non-deterministic and a re-run genuinely can succeed.
  */
 
+import { logUnmatchedIngredients } from '@/lib/ai/matching';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import type { PipelineUnresolved } from '@/lib/ai/types';
@@ -38,6 +39,27 @@ export async function emitPartialFailure(args: {
   );
 
   if (isCarveOut) {
+    // Coverage log. The success path records `unmatchedIngredients`
+    // (route.ts), but a gated analysis returns before that block AND the
+    // bridge's carve-out never pushes to `unmatched[]` — so the failures that
+    // matter MOST, a food we could not characterize at all, were the only ones
+    // leaving no queryable trace. Carve-outs ONLY: a chunk failure is an infra
+    // signal, not evidence that a food is missing from the composition table,
+    // and logging it here would pollute the coverage signal with outages.
+    // Fire-and-forget, matching the success path's pattern.
+    const carvedOutNames = args.unresolved?.carvedOutNames ?? [];
+    if (carvedOutNames.length > 0) {
+      logUnmatchedIngredients(
+        carvedOutNames.map((ingredientName) => ({
+          ingredientName,
+          mealContext: 'no_macro_data carve-out',
+        })),
+        null,
+        args.db
+      ).catch((err) =>
+        console.error('Failed to log carved-out ingredients:', err)
+      );
+    }
     const name = args.unresolved?.ingredientName;
     args.emit({
       type: 'error',

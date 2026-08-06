@@ -53,6 +53,7 @@ export function resolveCompletenessGate(args: {
       ingredientName: carvedOut[0].ingredientName,
       reason: 'no_macro_data',
       unresolvedCount: carvedOut.length,
+      carvedOutNames: carvedOut.map((c) => c.ingredientName),
     };
   }
 

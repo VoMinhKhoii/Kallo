@@ -26,6 +26,14 @@ const expectationSchema = z.object({
     })
     .optional(),
   noSilentZeros: z.boolean().optional(),
+  /**
+   * Minimum number of distinct meal items Call 1 must decompose the input
+   * into. Guards the collapse class: "1 tô mì gói + sữa" came back as ONE
+   * ingredient ("Mì gói sữa") instead of noodles + milk, which let a single
+   * unmatched item swallow a whole meal. Macro bands alone cannot catch this —
+   * a collapsed item can still land inside them.
+   */
+  minMealItems: z.number().int().positive().optional(),
   expectClarify: z.boolean().optional(),
   maxDurationMs: z.number().positive().optional(),
   /**
@@ -38,9 +46,22 @@ const expectationSchema = z.object({
   latencyBudgetMs: z.number().positive().optional(),
 });
 
-/** Where a golden expectation came from — makes incremental updates auditable. */
+/**
+ * Where a golden expectation came from — makes incremental updates auditable.
+ *
+ * `db-anchored` is stronger evidence than `knowledge-estimate`: the band was
+ * computed from a named `vietnamese_food_composition` row times a named
+ * portion prior, so it is re-derivable by query rather than recalled. Cite the
+ * row id and the prior in `note` so the arithmetic can be re-checked when
+ * either changes.
+ */
 const provenanceSchema = z.object({
-  source: z.enum(['knowledge-estimate', 'staging-confirmed', 'user-corrected']),
+  source: z.enum([
+    'knowledge-estimate',
+    'staging-confirmed',
+    'user-corrected',
+    'db-anchored',
+  ]),
   setAt: z.string().min(1),
   note: z.string().optional(),
 });
