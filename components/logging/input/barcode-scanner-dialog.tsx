@@ -22,6 +22,7 @@ import { stageOcrMealAction } from '@/lib/actions/nutrition-ocr';
 import { tryDecodeFontEncodedBarcode } from '@/lib/barcode/decode';
 import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
 import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';
+import { BarcodeCameraView } from './barcode-camera-view';
 import { BarcodeProductStep } from './barcode-product-step';
 import { OcrReviewStep } from './ocr-review-step';
 import { OcrScannerTab } from './ocr-scanner-tab';
@@ -153,20 +154,16 @@ export function BarcodeScannerDialog({
     >[0]
   ) => {
     setIsStaging(true);
-    const timezoneOffset = new Date().getTimezoneOffset();
-
     try {
       const res = await stageOcrMealAction({
         ...payload,
         loggedDate: selectedDate,
-        timezoneOffset,
+        timezoneOffset: new Date().getTimezoneOffset(),
       });
-
       if (!res.success) {
         toast.error(t(`ocrError.${res.code}`));
         return;
       }
-
       await confirmAndSaveMealAction({ analysisId: res.analysisId });
       toast.success(t('feedArea.savedMeal'));
       onSuccess();
@@ -288,54 +285,14 @@ export function BarcodeScannerDialog({
                   </div>
 
                   {scanMode === 'camera' ? (
-                    <div className="space-y-3">
-                      <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black shadow-sm">
-                        <div
-                          id="nham-barcode-scanner"
-                          className="[&_#qr-shaded-region]:!hidden h-full w-full [&>video]:h-full [&>video]:w-full [&>video]:object-cover"
-                        />
-                        <div className="pointer-events-none absolute inset-0 z-10">
-                          <div className="absolute inset-0 bg-black/30" />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="relative aspect-[2/1] w-2/3 max-w-[280px] rounded-lg border-2 border-nham-accent/80 shadow-[0_0_0_100vmax_rgba(0,0,0,0.4)]">
-                              <div className="absolute -top-1 -left-1 h-4 w-4 rounded-tl border-nham-accent border-t-4 border-l-4" />
-                              <div className="absolute -top-1 -right-1 h-4 w-4 rounded-tr border-nham-accent border-t-4 border-r-4" />
-                              <div className="absolute -bottom-1 -left-1 h-4 w-4 rounded-bl border-nham-accent border-b-4 border-l-4" />
-                              <div className="absolute -right-1 -bottom-1 h-4 w-4 rounded-br border-nham-accent border-r-4 border-b-4" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-center font-sans-display text-[#8B8682] text-[12px]">
-                        {cameraStatus === 'initializing' && (
-                          <div className="flex items-center justify-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>{t('barcodeCameraInitializing')}</span>
-                          </div>
-                        )}
-                        {cameraStatus === 'scanning' && (
-                          <div className="space-y-2">
-                            <span>{t('barcodeCameraScanning')}</span>
-                            {cameras.length > 1 && (
-                              <select
-                                value={selectedCameraId || cameras[0]?.id}
-                                onChange={(e) =>
-                                  setSelectedCameraId(e.target.value)
-                                }
-                                className="mx-auto block rounded-lg border border-[#EAE7E0] bg-white px-2.5 py-1 text-xs"
-                              >
-                                {cameras.map((d) => (
-                                  <option key={d.id} value={d.id}>
-                                    {d.label ||
-                                      `Camera ${d.id.substring(0, 5)}`}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <BarcodeCameraView
+                      cameraStatus={cameraStatus}
+                      cameras={cameras}
+                      selectedCameraId={selectedCameraId}
+                      onCameraChange={setSelectedCameraId}
+                      initializingText={t('barcodeCameraInitializing')}
+                      scanningText={t('barcodeCameraScanning')}
+                    />
                   ) : (
                     <div className="space-y-2">
                       <div className="relative flex items-center">

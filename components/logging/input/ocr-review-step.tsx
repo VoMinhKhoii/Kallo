@@ -1,10 +1,11 @@
 'use client';
 
-import { ArrowLeft, Check, Flame, Loader2, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';
+import { OcrNutrientGrid } from './ocr-nutrient-grid';
 
 interface OcrReviewStepProps {
   data: ParsedNutritionLabel;
@@ -17,14 +18,7 @@ interface OcrReviewStepProps {
     proteinGrams: number;
     carbsGrams: number;
     fatGrams: number;
-    fiberGrams?: number | null;
-    sodiumMg?: number | null;
-    calciumMg?: number | null;
-    ironMg?: number | null;
-    potassiumMg?: number | null;
-    vitaminAMcg?: number | null;
-    vitaminCMg?: number | null;
-    vitaminDMcg?: number | null;
+    [key: string]: string | number | null | undefined;
   }) => void;
 }
 
@@ -41,16 +35,16 @@ export function OcrReviewStep({
   );
   const [grams, setGrams] = useState(defaultServing);
 
-  const baseCal = data.per100g?.calories ?? data.perServing?.calories ?? 0;
-  const baseProtein =
-    data.per100g?.proteinGrams ?? data.perServing?.proteinGrams ?? 0;
-  const baseCarbs =
-    data.per100g?.carbsGrams ?? data.perServing?.carbsGrams ?? 0;
-  const baseFat = data.per100g?.fatGrams ?? data.perServing?.fatGrams ?? 0;
+  const p100 = data.per100g;
+  const pSrv = data.perServing;
+  const baseCal = p100?.calories ?? pSrv?.calories ?? 0;
+  const baseProtein = p100?.proteinGrams ?? pSrv?.proteinGrams ?? 0;
+  const baseCarbs = p100?.carbsGrams ?? pSrv?.carbsGrams ?? 0;
+  const baseFat = p100?.fatGrams ?? pSrv?.fatGrams ?? 0;
 
   const getBaseValue = (
     key: keyof import('@/lib/nutrition/ocr-schema').NutritionValues
-  ) => data.per100g?.[key] ?? data.perServing?.[key] ?? null;
+  ) => p100?.[key] ?? pSrv?.[key] ?? null;
 
   const baseWeight = data.per100g
     ? 100
@@ -178,31 +172,7 @@ export function OcrReviewStep({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5">
-          {macros.map((item) => (
-            <div
-              key={item.label}
-              className="space-y-1 rounded-xl border border-[#EAE7E0] bg-white p-3"
-            >
-              <div className="flex items-center gap-1.5 text-[#8B8682] text-[12px]">
-                {item.icon && (
-                  <Flame className="h-3.5 w-3.5 text-nham-accent" />
-                )}
-                <span>{item.label}</span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <Input
-                  type="number"
-                  step={item.step}
-                  value={item.val}
-                  onChange={(e) => item.setter(Number(e.target.value))}
-                  className="h-8 w-16 border-none p-0 font-bold text-[18px] text-nham-ink focus-visible:ring-0"
-                />
-                <span className="text-[#8B8682] text-[12px]">{item.unit}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        <OcrNutrientGrid items={macros} />
       </div>
 
       <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/70 border-t bg-nham-track/50 px-6 py-4">

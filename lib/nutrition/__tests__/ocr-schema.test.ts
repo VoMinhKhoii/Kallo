@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nutritionLabelScanSchema, nutritionValuesSchema } from '../ocr-schema';
+import { nutritionLabelScanSchema } from '../ocr-schema';
 
 describe('nutritionLabelScanSchema', () => {
   it('parses valid per-serving OCR extraction result', () => {

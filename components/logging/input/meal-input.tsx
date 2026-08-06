@@ -32,7 +32,6 @@ import {
 } from '@/lib/logging/meal-input-draft';
 import type { MentionSegment } from '@/lib/logging/relog/mentions';
 import type { CheatIntensity } from '@/lib/types/cheat';
-import { cn } from '@/lib/utils';
 import { BarcodeScannerDialog } from './barcode-scanner-dialog';
 
 export interface MealInputHandle {

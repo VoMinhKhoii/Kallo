@@ -12,6 +12,7 @@ import { useRef, useState } from 'react';
 import { useNutritionOcr } from '@/hooks/meals/use-nutrition-ocr';
 import { useOcrCamera } from '@/hooks/meals/use-ocr-camera';
 import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';
+import { OcrCameraView } from './ocr-camera-view';
 
 export function OcrScannerTab({
   onSuccess,
@@ -108,6 +109,7 @@ export function OcrScannerTab({
       {previewUrl ? (
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black/5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/* biome-ignore lint/performance/noImgElement: Blob preview URL */}
           <img
             src={previewUrl}
             alt="Nutrition label preview"
@@ -125,44 +127,14 @@ export function OcrScannerTab({
           )}
         </div>
       ) : mode === 'camera' ? (
-        <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black shadow-sm">
-          {cameraError ? (
-            <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center text-white">
-              <Camera className="h-8 w-8 text-white/50" />
-              <p className="text-white/80 text-xs">{cameraError}</p>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="mt-2 rounded-lg bg-white/20 px-3 py-1.5 text-white text-xs hover:bg-white/30"
-              >
-                {t('ocrUploadHint')}
-              </button>
-            </div>
-          ) : (
-            <>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="h-full w-full object-cover"
-              />
-              <div className="pointer-events-none absolute inset-0 m-6 flex items-center justify-center rounded-xl border-2 border-nham-accent/50 border-dashed" />
-              {isCameraActive && (
-                <div className="absolute inset-x-0 bottom-3 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={handleCapturePhoto}
-                    className="flex items-center gap-2 rounded-full bg-nham-accent px-4 py-2 font-medium text-white text-xs shadow-lg transition-transform active:scale-95"
-                  >
-                    <Camera className="h-4 w-4" />
-                    Snap Photo
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <OcrCameraView
+          videoRef={videoRef}
+          isCameraActive={isCameraActive}
+          cameraError={cameraError}
+          onCapture={handleCapturePhoto}
+          onUploadClick={() => fileInputRef.current?.click()}
+          uploadHintText={t('ocrUploadHint')}
+        />
       ) : (
         <div
           onClick={() => fileInputRef.current?.click()}
