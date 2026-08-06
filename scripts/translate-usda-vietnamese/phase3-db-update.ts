@@ -85,7 +85,7 @@ export async function runPhase3(opts: Phase3Options): Promise<string[]> {
 
   const rows = (await db.execute(
     sql.raw(`
-      SELECT id, type_en
+      SELECT id, type_en, name_en
       FROM vietnamese_food_composition
       WHERE source_id = 2
         AND type_en IN (${catPlaceholders})
@@ -93,7 +93,7 @@ export async function runPhase3(opts: Phase3Options): Promise<string[]> {
         AND name_alt IS NULL
       ORDER BY type_en, id
     `)
-  )) as unknown as { id: string; type_en: string }[];
+  )) as unknown as { id: string; type_en: string; name_en: string }[];
 
   // Only update items that have a VALID Phase 1 translation AND are still
   // untranslated in DB
@@ -114,10 +114,10 @@ export async function runPhase3(opts: Phase3Options): Promise<string[]> {
   }
 
   // Group by category
-  const byCategory = new Map<string, string[]>();
+  const byCategory = new Map<string, typeof updateable>();
   for (const row of updateable) {
     const list = byCategory.get(row.type_en) || [];
-    list.push(row.id);
+    list.push(row);
     byCategory.set(row.type_en, list);
   }
 
@@ -125,22 +125,36 @@ export async function runPhase3(opts: Phase3Options): Promise<string[]> {
     console.log(
       `  [dry-run] Would update ${updateable.length} items across ${byCategory.size} categories:`
     );
-    for (const [cat, ids] of byCategory) {
-      const withAlt = ids.filter((id) => cp2[id]).length;
-      console.log(`    ${cat}: ${ids.length} items (${withAlt} with name_alt)`);
+    for (const [cat, rs] of byCategory) {
+      const withAlt = rs.filter((r) => cp2[r.id]).length;
+      console.log(`    ${cat}: ${rs.length} items (${withAlt} with name_alt)`);
     }
     return [];
   }
 
   const allUpdatedIds: string[] = [];
 
-  for (const [category, ids] of byCategory) {
-    console.log(`\n  📂 ${category}: updating ${ids.length} items...`);
+  for (const [category, catRows] of byCategory) {
+    console.log(`\n  📂 ${category}: updating ${catRows.length} items...`);
+    const ids = catRows.map((r) => r.id);
 
     // Build VALUES clause for set-based update
-    const valueRows = ids.map((id) => {
+    const valueRows = catRows.map((row) => {
+      const { id } = row;
       const namePrimary = cp1[id].name_primary_vi.replace(/'/g, "''");
-      const alt = validNameAlt(cp2[id], id);
+      let alt = validNameAlt(cp2[id], id);
+      // Loanword terminator: when the Vietnamese name IS the English name
+      // (Poi, Miso...) the row only leaves the untranslated predicate via
+      // name_alt — and Gemini can refuse to emit variants for a food it does
+      // not recognize, on every run. Writing the name itself as the alias is
+      // honest ("its alias set is just its own name") and stops the row from
+      // looping the pipeline and the CI verify step forever.
+      if (!alt && cp1[id].name_primary_vi === row.name_en) {
+        console.warn(
+          `    ⚠ ${id}: loanword with no generated name_alt — falling back to [name_en]; curate later if it deserves real aliases`
+        );
+        alt = [row.name_en];
+      }
       // NULL must carry the array type: a chunk whose rows are ALL null would
       // otherwise leave the VALUES column inferred as text, and the UPDATE
       // fails with `column "name_alt" is of type text[] but expression is of
