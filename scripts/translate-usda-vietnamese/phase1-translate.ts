@@ -113,6 +113,7 @@ export async function runPhase1(opts: TranslateOptions): Promise<Checkpoint1> {
       WHERE source_id = 2
         AND type_en IN (${catPlaceholders})
         AND name_primary = name_en
+        AND name_alt IS NULL
       ORDER BY type_en, id
     `)
   )) as unknown as { id: string; name_en: string }[];

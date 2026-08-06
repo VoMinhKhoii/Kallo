@@ -2,7 +2,9 @@
 # regenerate their embeddings — the durable fix for the mì-gói class of
 # zero-candidate incidents (2,186 rows / 31% of USDA were never translated
 # because the old hardcoded category scope skipped whole food groups; the
-# pipeline is now self-scoping on `name_primary = name_en`).
+# pipeline is now self-scoping on `name_primary = name_en AND name_alt IS
+# NULL` — the name_alt clause releases loanwords like Miso/Wasabi whose
+# correct Vietnamese name IS the English name).
 #
 # Manual trigger only: it spends Google Translate + Gemini quota and writes
 # to the PROD DB. Fully idempotent — translated rows drop out of scope, so a
@@ -88,7 +90,9 @@ jobs:
           echo "::add-mask::$encoded"
           remaining="$(psql "$encoded" -X -v ON_ERROR_STOP=1 -A -t -c \
             "SELECT count(*) FROM vietnamese_food_composition
-             WHERE source_id = 2 AND (name_primary = name_en OR embedding IS NULL)")"
+             WHERE source_id = 2
+               AND ((name_primary = name_en AND name_alt IS NULL)
+                    OR embedding IS NULL)")"
           echo "rows still untranslated or missing embeddings: $remaining"
           if [ "$remaining" != "0" ]; then
             echo "::error::$remaining rows remain — rerun this workflow (checkpoints are cached; the rerun resumes)."

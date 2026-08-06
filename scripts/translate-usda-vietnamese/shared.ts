@@ -22,6 +22,12 @@ import * as schema from '@/lib/db/schema';
  * incident. Deriving the scope from the untranslated predicate itself makes
  * the pipeline self-scoping forever: any future import lands in scope
  * automatically, and a fully-translated DB yields an empty (no-op) run.
+ *
+ * The `name_alt IS NULL` clause is what lets loanwords finish: for Miso,
+ * Natto, Wasabi, Tempeh, Eggnog & co. the correct Vietnamese name IS the
+ * English name, so `name_primary = name_en` alone would keep them in scope
+ * (and the CI verify step red) forever. Phase 2's name_alt variants are the
+ * durable "this row has been through the pipeline" marker.
  */
 export async function resolveInScopeCategories(): Promise<string[]> {
   const db = getDb();
@@ -29,7 +35,7 @@ export async function resolveInScopeCategories(): Promise<string[]> {
     sql.raw(`
       SELECT DISTINCT type_en
       FROM vietnamese_food_composition
-      WHERE source_id = 2 AND name_primary = name_en
+      WHERE source_id = 2 AND name_primary = name_en AND name_alt IS NULL
       ORDER BY type_en
     `)
   )) as unknown as Array<{ type_en: string }>;
