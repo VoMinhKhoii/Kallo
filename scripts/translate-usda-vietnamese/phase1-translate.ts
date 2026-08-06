@@ -7,7 +7,12 @@
 
 import { sql } from 'drizzle-orm';
 import { loadCheckpoint, mergeAndSave } from './checkpoints';
-import { type Checkpoint1, getDb, IN_SCOPE_CATEGORIES, sleep } from './shared';
+import {
+  type Checkpoint1,
+  getDb,
+  resolveInScopeCategories,
+  sleep,
+} from './shared';
 
 const BATCH_SIZE = 128;
 const BATCH_DELAY_MS = 100;
@@ -89,7 +94,7 @@ export async function runPhase1(opts: TranslateOptions): Promise<Checkpoint1> {
   // Query untranslated USDA items (name_primary still equals name_en)
   const categoryFilter = opts.category
     ? [opts.category]
-    : [...IN_SCOPE_CATEGORIES];
+    : await resolveInScopeCategories();
 
   const catPlaceholders = categoryFilter
     .map((c) => `'${c.replace(/'/g, "''")}'`)

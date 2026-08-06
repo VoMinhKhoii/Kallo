@@ -170,7 +170,6 @@ export function bridgeV2ToV1(args: {
         ground,
         resolvedGrams,
         explicitZero: portion?.unresolvedReason === 'explicit_zero',
-        name: ing.rawName || ing.canonicalName,
       });
       // A DB row anchors P/C/kcal; anything else rides Call 2's triple.
       const isDbAnchored = macroSource.kind === 'db';
@@ -197,10 +196,6 @@ export function bridgeV2ToV1(args: {
             caloriesPer100g: acceptedCandidate?.nutrition?.caloriesKcal ?? null,
             carbsPer100g,
             name: ing.rawName || ing.canonicalName,
-            // Unmatched-only by contract: a matched ingredient's omitted
-            // triple is correctly re-derived from the DB row.
-            emittedCaloricMacrosMissing:
-              macroSource.kind === 'none' && macroSource.reason === 'no_anchor',
           });
       plausibilityPartialByFlatIdx.set(flatIngredientIdx, {
         mealItemIdx,
@@ -213,15 +208,15 @@ export function bridgeV2ToV1(args: {
           : {}),
       });
 
-      // NO-DATA carve-out: a row here could only carry fabricated zeros, and
-      // the picker merely scales, so a zero row stays zero however far it is
-      // dragged. Withhold instead — the ingredient stays in the decomposition
-      // so streamed ids hold, and an all-carve-out meal lands on the route's
-      // empty_nutrition gate. Non-caloric names are exempt: a zero row IS
-      // correct for water/tea (reachable only on 'no_anchor'; the other two
-      // reasons force `unresolved_estimate` in the classifier's first branch).
-      // Every OTHER unresolved cause (staple floor, ambiguous concept,
-      // too-wide band) still ships on real grams.
+      // NO-DATA carve-out: no portion, no estimate, or an explicit user zero —
+      // a row here could only carry fabricated zeros, and the picker merely
+      // scales, so a zero row stays zero however far it is dragged. Withhold
+      // instead — the ingredient stays in the decomposition so streamed ids
+      // hold, and the per-ingredient completeness gate reports it. Every OTHER
+      // unresolved cause (staple floor, ambiguous concept, too-wide band)
+      // still ships on real grams; a present-but-zero macro from Call 2 ships
+      // too, flagged by plausibility telemetry (schema requires all triples,
+      // so "omitted" no longer exists as a state).
       if (macroSource.kind === 'none' && state !== 'genuinely_noncaloric') {
         // Loud: the ingredient vanishes from the meal's totals and the route's
         // meal-level check still passes if ANY other item has macros, so

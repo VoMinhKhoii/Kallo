@@ -11,7 +11,7 @@ import {
   type Checkpoint1,
   type Checkpoint2,
   getDb,
-  IN_SCOPE_CATEGORIES,
+  resolveInScopeCategories,
 } from './shared';
 
 interface Phase3Options {
@@ -41,7 +41,7 @@ export async function runPhase3(opts: Phase3Options): Promise<string[]> {
   // Get category mapping for items
   const categoryFilter = opts.category
     ? [opts.category]
-    : [...IN_SCOPE_CATEGORIES];
+    : await resolveInScopeCategories();
   const catPlaceholders = categoryFilter
     .map((c) => `'${c.replace(/'/g, "''")}'`)
     .join(',');

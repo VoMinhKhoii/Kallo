@@ -254,12 +254,12 @@ describe('bridgeV2ToV1 — Call 2 macros into v1 nutrition shape', () => {
   });
 });
 
-describe('bridgeV2ToV1 — D3 slimmed matched output (omitted macro triples)', () => {
-  // A matched-without-prep-notes ingredient that OMITS caloriesKcal / proteinG
-  // / carbohydrateG (only fatG + grams + verdict emitted). The server anchors
-  // P/C/kcal from the DB row, so the resolved matched numbers must be IDENTICAL
-  // to the case where the LLM emitted (now-discarded) full quads.
-  function groundedSlim(): GroundedEstimation {
+describe('bridgeV2ToV1 — matched P/C/kcal are DB-anchored regardless of LLM values', () => {
+  // Every triple is now schema-REQUIRED (the D3 optionality is reverted). For
+  // a matched-without-prep-notes ingredient the model emits cheap placeholder
+  // triples; the server anchors P/C/kcal from the DB row, so the resolved
+  // numbers must be IDENTICAL to a run where the model emitted full quads.
+  function groundedPlaceholders(): GroundedEstimation {
     return {
       mealItems: [
         {
@@ -269,7 +269,10 @@ describe('bridgeV2ToV1 — D3 slimmed matched output (omitted macro triples)', (
               ingredientName: 'đùi gà',
               selectedCandidateId: 'c1',
               grams: 150,
-              // caloriesKcal / proteinG / carbohydrateG intentionally OMITTED.
+              // Cheap flat placeholders — discarded for matched ingredients.
+              caloriesKcal: ZERO_TRIPLE,
+              proteinG: ZERO_TRIPLE,
+              carbohydrateG: ZERO_TRIPLE,
               fatG: { low: 10, mid: 12, high: 14 },
             },
           ],
@@ -278,18 +281,18 @@ describe('bridgeV2ToV1 — D3 slimmed matched output (omitted macro triples)', (
     };
   }
 
-  it('bridges a slimmed matched ingredient without throwing; grams + fat preserved', () => {
+  it('bridges a placeholder-triple matched ingredient; grams + fat preserved', () => {
     const out = bridgeV2ToV1({
       v2: v2Decomp(),
       matches: matchResultWithCandidate(),
-      grounded: groundedSlim(),
+      grounded: groundedPlaceholders(),
       mealContext: 'm',
     });
     expect(out.matched).toHaveLength(1);
     expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(150);
     // fatG (the one triple the server still needs from Call 2) flows through.
     expect(out.rawNutrition.mealItems[0].ingredients[0].fatG.mid).toBe(12);
-    // Omitted triples default to ZERO_TRIPLE in the raw shape — harmless because
+    // Placeholder P/kcal pass through raw — harmless because
     // resolveIngredientMacros overwrites P/C/kcal from the DB base for matched.
     expect(out.rawNutrition.mealItems[0].ingredients[0].proteinG).toEqual({
       low: 0,
@@ -303,7 +306,7 @@ describe('bridgeV2ToV1 — D3 slimmed matched output (omitted macro triples)', (
     });
   });
 
-  it('produces IDENTICAL resolved matched numbers whether or not the LLM emitted P/C/kcal', () => {
+  it('produces IDENTICAL resolved matched numbers for placeholder vs full LLM triples', () => {
     // The candidate DB row: 220 kcal / 24 P / 0 C / 14 F per 100g, grams=150.
     // base = per_100g × 150/100. For matched-no-prep, resolveIngredientMacros
     // returns flatTriple(base.P), flatTriple(base.C), guarded fat, kcal=4P+4C+9F.
@@ -349,7 +352,7 @@ describe('bridgeV2ToV1 — D3 slimmed matched output (omitted macro triples)', (
   });
 });
 
-describe('bridgeV2ToV1 — Phase 4/D3 unmatched-missing-macros guard', () => {
+describe('bridgeV2ToV1 — unmatched macro plausibility (all triples required)', () => {
   const matchesNoCands: IngredientV2MatchResult[] = [
     { ingredientIndex: 0, candidates: [] },
   ];
@@ -370,39 +373,7 @@ describe('bridgeV2ToV1 — Phase 4/D3 unmatched-missing-macros guard', () => {
     };
   }
 
-  it('unmatched ingredient with grams but omitted caloric macros → unresolved_estimate (not persisted, not ZERO_TRIPLE ok)', () => {
-    const grounded: GroundedEstimation = {
-      mealItems: [
-        {
-          mealItemName: 'ức gà',
-          ingredients: [
-            {
-              ingredientName: 'ức gà',
-              // grams present; caloriesKcal/proteinG/carbohydrateG OMITTED.
-              grams: 150,
-              fatG: { low: 3, mid: 4, high: 5 },
-            },
-          ],
-        },
-      ],
-    };
-    const out = bridgeV2ToV1({
-      v2: v2SingleIngredient('ức gà'),
-      matches: matchesNoCands,
-      grounded,
-      mealContext: 'm',
-    });
-    expect(out.verdicts[0].verdict).toBe('unmatched');
-    expect(out.plausibility[0].state).toBe('unresolved_estimate');
-    // Not persisted: no matched, no unmatched, no rawNutrition (silent-zero killed).
-    expect(out.matched).toHaveLength(0);
-    expect(out.unmatched).toHaveLength(0);
-    expect(out.rawNutrition.mealItems).toHaveLength(0);
-    // Decomposition ingredient carries grams=0 (no 1g/ZERO_TRIPLE placeholder).
-    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(0);
-  });
-
-  it('unmatched water name with omitted macros → still genuinely_noncaloric (not spuriously unresolved)', () => {
+  it('unmatched water with explicit zero macros → genuinely_noncaloric (not spuriously unresolved)', () => {
     const grounded: GroundedEstimation = {
       mealItems: [
         {
@@ -411,6 +382,9 @@ describe('bridgeV2ToV1 — Phase 4/D3 unmatched-missing-macros guard', () => {
             {
               ingredientName: 'nước lọc',
               grams: 300,
+              caloriesKcal: ZERO_TRIPLE,
+              proteinG: ZERO_TRIPLE,
+              carbohydrateG: ZERO_TRIPLE,
               fatG: { low: 0, mid: 0, high: 0 },
             },
           ],
@@ -460,10 +434,9 @@ describe('bridgeV2ToV1 — Phase 4/D3 unmatched-missing-macros guard', () => {
     expect(out.rawNutrition.mealItems[0].ingredients[0].proteinG.mid).toBe(46);
   });
 
-  it('matched ingredient with omitted P/C/kcal (D3 normal case) → still ok, real anchored numbers (regression guard)', () => {
-    // Matched-without-prep-notes: caloriesKcal/proteinG/carbohydrateG omitted.
-    // The server anchors P/C/kcal from the DB row, so this MUST stay 'ok' — the
-    // D3 guard is unmatched-only and must not fire here.
+  it('matched ingredient with placeholder P/C/kcal → still ok, real anchored numbers (regression guard)', () => {
+    // Matched-without-prep-notes: the model emits cheap placeholder triples.
+    // The server anchors P/C/kcal from the DB row, so this MUST stay 'ok'.
     const groundedSlimMatched: GroundedEstimation = {
       mealItems: [
         {
@@ -473,7 +446,9 @@ describe('bridgeV2ToV1 — Phase 4/D3 unmatched-missing-macros guard', () => {
               ingredientName: 'đùi gà',
               selectedCandidateId: 'c1',
               grams: 150,
-              // caloriesKcal / proteinG / carbohydrateG OMITTED (D3).
+              caloriesKcal: ZERO_TRIPLE,
+              proteinG: ZERO_TRIPLE,
+              carbohydrateG: ZERO_TRIPLE,
               fatG: { low: 10, mid: 12, high: 14 },
             },
           ],
@@ -749,11 +724,14 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
     expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(150);
   });
 
-  it('withholds when the DB nutrition is absent AND Call 2 is incomplete', () => {
+  it('ships an accepted candidate whose nutrition never loaded (LLM path, explicit zeros allowed)', () => {
+    // Schema requires every triple, so "Call 2 was incomplete" no longer
+    // exists as a state — the provider decoder cannot omit a field. A row of
+    // explicit zeros SHIPS (plausibility telemetry judges it); only a missing
+    // portion/estimate or a user-typed zero withholds.
     const grounded = groundedAccepted();
-    // P and C omitted AND fat is not the food (zero) → nothing to ship.
-    grounded.mealItems[0].ingredients[0].proteinG = undefined;
-    grounded.mealItems[0].ingredients[0].carbohydrateG = undefined;
+    grounded.mealItems[0].ingredients[0].proteinG = { low: 0, mid: 0, high: 0 };
+    grounded.mealItems[0].ingredients[0].carbohydrateG = ZERO_TRIPLE;
     grounded.mealItems[0].ingredients[0].fatG = { low: 0, mid: 0, high: 0 };
     const out = bridgeV2ToV1({
       v2: v2Decomp(),
@@ -761,18 +739,18 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
       grounded,
       mealContext: 'm',
     });
-    expect(out.matched).toHaveLength(0);
-    expect(out.rawNutrition.mealItems).toHaveLength(0);
-    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(0);
+    expect(out.matched).toHaveLength(0); // no DB anchor
+    expect(out.rawNutrition.mealItems).toHaveLength(1); // ships regardless
+    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(150);
   });
 
-  it('ships a pure-fat food whose P and C are legitimately omitted', () => {
-    // Butter/oil have ~0 protein and ~0 carb; Call 2 drops both. Withholding
-    // deleted a real ~700 kcal/100g ingredient from the meal.
+  it('ships a pure-fat food with explicit zero P and C', () => {
+    // Butter/oil have ~0 protein and ~0 carb; the model now says so with
+    // explicit zeros instead of omitting the fields.
     const grounded = groundedAccepted();
     const ing = grounded.mealItems[0].ingredients[0];
-    ing.proteinG = undefined;
-    ing.carbohydrateG = undefined;
+    ing.proteinG = ZERO_TRIPLE;
+    ing.carbohydrateG = ZERO_TRIPLE;
     ing.grams = 14; // a pat of butter: fat is ~80% of the mass
     ing.fatG = { low: 10, mid: 11, high: 12 };
     const out = bridgeV2ToV1({
@@ -783,35 +761,6 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
     });
     expect(out.rawNutrition.mealItems).toHaveLength(1);
     expect(out.rawNutrition.mealItems[0].ingredients[0].fatG.mid).toBe(11);
-  });
-
-  it('keeps a row when only ONE of protein/carb is omitted', () => {
-    // Butter and milk tea legitimately have a ~0 macro Call 2 drops; requiring
-    // both present deleted a real ~100-200 kcal ingredient from the meal.
-    const grounded = groundedAccepted();
-    grounded.mealItems[0].ingredients[0].carbohydrateG = undefined;
-    const out = bridgeV2ToV1({
-      v2: v2Decomp(),
-      matches: [{ ingredientIndex: 0, candidates: [] }],
-      grounded,
-      mealContext: 'm',
-    });
-    expect(out.rawNutrition.mealItems).toHaveLength(1);
-    expect(out.rawNutrition.mealItems[0].ingredients[0].fatG.mid).toBe(12);
-  });
-
-  it('keeps an unmatched row when only caloriesKcal is omitted', () => {
-    // kcal is DERIVED from 4P+4C+9F downstream, so its absence costs nothing.
-    const grounded = groundedAccepted();
-    grounded.mealItems[0].ingredients[0].caloriesKcal = undefined;
-    const out = bridgeV2ToV1({
-      v2: v2Decomp(),
-      matches: [{ ingredientIndex: 0, candidates: [] }],
-      grounded,
-      mealContext: 'm',
-    });
-    expect(out.rawNutrition.mealItems).toHaveLength(1);
-    expect(out.rawNutrition.mealItems[0].ingredients[0].proteinG.mid).toBe(40);
   });
 
   it('withholds an explicit zero count so it never yields calories', () => {
@@ -923,19 +872,21 @@ describe('bridgeV2ToV1 — carb-staple floor (bánh ướt chả bò)', () => {
   });
 });
 
-describe('bridgeV2ToV1 — unmatched staple with an OMITTED carb triple (mì gói)', () => {
-  // Prod repro: "1 tô mì gói + sữa" persisted at P:20 C:0 F:37, 412 kcal
-  // (= 4·20 + 4·0 + 9·37). Retrieval found nothing, so Call 2 owned all four
-  // macros — and it simply did not emit `carbohydrateG`, which `schemas-v2`
-  // marks optional. `scaleGroundedMacros` turned the absence into a literal 0
-  // and `uncharacterized` stayed false because protein WAS present.
-  function miGoiDecomp(rawName = 'Mì gói sữa'): MealDecompositionV2 {
+describe('bridgeV2ToV1 — unmatched staple with an explicit zero carb (mì gói)', () => {
+  // Prod incident "mì gói sứa": retrieval found nothing for the noodles, and
+  // Call 2 OMITTED `carbohydrateG` (then optional) — the absence became a
+  // persisted C:0g / 412 kcal. The schema now REQUIRES every triple, so the
+  // omission state no longer exists: the provider decoder cannot skip a
+  // field, and a parse-level test guards that in schemas-grounded.test.ts.
+  // What remains bridge-side: an EXPLICIT zero ships (user decision — the
+  // model may genuinely mean 0) and plausibility telemetry flags the staple.
+  function miGoiDecomp(rawName = 'mì gói'): MealDecompositionV2 {
     return {
       isFood: true,
       mealSlot: 'breakfast',
       mealItems: [
         {
-          name: 'Mì gói sữa',
+          name: 'Mì gói sứa',
           cookingMethod: 'nấu',
           ingredients: [{ rawName, canonicalName: rawName }],
         },
@@ -943,21 +894,21 @@ describe('bridgeV2ToV1 — unmatched staple with an OMITTED carb triple (mì gó
     };
   }
 
-  function miGoiGrounded(carbohydrateG?: {
-    low: number;
-    mid: number;
-    high: number;
-  }): GroundedEstimation {
+  function miGoiGrounded(
+    ingredientName: string,
+    carbohydrateG: { low: number; mid: number; high: number }
+  ): GroundedEstimation {
     return {
       mealItems: [
         {
-          mealItemName: 'Mì gói sữa',
+          mealItemName: 'Mì gói sứa',
           ingredients: [
             {
-              ingredientName: 'Mì gói sữa',
+              ingredientName,
               grams: 350,
+              caloriesKcal: { low: 380, mid: 410, high: 440 },
               proteinG: { low: 18, mid: 20, high: 22 },
-              ...(carbohydrateG ? { carbohydrateG } : {}),
+              carbohydrateG,
               fatG: { low: 34, mid: 37, high: 40 },
             },
           ],
@@ -966,78 +917,54 @@ describe('bridgeV2ToV1 — unmatched staple with an OMITTED carb triple (mì gó
     };
   }
 
-  it('withholds the row instead of shipping a fabricated C:0', () => {
+  it('ships an explicit C:0 staple and flags it in plausibility telemetry', () => {
     const out = bridgeV2ToV1({
       v2: miGoiDecomp(),
       matches: [{ ingredientIndex: 0, candidates: [] }],
-      grounded: miGoiGrounded(),
-      mealContext: '1 tô mì gói + sữa',
+      grounded: miGoiGrounded('mì gói', ZERO_TRIPLE),
+      mealContext: '1 tô mì gói sứa',
     });
 
-    expect(out.rawNutrition.mealItems).toHaveLength(0);
-    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(0);
+    // Ships on real grams — the picker can correct a portion, telemetry
+    // records the implausible staple density (0 < STAPLE_MIN_CARBS_PER_100G).
+    expect(out.rawNutrition.mealItems).toHaveLength(1);
+    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(350);
     expect(out.plausibility[0].state).toBe('unresolved_estimate');
   });
 
-  it('ships the row once Call 2 actually emits carbs', () => {
-    // The guard keys on the OMISSION, not on the name: a staple that arrives
-    // with real carbs must still reach the user.
+  it('ships a staple with real carbs as plain ok', () => {
     const out = bridgeV2ToV1({
       v2: miGoiDecomp(),
       matches: [{ ingredientIndex: 0, candidates: [] }],
-      grounded: miGoiGrounded({ low: 50, mid: 55, high: 60 }),
-      mealContext: '1 tô mì gói + sữa',
+      grounded: miGoiGrounded('mì gói', { low: 50, mid: 55, high: 60 }),
+      mealContext: '1 tô mì gói sứa',
     });
 
     expect(out.rawNutrition.mealItems).toHaveLength(1);
     expect(out.rawNutrition.mealItems[0].ingredients[0].carbohydrateG.mid).toBe(
       55
     );
+    expect(out.plausibility[0].state).toBe('ok');
   });
 
-  it('leaves a non-staple alone when only its carb triple is omitted', () => {
-    // Regression guard for the butter/milk-tea case: `sữa tươi` is not a
-    // starch, so an omitted carb is not evidence that nothing resolved.
-    const out = bridgeV2ToV1({
-      v2: miGoiDecomp('sữa tươi'),
-      matches: [{ ingredientIndex: 0, candidates: [] }],
-      grounded: {
-        mealItems: [
-          {
-            mealItemName: 'Mì gói sữa',
-            ingredients: [
-              {
-                ingredientName: 'sữa tươi',
-                grams: 200,
-                proteinG: { low: 6, mid: 7, high: 8 },
-                fatG: { low: 7, mid: 8, high: 9 },
-              },
-            ],
-          },
-        ],
-      },
-      mealContext: 'm',
-    });
-
-    expect(out.rawNutrition.mealItems).toHaveLength(1);
-  });
-
-  it('leaves an EXEMPT `mì` word alone (mì chính = MSG)', () => {
+  it('does not flag an EXEMPT `mì` word with zero carbs (mì chính = MSG)', () => {
     // `viWord('mì')` matches "mì chính", but the exempt list rescues it —
-    // MSG genuinely has no carbs and must not be withheld.
+    // MSG genuinely has no carbs.
     const out = bridgeV2ToV1({
       v2: miGoiDecomp('mì chính'),
       matches: [{ ingredientIndex: 0, candidates: [] }],
       grounded: {
         mealItems: [
           {
-            mealItemName: 'Mì gói sữa',
+            mealItemName: 'Mì gói sứa',
             ingredients: [
               {
                 ingredientName: 'mì chính',
                 grams: 3,
-                proteinG: { low: 0, mid: 0, high: 0 },
-                fatG: { low: 0, mid: 0, high: 0 },
+                caloriesKcal: ZERO_TRIPLE,
+                proteinG: ZERO_TRIPLE,
+                carbohydrateG: ZERO_TRIPLE,
+                fatG: ZERO_TRIPLE,
               },
             ],
           },
@@ -1047,51 +974,7 @@ describe('bridgeV2ToV1 — unmatched staple with an OMITTED carb triple (mì gó
     });
 
     expect(out.rawNutrition.mealItems).toHaveLength(1);
-  });
-
-  it('never fires for a MATCHED staple — the DB row anchors its carbs', () => {
-    // A matched ingredient is SUPPOSED to omit the triple (D3 slimming); the
-    // server re-derives P/C/kcal from the row, so withholding here would
-    // delete a correctly-resolved ingredient.
-    const matches: IngredientV2MatchResult[] = [
-      {
-        ingredientIndex: 0,
-        candidates: [
-          {
-            info: {
-              ingredientName: 'Mì gói sữa',
-              foodCompositionId: 'fc-instant-noodle',
-              matchedName: 'Mì ăn liền',
-              similarity: 0.91,
-              confidence: 'high',
-              state: 'raw',
-              source: 'usda',
-              matchType: 'vector',
-            },
-            nutrition: {
-              ...NULL_NUTRITION_VALUES,
-              caloriesKcal: 450,
-              proteinG: 10,
-              carbohydrateG: 60,
-              fatG: 18,
-            },
-            inediblePct: null,
-          },
-        ],
-      },
-    ];
-    const grounded = miGoiGrounded();
-    grounded.mealItems[0].ingredients[0].selectedCandidateId = 'c1';
-
-    const out = bridgeV2ToV1({
-      v2: miGoiDecomp(),
-      matches,
-      grounded,
-      mealContext: 'm',
-    });
-
-    expect(out.matched).toHaveLength(1);
-    expect(out.rawNutrition.mealItems).toHaveLength(1);
+    expect(out.plausibility[0].state).not.toBe('unresolved_estimate');
   });
 });
 
@@ -1146,36 +1029,46 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
     ],
   };
 
-  function groundedFor(noodleCarbs?: {
-    low: number;
-    mid: number;
-    high: number;
-  }): GroundedEstimation {
+  const milkGrounded = {
+    mealItemName: 'Sữa tươi',
+    ingredients: [
+      {
+        ingredientName: 'sữa tươi',
+        selectedCandidateId: 'c1',
+        grams: 200,
+        caloriesKcal: { low: 140, mid: 150, high: 160 },
+        proteinG: { low: 7, mid: 7.8, high: 8.5 },
+        carbohydrateG: { low: 9, mid: 9.6, high: 10.5 },
+        fatG: { low: 8, mid: 8.8, high: 9.5 },
+      },
+    ],
+  };
+
+  function groundedFor(includeNoodles: boolean): GroundedEstimation {
     return {
       mealItems: [
-        {
-          mealItemName: 'Mì gói',
-          ingredients: [
-            {
-              ingredientName: 'mì gói',
-              grams: 350,
-              proteinG: { low: 18, mid: 20, high: 22 },
-              ...(noodleCarbs ? { carbohydrateG: noodleCarbs } : {}),
-              fatG: { low: 34, mid: 37, high: 40 },
-            },
-          ],
-        },
-        {
-          mealItemName: 'Sữa tươi',
-          ingredients: [
-            {
-              ingredientName: 'sữa tươi',
-              selectedCandidateId: 'c1',
-              grams: 200,
-              fatG: { low: 8, mid: 8.8, high: 9.5 },
-            },
-          ],
-        },
+        // When Call 2 DROPS the noodle item entirely (a failed emission),
+        // there are no grams from anywhere → macroSource 'no_portion' →
+        // carve-out. Omission of a FIELD can no longer happen (schema), so a
+        // dropped INGREDIENT is the withhold trigger this gate now guards.
+        ...(includeNoodles
+          ? [
+              {
+                mealItemName: 'Mì gói',
+                ingredients: [
+                  {
+                    ingredientName: 'mì gói',
+                    grams: 350,
+                    caloriesKcal: { low: 380, mid: 410, high: 440 },
+                    proteinG: { low: 18, mid: 20, high: 22 },
+                    carbohydrateG: { low: 50, mid: 55, high: 60 },
+                    fatG: { low: 34, mid: 37, high: 40 },
+                  },
+                ],
+              },
+            ]
+          : []),
+        milkGrounded,
       ],
     };
   }
@@ -1184,8 +1077,8 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
     const out = bridgeV2ToV1({
       v2: twoItemMeal(),
       matches: [{ ingredientIndex: 0, candidates: [] }, milkMatch],
-      grounded: groundedFor(),
-      mealContext: '1 tô mì gói + sữa',
+      grounded: groundedFor(false),
+      mealContext: '1 tô mì gói sứa',
     });
 
     // The milk survives — which is exactly why the meal-level predicate was
@@ -1199,7 +1092,7 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
     expect(out.carvedOut[0]).toMatchObject({
       mealItemName: 'Mì gói',
       ingredientName: 'mì gói',
-      reason: 'no_anchor',
+      reason: 'no_portion',
     });
 
     const gate = resolveCompletenessGate({
@@ -1215,8 +1108,8 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
     const out = bridgeV2ToV1({
       v2: twoItemMeal(),
       matches: [{ ingredientIndex: 0, candidates: [] }, milkMatch],
-      grounded: groundedFor({ low: 50, mid: 55, high: 60 }),
-      mealContext: '1 tô mì gói + sữa',
+      grounded: groundedFor(true),
+      mealContext: '1 tô mì gói sứa',
     });
 
     expect(out.carvedOut).toEqual([]);
@@ -1265,7 +1158,7 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
         {
           mealItemName: 'Mì gói',
           ingredientName: 'mì gói',
-          reason: 'no_anchor',
+          reason: 'no_estimate',
         },
       ],
     });

@@ -19,7 +19,7 @@ import {
   type Checkpoint1,
   type Checkpoint2,
   getDb,
-  IN_SCOPE_CATEGORIES,
+  resolveInScopeCategories,
   sleep,
 } from './shared';
 
@@ -187,7 +187,7 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
 
   const categoryFilter = opts.category
     ? [opts.category]
-    : [...IN_SCOPE_CATEGORIES];
+    : await resolveInScopeCategories();
 
   // Fetch items that have Phase 1 translations but no Phase 2 name_alt yet
   const catPlaceholders = categoryFilter

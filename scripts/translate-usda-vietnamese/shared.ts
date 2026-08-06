@@ -3,32 +3,38 @@
  * for the USDA Vietnamese translation pipeline.
  */
 
+import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { encodeDbUrl } from '@/lib/db';
 import * as schema from '@/lib/db/schema';
 
 // ---------------------------------------------------------------------------
-// 13 in-scope USDA categories
+// In-scope USDA categories — derived from the DB, not hardcoded
 // ---------------------------------------------------------------------------
 
-export const IN_SCOPE_CATEGORIES = [
-  'Beef Products',
-  'Vegetables and Vegetable Products',
-  'Lamb, Veal, and Game Products',
-  'Poultry Products',
-  'Fruits and Fruit Juices',
-  'Pork Products',
-  'Dairy and Egg Products',
-  'Legumes and Legume Products',
-  'Finfish and Shellfish Products',
-  'Fats and Oils',
-  'Cereal Grains and Pasta',
-  'Nut and Seed Products',
-  'Spices and Herbs',
-] as const;
-
-export type InScopeCategory = (typeof IN_SCOPE_CATEGORIES)[number];
+/**
+ * Every category that still contains untranslated rows. The original 13-item
+ * hardcoded list is exactly why 2,186 of 6,945 USDA rows (31%) were never
+ * translated: whole groups (Baked Products, Beverages, Sweets, Soups/Sauces/
+ * Gravies — where instant ramen lives — Breakfast Cereals, Sausages, Other)
+ * were simply never in scope, which surfaced as the mì-gói zero-candidates
+ * incident. Deriving the scope from the untranslated predicate itself makes
+ * the pipeline self-scoping forever: any future import lands in scope
+ * automatically, and a fully-translated DB yields an empty (no-op) run.
+ */
+export async function resolveInScopeCategories(): Promise<string[]> {
+  const db = getDb();
+  const rows = (await db.execute(
+    sql.raw(`
+      SELECT DISTINCT type_en
+      FROM vietnamese_food_composition
+      WHERE source_id = 2 AND name_primary = name_en
+      ORDER BY type_en
+    `)
+  )) as unknown as Array<{ type_en: string }>;
+  return rows.map((r) => r.type_en);
+}
 
 // ---------------------------------------------------------------------------
 // Types

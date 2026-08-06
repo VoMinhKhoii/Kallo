@@ -906,7 +906,7 @@
       "provenance": {
         "source": "db-anchored",
         "setAt": "2026-08-06",
-        "note": "Guards BOTH halves of the incident. Floor: the prod bug shipped C:0g / 412 kcal from 4P+9F with carbs omitted. Ceiling: usda_6583_raw is DRY (440 kcal/100g), so emitting a bowl's ~230-260g COOKED mass against it would read ~1000-1150 kcal. A bowl is one 70-90g goi -> 308-396 kcal."
+        "note": "Guards BOTH halves of the incident. Floor: the prod bug shipped C:0g / 412 kcal because Call 2 omitted the then-optional carbohydrateG for the unmatched noodles. Ceiling: usda_6583_raw is DRY (440 kcal/100g), so emitting a bowl's ~230-260g COOKED mass against it would read ~1000-1150 kcal. A bowl is one 70-90g goi -> 308-396 kcal."
       }
     },
     {
@@ -927,7 +927,7 @@
       "provenance": {
         "source": "db-anchored",
         "setAt": "2026-08-06",
-        "note": "The verbatim prod input. Call 1 collapsed it into ONE ingredient 'Mi goi sua' instead of noodles + milk, which is what let a single unmatched item swallow the whole meal. Asserts the '+' splits."
+        "note": "Decomposition guard: an 'X + Y' input must split into two meal items. Correction to the original note: the real incident ('mi goi sua' = noodles + JELLYFISH) did NOT collapse - Call 1 decomposed it correctly and the jellyfish matched at 0.776; only the noodles returned zero candidates (untranslated USDA names + floors + state penalty). This fixture guards the collapse CLASS anyway, since minMealItems is the only assertion that can see it."
       }
     }
   ]

@@ -39,6 +39,17 @@ function isRetryableGeminiError(error: unknown): boolean {
     return false;
   }
 
+  // Schema-validation failures ARE retryable: the model is nondeterministic,
+  // so a re-ask usually produces a conforming response. This is load-bearing
+  // for the required macro triples (and `grams.positive()`) — without it, one
+  // malformed emission failed the whole call on attempt 1, despite schemas-v2
+  // having long claimed the parse "routes into the withRetry retry path".
+  // Matched by name rather than `instanceof z.ZodError` so this module stays
+  // free of a zod import.
+  if (error instanceof Error && error.name === 'ZodError') {
+    return true;
+  }
+
   const status = getErrorStatus(error);
   if (status != null) {
     return new Set([408, 429, 500, 502, 503, 504]).has(status);

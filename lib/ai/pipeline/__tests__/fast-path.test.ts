@@ -205,10 +205,13 @@ describe('buildFastPathEstimation — synthesized estimation shape', () => {
     // Flat triple (low = mid = high) so the guard passes it byte-identically.
     expect(ing.fatG.low).toBe(ing.fatG.mid);
     expect(ing.fatG.high).toBe(ing.fatG.mid);
-    // P/C/kcal omitted — the matched path re-derives them from the DB base.
-    expect(ing.proteinG).toBeUndefined();
-    expect(ing.carbohydrateG).toBeUndefined();
-    expect(ing.caloriesKcal).toBeUndefined();
+    // P/C/kcal now schema-REQUIRED: flat DB-anchored triples (165 kcal / 31 P
+    // / 0 C per 100g × 150/100). Overwritten downstream from the same base,
+    // so redundant by construction — never a second opinion.
+    expect(ing.proteinG.mid).toBeCloseTo(46.5, 3);
+    expect(ing.proteinG.low).toBe(ing.proteinG.high);
+    expect(ing.carbohydrateG.mid).toBe(0);
+    expect(ing.caloriesKcal.mid).toBeCloseTo(247.5, 3);
   });
 
   it('scales a raw DB row through the cooked→raw yield (weightBasis forced raw)', () => {

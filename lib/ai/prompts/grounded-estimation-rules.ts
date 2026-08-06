@@ -73,16 +73,18 @@ ${renderPriorLines()}
 </grams_rule>${vesselRule}
 
 <macro_rule>
+  Every ingredient ALWAYS emits all four macro triples (caloriesKcal, proteinG, carbohydrateG, fatG). A genuine 0 is a valid value — never invent mass to avoid a zero, and never omit a field.
+
   Per-ingredient default behavior (MATCHED ingredient, prep_notes EMPTY):
-    - protein, carb, calories: OMIT these fields entirely. The server overrides them with DB-anchored base = (per_100g × grams) / 100 and derives kcal from 4P + 4C + 9F, so any value you emit is discarded. Do not emit proteinG, carbohydrateG, or caloriesKcal for these ingredients — it only wastes output.
-    - fat: always emit; reflect cooking-method effect.
+    - protein, carb, calories: emit your best estimate, but know the server OVERRIDES them with DB-anchored base = (per_100g × grams) / 100 and derives kcal from 4P + 4C + 9F — keep these three brief (flat triples are fine); your effort belongs in grams and fat.
+    - fat: reflect cooking-method effect.
         · chiên/rán/xào (oil): +30–80% over base.
         · luộc/hấp: near base.
         · nướng without basting: near base.
         · kho with oil: modest increase.
         · Bound: 0.33× to 3× of base.fatG. Beyond → server snaps to base.
 
-  When prep_notes is NON-EMPTY for a matched ingredient: the server unlocks protein and carb so you can reflect the user's modifier. Move only what the note physically implies.
+  When prep_notes is NON-EMPTY for a matched ingredient: the server unlocks protein and carb, so those two triples now carry real signal — reflect the user's modifier. Move only what the note physically implies.
     Tighter prep-notes bands (server enforces, snaps to base on overshoot):
       - proteinG, carbohydrateG: 0.71× to 1.4× of base.
       - fatG: 0.5× to 2× of base.
@@ -102,10 +104,8 @@ ${renderPriorLines()}
 <output_format>
   Top-level "mealItems" array.
   Each meal item: { mealItemName, ingredients[] }.
-  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grams, fatG{low,mid,high}, and — ONLY when required — caloriesKcal/proteinG/carbohydrateG{low,mid,high} }.
-    - MATCHED ingredient, prep_notes EMPTY → emit ONLY: ingredientName, selectedCandidateId, grams, fatG. OMIT caloriesKcal, proteinG, carbohydrateG.
-    - MATCHED ingredient, prep_notes NON-EMPTY → also emit proteinG, carbohydrateG (and fatG); caloriesKcal still optional (server derives it).
-    - UNMATCHED ingredient → emit caloriesKcal, proteinG, carbohydrateG, fatG (all four).
+  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grams, caloriesKcal{low,mid,high}, proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.
+  All four macro triples are REQUIRED on every ingredient, matched or not. 0 is a valid value; an omitted field is a schema violation and the whole response is rejected.
   Round numerical fields to 1 decimal place.
 
   FINAL CHECK before emitting, ingredient by ingredient — the BASIS RULE again, because getting it wrong is a silent 2–3× calorie error:

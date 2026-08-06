@@ -427,6 +427,35 @@ describe('GeminiClient', () => {
       ).rejects.toThrow('429');
     });
 
+    it('RETRIES a schema-validation (ZodError) failure — the model is nondeterministic', async () => {
+      // Load-bearing for the required macro triples: one malformed emission
+      // must trigger a re-ask, not fail the whole call on attempt 1. The
+      // first response violates the schema; the second conforms.
+      mockGenerateContent
+        .mockResolvedValueOnce({
+          text: JSON.stringify({ name: 'test' }), // `value` missing → ZodError
+        })
+        .mockResolvedValueOnce({
+          text: JSON.stringify({ name: 'test', value: 42 }),
+        });
+
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        {
+          maxRetries: 3,
+          baseDelayMs: 1,
+        }
+      );
+      const result = await client.generateStructuredOutput({
+        schema: z.object({ name: z.string(), value: z.number() }),
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+      });
+      expect(result).toEqual({ name: 'test', value: 42 });
+      expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+    });
+
     it('does not retry on non-retryable 4xx errors', async () => {
       mockGenerateContent.mockRejectedValueOnce(
         Object.assign(new Error('400 Bad Request'), { status: 400 })

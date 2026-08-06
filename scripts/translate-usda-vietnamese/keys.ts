@@ -33,9 +33,22 @@ export function loadGeminiKeys(): KeySlot[] {
       });
     }
   }
+  // Fallback: a plain GEMINI_API_KEY (the name every other script and the
+  // deploy workflow already use) counts as slot 0 — no numbered alias needed
+  // to run this pipeline locally or in CI with a single key.
+  if (slots.length === 0 && process.env.GEMINI_API_KEY) {
+    slots.push({
+      index: 0,
+      apiKey: process.env.GEMINI_API_KEY,
+      client: new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }),
+      lastCallAt: 0,
+      cooldownUntil: 0,
+      dailyRequests: 0,
+    });
+  }
   if (slots.length === 0) {
     throw new Error(
-      'No GEMINI_API_KEY_N found in env (checked GEMINI_API_KEY_1..10)'
+      'No Gemini key found in env (checked GEMINI_API_KEY_1..10, GEMINI_API_KEY)'
     );
   }
   console.log(`  Loaded ${slots.length} Gemini API keys`);
