@@ -107,5 +107,10 @@ ${renderPriorLines()}
     - MATCHED ingredient, prep_notes NON-EMPTY → also emit proteinG, carbohydrateG (and fatG); caloriesKcal still optional (server derives it).
     - UNMATCHED ingredient → emit caloriesKcal, proteinG, carbohydrateG, fatG (all four).
   Round numerical fields to 1 decimal place.
+
+  FINAL CHECK before emitting, ingredient by ingredient — the BASIS RULE again, because getting it wrong is a silent 2–3× calorie error:
+    - grams MUST be in the SELECTED candidate's db_state basis. Dry/raw row → dry/raw grams, even though you picture the food as eaten.
+    - If the user stated a weight, state_hint says which basis THEIR number is in — convert it whenever the candidate's basis differs; never copy it across bases.
+    - Sanity-check: grams × db_per_100g_kcal / 100 must be a believable kcal for that ingredient. ~250g against a ~440 kcal/100g dry-noodle row is ~1100 kcal — wrong basis; the dry packet is ~80g.
 </output_format>`;
 }
