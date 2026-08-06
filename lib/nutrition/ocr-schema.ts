@@ -40,7 +40,16 @@ export const nutritionLabelScanSchema = z.object({
   servingSizeGrams: z
     .number()
     .nullable()
-    .describe('Gram weight per serving (e.g. 45 for a 45g bar)'),
+    .describe(
+      'Gram/mL weight or volume per serving (e.g. 45 for 45g bar or 250 for 250ml drink)'
+    ),
+  servingSizeUnit: z
+    .enum(['g', 'ml'])
+    .nullable()
+    .optional()
+    .describe(
+      'Unit of measurement: "g" for solid food, "ml" for liquids/beverages'
+    ),
   servingSizeDescription: z
     .string()
     .nullable()

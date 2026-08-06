@@ -1,31 +1,14 @@
 'use client';
 
-import { Barcode, FileText, Loader2, Search, X } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { useBarcodeCameraScanner } from '@/hooks/meals/use-barcode-camera-scanner';
-import {
-  searchBarcodeAction,
-  stageBarcodeMealAction,
-} from '@/lib/actions/barcode';
-import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
-import { stageOcrMealAction } from '@/lib/actions/nutrition-ocr';
-import { tryDecodeFontEncodedBarcode } from '@/lib/barcode/decode';
-import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
-import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';
+import { Barcode, FileText, Loader2, Search } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { BarcodeCameraView } from './barcode-camera-view';
+import { BarcodeDialogHeader } from './barcode-dialog-header';
+import { BarcodeManualInput } from './barcode-manual-input';
 import { BarcodeProductStep } from './barcode-product-step';
 import { OcrReviewStep } from './ocr-review-step';
 import { OcrScannerTab } from './ocr-scanner-tab';
+import { useBarcodeScannerDialogState } from './use-barcode-scanner-dialog-state';
 
 interface BarcodeScannerDialogProps {
   isOpen: boolean;
@@ -37,184 +20,52 @@ interface BarcodeScannerDialogProps {
 const SCAN_TYPES = ['barcode', 'ocr'] as const;
 const SCAN_MODES = ['camera', 'manual'] as const;
 
-export function BarcodeScannerDialog({
-  isOpen,
-  onOpenChange,
-  selectedDate,
-  onSuccess,
-}: BarcodeScannerDialogProps) {
-  const t = useTranslations('logging');
-  const [scanType, setScanType] = useState<'barcode' | 'ocr'>('barcode');
-  const [step, setStep] = useState<'input' | 'quantity' | 'ocr-review'>(
-    'input'
-  );
-  const [scanMode, setScanMode] = useState<'camera' | 'manual'>('camera');
-  const [barcode, setBarcode] = useState('');
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [product, setProduct] = useState<ParsedBarcodeProduct | null>(null);
-  const [ocrData, setOcrData] = useState<ParsedNutritionLabel | null>(null);
-
-  const [isStaging, setIsStaging] = useState(false);
-
-  const runSearch = useCallback(
-    async (rawBarcode: string) => {
-      const sanitized = tryDecodeFontEncodedBarcode(rawBarcode);
-      setBarcode(sanitized);
-      setIsSearching(true);
-      setSearchError(null);
-
-      try {
-        const res = await searchBarcodeAction({ barcode: sanitized });
-        if (res.success) {
-          setProduct(res.data);
-          setStep('quantity');
-          return true;
-        }
-        setSearchError(t(`barcodeError.${res.code}`));
-        return false;
-      } catch {
-        setSearchError(t('barcodeError.server_error'));
-        return false;
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [t]
-  );
-
-  const handleDecode = useCallback(
-    (decodedText: string) => {
-      runSearch(decodedText).then((success) => {
-        if (!success) setScanMode('manual');
-      });
-    },
-    [runSearch]
-  );
-
-  const handleCameraFailure = useCallback(() => {
-    setScanMode('manual');
-  }, []);
-
+export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
   const {
+    t,
+    scanType,
+    setScanType,
+    step,
+    setStep,
+    scanMode,
+    setScanMode,
+    barcode,
+    setBarcode,
+    searchError,
+    setSearchError,
+    isSearching,
+    product,
+    ocrData,
+    setOcrData,
+    isStaging,
     cameraStatus,
     cameras,
     selectedCameraId,
     setSelectedCameraId,
-    stopScanner,
-  } = useBarcodeCameraScanner({
-    isActive:
-      isOpen &&
-      step === 'input' &&
-      scanType === 'barcode' &&
-      scanMode === 'camera',
-    onDecode: handleDecode,
-    onCameraFailure: handleCameraFailure,
-  });
-
-  const handleSearch = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const trimmed = barcode.trim();
-    if (!trimmed) return;
-    await runSearch(trimmed);
-  };
-
-  const handleStageMeal = async (grams: number) => {
-    if (!product) return;
-    setIsStaging(true);
-    const timezoneOffset = new Date().getTimezoneOffset();
-
-    try {
-      const res = await stageBarcodeMealAction({
-        barcode: product.barcode,
-        grams,
-        loggedDate: selectedDate,
-        timezoneOffset,
-      });
-
-      if (!res.success) {
-        toast.error(t(`barcodeError.${res.code}`));
-        return;
-      }
-
-      await confirmAndSaveMealAction({ analysisId: res.analysisId });
-      toast.success(t('feedArea.savedMeal'));
-      onSuccess();
-      handleClose();
-    } catch {
-      toast.error(t('barcodeError.server_error'));
-    } finally {
-      setIsStaging(false);
-    }
-  };
-
-  const handleConfirmOcrMeal = async (
-    payload: Parameters<
-      React.ComponentProps<typeof OcrReviewStep>['onConfirm']
-    >[0]
-  ) => {
-    setIsStaging(true);
-    try {
-      const res = await stageOcrMealAction({
-        ...payload,
-        loggedDate: selectedDate,
-        timezoneOffset: new Date().getTimezoneOffset(),
-      });
-      if (!res.success) {
-        toast.error(t(`ocrError.${res.code}`));
-        return;
-      }
-      await confirmAndSaveMealAction({ analysisId: res.analysisId });
-      toast.success(t('feedArea.savedMeal'));
-      onSuccess();
-      handleClose();
-    } catch {
-      toast.error(t('ocrError.server_error'));
-    } finally {
-      setIsStaging(false);
-    }
-  };
-
-  const handleClose = () => {
-    onOpenChange(false);
-    stopScanner();
-    setTimeout(() => {
-      setScanType('barcode');
-      setStep('input');
-      setScanMode('camera');
-      setBarcode('');
-      setSearchError(null);
-      setProduct(null);
-      setOcrData(null);
-    }, 200);
-  };
+    handleSearch,
+    handleStageMeal,
+    handleConfirmOcrMeal,
+    handleClose,
+  } = useBarcodeScannerDialogState(props);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog open={props.isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
         showCloseButton={false}
         className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-[24px] border border-[#EAE7E0] bg-[#FDFCF8] p-0 font-sans-display text-nham-text sm:max-w-md"
       >
-        <div className="flex shrink-0 items-start justify-between gap-4 border-[#EAE7E0]/70 border-b px-6 py-4">
-          <div className="min-w-0 space-y-1">
-            <DialogTitle className="font-normal font-sans-display text-[22px] text-nham-text leading-tight tracking-tight">
-              {scanType === 'barcode'
-                ? t('barcodeDialogTitle')
-                : t('ocrDialogTitle')}
-            </DialogTitle>
-            <DialogDescription className="font-sans-display text-[#8B8682] text-[13px] leading-normal">
-              {scanType === 'barcode'
-                ? t('barcodeDialogDesc')
-                : t('ocrDialogDesc')}
-            </DialogDescription>
-          </div>
-          <DialogClose
-            aria-label={t('barcodeCancel')}
-            className="-mr-1 shrink-0 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-[#EAE7E0]/50 hover:text-nham-text"
-          >
-            <X className="h-5 w-5" />
-          </DialogClose>
-        </div>
+        <BarcodeDialogHeader
+          scanType={scanType}
+          title={
+            scanType === 'barcode'
+              ? t('barcodeDialogTitle')
+              : t('ocrDialogTitle')
+          }
+          description={
+            scanType === 'barcode' ? t('barcodeDialogDesc') : t('ocrDialogDesc')
+          }
+          cancelText={t('barcodeCancel')}
+        />
 
         {step === 'input' ? (
           <div className="flex min-h-0 flex-1 flex-col">
@@ -294,38 +145,21 @@ export function BarcodeScannerDialog({
                       scanningText={t('barcodeCameraScanning')}
                     />
                   ) : (
-                    <div className="space-y-2">
-                      <div className="relative flex items-center">
-                        <Barcode className="absolute left-3 h-5 w-5 text-[#8B8682]/60" />
-                        <Input
-                          type="text"
-                          placeholder={t('barcodePlaceholder')}
-                          value={barcode}
-                          onChange={(e) => {
-                            setBarcode(e.target.value);
-                            setSearchError(null);
-                          }}
-                          autoFocus
-                          disabled={isSearching}
-                          className="rounded-lg border-[#EAE7E0] bg-white pl-10 font-sans-display text-[14px] text-nham-text"
-                        />
-                      </div>
-                      {searchError && (
-                        <div className="space-y-2 rounded-lg bg-nham-danger/10 p-3 font-sans-display text-[13px] text-nham-danger">
-                          <p>{searchError}</p>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setScanType('ocr');
-                              setSearchError(null);
-                            }}
-                            className="block font-medium text-[12px] text-nham-accent hover:underline"
-                          >
-                            {t('ocrFallbackPrompt')} &rarr;
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <BarcodeManualInput
+                      barcode={barcode}
+                      onBarcodeChange={(val) => {
+                        setBarcode(val);
+                        setSearchError(null);
+                      }}
+                      isSearching={isSearching}
+                      searchError={searchError}
+                      placeholderText={t('barcodePlaceholder')}
+                      fallbackPromptText={t('ocrFallbackPrompt')}
+                      onFallbackClick={() => {
+                        setScanType('ocr');
+                        setSearchError(null);
+                      }}
+                    />
                   )}
                 </div>
 

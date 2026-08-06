@@ -13,14 +13,15 @@ Extraction Instructions:
    - "per_100g": Numbers are strictly per 100g or 100ml.
    - "per_serving": Numbers are strictly per serving (khẩu phần / phần / gói).
    - "both": Table displays dual columns (Per 100g and Per Serving).
-3. Extract gram weight of one serving if specified (e.g. 45 for "1 bar (45g)").
-4. Extract nutrition metrics cleanly. Convert values strictly to standard units:
+3. Extract weight or volume of one serving if specified (e.g. 45 for "45g bar", 250 for "250ml box").
+4. Identify servingSizeUnit as "g" for solid food items or "ml" for liquid items/beverages (sữa, nước ngọt, sinh tố, vv.).
+5. Extract nutrition metrics cleanly. Convert values strictly to standard units:
    - Calories: kcal
    - Protein, Carbohydrates, Fat, Dietary Fiber: grams (g)
    - Sodium, Calcium, Iron, Potassium, Vitamin C: milligrams (mg)
    - Vitamin A, Vitamin D: micrograms (mcg)
-5. Omit any unmapped or unsupported label fields (e.g. cholesterol, trans fat, added sugars, saturated fat). Return null for any supported field not present in the scan.
-6. Rate extraction confidence ('high', 'medium', 'low') based on image clarity, blur, or obstruction.
+6. Omit any unmapped or unsupported label fields (e.g. cholesterol, trans fat, added sugars, saturated fat). Return null for any supported field not present in the scan.
+7. Rate extraction confidence ('high', 'medium', 'low') based on image clarity, blur, or obstruction.
 `;
 
 export interface ScanLabelOptions {
