@@ -140,9 +140,13 @@ export async function runPhase3(opts: Phase3Options): Promise<string[]> {
     const valueRows = ids.map((id) => {
       const namePrimary = cp1[id].name_primary_vi.replace(/'/g, "''");
       const alt = validNameAlt(cp2[id], id);
+      // NULL must carry the array type: a chunk whose rows are ALL null would
+      // otherwise leave the VALUES column inferred as text, and the UPDATE
+      // fails with `column "name_alt" is of type text[] but expression is of
+      // type text`.
       const nameAlt = alt
         ? `ARRAY[${alt.map((a) => `'${a.replace(/'/g, "''")}'`).join(',')}]`
-        : 'NULL';
+        : 'NULL::text[]';
       const safeId = id.replace(/'/g, "''");
       return `('${safeId}', '${namePrimary}', ${nameAlt})`;
     });
