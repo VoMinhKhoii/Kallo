@@ -1080,6 +1080,22 @@
       "stage_failed": "Couldn't add this meal. Please try again.",
       "server_error": "Something went wrong. Please try again."
     },
+    "ocrTab": "Scan Label",
+    "ocrDialogTitle": "Scan Nutrition Label",
+    "ocrDialogDesc": "Take or upload a photo of the product's nutrition table to extract calories and macros automatically.",
+    "ocrUploadTab": "Upload Photo",
+    "ocrUploadHint": "Upload or take a photo of the Nutrition Facts table",
+    "ocrCompressing": "Optimizing image...",
+    "ocrScanning": "Analyzing nutrition table with AI...",
+    "ocrReviewTitle": "Verify Extracted Nutrition",
+    "ocrReviewDesc": "Review and tweak values before adding to your log.",
+    "ocrFallbackPrompt": "Barcode missing? Scan Nutrition Label instead",
+    "ocrError": {
+      "invalid_image": "Please upload a clear image of a nutrition facts table.",
+      "no_label_detected": "No nutrition table detected in this photo. Try a clearer close-up.",
+      "rate_limited": "The OCR service is busy. Please try again in a moment.",
+      "server_error": "Could not scan label. Please try again."
+    },
     "submit": "Analyze",
     "stopAnalyzing": "Stop analyzing",
     "analyzing": "Analyzing your meal…",

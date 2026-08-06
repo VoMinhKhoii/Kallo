@@ -3,8 +3,8 @@
   "version": "1.11.0",
   "private": true,
   "scripts": {
-    "setup:env": "bash scripts/link-worktree-env.sh",
-    "predev": "bash scripts/link-worktree-env.sh",
+    "setup:env": "node scripts/link-worktree-env.mjs",
+    "predev": "node scripts/link-worktree-env.mjs",
     "dev": "next dev",
     "dev:mobile": "bash apps/mobile-flutter/tool/dev_mobile.sh",
     "build": "next build",

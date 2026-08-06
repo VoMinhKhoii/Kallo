@@ -20,6 +20,7 @@ export interface StructuredOutputParams<T> {
   schema: ZodType<T>;
   systemPrompt: string;
   userMessage: string;
+  image?: { mimeType: string; base64Data: string };
   model: string;
   temperature?: number;
   topP?: number;
@@ -187,9 +188,21 @@ export function createGeminiClient(
       return withRetry(
         async (attempt) => {
           const callStart = Date.now();
+          const contents = params.image
+            ? [
+                {
+                  inlineData: {
+                    mimeType: params.image.mimeType,
+                    data: params.image.base64Data,
+                  },
+                },
+                params.userMessage,
+              ]
+            : params.userMessage;
+
           const response = await ai.models.generateContent({
             model: params.model,
-            contents: params.userMessage,
+            contents,
             config: {
               systemInstruction: params.systemPrompt,
               responseMimeType: 'application/json',

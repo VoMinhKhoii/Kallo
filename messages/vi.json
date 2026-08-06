@@ -1079,6 +1079,22 @@
       "stage_failed": "Không thể thêm bữa ăn này. Vui lòng thử lại.",
       "server_error": "Đã xảy ra lỗi. Vui lòng thử lại."
     },
+    "ocrTab": "Quét bảng dinh dưỡng",
+    "ocrDialogTitle": "Quét Bảng Giá Trị Dinh Dưỡng",
+    "ocrDialogDesc": "Chụp hoặc tải ảnh bảng dinh dưỡng trên bao bì để tự động trích xuất calo và macro.",
+    "ocrUploadTab": "Tải ảnh lên",
+    "ocrUploadHint": "Tải ảnh hoặc chụp bảng Thông tin dinh dưỡng",
+    "ocrCompressing": "Đang tối ưu ảnh...",
+    "ocrScanning": "AI đang phân tích bảng dinh dưỡng...",
+    "ocrReviewTitle": "Xác nhận Thông tin Dinh dưỡng",
+    "ocrReviewDesc": "Kiểm tra và điều chỉnh các chỉ số trước khi lưu.",
+    "ocrFallbackPrompt": "Không tìm thấy mã vạch? Quét bảng dinh dưỡng",
+    "ocrError": {
+      "invalid_image": "Vui lòng chọn ảnh chụp rõ nét bảng thông tin dinh dưỡng.",
+      "no_label_detected": "Không phát hiện bảng dinh dưỡng trong ảnh. Vui lòng chụp cận cảnh rõ hơn.",
+      "rate_limited": "Hệ thống đang bận. Vui lòng thử lại sau giây lát.",
+      "server_error": "Không thể quét bảng dinh dưỡng. Vui lòng thử lại sau."
+    },
     "submit": "Phân tích",
     "stopAnalyzing": "Dừng phân tích",
     "analyzing": "Đang phân tích bữa ăn…",
