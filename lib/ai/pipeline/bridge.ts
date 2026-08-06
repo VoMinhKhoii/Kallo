@@ -29,6 +29,12 @@ import type {
   UnmatchedIngredient,
 } from '../types';
 import { resolveMacroSource, scaleGroundedMacros } from './bridge-macros';
+import type {
+  CarvedOutIngredient,
+  PlausibilityPerIngredient,
+  V2BridgeOutput,
+  VerdictPerIngredient,
+} from './bridge-output';
 import {
   buildNullNutrition,
   classifyVerdict,
@@ -36,70 +42,10 @@ import {
   v2DishToV1,
   v2IngredientToV1,
 } from './bridge-verdicts';
-import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
+import { ensureIdsOnDecomposition } from './ids';
 import type { RawNutritionAdjustment } from './nutrition';
-import {
-  classifyIngredientPlausibility,
-  type IngredientPlausibility,
-} from './plausibility';
-import type {
-  GroundedEstimation,
-  GroundedIngredientEstimate,
-  MealDecompositionV2,
-} from './schemas-v2';
-
-export interface VerdictPerIngredient {
-  /** Position in the original decomposition (meal-item, ingredient) tuple. */
-  mealItemIdx: number;
-  ingredientIdx: number;
-  /** What the LLM decided. */
-  verdict: 'accepted' | 'rejected' | 'unmatched' | 'missing';
-  /** Selected candidate index inside the ingredient's candidate list when accepted. */
-  selectedCandidateIdx: number | null;
-  /** Set on rejected verdicts; passed through to telemetry. */
-  rejectReason: string | null;
-  /** Reference to the v2 grounded output (null when missing). */
-  grounded: GroundedIngredientEstimate | null;
-}
-
-/**
- * Per-ingredient plausibility trail (flat order, one entry per decomposed
- * ingredient). TELEMETRY ONLY — it does not gate: an `unresolved_estimate`
- * ingredient still ships with real grams and the user corrects the portion with
- * the visual picker. Only `bridgeV2ToV1`'s no-data carve-out withholds a row.
- */
-export interface PlausibilityPerIngredient {
-  mealItemIdx: number;
-  ingredientIdx: number;
-  /** Run-scoped ingredient id (assigned after `ensureIdsOnDecomposition`). */
-  ingredientId: string;
-  /** Ingredient display name (rawName). */
-  ingredientName: string;
-  /** Owning meal-item display name. */
-  mealItemName: string;
-  state: IngredientPlausibility;
-  /**
-   * When `state === 'unresolved_estimate'`, why. 'ambiguous_food' when the
-   * portion resolver couldn't scope the concept; 'unresolved_portion' (default)
-   * for a missing/too-wide portion. Diagnostic label for the admin trace.
-   */
-  unresolvedReason?: 'ambiguous_food' | 'unresolved_portion' | 'explicit_zero';
-}
-
-export interface V2BridgeOutput {
-  /** v1-shape decomposition with run-scoped IDs and grams emitted by Call 2. */
-  decomposition: MealDecompositionWithIds;
-  /** Matched ingredients with DB-anchored per_100g and run-scoped IDs. */
-  matched: MatchedIngredient[];
-  /** Unmatched ingredients (no candidates OR verdict=rejected). */
-  unmatched: UnmatchedIngredient[];
-  /** v1-shape RawNutritionAdjustment built from Call 2 macros. */
-  rawNutrition: RawNutritionAdjustment;
-  /** Per-ingredient verdict trail for telemetry / shadow-divergence dashboards. */
-  verdicts: VerdictPerIngredient[];
-  /** Per-ingredient plausibility classification (Phase 1 silent-zero kill). */
-  plausibility: PlausibilityPerIngredient[];
-}
+import { classifyIngredientPlausibility } from './plausibility';
+import type { GroundedEstimation, MealDecompositionV2 } from './schemas-v2';
 
 export function bridgeV2ToV1(args: {
   v2: MealDecompositionV2;
@@ -147,6 +93,7 @@ export function bridgeV2ToV1(args: {
     Omit<MatchedIngredient, 'ingredientId'>
   >();
   const unmatched: UnmatchedIngredient[] = [];
+  const carvedOut: CarvedOutIngredient[] = [];
   const rawMealItems: RawNutritionAdjustment['mealItems'] = [];
   // Per-flat-index plausibility partial (ingredientId attached after id assignment).
   const plausibilityPartialByFlatIdx = new Map<
@@ -282,6 +229,13 @@ export function bridgeV2ToV1(args: {
         console.warn(
           `[bridge] no_data_carveout: dropped "${ing.rawName}" in "${mi.name}" (${macroSource.reason}, state=${state})`
         );
+        if (macroSource.reason !== 'explicit_zero') {
+          carvedOut.push({
+            mealItemName: mi.name,
+            ingredientName: ing.rawName,
+            reason: macroSource.reason,
+          });
+        }
         v1Ings.push(v2IngredientToV1(ing, cookingMethodForIng, 0, undefined));
         flatIngredientIdx++;
         return;
@@ -393,5 +347,6 @@ export function bridgeV2ToV1(args: {
     rawNutrition,
     verdicts,
     plausibility,
+    carvedOut,
   };
 }

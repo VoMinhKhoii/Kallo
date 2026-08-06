@@ -364,9 +364,14 @@ export interface PipelineUnresolved {
   mealItemName: string;
   /** Display name for the failed item. */
   ingredientName: string;
-  /** Transient infra failure, NOT a gap in the user's input. */
-  reason: 'processing_incomplete';
-  /** Count of meal items whose chunk failed. */
+  /**
+   * 'processing_incomplete' — transient infra failure (a Call-2 chunk failed
+   * after retries), NOT a gap in the user's input.
+   * 'no_macro_data' — the bridge withheld an ingredient that had no usable
+   * macro source, so the meal's totals would silently under-count real food.
+   */
+  reason: 'processing_incomplete' | 'no_macro_data';
+  /** Count of meal items whose chunk failed, or ingredients withheld. */
   unresolvedCount: number;
 }
 

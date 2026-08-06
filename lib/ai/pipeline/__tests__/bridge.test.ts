@@ -1094,3 +1094,181 @@ describe('bridgeV2ToV1 — unmatched staple with an OMITTED carb triple (mì gó
     expect(out.rawNutrition.mealItems).toHaveLength(1);
   });
 });
+
+describe('completeness gate — per-ingredient, not per-meal', () => {
+  // The route's `empty_nutrition` check is `meal.items.some(item =>
+  // item.macros.calories !== 0 || item.macros.protein !== 0)`. One healthy
+  // item satisfies it for the WHOLE meal, so a fully-withheld sibling rode
+  // along invisibly: "1 tô mì gói + sữa" persisted a 0g / 0 kcal "Mì gói"
+  // row next to a 152 kcal "Sữa tươi" row and booked the day at 152 kcal.
+  function twoItemMeal(): MealDecompositionV2 {
+    return {
+      isFood: true,
+      mealSlot: 'breakfast',
+      mealItems: [
+        {
+          name: 'Mì gói',
+          cookingMethod: 'nấu',
+          ingredients: [{ rawName: 'mì gói', canonicalName: 'Mì gói' }],
+        },
+        {
+          name: 'Sữa tươi',
+          cookingMethod: 'không',
+          ingredients: [{ rawName: 'sữa tươi', canonicalName: 'Sữa bò tươi' }],
+        },
+      ],
+    };
+  }
+
+  const milkMatch: IngredientV2MatchResult = {
+    ingredientIndex: 1,
+    candidates: [
+      {
+        info: {
+          ingredientName: 'sữa tươi',
+          foodCompositionId: 'fc-milk',
+          matchedName: 'Sữa bò tươi',
+          similarity: 0.95,
+          confidence: 'high',
+          state: 'raw',
+          source: 'fao',
+          matchType: 'vector',
+        },
+        nutrition: {
+          ...NULL_NUTRITION_VALUES,
+          caloriesKcal: 74,
+          proteinG: 3.9,
+          carbohydrateG: 4.8,
+          fatG: 4.4,
+        },
+        inediblePct: null,
+      },
+    ],
+  };
+
+  function groundedFor(noodleCarbs?: {
+    low: number;
+    mid: number;
+    high: number;
+  }): GroundedEstimation {
+    return {
+      mealItems: [
+        {
+          mealItemName: 'Mì gói',
+          ingredients: [
+            {
+              ingredientName: 'mì gói',
+              grams: 350,
+              proteinG: { low: 18, mid: 20, high: 22 },
+              ...(noodleCarbs ? { carbohydrateG: noodleCarbs } : {}),
+              fatG: { low: 34, mid: 37, high: 40 },
+            },
+          ],
+        },
+        {
+          mealItemName: 'Sữa tươi',
+          ingredients: [
+            {
+              ingredientName: 'sữa tươi',
+              selectedCandidateId: 'c1',
+              grams: 200,
+              fatG: { low: 8, mid: 8.8, high: 9.5 },
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  it('gates when ONE item is withheld and a healthy sibling remains', () => {
+    const out = bridgeV2ToV1({
+      v2: twoItemMeal(),
+      matches: [{ ingredientIndex: 0, candidates: [] }, milkMatch],
+      grounded: groundedFor(),
+      mealContext: '1 tô mì gói + sữa',
+    });
+
+    // The milk survives — which is exactly why the meal-level predicate was
+    // no help. Only the per-ingredient signal can catch this.
+    expect(out.rawNutrition.mealItems).toHaveLength(1);
+    expect(out.rawNutrition.mealItems[0].ingredients[0].ingredientName).toBe(
+      'sữa tươi'
+    );
+
+    expect(out.carvedOut).toHaveLength(1);
+    expect(out.carvedOut[0]).toMatchObject({
+      mealItemName: 'Mì gói',
+      ingredientName: 'mì gói',
+      reason: 'no_anchor',
+    });
+
+    const gate = resolveCompletenessGate({
+      failedMealItemNames: [],
+      carvedOut: out.carvedOut,
+    });
+    expect(gate?.reason).toBe('no_macro_data');
+    expect(gate?.ingredientName).toBe('mì gói');
+    expect(gate?.unresolvedCount).toBe(1);
+  });
+
+  it('does not gate once every ingredient ships', () => {
+    const out = bridgeV2ToV1({
+      v2: twoItemMeal(),
+      matches: [{ ingredientIndex: 0, candidates: [] }, milkMatch],
+      grounded: groundedFor({ low: 50, mid: 55, high: 60 }),
+      mealContext: '1 tô mì gói + sữa',
+    });
+
+    expect(out.carvedOut).toEqual([]);
+    expect(out.rawNutrition.mealItems).toHaveLength(2);
+    expect(
+      resolveCompletenessGate({
+        failedMealItemNames: [],
+        carvedOut: out.carvedOut,
+      })
+    ).toBeUndefined();
+  });
+
+  it('does NOT gate on an explicit zero — the user meant that row to be absent', () => {
+    // "0 fried chicken" is a correct description, not a coverage gap.
+    const out = bridgeV2ToV1({
+      v2: v2Decomp(),
+      matches: matchResultWithCandidate(),
+      grounded: groundedAccepted(),
+      mealContext: 'm',
+      portionResolutions: [
+        {
+          grams: null,
+          provenance: 'unresolved',
+          confidence: 'none',
+          unresolvedReason: 'explicit_zero',
+          note: 'user typed an explicit zero',
+        },
+      ],
+    });
+
+    expect(out.carvedOut).toEqual([]);
+    expect(
+      resolveCompletenessGate({
+        failedMealItemNames: [],
+        carvedOut: out.carvedOut,
+      })
+    ).toBeUndefined();
+  });
+
+  it('ranks a transient chunk failure ahead of a carve-out', () => {
+    // Chunk failure is genuinely worth retrying verbatim; a carve-out usually
+    // needs the input reworded. Reporting the retryable one first is kinder.
+    const gate = resolveCompletenessGate({
+      failedMealItemNames: ['Mì gói'],
+      carvedOut: [
+        {
+          mealItemName: 'Mì gói',
+          ingredientName: 'mì gói',
+          reason: 'no_anchor',
+        },
+      ],
+    });
+    expect(gate?.reason).toBe('processing_incomplete');
+  });
+});
