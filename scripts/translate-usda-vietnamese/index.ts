@@ -69,7 +69,7 @@ if ((!phase || phase === 1) && !process.env.GOOGLE_TRANSLATE_API_KEY) {
   process.exit(1);
 }
 
-if ((!phase || phase === 2 || phase === 4) && !process.env.GEMINI_API_KEY_1) {
+if ((!phase || phase === 2 || phase === 4) && !process.env.GEMINI_API_KEY_1 && !process.env.GEMINI_API_KEY) {
   console.error(
     'Missing GEMINI_API_KEY_1..10 (needed for Phase 2 and Phase 4)'
   );
