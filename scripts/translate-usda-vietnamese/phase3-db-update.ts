@@ -153,11 +153,17 @@ export async function runPhase3(opts: Phase3Options): Promise<string[]> {
       const chunk = valueRows.slice(i, i + CHUNK_SIZE);
       const chunkIds = ids.slice(i, i + CHUNK_SIZE);
 
+      // embedding = NULL is what makes an interrupted run recoverable: a row
+      // rewritten here leaves the untranslated predicate immediately, so if
+      // the process dies before Phase 4 the only durable marker that its
+      // (English-text) embedding is stale is the NULL — which Phase 4's
+      // `embedding IS NULL` scope and the workflow's verify step both see.
       await db.execute(
         sql.raw(`
           UPDATE vietnamese_food_composition AS vfc
           SET name_primary = data.name_primary_vi,
-              name_alt = data.name_alt_arr
+              name_alt = data.name_alt_arr,
+              embedding = NULL
           FROM (VALUES ${chunk.join(',')}) AS data(id, name_primary_vi, name_alt_arr)
           WHERE vfc.id = data.id
         `)
