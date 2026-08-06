@@ -237,6 +237,21 @@ function matchesAny(name: string, patterns: RegExp[]): boolean {
   return patterns.some((p) => p.test(normalized));
 }
 
+/**
+ * Is this name a rice/noodle/bread base that MUST carry real carbs?
+ *
+ * The staple and exempt lists are the single source of truth for "is this a
+ * starch", so the bridge's no-macro-anchor carve-out asks THIS rather than
+ * keeping a second copy that could drift out of sync with the exemptions
+ * (`mì chính` = MSG, `mì căn` = seitan, konjac, broths named after dishes).
+ */
+export function isCarbStapleName(name: string): boolean {
+  return (
+    matchesAny(name, CARB_STAPLE_PATTERNS) &&
+    !matchesAny(name, CARB_STAPLE_EXEMPT_PATTERNS)
+  );
+}
+
 function hasResolvedGrams(grams: number | null): grams is number {
   return grams != null && Number.isFinite(grams) && grams > 0;
 }
@@ -292,11 +307,7 @@ export function classifyIngredientPlausibility(
   // density trips outright; a null density (carb triple omitted for an
   // unmatched staple) only trips when calories are ALSO absent, so a matched
   // staple with a null DB carb but a real energy density still passes.
-  if (
-    input.carbsPer100g !== undefined &&
-    matchesAny(name, CARB_STAPLE_PATTERNS) &&
-    !matchesAny(name, CARB_STAPLE_EXEMPT_PATTERNS)
-  ) {
+  if (input.carbsPer100g !== undefined && isCarbStapleName(name)) {
     const carbs = input.carbsPer100g;
     if (carbs != null && carbs < STAPLE_MIN_CARBS_PER_100G) {
       return 'unresolved_estimate';

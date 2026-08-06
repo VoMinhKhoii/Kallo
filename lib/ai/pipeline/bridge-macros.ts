@@ -16,6 +16,7 @@ import type { BoundedEstimate } from '../types';
 import { scaleBounded } from './bounded-macros';
 import { ZERO_TRIPLE } from './bridge-verdicts';
 import type { RawNutritionAdjustment } from './nutrition';
+import { isCarbStapleName } from './plausibility';
 import type { GroundedIngredientEstimate } from './schemas-v2';
 
 /** Why an ingredient has no usable macro source. Drives the carve-out log. */
@@ -60,8 +61,15 @@ export function resolveMacroSource(args: {
   resolvedGrams: number | null;
   /** True when the portion resolver rejected an explicit zero count. */
   explicitZero?: boolean;
+  /**
+   * Ingredient display name, for the carb-staple check below. Pass the SAME
+   * expression the plausibility classifier gets (`rawName || canonicalName`)
+   * so the two never disagree about what counts as a starch. Omitted → the
+   * staple check is skipped (backward-compatible with callers that predate it).
+   */
+  name?: string;
 }): MacroSource {
-  const { acceptedCandidate, ground, resolvedGrams, explicitZero } = args;
+  const { acceptedCandidate, ground, resolvedGrams, explicitZero, name } = args;
   if (explicitZero) return { kind: 'none', reason: 'explicit_zero' };
   if (resolvedGrams == null) return { kind: 'none', reason: 'no_portion' };
   if (ground == null) return { kind: 'none', reason: 'no_estimate' };
@@ -92,9 +100,19 @@ export function resolveMacroSource(args: {
   const fatIsTheFood = fatMid > 0 && fatMid / fatBasis >= FAT_FOOD_RATIO;
   const uncharacterized =
     ground.proteinG == null && ground.carbohydrateG == null && !fatIsTheFood;
-  return uncharacterized
-    ? { kind: 'none', reason: 'no_anchor' }
-    : { kind: 'llm' };
+  if (uncharacterized) return { kind: 'none', reason: 'no_anchor' };
+  // A STARCH with no carb triple is the same fabricated zero, one field over:
+  // "Mì gói sữa" came back P:20 F:37 C:<omitted>, so `uncharacterized` was
+  // false on the strength of protein alone and the row shipped at a literal
+  // C:0 — 412 kcal derived from 4P + 9F. Carbs ARE the food for a rice/noodle/
+  // bread base, so their absence leaves it as uncharacterized as a missing
+  // protein leaves ức gà. Scoped to a null triple only: a present-but-
+  // implausible carb stays telemetry (the staple floor in `plausibility.ts`),
+  // which is the trade the clarify ask-back's removal deliberately made.
+  if (ground.carbohydrateG == null && name != null && isCarbStapleName(name)) {
+    return { kind: 'none', reason: 'no_anchor' };
+  }
+  return { kind: 'llm' };
 }
 
 /**

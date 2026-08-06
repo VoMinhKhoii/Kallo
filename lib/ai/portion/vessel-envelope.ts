@@ -35,8 +35,13 @@ export interface VesselEnvelope {
 
 const SOUP_INGREDIENT = /nước dùng|nước lèo|nước súp|canh|súp|broth|stock/i;
 const SOUP_METHOD = /ninh|nấu canh/i;
+// `mì gói` and friends are listed explicitly rather than as a bare `mì`: the
+// bare form also covers dry-tossed dishes (mì xào, mì khô) that are NOT soup,
+// while an instant-noodle bowl essentially always is. Without these, "1 tô mì
+// gói" classified `solid` and got a dense-food gram band for what is mostly
+// broth — the same tier a bowl of phở correctly avoids.
 const SOUP_DISH =
-  /phở|pho\b|bún bò|bún riêu|hủ tiếu|miến|bánh canh|cháo|ramen|udon|soba|noodle soup|soup|stew|congee|laksa|malatang/i;
+  /phở|pho\b|bún bò|bún riêu|hủ tiếu|miến|bánh canh|cháo|mì gói|mì tôm|mì ăn liền|mi goi|mi tom|mi an lien|instant noodle|ramen|udon|soba|noodle soup|soup|stew|congee|laksa|malatang/i;
 const AIRY_DISH = /gỏi|nộm|salad|rau trộn/i;
 const LARGE_BOWL_DISH = /ramen|donburi|malatang|lẩu mini/i;
 const FOOD_IN_CUP =

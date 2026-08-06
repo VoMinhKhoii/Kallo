@@ -40,6 +40,20 @@ export interface ExactAlias {
  * Deliberately LEFT OUT (no correct DB row exists yet — a later phase adds
  * curated rows): Bánh canh (tapioca-based, no honest proxy), Hành phi.
  *
+ * Also left out, pending a DB probe: Mì gói / mì tôm / mì ăn liền (instant
+ * noodles). A prod meal logged as "1 tô mì gói + sữa" retrieved ZERO
+ * candidates and shipped at 0g carbs. The 526-row FAO seed has no instant
+ * noodle entry, but the live table also carries USDA SR Legacy rows and the
+ * importer excludes neither group 19 (Soups) nor 20 (Cereal Grains and
+ * Pasta) — so a ramen row may well exist under a machine-translated name and
+ * simply score under the acceptance floors. An alias whose `target` names a
+ * row that is not there is worse than none: it replaces the user's own words
+ * with a query the lexical arm matches even less well. Settle it first:
+ *   bun --env-file=.env.local scripts/probe_food_coverage.ts "mì gói"
+ * then add the alias pointing at whatever `name_primary` the fix lands on.
+ * The portion side is already in place (`instant-noodle-pack` concept +
+ * `gói` unit + an 80g dry-packet prior in `lib/ai/portion/`).
+ *
  * Keys are normalized (NFC + lowercase + trim) for locale-agnostic lookup.
  */
 export const EXACT_ALIASES: Record<string, ExactAlias> = {

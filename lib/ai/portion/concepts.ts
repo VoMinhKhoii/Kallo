@@ -57,6 +57,14 @@ export const CONCEPTS: Record<ConceptId, FoodConcept> = {
     // ("Gạo tẻ máy") are handled by the matcher. Portion prior only.
     label: 'Cơm (cooked white rice)',
   },
+  'instant-noodle-pack': {
+    id: 'instant-noodle-pack',
+    // No instant-noodle row in FAO source_id=1 (the only `mì` entries are
+    // "Bột mì" / wheat flour). `dbRowName` is deliberately unset until the
+    // composition row lands — the prior still supplies the WEIGHT of a packet,
+    // which is what "1 gói mì" was missing, and nutrition matching owns the row.
+    label: 'Mì gói (instant noodle packet)',
+  },
 };
 
 /**
@@ -89,6 +97,18 @@ const ALIAS_TO_CONCEPT: Record<string, ConceptResolution> = {
   // -- cooked rice ------------------------------------------------------
   cơm: 'cooked-rice',
   'cơm trắng': 'cooked-rice',
+  // -- instant noodles --------------------------------------------------
+  // Only the QUALIFIED forms. Bare `mì` stays out: it covers fresh egg
+  // noodles and wheat flour too, so mapping it here would put a packet's
+  // weight on a bowl of mì Quảng.
+  'mì gói': 'instant-noodle-pack',
+  'mi goi': 'instant-noodle-pack',
+  'mì tôm': 'instant-noodle-pack',
+  'mi tom': 'instant-noodle-pack',
+  'mì ăn liền': 'instant-noodle-pack',
+  'mi an lien': 'instant-noodle-pack',
+  'instant noodles': 'instant-noodle-pack',
+  'instant noodle': 'instant-noodle-pack',
   // -- Explicitly ambiguous generics (route to clarify, NEVER a number) --
   bánh: AMBIGUOUS,
   bun: AMBIGUOUS,

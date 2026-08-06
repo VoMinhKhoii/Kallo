@@ -922,3 +922,175 @@ describe('bridgeV2ToV1 — carb-staple floor (bánh ướt chả bò)', () => {
     expect(unresolved?.unresolvedCount).toBe(1);
   });
 });
+
+describe('bridgeV2ToV1 — unmatched staple with an OMITTED carb triple (mì gói)', () => {
+  // Prod repro: "1 tô mì gói + sữa" persisted at P:20 C:0 F:37, 412 kcal
+  // (= 4·20 + 4·0 + 9·37). Retrieval found nothing, so Call 2 owned all four
+  // macros — and it simply did not emit `carbohydrateG`, which `schemas-v2`
+  // marks optional. `scaleGroundedMacros` turned the absence into a literal 0
+  // and `uncharacterized` stayed false because protein WAS present.
+  function miGoiDecomp(rawName = 'Mì gói sữa'): MealDecompositionV2 {
+    return {
+      isFood: true,
+      mealSlot: 'breakfast',
+      mealItems: [
+        {
+          name: 'Mì gói sữa',
+          cookingMethod: 'nấu',
+          ingredients: [{ rawName, canonicalName: rawName }],
+        },
+      ],
+    };
+  }
+
+  function miGoiGrounded(carbohydrateG?: {
+    low: number;
+    mid: number;
+    high: number;
+  }): GroundedEstimation {
+    return {
+      mealItems: [
+        {
+          mealItemName: 'Mì gói sữa',
+          ingredients: [
+            {
+              ingredientName: 'Mì gói sữa',
+              grams: 350,
+              proteinG: { low: 18, mid: 20, high: 22 },
+              ...(carbohydrateG ? { carbohydrateG } : {}),
+              fatG: { low: 34, mid: 37, high: 40 },
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  it('withholds the row instead of shipping a fabricated C:0', () => {
+    const out = bridgeV2ToV1({
+      v2: miGoiDecomp(),
+      matches: [{ ingredientIndex: 0, candidates: [] }],
+      grounded: miGoiGrounded(),
+      mealContext: '1 tô mì gói + sữa',
+    });
+
+    expect(out.rawNutrition.mealItems).toHaveLength(0);
+    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(0);
+    expect(out.plausibility[0].state).toBe('unresolved_estimate');
+  });
+
+  it('ships the row once Call 2 actually emits carbs', () => {
+    // The guard keys on the OMISSION, not on the name: a staple that arrives
+    // with real carbs must still reach the user.
+    const out = bridgeV2ToV1({
+      v2: miGoiDecomp(),
+      matches: [{ ingredientIndex: 0, candidates: [] }],
+      grounded: miGoiGrounded({ low: 50, mid: 55, high: 60 }),
+      mealContext: '1 tô mì gói + sữa',
+    });
+
+    expect(out.rawNutrition.mealItems).toHaveLength(1);
+    expect(out.rawNutrition.mealItems[0].ingredients[0].carbohydrateG.mid).toBe(
+      55
+    );
+  });
+
+  it('leaves a non-staple alone when only its carb triple is omitted', () => {
+    // Regression guard for the butter/milk-tea case: `sữa tươi` is not a
+    // starch, so an omitted carb is not evidence that nothing resolved.
+    const out = bridgeV2ToV1({
+      v2: miGoiDecomp('sữa tươi'),
+      matches: [{ ingredientIndex: 0, candidates: [] }],
+      grounded: {
+        mealItems: [
+          {
+            mealItemName: 'Mì gói sữa',
+            ingredients: [
+              {
+                ingredientName: 'sữa tươi',
+                grams: 200,
+                proteinG: { low: 6, mid: 7, high: 8 },
+                fatG: { low: 7, mid: 8, high: 9 },
+              },
+            ],
+          },
+        ],
+      },
+      mealContext: 'm',
+    });
+
+    expect(out.rawNutrition.mealItems).toHaveLength(1);
+  });
+
+  it('leaves an EXEMPT `mì` word alone (mì chính = MSG)', () => {
+    // `viWord('mì')` matches "mì chính", but the exempt list rescues it —
+    // MSG genuinely has no carbs and must not be withheld.
+    const out = bridgeV2ToV1({
+      v2: miGoiDecomp('mì chính'),
+      matches: [{ ingredientIndex: 0, candidates: [] }],
+      grounded: {
+        mealItems: [
+          {
+            mealItemName: 'Mì gói sữa',
+            ingredients: [
+              {
+                ingredientName: 'mì chính',
+                grams: 3,
+                proteinG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 0, mid: 0, high: 0 },
+              },
+            ],
+          },
+        ],
+      },
+      mealContext: 'm',
+    });
+
+    expect(out.rawNutrition.mealItems).toHaveLength(1);
+  });
+
+  it('never fires for a MATCHED staple — the DB row anchors its carbs', () => {
+    // A matched ingredient is SUPPOSED to omit the triple (D3 slimming); the
+    // server re-derives P/C/kcal from the row, so withholding here would
+    // delete a correctly-resolved ingredient.
+    const matches: IngredientV2MatchResult[] = [
+      {
+        ingredientIndex: 0,
+        candidates: [
+          {
+            info: {
+              ingredientName: 'Mì gói sữa',
+              foodCompositionId: 'fc-instant-noodle',
+              matchedName: 'Mì ăn liền',
+              similarity: 0.91,
+              confidence: 'high',
+              state: 'raw',
+              source: 'usda',
+              matchType: 'vector',
+            },
+            nutrition: {
+              ...NULL_NUTRITION_VALUES,
+              caloriesKcal: 450,
+              proteinG: 10,
+              carbohydrateG: 60,
+              fatG: 18,
+            },
+            inediblePct: null,
+          },
+        ],
+      },
+    ];
+    const grounded = miGoiGrounded();
+    grounded.mealItems[0].ingredients[0].selectedCandidateId = 'c1';
+
+    const out = bridgeV2ToV1({
+      v2: miGoiDecomp(),
+      matches,
+      grounded,
+      mealContext: 'm',
+    });
+
+    expect(out.matched).toHaveLength(1);
+    expect(out.rawNutrition.mealItems).toHaveLength(1);
+  });
+});

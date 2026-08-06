@@ -44,6 +44,7 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
     - 1 miếng cá ≈ 60g (50–70g).
     - 1 cây nem lụi ≈ 25g (22–28g).
     - 1 phần protein áp chảo ≈ 150g (140–160g).
+    - 1 gói mì ≈ 80g (70–90g).
   Per-food yield priors (raw → cooked):
     - rice nấu: cooked ≈ 2.6× raw weight (absorbs water).
     - chicken nướng/luộc: cooked ≈ 0.75× raw.

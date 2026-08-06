@@ -1,5 +1,6 @@
 import { ArrowRight, CheckCircle2, CircleSlash, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CandidatePool } from './matching/candidate-pool';
 import { pickConfidenceTone } from './stage-primitives';
 import type { MatchDiagnosticRow } from './types';
 
@@ -119,6 +120,8 @@ export function MatchRow({ row }: { row: MatchDiagnosticRow }) {
             )}
           </div>
         )}
+
+      <CandidatePool candidates={row.candidates} />
     </li>
   );
 }

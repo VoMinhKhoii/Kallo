@@ -223,6 +223,7 @@ export function bridgeV2ToV1(args: {
         ground,
         resolvedGrams,
         explicitZero: portion?.unresolvedReason === 'explicit_zero',
+        name: ing.rawName || ing.canonicalName,
       });
       // A DB row anchors P/C/kcal; anything else rides Call 2's triple.
       const isDbAnchored = macroSource.kind === 'db';

@@ -219,3 +219,59 @@ describe('unit token tables agree', () => {
     }
   });
 });
+
+describe('instant noodles — the `1 gói mì` path', () => {
+  it('types `gói` as a count unit, accented or not', () => {
+    // Prod gap: `gói` was absent from the lexicon entirely, so the most
+    // ordinary phrasing for instant noodles carried no unit the resolver
+    // could hang a prior on and the portion stayed unanchored.
+    expect(resolveUnitType('gói')).toBe('count');
+    expect(resolveUnitType('GÓI')).toBe('count');
+    expect(resolveUnitType('goi')).toBe('count');
+    expect(resolveUnitType('pack')).toBe('count');
+    expect(resolveUnitType('packets')).toBe('count');
+  });
+
+  it('adds no folded-key collision', () => {
+    expect(foldCollisions()).toEqual([]);
+  });
+
+  it('resolves qualified surface forms to the packet concept', () => {
+    expect(resolveConcept('mì gói')).toBe('instant-noodle-pack');
+    expect(resolveConcept('Mì Tôm')).toBe('instant-noodle-pack');
+    expect(resolveConcept('mi an lien')).toBe('instant-noodle-pack');
+    expect(resolveConcept('instant noodles')).toBe('instant-noodle-pack');
+  });
+
+  it('leaves bare `mì` unresolved rather than guessing a packet', () => {
+    // `mì` also covers fresh egg noodles and wheat flour; mapping it here
+    // would put a packet's weight on a bowl of mì Quảng.
+    expect(resolveConcept('mì')).toBeNull();
+    expect(resolveConcept('mì xào')).toBeNull();
+  });
+
+  it('supplies a DRY packet weight, and scales with the size cue', () => {
+    const prior = findPrior({
+      conceptId: 'instant-noodle-pack',
+      unitType: 'count',
+      locale: 'vi',
+      form: 'raw',
+    });
+    expect(prior).not.toBeNull();
+    expect(prior?.perUnit.mid).toBe(80);
+    expect(applySizeModifier(prior!.perUnit, 'small')).toBe(70);
+    expect(applySizeModifier(prior!.perUnit, 'large')).toBe(90);
+    // Dry, not prepared: noodles roughly triple in mass once cooked, so a
+    // band anywhere near a bowl's mass would be the wrong basis entirely.
+    expect(prior?.form).toBe('raw');
+    expect(prior?.perUnit.high).toBeLessThan(150);
+  });
+
+  it('has a concept record with no premature DB row link', () => {
+    const concept = getConcept('instant-noodle-pack');
+    expect(concept?.label).toContain('Mì gói');
+    // No FAO source_id=1 instant-noodle row exists yet; claiming one would
+    // point the matcher at a row that is not there.
+    expect(concept?.dbRowName).toBeUndefined();
+  });
+});
