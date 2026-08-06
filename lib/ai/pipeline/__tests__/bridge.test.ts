@@ -1093,6 +1093,8 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
       mealItemName: 'Mì gói',
       ingredientName: 'mì gói',
       reason: 'no_portion',
+      mealItemIdx: 0,
+      mealItemIngredientCount: 1,
     });
 
     const gate = resolveCompletenessGate({
@@ -1159,9 +1161,100 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
           mealItemName: 'Mì gói',
           ingredientName: 'mì gói',
           reason: 'no_estimate',
+          mealItemIdx: 0,
+          mealItemIngredientCount: 1,
         },
       ],
     });
     expect(gate?.reason).toBe('processing_incomplete');
+  });
+});
+
+describe('completeness gate — only MATERIAL carve-outs fail the meal', () => {
+  it('ships a dropped garnish that has surviving siblings', () => {
+    // Throwing away a 99%-correct meal because the LLM forgot to estimate the
+    // scallions is worse for the user than shipping them at zero.
+    expect(
+      resolveCompletenessGate({
+        failedMealItemNames: [],
+        carvedOut: [
+          {
+            mealItemName: 'Bún chả',
+            ingredientName: 'hành lá',
+            reason: 'no_estimate',
+            mealItemIdx: 0,
+            mealItemIngredientCount: 4,
+          },
+        ],
+      })
+    ).toBeUndefined();
+  });
+
+  it('gates when a meal item loses EVERY one of its ingredients', () => {
+    const gate = resolveCompletenessGate({
+      failedMealItemNames: [],
+      carvedOut: [
+        {
+          mealItemName: 'Salad',
+          ingredientName: 'xà lách',
+          reason: 'no_estimate',
+          mealItemIdx: 1,
+          mealItemIngredientCount: 2,
+        },
+        {
+          mealItemName: 'Salad',
+          ingredientName: 'cà chua',
+          reason: 'no_portion',
+          mealItemIdx: 1,
+          mealItemIngredientCount: 2,
+        },
+      ],
+    });
+    expect(gate?.reason).toBe('no_macro_data');
+    expect(gate?.mealItemName).toBe('Salad');
+    expect(gate?.unresolvedCount).toBe(2);
+  });
+
+  it('gates on a carved-out carb staple even with surviving siblings', () => {
+    // Rice carries the bulk of the calories — dropping it halves the meal.
+    const gate = resolveCompletenessGate({
+      failedMealItemNames: [],
+      carvedOut: [
+        {
+          mealItemName: 'Cơm tấm',
+          ingredientName: 'cơm trắng',
+          reason: 'no_portion',
+          mealItemIdx: 0,
+          mealItemIngredientCount: 3,
+        },
+      ],
+    });
+    expect(gate?.reason).toBe('no_macro_data');
+    expect(gate?.ingredientName).toBe('cơm trắng');
+    expect(gate?.unresolvedCount).toBe(1);
+  });
+
+  it('reports only the material carve-outs, not the immaterial siblings', () => {
+    const gate = resolveCompletenessGate({
+      failedMealItemNames: [],
+      carvedOut: [
+        {
+          mealItemName: 'Cơm tấm',
+          ingredientName: 'rau thơm',
+          reason: 'no_estimate',
+          mealItemIdx: 0,
+          mealItemIngredientCount: 3,
+        },
+        {
+          mealItemName: 'Cơm tấm',
+          ingredientName: 'cơm trắng',
+          reason: 'no_portion',
+          mealItemIdx: 0,
+          mealItemIngredientCount: 3,
+        },
+      ],
+    });
+    expect(gate?.unresolvedCount).toBe(1);
+    expect(gate?.carvedOutNames).toEqual(['cơm trắng']);
   });
 });

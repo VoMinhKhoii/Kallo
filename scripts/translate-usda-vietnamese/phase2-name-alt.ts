@@ -189,6 +189,13 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
     ? [opts.category]
     : await resolveInScopeCategories();
 
+  // An empty scope means every row is already translated. Interpolating it
+  // would emit `type_en IN ()` — a syntax error — so stop here instead.
+  if (categoryFilter.length === 0) {
+    console.log('  ✓ Phase 2 complete (nothing left untranslated)');
+    return checkpoint;
+  }
+
   // Fetch items that have Phase 1 translations but no Phase 2 name_alt yet
   const catPlaceholders = categoryFilter
     .map((c) => `'${c.replace(/'/g, "''")}'`)

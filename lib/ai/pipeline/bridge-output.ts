@@ -75,6 +75,10 @@ export interface V2BridgeOutput {
    * silently left the day's numbers. The console.warn was the only trace.
    * Surfacing the list lets the completeness gate fail the analysis instead.
    *
+   * The FULL list is reported here regardless of materiality — the gate decides
+   * which entries are worth failing on (see `resolveCompletenessGate`), while
+   * telemetry keeps every carve-out.
+   *
    * `explicit_zero` is deliberately NOT reported: "0 fried chicken" means the
    * row is SUPPOSED to be absent, and gating there would break a meal the
    * user described correctly.
@@ -87,4 +91,11 @@ export interface CarvedOutIngredient {
   mealItemName: string;
   ingredientName: string;
   reason: NoMacroReason;
+  /** Owning meal item's index — disambiguates two items sharing a name. */
+  mealItemIdx: number;
+  /**
+   * How many ingredients the owning meal item has in total. The gate needs it
+   * to tell "the whole item was withheld" from "one garnish among five".
+   */
+  mealItemIngredientCount: number;
 }

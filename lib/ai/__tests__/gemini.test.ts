@@ -439,13 +439,18 @@ describe('GeminiClient', () => {
           text: JSON.stringify({ name: 'test', value: 42 }),
         });
 
+      // ...and it re-asks IMMEDIATELY. Backoff exists to relieve provider
+      // pressure; a malformed-but-200 response applied none, so sleeping only
+      // burns the shared chunk wall-clock budget. baseDelayMs is huge here so a
+      // regression to exponential backoff blows the elapsed assertion.
       const client = createGeminiClient(
         { provider: 'ai-studio', apiKey: 'test-key' },
         {
           maxRetries: 3,
-          baseDelayMs: 1,
+          baseDelayMs: 10_000,
         }
       );
+      const startedAt = Date.now();
       const result = await client.generateStructuredOutput({
         schema: z.object({ name: z.string(), value: z.number() }),
         systemPrompt: 'test',
@@ -454,6 +459,7 @@ describe('GeminiClient', () => {
       });
       expect(result).toEqual({ name: 'test', value: 42 });
       expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+      expect(Date.now() - startedAt).toBeLessThan(1000);
     });
 
     it('does not retry on non-retryable 4xx errors', async () => {

@@ -18,7 +18,8 @@
  *
  * Environment variables:
  *   GOOGLE_TRANSLATE_API_KEY — Google Cloud Translation API key
- *   GEMINI_API_KEY_1..10    — 10 Gemini API keys (different GCP projects)
+ *   GEMINI_API_KEY           — single Gemini key, or GEMINI_API_KEY_1..10 for
+ *                              10 keys across different GCP projects
  *   DATABASE_URL             — Supabase connection string
  */
 
@@ -69,9 +70,12 @@ if ((!phase || phase === 1) && !process.env.GOOGLE_TRANSLATE_API_KEY) {
   process.exit(1);
 }
 
-if ((!phase || phase === 2 || phase === 4) && !process.env.GEMINI_API_KEY_1 && !process.env.GEMINI_API_KEY) {
+const needsGemini = !phase || phase === 2 || phase === 4;
+const hasGeminiKey =
+  !!process.env.GEMINI_API_KEY_1 || !!process.env.GEMINI_API_KEY;
+if (needsGemini && !hasGeminiKey) {
   console.error(
-    'Missing GEMINI_API_KEY_1..10 (needed for Phase 2 and Phase 4)'
+    'Missing GEMINI_API_KEY (or GEMINI_API_KEY_1..10) — needed for Phase 2 and Phase 4'
   );
   process.exit(1);
 }
@@ -126,7 +130,7 @@ async function main() {
 
     // Phase 4: Re-embed
     if (!phase || phase === 4) {
-      await runPhase4({ dryRun, category, updatedIds });
+      await runPhase4({ dryRun, updatedIds });
     }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);

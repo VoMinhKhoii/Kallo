@@ -147,11 +147,13 @@ export function resolveStreamingV2MealItem(
 
     const base = computeBaseFromVerdict(rawIng, candidates, grams);
 
-    // Phase 4 (D3): matched ingredients omit caloriesKcal/proteinG/
-    // carbohydrateG in Call-2 output because the server overwrites them from
-    // the DB anchor. Default an omitted triple to ZERO_TRIPLE — harmless for
-    // matched (resolveIngredientMacros replaces it), and a safe floor for the
-    // rare unmatched ingredient that drops a triple. fatG is always emitted.
+    // Every macro triple is schema-REQUIRED now, so a well-formed Call-2
+    // response can never omit one. These defaults survive for exactly one
+    // reason: this speculative streaming path reads partial chunks with no zod
+    // parse, so a triple can still be absent mid-stream from truncation. Zero
+    // is the safe placeholder — a matched ingredient has it replaced by
+    // resolveIngredientMacros from the DB anchor, and the final reconciliation
+    // re-parses the complete payload.
     const rawAdjustment: RawNutritionAdjustment['mealItems'][number]['ingredients'][number] =
       {
         ingredientName: rawIng.ingredientName,

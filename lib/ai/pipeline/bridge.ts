@@ -229,6 +229,8 @@ export function bridgeV2ToV1(args: {
             mealItemName: mi.name,
             ingredientName: ing.rawName,
             reason: macroSource.reason,
+            mealItemIdx,
+            mealItemIngredientCount: mi.ingredients.length,
           });
         }
         v1Ings.push(v2IngredientToV1(ing, cookingMethodForIng, 0, undefined));

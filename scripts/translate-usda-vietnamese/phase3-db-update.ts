@@ -11,12 +11,41 @@ import {
   type Checkpoint1,
   type Checkpoint2,
   getDb,
+  type NameAltResult,
   resolveInScopeCategories,
 } from './shared';
 
 interface Phase3Options {
   dryRun: boolean;
   category?: string;
+}
+
+const MAX_NAME_LENGTH = 200;
+const MAX_NAME_ALT_ENTRIES = 10;
+
+// The checkpoints are restored from the CI cache and written verbatim into
+// prod name_primary/name_alt, so treat them as untrusted input: a truncated or
+// hand-edited cache must not corrupt the food table. Rows the DB no longer
+// reports as untranslated are already excluded by the query below.
+function isValidName(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.trim().length > 0 &&
+    value.length <= MAX_NAME_LENGTH
+  );
+}
+
+function validNameAlt(
+  entry: NameAltResult | undefined,
+  id: string
+): string[] | null {
+  const alt = entry?.name_alt;
+  if (!Array.isArray(alt) || alt.length === 0) return null;
+  if (alt.length > MAX_NAME_ALT_ENTRIES || !alt.every(isValidName)) {
+    console.warn(`    ⚠ Skipping name_alt for ${id}: invalid checkpoint entry`);
+    return null;
+  }
+  return alt;
 }
 
 export async function runPhase3(opts: Phase3Options): Promise<string[]> {
@@ -42,6 +71,14 @@ export async function runPhase3(opts: Phase3Options): Promise<string[]> {
   const categoryFilter = opts.category
     ? [opts.category]
     : await resolveInScopeCategories();
+
+  // An empty scope means every row is already translated. Interpolating it
+  // would emit `type_en IN ()` — a syntax error — so stop here instead.
+  if (categoryFilter.length === 0) {
+    console.log('  ✓ Phase 3 complete (nothing left untranslated)');
+    return [];
+  }
+
   const catPlaceholders = categoryFilter
     .map((c) => `'${c.replace(/'/g, "''")}'`)
     .join(',');
@@ -57,8 +94,16 @@ export async function runPhase3(opts: Phase3Options): Promise<string[]> {
     `)
   )) as unknown as { id: string; type_en: string }[];
 
-  // Only update items that have Phase 1 translations AND are still untranslated in DB
-  const updateable = rows.filter((r) => cp1[r.id]);
+  // Only update items that have a VALID Phase 1 translation AND are still
+  // untranslated in DB
+  const updateable = rows.filter((r) => {
+    if (!cp1[r.id]) return false;
+    if (!isValidName(cp1[r.id].name_primary_vi)) {
+      console.warn(`    ⚠ Skipping ${r.id}: invalid checkpoint translation`);
+      return false;
+    }
+    return true;
+  });
 
   if (updateable.length === 0) {
     console.log(
@@ -94,8 +139,9 @@ export async function runPhase3(opts: Phase3Options): Promise<string[]> {
     // Build VALUES clause for set-based update
     const valueRows = ids.map((id) => {
       const namePrimary = cp1[id].name_primary_vi.replace(/'/g, "''");
-      const nameAlt = cp2[id]
-        ? `ARRAY[${cp2[id].name_alt.map((a) => `'${a.replace(/'/g, "''")}'`).join(',')}]`
+      const alt = validNameAlt(cp2[id], id);
+      const nameAlt = alt
+        ? `ARRAY[${alt.map((a) => `'${a.replace(/'/g, "''")}'`).join(',')}]`
         : 'NULL';
       const safeId = id.replace(/'/g, "''");
       return `('${safeId}', '${namePrimary}', ${nameAlt})`;

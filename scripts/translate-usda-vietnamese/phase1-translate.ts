@@ -96,6 +96,13 @@ export async function runPhase1(opts: TranslateOptions): Promise<Checkpoint1> {
     ? [opts.category]
     : await resolveInScopeCategories();
 
+  // An empty scope means every row is already translated. Interpolating it
+  // would emit `type_en IN ()` — a syntax error — so stop here instead.
+  if (categoryFilter.length === 0) {
+    console.log('  ✓ Phase 1 complete (nothing left untranslated)');
+    return checkpoint;
+  }
+
   const catPlaceholders = categoryFilter
     .map((c) => `'${c.replace(/'/g, "''")}'`)
     .join(',');

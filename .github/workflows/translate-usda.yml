@@ -32,6 +32,9 @@ jobs:
     env:
       LEASE_BUCKET: ${{ vars.GCS_PROD_LEASE_BUCKET }}
       LEASE_OBJECT: prod/lease.json
+      # The lease's 2h default would expire mid-run and let a deploy steal the
+      # lock while phase 3/4 are still writing; 4h outruns the 180m timeout.
+      STAGING_LEASE_TTL_HOURS: 4
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-bun
@@ -55,6 +58,11 @@ jobs:
             translate-usda-checkpoints-
 
       - name: Acquire prod DB lease
+        env:
+          STAGING_REF: ${{ github.ref_name }}
+          STAGING_REASON: manual USDA translation backfill
+          STAGING_FORCE_TAKEOVER: 'false'
+          STAGING_TARGET_SHA: ${{ github.sha }}
         run: ./scripts/cloud-run/staging-lease.sh acquire
 
       - name: Run translation pipeline (4 phases)
@@ -78,7 +86,7 @@ jobs:
           echo "::add-mask::$database_url"
           encoded="$(node ./scripts/cloud-run/shared-db.mjs encode-url --db-url "$database_url")"
           echo "::add-mask::$encoded"
-          remaining="$(psql "$encoded" -A -t -c \
+          remaining="$(psql "$encoded" -X -v ON_ERROR_STOP=1 -A -t -c \
             "SELECT count(*) FROM vietnamese_food_composition
              WHERE source_id = 2 AND (name_primary = name_en OR embedding IS NULL)")"
           echo "rows still untranslated or missing embeddings: $remaining"
