@@ -50,6 +50,30 @@ describe('Cloud Run prod workflow', () => {
     expect(backfill).toContain('Embedding backfill incomplete');
   });
 
+  it('runs the embedding backfill on Vertex, not a free-tier API key', () => {
+    const workflow = readWorkflow('cloud-run-prod.yml');
+    const backfill = readFileSync(
+      resolve('scripts/backfill_embeddings.ts'),
+      'utf8'
+    );
+
+    // The deploy must embed with the same provider the service it ships runs
+    // on. Exporting a GEMINI_API_KEY here would silently bill an abandoned
+    // AI Studio free-tier key and reinstate the 35s-per-batch pacing.
+    expect(workflow).not.toContain('export GEMINI_API_KEY=');
+    expect(workflow).toContain('AI_PROVIDER: vertex');
+    expect(workflow).toContain(
+      `GOOGLE_CLOUD_PROJECT: \${{ vars.GCP_PROJECT_ID }}`
+    );
+    expect(workflow).toContain('GOOGLE_CLOUD_LOCATION: global');
+    expect(backfill).toContain('vertexai: true');
+    expect(backfill).toContain(
+      'AI_PROVIDER=vertex requires GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION'
+    );
+    // The AI Studio path stays intact for local `dbr:reset` against .env.local.
+    expect(backfill).toContain('apiKey: process.env.GEMINI_API_KEY');
+  });
+
   it('scopes the deploy-time append-only check to pending migrations only', () => {
     const workflow = readWorkflow('cloud-run-prod.yml');
 
