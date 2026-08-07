@@ -1,18 +1,14 @@
 'use client';
 
-import {
-  Camera,
-  Image as ImageIcon,
-  Loader2,
-  RefreshCw,
-  Upload,
-} from 'lucide-react';
+import { Image as ImageIcon, Loader2, RefreshCw, Upload } from 'lucide-react';
+import NextImage from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { useNutritionOcr } from '@/hooks/meals/use-nutrition-ocr';
 import { useOcrCamera } from '@/hooks/meals/use-ocr-camera';
 import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';
 import { OcrCameraView } from './ocr-camera-view';
+import { OcrModeToggle } from './ocr-mode-toggle';
 
 export function OcrScannerTab({
   onSuccess,
@@ -79,47 +75,23 @@ export function OcrScannerTab({
       />
 
       {!previewUrl && (
-        <div className="grid grid-cols-2 rounded-xl bg-nham-track/60 p-1">
-          <button
-            type="button"
-            aria-pressed={mode === 'camera'}
-            onClick={() => setMode('camera')}
-            className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-medium font-sans-display text-[12px] transition-all ${
-              mode === 'camera'
-                ? 'bg-white text-nham-text shadow-sm'
-                : 'text-[#8B8682] hover:text-nham-text'
-            }`}
-          >
-            <Camera className="h-3.5 w-3.5" />
-            {t('barcodeScanTab')}
-          </button>
-          <button
-            type="button"
-            aria-pressed={mode === 'upload'}
-            onClick={() => {
-              setMode('upload');
-              stopCamera();
-            }}
-            className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-medium font-sans-display text-[12px] transition-all ${
-              mode === 'upload'
-                ? 'bg-white text-nham-text shadow-sm'
-                : 'text-[#8B8682] hover:text-nham-text'
-            }`}
-          >
-            <Upload className="h-3.5 w-3.5" />
-            {t('ocrUploadTab')}
-          </button>
-        </div>
+        <OcrModeToggle
+          mode={mode}
+          setMode={setMode}
+          stopCamera={stopCamera}
+          scanTabLabel={t('barcodeScanTab')}
+          uploadTabLabel={t('ocrUploadTab')}
+        />
       )}
 
       {safePreviewUrl ? (
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black/5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {/* biome-ignore lint/performance/noImgElement: Blob preview URL */}
-          <img
+          <NextImage
             src={safePreviewUrl}
             alt="Nutrition label preview"
-            className="h-full w-full object-contain"
+            fill
+            unoptimized
+            className="object-contain"
           />
           {!isProcessing && (
             <button
