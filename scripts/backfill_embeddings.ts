@@ -9,7 +9,12 @@
  *   bun --env-file=.env.local scripts/backfill_embeddings.ts \
  *     --ids=usda_6008_raw,usda_6170_raw
  *
- * Requires env vars: GEMINI_API_KEY, DATABASE_URL
+ * Requires DATABASE_URL, plus one of two providers (same contract as
+ * lib/ai/gemini.ts and scripts/translate-usda-vietnamese/keys.ts):
+ *   - AI_PROVIDER=vertex: GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION, auth via
+ *     Application Default Credentials. This is what the prod deploy uses, so
+ *     the backfill bills the same quota as the service it is deploying.
+ *   - otherwise (AI Studio): GEMINI_API_KEY — the local `dbr:reset` path.
  */
 
 import { GoogleGenAI } from '@google/genai';
@@ -22,9 +27,27 @@ import { vietnameseFoodComposition } from '@/lib/db/schema';
 const EMBEDDING_MODEL = 'gemini-embedding-001';
 const BATCH_SIZE = 50;
 const MAX_RETRIES = 5;
-// Free tier: 100 embed requests/min. Each text counts as 1 request.
-// With BATCH_SIZE=50, sleep 35s between batches to stay under limit.
-const BATCH_DELAY_MS = 35_000;
+/**
+ * Pause between batches, per provider.
+ *
+ * 35s is NOT an inherent property of gemini-embedding-001 — it is the Google
+ * AI Studio FREE-tier ceiling of 100 embed requests/min, where each text
+ * counts as one request: BATCH_SIZE=50 texts twice a minute needs ~35s of
+ * spacing. Vertex AI is billed and its embedding quota is per-project
+ * requests-per-minute, orders of magnitude above 100, so paying 35s there
+ * would ceiling the prod deploy's backfill step at ~25 batches (~1,250 rows)
+ * before its timeout — and this script deliberately fails the build when rows
+ * remain.
+ *
+ * Vertex still gets a small non-zero pause rather than 0: quotas are high but
+ * finite, and the retry path below only tolerates MAX_RETRIES=5 before failing
+ * the deploy, so it is a last resort rather than the pacing mechanism. 2s
+ * between 50-text batches is ~1,500 texts/min — comfortably inside Vertex
+ * quota, and only ~50s of total sleep across the ~25 batches that used to
+ * consume the entire 15-minute step.
+ */
+const AI_STUDIO_FREE_TIER_BATCH_DELAY_MS = 35_000;
+const VERTEX_BATCH_DELAY_MS = 2_000;
 
 const idsArg = process.argv.find((arg) => arg.startsWith('--ids='));
 const requestedIds = idsArg
@@ -44,7 +67,9 @@ if (idsArg && requestedIds.length === 0) {
   process.exit(1);
 }
 
-if (!process.env.DATABASE_URL || !process.env.GEMINI_API_KEY) {
+const useVertex = process.env.AI_PROVIDER?.trim() === 'vertex';
+
+if (!process.env.DATABASE_URL || (!useVertex && !process.env.GEMINI_API_KEY)) {
   console.error(
     'Missing DATABASE_URL or GEMINI_API_KEY. Run with:',
     '\n  bun --env-file=.env.local scripts/backfill_embeddings.ts'
@@ -52,9 +77,29 @@ if (!process.env.DATABASE_URL || !process.env.GEMINI_API_KEY) {
   process.exit(1);
 }
 
+function createGenAI(): GoogleGenAI {
+  if (!useVertex) {
+    return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  }
+  const project = process.env.GOOGLE_CLOUD_PROJECT?.trim();
+  const location = process.env.GOOGLE_CLOUD_LOCATION?.trim();
+  if (!project || !location) {
+    throw new Error(
+      'AI_PROVIDER=vertex requires GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION'
+    );
+  }
+  console.log(`Using Vertex AI (project=${project}, location=${location})`);
+  return new GoogleGenAI({ vertexai: true, project, location });
+}
+
+// Built before the postgres client so a provider misconfiguration fails
+// without opening a DB connection nothing will close.
+const genai = createGenAI();
 const client = postgres(encodeDbUrl(process.env.DATABASE_URL!));
 const db = drizzle(client);
-const genai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const BATCH_DELAY_MS = useVertex
+  ? VERTEX_BATCH_DELAY_MS
+  : AI_STUDIO_FREE_TIER_BATCH_DELAY_MS;
 
 function buildEmbeddingText(row: {
   namePrimary: string;
@@ -185,7 +230,7 @@ async function main() {
         `Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${processed}/${rows.length}`
       );
 
-      // Rate-limit: wait between batches to stay under free tier quota
+      // Rate-limit: wait between batches to stay under the provider's quota
       if (i + BATCH_SIZE < rows.length) {
         await new Promise((r) => setTimeout(r, BATCH_DELAY_MS));
       }

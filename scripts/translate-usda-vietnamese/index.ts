@@ -17,13 +17,21 @@
  *   bun --env-file=.env.local scripts/translate-usda-vietnamese/index.ts --resume
  *
  * Environment variables:
- *   GOOGLE_TRANSLATE_API_KEY — Google Cloud Translation API key
- *   GEMINI_API_KEY           — single Gemini key, or GEMINI_API_KEY_1..10 for
- *                              10 keys across different GCP projects
+ *   GOOGLE_TRANSLATE_API_KEY — Google Cloud Translation API key (Phase 1 only;
+ *                              the REST v2 API is key-authenticated and is
+ *                              unrelated to the Gemini provider below)
  *   DATABASE_URL             — Supabase connection string
+ *
+ *   Gemini provider for Phase 2/4 — same contract as lib/ai/gemini.ts:
+ *   AI_PROVIDER=vertex       — Vertex AI via ADC (what prod uses; billed quota,
+ *                              no free-tier daily cap). Then also needs
+ *                              GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION.
+ *   otherwise (AI Studio)    — GEMINI_API_KEY, or GEMINI_API_KEY_1..20 for
+ *                              up to 20 keys across different GCP projects
  */
 
 import { loadCheckpoint, saveCheckpoint } from './checkpoints';
+import { MAX_NUMBERED_KEYS } from './keys';
 import { runPhase1 } from './phase1-translate';
 import { runPhase2 } from './phase2-name-alt';
 import { runPhase3 } from './phase3-db-update';
@@ -71,19 +79,34 @@ if ((!phase || phase === 1) && !process.env.GOOGLE_TRANSLATE_API_KEY) {
 }
 
 const needsGemini = !phase || phase === 2 || phase === 4;
-// Mirrors loadGeminiKeys(): any slot in _1.._10 counts, not just _1 — an env
-// that starts numbering at _2 is valid and must not be rejected here.
-const hasGeminiKey =
-  !!process.env.GEMINI_API_KEY ||
-  Array.from(
-    { length: 10 },
-    (_, i) => process.env[`GEMINI_API_KEY_${i + 1}`]
-  ).some(Boolean);
-if (needsGemini && !hasGeminiKey) {
-  console.error(
-    'Missing GEMINI_API_KEY (or GEMINI_API_KEY_1..10) — needed for Phase 2 and Phase 4'
-  );
-  process.exit(1);
+if (needsGemini) {
+  if (process.env.AI_PROVIDER?.trim() === 'vertex') {
+    // Vertex authenticates via ADC — no API key exists or is needed.
+    if (
+      !process.env.GOOGLE_CLOUD_PROJECT ||
+      !process.env.GOOGLE_CLOUD_LOCATION
+    ) {
+      console.error(
+        'AI_PROVIDER=vertex requires GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION — needed for Phase 2 and Phase 4'
+      );
+      process.exit(1);
+    }
+  } else {
+    // Mirrors loadGeminiKeys(): any slot in _1.._10 counts, not just _1 — an
+    // env that starts numbering at _2 is valid and must not be rejected here.
+    const hasGeminiKey =
+      !!process.env.GEMINI_API_KEY ||
+      Array.from(
+        { length: MAX_NUMBERED_KEYS },
+        (_, i) => process.env[`GEMINI_API_KEY_${i + 1}`]
+      ).some(Boolean);
+    if (!hasGeminiKey) {
+      console.error(
+        `Missing GEMINI_API_KEY (or GEMINI_API_KEY_1..${MAX_NUMBERED_KEYS}) — needed for Phase 2 and Phase 4`
+      );
+      process.exit(1);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -238,8 +238,10 @@ export GCP_RUNTIME_SERVICE_ACCOUNT="$GCP_RUNTIME_SA_ID@$GCP_PROJECT_ID.iam.gserv
 ### Deployer service account
 
 The deployer must be able to push images, create/update/delete Cloud Run
-services, attach the runtime service account, and access Secret Manager for
-pre-deploy validation and database reset operations.
+services, attach the runtime service account, access Secret Manager for
+pre-deploy validation and database reset operations, and call Vertex AI — the
+"Backfill food embeddings" deploy step runs `scripts/backfill_embeddings.ts`
+with `AI_PROVIDER=vertex` under the deployer's own ADC.
 
 ```bash
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
@@ -253,6 +255,10 @@ gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
   --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
   --role="roles/secretmanager.secretAccessor"
+
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/aiplatform.user"
 
 gcloud iam service-accounts add-iam-policy-binding \
   "$GCP_RUNTIME_SERVICE_ACCOUNT" \
