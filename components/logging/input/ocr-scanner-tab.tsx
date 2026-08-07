@@ -30,20 +30,20 @@ export function OcrScannerTab({
   const { scanLabel, isCompressing, isScanning, error, resetError } =
     useNutritionOcr();
 
-  const handleCapturePhoto = async () => {
-    const file = await capturePhoto();
-    if (!file) return;
+  const selectImage = (file: File) => {
     resetError();
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
   };
 
+  const handleCapturePhoto = async () => {
+    const file = await capturePhoto();
+    if (file) selectImage(file);
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    resetError();
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
+    if (file) selectImage(file);
   };
 
   const handleClearImage = () => {
@@ -61,6 +61,12 @@ export function OcrScannerTab({
   };
 
   const isProcessing = isCompressing || isScanning;
+
+  const safePreviewUrl =
+    previewUrl &&
+    (previewUrl.startsWith('blob:') || previewUrl.startsWith('data:image/'))
+      ? previewUrl
+      : undefined;
 
   return (
     <div className="space-y-4 p-6">
@@ -106,12 +112,12 @@ export function OcrScannerTab({
         </div>
       )}
 
-      {previewUrl ? (
+      {safePreviewUrl ? (
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black/5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {/* biome-ignore lint/performance/noImgElement: Blob preview URL */}
           <img
-            src={previewUrl}
+            src={safePreviewUrl}
             alt="Nutrition label preview"
             className="h-full w-full object-contain"
           />
