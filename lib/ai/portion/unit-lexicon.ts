@@ -35,6 +35,10 @@ const ENTRIES: UnitLexiconEntry[] = [
   { token: 'bánh bao', locale: 'vi', unitType: 'count' }, // the item IS its own counter
   { token: 'cuốn', locale: 'vi', unitType: 'count' },
   { token: 'chả', locale: 'vi', unitType: 'count' },
+  // A packet is the unit instant noodles are actually counted in ("1 gói mì",
+  // "2 gói"). Without it the most ordinary phrasing for the food had no unit
+  // the resolver could hang a prior on, so the portion stayed unanchored.
+  { token: 'gói', locale: 'vi', unitType: 'count' },
   // -- Vietnamese slice / piece-of ---------------------------------------
   { token: 'lát', locale: 'vi', unitType: 'slice' },
   { token: 'miếng', locale: 'vi', unitType: 'slice' },
@@ -63,6 +67,10 @@ const ENTRIES: UnitLexiconEntry[] = [
   { token: 'chunks', locale: 'en', unitType: 'count' },
   { token: 'cut', locale: 'en', unitType: 'count' },
   { token: 'cuts', locale: 'en', unitType: 'count' },
+  { token: 'pack', locale: 'en', unitType: 'count' },
+  { token: 'packs', locale: 'en', unitType: 'count' },
+  { token: 'packet', locale: 'en', unitType: 'count' },
+  { token: 'packets', locale: 'en', unitType: 'count' },
   // -- English / global slice --------------------------------------------
   { token: 'slice', locale: 'en', unitType: 'slice' },
   { token: 'slices', locale: 'en', unitType: 'slice' },

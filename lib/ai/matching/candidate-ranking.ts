@@ -127,6 +127,32 @@ export function mergeTopKAcrossSources(
   return merged.slice(0, k);
 }
 
+/**
+ * Hard state filter for an EXPLICIT user-stated weighing basis ("cân sống" /
+ * "raw weight" → 'raw'; "đã nấu xong cân" → 'cooked').
+ *
+ * When the user SAID which state they weighed in, a candidate in the opposite
+ * state forces a lossy conversion Call 2 might fumble — so drop it, but only
+ * when a usable candidate survives:
+ *   - 'unknown'-state candidates are kept (an unlabeled row is not evidence
+ *     of a mismatch);
+ *   - if filtering would empty the pool, keep the original pool — a
+ *     convertible wrong-state candidate still beats zero candidates.
+ *
+ * Deliberately NOT applied to states merely DERIVED from the cooking method —
+ * that inference is heuristic, and the soft STATE_MISMATCH_PENALTY already
+ * handles it. This filter fires only on the user's own words.
+ */
+export function filterByExplicitState(
+  candidates: MatchInfo[],
+  explicitState: 'raw' | 'cooked' | null
+): MatchInfo[] {
+  if (!explicitState || candidates.length === 0) return candidates;
+  const opposite = explicitState === 'raw' ? 'cooked' : 'raw';
+  const kept = candidates.filter((c) => c.state !== opposite);
+  return kept.length > 0 ? kept : candidates;
+}
+
 /** Standard RRF dampening constant (Cormack et al.) — rank 0 contributes
  *  1/61, rank 1 contributes 1/62, ... */
 export const RRF_K = 60;

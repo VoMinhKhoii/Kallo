@@ -18,11 +18,10 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
 <verdict_rule>
   Accept a candidate when:
     - the canonical food matches what the user described (cut, species, part);
-    - the db_state is consistent with how the user weighed (state_hint) or the cooking_method;
+    - the db_state has a workable relationship to the dish: identical, or convertible. A dry/raw staple row backing a cooked dish (dried noodles for "1 tô mì gói", raw rice for "1 chén cơm") is the NORMAL case, NOT a state mismatch — accept it and emit grams in its basis per the grams_rule.
     - the per-100g density looks right for the food family (no obvious off-by-order-of-magnitude).
   Reject ALL candidates ("none") when none of them passes the above. Common reject reasons:
     - cut mismatch: "ức gà" matched only to "Thịt gà ta" (52 % inedible, aggregate whole-bird);
-    - state mismatch: cooked noodle dish matched to "Noodles, dry" only;
     - category mismatch: "gan gà" (liver) matched to "thịt gà" generic;
     - density mismatch: vegetable matched to a sauce/seasoning row.
   When a higher-similarity candidate is wrong and a lower-similarity one is right, pick the right one. similarity is a hint, not a vote.
@@ -30,9 +29,12 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
 
 <grams_rule>
   If an ingredient carries resolved_grams="N", the server already grounded the portion (explicit user weight, package size, or a curated concept prior). Emit grams EXACTLY = N. Do NOT re-estimate, scale, or "correct" it. You may still adjust macros / fat for cooking method and prep_notes. resolved_grams is already in the selected candidate's state.
-  Otherwise, estimate the portion the user actually ate, scoped to the selected candidate's state:
-    - If state_hint="raw_weight": emit raw mass (Call 2 trusts the user's number; you still estimate when a quantity is not given verbatim).
-    - If state_hint="cooked_weight" or absent: emit cooked / as-eaten mass. For soups, vessel or not, broth/liquid grams follow broth_consumption in <user_context>: leave_it ≈ 10%, some ≈ 50%, finish_it = 100% of served broth.
+  Otherwise, estimate the portion the user actually ate. BASIS RULE — overrides every other sizing hint in this section: emit grams in the SAME state as the selected candidate's db_state.
+    - db_state="cooked": grams = cooked / as-eaten mass.
+    - db_state="raw" (includes DRY staples: dried noodles, raw rice, dry beans): grams = raw/dry mass. Convert from the as-eaten portion using the cooking yields you know (meat loses water when cooked; dried staples absorb it, ending ~2.5–3× heavier). Cross-check with db_per_100g_kcal: grams × density must give a plausible total for the dish — a dry-basis row (~350–450 kcal/100g) carrying a cooked-basis mass reads 2–3× too high.
+    - db_state="unknown": treat as cooked unless the user weighed raw.
+  state_hint describes the USER's number, never the basis you emit: "raw_weight" means their figure is already raw (trust it verbatim); "cooked_weight" or absent means the figure is as-eaten — convert it when the row's basis differs.
+  For soups, vessel or not, broth/liquid grams follow broth_consumption in <user_context>: leave_it ≈ 10%, some ≈ 50%, finish_it = 100% of served broth.
   Use cuisine priors:
     - 1 bánh bao ≈ 165g (150–180g).
     - 1 trứng cút ≈ 10g (9–11g).
@@ -44,35 +46,28 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
     - 1 miếng cá ≈ 60g (50–70g).
     - 1 cây nem lụi ≈ 25g (22–28g).
     - 1 phần protein áp chảo ≈ 150g (140–160g).
-  Per-food yield priors (raw → cooked):
-    - rice nấu: cooked ≈ 2.6× raw weight (absorbs water).
-    - chicken nướng/luộc: cooked ≈ 0.75× raw.
-    - beef chiên/xào: cooked ≈ 0.75× raw.
-    - fish hấp/nướng: cooked ≈ 0.85× raw.
-    - shrimp luộc: cooked ≈ 0.85× raw.
+    - 1 gói mì ≈ 80g (70–90g).
   Absorbed cooking fat: for chiên/rán/xào/áp chảo/fried/pan-seared/stir-fried items, fatG MUST include absorbed oil on top of the food's own fat (pan-sear 3–7g, stir-fry 5–10g, shallow-fry 8–15g, deep-fry ~10–18% of food weight; scale with oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat. Skip when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
-  Staple carb base: when rice/noodles/bread is the base of a plate or bowl dish (cơm tấm, cơm gà, katsu curry, bibimbap, fried rice), size it as a FULL meal portion — rice follows default_rice_portion in <user_context> (~1 small bowl (~140–160g cooked rice); ~1 bowl (~200g cooked rice); ~1.5–2 bowls (~300–400g cooked rice)); noodles are typically 150–250g cooked — never a side garnish.
+  Staple carb base: when rice/noodles/bread is the base of a plate or bowl dish (cơm tấm, cơm gà, katsu curry, bibimbap, fried rice), size it as a FULL meal portion — rice follows default_rice_portion in <user_context> (~1 small bowl (~140–160g cooked rice); ~1 bowl (~200g cooked rice); ~1.5–2 bowls (~300–400g cooked rice)); noodles are typically 150–250g cooked — never a side garnish. (An as-eaten figure — the BASIS RULE still applies when the matched row is dry/raw.)
   When a protein has no count/unit/anchor, size it per default_protein_portion in <user_context>.
   For kho/braised/caramelized dishes, added sugar follows sugar_braised in <user_context> (low ≈ 5g, medium ≈ 10–15g, high ≈ 20–25g carbs from sugar per serving).
   If user_count="0" on an ingredient: the user typed an explicit zero. The server has flagged it for a clarify and will DISCARD your numbers for it — emit normal best-effort fields (grams must be > 0) and never treat the zero as one standard serving in meal-level reasoning.
-  IMPORTANT: emit grams in the SAME state as the selected candidate's db_state.
-    - candidate db_state="cooked": grams = cooked mass.
-    - candidate db_state="raw": grams = raw mass (convert from user's spoken cooked weight if needed using the yield priors above, or take the user's verbatim raw weight when state_hint="raw_weight").
-    - candidate db_state="unknown": treat as cooked unless the user weighed raw.
   Server scales DB per_100g × grams / 100 — no further yield conversion happens server-side.
 </grams_rule>
 
 <macro_rule>
+  Every ingredient ALWAYS emits all four macro triples (caloriesKcal, proteinG, carbohydrateG, fatG). A genuine 0 is a valid value — never invent mass to avoid a zero, and never omit a field.
+
   Per-ingredient default behavior (MATCHED ingredient, prep_notes EMPTY):
-    - protein, carb, calories: OMIT these fields entirely. The server overrides them with DB-anchored base = (per_100g × grams) / 100 and derives kcal from 4P + 4C + 9F, so any value you emit is discarded. Do not emit proteinG, carbohydrateG, or caloriesKcal for these ingredients — it only wastes output.
-    - fat: always emit; reflect cooking-method effect.
+    - protein, carb, calories: emit your best estimate, but know the server OVERRIDES them with DB-anchored base = (per_100g × grams) / 100 and derives kcal from 4P + 4C + 9F — keep these three brief (flat triples are fine); your effort belongs in grams and fat.
+    - fat: reflect cooking-method effect.
         · chiên/rán/xào (oil): +30–80% over base.
         · luộc/hấp: near base.
         · nướng without basting: near base.
         · kho with oil: modest increase.
         · Bound: 0.33× to 3× of base.fatG. Beyond → server snaps to base.
 
-  When prep_notes is NON-EMPTY for a matched ingredient: the server unlocks protein and carb so you can reflect the user's modifier. Move only what the note physically implies.
+  When prep_notes is NON-EMPTY for a matched ingredient: the server unlocks protein and carb, so those two triples now carry real signal — reflect the user's modifier. Move only what the note physically implies.
     Tighter prep-notes bands (server enforces, snaps to base on overshoot):
       - proteinG, carbohydrateG: 0.71× to 1.4× of base.
       - fatG: 0.5× to 2× of base.
@@ -92,10 +87,13 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
 <output_format>
   Top-level "mealItems" array.
   Each meal item: { mealItemName, ingredients[] }.
-  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grams, fatG{low,mid,high}, and — ONLY when required — caloriesKcal/proteinG/carbohydrateG{low,mid,high} }.
-    - MATCHED ingredient, prep_notes EMPTY → emit ONLY: ingredientName, selectedCandidateId, grams, fatG. OMIT caloriesKcal, proteinG, carbohydrateG.
-    - MATCHED ingredient, prep_notes NON-EMPTY → also emit proteinG, carbohydrateG (and fatG); caloriesKcal still optional (server derives it).
-    - UNMATCHED ingredient → emit caloriesKcal, proteinG, carbohydrateG, fatG (all four).
+  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grams, caloriesKcal{low,mid,high}, proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.
+  All four macro triples are REQUIRED on every ingredient, matched or not. 0 is a valid value; an omitted field is a schema violation and the whole response is rejected.
   Round numerical fields to 1 decimal place.
+
+  FINAL CHECK before emitting, ingredient by ingredient — the BASIS RULE again, because getting it wrong is a silent 2–3× calorie error:
+    - grams MUST be in the SELECTED candidate's db_state basis. Dry/raw row → dry/raw grams, even though you picture the food as eaten.
+    - If the user stated a weight, state_hint says which basis THEIR number is in — convert it whenever the candidate's basis differs; never copy it across bases.
+    - Sanity-check: grams × db_per_100g_kcal / 100 must be a believable kcal for that ingredient. ~250g against a ~440 kcal/100g dry-noodle row is ~1100 kcal — wrong basis; the dry packet is ~80g.
 </output_format>"
 `;

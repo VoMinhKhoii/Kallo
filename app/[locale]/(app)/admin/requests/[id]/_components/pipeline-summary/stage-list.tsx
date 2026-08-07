@@ -29,6 +29,7 @@ export function StageList({
     unmatched,
     totalIngredients,
     matchedCount,
+    matchingPipeline,
     rowsByMeal,
     unmatchedOutputRows,
     matchStrategyCounts,
@@ -127,9 +128,19 @@ export function StageList({
           <span className="text-muted-foreground text-xs tabular-nums">
             {stagesByName.matching?.durationMs ?? '—'} ms
             {' · '}
-            {matchedCount} matched
-            {' · '}
-            {unmatched.length} unmatched
+            {matchingPipeline === 'v2' ? (
+              // v2's count is "retrieval found candidates for N of M"; the
+              // accept/reject verdict happens later, in Call 2.
+              <>
+                {matchedCount}/{totalIngredients} with candidates
+              </>
+            ) : (
+              <>
+                {matchedCount} matched
+                {' · '}
+                {unmatched.length} unmatched
+              </>
+            )}
             {(matchStrategyCounts.vector > 0 ||
               matchStrategyCounts.fuzzy > 0 ||
               matchStrategyCounts.alias > 0) && (
@@ -150,7 +161,8 @@ export function StageList({
       >
         {!matching.success ? (
           <ParseFallback stage="matching" />
-        ) : matched.length + unmatched.length === 0 ? (
+        ) : matchingPipeline === 'v1' &&
+          matched.length + unmatched.length === 0 ? (
           <p className="text-muted-foreground text-sm">No matches recorded.</p>
         ) : (
           <MatchingStageBody

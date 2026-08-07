@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { INSTANT_NOODLE_ROW, PRE_MATCH_ALIASES } from '../../matching/aliases';
 import { AMBIGUOUS, getConcept, resolveConcept } from '../concepts';
 import { PIECE_UNIT_TOKENS } from '../piece-vessel';
 import { applySizeModifier, findPrior } from '../priors';
@@ -217,5 +218,65 @@ describe('unit token tables agree', () => {
       expect(PIECE_UNIT_TOKENS.has(singular), singular).toBe(true);
       expect(PIECE_UNIT_TOKENS.has(plural), plural).toBe(true);
     }
+  });
+});
+
+describe('instant noodles — the `1 gói mì` path', () => {
+  it('types `gói` as a count unit, accented or not', () => {
+    // Prod gap: `gói` was absent from the lexicon entirely, so the most
+    // ordinary phrasing for instant noodles carried no unit the resolver
+    // could hang a prior on and the portion stayed unanchored.
+    expect(resolveUnitType('gói')).toBe('count');
+    expect(resolveUnitType('GÓI')).toBe('count');
+    expect(resolveUnitType('goi')).toBe('count');
+    expect(resolveUnitType('pack')).toBe('count');
+    expect(resolveUnitType('packets')).toBe('count');
+  });
+
+  it('adds no folded-key collision', () => {
+    expect(foldCollisions()).toEqual([]);
+  });
+
+  it('resolves qualified surface forms to the packet concept', () => {
+    expect(resolveConcept('mì gói')).toBe('instant-noodle-pack');
+    expect(resolveConcept('Mì Tôm')).toBe('instant-noodle-pack');
+    expect(resolveConcept('mi an lien')).toBe('instant-noodle-pack');
+    expect(resolveConcept('instant noodles')).toBe('instant-noodle-pack');
+  });
+
+  it('leaves bare `mì` unresolved rather than guessing a packet', () => {
+    // `mì` also covers fresh egg noodles and wheat flour; mapping it here
+    // would put a packet's weight on a bowl of mì Quảng.
+    expect(resolveConcept('mì')).toBeNull();
+    expect(resolveConcept('mì xào')).toBeNull();
+  });
+
+  it('supplies a DRY packet weight, and scales with the size cue', () => {
+    const prior = findPrior({
+      conceptId: 'instant-noodle-pack',
+      unitType: 'count',
+      locale: 'vi',
+      form: 'raw',
+    });
+    expect(prior).not.toBeNull();
+    expect(prior?.perUnit.mid).toBe(80);
+    expect(applySizeModifier(prior!.perUnit, 'small')).toBe(70);
+    expect(applySizeModifier(prior!.perUnit, 'large')).toBe(90);
+    // Dry, not prepared: noodles roughly triple in mass once cooked, so a
+    // band anywhere near a bowl's mass would be the wrong basis entirely.
+    expect(prior?.form).toBe('raw');
+    expect(prior?.perUnit.high).toBeLessThan(150);
+  });
+
+  it('links the concept to the same row the alias targets', () => {
+    // `dbRowName` has no runtime reader — this assertion IS its purpose. It is
+    // the executable drift-guard tying three things that must agree: the
+    // concept registry, the pre-match alias target, and the name that
+    // migration 20260806120000 writes to usda_6583_raw. If someone re-curates
+    // that row's name and updates only the migration, this fails.
+    const concept = getConcept('instant-noodle-pack');
+    expect(concept?.label).toContain('Mì gói');
+    expect(concept?.dbRowName).toBe(INSTANT_NOODLE_ROW);
+    expect(PRE_MATCH_ALIASES['mì tôm']).toBe(INSTANT_NOODLE_ROW);
   });
 });

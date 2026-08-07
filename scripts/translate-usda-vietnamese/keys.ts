@@ -1,7 +1,7 @@
 /**
  * Gemini API key rotation for round-robin load distribution.
  *
- * Reads GEMINI_API_KEY_1 through GEMINI_API_KEY_10 from environment.
+ * Reads GEMINI_API_KEY_1 through GEMINI_API_KEY_20 from environment.
  * Tracks per-key rate limits and rotates on 429.
  */
 
@@ -20,7 +20,7 @@ const COOLDOWN_MS = 35_000;
 
 export function loadGeminiKeys(): KeySlot[] {
   const slots: KeySlot[] = [];
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= 20; i++) {
     const key = process.env[`GEMINI_API_KEY_${i}`];
     if (key) {
       slots.push({
@@ -33,9 +33,22 @@ export function loadGeminiKeys(): KeySlot[] {
       });
     }
   }
+  // Fallback: a plain GEMINI_API_KEY (the name every other script and the
+  // deploy workflow already use) counts as slot 0 — no numbered alias needed
+  // to run this pipeline locally or in CI with a single key.
+  if (slots.length === 0 && process.env.GEMINI_API_KEY) {
+    slots.push({
+      index: 0,
+      apiKey: process.env.GEMINI_API_KEY,
+      client: new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }),
+      lastCallAt: 0,
+      cooldownUntil: 0,
+      dailyRequests: 0,
+    });
+  }
   if (slots.length === 0) {
     throw new Error(
-      'No GEMINI_API_KEY_N found in env (checked GEMINI_API_KEY_1..10)'
+      'No Gemini key found in env (checked GEMINI_API_KEY_1..20, GEMINI_API_KEY)'
     );
   }
   console.log(`  Loaded ${slots.length} Gemini API keys`);

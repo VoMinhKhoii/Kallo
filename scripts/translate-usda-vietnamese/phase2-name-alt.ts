@@ -19,7 +19,7 @@ import {
   type Checkpoint1,
   type Checkpoint2,
   getDb,
-  IN_SCOPE_CATEGORIES,
+  resolveInScopeCategories,
   sleep,
 } from './shared';
 
@@ -187,7 +187,14 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
 
   const categoryFilter = opts.category
     ? [opts.category]
-    : [...IN_SCOPE_CATEGORIES];
+    : await resolveInScopeCategories();
+
+  // An empty scope means every row is already translated. Interpolating it
+  // would emit `type_en IN ()` — a syntax error — so stop here instead.
+  if (categoryFilter.length === 0) {
+    console.log('  ✓ Phase 2 complete (nothing left untranslated)');
+    return checkpoint;
+  }
 
   // Fetch items that have Phase 1 translations but no Phase 2 name_alt yet
   const catPlaceholders = categoryFilter

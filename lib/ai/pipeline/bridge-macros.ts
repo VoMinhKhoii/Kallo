@@ -25,24 +25,10 @@ export type NoMacroReason =
   /** Call 2 dropped the ingredient entirely (verdict='missing'). */
   | 'no_estimate'
   /**
-   * No DB row AND no usable Call-2 triple. `schemas-v2` makes proteinG and
-   * carbohydrateG independently optional, so either omission degrades that
-   * macro to ZERO_TRIPLE — a fabricated zero the picker can never repair.
-   * The prompt says both are "REQUIRED for unmatched", but never trust it.
-   */
-  | 'no_anchor'
-  /**
    * The user typed an explicit zero ("0 fried chicken"). A contradiction, not
    * a portion — it must never produce calories (`resolver.ts` step 0).
    */
   | 'explicit_zero';
-
-/**
- * Fat mass fraction above which fat alone characterizes the food. Butter is
- * ~81% fat and oil ~100%; a protein or starch never approaches half its mass
- * in fat, so 0.5 separates "fat IS the food" from "fat is one component".
- */
-const FAT_FOOD_RATIO = 0.5;
 
 export type MacroSource =
   /** Accepted candidate with a nutrition row: the server anchors P/C/kcal. */
@@ -68,33 +54,13 @@ export function resolveMacroSource(args: {
   // A DB row anchors P/C/kcal — the strongest source, so prefer it.
   if (acceptedCandidate?.nutrition != null) return { kind: 'db' };
   // No DB anchor (unmatched, rejected, or an accepted candidate whose
-  // nutrition never loaded). Call 2 can still carry the row: `fatG` is
-  // schema-mandatory and kcal is DERIVED from P/C/F downstream
-  // (`deriveCaloriesFromMacros`), so an omitted kcal costs nothing.
-  //
-  // Both P and C omitted leaves fat as the only signal. That is legitimate
-  // ONLY when fat IS the food (butter, oil: ~0 protein, ~0 carb by nature) —
-  // withholding there deleted a real ~700 kcal/100g ingredient. It is NOT
-  // legitimate when fat is a minor component: 150g of ức gà carrying 4g fat
-  // leaves 97% of the mass unaccounted, and shipping it would persist 36 kcal
-  // and 0g protein — the D3 silent-undercount this guard exists to stop.
-  // Mass fraction separates the two cleanly.
-  // A present-but-implausible macro (the bánh-ướt C≈0 class) is not this
-  // function's job — the carb-staple floor flags that in telemetry.
-  // Compare against the mass the fat is SCOPED to (Call 2's own grams), not a
-  // server anchor that may have overridden it — the ratio is invariant there,
-  // and mixing the two would misjudge a butter pat anchored to a larger mass.
-  const fatMid = ground.fatG?.mid ?? 0;
-  const fatBasis =
-    Number.isFinite(ground.grams) && ground.grams > 0
-      ? ground.grams
-      : resolvedGrams;
-  const fatIsTheFood = fatMid > 0 && fatMid / fatBasis >= FAT_FOOD_RATIO;
-  const uncharacterized =
-    ground.proteinG == null && ground.carbohydrateG == null && !fatIsTheFood;
-  return uncharacterized
-    ? { kind: 'none', reason: 'no_anchor' }
-    : { kind: 'llm' };
+  // nutrition never loaded): Call 2's triples carry the row. The schema makes
+  // all four triples REQUIRED (D3 optionality reverted after the mì-gói
+  // incident, where an omitted carbohydrateG became a persisted C:0g), so a
+  // parsed `ground` always has a full set of numbers. Whether those numbers
+  // are PLAUSIBLE is the plausibility classifier's job, not this function's —
+  // an explicit zero from the model ships, flagged in telemetry.
+  return { kind: 'llm' };
 }
 
 /**

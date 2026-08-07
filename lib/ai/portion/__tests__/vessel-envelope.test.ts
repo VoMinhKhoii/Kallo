@@ -135,6 +135,17 @@ describe('dish classification', () => {
     ['cup noodles', 'cup', 'soup'],
     ['mug cake', 'cup', 'solid'],
     ['cereal with milk', 'bowl', 'solid'],
+    // "1 tô mì gói" classified `solid` and drew a dense-food gram band for
+    // what is mostly broth. The qualified instant-noodle forms are soup; the
+    // bare `mì` ones are deliberately not, since mì xào / mì khô are dry.
+    ['mì gói', 'bowl', 'soup'],
+    ['mì gói sữa', 'bowl', 'soup'],
+    ['mì tôm trứng', 'bowl', 'soup'],
+    ['mì ăn liền', 'bowl', 'soup'],
+    ['mi goi', 'bowl', 'soup'],
+    ['instant noodles with egg', 'bowl', 'soup'],
+    ['mì xào giòn', 'plate', 'solid'],
+    ['mì Quảng khô', 'bowl', 'solid'],
   ] as const)('%s in a %s is %s', (name, family, expected) => {
     expect(classifyDishClass(dish({ name }), family)).toBe(expected);
   });

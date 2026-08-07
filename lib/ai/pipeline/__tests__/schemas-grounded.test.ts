@@ -287,6 +287,45 @@ describe('groundedIngredientEstimateSchema', () => {
     expect(parsed.selectedCandidateId).toBeUndefined();
   });
 
+  it('REJECTS an ingredient missing any macro triple (the mì gói regression)', () => {
+    // Prod incident: `carbohydrateG` was optional, Call 2 omitted it for the
+    // unmatched noodles, and the absence persisted as C:0g / 412 kcal. All
+    // four triples are now required — zod rejection here is the backstop
+    // behind the provider's own `required` enforcement, and this test is the
+    // executable guard that the optionality never quietly returns.
+    const base = {
+      ingredientName: 'mì gói',
+      grams: 80,
+      caloriesKcal: { low: 340, mid: 355, high: 370 },
+      proteinG: { low: 7, mid: 8, high: 9 },
+      carbohydrateG: { low: 46, mid: 48, high: 50 },
+      fatG: { low: 13, mid: 14, high: 15 },
+    };
+    for (const field of [
+      'caloriesKcal',
+      'proteinG',
+      'carbohydrateG',
+    ] as const) {
+      const { [field]: _omitted, ...withoutField } = base;
+      expect(
+        () => groundedIngredientEstimateSchema.parse(withoutField),
+        `omitting ${field} must fail parse`
+      ).toThrow();
+    }
+  });
+
+  it('accepts explicit zero triples — 0 is a value, absence is a violation', () => {
+    const parsed = groundedIngredientEstimateSchema.parse({
+      ingredientName: 'mì chính',
+      grams: 3,
+      caloriesKcal: { low: 0, mid: 0, high: 0 },
+      proteinG: { low: 0, mid: 0, high: 0 },
+      carbohydrateG: { low: 0, mid: 0, high: 0 },
+      fatG: { low: 0, mid: 0, high: 0 },
+    });
+    expect(parsed.carbohydrateG.mid).toBe(0);
+  });
+
   it('rejects rejectReason longer than 120 chars', () => {
     expect(() =>
       groundedIngredientEstimateSchema.parse({

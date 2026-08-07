@@ -1,5 +1,6 @@
 /**
- * Phase 4: Re-embed — regenerate embeddings for items updated in Phase 3.
+ * Phase 4: Re-embed — regenerate embeddings for items updated in Phase 3, plus
+ * any USDA row still missing one.
  *
  * Uses gemini-embedding-001 with 10 API keys rotating round-robin.
  * Tracks embedding input hash in checkpoint-4.json for change detection.
@@ -29,7 +30,6 @@ const MAX_RETRIES = 5;
 
 interface Phase4Options {
   dryRun: boolean;
-  category?: string;
   updatedIds?: string[];
 }
 
@@ -100,40 +100,53 @@ export async function runPhase4(opts: Phase4Options): Promise<void> {
     console.log(`  Resuming: ${existingCount} items already embedded`);
   }
 
-  // Determine which items need re-embedding
-  let idFilter: string;
+  // Scope = rows Phase 3 just rewrote, PLUS every USDA row still missing an
+  // embedding. The second half is not optional: an un-embedded row is invisible
+  // to the matcher (every match function filters `embedding IS NOT NULL`) and
+  // the workflow's verify step fails on it, yet such rows are already
+  // translated so no updatedIds entry ever points at them.
+  //
+  // There is deliberately NO `name_primary != name_en` fallback: on a resume
+  // with an empty checkpoint that re-embedded ~4.8k already-embedded rows for
+  // nothing. `--category` likewise does not widen the scope here — a category
+  // re-embed is exactly the unbounded spend this guard exists to prevent.
+  const scopes = ['embedding IS NULL'];
   if (opts.updatedIds && opts.updatedIds.length > 0) {
     const idList = opts.updatedIds
       .map((id) => `'${id.replace(/'/g, "''")}'`)
       .join(',');
-    idFilter = `AND id IN (${idList})`;
-  } else if (opts.category) {
-    idFilter = `AND type_en = '${opts.category.replace(/'/g, "''")}'`;
-  } else {
-    // Re-embed all USDA items where name_primary != name_en (already translated)
-    idFilter = 'AND name_primary != name_en';
+    scopes.unshift(`id IN (${idList})`);
   }
 
   const rows = (await db.execute(
     sql.raw(`
-      SELECT id, name_primary, name_alt, name_en, type_vn, type_en
+      SELECT id,
+             name_primary AS "namePrimary",
+             name_alt     AS "nameAlt",
+             name_en      AS "nameEn",
+             type_vn      AS "typeVn",
+             type_en      AS "typeEn",
+             (embedding IS NOT NULL) AS has_embedding
       FROM vietnamese_food_composition
-      WHERE source_id = 2 ${idFilter}
+      WHERE source_id = 2 AND (${scopes.join(' OR ')})
       ORDER BY id
     `)
-  )) as unknown as FoodItem[];
+  )) as unknown as (FoodItem & { has_embedding: boolean })[];
 
-  // Filter: only re-embed if embedding input changed (hash mismatch)
+  // Filter: only re-embed if embedding input changed (hash mismatch). The
+  // checkpoint is cached across CI runs, so a row that lost its embedding after
+  // being embedded (a curation migration NULLs it) still carries a matching
+  // hash — skipping it there would loop the workflow's verify step forever.
   const pending: { item: FoodItem; text: string; hash: string }[] = [];
   for (const row of rows) {
     const text = buildEmbeddingText(row);
     const h = hashText(text);
-    if (checkpoint[row.id]?.hash === h) continue;
+    if (row.has_embedding && checkpoint[row.id]?.hash === h) continue;
     pending.push({ item: row, text, hash: h });
   }
 
   console.log(
-    `  ${rows.length} translated items, ${pending.length} need re-embedding`
+    `  ${rows.length} items in scope, ${pending.length} need re-embedding`
   );
 
   if (pending.length === 0) {
