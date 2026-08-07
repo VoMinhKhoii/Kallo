@@ -35,6 +35,12 @@ export interface KeySlot {
 }
 
 const COOLDOWN_MS = 35_000;
+/**
+ * Highest numbered AI Studio slot scanned. Exported so the CLI entry guard
+ * validates exactly the range this loader reads — they drifted apart once
+ * (guard at 10, loader at 20) and rejected valid environments.
+ */
+export const MAX_NUMBERED_KEYS = 20;
 const AI_STUDIO_FREE_TIER_DAILY_LIMIT = 1000;
 
 function loadVertexSlot(): KeySlot {
@@ -63,7 +69,7 @@ export function loadGeminiKeys(): KeySlot[] {
   }
 
   const slots: KeySlot[] = [];
-  for (let i = 1; i <= 20; i++) {
+  for (let i = 1; i <= MAX_NUMBERED_KEYS; i++) {
     const key = process.env[`GEMINI_API_KEY_${i}`];
     if (key) {
       slots.push({

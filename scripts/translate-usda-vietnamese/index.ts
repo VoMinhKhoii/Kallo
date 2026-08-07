@@ -26,11 +26,12 @@
  *   AI_PROVIDER=vertex       — Vertex AI via ADC (what prod uses; billed quota,
  *                              no free-tier daily cap). Then also needs
  *                              GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION.
- *   otherwise (AI Studio)    — GEMINI_API_KEY, or GEMINI_API_KEY_1..10 for
- *                              10 keys across different GCP projects
+ *   otherwise (AI Studio)    — GEMINI_API_KEY, or GEMINI_API_KEY_1..20 for
+ *                              up to 20 keys across different GCP projects
  */
 
 import { loadCheckpoint, saveCheckpoint } from './checkpoints';
+import { MAX_NUMBERED_KEYS } from './keys';
 import { runPhase1 } from './phase1-translate';
 import { runPhase2 } from './phase2-name-alt';
 import { runPhase3 } from './phase3-db-update';
@@ -96,12 +97,12 @@ if (needsGemini) {
     const hasGeminiKey =
       !!process.env.GEMINI_API_KEY ||
       Array.from(
-        { length: 10 },
+        { length: MAX_NUMBERED_KEYS },
         (_, i) => process.env[`GEMINI_API_KEY_${i + 1}`]
       ).some(Boolean);
     if (!hasGeminiKey) {
       console.error(
-        'Missing GEMINI_API_KEY (or GEMINI_API_KEY_1..10) — needed for Phase 2 and Phase 4'
+        `Missing GEMINI_API_KEY (or GEMINI_API_KEY_1..${MAX_NUMBERED_KEYS}) — needed for Phase 2 and Phase 4`
       );
       process.exit(1);
     }

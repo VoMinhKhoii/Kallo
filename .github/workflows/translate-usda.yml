@@ -75,7 +75,14 @@ jobs:
         with:
           path: data/translation-checkpoints
           key: translate-usda-checkpoints-${{ github.run_id }}-${{ github.run_attempt }}
+          # Ordered fallback: this run's earlier ATTEMPT first (a re-run should
+          # continue itself), then any earlier RUN. The bare prefix is what makes
+          # a fresh dispatch resume instead of re-paying Phase 1/2 API cost —
+          # scoping it to github.run_id would defeat the whole point. Stale
+          # entries are harmless: rows leave the untranslated predicate once
+          # written, and phase 3 validates every checkpoint entry before use.
           restore-keys: |
+            translate-usda-checkpoints-${{ github.run_id }}-
             translate-usda-checkpoints-
 
       - name: Acquire prod DB lease
