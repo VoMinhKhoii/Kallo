@@ -11,6 +11,12 @@
 # rerun after a partial failure only pays for what's left (checkpoints are
 # also cached across runs for the API phases).
 #
+# Gemini inference runs on Vertex AI (AI_PROVIDER=vertex), the same provider
+# the prod Cloud Run service uses — billed quota with no free-tier daily cap,
+# authenticated by the ADC that google-github-actions/auth (WIF) already puts
+# on the runner, so no Gemini API key secret is involved. The deployer service
+# account therefore needs roles/aiplatform.user on the project.
+#
 # Holds the same GCS lease as the deploy workflow while writing, so a deploy
 # and a translation never interleave DB writes; deploys queue behind it.
 name: Translate USDA rows
@@ -55,11 +61,20 @@ jobs:
       # Phase 1/2 results live in local JSON checkpoints; cache them so a
       # failed run resumes instead of re-paying the API cost. (Phase 3 needs
       # no cache — once it writes, rows leave the untranslated predicate.)
+      #
+      # Split into restore/save rather than a single actions/cache@v4 because
+      # that action's implicit post-step save is SKIPPED when the job is
+      # cancelled or times out — exactly the cases this pipeline hits (180m
+      # timeout, manual cancellation), and exactly when throwing away the API
+      # spend already paid for hurts most. The `if: always()` save below is
+      # what makes `--resume` actually work in CI. (`save-always: true` on the
+      # combined action is deprecated; the restore/save pair is the fix.)
       - name: Restore translation checkpoints
-        uses: actions/cache@v4
+        id: checkpoints
+        uses: actions/cache/restore@v4
         with:
           path: data/translation-checkpoints
-          key: translate-usda-checkpoints-${{ github.run_id }}
+          key: translate-usda-checkpoints-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             translate-usda-checkpoints-
 
@@ -72,17 +87,32 @@ jobs:
         run: ./scripts/cloud-run/staging-lease.sh acquire
 
       - name: Run translation pipeline (4 phases)
+        env:
+          # Same provider/region the prod service runs on (cloud-run-prod.yml).
+          AI_PROVIDER: vertex
+          GOOGLE_CLOUD_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          GOOGLE_CLOUD_LOCATION: global
         run: |
           database_url="$(gcloud secrets versions access latest --secret=kallo-prod-database-url)"
-          gemini_key="$(gcloud secrets versions access latest --secret=kallo-prod-gemini-api-key)"
           translate_key="$(gcloud secrets versions access latest --secret=kallo-google-translate-api-key)"
           echo "::add-mask::$database_url"
-          echo "::add-mask::$gemini_key"
           echo "::add-mask::$translate_key"
           DATABASE_URL="$database_url" \
-          GEMINI_API_KEY="$gemini_key" \
           GOOGLE_TRANSLATE_API_KEY="$translate_key" \
           bun scripts/translate-usda-vietnamese/index.ts --resume
+
+      # Must run even on cancel/timeout — see the restore step's comment.
+      - name: Save translation checkpoints
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/translation-checkpoints
+          # run_attempt is in the key because run_id is STABLE across
+          # "Re-run failed jobs": without it the save no-ops on "cache already
+          # exists" and the retry's progress is silently discarded. The
+          # restore-keys prefix still matches, so a retry resumes from the
+          # previous attempt.
+          key: translate-usda-checkpoints-${{ github.run_id }}-${{ github.run_attempt }}
 
       # Phase 4 exits gracefully on key exhaustion rather than throwing, so a
       # "green" pipeline step does not prove completion — count what's left.
