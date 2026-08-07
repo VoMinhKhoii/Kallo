@@ -1,13 +1,9 @@
 'use client';
 
-import { ArrowLeft, Check, Loader2, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, Check, Flame, Loader2, Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';
-import { OcrNutrientGrid } from './ocr-nutrient-grid';
-
-import { useOcrReviewState } from './use-ocr-review-state';
 
 interface OcrReviewStepProps {
   data: ParsedNutritionLabel;
@@ -20,7 +16,6 @@ interface OcrReviewStepProps {
     proteinGrams: number;
     carbsGrams: number;
     fatGrams: number;
-    [key: string]: string | number | null | undefined;
   }) => void;
 }
 
@@ -31,23 +26,50 @@ export function OcrReviewStep({
   onConfirm,
 }: OcrReviewStepProps) {
   const t = useTranslations('logging');
-  const {
-    productName,
-    setProductName,
-    grams,
-    unit,
-    handleGramsChange,
-    calories,
-    setCalories,
-    proteinGrams,
-    setProtein,
-    carbsGrams,
-    setCarbs,
-    fatGrams,
-    setFat,
-    getBaseValue,
-    scaleMicro,
-  } = useOcrReviewState(data);
+
+  // Base values per 100g or per serving
+  const defaultServing = data.servingSizeGrams ?? 100;
+  const [productName, setProductName] = useState(
+    data.productName || 'Scanned Packaged Food'
+  );
+  const [grams, setGrams] = useState(defaultServing);
+
+  // Compute scaled nutrients based on default detected nutrients vs target grams
+  const scaleRatio = data.per100g
+    ? grams / 100
+    : defaultServing > 0
+      ? grams / defaultServing
+      : 1;
+
+  const baseCal = data.per100g?.calories ?? data.calories ?? 0;
+  const baseProtein = data.per100g?.proteinGrams ?? data.proteinGrams ?? 0;
+  const baseCarbs = data.per100g?.carbsGrams ?? data.carbsGrams ?? 0;
+  const baseFat = data.per100g?.fatGrams ?? data.fatGrams ?? 0;
+
+  const [calories, setCalories] = useState(Math.round(baseCal * scaleRatio));
+  const [proteinGrams, setProtein] = useState(
+    Math.round(baseProtein * scaleRatio * 10) / 10
+  );
+  const [carbsGrams, setCarbs] = useState(
+    Math.round(baseCarbs * scaleRatio * 10) / 10
+  );
+  const [fatGrams, setFat] = useState(
+    Math.round(baseFat * scaleRatio * 10) / 10
+  );
+
+  const handleGramsChange = (newGrams: number) => {
+    const validGrams = Math.max(1, newGrams);
+    setGrams(validGrams);
+    const newRatio = data.per100g
+      ? validGrams / 100
+      : defaultServing > 0
+        ? validGrams / defaultServing
+        : 1;
+    setCalories(Math.round(baseCal * newRatio));
+    setProtein(Math.round(baseProtein * newRatio * 10) / 10);
+    setCarbs(Math.round(baseCarbs * newRatio * 10) / 10);
+    setFat(Math.round(baseFat * newRatio * 10) / 10);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,55 +80,13 @@ export function OcrReviewStep({
       proteinGrams,
       carbsGrams,
       fatGrams,
-      fiberGrams: scaleMicro(getBaseValue('fiberGrams')),
-      sodiumMg: scaleMicro(getBaseValue('sodiumMg')),
-      calciumMg: scaleMicro(getBaseValue('calciumMg')),
-      ironMg: scaleMicro(getBaseValue('ironMg')),
-      potassiumMg: scaleMicro(getBaseValue('potassiumMg')),
-      vitaminAMcg: scaleMicro(getBaseValue('vitaminAMcg')),
-      vitaminCMg: scaleMicro(getBaseValue('vitaminCMg')),
-      vitaminDMcg: scaleMicro(getBaseValue('vitaminDMcg')),
     });
   };
-
-  const macros = [
-    {
-      label: t('calories'),
-      val: calories,
-      unit: 'kcal',
-      icon: true,
-      step: '1',
-      setter: setCalories,
-    },
-    {
-      label: t('barcodeProtein'),
-      val: proteinGrams,
-      unit: 'g',
-      icon: false,
-      step: '0.1',
-      setter: setProtein,
-    },
-    {
-      label: t('barcodeCarbs'),
-      val: carbsGrams,
-      unit: 'g',
-      icon: false,
-      step: '0.1',
-      setter: setCarbs,
-    },
-    {
-      label: t('barcodeFat'),
-      val: fatGrams,
-      unit: 'g',
-      icon: false,
-      step: '0.1',
-      setter: setFat,
-    },
-  ];
 
   return (
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+        {/* Product Name */}
         <div className="space-y-1.5">
           <label className="font-medium font-sans-display text-[#8B8682] text-[12px]">
             Product Name
@@ -119,6 +99,7 @@ export function OcrReviewStep({
           />
         </div>
 
+        {/* Portion Selector */}
         <div className="space-y-2 rounded-xl border border-[#EAE7E0] bg-nham-track/30 p-3.5">
           <div className="flex items-center justify-between font-medium text-[13px] text-nham-text">
             <span>{t('barcodeGramsLabel')}</span>
@@ -130,9 +111,8 @@ export function OcrReviewStep({
               >
                 <Minus className="h-3.5 w-3.5" />
               </button>
-              <span className="w-14 text-center font-bold text-nham-ink">
-                {grams}
-                {unit}
+              <span className="w-12 text-center font-bold text-nham-ink">
+                {grams}g
               </span>
               <button
                 type="button"
@@ -145,9 +125,75 @@ export function OcrReviewStep({
           </div>
         </div>
 
-        <OcrNutrientGrid items={macros} />
+        {/* Extracted Nutrients Grid */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="space-y-1 rounded-xl border border-[#EAE7E0] bg-white p-3">
+            <div className="flex items-center gap-1.5 text-[#8B8682] text-[12px]">
+              <Flame className="h-3.5 w-3.5 text-nham-accent" />
+              <span>{t('calories')}</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <Input
+                type="number"
+                value={calories}
+                onChange={(e) => setCalories(Number(e.target.value))}
+                className="h-8 w-20 border-none p-0 font-bold text-[18px] text-nham-ink focus-visible:ring-0"
+              />
+              <span className="text-[#8B8682] text-[12px]">kcal</span>
+            </div>
+          </div>
+
+          <div className="space-y-1 rounded-xl border border-[#EAE7E0] bg-white p-3">
+            <span className="text-[#8B8682] text-[12px]">
+              {t('barcodeProtein')}
+            </span>
+            <div className="flex items-baseline gap-1">
+              <Input
+                type="number"
+                step="0.1"
+                value={proteinGrams}
+                onChange={(e) => setProtein(Number(e.target.value))}
+                className="h-8 w-16 border-none p-0 font-bold text-[18px] text-nham-ink focus-visible:ring-0"
+              />
+              <span className="text-[#8B8682] text-[12px]">g</span>
+            </div>
+          </div>
+
+          <div className="space-y-1 rounded-xl border border-[#EAE7E0] bg-white p-3">
+            <span className="text-[#8B8682] text-[12px]">
+              {t('barcodeCarbs')}
+            </span>
+            <div className="flex items-baseline gap-1">
+              <Input
+                type="number"
+                step="0.1"
+                value={carbsGrams}
+                onChange={(e) => setCarbs(Number(e.target.value))}
+                className="h-8 w-16 border-none p-0 font-bold text-[18px] text-nham-ink focus-visible:ring-0"
+              />
+              <span className="text-[#8B8682] text-[12px]">g</span>
+            </div>
+          </div>
+
+          <div className="space-y-1 rounded-xl border border-[#EAE7E0] bg-white p-3">
+            <span className="text-[#8B8682] text-[12px]">
+              {t('barcodeFat')}
+            </span>
+            <div className="flex items-baseline gap-1">
+              <Input
+                type="number"
+                step="0.1"
+                value={fatGrams}
+                onChange={(e) => setFat(Number(e.target.value))}
+                className="h-8 w-16 border-none p-0 font-bold text-[18px] text-nham-ink focus-visible:ring-0"
+              />
+              <span className="text-[#8B8682] text-[12px]">g</span>
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* Footer */}
       <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/70 border-t bg-nham-track/50 px-6 py-4">
         <button
           type="button"
@@ -158,6 +204,7 @@ export function OcrReviewStep({
           <ArrowLeft className="h-4 w-4" />
           {t('barcodeBack')}
         </button>
+
         <button
           type="submit"
           disabled={isStaging}

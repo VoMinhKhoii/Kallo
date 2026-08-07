@@ -1,12 +1,18 @@
+import { describe, expect, it } from 'vitest';
 import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr';
 
 describe('Live Nutrition Label OCR extraction', () => {
   it('extracts values from real images', async () => {
     // Standard sample nutrition label (Skittles)
     const url =
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Skittles-Nutrition-Facts.jpg/440px-Skittles-Nutrition-Facts.jpg';
+      'https://upload.wikimedia.org/wikipedia/commons/8/87/Skittles-Nutrition-Facts.jpg';
 
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+    });
     if (!res.ok) throw new Error(`Fetch failed: ${res.statusText}`);
     const arrayBuffer = await res.arrayBuffer();
     const base64Data = Buffer.from(arrayBuffer).toString('base64');

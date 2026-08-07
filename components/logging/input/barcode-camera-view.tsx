@@ -1,5 +1,6 @@
 'use client';
 
+import { Loader2 } from 'lucide-react';
 import type { CameraStatus } from '@/hooks/meals/use-barcode-camera-scanner';
 
 interface BarcodeCameraViewProps {

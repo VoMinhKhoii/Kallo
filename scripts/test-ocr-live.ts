@@ -4,7 +4,7 @@ import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-
 const SAMPLE_URLS = [
   {
     name: 'Skittles (Red Bag)',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Skittles-Nutrition-Facts.jpg/440px-Skittles-Nutrition-Facts.jpg',
+    url: 'https://upload.wikimedia.org/wikipedia/commons/8/87/Skittles-Nutrition-Facts.jpg',
   },
 ];
 
@@ -13,7 +13,12 @@ async function runTest() {
   for (const item of SAMPLE_URLS) {
     try {
       console.log(`\nFetching ${item.name}...`);
-      const res = await fetch(item.url);
+      const res = await fetch(item.url, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+      });
       if (!res.ok) {
         console.error(`Failed to fetch ${item.url}: ${res.statusText}`);
         continue;
