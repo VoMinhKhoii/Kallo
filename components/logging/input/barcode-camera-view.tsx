@@ -10,6 +10,7 @@ interface BarcodeCameraViewProps {
   onCameraChange: (id: string) => void;
   initializingText: string;
   scanningText: string;
+  selectCameraLabel?: string;
 }
 
 export function BarcodeCameraView({
@@ -19,13 +20,14 @@ export function BarcodeCameraView({
   onCameraChange,
   initializingText,
   scanningText,
+  selectCameraLabel,
 }: BarcodeCameraViewProps) {
   return (
     <div className="space-y-3">
       <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black shadow-sm">
         <div
           id="nham-barcode-scanner"
-          className="[&_#qr-shaded-region]:!hidden h-full w-full [&>video]:h-full [&>video]:w-full [&>video]:object-cover"
+          className="[&_#qr-shaded-region]:hidden! h-full w-full [&>video]:h-full [&>video]:w-full [&>video]:object-cover"
         />
         <div className="pointer-events-none absolute inset-0 z-10">
           <div className="absolute inset-0 bg-black/30" />
@@ -51,6 +53,7 @@ export function BarcodeCameraView({
             <span>{scanningText}</span>
             {cameras.length > 1 && (
               <select
+                aria-label={selectCameraLabel || 'Select camera'}
                 value={selectedCameraId || cameras[0]?.id}
                 onChange={(e) => onCameraChange(e.target.value)}
                 className="mx-auto block rounded-lg border border-[#EAE7E0] bg-white px-2.5 py-1 text-xs"

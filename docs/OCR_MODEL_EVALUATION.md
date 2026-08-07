@@ -81,6 +81,6 @@ bun --env-file=.env.local tsx scripts/test-ocr-live.ts
 Or execute unit & schema parsing benchmarks via:
 
 ```bash
-bun test lib/nutrition/__tests__/ocr-schema.test.ts
+npx vitest run lib/nutrition/__tests__/ocr-schema.test.ts
 ```
 

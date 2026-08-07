@@ -11,20 +11,18 @@ export function useOcrReviewState(data: ParsedNutritionLabel) {
   );
   const [grams, setGrams] = useState(defaultServing);
 
-  const p100 = data.per100g;
-  const pSrv = data.perServing;
-  const baseCal = p100?.calories ?? pSrv?.calories ?? 0;
-  const baseProtein = p100?.proteinGrams ?? pSrv?.proteinGrams ?? 0;
-  const baseCarbs = p100?.carbsGrams ?? pSrv?.carbsGrams ?? 0;
-  const baseFat = p100?.fatGrams ?? pSrv?.fatGrams ?? 0;
+  // Pick one column so every value shares a single base weight.
+  const useServingColumn = !data.per100g && !!data.perServing;
+  const base = useServingColumn ? data.perServing : data.per100g;
+  const baseWeight =
+    useServingColumn && defaultServing > 0 ? defaultServing : 100;
 
-  const getBaseValue = (key: keyof NutritionValues) =>
-    p100?.[key] ?? pSrv?.[key] ?? null;
-  const baseWeight = data.per100g
-    ? 100
-    : defaultServing > 0
-      ? defaultServing
-      : 100;
+  const baseCal = base?.calories ?? 0;
+  const baseProtein = base?.proteinGrams ?? 0;
+  const baseCarbs = base?.carbsGrams ?? 0;
+  const baseFat = base?.fatGrams ?? 0;
+
+  const getBaseValue = (key: keyof NutritionValues) => base?.[key] ?? null;
   const scaleRatio = grams / baseWeight;
 
   const [calories, setCalories] = useState(Math.round(baseCal * scaleRatio));

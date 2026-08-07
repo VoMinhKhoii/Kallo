@@ -43,12 +43,9 @@ export async function compressNutritionLabelImage(file: File): Promise<{
         }
 
         ctx.drawImage(img, 0, 0, width, height);
-        // Retain original mimeType if supported, default to image/jpeg
-        const targetMime = ['image/png', 'image/webp', 'image/jpeg'].includes(
-          file.type
-        )
-          ? file.type
-          : 'image/jpeg';
+        // Always re-encode lossily; PNG ignores quality argument and inflates payload.
+        const targetMime =
+          file.type === 'image/webp' ? 'image/webp' : 'image/jpeg';
         const dataUrl = canvas.toDataURL(targetMime, 0.85);
         const base64Data = dataUrl.split(',')[1];
         resolve({ base64Data, mimeType: targetMime });

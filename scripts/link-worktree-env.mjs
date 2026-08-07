@@ -1,5 +1,12 @@
 #!/usr/bin/env node
-import { copyFileSync, existsSync, lstatSync, symlinkSync } from 'node:fs';
+import {
+  constants,
+  copyFileSync,
+  existsSync,
+  lstatSync,
+  statSync,
+  symlinkSync,
+} from 'node:fs';
 import path from 'node:path';
 
 const cwd = process.cwd();
@@ -9,8 +16,8 @@ if (!normalizedCwd.includes('/.claude/worktrees/')) {
   process.exit(0);
 }
 
-const worktreePathSegment = `.claude${path.sep}worktrees`;
-const worktreeIndex = cwd.indexOf(worktreePathSegment);
+const worktreeMarker = '/.claude/worktrees/';
+const worktreeIndex = normalizedCwd.lastIndexOf(worktreeMarker);
 if (worktreeIndex === -1) {
   process.exit(0);
 }
@@ -31,7 +38,7 @@ try {
   // dst does not exist
 }
 
-if (!existsSync(src)) {
+if (!existsSync(src) || !statSync(src).isFile()) {
   process.exit(0);
 }
 
@@ -40,9 +47,18 @@ try {
   console.log(`linked .env.local -> ${src}`);
 } catch {
   try {
-    copyFileSync(src, dst);
+    copyFileSync(src, dst, constants.COPYFILE_EXCL);
     console.log(`copied .env.local -> ${src}`);
   } catch (copyErr) {
+    if (
+      typeof copyErr === 'object' &&
+      copyErr !== null &&
+      'code' in copyErr &&
+      copyErr.code === 'EEXIST'
+    ) {
+      process.exit(0);
+    }
     console.error('Failed to link or copy .env.local:', copyErr);
+    process.exitCode = 1;
   }
 }

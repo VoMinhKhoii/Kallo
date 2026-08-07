@@ -55,7 +55,6 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
         className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-[24px] border border-[#EAE7E0] bg-[#FDFCF8] p-0 font-sans-display text-nham-text sm:max-w-md"
       >
         <BarcodeDialogHeader
-          scanType={scanType}
           title={
             scanType === 'barcode'
               ? t('barcodeDialogTitle')

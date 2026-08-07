@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/dialog';
 
 interface BarcodeDialogHeaderProps {
-  scanType: 'barcode' | 'ocr';
   title: string;
   description: string;
   cancelText: string;

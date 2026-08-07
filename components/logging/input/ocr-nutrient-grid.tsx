@@ -27,6 +27,7 @@ export function OcrNutrientGrid({ items }: { items: MacroItem[] }) {
           <div className="flex items-baseline gap-1">
             <Input
               type="number"
+              aria-label={`${item.label} (${item.unit})`}
               step={item.step}
               value={item.val}
               onChange={(e) => item.setter(Number(e.target.value))}

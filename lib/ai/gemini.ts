@@ -188,6 +188,18 @@ export function createGeminiClient(
       return withRetry(
         async (attempt) => {
           const callStart = Date.now();
+          if (params.image) {
+            const approxBytes = Math.ceil(
+              (params.image.base64Data.length * 3) / 4
+            );
+            const MAX_INLINE_BYTES = 10 * 1024 * 1024;
+            if (approxBytes > MAX_INLINE_BYTES) {
+              throw new Error(
+                `Image payload exceeds inline limit (${(approxBytes / (1024 * 1024)).toFixed(1)}MB > 10MB)`
+              );
+            }
+          }
+
           const contents = params.image
             ? [
                 {
@@ -328,9 +340,33 @@ export function createGeminiClient(
           const streamStart = Date.now();
           let firstChunkAt: number | null = null;
 
+          if (params.image) {
+            const approxBytes = Math.ceil(
+              (params.image.base64Data.length * 3) / 4
+            );
+            const MAX_INLINE_BYTES = 10 * 1024 * 1024;
+            if (approxBytes > MAX_INLINE_BYTES) {
+              throw new Error(
+                `Image payload exceeds inline limit (${(approxBytes / (1024 * 1024)).toFixed(1)}MB > 10MB)`
+              );
+            }
+          }
+
+          const contents = params.image
+            ? [
+                {
+                  inlineData: {
+                    mimeType: params.image.mimeType,
+                    data: params.image.base64Data,
+                  },
+                },
+                params.userMessage,
+              ]
+            : params.userMessage;
+
           const response = await ai.models.generateContentStream({
             model: params.model,
-            contents: params.userMessage,
+            contents,
             config: {
               systemInstruction: params.systemPrompt,
               responseMimeType: 'application/json',

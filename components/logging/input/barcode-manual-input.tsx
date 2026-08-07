@@ -37,7 +37,10 @@ export function BarcodeManualInput({
         />
       </div>
       {searchError && (
-        <div className="space-y-2 rounded-lg bg-nham-danger/10 p-3 font-sans-display text-[13px] text-nham-danger">
+        <div
+          role="alert"
+          className="space-y-2 rounded-lg bg-nham-danger/10 p-3 font-sans-display text-[13px] text-nham-danger"
+        >
           <p>{searchError}</p>
           <button
             type="button"

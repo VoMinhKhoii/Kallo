@@ -4,6 +4,7 @@ import { ArrowLeft, Check, Flame, Loader2, Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';
+import { useOcrReviewState } from './use-ocr-review-state';
 
 interface OcrReviewStepProps {
   data: ParsedNutritionLabel;
@@ -26,50 +27,21 @@ export function OcrReviewStep({
   onConfirm,
 }: OcrReviewStepProps) {
   const t = useTranslations('logging');
-
-  // Base values per 100g or per serving
-  const defaultServing = data.servingSizeGrams ?? 100;
-  const [productName, setProductName] = useState(
-    data.productName || 'Scanned Packaged Food'
-  );
-  const [grams, setGrams] = useState(defaultServing);
-
-  // Compute scaled nutrients based on default detected nutrients vs target grams
-  const scaleRatio = data.per100g
-    ? grams / 100
-    : defaultServing > 0
-      ? grams / defaultServing
-      : 1;
-
-  const baseCal = data.per100g?.calories ?? data.calories ?? 0;
-  const baseProtein = data.per100g?.proteinGrams ?? data.proteinGrams ?? 0;
-  const baseCarbs = data.per100g?.carbsGrams ?? data.carbsGrams ?? 0;
-  const baseFat = data.per100g?.fatGrams ?? data.fatGrams ?? 0;
-
-  const [calories, setCalories] = useState(Math.round(baseCal * scaleRatio));
-  const [proteinGrams, setProtein] = useState(
-    Math.round(baseProtein * scaleRatio * 10) / 10
-  );
-  const [carbsGrams, setCarbs] = useState(
-    Math.round(baseCarbs * scaleRatio * 10) / 10
-  );
-  const [fatGrams, setFat] = useState(
-    Math.round(baseFat * scaleRatio * 10) / 10
-  );
-
-  const handleGramsChange = (newGrams: number) => {
-    const validGrams = Math.max(1, newGrams);
-    setGrams(validGrams);
-    const newRatio = data.per100g
-      ? validGrams / 100
-      : defaultServing > 0
-        ? validGrams / defaultServing
-        : 1;
-    setCalories(Math.round(baseCal * newRatio));
-    setProtein(Math.round(baseProtein * newRatio * 10) / 10);
-    setCarbs(Math.round(baseCarbs * newRatio * 10) / 10);
-    setFat(Math.round(baseFat * newRatio * 10) / 10);
-  };
+  const {
+    productName,
+    setProductName,
+    grams,
+    unit,
+    handleGramsChange,
+    calories,
+    setCalories,
+    proteinGrams,
+    setProtein,
+    carbsGrams,
+    setCarbs,
+    fatGrams,
+    setFat,
+  } = useOcrReviewState(data);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,7 +84,8 @@ export function OcrReviewStep({
                 <Minus className="h-3.5 w-3.5" />
               </button>
               <span className="w-12 text-center font-bold text-nham-ink">
-                {grams}g
+                {grams}
+                {unit}
               </span>
               <button
                 type="button"

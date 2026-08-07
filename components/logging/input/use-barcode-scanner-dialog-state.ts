@@ -117,21 +117,17 @@ export function useBarcodeScannerDialogState({
     }, 200);
   }, [onOpenChange, stopScanner]);
 
-  const handleStageMeal = async (grams: number) => {
-    if (!product) return;
+  const executeStageAndSave = async <
+    T extends { success: boolean; code?: string; analysisId?: string },
+  >(
+    stageFn: () => Promise<T>,
+    errorPrefix: 'barcodeError' | 'ocrError'
+  ) => {
     setIsStaging(true);
-    const timezoneOffset = new Date().getTimezoneOffset();
-
     try {
-      const res = await stageBarcodeMealAction({
-        barcode: product.barcode,
-        grams,
-        loggedDate: selectedDate,
-        timezoneOffset,
-      });
-
-      if (!res.success) {
-        toast.error(t(`barcodeError.${res.code}`));
+      const res = await stageFn();
+      if (!res.success || !res.analysisId) {
+        toast.error(t(`${errorPrefix}.${res.code || 'server_error'}`));
         return;
       }
 
@@ -140,10 +136,24 @@ export function useBarcodeScannerDialogState({
       onSuccess();
       handleClose();
     } catch {
-      toast.error(t('barcodeError.server_error'));
+      toast.error(t(`${errorPrefix}.server_error`));
     } finally {
       setIsStaging(false);
     }
+  };
+
+  const handleStageMeal = async (grams: number) => {
+    if (!product) return;
+    await executeStageAndSave(
+      () =>
+        stageBarcodeMealAction({
+          barcode: product.barcode,
+          grams,
+          loggedDate: selectedDate,
+          timezoneOffset: new Date().getTimezoneOffset(),
+        }),
+      'barcodeError'
+    );
   };
 
   const handleConfirmOcrMeal = async (
@@ -151,26 +161,15 @@ export function useBarcodeScannerDialogState({
       React.ComponentProps<typeof OcrReviewStep>['onConfirm']
     >[0]
   ) => {
-    setIsStaging(true);
-    try {
-      const res = await stageOcrMealAction({
-        ...payload,
-        loggedDate: selectedDate,
-        timezoneOffset: new Date().getTimezoneOffset(),
-      });
-      if (!res.success) {
-        toast.error(t(`ocrError.${res.code}`));
-        return;
-      }
-      await confirmAndSaveMealAction({ analysisId: res.analysisId });
-      toast.success(t('feedArea.savedMeal'));
-      onSuccess();
-      handleClose();
-    } catch {
-      toast.error(t('ocrError.server_error'));
-    } finally {
-      setIsStaging(false);
-    }
+    await executeStageAndSave(
+      () =>
+        stageOcrMealAction({
+          ...payload,
+          loggedDate: selectedDate,
+          timezoneOffset: new Date().getTimezoneOffset(),
+        }),
+      'ocrError'
+    );
   };
 
   return {

@@ -165,7 +165,7 @@ export function OcrScannerTab({
           role="alert"
           className="rounded-xl bg-nham-danger/10 p-3 font-sans-display text-[13px] text-nham-danger leading-snug"
         >
-          {error}
+          {t(`ocrError.${error}`)}
         </div>
       )}
 
