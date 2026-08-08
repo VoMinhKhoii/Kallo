@@ -48,6 +48,19 @@ describe('buildDecompositionPrompt', () => {
     expect(prompt).not.toContain('estimatedGrams');
   });
 
+  it('requires per-ingredient cooking methods for mixed-method dishes', () => {
+    for (const prompt of [
+      buildDecompositionPrompt(sampleUserContext),
+      buildCompressedDecompositionPrompt(sampleUserContext),
+    ]) {
+      expect(prompt).toContain('ingredients[].cookingMethod');
+      expect(prompt.toLowerCase()).toMatch(
+        /never\s+broadcast one method to all ingredients/
+      );
+      expect(prompt).toMatch(/(?:tofu|đậu hũ)="chiên"/);
+    }
+  });
+
   it('includes meal slot classification instruction', () => {
     const prompt = buildDecompositionPrompt(sampleUserContext);
     expect(prompt).toContain('mealSlot');

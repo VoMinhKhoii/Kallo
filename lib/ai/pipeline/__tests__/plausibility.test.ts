@@ -113,37 +113,6 @@ describe('classifyIngredientPlausibility — genuinely non-caloric', () => {
   });
 });
 
-describe('classifyIngredientPlausibility — unmatched with omitted caloric macros (D3 guard)', () => {
-  it('flags an unmatched real food with omitted caloric macros as unresolved_estimate', () => {
-    // Unmatched path: grams resolved, hasNutrition true (fatG always present),
-    // no DB candidate (caloriesPer100g null), but the LLM omitted the caloric
-    // triple → would silently persist ZERO_TRIPLE. Route to clarify instead.
-    expect(
-      classifyIngredientPlausibility({
-        grams: 150,
-        hasNutrition: true,
-        caloriesPer100g: null,
-        name: 'ức gà',
-        emittedCaloricMacrosMissing: true,
-      })
-    ).toBe('unresolved_estimate');
-  });
-
-  it('keeps a water/coffee/tea name genuinely_noncaloric even with omitted macros', () => {
-    for (const name of ['nước lọc', 'black coffee', 'trà đá không đường']) {
-      expect(
-        classifyIngredientPlausibility({
-          grams: 250,
-          hasNutrition: true,
-          caloriesPer100g: null,
-          name,
-          emittedCaloricMacrosMissing: true,
-        })
-      ).toBe('genuinely_noncaloric');
-    }
-  });
-});
-
 describe('classifyIngredientPlausibility — small concentrated portions', () => {
   it('permits a ≤5g oil/spice/sweetener/sauce portion', () => {
     for (const name of ['dầu ăn', 'muối', 'đường', 'nước mắm', 'olive oil']) {
@@ -444,7 +413,6 @@ describe('classifyIngredientPlausibility — carb-staple floor', () => {
           hasNutrition: true,
           caloriesPer100g: null,
           name,
-          emittedCaloricMacrosMissing: true,
         })
       ).not.toBe('genuinely_noncaloric');
     }

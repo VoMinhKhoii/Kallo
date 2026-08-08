@@ -82,6 +82,9 @@ function fakeEstimator(opts?: {
             ingredients: mi.ingredients.map((ing) => ({
               ingredientName: ing.ingredient.rawName,
               grams: 100,
+              caloriesKcal: { low: 100, mid: 110, high: 120 },
+              proteinG: { low: 10, mid: 11, high: 12 },
+              carbohydrateG: { low: 5, mid: 6, high: 7 },
               fatG: { low: 1, mid: 1, high: 1 },
             })),
           })),
@@ -196,6 +199,9 @@ describe('runChunkedCall2 — deterministic merge + failure contract', () => {
                 {
                   ingredientName: mi.ingredients[0].ingredient.rawName,
                   grams: 100,
+                  caloriesKcal: { low: 100, mid: 110, high: 120 },
+                  proteinG: { low: 10, mid: 11, high: 12 },
+                  carbohydrateG: { low: 5, mid: 6, high: 7 },
                   fatG: { low: 1, mid: 1, high: 1 },
                 },
               ],

@@ -26,7 +26,7 @@ import type {
   DecomposedMealItem,
   MatchedIngredient,
 } from '../types';
-import type { VerdictPerIngredient } from './bridge';
+import type { VerdictPerIngredient } from './bridge-output';
 import type {
   DecomposedDishV2,
   DecomposedIngredientV2,

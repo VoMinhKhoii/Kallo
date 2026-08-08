@@ -46,19 +46,6 @@ export interface PlausibilityInput {
   carbsPer100g?: number | null;
   /** Ingredient name (rawName or canonicalName) for name-class heuristics. */
   name: string;
-  /**
-   * UNMATCHED-path defense-in-depth (Phase 4/D3 regression guard). Set `true`
-   * ONLY for an unmatched / rejected-resolvable ingredient whose Call 2 output
-   * OMITTED the caloric macro triple (caloriesKcal/proteinG/carbohydrateG) — the
-   * values the server does NOT anchor for unmatched foods. When true, the
-   * ingredient is treated as `unresolved_estimate` (routes to clarify) rather
-   * than silently persisting a ZERO_TRIPLE row, UNLESS its name is genuinely
-   * non-caloric (water/black coffee/plain tea).
-   *
-   * MUST stay `false`/omitted for matched ingredients: the server anchors their
-   * P/C/kcal from the DB row, so an omitted D3 triple is correct there.
-   */
-  emittedCaloricMacrosMissing?: boolean;
 }
 
 /** Foods whose correct calorie contribution is ~zero regardless of volume. */
@@ -237,6 +224,21 @@ function matchesAny(name: string, patterns: RegExp[]): boolean {
   return patterns.some((p) => p.test(normalized));
 }
 
+/**
+ * Is this name a rice/noodle/bread base that MUST carry real carbs?
+ *
+ * The staple and exempt lists are the single source of truth for "is this a
+ * starch", so the bridge's no-macro-anchor carve-out asks THIS rather than
+ * keeping a second copy that could drift out of sync with the exemptions
+ * (`mì chính` = MSG, `mì căn` = seitan, konjac, broths named after dishes).
+ */
+export function isCarbStapleName(name: string): boolean {
+  return (
+    matchesAny(name, CARB_STAPLE_PATTERNS) &&
+    !matchesAny(name, CARB_STAPLE_EXEMPT_PATTERNS)
+  );
+}
+
 function hasResolvedGrams(grams: number | null): grams is number {
   return grams != null && Number.isFinite(grams) && grams > 0;
 }
@@ -274,16 +276,6 @@ export function classifyIngredientPlausibility(
     return 'genuinely_noncaloric';
   }
 
-  // Phase 4/D3 regression guard (UNMATCHED path only): the ingredient resolved
-  // grams and Call 2 emitted SOMETHING (hasNutrition — fatG is always present),
-  // but the caloric macro triple the server does NOT anchor for unmatched foods
-  // was omitted. Defense-in-depth: never trust the prompt. A ZERO_TRIPLE row
-  // here would be a silent zero-macro persist; the bridge withholds the row.
-  // Non-caloric names already returned above, so this only bites real foods.
-  if (input.emittedCaloricMacrosMissing) {
-    return 'unresolved_estimate';
-  }
-
   // Carb-staple floor (bánh-ướt-chả-bò bug class): a rice/noodle/bread base
   // must carry real carbs. `undefined` skips the check (backward-compat). When
   // provided, MATCHED carbs come from the DB row and UNMATCHED carbs are the
@@ -292,11 +284,7 @@ export function classifyIngredientPlausibility(
   // density trips outright; a null density (carb triple omitted for an
   // unmatched staple) only trips when calories are ALSO absent, so a matched
   // staple with a null DB carb but a real energy density still passes.
-  if (
-    input.carbsPer100g !== undefined &&
-    matchesAny(name, CARB_STAPLE_PATTERNS) &&
-    !matchesAny(name, CARB_STAPLE_EXEMPT_PATTERNS)
-  ) {
+  if (input.carbsPer100g !== undefined && isCarbStapleName(name)) {
     const carbs = input.carbsPer100g;
     if (carbs != null && carbs < STAPLE_MIN_CARBS_PER_100G) {
       return 'unresolved_estimate';

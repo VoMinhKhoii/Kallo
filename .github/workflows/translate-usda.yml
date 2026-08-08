@@ -1,0 +1,145 @@
+# Translate untranslated USDA rows in vietnamese_food_composition and
+# regenerate their embeddings — the durable fix for the mì-gói class of
+# zero-candidate incidents (2,186 rows / 31% of USDA were never translated
+# because the old hardcoded category scope skipped whole food groups; the
+# pipeline is now self-scoping on `name_primary = name_en AND name_alt IS
+# NULL` — the name_alt clause releases loanwords like Miso/Wasabi whose
+# correct Vietnamese name IS the English name).
+#
+# Manual trigger only: it spends Google Translate + Gemini quota and writes
+# to the PROD DB. Fully idempotent — translated rows drop out of scope, so a
+# rerun after a partial failure only pays for what's left (checkpoints are
+# also cached across runs for the API phases).
+#
+# Gemini inference runs on Vertex AI (AI_PROVIDER=vertex), the same provider
+# the prod Cloud Run service uses — billed quota with no free-tier daily cap,
+# authenticated by the ADC that google-github-actions/auth (WIF) already puts
+# on the runner, so no Gemini API key secret is involved. The deployer service
+# account therefore needs roles/aiplatform.user on the project.
+#
+# Holds the same GCS lease as the deploy workflow while writing, so a deploy
+# and a translation never interleave DB writes; deploys queue behind it.
+name: Translate USDA rows
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: translate-usda-production
+  cancel-in-progress: false
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 180
+    env:
+      LEASE_BUCKET: ${{ vars.GCS_PROD_LEASE_BUCKET }}
+      LEASE_OBJECT: prod/lease.json
+      # The lease's 2h default would expire mid-run and let a deploy steal the
+      # lock while phase 3/4 are still writing; 4h outruns the 180m timeout.
+      STAGING_LEASE_TTL_HOURS: 4
+    steps:
+      - uses: actions/checkout@v4
+        # Nothing after this runs a git command — the pipeline only reads the
+        # tree — so don't leave the checkout token in the runner's git config.
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      # Phase 1/2 results live in local JSON checkpoints; cache them so a
+      # failed run resumes instead of re-paying the API cost. (Phase 3 needs
+      # no cache — once it writes, rows leave the untranslated predicate.)
+      #
+      # Split into restore/save rather than a single actions/cache@v4 because
+      # that action's implicit post-step save is SKIPPED when the job is
+      # cancelled or times out — exactly the cases this pipeline hits (180m
+      # timeout, manual cancellation), and exactly when throwing away the API
+      # spend already paid for hurts most. The `if: always()` save below is
+      # what makes `--resume` actually work in CI. (`save-always: true` on the
+      # combined action is deprecated; the restore/save pair is the fix.)
+      - name: Restore translation checkpoints
+        id: checkpoints
+        uses: actions/cache/restore@v4
+        with:
+          path: data/translation-checkpoints
+          key: translate-usda-checkpoints-${{ github.run_id }}-${{ github.run_attempt }}
+          # Ordered fallback: this run's earlier ATTEMPT first (a re-run should
+          # continue itself), then any earlier RUN. The bare prefix is what makes
+          # a fresh dispatch resume instead of re-paying Phase 1/2 API cost —
+          # scoping it to github.run_id would defeat the whole point. Stale
+          # entries are harmless: rows leave the untranslated predicate once
+          # written, and phase 3 validates every checkpoint entry before use.
+          restore-keys: |
+            translate-usda-checkpoints-${{ github.run_id }}-
+            translate-usda-checkpoints-
+
+      - name: Acquire prod DB lease
+        env:
+          STAGING_REF: ${{ github.ref_name }}
+          STAGING_REASON: manual USDA translation backfill
+          STAGING_FORCE_TAKEOVER: 'false'
+          STAGING_TARGET_SHA: ${{ github.sha }}
+        run: ./scripts/cloud-run/staging-lease.sh acquire
+
+      - name: Run translation pipeline (4 phases)
+        env:
+          # Same provider/region the prod service runs on (cloud-run-prod.yml).
+          AI_PROVIDER: vertex
+          GOOGLE_CLOUD_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          GOOGLE_CLOUD_LOCATION: global
+        run: |
+          database_url="$(gcloud secrets versions access latest --secret=kallo-prod-database-url)"
+          translate_key="$(gcloud secrets versions access latest --secret=kallo-google-translate-api-key)"
+          echo "::add-mask::$database_url"
+          echo "::add-mask::$translate_key"
+          DATABASE_URL="$database_url" \
+          GOOGLE_TRANSLATE_API_KEY="$translate_key" \
+          bun scripts/translate-usda-vietnamese/index.ts --resume
+
+      # Must run even on cancel/timeout — see the restore step's comment.
+      - name: Save translation checkpoints
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/translation-checkpoints
+          # run_attempt is in the key because run_id is STABLE across
+          # "Re-run failed jobs": without it the save no-ops on "cache already
+          # exists" and the retry's progress is silently discarded. The
+          # restore-keys prefix still matches, so a retry resumes from the
+          # previous attempt.
+          key: translate-usda-checkpoints-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # Phase 4 exits gracefully on key exhaustion rather than throwing, so a
+      # "green" pipeline step does not prove completion — count what's left.
+      - name: Verify nothing untranslated or unembedded remains
+        run: |
+          database_url="$(gcloud secrets versions access latest --secret=kallo-prod-database-url)"
+          echo "::add-mask::$database_url"
+          encoded="$(node ./scripts/cloud-run/shared-db.mjs encode-url --db-url "$database_url")"
+          echo "::add-mask::$encoded"
+          remaining="$(psql "$encoded" -X -v ON_ERROR_STOP=1 -A -t -c \
+            "SELECT count(*) FROM vietnamese_food_composition
+             WHERE source_id = 2
+               AND ((name_primary = name_en AND name_alt IS NULL)
+                    OR embedding IS NULL)")"
+          echo "rows still untranslated or missing embeddings: $remaining"
+          if [ "$remaining" != "0" ]; then
+            echo "::error::$remaining rows remain — rerun this workflow (checkpoints are cached; the rerun resumes)."
+            exit 1
+          fi
+
+      - name: Release prod DB lease
+        if: always()
+        run: ./scripts/cloud-run/staging-lease.sh release

@@ -25,7 +25,6 @@ import {
   renderGeminiEstimatorPrompt,
 } from './estimator/gemini-estimator';
 import type { GroundedEstimator } from './estimator/types';
-import { buildFastPathEstimation } from './fast-path';
 import { runGroundedDecomposition } from './grounded-decomposition';
 import {
   createCall2StreamHandler,
@@ -142,7 +141,6 @@ export async function analyzeMealV2(
       portionResolutions,
       vesselEnvelopes,
       mealItemsWithCandidates,
-      fullyGrounded,
     } = await prepareGrounding({
       decomposition,
       userContext,
@@ -203,7 +201,6 @@ export async function analyzeMealV2(
         unmatchedCount: matchResults.filter((m) => m.candidates.length === 0)
           .length,
         model: profile.nutritionModel,
-        fastPath: fullyGrounded,
       },
       async ({ stageLogId }) => {
         emit({ type: 'stage', stage: 'estimating' });
@@ -234,15 +231,6 @@ export async function analyzeMealV2(
           },
           chunkEmit,
           onAttemptComplete: budget.nutritionRecorder,
-          ...(fullyGrounded
-            ? {
-                fastPath: buildFastPathEstimation({
-                  decomposition,
-                  matchResults,
-                  portionResolutions,
-                }),
-              }
-            : {}),
           ...(callTrace ? { trace: callTrace } : {}),
         });
       }
@@ -358,10 +346,12 @@ export async function analyzeMealV2(
       },
     });
 
-    // Transient chunk failure → retryable error (see completeness-gate). A
-    // shaky portion no longer gates: it ships and the picker corrects it.
+    // Transient chunk failure, or an ingredient the bridge withheld for want
+    // of any macro source → retryable error (see completeness-gate). A shaky
+    // portion still does not gate: it ships and the picker corrects it.
     const unresolved = resolveCompletenessGate({
       failedMealItemNames: call2.failedMealItemNames,
+      carvedOut: bridged.carvedOut,
     });
     return unresolved
       ? { success: true, data: assembly.result, unresolved }

@@ -3,6 +3,8 @@
 /// Ported from `lib/types/meal.ts`.
 library;
 
+import 'vessel.dart';
+
 class MacroBreakdown {
   final double calories;
   final double protein;
@@ -51,12 +53,18 @@ class MealItem {
   final String unit;
   final MacroBreakdown macros;
 
+  /// The vessel the AI assumed this dish was served in. Present on staged
+  /// (unconfirmed) items only — the portion picker renders from it. Null when
+  /// the pipeline couldn't resolve one, or when the payload predates the field.
+  final ClientVessel? vessel;
+
   const MealItem({
     required this.id,
     required this.name,
     required this.quantity,
     required this.unit,
     required this.macros,
+    this.vessel,
   });
 
   factory MealItem.fromJson(Map<String, dynamic> json) => MealItem(
@@ -65,6 +73,9 @@ class MealItem {
         quantity: (json['quantity'] as num).toDouble(),
         unit: json['unit'] as String,
         macros: MacroBreakdown.fromJson(json['macros'] as Map<String, dynamic>),
+        // Passed raw, uncast: a `vessel` that arrives as a list or a string
+        // must yield "no portion line", not throw and fail the whole meal.
+        vessel: ClientVessel.fromJson(json['vessel']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -73,14 +84,18 @@ class MealItem {
         'quantity': quantity,
         'unit': unit,
         'macros': macros.toJson(),
+        if (vessel != null) 'vessel': vessel!.toJson(),
       };
 
+  /// [vessel] is only ever re-pointed to another tier, never cleared, so the
+  /// plain `??` passthrough is the whole contract here.
   MealItem copyWith({
     String? id,
     String? name,
     double? quantity,
     String? unit,
     MacroBreakdown? macros,
+    ClientVessel? vessel,
   }) =>
       MealItem(
         id: id ?? this.id,
@@ -88,6 +103,7 @@ class MealItem {
         quantity: quantity ?? this.quantity,
         unit: unit ?? this.unit,
         macros: macros ?? this.macros,
+        vessel: vessel ?? this.vessel,
       );
 }
 

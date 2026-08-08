@@ -1,6 +1,6 @@
 /** Client-safe vessel dimensions and portion-envelope arithmetic. */
 
-import type { PieceVessel } from './vessel-types';
+import type { ClientVessel, PieceVessel } from './vessel-types';
 
 export type VesselFamily = 'bowl' | 'plate' | 'cup' | 'piece';
 
@@ -289,6 +289,61 @@ export function pieceAssetFor(
   kind: PieceVessel['kind']
 ): PieceTier['assets'][number] {
   return tier.assets[kind === 'fish' ? 0 : kind === 'meat' ? 1 : 2];
+}
+
+/**
+ * Beyond this many pieces the vessel stops being a useful affordance and is
+ * almost certainly corruption or a hallucinated number. 100 of the largest cut
+ * is already 60 kg of food. Mirrored by `maxPieceCount` in the Flutter app's
+ * `models/vessel.dart`; the mobile asset test pins the two together.
+ */
+export const MAX_PIECE_COUNT = 100;
+
+/**
+ * Whether a vessel is safe to hand to a client picker.
+ *
+ * The vessel is a DECORATION — a silhouette and a label under a dish — and it
+ * must never be able to break the meal it decorates. Both clients derive an
+ * envelope from it (`[0.6 x firstAnchor, 1.2 x lastAnchor]`) and clamp the
+ * dish's grams into that range, so an out-of-range value does real damage
+ * rather than just looking wrong:
+ *
+ *   - `count: -1` builds a DESCENDING envelope (min -18, max -600). Flutter's
+ *     `clamp` throws on that and takes down the sheet; web's `Math.min/max`
+ *     silently shows a -600 g portion.
+ *   - `count: 0` renders a picker pinned at 0 g that commits 10 g (the
+ *     minimum-dish floor), so the sheet promises one number and the card shows
+ *     another.
+ *   - `count: 1e9` clamps a normal 150 g dish up to 18 billion grams and stages
+ *     it for confirmation with macros scaled by ~1.2e8.
+ *   - a `tier` outside its family's range indexes past the tier table:
+ *     `VESSEL_FAMILIES[family].tiers[9]` is `undefined`, and reading `.asset`
+ *     off it throws while rendering the assumption line.
+ *
+ * Enforced HERE, in the one function every client path runs through
+ * (`toParsedMeal` serves the SSE `result` frame, restored pending analyses, and
+ * relog staging), so web and Flutter get the same guarantee from one place
+ * instead of each re-deriving it. Clients still validate on parse — belt and
+ * braces for rows written before this guard existed.
+ */
+export function isRenderableVessel(vessel: ClientVessel): boolean {
+  if (!Number.isInteger(vessel.tier)) return false;
+  if (vessel.family === 'piece') {
+    return (
+      vessel.tier >= 1 &&
+      vessel.tier <= PIECE_TIERS.length &&
+      Number.isFinite(vessel.count) &&
+      vessel.count >= 1 &&
+      vessel.count <= MAX_PIECE_COUNT
+    );
+  }
+  // Bound read off the family's own tier table, like the piece branch above —
+  // a hard-coded 4 goes stale the moment a family gains or loses a tier, and
+  // it goes stale silently.
+  const tiers = VESSEL_FAMILIES[vessel.family]?.tiers;
+  return (
+    !!tiers && vessel.tier >= 1 && vessel.tier <= Object.keys(tiers).length
+  );
 }
 
 /**

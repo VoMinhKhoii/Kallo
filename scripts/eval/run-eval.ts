@@ -9,6 +9,7 @@ import {
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { PipelineResponse, UserContext } from '@/lib/ai/types';
 import { buildIngredientResults, findSilentZeros } from './eval-diagnostics';
+import { applyEvalRelations } from './eval-relations';
 import { renderMarkdownReport } from './eval-report';
 import { aggregateResults, scoreCase } from './eval-scoring';
 import {
@@ -17,6 +18,7 @@ import {
   type EvalCliOptions,
   type EvalEstimatorSummary,
   type EvalFixtureCase,
+  type EvalFixtureRelation,
   type EvalStageTimings,
   fixtureFileSchema,
 } from './eval-types';
@@ -284,6 +286,7 @@ async function main() {
     .filter((name) => name.endsWith('.json') && !name.endsWith('.schema.json'))
     .sort();
   const allCases: EvalFixtureCase[] = [];
+  const allRelations: EvalFixtureRelation[] = [];
   let fixtureVersion = 0;
   for (const name of fixtureFiles) {
     const parsed = fixtureFileSchema.parse(
@@ -291,6 +294,7 @@ async function main() {
     );
     fixtureVersion = Math.max(fixtureVersion, parsed.version);
     allCases.push(...parsed.cases);
+    allRelations.push(...(parsed.relations ?? []));
   }
   const seenIds = new Set<string>();
   for (const item of allCases) {
@@ -298,6 +302,15 @@ async function main() {
       throw new Error(`Duplicate fixture case id across files: ${item.id}`);
     }
     seenIds.add(item.id);
+  }
+  for (const relation of allRelations) {
+    for (const caseId of relation.caseIds) {
+      if (!seenIds.has(caseId)) {
+        throw new Error(
+          `Eval relation ${relation.id} references unknown case: ${caseId}`
+        );
+      }
+    }
   }
   // Tier ordering: smoke ⊂ core ⊂ extended. `--tier smoke` runs only smoke;
   // `--tier core` runs smoke+core; omitted runs everything.
@@ -317,8 +330,11 @@ async function main() {
   }
 
   const dependencies = await loadPipeline(options.estimator);
-  const results = await mapConcurrent(selected, options.concurrency, (item) =>
-    runCase(item, dependencies)
+  const results = applyEvalRelations(
+    await mapConcurrent(selected, options.concurrency, (item) =>
+      runCase(item, dependencies)
+    ),
+    allRelations
   );
   const generatedAt = new Date().toISOString();
   const pricing = ESTIMATOR_PRICING[options.estimator];

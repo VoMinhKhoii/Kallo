@@ -5,6 +5,8 @@ import {
   decideMealLanguage,
   type SupportedOutputLanguage,
 } from './language/detect';
+import { isRenderableVessel } from './portion/vessel-data';
+import type { ClientVessel, PipelineVessel } from './portion/vessel-types';
 import type { PipelineResult, UserContext } from './types';
 
 type ProfileRow = typeof userProfiles.$inferSelect;
@@ -101,6 +103,34 @@ function toMacros(nutrition: {
  * Uses meal item names (user-facing cooked names) for display, not raw DB ingredient names.
  * estimatedGrams (cooked weight) is the display weight — rawEquivalentGrams is internal only.
  */
+/**
+ * Strips the pipeline's `provenance` discriminator and drops any vessel a
+ * client picker could not safely render (see `isRenderableVessel`).
+ *
+ * The vessel is optional by design, so dropping it is the correct degradation:
+ * the dish simply shows no portion line. Doing it HERE means web and Flutter
+ * inherit one guarantee instead of each re-deriving it, and it covers stored
+ * pending analyses too — `loadPendingAnalysesByDate` re-runs this mapper on
+ * read, so a bad row written by an older pipeline is cleaned on its way out.
+ */
+function toClientVessel(vessel?: PipelineVessel): ClientVessel | undefined {
+  if (!vessel) return undefined;
+  const client: ClientVessel =
+    vessel.provenance === 'piece_prior'
+      ? {
+          family: 'piece',
+          tier: vessel.tier,
+          count: vessel.count,
+          kind: vessel.kind,
+        }
+      : {
+          family: vessel.family,
+          tier: vessel.tier,
+          dishClass: vessel.dishClass,
+        };
+  return isRenderableVessel(client) ? client : undefined;
+}
+
 export function toParsedMeal(result: PipelineResult): ParsedMeal {
   const items: MealItem[] = result.mealItems.map((mealItem, idx) => ({
     id: `item-${idx + 1}`,
@@ -110,20 +140,7 @@ export function toParsedMeal(result: PipelineResult): ParsedMeal {
     ),
     unit: 'g',
     macros: toMacros(mealItem.displayedNutrition),
-    vessel: !mealItem.vessel
-      ? undefined
-      : mealItem.vessel.provenance === 'piece_prior'
-        ? {
-            family: 'piece',
-            tier: mealItem.vessel.tier,
-            count: mealItem.vessel.count,
-            kind: mealItem.vessel.kind,
-          }
-        : {
-            family: mealItem.vessel.family,
-            tier: mealItem.vessel.tier,
-            dishClass: mealItem.vessel.dishClass,
-          },
+    vessel: toClientVessel(mealItem.vessel),
   }));
 
   return {

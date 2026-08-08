@@ -1199,6 +1199,14 @@
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng"
     },
+    "portionPicker": {
+      "title": "Khẩu phần",
+      "assumption": "≈ {label}",
+      "adjust": "Chỉnh khẩu phần, hiện tại {label}",
+      "custom": "Khẩu phần tuỳ chỉnh",
+      "apply": "Áp dụng",
+      "cancel": "Hủy"
+    },
     "persistedMealCard": {
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",

@@ -37,7 +37,7 @@ export interface AssemblyOutput {
 const ingredientCookingMethod = (
   item: MealDecomposition['mealItems'][number],
   ing: MealDecomposition['mealItems'][number]['ingredients'][number]
-): string | null => item.cookingMethod ?? ing.cookingMethod ?? null;
+): string | null => ing.cookingMethod ?? item.cookingMethod ?? null;
 
 /**
  * D5: Merge LLM-bounded macros with DB mid values for the remaining 24
@@ -46,8 +46,8 @@ const ingredientCookingMethod = (
  * Post-2026-05-13 contract: the 4 macros in `llmNutrition` have already been
  * passed through `nutrition.ts:resolveIngredientMacros`, so:
  *   - matched ingredients: P and C are flat triples at the DB-anchored base,
- *     fat is LLM-mid with the hallucination guard (falls back to a flat
- *     triple at base.fatG when the guard fires), kcal is derived from
+ *     fat is LLM-mid with the hallucination guard and additive oil allowance,
+ *     clamped at the nearest bound when needed; kcal is derived from
  *     4P + 4C + 9F. Only fat's spread (when present) drives goal-adjustment.
  *   - unmatched ingredients: P/C/F flow through from the LLM, kcal is derived
  *     from the macro identity, and a density clamp scales the triple if

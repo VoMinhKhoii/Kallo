@@ -75,7 +75,7 @@ export function buildCompressedDecompositionPrompt(
 <schema_fields>
   Root: isFood, mealSlot, mealItems.
   mealItems[]: name, cookingMethod, cuisineNote?, ingredients[].
-  ingredients[]: rawName, canonicalName, grams, expectedState?, weightBasis?, prepNotes?, ambiguityFlags?.
+  ingredients[]: rawName, canonicalName, cookingMethod?, grams, expectedState?, weightBasis?, prepNotes?, ambiguityFlags?.
   expectedState is optional and only "raw" or "cooked".
   weightBasis is optional and only "raw" or "as_eaten" — omit when as_eaten.
   prepNotes is optional, max 6 short strings (≤60 chars each), preserve user's language and diacritics.
@@ -97,7 +97,11 @@ export function buildCompressedDecompositionPrompt(
   grams is cooked/as-eaten mass and must be a positive number — UNLESS weightBasis="raw", in which case grams is the user's raw weight (no conversion).
   Preserve explicit cuts, species, brands, and regional names from the user's text.
   Add only explicitly mentioned ingredients plus fundamental seasonings for the cooking method.
-  Use cookingMethod at dish level; use expectedState only for mixed-state ingredients.
+  Use mealItems[].cookingMethod as the dish default. In a mixed-method dish,
+  set ingredients[].cookingMethod on EVERY ingredient whose actual method
+  differs from that default; never broadcast one method to all ingredients.
+  Example: bún đậu hũ chiên + rau sống → noodles="luộc", tofu="chiên",
+  vegetables="raw". Use expectedState only when method alone is insufficient.
   If quantity or interpretation is unclear, choose best-estimate grams and add the relevant ambiguityFlags.
   Explicit quantifiers (counts, units, weights — "3 fried eggs", "8 cây nem lụi", "5 oz steak", "1 bowl", "200g bún", "1 phần", etc.) ALWAYS take precedence over default_rice_portion and default_protein_portion. Estimate per-unit grams and multiply by the count. Default portions are fallbacks for items with no quantifier — never a fixed pivot to be split or scaled by an explicit count. Size/amount modifiers ("nhỏ"/"small", "nhiều"/"lots", "ít"/"a little", "to"/"large") refine the per-unit estimate; they do not override the count.
 </rules>
@@ -132,7 +136,7 @@ export function buildDecompositionPrompt(
      3. Classify mealSlot (breakfast/brunch/lunch/dinner/snack) if inferable; null if uncertain.
      4. Emit the dish-wrapped schema exactly:
         mealItems[]: { name, cookingMethod, cuisineNote?, ingredients[] }
-        ingredients[]: { rawName, canonicalName, grams, expectedState?, weightBasis?, prepNotes?, ambiguityFlags? }
+         ingredients[]: { rawName, canonicalName, cookingMethod?, grams, expectedState?, weightBasis?, prepNotes?, ambiguityFlags? }
    </task>
 
   <stable_ids>
@@ -172,7 +176,9 @@ export function buildDecompositionPrompt(
     canonicalName = disambiguated FCT/USDA-friendly food-composition vocabulary name used for matching.
     Adapt to the user's cuisine based on the cuisine context provided in <user_context>.
     Keep rawName close to the user's input; use canonicalName to resolve aliases or regional names.
-    cookingMethod lives on the dish; expectedState lives on ingredients only when needed.
+    mealItems[].cookingMethod is only the dish default. In mixed-method dishes,
+    ingredients[].cookingMethod records each ingredient's actual differing
+    method; expectedState is used only when method alone is insufficient.
 
     Specificity rules (Vietnamese examples — apply the same principle to any cuisine):
     - If user says "đùi gà" (chicken thigh) → use "đùi gà", NOT generic "thịt gà"
@@ -201,7 +207,13 @@ export function buildDecompositionPrompt(
   </canonical_names>
 
   <cooking_method_rule>
-    - cookingMethod is a free-form dish-level string in the user's language.
+    - mealItems[].cookingMethod is a free-form DEFAULT in the user's language.
+    - In mixed-method dishes, emit ingredients[].cookingMethod for EVERY
+      ingredient whose actual method differs from the dish default; never
+      broadcast one method to all ingredients.
+    - Example: bún đậu hũ chiên + rau sống → bún="luộc", đậu hũ="chiên",
+      rau sống="raw". Bánh mì ốp la → bread is not "chiên" just because the
+      egg is fried.
     - "nấu" (cook/absorb): ONLY for rice/grain/starch where water is absorbed. NOT for soup.
     - "luộc" (boil): boiling meat/vegetables. NOT for eggs.
     - "ninh" (slow-simmer): slow-simmering broth.

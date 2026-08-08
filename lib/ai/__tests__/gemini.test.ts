@@ -427,6 +427,44 @@ describe('GeminiClient', () => {
       ).rejects.toThrow('429');
     });
 
+    it('RETRIES a schema-validation (ZodError) failure — the model is nondeterministic', async () => {
+      // Load-bearing for the required macro triples: one malformed emission
+      // must trigger a re-ask, not fail the whole call on attempt 1. The
+      // first response violates the schema; the second conforms.
+      mockGenerateContent
+        .mockResolvedValueOnce({
+          text: JSON.stringify({ name: 'test' }), // `value` missing → ZodError
+        })
+        .mockResolvedValueOnce({
+          text: JSON.stringify({ name: 'test', value: 42 }),
+        });
+
+      // ...and it re-asks IMMEDIATELY. Backoff exists to relieve provider
+      // pressure; a malformed-but-200 response applied none, so sleeping only
+      // burns the shared chunk wall-clock budget. The retry sleep is the ONLY
+      // timer in this path, so spying on it asserts the delay exactly (0)
+      // rather than "some wall-clock threshold nobody crossed today";
+      // baseDelayMs is huge so a regression to exponential backoff is loud.
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        {
+          maxRetries: 3,
+          baseDelayMs: 10_000,
+        }
+      );
+      const result = await client.generateStructuredOutput({
+        schema: z.object({ name: z.string(), value: z.number() }),
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+      });
+      expect(result).toEqual({ name: 'test', value: 42 });
+      expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+      expect(setTimeoutSpy.mock.calls.map(([, ms]) => ms)).toEqual([0]);
+      setTimeoutSpy.mockRestore();
+    });
+
     it('does not retry on non-retryable 4xx errors', async () => {
       mockGenerateContent.mockRejectedValueOnce(
         Object.assign(new Error('400 Bad Request'), { status: 400 })

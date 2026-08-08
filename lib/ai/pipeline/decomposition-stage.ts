@@ -336,7 +336,7 @@ export async function runDecompositionStage(args: {
       );
       const derived = deriveExpectedState({
         explicit: ing.expectedState,
-        dishMethod: mi.cookingMethod ?? ing.cookingMethod,
+        dishMethod: ing.cookingMethod ?? mi.cookingMethod,
         weightBasis: ing.weightBasis,
       });
       ing.expectedState = derived.state;

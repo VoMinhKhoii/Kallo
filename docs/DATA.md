@@ -1,5 +1,30 @@
 # Data Sources
 
+## Diagnosing a food that finds no candidates
+
+When an ingredient comes back with `candidates: []`, settle first whether the
+row is **absent** or **present but unreachable** — the two have opposite fixes.
+
+```bash
+bun --env-file=.env.local scripts/probe_food_coverage.ts "mì gói" "mì ăn liền"
+```
+
+The script lists up to 20 rows carrying the phrase, then re-runs the lexical arm
+(`fuzzy_match_ingredients_all_sources`) at the loose SQL floor and marks which
+rows would survive the much stricter JS acceptance floors in
+`lib/ai/matching/match-constants.ts` (FAO vector `0.80`, USDA vector `0.70`,
+fuzzy `0.70`). Postgres returning a row at `0.15` says nothing about whether
+the matcher will accept it.
+
+| Verdict | Fix | Precedent migration |
+|---|---|---|
+| `NO LEXICAL NAME MATCH` | Re-probe the English name and scan the category first — an untranslated USDA row keeps its English `name_primary`. Only if that is empty too, insert a curated row citing a verified source ID | `20260729130000_add_banh_uot_row.sql` |
+| `PRESENT BUT UNREACHABLE` | Curate `name_primary` / `name_alt`; set `embedding = NULL` to re-queue the backfill | `20260801120000_curate_broth_search_names.sql` |
+
+Do **not** lower the acceptance floors to rescue one food — they are shared by
+every ingredient, so loosening them trades a silent miss for silent wrong
+matches everywhere.
+
 ## VTN FCT 2007 — Vietnamese Food Composition Table
 
 ### Overview

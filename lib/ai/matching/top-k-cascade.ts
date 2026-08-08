@@ -11,6 +11,7 @@ import { deriveExpectedState } from '../pipeline/cooking-method-state';
 import type { DecomposedIngredientV2 } from '../pipeline/schemas-v2';
 import type { NutritionPer100g } from '../types';
 import { resolvePreMatchAlias } from './aliases';
+import { filterByExplicitState } from './candidate-ranking';
 import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
 import { resolveExactMatch } from './exact-match';
 import type { DbIngredientState, MatchInfo } from './match-constants';
@@ -74,6 +75,15 @@ function deriveExpectedStateFromV2(
   // Preserve v2's prior "unknown when method is empty" semantics so the
   // STATE_MISMATCH_PENALTY does not fire for genuinely-unknown ingredients.
   return source === 'unknown' ? 'unknown' : state;
+}
+
+/** Explicit user-stated weighing basis, or null when the user said nothing. */
+function explicitWeighState(
+  ingredient: DecomposedIngredientV2
+): 'raw' | 'cooked' | null {
+  if (ingredient.stateHint === 'raw_weight') return 'raw';
+  if (ingredient.stateHint === 'cooked_weight') return 'cooked';
+  return null;
 }
 
 interface IngredientWithContext {
@@ -282,9 +292,16 @@ export async function matchTopKPerIngredient(
       continue;
     }
     if (!r.value.embedded) lexicalFallbackCount++;
+    // When the user SAID which state they weighed in, drop opposite-state
+    // candidates (keep-if-any fallback) so the CRAG judge isn't offered a row
+    // that forces a lossy dry↔cooked conversion the user already resolved.
+    const stateFiltered = filterByExplicitState(
+      r.value.candidates,
+      explicitWeighState(pendingWithEmbedding[taskIdx].c.ingredient)
+    );
     results[r.value.ingredientIndex] = {
       ingredientIndex: r.value.ingredientIndex,
-      candidates: r.value.candidates.map((info) => ({
+      candidates: stateFiltered.map((info) => ({
         info,
         nutrition: null,
         inediblePct: null,

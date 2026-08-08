@@ -5,6 +5,7 @@ import {
   buildMatchTopK,
   mergeTopKAcrossSources,
   rrfFuseCandidates,
+  sourceLimitForIngredient,
 } from './candidate-ranking';
 import {
   type DbIngredientState,
@@ -63,8 +64,9 @@ async function fuzzyArm(
   db: AppDb,
   sourceLimit: number
 ): Promise<unknown> {
+  const effectiveLimit = sourceLimitForIngredient(matchingName, sourceLimit);
   return db.execute(
-    sql`SELECT * FROM fuzzy_match_ingredients_all_sources(${matchingName}, ${sourceLimit}, 0.15)`
+    sql`SELECT * FROM fuzzy_match_ingredients_all_sources(${matchingName}, ${effectiveLimit}, 0.15)`
   );
 }
 
@@ -88,12 +90,13 @@ export async function retrieveHybridTopK(args: {
 }): Promise<{ candidates: MatchInfo[]; vectorArmEmpty: boolean }> {
   const { matchingName, embedding, db, k, sourceLimit, expectedState } = args;
   const embeddingLiteral = JSON.stringify(embedding);
+  const effectiveLimit = sourceLimitForIngredient(matchingName, sourceLimit);
   // One arm failing must not discard the other's results: settle both, treat
   // a failed arm as empty, and only reject when BOTH arms failed (a healthy
   // fuzzy arm still yields candidates through a vector outage, and vice versa).
   const [vectorSettled, fuzzySettled] = await Promise.allSettled([
     db.execute(
-      sql`SELECT * FROM match_ingredients_all_sources(${embeddingLiteral}::vector, ${sourceLimit}, 0.5)`
+      sql`SELECT * FROM match_ingredients_all_sources(${embeddingLiteral}::vector, ${effectiveLimit}, 0.5)`
     ),
     fuzzyArm(matchingName, db, sourceLimit),
   ]);

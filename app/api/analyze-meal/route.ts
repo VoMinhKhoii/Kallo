@@ -229,10 +229,15 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        // Completeness gate — a Call-2 chunk failed after retries, so part of
-        // the meal was never analyzed. Runs BEFORE the empty_nutrition gate so
-        // the failure surfaces as a precise retryable error rather than a
-        // generic one. Nothing is staged for confirm.
+        // Completeness gate — a Call-2 chunk failed after retries, or the
+        // bridge withheld an ingredient that had no usable macro source.
+        //
+        // This is PER-INGREDIENT, and it has to be: the `empty_nutrition`
+        // check below is `meal.items.some(...)`, which any one healthy item
+        // satisfies. A meal whose "Mì gói" item was fully withheld therefore
+        // passed it and persisted at 0g / 0 kcal beside a normal milk row,
+        // under-counting the day by the entire dish. Runs BEFORE that gate so
+        // the failure surfaces precisely. Nothing is staged for confirm.
         if (result.unresolved) {
           await emitPartialFailure({
             emit,
@@ -240,6 +245,7 @@ export async function POST(request: NextRequest) {
             db,
             startTime,
             promptVersionsUsed: pvu,
+            unresolved: result.unresolved,
           });
           return;
         }

@@ -15,7 +15,10 @@
 import type { Locale, UnitLexiconEntry, UnitType } from './types';
 
 function normalize(token: string): string {
-  return token.normalize('NFC').toLowerCase().trim();
+  // Internal runs collapse too, not just the ends: the multi-word entries
+  // ("phi lê", "bánh bao") are the only ones whitespace can break, and a
+  // double-spaced token is exactly the kind of thing a model emits.
+  return token.normalize('NFC').toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
 const ENTRIES: UnitLexiconEntry[] = [
@@ -32,10 +35,17 @@ const ENTRIES: UnitLexiconEntry[] = [
   { token: 'bánh bao', locale: 'vi', unitType: 'count' }, // the item IS its own counter
   { token: 'cuốn', locale: 'vi', unitType: 'count' },
   { token: 'chả', locale: 'vi', unitType: 'count' },
+  // A packet is the unit instant noodles are actually counted in ("1 gói mì",
+  // "2 gói"). Without it the most ordinary phrasing for the food had no unit
+  // the resolver could hang a prior on, so the portion stayed unanchored.
+  { token: 'gói', locale: 'vi', unitType: 'count' },
   // -- Vietnamese slice / piece-of ---------------------------------------
   { token: 'lát', locale: 'vi', unitType: 'slice' },
   { token: 'miếng', locale: 'vi', unitType: 'slice' },
   { token: 'khúc', locale: 'vi', unitType: 'slice' },
+  { token: 'khứa', locale: 'vi', unitType: 'slice' },
+  { token: 'khoanh', locale: 'vi', unitType: 'slice' },
+  { token: 'phi lê', locale: 'vi', unitType: 'slice' },
   // -- Vietnamese containers ---------------------------------------------
   { token: 'tô', locale: 'vi', unitType: 'container' },
   { token: 'bát', locale: 'vi', unitType: 'container' },
@@ -53,9 +63,27 @@ const ENTRIES: UnitLexiconEntry[] = [
   { token: 'bun', locale: 'en', unitType: 'count' },
   { token: 'skewer', locale: 'en', unitType: 'count' },
   { token: 'roll', locale: 'en', unitType: 'count' },
+  { token: 'chunk', locale: 'en', unitType: 'count' },
+  { token: 'chunks', locale: 'en', unitType: 'count' },
+  { token: 'cut', locale: 'en', unitType: 'count' },
+  { token: 'cuts', locale: 'en', unitType: 'count' },
+  { token: 'pack', locale: 'en', unitType: 'count' },
+  { token: 'packs', locale: 'en', unitType: 'count' },
+  { token: 'packet', locale: 'en', unitType: 'count' },
+  { token: 'packets', locale: 'en', unitType: 'count' },
   // -- English / global slice --------------------------------------------
   { token: 'slice', locale: 'en', unitType: 'slice' },
   { token: 'slices', locale: 'en', unitType: 'slice' },
+  // A steak/fillet is a CUT of a larger piece, so it types like `lát`/`miếng`
+  // rather than like a whole countable item. These were reachable by the piece
+  // picker (PIECE_UNIT_TOKENS) but invisible here, so "2 steaks" carried a
+  // silhouette and no unit the resolver could hang a prior on.
+  { token: 'steak', locale: 'en', unitType: 'slice' },
+  { token: 'steaks', locale: 'en', unitType: 'slice' },
+  { token: 'fillet', locale: 'en', unitType: 'slice' },
+  { token: 'fillets', locale: 'en', unitType: 'slice' },
+  { token: 'filet', locale: 'en', unitType: 'slice' },
+  { token: 'filets', locale: 'en', unitType: 'slice' },
   // -- English / global containers + volume ------------------------------
   { token: 'bowl', locale: 'en', unitType: 'container' },
   { token: 'plate', locale: 'en', unitType: 'container' },
@@ -77,19 +105,60 @@ const LEXICON = new Map<string, UnitLexiconEntry>();
 for (const e of ENTRIES) LEXICON.set(normalize(e.token), e);
 
 /**
+ * Diacritic-folded index, tried only after an exact miss.
+ *
+ * Vietnamese is very often typed without tone marks ("2 lat ca kho", "1 to
+ * pho"), and `normalize` above is NFC + lowercase only — so those inputs missed
+ * every Vietnamese entry in this table. `PIECE_UNIT_TOKENS` in `piece-vessel.ts`
+ * has always folded (it uses `normalizeVesselToken`), which is how a portion
+ * could get a piece silhouette from a token this table could not type at all.
+ * An unresolvable unit leaves the estimate unanchored, and a too-wide estimate
+ * routes the whole meal to clarify.
+ *
+ * Folding is a FALLBACK, never a replacement: an exact accented match always
+ * wins, so nothing that resolved before resolves differently now.
+ */
+function fold(token: string): string {
+  return normalize(token)
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/đ/g, 'd');
+}
+
+const FOLDED = new Map<string, UnitLexiconEntry>();
+for (const e of ENTRIES) {
+  const key = fold(e.token);
+  // `đĩa`/`dĩa` are two spellings of one word and agree on their type. A future
+  // collision that does NOT agree is a real ambiguity — first entry wins here,
+  // and `lexicon-concepts-priors.test.ts` fails so it can't pass unnoticed.
+  if (!FOLDED.has(key)) FOLDED.set(key, e);
+}
+
+/** Entries sharing a folded key but disagreeing on type — must stay empty. */
+export function foldCollisions(): Array<[string, UnitType, UnitType]> {
+  const out: Array<[string, UnitType, UnitType]> = [];
+  for (const e of ENTRIES) {
+    const winner = FOLDED.get(fold(e.token));
+    if (winner && winner.unitType !== e.unitType) {
+      out.push([fold(e.token), winner.unitType, e.unitType]);
+    }
+  }
+  return out;
+}
+
+/**
  * Resolve a verbatim unit token to a semantic unit type. Returns null for
  * unknown tokens (the resolver treats an unknown unit as "no unit type" and
  * falls through to null/clarify rather than guessing).
  */
 export function resolveUnitType(token: string | undefined): UnitType | null {
-  if (!token) return null;
-  return LEXICON.get(normalize(token))?.unitType ?? null;
+  return lookupUnit(token)?.unitType ?? null;
 }
 
 /** Full lexicon entry (type + locale) for a token, or null. */
 export function lookupUnit(token: string | undefined): UnitLexiconEntry | null {
   if (!token) return null;
-  return LEXICON.get(normalize(token)) ?? null;
+  return LEXICON.get(normalize(token)) ?? FOLDED.get(fold(token)) ?? null;
 }
 
 /** All entries for a locale — used by tests / coverage reporting. */

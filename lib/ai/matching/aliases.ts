@@ -42,6 +42,14 @@ export interface ExactAlias {
  *
  * Keys are normalized (NFC + lowercase + trim) for locale-agnostic lookup.
  */
+/**
+ * `name_primary` of usda_6583_raw after migration 20260806120000. Named once
+ * so the alias targets and the portion concept's `dbRowName` cannot drift
+ * apart from the migration — a target that does not name a real row rewrites
+ * the user's words into a query the lexical arm matches even less well.
+ */
+export const INSTANT_NOODLE_ROW = 'Mì ăn liền (mì gói), khô';
+
 export const EXACT_ALIASES: Record<string, ExactAlias> = {
   tôm: { lang: 'vi', target: 'Tôm biển' },
   shrimp: { lang: 'en', target: 'Tôm biển' },
@@ -54,6 +62,22 @@ export const EXACT_ALIASES: Record<string, ExactAlias> = {
   'bánh cuốn': { lang: 'vi', target: 'Bánh ướt' },
   'hủ tiếu': { lang: 'vi', target: 'Bánh phở' },
   'bánh hỏi': { lang: 'vi', target: 'Bún' },
+  // Instant noodles. The DB rows (usda_6583/6982/6983/27035_raw) existed all
+  // along but kept their untranslated English `name_primary`, so a Vietnamese
+  // query scored under the acceptance floors — "mì gói" peaked at 0.572 on
+  // "Mì gạo khô" (dry RICE noodles) and "mì ăn liền" matched instant RICE at
+  // 0.728. Migration 20260806120000 curates the names; these keys cover the
+  // surface forms that are NOT safe to put in `name_alt`:
+  //   - `mì tôm`: word_similarity('tôm', 'mì tôm') = 1.0, so as a fuzzy target
+  //     it would make every shrimp query match instant noodles perfectly.
+  //   - `mì ly` / `mì cốc`: same hazard via the bare unit word 'ly'.
+  // An exact normalized-key rewrite has no such blast radius.
+  'mì tôm': { lang: 'vi', target: INSTANT_NOODLE_ROW },
+  'mì ly': { lang: 'vi', target: INSTANT_NOODLE_ROW },
+  'mì cốc': { lang: 'vi', target: INSTANT_NOODLE_ROW },
+  'instant noodles': { lang: 'en', target: INSTANT_NOODLE_ROW },
+  'instant noodle': { lang: 'en', target: INSTANT_NOODLE_ROW },
+  'instant ramen': { lang: 'en', target: INSTANT_NOODLE_ROW },
 };
 
 /**

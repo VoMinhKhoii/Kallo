@@ -15,6 +15,7 @@ import 'meal_entry_confirm_button.dart';
 import 'meal_entry_header.dart';
 import 'meal_entry_item_row.dart';
 import 'meal_time_divider.dart';
+import 'portion/portion_pick_flow.dart';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a stepper
 // can't slip through and save before the user is done adjusting.
@@ -71,15 +72,35 @@ class _MealEntryState extends State<MealEntry> {
 
   void _change(String itemId, double delta) {
     HapticFeedback.selectionClick();
+    _edit(() => applyQuantityChange(_items, _original, itemId, delta));
+  }
+
+  /// Every quantity edit — stepper or portion picker — lands here: it snaps the
+  /// totals (only the reveal counts up) and, when [debounce] is set, re-arms
+  /// the confirm cooldown so a fast double-tap can't save mid-adjust.
+  void _edit(List<MealItem> Function() mutate, {bool debounce = true}) {
     setState(() {
-      _countUp = false; // a manual edit snaps; only the reveal counts up
-      _items = applyQuantityChange(_items, _original, itemId, delta);
-      _confirmCoolingDown = true;
+      _countUp = false;
+      _items = mutate();
+      if (debounce) _confirmCoolingDown = true;
     });
+    if (!debounce) return;
     _confirmTimer?.cancel();
     _confirmTimer = Timer(_confirmDebounce, () {
       if (mounted) setState(() => _confirmCoolingDown = false);
     });
+  }
+
+  /// Commits whatever the portion picker previewed. No debounce, matching web's
+  /// `handleApply`: dismissing the sheet already separates this from Confirm.
+  Future<void> _adjustPortion(MealItem item) async {
+    final next = await pickPortion(
+      context,
+      item: item,
+      items: _items,
+      original: _original,
+    );
+    if (next != null && mounted) _edit(() => next, debounce: false);
   }
 
   bool get _confirmDisabled => widget.busy || (_editing && _confirmCoolingDown);
@@ -124,32 +145,17 @@ class _MealEntryState extends State<MealEntry> {
                 padding: const EdgeInsets.only(bottom: LoggingSpacing.section),
                 child: Column(
                   children: [
+                    // The stagger lives inside the row — see MealEntryItemRow.
                     for (final (index, item) in _items.indexed)
-                      // Web: each item enters opacity 0→1, x:-8→0, staggered
-                      // delay index*0.05s (meal-entry-item.tsx:32-35). On
-                      // the reveal the rows were already on screen in the
-                      // streaming card — crossfade in place, don't re-enter.
-                      if (widget.revealing)
-                        FadeIn(
-                          key: ValueKey(item.id),
-                          duration: const Duration(milliseconds: 150),
-                          child: MealEntryItemRow(
-                            item: item,
-                            editing: _editing,
-                            onChange: _change,
-                          ),
-                        )
-                      else
-                        FadeInLeft(
-                          key: ValueKey(item.id),
-                          offset: 8,
-                          delay: Duration(milliseconds: index * 50),
-                          child: MealEntryItemRow(
-                            item: item,
-                            editing: _editing,
-                            onChange: _change,
-                          ),
-                        ),
+                      MealEntryItemRow(
+                        key: ValueKey(item.id),
+                        item: item,
+                        index: index,
+                        editing: _editing,
+                        revealing: widget.revealing,
+                        onChange: _change,
+                        onAdjustPortion: _adjustPortion,
+                      ),
                   ],
                 ),
               ),
