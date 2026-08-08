@@ -18,7 +18,6 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 const CAPTURE = 'scripts/eval/landing-v2.json';
 const OUT = 'scripts/eval/fixtures/adjustment-sensitivity.json';
-const CAPTURED_AT = '2026-08-08';
 
 /** Cases that earned their place: the delta is real AND attributable. */
 const KEEP: Array<{ key: string; id: string; tags: string[]; note: string }> = [
@@ -142,6 +141,12 @@ const band = (v: number, pct = 0.3): [number, number] => [
 ];
 
 const capture = JSON.parse(readFileSync(CAPTURE, 'utf8'));
+
+// Read the date off the capture rather than hard-coding it: provenance is only
+// worth recording if it names the run that actually produced these bands.
+const CAPTURED_AT = String(capture.capturedAt ?? '').slice(0, 10);
+if (!CAPTURED_AT) throw new Error(`${CAPTURE} has no capturedAt timestamp`);
+
 const cases = [];
 
 for (const spec of KEEP) {

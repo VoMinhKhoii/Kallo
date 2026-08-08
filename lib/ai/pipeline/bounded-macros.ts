@@ -1,4 +1,4 @@
-import { absorbedOil, isDiscreteOilIngredient } from '../absorbed-oil';
+import { absorbedOil, isDiscreteOilIngredient } from '@/lib/ai/absorbed-oil';
 import { convertCookedToRaw, MAX_KCAL_PER_100G } from '../constants';
 import type {
   BoundedEstimate,

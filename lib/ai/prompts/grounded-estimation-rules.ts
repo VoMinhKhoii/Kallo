@@ -1,4 +1,4 @@
-import { renderAbsorbedOilPromptRule } from '../absorbed-oil';
+import { renderAbsorbedOilPromptRule } from '@/lib/ai/absorbed-oil';
 import { RICE_PORTION_DESCRIPTION } from '../constants';
 import { PORTION_PRIORS } from '../portion/priors';
 

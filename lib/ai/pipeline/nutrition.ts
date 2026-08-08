@@ -1,4 +1,4 @@
-import { mealItemHasDiscreteOil } from '../absorbed-oil';
+import { mealItemHasDiscreteOil } from '@/lib/ai/absorbed-oil';
 import type {
   BoundedEstimate,
   IngredientLlmNutrition,

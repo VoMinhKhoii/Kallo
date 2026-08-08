@@ -38,6 +38,20 @@ const DISCRETE_OIL_INGREDIENT =
   /d[aầ]u\s*[aă]n|d[aầ]u\b|m[ơỡ]\s*(?:heo|n[uư][ơớ]c|l[oợ]n)|\boil\b|\bbutter\b|\bghee\b|\blard\b|\bmargarine\b|\bshortening\b|\btallow\b/i;
 
 /**
+ * The names the decomposition prompt tells Call 1 to use for a cooking-fat
+ * row. The prompt renders this list rather than spelling one of its own, so it
+ * cannot offer a name this module fails to recognise — which is how bare `bơ`
+ * and `mỡ` once reached the prompt and let a butter row's siblings claim
+ * absorbed oil on top of it.
+ */
+export const COOKING_FAT_ROW_NAMES = [
+  'dầu ăn',
+  'oil',
+  'butter',
+  'mỡ heo',
+] as const;
+
+/**
  * True when this ingredient IS the cooking fat, rather than a food that
  * absorbed some.
  */

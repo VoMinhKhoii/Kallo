@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   ABSORBED_OIL_RANGES,
   absorbedOil,
+  COOKING_FAT_ROW_NAMES,
   isDiscreteOilIngredient,
   mealItemHasDiscreteOil,
   renderAbsorbedOilPromptRule,
-} from '../absorbed-oil';
-import type { RawNutritionAdjustment } from '../pipeline/nutrition';
-import { __testing } from '../pipeline/nutrition';
+} from '@/lib/ai/absorbed-oil';
+import type { RawNutritionAdjustment } from '@/lib/ai/pipeline/nutrition';
+import { __testing } from '@/lib/ai/pipeline/nutrition';
 
 const vegetableEstimate: RawNutritionAdjustment['mealItems'][number]['ingredients'][number] =
   {
@@ -96,6 +97,15 @@ describe('discrete oil rows suppress the sibling allowance', () => {
     }
     expect(mealItemHasDiscreteOil(['Khoai tây', 'Dầu ăn'])).toBe(true);
     expect(mealItemHasDiscreteOil(['Khoai tây', 'Thịt bò'])).toBe(false);
+  });
+
+  // The prompt renders this list verbatim, so a name it offers Call 1 that
+  // this module cannot read back is exactly the drift that let a butter row's
+  // siblings claim absorbed oil on top of it.
+  it('recognises every cooking-fat name the decomposition prompt asks for', () => {
+    for (const name of COOKING_FAT_ROW_NAMES) {
+      expect(isDiscreteOilIngredient(name)).toBe(true);
+    }
   });
 
   it('does not grant a fried food an allowance when the oil has its own row', () => {

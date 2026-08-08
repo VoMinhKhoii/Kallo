@@ -15,6 +15,7 @@
  *      run unchanged.
  */
 
+import { mealItemHasDiscreteOil } from '@/lib/ai/absorbed-oil';
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
 import { ZERO_TRIPLE } from '../pipeline/bridge-verdicts';
 import type { RawNutritionAdjustment } from '../pipeline/nutrition';
@@ -131,6 +132,14 @@ export function resolveStreamingV2MealItem(
     else localIdxByName.set(key, [i]);
   });
 
+  // Same rule the reconciled path applies (`nutrition.ts`): one discrete oil
+  // row suppresses its siblings' absorbed-oil allowance. Without it the
+  // streamed preview shows the oil twice and then silently corrects itself
+  // once reconciliation lands.
+  const siblingOilPresent = mealItemHasDiscreteOil(
+    rawItem.ingredients.map((ing) => ing.ingredientName)
+  );
+
   rawItem.ingredients.forEach((rawIng, streamIdx) => {
     const nameKey = rawIng.ingredientName.trim().toLocaleLowerCase('vi-VN');
     const localIdx = localIdxByName.get(nameKey)?.shift() ?? streamIdx;
@@ -172,7 +181,8 @@ export function resolveStreamingV2MealItem(
       grams,
       prepNotesPresent,
       cookingMethod,
-      decompForName?.prepNotes
+      decompForName?.prepNotes,
+      siblingOilPresent
     );
 
     ingredients.push({
