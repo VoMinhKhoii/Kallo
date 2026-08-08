@@ -44,7 +44,7 @@ export function PricingSection() {
       id="pricing"
       className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-hover pt-12 pb-10 md:pt-16 md:pb-12"
     >
-      <div className="mx-auto max-w-[88rem] px-6 sm:px-12 lg:px-20">
+      <div className="mx-auto max-w-[92rem] px-6 sm:px-12 lg:px-20">
         <motion.h2
           {...reveal}
           className="text-center font-normal font-serif text-5xl text-nham-text tracking-[-0.02em] md:text-6xl"

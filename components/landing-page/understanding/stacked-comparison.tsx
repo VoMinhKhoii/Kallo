@@ -10,7 +10,7 @@ import type { Comparison } from './comparisons';
  * own title rather than an anonymous strip of beige. Change one and the other
  * has to move with it.
  */
-const TITLE_BAND_REM = 4.75;
+const TITLE_BAND_REM = 5;
 
 /**
  * Where the first card comes to rest: directly under the pinned section
@@ -29,14 +29,14 @@ export const STACK_TOP_REM = 15.5;
  * This is what makes the pile leave in one piece. Release happens at
  * `top + height + marginBottom`; the margins cancel out the differing `top`s,
  * but only if `height` is the same for every card. Sizing the visible panel to
- * they naturally want 22.61, 20.89, 24.23 and 20.89rem. So the wrapper is held
+ * they naturally want 24.7, 21.52, 26.33 and 21.52rem. So the wrapper is held
  * level and the panel inside keeps its own height with consistent padding.
  *
  * It has to clear the tallest panel — a shorter wrapper would let its card
  * spill into the next one's flow slot during the deal-in — so re-measure it
  * whenever these cards gain content.
  */
-export const CARD_REM = 24.5;
+export const CARD_REM = 26.75;
 
 /**
  * The scroll position, in rem down the container, at which every card lets go.
@@ -132,8 +132,8 @@ export function StackedComparison({
 
           That leaves coverage, which the numbers happen to satisfy: a card may
           be up to one title band shorter than the one it lands on and still
-          hide it, and the biggest drop between neighbours here is 3.34rem
-          against a 4.75rem band. Reorder the comparisons, or give one a fourth
+          hide it, and the biggest drop between neighbours here is 4.81rem
+          against a 5rem band, with 0.19rem to spare. Reorder the comparisons, or add a
           dish row, and that has to be re-checked. */}
       <div className="overflow-hidden rounded-[2rem] border border-nham-border/60 bg-nham-hover shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_1px_2px_rgba(20,20,19,0.05),0_8px_16px_-8px_rgba(20,20,19,0.10),0_24px_48px_-16px_rgba(20,20,19,0.16),0_48px_96px_-32px_rgba(20,20,19,0.20)]">
         {/* The title band. Its height is exactly the stack's step, so the strip
@@ -165,7 +165,7 @@ export function StackedComparison({
               those rows are what you read across. Below `lg` there is not
               enough width for two one-line sentences, so equal columns plus the
               card's own two-line floor keeps the rows level instead. */}
-          <div className="mt-4 grid gap-3.5 md:grid-cols-2 2xl:grid-cols-[auto_auto]">
+          <div className="mt-4 grid gap-3.5 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] 2xl:auto-cols-max 2xl:grid-flow-col 2xl:grid-cols-none 2xl:justify-start">
             <CompareMealCard comparison={comparison} variant={before} />
             <CompareMealCard comparison={comparison} variant={after} />
           </div>

@@ -36,7 +36,7 @@ export function CompareMealCard({
   const base = `categories.${comparison.id}`;
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-nham-border/60 bg-white p-3.5 shadow-sm">
+    <div className="flex h-full flex-col rounded-2xl border border-nham-border/60 bg-white p-3.5 shadow-sm md:row-span-3 md:grid md:grid-rows-subgrid">
       {/* The sentence somebody actually typed. `first-letter:uppercase` rather
           than capitalised copy, because half these sentences open with a digit
           and "1 chén cơm" has no first letter to raise.
@@ -58,7 +58,7 @@ export function CompareMealCard({
           Below `2xl` the sentence wraps and carries a two-line floor instead:
           the rows underneath still start at the same height whether the
           sentence took one line or two, which is the actual goal. */}
-      <p className="min-h-[2.75em] font-serif text-[15px] text-nham-text leading-snug first-letter:uppercase 2xl:min-h-0 2xl:whitespace-nowrap">
+      <p className="font-serif text-[15px] text-nham-text leading-snug first-letter:uppercase sm:text-[17px] 2xl:whitespace-nowrap">
         {t.rich(`${base}.variants.${variant.id}.input`, {
           // Bold AND underlined, echoing the headline's rule. Only the right
           // card carries any of this: the left is the plain sentence people

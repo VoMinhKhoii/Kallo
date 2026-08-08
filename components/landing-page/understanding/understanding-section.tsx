@@ -93,7 +93,7 @@ export function UnderstandingSection() {
           would COLLAPSE into a single used value, which destroys both the
           cancellation and the sticky arithmetic. Flex children do not collapse
           margins, so the two survive independently. */}
-      <div className="mx-auto max-w-[88rem] px-6 sm:px-12 md:flex md:flex-col lg:px-20">
+      <div className="mx-auto max-w-[92rem] px-6 sm:px-12 md:flex md:flex-col lg:px-20">
         {/* The hero's headline treatment at the pricing heading's size, in two
             blocks so the rule sits under the second clause rather than wherever
             the text happens to wrap.

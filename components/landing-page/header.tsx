@@ -34,7 +34,7 @@ export function Header() {
     >
       {/* Matches the section measure below it, so the wordmark sits on the
           same left edge as the first meal card and the first plan. */}
-      <div className="mx-auto flex max-w-[88rem] items-center justify-between px-6 py-5 sm:px-12 lg:px-20">
+      <div className="mx-auto flex max-w-[92rem] items-center justify-between px-6 py-5 sm:px-12 lg:px-20">
         {/* Logo */}
         <div className="flex items-center gap-2">
           <KalloWordmark className="h-5 w-auto text-nham-text" />
