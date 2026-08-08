@@ -86,15 +86,22 @@ export function UnderstandingSection() {
             releases together, keeping its offset, and the stack leaves as one
             object. That is the Wallet behaviour: cards land, pile holds, pile
             goes. */}
-        <div className="mt-10 space-y-5 md:mt-12 md:space-y-6">
+        {/* `space-y` is phone-only. From `md` the gaps come from each card's
+            own bottom margin, which is doing arithmetic (see StackedComparison)
+            rather than spacing — a uniform `space-y` here would break it. */}
+        <div className="mt-10 space-y-5 md:mt-12 md:space-y-0">
           {comparisons.map((comparison, index) => (
             <StackedComparison
               key={comparison.id}
               comparison={comparison}
               index={index}
+              total={comparisons.length}
             />
           ))}
-          <div aria-hidden="true" className="hidden md:block md:h-[55vh]" />
+          {/* Scroll runway after the last card is dealt, so the finished pile
+              sits complete for a beat before the container's bottom reaches it
+              and the whole stack lets go at once. */}
+          <div aria-hidden="true" className="hidden md:block md:h-[40vh]" />
         </div>
       </div>
     </section>

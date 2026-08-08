@@ -36,12 +36,34 @@ export function StackedComparison({
   comparison,
   /** 0-based position in the stack, used for the resting offset and the tab. */
   index,
+  /** How many cards the pile holds. Vietnamese has three, English four. */
+  total,
 }: {
   comparison: Comparison;
   index: number;
+  total: number;
 }) {
   const t = useTranslations('landing.understanding');
   const [before, after] = comparison.variants;
+
+  // What makes the pile leave as one object instead of peeling apart.
+  //
+  // A sticky element releases when its CONTAINER's bottom edge reaches the
+  // element's own bottom — and that bottom is inset by the element's bottom
+  // margin. Every card here is the same height but stuck at a different `top`,
+  // so without this the lowest card in the pile had the lowest bottom edge and
+  // released first, then the next, then the next: the stack came apart from the
+  // front as it left. Which is exactly the "weird" part.
+  //
+  // Release happens at `top + height + marginBottom`. `top` grows by one band
+  // per card, so giving each card a bottom margin that SHRINKS by one band
+  // makes that sum identical for every card, and they all let go on the same
+  // pixel. The constant is just a gap so the cards are not flush in flow.
+  //
+  // Only from `md`: below that nothing is sticky and a 12rem margin would be a
+  // 12rem hole. The value rides a custom property so the breakpoint can live in
+  // a class while the number stays computed.
+  const stackMarginRem = 1.5 + (total - 1 - index) * TITLE_BAND_REM;
 
   return (
     // Each card rests one title band lower than the one before it, so the pile
@@ -51,8 +73,13 @@ export function StackedComparison({
     // which makes the card taller than the viewport, and a sticky element
     // taller than its scrollport pins at the wrong end and never releases.
     <div
-      className="md:sticky"
-      style={{ top: `${STACK_TOP_REM + index * TITLE_BAND_REM}rem` }}
+      className="md:sticky md:mb-[var(--stack-mb)]"
+      style={
+        {
+          top: `${STACK_TOP_REM + index * TITLE_BAND_REM}rem`,
+          '--stack-mb': `${stackMarginRem}rem`,
+        } as React.CSSProperties
+      }
     >
       {/* Four stacked shadows rather than one, so the card reads as a physical
           slab being dealt onto a pile: a hairline contact shadow holding it to
