@@ -39,8 +39,22 @@ export function CompareMealCard({
     <div className="flex h-full flex-col rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm">
       {/* The sentence somebody actually typed. `first-letter:uppercase` rather
           than capitalised copy, because half these sentences open with a digit
-          and "1 chén cơm" has no first letter to raise. */}
-      <p className="font-serif text-[15px] text-nham-text leading-snug first-letter:uppercase sm:text-[17px]">
+          and "1 chén cơm" has no first letter to raise.
+
+          One line from `lg`, which is what holds the two cards' dish rows level
+          with each other — a sentence that wraps drops everything under it by a
+          line and the numbers stop being readable across.
+
+          It stays at 15px instead of growing to 17px, and it waits for `lg`
+          rather than `md`, because one line has to actually FIT. The longest
+          pair here is the raw-weight one at ~74 characters; at 17px two of
+          those are wider than the panel, so the columns get squeezed back to
+          filling and nothing is gained. At 15px on `lg` they clear it.
+
+          Below `lg` the sentence wraps, so it carries a two-line floor instead:
+          the rows underneath still start at the same height whether the
+          sentence took one line or two. */}
+      <p className="min-h-[2.75em] font-serif text-[15px] text-nham-text leading-snug first-letter:uppercase lg:min-h-0 lg:whitespace-nowrap">
         {t.rich(`${base}.variants.${variant.id}.input`, {
           // Bold AND underlined, echoing the headline's rule. Only the right
           // card carries any of this: the left is the plain sentence people

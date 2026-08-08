@@ -53,19 +53,22 @@ export function UnderstandingSection() {
             than one balanced line, so the rule sits under the second clause
             exactly as it does in the hero rather than wherever the text
             happens to wrap. */}
-        {/* Sticky, and it stays stuck for the whole section.
+        {/* Deliberately NOT sticky, though it was for a while.
 
-            The heading used to scroll away just as the pile started forming,
-            which left the cards alone on a wide cream page with nothing to sit
-            under. Holding it keeps the claim on screen the entire time the
-            evidence is being dealt out, which is also the more honest reading
-            order: you are looking at the cards *because* of the sentence above
-            them. The cards come later in the DOM, so when the pile finally
-            releases it travels up over the heading rather than under it. */}
-        <motion.div
-          {...reveal}
-          className="text-center md:sticky md:top-24 md:z-0"
-        >
+            A sticky element releases when its container's bottom reaches
+            `top + height + marginBottom`. The cards are built to share one
+            release threshold so the pile leaves intact; the heading is a
+            sibling in the same container but only a couple of lines tall, so
+            its threshold landed far earlier and it stayed pinned long after the
+            pile had gone — the departing cards slid up over it and sheared the
+            underlined line in half. Matching it to the cards would take roughly
+            37rem of bottom margin on the heading, which shoves the whole stack
+            most of a screen further down.
+
+            So the heading scrolls, and the emptiness it was pinned to solve is
+            handled by geometry instead: the pile rests higher up the viewport
+            now (see STACK_TOP_REM), which is where that space was going. */}
+        <motion.div {...reveal} className="text-center">
           <h2 className="font-medium font-serif text-5xl text-nham-text leading-[1.04] tracking-[-0.03em] md:text-6xl">
             <span className="block">{t('titleLead')}</span>
             <span className="block underline decoration-[0.055em] underline-offset-[0.16em]">

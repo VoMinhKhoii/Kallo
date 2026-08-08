@@ -13,15 +13,14 @@ import type { Comparison } from './comparisons';
 const TITLE_BAND_REM = 4;
 
 /**
- * Where the first card comes to rest.
+ * Where the first card comes to rest: just clear of the fixed page header.
  *
- * Below the fixed page header (5rem) AND below the section heading, which is
- * itself sticky and two lines of display serif. The pile is deliberately NOT
- * centred in the viewport: centring pushed it down the screen and left the
- * heading to scroll away above it, so the moment the stack was doing its work
- * there was nothing else on screen and it read as a lot of empty page.
+ * It sat at 15rem while the section heading was sticky above it. The heading
+ * scrolls now, so that reserved band was simply empty once it had gone by —
+ * which is the emptiness the sticky heading had been added to solve. Sitting
+ * the pile high fixes it without pinning anything.
  */
-const STACK_TOP_REM = 15;
+const STACK_TOP_REM = 8;
 
 /**
  * One category in the stack: a heading, a line saying what to look for, and the
@@ -122,7 +121,14 @@ export function StackedComparison({
             {t(`categories.${comparison.id}.note`)}
           </p>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {/* Equal columns up to `lg`, content-width from `lg`.
+              `auto-cols-max` lets each card take exactly the width its own
+              sentence needs on one line, so the two cards end up different
+              widths and their dish rows sit level — which is the point, since
+              those rows are what you read across. Below `lg` there is not
+              enough width for two one-line sentences, so equal columns plus the
+              card's own two-line floor keeps the rows level instead. */}
+          <div className="mt-5 grid gap-4 md:grid-cols-2 lg:auto-cols-max lg:grid-flow-col lg:grid-cols-none">
             <CompareMealCard comparison={comparison} variant={before} />
             <CompareMealCard comparison={comparison} variant={after} />
           </div>
