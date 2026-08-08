@@ -189,6 +189,40 @@ describe('mealDecompositionV2Schema', () => {
     ]);
   });
 
+  it('allows ingredients in one meal item to use different cooking methods', () => {
+    const parsed = mealDecompositionV2Schema.parse({
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'bún đậu hũ chiên và rau sống',
+          cookingMethod: 'mixed',
+          ingredients: [
+            {
+              rawName: 'bún',
+              canonicalName: 'Bún',
+              cookingMethod: 'luộc',
+            },
+            {
+              rawName: 'đậu hũ',
+              canonicalName: 'Đậu phụ',
+              cookingMethod: 'chiên',
+            },
+            {
+              rawName: 'rau sống',
+              canonicalName: 'Rau sống',
+              cookingMethod: 'raw',
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      parsed.mealItems[0].ingredients.map((ing) => ing.cookingMethod)
+    ).toEqual(['luộc', 'chiên', 'raw']);
+  });
+
   it('parses a dish with vesselToken and vesselSize', () => {
     const parsed = mealDecompositionV2Schema.parse({
       isFood: true,

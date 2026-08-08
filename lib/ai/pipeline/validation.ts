@@ -68,7 +68,7 @@ export interface ValidationAnomaly {
 const ingredientCookingMethod = (
   mealItem: DecomposedMealItem,
   ing: DecomposedMealItem['ingredients'][number]
-): string | null => mealItem.cookingMethod ?? ing.cookingMethod ?? null;
+): string | null => ing.cookingMethod ?? mealItem.cookingMethod ?? null;
 
 // ---------------------------------------------------------------------------
 // Pre-assembly validation (Section 3.2 — after LLM Call 2, before assembly)

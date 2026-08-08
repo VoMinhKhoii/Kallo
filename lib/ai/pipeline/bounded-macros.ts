@@ -1,3 +1,4 @@
+import { absorbedOil, isDiscreteOilIngredient } from '@/lib/ai/absorbed-oil';
 import { convertCookedToRaw, MAX_KCAL_PER_100G } from '../constants';
 import type {
   BoundedEstimate,
@@ -37,7 +38,7 @@ const UNMATCHED_DENSITY_CEILING = MAX_KCAL_PER_100G;
 const ingredientCookingMethod = (
   mealItem: MealDecompositionWithIds['mealItems'][number],
   ing: MealDecompositionWithIds['mealItems'][number]['ingredients'][number]
-): string | null => mealItem.cookingMethod ?? ing.cookingMethod ?? null;
+): string | null => ing.cookingMethod ?? mealItem.cookingMethod ?? null;
 
 /**
  * Compute the per-ingredient macro base map. For each matched ingredient,
@@ -120,8 +121,8 @@ export function scalePer100g(
 
 /**
  * Server-anchored flat triple: low = mid = high = value. Used wherever we
- * derive a definite DB-anchored number (matched protein, matched carb, fat
- * fallback when the guard rejects the LLM triple). The value is exact from
+ * derive a definite DB-anchored number (matched protein, matched carb, or an
+ * invalid LLM triple). The value is exact from
  * `base = DB per_100g × dbScalingGrams / 100`, so the low/high bounds carry
  * no additional information — emitting a spread would actively distort
  * downstream goal-adjusted displays (e.g., a cutting user would otherwise
@@ -145,11 +146,10 @@ export function isStructurallyInvalidTriple(t: BoundedEstimate): boolean {
 }
 
 /**
- * Apply the hallucination guard to a macro. Fall back to the server-anchored
- * band around `base` whenever the LLM triple is either outside the
- * `maxRatio` envelope (raw.mid > base × maxRatio OR raw.mid < base / maxRatio)
- * OR structurally invalid (unordered/negative/non-finite). Logs once per
- * fallback so we can monitor frequency.
+ * Apply the hallucination guard to a macro. Structurally invalid triples fall
+ * back to the server anchor. Ordered triples outside the permitted envelope
+ * are scaled to the nearest bound, preserving low <= mid <= high and the
+ * LLM's relative uncertainty instead of discarding the estimate.
  *
  * `maxRatio` defaults to `HALLUCINATION_GUARD_RATIO` (3) for the legacy
  * fat-only path; callers pass tighter prep-notes ratios when applying the
@@ -160,27 +160,70 @@ export function guardMacro(
   base: number,
   ingredientName: string,
   macroName: string,
-  maxRatio: number = HALLUCINATION_GUARD_RATIO
+  maxRatio: number = HALLUCINATION_GUARD_RATIO,
+  ceilingAddend: number = 0
 ): BoundedEstimate {
-  if (base <= 0) {
-    // No DB anchor for this nutrient (e.g., pepper has no kcal). Trust the
-    // LLM if it's at least structurally sane; otherwise return a zero triple.
-    return isStructurallyInvalidTriple(raw) ? { low: 0, mid: 0, high: 0 } : raw;
+  if (isStructurallyInvalidTriple(raw)) {
+    console.warn(
+      `[nutrition] hallucination_guard: replaced invalid ${macroName} of "${ingredientName}" with base=${base.toFixed(1)} (reason=invalid, raw mid=${raw.mid}, low=${raw.low}, high=${raw.high})`
+    );
+    return flatTriple(base);
   }
-  const structurallyInvalid = isStructurallyInvalidTriple(raw);
-  let reason: 'invalid' | 'overshoot' | 'undershoot' | null = null;
-  if (structurallyInvalid) {
-    reason = 'invalid';
-  } else {
-    const ratio = raw.mid / base;
-    if (ratio > maxRatio) reason = 'overshoot';
-    else if (ratio < 1 / maxRatio) reason = 'undershoot';
+  const safeAddend =
+    Number.isFinite(ceilingAddend) && ceilingAddend > 0 ? ceilingAddend : 0;
+  if (base <= 0 && safeAddend === 0) {
+    // No usable DB anchor or additive allowance. Trust a structurally sane
+    // triple rather than manufacturing a zero for a nutrient the DB lacks.
+    return raw;
   }
-  if (reason === null) return raw;
+  const floor = base > 0 ? base / maxRatio : 0;
+  const ceiling = Math.max(0, base) * maxRatio + safeAddend;
+  const target = raw.mid > ceiling ? ceiling : raw.mid < floor ? floor : null;
+
+  // Scale first so the LLM's relative uncertainty survives, then hold every
+  // bound inside the envelope.
+  //
+  // Both steps are needed. Scaling alone leaves `high` proportionally out of
+  // range, and a `mid` that is already inside the envelope used to return the
+  // triple untouched no matter how far `high` overshot. That mattered because
+  // the displayed number is not always `mid`: goal adjustment computes
+  // `mid + aggression × (goal_bound − mid)` (`goal-adjustment.ts:42`), so a
+  // cutting user at full aggression is shown `high` outright. A ceiling that
+  // bounds only `mid` is not a ceiling on anything the user actually reads.
+  //
+  // Clamping is monotone, so `low <= mid <= high` is preserved.
+  const scale = target !== null && raw.mid > 0 ? target / raw.mid : null;
+  const scaled =
+    target === null
+      ? raw
+      : scale === null
+        ? flatTriple(target)
+        : scaleBounded(raw, scale);
+
+  const hold = (v: number) => Math.min(Math.max(v, floor), ceiling);
+  const bounded = {
+    low: hold(scaled.low),
+    mid: hold(scaled.mid),
+    high: hold(scaled.high),
+  };
+
+  if (
+    bounded.low === raw.low &&
+    bounded.mid === raw.mid &&
+    bounded.high === raw.high
+  ) {
+    return raw;
+  }
+  const reason =
+    target === null
+      ? 'bounds_outside_envelope'
+      : raw.mid > ceiling
+        ? 'overshoot'
+        : 'undershoot';
   console.warn(
-    `[nutrition] hallucination_guard: snapped ${macroName} of "${ingredientName}" to base=${base.toFixed(1)} (reason=${reason}, raw mid=${raw.mid}, low=${raw.low}, high=${raw.high}, maxRatio=${maxRatio})`
+    `[nutrition] hallucination_guard: clamped ${macroName} of "${ingredientName}" to ${bounded.mid.toFixed(1)} (reason=${reason}, raw mid=${raw.mid}, low=${raw.low}, high=${raw.high}, base=${base.toFixed(1)}, maxRatio=${maxRatio}, ceilingAddend=${safeAddend.toFixed(1)}, envelope=[${floor.toFixed(1)}, ${ceiling.toFixed(1)}])`
   );
-  return flatTriple(base);
+  return bounded;
 }
 
 /**
@@ -240,7 +283,15 @@ export function resolveIngredientMacros(
   rawIng: RawNutritionAdjustment['mealItems'][number]['ingredients'][number],
   base: MacroBase | undefined,
   grams?: number,
-  prepNotesPresent: boolean = false
+  prepNotesPresent: boolean = false,
+  cookingMethod: string | null = null,
+  prepNotes: string[] = [],
+  /**
+   * True when a sibling ingredient in the same meal item IS the cooking fat.
+   * The allowance is then suppressed so the oil is not counted twice — once in
+   * its own row and again inside whatever it was fried in.
+   */
+  siblingOilPresent: boolean = false
 ): {
   caloriesKcal: BoundedEstimate;
   proteinG: BoundedEstimate;
@@ -290,12 +341,23 @@ export function resolveIngredientMacros(
         PREP_NOTES_PC_MAX_RATIO
       )
     : flatTriple(base.carbohydrateG);
+  const oilMethodContext = [cookingMethod, ...prepNotes]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join(' ');
+  // The oil row itself keeps its allowance — it is not "absorbing" anything,
+  // but suppressing it would clamp a legitimate 25g of oil back toward a base
+  // that assumes an unfried food.
+  const oilAllowance =
+    siblingOilPresent && !isDiscreteOilIngredient(rawIng.ingredientName)
+      ? 0
+      : absorbedOil(oilMethodContext, grams ?? 0);
   const fatG = guardMacro(
     rawIng.fatG,
     base.fatG,
     rawIng.ingredientName,
     'fatG',
-    prepNotesPresent ? PREP_NOTES_FAT_MAX_RATIO : HALLUCINATION_GUARD_RATIO
+    prepNotesPresent ? PREP_NOTES_FAT_MAX_RATIO : HALLUCINATION_GUARD_RATIO,
+    oilAllowance
   );
   const caloriesKcal = deriveCaloriesFromMacros(proteinG, carbohydrateG, fatG);
   return { caloriesKcal, proteinG, carbohydrateG, fatG };

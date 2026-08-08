@@ -1,6 +1,11 @@
 /**
  * D2 — simple-meal fast path.
  *
+ * ORPHANED INTENTIONALLY: production no longer imports this module because
+ * every meal must run Call 2 for cooking-fat judgment. Keep the synthesizer
+ * and its tests until the other in-flight pipeline branch lands; remove them
+ * only in a conflict-aware follow-up.
+ *
  * When EVERY ingredient in a meal is "fully grounded" — an exact-match DB hit
  * (Phase 2, similarity 1.0, exactly one candidate) AND a server-resolved
  * portion anchor from the resolver ladder steps 1-4 (Phase 3, no LLM range) —

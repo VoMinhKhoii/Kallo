@@ -77,11 +77,24 @@ export const fixtureCaseSchema = z.object({
   note: z.string().optional(),
 });
 
+export const fixtureRelationSchema = z.object({
+  id: z.string().min(1),
+  kind: z.literal('strictlyIncreasingFatMid'),
+  caseIds: z
+    .array(z.string().min(1))
+    .min(2)
+    .refine((ids) => new Set(ids).size === ids.length, {
+      message: 'relation caseIds must be unique',
+    }),
+  note: z.string().optional(),
+});
+
 export const fixtureFileSchema = z.object({
   $schema: z.string().optional(),
   version: z.number().int().positive(),
   notes: z.string().optional(),
   cases: z.array(fixtureCaseSchema),
+  relations: z.array(fixtureRelationSchema).optional(),
 });
 
 export const cliOptionsSchema = z.object({
@@ -97,6 +110,7 @@ export const cliOptionsSchema = z.object({
 });
 
 export type EvalFixtureCase = z.infer<typeof fixtureCaseSchema>;
+export type EvalFixtureRelation = z.infer<typeof fixtureRelationSchema>;
 export type EvalCliOptions = z.infer<typeof cliOptionsSchema>;
 
 export interface EvalStageTimings {

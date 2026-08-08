@@ -70,7 +70,7 @@ export function resolveMacroSource(args: {
  * the LLM's macros — a 150g estimate anchored to 330g under-reports by 2.2×.
  * Matched ingredients have P/C overwritten from the DB base downstream, but
  * their fat still flows from here into `guardMacro`, so scaling helps there
- * too (an unscaled fat would spuriously trip the undershoot snap).
+ * too (an unscaled fat would spuriously trip the undershoot clamp).
  */
 export function scaleGroundedMacros(
   ground: GroundedIngredientEstimate | null,

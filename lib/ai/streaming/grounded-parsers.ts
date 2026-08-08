@@ -15,6 +15,7 @@
  *      run unchanged.
  */
 
+import { mealItemHasDiscreteOil } from '@/lib/ai/absorbed-oil';
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
 import { ZERO_TRIPLE } from '../pipeline/bridge-verdicts';
 import type { RawNutritionAdjustment } from '../pipeline/nutrition';
@@ -112,6 +113,7 @@ export function extractCompletedGroundedMealItems(
 export function resolveStreamingV2MealItem(
   rawItem: GroundedMealItem,
   decomposedIngredients: DecomposedIngredientV2[],
+  dishCookingMethod: string | null,
   matchResults: IngredientV2MatchResult[],
   flatIngredientStart: number
 ): { nutrition: MealItemNutrition; totalGrams: number } {
@@ -130,6 +132,14 @@ export function resolveStreamingV2MealItem(
     else localIdxByName.set(key, [i]);
   });
 
+  // Same rule the reconciled path applies (`nutrition.ts`): one discrete oil
+  // row suppresses its siblings' absorbed-oil allowance. Without it the
+  // streamed preview shows the oil twice and then silently corrects itself
+  // once reconciliation lands.
+  const siblingOilPresent = mealItemHasDiscreteOil(
+    rawItem.ingredients.map((ing) => ing.ingredientName)
+  );
+
   rawItem.ingredients.forEach((rawIng, streamIdx) => {
     const nameKey = rawIng.ingredientName.trim().toLocaleLowerCase('vi-VN');
     const localIdx = localIdxByName.get(nameKey)?.shift() ?? streamIdx;
@@ -141,6 +151,8 @@ export function resolveStreamingV2MealItem(
       (decompForName?.prepNotes ?? []).some(
         (n) => typeof n === 'string' && n.trim().length > 0
       ) ?? false;
+    const cookingMethod =
+      decompForName?.cookingMethod ?? dishCookingMethod ?? null;
 
     const grams = rawIng.grams;
     totalGrams += grams;
@@ -167,7 +179,10 @@ export function resolveStreamingV2MealItem(
       rawAdjustment,
       base,
       grams,
-      prepNotesPresent
+      prepNotesPresent,
+      cookingMethod,
+      decompForName?.prepNotes,
+      siblingOilPresent
     );
 
     ingredients.push({
@@ -219,6 +234,7 @@ function computeBaseFromVerdict(
 
 export interface MealItemOffset {
   decomposedIngredients: DecomposedIngredientV2[];
+  dishCookingMethod: string | null;
   flatIngredientStart: number;
 }
 
@@ -229,12 +245,16 @@ export interface MealItemOffset {
  * meal-item index.
  */
 export function buildPerMealItemOffsetMap(
-  v2MealItems: Array<{ ingredients: DecomposedIngredientV2[] }>
+  v2MealItems: Array<{
+    ingredients: DecomposedIngredientV2[];
+    cookingMethod: string;
+  }>
 ): MealItemOffset[] {
   let start = 0;
   return v2MealItems.map((mi) => {
     const entry = {
       decomposedIngredients: mi.ingredients,
+      dishCookingMethod: mi.cookingMethod,
       flatIngredientStart: start,
     };
     start += mi.ingredients.length;
@@ -257,7 +277,11 @@ export function buildPerMealItemOffsetMap(
  * to the D3 output-shape change.
  */
 export function buildMealItemOffsetByName(
-  v2MealItems: Array<{ name: string; ingredients: DecomposedIngredientV2[] }>
+  v2MealItems: Array<{
+    name: string;
+    ingredients: DecomposedIngredientV2[];
+    cookingMethod: string;
+  }>
 ): Map<string, MealItemOffset> {
   const byName = new Map<string, MealItemOffset>();
   const occ = new Map<string, number>();
@@ -268,6 +292,7 @@ export function buildMealItemOffsetByName(
     occ.set(key, n);
     byName.set(`${key}::${n}`, {
       decomposedIngredients: mi.ingredients,
+      dishCookingMethod: mi.cookingMethod,
       flatIngredientStart: start,
     });
     start += mi.ingredients.length;

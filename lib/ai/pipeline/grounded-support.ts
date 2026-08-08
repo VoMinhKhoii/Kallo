@@ -227,6 +227,7 @@ export function createCall2StreamHandler(args: {
       const { nutrition, totalGrams } = resolveStreamingV2MealItem(
         rawItem,
         offset.decomposedIngredients,
+        offset.dishCookingMethod,
         matchResults,
         offset.flatIngredientStart
       );
@@ -296,6 +297,7 @@ export function flushUnstreamedItemMacros(args: {
     const { nutrition, totalGrams } = resolveStreamingV2MealItem(
       rawItem,
       offset.decomposedIngredients,
+      offset.dishCookingMethod,
       matchResults,
       offset.flatIngredientStart
     );
