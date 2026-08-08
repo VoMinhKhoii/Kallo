@@ -13,12 +13,14 @@ import type { Comparison } from './comparisons';
 const TITLE_BAND_REM = 4;
 
 /**
- * Where the first card comes to rest: just clear of the fixed page header.
+ * Where the first card comes to rest: directly under the pinned section
+ * heading, never over it.
  *
- * The heading is pinned above it, but they overlap by design — the pile slides
- * over the heading as it forms, and both let go together at the end.
+ * This is `HEADING_TOP_REM + HEADING_REM` plus a rem of air. Those live in
+ * `understanding-section.tsx`; if either moves, this has to move with it. It
+ * sat at 8rem for a while, which put the pile straight over the heading.
  */
-export const STACK_TOP_REM = 8;
+export const STACK_TOP_REM = 15.5;
 
 /**
  * The card's height on `md` and up. FIXED, not a minimum.
@@ -30,10 +32,12 @@ export const STACK_TOP_REM = 8;
  * than its neighbours, its threshold landed elsewhere, and the pile came apart
  * one card at a time on the way out.
  *
- * Tall enough for the worst case: a four-rem title band, a two-line note, and
- * a meal card with three dish rows over a two-line sentence.
+ * Measured, not guessed: the four panels come out at 22.69, 20.75, 24.31 and
+ * 20.75rem naturally, so the tallest is the raw-weight one with its two-line
+ * note and three dish rows. This clears it. Anything under 24.31 clips, since
+ * the panel is `overflow-hidden` for its corners.
  */
-export const CARD_REM = 24;
+export const CARD_REM = 25;
 
 /**
  * The scroll position, in rem down the container, at which every card lets go.

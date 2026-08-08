@@ -8,13 +8,16 @@ import { StackedComparison, stackReleaseRem } from './stacked-comparison';
 /**
  * Where the heading pins, and how tall it is held.
  *
- * The height is fixed rather than natural because the heading's release point
- * is computed from it — see `headingMarginRem`. It clears two lines of the
- * display serif at every breakpoint the section uses; Vietnamese sets the
- * ceiling, since "những chi tiết nhỏ mà quan trọng" is the longest second line.
+ * The height is fixed rather than natural because two other things are computed
+ * from it: the heading's own release point (see `headingMarginRem`), and where
+ * the pile rests — `STACK_TOP_REM` is these two added together plus a rem of
+ * air, so the cards stack UNDER the title instead of over it. Move either and
+ * that constant has to move with it.
+ *
+ * The h2 measures 7.8rem; this clears it with a little slack.
  */
 const HEADING_TOP_REM = 6;
-const HEADING_REM = 10;
+const HEADING_REM = 8.5;
 
 /**
  * The proof section: the same meal, one detail added, different numbers.
