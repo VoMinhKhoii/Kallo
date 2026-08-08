@@ -9,14 +9,16 @@ import { PLAN_IDS } from './plans';
 /**
  * Pricing.
  *
- * One word and three cards. There is no monthly/yearly switch: Premium quotes
- * the annual rate per month and its fine print says what is billed up front
- * and what the monthly alternative costs. That puts both numbers on screen at
- * once, where a toggle showed one and hid the other behind an interaction —
- * and it takes the section back to being static, with no state at all.
+ * One word and two cards — Lifetime is held back, see `PLAN_IDS`.
+ *
+ * There is no monthly/yearly switch: Premium quotes the monthly price and its
+ * fine print carries the annual one and what that works out to per month. That
+ * puts every number on screen at once, where a toggle showed one and hid the
+ * other behind an interaction — and it keeps the section static, with no state
+ * at all.
  *
  * For the same reason there is no "save N%" badge. The annual discount is 32%
- * in đồng and 58% in dollars, so a single number would be a lie in one of the
+ * in đồng and 40% in dollars, so a single number would be wrong in one of the
  * two locales; the fine print carries the real terms in each.
  */
 export function PricingSection() {
@@ -54,12 +56,17 @@ export function PricingSection() {
 
         {/* Four named rows the cards hang their blocks on — heading, price,
             button, features — so each row is as tall as the tallest card and
-            the three columns line up across. Below md the cards stack, the
-            subgrid is off, and the row gap goes back to being the gap between
-            cards. */}
+            the columns line up across. Below md the cards stack, the subgrid is
+            off, and the row gap goes back to being the gap between cards.
+
+            Capped and centred rather than filling the section's 92rem measure.
+            With Lifetime held back there are two cards, and two cards spread
+            across the full width would each be half a screen wide — the cap
+            holds them at the ~26rem they were at three across, so removing a
+            plan changes the count and nothing else. */}
         <motion.div
           {...reveal}
-          className="mt-10 grid gap-x-5 gap-y-5 md:mt-12 md:grid-cols-3 md:grid-rows-[auto_auto_auto_1fr] md:gap-y-0"
+          className="mt-10 grid gap-x-5 gap-y-5 md:mt-12 md:max-w-[54rem] md:grid-cols-2 md:grid-rows-[auto_auto_auto_1fr] md:gap-y-0 lg:mx-auto"
         >
           {PLAN_IDS.map((plan) => (
             <PlanCard

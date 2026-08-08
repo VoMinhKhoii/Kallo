@@ -22,7 +22,15 @@
  */
 export type PlanId = 'free' | 'premium' | 'lifetime';
 
-export const PLAN_IDS = ['free', 'premium', 'lifetime'] as const;
+/**
+ * The plans the page shows, in order.
+ *
+ * Lifetime is held back for now — it keeps its copy, its features and its place
+ * in the type, so putting it back is adding one string to this array. Removing
+ * the rest would throw away a tier that is only paused, and the section already
+ * says prices apply when beta ends.
+ */
+export const PLAN_IDS = ['free', 'premium'] as const;
 
 /** Feature keys per tier, resolved against `landing.pricing.features`. */
 export const PLAN_FEATURES: Record<PlanId, readonly string[]> = {

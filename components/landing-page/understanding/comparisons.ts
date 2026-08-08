@@ -1,3 +1,6 @@
+import { EN_COMPARISONS } from './comparisons-en';
+import { VI_COMPARISONS } from './comparisons-vi';
+
 /**
  * The comparisons the "understanding" section puts on display.
  *
@@ -50,409 +53,67 @@ export interface Comparison {
   id: string;
   /** Which macro the added words are supposed to move. Drives the delta line. */
   moves: 'fat' | 'protein' | 'carbs';
+  /**
+   * The painting behind the right-hand card, in the hero's house style.
+   *
+   * One per comparison, not one per variant. The two sides are the same meal
+   * with one detail added — and that detail is precisely what no picture of the
+   * meal can show, so a second painting could only differ in ways that have
+   * nothing to do with the comparison. Only the right card wears it (see
+   * `showArt` in `compare-meal-card.tsx`), which leaves the left as the plain
+   * sheet somebody typed on.
+   *
+   * Locales share a file wherever they share a dish (`fat`, `weight`) and split
+   * where the cuisines do (`oil` is bún đậu in Vietnamese, a burger in
+   * English), which is why these are set per entry rather than per id.
+   */
+  art: string;
   /** Exactly two: what people type, then the same thing with a detail added. */
   variants: readonly [ComparisonVariant, ComparisonVariant];
 }
 
-const VI: readonly Comparison[] = [
-  {
-    id: 'fat',
-    moves: 'fat',
-    variants: [
-      {
-        id: 'plain',
-        items: [
-          {
-            id: 'rice',
-            grams: 200,
-            calories: 302,
-            protein: 6,
-            carbs: 68,
-            fat: 1,
-          },
-          {
-            id: 'thigh',
-            grams: 155,
-            calories: 311,
-            protein: 36,
-            carbs: 0,
-            fat: 19,
-          },
-          {
-            id: 'soup',
-            grams: 550,
-            calories: 81,
-            protein: 5,
-            carbs: 12,
-            fat: 1,
-          },
-        ],
-      },
-      {
-        id: 'trimmed',
-        items: [
-          {
-            id: 'rice',
-            grams: 200,
-            calories: 302,
-            protein: 6,
-            carbs: 68,
-            fat: 1,
-          },
-          {
-            id: 'thigh',
-            grams: 155,
-            calories: 270,
-            protein: 36,
-            carbs: 0,
-            fat: 14,
-          },
-          {
-            id: 'soup',
-            grams: 450,
-            calories: 67,
-            protein: 5,
-            carbs: 10,
-            fat: 1,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'oil',
-    moves: 'fat',
-    variants: [
-      {
-        id: 'fried',
-        items: [
-          {
-            id: 'bun',
-            grams: 410,
-            calories: 530,
-            protein: 22,
-            carbs: 51,
-            fat: 27,
-          },
-        ],
-      },
-      {
-        id: 'noOil',
-        items: [
-          {
-            id: 'bun',
-            grams: 450,
-            calories: 346,
-            protein: 21,
-            carbs: 52,
-            fat: 6,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'weight',
-    moves: 'protein',
-    variants: [
-      {
-        id: 'asEaten',
-        items: [
-          {
-            id: 'breast',
-            grams: 300,
-            calories: 429,
-            protein: 87,
-            carbs: 0,
-            fat: 9,
-          },
-          {
-            id: 'potato',
-            grams: 150,
-            calories: 179,
-            protein: 1,
-            carbs: 43,
-            fat: 0,
-          },
-          {
-            id: 'salad',
-            grams: 120,
-            calories: 108,
-            protein: 1,
-            carbs: 3,
-            fat: 10,
-          },
-        ],
-      },
-      {
-        id: 'raw',
-        items: [
-          {
-            id: 'breast',
-            grams: 300,
-            calories: 330,
-            protein: 60,
-            carbs: 13,
-            fat: 5,
-          },
-          {
-            id: 'potato',
-            grams: 150,
-            calories: 179,
-            protein: 1,
-            carbs: 43,
-            fat: 0,
-          },
-          {
-            id: 'salad',
-            grams: 125,
-            calories: 108,
-            protein: 1,
-            carbs: 3,
-            fat: 10,
-          },
-        ],
-      },
-    ],
-  },
-];
-
-const EN: readonly Comparison[] = [
-  {
-    id: 'fat',
-    moves: 'fat',
-    variants: [
-      {
-        id: 'plain',
-        items: [
-          {
-            id: 'rice',
-            grams: 200,
-            calories: 302,
-            protein: 6,
-            carbs: 68,
-            fat: 1,
-          },
-          {
-            id: 'thigh',
-            grams: 157,
-            calories: 329,
-            protein: 36,
-            carbs: 0,
-            fat: 21,
-          },
-          {
-            id: 'greens',
-            grams: 150,
-            calories: 27,
-            protein: 2,
-            carbs: 4,
-            fat: 0,
-          },
-        ],
-      },
-      {
-        id: 'trimmed',
-        items: [
-          {
-            id: 'rice',
-            grams: 200,
-            calories: 302,
-            protein: 6,
-            carbs: 68,
-            fat: 1,
-          },
-          {
-            id: 'thigh',
-            grams: 125,
-            calories: 219,
-            protein: 29,
-            carbs: 0,
-            fat: 12,
-          },
-          {
-            id: 'greens',
-            grams: 150,
-            calories: 27,
-            protein: 2,
-            carbs: 4,
-            fat: 0,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'count',
-    moves: 'carbs',
-    variants: [
-      {
-        id: 'one',
-        items: [
-          {
-            id: 'rice',
-            grams: 200,
-            calories: 302,
-            protein: 6,
-            carbs: 68,
-            fat: 1,
-          },
-          {
-            id: 'pork',
-            grams: 180,
-            calories: 354,
-            protein: 30,
-            carbs: 0,
-            fat: 26,
-          },
-        ],
-      },
-      {
-        id: 'two',
-        items: [
-          {
-            id: 'rice',
-            grams: 400,
-            calories: 604,
-            protein: 13,
-            carbs: 136,
-            fat: 1,
-          },
-          {
-            id: 'pork',
-            grams: 170,
-            calories: 282,
-            protein: 30,
-            carbs: 0,
-            fat: 18,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'weight',
-    moves: 'protein',
-    variants: [
-      {
-        id: 'asEaten',
-        items: [
-          {
-            id: 'breast',
-            grams: 300,
-            calories: 429,
-            protein: 87,
-            carbs: 0,
-            fat: 9,
-          },
-          {
-            id: 'potato',
-            grams: 150,
-            calories: 179,
-            protein: 1,
-            carbs: 43,
-            fat: 0,
-          },
-          {
-            id: 'salad',
-            grams: 100,
-            calories: 18,
-            protein: 1,
-            carbs: 3,
-            fat: 0,
-          },
-        ],
-      },
-      {
-        id: 'raw',
-        items: [
-          {
-            id: 'breast',
-            grams: 300,
-            calories: 325,
-            protein: 70,
-            carbs: 0,
-            fat: 5,
-          },
-          {
-            id: 'potato',
-            grams: 150,
-            calories: 137,
-            protein: 3,
-            carbs: 31,
-            fat: 0,
-          },
-          {
-            id: 'salad',
-            grams: 150,
-            calories: 28,
-            protein: 2,
-            carbs: 5,
-            fat: 0,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    // The capture also holds a middle `pan-fried potatoes` variant, and across
-    // all three the calories are NOT monotonic (936 → 1002 → 804). Only the two
-    // ends are shown, and they are shown knowing that `fries` and `air-fried
-    // potatoes` match two different pre-fried composition rows, so part of this
-    // movement is the row choice rather than the words. DEV-96 tracks the fix.
-    id: 'oil',
-    moves: 'fat',
-    variants: [
-      {
-        id: 'fried',
-        items: [
-          {
-            id: 'potatoes',
-            grams: 208,
-            calories: 457,
-            protein: 5,
-            carbs: 46,
-            fat: 28,
-          },
-          {
-            id: 'burger',
-            grams: 185,
-            calories: 479,
-            protein: 35,
-            carbs: 30,
-            fat: 24,
-          },
-        ],
-      },
-      {
-        id: 'noOil',
-        items: [
-          {
-            id: 'potatoes',
-            grams: 200,
-            calories: 370,
-            protein: 4,
-            carbs: 50,
-            fat: 17,
-          },
-          {
-            id: 'burger',
-            grams: 180,
-            calories: 434,
-            protein: 28,
-            carbs: 30,
-            fat: 22,
-          },
-        ],
-      },
-    ],
-  },
-];
-
 export const COMPARISONS_BY_LOCALE: Record<string, readonly Comparison[]> = {
-  vi: VI,
-  en: EN,
+  vi: VI_COMPARISONS,
+  en: EN_COMPARISONS,
 };
+
+/**
+ * The one dish the added words actually moved — the row worth marking.
+ *
+ * Only the macro named by `moves` is considered, and only its single largest
+ * shift. Both restrictions are about honesty rather than tidiness: the two
+ * variants are independent model runs, so unrelated rows wobble by a gram or
+ * two on their own (see the note at the top of this file), and marking every
+ * row that differs would dress that noise up as the point. The largest shift in
+ * the claimed macro is the one attributable to the words.
+ *
+ * Symmetric by construction, so both cards mark the same row and the pair can
+ * be read across. Returns null if nothing moved, and nothing is marked.
+ *
+ * `delta` is signed, after minus before, and is what points the arrow.
+ */
+export interface ShiftedItem {
+  /** The dish that moved, resolving under the category's `items`. */
+  id: string;
+  /** Signed, after minus before. Its sign is what points the arrow. */
+  delta: number;
+}
+
+export function shiftedItem(comparison: Comparison): ShiftedItem | null {
+  const [before, after] = comparison.variants;
+  let best: ShiftedItem | null = null;
+
+  for (const item of after.items) {
+    const was = before.items.find((other) => other.id === item.id);
+    if (!was) continue;
+    const delta = item[comparison.moves] - was[comparison.moves];
+    if (!best || Math.abs(delta) > Math.abs(best.delta)) {
+      best = { id: item.id, delta };
+    }
+  }
+
+  return best && best.delta !== 0 ? best : null;
+}
 
 /** Totals summed from the rows, so a card can never disagree with itself. */
 export function variantTotals(variant: ComparisonVariant) {

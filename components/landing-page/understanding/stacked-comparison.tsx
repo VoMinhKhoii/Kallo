@@ -1,58 +1,12 @@
 import { useTranslations } from 'next-intl';
 import { CompareMealCard } from './compare-meal-card';
-import type { Comparison } from './comparisons';
-
-/**
- * Height of the title band, and therefore the stack's step.
- *
- * These are the same number on purpose: each card rests exactly one band lower
- * than the one before it, so the sliver every buried card still shows is its
- * own title rather than an anonymous strip of beige. Change one and the other
- * has to move with it.
- */
-const TITLE_BAND_REM = 5;
-
-/**
- * Where the first card comes to rest: directly under the pinned section
- * heading, never over it.
- *
- * This must be EXACTLY `HEADING_TOP_REM + HEADING_REM`, both in
- * `understanding-section.tsx`. Not approximately: the first card sits flush
- * under the heading box in flow and at this offset once pinned, so any
- * difference between the two shows up as the gap changing mid-scroll.
- */
-export const STACK_TOP_REM = 15.5;
-
-/**
- * The height of each card's sticky WRAPPER — not of the card you can see.
- *
- * This is what makes the pile leave in one piece. Release happens at
- * `top + height + marginBottom`; the margins cancel out the differing `top`s,
- * but only if `height` is the same for every card. Sizing the visible panel to
- * they naturally want 24.7, 21.52, 26.33 and 21.52rem. So the wrapper is held
- * level and the panel inside keeps its own height with consistent padding.
- *
- * It has to clear the tallest panel — a shorter wrapper would let its card
- * spill into the next one's flow slot during the deal-in — so re-measure it
- * whenever these cards gain content.
- */
-export const CARD_REM = 26.75;
-
-/**
- * The scroll position, in rem down the container, at which every card lets go.
- *
- * Exported because the section heading has to join the same group — it is a
- * sticky sibling in the same container, so if its threshold differs it either
- * gets left behind after the pile has gone or leaves before it.
- */
-export function stackReleaseRem(total: number) {
-  return (
-    STACK_TOP_REM + CARD_REM + STACK_GAP_REM + (total - 1) * TITLE_BAND_REM
-  );
-}
-
-/** Flow gap under the last card, added to every card's margin equally. */
-const STACK_GAP_REM = 1.5;
+import { type Comparison, shiftedItem } from './comparisons';
+import {
+  CARD_REM,
+  STACK_GAP_REM,
+  STACK_TOP_REM,
+  TITLE_BAND_REM,
+} from './stack-geometry';
 
 /**
  * One category in the stack: a heading, a line saying what to look for, and the
@@ -76,6 +30,8 @@ export function StackedComparison({
 }) {
   const t = useTranslations('landing.understanding');
   const [before, after] = comparison.variants;
+  // Resolved once, here, so both cards mark the same dish. See `shiftedItem`.
+  const shifted = shiftedItem(comparison);
 
   // What makes the pile leave as one object instead of peeling apart.
   //
@@ -144,11 +100,24 @@ export function StackedComparison({
           className="flex items-center px-6 sm:px-8 lg:px-10"
           style={{ minHeight: `${TITLE_BAND_REM}rem` }}
         >
-          {/* `leading-[1.4]`, not the display-tight 1.15 the other headings
-              use. `truncate` sets `overflow: hidden`, and Vietnamese is full of
-              descenders — the y of "hay", the g of "sống" — which a serif hangs
-              below a 1.15 line box. They were being sliced off mid-stroke. */}
-          <h3 className="truncate font-normal font-serif text-2xl text-nham-text leading-[1.4] tracking-[-0.02em] md:text-3xl">
+          {/* It wraps. It used to `truncate`, which ends a title that does not
+              fit with an ellipsis rather than giving it a second line — and
+              since the band is a `minHeight`, the room was there for the
+              taking. `text-balance` splits the two lines evenly instead of
+              leaving one word stranded.
+
+              The cost, accepted: a two-line title makes this band taller than
+              TITLE_BAND_REM, so a card buried in the pile shows the first line
+              and hides the second. That only bites from `md`, where the pile is
+              sticky at all, and at those widths these titles are short enough
+              to stay on one line — but a longer title added later has to be
+              checked against the band rather than assumed to fit.
+
+              `leading-[1.4]`, not the display-tight 1.15 the other headings
+              use: Vietnamese is full of descenders — the y of "hay", the g of
+              "sống" — which a serif hangs below a 1.15 line box, and they were
+              being sliced off mid-stroke by the old overflow. */}
+          <h3 className="text-balance font-normal font-serif text-2xl text-nham-text leading-[1.4] tracking-[-0.02em] md:text-3xl">
             {t(`categories.${comparison.id}.title`)}
           </h3>
         </div>
@@ -166,8 +135,18 @@ export function StackedComparison({
               enough width for two one-line sentences, so equal columns plus the
               card's own two-line floor keeps the rows level instead. */}
           <div className="mt-4 grid gap-3.5 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] 2xl:auto-cols-max 2xl:grid-flow-col 2xl:grid-cols-none 2xl:justify-start">
-            <CompareMealCard comparison={comparison} variant={before} />
-            <CompareMealCard comparison={comparison} variant={after} />
+            <CompareMealCard
+              comparison={comparison}
+              variant={before}
+              shifted={shifted}
+              isAfter={false}
+            />
+            <CompareMealCard
+              comparison={comparison}
+              variant={after}
+              shifted={shifted}
+              isAfter
+            />
           </div>
         </div>
       </div>

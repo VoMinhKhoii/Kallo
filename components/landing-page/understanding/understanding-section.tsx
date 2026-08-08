@@ -3,7 +3,8 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { COMPARISONS_BY_LOCALE } from './comparisons';
-import { StackedComparison, stackReleaseRem } from './stacked-comparison';
+import { stackReleaseRem } from './stack-geometry';
+import { StackedComparison } from './stacked-comparison';
 
 /**
  * Where the heading pins, and the height it is held at.

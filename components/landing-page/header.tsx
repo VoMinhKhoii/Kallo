@@ -6,6 +6,7 @@ import { useAuthDialog } from '@/components/auth/auth-provider';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
+import { AUTH_CTAS_LIVE } from './cta-hold';
 import { LocaleSwitcher } from './locale-switcher';
 import { scrollToAnchorId } from './scroll-to-anchor';
 
@@ -66,6 +67,7 @@ export function Header() {
           <Button
             variant="landing-ghost"
             className="hidden font-sans-display sm:block"
+            disabled={!AUTH_CTAS_LIVE}
             onClick={() => openDialog('sign-in')}
           >
             {t('signIn')}
@@ -76,6 +78,7 @@ export function Header() {
             variant="landing-ink"
             size="header"
             className="font-sans-display text-sm"
+            disabled={!AUTH_CTAS_LIVE}
             onClick={() => openDialog('sign-up')}
           >
             {t('getStarted')}

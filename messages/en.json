@@ -799,8 +799,8 @@
       }
     },
     "understanding": {
-      "titleLead": "Kallo understands",
-      "titleUnderlined": "minor details that matter",
+      "titleLead": "We understand that",
+      "titleUnderlined": "minor details matter",
       "categories": {
         "fat": {
           "title": "Skin on, or skin off",
@@ -884,8 +884,12 @@
         "premium": {
           "name": "Premium",
           "tagline": "For logging in your own words",
-          "price": "$2.08",
-          "fineprint": "Per month with annual subscription discount ($24.99 billed up front). $4.99 if billed monthly.",
+          "priceMonthly": "$3.49",
+          "priceYearly": "$2.08",
+          "amountMonthly": 3.49,
+          "amountYearly": 24.99,
+          "fineprintMonthly": "Billed every month. Cancel any time.",
+          "fineprintYearly": "Billed $24.99 once a year. Cancel any time.",
           "cta": "Start free trial",
           "inherits": "Everything in Free, plus:"
         },
@@ -914,7 +918,13 @@
         "payOnce": "One payment instead of a subscription",
         "futureUpdates": "Every future update included"
       },
-      "betaNote": "Kallo is free while it is in beta. These prices start when beta ends, and we will tell you before that happens."
+      "betaNote": "Kallo is free while it is in beta. These prices start when beta ends, and we will tell you before that happens.",
+      "period": {
+        "monthly": "Monthly",
+        "yearly": "Yearly"
+      },
+      "discount": "Save {percent}%",
+      "perMonth": "/mo"
     },
     "footer": {
       "copyright": "© {year} Kallo. All rights reserved."

@@ -799,8 +799,8 @@
       }
     },
     "understanding": {
-      "titleLead": "Kallo hiểu",
-      "titleUnderlined": "những chi tiết nhỏ mà quan trọng",
+      "titleLead": "Chúng tôi hiểu rằng",
+      "titleUnderlined": "những chi tiết nhỏ đều quan trọng",
       "categories": {
         "fat": {
           "title": "Còn da, hay bỏ da",
@@ -883,8 +883,12 @@
         "premium": {
           "name": "Premium",
           "tagline": "Để ghi bằng lời của bạn",
-          "price": "33K₫",
-          "fineprint": "Mỗi tháng khi trả theo năm (399K₫ trả trước). 49K₫ nếu trả từng tháng.",
+          "priceMonthly": "49K₫",
+          "priceYearly": "33K₫",
+          "amountMonthly": 49000,
+          "amountYearly": 399000,
+          "fineprintMonthly": "Trả mỗi tháng. Hủy bất cứ lúc nào.",
+          "fineprintYearly": "Trả 399K₫ một lần mỗi năm. Hủy bất cứ lúc nào.",
           "cta": "Dùng thử miễn phí",
           "inherits": "Mọi thứ ở gói Miễn phí, thêm:"
         },
@@ -913,7 +917,13 @@
         "payOnce": "Trả một lần thay vì thuê bao",
         "futureUpdates": "Bao gồm mọi bản cập nhật sau này"
       },
-      "betaNote": "Kallo miễn phí trong thời gian thử nghiệm. Mức giá này áp dụng khi kết thúc thử nghiệm, và chúng tôi sẽ báo trước."
+      "betaNote": "Kallo miễn phí trong thời gian thử nghiệm. Mức giá này áp dụng khi kết thúc thử nghiệm, và chúng tôi sẽ báo trước.",
+      "period": {
+        "monthly": "Hàng tháng",
+        "yearly": "Hàng năm"
+      },
+      "discount": "Tiết kiệm {percent}%",
+      "perMonth": "/tháng"
     },
     "footer": {
       "copyright": "© {year} Kallo. Mọi quyền được bảo lưu."

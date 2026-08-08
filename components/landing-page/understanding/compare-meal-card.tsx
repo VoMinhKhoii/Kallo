@@ -1,34 +1,69 @@
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import {
   formatCaloriesValue,
   formatMacroValue,
 } from '@/components/logging/feed/format-inline-nutrition';
+import { HIGHLIGHT_MARK } from '../highlight';
+import { CompareMealRows } from './compare-meal-rows';
 import {
   type Comparison,
   type ComparisonVariant,
+  type ShiftedItem,
   variantTotals,
 } from './comparisons';
+
+/**
+ * How far the painting comes up — far lower than the hero's 0.65.
+ *
+ * The hero card is one large panel with two or three roomy rows. This one is
+ * half the height, carries the same rows plus a 9px macro triple, and only one
+ * of the pair wears art at all, so the painting is here as a warmth in the
+ * paper rather than as a picture. Anything higher and the brushwork ran through
+ * the numbers, which are the argument.
+ */
+const ART_OPACITY = 0.22;
 
 /**
  * One side of a comparison, in the app's own card language.
  *
  * The body is the hero's card body element for element — the same serif input
  * line, the same 13px dish rows with their 9px macro triple and bold calories,
- * the same Total footer. Two of these sit side by side and the eye has to find
- * one difference between them, so everything else the hero card carries (time
- * divider, entry chip, painting, chevron) is left off: here it would be noise.
+ * the same Total footer, and the hero's painting on the right card. Two of
+ * these sit side by side and the eye has to find one difference between them,
+ * so what the hero card carries beyond that (time divider, entry chip,
+ * chevron) is left off: here it would be noise.
  *
- * The words the user added are bold, and they are the only bold in the
- * sentence. That is the section's whole argument rendered as typography — the
- * two sentences are nearly identical, and the part that is not is what moved
- * every number underneath.
+ * Two marks, both in the same tint, and nothing else on the card is coloured:
+ * the words the user added, and the macro they were supposed to move. That is
+ * the section's whole argument rendered as typography — the two sentences are
+ * nearly identical, and the part that is not is what moved the number.
  */
 export function CompareMealCard({
   comparison,
   variant,
+  shifted,
+  isAfter,
 }: {
   comparison: Comparison;
   variant: ComparisonVariant;
+  /**
+   * The dish whose moved macro gets the marker, and which way it moved.
+   *
+   * Passed in rather than derived here so both cards are guaranteed to mark the
+   * same row — a card that only sees its own variant cannot know what shifted.
+   */
+  shifted: ShiftedItem | null;
+  /**
+   * Whether this is the right-hand card — the one carrying the added detail.
+   *
+   * Drives the two things only that side gets: the painting, and the direction
+   * arrow. On both cards the art was the loudest thing in the pair and the eye
+   * read two pictures before it read either sentence; on the right one alone it
+   * marks the side that changed, and the left stays the plain sheet of paper
+   * somebody typed on.
+   */
+  isAfter: boolean;
 }) {
   const t = useTranslations('landing.understanding');
   const tHero = useTranslations('landing.hero');
@@ -36,7 +71,22 @@ export function CompareMealCard({
   const base = `categories.${comparison.id}`;
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-nham-border/60 bg-white p-3.5 shadow-sm md:row-span-3 md:grid md:grid-rows-subgrid">
+    <div className="relative isolate flex h-full flex-col overflow-hidden rounded-2xl border border-nham-border/60 bg-white p-3.5 shadow-sm md:row-span-3 md:grid md:grid-rows-subgrid">
+      {/* `fill` makes this absolutely positioned, so it is out of flow and
+          never becomes a grid item. That matters: the card is a 3-row subgrid
+          from `md`, and an in-flow child here would take the sentence's row and
+          push every row down by one. */}
+      {isAfter && (
+        <Image
+          src={comparison.art}
+          alt=""
+          fill
+          sizes="(min-width: 1536px) 40rem, (min-width: 768px) 45vw, 90vw"
+          style={{ opacity: ART_OPACITY }}
+          className="-z-10 object-cover"
+        />
+      )}
+
       {/* The sentence somebody actually typed. `first-letter:uppercase` rather
           than capitalised copy, because half these sentences open with a digit
           and "1 chén cơm" has no first letter to raise.
@@ -60,46 +110,45 @@ export function CompareMealCard({
           sentence took one line or two, which is the actual goal. */}
       <p className="font-serif text-[15px] text-nham-text leading-snug first-letter:uppercase sm:text-[17px] 2xl:whitespace-nowrap">
         {t.rich(`${base}.variants.${variant.id}.input`, {
-          // Bold AND underlined, echoing the headline's rule. Only the right
-          // card carries any of this: the left is the plain sentence people
-          // type, and marking a phrase there would imply it was the change.
+          // Bold and highlighted, in the same tint the moved macro wears below,
+          // so the eye can travel from the words to the number they moved.
+          //
+          // The underline these used to carry is gone: bold plus underline plus
+          // a tinted ground is three marks on one phrase, and the tint alone
+          // already outranks the other two.
+          //
+          // Only the right card carries any of this. The left is the plain
+          // sentence people type, and marking a phrase there would imply it was
+          // the change.
           b: (chunks) => (
-            <strong className="font-semibold underline decoration-[0.06em] underline-offset-[0.18em]">
+            <strong className={`font-semibold ${HIGHLIGHT_MARK}`}>
               {chunks}
             </strong>
           ),
         })}
       </p>
 
-      <div className="mt-2.5 flex-1 border-nham-border border-t pt-1.5">
-        {variant.items.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-center justify-between gap-2 py-1 font-sans-display text-[13px]"
-          >
-            <span className="min-w-0 truncate font-medium text-nham-text">
-              {t(`${base}.items.${item.id}`)}
-            </span>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <div className="flex gap-1 text-[9px] text-nham-text-soft tabular-nums">
-                <span>P:{formatMacroValue(item.protein)}</span>
-                <span>C:{formatMacroValue(item.carbs)}</span>
-                <span>F:{formatMacroValue(item.fat)}</span>
-              </div>
-              <span className="font-bold text-nham-text tabular-nums">
-                {formatCaloriesValue(item.calories)}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
+      <CompareMealRows
+        comparison={comparison}
+        variant={variant}
+        shifted={shifted}
+        isAfter={isAfter}
+      />
 
       <div className="mt-1.5 flex items-center justify-between border-nham-border/50 border-t pt-2">
         <span className="font-bold font-sans-display text-[13px] text-nham-text">
           {tHero('total')}
         </span>
         <div className="flex items-center gap-3">
-          <span className="font-sans-display text-[11px] text-nham-text-soft tabular-nums">
+          {/* The total carries no mark. It is the consequence of the shift
+              above, not the shift itself, and two highlights per card turned
+              the pair into a page of yellow. */}
+          {/* No explicit size, so this lands on exactly whatever the calories
+              beside it inherit. The app's cards set macros a step or two below
+              their calories; the landing page does not, because here the two
+              are being read across a pair rather than skimmed down a feed, and
+              a macro you have to lean in for cannot be compared at a glance. */}
+          <span className="font-sans-display text-nham-text-soft text-sm tabular-nums lg:text-base">
             P: {formatMacroValue(totals.protein)}
             {'  '}C: {formatMacroValue(totals.carbs)}
             {'  '}F: {formatMacroValue(totals.fat)}
