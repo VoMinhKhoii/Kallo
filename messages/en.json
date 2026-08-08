@@ -828,7 +828,7 @@
           },
           "variants": {
             "one": {
-              "input": "<b>one cup</b> of rice with braised pork and egg"
+              "input": "one cup of rice with braised pork and egg"
             },
             "two": {
               "input": "<b>two cups</b> of rice with braised pork and egg"
@@ -861,7 +861,7 @@
           },
           "variants": {
             "fried": {
-              "input": "a plate of <b>fries</b> with a beef burger"
+              "input": "a plate of fries with a beef burger"
             },
             "noOil": {
               "input": "a plate of <b>air-fried potatoes</b> with a beef burger"

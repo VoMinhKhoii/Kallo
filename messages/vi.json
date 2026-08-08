@@ -827,7 +827,7 @@
           },
           "variants": {
             "fried": {
-              "input": "1 tô bún đậu hũ <b>chiên</b> + rau sống"
+              "input": "1 tô bún đậu hũ chiên + rau sống"
             },
             "noOil": {
               "input": "1 tô bún đậu hũ <b>nướng không dầu</b> + rau sống"
@@ -860,7 +860,7 @@
           },
           "variants": {
             "one": {
-              "input": "<b>1 chén</b> cơm + thịt kho trứng"
+              "input": "1 chén cơm + thịt kho trứng"
             },
             "two": {
               "input": "<b>2 chén</b> cơm + thịt kho trứng"

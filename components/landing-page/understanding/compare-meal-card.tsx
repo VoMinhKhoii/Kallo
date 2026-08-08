@@ -42,8 +42,13 @@ export function CompareMealCard({
           and "1 chén cơm" has no first letter to raise. */}
       <p className="font-serif text-[15px] text-nham-text leading-snug first-letter:uppercase sm:text-[17px]">
         {t.rich(`${base}.variants.${variant.id}.input`, {
+          // Bold AND underlined, echoing the headline's rule. Only the right
+          // card carries any of this: the left is the plain sentence people
+          // type, and marking a phrase there would imply it was the change.
           b: (chunks) => (
-            <strong className="font-semibold text-nham-text">{chunks}</strong>
+            <strong className="font-semibold text-nham-text underline decoration-[0.06em] underline-offset-[0.18em]">
+              {chunks}
+            </strong>
           ),
         })}
       </p>
