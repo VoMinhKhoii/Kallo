@@ -19,16 +19,15 @@ import {
  * <the tier below>, plus" and list only the difference, so no line is printed
  * three times.
  *
- * The card reads its own copy. Nothing above it has to resolve a price any
- * more now that the period toggle is gone — the fine print under the number
- * carries the terms instead.
+ * The card reads its own copy, and Premium owns its billing period — the
+ * section above resolves no prices. Everything else about a plan is a message
+ * key; see `premium-price.tsx` for the one plan that has state.
  *
  * Four blocks — heading, price, button, features — laid on a subgrid inherited
- * from the section. Each row takes the tallest card's height, so the three
- * prices sit on one line, the three buttons sit on one line and the three
- * lists start together, whatever the copy does at any width or in any locale.
- * That matters most here: Premium's fine print runs to two lines and the other
- * two run to one.
+ * from the section. Each row takes the tallest card's height, so the prices sit
+ * on one line, the buttons sit on one line and the lists start together,
+ * whatever the copy does at any width or in any locale. That matters most here:
+ * Premium carries a switch and two lines of fine print where Free carries one.
  */
 export function PlanCard({
   plan,

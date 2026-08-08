@@ -83,7 +83,15 @@ export function PremiumPrice({ period }: { period: BillingPeriod }) {
 
   const monthly = Number(t.raw(`${base}.amountMonthly`));
   const yearly = Number(t.raw(`${base}.amountYearly`));
+
+  // A badge is only shown when the arithmetic actually produced a saving.
+  // `t.raw` hands back whatever the message file holds, so a missing or
+  // mistyped amount arrives as NaN and a zero monthly rate divides to
+  // Infinity — either way `Math.round` yields something, and "Save NaN%"
+  // printed next to a real price is worse than no badge at all.
   const percent = Math.round((1 - yearly / (monthly * 12)) * 100);
+  const showSaving =
+    period === 'yearly' && Number.isFinite(percent) && percent > 0;
 
   return (
     <div className="mt-8">
@@ -94,7 +102,7 @@ export function PremiumPrice({ period }: { period: BillingPeriod }) {
         <span className="font-sans-display text-nham-text-soft text-sm">
           {t('perMonth')}
         </span>
-        {period === 'yearly' && (
+        {showSaving && (
           <span className={`ml-1 ${HIGHLIGHT_BADGE}`}>
             {t('discount', { percent })}
           </span>

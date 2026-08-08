@@ -85,7 +85,12 @@ export function LoggedMealCard({
       <button
         type="button"
         aria-expanded={!isCollapsed}
-        aria-label={t('toggleDetails')}
+        // Labelled BY the sentence, not with a generic string. `aria-label`
+        // overrides the visible text, so all four cards announced "Toggle
+        // details" and a screen-reader user had no way to tell which meal they
+        // were opening. The sentence is the only thing that distinguishes them,
+        // and it is already on screen.
+        aria-labelledby={`hero-meal-${meal.id}`}
         onClick={() => {
           onSelectMeal();
           setIsCollapsed((prev) => !prev);
@@ -105,7 +110,10 @@ export function LoggedMealCard({
 
         {/* Header */}
         <div className="flex w-full items-start justify-between gap-3">
-          <span className="min-w-0 font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
+          <span
+            id={`hero-meal-${meal.id}`}
+            className="min-w-0 font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
+          >
             {t(`meals.${meal.id}.input`)}
           </span>
           <span

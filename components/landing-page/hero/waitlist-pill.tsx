@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { useWaitlistSignup } from '@/hooks/landing/use-waitlist-signup';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
 import { ApiError } from '@/lib/errors';
+import { cn } from '@/lib/utils';
 
 /**
  * The waitlist, wearing the meal-input pill.
@@ -67,9 +68,16 @@ export function WaitlistPill() {
       className="mx-auto w-full max-w-2xl"
     >
       <div
-        className={`flex w-full flex-col gap-3 rounded-[1.75rem] border border-nham-border bg-white p-3 shadow-[0_20px_50px_-20px_rgba(105,94,78,0.35)] transition-colors focus-within:border-nham-accent focus-within:ring-[3px] focus-within:ring-nham-accent/25 sm:h-16 sm:flex-row sm:items-center sm:gap-3 sm:rounded-full sm:py-2 sm:pr-2 sm:pl-6 ${
-          errors.email ? 'border-nham-danger/60' : ''
-        }`}
+        // `cn()`, not a template string: the base sets `border-nham-border`
+        // and the error state adds `border-nham-danger/60`. Both write
+        // border-color at equal specificity, so which one wins comes down to
+        // the order they happen to sit in the generated stylesheet rather than
+        // the order they are written here — the error border was a coin toss.
+        // tailwind-merge drops the loser instead.
+        className={cn(
+          'flex w-full flex-col gap-3 rounded-[1.75rem] border border-nham-border bg-white p-3 shadow-[0_20px_50px_-20px_rgba(105,94,78,0.35)] transition-colors focus-within:border-nham-accent focus-within:ring-[3px] focus-within:ring-nham-accent/25 sm:h-16 sm:flex-row sm:items-center sm:gap-3 sm:rounded-full sm:py-2 sm:pr-2 sm:pl-6',
+          errors.email && 'border-nham-danger/60'
+        )}
       >
         <label htmlFor="hero-waitlist-email" className="sr-only">
           {t('label')}
