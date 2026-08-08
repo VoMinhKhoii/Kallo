@@ -191,6 +191,51 @@ describe('__testing.guardMacro — tighter prep-notes ratios', () => {
     expect(out.mid).toBe(10);
   });
 
+  // The displayed number is not always `mid`. Goal adjustment computes
+  // `mid + aggression × (goal_bound − mid)`, so a cutting user at full
+  // aggression is shown `high` outright. A guard that bounds only `mid` leaves
+  // the number the user actually reads unbounded.
+  it('holds every bound inside the envelope, not just mid', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // mid sits comfortably inside 5×3 + 15 = 30, but high is far outside it.
+    const out = __testing.guardMacro(
+      { low: 4, mid: 5, high: 50 },
+      5,
+      'cá chiên',
+      'fatG',
+      3,
+      15 // shallow-fry absorbed-oil allowance
+    );
+    expect(out.mid).toBe(5);
+    expect(out.high).toBe(30);
+    expect(out.low).toBeGreaterThanOrEqual(5 / 3);
+    expect(out.low).toBeLessThanOrEqual(out.mid);
+    expect(out.mid).toBeLessThanOrEqual(out.high);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('leaves a fully in-envelope triple untouched', () => {
+    const raw = { low: 4, mid: 6, high: 9 };
+    expect(__testing.guardMacro(raw, 5, 'cá', 'fatG', 3, 0)).toBe(raw);
+  });
+
+  it('keeps high inside the ceiling after an overshooting mid is scaled', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // Scaling alone would map high 200 → 60, still double the 30 ceiling.
+    const out = __testing.guardMacro(
+      { low: 50, mid: 100, high: 200 },
+      5,
+      'cá chiên',
+      'fatG',
+      3,
+      15
+    );
+    expect(out.high).toBeLessThanOrEqual(30);
+    expect(out.mid).toBeLessThanOrEqual(out.high);
+    warn.mockRestore();
+  });
+
   it('clamps fat to the prep-notes ceiling when it exceeds 2×', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const out = __testing.guardMacro(

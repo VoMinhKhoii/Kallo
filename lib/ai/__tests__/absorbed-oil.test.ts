@@ -99,6 +99,21 @@ describe('discrete oil rows suppress the sibling allowance', () => {
     expect(mealItemHasDiscreteOil(['Khoai tây', 'Thịt bò'])).toBe(false);
   });
 
+  // `dầu giấm` and `dầu hào` carry the token `dầu` without being the fat
+  // anything was fried in. Counting them as the dish's cooking fat strips the
+  // absorbed-oil allowance from a genuinely fried sibling — the opposite of
+  // this module's purpose. `salad dầu giấm` is in our own eval set.
+  it('does not mistake vinaigrette or oyster sauce for cooking fat', () => {
+    expect(isDiscreteOilIngredient('dầu giấm')).toBe(false);
+    expect(isDiscreteOilIngredient('Salad dầu giấm')).toBe(false);
+    expect(isDiscreteOilIngredient('dầu hào')).toBe(false);
+    expect(isDiscreteOilIngredient('sốt dầu hào')).toBe(false);
+    // Sesame oil genuinely is a fat and must keep matching.
+    expect(isDiscreteOilIngredient('dầu mè')).toBe(true);
+    expect(mealItemHasDiscreteOil(['Cá chiên', 'Salad dầu giấm'])).toBe(false);
+    expect(mealItemHasDiscreteOil(['Cá chiên', 'Dầu ăn'])).toBe(true);
+  });
+
   // The prompt renders this list verbatim, so a name it offers Call 1 that
   // this module cannot read back is exactly the drift that let a butter row's
   // siblings claim absorbed oil on top of it.
@@ -195,6 +210,23 @@ describe('absorbedOil precedence with contradictory signals', () => {
     expect(absorbedOil('air-fried', GRAMS)).toBe(0);
     expect(absorbedOil('nướng không dầu', GRAMS)).toBe(0);
     expect(absorbedOil('luộc', GRAMS)).toBe(0);
+  });
+
+  // A method that simply uses no fat is not a statement that no fat was used.
+  // Treating `luộc` and `boiled` as negations made every two-stage dish report
+  // zero absorbed oil, which is the original bug wearing a different hat.
+  it('lets a fry verb beat a merely non-fry method that preceded it', () => {
+    const shallowFry = ABSORBED_OIL_RANGES.shallowFryG.high;
+    expect(absorbedOil('luộc rồi chiên', GRAMS)).toBe(shallowFry);
+    expect(absorbedOil('boiled then pan-fried', GRAMS)).toBe(shallowFry);
+    expect(absorbedOil('hấp xong chiên', GRAMS)).toBe(shallowFry);
+    expect(absorbedOil('luộc xong xào', GRAMS)).toBe(
+      ABSORBED_OIL_RANGES.stirFryG.high
+    );
+    // …but a genuine negation still wins, and a bare non-fry method is zero.
+    expect(absorbedOil('luộc rồi chiên không dầu', GRAMS)).toBe(0);
+    expect(absorbedOil('luộc', GRAMS)).toBe(0);
+    expect(absorbedOil('hấp', GRAMS)).toBe(0);
   });
 
   it('still resolves unambiguous methods', () => {

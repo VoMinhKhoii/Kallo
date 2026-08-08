@@ -179,15 +179,51 @@ export function guardMacro(
   const floor = base > 0 ? base / maxRatio : 0;
   const ceiling = Math.max(0, base) * maxRatio + safeAddend;
   const target = raw.mid > ceiling ? ceiling : raw.mid < floor ? floor : null;
-  if (target === null) return raw;
-  const reason = raw.mid > ceiling ? 'overshoot' : 'undershoot';
-  const scale = raw.mid > 0 ? target / raw.mid : null;
-  const clamped =
-    scale === null ? flatTriple(target) : scaleBounded(raw, scale);
+
+  // Scale first so the LLM's relative uncertainty survives, then hold every
+  // bound inside the envelope.
+  //
+  // Both steps are needed. Scaling alone leaves `high` proportionally out of
+  // range, and a `mid` that is already inside the envelope used to return the
+  // triple untouched no matter how far `high` overshot. That mattered because
+  // the displayed number is not always `mid`: goal adjustment computes
+  // `mid + aggression × (goal_bound − mid)` (`goal-adjustment.ts:42`), so a
+  // cutting user at full aggression is shown `high` outright. A ceiling that
+  // bounds only `mid` is not a ceiling on anything the user actually reads.
+  //
+  // Clamping is monotone, so `low <= mid <= high` is preserved.
+  const scale = target !== null && raw.mid > 0 ? target / raw.mid : null;
+  const scaled =
+    target === null
+      ? raw
+      : scale === null
+        ? flatTriple(target)
+        : scaleBounded(raw, scale);
+
+  const hold = (v: number) => Math.min(Math.max(v, floor), ceiling);
+  const bounded = {
+    low: hold(scaled.low),
+    mid: hold(scaled.mid),
+    high: hold(scaled.high),
+  };
+
+  if (
+    bounded.low === raw.low &&
+    bounded.mid === raw.mid &&
+    bounded.high === raw.high
+  ) {
+    return raw;
+  }
+  const reason =
+    target === null
+      ? 'bounds_outside_envelope'
+      : raw.mid > ceiling
+        ? 'overshoot'
+        : 'undershoot';
   console.warn(
-    `[nutrition] hallucination_guard: clamped ${macroName} of "${ingredientName}" to ${target.toFixed(1)} (reason=${reason}, raw mid=${raw.mid}, low=${raw.low}, high=${raw.high}, base=${base.toFixed(1)}, maxRatio=${maxRatio}, ceilingAddend=${safeAddend.toFixed(1)})`
+    `[nutrition] hallucination_guard: clamped ${macroName} of "${ingredientName}" to ${bounded.mid.toFixed(1)} (reason=${reason}, raw mid=${raw.mid}, low=${raw.low}, high=${raw.high}, base=${base.toFixed(1)}, maxRatio=${maxRatio}, ceilingAddend=${safeAddend.toFixed(1)}, envelope=[${floor.toFixed(1)}, ${ceiling.toFixed(1)}])`
   );
-  return clamped;
+  return bounded;
 }
 
 /**

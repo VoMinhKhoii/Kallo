@@ -15,8 +15,18 @@ export const ABSORBED_OIL_RANGES = {
   deepFryWeightRatio: { low: 0.1, high: 0.18 },
 } as const satisfies Record<string, AbsorbedOilRange>;
 
-const NO_OIL_METHOD =
-  /kh[oô]ng\s*(?:d[aầ]u|m[ơỡ])|no[- ]?oil|without oil|oil[- ]?free|air[- ]?fr(?:y|ied)|dry[- ]?fr(?:y|ied)|lu[oộ]c|h[aấ]p|steamed?|boiled?|poached?|raw|s[oố]ng/i;
+/**
+ * A statement that no fat was used. These OVERRIDE a generic fry verb, because
+ * they describe the frying itself: `chiên không dầu` is air-frying.
+ */
+const OIL_NEGATION =
+  /kh[oô]ng\s*(?:d[aầ]u|m[ơỡ])|no[- ]?oil|without oil|oil[- ]?free|air[- ]?fr(?:y|ied)|dry[- ]?fr(?:y|ied)/i;
+
+// `luộc`, `hấp`, `steamed`, `boiled`, `poached`, `raw` and `sống` are NOT listed
+// as negations. They use no fat, but they do not negate one, so they must lose
+// to a fry verb rather than beat it: `luộc rồi chiên` is boiled AND THEN fried,
+// and the frying still puts oil in the food. They need no pattern of their own —
+// absent any fry verb they fall through to the function's default of zero.
 const DEEP_FRY_METHOD =
   /chi[eê]n\s*ng[aậ]p|r[aá]n\s*ng[aậ]p|deep[- ]?fr(?:y|ied)|ng[aậ]p\s*(?:d[aầ]u|m[ơỡ])/i;
 const STIR_FRY_METHOD = /x[aà]o|stir[- ]?fr(?:y|ied)|saut[eé](?:ed)?/i;
@@ -38,6 +48,18 @@ const DISCRETE_OIL_INGREDIENT =
   /d[aầ]u\s*[aă]n|d[aầ]u\b|m[ơỡ]\s*(?:heo|n[uư][ơớ]c|l[oợ]n)|\boil\b|\bbutter\b|\bghee\b|\blard\b|\bmargarine\b|\bshortening\b|\btallow\b/i;
 
 /**
+ * Condiments whose names contain `dầu` but which are NOT the fat a neighbouring
+ * food was fried in: `dầu giấm` is vinaigrette, `dầu hào` is oyster sauce.
+ *
+ * Without this, a plate of fried fish served with a vinaigrette salad reads as
+ * "the frying oil is already its own row" and the fish loses its absorbed-oil
+ * allowance — under-reporting the fat this module exists to preserve.
+ * `salad dầu giấm` appears in our own adjustment eval set, so this is not
+ * hypothetical.
+ */
+const OIL_LIKE_CONDIMENT = /d[aầ]u\s*(?:gi[aấ]m|h[aà]o)/i;
+
+/**
  * The names the decomposition prompt tells Call 1 to use for a cooking-fat
  * row. The prompt renders this list rather than spelling one of its own, so it
  * cannot offer a name this module fails to recognise — which is how bare `bơ`
@@ -57,7 +79,9 @@ export const COOKING_FAT_ROW_NAMES = [
  */
 export function isDiscreteOilIngredient(name: string | null | undefined) {
   const normalized = name?.normalize('NFC').trim() ?? '';
-  return normalized.length > 0 && DISCRETE_OIL_INGREDIENT.test(normalized);
+  if (normalized.length === 0) return false;
+  if (OIL_LIKE_CONDIMENT.test(normalized)) return false;
+  return DISCRETE_OIL_INGREDIENT.test(normalized);
 }
 
 /**
@@ -86,9 +110,11 @@ export function absorbedOil(method: string | null | undefined, grams: number) {
   // `chiên ngập dầu`.
   //
   //   1. explicit deep-fry wins outright: `luộc chiên ngập dầu` is deep-fried.
-  //   2. an explicit negation beats a generic fry verb: `chiên không dầu` is
+  //   2. an explicit NEGATION beats a generic fry verb: `chiên không dầu` is
   //      air-frying and absorbs nothing.
-  //   3. generic fry verbs last.
+  //   3. generic fry verbs.
+  //   4. a non-fry method only when no fry verb appeared at all — `luộc rồi
+  //      chiên` is boiled and then fried, so the frying still counts.
   //
   // Testing no-oil first (the original order) made the guard fail closed to
   // the exact bug it exists to prevent: a stated fry modifier yielding zero
@@ -97,7 +123,7 @@ export function absorbedOil(method: string | null | undefined, grams: number) {
   if (DEEP_FRY_METHOD.test(normalized)) {
     return grams * ABSORBED_OIL_RANGES.deepFryWeightRatio.high;
   }
-  if (NO_OIL_METHOD.test(normalized)) return 0;
+  if (OIL_NEGATION.test(normalized)) return 0;
   if (STIR_FRY_METHOD.test(normalized)) {
     return ABSORBED_OIL_RANGES.stirFryG.high;
   }
@@ -107,6 +133,8 @@ export function absorbedOil(method: string | null | undefined, grams: number) {
   if (SHALLOW_FRY_METHOD.test(normalized)) {
     return ABSORBED_OIL_RANGES.shallowFryG.high;
   }
+  // Everything else — `luộc`, `hấp`, `steamed`, `raw` and any unrecognised
+  // method — absorbs nothing.
   return 0;
 }
 
