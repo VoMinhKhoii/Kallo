@@ -24,15 +24,24 @@ import type { DocsNavSection } from '@/lib/docs/tree';
  */
 interface DocsFooterProps {
   sections: DocsNavSection[];
+  /**
+   * Drop the gap above the footer, for pages that already end on a solid band.
+   *
+   * Docs pages end on cream, and the gap is what stops the ink slab reading as
+   * part of the article. The landing page ends on the beige pricing section, so
+   * there the gap is a strip of page background wedged between two solid
+   * colours — it looks like a seam rather than breathing room.
+   */
+  flush?: boolean;
 }
 
-export async function DocsFooter({ sections }: DocsFooterProps) {
+export async function DocsFooter({ sections, flush = false }: DocsFooterProps) {
   const t = await getTranslations('docs');
   const tSections = await getTranslations('docs.sections');
   const tFooter = await getTranslations('landing.footer');
 
   return (
-    <footer className="mt-24 bg-nham-ink">
+    <footer className={`bg-nham-ink ${flush ? '' : 'mt-24'}`}>
       <div className="mx-auto max-w-[90rem] px-4 py-16 sm:px-6">
         <nav
           aria-label={t('menu.label')}

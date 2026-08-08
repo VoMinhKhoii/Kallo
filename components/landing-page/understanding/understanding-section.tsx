@@ -3,17 +3,14 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { COMPARISONS_BY_LOCALE } from './comparisons';
-import { StackedComparison } from './stacked-comparison';
+import { StackedComparison, stackReleaseRem } from './stacked-comparison';
 
 /**
- * Where the heading pins, and how tall it is held.
+ * Where the heading pins, and the height it is held at.
  *
- * The height is fixed rather than natural because `STACK_TOP_REM` is derived
- * from it — these two added together plus a rem of air, so the cards stack
- * UNDER the title instead of over it. Move either and that constant has to move
- * with it.
- *
- * The h2 measures 7.8rem; this clears it with a little slack.
+ * The height is fixed because two things are derived from it: the heading's own
+ * release point, and `STACK_TOP_REM` — these two plus a rem of air, so the pile
+ * rests UNDER the title rather than over it. The h2 measures 7.8rem.
  */
 const HEADING_TOP_REM = 6;
 const HEADING_REM = 8.5;
@@ -45,17 +42,20 @@ export function UnderstandingSection() {
 
   const comparisons = COMPARISONS_BY_LOCALE[locale] ?? COMPARISONS_BY_LOCALE.en;
 
-  // A plain gap, not a computed one.
+  // The margin that puts the heading on the cards' release threshold.
   //
-  // This used to be sized so the heading released on the cards' threshold and
-  // the whole section left as one object. The arithmetic worked, but the margin
-  // is real flow space: it put roughly 39rem between the heading and the first
-  // card, so the heading pinned and then you scrolled most of a screen through
-  // nothing before a card arrived. The void was worse than the thing it bought.
+  // Sticky elements release when their container's bottom reaches
+  // `top + height + marginBottom`. That bottom RISES as you scroll, so a larger
+  // threshold fires sooner — and the heading, being two lines tall, has a much
+  // smaller threshold than the pile unless it is given one. Left alone it
+  // outlasts the cards, and the departing pile shears it in half on the way up.
   //
-  // So the heading now pins, holds while the first cards land under it, and
-  // unpins early to scroll away on its own. The pile still leaves as one piece.
-  const headingMarginRem = 2;
+  // The catch is that this margin is ~41rem of real flow space, which is what
+  // put a screen of nothing between the title and the first card. So the pile
+  // below cancels it with an equal negative top margin: the margin still exists
+  // for the sticky calculation, but occupies no visible space.
+  const headingMarginRem =
+    stackReleaseRem(comparisons.length) - HEADING_TOP_REM - HEADING_REM;
 
   const reveal = reduced
     ? {}
@@ -71,18 +71,19 @@ export function UnderstandingSection() {
       id="how"
       className="relative scroll-mt-20 border-nham-border/40 border-t py-12 md:py-16"
     >
-      <div className="mx-auto max-w-[88rem] px-6 sm:px-12 lg:px-20">
+      {/* `md:flex-col` is load-bearing: in normal flow the heading's bottom
+          margin and the pile's negative top margin are adjacent siblings and
+          would COLLAPSE into a single used value, which destroys both the
+          cancellation and the sticky arithmetic. Flex children do not collapse
+          margins, so the two survive independently. */}
+      <div className="mx-auto max-w-[88rem] px-6 sm:px-12 md:flex md:flex-col lg:px-20">
         {/* The hero's headline treatment at the pricing heading's size, in two
             blocks so the rule sits under the second clause rather than wherever
             the text happens to wrap.
 
-            Sticky, and it unpins EARLY — before the pile leaves. That is the
-            safe direction. A sticky element releases when its container's bottom
-            reaches `top + height + marginBottom`; hold the heading past the
-            pile's own release and the departing cards slide up over it and
-            shear it in half, because they cannot cover the strip above their
-            own top edge. Letting it go first just means it scrolls away
-            normally, which is unremarkable. */}
+            Sticky, and pinned on exactly the same release threshold as the
+            cards — see `headingMarginRem` for why that matters and what the
+            margin below is doing. */}
         <motion.div
           {...reveal}
           className="text-center md:sticky md:top-24 md:mb-[var(--heading-mb)] md:h-[var(--heading-h)]"
@@ -104,10 +105,20 @@ export function UnderstandingSection() {
         {/* The pile. Sticky children release when their PARENT's bottom reaches
             them, so this container decides when the stack breaks up.
 
+            The negative top margin is the other half of the heading's oversized
+            bottom margin: together they sum to zero, so the first card sits
+            directly under the title while the heading still carries the margin
+            its release threshold needs.
+
             `md:space-y-0` looks like spacing and is not: from `md` the gaps
             come from each card's own bottom margin, which is doing arithmetic
             (see StackedComparison), and a uniform gap would break it. */}
-        <div className="mt-10 space-y-5 md:mt-0 md:space-y-0">
+        <div
+          className="mt-10 space-y-5 md:mt-[var(--pile-mt)] md:space-y-0"
+          style={
+            { '--pile-mt': `${-headingMarginRem}rem` } as React.CSSProperties
+          }
+        >
           {comparisons.map((comparison, index) => (
             <StackedComparison
               key={comparison.id}

@@ -10,36 +10,32 @@ import type { Comparison } from './comparisons';
  * own title rather than an anonymous strip of beige. Change one and the other
  * has to move with it.
  */
-const TITLE_BAND_REM = 4;
+const TITLE_BAND_REM = 4.75;
 
 /**
  * Where the first card comes to rest: directly under the pinned section
  * heading, never over it.
  *
- * This is `HEADING_TOP_REM + HEADING_REM` plus a rem of air. Those live in
- * `understanding-section.tsx`; if either moves, this has to move with it. It
- * sat at 8rem for a while, which put the pile straight over the heading.
+ * This is `HEADING_TOP_REM + HEADING_REM` plus a rem of air, both of which live
+ * in `understanding-section.tsx`. If the heading changes size, this moves too,
+ * or the pile lands on top of the title.
  */
 export const STACK_TOP_REM = 15.5;
 
 /**
- * The card's height on `md` and up. FIXED, not a minimum.
+ * The height of each card's sticky WRAPPER — not of the card you can see.
  *
  * This is what makes the pile leave in one piece. Release happens at
- * `top + height + marginBottom`; the margins below cancel out the differing
- * `top`s, but that only works if `height` is identical for every card. It was
- * `min-h`, so a card with three dish rows or a wrapped note came out taller
- * than its neighbours, its threshold landed elsewhere, and the pile came apart
- * one card at a time on the way out.
+ * `top + height + marginBottom`; the margins cancel out the differing `top`s,
+ * but only if `height` is the same for every card. Sizing the visible panel to
+ * they naturally want 22.61, 20.89, 24.23 and 20.89rem. So the wrapper is held
+ * level and the panel inside keeps its own height with consistent padding.
  *
- * Measured, not guessed, and it has to be re-measured whenever the card's
- * padding or type changes. The panels come out at 21.25, 19.5, 22.88 and
- * 19.5rem, so the raw-weight one with its two-line note and three dish rows
- * sets the floor. Anything under it clips silently, because the panel is
- * `overflow-hidden` for its corners; anything far above it is dead beige under
- * every card.
+ * It has to clear the tallest panel — a shorter wrapper would let its card
+ * spill into the next one's flow slot during the deal-in — so re-measure it
+ * whenever these cards gain content.
  */
-export const CARD_REM = 23.25;
+export const CARD_REM = 24.5;
 
 /**
  * The scroll position, in rem down the container, at which every card lets go.
@@ -107,11 +103,12 @@ export function StackedComparison({
     // which makes the card taller than the viewport, and a sticky element
     // taller than its scrollport pins at the wrong end and never releases.
     <div
-      className="md:sticky md:mb-[var(--stack-mb)]"
+      className="md:sticky md:mb-[var(--stack-mb)] md:h-[var(--card-h)]"
       style={
         {
           top: `${STACK_TOP_REM + index * TITLE_BAND_REM}rem`,
           '--stack-mb': `${stackMarginRem}rem`,
+          '--card-h': `${CARD_REM}rem`,
         } as React.CSSProperties
       }
     >
@@ -124,13 +121,20 @@ export function StackedComparison({
           cream greys the paper under it. The inset highlight along the top edge
           is what sells the depth — light catching the lip.
 
-          `md:h` is a fixed height, and it is load-bearing twice over: every
-          card covers the one it lands on, and every card shares one release
-          threshold so the pile leaves as a single object. See CARD_REM. */}
-      <div
-        className="overflow-hidden rounded-[2rem] border border-nham-border/60 bg-nham-hover shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_1px_2px_rgba(20,20,19,0.05),0_8px_16px_-8px_rgba(20,20,19,0.10),0_24px_48px_-16px_rgba(20,20,19,0.16),0_48px_96px_-32px_rgba(20,20,19,0.20)] md:h-[var(--card-h)]"
-        style={{ ['--card-h' as string]: `${CARD_REM}rem` }}
-      >
+          The panel takes its NATURAL height — content plus the same padding on
+          every card. It was pinned to one height so all four shared a release
+          threshold, but the four want 21.25, 19.5, 22.88 and 19.5rem, so
+          holding them level pooled a different amount of empty beige under each
+          one and read as inconsistent padding. The fixed height lives on the
+          sticky wrapper above instead, which is the box release timing actually
+          measures; the panel inside is free.
+
+          That leaves coverage, which the numbers happen to satisfy: a card may
+          be up to one title band shorter than the one it lands on and still
+          hide it, and the biggest drop between neighbours here is 3.34rem
+          against a 4.75rem band. Reorder the comparisons, or give one a fourth
+          dish row, and that has to be re-checked. */}
+      <div className="overflow-hidden rounded-[2rem] border border-nham-border/60 bg-nham-hover shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_1px_2px_rgba(20,20,19,0.05),0_8px_16px_-8px_rgba(20,20,19,0.10),0_24px_48px_-16px_rgba(20,20,19,0.16),0_48px_96px_-32px_rgba(20,20,19,0.20)]">
         {/* The title band. Its height is exactly the stack's step, so the strip
             each buried card still shows is precisely this band — you can read
             "Skin on, or skin off" off a card three deep in the pile. Everything
@@ -148,7 +152,7 @@ export function StackedComparison({
           </h3>
         </div>
 
-        <div className="px-6 pb-5 sm:px-8 sm:pb-6 lg:px-10">
+        <div className="px-6 pb-7 sm:px-8 sm:pb-8 lg:px-10">
           <p className="max-w-2xl font-sans-display text-base text-nham-text leading-relaxed">
             {t(`categories.${comparison.id}.note`)}
           </p>

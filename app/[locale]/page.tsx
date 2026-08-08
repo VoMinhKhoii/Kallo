@@ -61,7 +61,7 @@ export default async function Home({
         <UnderstandingSection />
         <PricingSection />
       </main>
-      <DocsFooter sections={sections} />
+      <DocsFooter flush sections={sections} />
       <AuthDialog />
       <Suspense fallback={null}>
         <OAuthErrorToast />
