@@ -142,9 +142,13 @@ const band = (v: number, pct = 0.3): [number, number] => [
 
 const capture = JSON.parse(readFileSync(CAPTURE, 'utf8'));
 
-// Read the date off the capture rather than hard-coding it: provenance is only
-// worth recording if it names the run that actually produced these bands.
-const CAPTURED_AT = String(capture.capturedAt ?? '').slice(0, 10);
+// Read the stamp off the capture rather than hard-coding it: provenance is only
+// worth recording if it names the run that actually produced these bands. Kept
+// as the full ISO instant, not a date — the capture that produced these ran at
+// 17:59Z, which is already the next day in the timezone it was run from, and a
+// provenance field that flips by a day depending on who reads it is worse than
+// none.
+const CAPTURED_AT = String(capture.capturedAt ?? '');
 if (!CAPTURED_AT) throw new Error(`${CAPTURE} has no capturedAt timestamp`);
 
 const cases = [];

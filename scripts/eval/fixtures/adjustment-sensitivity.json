@@ -19,8 +19,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "Baseline for the skin-removal pair. Captured live 2026-08-08: 694 kcal, P48 C80 F20."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "Baseline for the skin-removal pair. Captured live 2026-08-07T17:59:55.383Z: 694 kcal, P48 C80 F20."
       }
     },
     {
@@ -40,8 +40,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "bỏ da must cut fat. Regressed to FLAT when đùi gà matched a skinless pheasant row. Captured live 2026-08-08: 639 kcal, P47 C78 F16."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "bỏ da must cut fat. Regressed to FLAT when đùi gà matched a skinless pheasant row. Captured live 2026-08-07T17:59:55.383Z: 639 kcal, P47 C78 F16."
       }
     },
     {
@@ -61,8 +61,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "Baseline for the skin-removal pair. Captured live 2026-08-08: 658 kcal, P44 C72 F21."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "Baseline for the skin-removal pair. Captured live 2026-08-07T17:59:55.383Z: 658 kcal, P44 C72 F21."
       }
     },
     {
@@ -82,8 +82,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "Thigh fat density fell 9.0 -> 5.4 g/100g at capture. Captured live 2026-08-08: 548 kcal, P37 C72 F12."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "Thigh fat density fell 9.0 -> 5.4 g/100g at capture. Captured live 2026-08-07T17:59:55.383Z: 548 kcal, P37 C72 F12."
       }
     },
     {
@@ -103,8 +103,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "Default: đậu hũ is fried unless stated otherwise. Captured live 2026-08-08: 530 kcal, P22 C51 F27."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "Default: đậu hũ is fried unless stated otherwise. Captured live 2026-08-07T17:59:55.383Z: 530 kcal, P22 C51 F27."
       }
     },
     {
@@ -124,8 +124,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "chiên ít dầu. Captured live 2026-08-08: 443 kcal, P21 C52 F17."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "chiên ít dầu. Captured live 2026-08-07T17:59:55.383Z: 443 kcal, P21 C52 F17."
       }
     },
     {
@@ -145,8 +145,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "nướng không dầu. Tofu held at 150g across all three at capture; only the oil moved. Captured live 2026-08-08: 346 kcal, P21 C52 F6."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "nướng không dầu. Tofu held at 150g across all three at capture; only the oil moved. Captured live 2026-08-07T17:59:55.383Z: 346 kcal, P21 C52 F6."
       }
     },
     {
@@ -166,8 +166,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "Baseline: 300g treated as as-eaten. Captured live 2026-08-08: 715 kcal, P90 C46 F19."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "Baseline: 300g treated as as-eaten. Captured live 2026-08-07T17:59:55.383Z: 715 kcal, P90 C46 F19."
       }
     },
     {
@@ -187,8 +187,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "cân sống: 300g raw yields less cooked mass, so protein must DROP. Captured live 2026-08-08: 617 kcal, P62 C59 F15."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "cân sống: 300g raw yields less cooked mass, so protein must DROP. Captured live 2026-08-07T17:59:55.383Z: 617 kcal, P62 C59 F15."
       }
     },
     {
@@ -208,8 +208,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "Baseline: 300g treated as as-eaten. Captured live 2026-08-08: 625 kcal, P90 C46 F9."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "Baseline: 300g treated as as-eaten. Captured live 2026-08-07T17:59:55.383Z: 625 kcal, P90 C46 F9."
       }
     },
     {
@@ -229,8 +229,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "raw-weight: protein must DROP relative to the as-eaten baseline. Captured live 2026-08-08: 490 kcal, P75 C36 F5."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "raw-weight: protein must DROP relative to the as-eaten baseline. Captured live 2026-08-07T17:59:55.383Z: 490 kcal, P75 C36 F5."
       }
     },
     {
@@ -250,8 +250,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "Baseline for the explicit-count pair. Captured live 2026-08-08: 656 kcal, P37 C68 F26."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "Baseline for the explicit-count pair. Captured live 2026-08-07T17:59:55.383Z: 656 kcal, P37 C68 F26."
       }
     },
     {
@@ -271,8 +271,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "Doubling an explicit count must roughly double carbs. Guards the profile-portion failure: stored defaultRicePortion never moved the estimate. Captured live 2026-08-08: 886 kcal, P43 C136 F19."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "Doubling an explicit count must roughly double carbs. Guards the profile-portion failure: stored defaultRicePortion never moved the estimate. Captured live 2026-08-07T17:59:55.383Z: 886 kcal, P43 C136 F19."
       }
     },
     {
@@ -306,8 +306,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "One sentence must yield plate + bowl + cup. Captured live 2026-08-08: 826 kcal, P57 C63 F38."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "One sentence must yield plate + bowl + cup. Captured live 2026-08-07T17:59:55.383Z: 826 kcal, P57 C63 F38."
       }
     },
     {
@@ -341,8 +341,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "One sentence must yield plate + bowl + cup. Captured live 2026-08-08: 832 kcal, P46 C84 F34."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "One sentence must yield plate + bowl + cup. Captured live 2026-08-07T17:59:55.383Z: 832 kcal, P46 C84 F34."
       }
     },
     {
@@ -362,8 +362,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "phi lê must resolve a fish piece vessel. Captured live 2026-08-08: 294 kcal, P34 C3 F16."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "phi lê must resolve a fish piece vessel. Captured live 2026-08-07T17:59:55.383Z: 294 kcal, P34 C3 F16."
       }
     },
     {
@@ -383,8 +383,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "miếng must resolve a meat piece vessel. Captured live 2026-08-08: 543 kcal, P21 C32 F37."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "miếng must resolve a meat piece vessel. Captured live 2026-08-07T17:59:55.383Z: 543 kcal, P21 C32 F37."
       }
     },
     {
@@ -410,8 +410,8 @@
       },
       "provenance": {
         "source": "staging-confirmed",
-        "setAt": "2026-08-08",
-        "note": "Regressed to 1491 kcal / 122g fat when gà rán matched a chicken-SKIN row. Captured live 2026-08-08: 777 kcal, P71 C68 F25."
+        "setAt": "2026-08-07T17:59:55.383Z",
+        "note": "Regressed to 1491 kcal / 122g fat when gà rán matched a chicken-SKIN row. Captured live 2026-08-07T17:59:55.383Z: 777 kcal, P71 C68 F25."
       }
     }
   ],
