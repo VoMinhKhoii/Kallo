@@ -42,7 +42,7 @@ export function PricingSection() {
     // instead of fading out under the footer.
     <section
       id="pricing"
-      className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-hover py-16 md:py-20"
+      className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-hover pt-12 pb-10 md:pt-16 md:pb-12"
     >
       <div className="mx-auto max-w-[88rem] px-6 sm:px-12 lg:px-20">
         <motion.h2
@@ -59,7 +59,7 @@ export function PricingSection() {
             cards. */}
         <motion.div
           {...reveal}
-          className="mt-14 grid gap-x-5 gap-y-5 md:mt-16 md:grid-cols-3 md:grid-rows-[auto_auto_auto_1fr] md:gap-y-0"
+          className="mt-10 grid gap-x-5 gap-y-5 md:mt-12 md:grid-cols-3 md:grid-rows-[auto_auto_auto_1fr] md:gap-y-0"
         >
           {PLAN_IDS.map((plan) => (
             <PlanCard
@@ -72,7 +72,7 @@ export function PricingSection() {
 
         <motion.p
           {...reveal}
-          className="mt-10 text-center font-sans-display text-nham-text-soft text-xs leading-relaxed"
+          className="mt-8 text-center font-sans-display text-nham-text-soft text-xs leading-relaxed"
         >
           {t('betaNote')}
         </motion.p>

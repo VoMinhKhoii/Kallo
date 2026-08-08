@@ -3,16 +3,15 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { COMPARISONS_BY_LOCALE } from './comparisons';
-import { StackedComparison, stackReleaseRem } from './stacked-comparison';
+import { StackedComparison } from './stacked-comparison';
 
 /**
  * Where the heading pins, and how tall it is held.
  *
- * The height is fixed rather than natural because two other things are computed
- * from it: the heading's own release point (see `headingMarginRem`), and where
- * the pile rests — `STACK_TOP_REM` is these two added together plus a rem of
- * air, so the cards stack UNDER the title instead of over it. Move either and
- * that constant has to move with it.
+ * The height is fixed rather than natural because `STACK_TOP_REM` is derived
+ * from it — these two added together plus a rem of air, so the cards stack
+ * UNDER the title instead of over it. Move either and that constant has to move
+ * with it.
  *
  * The h2 measures 7.8rem; this clears it with a little slack.
  */
@@ -46,12 +45,17 @@ export function UnderstandingSection() {
 
   const comparisons = COMPARISONS_BY_LOCALE[locale] ?? COMPARISONS_BY_LOCALE.en;
 
-  // Put the heading on the cards' release threshold. `top + height + margin`
-  // has to match theirs, and the first two are known, so the margin is whatever
-  // is left over. It depends on how many cards the locale has, because that is
-  // what sets where the pile lets go.
-  const headingMarginRem =
-    stackReleaseRem(comparisons.length) - HEADING_TOP_REM - HEADING_REM;
+  // A plain gap, not a computed one.
+  //
+  // This used to be sized so the heading released on the cards' threshold and
+  // the whole section left as one object. The arithmetic worked, but the margin
+  // is real flow space: it put roughly 39rem between the heading and the first
+  // card, so the heading pinned and then you scrolled most of a screen through
+  // nothing before a card arrived. The void was worse than the thing it bought.
+  //
+  // So the heading now pins, holds while the first cards land under it, and
+  // unpins early to scroll away on its own. The pile still leaves as one piece.
+  const headingMarginRem = 2;
 
   const reveal = reduced
     ? {}
@@ -65,29 +69,20 @@ export function UnderstandingSection() {
   return (
     <section
       id="how"
-      className="relative scroll-mt-20 border-nham-border/40 border-t py-16 md:py-20"
+      className="relative scroll-mt-20 border-nham-border/40 border-t py-12 md:py-16"
     >
       <div className="mx-auto max-w-[88rem] px-6 sm:px-12 lg:px-20">
-        {/* The hero's headline treatment at the pricing heading's size: same
-            serif, same medium weight, same tight leading and tracking, and the
-            same underline carrying the part that matters. Two blocks rather
-            than one balanced line, so the rule sits under the second clause
-            exactly as it does in the hero rather than wherever the text
-            happens to wrap. */}
-        {/* Sticky, and in the SAME release group as the cards.
+        {/* The hero's headline treatment at the pricing heading's size, in two
+            blocks so the rule sits under the second clause rather than wherever
+            the text happens to wrap.
 
-            A sticky element releases when its container's bottom reaches
-            `top + height + marginBottom`. The heading is a sibling of the cards
-            in this container, so if its threshold differs it either scrolls off
-            early or — what happened before — stays pinned long after the pile
-            has gone, and the departing cards shear it in half on their way past.
-
-            So it is given a fixed height and a bottom margin that lands its
-            threshold exactly on the cards'. Everything in the section then lets
-            go on the same pixel and the whole thing leaves as one object. The
-            cost is that margin: it is real flow space, so the section is that
-            much longer to scroll before the first card arrives. That runway is
-            where the heading sits alone, which is the point of pinning it. */}
+            Sticky, and it unpins EARLY — before the pile leaves. That is the
+            safe direction. A sticky element releases when its container's bottom
+            reaches `top + height + marginBottom`; hold the heading past the
+            pile's own release and the departing cards slide up over it and
+            shear it in half, because they cannot cover the strip above their
+            own top edge. Letting it go first just means it scrolls away
+            normally, which is unremarkable. */}
         <motion.div
           {...reveal}
           className="text-center md:sticky md:top-24 md:mb-[var(--heading-mb)] md:h-[var(--heading-h)]"
@@ -106,25 +101,12 @@ export function UnderstandingSection() {
           </h2>
         </motion.div>
 
-        {/* The pile.
+        {/* The pile. Sticky children release when their PARENT's bottom reaches
+            them, so this container decides when the stack breaks up.
 
-            Sticky children release when their PARENT's bottom edge reaches
-            them, so the container is what decides when the stack breaks up.
-            Without the tail below, the last card arrived at its offset just as
-            the container ran out and the whole thing came apart immediately —
-            the last card appeared to slide up over everything rather than
-            landing on it. The tail buys scroll length after the final card is
-            dealt, so the pile sits complete for a beat and then every card
-            releases together, keeping its offset, and the stack leaves as one
-            object. That is the Wallet behaviour: cards land, pile holds, pile
-            goes. */}
-        {/* `space-y` is phone-only. From `md` the gaps come from each card's
-            own bottom margin, which is doing arithmetic (see StackedComparison)
-            rather than spacing — a uniform `space-y` here would break it. */}
-        {/* `md:mt-0` matters: an `mt` here would be an adjacent sibling to the
-            heading's computed `mb`, the two would collapse to the larger, and
-            the heading's release threshold — which that margin IS — would no
-            longer be what the arithmetic thinks it is. */}
+            `md:space-y-0` looks like spacing and is not: from `md` the gaps
+            come from each card's own bottom margin, which is doing arithmetic
+            (see StackedComparison), and a uniform gap would break it. */}
         <div className="mt-10 space-y-5 md:mt-0 md:space-y-0">
           {comparisons.map((comparison, index) => (
             <StackedComparison
