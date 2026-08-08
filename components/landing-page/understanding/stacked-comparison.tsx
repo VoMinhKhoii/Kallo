@@ -15,12 +15,41 @@ const TITLE_BAND_REM = 4;
 /**
  * Where the first card comes to rest: just clear of the fixed page header.
  *
- * It sat at 15rem while the section heading was sticky above it. The heading
- * scrolls now, so that reserved band was simply empty once it had gone by —
- * which is the emptiness the sticky heading had been added to solve. Sitting
- * the pile high fixes it without pinning anything.
+ * The heading is pinned above it, but they overlap by design — the pile slides
+ * over the heading as it forms, and both let go together at the end.
  */
-const STACK_TOP_REM = 8;
+export const STACK_TOP_REM = 8;
+
+/**
+ * The card's height on `md` and up. FIXED, not a minimum.
+ *
+ * This is what makes the pile leave in one piece. Release happens at
+ * `top + height + marginBottom`; the margins below cancel out the differing
+ * `top`s, but that only works if `height` is identical for every card. It was
+ * `min-h`, so a card with three dish rows or a wrapped note came out taller
+ * than its neighbours, its threshold landed elsewhere, and the pile came apart
+ * one card at a time on the way out.
+ *
+ * Tall enough for the worst case: a four-rem title band, a two-line note, and
+ * a meal card with three dish rows over a two-line sentence.
+ */
+export const CARD_REM = 24;
+
+/**
+ * The scroll position, in rem down the container, at which every card lets go.
+ *
+ * Exported because the section heading has to join the same group — it is a
+ * sticky sibling in the same container, so if its threshold differs it either
+ * gets left behind after the pile has gone or leaves before it.
+ */
+export function stackReleaseRem(total: number) {
+  return (
+    STACK_TOP_REM + CARD_REM + STACK_GAP_REM + (total - 1) * TITLE_BAND_REM
+  );
+}
+
+/** Flow gap under the last card, added to every card's margin equally. */
+const STACK_GAP_REM = 1.5;
 
 /**
  * One category in the stack: a heading, a line saying what to look for, and the
@@ -62,7 +91,7 @@ export function StackedComparison({
   // Only from `md`: below that nothing is sticky and a 12rem margin would be a
   // 12rem hole. The value rides a custom property so the breakpoint can live in
   // a class while the number stays computed.
-  const stackMarginRem = 1.5 + (total - 1 - index) * TITLE_BAND_REM;
+  const stackMarginRem = STACK_GAP_REM + (total - 1 - index) * TITLE_BAND_REM;
 
   return (
     // Each card rests one title band lower than the one before it, so the pile
@@ -87,18 +116,14 @@ export function StackedComparison({
           on cream greys the paper under it and is the fastest way to make a
           warm palette look cheap. The inset highlight along the top edge is
           what actually sells the depth: it reads as light catching the lip. */}
-      {/* `md:min-h` is load-bearing, not cosmetic. Cards carry between one and
-          three dish rows, and a card that lands on the pile much SHORTER than
-          the one beneath it leaves the lower card's bottom sticking out below
-          it — two sets of numbers visible at once, which is the one thing this
-          section cannot do.
-
-          The floor is set just above the natural height of the three-row case.
-          It was 26rem, which cleared that case by several rem and put a band of
-          dead beige under every card; a card may in fact be up to one title
-          band shorter than the one above it and still cover it, so the floor
-          only has to stop the one-row cards collapsing. */}
-      <div className="overflow-hidden rounded-[2rem] border border-nham-border/60 bg-nham-hover shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_1px_2px_rgba(20,20,19,0.05),0_8px_16px_-8px_rgba(20,20,19,0.10),0_24px_48px_-16px_rgba(20,20,19,0.16),0_48px_96px_-32px_rgba(20,20,19,0.20)] md:min-h-[23rem]">
+      {/* `md:h`, a fixed height, does two jobs and both are load-bearing.
+          Every card covers the one it lands on, so no buried card's bottom
+          shows below its neighbour; and every card shares one release
+          threshold, so the pile leaves as a single object. See CARD_REM. */}
+      <div
+        className="overflow-hidden rounded-[2rem] border border-nham-border/60 bg-nham-hover shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_1px_2px_rgba(20,20,19,0.05),0_8px_16px_-8px_rgba(20,20,19,0.10),0_24px_48px_-16px_rgba(20,20,19,0.16),0_48px_96px_-32px_rgba(20,20,19,0.20)] md:h-[var(--card-h)]"
+        style={{ ['--card-h' as string]: `${CARD_REM}rem` }}
+      >
         {/* The title band. Its height is exactly the stack's step, so the strip
             each buried card still shows is precisely this band — you can read
             "Skin on, or skin off" off a card three deep in the pile. Everything

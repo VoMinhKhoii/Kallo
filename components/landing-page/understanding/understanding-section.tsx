@@ -3,7 +3,18 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { COMPARISONS_BY_LOCALE } from './comparisons';
-import { StackedComparison } from './stacked-comparison';
+import { StackedComparison, stackReleaseRem } from './stacked-comparison';
+
+/**
+ * Where the heading pins, and how tall it is held.
+ *
+ * The height is fixed rather than natural because the heading's release point
+ * is computed from it — see `headingMarginRem`. It clears two lines of the
+ * display serif at every breakpoint the section uses; Vietnamese sets the
+ * ceiling, since "những chi tiết nhỏ mà quan trọng" is the longest second line.
+ */
+const HEADING_TOP_REM = 6;
+const HEADING_REM = 10;
 
 /**
  * The proof section: the same meal, one detail added, different numbers.
@@ -32,6 +43,13 @@ export function UnderstandingSection() {
 
   const comparisons = COMPARISONS_BY_LOCALE[locale] ?? COMPARISONS_BY_LOCALE.en;
 
+  // Put the heading on the cards' release threshold. `top + height + margin`
+  // has to match theirs, and the first two are known, so the margin is whatever
+  // is left over. It depends on how many cards the locale has, because that is
+  // what sets where the pile lets go.
+  const headingMarginRem =
+    stackReleaseRem(comparisons.length) - HEADING_TOP_REM - HEADING_REM;
+
   const reveal = reduced
     ? {}
     : {
@@ -53,22 +71,30 @@ export function UnderstandingSection() {
             than one balanced line, so the rule sits under the second clause
             exactly as it does in the hero rather than wherever the text
             happens to wrap. */}
-        {/* Deliberately NOT sticky, though it was for a while.
+        {/* Sticky, and in the SAME release group as the cards.
 
             A sticky element releases when its container's bottom reaches
-            `top + height + marginBottom`. The cards are built to share one
-            release threshold so the pile leaves intact; the heading is a
-            sibling in the same container but only a couple of lines tall, so
-            its threshold landed far earlier and it stayed pinned long after the
-            pile had gone — the departing cards slid up over it and sheared the
-            underlined line in half. Matching it to the cards would take roughly
-            37rem of bottom margin on the heading, which shoves the whole stack
-            most of a screen further down.
+            `top + height + marginBottom`. The heading is a sibling of the cards
+            in this container, so if its threshold differs it either scrolls off
+            early or — what happened before — stays pinned long after the pile
+            has gone, and the departing cards shear it in half on their way past.
 
-            So the heading scrolls, and the emptiness it was pinned to solve is
-            handled by geometry instead: the pile rests higher up the viewport
-            now (see STACK_TOP_REM), which is where that space was going. */}
-        <motion.div {...reveal} className="text-center">
+            So it is given a fixed height and a bottom margin that lands its
+            threshold exactly on the cards'. Everything in the section then lets
+            go on the same pixel and the whole thing leaves as one object. The
+            cost is that margin: it is real flow space, so the section is that
+            much longer to scroll before the first card arrives. That runway is
+            where the heading sits alone, which is the point of pinning it. */}
+        <motion.div
+          {...reveal}
+          className="text-center md:sticky md:top-24 md:mb-[var(--heading-mb)] md:h-[var(--heading-h)]"
+          style={
+            {
+              '--heading-h': `${HEADING_REM}rem`,
+              '--heading-mb': `${headingMarginRem}rem`,
+            } as React.CSSProperties
+          }
+        >
           <h2 className="font-medium font-serif text-5xl text-nham-text leading-[1.04] tracking-[-0.03em] md:text-6xl">
             <span className="block">{t('titleLead')}</span>
             <span className="block underline decoration-[0.055em] underline-offset-[0.16em]">
@@ -92,7 +118,11 @@ export function UnderstandingSection() {
         {/* `space-y` is phone-only. From `md` the gaps come from each card's
             own bottom margin, which is doing arithmetic (see StackedComparison)
             rather than spacing — a uniform `space-y` here would break it. */}
-        <div className="mt-10 space-y-5 md:mt-12 md:space-y-0">
+        {/* `md:mt-0` matters: an `mt` here would be an adjacent sibling to the
+            heading's computed `mb`, the two would collapse to the larger, and
+            the heading's release threshold — which that margin IS — would no
+            longer be what the arithmetic thinks it is. */}
+        <div className="mt-10 space-y-5 md:mt-0 md:space-y-0">
           {comparisons.map((comparison, index) => (
             <StackedComparison
               key={comparison.id}
