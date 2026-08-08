@@ -8,12 +8,22 @@ import { StackedComparison, stackReleaseRem } from './stacked-comparison';
 /**
  * Where the heading pins, and the height it is held at.
  *
- * The height is fixed because two things are derived from it: the heading's own
- * release point, and `STACK_TOP_REM` — these two plus a rem of air, so the pile
- * rests UNDER the title rather than over it. The h2 measures 7.8rem.
+ * `HEADING_TOP_REM + HEADING_REM` must equal `STACK_TOP_REM` EXACTLY, and that
+ * is not a tidiness rule — it is what makes the transition smooth.
+ *
+ * In flow the first card sits flush against the bottom of this box, because the
+ * heading's margin and the pile's cancel to zero. Once both are pinned the card
+ * sits at `STACK_TOP_REM`. If those two numbers differ, the gap between title
+ * and card changes as they stick, and they stick at different moments — the
+ * card reaches its offset first and hangs there while the heading is still
+ * moving. It was 8.5 against a 15.5 stack top, so the gap jumped a rem mid
+ * scroll and read as a stutter.
+ *
+ * The h2 measures 7.8rem, so the remainder here is the air under the title.
+ * Grow that air by growing this, never by pushing the stack top down.
  */
 const HEADING_TOP_REM = 6;
-const HEADING_REM = 8.5;
+const HEADING_REM = 9.5;
 
 /**
  * The proof section: the same meal, one detail added, different numbers.
@@ -57,11 +67,18 @@ export function UnderstandingSection() {
   const headingMarginRem =
     stackReleaseRem(comparisons.length) - HEADING_TOP_REM - HEADING_REM;
 
+  // Opacity only — no `y` rise, unlike the other sections.
+  //
+  // This heading is sticky, and the first card sits flush under it. A 24px rise
+  // moves the heading but not the card, so the gap between them opened and shut
+  // as the animation played, which read as the whole section stuttering on
+  // arrival. Animating a transform on a sticky element is a bad idea besides:
+  // it shifts the box the sticky offset is measured against.
   const reveal = reduced
     ? {}
     : {
-        initial: { opacity: 0, y: 24 },
-        whileInView: { opacity: 1, y: 0 },
+        initial: { opacity: 0 },
+        whileInView: { opacity: 1 },
         viewport: { once: true, margin: '-80px' },
         transition: { duration: 0.7, ease: [0.32, 0.72, 0, 1] as const },
       };

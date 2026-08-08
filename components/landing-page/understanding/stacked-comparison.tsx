@@ -16,9 +16,10 @@ const TITLE_BAND_REM = 4.75;
  * Where the first card comes to rest: directly under the pinned section
  * heading, never over it.
  *
- * This is `HEADING_TOP_REM + HEADING_REM` plus a rem of air, both of which live
- * in `understanding-section.tsx`. If the heading changes size, this moves too,
- * or the pile lands on top of the title.
+ * This must be EXACTLY `HEADING_TOP_REM + HEADING_REM`, both in
+ * `understanding-section.tsx`. Not approximately: the first card sits flush
+ * under the heading box in flow and at this offset once pinned, so any
+ * difference between the two shows up as the gap changing mid-scroll.
  */
 export const STACK_TOP_REM = 15.5;
 
