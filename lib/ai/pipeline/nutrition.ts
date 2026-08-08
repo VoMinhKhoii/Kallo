@@ -1,3 +1,4 @@
+import { mealItemHasDiscreteOil } from '../absorbed-oil';
 import type {
   BoundedEstimate,
   IngredientLlmNutrition,
@@ -6,7 +7,6 @@ import type {
   MealItemNutrition,
   NutritionAdjustment,
 } from '../types';
-import { mealItemHasDiscreteOil } from '../absorbed-oil';
 import { computeMacroBaseMap, resolveIngredientMacros } from './bounded-macros';
 import type { MealDecompositionWithIds } from './ids';
 

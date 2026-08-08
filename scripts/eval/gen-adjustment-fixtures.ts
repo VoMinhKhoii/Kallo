@@ -22,28 +22,118 @@ const CAPTURED_AT = '2026-08-08';
 
 /** Cases that earned their place: the delta is real AND attributable. */
 const KEEP: Array<{ key: string; id: string; tags: string[]; note: string }> = [
-  { key: 'fat.vi.default', id: 'adj-vn-thigh-plain', tags: ['vi', 'adjustment', 'fat-trim'], note: 'Baseline for the skin-removal pair.' },
-  { key: 'fat.vi.trimmed', id: 'adj-vn-thigh-skinless', tags: ['vi', 'adjustment', 'fat-trim'], note: 'bỏ da must cut fat. Regressed to FLAT when đùi gà matched a skinless pheasant row.' },
-  { key: 'fat.en.default', id: 'adj-en-thigh-plain', tags: ['en', 'adjustment', 'fat-trim'], note: 'Baseline for the skin-removal pair.' },
-  { key: 'fat.en.trimmed', id: 'adj-en-thigh-skinless', tags: ['en', 'adjustment', 'fat-trim'], note: 'Thigh fat density fell 9.0 -> 5.4 g/100g at capture.' },
+  {
+    key: 'fat.vi.default',
+    id: 'adj-vn-thigh-plain',
+    tags: ['vi', 'adjustment', 'fat-trim'],
+    note: 'Baseline for the skin-removal pair.',
+  },
+  {
+    key: 'fat.vi.trimmed',
+    id: 'adj-vn-thigh-skinless',
+    tags: ['vi', 'adjustment', 'fat-trim'],
+    note: 'bỏ da must cut fat. Regressed to FLAT when đùi gà matched a skinless pheasant row.',
+  },
+  {
+    key: 'fat.en.default',
+    id: 'adj-en-thigh-plain',
+    tags: ['en', 'adjustment', 'fat-trim'],
+    note: 'Baseline for the skin-removal pair.',
+  },
+  {
+    key: 'fat.en.trimmed',
+    id: 'adj-en-thigh-skinless',
+    tags: ['en', 'adjustment', 'fat-trim'],
+    note: 'Thigh fat density fell 9.0 -> 5.4 g/100g at capture.',
+  },
 
-  { key: 'oil.vi.default', id: 'adj-vn-tofu-fried', tags: ['vi', 'adjustment', 'cooking-oil'], note: 'Default: đậu hũ is fried unless stated otherwise.' },
-  { key: 'oil.vi.light', id: 'adj-vn-tofu-light-oil', tags: ['vi', 'adjustment', 'cooking-oil'], note: 'chiên ít dầu.' },
-  { key: 'oil.vi.none', id: 'adj-vn-tofu-no-oil', tags: ['vi', 'adjustment', 'cooking-oil'], note: 'nướng không dầu. Tofu held at 150g across all three at capture; only the oil moved.' },
+  {
+    key: 'oil.vi.default',
+    id: 'adj-vn-tofu-fried',
+    tags: ['vi', 'adjustment', 'cooking-oil'],
+    note: 'Default: đậu hũ is fried unless stated otherwise.',
+  },
+  {
+    key: 'oil.vi.light',
+    id: 'adj-vn-tofu-light-oil',
+    tags: ['vi', 'adjustment', 'cooking-oil'],
+    note: 'chiên ít dầu.',
+  },
+  {
+    key: 'oil.vi.none',
+    id: 'adj-vn-tofu-no-oil',
+    tags: ['vi', 'adjustment', 'cooking-oil'],
+    note: 'nướng không dầu. Tofu held at 150g across all three at capture; only the oil moved.',
+  },
 
-  { key: 'rawcooked.vi.default', id: 'adj-vn-weight-as-eaten', tags: ['vi', 'adjustment', 'weight-basis'], note: 'Baseline: 300g treated as as-eaten.' },
-  { key: 'rawcooked.vi.raw', id: 'adj-vn-weight-raw', tags: ['vi', 'adjustment', 'weight-basis'], note: 'cân sống: 300g raw yields less cooked mass, so protein must DROP.' },
-  { key: 'rawcooked.en.default', id: 'adj-en-weight-as-eaten', tags: ['en', 'adjustment', 'weight-basis'], note: 'Baseline: 300g treated as as-eaten.' },
-  { key: 'rawcooked.en.raw', id: 'adj-en-weight-raw', tags: ['en', 'adjustment', 'weight-basis'], note: 'raw-weight: protein must DROP relative to the as-eaten baseline.' },
+  {
+    key: 'rawcooked.vi.default',
+    id: 'adj-vn-weight-as-eaten',
+    tags: ['vi', 'adjustment', 'weight-basis'],
+    note: 'Baseline: 300g treated as as-eaten.',
+  },
+  {
+    key: 'rawcooked.vi.raw',
+    id: 'adj-vn-weight-raw',
+    tags: ['vi', 'adjustment', 'weight-basis'],
+    note: 'cân sống: 300g raw yields less cooked mass, so protein must DROP.',
+  },
+  {
+    key: 'rawcooked.en.default',
+    id: 'adj-en-weight-as-eaten',
+    tags: ['en', 'adjustment', 'weight-basis'],
+    note: 'Baseline: 300g treated as as-eaten.',
+  },
+  {
+    key: 'rawcooked.en.raw',
+    id: 'adj-en-weight-raw',
+    tags: ['en', 'adjustment', 'weight-basis'],
+    note: 'raw-weight: protein must DROP relative to the as-eaten baseline.',
+  },
 
-  { key: 'rice.en.one', id: 'adj-en-rice-one-cup', tags: ['en', 'adjustment', 'portion-count'], note: 'Baseline for the explicit-count pair.' },
-  { key: 'rice.en.two', id: 'adj-en-rice-two-cups', tags: ['en', 'adjustment', 'portion-count'], note: 'Doubling an explicit count must roughly double carbs. Guards the profile-portion failure: stored defaultRicePortion never moved the estimate.' },
+  {
+    key: 'rice.en.one',
+    id: 'adj-en-rice-one-cup',
+    tags: ['en', 'adjustment', 'portion-count'],
+    note: 'Baseline for the explicit-count pair.',
+  },
+  {
+    key: 'rice.en.two',
+    id: 'adj-en-rice-two-cups',
+    tags: ['en', 'adjustment', 'portion-count'],
+    note: 'Doubling an explicit count must roughly double carbs. Guards the profile-portion failure: stored defaultRicePortion never moved the estimate.',
+  },
 
-  { key: 'portion.vi.containers', id: 'adj-vn-three-containers', tags: ['vi', 'vessel', 'portion'], note: 'One sentence must yield plate + bowl + cup.' },
-  { key: 'portion.en.containers', id: 'adj-en-three-containers', tags: ['en', 'vessel', 'portion'], note: 'One sentence must yield plate + bowl + cup.' },
-  { key: 'portion.vi.fish', id: 'adj-vn-piece-fish', tags: ['vi', 'vessel', 'portion'], note: 'phi lê must resolve a fish piece vessel.' },
-  { key: 'portion.vi.beef', id: 'adj-vn-piece-beef', tags: ['vi', 'vessel', 'portion'], note: 'miếng must resolve a meat piece vessel.' },
-  { key: 'portion.vi.poultry', id: 'adj-vn-piece-poultry', tags: ['vi', 'vessel', 'portion'], note: 'Regressed to 1491 kcal / 122g fat when gà rán matched a chicken-SKIN row.' },
+  {
+    key: 'portion.vi.containers',
+    id: 'adj-vn-three-containers',
+    tags: ['vi', 'vessel', 'portion'],
+    note: 'One sentence must yield plate + bowl + cup.',
+  },
+  {
+    key: 'portion.en.containers',
+    id: 'adj-en-three-containers',
+    tags: ['en', 'vessel', 'portion'],
+    note: 'One sentence must yield plate + bowl + cup.',
+  },
+  {
+    key: 'portion.vi.fish',
+    id: 'adj-vn-piece-fish',
+    tags: ['vi', 'vessel', 'portion'],
+    note: 'phi lê must resolve a fish piece vessel.',
+  },
+  {
+    key: 'portion.vi.beef',
+    id: 'adj-vn-piece-beef',
+    tags: ['vi', 'vessel', 'portion'],
+    note: 'miếng must resolve a meat piece vessel.',
+  },
+  {
+    key: 'portion.vi.poultry',
+    id: 'adj-vn-piece-poultry',
+    tags: ['vi', 'vessel', 'portion'],
+    note: 'Regressed to 1491 kcal / 122g fat when gà rán matched a chicken-SKIN row.',
+  },
 ];
 
 const band = (v: number, pct = 0.3): [number, number] => [
@@ -121,4 +211,6 @@ const out = {
 };
 
 writeFileSync(OUT, `${JSON.stringify(out, null, 2)}\n`);
-console.log(`wrote ${OUT} — ${cases.length} cases, ${out.relations.length} relation(s)`);
+console.log(
+  `wrote ${OUT} — ${cases.length} cases, ${out.relations.length} relation(s)`
+);

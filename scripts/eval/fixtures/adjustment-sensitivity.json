@@ -5,33 +5,16 @@
     {
       "id": "adj-vn-thigh-plain",
       "input": "1 chén cơm trắng + 1 đùi gà nướng + tô canh cải xanh",
-      "tags": [
-        "vi",
-        "adjustment",
-        "fat-trim",
-        "regression-bug"
-      ],
+      "tags": ["vi", "adjustment", "fat-trim", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          486,
-          902
-        ],
+        "kcalRange": [486, 902],
         "macroRanges": {
-          "proteinG": [
-            34,
-            62
-          ],
-          "carbohydrateG": [
-            56,
-            104
-          ],
-          "fatG": [
-            13,
-            27
-          ]
+          "proteinG": [34, 62],
+          "carbohydrateG": [56, 104],
+          "fatG": [13, 27]
         }
       },
       "provenance": {
@@ -43,33 +26,16 @@
     {
       "id": "adj-vn-thigh-skinless",
       "input": "1 chén cơm trắng + 1 đùi gà nướng bỏ da + tô canh cải xanh",
-      "tags": [
-        "vi",
-        "adjustment",
-        "fat-trim",
-        "regression-bug"
-      ],
+      "tags": ["vi", "adjustment", "fat-trim", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          447,
-          831
-        ],
+        "kcalRange": [447, 831],
         "macroRanges": {
-          "proteinG": [
-            33,
-            61
-          ],
-          "carbohydrateG": [
-            55,
-            101
-          ],
-          "fatG": [
-            10,
-            22
-          ]
+          "proteinG": [33, 61],
+          "carbohydrateG": [55, 101],
+          "fatG": [10, 22]
         }
       },
       "provenance": {
@@ -81,33 +47,16 @@
     {
       "id": "adj-en-thigh-plain",
       "input": "a bowl of rice with a grilled chicken thigh and a side of greens",
-      "tags": [
-        "en",
-        "adjustment",
-        "fat-trim",
-        "regression-bug"
-      ],
+      "tags": ["en", "adjustment", "fat-trim", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          461,
-          855
-        ],
+        "kcalRange": [461, 855],
         "macroRanges": {
-          "proteinG": [
-            31,
-            57
-          ],
-          "carbohydrateG": [
-            50,
-            94
-          ],
-          "fatG": [
-            14,
-            28
-          ]
+          "proteinG": [31, 57],
+          "carbohydrateG": [50, 94],
+          "fatG": [14, 28]
         }
       },
       "provenance": {
@@ -119,33 +68,16 @@
     {
       "id": "adj-en-thigh-skinless",
       "input": "a bowl of rice with a grilled chicken thigh, skin removed, and a side of greens",
-      "tags": [
-        "en",
-        "adjustment",
-        "fat-trim",
-        "regression-bug"
-      ],
+      "tags": ["en", "adjustment", "fat-trim", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          384,
-          712
-        ],
+        "kcalRange": [384, 712],
         "macroRanges": {
-          "proteinG": [
-            26,
-            48
-          ],
-          "carbohydrateG": [
-            50,
-            94
-          ],
-          "fatG": [
-            8,
-            16
-          ]
+          "proteinG": [26, 48],
+          "carbohydrateG": [50, 94],
+          "fatG": [8, 16]
         }
       },
       "provenance": {
@@ -157,33 +89,16 @@
     {
       "id": "adj-vn-tofu-fried",
       "input": "1 tô bún đậu hũ chiên + rau sống",
-      "tags": [
-        "vi",
-        "adjustment",
-        "cooking-oil",
-        "regression-bug"
-      ],
+      "tags": ["vi", "adjustment", "cooking-oil", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          371,
-          689
-        ],
+        "kcalRange": [371, 689],
         "macroRanges": {
-          "proteinG": [
-            15,
-            29
-          ],
-          "carbohydrateG": [
-            36,
-            66
-          ],
-          "fatG": [
-            18,
-            36
-          ]
+          "proteinG": [15, 29],
+          "carbohydrateG": [36, 66],
+          "fatG": [18, 36]
         }
       },
       "provenance": {
@@ -195,33 +110,16 @@
     {
       "id": "adj-vn-tofu-light-oil",
       "input": "1 tô bún đậu hũ chiên ít dầu + rau sống",
-      "tags": [
-        "vi",
-        "adjustment",
-        "cooking-oil",
-        "regression-bug"
-      ],
+      "tags": ["vi", "adjustment", "cooking-oil", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          310,
-          576
-        ],
+        "kcalRange": [310, 576],
         "macroRanges": {
-          "proteinG": [
-            15,
-            27
-          ],
-          "carbohydrateG": [
-            36,
-            68
-          ],
-          "fatG": [
-            11,
-            23
-          ]
+          "proteinG": [15, 27],
+          "carbohydrateG": [36, 68],
+          "fatG": [11, 23]
         }
       },
       "provenance": {
@@ -233,33 +131,16 @@
     {
       "id": "adj-vn-tofu-no-oil",
       "input": "1 tô bún đậu hũ nướng không dầu + rau sống",
-      "tags": [
-        "vi",
-        "adjustment",
-        "cooking-oil",
-        "regression-bug"
-      ],
+      "tags": ["vi", "adjustment", "cooking-oil", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          242,
-          450
-        ],
+        "kcalRange": [242, 450],
         "macroRanges": {
-          "proteinG": [
-            15,
-            27
-          ],
-          "carbohydrateG": [
-            36,
-            68
-          ],
-          "fatG": [
-            4,
-            8
-          ]
+          "proteinG": [15, 27],
+          "carbohydrateG": [36, 68],
+          "fatG": [4, 8]
         }
       },
       "provenance": {
@@ -271,33 +152,16 @@
     {
       "id": "adj-vn-weight-as-eaten",
       "input": "300g ức gà nấu chậm + 150g khoai lang + salad dầu giấm",
-      "tags": [
-        "vi",
-        "adjustment",
-        "weight-basis",
-        "regression-bug"
-      ],
+      "tags": ["vi", "adjustment", "weight-basis", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          500,
-          930
-        ],
+        "kcalRange": [500, 930],
         "macroRanges": {
-          "proteinG": [
-            63,
-            117
-          ],
-          "carbohydrateG": [
-            32,
-            60
-          ],
-          "fatG": [
-            12,
-            26
-          ]
+          "proteinG": [63, 117],
+          "carbohydrateG": [32, 60],
+          "fatG": [12, 26]
         }
       },
       "provenance": {
@@ -309,33 +173,16 @@
     {
       "id": "adj-vn-weight-raw",
       "input": "300g ức gà cân sống nấu chậm + 150g khoai lang + salad dầu giấm",
-      "tags": [
-        "vi",
-        "adjustment",
-        "weight-basis",
-        "regression-bug"
-      ],
+      "tags": ["vi", "adjustment", "weight-basis", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          432,
-          802
-        ],
+        "kcalRange": [432, 802],
         "macroRanges": {
-          "proteinG": [
-            43,
-            81
-          ],
-          "carbohydrateG": [
-            41,
-            77
-          ],
-          "fatG": [
-            10,
-            20
-          ]
+          "proteinG": [43, 81],
+          "carbohydrateG": [41, 77],
+          "fatG": [10, 20]
         }
       },
       "provenance": {
@@ -347,33 +194,16 @@
     {
       "id": "adj-en-weight-as-eaten",
       "input": "300g slow-cooked chicken breast, 150g sweet potato, green salad",
-      "tags": [
-        "en",
-        "adjustment",
-        "weight-basis",
-        "regression-bug"
-      ],
+      "tags": ["en", "adjustment", "weight-basis", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          438,
-          813
-        ],
+        "kcalRange": [438, 813],
         "macroRanges": {
-          "proteinG": [
-            63,
-            117
-          ],
-          "carbohydrateG": [
-            32,
-            60
-          ],
-          "fatG": [
-            6,
-            12
-          ]
+          "proteinG": [63, 117],
+          "carbohydrateG": [32, 60],
+          "fatG": [6, 12]
         }
       },
       "provenance": {
@@ -385,33 +215,16 @@
     {
       "id": "adj-en-weight-raw",
       "input": "300g raw-weight chicken breast, slow-cooked, 150g sweet potato, green salad",
-      "tags": [
-        "en",
-        "adjustment",
-        "weight-basis",
-        "regression-bug"
-      ],
+      "tags": ["en", "adjustment", "weight-basis", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          343,
-          637
-        ],
+        "kcalRange": [343, 637],
         "macroRanges": {
-          "proteinG": [
-            53,
-            98
-          ],
-          "carbohydrateG": [
-            25,
-            47
-          ],
-          "fatG": [
-            3,
-            7
-          ]
+          "proteinG": [53, 98],
+          "carbohydrateG": [25, 47],
+          "fatG": [3, 7]
         }
       },
       "provenance": {
@@ -423,33 +236,16 @@
     {
       "id": "adj-en-rice-one-cup",
       "input": "one cup of rice with braised pork and egg",
-      "tags": [
-        "en",
-        "adjustment",
-        "portion-count",
-        "regression-bug"
-      ],
+      "tags": ["en", "adjustment", "portion-count", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          459,
-          853
-        ],
+        "kcalRange": [459, 853],
         "macroRanges": {
-          "proteinG": [
-            26,
-            48
-          ],
-          "carbohydrateG": [
-            48,
-            88
-          ],
-          "fatG": [
-            17,
-            35
-          ]
+          "proteinG": [26, 48],
+          "carbohydrateG": [48, 88],
+          "fatG": [17, 35]
         }
       },
       "provenance": {
@@ -461,33 +257,16 @@
     {
       "id": "adj-en-rice-two-cups",
       "input": "two cups of rice with braised pork and egg",
-      "tags": [
-        "en",
-        "adjustment",
-        "portion-count",
-        "regression-bug"
-      ],
+      "tags": ["en", "adjustment", "portion-count", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          620,
-          1152
-        ],
+        "kcalRange": [620, 1152],
         "macroRanges": {
-          "proteinG": [
-            30,
-            56
-          ],
-          "carbohydrateG": [
-            95,
-            177
-          ],
-          "fatG": [
-            12,
-            26
-          ]
+          "proteinG": [30, 56],
+          "carbohydrateG": [95, 177],
+          "fatG": [12, 26]
         }
       },
       "provenance": {
@@ -499,33 +278,16 @@
     {
       "id": "adj-vn-three-containers",
       "input": "1 dĩa cơm tấm sườn + 1 tô canh khổ qua + 1 ly trà đá",
-      "tags": [
-        "vi",
-        "vessel",
-        "portion",
-        "regression-bug"
-      ],
+      "tags": ["vi", "vessel", "portion", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          578,
-          1074
-        ],
+        "kcalRange": [578, 1074],
         "macroRanges": {
-          "proteinG": [
-            40,
-            74
-          ],
-          "carbohydrateG": [
-            44,
-            82
-          ],
-          "fatG": [
-            25,
-            51
-          ]
+          "proteinG": [40, 74],
+          "carbohydrateG": [44, 82],
+          "fatG": [25, 51]
         },
         "expectVessel": [
           {
@@ -551,33 +313,16 @@
     {
       "id": "adj-en-three-containers",
       "input": "a plate of roast chicken with potatoes, a bowl of tomato soup and a glass of orange juice",
-      "tags": [
-        "en",
-        "vessel",
-        "portion",
-        "regression-bug"
-      ],
+      "tags": ["en", "vessel", "portion", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          582,
-          1082
-        ],
+        "kcalRange": [582, 1082],
         "macroRanges": {
-          "proteinG": [
-            32,
-            60
-          ],
-          "carbohydrateG": [
-            59,
-            109
-          ],
-          "fatG": [
-            22,
-            46
-          ]
+          "proteinG": [32, 60],
+          "carbohydrateG": [59, 109],
+          "fatG": [22, 46]
         },
         "expectVessel": [
           {
@@ -603,33 +348,16 @@
     {
       "id": "adj-vn-piece-fish",
       "input": "1 phi lê cá hồi áp chảo + salad rau",
-      "tags": [
-        "vi",
-        "vessel",
-        "portion",
-        "regression-bug"
-      ],
+      "tags": ["vi", "vessel", "portion", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          206,
-          382
-        ],
+        "kcalRange": [206, 382],
         "macroRanges": {
-          "proteinG": [
-            24,
-            44
-          ],
-          "carbohydrateG": [
-            2,
-            4
-          ],
-          "fatG": [
-            10,
-            22
-          ]
+          "proteinG": [24, 44],
+          "carbohydrateG": [2, 4],
+          "fatG": [10, 22]
         }
       },
       "provenance": {
@@ -641,33 +369,16 @@
     {
       "id": "adj-vn-piece-beef",
       "input": "1 miếng bò bít tết + khoai tây chiên",
-      "tags": [
-        "vi",
-        "vessel",
-        "portion",
-        "regression-bug"
-      ],
+      "tags": ["vi", "vessel", "portion", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          380,
-          706
-        ],
+        "kcalRange": [380, 706],
         "macroRanges": {
-          "proteinG": [
-            15,
-            27
-          ],
-          "carbohydrateG": [
-            22,
-            42
-          ],
-          "fatG": [
-            24,
-            50
-          ]
+          "proteinG": [15, 27],
+          "carbohydrateG": [22, 42],
+          "fatG": [24, 50]
         }
       },
       "provenance": {
@@ -679,33 +390,16 @@
     {
       "id": "adj-vn-piece-poultry",
       "input": "2 miếng gà rán + 1 chén cơm",
-      "tags": [
-        "vi",
-        "vessel",
-        "portion",
-        "regression-bug"
-      ],
+      "tags": ["vi", "vessel", "portion", "regression-bug"],
       "tier": "extended",
       "expect": {
         "isFood": true,
         "noSilentZeros": true,
-        "kcalRange": [
-          544,
-          1010
-        ],
+        "kcalRange": [544, 1010],
         "macroRanges": {
-          "proteinG": [
-            50,
-            92
-          ],
-          "carbohydrateG": [
-            48,
-            88
-          ],
-          "fatG": [
-            16,
-            34
-          ]
+          "proteinG": [50, 92],
+          "carbohydrateG": [48, 88],
+          "fatG": [16, 34]
         },
         "expectVessel": [
           {

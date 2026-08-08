@@ -37,56 +37,208 @@ type Sample = {
 
 const SAMPLES: Sample[] = [
   // 1 — trimming fat
-  { category: 'fat', locale: 'vi', variant: 'default', text: '1 chén cơm trắng + 1 đùi gà nướng + tô canh cải xanh' },
-  { category: 'fat', locale: 'vi', variant: 'trimmed', text: '1 chén cơm trắng + 1 đùi gà nướng bỏ da + tô canh cải xanh' },
-  { category: 'fat', locale: 'en', variant: 'default', text: 'a bowl of rice with a grilled chicken thigh and a side of greens' },
-  { category: 'fat', locale: 'en', variant: 'trimmed', text: 'a bowl of rice with a grilled chicken thigh, skin removed, and a side of greens' },
+  {
+    category: 'fat',
+    locale: 'vi',
+    variant: 'default',
+    text: '1 chén cơm trắng + 1 đùi gà nướng + tô canh cải xanh',
+  },
+  {
+    category: 'fat',
+    locale: 'vi',
+    variant: 'trimmed',
+    text: '1 chén cơm trắng + 1 đùi gà nướng bỏ da + tô canh cải xanh',
+  },
+  {
+    category: 'fat',
+    locale: 'en',
+    variant: 'default',
+    text: 'a bowl of rice with a grilled chicken thigh and a side of greens',
+  },
+  {
+    category: 'fat',
+    locale: 'en',
+    variant: 'trimmed',
+    text: 'a bowl of rice with a grilled chicken thigh, skin removed, and a side of greens',
+  },
 
   // 2 — cooking oil, three levels, default first
-  { category: 'oil', locale: 'vi', variant: 'default', text: '1 tô bún đậu hũ chiên + rau sống' },
-  { category: 'oil', locale: 'vi', variant: 'light', text: '1 tô bún đậu hũ chiên ít dầu + rau sống' },
-  { category: 'oil', locale: 'vi', variant: 'none', text: '1 tô bún đậu hũ nướng không dầu + rau sống' },
-  { category: 'oil', locale: 'en', variant: 'default', text: 'a plate of fries with a beef burger' },
-  { category: 'oil', locale: 'en', variant: 'light', text: 'a plate of pan-fried potatoes with a beef burger' },
-  { category: 'oil', locale: 'en', variant: 'none', text: 'a plate of air-fried potatoes with a beef burger' },
+  {
+    category: 'oil',
+    locale: 'vi',
+    variant: 'default',
+    text: '1 tô bún đậu hũ chiên + rau sống',
+  },
+  {
+    category: 'oil',
+    locale: 'vi',
+    variant: 'light',
+    text: '1 tô bún đậu hũ chiên ít dầu + rau sống',
+  },
+  {
+    category: 'oil',
+    locale: 'vi',
+    variant: 'none',
+    text: '1 tô bún đậu hũ nướng không dầu + rau sống',
+  },
+  {
+    category: 'oil',
+    locale: 'en',
+    variant: 'default',
+    text: 'a plate of fries with a beef burger',
+  },
+  {
+    category: 'oil',
+    locale: 'en',
+    variant: 'light',
+    text: 'a plate of pan-fried potatoes with a beef burger',
+  },
+  {
+    category: 'oil',
+    locale: 'en',
+    variant: 'none',
+    text: 'a plate of air-fried potatoes with a beef burger',
+  },
 
   // 3 — raw vs cooked weight
-  { category: 'rawcooked', locale: 'vi', variant: 'default', text: '300g ức gà nấu chậm + 150g khoai lang + salad dầu giấm' },
-  { category: 'rawcooked', locale: 'vi', variant: 'raw', text: '300g ức gà cân sống nấu chậm + 150g khoai lang + salad dầu giấm' },
-  { category: 'rawcooked', locale: 'en', variant: 'default', text: '300g slow-cooked chicken breast, 150g sweet potato, green salad' },
-  { category: 'rawcooked', locale: 'en', variant: 'raw', text: '300g raw-weight chicken breast, slow-cooked, 150g sweet potato, green salad' },
+  {
+    category: 'rawcooked',
+    locale: 'vi',
+    variant: 'default',
+    text: '300g ức gà nấu chậm + 150g khoai lang + salad dầu giấm',
+  },
+  {
+    category: 'rawcooked',
+    locale: 'vi',
+    variant: 'raw',
+    text: '300g ức gà cân sống nấu chậm + 150g khoai lang + salad dầu giấm',
+  },
+  {
+    category: 'rawcooked',
+    locale: 'en',
+    variant: 'default',
+    text: '300g slow-cooked chicken breast, 150g sweet potato, green salad',
+  },
+  {
+    category: 'rawcooked',
+    locale: 'en',
+    variant: 'raw',
+    text: '300g raw-weight chicken breast, slow-cooked, 150g sweet potato, green salad',
+  },
 
   // 4 — rice by count
-  { category: 'rice', locale: 'vi', variant: 'one', text: '1 chén cơm + thịt kho trứng' },
-  { category: 'rice', locale: 'vi', variant: 'two', text: '2 chén cơm + thịt kho trứng' },
-  { category: 'rice', locale: 'en', variant: 'one', text: 'one cup of rice with braised pork and egg' },
-  { category: 'rice', locale: 'en', variant: 'two', text: 'two cups of rice with braised pork and egg' },
+  {
+    category: 'rice',
+    locale: 'vi',
+    variant: 'one',
+    text: '1 chén cơm + thịt kho trứng',
+  },
+  {
+    category: 'rice',
+    locale: 'vi',
+    variant: 'two',
+    text: '2 chén cơm + thịt kho trứng',
+  },
+  {
+    category: 'rice',
+    locale: 'en',
+    variant: 'one',
+    text: 'one cup of rice with braised pork and egg',
+  },
+  {
+    category: 'rice',
+    locale: 'en',
+    variant: 'two',
+    text: 'two cups of rice with braised pork and egg',
+  },
 
   // 5 — braising sugar
-  { category: 'kho', locale: 'vi', variant: 'default', text: 'cá lóc kho tộ + 1 chén cơm' },
-  { category: 'kho', locale: 'vi', variant: 'less', text: 'cá lóc kho tộ ít đường + 1 chén cơm' },
-  { category: 'kho', locale: 'en', variant: 'default', text: 'braised pork belly with rice' },
-  { category: 'kho', locale: 'en', variant: 'less', text: 'braised pork belly, light on the sugar, with rice' },
+  {
+    category: 'kho',
+    locale: 'vi',
+    variant: 'default',
+    text: 'cá lóc kho tộ + 1 chén cơm',
+  },
+  {
+    category: 'kho',
+    locale: 'vi',
+    variant: 'less',
+    text: 'cá lóc kho tộ ít đường + 1 chén cơm',
+  },
+  {
+    category: 'kho',
+    locale: 'en',
+    variant: 'default',
+    text: 'braised pork belly with rice',
+  },
+  {
+    category: 'kho',
+    locale: 'en',
+    variant: 'less',
+    text: 'braised pork belly, light on the sugar, with rice',
+  },
 
   // 6 — portion vessels
-  { category: 'portion', locale: 'vi', variant: 'containers', text: '1 dĩa cơm tấm sườn + 1 tô canh khổ qua + 1 ly trà đá' },
-  { category: 'portion', locale: 'vi', variant: 'fish', text: '1 phi lê cá hồi áp chảo + salad rau' },
-  { category: 'portion', locale: 'vi', variant: 'beef', text: '1 miếng bò bít tết + khoai tây chiên' },
-  { category: 'portion', locale: 'vi', variant: 'poultry', text: '2 miếng gà rán + 1 chén cơm' },
-  { category: 'portion', locale: 'en', variant: 'containers', text: 'a plate of roast chicken with potatoes, a bowl of tomato soup and a glass of orange juice' },
-  { category: 'portion', locale: 'en', variant: 'fish', text: '1 salmon fillet, pan-seared, with a green salad' },
-  { category: 'portion', locale: 'en', variant: 'beef', text: '1 grilled steak with fries' },
-  { category: 'portion', locale: 'en', variant: 'poultry', text: '2 pieces of fried chicken with a side of coleslaw' },
+  {
+    category: 'portion',
+    locale: 'vi',
+    variant: 'containers',
+    text: '1 dĩa cơm tấm sườn + 1 tô canh khổ qua + 1 ly trà đá',
+  },
+  {
+    category: 'portion',
+    locale: 'vi',
+    variant: 'fish',
+    text: '1 phi lê cá hồi áp chảo + salad rau',
+  },
+  {
+    category: 'portion',
+    locale: 'vi',
+    variant: 'beef',
+    text: '1 miếng bò bít tết + khoai tây chiên',
+  },
+  {
+    category: 'portion',
+    locale: 'vi',
+    variant: 'poultry',
+    text: '2 miếng gà rán + 1 chén cơm',
+  },
+  {
+    category: 'portion',
+    locale: 'en',
+    variant: 'containers',
+    text: 'a plate of roast chicken with potatoes, a bowl of tomato soup and a glass of orange juice',
+  },
+  {
+    category: 'portion',
+    locale: 'en',
+    variant: 'fish',
+    text: '1 salmon fillet, pan-seared, with a green salad',
+  },
+  {
+    category: 'portion',
+    locale: 'en',
+    variant: 'beef',
+    text: '1 grilled steak with fries',
+  },
+  {
+    category: 'portion',
+    locale: 'en',
+    variant: 'poultry',
+    text: '2 pieces of fried chicken with a side of coleslaw',
+  },
 ];
 
 const keyOf = (s: Sample) => `${s.category}.${s.locale}.${s.variant}`;
 
-const [{ analyzeMealV2 }, gemini, { db }, { toParsedMeal }] = await Promise.all([
-  import('@/lib/ai/pipeline/grounded-orchestrator'),
-  import('@/lib/ai/gemini'),
-  import('@/lib/db'),
-  import('@/lib/ai/mappers'),
-]);
+const [{ analyzeMealV2 }, gemini, { db }, { toParsedMeal }] = await Promise.all(
+  [
+    import('@/lib/ai/pipeline/grounded-orchestrator'),
+    import('@/lib/ai/gemini'),
+    import('@/lib/db'),
+    import('@/lib/ai/mappers'),
+  ]
+);
 const provider = gemini.resolveGeminiProvider();
 const client = gemini.createGeminiClient(provider);
 
@@ -104,7 +256,9 @@ async function run(text: string, attempts = 3) {
         }),
       ]).finally(() => clearTimeout(handle));
     } catch (error) {
-      console.log(`   retry ${attempt}/${attempts}: ${(error as Error).message}`);
+      console.log(
+        `   retry ${attempt}/${attempts}: ${(error as Error).message}`
+      );
       if (attempt === attempts) throw error;
     }
   }

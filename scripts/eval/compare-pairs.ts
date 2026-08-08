@@ -13,7 +13,14 @@ type Row = {
   locale: string;
   variant: string;
   text: string;
-  parsed: { totalMacros: { calories: number; protein: number; carbs: number; fat: number } };
+  parsed: {
+    totalMacros: {
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+    };
+  };
   raw: {
     mealItems: Array<{
       ingredients: Array<{
@@ -45,10 +52,15 @@ for (const [group, rows] of [...groups.entries()].sort()) {
   // Union of ingredient names across variants, so an ingredient that appears
   // in one variant but not the other is visible rather than silently absent.
   const names = [
-    ...new Set(rows.flatMap((r) => ingredientsOf(r).map((i) => i.ingredientName))),
+    ...new Set(
+      rows.flatMap((r) => ingredientsOf(r).map((i) => i.ingredientName))
+    ),
   ];
 
-  const header = ['ingredient'.padEnd(20), ...rows.map((r) => r.variant.padStart(16))].join('');
+  const header = [
+    'ingredient'.padEnd(20),
+    ...rows.map((r) => r.variant.padStart(16)),
+  ].join('');
   console.log(header);
   for (const name of names) {
     // Grams AND fat density. Density (g fat per 100g of that ingredient) is
@@ -60,11 +72,15 @@ for (const [group, rows] of [...groups.entries()].sort()) {
       const g = ing.estimatedGrams ?? 0;
       const fat = ing.boundedNutrition?.fatG?.mid;
       const per100 = g > 0 && fat !== undefined ? (fat * 100) / g : undefined;
-      return `${Math.round(g)}g ${per100 !== undefined ? `(${per100.toFixed(1)})` : '(—)'}`.padStart(16);
+      return `${Math.round(g)}g ${per100 !== undefined ? `(${per100.toFixed(1)})` : '(—)'}`.padStart(
+        16
+      );
     });
     console.log(name.slice(0, 19).padEnd(20) + cells.join(''));
   }
-  console.log('  (n) = g fat per 100g of that ingredient — portion-independent');
+  console.log(
+    '  (n) = g fat per 100g of that ingredient — portion-independent'
+  );
 
   const totals = rows.map((r) => r.parsed.totalMacros);
   console.log(
@@ -99,7 +115,8 @@ for (const [group, rows] of [...groups.entries()].sort()) {
       rows
         .map((r) => {
           const w = weightOf(r);
-          const scaled = w > 0 ? (r.parsed.totalMacros.calories * baseWeight) / w : 0;
+          const scaled =
+            w > 0 ? (r.parsed.totalMacros.calories * baseWeight) / w : 0;
           return String(Math.round(scaled)).padStart(16);
         })
         .join('')
@@ -109,7 +126,8 @@ for (const [group, rows] of [...groups.entries()].sort()) {
       rows
         .map((r) => {
           const w = weightOf(r);
-          const scaled = w > 0 ? (r.parsed.totalMacros.fat * baseWeight) / w : 0;
+          const scaled =
+            w > 0 ? (r.parsed.totalMacros.fat * baseWeight) / w : 0;
           return `${scaled.toFixed(1)}g`.padStart(16);
         })
         .join('')
@@ -121,7 +139,9 @@ for (const [group, rows] of [...groups.entries()].sort()) {
   );
   const drifted = shared.filter((n) => {
     const g = rows.map(
-      (r) => ingredientsOf(r).find((i) => i.ingredientName === n)?.estimatedGrams ?? 0
+      (r) =>
+        ingredientsOf(r).find((i) => i.ingredientName === n)?.estimatedGrams ??
+        0
     );
     const lo = Math.min(...g);
     const hi = Math.max(...g);
