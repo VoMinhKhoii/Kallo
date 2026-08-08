@@ -66,10 +66,13 @@ const escapeXmlAttribute = (value: string): string =>
     .replace(/>/g, '&gt;')
     .replace(/'/g, '&apos;');
 
+// Ingredient first, dish second — matching `bounded-macros`, `validation` and
+// `assembly`. An ingredient's own method is the more specific signal; the dish
+// method is the fallback for ingredients Call 1 left unlabelled.
 const ingredientCookingMethod = (
   item: DecomposedMealItem,
   ing: PromptIngredient
-): string | null => item.cookingMethod ?? ing.cookingMethod ?? null;
+): string | null => ing.cookingMethod ?? item.cookingMethod ?? null;
 
 /**
  * Render prep notes as a `prep_notes` XML attribute fragment when the

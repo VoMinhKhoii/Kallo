@@ -94,6 +94,7 @@ export function buildDecompositionV2Prompt(
 
   <cooking_method_rule>
     cookingMethod on the dish is free-form in the user's language. Two disambiguation traps: "nấu" means cook/absorb water for rice or congee, NOT soup; "luộc" means boil and does NOT imply eggs.
+    Cooking fat is ALWAYS its own ingredient. When a dish is fried, stir-fried or pan-seared (chiên/rán/xào/áp chảo/fried/stir-fried/pan-seared), emit the cooking fat as a SEPARATE ingredient — rawName "dầu ăn" / "oil" / "bơ" / "mỡ" as the user would say it — rather than leaving it implied inside the food it was cooked in. It then matches its own composition row, so its fat AND its micronutrients (vitamin E above all) reach the meal total. Omit it only when the dish is explicitly no-oil (luộc/hấp/steamed/boiled/air-fried/không dầu).
     Per-ingredient cookingMethod is ONLY for mixed-state dishes (e.g., bún thịt nướng: bún is "luộc", thịt is "nướng", herbs are "raw").
   </cooking_method_rule>
 

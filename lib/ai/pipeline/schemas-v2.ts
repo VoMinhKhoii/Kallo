@@ -12,9 +12,8 @@ import { boundedEstimateSchema } from './schemas';
  * the matched DB row and can reason with full context (eliminates the
  * Call-1-grams-ambiguity that forced the convertCookedToRaw fudge in v1).
  *
- * `cookingMethod` stays on the dish; per-ingredient override is rare and
- * lives on `decomposedIngredientV2Schema.cookingMethod` for mixed-state
- * dishes.
+ * `cookingMethod` defaults from the dish. Mixed-method dishes must use the
+ * per-ingredient override on `decomposedIngredientV2Schema.cookingMethod`.
  */
 export const decomposedIngredientV2Schema = z
   .object({
@@ -35,7 +34,7 @@ export const decomposedIngredientV2Schema = z
       .min(1)
       .optional()
       .describe(
-        'Per-ingredient cooking method override for mixed-state dishes; otherwise inherit from the dish.'
+        'Actual cooking method for this ingredient when it differs from the dish default. Use this override for every differing ingredient in a mixed-method dish (for example: boiled noodles, fried tofu, raw herbs). Otherwise omit it and inherit the dish method.'
       ),
     stateHint: stateHintSchema
       .optional()
@@ -102,7 +101,7 @@ export const decomposedDishV2Schema = z
       .string()
       .min(1)
       .describe(
-        "Free-form cooking method for the dish in the user's language; per-ingredient cookingMethod overrides for mixed-state dishes."
+        "Free-form default cooking method for the dish in the user's language. It applies only to ingredients without their own cookingMethod override."
       ),
     cuisineNote: z
       .string()

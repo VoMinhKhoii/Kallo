@@ -6,6 +6,7 @@ import type {
   MealItemNutrition,
   NutritionAdjustment,
 } from '../types';
+import { mealItemHasDiscreteOil } from '../absorbed-oil';
 import { computeMacroBaseMap, resolveIngredientMacros } from './bounded-macros';
 import type { MealDecompositionWithIds } from './ids';
 
@@ -48,6 +49,12 @@ export function resolveStreamingMealItem(
   decomposedMealItem: MealDecompositionWithIds['mealItems'][number] | undefined,
   baseMap: Map<string, MacroBase>
 ): MealItemNutrition {
+  // Whether this dish carries its frying fat as its own row. Computed once per
+  // meal item: if it does, its sibling foods must not also be granted an
+  // absorbed-oil allowance, or the oil lands in the total twice.
+  const siblingOilPresent = mealItemHasDiscreteOil(
+    rawItem.ingredients.map((ing) => ing.ingredientName)
+  );
   const ingredients: IngredientLlmNutrition[] = rawItem.ingredients.map(
     (rawIng) => {
       const decIng = decomposedMealItem?.ingredients.find(
@@ -71,7 +78,10 @@ export function resolveStreamingMealItem(
         rawIng,
         base,
         grams,
-        prepNotesPresent
+        prepNotesPresent,
+        decIng?.cookingMethod ?? decomposedMealItem?.cookingMethod ?? null,
+        decIng?.prepNotes,
+        siblingOilPresent
       );
       return {
         ingredientId,
@@ -104,8 +114,8 @@ function hasPrepNotes(notes: string[] | undefined): boolean {
  *   2. Match ingredients by name within the meal item (same FIFO policy).
  *   3. For each matched ingredient with a DB-anchored base:
  *      - protein and carb are flat triples at the DB-anchored value (LLM ignored);
- *      - fat keeps the LLM triple subject to the 3× hallucination guard
- *        (falls back to a flat triple at base.fatG when the guard fires);
+ *      - fat keeps the LLM triple subject to the 3× hallucination guard plus
+ *        the cooking method's additive oil allowance; outliers are clamped;
  *      - calories are derived from the macro identity (4P + 4C + 9F), so
  *        only fat's spread (when present) drives kcal's spread.
  *   4. For unmatched ingredients:
@@ -163,6 +173,11 @@ export function reconcileNutritionIds(
         ingredientQueueByName.set(name, list);
       }
       const ingredientConsumed = new Map<string, number>();
+      // See `resolveStreamingMealItem`: one discrete oil row per meal item
+      // suppresses its siblings' absorbed-oil allowance.
+      const siblingOilPresent = mealItemHasDiscreteOil(
+        rawMi.ingredients.map((ing) => ing.ingredientName)
+      );
 
       const ingredients: IngredientLlmNutrition[] = rawMi.ingredients.map(
         (rawIng) => {
@@ -199,7 +214,10 @@ export function reconcileNutritionIds(
             rawIng,
             base,
             grams,
-            prepNotesPresent
+            prepNotesPresent,
+            decomposedIng.cookingMethod ?? decomposedMi.cookingMethod ?? null,
+            decomposedIng.prepNotes,
+            siblingOilPresent
           );
           return {
             ingredientId,

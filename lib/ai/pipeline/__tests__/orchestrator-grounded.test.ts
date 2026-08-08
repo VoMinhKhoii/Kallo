@@ -47,7 +47,7 @@ function geminiReturning(
 }
 
 describe('analyzeMealV2 — accepted candidate, server-anchored P/C', () => {
-  it('runs end-to-end and returns server-anchored protein for a matched cooked DB row', async () => {
+  it('still runs Call 2 for a fully grounded exact match', async () => {
     const call1: MealDecompositionV2 = {
       isFood: true,
       mealSlot: 'lunch',
@@ -79,6 +79,13 @@ describe('analyzeMealV2 — accepted candidate, server-anchored P/C', () => {
     };
     const gemini = geminiReturning(call1, call2);
     const db = createSourceAwareMockDb({
+      exact: [
+        {
+          id: 'fc-thigh',
+          name_primary: 'Đùi gà',
+          state: 'cooked',
+        },
+      ],
       fao_vector: [
         {
           id: 'fc-thigh',
@@ -108,6 +115,10 @@ describe('analyzeMealV2 — accepted candidate, server-anchored P/C', () => {
       gemini
     );
     expect(result.success).toBe(true);
+    // Call 1 plus Call 2. Before the mandatory-Call-2 change, this exact-match
+    // + curated portion-prior case qualified for the fast path and called the
+    // model only once.
+    expect(gemini.generateStructuredOutputStream).toHaveBeenCalledTimes(2);
     if (result.success) {
       const pr = result.data;
       expect(pr.mealItems).toHaveLength(1);

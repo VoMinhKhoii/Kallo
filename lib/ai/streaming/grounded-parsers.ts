@@ -112,6 +112,7 @@ export function extractCompletedGroundedMealItems(
 export function resolveStreamingV2MealItem(
   rawItem: GroundedMealItem,
   decomposedIngredients: DecomposedIngredientV2[],
+  dishCookingMethod: string | null,
   matchResults: IngredientV2MatchResult[],
   flatIngredientStart: number
 ): { nutrition: MealItemNutrition; totalGrams: number } {
@@ -141,6 +142,8 @@ export function resolveStreamingV2MealItem(
       (decompForName?.prepNotes ?? []).some(
         (n) => typeof n === 'string' && n.trim().length > 0
       ) ?? false;
+    const cookingMethod =
+      decompForName?.cookingMethod ?? dishCookingMethod ?? null;
 
     const grams = rawIng.grams;
     totalGrams += grams;
@@ -167,7 +170,9 @@ export function resolveStreamingV2MealItem(
       rawAdjustment,
       base,
       grams,
-      prepNotesPresent
+      prepNotesPresent,
+      cookingMethod,
+      decompForName?.prepNotes
     );
 
     ingredients.push({
@@ -219,6 +224,7 @@ function computeBaseFromVerdict(
 
 export interface MealItemOffset {
   decomposedIngredients: DecomposedIngredientV2[];
+  dishCookingMethod: string | null;
   flatIngredientStart: number;
 }
 
@@ -229,12 +235,16 @@ export interface MealItemOffset {
  * meal-item index.
  */
 export function buildPerMealItemOffsetMap(
-  v2MealItems: Array<{ ingredients: DecomposedIngredientV2[] }>
+  v2MealItems: Array<{
+    ingredients: DecomposedIngredientV2[];
+    cookingMethod: string;
+  }>
 ): MealItemOffset[] {
   let start = 0;
   return v2MealItems.map((mi) => {
     const entry = {
       decomposedIngredients: mi.ingredients,
+      dishCookingMethod: mi.cookingMethod,
       flatIngredientStart: start,
     };
     start += mi.ingredients.length;
@@ -257,7 +267,11 @@ export function buildPerMealItemOffsetMap(
  * to the D3 output-shape change.
  */
 export function buildMealItemOffsetByName(
-  v2MealItems: Array<{ name: string; ingredients: DecomposedIngredientV2[] }>
+  v2MealItems: Array<{
+    name: string;
+    ingredients: DecomposedIngredientV2[];
+    cookingMethod: string;
+  }>
 ): Map<string, MealItemOffset> {
   const byName = new Map<string, MealItemOffset>();
   const occ = new Map<string, number>();
@@ -268,6 +282,7 @@ export function buildMealItemOffsetByName(
     occ.set(key, n);
     byName.set(`${key}::${n}`, {
       decomposedIngredients: mi.ingredients,
+      dishCookingMethod: mi.cookingMethod,
       flatIngredientStart: start,
     });
     start += mi.ingredients.length;

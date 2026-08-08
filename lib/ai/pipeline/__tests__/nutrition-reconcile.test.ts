@@ -398,7 +398,7 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
     expect(ing.fatG.mid).toBe(34);
   });
 
-  it('matched + LLM fat > 3× base.fatG: snaps to base.fatG (the 5511 kcal regression class)', () => {
+  it('matched + LLM fat > 3× base.fatG: clamps to the ceiling', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const decomposition: MealDecompositionWithIds = {
       isFood: true,
@@ -433,7 +433,7 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
       }),
     ];
     // base for 100g cooked: P=22, C=0, F=22. LLM hallucinates fat=91 → ratio
-    // 91/22 ≈ 4.1×, beyond 3× guard → fat snaps to 22.
+    // 91/22 ≈ 4.1×, beyond the 3× guard → fat clamps to 66.
     const raw: RawNutritionAdjustment = {
       mealItems: [
         {
@@ -453,9 +453,10 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
 
     const out = reconcileNutritionIds(raw, decomposition, matched);
     const ing = out.mealItems[0].ingredients[0];
-    expect(ing.fatG.mid).toBeCloseTo(22, 5);
-    // Kcal derived from server-anchored P/C and snapped F: 4×22 + 0 + 9×22 = 286.
-    expect(ing.caloriesKcal.mid).toBeCloseTo(286, 5);
+    expect(ing.fatG.mid).toBeCloseTo(66, 5);
+    // Kcal derives from server-anchored P/C and clamped F:
+    // 4×22 + 0 + 9×66 = 682.
+    expect(ing.caloriesKcal.mid).toBeCloseTo(682, 5);
     expect(warn).toHaveBeenCalled();
     const warnCalls = warn.mock.calls.map((c) => c.join(' '));
     expect(warnCalls.some((m) => /hallucination_guard/.test(m))).toBe(true);
@@ -741,7 +742,7 @@ describe('__testing.guardMacro', () => {
     expect(out).toEqual({ low: 200, mid: 270, high: 350 });
   });
 
-  it('snaps mid to base when LLM mid exceeds 3× base', () => {
+  it('clamps a plain overshoot to the ceiling instead of returning base', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const out = __testing.guardMacro(
       { low: 5400, mid: 5511, high: 5600 },
@@ -749,13 +750,14 @@ describe('__testing.guardMacro', () => {
       'Sườn non',
       'caloriesKcal'
     );
-    expect(out.mid).toBe(270);
+    expect(out.mid).toBeCloseTo(810, 8);
+    expect(out.mid).not.toBe(270);
     expect(out.low).toBeLessThanOrEqual(out.mid);
     expect(out.high).toBeGreaterThanOrEqual(out.mid);
     expect(warn).toHaveBeenCalled();
   });
 
-  it('snaps mid to base when LLM mid is below 1/3 of base', () => {
+  it('clamps an undershoot up to the floor instead of returning base', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const out = __testing.guardMacro(
       { low: 1, mid: 5, high: 10 },
@@ -763,7 +765,7 @@ describe('__testing.guardMacro', () => {
       'test',
       'caloriesKcal'
     );
-    expect(out.mid).toBe(100);
+    expect(out.mid).toBeCloseTo(100 / 3, 8);
     expect(warn).toHaveBeenCalled();
   });
 

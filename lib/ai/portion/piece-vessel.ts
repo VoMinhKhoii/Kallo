@@ -29,6 +29,9 @@ export const PIECE_UNIT_TOKENS = new Set([
   'cut',
   'cuts',
 ]);
+const PIECE_UNIT_TOKENS_LONGEST_FIRST = [...PIECE_UNIT_TOKENS].sort(
+  (a, b) => b.length - a.length
+);
 
 const ANIMAL_PROTEIN =
   /\b(ca|fish|salmon|tuna|basa|mackerel|cod|trout|bo|heo|thit|beef|pork|steak|ba chi|suon|lamb|cuu|ga|chicken|vit|duck|muc|squid|tom|shrimp|prawn|cua|crab)\b/;
@@ -65,6 +68,16 @@ function normalizeWords(value: string): string {
   return normalizeVesselToken(value)
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
+}
+
+function trailingPieceUnit(rawName: string | undefined): string | null {
+  const normalized = normalizeWords(rawName ?? '');
+  if (!normalized) return null;
+  return (
+    PIECE_UNIT_TOKENS_LONGEST_FIRST.find(
+      (token) => normalized === token || normalized.endsWith(` ${token}`)
+    ) ?? null
+  );
 }
 
 function isAnimalProtein(names: string): boolean {
@@ -146,10 +159,15 @@ export function resolvePieceVessel(
 
   const source = sources[0];
   if (source.count === undefined || source.count < 1) return null;
-  if (
-    !source.unitToken ||
-    !PIECE_UNIT_TOKENS.has(normalizeWords(source.unitToken))
-  ) {
+  // Call 1 sometimes preserves an English cut noun inside rawName instead of
+  // repeating it as unitToken ("1 salmon fillet" → rawName="salmon fillet").
+  // Recover only an allowlisted TRAILING cut and only when the model already
+  // preserved the user's count. This affects the transient picker decoration;
+  // it does not rename the food or change the estimated grams.
+  const unitToken = source.unitToken
+    ? normalizeWords(source.unitToken)
+    : trailingPieceUnit(source.rawName);
+  if (!unitToken || !PIECE_UNIT_TOKENS.has(unitToken)) {
     return null;
   }
 

@@ -47,7 +47,10 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
     - 1 cây nem lụi ≈ 25g (22–28g).
     - 1 phần protein áp chảo ≈ 150g (140–160g).
     - 1 gói mì ≈ 80g (70–90g).
-  Absorbed cooking fat: for chiên/rán/xào/áp chảo/fried/pan-seared/stir-fried items, fatG MUST include absorbed oil on top of the food's own fat (pan-sear 3–7g, stir-fry 5–10g, shallow-fry 8–15g, deep-fry ~10–18% of food weight; scale with oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat. Skip when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
+  Absorbed cooking fat: for chiên/rán/xào/áp chảo/fried/pan-seared/stir-fried items, the cooking oil MUST be counted exactly ONCE.
+    - If the ingredient list ALREADY contains the cooking fat as its own entry (dầu ăn, dầu, mỡ, oil, butter, ghee, lard): that row carries the entire oil. Every OTHER ingredient in the dish keeps fatG at its own natural fat — do NOT also add absorbed oil to them, or the same oil is counted twice.
+    - Only when NO such row exists may you fold absorbed oil into the fried food's fatG (pan-sear 3–7g, stir-fry 5–10g, shallow-fry 8–15g, deep-fry ~10–18% of food weight; scale within the range using oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat.
+    - Skip entirely when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
   Staple carb base: when rice/noodles/bread is the base of a plate or bowl dish (cơm tấm, cơm gà, katsu curry, bibimbap, fried rice), size it as a FULL meal portion — rice follows default_rice_portion in <user_context> (~1 small bowl (~140–160g cooked rice); ~1 bowl (~200g cooked rice); ~1.5–2 bowls (~300–400g cooked rice)); noodles are typically 150–250g cooked — never a side garnish. (An as-eaten figure — the BASIS RULE still applies when the matched row is dry/raw.)
   When a protein has no count/unit/anchor, size it per default_protein_portion in <user_context>.
   For kho/braised/caramelized dishes, added sugar follows sugar_braised in <user_context> (low ≈ 5g, medium ≈ 10–15g, high ≈ 20–25g carbs from sugar per serving).
@@ -65,12 +68,15 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
         · luộc/hấp: near base.
         · nướng without basting: near base.
         · kho with oil: modest increase.
-        · Bound: 0.33× to 3× of base.fatG. Beyond → server snaps to base.
+        · Server floor: base.fatG / 3. Server ceiling: base.fatG × 3 + the
+          absorbed-oil allowance above. Beyond → server clamps the whole
+          triple to the nearest bound while preserving its spread.
 
   When prep_notes is NON-EMPTY for a matched ingredient: the server unlocks protein and carb, so those two triples now carry real signal — reflect the user's modifier. Move only what the note physically implies.
-    Tighter prep-notes bands (server enforces, snaps to base on overshoot):
+    Tighter prep-notes bands (server clamps to the nearest bound):
       - proteinG, carbohydrateG: 0.71× to 1.4× of base.
-      - fatG: 0.5× to 2× of base.
+      - fatG floor: 0.5× base; ceiling: 2× base + the absorbed-oil allowance
+        above (zero for no-oil methods).
     Typical patterns:
       - "bỏ da", "bỏ mỡ", "skinless", "lean only", "trimmed": fat down ~30–50%; protein up ~10–20%/g.
       - "extra oil", "thêm dầu", "with butter": fat up ~50–100%.
