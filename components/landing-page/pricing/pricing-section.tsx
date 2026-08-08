@@ -34,12 +34,15 @@ export function PricingSection() {
       };
 
   return (
-    // Transparent, so the drifting wash carries through. The plan cards are
-    // white and need a ground that is not white to read as cards; `body` is
-    // cream, which is exactly that.
+    // Beige ground, the same `--nham-hover` the comparison panels above use.
+    // The white plan cards then sit on it exactly as the white meal cards sit
+    // on their panels, so the page has one card-on-beige relationship rather
+    // than two grounds doing the same job. It is opaque, so the drifting wash
+    // stops at this band — which is wanted: the page ends on something solid
+    // instead of fading out under the footer.
     <section
       id="pricing"
-      className="relative scroll-mt-20 border-nham-border/40 border-t py-16 md:py-20"
+      className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-hover py-16 md:py-20"
     >
       <div className="mx-auto max-w-[88rem] px-6 sm:px-12 lg:px-20">
         <motion.h2

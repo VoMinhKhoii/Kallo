@@ -53,7 +53,19 @@ export function UnderstandingSection() {
             than one balanced line, so the rule sits under the second clause
             exactly as it does in the hero rather than wherever the text
             happens to wrap. */}
-        <motion.div {...reveal} className="text-center">
+        {/* Sticky, and it stays stuck for the whole section.
+
+            The heading used to scroll away just as the pile started forming,
+            which left the cards alone on a wide cream page with nothing to sit
+            under. Holding it keeps the claim on screen the entire time the
+            evidence is being dealt out, which is also the more honest reading
+            order: you are looking at the cards *because* of the sentence above
+            them. The cards come later in the DOM, so when the pile finally
+            releases it travels up over the heading rather than under it. */}
+        <motion.div
+          {...reveal}
+          className="text-center md:sticky md:top-24 md:z-0"
+        >
           <h2 className="font-medium font-serif text-5xl text-nham-text leading-[1.04] tracking-[-0.03em] md:text-6xl">
             <span className="block">{t('titleLead')}</span>
             <span className="block underline decoration-[0.055em] underline-offset-[0.16em]">
