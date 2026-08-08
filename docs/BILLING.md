@@ -270,22 +270,33 @@ does, and approval has lead time — start it early.
    almost always a missing scope, not a bad key. Paddle allows editing an
    existing key's permissions, so this is recoverable without regenerating.
 
-   | Permission | Read | Write |
-   |---|:--:|:--:|
-   | Addresses | ✅ | |
-   | Adjustments | ✅ | |
-   | Businesses | ✅ | |
-   | Client-side tokens | ✅ | ✅ |
-   | Customer portal sessions | ✅ | ✅ |
-   | Customers | ✅ | |
-   | Discounts | ✅ | |
-   | Notification settings | ✅ | ✅ |
-   | Notifications | ✅ | |
-   | Payment methods | ✅ | |
-   | Prices | ✅ | |
-   | Products | ✅ | |
-   | Subscriptions | ✅ | |
-   | Transactions | ✅ | ✅ |
+   The reliable recipe is **tick `All → Read`**, then grant `Write` on exactly
+   these six:
+
+   | Write permission | Why |
+   |---|---|
+   | Client-side tokens | mints the token `purchases-js` uses at checkout |
+   | Customer portal sessions | mints `management_url` |
+   | Notification settings | required by *Automatic* purchase tracking |
+   | Transactions | |
+   | Subscriptions | see caveat below |
+   | Adjustments | see caveat below |
+
+   Leave **Customer authentication tokens** off. Paddle dims `Read` wherever
+   `Write` is granted — write implies read.
+
+   Transcribed from the sandbox key that RevenueCat actually accepted, after an
+   earlier hand-written subset of this table cost two failed "Connect to
+   Paddle" attempts. Prefer `All → Read` over enumerating: the working key
+   includes reads this doc kept omitting (Checkout domain, Metrics,
+   Notification simulations, Reports, Subscription history), and an over-broad
+   *read* scope is far cheaper than another round of the generic error.
+
+   Caveat: `Subscriptions (Write)` and `Adjustments (Write)` are on that key
+   partly because QA needed them to cancel and refund by API. RevenueCat may
+   not require either. They are the two worth trimming on a production key —
+   one at a time, reconnecting after each — since together they allow
+   cancelling subscriptions and refunding real money.
 
    Two of these carry consequences worth knowing:
    - **Customer portal sessions (Write)** — without it RevenueCat cannot mint
