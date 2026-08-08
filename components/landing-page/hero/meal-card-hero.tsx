@@ -58,7 +58,7 @@ export function MealCardHero() {
       className="relative isolate flex min-h-[100dvh] flex-col overflow-hidden"
       onPointerLeave={() => setActiveId(null)}
     >
-      <div className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col items-center justify-center px-4 pt-24 pb-16 text-center sm:px-6">
+      <div className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col items-center justify-center px-4 pt-24 pb-10 text-center sm:px-6">
         {/* On a phone the promise owns the first screen; the cards are what
             scrolling is for. On lg everything sits in one viewport again. */}
         <div className="flex min-h-[calc(100dvh-13rem)] flex-col items-center justify-center md:min-h-0">
@@ -98,7 +98,7 @@ export function MealCardHero() {
 
         <motion.div
           {...rise(4)}
-          className={`mt-7 space-y-1 text-xs ${HERO_GROUND.faint}`}
+          className={`mt-7 space-y-1 text-xs ${HERO_GROUND.body}`}
         >
           {/* The desktop hint invites a hover. On touch the paintings are
               already up, so inviting one would be a lie. */}

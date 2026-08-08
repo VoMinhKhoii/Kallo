@@ -753,10 +753,6 @@
       "beta": "Free while in beta · born in Vietnam, built for every kitchen",
       "total": "Total",
       "toggleDetails": "Toggle details",
-      "entry": {
-        "eyeballed": "Eyeballed",
-        "weighed": "Weighed"
-      },
       "meals": {
         "pho": {
           "input": "big bowl of phở, extra rare beef",
@@ -802,25 +798,77 @@
         "privacy": "One email to confirm, one when your spot opens. Nothing else."
       }
     },
-    "why": {
-      "title": "A photo can't hear you say",
-      "titleAccent": "less oil.",
-      "adjustments": {
+    "understanding": {
+      "titleLead": "Kallo understands",
+      "titleUnderlined": "minor details that matter",
+      "categories": {
+        "fat": {
+          "title": "Skin on, or skin off",
+          "note": "Three words about how you ate the chicken, and the fat follows them.",
+          "items": {
+            "rice": "Rice",
+            "thigh": "Grilled chicken thigh",
+            "greens": "Greens"
+          },
+          "variants": {
+            "plain": {
+              "input": "a bowl of rice with a grilled chicken thigh and a side of greens"
+            },
+            "trimmed": {
+              "input": "a bowl of rice with a grilled chicken thigh, <b>skin removed</b>, and a side of greens"
+            }
+          }
+        },
+        "count": {
+          "title": "One cup, or two",
+          "note": "Say how much rice and it is counted, rather than assumed from a setting you filled in once.",
+          "items": {
+            "rice": "Rice",
+            "pork": "Braised pork and egg"
+          },
+          "variants": {
+            "one": {
+              "input": "<b>one cup</b> of rice with braised pork and egg"
+            },
+            "two": {
+              "input": "<b>two cups</b> of rice with braised pork and egg"
+            }
+          }
+        },
+        "weight": {
+          "title": "Weighed raw, or weighed cooked",
+          "note": "The difference every person who owns a kitchen scale has argued about. Say which, and it lands.",
+          "items": {
+            "breast": "Slow-cooked chicken breast",
+            "potato": "Sweet potato",
+            "salad": "Green salad"
+          },
+          "variants": {
+            "asEaten": {
+              "input": "300g slow-cooked chicken breast, 150g sweet potato, green salad"
+            },
+            "raw": {
+              "input": "300g <b>raw-weight</b> chicken breast, slow-cooked, 150g sweet potato, green salad"
+            }
+          }
+        },
         "oil": {
-          "input": "chicken curry, went easy on the oil",
-          "effect": "Fat drops, and the calories with it."
-        },
-        "milk": {
-          "input": "flat white with skim instead of whole",
-          "effect": "Same cup, different macros."
-        },
-        "backfill": {
-          "input": "yesterday around 8pm, two slices of pizza",
-          "effect": "Filed to yesterday. No cut-off."
+          "title": "Deep-fried, or air-fried",
+          "note": "The same potatoes, cooked two ways. The oil they drank is the difference.",
+          "items": {
+            "potatoes": "Potatoes",
+            "burger": "Beef burger"
+          },
+          "variants": {
+            "fried": {
+              "input": "a plate of <b>fries</b> with a beef burger"
+            },
+            "noOil": {
+              "input": "a plate of <b>air-fried potatoes</b> with a beef burger"
+            }
+          }
         }
-      },
-      "tradeoff": "More work than a photo. Less than logging by hand.",
-      "sources": "Matched against FAO and USDA composition data, with an AI layer for portions and preparation. Bounded ranges, never invented decimals."
+      }
     },
     "pricing": {
       "title": "Pricing",

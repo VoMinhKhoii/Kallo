@@ -9,7 +9,7 @@ import {
   Header,
   MealCardHero,
   PricingSection,
-  TextFirstSection,
+  UnderstandingSection,
 } from '@/components/landing-page';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
 import type { Locale } from '@/i18n/config';
@@ -58,7 +58,7 @@ export default async function Home({
       <Header />
       <main>
         <MealCardHero />
-        <TextFirstSection />
+        <UnderstandingSection />
         <PricingSection />
       </main>
       <DocsFooter sections={sections} />

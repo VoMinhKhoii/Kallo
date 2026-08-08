@@ -54,7 +54,7 @@ export function PlanCard({
         <p className="font-bold font-sans-display text-4xl text-nham-text tabular-nums">
           {t(`plans.${plan}.price`)}
         </p>
-        <p className="mt-4 font-sans-display text-nham-text-muted text-sm leading-relaxed">
+        <p className="mt-4 font-sans-display text-nham-text-soft text-sm leading-relaxed">
           {t(`plans.${plan}.fineprint`)}
         </p>
       </div>
@@ -78,7 +78,7 @@ export function PlanCard({
             <li key={id} className="flex items-start gap-2.5">
               <Check
                 aria-hidden
-                className="mt-0.5 h-4 w-4 shrink-0 text-nham-text-muted"
+                className="mt-0.5 h-4 w-4 shrink-0 text-nham-text-soft"
               />
               <span className="font-sans-display text-nham-text-soft text-sm leading-snug">
                 {t(`features.${id}`)}

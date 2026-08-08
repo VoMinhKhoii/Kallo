@@ -41,7 +41,7 @@ export function WaitlistPill() {
           <p className="font-medium font-sans-display text-nham-text text-sm">
             {t('success')}
           </p>
-          <p className="mt-1 font-sans-display text-nham-text-muted text-sm">
+          <p className="mt-1 font-sans-display text-nham-text-soft text-sm">
             {t('successBody')}
           </p>
         </div>
@@ -114,7 +114,7 @@ export function WaitlistPill() {
           {failureMessage}
         </p>
       )}
-      <p className="mt-3 font-sans-display text-nham-text-muted text-xs">
+      <p className="mt-3 font-sans-display text-nham-text-soft text-xs">
         {t('privacy')}
       </p>
     </form>

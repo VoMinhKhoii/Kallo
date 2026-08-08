@@ -12,10 +12,15 @@
  * The ground and the veil left too — they are the whole page's now, and live
  * in `../ambient-wash.tsx`. What is left is ink, which is still the hero's.
  */
+/**
+ * Two inks, not three. `faint` used to be the muted grey `#6E6D66`; on cream it
+ * read as washed out rather than quiet, so everything secondary on this page is
+ * now the soft near-black. Hierarchy comes from size and weight instead — which
+ * is the same reason the cards separate by hairline rather than by opacity.
+ */
 export const HERO_GROUND = {
   ink: 'text-nham-text',
   body: 'text-nham-text-soft',
-  faint: 'text-nham-text-muted',
 } as const;
 
 /** The one easing curve every hero motion uses — heavy, decelerating. */

@@ -753,10 +753,6 @@
       "beta": "Miễn phí trong thời gian thử nghiệm · làm tại Việt Nam, dùng được cho mọi căn bếp",
       "total": "Tổng",
       "toggleDetails": "Mở/đóng chi tiết",
-      "entry": {
-        "eyeballed": "Ước lượng",
-        "weighed": "Cân"
-      },
       "meals": {
         "pho": {
           "input": "1 tô phở bò tái + quẩy",
@@ -802,25 +798,76 @@
         "privacy": "Một email để xác nhận, một email khi tới lượt bạn. Không gì khác."
       }
     },
-    "why": {
-      "title": "Tấm ảnh không nghe được bạn dặn",
-      "titleAccent": "ít dầu mỡ.",
-      "adjustments": {
+    "understanding": {
+      "titleLead": "Kallo hiểu",
+      "titleUnderlined": "những chi tiết nhỏ mà quan trọng",
+      "categories": {
+        "fat": {
+          "title": "Còn da, hay bỏ da",
+          "note": "Chỉ hai chữ về cách bạn ăn miếng gà, và lượng mỡ đi theo.",
+          "items": {
+            "rice": "Cơm trắng",
+            "thigh": "Đùi gà nướng",
+            "soup": "Canh cải xanh"
+          },
+          "variants": {
+            "plain": {
+              "input": "1 chén cơm trắng + 1 đùi gà nướng + tô canh cải xanh"
+            },
+            "trimmed": {
+              "input": "1 chén cơm trắng + 1 đùi gà nướng <b>bỏ da</b> + tô canh cải xanh"
+            }
+          }
+        },
         "oil": {
-          "input": "cơm tấm sườn, ít dầu mỡ",
-          "effect": "Chất béo giảm, calo giảm theo."
+          "title": "Chiên, hay không dầu",
+          "note": "Đậu hũ mặc định là chiên. Nói rõ là không dầu, thì phần dầu được trừ ra.",
+          "items": {
+            "bun": "Bún đậu hũ"
+          },
+          "variants": {
+            "fried": {
+              "input": "1 tô bún đậu hũ <b>chiên</b> + rau sống"
+            },
+            "noOil": {
+              "input": "1 tô bún đậu hũ <b>nướng không dầu</b> + rau sống"
+            }
+          }
         },
-        "milk": {
-          "input": "cà phê sữa, sữa tách béo",
-          "effect": "Vẫn ly đó, macro khác hẳn."
+        "weight": {
+          "title": "Cân sống, hay cân chín",
+          "note": "Chuyện mà ai có cân nhà bếp cũng từng tranh cãi. Nói rõ là cân sống, con số đổi theo.",
+          "items": {
+            "breast": "Ức gà nấu chậm",
+            "potato": "Khoai lang",
+            "salad": "Salad dầu giấm"
+          },
+          "variants": {
+            "asEaten": {
+              "input": "300g ức gà nấu chậm + 150g khoai lang + salad dầu giấm"
+            },
+            "raw": {
+              "input": "300g ức gà <b>cân sống</b> nấu chậm + 150g khoai lang + salad dầu giấm"
+            }
+          }
         },
-        "backfill": {
-          "input": "hôm qua ăn cơm tấm lúc 7 giờ tối",
-          "effect": "Ghi vào hôm qua. Không giới hạn."
+        "count": {
+          "title": "Một chén, hay hai chén",
+          "note": "Nói rõ bao nhiêu cơm thì được tính đúng bấy nhiêu, thay vì suy ra từ một thiết lập bạn chọn một lần rồi quên.",
+          "items": {
+            "rice": "Cơm trắng",
+            "pork": "Thịt kho trứng"
+          },
+          "variants": {
+            "one": {
+              "input": "<b>1 chén</b> cơm + thịt kho trứng"
+            },
+            "two": {
+              "input": "<b>2 chén</b> cơm + thịt kho trứng"
+            }
+          }
         }
-      },
-      "tradeoff": "Mất công hơn chụp ảnh. Nhẹ hơn nhập tay.",
-      "sources": "Đối chiếu với dữ liệu thành phần của FAO và USDA, cùng lớp AI lo khẩu phần và cách chế biến. Khoảng ước lượng có giới hạn, không bịa số lẻ."
+      }
     },
     "pricing": {
       "title": "Bảng giá",

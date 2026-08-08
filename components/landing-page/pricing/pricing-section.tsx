@@ -39,9 +39,9 @@ export function PricingSection() {
     // cream, which is exactly that.
     <section
       id="pricing"
-      className="relative scroll-mt-20 border-nham-border/40 border-t py-24 md:py-32"
+      className="relative scroll-mt-20 border-nham-border/40 border-t py-16 md:py-20"
     >
-      <div className="mx-auto max-w-[100rem] px-4 sm:px-6">
+      <div className="mx-auto max-w-[88rem] px-6 sm:px-12 lg:px-20">
         <motion.h2
           {...reveal}
           className="text-center font-normal font-serif text-5xl text-nham-text tracking-[-0.02em] md:text-6xl"
@@ -69,7 +69,7 @@ export function PricingSection() {
 
         <motion.p
           {...reveal}
-          className="mt-10 text-center font-sans-display text-nham-text-muted text-xs leading-relaxed"
+          className="mt-10 text-center font-sans-display text-nham-text-soft text-xs leading-relaxed"
         >
           {t('betaNote')}
         </motion.p>

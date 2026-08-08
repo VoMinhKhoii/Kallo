@@ -31,7 +31,7 @@ export function LoggedMealDetails({ meal }: { meal: HeroMeal }) {
               {t(item.id)}
             </span>
             <div className="flex shrink-0 items-center gap-1.5">
-              <div className="flex gap-1 text-[9px] text-nham-text-muted tabular-nums">
+              <div className="flex gap-1 text-[9px] text-nham-text tabular-nums">
                 <span>P:{formatMacroValue(item.protein)}</span>
                 <span>C:{formatMacroValue(item.carbs)}</span>
                 <span>F:{formatMacroValue(item.fat)}</span>
@@ -49,7 +49,7 @@ export function LoggedMealDetails({ meal }: { meal: HeroMeal }) {
           {tTotal('total')}
         </span>
         <div className="flex items-center gap-4">
-          <span className="font-sans-display text-[11px] text-nham-text-muted tabular-nums">
+          <span className="font-sans-display text-[11px] text-nham-text tabular-nums">
             P: {formatMacroValue(totals.protein)}
             {'  '}C: {formatMacroValue(totals.carbs)}
             {'  '}F: {formatMacroValue(totals.fat)}

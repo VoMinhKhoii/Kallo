@@ -9,9 +9,9 @@
  * straight through rather than being fought.
  *
  * Only ids, numbers and artwork live here. Every visible string — the typed
- * sentence, the dish names, the entry chip — is a message key, because this is
+ * sentence and the dish names — is a message key, because this is
  * the real landing page and it has to speak Vietnamese too. Labels resolve
- * under `landing.hero.meals.<id>` and `landing.hero.entry`.
+ * under `landing.hero.meals.<id>`.
  *
  * Numbers are illustrative, but internally consistent: every total is the exact
  * sum of its item rows, because a landing page showing arithmetic that doesn't
@@ -29,9 +29,6 @@ export interface HeroMealItem {
 export interface HeroMeal {
   /** Message key under `landing.hero.meals`. */
   id: string;
-  /** How the portion was arrived at — the two audiences, side by side. */
-  entry: 'eyeballed' | 'weighed';
-  timeLabel: string;
   /** The derived rows. Totals are computed from these, never hardcoded. */
   items: HeroMealItem[];
   /**
@@ -49,8 +46,6 @@ export interface HeroMeal {
 export const HERO_MEALS: readonly HeroMeal[] = [
   {
     id: 'pho',
-    entry: 'eyeballed',
-    timeLabel: '07:40',
     items: [
       { id: 'pho', calories: 420, protein: 30, carbs: 50, fat: 10 },
       { id: 'quay', calories: 110, protein: 4, carbs: 12, fat: 3 },
@@ -59,8 +54,6 @@ export const HERO_MEALS: readonly HeroMeal[] = [
   },
   {
     id: 'bol',
-    entry: 'eyeballed',
-    timeLabel: '21:15',
     items: [
       { id: 'pasta', calories: 380, protein: 21, carbs: 40, fat: 15 },
       { id: 'salad', calories: 90, protein: 3, carbs: 8, fat: 4 },
@@ -69,8 +62,6 @@ export const HERO_MEALS: readonly HeroMeal[] = [
   },
   {
     id: 'chicken',
-    entry: 'weighed',
-    timeLabel: '13:05',
     items: [
       { id: 'chicken', calories: 245, protein: 46, carbs: 0, fat: 5 },
       { id: 'rice', calories: 235, protein: 4, carbs: 52, fat: 1 },
@@ -80,8 +71,6 @@ export const HERO_MEALS: readonly HeroMeal[] = [
   },
   {
     id: 'shake',
-    entry: 'weighed',
-    timeLabel: '08:20',
     items: [
       { id: 'whey', calories: 152, protein: 32, carbs: 3, fat: 1 },
       { id: 'milk', calories: 88, protein: 9, carbs: 12, fat: 0 },
