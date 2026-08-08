@@ -110,10 +110,7 @@ const fatOf = (
   result: ReturnType<typeof resolveStreamingV2MealItem>,
   name: string
 ) =>
-  result.nutrition.ingredients.find((i) => i.ingredientName === name)
-    ?.displayedNutrition?.fatG?.mid ??
-  result.nutrition.ingredients.find((i) => i.ingredientName === name)?.fatG
-    ?.mid;
+  result.nutrition.ingredients.find((i) => i.ingredientName === name)?.fatG.mid;
 
 describe('streamed meal items honour the discrete-oil suppression', () => {
   it('withholds the absorbed-oil allowance when the oil has its own row', () => {
