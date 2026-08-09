@@ -115,6 +115,55 @@ export function shiftedItem(comparison: Comparison): ShiftedItem | null {
   return best && best.delta !== 0 ? best : null;
 }
 
+/**
+ * The pair as it is DISPLAYED: every dish the words did not touch is held at
+ * the value the left card gives it.
+ *
+ * This is the one place the page shows something other than raw capture, and it
+ * is deliberate, narrow and reversible — the fixtures above are untouched, so
+ * `comparisons-{en,vi}.ts` remain exactly what the pipeline returned and this
+ * can be deleted to get the raw pair back.
+ *
+ * Why it is here. The two variants are independent model runs at temperature,
+ * so a dish neither sentence changed still comes back a few grams apart: the
+ * English side salad moved 18 → 28 kcal between two runs of a meal where the
+ * salad was never mentioned. That difference is measurement noise, not a fact
+ * about the food, and shown side by side it invites exactly the reading the
+ * section must not invite — that saying "raw weight" did something to a salad.
+ *
+ * Why it is defensible. The claim the page makes is about the dish the words
+ * named. Holding the others still does not strengthen that claim; it stops a
+ * sampling artifact from muddying it. The dish that moved keeps every one of
+ * its captured numbers, including the macros and calories that moved with the
+ * one being marked, because those ARE the effect being shown.
+ *
+ * What it costs, and it is a real cost: the totals under an aligned card are
+ * summed from a mix of both runs, so they are no longer a number the pipeline
+ * ever returned for that sentence. Do not quote them as one.
+ *
+ * The proper fix is upstream — pin the constant across variants at capture time
+ * so there is nothing to align. Until then this stays.
+ */
+export function displayVariants(
+  comparison: Comparison
+): readonly [ComparisonVariant, ComparisonVariant] {
+  const [before, after] = comparison.variants;
+  const moved = shiftedItem(comparison);
+  if (!moved) return comparison.variants;
+
+  return [
+    before,
+    {
+      ...after,
+      items: after.items.map((item) => {
+        if (item.id === moved.id) return item;
+        const was = before.items.find((other) => other.id === item.id);
+        return was ?? item;
+      }),
+    },
+  ];
+}
+
 /** Totals summed from the rows, so a card can never disagree with itself. */
 export function variantTotals(variant: ComparisonVariant) {
   return variant.items.reduce(

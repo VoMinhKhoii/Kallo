@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { CompareMealCard } from './compare-meal-card';
-import { type Comparison, shiftedItem } from './comparisons';
+import { type Comparison, displayVariants, shiftedItem } from './comparisons';
 import {
   CARD_REM,
   STACK_GAP_REM,
@@ -29,9 +29,12 @@ export function StackedComparison({
   total: number;
 }) {
   const t = useTranslations('landing.understanding');
-  const [before, after] = comparison.variants;
   // Resolved once, here, so both cards mark the same dish. See `shiftedItem`.
   const shifted = shiftedItem(comparison);
+  // Not `comparison.variants` — the dishes the words did not touch are held
+  // level across the pair, so the only rows that differ are the ones that were
+  // meant to. See `displayVariants` for what that costs.
+  const [before, after] = displayVariants(comparison);
 
   // What makes the pile leave as one object instead of peeling apart.
   //

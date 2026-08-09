@@ -56,7 +56,7 @@ export async function DocsFooter({
       <div
         className={
           landing
-            ? 'mx-auto max-w-[92rem] px-6 py-16 sm:px-12 lg:px-20'
+            ? 'mx-auto max-w-[92rem] px-6 py-12 sm:px-12 lg:px-20'
             : 'mx-auto max-w-[90rem] px-4 py-16 sm:px-6'
         }
       >

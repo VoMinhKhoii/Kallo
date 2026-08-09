@@ -87,7 +87,7 @@ export function UnderstandingSection() {
   return (
     <section
       id="how"
-      className="relative scroll-mt-20 border-nham-border/40 border-t py-12 md:py-16"
+      className="relative scroll-mt-20 border-nham-border/40 border-t py-8 md:py-10"
     >
       {/* `md:flex-col` is load-bearing: in normal flow the heading's bottom
           margin and the pile's negative top margin are adjacent siblings and
@@ -112,7 +112,7 @@ export function UnderstandingSection() {
             } as React.CSSProperties
           }
         >
-          <h2 className="font-medium font-serif text-5xl text-nham-text leading-[1.04] tracking-[-0.03em] md:text-6xl">
+          <h2 className="font-medium font-serif text-4xl text-nham-text leading-[1.04] tracking-[-0.03em] sm:text-5xl md:text-6xl">
             <span className="block">{t('titleLead')}</span>
             <span className="block underline decoration-[0.055em] underline-offset-[0.16em]">
               {t('titleUnderlined')}

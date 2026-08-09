@@ -14,15 +14,17 @@ import {
 } from './comparisons';
 
 /**
- * How far the painting comes up — far lower than the hero's 0.65.
+ * How far the painting comes up — below the hero's 0.65, but not by as much as
+ * it first was.
  *
- * The hero card is one large panel with two or three roomy rows. This one is
- * half the height, carries the same rows plus a 9px macro triple, and only one
- * of the pair wears art at all, so the painting is here as a warmth in the
- * paper rather than as a picture. Anything higher and the brushwork ran through
- * the numbers, which are the argument.
+ * The hero card is one large panel with two or three roomy rows; this one is
+ * half the height and only one of the pair wears art at all, so the painting is
+ * here as warmth in the paper rather than as a picture. It started at 0.22 and
+ * read as a smudge — the food was not identifiable, which wastes the one thing
+ * the painting is for. The ceiling is set by the dish rows: much past this and
+ * the brushwork starts competing with the numbers, which are the argument.
  */
-const ART_OPACITY = 0.22;
+const ART_OPACITY = 0.34;
 
 /**
  * One side of a comparison, in the app's own card language.

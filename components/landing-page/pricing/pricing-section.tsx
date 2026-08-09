@@ -44,12 +44,12 @@ export function PricingSection() {
     // instead of fading out under the footer.
     <section
       id="pricing"
-      className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-hover pt-12 pb-10 md:pt-16 md:pb-12"
+      className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-hover pt-8 pb-8 md:pt-10 md:pb-10"
     >
       <div className="mx-auto max-w-[92rem] px-6 sm:px-12 lg:px-20">
         <motion.h2
           {...reveal}
-          className="text-center font-normal font-serif text-5xl text-nham-text tracking-[-0.02em] md:text-6xl"
+          className="text-center font-normal font-serif text-4xl text-nham-text tracking-[-0.02em] sm:text-5xl md:text-6xl"
         >
           {t('title')}
         </motion.h2>
