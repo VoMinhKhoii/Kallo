@@ -97,7 +97,7 @@ export function WaitlistPill() {
         <button
           type="submit"
           disabled={signup.isPending}
-          className="group flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-nham-ink px-5 font-medium font-sans-display text-nham-surface text-sm transition-[transform,background-color] hover:bg-nham-ink-hover active:scale-[0.98] disabled:opacity-60 sm:w-auto"
+          className="group flex h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-nham-ink px-5 font-medium font-sans-display text-nham-surface text-sm transition-[transform,background-color] hover:bg-nham-ink-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           <span className="whitespace-nowrap">
             {signup.isPending ? t('submitting') : t('submit')}

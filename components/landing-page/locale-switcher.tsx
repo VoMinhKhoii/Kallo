@@ -65,7 +65,7 @@ export function LocaleSwitcher() {
               // buttons called after country-ish abbreviations.
               aria-label={label}
               className={cn(
-                'px-2.5 py-1 text-[11px] uppercase tracking-[0.08em] transition-colors',
+                'cursor-pointer px-2.5 py-1 text-[11px] uppercase tracking-[0.08em] transition-colors disabled:cursor-wait',
                 selected
                   ? 'font-semibold text-nham-text'
                   : 'font-normal text-nham-text-soft hover:text-nham-text'

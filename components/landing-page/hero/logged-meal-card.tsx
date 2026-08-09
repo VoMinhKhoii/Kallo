@@ -95,7 +95,7 @@ export function LoggedMealCard({
           onSelectMeal();
           setIsCollapsed((prev) => !prev);
         }}
-        className="relative isolate flex w-full flex-col overflow-hidden rounded-2xl border border-nham-border/60 bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md"
+        className="relative isolate flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-nham-border/60 bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md"
       >
         <Image
           src={meal.art}

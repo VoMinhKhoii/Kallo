@@ -47,7 +47,7 @@ export function BillingToggle({
             type="button"
             aria-pressed={selected}
             onClick={() => onPeriodChange(option)}
-            className={`rounded-full px-3 py-1 font-sans-display text-xs transition-colors ${
+            className={`cursor-pointer rounded-full px-3 py-1 font-sans-display text-xs transition-colors ${
               selected
                 ? 'bg-nham-hover font-semibold text-nham-text'
                 : 'text-nham-text-soft hover:text-nham-text'

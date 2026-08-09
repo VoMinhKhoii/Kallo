@@ -8,6 +8,15 @@ import type { Comparison } from './comparisons';
  * rather than a translation, and because each locale shows only the pairs
  * verified in that locale: the Vietnamese `count` pair failed review (DEV-100)
  * and is absent here rather than faked.
+ *
+ * `weight` was re-captured on 2026-08-09; everything else here is from the
+ * 2026-08-07 run. The first capture of `cân sống` returned 13g of carbohydrate
+ * on a slow-cooked chicken breast, which is facially impossible — chicken has
+ * none — and the English run of the same sentence returned 0g. Re-running the
+ * pair returned 0g and a protein move of 87 → 72g, in line with the English
+ * 87 → 70g, so it was a sampling artifact rather than a reproducible mismatch.
+ * Recorded rather than quietly corrected: the matcher is evidently capable of
+ * putting carbohydrate on pure protein, and that is worth knowing.
  */
 export const VI_COMPARISONS: readonly Comparison[] = [
   {
@@ -134,10 +143,10 @@ export const VI_COMPARISONS: readonly Comparison[] = [
           },
           {
             id: 'salad',
-            grams: 120,
-            calories: 108,
+            grams: 95,
+            calories: 103,
             protein: 1,
-            carbs: 3,
+            carbs: 2,
             fat: 10,
           },
         ],
@@ -148,10 +157,10 @@ export const VI_COMPARISONS: readonly Comparison[] = [
           {
             id: 'breast',
             grams: 300,
-            calories: 330,
-            protein: 60,
-            carbs: 13,
-            fat: 5,
+            calories: 342,
+            protein: 72,
+            carbs: 0,
+            fat: 6,
           },
           {
             id: 'potato',
@@ -163,10 +172,10 @@ export const VI_COMPARISONS: readonly Comparison[] = [
           },
           {
             id: 'salad',
-            grams: 125,
-            calories: 108,
+            grams: 100,
+            calories: 103,
             protein: 1,
-            carbs: 3,
+            carbs: 2,
             fat: 10,
           },
         ],
