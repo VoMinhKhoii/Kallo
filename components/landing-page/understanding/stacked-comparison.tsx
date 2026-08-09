@@ -143,14 +143,14 @@ export function StackedComparison({
             {t(`categories.${comparison.id}.note`)}
           </p>
 
-          {/* Equal columns up to `lg`, content-width from `lg`.
-              `auto-cols-max` lets each card take exactly the width its own
-              sentence needs on one line, so the two cards end up different
-              widths and their dish rows sit level — which is the point, since
-              those rows are what you read across. Below `lg` there is not
-              enough width for two one-line sentences, so equal columns plus the
-              card's own two-line floor keeps the rows level instead. */}
-          <div className="mt-4 grid gap-3.5 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] 2xl:auto-cols-max 2xl:grid-flow-col 2xl:grid-cols-none 2xl:justify-start">
+          {/* `max-content` floors each column at its own one-line sentence, so
+              neither card can be squeezed into wrapping; `1fr` splits the
+              leftover so the pair fills the panel. This was `auto-cols-max`,
+              which did the first half and left the rest as empty beige.
+
+              Equal halves below `2xl`, where two one-line sentences do not fit
+              anyway; the subgrid keeps the rows level when one wraps. */}
+          <div className="mt-4 grid gap-3.5 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] 2xl:grid-cols-[minmax(max-content,1fr)_minmax(max-content,1fr)]">
             <CompareMealCard
               comparison={comparison}
               variant={before}
