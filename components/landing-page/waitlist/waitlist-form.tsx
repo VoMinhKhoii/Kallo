@@ -50,7 +50,7 @@ export function WaitlistForm({ source = 'hero' }: { source?: 'hero' | 'cta' }) {
           <p className="font-medium font-sans-display text-nham-text text-sm">
             {t('success')}
           </p>
-          <p className="mt-1 font-sans-display text-nham-text-muted text-sm">
+          <p className="mt-1 font-sans-display text-nham-text-soft text-sm">
             {t('successBody')}
           </p>
         </div>
@@ -78,7 +78,7 @@ export function WaitlistForm({ source = 'hero' }: { source?: 'hero' | 'cta' }) {
             aria-invalid={errors.email ? true : undefined}
             aria-describedby={errors.email ? 'waitlist-email-error' : undefined}
             className={cn(
-              'w-full rounded-xl border bg-white px-4 py-4 font-sans-display text-base text-nham-text outline-none transition-all duration-200 placeholder:text-nham-text-muted/70',
+              'w-full rounded-xl border bg-white px-4 py-4 font-sans-display text-base text-nham-text outline-none transition-all duration-200 placeholder:text-nham-text-soft',
               errors.email
                 ? 'border-nham-danger/50 focus:border-nham-danger focus:ring-2 focus:ring-nham-danger/10'
                 : 'border-nham-border/60 focus:border-nham-accent focus:ring-2 focus:ring-nham-accent/10'
@@ -114,7 +114,7 @@ export function WaitlistForm({ source = 'hero' }: { source?: 'hero' | 'cta' }) {
           {failureMessage}
         </p>
       )}
-      <p className="mt-3 font-sans-display text-nham-text-muted text-xs">
+      <p className="mt-3 font-sans-display text-nham-text-soft text-xs">
         {t('privacy')}
       </p>
     </form>

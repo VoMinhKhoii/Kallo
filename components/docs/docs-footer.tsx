@@ -24,16 +24,42 @@ import type { DocsNavSection } from '@/lib/docs/tree';
  */
 interface DocsFooterProps {
   sections: DocsNavSection[];
+  /**
+   * Wear the landing page's frame instead of the docs one.
+   *
+   * Two differences, both about sitting correctly under the page above.
+   *
+   * No gap: docs end on cream, and that gap is what stops the ink slab reading
+   * as part of the article. The landing page ends on the beige pricing band, so
+   * there the same gap is a strip of page background wedged between two solid
+   * colours — a seam rather than breathing room.
+   *
+   * And the landing measure: the default `90rem / px-4 / sm:px-6` is matched to
+   * `app/[locale]/docs/layout.tsx`, so the footer's columns line up with the
+   * article above them. The landing page frames everything at `88rem` with far
+   * wider side padding, and against that the default makes the footer look like
+   * it belongs to a different page.
+   */
+  landing?: boolean;
 }
 
-export async function DocsFooter({ sections }: DocsFooterProps) {
+export async function DocsFooter({
+  sections,
+  landing = false,
+}: DocsFooterProps) {
   const t = await getTranslations('docs');
   const tSections = await getTranslations('docs.sections');
   const tFooter = await getTranslations('landing.footer');
 
   return (
-    <footer className="mt-24 bg-nham-ink">
-      <div className="mx-auto max-w-[90rem] px-4 py-16 sm:px-6">
+    <footer className={`bg-nham-ink ${landing ? '' : 'mt-24'}`}>
+      <div
+        className={
+          landing
+            ? 'mx-auto max-w-[92rem] px-6 py-12 sm:px-12 lg:px-20'
+            : 'mx-auto max-w-[90rem] px-4 py-16 sm:px-6'
+        }
+      >
         <nav
           aria-label={t('menu.label')}
           className="grid grid-cols-1 gap-x-8 gap-y-12 text-left sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"

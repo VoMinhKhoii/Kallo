@@ -62,6 +62,9 @@ export function ButtonsSection() {
           <Button size="header" variant="header-cta">
             Get started
           </Button>
+          <Button className="h-11" variant="landing-ink">
+            Start free trial
+          </Button>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Button size="hero" variant="hero-dark">

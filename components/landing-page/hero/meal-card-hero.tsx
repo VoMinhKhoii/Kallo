@@ -1,35 +1,13 @@
 'use client';
 
 import { motion, useReducedMotion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { HERO_COPY } from './copy';
 import { HeroHeadline } from './headline';
 import { LoggedMealCard } from './logged-meal-card';
 import { HERO_MEALS } from './logged-meals';
-import { HERO_EASE, HERO_TONE, type HeroTone } from './tone';
+import { HERO_EASE, HERO_GROUND } from './tone';
 import { WaitlistPill } from './waitlist-pill';
-
-/** Two slow washes so the page still breathes with nothing hovered. */
-const RESTING = [
-  {
-    tint: '201,168,124',
-    size: '46rem',
-    top: '-14%',
-    left: '-8%',
-    seconds: 54,
-    dx: 80,
-    dy: 50,
-  },
-  {
-    tint: '139,115,85',
-    size: '38rem',
-    top: '46%',
-    left: '64%',
-    seconds: 69,
-    dx: -90,
-    dy: -60,
-  },
-];
 
 /**
  * The meal-card hero: the app's real logged-meal cards, each holding a
@@ -43,11 +21,10 @@ const RESTING = [
  * The four meals are chosen to answer both halves of the audience in one
  * glance: two eyeballed in plain language, two weighed to the gram.
  */
-export function MealCardHero({ tone }: { tone: HeroTone }) {
+export function MealCardHero() {
+  const t = useTranslations('landing.hero');
   const reduced = useReducedMotion() ?? false;
   const [activeId, setActiveId] = useState<string | null>(null);
-  const t = HERO_TONE[tone];
-  const dark = tone === 'espresso';
 
   // A phone has no hover, so every card wears its painting and nothing dims.
   //
@@ -78,56 +55,26 @@ export function MealCardHero({ tone }: { tone: HeroTone }) {
 
   return (
     <section
-      className={`relative isolate flex min-h-[100dvh] flex-col overflow-hidden ${t.ground}`}
+      className="relative isolate flex min-h-[100dvh] flex-col overflow-hidden"
       onPointerLeave={() => setActiveId(null)}
     >
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        {RESTING.map((wash) => (
-          <motion.div
-            key={wash.left}
-            className="absolute"
-            style={{
-              width: wash.size,
-              height: wash.size,
-              top: wash.top,
-              left: wash.left,
-              background: `radial-gradient(closest-side, rgba(${wash.tint},0.28), rgba(${wash.tint},0) 72%)`,
-            }}
-            animate={
-              reduced ? undefined : { x: [0, wash.dx, 0], y: [0, wash.dy, 0] }
-            }
-            transition={
-              reduced
-                ? undefined
-                : {
-                    duration: wash.seconds,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: [0.45, 0, 0.55, 1],
-                  }
-            }
-          />
-        ))}
-
-        <div className="absolute inset-0" style={{ background: t.veil }} />
-      </div>
-
-      <div className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col items-center justify-center px-4 pt-24 pb-16 text-center sm:px-6">
+      <div className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col items-center justify-center px-4 pt-24 pb-10 text-center sm:px-6">
         {/* On a phone the promise owns the first screen; the cards are what
             scrolling is for. On lg everything sits in one viewport again. */}
         <div className="flex min-h-[calc(100dvh-13rem)] flex-col items-center justify-center md:min-h-0">
           <motion.div {...rise(0)}>
-            <HeroHeadline ink={t.ink} />
+            <HeroHeadline ink={HERO_GROUND.ink} />
           </motion.div>
 
           <motion.p
             {...rise(1)}
-            className={`mt-5 max-w-2xl text-pretty text-base leading-[1.6] ${t.body}`}
+            className={`mt-5 max-w-2xl text-pretty text-base leading-[1.6] ${HERO_GROUND.body}`}
           >
-            {HERO_COPY.subtitle}
+            {t('subtitle')}
           </motion.p>
 
           <motion.div {...rise(2)} className="mt-8 w-full">
-            <WaitlistPill tone={tone} />
+            <WaitlistPill />
           </motion.div>
         </div>
 
@@ -140,7 +87,6 @@ export function MealCardHero({ tone }: { tone: HeroTone }) {
               key={meal.id}
               offset={index % 2 === 1}
               meal={meal}
-              dark={dark}
               active={touch || activeId === meal.id}
               dimmed={!touch && activeId !== null && activeId !== meal.id}
               onFocusMeal={() => setActiveId(meal.id)}
@@ -152,10 +98,12 @@ export function MealCardHero({ tone }: { tone: HeroTone }) {
 
         <motion.div
           {...rise(4)}
-          className={`mt-7 space-y-1 text-xs ${t.faint}`}
+          className={`mt-7 space-y-1 text-xs ${HERO_GROUND.body}`}
         >
-          <p>{HERO_COPY.cardsHint}</p>
-          <p>{HERO_COPY.beta}</p>
+          {/* The desktop hint invites a hover. On touch the paintings are
+              already up, so inviting one would be a lie. */}
+          <p>{t(touch ? 'cardsHintTouch' : 'cardsHint')}</p>
+          <p>{t('beta')}</p>
         </motion.div>
       </div>
     </section>
