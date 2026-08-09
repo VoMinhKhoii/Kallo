@@ -15,10 +15,18 @@ import { VI_COMPARISONS } from './comparisons-vi';
  * `landing.understanding`, because this page speaks Vietnamese too.
  *
  * **Vietnamese and English are different cuisines, not translations.** A
- * Vietnamese visitor sees `fat`, `weight` and `oil`; an English visitor sees
- * `fat`, `weight` and `count`. Each locale shows only pairs verified in that
- * locale — the English oil pair and the Vietnamese count pair both failed
- * review (DEV-96 and DEV-100) and are deliberately absent rather than faked.
+ * Vietnamese visitor sees `fat`, `oil` and `weight`; an English visitor sees
+ * those three plus `count`. Where a locale has no entry it is because the pair
+ * failed review there — the Vietnamese `count` pair is absent for that reason
+ * (DEV-100) rather than faked to fill the slot.
+ *
+ * One pair is shown WITH a known caveat rather than dropped: the English `oil`
+ * pair carries DEV-96, where `fries` and `air-fried potatoes` resolve to three
+ * different pre-fried composition rows, so part of its movement is the row
+ * choice and not the words. That is a deliberate call — see the comment on the
+ * pair itself — and it is the one place on this page where the movement is not
+ * fully attributable to what the user typed. If the section ever grows copy
+ * about attribution, that pair is the reason it would need it.
  *
  * Two honesty constraints the copy must respect, both learned the hard way:
  *

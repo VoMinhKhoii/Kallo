@@ -5,15 +5,11 @@ import type { Comparison } from './comparisons';
  * for the provenance and the two things the copy is not allowed to claim.
  *
  * A separate file from the Vietnamese ones because these are a different
- * cuisine rather than a translation: braised pork where Vietnamese has none.
+ * cuisine rather than a translation: a burger and fries where Vietnamese has
+ * bún đậu, braised pork where it has none.
  *
- * There is no English `oil` pair. It was dropped at review — 936 → 1002 → 804
- * kcal, not monotonic, because `fries` and `air-fried potatoes` match three
- * different pre-fried composition rows, so most of the movement is the row
- * choice rather than the words (DEV-96, recorded in DEV-105). It was shipped
- * here by mistake for a while, with the caveat noted in a code comment nobody
- * reading the page could see. A pair whose movement we cannot attribute to the
- * user's words is the one thing this section must not show.
+ * Four pairs where Vietnamese has three. The extra one is `count`, which the
+ * Vietnamese capture failed to produce cleanly (DEV-100).
  */
 export const EN_COMPARISONS: readonly Comparison[] = [
   {
@@ -190,6 +186,60 @@ export const EN_COMPARISONS: readonly Comparison[] = [
             protein: 2,
             carbs: 5,
             fat: 0,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    // The capture also holds a middle `pan-fried potatoes` variant, and across
+    // all three the calories are NOT monotonic (936 → 1002 → 804). Only the two
+    // ends are shown, and they are shown knowing that `fries` and `air-fried
+    // potatoes` match two different pre-fried composition rows, so part of this
+    // movement is the row choice rather than the words. DEV-96 tracks the fix.
+    id: 'oil',
+    moves: 'fat',
+    art: '/landing/meals/compare-oil-en.webp',
+    variants: [
+      {
+        id: 'fried',
+        items: [
+          {
+            id: 'potatoes',
+            grams: 208,
+            calories: 457,
+            protein: 5,
+            carbs: 46,
+            fat: 28,
+          },
+          {
+            id: 'burger',
+            grams: 185,
+            calories: 479,
+            protein: 35,
+            carbs: 30,
+            fat: 24,
+          },
+        ],
+      },
+      {
+        id: 'noOil',
+        items: [
+          {
+            id: 'potatoes',
+            grams: 200,
+            calories: 370,
+            protein: 4,
+            carbs: 50,
+            fat: 17,
+          },
+          {
+            id: 'burger',
+            grams: 180,
+            calories: 434,
+            protein: 28,
+            carbs: 30,
+            fat: 22,
           },
         ],
       },
