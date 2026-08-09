@@ -74,3 +74,13 @@ seed_food.sql
 # Eval run artifacts — generated per run, not reviewable source. Kept on disk
 # for local comparison, out of the repo so PRs stay readable.
 scripts/eval/reports/
+
+# Live pipeline captures. Megabytes of raw model output, non-deterministic, and
+# not something a reviewer can read a diff of — `landing-v2.json` alone is
+# ~1.1 MB across 29 cases. One was committed by accident and backed out in
+# aaa5a760; this stops the next time. The analysis that makes a capture worth
+# keeping goes on ttr instead (see DEV-105 for the landing set).
+#
+# Anchored to this directory, so the hand-authored fixtures under
+# scripts/eval/fixtures/ stay tracked — they are source, these are output.
+scripts/eval/*.json
