@@ -308,7 +308,9 @@ void main() {
             );
 
         expect(premium, isFalse);
-        expect(api.postCalls, 1);
+        // Both provider attempts fail; neither may resurrect the cached
+        // premium snapshot. The count is the bound, not the behaviour.
+        expect(api.postCalls, 2);
         expect(api.getCalls, greaterThan(1));
         expect(
           c.read(entitlementsProvider(userA)).valueOrNull?.isPremium,
@@ -365,8 +367,34 @@ void main() {
           );
 
       expect(premium, isFalse);
-      expect(api.postCalls, 1);
+      // Two provider calls, never more: one immediately after the store call
+      // and one mid-window. The rest of the window is cheap local reads.
+      expect(api.postCalls, 2);
       expect(api.getCalls, greaterThan(1));
+    });
+
+    test('retries the provider when the purchase lands after the first '
+        'reconcile', () async {
+      // The observed failure: the first reconcile ran before the provider had
+      // recorded the purchase, so it correctly found nothing. Local reads can
+      // never discover a grant the server does not have, so without a second
+      // provider call activation depends entirely on the webhook.
+      final api = FakeApiClient(
+        (_) => freeJson(),
+        postHandler: (index) => index == 0 ? freeJson() : premiumJson(),
+      );
+      final c = makeContainer(api);
+      await c.read(entitlementsProvider(userA).future);
+
+      final premium = await c
+          .read(entitlementsProvider(userA).notifier)
+          .pollUntilPremium(
+            interval: const Duration(milliseconds: 5),
+            timeout: const Duration(milliseconds: 30),
+          );
+
+      expect(premium, isTrue);
+      expect(api.postCalls, 2);
     });
   });
 

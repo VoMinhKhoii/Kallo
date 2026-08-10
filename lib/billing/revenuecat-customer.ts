@@ -13,9 +13,11 @@ interface DeleteRevenueCatCustomerDeps {
 
 /**
  * Erase the authenticated Kallo user from RevenueCat before local account
- * deletion. This does not cancel App Store or Play Store billing, but it does
- * cancel RevenueCat Billing subscriptions immediately. Both outcomes are
- * disclosed in the deletion UI.
+ * deletion. This does not cancel App Store or Play Store billing. Paddle is a
+ * separate billing engine and merchant of record, so assume it does not cancel
+ * a Paddle web subscription either — the deletion UI therefore promises no
+ * cancellation and tells the user to cancel with the provider first. See the
+ * account-deletion section of docs/BILLING.md.
  */
 export async function deleteRevenueCatCustomer(
   customerId: string,

@@ -16,6 +16,7 @@ function make(
     userId: 'user-a',
     purchasesEnabled: false,
     tier: 'free',
+    reconciliationRequired: false,
     isLifetime: false,
     expiresAt: null,
     willRenew: false,

@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import '../../data/billing/activation_pending.dart';
 import '../../data/billing/entitlement_state.dart';
 import '../../data/billing/entitlements_provider.dart';
 import '../../data/billing/purchases_service.dart';
@@ -218,9 +219,18 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
           busyPackageId: package.identifier,
         ),
       );
+      // Record the attempt BEFORE handing control to the store. The likeliest
+      // interruption is a purchase whose app is backgrounded or killed before
+      // the future below completes — a marker written afterwards would be
+      // missing in exactly the case it exists for. An abandoned checkout costs
+      // one wasted reconcile; a lost one costs a customer their money.
+      final pendingStore = ref.read(activationPendingStoreProvider);
+      await pendingStore.mark(userId);
       final result = await _purchases.purchasePackage(userId, package);
       if (!_isCurrentUser(userId)) return PaywallActionResult.error;
       if (result.isCancelled) {
+        // Explicitly dismissed, so no money moved and nothing needs healing.
+        await pendingStore.clear(userId);
         _set(state.copyWith(phase: PaywallPhase.ready, clearBusy: true));
         return PaywallActionResult.cancelled;
       }
@@ -318,10 +328,16 @@ class PaywallController extends AutoDisposeNotifier<PaywallState> {
     required String userId,
   }) async {
     _set(state.copyWith(phase: PaywallPhase.verifying, clearBusy: true));
+    // `purchase` already marked the attempt before the store call; `restore`
+    // and `retryActivation` arrive here without one, and both can equally
+    // surface a transaction the server has not projected yet.
+    final pendingStore = ref.read(activationPendingStoreProvider);
+    await pendingStore.mark(userId);
     final premium =
         await ref
             .read(entitlementsProvider(userId).notifier)
             .pollUntilPremium();
+    if (premium) await pendingStore.clear(userId);
     if (!_isCurrentUser(userId)) return PaywallActionResult.error;
     // Leave the state on `verifying`→`ready` so the screen can dismiss / toast.
     _set(

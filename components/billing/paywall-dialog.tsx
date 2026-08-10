@@ -1,32 +1,30 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   entitlementsKeys,
+  fetchEntitlements,
   reconcileEntitlements,
   useEntitlements,
 } from '@/hooks/billing/use-entitlements';
-import { BillingIdentityMismatchError } from '@/lib/billing/identity';
-import { isAllowedWebProduct } from '@/lib/billing/products';
 import {
-  getOfferings,
-  type Package,
-  purchasePackage,
-} from '@/lib/billing/web-purchases';
-import { pollUntilPremium } from './paywall-activation';
+  canonicalProductId,
+  isAllowedWebProduct,
+} from '@/lib/billing/products';
+import { getOfferings } from '@/lib/billing/web-purchases';
+import { hasActivationPending } from './activation-pending';
 import { PaywallOffer } from './paywall-offer';
 import { PaywallStatus } from './paywall-status';
+import { usePaywallPurchase } from './use-paywall-purchase';
 
 interface PaywallDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** The Supabase user id — the RC appUserId the webhook keys grants on. */
   userId: string;
-  /** Legacy checkout-prefill input; RevenueCat Billing owns email collection. */
+  /** Legacy checkout-prefill input; the Paddle checkout owns email collection. */
   email?: string | null;
 }
 
@@ -34,27 +32,33 @@ interface PaywallDialogProps {
  * The Kallo premium paywall. Pitches AI meal analysis, shows the live trial
  * countdown, lists offering packages with live prices, and runs the purchase +
  * webhook-race poll. All copy is translated (vi + en).
+ *
+ * Purchase and activation state lives in `usePaywallPurchase`; this component
+ * owns which packages are offered and what the user sees.
  */
 export function PaywallDialog({
   open,
   onOpenChange,
   userId,
 }: PaywallDialogProps) {
-  const t = useTranslations('billing.paywall');
-  const locale = useLocale();
   const queryClient = useQueryClient();
   const { data: entitlements } = useEntitlements(userId);
-
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [succeeded, setSucceeded] = useState(false);
-  const [activationPending, setActivationPending] = useState(false);
-  const [checkingActivation, setCheckingActivation] = useState(false);
-  const activationAttempt = useRef(0);
+  const purchase = usePaywallPurchase(userId);
 
   const offeringsQuery = useQuery({
     queryKey: ['billing', 'offerings', userId],
     queryFn: async () => {
-      const current = await reconcileEntitlements(userId);
+      // A cheap server read is enough to avoid offering packages to someone who
+      // is already premium. Spend a provider reconcile only when the server
+      // asks for one, or when an earlier checkout is still unaccounted for:
+      // the endpoint allows 3/min, and the post-purchase activation poll needs
+      // that budget far more than the paywall's opening frame does.
+      const needsProvider =
+        entitlements?.reconciliationRequired === true ||
+        hasActivationPending(userId);
+      const current = needsProvider
+        ? await reconcileEntitlements(userId)
+        : await fetchEntitlements(userId);
       queryClient.setQueryData(entitlementsKeys.user(userId), current);
       if (current.tier === 'premium') return null;
       return getOfferings(userId);
@@ -65,106 +69,36 @@ export function PaywallDialog({
 
   const packages =
     offeringsQuery.data?.availablePackages.filter((pkg) => {
-      const allowed = isAllowedWebProduct(pkg.webBillingProduct.identifier);
-      if (!allowed) {
+      const identifier = pkg.webBillingProduct.identifier;
+      const allowed = isAllowedWebProduct(identifier);
+      // A deliberately deferred plan (lifetime today) is filtered on purpose
+      // and must stay quiet — the offering is shared with iOS and Android, so
+      // it arrives here on every load. Only an id our catalog cannot resolve
+      // at all is a real misconfiguration worth shouting about.
+      if (!allowed && canonicalProductId(identifier) === null) {
         console.error(
-          `[billing] Ignoring unexpected web product: ${pkg.webBillingProduct.identifier}`
+          `[billing] Ignoring unexpected web product: ${identifier}`
         );
       }
       return allowed;
     }) ?? [];
-  const purchasing = pendingId !== null;
-
-  const handleSelect = useCallback(
-    async (rcPackage: Package) => {
-      if (purchasing) return;
-      setPendingId(rcPackage.identifier);
-      try {
-        const result = await purchasePackage(userId, rcPackage, {
-          selectedLocale: locale,
-        });
-
-        if (result.status === 'cancelled') {
-          // User dismissed the checkout — stay silent.
-          return;
-        }
-        if (result.status === 'payment_pending') {
-          setActivationPending(true);
-          toast.success(t('pendingToast'));
-          return;
-        }
-
-        // Both a fresh success and an already-owned account should settle into
-        // premium; poll the server until the webhook catches up.
-        const attempt = ++activationAttempt.current;
-        setCheckingActivation(true);
-        const flipped = await pollUntilPremium(
-          queryClient,
-          userId,
-          () => activationAttempt.current === attempt
-        );
-        if (activationAttempt.current !== attempt) return;
-        if (flipped) {
-          setSucceeded(true);
-          toast.success(t('successToast'));
-        } else {
-          setActivationPending(true);
-          toast.success(t('successPendingToast'));
-        }
-      } catch (error) {
-        console.error('Web purchase failed:', error);
-        toast.error(
-          error instanceof BillingIdentityMismatchError
-            ? t('sessionChangedToast')
-            : t('errorToast')
-        );
-      } finally {
-        setCheckingActivation(false);
-        setPendingId(null);
-      }
-    },
-    [purchasing, userId, locale, queryClient, t]
-  );
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
-      if (purchasing) return;
-      if (!next) {
-        activationAttempt.current += 1;
-        setSucceeded(false);
-        setActivationPending(false);
-        setCheckingActivation(false);
-      }
+      if (purchase.purchasing) return;
+      if (!next) purchase.reset();
       onOpenChange(next);
     },
-    [purchasing, onOpenChange]
+    [purchase, onOpenChange]
   );
 
   const handleStatusAction = useCallback(async () => {
-    if (!activationPending) {
+    if (!purchase.activationPending) {
       handleOpenChange(false);
       return;
     }
-
-    setCheckingActivation(true);
-    const attempt = ++activationAttempt.current;
-    try {
-      const flipped = await pollUntilPremium(
-        queryClient,
-        userId,
-        () => activationAttempt.current === attempt
-      );
-      if (activationAttempt.current !== attempt) return;
-      if (flipped) {
-        setActivationPending(false);
-        setSucceeded(true);
-      }
-    } finally {
-      if (activationAttempt.current === attempt) {
-        setCheckingActivation(false);
-      }
-    }
-  }, [activationPending, handleOpenChange, queryClient, userId]);
+    await purchase.confirmActivation();
+  }, [purchase, handleOpenChange]);
 
   const trialActive = entitlements?.trial.active ?? false;
   const daysRemaining = entitlements?.trial.daysRemaining ?? 0;
@@ -172,12 +106,22 @@ export function PaywallDialog({
   if (entitlements && !entitlements.purchasesEnabled) return null;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    // Non-modal while a checkout is open. Paddle mounts its checkout on
+    // `document.body`, outside this dialog's portal, and a modal Radix dialog
+    // sets `pointer-events: none` on the body and traps focus in its own
+    // subtree — which leaves the payment form visible but completely
+    // uninteractive. `handleOpenChange` already refuses to close mid-purchase,
+    // so dropping modality here costs nothing but the scroll lock.
+    <Dialog
+      modal={!purchase.purchasing}
+      open={open}
+      onOpenChange={handleOpenChange}
+    >
       <DialogContent className="max-h-[min(90dvh,48rem)] max-w-md gap-0 overflow-y-auto overscroll-contain rounded-2xl border-nham-border/70 bg-nham-surface p-0">
-        {succeeded || activationPending ? (
+        {purchase.succeeded || purchase.activationPending ? (
           <PaywallStatus
-            activationPending={activationPending}
-            checkingActivation={checkingActivation}
+            activationPending={purchase.activationPending}
+            checkingActivation={purchase.checkingActivation}
             onAction={handleStatusAction}
           />
         ) : (
@@ -185,11 +129,11 @@ export function PaywallDialog({
             trialActive={trialActive}
             daysRemaining={daysRemaining}
             packages={packages}
-            pendingId={pendingId}
-            purchasing={purchasing}
+            pendingId={purchase.pendingId}
+            purchasing={purchase.purchasing}
             offeringsPending={offeringsQuery.isPending}
             offeringsFailed={offeringsQuery.isError}
-            onSelect={handleSelect}
+            onSelect={purchase.select}
           />
         )}
       </DialogContent>

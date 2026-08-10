@@ -10,8 +10,15 @@ platform:
 
 - **Apple App Store** in-app purchases (iOS)
 - **Google Play** billing (Android)
-- **RevenueCat Billing** for web checkout, backed by Stripe and exposed through
+- **Paddle Billing** for web checkout, exposed through RevenueCat's
   `@revenuecat/purchases-js`
+
+Paddle is the web billing engine and **merchant of record**: it owns the
+checkout, the prices, tax, receipts, and the customer portal. RevenueCat stays
+the subscription brain — the same Web SDK and the same public Web API key are
+used whichever billing engine backs them. Paddle was chosen because it onboards
+Vietnamese individual sellers and pays out to Vietnam; RevenueCat Billing and
+Stripe Billing both require a Stripe account we cannot open.
 
 Clients never grant access to themselves. A purchase/restore flows through RC.
 The signed **webhook** is the normal update path; an authenticated, rate-limited
@@ -19,18 +26,20 @@ reconciliation endpoint is the recovery path after a purchase, restore, or
 missed webhook. Both fetch canonical CustomerInfo from RC and project it into
 the same server-owned grant tables.
 
-Flutter refreshes the server snapshot once on authenticated launch/account
-switch and at most once every fifteen minutes on app resume. The server marks a
-snapshot for reconciliation when an expired RevenueCat grant still says it will
-renew or when an active RevenueCat projection has not been provider-confirmed
-for 24 hours. Only then does Flutter invoke the provider recovery path. This
-heals delayed webhooks, missed refunds/revocations, and TestFlight sandbox
-renewals without spending RevenueCat/rate-limit budget on healthy launches.
-Failed lifecycle checks preserve the last server snapshot and observe the same
-bounded retry cadence.
+Both clients refresh the server snapshot once on authenticated launch/account
+switch and at most once every fifteen minutes on resume — app resume on Flutter
+(`entitlement_lifecycle_sync.dart`), tab visibility on web
+(`components/billing/entitlement-lifecycle.ts`). The server marks a snapshot for
+reconciliation when an expired RevenueCat grant still says it will renew or when
+an active RevenueCat projection has not been provider-confirmed for 24 hours.
+Only then does a client invoke the provider recovery path. This heals delayed
+webhooks, missed refunds/revocations, and TestFlight sandbox renewals without
+spending RevenueCat/rate-limit budget on healthy launches. Failed lifecycle
+checks preserve the last server snapshot and observe the same bounded retry
+cadence. Keep the two implementations in step when either changes.
 
 ```
-Apple / Google / RevenueCat Billing
+Apple / Google / Paddle
         │  purchase, renewal, cancel, refund, expiration
         ▼
    RevenueCat  ──webhook──▶  POST /api/webhooks/revenuecat
@@ -54,7 +63,7 @@ Apple / Google / RevenueCat Billing
 Each grant row (see `lib/db/schema.ts`) records `entitlement_key` (`premium`),
 `status`, `expires_at` (NULL = lifetime), `will_renew`, an environment-scoped
 RC customer/product `external_ref`, and `store` (lowercased: `app_store`,
-`play_store`, `rc_billing`, ...). `source`
+`play_store`, `paddle`, ...). `source`
 is always `revenuecat`; **branch UI on `store`, never `source`** (the settings
 "manage subscription" deep link keys on `store`).
 
@@ -152,22 +161,31 @@ The 402 body:
 | `REVENUECAT_REST_API_KEY` | required for reconciliation | App-specific public v1 SDK key used only for CustomerInfo reads. Do not put a project-wide secret key in the runtime. |
 | `REVENUECAT_CUSTOMER_DELETE_API_KEY` | required for account deletion | Server-only v2 secret key restricted to `customer_information:customers:read_write`; used only to erase the authenticated user's RevenueCat customer. |
 | `REVENUECAT_PROJECT_ID` | required for account deletion | Public RevenueCat project identifier used by the v2 customer deletion endpoint. |
-| `REVENUECAT_WEB_API_KEY` | unset → web purchases unavailable | Runtime public Web Billing key returned only to an authenticated web client. |
+| `REVENUECAT_WEB_API_KEY` | unset → web purchases unavailable | Runtime public Web SDK key returned only to an authenticated web client. Issued by RevenueCat for the Web app regardless of which billing engine (Paddle) backs it. |
+| `REVENUECAT_WEB_API_KEY_SANDBOX` | unset | Public Web SDK key for the **sandbox** Paddle config. Required on production only if `BILLING_SANDBOX_USER_IDS` is non-empty: those users reconcile the sandbox environment, so serving them the production key would open checkout in a catalog the grant projection never reads. Without it they are served no key at all (fail closed). A wholly sandbox deployment does not need it. |
 | `REVENUECAT_APPLE_API_KEY` | unset → iOS purchases unavailable | Client-public iOS SDK key. A Test Store key may be used locally. |
 | `REVENUECAT_GOOGLE_API_KEY` | unset → Android purchases unavailable | Client-public Android SDK key. A Test Store key may be used locally. |
 | `REVENUECAT_WEBHOOK_SECRET` | unset → webhook returns 503 | Shared secret; RC echoes it verbatim in the `Authorization` header |
 | `REVENUECAT_WEBHOOK_HMAC_SECRET` | optional, inactive until configured in the dashboard | Dashboard-generated HMAC key for `X-RevenueCat-Webhook-Signature`; when set, raw-body signature and 5-minute timestamp are required. The current deployments use static Authorization until this one-time secret is captured. |
 | `REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT` | default `false` | Production override. Set `true` only after the production integration is environment-filtered and verified. Allows valid transfer/redemption events that omit `environment` to inherit that authenticated boundary. |
 | `REVENUECAT_ALLOW_OWNERSHIP_TRANSFER` | `false` | Break-glass only. Kallo dead-letters cross-account transfers unless a separately reviewed ownership-migration workflow explicitly enables them. |
-| `REVENUECAT_ALLOWED_APP_IDS` | required for billing webhooks | Comma-separated Apple, Google, and Web Billing app IDs accepted from grant-mutating webhook events. |
+| `REVENUECAT_ALLOWED_APP_IDS` | required for billing webhooks | Comma-separated Apple, Google, and Web app IDs accepted from grant-mutating webhook events. |
 
 ## Account deletion policy
 
 Deleting a Kallo account is available immediately even when a renewable
-subscription is active. The confirmation UI warns that Apple and Google
-subscriptions continue until canceled in their store, while a RevenueCat
-Billing web subscription is canceled as part of RevenueCat customer deletion.
-Cancellation is recommended but never required to erase the account.
+subscription is active. The confirmation UI warns that **no** subscription is
+canceled by deletion — Apple, Google, and Paddle all continue billing until
+canceled in their own surface. Cancellation is recommended but never required
+to erase the account.
+
+> RevenueCat cancels a **RevenueCat Billing** subscription when its customer is
+> deleted, but Paddle is a separate billing engine and merchant of record, and
+> RevenueCat does not auto-cancel other engines' subscriptions (it explicitly
+> does not for Stripe). Until a sandbox deletion proves otherwise, assume a
+> Paddle subscription survives account deletion. This is why the deletion copy
+> no longer promises web cancellation — promising it and being wrong means
+> charging a user who believes they have left.
 
 Deletion requires a server-verified authentication method used within the last
 10 minutes. The server removes all public avatar objects with fail-closed
@@ -183,20 +201,22 @@ short-lived hashed completion tombstone until normal billing retention prunes
 it. This avoids duplicate erasure calls or canceling a web subscription while
 leaving a live Kallo account after a later failure. RevenueCat `200`, queued
 `202`, and already-absent `404` results are idempotent successes. RevenueCat
-customer deletion does not cancel Apple/Google store subscriptions, but does
-cancel RevenueCat Billing subscriptions immediately.
+customer deletion does not cancel Apple/Google store subscriptions, and must not
+be assumed to cancel the Paddle subscription either — see the note above.
 
 ## Owner dashboard setup checklist
 
 ### RevenueCat
 
-1. Create the RC project; add an **iOS app**, an **Android app**, and a **Web
-   Billing** app.
+1. Create the RC project; add an **iOS app**, an **Android app**, and a **Web**
+   app (its billing engine is Paddle — see the Paddle section below).
 2. Create one entitlement: **`premium`**.
-3. Create products and attach them to `premium`. Every store uses the same
+3. Create products and attach them to `premium`. Apple and Google use the
    canonical ids from `lib/billing/products.ts`: `kallo_premium_monthly`,
    `kallo_premium_annual`, and `kallo_premium_lifetime`. Google reports the
    subscription products with their exact `:monthly` and `:annual` base plans.
+   Web products are imported from Paddle and may carry Paddle price ids
+   instead — see step 7 of the Paddle checklist.
 4. Build an **offering** with the three packages.
 5. In Project settings → General, set **Restore behavior** to **Keep with
    original App User ID**. Kallo requires login before purchase; this prevents
@@ -210,7 +230,7 @@ cancel RevenueCat Billing subscriptions immediately.
 7. Put every production dashboard app ID in `REVENUECAT_ALLOWED_APP_IDS`.
    Production must receive production events only. Never point an unfiltered
    sandbox integration at production.
-8. Copy the matching app-specific public v1 SDK key and public Web Billing key into
+8. Copy the matching app-specific public v1 SDK key and public Web SDK key into
    `REVENUECAT_REST_API_KEY` and `REVENUECAT_WEB_API_KEY`.
 9. Create a v2 secret key with only
    `customer_information:customers:read_write`, store it as
@@ -231,18 +251,97 @@ cancel RevenueCat Billing subscriptions immediately.
 1. Complete the **merchant / payments profile**.
 2. Create the matching subscription + one-time products.
 
-### RevenueCat Billing (web)
+### Paddle (web)
 
-1. Connect a Stripe account to RevenueCat. This is a merchant/financial setup
-   step and must be completed by the account owner.
-2. Add a RevenueCat Billing app named **Kallo Web**, then create/import the
-   matching monthly, annual, and lifetime products.
-3. Attach those products to the existing `premium` entitlement and the
-   matching packages in the current `default` offering.
-4. Configure the web checkout support email, default currency, tax settings,
-   and payment domains. Review prices and tax treatment with the account owner
-   before publishing; do not infer them from mobile store fees.
-5. Never surface or promote web pricing inside the iOS app without a separate
+Sandbox and production are **separate Paddle accounts** with separate price ids,
+so every step below is done twice. Sandbox needs no domain approval; production
+does, and approval has lead time — start it early.
+
+1. Create the Paddle account. This is a merchant/financial setup step and must
+   be completed by the account owner. Paddle's domain review expects the site to
+   show the product, pricing, contact details, terms, and a refund policy —
+   `/terms` and `/privacy` already cover refunds; confirm they also name Paddle
+   as merchant of record.
+2. Paddle → **Checkout settings**: if no default payment link is set, enter
+   `https://pay.rev.cat`.
+3. Create a Paddle API key with **exactly** these permissions. A missing scope
+   fails at "Connect to Paddle" with the unhelpfully generic *"API key is
+   invalid, expired, revoked, or lacks the required permissions"* — it is
+   almost always a missing scope, not a bad key. Paddle allows editing an
+   existing key's permissions, so this is recoverable without regenerating.
+
+   The reliable recipe is **tick `All → Read`**, then grant `Write` on exactly
+   these six:
+
+   | Write permission | Why |
+   |---|---|
+   | Client-side tokens | mints the token `purchases-js` uses at checkout |
+   | Customer portal sessions | mints `management_url` |
+   | Notification settings | required by *Automatic* purchase tracking |
+   | Transactions | |
+   | Subscriptions | see caveat below |
+   | Adjustments | see caveat below |
+
+   Leave **Customer authentication tokens** off. Paddle dims `Read` wherever
+   `Write` is granted — write implies read.
+
+   Transcribed from the sandbox key that RevenueCat actually accepted, after an
+   earlier hand-written subset of this table cost two failed "Connect to
+   Paddle" attempts. Prefer `All → Read` over enumerating: the working key
+   includes reads this doc kept omitting (Checkout domain, Metrics,
+   Notification simulations, Reports, Subscription history), and an over-broad
+   *read* scope is far cheaper than another round of the generic error.
+
+   Caveat: `Subscriptions (Write)` and `Adjustments (Write)` are on that key
+   partly because QA needed them to cancel and refund by API. RevenueCat may
+   not require either. They are the two worth trimming on a production key —
+   one at a time, reconnecting after each — since together they allow
+   cancelling subscriptions and refunding real money.
+
+   Two of these carry consequences worth knowing:
+   - **Customer portal sessions (Write)** — without it RevenueCat cannot mint
+     `management_url` at all and the settings "manage subscription" link
+     degrades to `manageUnavailable`. Granting it does *not* make the link
+     authenticated; see "Known limitations" for what the customer actually
+     sees.
+   - **Notification settings (Write)** — required by *Automatic* purchase
+     tracking, where RevenueCat creates the webhook destination inside the
+     Paddle account for you.
+4. Create the prices: monthly and annual recurring, plus lifetime as a one-time
+   price (`billing_cycle: null`). A Paddle **price** maps to a RevenueCat
+   **product**, so one Paddle product with three prices yields three RC
+   products.
+5. RevenueCat → **Web** in the lower section of the project sidebar (not
+   *Integrations*, which is analytics destinations, and not *Project settings*)
+   → create a web config for **Paddle** → **Set secret** → paste the Paddle API
+   key → **Set**. There is no sandbox/production toggle here: the environment
+   follows whichever Paddle account issued the key.
+6. **Product catalog → Products → Import**, pick the Paddle config, and import
+   the three prices.
+7. **Record the RevenueCat product identifiers the import produces.** If RC lets
+   you set them, use the canonical ids from `lib/billing/products.ts`. If RC
+   assigns the Paddle price id (`pri_…`), those ids must be added to the catalog
+   in `lib/billing/products.ts` — `canonicalProductId()` matches exactly and
+   refuses anything unknown, so an unmapped id means a paying customer gets no
+   grant.
+8. Attach the products to the existing `premium` entitlement and to the packages
+   in the current `default` offering.
+9. Copy the **public** Web SDK key into `REVENUECAT_WEB_API_KEY`. A
+   Paddle-backed config issues it with a `pdl_` prefix (`rcb_` is RevenueCat
+   Billing); both are accepted by `WEB_CLIENT_KEY_PATTERN` in
+   `app/api/v1/account/billing-config/route.ts`. Any other shape is withheld
+   and the paywall reports `available: false`.
+
+   > **Do not confuse this with the Paddle server secret**, which now shares the
+   > `pdl_` prefix (`pdl_sdbx_apikey_…` / `pdl_live_apikey_…`). That value is
+   > the one from step 3 and belongs only in RevenueCat's dashboard — never in
+   > `REVENUECAT_WEB_API_KEY`, which is served to the browser. The pattern
+   > rejects it because of the underscores in `_apikey_`; that guard is
+   > covered by a test and must not be loosened.
+10. Review prices and tax treatment with the account owner before publishing; do
+   not infer them from mobile store fees. Paddle handles tax as merchant of
+   record.
+11. Never surface or promote web pricing inside the iOS app without a separate
    App Review policy check.
 
 ## Sandbox test plan
@@ -253,8 +352,46 @@ cancel RevenueCat Billing subscriptions immediately.
   iOS purchase flow in the simulator.
 - **TestFlight + sandbox tester**: full iOS purchase/restore against the App
   Store sandbox.
-- **purchases-js sandbox key**: use the RC Web Billing sandbox key to run the
-  web checkout end-to-end without real charges.
+- **Paddle sandbox checkout**: run the web flow end-to-end against the sandbox
+  Paddle account with Paddle's test cards. Confirm the grant lands with
+  `store='paddle'`, the settings management link opens the Paddle customer
+  portal, and a portal cancellation flips `will_renew` to false. Verified
+  2026-08-02 for monthly, annual, and lifetime. The portal cancellation is the
+  one to re-run after any change to the projection: RevenueCat set
+  `unsubscribe_detected_at` within seconds, and reconciling left the customer
+  on `tier=premium` with `willRenew=false` and `expiresAt` unmoved — cancelled
+  but still entitled until the period ends, which is the behaviour a
+  premature revoke would silently break.
+- **Paddle lifetime (blocking for the lifetime plan only)**: RevenueCat reports
+  one-time purchases under `non_subscriptions`, and
+  `nonSubscriptionForProduct` requires an exact `purchase_date` match against
+  the entitlement plus a matching `is_sandbox`. Confirm the grant lands with
+  `expires_at = NULL`. If the timestamps do not match exactly the grant is
+  dropped and the customer pays for nothing — ship monthly/annual only until
+  the matcher is relaxed.
+- **Paddle refund — measured 2026-08-02, and it proves the fail-closed branch
+  is load-bearing.** Refunds are not issued on request: `POST /adjustments`
+  creates the adjustment as `pending_approval`, and approval is a Paddle
+  dashboard action with no public API (`/adjustments/{id}/approve` is 404).
+  Once approved, RevenueCat set `subscriptions[…].refunded_at` in the same
+  second — but the `entitlements.premium` object was **still present**, still
+  carrying its original future expiry. A projection that trusted the
+  entitlement object would have left a refunded customer on premium
+  indefinitely. `parseRevenueCatSnapshot` requires a non-refunded backing
+  transaction (`lib/billing/revenuecat.ts`), so it emitted zero grants and the
+  user dropped to `tier=free`, `hasActiveSubscription=false`. Never relax that
+  check to trust `entitlements` alone.
+- **Paddle account deletion — measured 2026-08-02: deletion does NOT cancel
+  billing.** A Kallo account holding an active annual Paddle subscription was
+  deleted; the Paddle subscription stayed `status=active` with no
+  `scheduled_change` and a live `next_billed_at`. Deleting the RevenueCat
+  customer does not reach Paddle. This is why the deletion copy tells the
+  customer to cancel first and promises nothing — a customer who deletes
+  without cancelling keeps getting charged with no account left to see it
+  from. Re-measure before changing that copy.
+- **CSP**: with `Content-Security-Policy-Report-Only` active, run a checkout and
+  read the violation reports. Narrow `BILLING_FRAME_ORIGINS` /
+  `BILLING_CONNECT_ORIGINS` in `lib/security/csp.ts` to the hosts they name.
 - **Account isolation**: on one device/store account, buy as app account A,
   sign out, sign in as B, and restore. With **Keep with original App User ID**,
   B must not acquire A's entitlement or management URL.
@@ -275,8 +412,8 @@ binary uses Apple's sandbox during TestFlight/App Review; add only the dedicated
 review account UUID to `BILLING_SANDBOX_USER_IDS`. That account reconciles its
 sandbox CustomerInfo on production without making sandbox grants valid for any
 normal production account. Because the production webhook intentionally ignores
-sandbox lifecycle events, the Flutter launch/resume recovery check is what keeps
-that allowlisted account aligned across accelerated sandbox renewals.
+sandbox lifecycle events, the launch/resume recovery check is what keeps that
+allowlisted account aligned across accelerated sandbox renewals.
 
 ## Rollout runbook
 
@@ -346,14 +483,38 @@ independently; existing grants are untouched.
   rare store-validation outage, the device SDK may show temporary access
   before the server projection does; never weaken environment isolation to
   remove this availability tradeoff.
+- **The web "manage subscription" link costs the customer an email round-trip.**
+  Paddle authenticates its customer portal with a `?token=pga_…` JWT that a
+  freshly minted `POST /customers/{id}/portal-sessions` returns and that expires
+  in 24 hours. The `management_url` RevenueCat reports is the bare
+  `https://sandbox-customer-portal.paddle.com/cpl_…?action=overview` link with
+  no token, so opening it lands on Paddle's sign-in wall, which emails a magic
+  link. Measured 2026-08-02 with the portal-session scope granted, so this is
+  Paddle/RevenueCat behaviour and not a misconfiguration. Cancellation still
+  works and still reaches us (verified below); it just is not one click. Apple
+  and Google have no equivalent step, so expect more web cancellation support
+  mail than mobile. Closing this would mean minting portal sessions ourselves
+  from the Paddle API at click time instead of trusting `management_url`.
 - **Multiple stores**: CustomerInfo exposes one management URL. If a customer
   somehow buys renewable subscriptions on more than one store, access remains
   correct but the app cannot display every store's cancellation link. Treat
   duplicate subscriptions as a support/refund case and monitor provider data.
-- **No VietQR / direct-bank web payment yet.** Web checkout uses RevenueCat
-  Billing backed by Stripe. The
-  entitlement model (`source`, `store`) is designed to allow adding another
-  gateway later without schema changes.
-- **Tax and payout configuration requires owner review.** RevenueCat Billing
-  uses Stripe for payment processing; confirm merchant, tax, payout, and local
-  reporting obligations before enabling real charges.
+- **No in-app plan switching, and on web no self-serve switching at all.** The
+  paywall stops offering packages once the tier is `premium`
+  (`paywall-dialog.tsx`), so an existing subscriber cannot be charged twice by
+  accident. Apple and Google absorb this: their management surfaces let a
+  customer move between plans in the same subscription group, and on mobile a
+  paywall purchase *is* the upgrade because the store prorates it. Paddle does
+  not — plan changes there are a server-side `PATCH /subscriptions/{id}` that
+  replaces the price item with an explicit proration mode, and its customer
+  portal covers payment methods, invoices, and cancellation but not switching.
+  So a monthly web subscriber's only route to annual today is to cancel and
+  resubscribe. Closing this means a new authenticated endpoint plus a proration
+  policy; deliberately out of scope for the checkout rail.
+- **No VietQR / direct-bank web payment yet.** Web checkout goes through
+  Paddle's card/wallet methods. The entitlement model (`source`, `store`) is
+  designed to allow adding another gateway later without schema changes; the
+  `source` CHECK already reserves `payos` for a future VietQR rail.
+- **Tax and payout configuration requires owner review.** Paddle is merchant of
+  record and handles sales tax/VAT, but confirm payout schedule, currency, and
+  local reporting obligations before enabling real charges.
