@@ -17,19 +17,18 @@ import {
   nullableNumber,
 } from './row-metrics';
 
-// Day-series bucket granularity per resolved range: one column per day up to a
-// month, per week beyond that. Table-driven so a new range needs no conditional
-// edits.
+// Day-series bucket granularity per resolved range: short ranges bucket by day,
+// long ranges by week. Table-driven so a new range needs no conditional edits.
 //
-// 30d buckets by DAY on purpose. A day bucket divides by that day's own
-// in-scope count, which is 1 or 0 — so a complete day reads the same under both
-// day scopes and switching scope only adds or removes columns. A week bucket
-// re-averages: every week containing a set-aside partial day moves when the
-// scope flips, which read as numbers changing for no reason.
+// 30d and 90d bucket by WEEK because logging is sparse — a month of daily
+// columns is mostly holes for anyone who logs 10 days in 30, and 30 columns at
+// phone width leaves each one 6px wide. Weekly columns stay populated and
+// legible. The series is built over every logged day (see `buildDaySeries`), so
+// a week's height does not move when the caller flips day scope.
 export const RANGE_BUCKET_UNIT: Record<NutritionRange, DaySeriesBucketUnit> = {
   '1d': 'day',
   '7d': 'day',
-  '30d': 'day',
+  '30d': 'week',
   '90d': 'week',
 };
 
@@ -116,16 +115,17 @@ interface DaySeriesMetricSpec {
 }
 
 /** Build one metric's bucket series: each bucket's value is the per-day average
- *  of the metric over that bucket's COMPLETE days only. Pure over its inputs so
- *  the day-series builder stays a flat map over the metric specs. */
+ *  of the metric over that bucket's logged days, `null` where the bucket holds
+ *  none. Pure over its inputs so the day-series builder stays a flat map over
+ *  the metric specs. */
 function buildMetricSeries(
   spec: DaySeriesMetricSpec,
   bounds: { startDate: string; endDate: string }[],
-  completeDaysInBucket: number[],
-  completeRows: OverviewMealItemRow[]
+  daysInBucket: number[],
+  seriesRows: OverviewMealItemRow[]
 ): NutrientDaySeries {
   const buckets: DaySeriesBucket[] = bounds.map((bucket, index) => {
-    const days = completeDaysInBucket[index];
+    const days = daysInBucket[index];
     if (days === 0) {
       return {
         startDate: bucket.startDate,
@@ -134,7 +134,7 @@ function buildMetricSeries(
         ratioOfTarget: null,
       };
     }
-    const total = completeRows.reduce((sum, row) => {
+    const total = seriesRows.reduce((sum, row) => {
       if (row.localDate < bucket.startDate || row.localDate > bucket.endDate) {
         return sum;
       }
@@ -166,21 +166,28 @@ function buildMetricSeries(
 }
 
 /**
- * Build the per-bucket time series. Each bucket's value is the per-day average
- * of the metric over that bucket's COMPLETE days only — the same complete-day
- * scoping the headline averages use — so a day-strip reads on the same scale
- * as the rhythm figure above it.
+ * Build the per-bucket time series: each bucket's value is the per-day average
+ * of the metric over that bucket's LOGGED days.
+ *
+ * Deliberately scope-independent. The headline average, the gram legend and the
+ * nutrient grid all narrow to complete days when the caller asks for them — the
+ * chart does not. It used to, and because a bucket divides by its own in-scope
+ * day count, every week holding a set-aside partial day changed height when the
+ * day scope flipped while weeks without one held still. Bars that move on a
+ * toggle that was only meant to change an average read as a bug, so the bars are
+ * now the constant: this is what was eaten, and the figures above it are what
+ * you choose to average over.
  */
 export function buildDaySeries({
-  completeRows,
-  completeDates,
+  loggedRows,
+  loggedDates,
   resolvedRange,
   period,
   profile,
   targets,
 }: {
-  completeRows: OverviewMealItemRow[];
-  completeDates: Set<string>;
+  loggedRows: OverviewMealItemRow[];
+  loggedDates: Set<string>;
   resolvedRange: NutritionOverview['resolvedRange'];
   period: { startDate: string; endDate: string };
   profile: NutritionProfile;
@@ -190,10 +197,10 @@ export function buildDaySeries({
   const step = unit === 'day' ? 1 : 7;
   const bounds = buildBucketBounds(period.startDate, period.endDate, step);
 
-  // Count complete days per bucket once; reused for every metric's divisor.
-  const completeDaysInBucket = bounds.map((bucket) => {
+  // Count logged days per bucket once; reused for every metric's divisor.
+  const loggedDaysInBucket = bounds.map((bucket) => {
     let count = 0;
-    for (const date of completeDates) {
+    for (const date of loggedDates) {
       if (date >= bucket.startDate && date <= bucket.endDate) {
         count += 1;
       }
@@ -222,7 +229,7 @@ export function buildDaySeries({
   ];
 
   const series: NutrientDaySeries[] = metrics.map((spec) =>
-    buildMetricSeries(spec, bounds, completeDaysInBucket, completeRows)
+    buildMetricSeries(spec, bounds, loggedDaysInBucket, loggedRows)
   );
 
   return { unit, series };

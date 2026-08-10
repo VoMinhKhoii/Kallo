@@ -225,7 +225,6 @@ export function mapOverviewRowsToDto({
     };
   }
 
-  const completeDates = averagingDates;
   const completeRows = rows.filter((row) => averagingDates.has(row.localDate));
 
   // safeLoggedDays divides nutrient sums to produce the per-day average over the
@@ -268,9 +267,12 @@ export function mapOverviewRowsToDto({
       targets[card.nutrient].applicability !== 'hidden'
   );
   const { spotlight, steady } = partitionSpotlight(micronutrients);
+  // Every logged day, NOT `completeRows`/`completeDates`: the chart is the one
+  // part of the body that does not narrow with `dayScope`, so a bar's height
+  // never moves when the toggle flips. See `buildDaySeries`.
   const daySeries = buildDaySeries({
-    completeRows,
-    completeDates,
+    loggedRows,
+    loggedDates,
     resolvedRange,
     period: { startDate: period.startDate, endDate: period.endDate },
     profile,

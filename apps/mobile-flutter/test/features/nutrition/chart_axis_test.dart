@@ -30,19 +30,7 @@ void main() {
       expect(labels, ['M', 'T', 'W', 'T', 'F', 'S', 'S']);
     });
 
-    test('anchors the 30-day axis weekly on the day number', () {
-      final labels = buildBucketTickLabels(
-        _dates('2026-05-04', 30, 1),
-        'day',
-        'en',
-      );
-      expect(labels.length, 30);
-      expect(labels.where((l) => l.isNotEmpty).toList(),
-          ['4', '11', '18', '25', '1']);
-      expect(labels[1], '');
-    });
-
-    test('labels every column on a short week axis', () {
+    test('labels every column on the 30-day (5 week) axis', () {
       final labels = buildBucketTickLabels(
         _dates('2026-05-04', 5, 7),
         'week',

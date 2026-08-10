@@ -8,10 +8,11 @@ import '../../../theme/nham_colors.dart';
 import '../logic/format_date.dart';
 import '../logic/rhythm_logic.dart';
 
-/// A stacked **bar** chart of macro **calories** per bucket (day for 7d/30d,
-/// week for 90d): total bar height = that bucket's calories, each stacked
+/// A stacked **bar** chart of macro **calories** per bucket (day for 7d, week
+/// for 30d/90d): total bar height = that bucket's calories, each stacked
 /// segment = the energy from protein / carbs / fat. Reads the overview
-/// `daySeries` directly.
+/// `daySeries` directly — which is built over every logged day, so a bar's
+/// height does not move when the day-scope toggle flips.
 ///
 /// One rounded column per bucket, split into three regions filled with the
 /// nutrition chart pigments that match the `DaySummary` legend.
@@ -40,9 +41,9 @@ class MacroTrendChart extends StatelessWidget {
     final carbs = kCompositionColors['carbohydrate']!;
     final fat = kCompositionColors['fat']!;
 
-    // Fewer, fatter columns for the 7-day view; slimmer for the 13-week 90-day
-    // axis; thinner still for the 30 daily columns of the 30-day view.
-    final barWidth = _barWidth(buckets.length);
+    // Fewer, fatter columns for the 7-day view; slimmer ones for the busier
+    // weekly axes (5 buckets at 30d, 13 at 90d) so they don't crowd.
+    final barWidth = buckets.length <= 7 ? 18.0 : 10.0;
 
     final groups = <BarChartGroupData>[];
     var maxY = 0.0;
@@ -183,12 +184,6 @@ class MacroTrendChart extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  static double _barWidth(int bucketCount) {
-    if (bucketCount <= 7) return 18;
-    if (bucketCount <= 14) return 10;
-    return 6;
   }
 
   /// A round kcal gridline step giving ~3–5 lines across the data range.

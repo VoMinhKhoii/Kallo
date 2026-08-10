@@ -144,54 +144,31 @@ export function formatBucketLabel(
   return Array.from(weekday)[0] ?? '';
 }
 
-/** How many day buckets fit before per-bucket labels start colliding. */
-const DENSE_DAY_AXIS = 7;
-/** Same, for the wider `d/M` week-bucket label. */
+/** How many `d/M` week labels fit before they start colliding on a phone. */
 const DENSE_WEEK_AXIS = 8;
-/** 30d anchors on the same weekday the range started on. */
-const DAY_ANCHOR_STEP = 7;
-
-function parseBucketDate(startDate: string): Date | null {
-  const d = new Date(`${startDate}T00:00:00`);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
 
 /**
- * One tick label per bucket, `''` where the axis should stay bare. Apple
- * Health's ladder: a short range labels every column; a long day axis (30d, 30
- * columns) anchors weekly on the day number; a long week axis (90d, 13 columns)
- * anchors at month boundaries. Labelling all 30 or all 13 collides on a phone.
+ * One tick label per bucket, `''` where the axis should stay bare. 7d (7 day
+ * columns) and 30d (5 week columns) label every column. 90d is 13 week columns,
+ * where 13 `d/M` labels collide — so it falls back to a month name at the first
+ * column and at every crossing into a new month, reading "Jun · Jul · Aug".
  */
 export function buildBucketTickLabels(
   points: MacroTrendPoint[],
   unit: DaySeriesBucketUnit,
   locale: string
 ): string[] {
-  const dense =
-    unit === 'week'
-      ? points.length > DENSE_WEEK_AXIS
-      : points.length > DENSE_DAY_AXIS;
-  if (!dense) {
+  if (unit !== 'week' || points.length <= DENSE_WEEK_AXIS) {
     return points.map((point) =>
       formatBucketLabel(point.startDate, unit, locale)
     );
   }
 
-  if (unit === 'day') {
-    return points.map((point, i) => {
-      if (i % DAY_ANCHOR_STEP !== 0) return '';
-      const d = parseBucketDate(point.startDate);
-      return d ? String(d.getDate()) : '';
-    });
-  }
-
-  // Week buckets: name the month at the first column and wherever the axis
-  // crosses into a new one, so 90 days reads as "Jun · Jul · Aug".
   const month = new Intl.DateTimeFormat(locale, { month: 'short' });
   let previousMonth: number | null = null;
   return points.map((point) => {
-    const d = parseBucketDate(point.startDate);
-    if (!d) return '';
+    const d = new Date(`${point.startDate}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return '';
     const current = d.getMonth();
     if (previousMonth === current) return '';
     previousMonth = current;

@@ -175,7 +175,7 @@ describe('mapOverviewRowsToDto', () => {
       expect(peak?.ratioOfTarget).toBeCloseTo(1.1);
     });
 
-    it('buckets by day for the 30d range', () => {
+    it('buckets by week for the 30d range', () => {
       const rows: OverviewMealItemRow[] = [];
       // 28 fully-logged days ending 2026-04-25.
       for (let i = 0; i < 28; i++) {
@@ -199,13 +199,12 @@ describe('mapOverviewRowsToDto', () => {
         },
       });
 
-      // One column per day, so a complete day's value never moves when the
-      // caller flips day scope — only unlogged/partial columns come and go.
-      expect(overview.daySeries.unit).toBe('day');
+      expect(overview.daySeries.unit).toBe('week');
       const calories = overview.daySeries.series.find(
         (s) => s.metric === 'calories'
       );
-      expect(calories?.buckets).toHaveLength(30);
+      // 30 days / 7 → 5 week buckets (the final one clamps to the period end).
+      expect(calories?.buckets).toHaveLength(5);
     });
 
     it('buckets by week for the 90d range', () => {
@@ -323,36 +322,36 @@ describe('mapOverviewRowsToDto', () => {
       expect(overview.calorieAverages.all.averagePerDay).toBe(350);
     });
 
-    it('keeps a complete day identical across scopes, only adding columns', () => {
-      // The invariant the day-scope toggle promises: flipping scope must not
-      // move a day that was already complete. It only adds back the partial
-      // day's column. Day buckets divide by their own in-scope count (1 or 0),
-      // so this holds for 7d and — since 30d now buckets by day too — for 30d.
+    it('holds the chart steady across scopes, averaging over logged days', () => {
+      // The invariant the day-scope toggle promises: it changes the averages
+      // above the chart, never the bars. The series is built over every logged
+      // day in both scopes, so a bucket cannot re-average on a toggle — which
+      // is what made weeks holding a partial day jump.
       const rows = [completeDay, partialDay];
       const bucketsFor = (scope: 'all' | 'complete') =>
-        mapScoped(rows, scope)
-          .daySeries.series.find((s) => s.metric === 'calories')
-          ?.buckets.filter(
-            (b) => b.startDate === '2026-04-24' || b.startDate === '2026-04-25'
-          ) ?? [];
+        mapScoped(rows, scope).daySeries.series.find(
+          (s) => s.metric === 'calories'
+        )?.buckets ?? [];
 
-      const complete = bucketsFor('complete');
-      const all = bucketsFor('all');
+      expect(bucketsFor('complete')).toEqual(bucketsFor('all'));
 
-      // The complete day reads 2000 either way.
-      expect(complete[0]).toMatchObject({
-        startDate: '2026-04-24',
-        value: 2000,
-      });
-      expect(all[0]).toMatchObject({ startDate: '2026-04-24', value: 2000 });
+      // Both days are logged, so both carry their own total — the partial day
+      // included, and neither dragged toward the other.
+      const buckets = bucketsFor('complete');
+      expect(buckets.find((b) => b.startDate === '2026-04-24')?.value).toBe(
+        2000
+      );
+      expect(buckets.find((b) => b.startDate === '2026-04-25')?.value).toBe(
+        400
+      );
+      // A day with nothing logged is still a gap, not a zero.
+      expect(
+        buckets.find((b) => b.startDate === '2026-04-19')?.value
+      ).toBeNull();
 
-      // The partial day is a gap under 'complete' and a real column under 'all'
-      // — never a zero, which would read as "ate nothing".
-      expect(complete[1]).toMatchObject({
-        startDate: '2026-04-25',
-        value: null,
-      });
-      expect(all[1]).toMatchObject({ startDate: '2026-04-25', value: 400 });
+      // …while the headline averages still respond to the scope.
+      expect(caloriesAvg(mapScoped(rows, 'complete'))).toBe(2000);
+      expect(caloriesAvg(mapScoped(rows, 'all'))).toBe(1200);
     });
 
     it('legacy (no scope) keeps the safety valve for all-partial periods', () => {

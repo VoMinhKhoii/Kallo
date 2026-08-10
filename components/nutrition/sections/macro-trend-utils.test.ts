@@ -201,18 +201,7 @@ describe('buildBucketTickLabels', () => {
     expect(labels).toEqual(['M', 'T', 'W', 'T', 'F', 'S', 'S']);
   });
 
-  it('anchors the 30-day axis weekly on the day number', () => {
-    const labels = buildBucketTickLabels(
-      points('2026-05-04', 30, 1),
-      'day',
-      'en'
-    );
-    expect(labels.filter(Boolean)).toEqual(['4', '11', '18', '25', '1']);
-    expect(labels[1]).toBe('');
-    expect(labels).toHaveLength(30);
-  });
-
-  it('labels every column on a short week axis', () => {
+  it('labels every column on the 30-day (5 week) axis', () => {
     const labels = buildBucketTickLabels(
       points('2026-05-04', 5, 7),
       'week',

@@ -15,14 +15,8 @@ String formatDate(String date, String locale) {
   return DateFormat.MMMd(locale).format(parsed);
 }
 
-/// How many day buckets fit before per-bucket labels start colliding.
-const int _denseDayAxis = 7;
-
-/// Same, for the wider `d/M` week-bucket label.
+/// How many `d/M` week labels fit before they start colliding on a phone.
 const int _denseWeekAxis = 8;
-
-/// 30d anchors on the same weekday the range started on.
-const int _dayAnchorStep = 7;
 
 /// A single bucket's axis label: day buckets → weekday initial, week buckets →
 /// `d/M` of the week start.
@@ -42,34 +36,19 @@ String bucketLabel(String startDate, String unit, String locale) {
 /// One tick label per bucket, `''` where the axis should stay bare. Mirror of
 /// web `buildBucketTickLabels` (keep in sync).
 ///
-/// Apple Health's ladder: a short range labels every column; a long day axis
-/// (30d, 30 columns) anchors weekly on the day number; a long week axis (90d,
-/// 13 columns) anchors at month boundaries. Labelling all 30 or all 13 collides
-/// at phone widths.
+/// 7d (7 day columns) and 30d (5 week columns) label every column. 90d is 13
+/// week columns, where 13 `d/M` labels collide — so it falls back to a month
+/// name at the first column and at every crossing into a new month, reading
+/// "Jun · Jul · Aug".
 List<String> buildBucketTickLabels(
   List<String> startDates,
   String unit,
   String locale,
 ) {
-  final dense = unit == 'week'
-      ? startDates.length > _denseWeekAxis
-      : startDates.length > _denseDayAxis;
-  if (!dense) {
+  if (unit != 'week' || startDates.length <= _denseWeekAxis) {
     return [for (final date in startDates) bucketLabel(date, unit, locale)];
   }
 
-  if (unit == 'day') {
-    return [
-      for (var i = 0; i < startDates.length; i++)
-        if (i % _dayAnchorStep != 0)
-          ''
-        else
-          DateTime.tryParse(startDates[i])?.day.toString() ?? '',
-    ];
-  }
-
-  // Week buckets: name the month at the first column and wherever the axis
-  // crosses into a new one, so 90 days reads as "Jun · Jul · Aug".
   final month = DateFormat.MMM(locale);
   int? previousMonth;
   final labels = <String>[];

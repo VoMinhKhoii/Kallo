@@ -23,12 +23,6 @@ interface MacroTrendChartProps {
   unit: DaySeriesBucketUnit;
 }
 
-function getBarSize(bucketCount: number): number {
-  if (bucketCount <= 7) return 18;
-  if (bucketCount <= 14) return 10;
-  return 6;
-}
-
 /**
  * Stacked macro-calorie bars — the Flutter `MacroTrendChart` port. One rounded
  * column per bucket, split bottom→top into protein / carbs / fat kcal bands in
@@ -41,9 +35,9 @@ export function MacroTrendChart({ points, maxY, unit }: MacroTrendChartProps) {
 
   const { topY, ticks } = buildMacroTrendAxis(maxY);
   const tickLabels = buildBucketTickLabels(points, unit, locale);
-  // Fewer, fatter columns for the 7-day view; slimmer for the 13-week 90-day
-  // axis; thinner still for the 30 daily columns of the 30-day view.
-  const barSize = getBarSize(points.length);
+  // Fewer, fatter columns for the 7-day view; slimmer ones for the busier
+  // weekly axes (5 buckets at 30d, 13 at 90d) so they don't crowd.
+  const barSize = points.length <= 7 ? 18 : 10;
 
   return (
     <div
