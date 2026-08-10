@@ -15,12 +15,17 @@ export interface EntitlementsResponse {
   userId: string;
   purchasesEnabled: boolean;
   tier: 'free' | 'premium';
+  // The server detected a grant that looks like a missed renewal webhook, or a
+  // projection RevenueCat has not confirmed in 24h. Only then is it worth
+  // spending provider budget on the reconcile endpoint — see
+  // `EntitlementLifecycleSync`.
+  reconciliationRequired: boolean;
   isLifetime: boolean;
   expiresAt: string | null;
   willRenew: boolean;
   source: string | null;
   // RC's lowercased event.store on the winning grant (app_store, play_store,
-  // rc_billing, ...) — used to route the "manage subscription" deep link. null
+  // paddle, ...) — used to route the "manage subscription" deep link. null
   // when the grant carried no store.
   store: string | null;
   managementUrl: string | null;
@@ -42,11 +47,13 @@ export const entitlementsKeys = {
 };
 
 export async function fetchEntitlements(
-  expectedUserId: string
+  expectedUserId: string,
+  signal?: AbortSignal
 ): Promise<EntitlementsResponse> {
   const res = await fetch('/api/v1/account/entitlements', {
     cache: 'no-store',
     headers: { accept: 'application/json' },
+    signal,
   });
   if (!res.ok) {
     throw new Error(`Failed to load entitlements (${res.status})`);
@@ -58,11 +65,13 @@ export async function fetchEntitlements(
 
 /** Force a server-side RevenueCat CustomerInfo reconciliation. */
 export async function reconcileEntitlements(
-  expectedUserId: string
+  expectedUserId: string,
+  signal?: AbortSignal
 ): Promise<EntitlementsResponse> {
   const res = await fetch('/api/v1/account/entitlements/reconcile', {
     method: 'POST',
     headers: { accept: 'application/json' },
+    signal,
   });
   if (!res.ok) {
     throw new Error(`Failed to reconcile entitlements (${res.status})`);

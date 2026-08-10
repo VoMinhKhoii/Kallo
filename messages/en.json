@@ -791,11 +791,11 @@
         "submit": "Join the waitlist",
         "submitting": "Joining…",
         "success": "Check your inbox",
-        "successBody": "We sent you a link. Tap it to confirm your spot — that's the only thing left to do.",
+        "successBody": "We sent you a link. Tap it to confirm — that's the only thing left to do.",
         "invalidEmail": "Enter a valid email address.",
         "error": "Something went wrong. Please try again.",
         "rateLimited": "Too many tries. Please wait a moment and try again.",
-        "privacy": "One email to confirm, one when your spot opens. Nothing else."
+        "privacy": "One email to confirm, one when the mobile app is out. Nothing else."
       }
     },
     "understanding": {
@@ -930,7 +930,7 @@
       "copyright": "© {year} Kallo. All rights reserved."
     },
     "waitlistStatus": {
-      "confirmed": "You're on the list. We'll email you when your spot opens.",
+      "confirmed": "You're on the list. We'll email you when the mobile app is out.",
       "already": "You're already on the list — nothing more to do.",
       "expired": "That link has expired. Enter your email again to get a new one.",
       "invalid": "That link isn't valid. Enter your email again to get a new one."
@@ -1539,7 +1539,7 @@
       "deleteDescription": "Permanently remove your account and everything in it.",
       "deleteAction": "Delete account",
       "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
-      "deleteSubscriptionWarning": "Deleting your Kallo account does not cancel an Apple or Google subscription. Cancel it in the store first to prevent future charges. A Kallo web subscription is canceled as part of account deletion. You can still delete immediately.",
+      "deleteSubscriptionWarning": "Deleting your Kallo account does not cancel an active subscription. Cancel it first — in the App Store, Google Play, or the billing portal you purchased through on the web — to prevent future charges. You can still delete immediately.",
       "deleteManageSubscription": "Manage or cancel subscription",
       "deleteConfirmLabel": "Type {word} to confirm",
       "deleteConfirmWord": "DELETE",
@@ -1631,7 +1631,7 @@
       "choosePlan": "Choose",
       "opening": "Opening…",
       "unavailable": "Purchases aren't available right now. Please try again later.",
-      "finetext": "Cancel anytime. Prices shown include applicable taxes.",
+      "finetext": "Cancel anytime. Any applicable taxes are shown at checkout.",
       "successToast": "Welcome to Kallo Premium.",
       "successPendingToast": "Payment received — your premium access will appear shortly.",
       "pendingToast": "Payment is pending. We’ll unlock Premium after the store confirms it.",

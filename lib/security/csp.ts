@@ -18,12 +18,35 @@
  * under an enforced strict `script-src` they would be blocked. Nonce + static
  * generation are mutually exclusive (a documented Next.js constraint).
  *
- * Third-party origins are intentionally tiny: the only external service the
- * browser talks to is Supabase (auth/REST over https + realtime over wss), and
- * fonts are self-hosted by `next/font`. `style-src` keeps `'unsafe-inline'`
- * because `next/font` and assorted libraries inject inline `style` attributes,
- * which cannot carry a nonce; inline *style* injection is not an XSS vector.
+ * Third-party origins are intentionally tiny: the browser talks to Supabase
+ * (auth/REST over https + realtime over wss) and, on the paywall only, to
+ * RevenueCat and Paddle. Fonts are self-hosted by `next/font`. `style-src`
+ * keeps `'unsafe-inline'` because `next/font` and assorted libraries inject
+ * inline `style` attributes, which cannot carry a nonce; inline *style*
+ * injection is not an XSS vector.
  */
+
+/**
+ * Web checkout origins. RevenueCat is the subscription brain; Paddle is the
+ * billing engine and merchant of record, and its checkout renders as an iframe
+ * inside our page (see docs/BILLING.md).
+ *
+ * Paddle publishes no canonical CSP allowlist, so `*.paddle.com` covers the
+ * environment-specific checkout hosts (`buy.` in production, `sandbox-buy.` in
+ * sandbox) rather than guessing at subdomains. Narrow this to the exact hosts
+ * once a sandbox checkout has been run and the Report-Only violations name
+ * them.
+ *
+ * Deliberately absent from `script-src`: Paddle.js is served from
+ * `cdn.paddle.com`, but `'strict-dynamic'` makes host allowlists inert for
+ * scripts, and the RevenueCat bundle that injects it already carries the
+ * request nonce. Adding the host there would be dead configuration.
+ */
+const BILLING_FRAME_ORIGINS = ['https://*.paddle.com', 'https://pay.rev.cat'];
+const BILLING_CONNECT_ORIGINS = [
+  'https://api.revenuecat.com',
+  'https://*.paddle.com',
+];
 
 function supabaseOrigins(): { https: string; wss: string } | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -44,7 +67,12 @@ function supabaseOrigins(): { https: string; wss: string } | null {
  */
 export function buildCsp(nonce: string, isDev: boolean): string {
   const supabase = supabaseOrigins();
-  const connect = ["'self'", supabase?.https, supabase?.wss]
+  const connect = [
+    "'self'",
+    supabase?.https,
+    supabase?.wss,
+    ...BILLING_CONNECT_ORIGINS,
+  ]
     .filter(Boolean)
     .join(' ');
   const img = ["'self'", 'data:', 'blob:', supabase?.https]
@@ -58,6 +86,7 @@ export function buildCsp(nonce: string, isDev: boolean): string {
     `img-src ${img}`,
     `font-src 'self'`,
     `connect-src ${connect}`,
+    `frame-src 'self' ${BILLING_FRAME_ORIGINS.join(' ')}`,
     `manifest-src 'self'`,
     `worker-src 'self'`,
     `object-src 'none'`,

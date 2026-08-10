@@ -9,11 +9,12 @@ import {
 } from '@revenuecat/purchases-js';
 import { assertBillingIdentity } from '@/lib/billing/identity';
 
-// The RevenueCat Web Billing public API key. Behind the scenes RC routes web
-// checkout through RevenueCat Billing, but from this SDK's perspective it is the standard
-// purchases-js flow. When the key is absent (dashboards not configured yet in
-// an environment) the UI must degrade gracefully instead of crashing — see
-// `webPurchasesEnabled`.
+// The RevenueCat Web SDK public API key. Behind the scenes RC routes web
+// checkout through Paddle, which is the billing engine and merchant of record;
+// from this SDK's perspective it is the standard purchases-js flow and the same
+// key works whichever engine backs it. When the key is absent (dashboards not
+// configured yet in an environment) the UI must degrade gracefully instead of
+// crashing — see `webPurchasesEnabled`.
 let instance: Purchases | null = null;
 let configuredUserId: string | null = null;
 let configuredApiKey: string | null = null;
