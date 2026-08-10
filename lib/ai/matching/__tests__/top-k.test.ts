@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildMatchResult,
   buildMatchTopK,
+  filterByExplicitState,
   mergeTopKAcrossSources,
   rrfFuseCandidates,
+  sourceLimitForIngredient,
 } from '../candidate-ranking';
-import type { FuzzyMatchRow } from '../match-constants';
+import type { FuzzyMatchRow, MatchInfo } from '../match-constants';
 
 function row(
   overrides: Partial<FuzzyMatchRow> & {
@@ -116,6 +119,135 @@ describe('buildMatchTopK', () => {
       buildMatchTopK('x', [row({ id: 'a', similarity: 0.9 })], 0, 0.7)
     ).toEqual([]);
   });
+
+  it('excludes compound non-chicken species from a bare gà query', () => {
+    const out = buildMatchTopK(
+      'đùi gà',
+      [
+        row({
+          id: 'chicken',
+          name_primary:
+            'Gà, gà công nghiệp hoặc gà rán, đùi gà, thịt và da, sống',
+          similarity: 1.001,
+        }),
+        row({
+          id: 'pheasant',
+          name_primary: 'Đùi gà lôi, chỉ lấy thịt, sống',
+          similarity: 1.001,
+        }),
+        row({
+          id: 'turkey',
+          name_primary: 'Đùi gà tây, chỉ lấy thịt, nướng',
+          similarity: 1.001,
+        }),
+        row({
+          id: 'jungle-fowl',
+          name_primary: 'Thịt gà rừng',
+          similarity: 1.001,
+        }),
+      ],
+      3,
+      0.7
+    );
+
+    expect(out.map((candidate) => candidate.foodCompositionId)).toEqual([
+      'chicken',
+    ]);
+  });
+
+  it('keeps an explicitly requested compound species', () => {
+    const out = buildMatchTopK(
+      'đùi gà tây',
+      [
+        row({
+          id: 'turkey',
+          name_primary: 'Đùi gà tây, chỉ lấy thịt, nướng',
+          name_en: 'Turkey, thigh, meat only, roasted',
+          similarity: 1.001,
+        }),
+      ],
+      3,
+      0.7
+    );
+
+    expect(out.map((candidate) => candidate.foodCompositionId)).toEqual([
+      'turkey',
+    ]);
+  });
+
+  it('excludes skin-only rows for a whole cut but keeps meat-and-skin rows', () => {
+    const out = buildMatchTopK(
+      'gà rán',
+      [
+        row({
+          id: 'skin-only',
+          name_primary: 'Chicken, skin (drumsticks and thighs), raw',
+          similarity: 1.001,
+        }),
+        row({
+          id: 'whole-cut',
+          name_primary: 'Chicken, broilers, thigh, meat and skin, raw',
+          similarity: 0.99,
+        }),
+      ],
+      3,
+      0.7
+    );
+
+    expect(out.map((candidate) => candidate.foodCompositionId)).toEqual([
+      'whole-cut',
+    ]);
+  });
+
+  it('keeps skin-only rows when skin is explicitly requested', () => {
+    const out = buildMatchTopK(
+      'da gà',
+      [
+        row({
+          id: 'skin-only',
+          name_primary: 'Chicken, skin (drumsticks and thighs), raw',
+          similarity: 0.95,
+        }),
+      ],
+      3,
+      0.7
+    );
+
+    expect(out.map((candidate) => candidate.foodCompositionId)).toEqual([
+      'skin-only',
+    ]);
+  });
+
+  it('excludes separable-fat rows on the legacy single-match path', () => {
+    const out = buildMatchResult(
+      'thịt bò',
+      [
+        row({
+          id: 'fat-only',
+          name_primary: 'Beef, separable fat, raw',
+          similarity: 0.99,
+        }),
+        row({
+          id: 'whole-cut',
+          name_primary: 'Beef, loin, lean and fat, raw',
+          name_en: 'Beef, loin, lean and fat, raw',
+          similarity: 0.9,
+        }),
+      ],
+      0.7
+    );
+
+    expect(out?.foodCompositionId).toBe('whole-cut');
+  });
+});
+
+describe('sourceLimitForIngredient', () => {
+  it('over-fetches only for bare Vietnamese chicken queries', () => {
+    expect(sourceLimitForIngredient('đùi gà', 3)).toBe(8);
+    expect(sourceLimitForIngredient('gà rán', 3)).toBe(8);
+    expect(sourceLimitForIngredient('đùi gà tây', 3)).toBe(3);
+    expect(sourceLimitForIngredient('chicken thigh', 3)).toBe(3);
+  });
 });
 
 describe('mergeTopKAcrossSources', () => {
@@ -218,5 +350,50 @@ describe('rrfFuseCandidates', () => {
     const fuzzy = [C('d', 0.92)];
     const fused = rrfFuseCandidates(vector, fuzzy, 2);
     expect(fused[0].foodCompositionId).toBe('d');
+  });
+});
+
+describe('filterByExplicitState — user-stated weighing basis', () => {
+  const info = (
+    id: string,
+    state: 'raw' | 'cooked' | 'unknown'
+  ): MatchInfo => ({
+    ingredientName: 'thịt bò',
+    foodCompositionId: id,
+    matchedName: id,
+    similarity: 0.9,
+    confidence: 'high',
+    state,
+  });
+
+  it('drops opposite-state candidates when the user said how they weighed', () => {
+    // "250gr thịt bò cân sống" → explicit raw. The cooked row would force a
+    // lossy conversion the user already resolved by weighing raw.
+    const out = filterByExplicitState(
+      [info('raw-row', 'raw'), info('cooked-row', 'cooked')],
+      'raw'
+    );
+    expect(out.map((c) => c.foodCompositionId)).toEqual(['raw-row']);
+  });
+
+  it('keeps unknown-state candidates — an unlabeled row is not a mismatch', () => {
+    const out = filterByExplicitState(
+      [info('unknown-row', 'unknown'), info('cooked-row', 'cooked')],
+      'raw'
+    );
+    expect(out.map((c) => c.foodCompositionId)).toEqual(['unknown-row']);
+  });
+
+  it('falls back to the full pool rather than emptying it', () => {
+    // Only a cooked row exists for a raw-weighed food: a convertible
+    // wrong-state candidate still beats zero candidates (the BASIS RULE in
+    // Call 2 handles the conversion).
+    const pool = [info('cooked-only', 'cooked')];
+    expect(filterByExplicitState(pool, 'raw')).toEqual(pool);
+  });
+
+  it('is a no-op when the user said nothing about state', () => {
+    const pool = [info('a', 'raw'), info('b', 'cooked')];
+    expect(filterByExplicitState(pool, null)).toEqual(pool);
   });
 });

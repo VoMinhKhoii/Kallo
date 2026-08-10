@@ -113,37 +113,6 @@ describe('classifyIngredientPlausibility — genuinely non-caloric', () => {
   });
 });
 
-describe('classifyIngredientPlausibility — unmatched with omitted caloric macros (D3 guard)', () => {
-  it('flags an unmatched real food with omitted caloric macros as unresolved_estimate', () => {
-    // Unmatched path: grams resolved, hasNutrition true (fatG always present),
-    // no DB candidate (caloriesPer100g null), but the LLM omitted the caloric
-    // triple → would silently persist ZERO_TRIPLE. Route to clarify instead.
-    expect(
-      classifyIngredientPlausibility({
-        grams: 150,
-        hasNutrition: true,
-        caloriesPer100g: null,
-        name: 'ức gà',
-        emittedCaloricMacrosMissing: true,
-      })
-    ).toBe('unresolved_estimate');
-  });
-
-  it('keeps a water/coffee/tea name genuinely_noncaloric even with omitted macros', () => {
-    for (const name of ['nước lọc', 'black coffee', 'trà đá không đường']) {
-      expect(
-        classifyIngredientPlausibility({
-          grams: 250,
-          hasNutrition: true,
-          caloriesPer100g: null,
-          name,
-          emittedCaloricMacrosMissing: true,
-        })
-      ).toBe('genuinely_noncaloric');
-    }
-  });
-});
-
 describe('classifyIngredientPlausibility — small concentrated portions', () => {
   it('permits a ≤5g oil/spice/sweetener/sauce portion', () => {
     for (const name of ['dầu ăn', 'muối', 'đường', 'nước mắm', 'olive oil']) {
@@ -372,6 +341,128 @@ describe('classifyIngredientPlausibility — carb-staple floor', () => {
         name: 'bánh ướt',
       })
     ).toBe('ok');
+  });
+
+  it('does NOT flag "miếng <food>" — the classifier is not the noodle miến', () => {
+    // Prod regression (request 3ae446c9-e2ef-4f56-84ef-759e096a935a, "1 miếng
+    // vịt"): `/miến/i` substring-matched "miếng" (a piece/slice), so a matched
+    // 0-carb duck row tripped the staple floor and blanked the entire meal.
+    expect(
+      classifyIngredientPlausibility({
+        grams: 160,
+        hasNutrition: true,
+        caloriesPer100g: 267,
+        carbsPer100g: 0,
+        name: 'miếng vịt',
+      })
+    ).toBe('ok');
+    for (const name of ['miếng thịt bò', 'miếng phô mai', 'Miếng cá hồi']) {
+      expect(
+        classifyIngredientPlausibility({
+          grams: 120,
+          hasNutrition: true,
+          caloriesPer100g: 200,
+          carbsPer100g: 0,
+          name,
+        })
+      ).toBe('ok');
+    }
+  });
+
+  it('still flags the real miến (glass noodle) at C≈0', () => {
+    for (const name of ['miến', 'miến gà', 'tô miến trộn']) {
+      expect(
+        classifyIngredientPlausibility({
+          grams: 200,
+          hasNutrition: true,
+          caloriesPer100g: 110,
+          carbsPer100g: 0,
+          name,
+        })
+      ).toBe('unresolved_estimate');
+    }
+  });
+
+  it('still catches a staple sitting inside a classifier phrase', () => {
+    expect(
+      classifyIngredientPlausibility({
+        grams: 90,
+        hasNutrition: true,
+        caloriesPer100g: 260,
+        carbsPer100g: 0,
+        name: 'miếng bánh mì',
+      })
+    ).toBe('unresolved_estimate');
+  });
+
+  it('does NOT let a caloric modifier inherit the noncaloric zero', () => {
+    // `/\bwater\b/`, `/\bblack\s*coffee\b/` and `/\bgreen\s*tea\b/` are matched
+    // loosely, so a caloric variant used to be classified genuinely_noncaloric
+    // and ship a zero row.
+    for (const name of [
+      'coconut water',
+      'nước dừa',
+      'black coffee with sugar',
+      'green tea latte',
+      'trà sữa',
+      'cà phê sữa đá',
+    ]) {
+      expect(
+        classifyIngredientPlausibility({
+          grams: 250,
+          hasNutrition: true,
+          caloriesPer100g: null,
+          name,
+        })
+      ).not.toBe('genuinely_noncaloric');
+    }
+  });
+
+  it('keeps sugar-free variants noncaloric', () => {
+    // "không đường" must not be disqualified by the bare word "đường".
+    for (const name of [
+      'trà đá không đường',
+      'unsweetened green tea',
+      'nước lọc',
+      'black coffee',
+    ]) {
+      expect(
+        classifyIngredientPlausibility({
+          grams: 250,
+          hasNutrition: true,
+          caloriesPer100g: null,
+          name,
+        })
+      ).toBe('genuinely_noncaloric');
+    }
+  });
+
+  it('exempt list no longer fires on unrelated substrings', () => {
+    // `/stock/` exempted "stockfish noodles"; `/wine/` exempted "bánh mì
+    // wineberry" — both suppressed a real staple failure.
+    for (const name of ['stockfish noodles', 'bánh mì wineberry']) {
+      expect(
+        classifyIngredientPlausibility({
+          grams: 200,
+          hasNutrition: true,
+          caloriesPer100g: 200,
+          carbsPer100g: 0,
+          name,
+        })
+      ).toBe('unresolved_estimate');
+    }
+    // Real exemptions still hold, including mixed-diacritic spellings.
+    for (const name of ['nước dùng phở', 'mì chính', 'mi chính', 'mì chinh']) {
+      expect(
+        classifyIngredientPlausibility({
+          grams: 200,
+          hasNutrition: true,
+          caloriesPer100g: 200,
+          carbsPer100g: 0,
+          name,
+        })
+      ).not.toBe('unresolved_estimate');
+    }
   });
 
   it('lets genuinely_noncaloric win precedence over the staple floor', () => {

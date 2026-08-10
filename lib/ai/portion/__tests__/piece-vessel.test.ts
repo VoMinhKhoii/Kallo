@@ -284,6 +284,54 @@ describe('resolvePieceVessel', () => {
     ).toMatchObject({ family: 'piece', tier: 4, count: 1, kind: 'meat' });
   });
 
+  it.each([
+    ['Salmon fillet', 'Salmon', 'fish'],
+    ['Steak', 'Beef steak', 'meat'],
+  ] as const)('recovers a trailing high-variance cut unit from %s', (rawName, canonicalName, kind) => {
+    expect(
+      resolvePieceVessel(
+        item([{ name: rawName, grams: 250 }]),
+        dish([{ rawName, canonicalName, count: 1 }])
+      )
+    ).toMatchObject({ family: 'piece', tier: 4, count: 1, kind });
+  });
+
+  it.each([
+    ['Beef burger', 'Beef burger'],
+    ['Chicken thigh', 'Chicken thigh'],
+    ['Greens', 'Leafy greens'],
+  ])('does not invent a piece vessel for %s', (rawName, canonicalName) => {
+    expect(
+      resolvePieceVessel(
+        item([{ name: rawName, grams: 150 }]),
+        dish([{ rawName, canonicalName, count: 1 }])
+      )
+    ).toBeNull();
+  });
+
+  it('requires a preserved count and does not override an explicit unit', () => {
+    const mealItem = item([{ name: 'Salmon fillet', grams: 250 }]);
+    expect(
+      resolvePieceVessel(
+        mealItem,
+        dish([{ rawName: 'Salmon fillet', canonicalName: 'Salmon' }])
+      )
+    ).toBeNull();
+    expect(
+      resolvePieceVessel(
+        mealItem,
+        dish([
+          {
+            rawName: 'Salmon fillet',
+            canonicalName: 'Salmon',
+            count: 1,
+            unitToken: 'serving',
+          },
+        ])
+      )
+    ).toBeNull();
+  });
+
   it('joins the dominant pipeline ingredient by name after an index shift', () => {
     expect(
       resolvePieceVessel(
@@ -399,8 +447,14 @@ describe('nearestPieceTier', () => {
       'slice',
       'slices',
       'steak',
+      'steaks',
+      'fillets',
+      'filet',
+      'filets',
       'chunk',
+      'chunks',
       'cut',
+      'cuts',
     ]);
   });
 });

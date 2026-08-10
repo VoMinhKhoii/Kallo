@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import { loadRelogDishCandidates } from '@/lib/logging/relog/dish-query';
 import { loadRelogMealCandidates } from '@/lib/logging/relog/meal-query';
 import type { RelogCandidatesResponse } from '@/lib/logging/relog/relog';
+import { withRelogGuard } from '@/lib/rate-limit/relog-guard';
 
 // `relogCandidatesQuerySchema` lives in the meals contract so the route can
 // reuse it; imported here since this 'use server' module may only export async
@@ -38,12 +39,20 @@ export async function loadRelogCandidatesAction(input: {
   });
   const { user } = await requireAuthAndProfile();
 
-  // No AI-cost guards needed: this is a pair of indexed queries over the user's
-  // own history, throttled by auth, the limit cap and the client debounce.
-  const [dishes, meals] = await Promise.all([
-    loadRelogDishCandidates(db, { userId: user.id, query: q, limit }),
-    loadRelogMealCandidates(db, { userId: user.id, query: q, limit }),
-  ]);
-
-  return { dishes, meals };
+  // Throttled HERE, not at the route: the web composer calls this action
+  // directly, so a route-level guard would leave that caller unlimited. The
+  // scan is `lower(unaccent(col)) LIKE '%…%'` — no index applies — and both
+  // arms run in parallel against a pool that defaults to 2 connections.
+  return withRelogGuard(
+    'candidates',
+    'meals-relog-candidates',
+    user.id,
+    async () => {
+      const [dishes, meals] = await Promise.all([
+        loadRelogDishCandidates(db, { userId: user.id, query: q, limit }),
+        loadRelogMealCandidates(db, { userId: user.id, query: q, limit }),
+      ]);
+      return { dishes, meals };
+    }
+  );
 }

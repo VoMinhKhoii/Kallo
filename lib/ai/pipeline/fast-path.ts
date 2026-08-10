@@ -1,6 +1,11 @@
 /**
  * D2 — simple-meal fast path.
  *
+ * ORPHANED INTENTIONALLY: production no longer imports this module because
+ * every meal must run Call 2 for cooking-fat judgment. Keep the synthesizer
+ * and its tests until the other in-flight pipeline branch lands; remove them
+ * only in a conflict-aware follow-up.
+ *
  * When EVERY ingredient in a meal is "fully grounded" — an exact-match DB hit
  * (Phase 2, similarity 1.0, exactly one candidate) AND a server-resolved
  * portion anchor from the resolver ladder steps 1-4 (Phase 3, no LLM range) —
@@ -118,11 +123,13 @@ export function isFullyGrounded(args: {
  * grounded meal. For each ingredient:
  *   - selectedCandidateId = 'c1' (accept the exact-match candidate),
  *   - grams = the server anchor (resolver mid),
- *   - fatG = the DB-anchored fat triple (base = per_100g × dbScalingGrams/100),
- *     computed with the SAME `computeDbScalingGrams`/`scalePer100g` the
- *     reconcile path uses, so the guard passes it through unchanged,
- *   - caloriesKcal/proteinG/carbohydrateG omitted — the matched path re-derives
- *     protein/carb from the DB base and kcal from the macro identity.
+ *   - all four macro triples = the DB-anchored base (per_100g ×
+ *     dbScalingGrams/100), computed with the SAME `computeDbScalingGrams` /
+ *     `scalePer100g` the reconcile path uses. P/C/kcal are then OVERWRITTEN
+ *     downstream from the same base, and fat passes `guardMacro` unchanged —
+ *     so emitting them here is redundancy, not a second opinion. They exist
+ *     because the schema now REQUIRES every triple (the D3 optionality that
+ *     let an omitted field become a silent zero is reverted).
  *
  * The result is fed through the unchanged bridge, so downstream macros are
  * identical to the full path's for this clean case.
@@ -162,15 +169,23 @@ export function buildFastPathEstimation(args: {
           candidate.nutrition as NonNullable<typeof candidate.nutrition>,
           dbScalingGrams
         );
-        const fat = Math.max(0, base.fatG);
+        const flat = (value: number) => {
+          const v = Math.max(0, value);
+          return { low: v, mid: v, high: v };
+        };
 
         return {
           ingredientName: ing.rawName,
           selectedCandidateId: 'c1',
           grams,
-          // Echo the DB-anchored fat as a flat triple → guardMacro passes it
-          // through byte-identical to the reconcile path's flatTriple(base.fatG).
-          fatG: { low: fat, mid: fat, high: fat },
+          // Echo the DB-anchored base as flat triples. Fat: guardMacro passes
+          // it through byte-identical to the reconcile path's
+          // flatTriple(base.fatG). P/C/kcal: overwritten downstream from the
+          // same base, present only because the schema requires every triple.
+          caloriesKcal: flat(base.caloriesKcal),
+          proteinG: flat(base.proteinG),
+          carbohydrateG: flat(base.carbohydrateG),
+          fatG: flat(base.fatG),
         };
       }
     );

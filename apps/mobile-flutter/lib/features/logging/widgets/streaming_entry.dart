@@ -21,13 +21,13 @@ const _phaseKeys = {
 };
 
 String _phaseKey(StreamStatus status) => switch (status) {
-      StreamStatus.connecting => 'logging.streaming.connecting',
-      StreamStatus.decomposing => 'logging.streaming.decomposing',
-      StreamStatus.matching => 'logging.streaming.matching',
-      StreamStatus.estimating => 'logging.streaming.estimating',
-      StreamStatus.assembling => 'logging.streaming.assembling',
-      _ => 'logging.streaming.analyzing',
-    };
+  StreamStatus.connecting => 'logging.streaming.connecting',
+  StreamStatus.decomposing => 'logging.streaming.decomposing',
+  StreamStatus.matching => 'logging.streaming.matching',
+  StreamStatus.estimating => 'logging.streaming.estimating',
+  StreamStatus.assembling => 'logging.streaming.assembling',
+  _ => 'logging.streaming.analyzing',
+};
 
 /// The analyzing card while the SSE analysis streams. The items still stream out
 /// like the original waterfall — names appear as they're detected, then carry
@@ -89,13 +89,15 @@ class _StreamingEntryState extends State<StreamingEntry>
     final completedNames =
         widget.completedItems.map((i) => i.name.toLowerCase()).toSet();
     // Names detected but not yet carrying macros — the streaming waterfall.
-    final pendingNames = widget.items
-        .where((n) => !completedNames.contains(n.toLowerCase()))
-        .toList();
+    final pendingNames =
+        widget.items
+            .where((n) => !completedNames.contains(n.toLowerCase()))
+            .toList();
 
-    final phaseLabel = _phaseKeys.contains(widget.status)
-        ? _phaseKey(widget.status).tr()
-        : 'logging.streaming.analyzing'.tr();
+    final phaseLabel =
+        _phaseKeys.contains(widget.status)
+            ? _phaseKey(widget.status).tr()
+            : 'logging.streaming.analyzing'.tr();
 
     final hasQuote =
         widget.rawInput != null && widget.rawInput!.trim().isNotEmpty;
@@ -138,7 +140,7 @@ class _StreamingEntryState extends State<StreamingEntry>
             children: [
               RotationTransition(turns: _spin, child: const _Spinner()),
               const SizedBox(width: NhamSpacing.sp2), // gap-2
-              Text(phaseLabel, style: dashMeta(),),
+              Text(phaseLabel, style: dashMeta()),
             ],
           ),
         ],
@@ -158,9 +160,16 @@ class _CompletedRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: LoggingSpacing.row),
       child: Row(
         children: [
+          // Two lines + ellipsis, as the persisted card's rows: the fixed macro
+          // tail leaves too little width for a typical Vietnamese dish, and
+          // with no `overflow` set this clipped mid-glyph without even saying so.
           Expanded(
-            child: Text(item.name,
-                maxLines: 1, style: dashBody(),),
+            child: Text(
+              item.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: dashBody(),
+            ),
           ),
           const SizedBox(width: NhamSpacing.sp3),
           MacroTrio(
@@ -209,11 +218,13 @@ class _SpinnerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
     final radius = (size.width - 1.5) / 2;
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5 // border-[1.5px]
-      ..strokeCap = StrokeCap.round
-      ..color = NhamColors.accent;
+    final paint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth =
+              1.5 // border-[1.5px]
+          ..strokeCap = StrokeCap.round
+          ..color = NhamColors.accent;
     // ~270° arc (top segment transparent), starting just past 12 o'clock.
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),

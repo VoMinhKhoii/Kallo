@@ -63,6 +63,20 @@ export function scoreCase(
     });
   }
 
+  if (fixture.expect.minMealItems != null) {
+    // Derived from the observed ingredients rather than a new observation
+    // field — every ingredient already carries its owning meal-item name.
+    const distinctMealItems = new Set(
+      observed.ingredients.map((item) => item.mealItemName)
+    ).size;
+    checks.push({
+      name: 'minMealItems',
+      pass: distinctMealItems >= fixture.expect.minMealItems,
+      expected: fixture.expect.minMealItems,
+      actual: distinctMealItems,
+    });
+  }
+
   if (fixture.expect.kcalRange) {
     const [min, max] = fixture.expect.kcalRange;
     const mid = observed.mealKcal?.mid ?? null;

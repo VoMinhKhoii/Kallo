@@ -45,14 +45,15 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
                 name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style:
-                    dashBody().merge(row.removed
-                        ? const TextStyle(
-                          decoration: TextDecoration.lineThrough,
-                          decorationColor: kInkMuted,
-                          color: kInkMuted,
-                        )
-                        : null),
+                style: dashBody().merge(
+                  row.removed
+                      ? const TextStyle(
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: kInkMuted,
+                        color: kInkMuted,
+                      )
+                      : null,
+                ),
               ),
             ),
             const SizedBox(width: NhamSpacing.sp2),
@@ -64,11 +65,24 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
               ),
               const SizedBox(width: 2), // gap-0.5
               SizedBox(
-                width: 36,
-                child: Text(
-                  '${grams.round()}g',
-                  textAlign: TextAlign.center,
-                  style: dashMeta(color: kInk, tabular: true),
+                // Wide enough for `1000g` at Meta 12: the steppers move grams
+                // in 10s with no cap, so four digits is reachable and a
+                // wrapped value would grow the whole editor row.
+                //
+                // It SCALES DOWN past that rather than clipping. Clipping a
+                // number is the worst failure available: `1200g` cut to the
+                // cell reads as a smaller, entirely plausible amount, and the
+                // user has no way to see it is wrong.
+                width: 44,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${grams.round()}g',
+                    maxLines: 1,
+                    softWrap: false,
+                    textAlign: TextAlign.center,
+                    style: dashMeta(color: kInk, tabular: true),
+                  ),
                 ),
               ),
               const SizedBox(width: 2),

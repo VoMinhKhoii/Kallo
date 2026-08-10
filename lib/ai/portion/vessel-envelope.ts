@@ -35,8 +35,13 @@ export interface VesselEnvelope {
 
 const SOUP_INGREDIENT = /nước dùng|nước lèo|nước súp|canh|súp|broth|stock/i;
 const SOUP_METHOD = /ninh|nấu canh/i;
+// `mì gói` and friends are listed explicitly rather than as a bare `mì`: the
+// bare form also covers dry-tossed dishes (mì xào, mì khô) that are NOT soup,
+// while an instant-noodle bowl essentially always is. Without these, "1 tô mì
+// gói" classified `solid` and got a dense-food gram band for what is mostly
+// broth — the same tier a bowl of phở correctly avoids.
 const SOUP_DISH =
-  /phở|pho\b|bún bò|bún riêu|hủ tiếu|miến|bánh canh|cháo|ramen|udon|soba|noodle soup|soup|stew|congee|laksa|malatang/i;
+  /phở|pho\b|bún bò|bún riêu|hủ tiếu|miến|bánh canh|cháo|mì gói|mì tôm|mì ăn liền|mi goi|mi tom|mi an lien|instant noodle|ramen|udon|soba|noodle soup|soup|stew|congee|laksa|malatang/i;
 const AIRY_DISH = /gỏi|nộm|salad|rau trộn/i;
 const LARGE_BOWL_DISH = /ramen|donburi|malatang|lẩu mini/i;
 const FOOD_IN_CUP =
@@ -66,15 +71,49 @@ export function classifyDishClass(
   return 'solid';
 }
 
+/**
+ * The container word for this dish, whether Call 1 put it on the dish or on the
+ * ingredient.
+ *
+ * The prompt asks for BOTH on a single-ingredient dish quantified by a vessel
+ * ("1 chén cơm" → ingredient `count`+`unitToken` AND meal-item `vesselToken`),
+ * and the model does not always comply: for "3 piece of salmon + 2 steaks +
+ * 1 cup of milk + 1 plate of spaghetti" it emitted `vesselToken: "plate"` on
+ * the spaghetti but put the milk's "cup" only on the ingredient. Milk then fell
+ * through BOTH resolvers — not a dish vessel, and "cup" is not a piece token —
+ * so a plainly-quantified drink got no portion affordance at all.
+ *
+ * Deriving it here makes the outcome independent of which slot the model
+ * chose. Restricted to a SINGLE-ingredient dish on purpose: in a composed dish
+ * one ingredient measured in cups ("phở with a cup of broth") says nothing
+ * about what the dish was served in.
+ *
+ * And to a single SERVING. The envelope's guard band and `midG` describe one
+ * vessel, while the dish grams describe `count` of them — so promoting "3 cups
+ * of milk" would fit a three-cup total into a one-cup band and tell the
+ * estimator the portion is far too small. The dish-level `vesselToken` path is
+ * unaffected: that token already describes the dish as served.
+ */
+function dishVesselToken(dish: DishLike): string | undefined {
+  if (dish.vesselToken) return dish.vesselToken;
+  if (dish.ingredients.length !== 1) return undefined;
+  const { unitToken: token, count } = dish.ingredients[0];
+  if (count !== undefined && count > 1) return undefined;
+  // Only a real container word — `resolveVesselFromToken` rejects piece and
+  // mass units, so "2 steaks" can never become a vessel this way.
+  return token && resolveVesselFromToken(token) ? token : undefined;
+}
+
 export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
+  const vesselToken = dishVesselToken(dish);
   if (
-    !dish.vesselToken ||
+    !vesselToken ||
     dish.ingredients.some((ingredient) => ingredient.count === 0)
   ) {
     return null;
   }
 
-  const resolved = resolveVesselFromToken(dish.vesselToken, dish.vesselSize);
+  const resolved = resolveVesselFromToken(vesselToken, dish.vesselSize);
   if (!resolved) return null;
 
   const tier =
@@ -89,7 +128,7 @@ export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
     family: resolved.family,
     tier,
     dishClass,
-    token: dish.vesselToken,
+    token: vesselToken,
     vesselMl: VESSEL_FAMILIES[resolved.family].tiers[tier].ml,
     guardG: guardBandG(resolved.family, tier, dishClass),
     midG: midG(resolved.family, tier, dishClass),

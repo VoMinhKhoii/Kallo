@@ -32,7 +32,7 @@ export default async function GroupsLayout({
 
   return (
     <main className="flex h-full w-full flex-1 justify-end overflow-hidden">
-      <div className="wide:-translate-x-1/2 mx-auto flex h-full min-h-0 w-full max-w-2xl flex-col px-4 pt-4 pb-4 sm:px-5 wide:fixed wide:inset-y-0 wide:left-1/2 wide:mx-0">
+      <div className="wide:fixed wide:inset-y-0 wide:left-1/2 mx-auto wide:mx-0 flex h-full min-h-0 w-full max-w-2xl wide:-translate-x-1/2 flex-col px-4 pt-4 pb-4 sm:px-5">
         <header className="mb-3 flex shrink-0 items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="font-bold font-sans-display text-[#141413] text-[18px] tracking-[-0.01em]">
@@ -62,7 +62,7 @@ export default async function GroupsLayout({
        * made the rail sit deeper than the nav. */}
       <aside
         id="circle-info-slot"
-        className="hidden h-full min-h-0 shrink-0 empty:hidden wide:block"
+        className="wide:block hidden h-full min-h-0 shrink-0 empty:hidden"
       />
     </main>
   );

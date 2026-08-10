@@ -139,6 +139,26 @@ export const PORTION_PRIORS: PortionPrior[] = [
     source:
       'Single pan-seared protein serving ~140–160g cooked (restaurant portion review, 2026).',
   },
+  {
+    // 1 gói mì ≈ 70–90g of DRY noodle block + seasoning sachets. VN retail
+    // packets cluster at 65–75g (Hảo Hảo, Omachi) with 85–100g "lớn"/ly
+    // variants, so the band spans both and `applySizeModifier` picks the end.
+    //
+    // `form: 'raw'` is load-bearing. This is the weight of the PACKET, not of
+    // the prepared bowl — noodles roughly triple in mass once cooked. The
+    // prior must therefore only ever pair with a raw-state composition row;
+    // pairing it with a prepared-basis row would undercount by ~3x, and using
+    // it as a bowl's weight would overcount by the same factor.
+    conceptId: 'instant-noodle-pack',
+    unitType: 'count',
+    locale: 'vi',
+    form: 'raw',
+    promptLabel: 'gói mì',
+    perUnit: band(70, 80, 90),
+    confidence: 'high',
+    source:
+      'VN instant-noodle retail packets ~65–100g dry (Hảo Hảo 75g, Omachi 80g, 3 Miền 65g; label survey 2026). Dry packet weight, NOT prepared mass.',
+  },
 ];
 
 /**

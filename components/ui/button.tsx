@@ -5,7 +5,7 @@ import type * as React from 'react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
@@ -27,6 +27,12 @@ const buttonVariants = cva(
           'rounded-xl border border-nham-border text-nham-text-soft hover:bg-nham-surface !font-medium text-base',
         'landing-ghost':
           'text-nham-text-soft text-sm hover:text-nham-text h-auto p-0 !font-normal',
+        // The black landing CTA. `hero-dark` is the same ink but dressed for a
+        // button standing on the page — heavy shadow, hover lift, wide
+        // tracking. Sitting inside a card or a header bar it needs none of
+        // that, and borrowing it meant cancelling three utilities per call.
+        'landing-ink':
+          'rounded-xl bg-nham-ink text-nham-surface hover:bg-nham-ink-hover !font-medium text-base',
         'hero-dark':
           'rounded-xl bg-nham-ink text-nham-surface shadow-lg hover:-translate-y-0.5 hover:bg-nham-ink-hover hover:shadow-xl !font-medium tracking-wide text-base',
         'hero-outline':

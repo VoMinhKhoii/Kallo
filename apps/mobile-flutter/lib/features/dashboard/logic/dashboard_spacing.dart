@@ -38,3 +38,11 @@ abstract final class DashboardSpacing {
   );
 }
 
+/// Shared right-hand column width in the Today dock: the macro `x/yg` values
+/// and the meal-row kcal sit in this fixed column so both align to one right
+/// edge. Wide enough for `1024/350g` and `9999 kcal` at Meta 12.
+///
+/// Lives here rather than in either widget file because both need it and they
+/// are now separate libraries — and because a shared alignment constant is a
+/// layout decision, not a widget's private business.
+const double dashboardValueColumnWidth = 72;

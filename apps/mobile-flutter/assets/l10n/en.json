@@ -1199,6 +1199,14 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total"
     },
+    "portionPicker": {
+      "title": "Portion size",
+      "assumption": "≈ {label}",
+      "adjust": "Adjust portion, currently {label}",
+      "custom": "Custom portion",
+      "apply": "Apply",
+      "cancel": "Cancel"
+    },
     "persistedMealCard": {
       "toggleDetails": "Toggle meal details",
       "total": "Total",
@@ -1253,6 +1261,18 @@
       "removeItem": "Remove food",
       "save": "Save meal",
       "relatedMatch": "related"
+    },
+    "relog": {
+      "groupDishes": "Dishes",
+      "groupMeals": "Meals",
+      "macroSplit": "P {protein}g · C {carbs}g · F {fat}g",
+      "optionKcal": "{kcal} kcal",
+      "searching": "Searching...",
+      "noResults": "No dishes found",
+      "noHistory": "Nothing logged yet",
+      "searchFailed": "Couldn't load your dishes",
+      "closePicker": "Close",
+      "stagedFull": "You can stage up to {max} at a time."
     }
   },
   "groups": {

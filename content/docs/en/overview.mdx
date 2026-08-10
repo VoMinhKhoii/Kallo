@@ -1,0 +1,83 @@
+---
+title: What Kallo is
+description: A way of logging meals that starts from the sentence you would say, not from a search box.
+lastUpdated: '2026-08-03'
+---
+
+Most nutrition apps make you translate your meal into their language: search for
+each ingredient, pick a row that looks close, guess the portion, repeat. For a
+bowl of noodle soup with ten things in it, that takes longer than the meal did.
+
+Kallo starts somewhere else. You describe the meal the way you would tell a
+friend — in Vietnamese, in English, or a mix — and Kallo handles the rest.
+
+<MealExample
+  input="chicken caesar salad and an iced latte"
+  totalLabel="Total"
+  dishes={[
+    { name: 'Chicken caesar salad', protein: 34, carbs: 18, fat: 26, calories: 450 },
+    { name: 'Iced latte', protein: 6, carbs: 12, fat: 5, calories: 125 },
+  ]}
+/>
+
+## What Kallo does
+
+**Reads what you wrote.** No search box, no dropdowns. You write "grilled
+chicken breast with rice, light on the rice" and Kallo separates it into dishes,
+then into ingredients, with the cooking method attached.
+
+**Matches against real data.** Every ingredient is matched to food composition
+data — the Vietnam National Food Composition Table 2007, plus FAO and USDA —
+rather than a number the model invented.
+
+**Asks when the portion is unclear.** How many grams "one bowl" is depends on
+the bowl. When there genuinely isn't enough to settle it, Kallo asks which size
+you used instead of guessing.
+
+**Gives you numbers with their limits attached.** An estimate is an estimate.
+Kallo gives you figures good enough to decide with, and says where it is
+unsure.
+
+## Manual logging, done properly
+
+Kallo is not trying to stop you thinking about your meals. You are still the one
+who knows what you ate and how much of it, and says so. What Kallo removes is
+the pointless part in the middle: translating that meal into ten searches, ten
+close-enough rows, ten guessed portions.
+
+It is also why Kallo starts from text rather than a photo. A sentence shows you
+what Kallo understood, lets you correct the exact thing that is wrong, and gives
+the same result next time — see
+[How estimates work](/docs/estimates/how-it-works) for the full comparison.
+
+The other ways of logging are still there, for when they are the easier option:
+
+- [Manual logging](/docs/logging/manual) — when you have a scale and want
+  gram-accurate figures.
+- [Barcode scanning](/docs/logging/barcode) — for packaged food that already has
+  a nutrition label.
+- [Re-logging](/docs/logging/relog) — for the meals you eat over and over.
+- [Cheat mode](/docs/logging/cheat-mode) — for occasions you cannot itemise at
+  all.
+
+## What Kallo does not do
+
+- **It is not a medical device.** It does not diagnose or treat anything, and it
+  does not replace a doctor or dietitian.
+- **It does not promise exactness.** If you need gram-accurate figures, weigh
+  your ingredients and use [manual logging](/docs/logging/manual).
+- **It does not train shared models on your content.** See the
+  [privacy policy](/docs/legal/privacy).
+
+## Where to start
+
+If you are new, read these in order:
+
+1. [Log your first meal](/docs/quickstart) — five minutes, no setup needed.
+2. [Profile and targets](/docs/profile-and-targets) — so the numbers describe
+   your body, not an average one.
+3. [Describing a meal](/docs/logging/describe-a-meal) — how to write for the
+   best results.
+
+If you are curious where the numbers come from,
+[How estimates work](/docs/estimates/how-it-works) is your page.

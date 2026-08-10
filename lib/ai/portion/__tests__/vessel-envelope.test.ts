@@ -135,6 +135,17 @@ describe('dish classification', () => {
     ['cup noodles', 'cup', 'soup'],
     ['mug cake', 'cup', 'solid'],
     ['cereal with milk', 'bowl', 'solid'],
+    // "1 tô mì gói" classified `solid` and drew a dense-food gram band for
+    // what is mostly broth. The qualified instant-noodle forms are soup; the
+    // bare `mì` ones are deliberately not, since mì xào / mì khô are dry.
+    ['mì gói', 'bowl', 'soup'],
+    ['mì gói sữa', 'bowl', 'soup'],
+    ['mì tôm trứng', 'bowl', 'soup'],
+    ['mì ăn liền', 'bowl', 'soup'],
+    ['mi goi', 'bowl', 'soup'],
+    ['instant noodles with egg', 'bowl', 'soup'],
+    ['mì xào giòn', 'plate', 'solid'],
+    ['mì Quảng khô', 'bowl', 'solid'],
   ] as const)('%s in a %s is %s', (name, family, expected) => {
     expect(classifyDishClass(dish({ name }), family)).toBe(expected);
   });
@@ -450,5 +461,91 @@ describe('attachVesselToMealItems', () => {
     );
 
     expect(mealItems.every((item) => !('vessel' in item))).toBe(true);
+  });
+});
+
+/**
+ * Regression from a real capture of Call 1 for
+ * "3 piece of salmon + 2 steaks + 1 cup of milk + 1 plate of spaghetti":
+ *
+ *   Salmon    count 3, unitToken "piece",  vesselToken —
+ *   Steaks    count 2, unitToken "steaks", vesselToken —
+ *   Milk      count 1, unitToken "cup",    vesselToken —
+ *   Spaghetti count —, unitToken —,        vesselToken "plate"
+ *
+ * The model put the container word on the DISH for spaghetti and on the
+ * INGREDIENT for milk. Only spaghetti got a portion affordance; milk fell
+ * through both resolvers and showed nothing.
+ */
+describe('container word on the ingredient instead of the dish', () => {
+  const milk = {
+    name: 'Milk',
+    ingredients: [{ canonicalName: 'Milk', count: 1, unitToken: 'cup' }],
+  };
+
+  it('resolves a cup that Call 1 attached to the ingredient', () => {
+    const envelope = resolveVesselEnvelope(milk);
+    expect(envelope?.family).toBe('cup');
+    // Milk in a cup is a drink, not food served in a cup.
+    expect(envelope?.dishClass).toBe('drink');
+    expect(envelope?.token).toBe('cup');
+  });
+
+  it('still prefers an explicit dish vessel when both are present', () => {
+    const envelope = resolveVesselEnvelope({
+      name: 'Cơm',
+      vesselToken: 'chén',
+      ingredients: [{ canonicalName: 'Cơm', count: 1, unitToken: 'cup' }],
+    });
+    expect(envelope?.family).toBe('bowl');
+    expect(envelope?.token).toBe('chén');
+  });
+
+  it('never promotes a piece or mass unit to a vessel', () => {
+    for (const unitToken of ['steaks', 'piece', 'g', 'slice']) {
+      expect(
+        resolveVesselEnvelope({
+          name: 'Steaks',
+          ingredients: [{ canonicalName: 'Beef steak', count: 2, unitToken }],
+        }),
+        unitToken
+      ).toBeNull();
+    }
+  });
+
+  it('ignores a multi-serving ingredient, whose grams outrun one vessel', () => {
+    // The envelope's guard band and midG describe ONE cup, but "3 cups of
+    // milk" is three of them. Promoting it would fit a ~720 g total into a
+    // one-cup band and tell the estimator the portion is far too small — worse
+    // than the no-affordance behaviour this promotion path exists to fix.
+    expect(
+      resolveVesselEnvelope({
+        name: 'Milk',
+        ingredients: [{ canonicalName: 'Milk', count: 3, unitToken: 'cup' }],
+      })
+    ).toBeNull();
+  });
+
+  it('still promotes a fractional serving', () => {
+    // Half a cup is inside a one-cup envelope, so the guard band still holds.
+    expect(
+      resolveVesselEnvelope({
+        name: 'Milk',
+        ingredients: [{ canonicalName: 'Milk', count: 0.5, unitToken: 'cup' }],
+      })?.family
+    ).toBe('cup');
+  });
+
+  it('ignores a composed dish where one ingredient is measured in cups', () => {
+    // "phở with a cup of broth" says nothing about what the DISH was served in.
+    expect(
+      resolveVesselEnvelope({
+        name: 'Phở bò',
+        ingredients: [
+          { canonicalName: 'Nước dùng', count: 1, unitToken: 'cup' },
+          { canonicalName: 'Bánh phở' },
+        ],
+      })
+    ).toBeNull();
   });
 });

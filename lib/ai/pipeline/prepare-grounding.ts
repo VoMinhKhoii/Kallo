@@ -1,9 +1,8 @@
 /**
  * Stage 2 of the v2 pipeline: turn a decomposition into everything Call 2
  * needs — top-K DB candidates per ingredient, server-resolved portions
- * (Phase-3 ladder), the Call-2 payload, and the fast-path gate. Pure
- * orchestration glue with no streaming or telemetry entanglement beyond the
- * matching stage log.
+ * (Phase-3 ladder), and the Call-2 payload. Pure orchestration glue with no
+ * streaming or telemetry entanglement beyond the matching stage log.
  */
 
 import type { AppDb } from '@/lib/db';
@@ -21,7 +20,6 @@ import {
 import type { MealItemWithCandidates } from '../prompts/grounded-estimation';
 import type { StreamEvent } from '../streaming/types';
 import type { UserContext } from '../types';
-import { isFullyGrounded } from './fast-path';
 import { buildCallTwoPayload, withStageLogV2 } from './grounded-support';
 import type { AnalyzeMealTraceContext } from './orchestrator';
 import type { MealDecompositionV2 } from './schemas-v2';
@@ -32,7 +30,6 @@ export interface GroundingPreparation {
   resolvedGramsAnchors: Array<number | null>;
   vesselEnvelopes: Array<VesselEnvelope | null>;
   mealItemsWithCandidates: MealItemWithCandidates[];
-  fullyGrounded: boolean;
 }
 
 export async function prepareGrounding(args: {
@@ -84,20 +81,11 @@ export async function prepareGrounding(args: {
     resolvedGramsAnchors,
     vesselEnvelopes
   );
-  // D2 fast path: when EVERY ingredient is fully grounded (exact-match +
-  // server anchor, no prep notes), Call 2 is skipped and the estimation is
-  // synthesized server-side (numerically identical to the full path).
-  const fullyGrounded = isFullyGrounded({
-    decomposition,
-    matchResults,
-    portionResolutions,
-  });
   return {
     matchResults,
     portionResolutions,
     resolvedGramsAnchors,
     vesselEnvelopes,
     mealItemsWithCandidates,
-    fullyGrounded,
   };
 }

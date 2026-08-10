@@ -12,6 +12,10 @@ import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { buildRelogPipelineResult } from '@/lib/logging/relog/build-relog-pipeline-result';
 import { buildRelogRawInput } from '@/lib/logging/relog/relog';
+import {
+  RELOG_WRITE_ROUTE,
+  withRelogGuard,
+} from '@/lib/rate-limit/relog-guard';
 import type { ParsedMeal } from '@/lib/types/meal';
 
 /**
@@ -22,8 +26,11 @@ import type { ParsedMeal } from '@/lib/types/meal';
  * incurs). Mirrors `stageCheatRepeatAction`, which likewise stages a pending
  * card from a plain server action without streaming.
  *
- * The mobile client keeps the instant-save `relogMealItemsAction`; this is the
- * web replacement for that path.
+ * BOTH clients go through here: the web composer calls this action directly and
+ * the Flutter composer posts to `/api/v1/meals/relog/stage`, so a pure-relog
+ * submit produces the same editable card on either surface. The instant-save
+ * `relogMealItemsAction` remains for callers that want a committed meal with no
+ * review step.
  *
  * The resolve runs in a short transaction with `FOR UPDATE` on the source meals
  * (like the direct writer): without it, a concurrent split-share could halve a
@@ -43,30 +50,43 @@ export async function stageRelogAnalysisAction(
   const parsed = stageRelogAnalysisSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  const { dishes, sourceConfidences } = await db.transaction((tx) =>
-    resolveRelogSources(tx, user.id, parsed.items, { lock: true })
-  );
+  // Throttled HERE, not at the route: the web composer calls this action
+  // directly. This path opens a transaction holding `FOR UPDATE` on the source
+  // meals and writes a fat `pending_analyses` row, so an unthrottled caller
+  // starves the pool for every other surface.
+  //
+  // The SAME key as `relogMealItemsAction`, deliberately. `checkAnalysisGuards`
+  // keys its window and in-flight counters on this string, so a distinct one
+  // would give a user an independent `concurrentUser: 1` budget per write
+  // action — two simultaneous transactions, each holding `FOR UPDATE` on its
+  // source meals. `DB_POOL_MAX` defaults to 2, so that is the whole pool, which
+  // is precisely the starvation the guard exists to prevent.
+  return withRelogGuard('write', RELOG_WRITE_ROUTE, user.id, async () => {
+    const { dishes, sourceConfidences } = await db.transaction((tx) =>
+      resolveRelogSources(tx, user.id, parsed.items, { lock: true })
+    );
 
-  const pipelineResult = buildRelogPipelineResult(dishes, sourceConfidences);
-  const rawInput = buildRelogRawInput(dishes.map((d) => d.name));
-  const loggedAt = getUtcInstantForLocalDate(
-    parsed.loggedDate,
-    parsed.timezoneOffset
-  );
+    const pipelineResult = buildRelogPipelineResult(dishes, sourceConfidences);
+    const rawInput = buildRelogRawInput(dishes.map((d) => d.name));
+    const loggedAt = getUtcInstantForLocalDate(
+      parsed.loggedDate,
+      parsed.timezoneOffset
+    );
 
-  const [inserted] = await upsertPendingAnalysis({
-    userId: user.id,
-    pipelineResult,
-    rawInput,
-    entryMode: 'precise',
-    loggedAt,
-    attemptId: parsed.attemptId,
+    const [inserted] = await upsertPendingAnalysis({
+      userId: user.id,
+      pipelineResult,
+      rawInput,
+      entryMode: 'precise',
+      loggedAt,
+      attemptId: parsed.attemptId,
+    });
+
+    return {
+      analysisId: inserted.id,
+      parsedMeal: toParsedMeal(pipelineResult),
+      rawInput,
+      loggedAt: loggedAt.toISOString(),
+    };
   });
-
-  return {
-    analysisId: inserted.id,
-    parsedMeal: toParsedMeal(pipelineResult),
-    rawInput,
-    loggedAt: loggedAt.toISOString(),
-  };
 }

@@ -1199,6 +1199,14 @@
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng"
     },
+    "portionPicker": {
+      "title": "Khẩu phần",
+      "assumption": "≈ {label}",
+      "adjust": "Chỉnh khẩu phần, hiện tại {label}",
+      "custom": "Khẩu phần tuỳ chỉnh",
+      "apply": "Áp dụng",
+      "cancel": "Hủy"
+    },
     "persistedMealCard": {
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",
@@ -1253,6 +1261,18 @@
       "removeItem": "Xóa món",
       "save": "Lưu bữa ăn",
       "relatedMatch": "liên quan"
+    },
+    "relog": {
+      "groupDishes": "Món",
+      "groupMeals": "Bữa ăn",
+      "macroSplit": "P {protein}g · C {carbs}g · F {fat}g",
+      "optionKcal": "{kcal} kcal",
+      "searching": "Đang tìm...",
+      "noResults": "Không tìm thấy món nào",
+      "noHistory": "Chưa có món nào trong lịch sử",
+      "searchFailed": "Không tải được danh sách món",
+      "closePicker": "Đóng",
+      "stagedFull": "Mỗi lần chỉ ghi lại được tối đa {max} món."
     }
   },
   "groups": {

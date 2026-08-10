@@ -730,20 +730,61 @@
       "label": "Landing page language"
     },
     "header": {
-      "features": "Features",
-      "howItWorks": "How it works",
+      "why": "Why text",
       "pricing": "Pricing",
+      "docs": "Docs",
       "signIn": "Sign in",
       "getStarted": "Get started"
     },
     "hero": {
-      "badge": "Built for Vietnamese meals",
-      "title": "Track Vietnamese meals",
-      "titleHighlight": "without the guesswork",
-      "subtitle": "Describe your meal the way you'd tell a friend — in Vietnamese, English, or both. Kallo knows phở, bánh mì, and 500+ Vietnamese dishes, and how you cook them, then estimates the nutrition from Vietnamese food-composition data.",
-      "cta": "Get started",
-      "ctaSecondary": "See how it works",
-      "beta": "In beta · built in Vietnam",
+      "headline": {
+        "clause1": {
+          "lead": "You",
+          "word": "describe"
+        },
+        "clause2": {
+          "lead": "we",
+          "word": "derive"
+        }
+      },
+      "subtitle": "Tell Kallo what you ate the way you'd tell a friend. It helps split into real ingredients and derives calories/macros from trusted data.",
+      "cardsHint": "Eyeballed or weighed to the gram. Hover a meal to see it.",
+      "cardsHintTouch": "Eyeballed or weighed to the gram.",
+      "beta": "Free while in beta · born in Vietnam, built for every kitchen",
+      "total": "Total",
+      "toggleDetails": "Toggle details",
+      "meals": {
+        "pho": {
+          "input": "big bowl of phở, extra rare beef",
+          "items": {
+            "pho": "Phở with rare beef",
+            "quay": "Fried dough stick"
+          }
+        },
+        "bol": {
+          "input": "leftover spaghetti bolognese, small bowl + side salad",
+          "items": {
+            "pasta": "Spaghetti bolognese",
+            "salad": "Side salad + dressing"
+          }
+        },
+        "chicken": {
+          "input": "150g grilled chicken breast, 180g jasmine rice, 1 tbsp olive oil",
+          "items": {
+            "chicken": "Chicken breast (150g)",
+            "rice": "Jasmine rice (180g)",
+            "oil": "Olive oil (1 tbsp)"
+          }
+        },
+        "shake": {
+          "input": "40g whey isolate + 250ml skim milk + 1 banana",
+          "items": {
+            "whey": "Whey isolate (40g)",
+            "milk": "Skim milk (250ml)",
+            "banana": "Banana (1)"
+          }
+        }
+      },
       "waitlist": {
         "label": "Email address",
         "placeholder": "you@email.com",
@@ -755,132 +796,138 @@
         "error": "Something went wrong. Please try again.",
         "rateLimited": "Too many tries. Please wait a moment and try again.",
         "privacy": "One email to confirm, one when your spot opens. Nothing else."
-      },
-      "demo": {
-        "today": "Today",
-        "date": "Meal log",
-        "justNow": "Just now",
-        "analysis": "AI nutrition analysis",
-        "totalCalories": "Total calories",
-        "inputPlaceholder": "Describe your meal…",
-        "smartContext": "Smart context",
-        "smartContextText": "Uses your region, cooking habits, and meal text to tighten estimates.",
-        "send": "Analyze meal",
-        "save": "Save this meal",
-        "phaseMatching": "Matching ingredients…",
-        "phaseEstimating": "Estimating nutrition…",
-        "chips": {
-          "phoBo": "1 tô phở bò tái + quẩy",
-          "comTam": "Cơm tấm sườn bì chả",
-          "bunCha": "Bún chả Hà Nội"
+      }
+    },
+    "understanding": {
+      "titleLead": "We understand that",
+      "titleUnderlined": "minor details matter",
+      "categories": {
+        "fat": {
+          "title": "Skin on, or skin off",
+          "note": "Three words about how you ate the chicken, and the fat follows them.",
+          "items": {
+            "rice": "Rice",
+            "thigh": "Grilled chicken thigh",
+            "greens": "Greens"
+          },
+          "variants": {
+            "plain": {
+              "input": "a bowl of rice with a grilled chicken thigh and a side of greens"
+            },
+            "trimmed": {
+              "input": "a bowl of rice with a grilled chicken thigh, <b>skin removed</b>, and a side of greens"
+            }
+          }
+        },
+        "count": {
+          "title": "One cup, or two",
+          "note": "Say how much rice and it is counted, rather than assumed from a setting you filled in once.",
+          "items": {
+            "rice": "Rice",
+            "pork": "Braised pork and egg"
+          },
+          "variants": {
+            "one": {
+              "input": "one cup of rice with braised pork and egg"
+            },
+            "two": {
+              "input": "<b>two cups</b> of rice with braised pork and egg"
+            }
+          }
+        },
+        "weight": {
+          "title": "Weighed raw, or weighed cooked",
+          "note": "The difference every person who owns a kitchen scale has argued about. Say which, and it lands.",
+          "items": {
+            "breast": "Slow-cooked chicken breast",
+            "potato": "Sweet potato",
+            "salad": "Green salad"
+          },
+          "variants": {
+            "asEaten": {
+              "input": "300g slow-cooked chicken breast, 150g sweet potato, green salad"
+            },
+            "raw": {
+              "input": "300g <b>raw-weight</b> chicken breast, slow-cooked, 150g sweet potato, green salad"
+            }
+          }
+        },
+        "oil": {
+          "title": "Deep-fried, or air-fried",
+          "note": "The same potatoes, cooked two ways. The oil they drank is the difference.",
+          "items": {
+            "potatoes": "Potatoes",
+            "burger": "Beef burger"
+          },
+          "variants": {
+            "fried": {
+              "input": "a plate of fries with a beef burger"
+            },
+            "noOil": {
+              "input": "a plate of <b>air-fried potatoes</b> with a beef burger"
+            }
+          }
         }
       }
     },
-    "problem": {
-      "label": "Why current apps fail",
-      "title": "The problem with",
-      "titleHighlight": "existing trackers",
-      "subtitle": "Built for Western diets. Most trackers don't know the difference between phở bò and phở gà, or that your bún bò Huế has more chili oil than usual.",
-      "card1Title": "Generic databases",
-      "card1Text": "Western-centric food databases with wrong portions and missing Vietnamese dishes.",
-      "card2Title": "Manual entry is painful",
-      "card2Text": "Searching ingredient by ingredient, guessing portions, and giving up after a few days.",
-      "card3Title": "No cooking context",
-      "card3Text": "A stir-fry with minimal oil vs. deep-fried — same ingredient, very different calories.",
-      "visual": {
-        "appLabel": "A typical Western tracker",
-        "query": "mực kho",
-        "result1": "Squid, raw",
-        "result1Note": "no braising, no sauce",
-        "result2": "Calamari, fried",
-        "result2Note": "wrong dish entirely",
-        "noMatch": "No exact match for “mực kho”",
-        "caption": "Two near-misses and a shrug — for a dish eaten in millions of homes."
+    "pricing": {
+      "title": "Pricing",
+      "plans": {
+        "free": {
+          "name": "Free",
+          "tagline": "Try Kallo",
+          "price": "$0",
+          "fineprint": "Free for everyone.",
+          "cta": "Get started free",
+          "inherits": "Includes:"
+        },
+        "premium": {
+          "name": "Premium",
+          "tagline": "For logging in your own words",
+          "priceMonthly": "$3.49",
+          "priceYearly": "$2.08",
+          "amountMonthly": 3.49,
+          "amountYearly": 24.99,
+          "fineprintMonthly": "Billed every month. Cancel any time.",
+          "fineprintYearly": "Billed $24.99 once a year. Cancel any time.",
+          "cta": "Start free trial",
+          "inherits": "Everything in Free, plus:"
+        },
+        "lifetime": {
+          "name": "Lifetime",
+          "tagline": "Pay once, keep it",
+          "price": "$54.99",
+          "fineprint": "One payment, billed up front. No renewals, ever.",
+          "cta": "Buy lifetime",
+          "inherits": "Everything in Premium, plus:"
+        }
       },
-      "quote": "When the food database doesn't understand your cuisine, every calorie target becomes a guess.",
-      "quoteLabel": "What users keep running into"
-    },
-    "solution": {
-      "step1Label": "Step 1",
-      "step1Title": "Describe what you ate",
-      "step1Text": "Type the meal the way you naturally would — in Vietnamese, English, or a mix of both.",
-      "step1TextMobile": "Describe your meal naturally in Vietnamese, English, or both.",
-      "step2Label": "Step 2",
-      "step2Title": "We break it into real ingredients",
-      "step2Text": "Kallo maps your description to Vietnamese ingredients and dish components from a curated nutrition dataset.",
-      "step2TextMobile": "Kallo maps your text to real Vietnamese ingredients and dish components.",
-      "step3Label": "Step 3",
-      "step3Title": "Personal context sharpens the estimate",
-      "step3Text": "Region, cooking habits, and nutrition goals help the AI understand hidden calories and likely portion adjustments.",
-      "step3TextMobile": "Region, cooking habits, and goals help the AI tighten the estimate.",
-      "step4Label": "Step 4",
-      "step4Title": "You get one number you can trust",
-      "step4Text": "Kallo gives you one calorie and macro number you can trust, built from real Vietnamese food data and how you actually cook.",
-      "step4TextMobile": "One number you can trust, built from real Vietnamese food data.",
-      "cta": "Start tracking now",
-      "whyLabel": "Why Kallo works better",
-      "whyTitle": "Built around how Vietnamese meals are actually eaten",
-      "feature1Title": "Vietnamese-first ingredient matching",
-      "feature1Text": "Matches meals against Vietnamese food composition data instead of forcing Western substitutes.",
-      "feature2Title": "Context-aware estimation",
-      "feature2Text": "Understands modifiers like less scallion oil, extra broth, or home-style braising habits.",
-      "feature3Title": "Numbers you can trust",
-      "feature3Text": "Every estimate is grounded in Vietnamese food-composition data, so the numbers hold up when you make decisions.",
-      "profile": {
-        "title": "Personalization profile",
-        "active": "Active",
-        "regionTaste": "Regional taste",
-        "regionTasteValue": "Southern / sweet-leaning",
-        "braisedDishes": "Braised dishes",
-        "braisedDishesValue": "Usually sweeter",
-        "chickenSkin": "Chicken skin",
-        "chickenSkinValue": "Usually eaten",
-        "ricePortion": "Rice portion",
-        "ricePortionValue": "Large bowl",
-        "disclaimer": "These preferences tighten the estimate without forcing you to log every detail every time."
+      "features": {
+        "barcode": "Barcode scanning",
+        "manualLogging": "Manual logging",
+        "joinGroups": "Max 2 groups, view-only",
+        "friends": "10 friends",
+        "macros": "Macros tracking",
+        "micros": "Micros breakdown (7d/30d/90d)",
+        "textLogging": "Describe a meal in your own words",
+        "visualEdit": "Visual edit",
+        "relog": "Relog a previous meal",
+        "cheatMeal": "Cheat meal mode",
+        "copySplit": "Copy or split a friend's meal",
+        "unlimitedCircle": "Unlimited groups and friends",
+        "payOnce": "One payment instead of a subscription",
+        "futureUpdates": "Every future update included"
       },
-      "receipt": {
-        "title": "Analysis receipt",
-        "dbQuery": "Querying Vietnamese ingredient database",
-        "profileTitle": "Personal context",
-        "regionPref": "Regional preference",
-        "regionValue": "Southern",
-        "modification": "Meal modifier",
-        "modificationValue": "Less scallion oil",
-        "goalStrategy": "Goal strategy",
-        "goalCutting": "Cutting",
-        "goalUpperBound": "Count conservatively",
-        "total": "Estimated total",
-        "upperBoundNote": "Counted conservatively for cutting"
-      }
-    },
-    "cta": {
-      "title": "Ready to track smarter?",
-      "subtitle": "Join the beta and start tracking Vietnamese meals with real accuracy.",
-      "button": "Get started free",
-      "buttonSecondary": "See a sample analysis",
-      "feature1": "Vietnamese-first database",
-      "feature2": "AI understands cooking context",
-      "feature3": "Nutrition numbers you can trust",
-      "socialProof": "Trusted by early testers who were tired of guessing",
-      "trust": "Vietnamese food-composition data · understands how you cook · tiếng Việt + English"
+      "betaNote": "Kallo is free while it is in beta. These prices start when beta ends, and we will tell you before that happens.",
+      "period": {
+        "monthly": "Monthly",
+        "yearly": "Yearly"
+      },
+      "discount": "Save {percent}%",
+      "perMonth": "/mo"
     },
     "footer": {
-      "tagline": "Vietnamese meal tracking, powered by AI.",
-      "product": "Product",
-      "features": "Features",
-      "howItWorks": "How it works",
-      "pricing": "Pricing",
-      "faq": "FAQ",
-      "company": "Company",
-      "about": "About",
-      "blog": "Blog",
-      "contact": "Contact",
-      "privacy": "Privacy",
-      "copyright": "© {year} Kallo. All rights reserved.",
-      "terms": "Terms",
-      "privacyLink": "Privacy policy",
-      "security": "Security"
+      "copyright": "© {year} Kallo. All rights reserved."
     },
     "waitlistStatus": {
       "confirmed": "You're on the list. We'll email you when your spot opens.",
@@ -1161,10 +1208,6 @@
       "kcal": "kcal",
       "alcohol": "alcohol",
       "between": "Between {low} and {high}"
-    },
-    "clarify": {
-      "portion": "How much {ingredient} was in your {mealItem}? A rough weight or portion helps.",
-      "food": "Which {ingredient} did you mean in your {mealItem}?"
     },
     "cheatRepeat": {
       "title": "Log it again"
@@ -1630,6 +1673,42 @@
     "trialBanner": {
       "daysRemaining": "{days} {days, plural, one {day} other {days}} left in your free trial",
       "upgrade": "Upgrade"
+    }
+  },
+  "docs": {
+    "title": "Docs",
+    "openApp": "Open app",
+    "onThisPage": "On this page",
+    "lastUpdated": "Last updated {date}",
+    "menu": {
+      "open": "Open contents",
+      "close": "Close contents",
+      "label": "Docs contents"
+    },
+    "breadcrumb": {
+      "label": "Breadcrumb",
+      "home": "Docs"
+    },
+    "pager": {
+      "previous": "Previous",
+      "next": "Next",
+      "label": "Page navigation"
+    },
+    "search": {
+      "trigger": "Search the docs",
+      "placeholder": "Search pages, sections…",
+      "empty": "No pages found.",
+      "label": "Search documentation",
+      "shortcutHint": "to search"
+    },
+    "sections": {
+      "start": "Getting started",
+      "logging": "Logging",
+      "tracking": "Tracking",
+      "circle": "Circle",
+      "account": "Account",
+      "estimates": "Understanding estimates",
+      "legal": "Legal"
     }
   }
 }

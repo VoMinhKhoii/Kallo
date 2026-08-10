@@ -131,6 +131,7 @@
   --color-nham-ink: var(--nham-ink);
   --color-nham-ink-hover: var(--nham-ink-hover);
   --color-nham-accent: var(--nham-accent);
+  --color-nham-highlight: var(--nham-highlight);
   --color-nham-accent-hover: var(--nham-accent-hover);
   --color-nham-border: var(--nham-border);
   --color-nham-hover: var(--nham-hover);
@@ -214,6 +215,11 @@
   --nham-ink-hover: #2f2f2d;
   --nham-accent: #c9a87c;
   --nham-accent-hover: #b89968; /* accent darkened one step on hover */
+  /* Marker pen, landing page only. Deliberately OUTSIDE the warm palette:
+     every on-palette tint disappeared into the cream, which is what happened
+     to the accent above when it was tried here. It earns being foreign by
+     being the only one, so it may mark only the thing that changed. */
+  --nham-highlight: #f8d546;
   --nham-border: #e8e6dc;
   --nham-hover: #f0eae0;
   --nham-track: #f5f4f0;

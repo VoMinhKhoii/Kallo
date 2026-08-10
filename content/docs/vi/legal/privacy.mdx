@@ -1,0 +1,464 @@
+---
+title: Chính sách quyền riêng tư
+description: Kallo thu thập dữ liệu gì, gửi những gì tới mô hình AI, giữ trong bao lâu, và bạn kiểm soát ra sao.
+lastUpdated: '2026-08-03'
+---
+
+Chính sách này giải thích VÕ MINH KHÔI ("Kallo", "chúng tôi") thu thập, sử
+dụng, chia sẻ và bảo vệ dữ liệu cá nhân của bạn ra sao khi bạn dùng Kallo trên
+web, iOS và Android.
+
+Chính sách áp dụng cho mọi tài khoản Kallo, kể cả tài khoản chưa đăng ký
+Premium, và cho cả người đăng ký nhận thông báo khi chưa có tài khoản.
+
+## 1. Ai chịu trách nhiệm dữ liệu của bạn
+
+Bên Kiểm soát dữ liệu cá nhân là VÕ MINH KHÔI, địa chỉ
+88/2 Đ. Đào Duy Anh, phường Đức Nhuận, Thành phố Hồ Chí Minh 700000, Việt Nam.
+
+Nếu bạn có câu hỏi, muốn xem dữ liệu của mình, hoặc muốn khiếu nại về quyền
+riêng tư, hãy gửi email tới [support@kallo.fit](mailto:support@kallo.fit).
+
+## 2. Dữ liệu chúng tôi thu thập
+
+### Thông tin tài khoản
+
+Địa chỉ email, cách bạn đăng nhập (email kèm mật khẩu, Google, hoặc Apple), và
+mã định danh tài khoản. Chúng tôi **không** lưu mật khẩu ở dạng đọc được; phần
+xác thực do Supabase Auth đảm nhiệm.
+
+### Hồ sơ và mục tiêu
+
+Tên hiển thị, tên định danh, ảnh đại diện, ngôn ngữ bạn chọn; cân nặng, chiều
+cao, tuổi, giới tính sinh học và mức vận động; mục tiêu giảm, tăng hay giữ cân,
+nhịp độ bạn đặt cho mục tiêu đó, cùng các chỉ tiêu calo và đa lượng suy ra từ
+chúng; quốc gia bạn lớn lên và quốc gia bạn đang sống.
+
+Hai quốc gia này là do **bạn tự chọn** trong phần thiết lập hồ sơ, từ một danh
+sách có sẵn. Kallo **không** đọc vị trí thiết bị của bạn: ứng dụng không xin
+quyền truy cập vị trí, không dùng GPS, và không suy ra nơi bạn đang đứng từ địa
+chỉ IP.
+
+### Thói quen nấu ăn
+
+Lượng dầu bạn hay dùng, khẩu phần cơm và đạm quen thuộc, thói quen cho đường vào
+món kho, và mức độ bạn húp nước dùng. Những thông tin này giúp ước lượng bám sát
+cách bạn nấu thật.
+
+### Nhật ký bữa ăn
+
+Câu bạn viết để mô tả bữa ăn, thời điểm ghi, buổi ăn, chế độ ghi (Bình thường,
+Thủ công hay Bữa xả), các món và nguyên liệu Kallo nhận ra, khối lượng ước tính,
+cách chế biến, độ tin cậy khi khớp nguyên liệu, lượng cồn nếu có, vị trí các
+thanh trượt khi bạn dùng chế độ Bữa xả, và cả 28 chỉ số dinh dưỡng tính cho từng
+bữa và từng món.
+
+### Cân nặng theo thời gian
+
+Các lần bạn ghi cân nặng, kèm ngày ghi.
+
+### Nội dung trong Vòng kết nối
+
+Danh sách bạn bè, bữa ăn bạn chia sẻ, biểu cảm và phản hồi, lời mời chia phần,
+các nhóm bạn tham gia, và tin nhắn bạn gửi trong nhóm hoặc trong cuộc trò chuyện
+riêng.
+
+### Góp ý
+
+Loại góp ý, nội dung bạn viết, ảnh chụp màn hình bạn đính kèm (lưu trong kho
+riêng tư, không công khai), kèm phiên bản ứng dụng, nền tảng, ngôn ngữ và màn
+hình bạn đang mở lúc gửi.
+
+### Thanh toán
+
+Trạng thái quyền Premium, nơi bạn mua, mã sản phẩm, ngày bắt đầu và ngày hết
+hạn, trạng thái gia hạn, và mã khách hàng do đơn vị thanh toán cấp. **Chúng tôi
+không nhận và không lưu số thẻ của bạn**; phần thanh toán do Apple, Google,
+RevenueCat Billing hoặc Stripe xử lý.
+
+### Danh sách chờ
+
+Nếu bạn đăng ký nhận thông báo trước khi có tài khoản, chúng tôi lưu email, ngôn
+ngữ, nguồn đăng ký, một mã xác nhận đã băm, và **một giá trị băm từ địa chỉ IP**
+để chống lạm dụng. Địa chỉ IP nguyên bản không được lưu cho mục đích này.
+
+### Dữ liệu vận hành và chống lạm dụng
+
+Nhật ký kỹ thuật của mỗi lần phân tích: các bước xử lý, thời gian chạy, số
+token, và lỗi nếu có. Các sự kiện chống lạm dụng được ghi kèm **mã định danh đã
+băm bằng HMAC** chứ không phải mã tài khoản nguyên bản.
+
+## 3. Dữ liệu nào thực sự được gửi tới mô hình AI
+
+Khi bạn nhờ phân tích một bữa ăn, mô hình AI **chỉ** nhận được:
+
+- Câu mô tả bữa ăn của bạn.
+- Quốc gia bạn lớn lên và quốc gia bạn đang sống.
+- Thói quen nấu ăn của bạn.
+- Ngôn ngữ bạn muốn nhận kết quả.
+
+Mô hình **không** biết mục tiêu cân nặng, nhịp độ, chỉ tiêu calo hay đa lượng,
+cân nặng, chiều cao, tuổi, giới tính, email, tên, cũng như lịch sử bữa ăn của
+bạn.
+
+<Callout label="Vì sao điều này quan trọng" tone="tip">
+Kallo điều chỉnh kết quả theo mục tiêu của bạn **trên máy chủ, sau khi** mô hình
+đã trả về, chứ không phải bằng cách nói cho mô hình biết bạn đang giảm cân. Nhờ
+vậy con số gốc không bị mục tiêu kéo lệch. Ranh giới dữ liệu này được ràng buộc
+ngay trong kiểu dữ liệu của mã nguồn, chứ không phải chỉ là một quy ước dễ quên.
+</Callout>
+
+Chúng tôi **không** dùng nội dung của bạn để huấn luyện mô hình AI dùng chung.
+
+### Điều gì xảy ra với dữ liệu đó ở phía Google
+
+Bản chính thức của Kallo gọi Gemini qua **Vertex AI trên Google Cloud**, tức bản
+dành cho doanh nghiệp chứ không phải ứng dụng Gemini cho người dùng phổ thông.
+Theo điều khoản Google Cloud, nội dung gửi lên và kết quả trả về **không được
+dùng để huấn luyện hay tinh chỉnh mô hình của Google**.
+
+Có hai ngoại lệ:
+
+- **Lưu tạm tối đa 24 giờ.** Google giữ tạm nội dung đầu vào để những yêu cầu kế
+  tiếp chạy nhanh hơn. Bản lưu tạm nằm tại trung tâm dữ liệu đã xử lý yêu cầu
+  đó.
+- **Giám sát lạm dụng tối đa 30 ngày.** Nếu hệ thống kiểm duyệt tự động thấy một
+  yêu cầu đáng ngờ, Google có thể giữ lại nội dung đó để kiểm tra xem có vi phạm
+  chính sách hay không. Dữ liệu này vẫn **không** được dùng để huấn luyện mô
+  hình.
+
+Kallo gọi **điểm cuối toàn cầu** của Vertex AI, nên một yêu cầu có thể được xử
+lý ở bất kỳ vùng nào Google đang vận hành. Nói cách khác, câu mô tả bữa ăn của
+bạn cùng ba thông tin còn lại ở trên có thể rời khỏi Việt Nam trong lúc được xử
+lý. Mục 9 nói kỹ hơn.
+
+Khi lập trình viên chạy thử trên máy cá nhân, ứng dụng dùng một đường kết nối
+khác (Google AI Studio) với dữ liệu thử nghiệm, không phải dữ liệu tài khoản của
+bạn.
+
+## 4. Chúng tôi dùng dữ liệu để làm gì
+
+| Mục đích | Dữ liệu liên quan |
+| --- | --- |
+| Xác thực và giữ bạn ở trạng thái đã đăng nhập | Tài khoản, thiết bị |
+| Tạo ước lượng dinh dưỡng | Mô tả bữa ăn, thói quen nấu, quốc gia |
+| Cá nhân hóa chỉ tiêu và biểu đồ | Hồ sơ, chỉ số cơ thể, mục tiêu, nhật ký |
+| Hiển thị nội dung bạn chia sẻ | Vòng kết nối, bữa ăn được chia sẻ |
+| Duy trì quyền Premium | Dữ liệu thanh toán từ đơn vị cung cấp |
+| Chống lạm dụng, gian lận, quá tải | Sự kiện giới hạn tần suất, mã băm |
+| Khắc phục sự cố, cải thiện độ tin cậy | Nhật ký vận hành, góp ý |
+| Trả lời hỗ trợ | Nội dung bạn liên hệ, tài khoản |
+| Tuân thủ nghĩa vụ pháp lý | Theo yêu cầu áp dụng |
+
+Căn cứ để chúng tôi xử lý dữ liệu gồm: **thực hiện hợp đồng** với bạn, tức cung
+cấp dịch vụ bạn đã đăng ký; **lợi ích hợp pháp**, gồm giữ hệ thống an toàn,
+chống lạm dụng và cải thiện chất lượng; **sự đồng ý** của bạn, ví dụ với dữ liệu
+sức khỏe và các thông báo tùy chọn; và **nghĩa vụ pháp lý**.
+
+Một số dữ liệu bạn cung cấp, như cân nặng, chiều cao và thói quen ăn uống, có
+thể được xem là **dữ liệu cá nhân nhạy cảm** theo pháp luật Việt Nam. Chúng tôi
+xử lý chúng dựa trên sự đồng ý của bạn, và bạn có thể rút lại sự đồng ý bất cứ
+lúc nào bằng cách xóa dữ liệu hoặc xóa tài khoản.
+
+**Chúng tôi không bán dữ liệu cá nhân của bạn**, và không chia sẻ dữ liệu để bên
+thứ ba làm quảng cáo.
+
+## 5. Các bên xử lý dữ liệu thay chúng tôi
+
+| Nhà cung cấp | Vai trò | Dữ liệu tiếp cận |
+| --- | --- | --- |
+| Supabase | Xác thực, cơ sở dữ liệu, lưu trữ tệp | Tài khoản, toàn bộ dữ liệu ứng dụng, ảnh đại diện và ảnh góp ý |
+| Google Cloud (Vertex AI, Gemini) | Phân tích bữa ăn bằng AI | Mô tả bữa ăn, quốc gia, thói quen nấu, ngôn ngữ |
+| Google Cloud Run | Hạ tầng vận hành ứng dụng | Lưu lượng truy cập, nhật ký máy chủ |
+| Google Cloud Translate | Dịch dữ liệu nguyên liệu | Tên nguyên liệu |
+| Cloudflare | Phân phối nội dung, chống tấn công | Siêu dữ liệu yêu cầu, địa chỉ IP |
+| Resend | Gửi email xác thực và thông báo | Địa chỉ email, nội dung email |
+| RevenueCat | Quản lý quyền đăng ký đa nền tảng | Mã tài khoản, siêu dữ liệu giao dịch |
+| Apple App Store, Google Play | Thanh toán trong ứng dụng | Thông tin thanh toán của bạn với cửa hàng |
+| Stripe (qua RevenueCat Billing) | Thanh toán trên web | Thông tin thanh toán |
+| Paddle | Thanh toán trên web (đơn vị bán hàng chính danh) | Thông tin thanh toán, dữ liệu hóa đơn và thuế |
+| Open Food Facts | Tra cứu sản phẩm đóng gói | Mã vạch bạn quét |
+
+Danh sách này thay đổi khi hạ tầng thay đổi, và bản mới nhất luôn nằm ở đây.
+
+Ngoài các bên nêu trên, chúng tôi có thể chuyển giao dữ liệu cá nhân trong
+trường hợp **sáp nhập, mua bán tài sản doanh nghiệp, huy động vốn hoặc chuyển
+nhượng một phần hay toàn bộ hoạt động kinh doanh** cho một pháp nhân khác. Khi
+điều đó xảy ra, chúng tôi sẽ thông báo trước và bên nhận chuyển giao phải tiếp
+tục tuân thủ chính sách này.
+
+Chúng tôi cũng có thể tiết lộ dữ liệu cá nhân khi pháp luật yêu cầu, khi cần
+thiết để bảo vệ quyền và lợi ích hợp pháp của chúng tôi hoặc của bên thứ ba,
+hoặc khi cần bảo vệ **tính mạng, sức khỏe của một cá nhân** trong tình huống
+khẩn cấp.
+
+## 6. Khi bạn chia sẻ trong Vòng kết nối
+
+Bữa ăn bạn chia sẻ sẽ hiện ra với đúng những người trong phạm vi bạn chọn, có
+thể là bạn bè, một nhóm, hoặc một cuộc trò chuyện riêng, kèm câu mô tả, các món
+và số liệu dinh dưỡng.
+
+Lời mời kết bạn đi qua đường liên kết, nên ai cầm được liên kết cũng có thể gửi
+yêu cầu. Bạn có thể hủy kết bạn bất cứ lúc nào. Nếu bạn bật tự động chia sẻ
+trong **Cài đặt**, bữa ăn mới sẽ được chia sẻ mà bạn không cần làm gì thêm, nên
+hãy xem lại thiết lập này nếu muốn giữ nhật ký cho riêng mình.
+
+Nội dung người khác đã xem hoặc đã sao chép vào nhật ký của họ có thể vẫn còn
+sau khi bạn xóa bản gốc.
+
+## 7. Lưu trữ và xóa dữ liệu
+
+Chúng tôi giữ nội dung tài khoản chừng nào tài khoản còn hoạt động, sau đó chỉ
+giữ trong khoảng thời gian cần cho bảo mật, giải quyết tranh chấp và tuân thủ
+pháp luật.
+
+Bạn có thể xóa tài khoản trong **Cài đặt**. Một tiến trình chạy theo lịch sẽ
+thực hiện việc xóa, và tiến trình đó cũng xóa luôn hồ sơ khách hàng của bạn ở
+đơn vị thanh toán.
+
+<Callout label="Trước khi xóa tài khoản" tone="caution">
+Xóa tài khoản Kallo **không** hủy gói đăng ký bạn mua qua Apple hoặc Google. Nếu
+muốn dừng bị tính phí, hãy hủy trong cửa hàng trước. Gói mua thẳng trên web sẽ
+được hủy cùng lúc với việc xóa tài khoản.
+</Callout>
+
+Việc xóa sẽ gỡ dữ liệu khỏi những hệ thống đang vận hành ứng dụng. Nếu nhà cung
+cấp hạ tầng có giữ bản sao lưu ở mức hệ thống, dữ liệu đã xóa có thể còn nằm đó
+cho tới khi bị ghi đè; trong khoảng thời gian ấy, dữ liệu không được dùng để
+phục vụ ứng dụng và bạn cũng không truy cập được nó. Hiện chúng tôi chưa đặt
+thời hạn cố định cho bản sao lưu, và sẽ ghi rõ tại đây khi có.
+
+## 8. Bảo mật
+
+Chúng tôi bảo vệ dữ liệu bằng nhiều lớp:
+
+- Mã hóa toàn bộ kết nối trên đường truyền.
+- Phân quyền ngay ở tầng cơ sở dữ liệu, để dữ liệu của tài khoản này không đọc
+  được từ tài khoản khác.
+- Kiểm tra quyền ở phía máy chủ cho mọi lượt truy cập dữ liệu giữa các tài khoản
+  trong Vòng kết nối.
+- Chỉ nhận lưu lượng đi qua lớp bảo vệ phía trước, chặn truy cập thẳng vào máy
+  chủ.
+- Kho lưu trữ riêng tư cho ảnh đại diện và ảnh chụp màn hình gửi kèm góp ý.
+- Siết chặt quyền dùng khóa và mật khẩu hệ thống.
+
+Không hệ thống nào an toàn tuyệt đối. Nếu xảy ra sự cố ảnh hưởng tới dữ liệu cá
+nhân của bạn, chúng tôi sẽ thông báo theo đúng quy định pháp luật.
+
+## 9. Chuyển dữ liệu ra nước ngoài
+
+Các nhà cung cấp ở mục 5 có thể xử lý dữ liệu ở quốc gia khác với nơi bạn sống.
+Cụ thể:
+
+- **Máy chủ ứng dụng** chạy trên Google Cloud Run tại vùng `asia-southeast1`
+  (Singapore). Hiện Google Cloud chưa có vùng nào đặt tại Việt Nam, nên dữ liệu
+  ứng dụng được xử lý ngoài lãnh thổ Việt Nam.
+- **Cơ sở dữ liệu** do Supabase vận hành cũng đặt tại Singapore, ngay cạnh máy
+  chủ ứng dụng.
+- **Phân tích bữa ăn bằng AI** đi qua điểm cuối toàn cầu của Vertex AI, nên có
+  thể chạy ở bất kỳ vùng nào Google vận hành, kể cả ngoài Việt Nam. Chỉ bốn
+  thông tin nêu ở mục 3 đi theo đường này.
+- **Các nhà cung cấp còn lại** xử lý dữ liệu ở những vùng họ vận hành.
+
+Khi dữ liệu ra khỏi Việt Nam, chúng tôi làm theo quy định của pháp luật về bảo
+vệ dữ liệu cá nhân, gồm cả việc lập và lưu hồ sơ đánh giá tác động chuyển dữ
+liệu khi được yêu cầu.
+
+## 10. Quyền của bạn
+
+Theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân, và theo pháp luật nơi
+bạn sống, bạn có các quyền sau:
+
+- **Được biết** dữ liệu nào đang được xử lý và xử lý ra sao.
+- **Truy cập** và nhận bản sao dữ liệu của bạn.
+- **Chỉnh sửa** dữ liệu chưa chính xác.
+- **Rút lại sự đồng ý** đã cấp trước đó.
+- **Xóa** dữ liệu cá nhân của bạn.
+- **Hạn chế** hoặc **phản đối** một số hoạt động xử lý.
+- **Nhận dữ liệu** ở định dạng có thể mang đi nơi khác.
+- **Khiếu nại** với cơ quan nhà nước có thẩm quyền.
+- **Yêu cầu bồi thường** thiệt hại theo quy định pháp luật.
+
+Muốn thực hiện những quyền này, bạn gửi email tới
+[support@kallo.fit](mailto:support@kallo.fit). Chúng tôi có thể cần xác minh
+danh tính trước khi xử lý, và sẽ phản hồi trong thời hạn luật định.
+
+Phần lớn yêu cầu bạn làm được ngay trong **Cài đặt**: sửa hồ sơ, xóa từng bữa
+ăn, hoặc xóa cả tài khoản.
+
+## 11. Trẻ em
+
+Kallo không dành cho người dưới 13 tuổi. Tại Việt Nam, muốn xử lý dữ liệu cá
+nhân của người dưới 16 tuổi thì phải có sự đồng ý của cha, mẹ hoặc người giám
+hộ.
+
+Nếu bạn cho rằng con mình đã cung cấp dữ liệu cho chúng tôi mà chưa có sự đồng ý
+cần thiết, hãy liên hệ [support@kallo.fit](mailto:support@kallo.fit) và chúng
+tôi sẽ xóa dữ liệu đó.
+
+## 12. Cookie và lưu trữ trên thiết bị
+
+Chúng tôi chỉ dùng cookie và bộ nhớ trên thiết bị ở mức tối thiểu, để:
+
+- Giữ bạn ở trạng thái đã đăng nhập.
+- Nhớ ngôn ngữ bạn chọn.
+- Nhớ trạng thái giao diện, ví dụ thanh bên đang mở hay đã thu gọn.
+
+Chúng tôi không dùng cookie quảng cáo và không gắn mã theo dõi của bất kỳ mạng
+quảng cáo nào.
+
+## 13. Quyết định tự động
+
+Ước tính dinh dưỡng của Kallo được tạo ra bằng phương tiện tự động. Tuy nhiên,
+các ước tính này **không cấu thành quyết định tự động phát sinh hệ quả pháp lý
+hoặc ảnh hưởng tương tự đáng kể** tới bạn theo nghĩa của Điều 22 GDPR: chúng là
+thông tin tham khảo về dinh dưỡng, không quyết định việc bạn được tiếp cận dịch
+vụ, tín dụng, việc làm hay bất kỳ quyền lợi nào.
+
+Bạn luôn có quyền xem, chỉnh sửa hoặc xóa từng kết quả trước và sau khi lưu. Nếu
+bạn muốn một người xem xét lại cách một kết quả được tạo ra, hãy liên hệ
+[support@kallo.fit](mailto:support@kallo.fit); chúng tôi sẽ giải thích các yếu
+tố chính đã được sử dụng.
+
+Chúng tôi **không** thực hiện việc lập hồ sơ (profiling) nhằm mục đích quảng
+cáo, chấm điểm tín dụng, đánh giá rủi ro bảo hiểm, hay bất kỳ mục đích nào ngoài
+việc cung cấp chính dịch vụ bạn yêu cầu.
+
+## 14. Tín hiệu Do-Not-Track
+
+Phần lớn trình duyệt web, một số hệ điều hành và ứng dụng di động có tính năng
+Do-Not-Track ("DNT") cho phép bạn phát tín hiệu không muốn bị theo dõi hoạt động
+duyệt web.
+
+Hiện chưa có tiêu chuẩn công nghệ thống nhất để nhận diện và thực thi tín hiệu
+DNT. Vì vậy, chúng tôi **không phản hồi** tín hiệu DNT hay bất kỳ cơ chế tự động
+tương tự nào. Nếu một tiêu chuẩn được ban hành và áp dụng bắt buộc, chúng tôi sẽ
+cập nhật chính sách này. Pháp luật California yêu cầu công bố nội dung này.
+
+## 15. Quyền riêng tư của cư dân Hoa Kỳ
+
+Phần này áp dụng nếu bạn cư trú tại California, Colorado, Connecticut, Delaware,
+Florida, Indiana, Iowa, Kentucky, Maryland, Minnesota, Montana, Nebraska, New
+Hampshire, New Jersey, Oregon, Rhode Island, Tennessee, Texas, Utah hoặc
+Virginia.
+
+### Các loại dữ liệu cá nhân đã thu thập
+
+Bảng dưới đây liệt kê các loại dữ liệu cá nhân theo phân loại của pháp luật
+California mà chúng tôi đã thu thập trong mười hai (12) tháng gần nhất.
+
+| Loại | Ví dụ | Có thu thập |
+| --- | --- | --- |
+| A. Định danh | Tên hiển thị, email, mã tài khoản, giá trị băm từ địa chỉ IP | Có |
+| B. Dữ liệu theo Đạo luật Hồ sơ Khách hàng California | Tên, thông tin liên hệ | Có |
+| C. Đặc điểm được pháp luật bảo vệ | Tuổi, giới tính sinh học | Có |
+| D. Thông tin thương mại | Lịch sử đăng ký Premium, siêu dữ liệu giao dịch | Có |
+| E. Dữ liệu sinh trắc học | Vân tay, mẫu giọng nói | Không |
+| F. Hoạt động mạng | Nhật ký máy chủ, thao tác trong ứng dụng | Có |
+| G. Dữ liệu định vị | Vị trí thiết bị | Không |
+| H. Hình ảnh, âm thanh và dữ liệu cảm biến | Ảnh đại diện, ảnh chụp màn hình gửi kèm góp ý | Có |
+| I. Thông tin nghề nghiệp hoặc việc làm | Chức danh, lịch sử công việc | Không |
+| J. Thông tin giáo dục | Hồ sơ học tập | Không |
+| K. Suy luận từ dữ liệu đã thu thập | Chỉ tiêu calo và đa lượng, xu hướng dinh dưỡng | Có |
+| L. Dữ liệu cá nhân nhạy cảm | Dữ liệu sức khỏe: cân nặng, chiều cao, nhật ký bữa ăn | Có |
+
+Chúng tôi giữ từng loại dữ liệu nêu trên trong thời gian tài khoản của bạn còn
+tồn tại, trừ khi pháp luật yêu cầu thời hạn khác.
+
+### Không bán, không chia sẻ
+
+Trong mười hai (12) tháng gần nhất, chúng tôi **không bán và không chia sẻ** dữ
+liệu cá nhân cho bên thứ ba vì mục đích thương mại hoặc quảng cáo hướng đối
+tượng, theo nghĩa của pháp luật các bang nêu trên. Chúng tôi cũng không có kế
+hoạch làm việc đó.
+
+Chúng tôi **không** thu thập hay xử lý dữ liệu cá nhân nhạy cảm nhằm mục đích
+suy đoán đặc điểm về bạn.
+
+### Quyền của bạn
+
+Tùy theo bang nơi bạn cư trú, bạn có thể có các quyền sau:
+
+- **Quyền được biết** liệu chúng tôi có đang xử lý dữ liệu cá nhân của bạn hay
+  không.
+- **Quyền truy cập** dữ liệu cá nhân của bạn và các loại dữ liệu đang được xử
+  lý.
+- **Quyền chỉnh sửa** dữ liệu không chính xác.
+- **Quyền yêu cầu xóa** dữ liệu cá nhân của bạn.
+- **Quyền nhận bản sao** dữ liệu bạn đã cung cấp, ở định dạng có thể mang đi.
+- **Quyền không bị phân biệt đối xử** khi thực hiện các quyền nêu trên.
+- **Quyền từ chối** việc xử lý dữ liệu cho mục đích quảng cáo hướng đối tượng,
+  bán dữ liệu, hoặc lập hồ sơ phục vụ các quyết định có hệ quả pháp lý.
+- **Quyền giới hạn** việc sử dụng và tiết lộ dữ liệu cá nhân nhạy cảm.
+- **Quyền yêu cầu danh sách** các bên thứ ba mà chúng tôi đã tiết lộ dữ liệu,
+  trong phạm vi pháp luật bang của bạn cho phép.
+
+### Cách thực hiện quyền
+
+Gửi email tới [support@kallo.fit](mailto:support@kallo.fit). Phần lớn thao tác
+bạn cũng có thể tự thực hiện ngay trong **Cài đặt**.
+
+**Xác minh yêu cầu.** Khi nhận được yêu cầu, chúng tôi cần xác minh rằng bạn
+chính là chủ thể dữ liệu. Chúng tôi chỉ sử dụng thông tin trong yêu cầu cho mục
+đích xác minh. Nếu không thể xác minh từ dữ liệu sẵn có, chúng tôi có thể đề
+nghị bạn cung cấp thêm thông tin.
+
+**Người được ủy quyền.** Bạn có thể chỉ định người đại diện thực hiện yêu cầu
+thay bạn. Chúng tôi có thể từ chối yêu cầu nếu người đại diện không xuất trình
+được văn bản ủy quyền hợp lệ.
+
+**Khiếu nại nội bộ.** Nếu chúng tôi từ chối yêu cầu của bạn, bạn có quyền khiếu
+nại bằng cách gửi email tới [support@kallo.fit](mailto:support@kallo.fit).
+Chúng tôi sẽ trả lời bằng văn bản, nêu rõ hành động đã hoặc không thực hiện kèm
+lý do. Nếu khiếu nại bị từ chối, bạn có thể gửi đơn tới Tổng Chưởng lý bang nơi
+bạn cư trú.
+
+**Luật "Shine The Light" của California.** Theo Điều 1798.83 Bộ luật Dân sự
+California, cư dân California có quyền yêu cầu, mỗi năm một lần và miễn phí,
+thông tin về các loại dữ liệu cá nhân (nếu có) mà chúng tôi đã tiết lộ cho bên
+thứ ba phục vụ mục đích tiếp thị trực tiếp. Vì chúng tôi không tiết lộ dữ liệu
+cho mục đích đó, câu trả lời cho một yêu cầu như vậy sẽ là "không có".
+
+## 16. Khiếu nại với cơ quan có thẩm quyền
+
+Nếu bạn cho rằng chúng tôi xử lý dữ liệu cá nhân của bạn trái pháp luật, bạn có
+quyền khiếu nại với cơ quan giám sát:
+
+- **Việt Nam.** Cục An ninh mạng và phòng, chống tội phạm sử dụng công nghệ cao
+  (A05), Bộ Công an, là cơ quan chuyên trách bảo vệ dữ liệu cá nhân theo Nghị
+  định 13/2023/NĐ-CP.
+- **Khu vực Kinh tế châu Âu.** Cơ quan bảo vệ dữ liệu của quốc gia thành viên
+  nơi bạn cư trú.
+- **Vương quốc Anh.** Information Commissioner's Office —
+  [ico.org.uk/make-a-complaint](https://ico.org.uk/make-a-complaint), điện thoại
+  0303 123 1113.
+- **Thụy Sĩ.** Federal Data Protection and Information Commissioner (FDPIC).
+
+Chúng tôi đề nghị bạn liên hệ với chúng tôi trước tại
+[support@kallo.fit](mailto:support@kallo.fit). Chúng tôi sẽ xác nhận đã nhận
+khiếu nại trong vòng 30 ngày, xem xét không chậm trễ, và thông báo kết quả kèm
+giải thích.
+
+## 17. Dữ liệu từ API của Google
+
+Nếu bạn đăng nhập bằng tài khoản Google, việc chúng tôi sử dụng thông tin nhận
+được từ API của Google tuân thủ
+[Chính sách Dữ liệu Người dùng của Dịch vụ API Google](https://developers.google.com/terms/api-services-user-data-policy),
+bao gồm cả các
+[yêu cầu về Sử dụng Giới hạn](https://developers.google.com/terms/api-services-user-data-policy#limited-use).
+
+Chúng tôi chỉ nhận địa chỉ email, tên hiển thị và ảnh đại diện từ tài khoản
+Google của bạn, và chỉ dùng chúng để tạo và duy trì tài khoản Kallo.
+
+## 18. Thay đổi chính sách
+
+Khi dịch vụ hoặc quy định pháp luật thay đổi, chúng tôi sẽ cập nhật tài liệu này
+và đổi ngày ở đầu trang. Với những thay đổi quan trọng, chúng tôi sẽ báo trong
+ứng dụng hoặc qua email trước khi chúng có hiệu lực.
+
+## 19. Liên hệ
+
+Câu hỏi và yêu cầu về quyền riêng tư:
+[support@kallo.fit](mailto:support@kallo.fit)
+
+Đơn vị vận hành: VÕ MINH KHÔI, 88/2 Đ. Đào Duy Anh, phường Đức Nhuận, Thành phố Hồ Chí Minh 700000, Việt Nam.

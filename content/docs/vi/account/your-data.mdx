@@ -1,0 +1,80 @@
+---
+title: Dữ liệu của bạn
+description: Kallo lưu gì, gửi gì cho mô hình AI, và cách bạn lấy lại hoặc xóa đi.
+lastUpdated: '2026-08-03'
+---
+
+Đây là bản tóm tắt dễ đọc. Bản đầy đủ, có tính pháp lý, nằm ở
+[Chính sách quyền riêng tư](/docs/legal/privacy).
+
+## Kallo lưu gì
+
+- **Tài khoản** — email và cách bạn đăng nhập.
+- **Hồ sơ** — tên hiển thị, ảnh đại diện, ngôn ngữ, quốc gia.
+- **Chỉ số cơ thể** — cân nặng, chiều cao, tuổi, giới tính, mức vận động, mục
+  tiêu và chỉ tiêu.
+- **Thói quen nấu ăn** — dầu, khẩu phần mặc định, nước dùng.
+- **Nhật ký bữa ăn** — câu bạn viết, các món, khối lượng và 28 chỉ số dinh
+  dưỡng.
+- **Cân nặng theo thời gian.**
+- **Nội dung Vòng kết nối** — bạn bè, bữa ăn chia sẻ, tin nhắn.
+- **Góp ý** — nội dung và ảnh chụp màn hình bạn gửi.
+- **Trạng thái thanh toán** — không bao giờ có số thẻ.
+
+## Cái gì thực sự được gửi cho mô hình AI
+
+Đây là câu hỏi đáng hỏi nhất, và câu trả lời cụ thể hơn bạn tưởng.
+
+Khi bạn yêu cầu phân tích một bữa ăn, mô hình chỉ nhận:
+
+- Câu mô tả bữa ăn của bạn
+- Quốc gia xuất thân và quốc gia đang sống
+- Thói quen nấu ăn
+- Ngôn ngữ bạn muốn nhận kết quả
+
+Mô hình **không** nhận: cân nặng, chiều cao, tuổi, giới tính, mục tiêu, mức độ
+quyết liệt, chỉ tiêu calo, email, tên, hay lịch sử bữa ăn của bạn.
+
+<Callout label="Vì sao lại tách bạch như vậy" tone="tip">
+Có hai lý do. Thứ nhất là quyền riêng tư: mô hình không cần biết bạn nặng bao
+nhiêu để đoán một tô phở có gì.
+
+Thứ hai là chất lượng ước lượng. Nếu mô hình biết bạn đang giảm cân, nó rất dễ
+đưa ra con số dễ chịu hơn thực tế. Việc điều chỉnh theo mục tiêu được làm trên
+máy chủ **sau khi** mô hình trả kết quả, nên ước lượng gốc không bị mục tiêu của
+bạn kéo lệch.
+</Callout>
+
+Nội dung của bạn **không** được dùng để huấn luyện mô hình AI dùng chung. Kallo
+gọi Gemini qua Vertex AI trên Google Cloud, nơi điều khoản doanh nghiệp quy định
+câu lệnh và kết quả không được dùng để huấn luyện mô hình của Google. Google có
+lưu tạm đầu vào tối đa 24 giờ để giảm độ trễ, và có thể giữ tối đa 30 ngày nếu
+bộ lọc an toàn đánh dấu một yêu cầu là đáng ngờ — chi tiết ở
+[chính sách quyền riêng tư](/docs/legal/privacy).
+
+## Lấy dữ liệu ra
+
+Bạn có thể yêu cầu bản sao dữ liệu của mình qua
+[support@kallo.fit](mailto:support@kallo.fit).
+
+## Xóa dữ liệu
+
+- **Một bữa ăn** — xóa trực tiếp trong nhật ký.
+- **Toàn bộ tài khoản** — trong **Cài đặt**. Việc xóa chạy theo một tiến trình
+  có lịch, và cũng xóa hồ sơ khách hàng của bạn ở nhà cung cấp thanh toán.
+
+<Callout label="Hủy gói trước khi xóa" tone="caution">
+Xóa tài khoản **không** hủy gói mua qua Apple hoặc Google. Hãy hủy trong cửa
+hàng trước. Xem [Kallo Premium](/docs/account/premium).
+</Callout>
+
+Bản sao lưu được luân chuyển theo chu kỳ, nên dữ liệu đã xóa có thể còn trong
+bản sao lưu một thời gian ngắn trước khi bị ghi đè. Trong thời gian đó nó không
+còn được dùng để phục vụ ứng dụng.
+
+## Quyền của bạn
+
+Bạn có quyền được biết, truy cập, chỉnh sửa, xóa, hạn chế xử lý, rút lại sự đồng
+ý, nhận dữ liệu ở dạng chuyển đi được, và khiếu nại với cơ quan có thẩm quyền.
+Danh sách đầy đủ và cách thực hiện nằm ở
+[Chính sách quyền riêng tư](/docs/legal/privacy).

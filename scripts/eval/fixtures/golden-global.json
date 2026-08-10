@@ -642,17 +642,17 @@
       "tier": "smoke",
       "expect": {
         "isFood": true,
-        "kcalRange": [410, 560],
+        "kcalRange": [360, 540],
         "macroRanges": {
-          "carbohydrateG": [52, 78],
-          "fatG": [17, 30]
+          "carbohydrateG": [38, 64],
+          "fatG": [14, 30]
         },
         "latencyBudgetMs": 8000
       },
       "provenance": {
-        "source": "knowledge-estimate",
-        "setAt": "2026-07-18",
-        "note": "Standard 85g pack ~380 kcal + egg ~70. Tight band: high-specificity input."
+        "source": "db-anchored",
+        "setAt": "2026-08-06",
+        "note": "Re-derived from usda_6583_raw (Soup, ramen noodle, any flavor, dry: 440 kcal, 60.3g carb, 17.6g fat per 100g DRY) across the 70-90g `goi` prior plus one ~50g egg -> 380-468 kcal, 42.6-54.6g carb, 17.3-20.8g fat. The prior band was 'knowledge-estimate' and was internally inconsistent: its own note said 'standard 85g pack', but 85g against this row yields 51.2g carb, under its own 52g floor. Bands widened modestly beyond the computed range to tolerate flavored variants and larger packs."
       }
     },
     {

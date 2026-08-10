@@ -179,7 +179,11 @@ export interface ChunkEmitContext {
 
 /** Build a fresh emit context. Occurrence counters start empty. */
 export function createChunkEmitContext(args: {
-  mealItems: Array<{ name: string; ingredients: unknown[] }>;
+  mealItems: Array<{
+    name: string;
+    ingredients: unknown[];
+    cookingMethod: string;
+  }>;
   matchResults: IngredientV2MatchResult[];
   streamedMealItemIds: Map<string, string>;
   itemMacrosStreamed: Set<string>;
@@ -189,7 +193,11 @@ export function createChunkEmitContext(args: {
 }): ChunkEmitContext {
   return {
     offsetByName: buildMealItemOffsetByName(
-      args.mealItems as Array<{ name: string; ingredients: never[] }>
+      args.mealItems as Array<{
+        name: string;
+        ingredients: never[];
+        cookingMethod: string;
+      }>
     ),
     matchResults: args.matchResults,
     streamedMealItemIds: args.streamedMealItemIds,
@@ -224,6 +232,7 @@ export function emitChunkItemMacros(
     const { nutrition, totalGrams } = resolveStreamingV2MealItem(
       rawItem,
       offset.decomposedIngredients,
+      offset.dishCookingMethod,
       ctx.matchResults,
       offset.flatIngredientStart
     );

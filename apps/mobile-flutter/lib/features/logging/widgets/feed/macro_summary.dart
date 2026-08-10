@@ -81,10 +81,15 @@ class MacroSummary extends StatelessWidget {
                         ),
                         const SizedBox(height: 4), // gap-1
                         Text(
-                          '${formatCount(view.dailyCalories, context.locale.toString())} / ${formatCount(profile.calorieTarget, context.locale.toString())} kcal', style: dashMeta(tabular: true),),
+                          '${formatCount(view.dailyCalories, context.locale.toString())} / ${formatCount(profile.calorieTarget, context.locale.toString())} kcal',
+                          style: dashMeta(tabular: true),
+                        ),
                       ],
                     ),
-                    const SizedBox(width: NhamSpacing.sp4), // gap-4
+                    // The ring column is sized by its kcal line (~106 at Meta
+                    // 12), not by the 78pt ring, so it is already the widest
+                    // thing competing with the bars. Keep its gap at sp3.
+                    const SizedBox(width: NhamSpacing.sp3),
                     Expanded(
                       child: Column(
                         children: [
@@ -115,6 +120,21 @@ class _MacroRow extends StatelessWidget {
   const _MacroRow({required this.data});
   final _MacroBarData data;
 
+  /// Wide enough for `1024/350g` at Meta 12 — the web's `w-14` (56) was sized
+  /// for its 11px type and wrapped `120/135g` onto a second line here at 12.
+  /// The width comes out of the bar, which is [Expanded]; past this the value
+  /// scales down rather than reflowing the row.
+  static const double _valueColumn = 72;
+
+  /// Sized to the widest label either locale actually renders: `Chất béo`
+  /// measures 54.5 at Meta 12 (`Protein`, the widest English one, is 41.7).
+  ///
+  /// This was 76, inherited rather than measured, which spent ~20px on empty
+  /// space in a row where the BAR is the shortest column — on a 390pt screen it
+  /// was getting ~72px, less than either fixed column beside it. The bar is
+  /// [Expanded], so everything reclaimed here goes straight to it.
+  static const double _labelColumn = 58;
+
   @override
   Widget build(BuildContext context) {
     final pct =
@@ -126,22 +146,43 @@ class _MacroRow extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 76,
-          child: Text(
-            data.label,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.clip,
-            style: dashMeta(),
+          width: _labelColumn,
+          // Scales down instead of clipping, like the value column: the fixed
+          // width is measured at 1.0, and Vietnamese at the 1.3 Dynamic Type
+          // cap needs ~71.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              data.label,
+              maxLines: 1,
+              softWrap: false,
+              style: dashMeta(),
+            ),
           ),
         ),
-        const SizedBox(width: NhamSpacing.sp3), // gap-3
+        // Tighter than the sp3 this row used: the gaps flank the bar, and every
+        // point spent on them is a point the bar does not get.
+        const SizedBox(width: NhamSpacing.sp2),
         Expanded(child: MacroBar(pct: pct, color: data.color)),
-        const SizedBox(width: NhamSpacing.sp3),
+        const SizedBox(width: NhamSpacing.sp2),
         SizedBox(
-          width: 56, // w-14
-          child: Text(
-            '${data.current}/${data.target}g', style: dashMeta(tabular: true),),
+          width: _valueColumn,
+          // Scale down rather than clip. The column fits the widest realistic
+          // figure at 1.0, but Dynamic Type runs to 1.3 app-wide, and a
+          // truncated number misreads as a smaller one ("1024/350g" →
+          // "1024/35") — worse than the wrap this replaced.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              '${data.current}/${data.target}g',
+              maxLines: 1,
+              softWrap: false,
+              textAlign: TextAlign.right,
+              style: dashMeta(tabular: true),
+            ),
+          ),
         ),
       ],
     );

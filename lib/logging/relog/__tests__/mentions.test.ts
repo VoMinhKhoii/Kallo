@@ -104,6 +104,29 @@ describe('reconcileMentions', () => {
     expect(found.map((m) => m.label)).toEqual(['Trà đá', 'Phở bò']);
     expect(found.map((m) => m.start)).toEqual([2, 11]);
   });
+
+  // The cursor only moves forward, so a caller that hands over a pick made
+  // EARLIER in the sentence than one already staged would have it walked past
+  // and dropped — the reference gone while its label sits in the text, headed
+  // for the AI as prose. Sorting inside the walk is what makes callers safe.
+  it('keeps a mention the caller listed out of composer order', () => {
+    const found = reconcileMentions('Cà phê Phở bò', [
+      mention('Phở bò', 7),
+      mention('Cà phê', 0),
+    ]);
+    expect(found.map((m) => m.label)).toEqual(['Cà phê', 'Phở bò']);
+    expect(found.map((m) => m.start)).toEqual([0, 7]);
+  });
+
+  // A pick spliced in exactly where another one started: the splice is what
+  // pushed the old one right, so the newcomer — listed first — takes the slot.
+  it('breaks an offset tie in favour of the earlier-listed mention', () => {
+    const found = reconcileMentions('Cà phê Phở bò', [
+      mention('Cà phê', 0),
+      mention('Phở bò', 0),
+    ]);
+    expect(found.map((m) => m.label)).toEqual(['Cà phê', 'Phở bò']);
+  });
 });
 
 describe('stripMentions', () => {
@@ -124,6 +147,27 @@ describe('stripMentions', () => {
       mention('Trà đá', 10),
     ]);
     expect(result).toBe('và nữa');
+  });
+
+  it('does not rewrite a surviving mention that contains a double space', () => {
+    // A `meal` candidate's label is `raw_input` — free user text, so a double
+    // space is reachable. Collapsing whitespace across the WHOLE value (what
+    // this used to do) rewrote the survivor's label, and the next reconcile
+    // then dropped its reference while its staged row stayed on screen.
+    const kept = 'phở bò  với trà đá';
+    const value = `${kept} Phở gà `;
+    const survivor = mention(kept, 0);
+
+    const out = stripMentions(value, [mention('Phở gà', kept.length + 1)]);
+
+    expect(out).toContain(kept);
+    expect(reconcileMentions(out, [survivor])).toHaveLength(1);
+  });
+
+  it('still collapses the gap the removal itself left behind', () => {
+    expect(stripMentions('sáng Phở bò nay', [mention('Phở bò', 5)])).toBe(
+      'sáng nay'
+    );
   });
 });
 

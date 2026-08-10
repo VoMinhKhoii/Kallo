@@ -137,7 +137,7 @@ export type MealDecomposition = z.infer<typeof mealDecompositionSchema>;
 //   - emits flat triples (low=mid=high) at the DB-anchored base for proteinG
 //     and carbohydrateG;
 //   - keeps the LLM's fatG triple subject to a 3× hallucination guard
-//     (falls back to a flat triple at base.fatG when the guard fires);
+//     (clamps to the nearest guard bound when the estimate falls outside it);
 //   - derives caloriesKcal from the macro identity 4P + 4C + 9F, so only
 //     fat's spread (when present) drives goal-adjustment.
 // The LLM's emitted P/C/kcal for matched ingredients are accepted by the

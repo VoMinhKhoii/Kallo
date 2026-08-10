@@ -39,6 +39,17 @@ function isRetryableGeminiError(error: unknown): boolean {
     return false;
   }
 
+  // Schema-validation failures ARE retryable: the model is nondeterministic,
+  // so a re-ask usually produces a conforming response. This is load-bearing
+  // for the required macro triples (and `grams.positive()`) — without it, one
+  // malformed emission failed the whole call on attempt 1, despite schemas-v2
+  // having long claimed the parse "routes into the withRetry retry path".
+  // Matched by name rather than `instanceof z.ZodError` so this module stays
+  // free of a zod import.
+  if (error instanceof Error && error.name === 'ZodError') {
+    return true;
+  }
+
   const status = getErrorStatus(error);
   if (status != null) {
     return new Set([408, 429, 500, 502, 503, 504]).has(status);
@@ -57,6 +68,11 @@ function isRetryableGeminiError(error: unknown): boolean {
  * Compute the retry backoff for the next attempt.
  *
  * Priority order:
+ *   0. **Schema-validation (ZodError): no delay at all.** Backoff exists to
+ *      relieve provider pressure, and a malformed-but-200 response applied
+ *      none — the model was simply nondeterministic. Sleeping here only burns
+ *      the shared chunk wall-clock budget (and the sleep is not abort-aware,
+ *      so a cancelled request keeps paying it). Re-ask immediately.
  *   1. Honor `retry in Xs` hints in the error message (Gemini 429 quota).
  *   2. **5xx fast recovery (Phase C6)**: if the previous attempt aborted in
  *      under `FAST_RECOVERY_THRESHOLD_MS` with a 5xx/UNAVAILABLE, drop to a
@@ -67,6 +83,7 @@ function isRetryableGeminiError(error: unknown): boolean {
  */
 const FAST_RECOVERY_THRESHOLD_MS = 5000;
 const FAST_RECOVERY_DELAY_MS = 250;
+const ZOD_RETRY_DELAY_MS = 0;
 function parseRetryDelay(
   error: Error,
   baseDelayMs: number,
@@ -74,6 +91,9 @@ function parseRetryDelay(
   status: number | null,
   attemptElapsedMs: number
 ): number {
+  if (error.name === 'ZodError') {
+    return ZOD_RETRY_DELAY_MS;
+  }
   const match = error.message.match(/retry in ([\d.]+)s/i);
   if (match) {
     return Number.parseFloat(match[1]) * 1000;

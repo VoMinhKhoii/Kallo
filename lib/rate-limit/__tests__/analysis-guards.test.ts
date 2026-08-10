@@ -109,6 +109,10 @@ class InMemoryAnalysisGuardDb {
 
   private transactionQueue = Promise.resolve();
 
+  /// INSERT statements issued against `analysis_rate_limit_windows`, counted
+  /// per statement rather than per row — the thing a batched upsert changes.
+  windowInsertStatements = 0;
+
   readonly client = {
     transaction: async <T>(
       callback: (transactionClient: AppDb) => Promise<T> | T
@@ -250,7 +254,29 @@ class InMemoryAnalysisGuardDb {
     };
   }
 
-  private applyInsert(state: GuardState, table: unknown, values: unknown) {
+  private async applyInsert(
+    state: GuardState,
+    table: unknown,
+    values: unknown
+  ): Promise<unknown> {
+    if (table === analysisRateLimitWindows) this.windowInsertStatements += 1;
+
+    // A multi-row upsert is row-by-row work in Postgres, so it is row-by-row
+    // here: fold the array through the SAME per-row path the single-row tests
+    // already pin, rather than giving batches their own semantics that only
+    // this fake would agree with.
+    if (Array.isArray(values)) {
+      const rows: unknown[] = [];
+      for (const value of values) {
+        rows.push(...((await this.applyInsertRow(state, table, value)) as []));
+      }
+      return rows;
+    }
+
+    return this.applyInsertRow(state, table, values);
+  }
+
+  private applyInsertRow(state: GuardState, table: unknown, values: unknown) {
     if (table === analysisRateLimitWindows) {
       return this.applyWindowInsert(state, values as WindowRow);
     }
@@ -286,7 +312,7 @@ class InMemoryAnalysisGuardDb {
       updatedAt: values.updatedAt,
     });
 
-    return Promise.resolve([{ count }]);
+    return Promise.resolve([{ windowKind: values.windowKind, count }]);
   }
 
   private applyInFlightInsert(state: GuardState, values: InFlightRow) {
@@ -595,6 +621,25 @@ describe('checkAnalysisGuards', () => {
 
     await second.release?.();
     expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(0);
+  });
+
+  it('bumps all three windows in ONE statement', async () => {
+    // The reason this exists: the minute/hour/day counters used to go one
+    // round trip at a time inside the guard's transaction, and EVERY guarded
+    // request pays for that — the relog picker pays it on a 300ms debounce
+    // while you type. Three statements became one; this is the assertion that
+    // notices if a refactor puts the loop back.
+    const store = new InMemoryAnalysisGuardDb();
+    const result = await checkMealAnalysisGuard(store);
+
+    expect(result.allowed).toBe(true);
+    expect(store.windowInsertStatements).toBe(1);
+    // And all three counters really moved — one statement, not one window.
+    for (const windowKind of ['minute', 'hour', 'day'] as const) {
+      expect(
+        store.getWindowCount('user-1', analyzeMealRoute, windowKind, fixedNow)
+      ).toBe(1);
+    }
   });
 
   it('prevents concurrent allowed meal analysis requests from exceeding quota under race', async () => {

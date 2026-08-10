@@ -79,18 +79,40 @@ class FeedNoMealsView extends StatelessWidget {
       );
     }
 
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          0,
-          NhamSpacing.sp6,
-          0,
-          NhamSpacing.sp6 + dockHeight,
-        ),
-        child: Center(child: body),
-      ),
+    // Centred in the space the composer leaves, not in the raw viewport: the
+    // dock is an overlay the feed runs under, so without reserving its height
+    // the mark would sit visually low, half-hidden behind the input.
+    //
+    // The min-height box is what makes `Center` mean anything. A scroll view
+    // sizes its child to the content, so a bare `Center` around a short block
+    // centres it within its own height — i.e. does nothing, which is why the
+    // empty state used to ride at the top.
+    return LayoutBuilder(
+      builder:
+          (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              // Animated because the reserved height ARRIVES LATE and in steps: the
+              // dock measures itself post-frame, so opening the `/` picker or
+              // growing the field to a second line lands as one discrete jump that
+              // would teleport the mark. The keyboard's own shift rides the
+              // platform's animated inset — the viewport shrinks frame by frame, so
+              // the block glides up with it rather than snapping.
+              child: AnimatedPadding(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                padding: EdgeInsets.fromLTRB(
+                  0,
+                  NhamSpacing.sp6,
+                  0,
+                  NhamSpacing.sp6 + dockHeight,
+                ),
+                child: Center(child: body),
+              ),
+            ),
+          ),
     );
   }
 }

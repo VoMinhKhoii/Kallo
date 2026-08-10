@@ -19,7 +19,6 @@
  *     Net effect: the yield-factor table is bypassed for every v2 ingredient.
  */
 
-import { NUTRITION_KEYS } from '../constants';
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
 import type { PortionResolution } from '../portion/types';
 import type {
@@ -29,76 +28,24 @@ import type {
   MealDecomposition,
   UnmatchedIngredient,
 } from '../types';
+import { resolveMacroSource, scaleGroundedMacros } from './bridge-macros';
+import type {
+  CarvedOutIngredient,
+  PlausibilityPerIngredient,
+  V2BridgeOutput,
+  VerdictPerIngredient,
+} from './bridge-output';
 import {
+  buildNullNutrition,
   classifyVerdict,
   pairIngredientsWithGrounded,
   v2DishToV1,
   v2IngredientToV1,
-  ZERO_TRIPLE,
 } from './bridge-verdicts';
-import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
+import { ensureIdsOnDecomposition } from './ids';
 import type { RawNutritionAdjustment } from './nutrition';
-import {
-  classifyIngredientPlausibility,
-  type IngredientPlausibility,
-} from './plausibility';
-import type {
-  GroundedEstimation,
-  GroundedIngredientEstimate,
-  MealDecompositionV2,
-} from './schemas-v2';
-
-export interface VerdictPerIngredient {
-  /** Position in the original decomposition (meal-item, ingredient) tuple. */
-  mealItemIdx: number;
-  ingredientIdx: number;
-  /** What the LLM decided. */
-  verdict: 'accepted' | 'rejected' | 'unmatched' | 'missing';
-  /** Selected candidate index inside the ingredient's candidate list when accepted. */
-  selectedCandidateIdx: number | null;
-  /** Set on rejected verdicts; passed through to telemetry. */
-  rejectReason: string | null;
-  /** Reference to the v2 grounded output (null when missing). */
-  grounded: GroundedIngredientEstimate | null;
-}
-
-/**
- * Per-ingredient plausibility trail (flat order, one entry per decomposed
- * ingredient). `unresolved_estimate` entries are the ones the completeness
- * gates key on — they carry NO 1g/zero-filled matched or nutrition row.
- */
-export interface PlausibilityPerIngredient {
-  mealItemIdx: number;
-  ingredientIdx: number;
-  /** Run-scoped ingredient id (assigned after `ensureIdsOnDecomposition`). */
-  ingredientId: string;
-  /** Ingredient display name (rawName). */
-  ingredientName: string;
-  /** Owning meal-item display name. */
-  mealItemName: string;
-  state: IngredientPlausibility;
-  /**
-   * When `state === 'unresolved_estimate'`, why — drives the clarify reason.
-   * 'ambiguous_food' when the portion resolver couldn't scope the concept;
-   * 'unresolved_portion' (default) for a missing/too-wide portion.
-   */
-  unresolvedReason?: 'ambiguous_food' | 'unresolved_portion';
-}
-
-export interface V2BridgeOutput {
-  /** v1-shape decomposition with run-scoped IDs and grams emitted by Call 2. */
-  decomposition: MealDecompositionWithIds;
-  /** Matched ingredients with DB-anchored per_100g and run-scoped IDs. */
-  matched: MatchedIngredient[];
-  /** Unmatched ingredients (no candidates OR verdict=rejected). */
-  unmatched: UnmatchedIngredient[];
-  /** v1-shape RawNutritionAdjustment built from Call 2 macros. */
-  rawNutrition: RawNutritionAdjustment;
-  /** Per-ingredient verdict trail for telemetry / shadow-divergence dashboards. */
-  verdicts: VerdictPerIngredient[];
-  /** Per-ingredient plausibility classification (Phase 1 silent-zero kill). */
-  plausibility: PlausibilityPerIngredient[];
-}
+import { classifyIngredientPlausibility } from './plausibility';
+import type { GroundedEstimation, MealDecompositionV2 } from './schemas-v2';
 
 export function bridgeV2ToV1(args: {
   v2: MealDecompositionV2;
@@ -118,9 +65,9 @@ export function bridgeV2ToV1(args: {
    * Phase 3 portion-resolver output, one entry per flat ingredient (same order
    * as the decomposition walk). When a resolution grounded grams (steps 1–4),
    * it OVERRIDES the LLM grams so Call 2 cannot drift from the server anchor.
-   * When a resolution is `unresolved`, the ingredient is forced to
-   * `unresolved_estimate` so the completeness gate clarifies. Omitted on the
-   * v1-shadow / test paths that don't run the resolver.
+   * When a resolution is `unresolved`, the ingredient is labelled
+   * `unresolved_estimate` in the telemetry trail but still ships on Call 2's
+   * grams. Omitted on the v1-shadow / test paths that don't run the resolver.
    */
   portionResolutions?: PortionResolution[];
 }): V2BridgeOutput {
@@ -146,6 +93,12 @@ export function bridgeV2ToV1(args: {
     Omit<MatchedIngredient, 'ingredientId'>
   >();
   const unmatched: UnmatchedIngredient[] = [];
+  // `activeIngredientCount` can only be known once the whole item has been
+  // walked (an explicit zero is discovered per ingredient), so the entries are
+  // collected without it and the denominator is filled in below.
+  const carvedOutPartial: Omit<CarvedOutIngredient, 'activeIngredientCount'>[] =
+    [];
+  const explicitZerosByMealItemIdx = new Map<number, number>();
   const rawMealItems: RawNutritionAdjustment['mealItems'] = [];
   // Per-flat-index plausibility partial (ingredientId attached after id assignment).
   const plausibilityPartialByFlatIdx = new Map<
@@ -206,8 +159,9 @@ export function bridgeV2ToV1(args: {
           ? ground.grams
           : null;
       const resolvedGrams = anchorGrams ?? llmGrams;
-      // When the resolver explicitly deferred to clarify, force the ingredient
-      // unresolved regardless of whatever grams Call 2 emitted.
+      // When the resolver couldn't ground a portion, label the ingredient
+      // unresolved in the telemetry trail regardless of whatever grams Call 2
+      // emitted. Diagnostic only — Call 2's grams still ship.
       const resolverUnresolved = portion?.provenance === 'unresolved';
 
       const acceptedCandidate =
@@ -215,28 +169,28 @@ export function bridgeV2ToV1(args: {
           ? candidates[selectedCandidateIdx]
           : null;
 
-      // UNMATCHED-path defense-in-depth (Phase 4/D3): when the ingredient will
-      // flow through the unmatched path (no accepted candidate), the server does
-      // NOT anchor its P/C/kcal — those come from Call 2. If Call 2 omitted the
-      // whole caloric triple (D3 made it optional), degrading to ZERO_TRIPLE
-      // would be a silent zero-macro persist. Signal that to the classifier so
-      // it routes to clarify instead. Matched ingredients keep this `false`:
-      // their omitted triple is correctly re-derived from the DB row.
-      const unmatchedCaloricMacrosMissing =
-        acceptedCandidate == null &&
-        ground != null &&
-        ground.caloriesKcal == null &&
-        ground.proteinG == null &&
-        ground.carbohydrateG == null;
+      // Where this ingredient's macros come from — see `resolveMacroSource`.
+      const macroSource = resolveMacroSource({
+        acceptedCandidate,
+        ground,
+        resolvedGrams,
+        explicitZero: portion?.unresolvedReason === 'explicit_zero',
+      });
+      // A DB row anchors P/C/kcal; anything else rides Call 2's triple.
+      const isDbAnchored = macroSource.kind === 'db';
 
-      // Carb density for the carb-staple floor. Matched: DB per-100g carbs.
-      // Unmatched: scale Call 2's absolute carb mid back to a per-100g density.
-      const carbsPer100g = acceptedCandidate
-        ? (acceptedCandidate.nutrition?.carbohydrateG ?? null)
+      // Carb density for the carb-staple floor. DB-anchored: per-100g carbs.
+      // Otherwise: Call 2's absolute carb mid over the mass IT assumed — NOT
+      // `resolvedGrams`. Density is mass-invariant under the anchor rescale,
+      // and dividing an unscaled carb by anchored grams would understate it
+      // (9g/150g = 6g/100g reads as 2.7g/100g at a 330g anchor) and falsely
+      // trip the staple floor.
+      const carbsPer100g = isDbAnchored
+        ? (acceptedCandidate?.nutrition?.carbohydrateG ?? null)
         : ground?.carbohydrateG != null &&
-            resolvedGrams != null &&
-            resolvedGrams > 0
-          ? (ground.carbohydrateG.mid / resolvedGrams) * 100
+            Number.isFinite(ground.grams) &&
+            ground.grams > 0
+          ? (ground.carbohydrateG.mid / ground.grams) * 100
           : null;
 
       const state = resolverUnresolved
@@ -247,7 +201,6 @@ export function bridgeV2ToV1(args: {
             caloriesPer100g: acceptedCandidate?.nutrition?.caloriesKcal ?? null,
             carbsPer100g,
             name: ing.rawName || ing.canonicalName,
-            emittedCaloricMacrosMissing: unmatchedCaloricMacrosMissing,
           });
       plausibilityPartialByFlatIdx.set(flatIngredientIdx, {
         mealItemIdx,
@@ -260,11 +213,35 @@ export function bridgeV2ToV1(args: {
           : {}),
       });
 
-      // Unresolved: emit NEITHER a matched row NOR a zero/1g-filled nutrition
-      // row. The ingredient still exists in the decomposition (so streamed
-      // ids stay stable), but it contributes no silent under-weighted macros.
-      // The completeness gate downstream decides whether to clarify.
-      if (state === 'unresolved_estimate') {
+      // NO-DATA carve-out: no portion, no estimate, or an explicit user zero —
+      // a row here could only carry fabricated zeros, and the picker merely
+      // scales, so a zero row stays zero however far it is dragged. Withhold
+      // instead — the ingredient stays in the decomposition so streamed ids
+      // hold, and the per-ingredient completeness gate reports it. Every OTHER
+      // unresolved cause (staple floor, ambiguous concept, too-wide band)
+      // still ships on real grams; a present-but-zero macro from Call 2 ships
+      // too, flagged by plausibility telemetry (schema requires all triples,
+      // so "omitted" no longer exists as a state).
+      if (macroSource.kind === 'none' && state !== 'genuinely_noncaloric') {
+        // Loud: the ingredient vanishes from the meal's totals and the route's
+        // meal-level check still passes if ANY other item has macros, so
+        // without this the undercount is invisible in prod.
+        console.warn(
+          `[bridge] no_data_carveout: dropped "${ing.rawName}" in "${mi.name}" (${macroSource.reason}, state=${state})`
+        );
+        if (macroSource.reason === 'explicit_zero') {
+          explicitZerosByMealItemIdx.set(
+            mealItemIdx,
+            (explicitZerosByMealItemIdx.get(mealItemIdx) ?? 0) + 1
+          );
+        } else {
+          carvedOutPartial.push({
+            mealItemName: mi.name,
+            ingredientName: ing.rawName,
+            reason: macroSource.reason,
+            mealItemIdx,
+          });
+        }
         v1Ings.push(v2IngredientToV1(ing, cookingMethodForIng, 0, undefined));
         flatIngredientIdx++;
         return;
@@ -274,7 +251,7 @@ export function bridgeV2ToV1(args: {
       let weightBasis: 'raw' | undefined;
       let v1Ing: DecomposedIngredient;
 
-      if (acceptedCandidate) {
+      if (isDbAnchored && acceptedCandidate) {
         const dbState = acceptedCandidate.info.state;
         // For raw or unknown candidates, force weightBasis='raw' so
         // computeDbScalingGrams skips convertCookedToRaw. For cooked
@@ -308,10 +285,9 @@ export function bridgeV2ToV1(args: {
       v1Ings.push(v1Ing);
       rawIngs.push({
         ingredientName: ing.rawName,
-        caloriesKcal: ground?.caloriesKcal ?? ZERO_TRIPLE,
-        proteinG: ground?.proteinG ?? ZERO_TRIPLE,
-        carbohydrateG: ground?.carbohydrateG ?? ZERO_TRIPLE,
-        fatG: ground?.fatG ?? ZERO_TRIPLE,
+        // Rescaled when a server anchor overrode Call 2's mass — see
+        // `scaleGroundedMacros`.
+        ...scaleGroundedMacros(ground, grams),
       });
 
       flatIngredientIdx++;
@@ -370,6 +346,13 @@ export function bridgeV2ToV1(args: {
 
   const rawNutrition: RawNutritionAdjustment = { mealItems: rawMealItems };
 
+  const carvedOut: CarvedOutIngredient[] = carvedOutPartial.map((c) => ({
+    ...c,
+    activeIngredientCount:
+      v2.mealItems[c.mealItemIdx].ingredients.length -
+      (explicitZerosByMealItemIdx.get(c.mealItemIdx) ?? 0),
+  }));
+
   return {
     decomposition: withIds,
     matched,
@@ -377,17 +360,6 @@ export function bridgeV2ToV1(args: {
     rawNutrition,
     verdicts,
     plausibility,
+    carvedOut,
   };
-}
-
-/**
- * All-zeros nutrition per 100g, derived from `NUTRITION_KEYS` so adding a new
- * nutrient field doesn't need a touch here. Used as a last-resort fallback
- * when a matched candidate somehow has no nutrition row attached (should not
- * happen post-Phase 5 batch fetch; safety net for partial failure modes).
- */
-function buildNullNutrition(): MatchedIngredient['nutritionPer100g'] {
-  return Object.fromEntries(
-    NUTRITION_KEYS.map((k) => [k, 0])
-  ) as unknown as MatchedIngredient['nutritionPer100g'];
 }

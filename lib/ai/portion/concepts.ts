@@ -15,6 +15,7 @@
  * time; the verification is documented in the concept registry `source`.
  */
 
+import { INSTANT_NOODLE_ROW } from '../matching/aliases';
 import type { ConceptId, FoodConcept } from './types';
 
 function normalize(s: string): string {
@@ -57,6 +58,16 @@ export const CONCEPTS: Record<ConceptId, FoodConcept> = {
     // ("Gạo tẻ máy") are handled by the matcher. Portion prior only.
     label: 'Cơm (cooked white rice)',
   },
+  'instant-noodle-pack': {
+    id: 'instant-noodle-pack',
+    // VERIFIED against the dev DB: usda_6583_raw "Soup, ramen noodle, any
+    // flavor, dry" (440 kcal, 60.3g carb, 17.6g fat per 100g DRY). The row was
+    // always there but kept its untranslated English name; migration
+    // 20260806120000 curates it to the Vietnamese name referenced here.
+    // Dry-basis, which is why the prior below is a packet weight, not a bowl.
+    label: 'Mì gói (instant noodle packet)',
+    dbRowName: INSTANT_NOODLE_ROW,
+  },
 };
 
 /**
@@ -89,6 +100,18 @@ const ALIAS_TO_CONCEPT: Record<string, ConceptResolution> = {
   // -- cooked rice ------------------------------------------------------
   cơm: 'cooked-rice',
   'cơm trắng': 'cooked-rice',
+  // -- instant noodles --------------------------------------------------
+  // Only the QUALIFIED forms. Bare `mì` stays out: it covers fresh egg
+  // noodles and wheat flour too, so mapping it here would put a packet's
+  // weight on a bowl of mì Quảng.
+  'mì gói': 'instant-noodle-pack',
+  'mi goi': 'instant-noodle-pack',
+  'mì tôm': 'instant-noodle-pack',
+  'mi tom': 'instant-noodle-pack',
+  'mì ăn liền': 'instant-noodle-pack',
+  'mi an lien': 'instant-noodle-pack',
+  'instant noodles': 'instant-noodle-pack',
+  'instant noodle': 'instant-noodle-pack',
   // -- Explicitly ambiguous generics (route to clarify, NEVER a number) --
   bánh: AMBIGUOUS,
   bun: AMBIGUOUS,
