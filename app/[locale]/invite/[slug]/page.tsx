@@ -80,7 +80,10 @@ export default async function InvitePage({
         title={t('signedOutTitle', { name })}
         body={t('signedOutBody')}
       >
-        <InviteAuthCta next={invitePath} />
+        <InviteAuthCta
+          next={invitePath}
+          googleClientId={process.env.GOOGLE_WEB_CLIENT_ID || null}
+        />
       </Shell>
     );
   }

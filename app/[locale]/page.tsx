@@ -51,7 +51,12 @@ export default async function Home({
   const sections = await getDocsTree(locale as Locale);
 
   return (
-    <AuthProvider next={next} initialOpen={initialOpen} initialTab={initialTab}>
+    <AuthProvider
+      next={next}
+      googleClientId={process.env.GOOGLE_WEB_CLIENT_ID || null}
+      initialOpen={initialOpen}
+      initialTab={initialTab}
+    >
       {/* One fixed layer behind everything, so the drift runs the whole way
           down instead of stopping where the hero ends. */}
       <AmbientWash />
