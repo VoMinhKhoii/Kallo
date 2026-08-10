@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * Per-stage pipeline timeout (ms).
  *
@@ -19,6 +21,8 @@
  * the DB-backed matching stage has its own override so a long LLM budget
  * cannot accidentally weaken its pool-stall backstop.
  */
+const stageTimeoutMsSchema = z.coerce.number().int().positive();
+
 function readStageTimeoutMs(
   envKey: string,
   fallbackMs: number,
@@ -28,8 +32,8 @@ function readStageTimeoutMs(
     process.env[envKey] ??
     (useLlmFallback ? process.env.LLM_TIMEOUT_MS : undefined);
   if (!raw) return fallbackMs;
-  const parsed = Number(raw);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallbackMs;
+  const parsed = stageTimeoutMsSchema.safeParse(raw);
+  return parsed.success ? parsed.data : fallbackMs;
 }
 
 export const DECOMPOSITION_TIMEOUT_MS = readStageTimeoutMs(

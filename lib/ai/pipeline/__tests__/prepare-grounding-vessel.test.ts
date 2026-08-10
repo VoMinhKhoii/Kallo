@@ -21,7 +21,7 @@ vi.mock('../../portion/ingredient-portion', () => ({
   })),
 }));
 
-import { MATCHING_TIMEOUT_MS } from '../config/stage-timeouts';
+import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import { prepareGrounding } from '../prepare-grounding';
 import type { MealDecompositionV2 } from '../schemas-v2';
 
@@ -52,6 +52,8 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.PORTION_VESSEL_ENABLED;
+  delete process.env.LLM_TIMEOUT_MS;
+  delete process.env.PIPELINE_MATCHING_TIMEOUT_MS;
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
@@ -165,5 +167,23 @@ describe('prepareGrounding matching deadline', () => {
 
     await vi.advanceTimersByTimeAsync(MATCHING_TIMEOUT_MS);
     await assertion;
+  });
+
+  it('does not inherit the global LLM timeout', async () => {
+    process.env.LLM_TIMEOUT_MS = '120000';
+    vi.resetModules();
+
+    const config = await import('@/lib/ai/pipeline/config/stage-timeouts');
+
+    expect(config.MATCHING_TIMEOUT_MS).toBe(10_000);
+  });
+
+  it('honors the dedicated matching timeout override', async () => {
+    process.env.PIPELINE_MATCHING_TIMEOUT_MS = '7500';
+    vi.resetModules();
+
+    const config = await import('@/lib/ai/pipeline/config/stage-timeouts');
+
+    expect(config.MATCHING_TIMEOUT_MS).toBe(7500);
   });
 });
