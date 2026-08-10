@@ -99,4 +99,24 @@ describe('billing product allowlists', () => {
     expect(isAllowedMobileProduct('kallo_premium_annual:monthly')).toBe(false);
     expect(isAllowedMobileProduct('kallo_premium_lifetime:annual')).toBe(false);
   });
+
+  it('never offers lifetime on web while it is deferred', () => {
+    // The production Paddle lifetime price is archived, but RevenueCat still
+    // serves an $rc_lifetime package because the `default` offering is shared
+    // with iOS and Android. Without this the paywall renders a card whose
+    // checkout is dead.
+    expect(isAllowedWebProduct('kallo_premium_lifetime')).toBe(false);
+    expect(isAllowedWebProduct('pri_01kz49s9kxp82v1r03caxc1gqh')).toBe(false);
+    expect(isAllowedWebProduct('pri_01kyy26yps3tt1zf1vjhhcvkp8')).toBe(false);
+
+    // Mobile is unaffected — Apple and Google still sell lifetime.
+    expect(isAllowedMobileProduct('kallo_premium_lifetime')).toBe(true);
+
+    // Grant projection must still resolve a lifetime id. Hiding it from the
+    // paywall must never turn a completed purchase into a dropped grant.
+    expect(resolveProduct('pri_01kz49s9kxp82v1r03caxc1gqh')).toEqual({
+      entitlementKey: 'premium',
+      lifetime: true,
+    });
+  });
 });

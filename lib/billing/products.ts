@@ -60,7 +60,18 @@ export function canonicalProductId(productId: string): string | null {
   );
 }
 
+// Lifetime is deferred on web: the production Paddle price is archived, so it
+// cannot be bought. RevenueCat still serves an `$rc_lifetime` package in the
+// `default` offering (the dashboard offering is shared with iOS and Android,
+// which DO still sell lifetime), so the paywall would otherwise render a card
+// that leads to a dead checkout. Deliberately NOT removed from
+// PADDLE_PRICE_PRODUCTS: if a lifetime purchase somehow lands, the id must
+// still resolve so the grant projects rather than being silently dropped.
+const WEB_DEFERRED_PRODUCTS = new Set(['kallo_premium_lifetime']);
+
 export function isAllowedWebProduct(productId: string): boolean {
+  const canonical = canonicalProductId(productId);
+  if (canonical === null || WEB_DEFERRED_PRODUCTS.has(canonical)) return false;
   return (
     CANONICAL_PRODUCT_IDS.has(productId) || productId in PADDLE_PRICE_PRODUCTS
   );
