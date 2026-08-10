@@ -44,9 +44,28 @@ describe('buildCsp', () => {
 
   it('lets the Paddle checkout iframe and RevenueCat API through', async () => {
     const csp = await build('n', false);
-    expect(csp).toContain("frame-src 'self' https://*.paddle.com");
-    expect(csp).toContain('https://pay.rev.cat');
-    expect(csp).toContain('https://api.revenuecat.com');
+    // Assert per directive, not against the whole header: an origin that
+    // drifted from connect-src into frame-src (or the reverse) would still
+    // satisfy a bare `toContain` while breaking checkout or the API call.
+    const directive = (name: string) =>
+      (csp.split('; ').find((d) => d.startsWith(`${name} `)) ?? '')
+        .split(' ')
+        .slice(1);
+
+    expect(directive('frame-src')).toEqual(
+      expect.arrayContaining([
+        "'self'",
+        'https://*.paddle.com',
+        'https://pay.rev.cat',
+      ])
+    );
+    expect(directive('connect-src')).toEqual(
+      expect.arrayContaining([
+        'https://api.revenuecat.com',
+        'https://*.paddle.com',
+      ])
+    );
+    expect(directive('frame-src')).not.toContain('https://api.revenuecat.com');
   });
 
   it('keeps host allowlists out of script-src, which strict-dynamic ignores', async () => {

@@ -17,12 +17,19 @@ import {
   type EntitlementLifecycleSync as LifecycleSync,
 } from './entitlement-lifecycle';
 
+interface EntitlementLifecycleSyncProps {
+  /** The Supabase user id — the RC appUserId grants are keyed on. */
+  userId: string;
+}
+
 /**
  * Mounts the bounded entitlement recovery loop for the authenticated app.
  * Renders nothing; mounted once in the `(app)` layout so every signed-in page
  * is covered. The mobile app runs the same cadence on launch/resume.
  */
-export function EntitlementLifecycleSync({ userId }: { userId: string }) {
+export function EntitlementLifecycleSync({
+  userId,
+}: EntitlementLifecycleSyncProps) {
   const queryClient = useQueryClient();
   const syncRef = useRef<LifecycleSync | null>(null);
 

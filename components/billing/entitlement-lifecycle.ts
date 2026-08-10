@@ -81,8 +81,11 @@ export function createEntitlementLifecycleSync(
       const snapshot = await refresh(userId, controller.signal);
       if (!stillOwned() || !shouldRecover(snapshot)) return;
       await reconcile(userId, controller.signal);
-    } catch {
-      // Swallowed by design — see `synchronize`.
+    } catch (error) {
+      // Swallowed by design — see `synchronize`. Logged rather than silent:
+      // this loop is the only thing that heals a missed webhook, so a failure
+      // that repeats is worth seeing in a session replay or a bug report.
+      console.warn('[billing] entitlement lifecycle sync failed', error);
     } finally {
       clearTimeout(timer);
       if (inFlightController === controller) inFlightController = null;

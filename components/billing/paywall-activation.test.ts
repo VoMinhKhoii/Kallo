@@ -140,4 +140,36 @@ describe('paywall activation polling', () => {
     expect(reconcileEntitlements).not.toHaveBeenCalled();
     expect(fetchEntitlements).not.toHaveBeenCalled();
   });
+
+  it('never caches a poll result once the attempt is superseded', async () => {
+    // The attempt is current when the fetch starts and stale by the time it
+    // resolves — a second checkout in the same session. Caching the older
+    // snapshot here would overwrite the `premium` the newer purchase wrote and
+    // drop a paying user back to free in the UI.
+    // gcTime must outlive the fake-timer run: runAllTimersAsync advances past
+    // the default 5-minute collection window and would evict the very entry
+    // this test is asserting on.
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { gcTime: Number.POSITIVE_INFINITY } },
+    });
+    queryClient.setQueryData(['entitlements', 'user-a'], snapshot('premium'));
+
+    // Reconcile must fail, not resolve: a successful reconcile legitimately
+    // caches its own snapshot first, which would mask what this test measures.
+    let current = true;
+    reconcileEntitlements.mockRejectedValue(new Error('provider unavailable'));
+    fetchEntitlements.mockImplementation(async () => {
+      current = false;
+      return snapshot('free');
+    });
+
+    const result = pollUntilPremium(queryClient, 'user-a', () => current);
+    await vi.runAllTimersAsync();
+
+    await expect(result).resolves.toBe(false);
+    expect(fetchEntitlements).toHaveBeenCalled();
+    expect(queryClient.getQueryData(['entitlements', 'user-a'])).toEqual(
+      snapshot('premium')
+    );
+  });
 });

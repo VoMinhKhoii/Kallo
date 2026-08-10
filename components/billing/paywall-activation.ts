@@ -90,6 +90,11 @@ export async function pollUntilPremium(
       const data = await withBudget(remaining(), (signal) =>
         fetchEntitlements(userId, signal)
       );
+      // Recheck before caching, exactly as reconcileOnce does. A fetch started
+      // before the user opened a second checkout can resolve after that
+      // purchase already cached `premium`, and writing this older snapshot over
+      // it would drop a paid user back to free in the UI.
+      if (!isCurrent()) return false;
       queryClient.setQueryData(entitlementsKeys.user(userId), data);
       if (data.tier === 'premium') return true;
     } catch {
