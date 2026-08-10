@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   GoogleIdConfiguration,
@@ -106,6 +107,24 @@ describe('GoogleSignInButton', () => {
     // Supabase re-hashes the raw nonce and compares it with the token claim,
     // so what Google was given must be the hash of what Supabase is given.
     expect(google.config?.nonce).toBe(await sha256Hex(args.nonce));
+  });
+
+  it('recovers the button when the token exchange throws', async () => {
+    // Supabase rethrows anything that isn't an AuthError, and `createClient()`
+    // throws outright on a missing project URL. GIS calls us from a callback,
+    // so an unhandled rejection would strand the spinner with no message.
+    const google = fakeGoogleIdentity();
+    loadGoogleIdentityMock.mockResolvedValue(google);
+    signInWithIdTokenMock.mockRejectedValue(new Error('network down'));
+
+    render(<GoogleSignInButton />);
+    await waitFor(() => expect(google.config).not.toBeNull());
+
+    const button = screen.getByRole('button');
+    await userEvent.click(button);
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    await waitFor(() => expect(button).not.toBeDisabled());
   });
 
   it('keeps the invisible Google button out of the tab order', async () => {

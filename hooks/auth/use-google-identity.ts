@@ -56,36 +56,48 @@ export function useGoogleIdentity() {
     async (idToken: string) => {
       exchangingRef.current = true;
       setLoading(true);
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: idToken,
-        // Supabase re-hashes this and compares it with the token's claim.
-        ...(rawNonceRef.current ? { nonce: rawNonceRef.current } : {}),
-      });
+      try {
+        const supabase = createClient();
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+          // Supabase re-hashes this and compares it with the token's claim.
+          ...(rawNonceRef.current ? { nonce: rawNonceRef.current } : {}),
+        });
 
-      if (error) {
-        console.error('[google-sign-in] signInWithIdToken failed', error);
-        toast.error(
-          isDuplicateEmailError(error.message)
-            ? t('accountExists')
-            : t('googleError')
-        );
+        if (error) {
+          console.error('[google-sign-in] signInWithIdToken failed', error);
+          toast.error(
+            isDuplicateEmailError(error.message)
+              ? t('accountExists')
+              : t('googleError')
+          );
+          exchangingRef.current = false;
+          setLoading(false);
+          return;
+        }
+
+        closeDialog();
+        // Mirrors the password flow: a hard navigation for `next` so the server
+        // re-reads the fresh session cookie on an invite page.
+        const safeNext = safeNextPath(next);
+        if (safeNext) {
+          window.location.assign(safeNext);
+          return;
+        }
+        router.push('/logging');
+        router.refresh();
+      } catch (thrown) {
+        // Not every failure comes back in `error`: `createClient()` throws
+        // outright on a missing Supabase URL, and supabase-js rethrows
+        // anything that isn't an AuthError. GIS invokes this from a callback
+        // (`void exchange(...)`), so an unhandled rejection here would strand
+        // the button spinner with no message at all.
+        console.error('[google-sign-in] ID token exchange threw', thrown);
+        toast.error(t('googleError'));
         exchangingRef.current = false;
         setLoading(false);
-        return;
       }
-
-      closeDialog();
-      // Mirrors the password flow: a hard navigation for `next` so the server
-      // re-reads the fresh session cookie on an invite page.
-      const safeNext = safeNextPath(next);
-      if (safeNext) {
-        window.location.assign(safeNext);
-        return;
-      }
-      router.push('/logging');
-      router.refresh();
     },
     [closeDialog, next, router, t]
   );
@@ -154,7 +166,7 @@ export function useGoogleIdentity() {
       cancelled = true;
       // React re-runs effects on remount; without this the second render
       // appends a second GIS button to the same container.
-      if (container) container.innerHTML = '';
+      container?.replaceChildren();
     };
   }, [googleClientId, locale]);
 

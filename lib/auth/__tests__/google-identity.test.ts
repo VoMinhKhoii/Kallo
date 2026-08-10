@@ -71,6 +71,20 @@ describe('loadGoogleIdentity', () => {
     await expect(second).resolves.toBe(api);
   });
 
+  it('rejects and cleans up when the script loads without accounts.id', async () => {
+    // A proxy or captive portal can answer the request with something that
+    // isn't GIS. Both failure paths must leave the document clean enough for
+    // a later attempt to inject a fresh script.
+    const broken = loadGoogleIdentity();
+    const [script] = injectedScripts();
+    script?.onload?.(new Event('load'));
+
+    await expect(broken).rejects.toThrow(/without accounts\.id/);
+    expect(injectedScripts()).toHaveLength(0);
+    loadGoogleIdentity();
+    expect(injectedScripts()).toHaveLength(1);
+  });
+
   it('drops the memo when the script is blocked so a retry can inject again', async () => {
     const blocked = loadGoogleIdentity();
     const [script] = injectedScripts();

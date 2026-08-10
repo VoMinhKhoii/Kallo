@@ -92,6 +92,7 @@ export function loadGoogleIdentity(): Promise<GoogleIdentityApi> {
         return;
       }
       scriptPromise = null;
+      script.remove();
       reject(new Error('GIS loaded without accounts.id'));
     };
     script.onerror = () => {

@@ -13,6 +13,7 @@ import {
 } from '@/components/landing-page';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
 import type { Locale } from '@/i18n/config';
+import { googleWebClientId } from '@/lib/auth/google-client-id';
 import { safeNextPath } from '@/lib/auth/safe-next';
 import { getDocsTree } from '@/lib/docs/tree';
 import { createClient } from '@/lib/supabase/server';
@@ -53,7 +54,7 @@ export default async function Home({
   return (
     <AuthProvider
       next={next}
-      googleClientId={process.env.GOOGLE_WEB_CLIENT_ID || null}
+      googleClientId={googleWebClientId()}
       initialOpen={initialOpen}
       initialTab={initialTab}
     >
