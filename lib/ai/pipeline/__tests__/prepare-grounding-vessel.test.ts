@@ -1,13 +1,12 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserContext } from '../../types';
 
+const { mockMatchTopK } = vi.hoisted(() => ({
+  mockMatchTopK: vi.fn(),
+}));
+
 vi.mock('../../matching/top-k-cascade', () => ({
-  matchTopKPerIngredient: vi.fn(async (ingredients: unknown[]) =>
-    ingredients.map((_, ingredientIndex) => ({
-      ingredientIndex,
-      candidates: [],
-    }))
-  ),
+  matchTopKPerIngredient: mockMatchTopK,
 }));
 
 vi.mock('../../portion/ingredient-portion', () => ({
@@ -22,6 +21,7 @@ vi.mock('../../portion/ingredient-portion', () => ({
   })),
 }));
 
+import { MATCHING_TIMEOUT_MS } from '../config/stage-timeouts';
 import { prepareGrounding } from '../prepare-grounding';
 import type { MealDecompositionV2 } from '../schemas-v2';
 
@@ -41,8 +41,19 @@ const userContext: UserContext = {
   },
 };
 
+beforeEach(() => {
+  mockMatchTopK.mockImplementation(async (ingredients: unknown[]) =>
+    ingredients.map((_, ingredientIndex) => ({
+      ingredientIndex,
+      candidates: [],
+    }))
+  );
+});
+
 afterEach(() => {
   delete process.env.PORTION_VESSEL_ENABLED;
+  vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe('prepareGrounding vessel envelopes', () => {
@@ -117,5 +128,42 @@ describe('prepareGrounding vessel envelopes', () => {
 
     expect(prepared.vesselEnvelopes).toEqual([null]);
     expect(prepared.mealItemsWithCandidates[0].vesselEnvelope).toBeNull();
+  });
+});
+
+describe('prepareGrounding matching deadline', () => {
+  it('rejects a matching operation that never settles', async () => {
+    vi.useFakeTimers();
+    mockMatchTopK.mockReturnValue(new Promise(() => {}));
+    const decomposition: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'salmon salad',
+          cookingMethod: 'pan-seared',
+          ingredients: [{ rawName: 'salmon', canonicalName: 'Salmon' }],
+        },
+      ],
+    };
+
+    const pending = prepareGrounding({
+      decomposition,
+      userContext,
+      db: {} as never,
+      gemini: {} as never,
+      traceContext: undefined,
+      emit: vi.fn(),
+      topK: 3,
+      matchConcurrency: 2,
+      vesselEnabled: false,
+    });
+    const assertion = expect(pending).rejects.toMatchObject({
+      code: 'PIPELINE_TIMEOUT',
+      retryable: true,
+    });
+
+    await vi.advanceTimersByTimeAsync(MATCHING_TIMEOUT_MS);
+    await assertion;
   });
 });
