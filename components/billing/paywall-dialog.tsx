@@ -1,9 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   entitlementsKeys,
@@ -11,24 +9,15 @@ import {
   reconcileEntitlements,
   useEntitlements,
 } from '@/hooks/billing/use-entitlements';
-import { BillingIdentityMismatchError } from '@/lib/billing/identity';
 import {
   canonicalProductId,
   isAllowedWebProduct,
 } from '@/lib/billing/products';
-import {
-  getOfferings,
-  type Package,
-  purchasePackage,
-} from '@/lib/billing/web-purchases';
-import {
-  clearActivationPending,
-  hasActivationPending,
-  markActivationPending,
-} from './activation-pending';
-import { pollUntilPremium } from './paywall-activation';
+import { getOfferings } from '@/lib/billing/web-purchases';
+import { hasActivationPending } from './activation-pending';
 import { PaywallOffer } from './paywall-offer';
 import { PaywallStatus } from './paywall-status';
+import { usePaywallPurchase } from './use-paywall-purchase';
 
 interface PaywallDialogProps {
   open: boolean;
@@ -43,22 +32,18 @@ interface PaywallDialogProps {
  * The Kallo premium paywall. Pitches AI meal analysis, shows the live trial
  * countdown, lists offering packages with live prices, and runs the purchase +
  * webhook-race poll. All copy is translated (vi + en).
+ *
+ * Purchase and activation state lives in `usePaywallPurchase`; this component
+ * owns which packages are offered and what the user sees.
  */
 export function PaywallDialog({
   open,
   onOpenChange,
   userId,
 }: PaywallDialogProps) {
-  const t = useTranslations('billing.paywall');
-  const locale = useLocale();
   const queryClient = useQueryClient();
   const { data: entitlements } = useEntitlements(userId);
-
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [succeeded, setSucceeded] = useState(false);
-  const [activationPending, setActivationPending] = useState(false);
-  const [checkingActivation, setCheckingActivation] = useState(false);
-  const activationAttempt = useRef(0);
+  const purchase = usePaywallPurchase(userId);
 
   const offeringsQuery = useQuery({
     queryKey: ['billing', 'offerings', userId],
@@ -97,107 +82,23 @@ export function PaywallDialog({
       }
       return allowed;
     }) ?? [];
-  const purchasing = pendingId !== null;
-
-  const handleSelect = useCallback(
-    async (rcPackage: Package) => {
-      if (purchasing) return;
-      setPendingId(rcPackage.identifier);
-      // Record the attempt BEFORE handing control to the provider. The likeliest
-      // interruption is the user paying and then closing the tab, which never
-      // resolves the promise below — a marker written after it would be missing
-      // in exactly the case it exists for. An abandoned checkout costs one
-      // wasted reconcile; a lost one costs a customer their money.
-      markActivationPending(userId);
-      try {
-        const result = await purchasePackage(userId, rcPackage, {
-          selectedLocale: locale,
-        });
-
-        if (result.status === 'cancelled') {
-          // Explicitly dismissed, so no money moved and nothing needs healing.
-          clearActivationPending(userId);
-          return;
-        }
-        if (result.status === 'payment_pending') {
-          setActivationPending(true);
-          toast.success(t('pendingToast'));
-          return;
-        }
-
-        // Both a fresh success and an already-owned account should settle into
-        // premium; poll the server until the webhook catches up.
-        const attempt = ++activationAttempt.current;
-        setCheckingActivation(true);
-        const flipped = await pollUntilPremium(
-          queryClient,
-          userId,
-          () => activationAttempt.current === attempt
-        );
-        if (activationAttempt.current !== attempt) return;
-        if (flipped) {
-          clearActivationPending(userId);
-          setSucceeded(true);
-          toast.success(t('successToast'));
-        } else {
-          setActivationPending(true);
-          toast.success(t('successPendingToast'));
-        }
-      } catch (error) {
-        console.error('Web purchase failed:', error);
-        toast.error(
-          error instanceof BillingIdentityMismatchError
-            ? t('sessionChangedToast')
-            : t('errorToast')
-        );
-      } finally {
-        setCheckingActivation(false);
-        setPendingId(null);
-      }
-    },
-    [purchasing, userId, locale, queryClient, t]
-  );
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
-      if (purchasing) return;
-      if (!next) {
-        activationAttempt.current += 1;
-        setSucceeded(false);
-        setActivationPending(false);
-        setCheckingActivation(false);
-      }
+      if (purchase.purchasing) return;
+      if (!next) purchase.reset();
       onOpenChange(next);
     },
-    [purchasing, onOpenChange]
+    [purchase, onOpenChange]
   );
 
   const handleStatusAction = useCallback(async () => {
-    if (!activationPending) {
+    if (!purchase.activationPending) {
       handleOpenChange(false);
       return;
     }
-
-    setCheckingActivation(true);
-    const attempt = ++activationAttempt.current;
-    try {
-      const flipped = await pollUntilPremium(
-        queryClient,
-        userId,
-        () => activationAttempt.current === attempt
-      );
-      if (activationAttempt.current !== attempt) return;
-      if (flipped) {
-        clearActivationPending(userId);
-        setActivationPending(false);
-        setSucceeded(true);
-      }
-    } finally {
-      if (activationAttempt.current === attempt) {
-        setCheckingActivation(false);
-      }
-    }
-  }, [activationPending, handleOpenChange, queryClient, userId]);
+    await purchase.confirmActivation();
+  }, [purchase, handleOpenChange]);
 
   const trialActive = entitlements?.trial.active ?? false;
   const daysRemaining = entitlements?.trial.daysRemaining ?? 0;
@@ -211,12 +112,16 @@ export function PaywallDialog({
     // subtree — which leaves the payment form visible but completely
     // uninteractive. `handleOpenChange` already refuses to close mid-purchase,
     // so dropping modality here costs nothing but the scroll lock.
-    <Dialog modal={!purchasing} open={open} onOpenChange={handleOpenChange}>
+    <Dialog
+      modal={!purchase.purchasing}
+      open={open}
+      onOpenChange={handleOpenChange}
+    >
       <DialogContent className="max-h-[min(90dvh,48rem)] max-w-md gap-0 overflow-y-auto overscroll-contain rounded-2xl border-nham-border/70 bg-nham-surface p-0">
-        {succeeded || activationPending ? (
+        {purchase.succeeded || purchase.activationPending ? (
           <PaywallStatus
-            activationPending={activationPending}
-            checkingActivation={checkingActivation}
+            activationPending={purchase.activationPending}
+            checkingActivation={purchase.checkingActivation}
             onAction={handleStatusAction}
           />
         ) : (
@@ -224,11 +129,11 @@ export function PaywallDialog({
             trialActive={trialActive}
             daysRemaining={daysRemaining}
             packages={packages}
-            pendingId={pendingId}
-            purchasing={purchasing}
+            pendingId={purchase.pendingId}
+            purchasing={purchase.purchasing}
             offeringsPending={offeringsQuery.isPending}
             offeringsFailed={offeringsQuery.isError}
-            onSelect={handleSelect}
+            onSelect={purchase.select}
           />
         )}
       </DialogContent>
