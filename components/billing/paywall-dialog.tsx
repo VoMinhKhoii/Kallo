@@ -12,7 +12,10 @@ import {
   useEntitlements,
 } from '@/hooks/billing/use-entitlements';
 import { BillingIdentityMismatchError } from '@/lib/billing/identity';
-import { isAllowedWebProduct } from '@/lib/billing/products';
+import {
+  canonicalProductId,
+  isAllowedWebProduct,
+} from '@/lib/billing/products';
 import {
   getOfferings,
   type Package,
@@ -81,10 +84,15 @@ export function PaywallDialog({
 
   const packages =
     offeringsQuery.data?.availablePackages.filter((pkg) => {
-      const allowed = isAllowedWebProduct(pkg.webBillingProduct.identifier);
-      if (!allowed) {
+      const identifier = pkg.webBillingProduct.identifier;
+      const allowed = isAllowedWebProduct(identifier);
+      // A deliberately deferred plan (lifetime today) is filtered on purpose
+      // and must stay quiet — the offering is shared with iOS and Android, so
+      // it arrives here on every load. Only an id our catalog cannot resolve
+      // at all is a real misconfiguration worth shouting about.
+      if (!allowed && canonicalProductId(identifier) === null) {
         console.error(
-          `[billing] Ignoring unexpected web product: ${pkg.webBillingProduct.identifier}`
+          `[billing] Ignoring unexpected web product: ${identifier}`
         );
       }
       return allowed;
