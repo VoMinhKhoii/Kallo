@@ -17,12 +17,19 @@ import {
   nullableNumber,
 } from './row-metrics';
 
-// Day-series bucket granularity per resolved range: short ranges bucket by day,
-// long ranges by week. Table-driven so a new range needs no conditional edits.
+// Day-series bucket granularity per resolved range: one column per day up to a
+// month, per week beyond that. Table-driven so a new range needs no conditional
+// edits.
+//
+// 30d buckets by DAY on purpose. A day bucket divides by that day's own
+// in-scope count, which is 1 or 0 — so a complete day reads the same under both
+// day scopes and switching scope only adds or removes columns. A week bucket
+// re-averages: every week containing a set-aside partial day moves when the
+// scope flips, which read as numbers changing for no reason.
 export const RANGE_BUCKET_UNIT: Record<NutritionRange, DaySeriesBucketUnit> = {
   '1d': 'day',
   '7d': 'day',
-  '30d': 'week',
+  '30d': 'day',
   '90d': 'week',
 };
 

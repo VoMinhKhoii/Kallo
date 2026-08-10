@@ -5,9 +5,11 @@ import type {
   NutritionDaySeries,
 } from '@/lib/nutrition/types';
 import {
+  buildBucketTickLabels,
   buildMacroTrendAxis,
   buildMacroTrendData,
   formatBucketLabel,
+  type MacroTrendPoint,
 } from './macro-trend-utils';
 
 function bucket(startDate: string, value: number | null): DaySeriesBucket {
@@ -116,6 +118,26 @@ describe('buildMacroTrendData', () => {
     expect(data?.points).toHaveLength(3);
     expect(data?.points[2].fat).toBe(270);
   });
+
+  it('keeps a bucket null on every macro so it renders as a gap', () => {
+    // The middle day was set aside as partial: the server returns null on every
+    // metric. It must NOT become a zero-height column, which would read as
+    // "ate nothing" rather than "no data".
+    const data = buildMacroTrendData(
+      daySeries('day', [
+        series('protein', [100, null, 80]),
+        series('carbohydrate', [200, null, 150]),
+        series('fat', [10, null, 20]),
+      ])
+    );
+    expect(data?.points[1]).toMatchObject({
+      protein: null,
+      carbohydrate: null,
+      fat: null,
+    });
+    // …and the gap must not drag the axis down either.
+    expect(data?.maxY).toBe(1290);
+  });
 });
 
 describe('formatBucketLabel', () => {
@@ -147,5 +169,80 @@ describe('formatBucketLabel', () => {
   it('leaves non-vi locales on the first-grapheme behavior', () => {
     // 2026-05-04 is a Monday → English initial "M".
     expect(formatBucketLabel('2026-05-04', 'day', 'en')).toBe('M');
+  });
+});
+
+describe('buildBucketTickLabels', () => {
+  /** `count` consecutive buckets stepping `stepDays` from `start`. */
+  function points(
+    start: string,
+    count: number,
+    stepDays: number
+  ): MacroTrendPoint[] {
+    const startMs = Date.parse(`${start}T00:00:00.000Z`);
+    return Array.from({ length: count }, (_, i) => ({
+      index: i,
+      startDate: new Date(startMs + i * stepDays * 86_400_000)
+        .toISOString()
+        .slice(0, 10),
+      protein: 0,
+      carbohydrate: 0,
+      fat: 0,
+    }));
+  }
+
+  it('labels every column on the 7-day axis', () => {
+    // 2026-05-04 is a Monday.
+    const labels = buildBucketTickLabels(
+      points('2026-05-04', 7, 1),
+      'day',
+      'en'
+    );
+    expect(labels).toEqual(['M', 'T', 'W', 'T', 'F', 'S', 'S']);
+  });
+
+  it('anchors the 30-day axis weekly on the day number', () => {
+    const labels = buildBucketTickLabels(
+      points('2026-05-04', 30, 1),
+      'day',
+      'en'
+    );
+    expect(labels.filter(Boolean)).toEqual(['4', '11', '18', '25', '1']);
+    expect(labels[1]).toBe('');
+    expect(labels).toHaveLength(30);
+  });
+
+  it('labels every column on a short week axis', () => {
+    const labels = buildBucketTickLabels(
+      points('2026-05-04', 5, 7),
+      'week',
+      'en'
+    );
+    expect(labels).toEqual(['4/5', '11/5', '18/5', '25/5', '1/6']);
+  });
+
+  it('anchors the 90-day axis at month boundaries', () => {
+    // 13 weekly buckets from 2026-02-02 span February through April.
+    const labels = buildBucketTickLabels(
+      points('2026-02-02', 13, 7),
+      'week',
+      'en'
+    );
+    expect(labels.filter(Boolean)).toEqual(['Feb', 'Mar', 'Apr']);
+    expect(labels[0]).toBe('Feb');
+    expect(labels).toHaveLength(13);
+  });
+
+  it('uses localized month names for the 90-day anchors', () => {
+    const labels = buildBucketTickLabels(
+      points('2026-02-02', 13, 7),
+      'week',
+      'vi'
+    );
+    expect(labels[0]).toBe(
+      new Intl.DateTimeFormat('vi', { month: 'short' }).format(
+        new Date('2026-02-02T00:00:00')
+      )
+    );
   });
 });

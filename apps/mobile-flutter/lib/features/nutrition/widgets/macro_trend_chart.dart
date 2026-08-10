@@ -5,14 +5,16 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../theme/nham_colors.dart';
+import '../logic/format_date.dart';
 import '../logic/rhythm_logic.dart';
 
-/// A stacked **bar** chart of macro **calories** per bucket (day for 7d, week
-/// for 30d): total bar height = that bucket's calories, each stacked segment =
-/// the energy from protein / carbs / fat. Reads the overview `daySeries` directly.
+/// A stacked **bar** chart of macro **calories** per bucket (day for 7d/30d,
+/// week for 90d): total bar height = that bucket's calories, each stacked
+/// segment = the energy from protein / carbs / fat. Reads the overview
+/// `daySeries` directly.
 ///
-/// One rounded column per bucket, split into three regions filled with the warm
-/// macro tokens that match the `DaySummary` legend.
+/// One rounded column per bucket, split into three regions filled with the
+/// nutrition chart pigments that match the `DaySummary` legend.
 class MacroTrendChart extends StatelessWidget {
   const MacroTrendChart({super.key, required this.daySeries});
 
@@ -31,23 +33,48 @@ class MacroTrendChart extends StatelessWidget {
     final buckets = (p ?? c ?? f)?.buckets ?? const <DaySeriesBucket>[];
     if (buckets.length < 2) return const SizedBox.shrink();
 
-    double g(NutrientDaySeries? s, int i) =>
-        (s != null && i < s.buckets.length ? s.buckets[i].value : null) ?? 0;
+    double? raw(NutrientDaySeries? s, int i) =>
+        s != null && i < s.buckets.length ? s.buckets[i].value : null;
 
     final protein = kCompositionColors['protein']!;
     final carbs = kCompositionColors['carbohydrate']!;
     final fat = kCompositionColors['fat']!;
 
-    // Fewer, fatter columns for the 7-day view; slimmer ones for the busier
-    // 30-day (weekly) axis so they don't crowd.
-    final barWidth = buckets.length <= 7 ? 18.0 : 10.0;
+    // Fewer, fatter columns for the 7-day view; slimmer for the 13-week 90-day
+    // axis; thinner still for the 30 daily columns of the 30-day view.
+    final barWidth = _barWidth(buckets.length);
 
     final groups = <BarChartGroupData>[];
     var maxY = 0.0;
     for (var i = 0; i < buckets.length; i++) {
-      final pk = g(p, i) * kKcalPerGram['protein']!;
-      final ck = g(c, i) * kKcalPerGram['carbohydrate']!;
-      final fk = g(f, i) * kKcalPerGram['fat']!;
+      final rp = raw(p, i);
+      final rc = raw(c, i);
+      final rf = raw(f, i);
+
+      // Null on all three = the bucket held no in-scope days, because the day
+      // was set aside as partial under the "complete days" scope. That is "no
+      // data", not "ate nothing": no stack bands, and it must not pull `maxY`.
+      //
+      // The group keeps a zero rod rather than an empty rod list. An empty list
+      // reports `BarChartGroupData.width == 0`, and `spaceBetween` lays groups
+      // out from their widths — so a gap would shift every column after it off
+      // the grid its axis labels sit on. A zero-height rod paints nothing and
+      // holds the slot.
+      if (rp == null && rc == null && rf == null) {
+        groups.add(
+          BarChartGroupData(
+            x: i,
+            barRods: [BarChartRodData(toY: 0, width: barWidth)],
+          ),
+        );
+        continue;
+      }
+
+      // A null on only SOME macros inside a bucket that does have days is a
+      // genuine zero for that macro.
+      final pk = (rp ?? 0) * kKcalPerGram['protein']!;
+      final ck = (rc ?? 0) * kKcalPerGram['carbohydrate']!;
+      final fk = (rf ?? 0) * kKcalPerGram['fat']!;
       final total = pk + ck + fk;
       if (total > maxY) maxY = total;
       groups.add(
@@ -71,6 +98,12 @@ class MacroTrendChart extends StatelessWidget {
       );
     }
     if (maxY <= 0) return const SizedBox.shrink();
+
+    final tickLabels = buildBucketTickLabels(
+      [for (final b in buckets) b.startDate],
+      daySeries.unit,
+      context.locale.toString(),
+    );
 
     // Axis always reaches at least 3000 kcal so the 2500 / 3000 guides show,
     // and grows past that if intake exceeds it.
@@ -129,14 +162,15 @@ class MacroTrendChart extends StatelessWidget {
                 interval: 1,
                 getTitlesWidget: (value, meta) {
                   final i = value.round();
-                  if (i < 0 || i >= buckets.length) {
+                  if (i < 0 || i >= tickLabels.length) {
                     return const SizedBox.shrink();
                   }
+                  final label = tickLabels[i];
+                  if (label.isEmpty) return const SizedBox.shrink();
                   return Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
-                      _label(buckets[i].startDate, daySeries.unit,
-                          context.locale.toString()),
+                      label,
                       style: dashEyebrow(color: kInkMuted)
                           .copyWith(letterSpacing: 0.4),
                     ),
@@ -151,6 +185,12 @@ class MacroTrendChart extends StatelessWidget {
     );
   }
 
+  static double _barWidth(int bucketCount) {
+    if (bucketCount <= 7) return 18;
+    if (bucketCount <= 14) return 10;
+    return 6;
+  }
+
   /// A round kcal gridline step giving ~3–5 lines across the data range.
   static double _niceStep(double maxV) {
     const steps = [250.0, 500.0, 1000.0, 1500.0, 2000.0];
@@ -161,17 +201,4 @@ class MacroTrendChart extends StatelessWidget {
     return 2500;
   }
 
-  /// Day buckets → weekday initial; week buckets → "d/M" of the week start.
-  static String _label(String startDate, String unit, String locale) {
-    final d = DateTime.tryParse(startDate);
-    if (d == null) return '';
-    if (unit == 'week') return DateFormat('d/M', locale).format(d);
-    // Vietnamese convention: weekday number for Mon–Sat, "CN" for Sunday.
-    // The first grapheme of vi short weekdays ("Th 2".."Th 7"/"CN") yields six
-    // indistinct "T"s, so use the numeric scheme instead (matches the web chart).
-    if (locale.startsWith('vi')) {
-      return d.weekday == DateTime.sunday ? 'CN' : (d.weekday + 1).toString();
-    }
-    return DateFormat('E', locale).format(d).characters.first;
-  }
 }

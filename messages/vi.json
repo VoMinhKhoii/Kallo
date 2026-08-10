@@ -97,9 +97,9 @@
     "loading": "Đang tải tổng quan dinh dưỡng…",
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
-      "1d": "Hôm nay",
       "7d": "7 ngày",
-      "30d": "30 ngày"
+      "30d": "30 ngày",
+      "90d": "90 ngày"
     },
     "summary": {
       "label": "Tóm tắt dinh dưỡng",

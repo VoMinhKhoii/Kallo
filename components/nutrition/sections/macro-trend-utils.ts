@@ -9,10 +9,13 @@ export const KCAL_PER_GRAM = { protein: 4, carbohydrate: 4, fat: 9 } as const;
 export const COMPOSITION_KEYS = ['protein', 'carbohydrate', 'fat'] as const;
 export type CompositionKey = (typeof COMPOSITION_KEYS)[number];
 
+// The nutrition page's own, brighter pigments — NOT the --nham-macro-* trio the
+// dashboard dock and logging feed use. Berry rose / apricot / sage separate by
+// hue, so a stacked column still reads at the 6px width the 30-day axis needs.
 export const COMPOSITION_COLORS: Record<CompositionKey, string> = {
-  protein: 'var(--nham-macro-protein)',
-  carbohydrate: 'var(--nham-macro-carbs)',
-  fat: 'var(--nham-macro-fat)',
+  protein: 'var(--nham-chart-protein)',
+  carbohydrate: 'var(--nham-chart-carbs)',
+  fat: 'var(--nham-chart-fat)',
 };
 
 export const COMPOSITION_SHORT: Record<CompositionKey, string> = {
@@ -24,9 +27,10 @@ export const COMPOSITION_SHORT: Record<CompositionKey, string> = {
 export interface MacroTrendPoint {
   index: number;
   startDate: string;
-  protein: number;
-  carbohydrate: number;
-  fat: number;
+  /** Null on every macro = the bucket has no in-scope days. Renders as a gap. */
+  protein: number | null;
+  carbohydrate: number | null;
+  fat: number | null;
 }
 
 /**
@@ -49,15 +53,34 @@ export function buildMacroTrendData(
   const buckets = (protein ?? carbohydrate ?? fat)?.buckets ?? [];
   if (buckets.length < 2) return null;
 
-  // Null bucket values coerce to 0 (mobile `g()` parity).
-  const g = (series: typeof protein, i: number) =>
-    (series && i < series.buckets.length ? series.buckets[i].value : null) ?? 0;
+  const raw = (series: typeof protein, i: number) =>
+    series && i < series.buckets.length ? series.buckets[i].value : null;
 
   let maxY = 0;
   const points = buckets.map((bucket, i) => {
-    const p = g(protein, i) * KCAL_PER_GRAM.protein;
-    const c = g(carbohydrate, i) * KCAL_PER_GRAM.carbohydrate;
-    const f = g(fat, i) * KCAL_PER_GRAM.fat;
+    const rp = raw(protein, i);
+    const rc = raw(carbohydrate, i);
+    const rf = raw(fat, i);
+
+    // Null on all three = the bucket held no in-scope days, because the day was
+    // set aside as partial under the "complete days" scope. That is "no data",
+    // not "ate nothing" — carry the nulls through so recharts leaves the slot
+    // empty instead of drawing a flat zero column that reads as a real datum.
+    if (rp === null && rc === null && rf === null) {
+      return {
+        index: i,
+        startDate: bucket.startDate,
+        protein: null,
+        carbohydrate: null,
+        fat: null,
+      };
+    }
+
+    // A null on only SOME macros inside a bucket that does have days is a
+    // genuine zero for that macro (mobile `g()` parity).
+    const p = (rp ?? 0) * KCAL_PER_GRAM.protein;
+    const c = (rc ?? 0) * KCAL_PER_GRAM.carbohydrate;
+    const f = (rf ?? 0) * KCAL_PER_GRAM.fat;
     const total = p + c + f;
     if (total > maxY) maxY = total;
     return {
@@ -119,4 +142,59 @@ export function formatBucketLabel(
     d
   );
   return Array.from(weekday)[0] ?? '';
+}
+
+/** How many day buckets fit before per-bucket labels start colliding. */
+const DENSE_DAY_AXIS = 7;
+/** Same, for the wider `d/M` week-bucket label. */
+const DENSE_WEEK_AXIS = 8;
+/** 30d anchors on the same weekday the range started on. */
+const DAY_ANCHOR_STEP = 7;
+
+function parseBucketDate(startDate: string): Date | null {
+  const d = new Date(`${startDate}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * One tick label per bucket, `''` where the axis should stay bare. Apple
+ * Health's ladder: a short range labels every column; a long day axis (30d, 30
+ * columns) anchors weekly on the day number; a long week axis (90d, 13 columns)
+ * anchors at month boundaries. Labelling all 30 or all 13 collides on a phone.
+ */
+export function buildBucketTickLabels(
+  points: MacroTrendPoint[],
+  unit: DaySeriesBucketUnit,
+  locale: string
+): string[] {
+  const dense =
+    unit === 'week'
+      ? points.length > DENSE_WEEK_AXIS
+      : points.length > DENSE_DAY_AXIS;
+  if (!dense) {
+    return points.map((point) =>
+      formatBucketLabel(point.startDate, unit, locale)
+    );
+  }
+
+  if (unit === 'day') {
+    return points.map((point, i) => {
+      if (i % DAY_ANCHOR_STEP !== 0) return '';
+      const d = parseBucketDate(point.startDate);
+      return d ? String(d.getDate()) : '';
+    });
+  }
+
+  // Week buckets: name the month at the first column and wherever the axis
+  // crosses into a new one, so 90 days reads as "Jun · Jul · Aug".
+  const month = new Intl.DateTimeFormat(locale, { month: 'short' });
+  let previousMonth: number | null = null;
+  return points.map((point) => {
+    const d = parseBucketDate(point.startDate);
+    if (!d) return '';
+    const current = d.getMonth();
+    if (previousMonth === current) return '';
+    previousMonth = current;
+    return month.format(d);
+  });
 }

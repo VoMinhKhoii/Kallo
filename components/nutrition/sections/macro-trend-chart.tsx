@@ -11,9 +11,9 @@ import {
 } from 'recharts';
 import type { DaySeriesBucketUnit } from '@/lib/nutrition/types';
 import {
+  buildBucketTickLabels,
   buildMacroTrendAxis,
   COMPOSITION_COLORS,
-  formatBucketLabel,
   type MacroTrendPoint,
 } from './macro-trend-utils';
 
@@ -21,6 +21,12 @@ interface MacroTrendChartProps {
   points: MacroTrendPoint[];
   maxY: number;
   unit: DaySeriesBucketUnit;
+}
+
+function getBarSize(bucketCount: number): number {
+  if (bucketCount <= 7) return 18;
+  if (bucketCount <= 14) return 10;
+  return 6;
 }
 
 /**
@@ -34,9 +40,10 @@ export function MacroTrendChart({ points, maxY, unit }: MacroTrendChartProps) {
   const locale = useLocale();
 
   const { topY, ticks } = buildMacroTrendAxis(maxY);
-  // Fewer, fatter columns for the 7-day view; slimmer ones for the busier
-  // 30-day (weekly) axis so they don't crowd.
-  const barSize = points.length <= 7 ? 18 : 10;
+  const tickLabels = buildBucketTickLabels(points, unit, locale);
+  // Fewer, fatter columns for the 7-day view; slimmer for the 13-week 90-day
+  // axis; thinner still for the 30 daily columns of the 30-day view.
+  const barSize = getBarSize(points.length);
 
   return (
     <div
@@ -61,9 +68,7 @@ export function MacroTrendChart({ points, maxY, unit }: MacroTrendChartProps) {
             tickLine={false}
             axisLine={false}
             tick={{ fontSize: 10, fill: 'var(--nham-text-muted)' }}
-            tickFormatter={(_v, i) =>
-              formatBucketLabel(points[i]?.startDate ?? '', unit, locale)
-            }
+            tickFormatter={(_v, i) => tickLabels[i] ?? ''}
           />
           <YAxis
             domain={[0, topY]}

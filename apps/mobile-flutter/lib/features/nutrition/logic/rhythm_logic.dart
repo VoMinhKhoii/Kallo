@@ -1,6 +1,6 @@
 /// Pure daily-rhythm helpers vendored from web `components/nutrition/sections/
 /// daily-rhythm.tsx` (keep in sync). `kCompositionColors` swaps the web's
-/// `var(--nham-macro-*)` for resolved mobile tokens.
+/// `var(--nham-chart-*)` for resolved mobile tokens.
 ///
 /// Ported from `apps/mobile/src/lib/nutrition/logic/rhythm-logic.ts`.
 library;
@@ -18,10 +18,12 @@ const Map<String, double> kKcalPerGram = {
 
 const List<String> kCompositionKeys = ['protein', 'carbohydrate', 'fat'];
 
+// The nutrition page's own, brighter pigments — NOT the quieter `macro*` trio
+// the dashboard dock, logging feed and cheat sliders use.
 const Map<String, Color> kCompositionColors = {
-  'protein': NhamColors.macroProtein,
-  'carbohydrate': NhamColors.macroCarbs,
-  'fat': NhamColors.macroFat,
+  'protein': NhamColors.chartProtein,
+  'carbohydrate': NhamColors.chartCarbs,
+  'fat': NhamColors.chartFat,
 };
 
 const Map<String, String> kCompositionShort = {

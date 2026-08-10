@@ -17,6 +17,7 @@ import '../../../data/api_client.dart';
 import '../../../models/cheat.dart';
 // Prefixed: dashboard_providers also exports a `loggingDayProvider`.
 import '../../dashboard/data/dashboard_providers.dart' as dash;
+import '../../nutrition/providers/nutrition_overview_provider.dart';
 import '../logic/meal_log_mode.dart';
 import 'logging_keys.dart';
 import 'logging_models.dart';
@@ -270,6 +271,11 @@ void invalidateMealSurfaces(
   invalidate(recentCheatOccasionsProvider(userId));
   invalidate(dash.dashboardBundleProvider((userId: userId, date: date)));
   invalidate(dash.dashboardDayProvider((userId: userId, date: date)));
+  // The whole family — every cached (range, day scope) overview is now stale.
+  // Without this the nutrition page keeps serving pre-log numbers, and each
+  // cached selection holds a different vintage, which reads as the day-scope
+  // toggle changing numbers on its own.
+  invalidate(nutritionOverviewProvider);
 }
 
 /// Confirm a pending analysis into a saved meal, with the RN hook's optimistic

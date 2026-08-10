@@ -93,7 +93,7 @@ export type DaySeriesMetricKey =
   | 'fat'
   | NutritionNutrientKey;
 
-/** Whether the time axis buckets by day (7d) or by week (30d/90d). */
+/** Whether the time axis buckets by day (7d/30d) or by week (90d). */
 export type DaySeriesBucketUnit = 'day' | 'week';
 
 export interface DaySeriesBucket {
@@ -199,7 +199,7 @@ export interface NutritionOverview {
   macros: MacroPattern[];
   /**
    * Per-bucket time series for the macros and default micronutrients. Days for
-   * the 7d range, weeks for 30d/90d. Empty when there are no complete days.
+   * the 7d/30d ranges, weeks for 90d. Empty when there are no complete days.
    */
   daySeries: NutritionDaySeries;
   micronutrients: NutrientCardData[];

@@ -28,35 +28,41 @@ typedef NutritionOverviewArg = ({
 /// Family keyed by (range, scope). The query key registry tuple is
 /// `QueryKeys.nutritionOverview(range, tz, scope)`.
 ///
-/// `keepPreviousData` semantics: when the family arg changes (range OR scope
-/// toggle), the new provider instance keeps the previously-resolved overview as
-/// its initial value so the layout doesn't collapse to a skeleton mid-refetch —
-/// which is what makes the All/Complete swap feel instant.
+/// `keepPreviousData` semantics: a provider instance re-seeds from the last
+/// overview resolved *for its own (range, scope)*, so returning to a selection
+/// renders instantly instead of collapsing to a skeleton.
 final nutritionOverviewProvider = AsyncNotifierProvider.family<
   NutritionOverviewNotifier,
   NutritionOverview,
   NutritionOverviewArg
 >(NutritionOverviewNotifier.new);
 
-/// Holds the last successful overview across the family so a range switch can
-/// seed the next instance (the RN `keepPreviousData` behavior). It is keyed by
-/// user + timezone so an account switch can never seed another user's nutrition
-/// pattern into the placeholder state.
+/// Holds the last successful overview per selection so a returning instance can
+/// seed itself (the RN `keepPreviousData` behavior).
+///
+/// The key carries the range and the day scope alongside user + timezone. It
+/// used to be user + timezone alone, which meant switching range — or toggling
+/// All/Complete — seeded the new instance with the PREVIOUS selection's
+/// overview, so the page briefly rendered another selection's numbers, and its
+/// `resolvedRange`, as if they were the new one's. A selection with nothing
+/// cached now shows the skeleton, which is the honest answer: we have no data
+/// for it yet.
 final Map<String, NutritionOverview> _lastOverviewByAccount = {};
 
-String _overviewCacheKey(String? userId) =>
-    '${userId ?? 'signed-out'}:${nutritionTimezoneOffset()}';
+String _overviewCacheKey(String? userId, NutritionOverviewArg arg) =>
+    '${userId ?? 'signed-out'}:${nutritionTimezoneOffset()}'
+    ':${arg.range.value}:${arg.scope.value}';
 
 class NutritionOverviewNotifier
     extends FamilyAsyncNotifier<NutritionOverview, NutritionOverviewArg> {
   @override
   Future<NutritionOverview> build(NutritionOverviewArg arg) async {
     final userId = ref.watch(currentSessionProvider)?.user.id;
-    final cacheKey = _overviewCacheKey(userId);
+    final cacheKey = _overviewCacheKey(userId, arg);
     final previous = _lastOverviewByAccount[cacheKey];
     if (previous != null) {
-      // Seed with the prior overview so consumers keep rendering the editorial
-      // stack while the new range/scope loads (placeholderData: keepPreviousData).
+      // Seed with this selection's prior overview so consumers keep rendering
+      // the editorial stack while it revalidates (keepPreviousData).
       state = AsyncData(previous);
     }
     final overview = await _fetch(arg);
@@ -92,7 +98,7 @@ class NutritionOverviewNotifier
     try {
       final overview = await _fetch(arg);
       final userId = ref.read(currentSessionProvider)?.user.id;
-      _lastOverviewByAccount[_overviewCacheKey(userId)] = overview;
+      _lastOverviewByAccount[_overviewCacheKey(userId, arg)] = overview;
       state = AsyncData(overview);
       return true;
     } catch (error, stack) {

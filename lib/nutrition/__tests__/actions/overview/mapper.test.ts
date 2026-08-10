@@ -175,7 +175,7 @@ describe('mapOverviewRowsToDto', () => {
       expect(peak?.ratioOfTarget).toBeCloseTo(1.1);
     });
 
-    it('buckets by week for the 30d range', () => {
+    it('buckets by day for the 30d range', () => {
       const rows: OverviewMealItemRow[] = [];
       // 28 fully-logged days ending 2026-04-25.
       for (let i = 0; i < 28; i++) {
@@ -199,12 +199,45 @@ describe('mapOverviewRowsToDto', () => {
         },
       });
 
+      // One column per day, so a complete day's value never moves when the
+      // caller flips day scope — only unlogged/partial columns come and go.
+      expect(overview.daySeries.unit).toBe('day');
+      const calories = overview.daySeries.series.find(
+        (s) => s.metric === 'calories'
+      );
+      expect(calories?.buckets).toHaveLength(30);
+    });
+
+    it('buckets by week for the 90d range', () => {
+      const rows: OverviewMealItemRow[] = [];
+      // 90 fully-logged days ending 2026-04-25.
+      for (let i = 0; i < 90; i++) {
+        const date = new Date(
+          Date.parse('2026-04-25T00:00:00.000Z') - i * 86_400_000
+        )
+          .toISOString()
+          .slice(0, 10);
+        rows.push(row({ localDate: date, calories: 2000, proteinG: 100 }));
+      }
+      const overview = mapOverviewRowsToDto({
+        rows,
+        profile: baseProfile,
+        requestedRange: '90d',
+        resolvedRange: '90d',
+        loggedDaysLast30: 30,
+        period: {
+          startDate: '2026-01-26',
+          endDate: '2026-04-25',
+          bucketTimezone: 'local',
+        },
+      });
+
       expect(overview.daySeries.unit).toBe('week');
       const calories = overview.daySeries.series.find(
         (s) => s.metric === 'calories'
       );
-      // 30 days / 7 → 5 week buckets (final clamps to the period end).
-      expect(calories?.buckets).toHaveLength(5);
+      // 90 days / 7 → 13 week buckets (the final one clamps to the period end).
+      expect(calories?.buckets).toHaveLength(13);
     });
 
     it('includes the default micronutrients in the series', () => {
@@ -288,6 +321,38 @@ describe('mapOverviewRowsToDto', () => {
       expect(overview.daySeries.series).toHaveLength(0);
       expect(overview.calorieAverages.complete.averagePerDay).toBeNull();
       expect(overview.calorieAverages.all.averagePerDay).toBe(350);
+    });
+
+    it('keeps a complete day identical across scopes, only adding columns', () => {
+      // The invariant the day-scope toggle promises: flipping scope must not
+      // move a day that was already complete. It only adds back the partial
+      // day's column. Day buckets divide by their own in-scope count (1 or 0),
+      // so this holds for 7d and — since 30d now buckets by day too — for 30d.
+      const rows = [completeDay, partialDay];
+      const bucketsFor = (scope: 'all' | 'complete') =>
+        mapScoped(rows, scope)
+          .daySeries.series.find((s) => s.metric === 'calories')
+          ?.buckets.filter(
+            (b) => b.startDate === '2026-04-24' || b.startDate === '2026-04-25'
+          ) ?? [];
+
+      const complete = bucketsFor('complete');
+      const all = bucketsFor('all');
+
+      // The complete day reads 2000 either way.
+      expect(complete[0]).toMatchObject({
+        startDate: '2026-04-24',
+        value: 2000,
+      });
+      expect(all[0]).toMatchObject({ startDate: '2026-04-24', value: 2000 });
+
+      // The partial day is a gap under 'complete' and a real column under 'all'
+      // — never a zero, which would read as "ate nothing".
+      expect(complete[1]).toMatchObject({
+        startDate: '2026-04-25',
+        value: null,
+      });
+      expect(all[1]).toMatchObject({ startDate: '2026-04-25', value: 400 });
     });
 
     it('legacy (no scope) keeps the safety valve for all-partial periods', () => {

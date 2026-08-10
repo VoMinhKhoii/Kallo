@@ -170,6 +170,19 @@ abstract final class NhamColors {
   static const Color macroCarbs = Color(0xFF8B7355);
   static const Color macroFat = Color(0xFFA8A29E);
 
+  // ── Macros, charted ──────────────────────────────────────────────────
+  /// A SEPARATE, brighter macro set for the nutrition page's stacked bars,
+  /// composition bar and legend. The [macroProtein]/[macroCarbs]/[macroFat]
+  /// trio above is tan-on-taupe-on-gray — three low-chroma neighbours that turn
+  /// to mud at the 6–10px column widths the trend chart uses. These split by
+  /// hue instead of by value, so a column still reads at 6px. The dashboard,
+  /// logging feed and cheat sliders keep the quieter set; do not merge the two.
+  ///
+  /// Mirrors the web `--nham-chart-*` tokens in `app/globals.css`.
+  static const Color chartProtein = Color(0xFFD46A86); // berry rose
+  static const Color chartCarbs = Color(0xFFE09C84); // apricot
+  static const Color chartFat = Color(0xFFA6C495); // sage
+
   // ── Status ───────────────────────────────────────────────────────────
   static const Color success = Color(0xFF7CA368); // sage (heatmap/legacy)
   // Fresh emerald for "on target" cards — brighter + cleaner than the olive

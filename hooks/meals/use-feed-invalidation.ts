@@ -37,6 +37,16 @@ export function useFeedInvalidation(args: {
       refetchType: 'none',
     });
     queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+    // Prefix match over every cached (range, dayScope) nutrition overview. Its
+    // staleTime is 5 minutes, so without this the nutrition page can show
+    // pre-log numbers — and each cached selection can hold a different vintage,
+    // which reads as the day-scope toggle changing numbers on its own.
+    // refetchType: 'none' for the same reason as the day query above: the page
+    // isn't mounted here, so mark stale and let it refetch on next visit.
+    queryClient.invalidateQueries({
+      queryKey: ['nutrition'],
+      refetchType: 'none',
+    });
   }, [messages, userId, queryClient, selectedDate, streamingMsgId]);
 
   const handleBarcodeSuccess = useCallback(async () => {
@@ -61,6 +71,10 @@ export function useFeedInvalidation(args: {
       queryKey: dailyMealsKeys.byDate(selectedDate),
     });
     queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+    queryClient.invalidateQueries({
+      queryKey: ['nutrition'],
+      refetchType: 'none',
+    });
   }, [userId, queryClient, selectedDate]);
 
   return { handleAnalysisComplete, handleBarcodeSuccess };

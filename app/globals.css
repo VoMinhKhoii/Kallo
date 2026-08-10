@@ -234,6 +234,16 @@
   --nham-macro-protein: #c9a87c;
   --nham-macro-carbs: #8b7355;
   --nham-macro-fat: #a8a29e;
+  /* Nutrition-chart macro pigments — a SEPARATE, brighter set from the
+     --nham-macro-* trio above, scoped to the nutrition page's stacked bars,
+     composition bar and legend. The macro tokens are tan-on-taupe-on-gray:
+     three low-chroma neighbours that turn to mud at the 6-10px bar widths the
+     trend chart uses. These split by hue instead of by value, so a column is
+     readable at 6px. The dashboard, logging feed and cheat sliders keep the
+     quieter --nham-macro-* set; do not merge the two. */
+  --nham-chart-protein: #d46a86;
+  --nham-chart-carbs: #e09c84;
+  --nham-chart-fat: #a6c495;
   /* Semantic status tokens */
   --nham-success: #7ca368;
   /* Fresh emerald for "on target" nutrient cards — brighter + cleaner than the
@@ -310,6 +320,11 @@
   --nham-macro-protein: #c9a87c;
   --nham-macro-carbs: #b8a88e;
   --nham-macro-fat: #8a8580;
+  /* Chart pigments carry over unchanged: all three are mid-tone enough to hold
+     against the dark card (#251f15) without the light-mode values washing out. */
+  --nham-chart-protein: #d46a86;
+  --nham-chart-carbs: #e09c84;
+  --nham-chart-fat: #a6c495;
   /* Semantic status tokens */
   --nham-success: #7faf6a;
   --nham-success-faint: #16281f;
