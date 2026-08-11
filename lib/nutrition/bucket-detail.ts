@@ -180,6 +180,14 @@ export interface NutritionView {
   moreNutrients: NutrientCardData[];
   /** The dates the figures cover: the range, or the selected bucket. */
   dateSpan: string;
+  /**
+   * The selection that actually resolved, which is NOT always the one that was
+   * tapped: a bucket with nothing logged in it has no detail to show, so it
+   * falls back to `null` and the page stays on the range. Renderers must key
+   * off this rather than the raw tapped index, or a tapped empty column would
+   * grey every OTHER column while showing range figures under it.
+   */
+  selectedIndex: number | null;
 }
 
 /**
@@ -210,6 +218,7 @@ export function buildNutritionView(
         overview.period.endDate,
         locale
       ),
+      selectedIndex: null,
     };
   }
 
@@ -218,5 +227,6 @@ export function buildNutritionView(
     micronutrients: scopeCardsToBucket(overview.micronutrients, detail),
     moreNutrients: scopeCardsToBucket(overview.moreNutrients, detail),
     dateSpan: formatDateSpan(detail.startDate, detail.endDate, locale),
+    selectedIndex,
   };
 }

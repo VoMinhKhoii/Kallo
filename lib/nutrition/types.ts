@@ -101,15 +101,21 @@ export interface DaySeriesBucket {
   startDate: string;
   /** Inclusive local-date end of the bucket (same as start for day buckets). */
   endDate: string;
-  /** Per-day average of the metric across the bucket's in-scope days. */
+  /**
+   * Per-day average of the metric across the bucket's LOGGED days — in every
+   * day scope, including a bucket that mixes in-scope and set-aside days. The
+   * scope decides what is COUNTED (see `excluded`), not what is drawn, so a
+   * bar's height never moves when the scope is toggled.
+   */
   value: number | null;
   /** Value as a fraction of the metric's target, or null when no target. */
   ratioOfTarget: number | null;
   /**
-   * The bucket holds logged days but none the current day scope averages over,
-   * so `value` covers its logged days instead and it is NOT part of the
-   * headline above it. Clients draw it in the muted pigment: the day was
-   * eaten, it just isn't being counted. Always false under the `all` scope.
+   * The current day scope averages over none of this bucket's days
+   * (`scopedDays === 0`), so it is not part of the headline above the chart.
+   * Clients draw it in the muted pigment: the day was eaten, it just isn't
+   * being counted. Always false under the `all` scope, and false for a bucket
+   * with nothing logged in it — there is nothing there to set aside.
    */
   excluded: boolean;
 }

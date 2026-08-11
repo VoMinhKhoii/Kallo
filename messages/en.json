@@ -505,7 +505,9 @@
         "bucketDay": "day",
         "bucketWeek": "week",
         "gap": "no complete log"
-      }
+      },
+      "diffUp": "up from the period before",
+      "diffDown": "down from the period before"
     },
     "focus": {
       "eyebrow": "Where to focus",

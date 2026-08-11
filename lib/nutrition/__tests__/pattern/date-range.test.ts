@@ -76,8 +76,8 @@ describe('getNutritionPeriod', () => {
         timezoneOffset: 300,
       })
     ).toEqual({
-      // 01:30Z at UTC+? — the +300 offset pulls the local date back to Friday
-      // the 24th, whose week is Mon 20th → Sun 26th.
+      // Offsets follow `Date.prototype.getTimezoneOffset`, so +300 is UTC−5:
+      // 01:30Z is Friday the 24th locally, whose week is Mon 20th → Sun 26th.
       startDate: '2026-04-20',
       endDate: '2026-04-26',
       bucketTimezone: 'local',
@@ -98,12 +98,12 @@ describe('getPreviousPeriod', () => {
     ).toEqual({ startDate: '2026-02-25', endDate: '2026-03-26' });
   });
 
-  it('measures length from the period, so a forward-running week still maps to the week before', () => {
-    // The 7d window is the calendar week and can end after today; the previous
-    // window is still exactly the seven days before it, not "seven before now".
+  it('measures length from the period, not from a range constant', () => {
+    // A one-day window maps to the day before. Nothing here reads "today", so
+    // a 7d window ending after today still maps to the seven days before it.
     expect(
-      getPreviousPeriod({ startDate: '2026-08-10', endDate: '2026-08-16' })
-    ).toEqual({ startDate: '2026-08-03', endDate: '2026-08-09' });
+      getPreviousPeriod({ startDate: '2026-08-16', endDate: '2026-08-16' })
+    ).toEqual({ startDate: '2026-08-15', endDate: '2026-08-15' });
   });
 
   it('steps back across a year boundary', () => {

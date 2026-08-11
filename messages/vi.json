@@ -505,7 +505,9 @@
         "bucketDay": "ngày",
         "bucketWeek": "tuần",
         "gap": "chưa ghi đủ bữa"
-      }
+      },
+      "diffUp": "tăng so với kỳ trước",
+      "diffDown": "giảm so với kỳ trước"
     },
     "focus": {
       "eyebrow": "Cần để ý",

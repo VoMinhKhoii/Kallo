@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
+import { nutritionKeys } from '@/lib/nutrition/query-keys';
 import type { ChatMessage } from '@/lib/types/meal';
 
 /** Cache invalidation for analysis-complete and barcode-save events. */
@@ -44,7 +45,7 @@ export function useFeedInvalidation(args: {
     // refetchType: 'none' for the same reason as the day query above: the page
     // isn't mounted here, so mark stale and let it refetch on next visit.
     queryClient.invalidateQueries({
-      queryKey: ['nutrition'],
+      queryKey: nutritionKeys.all,
       refetchType: 'none',
     });
   }, [messages, userId, queryClient, selectedDate, streamingMsgId]);
@@ -72,7 +73,7 @@ export function useFeedInvalidation(args: {
     });
     queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
     queryClient.invalidateQueries({
-      queryKey: ['nutrition'],
+      queryKey: nutritionKeys.all,
       refetchType: 'none',
     });
   }, [userId, queryClient, selectedDate]);

@@ -159,6 +159,24 @@ describe('buildMacroTrendData', () => {
     // …and the gap must not drag the axis down either.
     expect(data?.maxY).toBe(1290);
   });
+  it('carries the scope-excluded flag through to the point', () => {
+    // The flag is what greys a column; a regression that dropped it would
+    // otherwise pass, since every fixture bucket sets it false.
+    const withExcluded = daySeries('day', [
+      series('protein', [100, 90]),
+      series('carbohydrate', [200, 180]),
+      series('fat', [10, 12]),
+    ]);
+    for (const s of withExcluded.series) {
+      s.buckets[1] = { ...s.buckets[1], excluded: true };
+    }
+
+    const data = buildMacroTrendData(withExcluded);
+
+    expect(data?.points[0].excluded).toBe(false);
+    // Excluded, but still carrying its real height.
+    expect(data?.points[1]).toMatchObject({ excluded: true, protein: 360 });
+  });
 });
 
 describe('formatBucketLabel', () => {

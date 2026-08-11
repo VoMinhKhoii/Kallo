@@ -10,6 +10,12 @@ const NO_PREVIOUS: CalorieAverages = {
   complete: { averagePerDay: null, days: 0 },
 };
 
+/** A prior window WITH data, to prove the field is forwarded and not rebuilt. */
+const PREVIOUS: CalorieAverages = {
+  all: { averagePerDay: 1800, days: 7 },
+  complete: { averagePerDay: 2100, days: 5 },
+};
+
 const baseProfile = {
   biologicalSex: 'male',
   age: 35,
@@ -57,7 +63,10 @@ function row(overrides: Partial<OverviewMealItemRow>): OverviewMealItemRow {
   };
 }
 
-function mapRows(rows: OverviewMealItemRow[]) {
+function mapRows(
+  rows: OverviewMealItemRow[],
+  previousCalorieAverages: CalorieAverages = NO_PREVIOUS
+) {
   return mapOverviewRowsToDto({
     rows,
     profile: baseProfile,
@@ -69,7 +78,7 @@ function mapRows(rows: OverviewMealItemRow[]) {
       endDate: '2026-04-25',
       bucketTimezone: 'local',
     },
-    previousCalorieAverages: NO_PREVIOUS,
+    previousCalorieAverages,
   });
 }
 
@@ -141,6 +150,16 @@ describe('mapOverviewRowsToDto', () => {
     ]) {
       expect('trend' in card).toBe(false);
     }
+  });
+
+  it('forwards the previous window averages untouched', () => {
+    // Three return paths carry this field; a dropped assignment on any of them
+    // would silently remove the delta from the card.
+    const overview = mapRows(
+      [row({ localDate: '2026-04-25', calories: 2000 })],
+      PREVIOUS
+    );
+    expect(overview.previousCalorieAverages).toEqual(PREVIOUS);
   });
 
   describe('daySeries', () => {

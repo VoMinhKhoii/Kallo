@@ -192,8 +192,8 @@
     },
     "detail": {
       "perDay": "per day",
-      "close": "Close day detail",
-      "noNutrients": "No nutrient data for this bucket.",
+      "close": "Close details",
+      "noNutrients": "No nutrient data for this period.",
       "averageVsTarget": "Average vs target"
     },
     "confidence": {
@@ -529,6 +529,8 @@
       "noCompleteDays": "No fully-logged days yet — keep logging, or tap All.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Macro composition",
+      "diffUp": "up from the period before",
+      "diffDown": "down from the period before",
       "consistency": {
         "steady": "steady",
         "rhythmic": "rhythmic",

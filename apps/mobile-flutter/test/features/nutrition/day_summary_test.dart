@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/features/nutrition/widgets/day_summary.dart';
 import 'package:nham_mobile/models/nutrition.dart';
 
-import 'l10n_test_loader.dart';
+import '../../l10n_test_loader.dart';
 
 /// Wraps a widget in the minimal localization + Material scaffolding the
 /// `DaySummary` needs. It takes plain data params, so no ProviderScope/Supabase.

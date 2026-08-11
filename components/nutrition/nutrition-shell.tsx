@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getNutritionOverview } from '@/lib/nutrition/actions';
 import { buildNutritionView } from '@/lib/nutrition/bucket-detail';
+import { nutritionKeys } from '@/lib/nutrition/query-keys';
 import type {
   NutritionDayScope,
   NutritionRangeInput,
@@ -36,13 +37,7 @@ export function NutritionShell() {
   const today = useMemo(() => localIsoDate(), []);
 
   const overviewQuery = useQuery({
-    queryKey: [
-      'nutrition',
-      'overview',
-      range,
-      dayScope,
-      timezoneOffset ?? 'utc',
-    ],
+    queryKey: nutritionKeys.overview(range, dayScope, timezoneOffset ?? 'utc'),
     queryFn: () =>
       getNutritionOverview({ range, timezoneOffset, days: dayScope }),
     retry: false,
@@ -58,6 +53,18 @@ export function NutritionShell() {
   const overviewErrorMessage = t('errors.overview');
   const overviewErrorToast = t('errors.overviewToast');
   const overviewRetryLabel = t('errors.retry');
+
+  // A pointer click on a column focuses nothing, so the container's onKeyDown
+  // never receives the Escape that follows. Listen at the document while a
+  // selection is live; the container handler still serves the keyboard path.
+  useEffect(() => {
+    if (selectedIndex === null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedIndex(null);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [selectedIndex]);
 
   useEffect(() => {
     if (!isError) {
@@ -94,8 +101,16 @@ export function NutritionShell() {
   // Tapping a column re-points the WHOLE page at that bucket — the calorie
   // hero, the gram legend and the nutrient grid — rather than opening a second
   // panel that repeats them. Tapping anywhere else puts the range back.
-  const { macros, micronutrients, moreNutrients, dateSpan } =
-    buildNutritionView(overview, selectedIndex, locale);
+  // `activeIndex`, not `selectedIndex`: tapping a column with nothing logged
+  // in it resolves to no detail, and the page stays on the range rather than
+  // greying every other column around an empty one.
+  const {
+    macros,
+    micronutrients,
+    moreNutrients,
+    dateSpan,
+    selectedIndex: activeIndex,
+  } = buildNutritionView(overview, selectedIndex, locale);
   const todayIndex = findTodayIndex(
     overview.daySeries.series[0]?.buckets ?? [],
     today
@@ -127,8 +142,11 @@ export function NutritionShell() {
           }}
         >
           <div className="mx-auto flex min-h-full max-w-2xl flex-col">
+            {/* `aria-busy` covers the column; `aria-live` does NOT. Announcing
+                the whole subtree meant every range change read out the chart,
+                the grid and the source line — the figure and its date span are
+                what actually changed, and DaySummary marks those. */}
             <div
-              aria-live="polite"
               aria-busy={overviewQuery.isFetching}
               className="flex flex-1 flex-col gap-7"
             >
@@ -143,7 +161,7 @@ export function NutritionShell() {
                 dateSpan={dateSpan}
                 isEmpty={overview.loggedDays === 0}
                 todayIndex={todayIndex}
-                selectedIndex={selectedIndex}
+                selectedIndex={activeIndex}
                 onSelect={(index) =>
                   setSelectedIndex((current) =>
                     current === index ? null : index

@@ -25,11 +25,18 @@ class ScopeSwitch extends StatelessWidget {
     return Semantics(
       button: true,
       label: label,
+      // `excludeSemantics` drops the child's own nodes, so without `onTap`
+      // here the node announces "button" and exposes no tap action.
+      onTap: onTap,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: Padding(
+        child: Container(
+          // Text height plus sp1 either side is well under the 44px minimum
+          // for a primary control; the padding stays, the hit area grows.
+          constraints: const BoxConstraints(minHeight: 44),
+          alignment: Alignment.centerRight,
           padding: const EdgeInsets.symmetric(
             horizontal: NhamSpacing.sp2,
             vertical: NhamSpacing.sp1,

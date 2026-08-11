@@ -43,8 +43,10 @@ class NutritionRangeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeIndex =
-        _ranges.indexOf(resolvedRange).clamp(0, _ranges.length - 1);
+    // NOT clamped to 0: `1d` is still a valid server response (retired from
+    // this control, kept in the API), and clamping would light up `7d` as
+    // though the user had picked it. -1 leaves every segment inactive.
+    final activeIndex = _ranges.indexOf(resolvedRange);
 
     return Opacity(
       opacity: disabled ? 0.6 : 1,
@@ -62,26 +64,29 @@ class NutritionRangeSelector extends StatelessWidget {
               final segWidth = constraints.maxWidth / _ranges.length;
               return Stack(
                 children: [
-                  // Sliding white thumb under the active segment.
-                  AnimatedAlign(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
-                    alignment: Alignment(
-                      _ranges.length == 1
-                          ? 0
-                          : -1 + 2 * (activeIndex / (_ranges.length - 1)),
-                      0,
-                    ),
-                    child: Container(
-                      width: segWidth,
-                      height: constraints.maxHeight,
-                      decoration: BoxDecoration(
-                        color: kCardSurface,
-                        borderRadius: BorderRadius.circular(NhamRadii.pill),
-                        boxShadow: const [NhamShadows.xs],
+                  // Sliding white thumb under the active segment. Absent when
+                  // nothing matches (a `1d` response), rather than sliding off
+                  // the end of the track on a negative index.
+                  if (activeIndex >= 0)
+                    AnimatedAlign(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment(
+                        _ranges.length == 1
+                            ? 0
+                            : -1 + 2 * (activeIndex / (_ranges.length - 1)),
+                        0,
+                      ),
+                      child: Container(
+                        width: segWidth,
+                        height: constraints.maxHeight,
+                        decoration: BoxDecoration(
+                          color: kCardSurface,
+                          borderRadius: BorderRadius.circular(NhamRadii.pill),
+                          boxShadow: const [NhamShadows.xs],
+                        ),
                       ),
                     ),
-                  ),
                   Row(
                     children: [
                       for (var i = 0; i < _ranges.length; i++)

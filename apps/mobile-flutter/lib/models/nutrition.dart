@@ -670,8 +670,16 @@ class NutritionOverview {
           json['summary'] as Map<String, dynamic>),
       calorieAverages: CalorieAverages.fromJson(
           json['calorieAverages'] as Map<String, dynamic>),
-      previousCalorieAverages: CalorieAverages.fromJson(
-          json['previousCalorieAverages'] as Map<String, dynamic>),
+      // Optional on the wire: a server that predates the comparison figure
+      // omits it, and a hard cast there would fail the whole overview rather
+      // than dropping one delta.
+      previousCalorieAverages: switch (json['previousCalorieAverages']) {
+        final Map<String, dynamic> j => CalorieAverages.fromJson(j),
+        _ => const CalorieAverages(
+            all: CalorieScopeAverage(averagePerDay: null, days: 0),
+            complete: CalorieScopeAverage(averagePerDay: null, days: 0),
+          ),
+      },
       macros: (json['macros'] as List<dynamic>)
           .map((e) => MacroPattern.fromJson(e as Map<String, dynamic>))
           .toList(),

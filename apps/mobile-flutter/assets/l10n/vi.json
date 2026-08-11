@@ -192,7 +192,7 @@
     },
     "detail": {
       "perDay": "mỗi ngày",
-      "close": "Đóng chi tiết ngày",
+      "close": "Đóng chi tiết",
       "noNutrients": "Chưa có dữ liệu vi chất cho khoảng này.",
       "averageVsTarget": "Trung bình so với mục tiêu"
     },
@@ -529,6 +529,8 @@
       "noCompleteDays": "Chưa có ngày nào ghi đủ — hãy tiếp tục ghi, hoặc chạm Tất cả.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Tỷ lệ macro",
+      "diffUp": "tăng so với kỳ trước",
+      "diffDown": "giảm so với kỳ trước",
       "consistency": {
         "steady": "ổn định",
         "rhythmic": "đều đặn",

@@ -161,7 +161,11 @@ export function MacroTrendChart({
       <ul className="sr-only">
         {points.map((point) => (
           <li key={point.startDate}>
-            <button type="button" onClick={() => onSelect(point.index)}>
+            <button
+              type="button"
+              aria-pressed={point.index === selectedIndex}
+              onClick={() => onSelect(point.index)}
+            >
               {formatDateSpan(point.startDate, point.endDate, locale)}
             </button>
           </li>

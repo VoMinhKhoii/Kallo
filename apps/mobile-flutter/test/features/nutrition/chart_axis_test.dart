@@ -4,8 +4,11 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:nham_mobile/features/nutrition/logic/format_date.dart';
 
 /// `count` consecutive bucket start dates stepping `stepDays` from `start`.
+/// Built in UTC: `add(Duration(days:))` moves fixed 24-hour spans, so a local
+/// DST transition inside the series would shift a bucket onto the previous
+/// calendar date and make the fixture machine-dependent.
 List<String> _dates(String start, int count, int stepDays) {
-  final first = DateTime.parse(start);
+  final first = DateTime.parse('${start}T00:00:00Z');
   return [
     for (var i = 0; i < count; i++)
       first.add(Duration(days: i * stepDays)).toIso8601String().substring(0, 10),

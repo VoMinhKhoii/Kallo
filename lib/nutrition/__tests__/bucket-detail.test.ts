@@ -76,7 +76,7 @@ describe('buildBucketDetail', () => {
     expect(detail?.nutrients[0].value).toBe(500);
   });
 
-  it('drops metrics whose bucket is a gap rather than reporting zero', () => {
+  it('returns null when EVERY metric is a gap at that bucket', () => {
     const detail = buildBucketDetail(
       daySeries([
         series('calories', [2000, null], { target: 2000, unit: 'kcal' }),
@@ -85,6 +85,19 @@ describe('buildBucketDetail', () => {
       1
     );
     expect(detail).toBeNull();
+  });
+
+  it('drops only the gap metric when others still report', () => {
+    const detail = buildBucketDetail(
+      daySeries([
+        series('calories', [2000, 1800], { target: 2000, unit: 'kcal' }),
+        series('calciumMg', [500, null], { target: 1000, unit: 'mg' }),
+      ]),
+      1
+    );
+    expect(detail).not.toBeNull();
+    expect(detail?.macros.map((m) => m.metric)).toEqual(['calories']);
+    expect(detail?.nutrients).toEqual([]);
   });
 
   it('orders macros consistently regardless of series order', () => {

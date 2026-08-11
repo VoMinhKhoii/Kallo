@@ -40,11 +40,11 @@ interface DaySummaryProps {
 
 /**
  * Compact calorie + macro summary — the Flutter DaySummary port. One solid card:
- * the swappable dual-scope calorie hero on the left with an over/under-vs-target
- * note (read from the active scope) on the right. Multi-day ranges with ≥2
- * buckets show a stacked macro-calorie trend
- * chart; a single day keeps the static macro composition bar. A centered gram
- * legend sits below either.
+ * a single calorie figure carrying its delta against the equal-length window
+ * before it, and a switch top-right naming the OTHER day scope. Multi-day
+ * ranges with ≥2 buckets show a stacked macro-calorie trend chart; a single day
+ * keeps the static macro composition bar. A centered gram legend sits below
+ * either.
  */
 export function DaySummary({
   macros,

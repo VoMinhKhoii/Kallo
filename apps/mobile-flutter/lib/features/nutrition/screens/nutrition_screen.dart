@@ -189,10 +189,13 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       );
     }
 
-    final selected = _selectedIndex;
-    final detail = selected == null
+    // `active`, not `_selectedIndex`: tapping a column with nothing logged in
+    // it resolves to no detail, and the page stays on the range rather than
+    // greying every other column around an empty one.
+    final detail = _selectedIndex == null
         ? null
-        : buildBucketDetail(overview.daySeries, selected);
+        : buildBucketDetail(overview.daySeries, _selectedIndex!);
+    final active = detail == null ? null : _selectedIndex;
     final macros = detail == null
         ? overview.macros
         : scopeMacrosToBucket(overview.macros, detail);
@@ -204,7 +207,10 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         all.where((c) => c.group == NutrientGroup.vitamin).toList();
     final minerals =
         all.where((c) => c.group != NutrientGroup.vitamin).toList();
-    final foodNutrients = suggestedFoodNutrients(overview);
+    // The CTA is off, so its input is not worth computing on every build.
+    final foodNutrients = kShowSuggestedFoods
+        ? suggestedFoodNutrients(overview)
+        : const <NutrientCardData>[];
     final buckets = overview.daySeries.series.isEmpty
         ? const <DaySeriesBucket>[]
         : overview.daySeries.series.first.buckets;
@@ -223,7 +229,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         // that names the OTHER one. A selected column is that bucket, not an
         // average over a day scope, so it drops the qualifier.
         _GroupHeader(
-          label: selected != null
+          label: active != null
               ? tr('nutrition.cardTitle')
               : '${tr('nutrition.cardTitle')} · '
                   '${tr(overview.loggedDays == 0 || _dayScope == NutritionDayScope.all ? 'nutrition.rhythm.loggedDays' : 'nutrition.rhythm.completeDays')}',
@@ -239,7 +245,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           onScopeChange: (scope) => setState(() => _dayScope = scope),
           dateSpan: dateSpan,
           todayIndex: findTodayIndex(buckets, localIsoDate()),
-          selectedIndex: selected,
+          selectedIndex: active,
           onSelect: (index) => setState(
               () => _selectedIndex = _selectedIndex == index ? null : index),
           isEmpty: overview.loggedDays == 0,

@@ -59,7 +59,9 @@ export function CalorieScopeStats({
       : averages[scope].averagePerDay;
 
   return (
-    <div>
+    // The one part of the page that restates itself on a range or scope
+    // change; the rest of the column is not worth reading out.
+    <div aria-live="polite">
       {/* The figure leads, top-left; the switch takes the opposite corner. */}
       <div className="flex items-start justify-between gap-4">
         <span className="flex flex-wrap items-baseline gap-x-2 leading-none">
@@ -75,6 +77,11 @@ export function CalorieScopeStats({
               it sits with it rather than down on the caption line. */}
           {diff !== null ? (
             <span className="flex items-center gap-0.5 text-[12px] text-nham-text-muted tabular-nums">
+              {/* The arrows are decorative, so without this a screen reader
+                  reads "1451 kcal 525" and the direction is simply lost. */}
+              <span className="sr-only">
+                {t(diff >= 0 ? 'rhythm.diffUp' : 'rhythm.diffDown')}{' '}
+              </span>
               {diff >= 0 ? (
                 <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
               ) : (

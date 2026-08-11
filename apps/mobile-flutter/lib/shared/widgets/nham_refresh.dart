@@ -24,8 +24,10 @@ class NhamRefresh extends StatelessWidget {
   Widget build(BuildContext context) {
     return RefreshIndicator.adaptive(
       onRefresh: onRefresh,
-      // Ignored by the Cupertino variant, which draws its own spinner.
-      color: NhamColors.accent,
+      // Ink, not `accent`: the tan is ~2.24:1 on a light surface, which is
+      // under the bar for a standalone mark. Ignored by the Cupertino
+      // variant, which draws its own spinner.
+      color: NhamColors.text,
       backgroundColor: NhamColors.elev,
       child: child,
     );

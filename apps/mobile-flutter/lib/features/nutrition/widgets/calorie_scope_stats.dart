@@ -88,9 +88,22 @@ class CalorieScopeStats extends StatelessWidget {
                 textBaseline: TextBaseline.alphabetic,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    value != null ? formatLocalizedNumber(value, locale) : '—',
-                    style: dashHero(),
+                  // Shrink-to-fit, never ellipsis: a truncated kcal figure is
+                  // a plausible-looking wrong number. At a large text scale or
+                  // five digits plus a delta this row would otherwise clip.
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        value != null
+                            ? formatLocalizedNumber(value, locale)
+                            : '—',
+                        style: dashHero(),
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: NhamSpacing.sp2),
                   Padding(
@@ -135,7 +148,13 @@ class _CalorieDelta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final over = diff >= 0;
-    return Row(
+    // The arrow is the only thing distinguishing +120 from -120, and an Icon
+    // carries no label — without this both read the same aloud.
+    return Semantics(
+      label: '${tr(over ? 'nutrition.rhythm.diffUp' : 'nutrition.rhythm.diffDown')} '
+          '${formatLocalizedNumber(diff.abs(), locale)}',
+      excludeSemantics: true,
+      child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
@@ -149,6 +168,7 @@ class _CalorieDelta extends StatelessWidget {
           style: dashMeta(color: kInkMuted, tabular: true),
         ),
       ],
+      ),
     );
   }
 }
