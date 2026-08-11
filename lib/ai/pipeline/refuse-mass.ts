@@ -1,9 +1,6 @@
 import { classifyRefuseCut, type RefuseCutClass } from '../portion/refuse-cut';
-import type { MassBasis, PortionProvenance } from '../portion/types';
+import type { MassBasis } from '../portion/types';
 import type { GroundedIngredientEstimate } from './schemas-v2';
-
-export type { RefuseCutClass } from '../portion/refuse-cut';
-export { classifyRefuseCut } from '../portion/refuse-cut';
 
 export type AppliedRefuseSource =
   | 'authoritative_edible_anchor'
@@ -35,7 +32,6 @@ export interface GroundedMassResolution {
 interface AuthoritativeMass {
   grams: number;
   basis: MassBasis;
-  provenance: PortionProvenance;
 }
 
 function clamp(value: number, low: number, high: number): number {

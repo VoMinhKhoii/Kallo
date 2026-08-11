@@ -15,18 +15,17 @@
  * time; the verification is documented in the concept registry `source`.
  */
 
-import { INSTANT_NOODLE_ROW } from '../matching/aliases';
-import type { ConceptId, FoodConcept } from './types';
+import { INSTANT_NOODLE_ROW } from '../../matching/aliases';
+import type { ConceptId, FoodConcept } from '../types';
+import {
+  ALIAS_TO_CONCEPT,
+  AMBIGUOUS,
+  type ConceptResolution,
+} from './concept-aliases';
+import { collisionsFor, fold, foldedLookupFor } from './fold';
 
 function normalize(s: string): string {
   return s.normalize('NFC').toLowerCase().trim();
-}
-
-function fold(s: string): string {
-  return normalize(s)
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .replace(/đ/g, 'd');
 }
 
 /**
@@ -134,124 +133,6 @@ export const CONCEPTS: Record<ConceptId, FoodConcept> = {
 };
 
 /**
- * Normalized surface form → concept id, OR the sentinel 'AMBIGUOUS'.
- *
- * 'AMBIGUOUS' is deliberate: bare generic words resolve to it so the resolver
- * fires a clarify instead of guessing. Specific, unambiguous surface forms map
- * to a concept.
- */
-export const AMBIGUOUS = 'AMBIGUOUS' as const;
-export type ConceptResolution = ConceptId | typeof AMBIGUOUS;
-
-const ALIAS_TO_CONCEPT: Record<string, ConceptResolution> = {
-  // -- banh bao (specific composed dish) --------------------------------
-  'bánh bao': 'banh-bao',
-  'banh bao': 'banh-bao',
-  'bánh bao nhân thịt': 'banh-bao',
-  'bánh bao trứng cút': 'banh-bao',
-  // -- quail egg --------------------------------------------------------
-  'trứng cút': 'quail-egg',
-  'trứng chim cút': 'quail-egg',
-  'quail egg': 'quail-egg',
-  // -- banh mi loaf -----------------------------------------------------
-  'bánh mì': 'banh-mi-loaf',
-  'bánh mỳ': 'banh-mi-loaf',
-  // -- chicken breast ---------------------------------------------------
-  'ức gà': 'chicken-breast',
-  'uc ga': 'chicken-breast',
-  'chicken breast': 'chicken-breast',
-  // -- chicken thigh / drumstick --------------------------------------
-  'đùi gà': 'chicken-thigh',
-  'chicken thigh': 'chicken-thigh',
-  'chicken drumstick': 'chicken-thigh',
-  // -- chicken wing ----------------------------------------------------
-  'cánh gà': 'chicken-wing',
-  'chicken wing': 'chicken-wing',
-  // -- rib table-cut (one concept across species) ---------------------
-  'sườn heo': 'rib-piece',
-  'sườn bò': 'rib-piece',
-  'sườn dê': 'rib-piece',
-  'sườn cừu': 'rib-piece',
-  'pork rib': 'rib-piece',
-  'beef rib': 'rib-piece',
-  'goat rib': 'rib-piece',
-  'lamb rib': 'rib-piece',
-  // -- fish forms ------------------------------------------------------
-  'cá nguyên con': 'whole-fish',
-  'nguyên con cá': 'whole-fish',
-  'con cá': 'whole-fish',
-  '1 con cá': 'whole-fish',
-  'whole fish': 'whole-fish',
-  'khúc cá': 'fish-section',
-  'khoanh cá': 'fish-section',
-  'fish steak': 'fish-section',
-  'fish section': 'fish-section',
-  'phi lê cá': 'fish-fillet',
-  'cá phi lê': 'fish-fillet',
-  'miếng cá': 'fish-fillet',
-  'fish fillet': 'fish-fillet',
-  'boneless fish piece': 'fish-fillet',
-  // -- shrimp forms ----------------------------------------------------
-  'tôm nguyên vỏ': 'shell-on-shrimp',
-  'tôm còn vỏ': 'shell-on-shrimp',
-  'shell-on shrimp': 'shell-on-shrimp',
-  'shell on shrimp': 'shell-on-shrimp',
-  'tôm bóc vỏ': 'peeled-shrimp',
-  'tôm lột vỏ': 'peeled-shrimp',
-  'peeled shrimp': 'peeled-shrimp',
-  // -- crab forms ------------------------------------------------------
-  ghẹ: 'whole-crab',
-  cua: 'whole-crab',
-  'cua nguyên con': 'whole-crab',
-  'ghẹ nguyên con': 'whole-crab',
-  'whole crab': 'whole-crab',
-  'thịt cua': 'picked-crab-meat',
-  'thịt ghẹ': 'picked-crab-meat',
-  'picked crab meat': 'picked-crab-meat',
-  'crab meat': 'picked-crab-meat',
-  // -- chicken egg served forms ---------------------------------------
-  'trứng gà nguyên vỏ': 'egg-in-shell',
-  'trứng gà còn vỏ': 'egg-in-shell',
-  'egg in shell': 'egg-in-shell',
-  'trứng gà luộc': 'peeled-egg',
-  'trứng luộc': 'peeled-egg',
-  'trứng gà bóc vỏ': 'peeled-egg',
-  'trứng gà': 'peeled-egg',
-  'chicken egg': 'peeled-egg',
-  'boiled egg': 'peeled-egg',
-  'peeled egg': 'peeled-egg',
-  // -- nem lui ---------------------------------------------------------
-  'nem lụi': 'nem-lui',
-  'nem lui': 'nem-lui',
-  'nem lụi nướng': 'nem-lui',
-  // -- pan-seared serving (qualified form only) ------------------------
-  'phần protein áp chảo': 'pan-seared-protein-serving',
-  'pan-seared protein serving': 'pan-seared-protein-serving',
-  // -- cooked rice ------------------------------------------------------
-  cơm: 'cooked-rice',
-  'cơm trắng': 'cooked-rice',
-  // -- instant noodles --------------------------------------------------
-  // Only the QUALIFIED forms. Bare `mì` stays out: it covers fresh egg
-  // noodles and wheat flour too, so mapping it here would put a packet's
-  // weight on a bowl of mì Quảng.
-  'mì gói': 'instant-noodle-pack',
-  'mi goi': 'instant-noodle-pack',
-  'mì tôm': 'instant-noodle-pack',
-  'mi tom': 'instant-noodle-pack',
-  'mì ăn liền': 'instant-noodle-pack',
-  'mi an lien': 'instant-noodle-pack',
-  'instant noodles': 'instant-noodle-pack',
-  'instant noodle': 'instant-noodle-pack',
-  // -- Explicitly ambiguous generics (route to clarify, NEVER a number) --
-  bánh: AMBIGUOUS,
-  bun: AMBIGUOUS,
-  slice: AMBIGUOUS,
-  bowl: AMBIGUOUS,
-  rice: AMBIGUOUS,
-  bread: AMBIGUOUS,
-};
-
-/**
  * Diacritic-folded fallback, tried only after an exact miss — with two rules
  * that a naive first-wins map gets wrong in both directions.
  *
@@ -266,36 +147,18 @@ const ALIAS_TO_CONCEPT: Record<string, ConceptResolution> = {
  *    (butter) and `bò` (beef) both fold to `bo`, `dưa`/`dừa`/`dứa` all fold to
  *    `dua`. Requiring diacritics there is correct; guessing is not.
  *
- * Mirrors the `foldCollisions()` discipline already in `unit-lexicon.ts`.
+ * The shared folded-index builder drops collisions before lookup, so the
+ * validation and runtime paths cannot disagree.
  */
-const FOLDED = new Map<string, ConceptResolution>();
-const foldSeen = new Map<string, ConceptResolution>();
-for (const [surface, resolution] of Object.entries(ALIAS_TO_CONCEPT)) {
-  if (resolution === AMBIGUOUS) continue;
-  const key = fold(surface);
-  const prior = foldSeen.get(key);
-  if (prior === undefined) {
-    foldSeen.set(key, resolution);
-    FOLDED.set(key, resolution);
-  } else if (prior !== resolution) {
-    FOLDED.delete(key);
-  }
-}
+const foldableAliases = Object.entries(ALIAS_TO_CONCEPT).filter(
+  ([, resolution]) => resolution !== AMBIGUOUS
+);
+const FOLDED = foldedLookupFor(foldableAliases, (resolution) => resolution);
 
 /** Folded keys claimed by two different concepts — resolvable only with
  *  diacritics. Exposed so a test can pin the set and catch new collisions. */
 export function conceptFoldCollisions(): string[] {
-  const counts = new Map<string, Set<ConceptResolution>>();
-  for (const [surface, resolution] of Object.entries(ALIAS_TO_CONCEPT)) {
-    if (resolution === AMBIGUOUS) continue;
-    const key = fold(surface);
-    if (!counts.has(key)) counts.set(key, new Set());
-    counts.get(key)?.add(resolution);
-  }
-  return [...counts.entries()]
-    .filter(([, set]) => set.size > 1)
-    .map(([key]) => key)
-    .sort();
+  return collisionsFor(foldableAliases, (resolution) => resolution);
 }
 
 /**

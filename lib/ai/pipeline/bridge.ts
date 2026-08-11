@@ -143,7 +143,6 @@ export function bridgeV2ToV1(args: {
           ? {
               grams: portion.grams.mid,
               basis: portion.massBasis ?? 'unknown',
-              provenance: portion.provenance,
             }
           : null;
       const acceptedCandidate =

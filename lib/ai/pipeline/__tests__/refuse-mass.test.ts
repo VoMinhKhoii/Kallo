@@ -165,7 +165,6 @@ describe('resolveGroundedMass', () => {
       authoritativeMass: {
         grams: 200,
         basis: 'edible',
-        provenance: 'explicit_user_mass',
       },
     });
     expect(result.edibleG).toBe(200);
@@ -187,7 +186,6 @@ describe('resolveGroundedMass', () => {
       authoritativeMass: {
         grams: 200,
         basis: 'gross_as_served',
-        provenance: 'retrieved_prior',
       },
     });
     expect(result.edibleG).toBe(100);
@@ -214,7 +212,6 @@ describe('resolveGroundedMass', () => {
       authoritativeMass: {
         grams,
         basis: 'edible',
-        provenance: 'retrieved_prior',
       },
     });
     expect(result.edibleG).toBe(grams);

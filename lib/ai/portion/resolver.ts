@@ -24,7 +24,8 @@
  * (clarify) — never a fabricated number.
  */
 
-import { AMBIGUOUS } from './concepts';
+import { AMBIGUOUS } from './lexicon/concept-aliases';
+import { isPieceLikeUnitToken, resolveUnitType } from './lexicon/unit-lexicon';
 import { applySizeModifier, findPrior } from './priors';
 import { classifyRefuseCut } from './refuse-cut';
 import type {
@@ -33,7 +34,6 @@ import type {
   QuantityEvidence,
   ResolverConceptInput,
 } from './types';
-import { isPieceLikeUnitToken, resolveUnitType } from './unit-lexicon';
 
 /**
  * Calibrated relative-width threshold for step 7. When a resolved band's

@@ -10,7 +10,8 @@
  */
 
 import type { DecomposedIngredientV2 } from '../pipeline/schemas-v2';
-import { AMBIGUOUS, resolveConcept } from './concepts';
+import { AMBIGUOUS } from './lexicon/concept-aliases';
+import { resolveConcept } from './lexicon/concepts';
 import { resolvePortion } from './resolver';
 import type {
   FoodForm,

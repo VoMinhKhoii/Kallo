@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { INSTANT_NOODLE_ROW, PRE_MATCH_ALIASES } from '../../matching/aliases';
+import { AMBIGUOUS } from '../lexicon/concept-aliases';
 import {
-  AMBIGUOUS,
   conceptFoldCollisions,
   getConcept,
   resolveConcept,
   surfaceFormsForConcept,
-} from '../concepts';
-import { PIECE_UNIT_TOKENS } from '../piece-vessel';
-import { applySizeModifier, findPrior, PORTION_PRIORS } from '../priors';
-import { MAX_RELATIVE_BAND_WIDTH } from '../resolver';
+} from '../lexicon/concepts';
 import {
   foldCollisions,
   lookupUnit,
   resolveUnitType,
   unitsForLocale,
   unitsForType,
-} from '../unit-lexicon';
+} from '../lexicon/unit-lexicon';
+import { PIECE_UNIT_TOKENS } from '../piece-vessel';
+import { applySizeModifier, findPrior, PORTION_PRIORS } from '../priors';
+import { MAX_RELATIVE_BAND_WIDTH } from '../resolver';
 
 describe('unit lexicon', () => {
   it('maps VN counters to unit types (NOT grams)', () => {
