@@ -15,7 +15,13 @@ import {
 } from './macro-trend-utils';
 
 function bucket(startDate: string, value: number | null): DaySeriesBucket {
-  return { startDate, endDate: startDate, value, ratioOfTarget: null };
+  return {
+    startDate,
+    endDate: startDate,
+    value,
+    ratioOfTarget: null,
+    excluded: false,
+  };
 }
 
 function series(
@@ -188,13 +194,9 @@ describe('formatBucketLabel', () => {
 });
 
 describe('findTodayIndex', () => {
-  const point = (startDate: string, endDate: string): MacroTrendPoint => ({
-    index: 0,
+  const point = (startDate: string, endDate: string) => ({
     startDate,
     endDate,
-    protein: 0,
-    carbohydrate: 0,
-    fat: 0,
   });
 
   it('matches the exact day on a day axis', () => {
@@ -252,6 +254,7 @@ describe('buildBucketTickLabels', () => {
         protein: 0,
         carbohydrate: 0,
         fat: 0,
+        excluded: false,
       };
     });
   }
@@ -287,16 +290,15 @@ describe('buildBucketTickLabels', () => {
     expect(labels).toHaveLength(13);
   });
 
-  it('uses localized month names for the 90-day anchors', () => {
+  it('uses a compact Th<n> month anchor in Vietnamese', () => {
+    // CLDR's vi abbreviation ("Tháng 2") is wide enough that the last anchor
+    // runs off the card and the neighbours nearly touch, so this axis uses the
+    // same compact scheme as its weekday labels.
     const labels = buildBucketTickLabels(
       points('2026-02-02', 13, 7),
       'week',
       'vi'
     );
-    expect(labels[0]).toBe(
-      new Intl.DateTimeFormat('vi', { month: 'short' }).format(
-        new Date('2026-02-02T00:00:00')
-      )
-    );
+    expect(labels.filter(Boolean)).toEqual(['Th2', 'Th3', 'Th4']);
   });
 });

@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:intl/intl.dart';
 
 import 'package:nham_mobile/features/nutrition/logic/format_date.dart';
 
@@ -51,16 +50,16 @@ void main() {
       expect(labels.first, 'Feb');
     });
 
-    test('uses localized month names for the 90-day anchors', () {
+    test('uses a compact Th<n> month anchor in Vietnamese', () {
+      // CLDR's vi abbreviation ("Tháng 2") is wide enough that the last anchor
+      // runs off the card and the neighbours nearly touch, so this axis uses
+      // the same compact scheme as its weekday labels.
       final labels = buildBucketTickLabels(
         _dates('2026-02-02', 13, 7),
         'week',
         'vi',
       );
-      expect(
-        labels.first,
-        DateFormat.MMM('vi').format(DateTime.parse('2026-02-02')),
-      );
+      expect(labels.where((l) => l.isNotEmpty), ['Th2', 'Th3', 'Th4']);
     });
 
     test('keeps the Vietnamese weekday scheme on the short day axis', () {

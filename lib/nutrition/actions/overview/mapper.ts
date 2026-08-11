@@ -177,6 +177,7 @@ export function mapOverviewRowsToDto({
   // them without a refetch. Same helper the previous window is scored by, so
   // the two sides of the delta can never drift apart.
   const calorieAverages = buildCalorieAverages(dayCalorieList, calorieTarget);
+  const loggedRows = rows.filter((row) => loggedDates.has(row.localDate));
 
   // Pick the day set the body (macros/series/grid) averages over. Legacy
   // (`undefined`) keeps the valve so the web app is byte-identical to before;
@@ -207,8 +208,8 @@ export function mapOverviewRowsToDto({
             partialDays: legacy!.partialDays,
           };
 
-  // No qualifying days — nothing logged at all, or the strict `'complete'`
-  // scope with no complete day in the window.
+  // No qualifying days — the strict `'complete'` scope with no complete day in
+  // the window (nothing logged at all returned above).
   //
   // The body is still fully populated, at zero. An empty payload used to make
   // the client swap in a separate "nothing here yet" screen, which hid the
@@ -216,6 +217,11 @@ export function mapOverviewRowsToDto({
   // nutrient row is present with its real target, a `null` average that renders
   // as "—", and a bar at zero: the page reads the same on day one as on day
   // thirty, just empty.
+  //
+  // The chart is the exception: the days ARE there, none of them qualifying, so
+  // it draws them all greyed rather than going blank. That is the honest
+  // picture — "you logged these, none counted" — and it shows what flipping to
+  // "all" would bring in.
   if (averagingDayCount === 0) {
     const zeroed = buildZeroedCards(profile);
     return {
@@ -240,10 +246,16 @@ export function mapOverviewRowsToDto({
       },
       calorieAverages,
       macros: buildMacroPatterns([], 1, profile),
-      daySeries: {
-        unit: RANGE_BUCKET_UNIT[resolvedRange],
-        series: [],
-      },
+      daySeries: buildDaySeries({
+        scopedRows: [],
+        scopedDates: new Set<string>(),
+        loggedRows,
+        loggedDates,
+        resolvedRange,
+        period: { startDate: period.startDate, endDate: period.endDate },
+        profile,
+        targets: resolveMicronutrientTargets(profile),
+      }),
       micronutrients: zeroed.micronutrients,
       spotlight: [],
       steady: [],
@@ -306,6 +318,8 @@ export function mapOverviewRowsToDto({
   const daySeries = buildDaySeries({
     scopedRows: completeRows,
     scopedDates: averagingDates,
+    loggedRows,
+    loggedDates,
     resolvedRange,
     period: { startDate: period.startDate, endDate: period.endDate },
     profile,

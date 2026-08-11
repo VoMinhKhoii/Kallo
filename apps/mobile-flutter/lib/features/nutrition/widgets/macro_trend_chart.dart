@@ -2,13 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../theme/nham_colors.dart';
 import '../logic/chart_axis.dart';
 import '../logic/format_date.dart';
 import '../logic/macro_trend_bars.dart';
 import '../logic/rhythm_logic.dart';
+import 'macro_trend_axis.dart';
 
 /// A stacked **bar** chart of macro **calories** per bucket (day for 7d, week
 /// for 30d/90d): total bar height = that bucket's calories, each stacked
@@ -41,14 +41,15 @@ class MacroTrendChart extends StatelessWidget {
     if (data == null) return const SizedBox.shrink();
     final bars = data.bars;
 
-    // A selected column keeps its macro colours; the rest collapse to one flat
-    // grey. Fading them instead only washed them toward the page and left three
-    // pale bands still competing for attention — greying makes each unselected
-    // column read as a single quiet block.
-    Color shade(Color base, int i) =>
-        selectedIndex == null || selectedIndex == i
-            ? base
-            : NhamColors.chartMuted;
+    // Grey means "not being counted", from either cause: a column the day scope
+    // set aside, or any column that isn't the selected one. Fading instead only
+    // washed them toward the page and left three pale bands still competing for
+    // attention — greying makes each one read as a single quiet block.
+    Color shade(Color base, MacroBar bar) {
+      final dimmed =
+          bar.excluded || (selectedIndex != null && selectedIndex != bar.index);
+      return dimmed ? NhamColors.chartMuted : base;
+    }
 
     // Fewer, fatter columns for the 7-day view; slimmer ones for the busier
     // weekly axes (5 buckets at 30d, 13 at 90d) so they don't crowd.
@@ -64,24 +65,32 @@ class MacroTrendChart extends StatelessWidget {
             // lays groups out from their widths — so a gap would shift every
             // column after it off the grid its axis labels sit on. A
             // zero-height rod paints nothing and holds the slot.
+            //
+            // `color` is explicit on BOTH rods for a second reason: fl_chart
+            // defaults an unset rod to cyan and animates between two
+            // BarChartData on every range switch, and mid-lerp the stack items
+            // don't cover the rod — so that default flashed blue across the
+            // chart. Transparent leaves the stack bands as the only paint.
             if (bar.isGap)
-              BarChartRodData(toY: 0, width: barWidth)
+              BarChartRodData(
+                  toY: 0, width: barWidth, color: Colors.transparent)
             else
               BarChartRodData(
                 toY: bar.total,
                 width: barWidth,
+                color: Colors.transparent,
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(4)),
                 // Stacked P/C/F kcal bands, matching the legend order & colors.
                 rodStackItems: [
                   BarChartRodStackItem(0, bar.proteinKcal,
-                      shade(kCompositionColors['protein']!, bar.index)),
+                      shade(kCompositionColors['protein']!, bar)),
                   BarChartRodStackItem(
                       bar.proteinKcal,
                       bar.proteinKcal + bar.carbsKcal,
-                      shade(kCompositionColors['carbohydrate']!, bar.index)),
+                      shade(kCompositionColors['carbohydrate']!, bar)),
                   BarChartRodStackItem(bar.proteinKcal + bar.carbsKcal,
-                      bar.total, shade(kCompositionColors['fat']!, bar.index)),
+                      bar.total, shade(kCompositionColors['fat']!, bar)),
                 ],
               ),
           ],
@@ -96,93 +105,55 @@ class MacroTrendChart extends StatelessWidget {
 
     final axis = buildMacroTrendAxis(data.maxY);
     final step = axis.step;
-    final maxLabel = axis.maxLabel;
 
     return SizedBox(
       height: 248,
-      child: BarChart(
-        BarChartData(
-          minY: 0,
-          maxY: axis.topY,
-          alignment: BarChartAlignment.spaceBetween,
-          // Tap-to-select, not hover-to-peek: no tooltip, the tapped index is
-          // handed up and the breakdown renders below the chart.
-          barTouchData: BarTouchData(
-            enabled: true,
-            handleBuiltInTouches: false,
-            touchCallback: (event, response) {
-              if (event is! FlTapUpEvent) return;
-              final index = response?.spot?.touchedBarGroupIndex;
-              if (index != null) onSelect(index);
-            },
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: step,
-            getDrawingHorizontalLine: (value) => const FlLine(
-              color: NhamColors.borderBiscotti40,
-              strokeWidth: 1,
-              dashArray: [4, 4],
+      // `spaceBetween` puts the last column flush against the right edge, so a
+      // centred axis label under it ran off the card. The y-axis gutter had the
+      // slack to pay for it — its widest label is four digits at 10pt.
+      child: Padding(
+        padding: const EdgeInsets.only(right: 14),
+        child: BarChart(
+          BarChartData(
+            minY: 0,
+            maxY: axis.topY,
+            alignment: BarChartAlignment.spaceBetween,
+            // Tap-to-select, not hover-to-peek: no tooltip, the tapped index is
+            // handed up and the breakdown renders below the chart.
+            barTouchData: BarTouchData(
+              enabled: true,
+              handleBuiltInTouches: false,
+              touchCallback: (event, response) {
+                if (event is! FlTapUpEvent) return;
+                final index = response?.spot?.touchedBarGroupIndex;
+                if (index != null) onSelect(index);
+              },
             ),
-          ),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                interval: step,
-                reservedSize: 36,
-                getTitlesWidget: (value, meta) {
-                  if (value <= 0 || value > maxLabel) {
-                    return const SizedBox.shrink();
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Text(
-                      value.round().toString(),
-                      textAlign: TextAlign.right,
-                      style: dashMeta(color: kInkMuted).copyWith(fontSize: 10),
-                    ),
-                  );
-                },
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              horizontalInterval: step,
+              getDrawingHorizontalLine: (value) => const FlLine(
+                color: NhamColors.borderBiscotti40,
+                strokeWidth: 1,
+                dashArray: [4, 4],
               ),
             ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 22,
-                interval: 1,
-                getTitlesWidget: (value, meta) {
-                  final i = value.round();
-                  if (i < 0 || i >= tickLabels.length) {
-                    return const SizedBox.shrink();
-                  }
-                  final label = tickLabels[i];
-                  if (label.isEmpty) return const SizedBox.shrink();
-                  // 500 is this palette's weight ceiling — today reads heavier
-                  // than its neighbours without becoming a second heading.
-                  final emphasised = i == todayIndex || i == selectedIndex;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      label,
-                      style: dashEyebrow(color: emphasised ? kInk : kInkMuted)
-                          .copyWith(
-                        letterSpacing: 0.4,
-                        fontWeight:
-                            emphasised ? FontWeight.w500 : FontWeight.w400,
-                      ),
-                    ),
-                  );
-                },
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(
+              topTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              leftTitles: kcalAxisTitles(step: step, maxLabel: axis.maxLabel),
+              bottomTitles: bucketAxisTitles(
+                labels: tickLabels,
+                todayIndex: todayIndex,
+                selectedIndex: selectedIndex,
               ),
             ),
+            barGroups: groups,
           ),
-          barGroups: groups,
         ),
       ),
     );

@@ -431,11 +431,16 @@ class DaySeriesBucket {
   final double? value;
   final double? ratioOfTarget;
 
+  /// Logged, but set aside by the current day scope — `value` covers its logged
+  /// days and it is not part of the headline. Drawn in the muted pigment.
+  final bool excluded;
+
   const DaySeriesBucket({
     required this.startDate,
     required this.endDate,
     required this.value,
     required this.ratioOfTarget,
+    this.excluded = false,
   });
 
   factory DaySeriesBucket.fromJson(Map<String, dynamic> json) => DaySeriesBucket(
@@ -443,6 +448,7 @@ class DaySeriesBucket {
         endDate: json['endDate'] as String,
         value: (json['value'] as num?)?.toDouble(),
         ratioOfTarget: (json['ratioOfTarget'] as num?)?.toDouble(),
+        excluded: json['excluded'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -450,6 +456,7 @@ class DaySeriesBucket {
         'endDate': endDate,
         'value': value,
         'ratioOfTarget': ratioOfTarget,
+        'excluded': excluded,
       };
 }
 

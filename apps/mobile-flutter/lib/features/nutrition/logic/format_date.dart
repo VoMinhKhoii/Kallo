@@ -49,7 +49,13 @@ List<String> buildBucketTickLabels(
     return [for (final date in startDates) bucketLabel(date, unit, locale)];
   }
 
+  // Vietnamese abbreviated months come out as "Tháng 8" — wide enough that the
+  // last one runs off the card and the neighbours nearly touch. "Th8" matches
+  // the weekday scheme this axis already uses and reads at a glance. Mirror of
+  // the web `shortMonth` (keep in sync).
   final month = DateFormat.MMM(locale);
+  String label(DateTime d) =>
+      locale.startsWith('vi') ? 'Th${d.month}' : month.format(d);
   int? previousMonth;
   final labels = <String>[];
   for (final date in startDates) {
@@ -63,7 +69,7 @@ List<String> buildBucketTickLabels(
       continue;
     }
     previousMonth = d.month;
-    labels.add(month.format(d));
+    labels.add(label(d));
   }
   return labels;
 }

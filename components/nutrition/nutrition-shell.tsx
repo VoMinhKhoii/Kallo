@@ -97,14 +97,7 @@ export function NutritionShell() {
   const { macros, micronutrients, moreNutrients, dateSpan } =
     buildNutritionView(overview, selectedIndex, locale);
   const todayIndex = findTodayIndex(
-    (overview.daySeries.series[0]?.buckets ?? []).map((bucket, index) => ({
-      index,
-      startDate: bucket.startDate,
-      endDate: bucket.endDate,
-      protein: null,
-      carbohydrate: null,
-      fat: null,
-    })),
+    overview.daySeries.series[0]?.buckets ?? [],
     today
   );
 

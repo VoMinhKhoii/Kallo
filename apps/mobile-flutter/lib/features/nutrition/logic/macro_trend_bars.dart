@@ -14,6 +14,7 @@ class MacroBar {
     required this.protein,
     required this.carbohydrate,
     required this.fat,
+    this.excluded = false,
   });
 
   final int index;
@@ -25,7 +26,10 @@ class MacroBar {
   final double? carbohydrate;
   final double? fat;
 
-  /// The bucket held no in-scope days — draw nothing, but hold the slot.
+  /// Logged, but set aside by the current day scope — drawn grey, not dropped.
+  final bool excluded;
+
+  /// Nothing logged in the bucket — draw nothing, but hold the slot.
   bool get isGap => protein == null && carbohydrate == null && fat == null;
 
   double get proteinKcal => protein ?? 0;
@@ -65,8 +69,10 @@ MacroTrendBars? buildMacroTrendBars(NutritionDaySeries daySeries) {
     final rc = raw(c, i);
     final rf = raw(f, i);
 
-    // Null on all three = the bucket held no in-scope days. That is "no data",
-    // not "ate nothing": no stack bands, and it must not pull `maxY`.
+    // Null on all three = nothing was logged in the bucket at all. That is "no
+    // data", not "ate nothing": no stack bands, and it must not pull `maxY`.
+    // (A bucket the day scope sets aside keeps its value and is flagged
+    // `excluded` instead, so it still draws — greyed.)
     if (rp == null && rc == null && rf == null) {
       bars.add(MacroBar(
         index: i,
@@ -88,6 +94,7 @@ MacroTrendBars? buildMacroTrendBars(NutritionDaySeries daySeries) {
       protein: (rp ?? 0) * kKcalPerGram['protein']!,
       carbohydrate: (rc ?? 0) * kKcalPerGram['carbohydrate']!,
       fat: (rf ?? 0) * kKcalPerGram['fat']!,
+      excluded: buckets[i].excluded,
     );
     if (bar.total > maxY) maxY = bar.total;
     bars.add(bar);

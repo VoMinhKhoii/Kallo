@@ -113,43 +113,60 @@ interface DaySeriesMetricSpec {
   target: number | null;
 }
 
-/** Build one metric's bucket series: each bucket's value is the per-day average
- *  of the metric over that bucket's in-scope days, `null` where the bucket holds
- *  none. Pure over its inputs so the day-series builder stays a flat map over
- *  the metric specs. */
+/** One bucket's bounds and its two day counts: the days the caller's scope
+ *  averages over, and every logged day in it. */
+interface BucketWindow {
+  startDate: string;
+  endDate: string;
+  scopedDays: number;
+  loggedDays: number;
+}
+
+/** Build one metric's bucket series. A bucket averages over its in-scope days;
+ *  one holding logged days but none in scope falls back to its logged days and
+ *  is flagged `excluded`, so the column is drawn greyed rather than vanishing.
+ *  `null` only where nothing was logged at all. Pure over its inputs so the
+ *  day-series builder stays a flat map over the metric specs. */
 function buildMetricSeries(
   spec: DaySeriesMetricSpec,
-  bounds: { startDate: string; endDate: string }[],
-  daysInBucket: number[],
-  seriesRows: OverviewMealItemRow[]
+  windows: BucketWindow[],
+  scopedRows: OverviewMealItemRow[],
+  loggedRows: OverviewMealItemRow[]
 ): NutrientDaySeries {
-  const buckets: DaySeriesBucket[] = bounds.map((bucket, index) => {
-    const days = daysInBucket[index];
+  const buckets: DaySeriesBucket[] = windows.map((window) => {
+    const excluded = window.scopedDays === 0;
+    const days = excluded ? window.loggedDays : window.scopedDays;
     if (days === 0) {
       return {
-        startDate: bucket.startDate,
-        endDate: bucket.endDate,
+        startDate: window.startDate,
+        endDate: window.endDate,
         value: null,
         ratioOfTarget: null,
+        excluded: false,
       };
     }
-    const total = seriesRows.reduce((sum, row) => {
-      if (row.localDate < bucket.startDate || row.localDate > bucket.endDate) {
+    const rows = excluded ? loggedRows : scopedRows;
+    const total = rows.reduce((sum, row) => {
+      if (row.localDate < window.startDate || row.localDate > window.endDate) {
         return sum;
       }
       return sum + Math.max(0, row[spec.rowKey] ?? 0);
     }, 0);
     const value = total / days;
     return {
-      startDate: bucket.startDate,
-      endDate: bucket.endDate,
+      startDate: window.startDate,
+      endDate: window.endDate,
       value,
       ratioOfTarget:
         spec.target && spec.target > 0 ? value / spec.target : null,
+      excluded,
     };
   });
 
+  // Excluded buckets are shown but not counted — the band describes the spread
+  // of what the headline actually averages.
   const values = buckets
+    .filter((bucket) => !bucket.excluded)
     .map((bucket) => bucket.value)
     .filter((value): value is number => value !== null);
 
@@ -174,16 +191,22 @@ function buildMetricSeries(
  * above every bar on an under-logged month, which reads as broken however it is
  * justified.
  *
- * What that costs, and why it is the right cost: on a DAY axis (7d) a complete
- * day is `total / 1` under either scope, so its column never moves — flipping
- * the toggle only adds or removes the partial days' columns, which is the whole
- * point of the control. On a WEEK axis (30d/90d) a week's height does move,
- * because its day set changed — but the headline moves with it, so the card
- * stays internally consistent.
+ * Days the scope sets aside are not dropped, though: a bucket with no in-scope
+ * day still draws, averaged over its logged days and flagged `excluded` for the
+ * client to grey. Removing it would leave a hole indistinguishable from a day
+ * nobody logged, and the point of the toggle is to SEE what it sets aside.
+ *
+ * On a DAY axis (7d) that makes the toggle purely additive: a complete day is
+ * `total / 1` under either scope, so its column cannot move, and the partial
+ * days go grey rather than away. On a WEEK axis (30d/90d) a week holding a mix
+ * does re-average when the partial days leave the divisor — but the headline
+ * moves with it, so the card stays internally consistent.
  */
 export function buildDaySeries({
   scopedRows,
   scopedDates,
+  loggedRows,
+  loggedDates,
   resolvedRange,
   period,
   profile,
@@ -193,6 +216,10 @@ export function buildDaySeries({
   scopedRows: OverviewMealItemRow[];
   /** The day set the caller's scope averages over. */
   scopedDates: Set<string>;
+  /** Rows on every logged day, for buckets the scope leaves empty. */
+  loggedRows: OverviewMealItemRow[];
+  /** Every day with calories, in scope or not. */
+  loggedDates: Set<string>;
   resolvedRange: NutritionOverview['resolvedRange'];
   period: { startDate: string; endDate: string };
   profile: NutritionProfile;
@@ -200,18 +227,25 @@ export function buildDaySeries({
 }): NutritionDaySeries {
   const unit: DaySeriesBucketUnit = RANGE_BUCKET_UNIT[resolvedRange];
   const step = unit === 'day' ? 1 : 7;
-  const bounds = buildBucketBounds(period.startDate, period.endDate, step);
 
-  // Count in-scope days per bucket once; reused for every metric's divisor.
-  const scopedDaysInBucket = bounds.map((bucket) => {
+  // Count both day sets per bucket once; reused for every metric's divisor.
+  const countIn = (dates: Set<string>, start: string, end: string) => {
     let count = 0;
-    for (const date of scopedDates) {
-      if (date >= bucket.startDate && date <= bucket.endDate) {
-        count += 1;
-      }
+    for (const date of dates) {
+      if (date >= start && date <= end) count += 1;
     }
     return count;
-  });
+  };
+  const windows: BucketWindow[] = buildBucketBounds(
+    period.startDate,
+    period.endDate,
+    step
+  ).map((bucket) => ({
+    startDate: bucket.startDate,
+    endDate: bucket.endDate,
+    scopedDays: countIn(scopedDates, bucket.startDate, bucket.endDate),
+    loggedDays: countIn(loggedDates, bucket.startDate, bucket.endDate),
+  }));
 
   const metrics: DaySeriesMetricSpec[] = [
     ...DAY_SERIES_MACROS.map((macro) => ({
@@ -234,7 +268,7 @@ export function buildDaySeries({
   ];
 
   const series: NutrientDaySeries[] = metrics.map((spec) =>
-    buildMetricSeries(spec, bounds, scopedDaysInBucket, scopedRows)
+    buildMetricSeries(spec, windows, scopedRows, loggedRows)
   );
 
   return { unit, series };

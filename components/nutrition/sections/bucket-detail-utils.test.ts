@@ -23,6 +23,7 @@ function series(
       value,
       ratioOfTarget:
         value !== null && target !== null && target > 0 ? value / target : null,
+      excluded: false,
     };
   });
   return {

@@ -85,14 +85,16 @@ export function MacroTrendChart({
     );
   };
 
-  // A selected column keeps its macro colours; the rest collapse to one flat
-  // grey. Fading them instead only washed them toward the page and left three
-  // pale bands still competing for attention — greying makes each unselected
-  // column read as a single quiet block.
-  const fillFor = (key: CompositionKey, index: number) =>
-    selectedIndex === null || selectedIndex === index
-      ? COMPOSITION_COLORS[key]
-      : 'var(--nham-chart-muted)';
+  // Grey means "not being counted", from either cause: a column the day scope
+  // set aside, or any column that isn't the selected one. Fading instead only
+  // washed them toward the page and left three pale bands still competing for
+  // attention — greying makes each one read as a single quiet block.
+  const fillFor = (key: CompositionKey, point: MacroTrendPoint) => {
+    const dimmed =
+      point.excluded ||
+      (selectedIndex !== null && selectedIndex !== point.index);
+    return dimmed ? 'var(--nham-chart-muted)' : COMPOSITION_COLORS[key];
+  };
 
   return (
     // Selecting a column and dismissing the selection are the same gesture at
@@ -104,7 +106,9 @@ export function MacroTrendChart({
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={points}
-          margin={{ top: 8, right: 8, bottom: 4, left: 0 }}
+          // The last column sits near the right edge, so a centred tick label
+          // under it needs room the y-axis gutter can spare — see `width` below.
+          margin={{ top: 8, right: 14, bottom: 4, left: 0 }}
           role="img"
           aria-label={t('rhythm.macroTrendAria')}
         >
@@ -128,7 +132,9 @@ export function MacroTrendChart({
             axisLine={false}
             tick={{ fontSize: 10, fill: 'var(--nham-text-muted)' }}
             tickFormatter={(v: number) => String(Math.round(v))}
-            width={36}
+            // Four digits at 10px plus the tick gap; the slack pays the right
+            // margin above.
+            width={28}
           />
 
           {COMPOSITION_KEYS.map((key) => (
@@ -144,7 +150,7 @@ export function MacroTrendChart({
               className="cursor-pointer"
             >
               {points.map((point) => (
-                <Cell key={point.startDate} fill={fillFor(key, point.index)} />
+                <Cell key={point.startDate} fill={fillFor(key, point)} />
               ))}
             </Bar>
           ))}

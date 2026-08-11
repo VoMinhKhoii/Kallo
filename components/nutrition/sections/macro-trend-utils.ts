@@ -29,10 +29,12 @@ export interface MacroTrendPoint {
   startDate: string;
   /** Same as `startDate` for day buckets; the week's last day for week ones. */
   endDate: string;
-  /** Null on every macro = the bucket has no in-scope days. Renders as a gap. */
+  /** Null on every macro = nothing logged in the bucket. Renders as a gap. */
   protein: number | null;
   carbohydrate: number | null;
   fat: number | null;
+  /** Logged, but set aside by the current day scope — drawn grey, not dropped. */
+  excluded: boolean;
 }
 
 /** Today as a local `YYYY-MM-DD`, matching the server's local-date bucketing. */
@@ -45,13 +47,17 @@ export function localIsoDate(now: Date = new Date()): string {
 /**
  * Index of the bucket holding `today`, or -1. Day buckets match exactly; week
  * buckets match the week it falls in, so the current week reads as current.
+ *
+ * Takes bare bounds, not points: the caller has the raw buckets before any
+ * chart data is built, and widening this to `MacroTrendPoint` only made it
+ * fabricate null macros to satisfy a type it never reads.
  */
 export function findTodayIndex(
-  points: MacroTrendPoint[],
+  buckets: { startDate: string; endDate: string }[],
   today: string
 ): number {
-  return points.findIndex(
-    (point) => today >= point.startDate && today <= point.endDate
+  return buckets.findIndex(
+    (bucket) => today >= bucket.startDate && today <= bucket.endDate
   );
 }
 
@@ -84,10 +90,11 @@ export function buildMacroTrendData(
     const rc = raw(carbohydrate, i);
     const rf = raw(fat, i);
 
-    // Null on all three = the bucket held no in-scope days, because the day was
-    // set aside as partial under the "complete days" scope. That is "no data",
-    // not "ate nothing" — carry the nulls through so recharts leaves the slot
-    // empty instead of drawing a flat zero column that reads as a real datum.
+    // Null on all three = nothing was logged in the bucket at all. That is "no
+    // data", not "ate nothing" — carry the nulls through so recharts leaves the
+    // slot empty instead of drawing a flat zero column that reads as a real
+    // datum. (A bucket the day scope sets aside is NOT this: it keeps its
+    // value and comes through flagged, to be drawn grey.)
     if (rp === null && rc === null && rf === null) {
       return {
         index: i,
@@ -96,6 +103,7 @@ export function buildMacroTrendData(
         protein: null,
         carbohydrate: null,
         fat: null,
+        excluded: false,
       };
     }
 
@@ -113,6 +121,7 @@ export function buildMacroTrendData(
       protein: p,
       carbohydrate: c,
       fat: f,
+      excluded: bucket.excluded,
     };
   });
 
@@ -193,7 +202,14 @@ export function buildBucketTickLabels(
     );
   }
 
+  // Vietnamese abbreviated months are wide enough that the last one runs off
+  // the card and the neighbours nearly touch. "Th8" matches the weekday scheme
+  // this axis already uses and reads at a glance. Mirror of the Flutter
+  // `buildBucketTickLabels` (keep in sync).
   const month = new Intl.DateTimeFormat(locale, { month: 'short' });
+  const label = (d: Date) =>
+    locale.startsWith('vi') ? `Th${d.getMonth() + 1}` : month.format(d);
+
   let previousMonth: number | null = null;
   return points.map((point) => {
     const d = new Date(`${point.startDate}T00:00:00`);
@@ -201,6 +217,6 @@ export function buildBucketTickLabels(
     const current = d.getMonth();
     if (previousMonth === current) return '';
     previousMonth = current;
-    return month.format(d);
+    return label(d);
   });
 }

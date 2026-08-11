@@ -101,10 +101,17 @@ export interface DaySeriesBucket {
   startDate: string;
   /** Inclusive local-date end of the bucket (same as start for day buckets). */
   endDate: string;
-  /** Per-day average of the metric across the bucket's complete days. */
+  /** Per-day average of the metric across the bucket's in-scope days. */
   value: number | null;
   /** Value as a fraction of the metric's target, or null when no target. */
   ratioOfTarget: number | null;
+  /**
+   * The bucket holds logged days but none the current day scope averages over,
+   * so `value` covers its logged days instead and it is NOT part of the
+   * headline above it. Clients draw it in the muted pigment: the day was
+   * eaten, it just isn't being counted. Always false under the `all` scope.
+   */
+  excluded: boolean;
 }
 
 export interface NutrientDaySeries {

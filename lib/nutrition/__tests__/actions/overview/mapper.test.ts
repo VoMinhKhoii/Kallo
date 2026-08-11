@@ -341,10 +341,24 @@ describe('mapOverviewRowsToDto', () => {
       expect(overview.micronutrients.every((c) => c.target !== null)).toBe(
         true
       );
-      // The chart still has nothing to draw.
-      expect(overview.daySeries.series).toHaveLength(0);
       expect(overview.calorieAverages.complete.averagePerDay).toBeNull();
       expect(overview.calorieAverages.all.averagePerDay).toBe(350);
+
+      // The chart is the exception to the zeroed body: the days ARE there,
+      // none of them qualifying, so every logged column draws at its real
+      // height flagged for greying rather than the chart going blank.
+      const calories = overview.daySeries.series.find(
+        (s) => s.metric === 'calories'
+      );
+      expect(
+        calories?.buckets.find((b) => b.startDate === '2026-04-24')
+      ).toMatchObject({ value: 400, excluded: true });
+      expect(
+        calories?.buckets.find((b) => b.startDate === '2026-04-25')
+      ).toMatchObject({ value: 300, excluded: true });
+      // Nothing qualifies, so the whisker band has no spread to report.
+      expect(calories?.min).toBeNull();
+      expect(calories?.max).toBeNull();
     });
 
     it('on the day axis, a scope flip only adds or removes partial columns', () => {
@@ -359,20 +373,39 @@ describe('mapOverviewRowsToDto', () => {
 
       const complete = bucketsFor('complete');
       const all = bucketsFor('all');
-      const valueOn = (buckets: typeof complete, date: string) =>
-        buckets.find((b) => b.startDate === date)?.value;
+      const bucketOn = (buckets: typeof complete, date: string) =>
+        buckets.find((b) => b.startDate === date);
 
-      // The complete day holds its height across the toggle…
-      expect(valueOn(complete, '2026-04-24')).toBe(2000);
-      expect(valueOn(all, '2026-04-24')).toBe(2000);
-      // …while the partial day is a gap under 'complete' and its own total
-      // under 'all'. A gap, never a zero column — "set aside", not "ate
-      // nothing".
-      expect(valueOn(complete, '2026-04-25')).toBeNull();
-      expect(valueOn(all, '2026-04-25')).toBe(400);
-      // A day with nothing logged is a gap under both.
-      expect(valueOn(complete, '2026-04-19')).toBeNull();
-      expect(valueOn(all, '2026-04-19')).toBeNull();
+      // The complete day holds its height across the toggle, counted either way.
+      expect(bucketOn(complete, '2026-04-24')).toMatchObject({
+        value: 2000,
+        excluded: false,
+      });
+      expect(bucketOn(all, '2026-04-24')).toMatchObject({
+        value: 2000,
+        excluded: false,
+      });
+      // The partial day keeps its real height under BOTH scopes — under
+      // 'complete' it is merely flagged, so the client greys it. Dropping it
+      // would leave a hole indistinguishable from a day nobody logged.
+      expect(bucketOn(complete, '2026-04-25')).toMatchObject({
+        value: 400,
+        excluded: true,
+      });
+      expect(bucketOn(all, '2026-04-25')).toMatchObject({
+        value: 400,
+        excluded: false,
+      });
+      // A day with nothing logged is a gap under both, and not "excluded" —
+      // there is nothing there to set aside.
+      expect(bucketOn(complete, '2026-04-19')).toMatchObject({
+        value: null,
+        excluded: false,
+      });
+      expect(bucketOn(all, '2026-04-19')).toMatchObject({
+        value: null,
+        excluded: false,
+      });
 
       // The headline is averaged over the same day set the bars are.
       expect(caloriesAvg(mapScoped(rows, 'complete'))).toBe(2000);
