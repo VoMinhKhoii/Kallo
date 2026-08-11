@@ -68,7 +68,7 @@ describe('food concepts (alias → concept)', () => {
     expect(resolveConcept('Bánh mỳ')).toBe('banh-mi-loaf');
     expect(resolveConcept('chicken breast')).toBe('chicken-breast');
     expect(resolveConcept('ĐÙI GÀ')).toBe('chicken-thigh');
-    expect(resolveConcept('miếng cá')).toBe('fish-fillet');
+    expect(resolveConcept('cá phi lê')).toBe('fish-fillet');
     expect(resolveConcept('nem lui')).toBe('nem-lui');
   });
 
@@ -78,6 +78,9 @@ describe('food concepts (alias → concept)', () => {
     expect(resolveConcept('bowl')).toBe(AMBIGUOUS);
     expect(resolveConcept('rice')).toBe(AMBIGUOUS);
     expect(resolveConcept('bánh')).toBe(AMBIGUOUS);
+    expect(resolveConcept('miếng cá')).toBe(AMBIGUOUS);
+    expect(resolveConcept('cua')).toBe(AMBIGUOUS);
+    expect(resolveConcept('trứng gà luộc')).toBe(AMBIGUOUS);
   });
 
   it('unknown surface form → null (defer to LLM)', () => {
@@ -87,7 +90,7 @@ describe('food concepts (alias → concept)', () => {
 
   it('folds Vietnamese diacritics only after an exact miss', () => {
     expect(resolveConcept('dui ga')).toBe('chicken-thigh');
-    expect(resolveConcept('mieng ca')).toBe('fish-fillet');
+    expect(resolveConcept('ca phi le')).toBe('fish-fillet');
     expect(resolveConcept('nem lui')).toBe('nem-lui');
   });
 
@@ -278,13 +281,13 @@ describe('concept/prior reachability invariants', () => {
     ['chicken-thigh', 'đùi gà', 'cái'],
     ['whole-fish', 'cá nguyên con', 'con'],
     ['fish-section', 'khúc cá', 'khúc'],
-    ['fish-fillet', 'miếng cá', 'miếng'],
+    ['fish-fillet', 'cá phi lê', 'miếng'],
     ['shell-on-shrimp', 'tôm nguyên vỏ', 'con'],
     ['peeled-shrimp', 'tôm bóc vỏ', 'con'],
-    ['whole-crab', 'ghẹ', 'con'],
+    ['whole-crab', 'ghẹ nguyên con', 'con'],
     ['picked-crab-meat', 'thịt cua', 'phần'],
     ['egg-in-shell', 'trứng gà nguyên vỏ', 'quả'],
-    ['peeled-egg', 'trứng gà luộc', 'quả'],
+    ['peeled-egg', 'trứng gà bóc vỏ', 'quả'],
   ] as const;
 
   it.each(
@@ -425,6 +428,11 @@ describe('concept fold collisions', () => {
     // the clarify path on 19 of 697 real-log ingredients.
     expect(resolveConcept('bún')).not.toBe(AMBIGUOUS);
     expect(resolveConcept('bun')).toBe(AMBIGUOUS);
+  });
+
+  it('blocks the canh gà soup collision without hiding exact cánh gà', () => {
+    expect(resolveConcept('canh gà')).toBeNull();
+    expect(resolveConcept('cánh gà')).toBe('chicken-wing');
   });
 
   it('refuses to guess when two concepts share a folded key', () => {

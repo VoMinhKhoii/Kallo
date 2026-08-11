@@ -1,6 +1,9 @@
-import { classifyRefuseCut, type RefuseCutClass } from '../portion/refuse-cut';
-import type { MassBasis } from '../portion/types';
-import type { GroundedIngredientEstimate } from './schemas-v2';
+import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/schemas-v2';
+import {
+  classifyRefuseCut,
+  type RefuseCutClass,
+} from '@/lib/ai/portion/refuse-cut';
+import type { MassBasis } from '@/lib/ai/portion/types';
 
 export type AppliedRefuseSource =
   | 'authoritative_edible_anchor'
@@ -92,12 +95,7 @@ export function hasExplicitEdibleForm(args: {
     value.includes('thit cua') ||
     value.includes('thịt ghẹ') ||
     value.includes('thit ghe') ||
-    /\bcrab\s*meat\b/.test(value) ||
-    value.includes('miếng cá') ||
-    value.includes('mieng ca') ||
-    /(?:trứng.*luộc|luộc.*trứng|trung.*luoc|luoc.*trung|boiled eggs?)/.test(
-      value
-    )
+    /\bcrab\s*meat\b/.test(value)
   );
 }
 
@@ -178,8 +176,7 @@ export function resolveGroundedMass(args: {
         ? ground.grams
         : null;
     const edibleAnchor =
-      args.authoritativeMass?.basis === 'edible' ||
-      args.authoritativeMass?.basis === 'unknown'
+      args.authoritativeMass?.basis === 'edible'
         ? args.authoritativeMass.grams
         : null;
     return {
@@ -199,8 +196,7 @@ export function resolveGroundedMass(args: {
   });
   const modelEdibleG = ground.grossG * (1 - decision.modelRefusePct / 100);
   const anchor = args.authoritativeMass;
-  const authoritativeEdible =
-    anchor?.basis === 'edible' || anchor?.basis === 'unknown';
+  const authoritativeEdible = anchor?.basis === 'edible';
   const grossG =
     anchor?.basis === 'gross_as_served' ? anchor.grams : ground.grossG;
   const appliedRefusePct = authoritativeEdible ? 0 : decision.appliedRefusePct;

@@ -1,3 +1,5 @@
+import { fold } from '@/lib/ai/portion/lexicon/fold';
+
 export type RefuseCutClass =
   | 'rib'
   | 'wing'
@@ -14,17 +16,21 @@ export interface RefuseBand {
   high: number;
 }
 
-function normalizedName(canonicalName: string, rawName: string): string {
-  const normalized = `${canonicalName} ${rawName}`
+interface NormalizedNames {
+  exact: string;
+  folded: string;
+}
+
+function normalizedNames(
+  canonicalName: string,
+  rawName: string
+): NormalizedNames {
+  const exact = `${canonicalName} ${rawName}`
     .toLocaleLowerCase('vi-VN')
     .replace(/[_-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  const folded = normalized
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .replace(/đ/g, 'd');
-  return `${normalized} ${folded}`;
+  return { exact, folded: fold(exact, { collapseWhitespace: true }) };
 }
 
 /** Keyword-only cut classifier. Order is deliberate for specific classes. */
@@ -32,87 +38,90 @@ export function classifyRefuseCut(
   canonicalName: string,
   rawName: string
 ): RefuseBand | null {
-  const name = normalizedName(canonicalName, rawName);
+  const { exact, folded } = normalizedNames(canonicalName, rawName);
   const porkChop =
-    name.includes('cơm tấm sườn') ||
-    name.includes('com tam suon') ||
-    name.includes('cốt lết') ||
-    name.includes('cot let') ||
-    name.includes('cotlet') ||
-    name.includes('pork chop');
+    exact.includes('cơm tấm sườn') ||
+    folded.includes('com tam suon') ||
+    exact.includes('cốt lết') ||
+    folded.includes('cot let') ||
+    folded.includes('cotlet') ||
+    exact.includes('pork chop');
   if (
     !porkChop &&
-    (name.includes('sườn') ||
-      name.includes('suon') ||
-      /\b(?:spare )?ribs?\b/.test(name))
+    (exact.includes('sườn') ||
+      folded.includes('suon') ||
+      /\b(?:spare )?ribs?\b/.test(exact))
   ) {
     return { cutClass: 'rib', low: 40, high: 60 };
   }
-  if (
-    name.includes('cánh') ||
-    name.includes('canh ga') ||
-    /\bwings?\b/.test(name)
-  ) {
+  // Do not fold this Vietnamese keyword. `cánh gà` (wing) and `canh gà`
+  // (chicken soup) both fold to `canh ga`, so the folded form is ambiguous.
+  if (exact.includes('cánh gà') || /\b(?:chicken )?wings?\b/.test(exact)) {
     return { cutClass: 'wing', low: 30, high: 50 };
   }
   if (
-    name.includes('cá nguyên con') ||
-    name.includes('ca nguyen con') ||
-    name.includes('nguyen con ca') ||
-    name.includes('1 con ca') ||
-    name.includes('whole fish')
+    exact.includes('cá nguyên con') ||
+    folded.includes('ca nguyen con') ||
+    folded.includes('nguyen con ca') ||
+    folded.includes('1 con ca') ||
+    exact.includes('whole fish')
   ) {
     return { cutClass: 'whole_fish', low: 35, high: 50 };
   }
   if (
-    name.includes('khúc cá') ||
-    name.includes('khuc ca') ||
-    name.includes('khoanh cá') ||
-    name.includes('khoanh ca') ||
-    name.includes('fish steak') ||
-    name.includes('fish section')
+    exact.includes('khúc cá') ||
+    folded.includes('khuc ca') ||
+    exact.includes('khoanh cá') ||
+    folded.includes('khoanh ca') ||
+    exact.includes('fish steak') ||
+    exact.includes('fish section')
   ) {
     return { cutClass: 'fish_section', low: 15, high: 30 };
   }
   const shrimp =
-    name.includes('tôm') ||
-    name.includes('tom') ||
-    /\b(?:shrimp|prawn)s?\b/.test(name);
+    exact.includes('tôm') ||
+    folded.includes('tom') ||
+    /\b(?:shrimp|prawn)s?\b/.test(exact);
   const shellOn =
-    name.includes('vỏ') ||
-    /(?:^|\s)vo(?:\s|$)/.test(name) ||
-    /\bshell on\b/.test(name) ||
-    name.includes('shell-on');
+    exact.includes('vỏ') ||
+    /(?:^|\s)vo(?:\s|$)/.test(folded) ||
+    /\bshell on\b/.test(exact) ||
+    exact.includes('shell-on');
   if (shrimp && shellOn) {
     return { cutClass: 'shell_on_shrimp', low: 35, high: 55 };
   }
-  const crab =
-    name.includes('ghẹ') ||
-    name.includes('ghe') ||
-    /(?:^|\s)cua(?:\s|$)/.test(name) ||
-    /\bcrabs?\b/.test(name);
-  if (crab) {
+  const wholeCrab =
+    folded.includes('cua nguyen con') ||
+    folded.includes('ghe nguyen con') ||
+    folded.includes('nguyen con cua') ||
+    folded.includes('nguyen con ghe') ||
+    /\b(?:\d+ )?con (?:cua|ghe)\b/.test(folded) ||
+    /\b(?:whole crab|whole blue crab)s?\b/.test(exact);
+  if (wholeCrab) {
     return { cutClass: 'whole_crab', low: 55, high: 75 };
   }
   const egg =
-    name.includes('trứng') || name.includes('trung') || /\beggs?\b/.test(name);
+    exact.includes('trứng') ||
+    folded.includes('trung') ||
+    /\beggs?\b/.test(exact);
   const inShell =
-    name.includes('nguyên vỏ') ||
-    name.includes('nguyen vo') ||
-    name.includes('còn vỏ') ||
-    name.includes('con vo') ||
-    name.includes('in shell');
+    exact.includes('nguyên vỏ') ||
+    folded.includes('nguyen vo') ||
+    exact.includes('còn vỏ') ||
+    folded.includes('con vo') ||
+    exact.includes('in shell');
   if (egg && inShell) {
     return { cutClass: 'egg_in_shell', low: 10, high: 15 };
   }
-  const vietnameseLeg = name.includes('đùi');
-  const porkKnuckle = name.includes('chân giò');
-  const drumstick = /\bdrumsticks?\b/.test(name);
-  const englishLeg = /\b(?:thigh|leg)s?\b/.test(name);
+  const vietnameseLeg = exact.includes('đùi') || folded.includes('dui');
+  const porkKnuckle = exact.includes('chân giò');
+  const drumstick = /\bdrumsticks?\b/.test(exact);
+  const englishLeg = /\b(?:thigh|leg)s?\b/.test(exact);
   const boneIn =
-    name.includes('bone in') ||
-    name.includes('bone-in') ||
-    name.includes('xương');
+    exact.includes('bone in') ||
+    exact.includes('bone-in') ||
+    exact.includes('xương') ||
+    folded.includes('xuong');
   if (porkKnuckle || drumstick || ((vietnameseLeg || englishLeg) && boneIn)) {
     return { cutClass: 'bone_in_leg', low: 25, high: 35 };
   }

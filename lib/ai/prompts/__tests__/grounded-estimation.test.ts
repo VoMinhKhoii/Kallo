@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import type {
   DecomposedDishV2,
   DecomposedIngredientV2,
@@ -28,6 +28,30 @@ const baseUserContext: PromptPersonalizationContext = {
     brothConsumption: 'some',
   },
 };
+
+const FLAG_BASELINE = {
+  PROTEIN_PORTION_DEFAULT: 'on',
+  INEDIBLE_PORTION_RULE: 'off',
+  PROMPT_SIZING_HINTS: 'on',
+  VESSEL_GUARD: 'on',
+  REFUSE_PCT_SCHEMA: 'off',
+} as const;
+const originalFlags = new Map(
+  Object.keys(FLAG_BASELINE).map((key) => [key, process.env[key]])
+);
+
+beforeEach(() => {
+  for (const [key, value] of Object.entries(FLAG_BASELINE)) {
+    process.env[key] = value;
+  }
+});
+
+afterAll(() => {
+  for (const [key, value] of originalFlags) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+});
 
 function ing(
   args: Partial<DecomposedIngredientV2> = {}
@@ -325,6 +349,9 @@ describe('grounded-estimation prompt structure', () => {
         'Deduct ONCE — never both from `db_inedible_pct`'
       );
       expect(enabled).not.toContain('Always emit grams > 0');
+      expect(enabled).toContain(
+        'accept it and emit grossG in its basis per the grams_rule'
+      );
     });
   });
 

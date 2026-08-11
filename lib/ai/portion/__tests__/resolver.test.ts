@@ -241,6 +241,19 @@ describe('D4 regression — raw-weight honored verbatim', () => {
     expect(r.grams?.mid).toBe(200);
     expect(r.massBasis).toBe('gross_as_served');
   });
+
+  it('preserves unknown basis when the named ingredient has no refuse cut', () => {
+    const r = resolvePortion(
+      conceptInput({
+        conceptId: null,
+        canonicalName: 'Cá kho',
+        rawName: 'unknown-basis ingredient',
+      }),
+      { explicitMass: { grams: 200, basis: 'unknown' } }
+    );
+    expect(r.grams?.mid).toBe(200);
+    expect(r.massBasis).toBe('unknown');
+  });
 });
 
 describe('D4 regression — explicit slice case', () => {

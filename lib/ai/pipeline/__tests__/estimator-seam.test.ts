@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createMockGemini } from '../../__tests__/test-helpers';
 import type { MealItemWithCandidates } from '../../prompts/grounded-estimation';
 import { buildGroundedEstimationPrompt } from '../../prompts/grounded-estimation';
@@ -94,6 +94,10 @@ const CALL2: GroundedEstimation = {
   ],
 };
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 // ---------------------------------------------------------------------------
 // D3: Gemini adapter — behavior-preserving round trip (golden)
 // ---------------------------------------------------------------------------
@@ -116,6 +120,7 @@ describe('createGeminiEstimator — round-trips the pre-refactor call identicall
   });
 
   it('calls generateStructuredOutputStream with the SAME prompt, model, message, and knobs', async () => {
+    vi.stubEnv('REFUSE_PCT_SCHEMA', 'off');
     const gemini = createMockGemini({
       generateStructuredOutputStream: vi.fn().mockResolvedValue(CALL2),
     });

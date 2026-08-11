@@ -161,7 +161,7 @@ ${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
           "name": "cơm trắng",
           "cookingMethod": "nấu",
           "ingredients": [
-            { "rawName": "cơm", "canonicalName": "Cơm" }
+            { "rawName": "cơm", "canonicalName": "Cơm", "explicitMass": { "grams": 100, "basis": "unknown" } }
           ]
         },
         {
@@ -225,7 +225,7 @@ ${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
           "name": "ức gà nấu chậm",
           "cookingMethod": "nấu",
           "ingredients": [
-            { "rawName": "ức gà", "canonicalName": "Ức gà", "stateHint": "raw_weight", "stateNote": "cân sống" }
+            { "rawName": "ức gà", "canonicalName": "Ức gà", "stateHint": "raw_weight", "stateNote": "cân sống", "explicitMass": { "grams": 300, "basis": "unknown" } }
           ]
         }
       ]

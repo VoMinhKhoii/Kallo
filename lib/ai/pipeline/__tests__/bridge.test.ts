@@ -211,6 +211,68 @@ describe('bridgeV2ToV1 — accepted verdict', () => {
     });
   });
 
+  it('does not let an unknown-basis ingredient bypass modeled refuse', () => {
+    const v2: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'cá kho',
+          cookingMethod: 'kho',
+          ingredients: [
+            {
+              rawName: 'unknown-basis ingredient',
+              canonicalName: 'Cá kho',
+              explicitMass: { grams: 300, basis: 'unknown' },
+            },
+          ],
+        },
+      ],
+    };
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'cá kho',
+          ingredients: [
+            {
+              ingredientName: 'unknown-basis ingredient',
+              grossG: 200,
+              refusePct: 25,
+              caloriesKcal: { low: 0, mid: 0, high: 0 },
+              proteinG: { low: 0, mid: 0, high: 0 },
+              carbohydrateG: { low: 0, mid: 0, high: 0 },
+              fatG: { low: 0, mid: 0, high: 0 },
+            },
+          ],
+        },
+      ],
+    };
+    const out = bridgeV2ToV1({
+      v2,
+      matches: [{ ingredientIndex: 0, candidates: [] }],
+      grounded,
+      mealContext: 'unknown-basis ingredient 300g',
+      portionResolutions: [
+        {
+          grams: { low: 300, mid: 300, high: 300 },
+          massBasis: 'unknown',
+          provenance: 'explicit_user_mass',
+          confidence: 'high',
+          note: 'basis unresolved',
+        },
+      ],
+    });
+
+    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(150);
+    expect(out.verdicts[0].refuse).toMatchObject({
+      grossG: 200,
+      appliedRefusePct: 25,
+      appliedRefuseSource: 'model_unknown_form',
+      edibleG: 150,
+      massBasis: 'gross_as_served',
+    });
+  });
+
   it('produces a v1 decomposition with grams from Call 2 and weightBasis omitted for cooked candidates', () => {
     const out = bridgeV2ToV1({
       v2: v2Decomp(),

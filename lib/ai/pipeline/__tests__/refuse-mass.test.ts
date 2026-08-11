@@ -8,6 +8,7 @@ describe('resolveRefusePct', () => {
     ['whole fish', 'cá nguyên con', '', 20, 35],
     ['shell-on shrimp', 'tôm còn vỏ', '', 80, 55],
     ['bone-in leg', 'đùi gà cả xương', '', 10, 25],
+    ['unaccented bone-in leg', 'dui ga ca xuong', '', 10, 25],
   ])('clamps the %s class to its band', (_, canonicalName, rawName, model, expected) => {
     const result = resolveRefusePct({
       modelRefusePct: model,
@@ -19,11 +20,75 @@ describe('resolveRefusePct', () => {
     expect(result.appliedRefuseSource).toBe('model_cut_band');
   });
 
+  it('does not fold the exact soup name canh gà into the cánh gà wing band', () => {
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 12,
+        candidateInediblePct: null,
+        canonicalName: 'canh gà',
+        rawName: 'canh gà',
+      })
+    ).toMatchObject({
+      appliedRefusePct: 12,
+      appliedRefuseSource: 'model_unknown_form',
+      cutClass: null,
+    });
+  });
+
+  it.each([
+    'thịt cua',
+    'bún riêu cua',
+  ])('does not classify the edible crab form %s as a whole crab', (name) => {
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 20,
+        candidateInediblePct: 70,
+        canonicalName: name,
+        rawName: name,
+      })
+    ).toMatchObject({
+      appliedRefusePct: name === 'thịt cua' ? 0 : 20,
+      cutClass: null,
+    });
+  });
+
+  it('still classifies the explicit whole form 1 con cua', () => {
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 50,
+        candidateInediblePct: null,
+        canonicalName: 'cua',
+        rawName: '1 con cua',
+      })
+    ).toMatchObject({
+      appliedRefuseSource: 'model_cut_band',
+      cutClass: 'whole_crab',
+    });
+  });
+
+  it.each([
+    'miếng cá',
+    'trứng gà luộc',
+  ])('does not infer an edible form from preparation alone: %s', (name) => {
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 18,
+        candidateInediblePct: 40,
+        canonicalName: name,
+        rawName: name,
+      })
+    ).toMatchObject({
+      appliedRefusePct: 18,
+      appliedRefuseSource: 'model_unknown_form',
+      cutClass: null,
+    });
+  });
+
   it.each([
     ['cá hồi áp chảo', 'salmon fillet', []],
     ['cá hồi phi lê', '', []],
     ['đùi gà rút xương', '', []],
-    ['trứng gà luộc', '3 boiled eggs', []],
+    ['trứng gà bóc vỏ', '3 peeled eggs', []],
     ['thịt heo', '', ['tách riêng phần nạc']],
     ['crab meat', '', []],
     ['crabmeat', '', []],
@@ -44,10 +109,10 @@ describe('resolveRefusePct', () => {
   });
 
   it.each([
-    ['miếng cá', '', 40],
+    ['cá phi lê', '', 40],
     ['tom boc vo', 'peeled shrimp', 45],
     ['thit cua', 'picked crab meat', 65],
-    ['trung ga luoc', '3 boiled eggs', 14],
+    ['trung ga boc vo', '3 peeled eggs', 14],
   ])('overrides a nonzero model/DB refuse value for boneless control %s', (canonicalName, rawName, refusePct) => {
     expect(
       resolveRefusePct({
@@ -67,8 +132,8 @@ describe('resolveRefusePct', () => {
       resolveRefusePct({
         modelRefusePct: 60,
         candidateInediblePct: 25,
-        canonicalName: 'ghẹ',
-        rawName: 'crab',
+        canonicalName: 'ghẹ nguyên con',
+        rawName: 'whole crab',
       })
     ).toMatchObject({
       modelRefusePct: 60,
@@ -83,8 +148,8 @@ describe('resolveRefusePct', () => {
       resolveRefusePct({
         modelRefusePct: 65,
         candidateInediblePct: 68,
-        canonicalName: 'ghẹ',
-        rawName: 'crab',
+        canonicalName: 'crab paste',
+        rawName: 'crab paste',
       }).appliedRefusePct
     ).toBe(65);
   });
@@ -199,10 +264,10 @@ describe('resolveGroundedMass', () => {
   });
 
   it.each([
-    ['fish-fillet', 'miếng cá', 90],
+    ['fish-fillet', 'cá phi lê', 90],
     ['peeled-shrimp', 'tôm không vỏ', 16],
     ['picked-crab-meat', 'crab meat', 65],
-    ['peeled-egg', 'trứng gà luộc', 50],
+    ['peeled-egg', 'trứng gà bóc vỏ', 50],
   ])('never deducts refuse from the edible %s prior', (_, canonicalName, grams) => {
     const result = resolveGroundedMass({
       ground: { ...ground, grossG: grams, refusePct: 60 },
@@ -220,6 +285,26 @@ describe('resolveGroundedMass', () => {
       appliedRefuseSource: 'authoritative_edible_anchor',
       edibleG: grams,
       massBasis: 'edible',
+    });
+  });
+
+  it('does not treat an unknown-basis ingredient as authoritative edible mass', () => {
+    const result = resolveGroundedMass({
+      ground: { ...ground, grossG: 200, refusePct: 25 },
+      candidateInediblePct: null,
+      canonicalName: 'cá kho',
+      rawName: 'unknown-basis ingredient',
+      authoritativeMass: {
+        grams: 300,
+        basis: 'unknown',
+      },
+    });
+    expect(result.edibleG).toBe(150);
+    expect(result.refuse).toMatchObject({
+      grossG: 200,
+      appliedRefusePct: 25,
+      appliedRefuseSource: 'model_unknown_form',
+      massBasis: 'gross_as_served',
     });
   });
 });

@@ -16,21 +16,21 @@
  */
 
 import { mealItemHasDiscreteOil } from '@/lib/ai/absorbed-oil';
-import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
-import { ZERO_TRIPLE } from '../pipeline/bridge-verdicts';
-import type { RawNutritionAdjustment } from '../pipeline/nutrition';
-import { __testing as nutritionTesting } from '../pipeline/nutrition';
-import { resolveGroundedMass } from '../pipeline/refuse-mass';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import { ZERO_TRIPLE } from '@/lib/ai/pipeline/bridge-verdicts';
+import type { RawNutritionAdjustment } from '@/lib/ai/pipeline/nutrition';
+import { __testing as nutritionTesting } from '@/lib/ai/pipeline/nutrition';
+import { resolveGroundedMass } from '@/lib/ai/pipeline/refuse-mass';
 import type {
   DecomposedIngredientV2,
   GroundedIngredientEstimate,
   GroundedMealItem,
-} from '../pipeline/schemas-v2';
+} from '@/lib/ai/pipeline/schemas-v2';
 import type {
   IngredientLlmNutrition,
   MacroBase,
   MealItemNutrition,
-} from '../types';
+} from '@/lib/ai/types';
 
 /**
  * Same partial-JSON marker as v1's nutrition stream. Each `{"mealItemName":`
@@ -161,6 +161,7 @@ export function resolveStreamingV2MealItem(
       candidateInediblePct: selectedCandidate?.inediblePct ?? null,
       canonicalName: decompForName?.canonicalName ?? rawIng.ingredientName,
       rawName: decompForName?.rawName ?? rawIng.ingredientName,
+      prepNotes: decompForName?.prepNotes,
     });
     const grams = mass.edibleG ?? 0;
     totalGrams += grams;

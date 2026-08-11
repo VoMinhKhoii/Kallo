@@ -154,6 +154,11 @@ const foldableAliases = Object.entries(ALIAS_TO_CONCEPT).filter(
   ([, resolution]) => resolution !== AMBIGUOUS
 );
 const FOLDED = foldedLookupFor(foldableAliases, (resolution) => resolution);
+// Known food phrases that collide with a registered alias only after
+// diacritic folding. They are not concepts themselves, so they cannot live in
+// ALIAS_TO_CONCEPT, but their folded keys must never inherit another food's
+// prior (`canh gà` soup vs `cánh gà` wing).
+for (const blocker of ['canh gà']) FOLDED.delete(fold(blocker));
 
 /** Folded keys claimed by two different concepts — resolvable only with
  *  diacritics. Exposed so a test can pin the set and catch new collisions. */

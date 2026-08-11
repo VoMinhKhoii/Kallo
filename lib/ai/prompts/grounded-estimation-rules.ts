@@ -130,6 +130,7 @@ export function buildStaticPrefix(hasVessel = false): string {
   const finalBasisRule = refusePctSchemaEnabled
     ? "    - grossG MUST be in the SELECTED candidate's db_state basis and include the whole served piece; refusePct carries the inedible share. Dry/raw row → dry/raw grossG."
     : "    - grams MUST be in the SELECTED candidate's db_state basis. Dry/raw row → dry/raw grams, even though you picture the food as eaten.";
+  const verdictMassField = refusePctSchemaEnabled ? 'grossG' : 'grams';
   const matchedMacroRule = refusePctSchemaEnabled
     ? '    - protein, carb, calories: emit your best estimate for the EDIBLE portion (grossG after refusePct), but know the server OVERRIDES them with DB-anchored base = (per_100g × edible mass) / 100 and derives kcal from 4P + 4C + 9F — keep these three brief (flat triples are fine); your effort belongs in grossG, refusePct, and fat.'
     : '    - protein, carb, calories: emit your best estimate, but know the server OVERRIDES them with DB-anchored base = (per_100g × grams) / 100 and derives kcal from 4P + 4C + 9F — keep these three brief (flat triples are fine); your effort belongs in grams and fat.';
@@ -153,7 +154,7 @@ export function buildStaticPrefix(hasVessel = false): string {
 <verdict_rule>
   Accept a candidate when:
     - the canonical food matches what the user described (cut, species, part);
-    - the db_state has a workable relationship to the dish: identical, or convertible. A dry/raw staple row backing a cooked dish (dried noodles for "1 tô mì gói", raw rice for "1 chén cơm") is the NORMAL case, NOT a state mismatch — accept it and emit grams in its basis per the grams_rule.
+    - the db_state has a workable relationship to the dish: identical, or convertible. A dry/raw staple row backing a cooked dish (dried noodles for "1 tô mì gói", raw rice for "1 chén cơm") is the NORMAL case, NOT a state mismatch — accept it and emit ${verdictMassField} in its basis per the grams_rule.
     - the per-100g density looks right for the food family (no obvious off-by-order-of-magnitude).
   Reject ALL candidates ("none") when none of them passes the above. Common reject reasons:
     - cut mismatch: "ức gà" matched only to "Thịt gà ta" (52 % inedible, aggregate whole-bird);
