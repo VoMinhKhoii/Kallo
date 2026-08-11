@@ -41,15 +41,12 @@ class MacroTrendChart extends StatelessWidget {
     if (data == null) return const SizedBox.shrink();
     final bars = data.bars;
 
-    // Grey means "not being counted", from either cause: a column the day scope
-    // set aside, or any column that isn't the selected one. Fading instead only
-    // washed them toward the page and left three pale bands still competing for
-    // attention — greying makes each one read as a single quiet block.
-    Color shade(Color base, MacroBar bar) {
-      final dimmed =
-          bar.excluded || (selectedIndex != null && selectedIndex != bar.index);
-      return dimmed ? NhamColors.chartMuted : base;
-    }
+    // Grey means "not being counted" — see `isColumnDimmed` for which sense of
+    // that applies. Fading instead only washed the columns toward the page and
+    // left three pale bands still competing for attention; greying makes each
+    // one read as a single quiet block.
+    Color shade(Color base, MacroBar bar) =>
+        isColumnDimmed(bar, selectedIndex) ? NhamColors.chartMuted : base;
 
     // Fewer, fatter columns for the 7-day view; slimmer ones for the busier
     // weekly axes (5 buckets at 30d, 13 at 90d) so they don't crowd.

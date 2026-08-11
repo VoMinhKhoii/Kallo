@@ -43,6 +43,27 @@ export interface MacroTrendPoint {
   excluded: boolean;
 }
 
+/**
+ * Whether a column is drawn in the muted pigment rather than its macro colours.
+ *
+ * Grey means one thing at a time, because the chart is in one of two modes:
+ *
+ *   nothing selected — grey is "this scope does not count it" (`excluded`)
+ *   something selected — grey is "this is not the one you picked"
+ *
+ * A selection therefore OVERRIDES exclusion for the column it lands on. Without
+ * that, tapping a set-aside column greyed the whole chart — that column for
+ * being excluded and every other one for not being selected — leaving no colour
+ * anywhere and no way to see what had been picked.
+ */
+export function isColumnDimmed(
+  point: Pick<MacroTrendPoint, 'index' | 'excluded'>,
+  selectedIndex: number | null
+): boolean {
+  if (selectedIndex !== null) return selectedIndex !== point.index;
+  return point.excluded;
+}
+
 /** Today as a local `YYYY-MM-DD`, matching the server's local-date bucketing. */
 export function localIsoDate(now: Date = new Date()): string {
   const month = String(now.getMonth() + 1).padStart(2, '0');

@@ -72,4 +72,34 @@ void main() {
       expect(bars.maxY, 400);
     });
   });
+
+  group('isColumnDimmed', () {
+    MacroBar bar(int index, {bool excluded = false}) => MacroBar(
+          index: index,
+          startDate: '2026-05-0${index + 1}',
+          endDate: '2026-05-0${index + 1}',
+          protein: 100,
+          carbohydrate: 200,
+          fat: 10,
+          excluded: excluded,
+        );
+
+    test('greys the scope-excluded columns when nothing is selected', () {
+      expect(isColumnDimmed(bar(0), null), isFalse);
+      expect(isColumnDimmed(bar(1, excluded: true), null), isTrue);
+    });
+
+    test('greys everything but the selection once one exists', () {
+      expect(isColumnDimmed(bar(1), 1), isFalse);
+      expect(isColumnDimmed(bar(0), 1), isTrue);
+    });
+
+    test('colours a selected column even when the scope excludes it', () {
+      // The regression: `excluded || not-selected` greyed the WHOLE chart when
+      // the tapped column was itself excluded, leaving no colour anywhere.
+      expect(isColumnDimmed(bar(1, excluded: true), 1), isFalse);
+      expect(isColumnDimmed(bar(0, excluded: true), 1), isTrue);
+      expect(isColumnDimmed(bar(2), 1), isTrue);
+    });
+  });
 }

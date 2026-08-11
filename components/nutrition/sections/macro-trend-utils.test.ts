@@ -10,6 +10,7 @@ import {
   buildMacroTrendData,
   findTodayIndex,
   formatBucketLabel,
+  isColumnDimmed,
   localIsoDate,
   type MacroTrendPoint,
 } from './macro-trend-utils';
@@ -176,6 +177,28 @@ describe('buildMacroTrendData', () => {
     expect(data?.points[0].excluded).toBe(false);
     // Excluded, but still carrying its real height.
     expect(data?.points[1]).toMatchObject({ excluded: true, protein: 360 });
+  });
+});
+
+describe('isColumnDimmed', () => {
+  const col = (index: number, excluded: boolean) => ({ index, excluded });
+
+  it('greys the scope-excluded columns when nothing is selected', () => {
+    expect(isColumnDimmed(col(0, false), null)).toBe(false);
+    expect(isColumnDimmed(col(1, true), null)).toBe(true);
+  });
+
+  it('greys everything but the selection once one exists', () => {
+    expect(isColumnDimmed(col(1, false), 1)).toBe(false);
+    expect(isColumnDimmed(col(0, false), 1)).toBe(true);
+  });
+
+  it('colours a selected column even when the scope excludes it', () => {
+    // The regression: `excluded || not-selected` greyed the WHOLE chart when
+    // the tapped column was itself excluded, leaving no colour anywhere.
+    expect(isColumnDimmed(col(1, true), 1)).toBe(false);
+    expect(isColumnDimmed(col(0, true), 1)).toBe(true);
+    expect(isColumnDimmed(col(2, false), 1)).toBe(true);
   });
 });
 

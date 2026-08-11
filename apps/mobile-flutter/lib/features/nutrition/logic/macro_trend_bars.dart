@@ -38,6 +38,23 @@ class MacroBar {
   double get total => proteinKcal + carbsKcal + fatKcal;
 }
 
+/// Whether a column is drawn in the muted pigment rather than its macro colours.
+///
+/// Grey means one thing at a time, because the chart is in one of two modes:
+///
+///   nothing selected  — grey is "this scope does not count it" (`excluded`)
+///   something selected — grey is "this is not the one you picked"
+///
+/// A selection therefore OVERRIDES exclusion for the column it lands on.
+/// Without that, tapping a set-aside column greyed the whole chart — that
+/// column for being excluded and every other one for not being selected —
+/// leaving no colour anywhere and no way to see what had been picked. Mirror of
+/// the web `isColumnDimmed` (keep in sync).
+bool isColumnDimmed(MacroBar bar, int? selectedIndex) {
+  if (selectedIndex != null) return selectedIndex != bar.index;
+  return bar.excluded;
+}
+
 class MacroTrendBars {
   const MacroTrendBars({required this.bars, required this.maxY});
 

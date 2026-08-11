@@ -18,6 +18,7 @@ import {
   COMPOSITION_COLORS,
   COMPOSITION_KEYS,
   type CompositionKey,
+  isColumnDimmed,
   type MacroTrendPoint,
 } from './macro-trend-utils';
 
@@ -85,16 +86,14 @@ export function MacroTrendChart({
     );
   };
 
-  // Grey means "not being counted", from either cause: a column the day scope
-  // set aside, or any column that isn't the selected one. Fading instead only
-  // washed them toward the page and left three pale bands still competing for
-  // attention — greying makes each one read as a single quiet block.
-  const fillFor = (key: CompositionKey, point: MacroTrendPoint) => {
-    const dimmed =
-      point.excluded ||
-      (selectedIndex !== null && selectedIndex !== point.index);
-    return dimmed ? 'var(--nham-chart-muted)' : COMPOSITION_COLORS[key];
-  };
+  // Grey means "not being counted" — see `isColumnDimmed` for which sense of
+  // that applies. Fading instead only washed the columns toward the page and
+  // left three pale bands still competing for attention; greying makes each one
+  // read as a single quiet block.
+  const fillFor = (key: CompositionKey, point: MacroTrendPoint) =>
+    isColumnDimmed(point, selectedIndex)
+      ? 'var(--nham-chart-muted)'
+      : COMPOSITION_COLORS[key];
 
   return (
     // Selecting a column and dismissing the selection are the same gesture at
