@@ -307,7 +307,7 @@ describe('mapOverviewRowsToDto', () => {
       expect(overview.completeDays).toBe(1);
     });
 
-    it("days:'complete' with only under-logged days returns an empty body", () => {
+    it("days:'complete' with only under-logged days returns a zeroed body", () => {
       const overview = mapScoped(
         [
           row({ localDate: '2026-04-24', calories: 400 }),
@@ -316,7 +316,21 @@ describe('mapOverviewRowsToDto', () => {
         'complete'
       );
       expect(overview.completeDays).toBe(0);
-      expect(overview.macros).toHaveLength(0);
+      // The body keeps its shape at zero rather than collapsing: every nutrient
+      // row is present with its real target and a null average, so the client
+      // renders the same page with "—" instead of a separate empty screen.
+      expect(overview.macros.length).toBeGreaterThan(0);
+      expect(overview.macros.every((m) => m.averagePerDay === 0)).toBe(true);
+      expect(overview.micronutrients.length).toBeGreaterThan(0);
+      expect(
+        overview.micronutrients.every(
+          (c) => c.averagePerDay === null && c.percentOfTarget === null
+        )
+      ).toBe(true);
+      expect(overview.micronutrients.every((c) => c.target !== null)).toBe(
+        true
+      );
+      // The chart still has nothing to draw.
       expect(overview.daySeries.series).toHaveLength(0);
       expect(overview.calorieAverages.complete.averagePerDay).toBeNull();
       expect(overview.calorieAverages.all.averagePerDay).toBe(350);

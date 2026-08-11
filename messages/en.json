@@ -93,6 +93,7 @@
   "nutrition": {
     "eyebrow": "Pattern analysis",
     "title": "Nutrition",
+    "cardTitle": "Average",
     "subtitle": "Review long-term macro and micronutrient patterns built from your logged meals.",
     "loading": "Loading nutrition overview…",
     "detail": {
@@ -473,6 +474,8 @@
     },
     "rhythm": {
       "calories": "kcal",
+      "kcalPerLoggedDay": "kcal per logged day",
+      "kcalPerCompleteDay": "kcal per complete day",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
       "dayCount": "{count, plural, one {# day} other {# days}}",

@@ -140,16 +140,19 @@ void main() {
     });
   });
 
-  group('formatBucketRange', () {
-    test('names the weekday for a single-day bucket', () {
-      // 2026-05-04 is a Monday.
-      expect(formatBucketRange('2026-05-04', '2026-05-04', 'en'),
-          'Monday, May 4');
+  group('formatDateSpan', () {
+    test('collapses a single-day bucket to one dated day', () {
+      expect(formatDateSpan('2026-05-04', '2026-05-04', 'en'), 'May 4, 2026');
     });
 
-    test('renders a span for a week bucket', () {
-      expect(formatBucketRange('2026-05-04', '2026-05-10', 'en'),
-          'May 4 – May 10');
+    test('renders a span for a week bucket, stating the year once', () {
+      expect(
+          formatDateSpan('2026-05-04', '2026-05-10', 'en'), 'May 4 – May 10, 2026');
+    });
+
+    test('states both years when the span crosses one', () {
+      expect(formatDateSpan('2025-12-29', '2026-01-04', 'en'),
+          'Dec 29, 2025 – Jan 4, 2026');
     });
   });
 }

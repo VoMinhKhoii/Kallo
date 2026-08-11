@@ -4,7 +4,11 @@ import type {
   NutrientDaySeries,
   NutritionDaySeries,
 } from '@/lib/nutrition/types';
-import { buildBucketDetail, formatBucketRange } from './bucket-detail-utils';
+import {
+  buildBucketDetail,
+  formatBucketRange,
+  formatDateSpan,
+} from './bucket-detail-utils';
 
 function series(
   metric: NutrientDaySeries['metric'],
@@ -107,22 +111,35 @@ describe('buildBucketDetail', () => {
 });
 
 describe('formatBucketRange', () => {
-  it('names the weekday for a single-day bucket', () => {
-    // 2026-05-04 is a Monday.
+  it('collapses a single-day bucket to one dated day', () => {
     expect(
       formatBucketRange(
         { startDate: '2026-05-04', endDate: '2026-05-04' },
         'en'
       )
-    ).toBe('Monday, May 4');
+    ).toBe('May 4, 2026');
   });
 
-  it('renders a span for a week bucket', () => {
+  it('renders a span for a week bucket, stating the year once', () => {
     expect(
       formatBucketRange(
         { startDate: '2026-05-04', endDate: '2026-05-10' },
         'en'
       )
-    ).toBe('May 4 – May 10');
+    ).toBe('May 4 – May 10, 2026');
+  });
+
+  it('states both years when the span crosses one', () => {
+    expect(formatDateSpan('2025-12-29', '2026-01-04', 'en')).toBe(
+      'Dec 29, 2025 – Jan 4, 2026'
+    );
+  });
+
+  it('follows the locale word order rather than an English pattern', () => {
+    // vi puts the day before the month, spelled "thg N".
+    const span = formatDateSpan('2026-08-05', '2026-08-11', 'vi');
+    expect(span).toContain('5');
+    expect(span).toContain('11');
+    expect(span.indexOf('5')).toBeLessThan(span.indexOf('thg'));
   });
 });

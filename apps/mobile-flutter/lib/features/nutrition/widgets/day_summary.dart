@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
@@ -8,7 +7,8 @@ import '../../../models/nutrition.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/helpers.dart';
 import '../logic/rhythm_logic.dart';
-import 'macro_trend_section.dart';
+import 'calorie_scope_stats.dart';
+import 'macro_trend_chart.dart';
 
 /// Compact calorie + macro summary at the top of the nutrition view. The hero
 /// calorie figure is the average over the active day scope; the other scope's
@@ -24,6 +24,10 @@ class DaySummary extends StatelessWidget {
     required this.calorieAverages,
     required this.scope,
     required this.onScopeChange,
+    required this.dateSpan,
+    required this.todayIndex,
+    required this.selectedIndex,
+    required this.onSelect,
   });
 
   final List<MacroPattern> macros;
@@ -32,6 +36,12 @@ class DaySummary extends StatelessWidget {
   final CalorieAverages calorieAverages;
   final NutritionDayScope scope;
   final ValueChanged<NutritionDayScope> onScopeChange;
+
+  /// The dates the figures cover — the range, or the tapped bucket.
+  final String dateSpan;
+  final int todayIndex;
+  final int? selectedIndex;
+  final ValueChanged<int> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -72,11 +82,21 @@ class DaySummary extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _CalorieSwap(
+                child: CalorieScopeStats(
                   averages: calorieAverages,
                   scope: scope,
                   locale: locale,
                   onScopeChange: onScopeChange,
+                  dateSpan: dateSpan,
+                  selectedValue: selectedIndex == null
+                      ? null
+                      : (macros
+                              .where((m) => m.key == 'calories')
+                              .firstOrNull
+                              ?.averagePerDay ??
+                          0),
+                  hasSelection: selectedIndex != null,
+                  isWeekBucket: daySeries.unit == 'week',
                 ),
               ),
               // Top-right: over/under vs the calorie goal for the active average.
@@ -99,7 +119,12 @@ class DaySummary extends StatelessWidget {
           if (composition.totalKcal > 0) ...[
             const SizedBox(height: NhamSpacing.sp3),
             if (showTrend)
-              MacroTrendSection(daySeries: daySeries)
+              MacroTrendChart(
+                daySeries: daySeries,
+                todayIndex: todayIndex,
+                selectedIndex: selectedIndex,
+                onSelect: onSelect,
+              )
             else
               _CompositionBar(segments: composition.segments),
             const SizedBox(height: NhamSpacing.sp3),
@@ -123,126 +148,6 @@ class DaySummary extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-/// The two calorie averages (complete + all) stacked as a hero + subtle
-/// secondary. On [scope] change the parent rebuilds and the two entries glide
-/// between the hero and sub slots (position) while morphing size/colour —
-/// a buttery "switch places". The inactive (sub) entry is tappable to promote it.
-class _CalorieSwap extends StatelessWidget {
-  const _CalorieSwap({
-    required this.averages,
-    required this.scope,
-    required this.locale,
-    required this.onScopeChange,
-  });
-
-  final CalorieAverages averages;
-  final NutritionDayScope scope;
-  final String locale;
-  final ValueChanged<NutritionDayScope> onScopeChange;
-
-  static const Duration _dur = Duration(milliseconds: 320);
-  static const Curve _curve = Curves.easeOutCubic;
-  static const double _heroTop = 0;
-  static const double _subTop = 62;
-
-  void _select(NutritionDayScope next) {
-    HapticFeedback.selectionClick();
-    onScopeChange(next);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final completeActive = scope == NutritionDayScope.complete;
-    return SizedBox(
-      height: 100,
-      child: Stack(
-        children: [
-          _entry(
-            data: averages.complete,
-            labelKey: 'nutrition.rhythm.avgPerCompleteDay',
-            active: completeActive,
-            onPromote: () => _select(NutritionDayScope.complete),
-          ),
-          _entry(
-            data: averages.all,
-            labelKey: 'nutrition.rhythm.avgPerLoggedDay',
-            active: !completeActive,
-            onPromote: () => _select(NutritionDayScope.all),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _entry({
-    required CalorieScopeAverage data,
-    required String labelKey,
-    required bool active,
-    required VoidCallback onPromote,
-  }) {
-    final numberStyle = active
-        ? dashHero()
-        : dashHero(color: kInkMuted).copyWith(
-            fontSize: 20,
-            letterSpacing: -0.5,
-          );
-    final valueText = data.averagePerDay != null
-        ? formatLocalizedNumber(data.averagePerDay!, locale)
-        : '—';
-    final label =
-        '${tr(labelKey)} · ${data.days} ${tr('nutrition.rhythm.days')}';
-
-    return AnimatedPositioned(
-      duration: _dur,
-      curve: _curve,
-      top: active ? _heroTop : _subTop,
-      left: 0,
-      right: 0,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: active ? null : onPromote,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedDefaultTextStyle(
-                  duration: _dur,
-                  curve: _curve,
-                  style: numberStyle,
-                  child: Text(valueText),
-                ),
-                const SizedBox(width: NhamSpacing.sp2),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Text(
-                    tr('nutrition.rhythm.calories'),
-                    style: dashMeta(color: kInkMuted),
-                  ),
-                ),
-                if (!active) ...[
-                  const SizedBox(width: NhamSpacing.sp1),
-                  const Icon(
-                    LucideIcons.arrowUpDown300,
-                    size: 12,
-                    color: kInkMuted,
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(label, style: dashEyebrow(color: kInkMuted)),
-          ],
-        ),
       ),
     );
   }

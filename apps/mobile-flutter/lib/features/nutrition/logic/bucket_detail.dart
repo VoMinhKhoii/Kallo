@@ -108,18 +108,64 @@ BucketDetailData? buildBucketDetail(NutritionDaySeries daySeries, int index) {
 DaySeriesBucket? _bucketAt(NutrientDaySeries series, int index) =>
     index >= 0 && index < series.buckets.length ? series.buckets[index] : null;
 
-/// The panel's heading: a weekday + date for a day bucket, a `start – end` span
-/// for a week one.
-String formatBucketRange(String startDate, String endDate, String locale) {
+/// A `start – end` date span carrying the year, e.g. "Aug 5 – Aug 11, 2026" or
+/// "5 thg 8 – 11 thg 8, 2026". A single day collapses to one date.
+///
+/// Both ends go through the locale's own day/month/year ordering rather than a
+/// hand-built "5–11 Aug" pattern, which is English word order and reads wrong
+/// in Vietnamese. Mirror of web `formatDateSpan` (keep in sync).
+String formatDateSpan(String startDate, String endDate, String locale) {
   final start = DateTime.tryParse(startDate);
   if (start == null) return '';
-  final short = DateFormat.MMMd(locale);
-  if (startDate == endDate) {
-    return '${DateFormat.EEEE(locale).format(start)}, ${short.format(start)}';
-  }
+  final withYear = DateFormat.yMMMd(locale);
+  if (startDate == endDate) return withYear.format(start);
+
   final end = DateTime.tryParse(endDate);
-  if (end == null) return short.format(start);
-  return '${short.format(start)} – ${short.format(end)}';
+  if (end == null) return withYear.format(start);
+  // The year is stated once, on the end, unless the span crosses one.
+  final startText = start.year == end.year
+      ? DateFormat.MMMd(locale).format(start)
+      : withYear.format(start);
+  return '$startText – ${withYear.format(end)}';
+}
+
+/// Re-point the macro figures at one bucket, so the calorie hero and the gram
+/// legend read that column instead of the whole range. A macro the bucket has
+/// no value for drops to 0 rather than carrying the range average forward,
+/// which would silently mix two periods in one row.
+List<MacroPattern> scopeMacrosToBucket(
+  List<MacroPattern> macros,
+  BucketDetailData detail,
+) {
+  final byMetric = {for (final m in detail.macros) m.metric: m};
+  return [
+    for (final macro in macros)
+      macro.copyWith(
+        averagePerDay: byMetric[macro.key]?.value ?? 0,
+        // Consistency is a property of the range, not of one column in it.
+        consistencyPct: () => null,
+      ),
+  ];
+}
+
+/// Re-point the nutrient cards at one bucket.
+///
+/// Only the eight default micronutrients carry a per-bucket series, so the
+/// extended set resolves to null — the card renders "—" rather than showing the
+/// range's average under a single day's heading.
+List<NutrientCardData> scopeCardsToBucket(
+  List<NutrientCardData> cards,
+  BucketDetailData detail,
+) {
+  final byMetric = {for (final n in detail.nutrients) n.metric: n};
+  return [
+    for (final card in cards)
+      card.copyWith(
+        averagePerDay: () => byMetric[card.nutrient.name]?.value,
+        percentOfTarget: () => byMetric[card.nutrient.name]?.percentOfTarget,
+        contextMetrics: () => null,
+      ),
+  ];
 }
 
 /// Today as a local `yyyy-MM-dd`, matching the server's local-date bucketing.

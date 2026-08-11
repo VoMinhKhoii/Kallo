@@ -93,6 +93,7 @@
   "nutrition": {
     "eyebrow": "Phân tích xu hướng",
     "title": "Dinh dưỡng",
+    "cardTitle": "Trung bình",
     "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn từ những bữa ăn bạn đã ghi.",
     "loading": "Đang tải tổng quan dinh dưỡng…",
     "detail": {
@@ -473,6 +474,8 @@
     },
     "rhythm": {
       "calories": "kcal",
+      "kcalPerLoggedDay": "kcal mỗi ngày ghi nhận",
+      "kcalPerCompleteDay": "kcal mỗi ngày đủ bữa",
       "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
       "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
       "dayCount": "{count} ngày",

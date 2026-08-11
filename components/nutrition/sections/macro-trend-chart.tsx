@@ -91,7 +91,14 @@ export function MacroTrendChart({
     selectedIndex === null || selectedIndex === index ? 1 : 0.3;
 
   return (
-    <div className="mt-4 h-[248px] w-full">
+    // Selecting a column and dismissing the selection are the same gesture at
+    // different targets, so the chart keeps its clicks to itself.
+    // biome-ignore lint/a11y/noStaticElementInteractions: containment, not a control.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: nothing is activated here.
+    <div
+      className="mt-4 h-[248px] w-full"
+      onClick={(event) => event.stopPropagation()}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={points}

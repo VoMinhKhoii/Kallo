@@ -170,6 +170,11 @@ abstract final class NhamColors {
   static const Color macroCarbs = Color(0xFF8B7355);
   static const Color macroFat = Color(0xFFA8A29E);
 
+  /// A brighter canvas for the nutrition page only — the analysis surface is
+  /// mostly white cards and reads cleaner one step up from the app cream.
+  /// Mirrors the web `--nham-surface-bright` token.
+  static const Color surfaceBright = Color(0xFFFCFCFC);
+
   // ── Macros, charted ──────────────────────────────────────────────────
   /// A SEPARATE, brighter macro set for the nutrition page's stacked bars,
   /// composition bar and legend. The [macroProtein]/[macroCarbs]/[macroFat]

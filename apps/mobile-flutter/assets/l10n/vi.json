@@ -105,6 +105,7 @@
     "title": "Dinh dưỡng",
     "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn.",
     "loading": "Đang tải tổng quan dinh dưỡng…",
+    "cardTitle": "Trung bình",
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
       "7d": "7 ngày",
@@ -515,6 +516,8 @@
     "rhythm": {
       "eyebrow": "Nhịp ăn mỗi ngày",
       "calories": "kcal",
+      "kcalPerLoggedDay": "kcal mỗi ngày ghi nhận",
+      "kcalPerCompleteDay": "kcal mỗi ngày đủ bữa",
       "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
       "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
       "days": "ngày",

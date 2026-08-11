@@ -8,11 +8,13 @@ import '../../../data/session_provider.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../shared/widgets/nham_primitives.dart';
+import '../../../shared/widgets/nham_refresh.dart';
 import '../../../shared/widgets/nham_text.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../shell/app_header.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../logic/bucket_detail.dart';
 import '../providers/nutrition_overview_provider.dart';
 import '../widgets/day_summary.dart';
 import '../widgets/empty_state.dart';
@@ -48,7 +50,16 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   // "all days" via the in-card swap.
   NutritionDayScope _dayScope = NutritionDayScope.complete;
 
+  /// The tapped chart column, if any. Selecting one re-points the WHOLE page at
+  /// that bucket — the calorie hero, the gram legend and the nutrient grid —
+  /// rather than opening a second panel repeating them.
+  int? _selectedIndex;
+
   NutritionOverviewArg get _arg => (range: _range, scope: _dayScope);
+
+  void _clearSelection() {
+    if (_selectedIndex != null) setState(() => _selectedIndex = null);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,23 +101,36 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     final isFetching = async.isLoading && async.hasValue;
 
     return Screen(
+      background: NhamColors.surfaceBright,
       child: ScrollSeparator(
         header: Padding(
           padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
           child: AppHeader(
             trailing: NutritionRangeSelector(
-              resolvedRange: async.valueOrNull?.resolvedRange ?? '7d',
-              onRangeChange: (range) => setState(() => _range = range),
+              // An explicit pick highlights immediately. Reading the server's
+              // `resolvedRange` alone meant the segment only moved once the
+              // refetch landed, and with nothing cached for the new selection
+              // the fallback below flashed 7d on the way from 30d to 90d.
+              // `auto` still defers — that is the whole point of it.
+              resolvedRange: _range == NutritionRangeInput.auto
+                  ? (async.valueOrNull?.resolvedRange ?? '7d')
+                  : _range.value,
+              onRangeChange: (range) => setState(() {
+                _range = range;
+                _selectedIndex = null;
+              }),
               disabled: isFetching,
             ),
           ),
         ),
-        child: RefreshIndicator(
+        child: NhamRefresh(
           onRefresh:
               () =>
                   ref.read(nutritionOverviewProvider(_arg).notifier).refetch(),
-          color: NhamColors.accent,
-          child: SingleChildScrollView(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: _clearSelection,
+            child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
               NhamSpacing.sp3,
               NhamSpacing.sp4,
@@ -116,7 +140,8 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
-            child: _buildBody(async, isFetching),
+              child: _buildBody(async, isFetching),
+            ),
           ),
         ),
       ),
@@ -140,31 +165,56 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       );
     }
 
-    if (overview.loggedDays == 0) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 48),
-        child: EmptyState(),
-      );
-    }
-
-    final all = [...overview.micronutrients, ...overview.moreNutrients];
+    final selected = _selectedIndex;
+    final detail = selected == null
+        ? null
+        : buildBucketDetail(overview.daySeries, selected);
+    final macros = detail == null
+        ? overview.macros
+        : scopeMacrosToBucket(overview.macros, detail);
+    final all = detail == null
+        ? [...overview.micronutrients, ...overview.moreNutrients]
+        : scopeCardsToBucket(
+            [...overview.micronutrients, ...overview.moreNutrients], detail);
     final vitamins =
         all.where((c) => c.group == NutrientGroup.vitamin).toList();
     final minerals =
         all.where((c) => c.group != NutrientGroup.vitamin).toList();
     final foodNutrients = suggestedFoodNutrients(overview);
+    final buckets = overview.daySeries.series.isEmpty
+        ? const <DaySeriesBucket>[]
+        : overview.daySeries.series.first.buckets;
+    final locale = context.locale.toString();
+    final dateSpan = detail == null
+        ? formatDateSpan(
+            overview.period.startDate, overview.period.endDate, locale)
+        : formatDateSpan(detail.startDate, detail.endDate, locale);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _GroupHeader(label: tr('nutrition.cardTitle')),
+        const SizedBox(height: 12),
         DaySummary(
-          macros: overview.macros,
+          macros: macros,
           resolvedRange: overview.resolvedRange,
           daySeries: overview.daySeries,
           calorieAverages: overview.calorieAverages,
           scope: _dayScope,
           onScopeChange: (scope) => setState(() => _dayScope = scope),
+          dateSpan: dateSpan,
+          todayIndex: findTodayIndex(buckets, localIsoDate()),
+          selectedIndex: selected,
+          onSelect: (index) => setState(
+              () => _selectedIndex = _selectedIndex == index ? null : index),
         ),
+        // Nothing logged yet: the page keeps its shape at zero, and the prompt
+        // sits under the card rather than replacing everything — so the layout
+        // someone will use every day is the first thing they see.
+        if (overview.loggedDays == 0) ...[
+          const SizedBox(height: 20),
+          const EmptyState(),
+        ],
         // The single CTA sits right under the summary so it's visible on load,
         // not buried below the full nutrient grid.
         if (kShowSuggestedFoods && foodNutrients.isNotEmpty) ...[

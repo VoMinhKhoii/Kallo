@@ -2,7 +2,7 @@
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { MotionConfig } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getNutritionOverview } from '@/lib/nutrition/actions';
@@ -11,7 +11,14 @@ import type {
   NutritionRangeInput,
 } from '@/lib/nutrition/types';
 import { NutritionSkeleton } from './nutrition-skeleton';
+import {
+  buildBucketDetail,
+  formatDateSpan,
+  scopeCardsToBucket,
+  scopeMacrosToBucket,
+} from './sections/bucket-detail-utils';
 import { DaySummary } from './sections/day-summary';
+import { findTodayIndex, localIsoDate } from './sections/macro-trend-utils';
 import { NutrientGrid } from './sections/nutrient-grid';
 import { NutritionHeader } from './sections/nutrition-header';
 import { SourceAttribution } from './sections/source-attribution';
@@ -25,10 +32,13 @@ function getTimezoneOffset(): number | null {
 
 export function NutritionShell() {
   const t = useTranslations('nutrition');
+  const locale = useLocale();
   const timezoneOffset = useMemo(() => getTimezoneOffset(), []);
   const [range, setRange] = useState<NutritionRangeInput>('auto');
   const [dayScope, setDayScope] = useState<NutritionDayScope>('complete');
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const hasShownErrorToast = useRef(false);
+  const today = useMemo(() => localIsoDate(), []);
 
   const overviewQuery = useQuery({
     queryKey: [
@@ -69,7 +79,7 @@ export function NutritionShell() {
 
   if (overviewQuery.isError || !overviewQuery.data) {
     return (
-      <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-20 sm:px-6 lg:px-8">
+      <main className="min-h-0 flex-1 overflow-y-auto bg-nham-surface-bright px-4 py-4 pb-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl">
           <InlineError
             isRetrying={overviewQuery.isFetching}
@@ -85,50 +95,102 @@ export function NutritionShell() {
   }
 
   const overview = overviewQuery.data;
-  const isEmpty = overview.loggedDays === 0;
+
+  // Tapping a column re-points the WHOLE page at that bucket — the calorie
+  // hero, the gram legend and the nutrient grid — rather than opening a second
+  // panel that repeats them. Tapping anywhere else puts the range back.
+  const detail =
+    selectedIndex === null
+      ? null
+      : buildBucketDetail(overview.daySeries, selectedIndex);
+  const macros = detail
+    ? scopeMacrosToBucket(overview.macros, detail)
+    : overview.macros;
+  const micronutrients = detail
+    ? scopeCardsToBucket(overview.micronutrients, detail)
+    : overview.micronutrients;
+  const moreNutrients = detail
+    ? scopeCardsToBucket(overview.moreNutrients, detail)
+    : overview.moreNutrients;
+  const dateSpan = detail
+    ? formatDateSpan(detail.startDate, detail.endDate, locale)
+    : formatDateSpan(
+        overview.period.startDate,
+        overview.period.endDate,
+        locale
+      );
+  const todayIndex = findTodayIndex(
+    (overview.daySeries.series[0]?.buckets ?? []).map((bucket, index) => ({
+      index,
+      startDate: bucket.startDate,
+      endDate: bucket.endDate,
+      protein: null,
+      carbohydrate: null,
+      fat: null,
+    })),
+    today
+  );
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className="flex min-h-0 flex-1 flex-col">
+      <main className="flex min-h-0 flex-1 flex-col bg-nham-surface-bright">
         {/* Padding lives on the outer div so the inner max-w column aligns
             with the content cards' column below. */}
         <div className="shrink-0 px-4 pt-4 sm:px-6 lg:px-8">
           <div className="mx-auto mb-3 w-full max-w-2xl">
             <NutritionHeader
-              resolvedRange={overview.resolvedRange}
+              resolvedRange={range === 'auto' ? overview.resolvedRange : range}
               onRangeChange={setRange}
               disabled={overviewQuery.isFetching}
             />
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-20 sm:px-6 lg:px-8">
+        {/* A click anywhere off the chart clears the selection; the chart stops
+            propagation. It is a dismissal, not a control — everything inside
+            stays reachable — and Escape does the same job from the keyboard. */}
+        {/** biome-ignore lint/a11y/noStaticElementInteractions: dismissal, see above. */}
+        {/** biome-ignore lint/a11y/useKeyWithClickEvents: Escape is handled. */}
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-4 pb-20 sm:px-6 lg:px-8"
+          onClick={() => setSelectedIndex(null)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setSelectedIndex(null);
+          }}
+        >
           <div className="mx-auto flex min-h-full max-w-2xl flex-col">
-            {isEmpty ? (
-              <div className="flex flex-1 items-center justify-center">
-                <EmptyState />
-              </div>
-            ) : (
-              <div
-                aria-live="polite"
-                aria-busy={overviewQuery.isFetching}
-                className="flex flex-col gap-7"
-              >
-                <DaySummary
-                  macros={overview.macros}
-                  daySeries={overview.daySeries}
-                  resolvedRange={overview.resolvedRange}
-                  calorieAverages={overview.calorieAverages}
-                  scope={dayScope}
-                  onScopeChange={setDayScope}
-                />
-                <NutrientGrid
-                  micronutrients={overview.micronutrients}
-                  moreNutrients={overview.moreNutrients}
-                />
-                <SourceAttribution />
-              </div>
-            )}
+            <div
+              aria-live="polite"
+              aria-busy={overviewQuery.isFetching}
+              className="flex flex-col gap-7"
+            >
+              <DaySummary
+                macros={macros}
+                daySeries={overview.daySeries}
+                resolvedRange={overview.resolvedRange}
+                calorieAverages={overview.calorieAverages}
+                scope={dayScope}
+                onScopeChange={setDayScope}
+                dateSpan={dateSpan}
+                todayIndex={todayIndex}
+                selectedIndex={selectedIndex}
+                onSelect={(index) =>
+                  setSelectedIndex((current) =>
+                    current === index ? null : index
+                  )
+                }
+              />
+              {/* Nothing logged yet: the page keeps its shape at zero and the
+                  prompt sits under the card rather than replacing everything,
+                  so the layout someone will use every day is what they see
+                  first. */}
+              {overview.loggedDays === 0 ? <EmptyState /> : null}
+              <NutrientGrid
+                micronutrients={micronutrients}
+                moreNutrients={moreNutrients}
+              />
+              <SourceAttribution />
+            </div>
           </div>
         </div>
       </main>

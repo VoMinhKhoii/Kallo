@@ -19,6 +19,16 @@ interface CalorieScopeStatsProps {
   averages: CalorieAverages;
   scope: NutritionDayScope;
   onScopeChange: (scope: NutritionDayScope) => void;
+  /** The dates each figure covers, shown under it. */
+  dateSpan: string;
+  /**
+   * Set while a column is selected. The two day scopes describe how to average
+   * a RANGE, so one bucket has neither — it shows a single figure and the swap
+   * goes away rather than offering a choice that would change nothing.
+   */
+  selectedValue?: number | null;
+  /** A week bucket's figure is still a per-day average; a day's is a total. */
+  isWeekBucket?: boolean;
 }
 
 /**
@@ -33,15 +43,32 @@ export function CalorieScopeStats({
   averages,
   scope,
   onScopeChange,
+  dateSpan,
+  selectedValue,
+  isWeekBucket = false,
 }: CalorieScopeStatsProps) {
   const completeActive = scope === 'complete';
+
+  if (selectedValue !== undefined) {
+    return (
+      <ScopeEntry
+        layoutId="calorie-scope-selected"
+        data={{ averagePerDay: selectedValue, days: 1 }}
+        unitKey={isWeekBucket ? 'rhythm.kcalPerLoggedDay' : 'rhythm.calories'}
+        dateSpan={dateSpan}
+        active
+        onSelect={() => undefined}
+      />
+    );
+  }
 
   const completeEntry = (
     <ScopeEntry
       key="complete"
       layoutId="calorie-scope-complete"
       data={averages.complete}
-      labelKey="rhythm.avgPerCompleteDay"
+      unitKey="rhythm.kcalPerCompleteDay"
+      dateSpan={dateSpan}
       active={completeActive}
       onSelect={() => onScopeChange('complete')}
     />
@@ -51,7 +78,8 @@ export function CalorieScopeStats({
       key="all"
       layoutId="calorie-scope-all"
       data={averages.all}
-      labelKey="rhythm.avgPerLoggedDay"
+      unitKey="rhythm.kcalPerLoggedDay"
+      dateSpan={dateSpan}
       active={!completeActive}
       onSelect={() => onScopeChange('all')}
     />
@@ -77,7 +105,8 @@ export function CalorieScopeStats({
 
 interface ScopeEntryProps {
   data: CalorieScopeAverage;
-  labelKey: string;
+  unitKey: string;
+  dateSpan: string;
   active: boolean;
   onSelect: () => void;
   layoutId: string;
@@ -85,7 +114,8 @@ interface ScopeEntryProps {
 
 function ScopeEntry({
   data,
-  labelKey,
+  unitKey,
+  dateSpan,
   active,
   onSelect,
   layoutId,
@@ -97,7 +127,6 @@ function ScopeEntry({
     data.averagePerDay !== null
       ? formatLocalizedNumber(data.averagePerDay, locale)
       : '—';
-  const label = `${t(labelKey)} · ${t('rhythm.dayCount', { count: data.days })}`;
 
   return (
     <motion.div
@@ -122,17 +151,19 @@ function ScopeEntry({
           >
             {valueText}
           </span>
+          {/* The unit carries the denominator — "kcal per complete day" — so the
+              figure is never a bare number needing a caption to be read. */}
           <span
             className={cn(
               'text-nham-text-muted',
-              active ? 'text-base' : 'text-xs'
+              active ? 'text-lg' : 'text-sm'
             )}
           >
-            {t('rhythm.calories')}
+            {t(unitKey)}
           </span>
         </span>
-        <span className="mt-1.5 block font-medium text-[11px] text-nham-text-muted uppercase tracking-[0.08em]">
-          {label}
+        <span className="mt-1.5 block text-[13px] text-nham-text-muted tabular-nums">
+          {dateSpan}
         </span>
       </button>
     </motion.div>

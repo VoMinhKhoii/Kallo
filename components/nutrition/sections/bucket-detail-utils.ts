@@ -1,5 +1,7 @@
 import type {
   DaySeriesMetricKey,
+  MacroPattern,
+  NutrientCardData,
   NutritionDaySeries,
 } from '@/lib/nutrition/types';
 
@@ -92,6 +94,51 @@ export function buildBucketDetail(
 }
 
 /**
+ * Re-point the macro figures at one bucket, so the calorie hero and the gram
+ * legend read that column instead of the whole range. A macro the bucket has no
+ * value for drops to 0 rather than carrying the range average forward, which
+ * would silently mix two periods in one row.
+ */
+export function scopeMacrosToBucket(
+  macros: MacroPattern[],
+  detail: BucketDetail
+): MacroPattern[] {
+  const byMetric = new Map(detail.macros.map((m) => [m.metric, m]));
+  return macros.map((macro) => ({
+    ...macro,
+    averagePerDay: byMetric.get(macro.key as DaySeriesMetricKey)?.value ?? 0,
+    // Consistency is a property of the range, not of one column in it.
+    consistencyPct: null,
+  }));
+}
+
+/**
+ * Re-point the nutrient cards at one bucket.
+ *
+ * Only the eight default micronutrients carry a per-bucket series, so the
+ * extended set resolves to null — the card renders "—" rather than showing the
+ * range's average under a single day's heading. `confidence`/`displayState`
+ * stay as computed for the range: they describe how much of the food data
+ * carried this nutrient at all, which does not become a different question for
+ * one column.
+ */
+export function scopeCardsToBucket(
+  cards: NutrientCardData[],
+  detail: BucketDetail
+): NutrientCardData[] {
+  const byMetric = new Map(detail.nutrients.map((n) => [n.metric, n]));
+  return cards.map((card) => {
+    const scoped = byMetric.get(card.nutrient);
+    return {
+      ...card,
+      averagePerDay: scoped?.value ?? null,
+      percentOfTarget: scoped?.percentOfTarget ?? null,
+      contextMetrics: undefined,
+    };
+  });
+}
+
+/**
  * The panel's heading: a single date for a day bucket, a `start – end` span for
  * a week one. Parsed as local midnight so the label doesn't shift under UTC.
  */
@@ -99,17 +146,41 @@ export function formatBucketRange(
   detail: Pick<BucketDetail, 'startDate' | 'endDate'>,
   locale: string
 ): string {
-  const format = new Intl.DateTimeFormat(locale, {
+  return formatDateSpan(detail.startDate, detail.endDate, locale);
+}
+
+/**
+ * A `start – end` date span carrying the year, e.g. "Aug 5 – Aug 11, 2026" or
+ * "5 thg 8 – 11 thg 8, 2026". A single day collapses to one date.
+ *
+ * Both ends go through the locale's own day/month/year ordering rather than a
+ * hand-built "5–11 Aug" pattern, which is English word order and reads wrong in
+ * Vietnamese. The Dart twin uses the same shape (keep in sync).
+ */
+export function formatDateSpan(
+  startDate: string,
+  endDate: string,
+  locale: string
+): string {
+  const start = new Date(`${startDate}T00:00:00`);
+  if (Number.isNaN(start.getTime())) return '';
+  const withYear = new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+  if (startDate === endDate) return withYear.format(start);
+
+  const end = new Date(`${endDate}T00:00:00`);
+  if (Number.isNaN(end.getTime())) return withYear.format(start);
+  const dayMonth = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'short',
   });
-  const start = new Date(`${detail.startDate}T00:00:00`);
-  if (detail.startDate === detail.endDate) {
-    const weekday = new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(
-      start
-    );
-    return `${weekday}, ${format.format(start)}`;
-  }
-  const end = new Date(`${detail.endDate}T00:00:00`);
-  return `${format.format(start)} – ${format.format(end)}`;
+  // The year is stated once, on the end, unless the span crosses one.
+  const startText =
+    start.getFullYear() === end.getFullYear()
+      ? dayMonth.format(start)
+      : withYear.format(start);
+  return `${startText} – ${withYear.format(end)}`;
 }

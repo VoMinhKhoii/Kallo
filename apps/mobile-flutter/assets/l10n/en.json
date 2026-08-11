@@ -105,6 +105,7 @@
     "title": "Nutrition",
     "subtitle": "Review long-term macro and micronutrient patterns.",
     "loading": "Loading nutrition overview…",
+    "cardTitle": "Average",
     "range": {
       "label": "Nutrition range",
       "7d": "7 days",
@@ -515,6 +516,8 @@
     "rhythm": {
       "eyebrow": "The shape of your days",
       "calories": "kcal",
+      "kcalPerLoggedDay": "kcal per logged day",
+      "kcalPerCompleteDay": "kcal per complete day",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
       "days": "days",

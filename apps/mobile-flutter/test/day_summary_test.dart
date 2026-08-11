@@ -44,6 +44,10 @@ DaySummary _daySummary({
       calorieAverages: averages,
       scope: scope,
       onScopeChange: onScopeChange ?? (_) {},
+      dateSpan: 'May 4 – May 10, 2026',
+      todayIndex: -1,
+      selectedIndex: null,
+      onSelect: (_) {},
     );
 
 void main() {
@@ -75,11 +79,11 @@ void main() {
     // Both averages are on screen at once.
     expect(find.text('2,000'), findsOneWidget);
     expect(find.text('350'), findsOneWidget);
-    // Each carries its own label + backing day-count.
-    expect(find.textContaining('avg per complete day'), findsOneWidget);
-    expect(find.textContaining('avg per logged day'), findsOneWidget);
-    expect(find.textContaining('9 days'), findsOneWidget);
-    expect(find.textContaining('14 days'), findsOneWidget);
+    // The unit line carries the denominator, so neither figure is a bare
+    // number, and each states the dates it covers underneath.
+    expect(find.textContaining('kcal per complete day'), findsOneWidget);
+    expect(find.textContaining('kcal per logged day'), findsOneWidget);
+    expect(find.text('May 4 – May 10, 2026'), findsNWidgets(2));
   });
 
   testWidgets('tapping the subtle secondary promotes that scope',

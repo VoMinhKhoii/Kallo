@@ -3,7 +3,11 @@
 import { useLocale, useTranslations } from 'next-intl';
 import type { NutrientCardData } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
-import { formatLocalizedNumber, shouldShowExceed } from '../primitives/helpers';
+import {
+  formatLocalizedNumber,
+  isLowConfidence,
+  shouldShowExceed,
+} from '../primitives/helpers';
 import { TargetProgressBar } from '../primitives/target-progress-bar';
 
 interface NutrientGridCardProps {
@@ -46,15 +50,18 @@ export function NutrientGridCard({
 
   const label = tRoot(card.labelKey);
   const pct = card.percentOfTarget;
-  const isLimited =
-    card.displayState === 'limited_data' ||
-    card.displayState === 'insufficient_data';
+  const isLimited = isLowConfidence(card.displayState);
   const showExceed = shouldShowExceed(card.nutrientType, pct);
   const adequate =
     pct !== null && !isLimited && !showExceed && isOnTarget(card);
 
   let figure: string;
-  if (card.displayState === 'insufficient_data') {
+  // Nothing measured at all — an empty range, or a nutrient with no per-bucket
+  // series while a column is selected. A dash, not "Limited": there is no thin
+  // reading to caveat, there is no reading.
+  if (card.averagePerDay === null && pct === null) {
+    figure = '—';
+  } else if (card.displayState === 'insufficient_data') {
     figure = t('steady.limited');
   } else if (pct === null) {
     figure = t('steady.noTarget');

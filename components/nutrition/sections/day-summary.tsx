@@ -12,7 +12,7 @@ import type {
 } from '@/lib/nutrition/types';
 import { formatLocalizedNumber } from '../primitives/helpers';
 import { CalorieScopeStats } from './calorie-scope-stats';
-import { MacroTrendSection } from './macro-trend-section';
+import { MacroTrendChart } from './macro-trend-chart';
 import {
   buildMacroTrendData,
   COMPOSITION_COLORS,
@@ -28,6 +28,11 @@ interface DaySummaryProps {
   calorieAverages: CalorieAverages;
   scope: NutritionDayScope;
   onScopeChange: (scope: NutritionDayScope) => void;
+  /** The dates the figures cover — the range, or the tapped bucket. */
+  dateSpan: string;
+  todayIndex: number;
+  selectedIndex: number | null;
+  onSelect: (index: number) => void;
 }
 
 /**
@@ -45,6 +50,10 @@ export function DaySummary({
   calorieAverages,
   scope,
   onScopeChange,
+  dateSpan,
+  todayIndex,
+  selectedIndex,
+  onSelect,
 }: DaySummaryProps) {
   const t = useTranslations('nutrition');
   const tRoot = useTranslations();
@@ -52,14 +61,20 @@ export function DaySummary({
 
   const calories = macros.find((m) => m.key === 'calories');
   const target = calories?.target ?? null;
-  // Over/under-target badge reads from the ACTIVE scope's average.
-  const activeAvg = calorieAverages[scope].averagePerDay;
+  const isSelected = selectedIndex !== null;
+  // Over/under-target badge reads from the ACTIVE scope's average — or, while a
+  // column is selected, from that column.
+  const activeAvg = isSelected
+    ? (calories?.averagePerDay ?? null)
+    : calorieAverages[scope].averagePerDay;
   const diff =
     target !== null && target > 0 && activeAvg !== null
       ? activeAvg - target
       : null;
   const showNoCompleteDays =
-    scope === 'complete' && calorieAverages.complete.averagePerDay === null;
+    !isSelected &&
+    scope === 'complete' &&
+    calorieAverages.complete.averagePerDay === null;
 
   const composition = COMPOSITION_KEYS.map((key) => {
     const macro = macros.find((m) => m.key === key);
@@ -86,45 +101,54 @@ export function DaySummary({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="rounded-[1.375rem] bg-card p-5 shadow-[0_10px_32px_rgba(44,36,22,0.05)]"
+      className="flex flex-col gap-3"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <CalorieScopeStats
-            averages={calorieAverages}
-            scope={scope}
-            onScopeChange={onScopeChange}
-          />
+      <h2 className="font-medium text-[11px] text-nham-text-muted uppercase tracking-[0.08em]">
+        {t('cardTitle')}
+      </h2>
+      <div className="rounded-[1.375rem] bg-card p-5 shadow-[0_10px_32px_rgba(44,36,22,0.05)]">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <CalorieScopeStats
+              averages={calorieAverages}
+              scope={scope}
+              onScopeChange={onScopeChange}
+              dateSpan={dateSpan}
+              selectedValue={isSelected ? activeAvg : undefined}
+              isWeekBucket={daySeries.unit === 'week'}
+            />
+          </div>
+
+          {diff !== null ? (
+            <div className="flex shrink-0 items-center gap-1 pt-1 text-nham-text-muted">
+              {diff >= 0 ? (
+                <ArrowUp className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <ArrowDown className="h-4 w-4" aria-hidden="true" />
+              )}
+              <span className="text-[12px] tabular-nums">
+                {formatLocalizedNumber(Math.abs(diff), locale)}{' '}
+                {t('rhythm.calories')}
+              </span>
+            </div>
+          ) : null}
         </div>
 
-        {diff !== null ? (
-          <div className="flex shrink-0 items-center gap-1 pt-1 text-nham-text-muted">
-            {diff >= 0 ? (
-              <ArrowUp className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <ArrowDown className="h-4 w-4" aria-hidden="true" />
-            )}
-            <span className="text-[12px] tabular-nums">
-              {formatLocalizedNumber(Math.abs(diff), locale)}{' '}
-              {t('rhythm.calories')}
-            </span>
-          </div>
+        {showNoCompleteDays ? (
+          <p className="mt-3 text-[12px] text-nham-text-muted">
+            {t('rhythm.noCompleteDays')}
+          </p>
         ) : null}
-      </div>
 
-      {showNoCompleteDays ? (
-        <p className="mt-3 text-[12px] text-nham-text-muted">
-          {t('rhythm.noCompleteDays')}
-        </p>
-      ) : null}
-
-      {totalKcal > 0 ? (
         <>
           {trendData ? (
-            <MacroTrendSection
+            <MacroTrendChart
               points={trendData.points}
               maxY={trendData.maxY}
-              daySeries={daySeries}
+              unit={daySeries.unit}
+              todayIndex={todayIndex}
+              selectedIndex={selectedIndex}
+              onSelect={onSelect}
             />
           ) : (
             <div
@@ -168,7 +192,7 @@ export function DaySummary({
             ))}
           </div>
         </>
-      ) : null}
+      </div>
     </motion.section>
   );
 }

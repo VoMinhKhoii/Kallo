@@ -182,10 +182,29 @@ export function mapOverviewRowsToDto({
             partialDays: legacy!.partialDays,
           };
 
-  // Strict `'complete'` scope with no qualifying days: return a body-empty DTO
-  // (the client shows a "no complete days yet" state) while still carrying the
-  // real day counts and both calorie averages.
+  // No qualifying days — nothing logged at all, or the strict `'complete'`
+  // scope with no complete day in the window.
+  //
+  // The body is still fully populated, at zero. An empty payload used to make
+  // the client swap in a separate "nothing here yet" screen, which hid the
+  // shape of the page from exactly the people who had not learned it yet. Every
+  // nutrient row is present with its real target, a `null` average that renders
+  // as "—", and a bar at zero: the page reads the same on day one as on day
+  // thirty, just empty.
   if (averagingDayCount === 0) {
+    const emptyTargets = resolveMicronutrientTargets(profile);
+    const emptyCards = buildNutrientCards({
+      rows: [],
+      targets: emptyTargets,
+      totalCalories: 0,
+      // Denominator only — every sum above it is 0. Zero here would divide by
+      // zero and put NaN on every card.
+      safeLoggedDays: 1,
+    }).map((card) => ({
+      ...card,
+      averagePerDay: null,
+      percentOfTarget: null,
+    }));
     return {
       requestedRange,
       resolvedRange,
@@ -206,15 +225,21 @@ export function mapOverviewRowsToDto({
         macroConsistency: { averageConsistencyPct: 0, weakestMacro: null },
       },
       calorieAverages,
-      macros: [],
+      macros: buildMacroPatterns([], 1, profile),
       daySeries: {
         unit: RANGE_BUCKET_UNIT[resolvedRange],
         series: [],
       },
-      micronutrients: [],
+      micronutrients: emptyCards.filter((card) =>
+        DEFAULT_NUTRIENT_SET.has(card.nutrient)
+      ),
       spotlight: [],
       steady: [],
-      moreNutrients: [],
+      moreNutrients: emptyCards.filter(
+        (card) =>
+          !DEFAULT_NUTRIENT_SET.has(card.nutrient) &&
+          emptyTargets[card.nutrient].applicability !== 'hidden'
+      ),
       educationCards: [
         {
           id: 'vitamin_d',
