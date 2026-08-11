@@ -78,36 +78,26 @@ class DaySummary extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: CalorieScopeStats(
-                  averages: calorieAverages,
-                  scope: scope,
-                  locale: locale,
-                  onScopeChange: onScopeChange,
-                  dateSpan: dateSpan,
-                  selectedValue: selectedIndex == null
-                      ? null
-                      : (macros
-                              .where((m) => m.key == 'calories')
-                              .firstOrNull
-                              ?.averagePerDay ??
-                          0),
-                  hasSelection: selectedIndex != null,
-                  isEmpty: isEmpty,
-                ),
-              ),
-              // Top-right: over/under vs the calorie goal for the active average.
-              // Hidden when no goal is set or the active scope has no average.
-              if (target != null && target > 0 && activeAvg != null)
-                _CalorieTarget(
-                  avg: activeAvg,
-                  target: target,
-                  locale: locale,
-                ),
-            ],
+          CalorieScopeStats(
+            averages: calorieAverages,
+            scope: scope,
+            locale: locale,
+            onScopeChange: onScopeChange,
+            dateSpan: dateSpan,
+            selectedValue: selectedIndex == null
+                ? null
+                : (macros
+                        .where((m) => m.key == 'calories')
+                        .firstOrNull
+                        ?.averagePerDay ??
+                    0),
+            hasSelection: selectedIndex != null,
+            isEmpty: isEmpty,
+            // Over/under vs the calorie goal for the active average. Absent
+            // when there is no goal or the active scope has no average.
+            diff: target != null && target > 0 && activeAvg != null
+                ? activeAvg - target
+                : null,
           ),
           if (composition.totalKcal > 0) ...[
             const SizedBox(height: NhamSpacing.sp3),
@@ -230,40 +220,3 @@ class _MacroLegend extends StatelessWidget {
 }
 
 /// Top-right calorie-goal chip: an over/under arrow + the target calories.
-class _CalorieTarget extends StatelessWidget {
-  const _CalorieTarget({
-    required this.avg,
-    required this.target,
-    required this.locale,
-  });
-
-  final double avg;
-  final double target;
-  final String locale;
-
-  @override
-  Widget build(BuildContext context) {
-    // Signed gap between the average and the goal — the arrow shows direction,
-    // the number shows how many calories over/under the target we are.
-    final diff = avg - target;
-    final over = diff >= 0;
-    return Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            over ? LucideIcons.arrowUp300 : LucideIcons.arrowDown300,
-            size: 15,
-            color: kInkMuted,
-          ),
-          const SizedBox(width: 2),
-          Text(
-            '${formatLocalizedNumber(diff.abs(), locale)} ${tr('nutrition.rhythm.calories')}',
-            style: dashMeta(color: kInkMuted, tabular: true),
-          ),
-        ],
-      ),
-    );
-  }
-}

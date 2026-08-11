@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowDown, ArrowUp } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import type {
@@ -90,6 +89,14 @@ export function DaySummary({
     pct: totalKcal > 0 ? (c.kcal / totalKcal) * 100 : 0,
   }));
 
+  // A selected column is that bucket, not an average over a day scope, so the
+  // title drops the qualifier rather than claiming one.
+  const title = isSelected
+    ? t('cardTitle')
+    : `${t('cardTitle')} · ${t(
+        isEmpty || scope === 'all' ? 'rhythm.loggedDays' : 'rhythm.completeDays'
+      )}`;
+
   // Multi-day ranges chart the macro-calorie trend; 1d has no trend to show.
   const trendData =
     resolvedRange !== '1d' ? buildMacroTrendData(daySeries) : null;
@@ -101,36 +108,23 @@ export function DaySummary({
       transition={{ duration: 0.45 }}
       className="flex flex-col gap-3"
     >
+      {/* The card names the scope its figure is averaged over. The unit used to
+          carry it ("kcal per complete day"); saying it once in the title keeps
+          the figure clean without leaving the scope inferable only from a
+          button that names the OTHER one. */}
       <h2 className="font-medium text-[11px] text-nham-text-muted uppercase tracking-[0.08em]">
-        {t('cardTitle')}
+        {title}
       </h2>
       <div className="rounded-[1.375rem] bg-card p-5 shadow-[0_10px_32px_rgba(44,36,22,0.05)]">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <CalorieScopeStats
-              averages={calorieAverages}
-              scope={scope}
-              onScopeChange={onScopeChange}
-              dateSpan={dateSpan}
-              selectedValue={isSelected ? activeAvg : undefined}
-              isEmpty={isEmpty}
-            />
-          </div>
-
-          {diff !== null ? (
-            <div className="flex shrink-0 items-center gap-1 pt-1 text-nham-text-muted">
-              {diff >= 0 ? (
-                <ArrowUp className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <ArrowDown className="h-4 w-4" aria-hidden="true" />
-              )}
-              <span className="text-[12px] tabular-nums">
-                {formatLocalizedNumber(Math.abs(diff), locale)}{' '}
-                {t('rhythm.calories')}
-              </span>
-            </div>
-          ) : null}
-        </div>
+        <CalorieScopeStats
+          averages={calorieAverages}
+          scope={scope}
+          onScopeChange={onScopeChange}
+          dateSpan={dateSpan}
+          selectedValue={isSelected ? activeAvg : undefined}
+          isEmpty={isEmpty}
+          diff={diff}
+        />
 
         <>
           {trendData ? (

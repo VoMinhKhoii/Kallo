@@ -217,7 +217,17 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _GroupHeader(label: tr('nutrition.cardTitle')),
+        // The card names the scope its figure is averaged over. The unit used
+        // to carry it ("kcal per complete day"); saying it once here keeps the
+        // figure clean without leaving the scope inferable only from a button
+        // that names the OTHER one. A selected column is that bucket, not an
+        // average over a day scope, so it drops the qualifier.
+        _GroupHeader(
+          label: selected != null
+              ? tr('nutrition.cardTitle')
+              : '${tr('nutrition.cardTitle')} · '
+                  '${tr(overview.loggedDays == 0 || _dayScope == NutritionDayScope.all ? 'nutrition.rhythm.loggedDays' : 'nutrition.rhythm.completeDays')}',
+        ),
         const SizedBox(height: 12),
         DaySummary(
           macros: macros,
