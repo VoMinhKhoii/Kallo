@@ -25,7 +25,7 @@ class MacroBar {
   final double? carbohydrate;
   final double? fat;
 
-  /// The bucket held no logged days — draw nothing, but hold the slot.
+  /// The bucket held no in-scope days — draw nothing, but hold the slot.
   bool get isGap => protein == null && carbohydrate == null && fat == null;
 
   double get proteinKcal => protein ?? 0;
@@ -65,7 +65,7 @@ MacroTrendBars? buildMacroTrendBars(NutritionDaySeries daySeries) {
     final rc = raw(c, i);
     final rf = raw(f, i);
 
-    // Null on all three = the bucket held no logged days. That is "no data",
+    // Null on all three = the bucket held no in-scope days. That is "no data",
     // not "ate nothing": no stack bands, and it must not pull `maxY`.
     if (rp == null && rc == null && rf == null) {
       bars.add(MacroBar(

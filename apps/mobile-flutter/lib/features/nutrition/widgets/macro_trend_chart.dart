@@ -13,8 +13,9 @@ import '../logic/rhythm_logic.dart';
 /// A stacked **bar** chart of macro **calories** per bucket (day for 7d, week
 /// for 30d/90d): total bar height = that bucket's calories, each stacked
 /// segment = the energy from protein / carbs / fat. Reads the overview
-/// `daySeries` directly — which is built over every logged day, so a bar's
-/// height does not move when the day-scope toggle flips.
+/// `daySeries` directly — which the server scopes by the same day set as the
+/// headline above it, so on the day axis a complete day's column holds still
+/// across a toggle and only the partial days come and go.
 ///
 /// One rounded column per bucket, split into three regions filled with the
 /// nutrition chart pigments that match the `DaySummary` legend.

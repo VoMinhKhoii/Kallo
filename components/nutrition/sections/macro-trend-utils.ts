@@ -121,9 +121,13 @@ export function buildMacroTrendData(
 }
 
 /**
- * A round kcal gridline step giving ~3–5 lines across the data range, plus the
- * derived axis top and tick set. The axis always reaches at least 3000 kcal so
- * the 2500 / 3000 guides show, and grows past that if intake exceeds it.
+ * A round kcal gridline step giving ~3–6 lines across the data range, plus the
+ * derived axis top and tick set.
+ *
+ * Scales to the data. A fixed 3000 kcal ceiling used to keep the axis identical
+ * across ranges, but a month averaging 1400 then drew every bar inside the
+ * bottom third under half a chart of empty grid — comparability across ranges
+ * nobody was making, paid for in the resolution of the one chart on screen.
  */
 export function buildMacroTrendAxis(maxY: number): {
   step: number;
@@ -131,9 +135,10 @@ export function buildMacroTrendAxis(maxY: number): {
   topY: number;
   ticks: number[];
 } {
-  const axisTarget = Math.max(maxY, 3000);
-  // <= 6 so a ~3000 axis keeps a 500 step (shows 2500 and 3000), not 1000.
-  const steps = [250, 500, 1000, 1500, 2000];
+  const axisTarget = Math.max(maxY, 1);
+  // First step that keeps the gridlines under seven. 100 floors the scale so a
+  // near-empty chart doesn't label in tens.
+  const steps = [100, 250, 500, 1000, 2000];
   const step = steps.find((s) => axisTarget / s <= 6) ?? 2500;
   const maxLabel = Math.ceil(axisTarget / step) * step;
   const topY = maxLabel + step * 0.35; // headroom so the top label isn't clipped

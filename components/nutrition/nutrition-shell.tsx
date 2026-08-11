@@ -126,8 +126,6 @@ export function NutritionShell() {
         {/* A click anywhere off the chart clears the selection; the chart stops
             propagation. It is a dismissal, not a control — everything inside
             stays reachable — and Escape does the same job from the keyboard. */}
-        {/** biome-ignore lint/a11y/noStaticElementInteractions: dismissal, see above. */}
-        {/** biome-ignore lint/a11y/useKeyWithClickEvents: Escape is handled. */}
         <div
           className="min-h-0 flex-1 overflow-y-auto px-4 pb-20 sm:px-6 lg:px-8"
           onClick={() => setSelectedIndex(null)}

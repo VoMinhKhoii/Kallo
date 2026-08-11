@@ -14,11 +14,12 @@ import type {
   NutritionOverview,
   NutritionRangeInput,
 } from '../../types';
+import { buildCalorieAverages } from './calorie-averages';
 import { buildDaySeries, RANGE_BUCKET_UNIT } from './day-series';
 import { buildMacroPatterns } from './macro-patterns';
 import { buildNutrientCards, toSummaryItem } from './nutrient-cards';
 import type { OverviewMealItemRow } from './query';
-import { type NutritionProfile, nullableNumber, sumRows } from './row-metrics';
+import { type NutritionProfile, nullableNumber } from './row-metrics';
 import { partitionSpotlight } from './spotlight';
 
 const DEFAULT_NUTRIENT_SET = new Set<NutritionNutrientKey>(DEFAULT_NUTRIENTS);
@@ -173,25 +174,9 @@ export function mapOverviewRowsToDto({
 
   // Both scopes' calorie averages, shipped regardless of `dayScope` so the
   // client can show one as hero and the other as a subtle secondary and swap
-  // them without a refetch.
-  const loggedRows = rows.filter((row) => loggedDates.has(row.localDate));
-  const strictCompleteRows = rows.filter((row) =>
-    strict.completeDates.has(row.localDate)
-  );
-  const calorieAverages: CalorieAverages = {
-    all: {
-      averagePerDay:
-        loggedDays > 0 ? sumRows(loggedRows, 'calories') / loggedDays : null,
-      days: loggedDays,
-    },
-    complete: {
-      averagePerDay:
-        strict.completeDays > 0
-          ? sumRows(strictCompleteRows, 'calories') / strict.completeDays
-          : null,
-      days: strict.completeDays,
-    },
-  };
+  // them without a refetch. Same helper the previous window is scored by, so
+  // the two sides of the delta can never drift apart.
+  const calorieAverages = buildCalorieAverages(dayCalorieList, calorieTarget);
 
   // Pick the day set the body (macros/series/grid) averages over. Legacy
   // (`undefined`) keeps the valve so the web app is byte-identical to before;
@@ -315,12 +300,12 @@ export function mapOverviewRowsToDto({
       targets[card.nutrient].applicability !== 'hidden'
   );
   const { spotlight, steady } = partitionSpotlight(micronutrients);
-  // Every logged day, NOT `completeRows`/`completeDates`: the chart is the one
-  // part of the body that does not narrow with `dayScope`, so a bar's height
-  // never moves when the toggle flips. See `buildDaySeries`.
+  // The same day set the headline, the gram legend and the grid above it use —
+  // a card that averages two different day sets reads as broken. See
+  // `buildDaySeries` for what that costs on the week axis.
   const daySeries = buildDaySeries({
-    loggedRows,
-    loggedDates,
+    scopedRows: completeRows,
+    scopedDates: averagingDates,
     resolvedRange,
     period: { startDate: period.startDate, endDate: period.endDate },
     profile,

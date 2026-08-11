@@ -97,8 +97,6 @@ export function MacroTrendChart({
   return (
     // Selecting a column and dismissing the selection are the same gesture at
     // different targets, so the chart keeps its clicks to itself.
-    // biome-ignore lint/a11y/noStaticElementInteractions: containment, not a control.
-    // biome-ignore lint/a11y/useKeyWithClickEvents: nothing is activated here.
     <div
       className="mt-4 h-[248px] w-full"
       onClick={(event) => event.stopPropagation()}

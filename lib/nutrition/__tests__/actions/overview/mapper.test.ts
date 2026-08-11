@@ -347,36 +347,69 @@ describe('mapOverviewRowsToDto', () => {
       expect(overview.calorieAverages.all.averagePerDay).toBe(350);
     });
 
-    it('holds the chart steady across scopes, averaging over logged days', () => {
-      // The invariant the day-scope toggle promises: it changes the averages
-      // above the chart, never the bars. The series is built over every logged
-      // day in both scopes, so a bucket cannot re-average on a toggle — which
-      // is what made weeks holding a partial day jump.
+    it('on the day axis, a scope flip only adds or removes partial columns', () => {
+      // The invariant the toggle promises, and the whole reason 7d buckets by
+      // day: a complete day's column is `total / 1` under either scope, so it
+      // cannot move. Only the partial day's column comes and goes.
       const rows = [completeDay, partialDay];
       const bucketsFor = (scope: 'all' | 'complete') =>
         mapScoped(rows, scope).daySeries.series.find(
           (s) => s.metric === 'calories'
         )?.buckets ?? [];
 
-      expect(bucketsFor('complete')).toEqual(bucketsFor('all'));
+      const complete = bucketsFor('complete');
+      const all = bucketsFor('all');
+      const valueOn = (buckets: typeof complete, date: string) =>
+        buckets.find((b) => b.startDate === date)?.value;
 
-      // Both days are logged, so both carry their own total — the partial day
-      // included, and neither dragged toward the other.
-      const buckets = bucketsFor('complete');
-      expect(buckets.find((b) => b.startDate === '2026-04-24')?.value).toBe(
-        2000
-      );
-      expect(buckets.find((b) => b.startDate === '2026-04-25')?.value).toBe(
-        400
-      );
-      // A day with nothing logged is still a gap, not a zero.
-      expect(
-        buckets.find((b) => b.startDate === '2026-04-19')?.value
-      ).toBeNull();
+      // The complete day holds its height across the toggle…
+      expect(valueOn(complete, '2026-04-24')).toBe(2000);
+      expect(valueOn(all, '2026-04-24')).toBe(2000);
+      // …while the partial day is a gap under 'complete' and its own total
+      // under 'all'. A gap, never a zero column — "set aside", not "ate
+      // nothing".
+      expect(valueOn(complete, '2026-04-25')).toBeNull();
+      expect(valueOn(all, '2026-04-25')).toBe(400);
+      // A day with nothing logged is a gap under both.
+      expect(valueOn(complete, '2026-04-19')).toBeNull();
+      expect(valueOn(all, '2026-04-19')).toBeNull();
 
-      // …while the headline averages still respond to the scope.
+      // The headline is averaged over the same day set the bars are.
       expect(caloriesAvg(mapScoped(rows, 'complete'))).toBe(2000);
       expect(caloriesAvg(mapScoped(rows, 'all'))).toBe(1200);
+    });
+
+    it('on the week axis, a bucket re-averages with the scope it is under', () => {
+      // The cost of scoping the chart, pinned deliberately: a week divides by
+      // its own in-scope day count, so dropping the partial day raises the
+      // week — in lockstep with the headline above it, which is what keeps the
+      // card readable.
+      const weekRows = [
+        row({ localDate: '2026-04-20', calories: 2000 }),
+        row({ localDate: '2026-04-21', calories: 400 }),
+      ];
+      const weekBucket = (scope: 'all' | 'complete') =>
+        mapOverviewRowsToDto({
+          rows: weekRows,
+          profile: baseProfile,
+          requestedRange: '30d',
+          resolvedRange: '30d',
+          loggedDaysLast30: 2,
+          period: {
+            startDate: '2026-03-27',
+            endDate: '2026-04-25',
+            bucketTimezone: 'local',
+          },
+          dayScope: scope,
+          previousCalorieAverages: NO_PREVIOUS,
+        })
+          .daySeries.series.find((s) => s.metric === 'calories')
+          ?.buckets.find(
+            (b) => b.startDate <= '2026-04-20' && b.endDate >= '2026-04-20'
+          )?.value;
+
+      expect(weekBucket('all')).toBe(1200);
+      expect(weekBucket('complete')).toBe(2000);
     });
 
     it('legacy (no scope) keeps the safety valve for all-partial periods', () => {

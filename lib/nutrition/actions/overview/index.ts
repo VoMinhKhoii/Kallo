@@ -7,11 +7,19 @@ import {
 } from '../../pattern/date-range';
 import { resolveInitialRange } from '../../pattern/summary';
 import { nutritionOverviewInputSchema } from '../../schemas';
-import type { NutritionOverview } from '../../types';
+import type {
+  NutritionDayScope,
+  NutritionOverview,
+  NutritionRangeInput,
+} from '../../types';
 import { buildCalorieAverages } from './calorie-averages';
 import { mapOverviewRowsToDto } from './mapper';
-import { countLoggedDaysLast30, fetchOverviewRows } from './query';
-import { nullableNumber } from './row-metrics';
+import {
+  countLoggedDaysLast30,
+  fetchDailyCalorieTotals,
+  fetchOverviewRows,
+} from './query';
+import { type NutritionProfile, nullableNumber } from './row-metrics';
 
 interface UtcBounds {
   startAt: Date;
@@ -57,8 +65,10 @@ function assertOverviewHasNoTrendArrays(overview: NutritionOverview): void {
  * [period] — what the card's up/down figure is measured against.
  *
  * A second query, deliberately: the delta compares like with like, and the
- * only way to know the previous window is to read it. It is scored by the same
- * `buildCalorieAverages` the current window uses.
+ * only way to know the previous window is to read it. It reads a per-day
+ * calorie aggregate rather than the full item rows — the same index and
+ * predicate as the main fetch, one column and a fraction of the rows — and is
+ * scored by the same `buildCalorieAverages` the current window uses.
  */
 async function fetchPreviousCalorieAverages({
   userId,
@@ -73,7 +83,7 @@ async function fetchPreviousCalorieAverages({
 }) {
   const previous = getPreviousPeriod(period);
   const bounds = getUtcBounds(previous, timezoneOffset);
-  const rows = await fetchOverviewRows({
+  const dayTotals = await fetchDailyCalorieTotals({
     userId,
     startDate: previous.startDate,
     endDate: previous.endDate,
@@ -81,7 +91,70 @@ async function fetchPreviousCalorieAverages({
     exclusiveEndAt: bounds.exclusiveEndAt,
     timezoneOffset,
   });
-  return buildCalorieAverages(rows, calorieTarget);
+  return buildCalorieAverages(dayTotals, calorieTarget);
+}
+
+/**
+ * Read a resolved range's window — its rows, the window before it, and the
+ * pending last-30 count — and map the DTO.
+ *
+ * Takes the count as a PROMISE rather than a number so it can join the same
+ * `Promise.all`: a pinned range never needed the count to decide anything, so
+ * it should not wait on it, while `auto` has already awaited it to pick the
+ * range and awaiting a settled promise again costs nothing.
+ */
+async function buildOverview({
+  userId,
+  profile,
+  requestedRange,
+  resolvedRange,
+  timezoneOffset,
+  dayScope,
+  loggedDaysLast30,
+}: {
+  userId: string;
+  profile: NutritionProfile;
+  requestedRange: NutritionRangeInput;
+  resolvedRange: NutritionOverview['resolvedRange'];
+  timezoneOffset: number | null;
+  dayScope: NutritionDayScope | undefined;
+  loggedDaysLast30: Promise<number>;
+}): Promise<NutritionOverview> {
+  const period = getNutritionPeriod({ range: resolvedRange, timezoneOffset });
+  const bounds = getUtcBounds(period, timezoneOffset);
+  const calorieTarget = nullableNumber(profile.calorieTarget);
+
+  const [rows, previousCalorieAverages, dayCount] = await Promise.all([
+    fetchOverviewRows({
+      userId,
+      startDate: period.startDate,
+      endDate: period.endDate,
+      startAt: bounds.startAt,
+      exclusiveEndAt: bounds.exclusiveEndAt,
+      timezoneOffset,
+    }),
+    fetchPreviousCalorieAverages({
+      userId,
+      period,
+      timezoneOffset,
+      calorieTarget,
+    }),
+    loggedDaysLast30,
+  ]);
+
+  const overview = mapOverviewRowsToDto({
+    rows,
+    profile,
+    requestedRange,
+    resolvedRange,
+    loggedDaysLast30: dayCount,
+    period,
+    dayScope,
+    previousCalorieAverages,
+  });
+
+  assertOverviewHasNoTrendArrays(overview);
+  return overview;
 }
 
 export async function getNutritionOverview(
@@ -95,102 +168,28 @@ export async function getNutritionOverview(
   });
   const last30Bounds = getUtcBounds(last30Period, parsed.timezoneOffset);
 
-  // When the caller pinned a range, we don't need the last-30 day count to
-  // resolve which range to use — fetch both in parallel. When range='auto',
-  // the count gates the second query so they stay sequential.
-  let loggedDaysLast30: number;
-  let resolvedRange: NutritionOverview['resolvedRange'];
-  let rows: Awaited<ReturnType<typeof fetchOverviewRows>>;
-
-  if (parsed.range === 'auto') {
-    loggedDaysLast30 = await countLoggedDaysLast30({
-      userId: user.id,
-      startDate: last30Period.startDate,
-      endDate: last30Period.endDate,
-      startAt: last30Bounds.startAt,
-      exclusiveEndAt: last30Bounds.exclusiveEndAt,
-      timezoneOffset: parsed.timezoneOffset,
-    });
-    resolvedRange = resolveInitialRange(loggedDaysLast30);
-    const period = getNutritionPeriod({
-      range: resolvedRange,
-      timezoneOffset: parsed.timezoneOffset,
-    });
-    const bounds = getUtcBounds(period, parsed.timezoneOffset);
-    const [autoRows, previousCalorieAverages] = await Promise.all([
-      fetchOverviewRows({
-        userId: user.id,
-        startDate: period.startDate,
-        endDate: period.endDate,
-        startAt: bounds.startAt,
-        exclusiveEndAt: bounds.exclusiveEndAt,
-        timezoneOffset: parsed.timezoneOffset,
-      }),
-      fetchPreviousCalorieAverages({
-        userId: user.id,
-        period,
-        timezoneOffset: parsed.timezoneOffset,
-        calorieTarget: nullableNumber(profile.calorieTarget),
-      }),
-    ]);
-    rows = autoRows;
-    const overview = mapOverviewRowsToDto({
-      rows,
-      profile,
-      requestedRange: parsed.range,
-      resolvedRange,
-      loggedDaysLast30,
-      period,
-      dayScope: parsed.days,
-      previousCalorieAverages,
-    });
-    assertOverviewHasNoTrendArrays(overview);
-    return overview;
-  }
-
-  resolvedRange = parsed.range;
-  const period = getNutritionPeriod({
-    range: resolvedRange,
+  // Start the count and hold the promise: it only ever gates which range to
+  // use, so `auto` awaits it here and a pinned range lets it run alongside the
+  // window fetch inside `buildOverview`.
+  const loggedDaysLast30 = countLoggedDaysLast30({
+    userId: user.id,
+    startDate: last30Period.startDate,
+    endDate: last30Period.endDate,
+    startAt: last30Bounds.startAt,
+    exclusiveEndAt: last30Bounds.exclusiveEndAt,
     timezoneOffset: parsed.timezoneOffset,
   });
-  const bounds = getUtcBounds(period, parsed.timezoneOffset);
-  let previousCalorieAverages: NutritionOverview['previousCalorieAverages'];
-  [loggedDaysLast30, rows, previousCalorieAverages] = await Promise.all([
-    countLoggedDaysLast30({
-      userId: user.id,
-      startDate: last30Period.startDate,
-      endDate: last30Period.endDate,
-      startAt: last30Bounds.startAt,
-      exclusiveEndAt: last30Bounds.exclusiveEndAt,
-      timezoneOffset: parsed.timezoneOffset,
-    }),
-    fetchOverviewRows({
-      userId: user.id,
-      startDate: period.startDate,
-      endDate: period.endDate,
-      startAt: bounds.startAt,
-      exclusiveEndAt: bounds.exclusiveEndAt,
-      timezoneOffset: parsed.timezoneOffset,
-    }),
-    fetchPreviousCalorieAverages({
-      userId: user.id,
-      period,
-      timezoneOffset: parsed.timezoneOffset,
-      calorieTarget: nullableNumber(profile.calorieTarget),
-    }),
-  ]);
 
-  const overview = mapOverviewRowsToDto({
-    rows,
+  return buildOverview({
+    userId: user.id,
     profile,
     requestedRange: parsed.range,
-    resolvedRange,
-    loggedDaysLast30,
-    period,
+    resolvedRange:
+      parsed.range === 'auto'
+        ? resolveInitialRange(await loggedDaysLast30)
+        : parsed.range,
+    timezoneOffset: parsed.timezoneOffset,
     dayScope: parsed.days,
-    previousCalorieAverages,
+    loggedDaysLast30,
   });
-
-  assertOverviewHasNoTrendArrays(overview);
-  return overview;
 }

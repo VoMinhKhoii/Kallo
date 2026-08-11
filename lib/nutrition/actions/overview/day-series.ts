@@ -23,8 +23,7 @@ import {
 // 30d and 90d bucket by WEEK because logging is sparse — a month of daily
 // columns is mostly holes for anyone who logs 10 days in 30, and 30 columns at
 // phone width leaves each one 6px wide. Weekly columns stay populated and
-// legible. The series is built over every logged day (see `buildDaySeries`), so
-// a week's height does not move when the caller flips day scope.
+// legible.
 export const RANGE_BUCKET_UNIT: Record<NutritionRange, DaySeriesBucketUnit> = {
   '1d': 'day',
   '7d': 'day',
@@ -115,7 +114,7 @@ interface DaySeriesMetricSpec {
 }
 
 /** Build one metric's bucket series: each bucket's value is the per-day average
- *  of the metric over that bucket's logged days, `null` where the bucket holds
+ *  of the metric over that bucket's in-scope days, `null` where the bucket holds
  *  none. Pure over its inputs so the day-series builder stays a flat map over
  *  the metric specs. */
 function buildMetricSeries(
@@ -167,27 +166,33 @@ function buildMetricSeries(
 
 /**
  * Build the per-bucket time series: each bucket's value is the per-day average
- * of the metric over that bucket's LOGGED days.
+ * of the metric over that bucket's IN-SCOPE days.
  *
- * Deliberately scope-independent. The headline average, the gram legend and the
- * nutrient grid all narrow to complete days when the caller asks for them — the
- * chart does not. It used to, and because a bucket divides by its own in-scope
- * day count, every week holding a set-aside partial day changed height when the
- * day scope flipped while weeks without one held still. Bars that move on a
- * toggle that was only meant to change an average read as a bug, so the bars are
- * now the constant: this is what was eaten, and the figures above it are what
- * you choose to average over.
+ * Scoped by the same day set as the headline average, the gram legend and the
+ * nutrient grid — one card must not average two different day sets. A chart
+ * over every logged day under a headline over complete days puts the number
+ * above every bar on an under-logged month, which reads as broken however it is
+ * justified.
+ *
+ * What that costs, and why it is the right cost: on a DAY axis (7d) a complete
+ * day is `total / 1` under either scope, so its column never moves — flipping
+ * the toggle only adds or removes the partial days' columns, which is the whole
+ * point of the control. On a WEEK axis (30d/90d) a week's height does move,
+ * because its day set changed — but the headline moves with it, so the card
+ * stays internally consistent.
  */
 export function buildDaySeries({
-  loggedRows,
-  loggedDates,
+  scopedRows,
+  scopedDates,
   resolvedRange,
   period,
   profile,
   targets,
 }: {
-  loggedRows: OverviewMealItemRow[];
-  loggedDates: Set<string>;
+  /** Rows on `scopedDates` only — the numerator, matching the divisor below. */
+  scopedRows: OverviewMealItemRow[];
+  /** The day set the caller's scope averages over. */
+  scopedDates: Set<string>;
   resolvedRange: NutritionOverview['resolvedRange'];
   period: { startDate: string; endDate: string };
   profile: NutritionProfile;
@@ -197,10 +202,10 @@ export function buildDaySeries({
   const step = unit === 'day' ? 1 : 7;
   const bounds = buildBucketBounds(period.startDate, period.endDate, step);
 
-  // Count logged days per bucket once; reused for every metric's divisor.
-  const loggedDaysInBucket = bounds.map((bucket) => {
+  // Count in-scope days per bucket once; reused for every metric's divisor.
+  const scopedDaysInBucket = bounds.map((bucket) => {
     let count = 0;
-    for (const date of loggedDates) {
+    for (const date of scopedDates) {
       if (date >= bucket.startDate && date <= bucket.endDate) {
         count += 1;
       }
@@ -229,7 +234,7 @@ export function buildDaySeries({
   ];
 
   const series: NutrientDaySeries[] = metrics.map((spec) =>
-    buildMetricSeries(spec, bounds, loggedDaysInBucket, loggedRows)
+    buildMetricSeries(spec, bounds, scopedDaysInBucket, scopedRows)
   );
 
   return { unit, series };

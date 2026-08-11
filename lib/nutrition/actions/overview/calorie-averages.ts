@@ -1,10 +1,13 @@
 import { classifyDayCompleteness } from '../../pattern/completeness';
 import type { CalorieAverages } from '../../types';
-import type { OverviewMealItemRow } from './query';
-import { sumRows } from './row-metrics';
+import type { DailyCalorieTotal } from './query';
 
 /**
- * Both day scopes' calorie averages for one window of rows.
+ * Both day scopes' calorie averages for one window.
+ *
+ * Takes per-day totals rather than meal-item rows: calories per local date is
+ * the whole input this needs, so the previous-window read can be a SQL
+ * aggregate instead of every item with its twenty-odd nutrient columns.
  *
  * Extracted so the CURRENT window and the one before it are measured by the
  * same rule — a comparison between two periods scored differently would be
@@ -15,44 +18,29 @@ import { sumRows } from './row-metrics';
  * partial ones.
  */
 export function buildCalorieAverages(
-  rows: OverviewMealItemRow[],
+  dayTotals: DailyCalorieTotal[],
   calorieTarget: number | null
 ): CalorieAverages {
-  const loggedDates = new Set(
-    rows.filter((row) => row.calories > 0).map((row) => row.localDate)
-  );
-  const loggedDays = loggedDates.size;
+  const loggedDays = dayTotals.filter((day) => day.calories > 0);
+  const strict = classifyDayCompleteness(loggedDays, calorieTarget, {
+    safetyValve: false,
+  });
 
-  const dayCalories = new Map<string, number>();
-  for (const row of rows) {
-    if (row.calories <= 0) continue;
-    dayCalories.set(
-      row.localDate,
-      (dayCalories.get(row.localDate) ?? 0) + row.calories
-    );
-  }
-  const strict = classifyDayCompleteness(
-    [...dayCalories].map(([date, calories]) => ({ date, calories })),
-    calorieTarget,
-    { safetyValve: false }
-  );
-
-  const loggedRows = rows.filter((row) => loggedDates.has(row.localDate));
-  const completeRows = rows.filter((row) =>
-    strict.completeDates.has(row.localDate)
+  const sum = (days: DailyCalorieTotal[]) =>
+    days.reduce((total, day) => total + day.calories, 0);
+  const completeTotal = sum(
+    loggedDays.filter((day) => strict.completeDates.has(day.date))
   );
 
   return {
     all: {
       averagePerDay:
-        loggedDays > 0 ? sumRows(loggedRows, 'calories') / loggedDays : null,
-      days: loggedDays,
+        loggedDays.length > 0 ? sum(loggedDays) / loggedDays.length : null,
+      days: loggedDays.length,
     },
     complete: {
       averagePerDay:
-        strict.completeDays > 0
-          ? sumRows(completeRows, 'calories') / strict.completeDays
-          : null,
+        strict.completeDays > 0 ? completeTotal / strict.completeDays : null,
       days: strict.completeDays,
     },
   };

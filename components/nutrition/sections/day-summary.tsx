@@ -130,58 +130,56 @@ export function DaySummary({
           diff={diff}
         />
 
-        <>
-          {trendData ? (
-            <MacroTrendChart
-              points={trendData.points}
-              maxY={trendData.maxY}
-              unit={daySeries.unit}
-              todayIndex={todayIndex}
-              selectedIndex={selectedIndex}
-              onSelect={onSelect}
-            />
-          ) : (
-            <div
-              role="img"
-              aria-label={t('rhythm.macroCompositionAria')}
-              className="mt-4 flex h-2 w-full overflow-hidden rounded-full bg-nham-track"
-            >
-              {segments.map((segment) =>
-                segment.pct > 0 ? (
-                  <motion.span
-                    key={segment.key}
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
-                    style={{
-                      width: `${segment.pct}%`,
-                      backgroundColor: COMPOSITION_COLORS[segment.key],
-                      transformOrigin: 'left',
-                    }}
-                    className="h-full"
-                  />
-                ) : null
-              )}
-            </div>
-          )}
-
-          {/* Centered legend: a short color bar (not a dot) + label + avg grams. */}
-          <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2">
-            {segments.map((segment) => (
-              <span
-                key={segment.key}
-                className="inline-flex items-center gap-1.5 text-[12px] text-nham-text tabular-nums"
-              >
-                <span
-                  aria-hidden="true"
-                  className="h-1.5 w-4 rounded-full"
-                  style={{ backgroundColor: COMPOSITION_COLORS[segment.key] }}
+        {trendData ? (
+          <MacroTrendChart
+            points={trendData.points}
+            maxY={trendData.maxY}
+            unit={daySeries.unit}
+            todayIndex={todayIndex}
+            selectedIndex={selectedIndex}
+            onSelect={onSelect}
+          />
+        ) : (
+          <div
+            role="img"
+            aria-label={t('rhythm.macroCompositionAria')}
+            className="mt-4 flex h-2 w-full overflow-hidden rounded-full bg-nham-track"
+          >
+            {segments.map((segment) =>
+              segment.pct > 0 ? (
+                <motion.span
+                  key={segment.key}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
+                  style={{
+                    width: `${segment.pct}%`,
+                    backgroundColor: COMPOSITION_COLORS[segment.key],
+                    transformOrigin: 'left',
+                  }}
+                  className="h-full"
                 />
-                {segment.label} {formatLocalizedNumber(segment.grams, locale)}g
-              </span>
-            ))}
+              ) : null
+            )}
           </div>
-        </>
+        )}
+
+        {/* Centered legend: a short color bar (not a dot) + label + avg grams. */}
+        <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2">
+          {segments.map((segment) => (
+            <span
+              key={segment.key}
+              className="inline-flex items-center gap-1.5 text-[12px] text-nham-text tabular-nums"
+            >
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-4 rounded-full"
+                style={{ backgroundColor: COMPOSITION_COLORS[segment.key] }}
+              />
+              {segment.label} {formatLocalizedNumber(segment.grams, locale)}g
+            </span>
+          ))}
+        </div>
       </div>
     </motion.section>
   );

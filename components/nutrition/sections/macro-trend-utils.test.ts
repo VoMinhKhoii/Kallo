@@ -41,8 +41,15 @@ function daySeries(
 }
 
 describe('buildMacroTrendAxis', () => {
-  it('keeps a 500 step for a 3000 axis (maxY 2000)', () => {
-    const axis = buildMacroTrendAxis(2000);
+  it('tops out just above the data instead of a fixed 3000 ceiling', () => {
+    const axis = buildMacroTrendAxis(1400);
+    expect(axis.step).toBe(250);
+    expect(axis.maxLabel).toBe(1500);
+    expect(axis.ticks).toEqual([250, 500, 750, 1000, 1250, 1500]);
+  });
+
+  it('keeps a 500 step for a 3000 axis (maxY 2600)', () => {
+    const axis = buildMacroTrendAxis(2600);
     expect(axis.step).toBe(500);
     expect(axis.maxLabel).toBe(3000);
     expect(axis.topY).toBe(3175);
@@ -53,6 +60,12 @@ describe('buildMacroTrendAxis', () => {
     const axis = buildMacroTrendAxis(3200);
     expect(axis.step).toBe(1000);
     expect(axis.maxLabel).toBe(4000);
+  });
+
+  it('floors the step at 100 so a near-empty chart is not labelled in tens', () => {
+    const axis = buildMacroTrendAxis(40);
+    expect(axis.step).toBe(100);
+    expect(axis.maxLabel).toBe(100);
   });
 
   it('falls back to a 2500 step for very high intake (maxY 16000)', () => {
