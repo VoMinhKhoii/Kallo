@@ -101,7 +101,6 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     final isFetching = async.isLoading && async.hasValue;
 
     return Screen(
-      background: NhamColors.surfaceBright,
       child: ScrollSeparator(
         header: Padding(
           padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),

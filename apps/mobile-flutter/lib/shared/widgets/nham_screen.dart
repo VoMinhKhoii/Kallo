@@ -13,21 +13,16 @@ class Screen extends StatelessWidget {
     required this.child,
     this.top = true,
     this.bottom = true,
-    this.background,
   });
 
   final Widget child;
   final bool top;
   final bool bottom;
 
-  /// Canvas colour. Defaults to the app cream; the nutrition page passes the
-  /// brighter [NhamColors.surfaceBright].
-  final Color? background;
-
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: background ?? NhamColors.surface,
+      color: NhamColors.surface,
       child: SafeArea(
         top: top,
         bottom: bottom,

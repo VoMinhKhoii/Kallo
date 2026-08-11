@@ -74,7 +74,7 @@ export function NutritionShell() {
 
   if (overviewQuery.isError || !overviewQuery.data) {
     return (
-      <main className="min-h-0 flex-1 overflow-y-auto bg-nham-surface-bright px-4 py-4 pb-20 sm:px-6 lg:px-8">
+      <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl">
           <InlineError
             isRetrying={overviewQuery.isFetching}
@@ -110,7 +110,7 @@ export function NutritionShell() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className="flex min-h-0 flex-1 flex-col bg-nham-surface-bright">
+      <main className="flex min-h-0 flex-1 flex-col">
         {/* Padding lives on the outer div so the inner max-w column aligns
             with the content cards' column below. */}
         <div className="shrink-0 px-4 pt-4 sm:px-6 lg:px-8">

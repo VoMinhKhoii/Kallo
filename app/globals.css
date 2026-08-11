@@ -140,7 +140,6 @@
   --color-nham-btn: var(--nham-btn);
   --color-nham-mention: var(--nham-mention);
   --color-nham-btn-hover: var(--nham-btn-hover);
-  --color-nham-surface-bright: var(--nham-surface-bright);
   --color-nham-macro-protein: var(--nham-macro-protein);
   --color-nham-macro-carbs: var(--nham-macro-carbs);
   --color-nham-macro-fat: var(--nham-macro-fat);
@@ -208,7 +207,7 @@
      sidebar visibly separate from it. Hover/selected washes and tracks stay
      warm beige — text is neutral, interaction states are not. Tan stays for
      italic-accent, focus rings, and chart/ring strokes — never running text. */
-  --nham-surface: #f9f9f7;
+  --nham-surface: #fcfcfc;
   --nham-text: #141413;
   --nham-text-muted: #6e6d66;
   --nham-text-soft: #3d3d3a; /* landing body copy — between text and muted */
@@ -232,9 +231,6 @@
      the warm palette has no hue that reads as "this token is not free text"
      without also reading as a warning. Scoped to that one use. */
   --nham-mention: #4a90d9;
-  /* A brighter canvas for the nutrition page only — the analysis surface is
-     mostly white cards and reads cleaner one step up from the app cream. */
-  --nham-surface-bright: #fcfcfc;
   --nham-macro-protein: #c9a87c;
   --nham-macro-carbs: #8b7355;
   --nham-macro-fat: #a8a29e;
@@ -323,8 +319,6 @@
   --nham-mention: #7ab3ea;
   --nham-btn: #c9a87c;
   --nham-btn-hover: #d4b88c;
-  /* Dark mode keeps one canvas — "brighter" is a light-mode idea. */
-  --nham-surface-bright: #1c1810;
   --nham-macro-protein: #c9a87c;
   --nham-macro-carbs: #b8a88e;
   --nham-macro-fat: #8a8580;

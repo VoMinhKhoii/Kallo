@@ -6,23 +6,31 @@ import 'dart:ui';
 /// `--nham-*` values). Visual direction: neutral canvas / ink / hairline with
 /// warm interaction washes; tan accent kept for non-text moments only.
 ///
-/// DELIBERATE DIVERGENCE FROM WEB: the canvas is `#F1F1EE`, not the web's
-/// `#f9f9f7`. At one step off white every surface in the system — white cards,
-/// hairlines, washes — had almost nothing to separate from, and the app read
-/// uniformly subtle on a phone. The surfaces tuned against the old canvas moved
-/// with it: `track` and `border` both darkened to keep their step below the
-/// page, and `pressWash` replaces the warm washes where a control is
-/// transparent. Do NOT "resync" these to `globals.css` without re-deciding it.
+/// The canvas is `#FCFCFC`, matching the web token exactly — the two were
+/// resynced deliberately after the brighter page was chosen on the nutrition
+/// surface and adopted app-wide.
+///
+/// This REVERSES an earlier divergence (`#F1F1EE`), taken because at one step
+/// off white every surface — white cards, hairlines, washes — had almost
+/// nothing to separate from on a phone. That trade-off is back, and more so:
+/// a white card on this canvas separates by shadow alone. `track` (#EDECE7)
+/// and `border` (#E2DFD4) were darkened for the old canvas and are left as
+/// they were — both still sit comfortably below a brighter page, so a track
+/// still reads recessed. If cards start reading flat, THAT is the knob to
+/// re-decide, not the canvas.
+///
+/// The `surface*` alpha ramps below MUST keep this hue: a scrim that fades
+/// toward a stale canvas colour is a visible seam.
 abstract final class NhamColors {
   // ── Core surfaces ────────────────────────────────────────────────────
   static const Color surface = Color(
-    0xFFF1F1EE,
+    0xFFFCFCFC,
   ); // app background — neutral canvas
   static const Color elev = Color(0xFFFFFFFF); // cards / sheets
   static const Color hover = Color(0xFFF0EAE0); // warm hover/select wash
-  // Moved by the SAME delta as [surface] (−8/−8/−9): the canvas↔track step is
-  // the whole point of this token, and at the old value it would now sit
-  // *lighter* than the page — a track that reads raised instead of recessed.
+  // Kept where it was when the canvas darkened: the canvas↔track step is the
+  // whole point of this token, and against the brighter page it now sits
+  // further below it, which is the direction that reads recessed.
   static const Color track = Color(0xFFEDECE7); // warm segmented/track
   static const Color track50 = Color(0x80EDECE7); // track @ 50%
 
@@ -71,13 +79,13 @@ abstract final class NhamColors {
 
   // ── Translucent surfaces ─────────────────────────────────────────────
   static const Color elevTranslucent = Color(0xCCFFFFFF); // card/elev @ 80%
-  static const Color surface80 = Color(0xCCF1F1EE); // canvas @ 80%
+  static const Color surface80 = Color(0xCCFCFCFC); // canvas @ 80%
   // Scrim ramp (composer dock). These MUST stay the same hue as [surface] —
   // a scrim that fades toward a stale canvas colour is a visible seam, which
   // is the exact thing the ramp exists to remove.
-  static const Color surface0 = Color(0x00F1F1EE); // canvas @ 0%
-  static const Color surface35 = Color(0x59F1F1EE); // canvas @ 35%
-  static const Color surface85 = Color(0xD9F1F1EE); // canvas @ 85%
+  static const Color surface0 = Color(0x00FCFCFC); // canvas @ 0%
+  static const Color surface35 = Color(0x59FCFCFC); // canvas @ 35%
+  static const Color surface85 = Color(0xD9FCFCFC); // canvas @ 85%
   static const Color cardWhite55 = Color(0x8CFFFFFF); // card white @ 55%
   static const Color cardWhite40 = Color(0x66FFFFFF); // card white @ 40%
   static const Color cardWhite30 = Color(0x4DFFFFFF); // card white @ 30%
@@ -169,11 +177,6 @@ abstract final class NhamColors {
   static const Color macroProtein = Color(0xFFC9A87C);
   static const Color macroCarbs = Color(0xFF8B7355);
   static const Color macroFat = Color(0xFFA8A29E);
-
-  /// A brighter canvas for the nutrition page only — the analysis surface is
-  /// mostly white cards and reads cleaner one step up from the app cream.
-  /// Mirrors the web `--nham-surface-bright` token.
-  static const Color surfaceBright = Color(0xFFFCFCFC);
 
   // ── Macros, charted ──────────────────────────────────────────────────
   /// A SEPARATE, brighter macro set for the nutrition page's stacked bars,
