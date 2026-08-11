@@ -251,9 +251,51 @@ const ALIAS_TO_CONCEPT: Record<string, ConceptResolution> = {
   bread: AMBIGUOUS,
 };
 
+/**
+ * Diacritic-folded fallback, tried only after an exact miss — with two rules
+ * that a naive first-wins map gets wrong in both directions.
+ *
+ * 1. AMBIGUOUS markers are NEVER folded into. A marker describes one exact
+ *    surface form (English "bun", the bread roll); a fold that reaches it is
+ *    always a cross-language accident. Measured: `fold('bún') === 'bun'`, so
+ *    Vietnamese rice vermicelli — bún bò, bún riêu, bún chả — routed to the
+ *    clarify path on 19 of 697 real-log ingredients. Falling through to the
+ *    LLM range is strictly better than interrupting the user over a collision.
+ * 2. A folded key that two DIFFERENT resolutions claim is dropped entirely.
+ *    First-wins is iteration-order dependent and silently misroutes: `bơ`
+ *    (butter) and `bò` (beef) both fold to `bo`, `dưa`/`dừa`/`dứa` all fold to
+ *    `dua`. Requiring diacritics there is correct; guessing is not.
+ *
+ * Mirrors the `foldCollisions()` discipline already in `unit-lexicon.ts`.
+ */
 const FOLDED = new Map<string, ConceptResolution>();
+const foldSeen = new Map<string, ConceptResolution>();
 for (const [surface, resolution] of Object.entries(ALIAS_TO_CONCEPT)) {
-  if (!FOLDED.has(fold(surface))) FOLDED.set(fold(surface), resolution);
+  if (resolution === AMBIGUOUS) continue;
+  const key = fold(surface);
+  const prior = foldSeen.get(key);
+  if (prior === undefined) {
+    foldSeen.set(key, resolution);
+    FOLDED.set(key, resolution);
+  } else if (prior !== resolution) {
+    FOLDED.delete(key);
+  }
+}
+
+/** Folded keys claimed by two different concepts — resolvable only with
+ *  diacritics. Exposed so a test can pin the set and catch new collisions. */
+export function conceptFoldCollisions(): string[] {
+  const counts = new Map<string, Set<ConceptResolution>>();
+  for (const [surface, resolution] of Object.entries(ALIAS_TO_CONCEPT)) {
+    if (resolution === AMBIGUOUS) continue;
+    const key = fold(surface);
+    if (!counts.has(key)) counts.set(key, new Set());
+    counts.get(key)?.add(resolution);
+  }
+  return [...counts.entries()]
+    .filter(([, set]) => set.size > 1)
+    .map(([key]) => key)
+    .sort();
 }
 
 /**

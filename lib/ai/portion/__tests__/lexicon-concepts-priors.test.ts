@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { INSTANT_NOODLE_ROW, PRE_MATCH_ALIASES } from '../../matching/aliases';
 import {
   AMBIGUOUS,
+  conceptFoldCollisions,
   getConcept,
   resolveConcept,
   surfaceFormsForConcept,
@@ -414,5 +415,23 @@ describe('instant noodles — the `1 gói mì` path', () => {
     expect(concept?.label).toContain('Mì gói');
     expect(concept?.dbRowName).toBe(INSTANT_NOODLE_ROW);
     expect(PRE_MATCH_ALIASES['mì tôm']).toBe(INSTANT_NOODLE_ROW);
+  });
+});
+
+describe('concept fold collisions', () => {
+  it('never folds into an AMBIGUOUS marker', () => {
+    // `fold('bún') === 'bun'`, and bare English `bun` is a deliberate
+    // AMBIGUOUS generic. Folding into it sent bún bò / bún riêu / bún chả to
+    // the clarify path on 19 of 697 real-log ingredients.
+    expect(resolveConcept('bún')).not.toBe(AMBIGUOUS);
+    expect(resolveConcept('bun')).toBe(AMBIGUOUS);
+  });
+
+  it('refuses to guess when two concepts share a folded key', () => {
+    // bơ/bò → `bo`, dưa/dừa/dứa → `dua`. Requiring diacritics is correct;
+    // first-wins would silently misroute on iteration order.
+    for (const key of conceptFoldCollisions()) {
+      expect(resolveConcept(key)).toBeNull();
+    }
   });
 });
