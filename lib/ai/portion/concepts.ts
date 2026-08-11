@@ -22,6 +22,13 @@ function normalize(s: string): string {
   return s.normalize('NFC').toLowerCase().trim();
 }
 
+function fold(s: string): string {
+  return normalize(s)
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/đ/g, 'd');
+}
+
 /**
  * The concept registry. Each concept optionally carries a VERIFIED
  * `dbRowName` (a real `vietnamese_food_composition.name_primary`, source_id=1).
@@ -51,6 +58,62 @@ export const CONCEPTS: Record<ConceptId, FoodConcept> = {
     // "Thịt gà ta"); we intentionally leave dbRowName unset so the resolver
     // still returns a portion prior while nutrition matching handles the row.
     label: 'Ức gà (chicken breast)',
+  },
+  'chicken-thigh': {
+    id: 'chicken-thigh',
+    label: 'Đùi gà (chicken thigh or drumstick)',
+  },
+  'chicken-wing': {
+    id: 'chicken-wing',
+    label: 'Cánh gà (chicken wing)',
+  },
+  'rib-piece': {
+    id: 'rib-piece',
+    label: 'Miếng sườn (table-cut rib)',
+  },
+  'whole-fish': {
+    id: 'whole-fish',
+    label: 'Cá nguyên con (whole fish)',
+  },
+  'fish-section': {
+    id: 'fish-section',
+    label: 'Khúc/khoanh cá (bone-in fish section)',
+  },
+  'fish-fillet': {
+    id: 'fish-fillet',
+    label: 'Phi lê/miếng cá (boneless fish fillet)',
+  },
+  'shell-on-shrimp': {
+    id: 'shell-on-shrimp',
+    label: 'Tôm nguyên vỏ (shell-on shrimp)',
+  },
+  'peeled-shrimp': {
+    id: 'peeled-shrimp',
+    label: 'Tôm bóc vỏ (peeled shrimp)',
+  },
+  'whole-crab': {
+    id: 'whole-crab',
+    label: 'Cua/ghẹ nguyên con (whole crab)',
+  },
+  'picked-crab-meat': {
+    id: 'picked-crab-meat',
+    label: 'Thịt cua/ghẹ đã gỡ (picked crab meat)',
+  },
+  'egg-in-shell': {
+    id: 'egg-in-shell',
+    label: 'Trứng còn vỏ (egg in shell)',
+  },
+  'peeled-egg': {
+    id: 'peeled-egg',
+    label: 'Trứng luộc đã bóc vỏ (peeled boiled egg)',
+  },
+  'nem-lui': {
+    id: 'nem-lui',
+    label: 'Nem lụi (Vietnamese grilled pork skewer)',
+  },
+  'pan-seared-protein-serving': {
+    id: 'pan-seared-protein-serving',
+    label: 'Phần protein áp chảo (pan-seared protein serving)',
   },
   'cooked-rice': {
     id: 'cooked-rice',
@@ -97,6 +160,73 @@ const ALIAS_TO_CONCEPT: Record<string, ConceptResolution> = {
   'ức gà': 'chicken-breast',
   'uc ga': 'chicken-breast',
   'chicken breast': 'chicken-breast',
+  // -- chicken thigh / drumstick --------------------------------------
+  'đùi gà': 'chicken-thigh',
+  'chicken thigh': 'chicken-thigh',
+  'chicken drumstick': 'chicken-thigh',
+  // -- chicken wing ----------------------------------------------------
+  'cánh gà': 'chicken-wing',
+  'chicken wing': 'chicken-wing',
+  // -- rib table-cut (one concept across species) ---------------------
+  'sườn heo': 'rib-piece',
+  'sườn bò': 'rib-piece',
+  'sườn dê': 'rib-piece',
+  'sườn cừu': 'rib-piece',
+  'pork rib': 'rib-piece',
+  'beef rib': 'rib-piece',
+  'goat rib': 'rib-piece',
+  'lamb rib': 'rib-piece',
+  // -- fish forms ------------------------------------------------------
+  'cá nguyên con': 'whole-fish',
+  'nguyên con cá': 'whole-fish',
+  'con cá': 'whole-fish',
+  '1 con cá': 'whole-fish',
+  'whole fish': 'whole-fish',
+  'khúc cá': 'fish-section',
+  'khoanh cá': 'fish-section',
+  'fish steak': 'fish-section',
+  'fish section': 'fish-section',
+  'phi lê cá': 'fish-fillet',
+  'cá phi lê': 'fish-fillet',
+  'miếng cá': 'fish-fillet',
+  'fish fillet': 'fish-fillet',
+  'boneless fish piece': 'fish-fillet',
+  // -- shrimp forms ----------------------------------------------------
+  'tôm nguyên vỏ': 'shell-on-shrimp',
+  'tôm còn vỏ': 'shell-on-shrimp',
+  'shell-on shrimp': 'shell-on-shrimp',
+  'shell on shrimp': 'shell-on-shrimp',
+  'tôm bóc vỏ': 'peeled-shrimp',
+  'tôm lột vỏ': 'peeled-shrimp',
+  'peeled shrimp': 'peeled-shrimp',
+  // -- crab forms ------------------------------------------------------
+  ghẹ: 'whole-crab',
+  cua: 'whole-crab',
+  'cua nguyên con': 'whole-crab',
+  'ghẹ nguyên con': 'whole-crab',
+  'whole crab': 'whole-crab',
+  'thịt cua': 'picked-crab-meat',
+  'thịt ghẹ': 'picked-crab-meat',
+  'picked crab meat': 'picked-crab-meat',
+  'crab meat': 'picked-crab-meat',
+  // -- chicken egg served forms ---------------------------------------
+  'trứng gà nguyên vỏ': 'egg-in-shell',
+  'trứng gà còn vỏ': 'egg-in-shell',
+  'egg in shell': 'egg-in-shell',
+  'trứng gà luộc': 'peeled-egg',
+  'trứng luộc': 'peeled-egg',
+  'trứng gà bóc vỏ': 'peeled-egg',
+  'trứng gà': 'peeled-egg',
+  'chicken egg': 'peeled-egg',
+  'boiled egg': 'peeled-egg',
+  'peeled egg': 'peeled-egg',
+  // -- nem lui ---------------------------------------------------------
+  'nem lụi': 'nem-lui',
+  'nem lui': 'nem-lui',
+  'nem lụi nướng': 'nem-lui',
+  // -- pan-seared serving (qualified form only) ------------------------
+  'phần protein áp chảo': 'pan-seared-protein-serving',
+  'pan-seared protein serving': 'pan-seared-protein-serving',
   // -- cooked rice ------------------------------------------------------
   cơm: 'cooked-rice',
   'cơm trắng': 'cooked-rice',
@@ -121,6 +251,11 @@ const ALIAS_TO_CONCEPT: Record<string, ConceptResolution> = {
   bread: AMBIGUOUS,
 };
 
+const FOLDED = new Map<string, ConceptResolution>();
+for (const [surface, resolution] of Object.entries(ALIAS_TO_CONCEPT)) {
+  if (!FOLDED.has(fold(surface))) FOLDED.set(fold(surface), resolution);
+}
+
 /**
  * Resolve a surface form (rawName or canonicalName) to a concept resolution.
  * Returns:
@@ -132,7 +267,18 @@ export function resolveConcept(
   surfaceForm: string | undefined
 ): ConceptResolution | null {
   if (!surfaceForm) return null;
-  return ALIAS_TO_CONCEPT[normalize(surfaceForm)] ?? null;
+  return (
+    ALIAS_TO_CONCEPT[normalize(surfaceForm)] ??
+    FOLDED.get(fold(surfaceForm)) ??
+    null
+  );
+}
+
+/** Real, non-ambiguous surface forms registered for invariant coverage. */
+export function surfaceFormsForConcept(conceptId: ConceptId): string[] {
+  return Object.entries(ALIAS_TO_CONCEPT)
+    .filter(([, resolution]) => resolution === conceptId)
+    .map(([surface]) => surface);
 }
 
 /** Look up a concept record by id. */

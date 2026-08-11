@@ -29,7 +29,9 @@ const ENTRIES: UnitLexiconEntry[] = [
   { token: 'trái', locale: 'vi', unitType: 'count' },
   { token: 'con', locale: 'vi', unitType: 'count' },
   { token: 'viên', locale: 'vi', unitType: 'count' },
+  { token: 'cục', locale: 'vi', unitType: 'count' },
   { token: 'cây', locale: 'vi', unitType: 'count' },
+  { token: 'phần', locale: 'vi', unitType: 'count' },
   { token: 'xiên', locale: 'vi', unitType: 'count' },
   { token: 'ổ', locale: 'vi', unitType: 'count' },
   { token: 'bánh bao', locale: 'vi', unitType: 'count' }, // the item IS its own counter
@@ -164,4 +166,38 @@ export function lookupUnit(token: string | undefined): UnitLexiconEntry | null {
 /** All entries for a locale — used by tests / coverage reporting. */
 export function unitsForLocale(locale: Locale): UnitLexiconEntry[] {
   return ENTRIES.filter((e) => e.locale === locale);
+}
+
+/** All real surface units registered for an invariant's unit-type coverage. */
+export function unitsForType(unitType: UnitType): UnitLexiconEntry[] {
+  return ENTRIES.filter((entry) => entry.unitType === unitType);
+}
+
+const PIECE_LIKE_FOLDED = new Set([
+  'mieng',
+  'lat',
+  'khuc',
+  'khua',
+  'khoanh',
+  'phi le',
+  'cuc',
+  'piece',
+  'pieces',
+  'slice',
+  'slices',
+  'steak',
+  'steaks',
+  'fillet',
+  'fillets',
+  'filet',
+  'filets',
+  'chunk',
+  'chunks',
+  'cut',
+  'cuts',
+]);
+
+/** Whether a token describes a cut/piece eligible for slice↔count loosening. */
+export function isPieceLikeUnitToken(token: string | undefined): boolean {
+  return token ? PIECE_LIKE_FOLDED.has(fold(token)) : false;
 }

@@ -24,6 +24,9 @@ export type FoodForm = 'raw' | 'cooked' | 'composed' | 'any';
 /** Size cue → picks low/mid/high within a prior's band. */
 export type SizeModifier = 'small' | 'medium' | 'large';
 
+/** Whether a mass includes bone, shell, rind, or other physical refuse. */
+export type MassBasis = 'gross_as_served' | 'edible' | 'unknown';
+
 /** A grams triple: the resolver always returns a distribution, never a point. */
 export interface GramsBand {
   low: number;
@@ -72,6 +75,8 @@ export interface PortionPrior {
   promptLabel?: string;
   /** Grams for ONE unit of this type (per-unit; resolver multiplies by count). */
   perUnit: GramsBand;
+  /** Physical basis of every value in `perUnit`. */
+  massBasis: Exclude<MassBasis, 'unknown'>;
   confidence: 'high' | 'medium' | 'low';
   /** Free-text provenance note (source + review basis). */
   source: string;
@@ -95,7 +100,7 @@ export interface QuantityEvidence {
   count?: number;
   unitToken?: string;
   sizeModifier?: SizeModifier;
-  explicitMass?: { grams: number; basis: 'raw' | 'cooked' };
+  explicitMass?: { grams: number; basis: MassBasis };
 }
 
 /**
@@ -109,6 +114,8 @@ export interface ResolverConceptInput {
   ambiguous: boolean;
   locale: Locale;
   form: FoodForm;
+  rawName?: string;
+  canonicalName?: string;
   /**
    * Serving weight from the matched row (Open Food Facts packaged products).
    * DORMANT SEAM: only ~5 of ~7.5k rows carry serving_size_g today and no
@@ -122,6 +129,8 @@ export interface ResolverConceptInput {
 export interface PortionResolution {
   /** null → defer to Call 2 (llm_range) or clarify (unresolved). */
   grams: GramsBand | null;
+  /** Physical basis of `grams`; null when no grams were resolved. */
+  massBasis: MassBasis | null;
   provenance: PortionProvenance;
   confidence: 'high' | 'medium' | 'low' | 'none';
   /** Set when provenance='unresolved'. Diagnostic label; `explicit_zero` is

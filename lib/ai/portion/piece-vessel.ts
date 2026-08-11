@@ -14,6 +14,7 @@ export const PIECE_UNIT_TOKENS = new Set([
   'khua',
   'khoanh',
   'phi le',
+  'cuc',
   'fillet',
   'piece',
   'pieces',
@@ -34,7 +35,7 @@ const PIECE_UNIT_TOKENS_LONGEST_FIRST = [...PIECE_UNIT_TOKENS].sort(
 );
 
 const ANIMAL_PROTEIN =
-  /\b(ca|fish|salmon|tuna|basa|mackerel|cod|trout|bo|heo|thit|beef|pork|steak|ba chi|suon|lamb|cuu|ga|chicken|vit|duck|muc|squid|tom|shrimp|prawn|cua|crab)\b/;
+  /\b(ca|fish|salmon|tuna|basa|mackerel|cod|trout|bo|heo|thit|beef|pork|steak|ba chi|suon|lamb|cuu|de|goat|ga|chicken|vit|duck|muc|squid|tom|shrimp|prawn|cua|crab)\b/;
 
 const FISH_OR_SEAFOOD =
   /\b(ca|fish|salmon|tuna|basa|mackerel|cod|trout|muc|squid|tom|shrimp|prawn|cua|crab)\b/;

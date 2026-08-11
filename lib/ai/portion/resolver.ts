@@ -2,12 +2,14 @@
  * Server-side portion resolver — the strict fallback ladder (Phase 3).
  *
  * Given a matched food concept + structured quantity evidence + locale/form,
- * return a grams band (or null) plus provenance and confidence. The resolver
+ * return a basis-declared grams band (or null) plus provenance and confidence.
+ * Edible anchors bypass refuse conversion; gross-as-served anchors include
+ * bone/shell/rind and pass through `refuse-mass.ts` exactly once. The resolver
  * does ALL numeric portion resolution; the LLM only extracted the evidence.
  *
  * Ladder (strict order — first hit wins):
- *   1. Explicit user mass (explicitMass / raw-weight state hint) — verbatim,
- *      raw basis honored with NO cooking-yield fudge.
+ *   1. Explicit user mass (explicitMass / raw-weight state hint) — physical
+ *      mass basis honored verbatim; raw cooking state gets NO yield fudge.
  *   2. Packaged / serving weight carried on the matched DB row (rare; skipped
  *      when the row has none).
  *   3. Retrieved portion prior matching concept + unit-type + locale + form.
@@ -24,13 +26,14 @@
 
 import { AMBIGUOUS } from './concepts';
 import { applySizeModifier, findPrior } from './priors';
+import { classifyRefuseCut } from './refuse-cut';
 import type {
   GramsBand,
   PortionResolution,
   QuantityEvidence,
   ResolverConceptInput,
 } from './types';
-import { resolveUnitType } from './unit-lexicon';
+import { isPieceLikeUnitToken, resolveUnitType } from './unit-lexicon';
 
 /**
  * Calibrated relative-width threshold for step 7. When a resolved band's
@@ -70,6 +73,7 @@ export function resolvePortion(
   if (quantity.count === 0) {
     return {
       grams: null,
+      massBasis: null,
       provenance: 'unresolved',
       confidence: 'none',
       unresolvedReason: 'explicit_zero',
@@ -78,16 +82,23 @@ export function resolvePortion(
   }
 
   // ---- Step 1: explicit user mass -------------------------------------
-  // Honored verbatim. A raw basis means NO cooking-yield conversion here — the
-  // downstream bridge already routes raw grams 1:1 against the raw DB row.
+  // Unknown mass on a refuse-bearing named cut defaults to gross-as-served.
+  // For boneless foods, rice, and liquids gross and edible are equivalent.
   const explicit = quantity.explicitMass;
   if (explicit && Number.isFinite(explicit.grams) && explicit.grams > 0) {
     const g = explicit.grams;
+    const cut = classifyRefuseCut(
+      concept.canonicalName ?? '',
+      concept.rawName ?? ''
+    );
+    const massBasis =
+      explicit.basis === 'unknown' && cut ? 'gross_as_served' : explicit.basis;
     return {
       grams: { low: g, mid: g, high: g },
+      massBasis,
       provenance: 'explicit_user_mass',
       confidence: 'high',
-      note: `explicit user mass ${g}g (basis=${explicit.basis}); honored verbatim, no yield fudge`,
+      note: `explicit user mass ${g}g (massBasis=${massBasis}); honored verbatim, no yield fudge`,
     };
   }
 
@@ -97,6 +108,7 @@ export function resolvePortion(
   if (concept.ambiguous || concept.conceptId === AMBIGUOUS) {
     return {
       grams: null,
+      massBasis: null,
       provenance: 'unresolved',
       confidence: 'none',
       unresolvedReason: 'ambiguous_food',
@@ -112,6 +124,7 @@ export function resolvePortion(
   if (unitType === 'mass') {
     return {
       grams: null,
+      massBasis: null,
       provenance: 'llm_range',
       confidence: 'none',
       note: 'mass unit token without explicitMass — defer to Call 2 LLM range',
@@ -125,6 +138,7 @@ export function resolvePortion(
     const g = serving * count;
     return {
       grams: { low: g, mid: g, high: g },
+      massBasis: 'edible',
       provenance: 'packaged_serving',
       confidence: 'high',
       note: `packaged serving ${serving}g × ${count}`,
@@ -141,6 +155,7 @@ export function resolvePortion(
       unitType,
       locale: concept.locale,
       form: concept.form,
+      pieceLikeUnit: isPieceLikeUnitToken(quantity.unitToken),
     });
     if (prior) {
       const count = quantity.count && quantity.count > 0 ? quantity.count : 1;
@@ -161,6 +176,7 @@ export function resolvePortion(
       if (relativeWidth(prior.perUnit) > MAX_RELATIVE_BAND_WIDTH) {
         return {
           grams: null,
+          massBasis: null,
           provenance: 'unresolved',
           confidence: 'none',
           unresolvedReason: 'unresolved_portion',
@@ -171,6 +187,7 @@ export function resolvePortion(
         prior.locale === 'global' ? 'curated_prior' : 'retrieved_prior';
       return {
         grams,
+        massBasis: prior.massBasis,
         provenance,
         confidence: prior.confidence,
         note: `prior ${prior.conceptId}/${unitType}/${prior.locale}/${prior.form} × ${count}${
@@ -187,6 +204,7 @@ export function resolvePortion(
   // ---- Step 6: null → defer to Call 2 (LLM range) ---------------------
   return {
     grams: null,
+    massBasis: null,
     provenance: 'llm_range',
     confidence: 'none',
     note: unitType

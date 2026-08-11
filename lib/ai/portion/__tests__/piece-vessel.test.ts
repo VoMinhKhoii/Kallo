@@ -441,6 +441,7 @@ describe('nearestPieceTier', () => {
       'khua',
       'khoanh',
       'phi le',
+      'cuc',
       'fillet',
       'piece',
       'pieces',
