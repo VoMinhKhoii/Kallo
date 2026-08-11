@@ -25,7 +25,6 @@ class CalorieScopeStats extends StatelessWidget {
     required this.dateSpan,
     this.selectedValue,
     this.hasSelection = false,
-    this.isWeekBucket = false,
     this.isEmpty = false,
   });
 
@@ -42,9 +41,6 @@ class CalorieScopeStats extends StatelessWidget {
   /// goes away rather than offering a choice that would change nothing.
   final double? selectedValue;
   final bool hasSelection;
-
-  /// A week bucket's figure is still a per-day average; a day's is a total.
-  final bool isWeekBucket;
 
   /// Nothing logged in the range. Both scopes read "—", so the switch would be
   /// a choice between two blanks — show the logged-day figure alone.
@@ -71,26 +67,12 @@ class CalorieScopeStats extends StatelessWidget {
       value = averages.forScope(scope).averagePerDay;
     }
 
-    final String unitKey;
-    if (hasSelection) {
-      unitKey = isWeekBucket
-          ? 'nutrition.rhythm.kcalPerLoggedDay'
-          : 'nutrition.rhythm.calories';
-    } else if (isEmpty || !onComplete) {
-      unitKey = 'nutrition.rhythm.kcalPerLoggedDay';
-    } else {
-      unitKey = 'nutrition.rhythm.kcalPerCompleteDay';
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (showSwitch)
-          Align(
-            alignment: Alignment.centerRight,
-            child: _ScopeSwitch(onComplete: onComplete, onTap: _toggle),
-          ),
+        // The figure leads — it is what the card is for. The switch sits under
+        // it rather than above, so nothing pushes the number off the top.
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
@@ -100,18 +82,26 @@ class CalorieScopeStats extends StatelessWidget {
               style: dashHero(),
             ),
             const SizedBox(width: NhamSpacing.sp2),
-            // The unit carries the denominator — "kcal per complete day" — so
-            // the figure is never a bare number needing a caption.
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Text(tr(unitKey), style: dashBody(color: kInkMuted)),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                tr('nutrition.rhythm.calories'),
+                style: dashBody(color: kInkMuted),
               ),
             ),
           ],
         ),
         const SizedBox(height: 2),
         Text(dateSpan, style: dashMeta(color: kInkMuted)),
+        if (showSwitch) ...[
+          const SizedBox(height: NhamSpacing.sp1),
+          // Pulled back by its own padding so the label's left edge lines up
+          // with the figure above it.
+          Transform.translate(
+            offset: const Offset(-NhamSpacing.sp2, 0),
+            child: _ScopeSwitch(onComplete: onComplete, onTap: _toggle),
+          ),
+        ],
       ],
     );
   }

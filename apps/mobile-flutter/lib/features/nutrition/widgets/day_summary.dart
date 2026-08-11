@@ -96,7 +96,6 @@ class DaySummary extends StatelessWidget {
                               ?.averagePerDay ??
                           0),
                   hasSelection: selectedIndex != null,
-                  isWeekBucket: daySeries.unit == 'week',
                   isEmpty: isEmpty,
                 ),
               ),

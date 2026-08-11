@@ -516,10 +516,8 @@
     "rhythm": {
       "eyebrow": "The shape of your days",
       "calories": "kcal",
-      "loggedDays": "Logged days",
+      "loggedDays": "All",
       "completeDays": "Complete days",
-      "kcalPerLoggedDay": "kcal per logged day",
-      "kcalPerCompleteDay": "kcal per complete day",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
       "days": "days",

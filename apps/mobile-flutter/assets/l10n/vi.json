@@ -516,10 +516,8 @@
     "rhythm": {
       "eyebrow": "Nhịp ăn mỗi ngày",
       "calories": "kcal",
-      "loggedDays": "Ngày ghi nhận",
+      "loggedDays": "Tất cả",
       "completeDays": "Ngày đủ bữa",
-      "kcalPerLoggedDay": "kcal mỗi ngày ghi nhận",
-      "kcalPerCompleteDay": "kcal mỗi ngày đủ bữa",
       "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
       "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
       "days": "ngày",

@@ -76,13 +76,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // One figure, carrying its own denominator and the dates it covers.
+    // One figure, in plain kcal, with the dates it covers under it.
     expect(find.text('2,000'), findsOneWidget);
-    expect(find.textContaining('kcal per complete day'), findsOneWidget);
     expect(find.text('10 – 16 Aug 2026'), findsOneWidget);
     // The other scope is offered by NAME rather than shown as a loose number.
     expect(find.text('350'), findsNothing);
-    expect(find.text('Logged days'), findsOneWidget);
+    expect(find.text('All'), findsOneWidget);
   });
 
   testWidgets('the switch moves to the scope it names', (tester) async {
@@ -98,7 +97,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Logged days'));
+    await tester.tap(find.text('All'));
     await tester.pump();
 
     expect(promoted, NutritionDayScope.all);
@@ -117,7 +116,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('350'), findsOneWidget);
-    expect(find.textContaining('kcal per logged day'), findsOneWidget);
     expect(find.text('Complete days'), findsOneWidget);
   });
 
@@ -136,6 +134,6 @@ void main() {
     // No hint copy any more — the dash says it, and the switch offers the way
     // out by naming the other scope.
     expect(find.text('—'), findsOneWidget);
-    expect(find.textContaining('Logged days'), findsOneWidget);
+    expect(find.text('All'), findsOneWidget);
   });
 }

@@ -113,7 +113,6 @@ export function DaySummary({
               onScopeChange={onScopeChange}
               dateSpan={dateSpan}
               selectedValue={isSelected ? activeAvg : undefined}
-              isWeekBucket={daySeries.unit === 'week'}
               isEmpty={isEmpty}
             />
           </div>
