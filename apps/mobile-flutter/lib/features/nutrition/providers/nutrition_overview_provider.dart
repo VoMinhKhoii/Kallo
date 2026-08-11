@@ -28,30 +28,35 @@ typedef NutritionOverviewArg = ({
 /// Family keyed by (range, scope). The query key registry tuple is
 /// `QueryKeys.nutritionOverview(range, tz, scope)`.
 ///
-/// `keepPreviousData` semantics: a provider instance re-seeds from the last
-/// overview resolved *for its own (range, scope)*, so returning to a selection
-/// renders instantly instead of collapsing to a skeleton.
+/// `keepPreviousData` semantics: a provider instance seeds from its own last
+/// overview when it has one, and otherwise from whatever the account last saw —
+/// so switching range or day scope keeps the page standing while the new
+/// numbers land, rather than blanking to a grey skeleton and back.
 final nutritionOverviewProvider = AsyncNotifierProvider.family<
   NutritionOverviewNotifier,
   NutritionOverview,
   NutritionOverviewArg
 >(NutritionOverviewNotifier.new);
 
-/// Holds the last successful overview per selection so a returning instance can
-/// seed itself (the RN `keepPreviousData` behavior).
+/// The last successful overview for each selection, so a returning instance
+/// renders instantly instead of collapsing to a skeleton.
+final Map<String, NutritionOverview> _lastOverviewByArg = {};
+
+/// The last successful overview for the ACCOUNT, whatever selection produced
+/// it — the fallback seed when a selection has nothing of its own yet.
 ///
-/// The key carries the range and the day scope alongside user + timezone. It
-/// used to be user + timezone alone, which meant switching range — or toggling
-/// All/Complete — seeded the new instance with the PREVIOUS selection's
-/// overview, so the page briefly rendered another selection's numbers, and its
-/// `resolvedRange`, as if they were the new one's. A selection with nothing
-/// cached now shows the skeleton, which is the honest answer: we have no data
-/// for it yet.
+/// This is `keepPreviousData`: switching range or day scope keeps the page
+/// standing and swaps the numbers when they land, rather than blanking to grey
+/// and back. It is safe now that the range selector reads the REQUESTED range
+/// rather than the seeded overview's `resolvedRange` — otherwise the stale
+/// value drove the highlight and 30d → 90d flashed 7d on the way.
 final Map<String, NutritionOverview> _lastOverviewByAccount = {};
 
+String _accountKey(String? userId) =>
+    '${userId ?? 'signed-out'}:${nutritionTimezoneOffset()}';
+
 String _overviewCacheKey(String? userId, NutritionOverviewArg arg) =>
-    '${userId ?? 'signed-out'}:${nutritionTimezoneOffset()}'
-    ':${arg.range.value}:${arg.scope.value}';
+    '${_accountKey(userId)}:${arg.range.value}:${arg.scope.value}';
 
 class NutritionOverviewNotifier
     extends FamilyAsyncNotifier<NutritionOverview, NutritionOverviewArg> {
@@ -59,14 +64,15 @@ class NutritionOverviewNotifier
   Future<NutritionOverview> build(NutritionOverviewArg arg) async {
     final userId = ref.watch(currentSessionProvider)?.user.id;
     final cacheKey = _overviewCacheKey(userId, arg);
-    final previous = _lastOverviewByAccount[cacheKey];
+    // This selection's own data if we have it, otherwise whatever the account
+    // last saw, so the layout never blanks mid-switch.
+    final previous =
+        _lastOverviewByArg[cacheKey] ?? _lastOverviewByAccount[_accountKey(userId)];
     if (previous != null) {
-      // Seed with this selection's prior overview so consumers keep rendering
-      // the editorial stack while it revalidates (keepPreviousData).
       state = AsyncData(previous);
     }
     final overview = await _fetch(arg);
-    _lastOverviewByAccount[cacheKey] = overview;
+    _remember(userId, arg, overview);
     return overview;
   }
 
@@ -79,6 +85,15 @@ class NutritionOverviewNotifier
       '&days=${arg.scope.value}',
     );
     return NutritionOverview.fromJson(json);
+  }
+
+  void _remember(
+    String? userId,
+    NutritionOverviewArg arg,
+    NutritionOverview overview,
+  ) {
+    _lastOverviewByArg[_overviewCacheKey(userId, arg)] = overview;
+    _lastOverviewByAccount[_accountKey(userId)] = overview;
   }
 
   /// Refetch the current range — mirrors `query.refetch()`. Keeps the existing
@@ -97,8 +112,7 @@ class NutritionOverviewNotifier
     );
     try {
       final overview = await _fetch(arg);
-      final userId = ref.read(currentSessionProvider)?.user.id;
-      _lastOverviewByAccount[_overviewCacheKey(userId, arg)] = overview;
+      _remember(ref.read(currentSessionProvider)?.user.id, arg, overview);
       state = AsyncData(overview);
       return true;
     } catch (error, stack) {

@@ -139,7 +139,7 @@ export function NutritionShell() {
             <div
               aria-live="polite"
               aria-busy={overviewQuery.isFetching}
-              className="flex min-h-full flex-col gap-3"
+              className="flex flex-1 flex-col gap-3"
             >
               <DaySummary
                 macros={macros}

@@ -17,6 +17,7 @@ class NhamEmptyState extends StatelessWidget {
     required this.description,
     this.mark,
     this.action,
+    this.minHeight = 288,
   });
 
   /// A single thin line glyph above the title.
@@ -29,11 +30,16 @@ class NhamEmptyState extends StatelessWidget {
   /// The one way forward. Optional: some surfaces have nothing to offer.
   final Widget? action;
 
+  /// The block it centres itself inside. Its OWN space — not the whole page,
+  /// which would drift with however much happens to sit above and below it.
+  final double minHeight;
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: minHeight),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (mark != null) ...[

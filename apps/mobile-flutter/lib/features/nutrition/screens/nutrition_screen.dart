@@ -130,17 +130,42 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
             onTap: _clearSelection,
-            child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp3,
-              NhamSpacing.sp4,
-              NhamSpacing.sp3,
-              NhamSpacing.sp10,
-            ),
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
-            ),
-              child: _buildBody(async, isFetching),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    NhamSpacing.sp3,
+                    NhamSpacing.sp4,
+                    NhamSpacing.sp3,
+                    0,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: _buildBody(async, isFetching),
+                  ),
+                ),
+                // The source line belongs to the PAGE, not to the section above
+                // it. `hasScrollBody: false` hands this sliver whatever height
+                // is left over, so the line sits on the bottom edge on a short
+                // page and simply follows the content on a long one.
+                const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    NhamSpacing.sp3,
+                    NhamSpacing.sp5,
+                    NhamSpacing.sp3,
+                    NhamSpacing.sp10,
+                  ),
+                  sliver: SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: SourceAttribution(),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -238,8 +263,6 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           const SizedBox(height: 12),
           _NutrientGrid(cards: minerals),
         ],
-        const SizedBox(height: 24),
-        const SourceAttribution(),
       ],
     );
   }
