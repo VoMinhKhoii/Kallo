@@ -2,6 +2,19 @@ import { describe, expect, it } from 'vitest';
 import type { userProfiles } from '@/lib/db/schema';
 import { mapOverviewRowsToDto } from '@/lib/nutrition/actions/overview/mapper';
 import type { OverviewMealItemRow } from '@/lib/nutrition/actions/overview/query';
+import type { CalorieAverages } from '@/lib/nutrition/types';
+
+/** No prior window logged — the delta figure simply has nothing to compare. */
+const NO_PREVIOUS: CalorieAverages = {
+  all: { averagePerDay: null, days: 0 },
+  complete: { averagePerDay: null, days: 0 },
+};
+
+/** A prior window WITH data, to prove the field is forwarded and not rebuilt. */
+const PREVIOUS: CalorieAverages = {
+  all: { averagePerDay: 1800, days: 7 },
+  complete: { averagePerDay: 2100, days: 5 },
+};
 
 const baseProfile = {
   biologicalSex: 'male',
@@ -50,7 +63,10 @@ function row(overrides: Partial<OverviewMealItemRow>): OverviewMealItemRow {
   };
 }
 
-function mapRows(rows: OverviewMealItemRow[]) {
+function mapRows(
+  rows: OverviewMealItemRow[],
+  previousCalorieAverages: CalorieAverages = NO_PREVIOUS
+) {
   return mapOverviewRowsToDto({
     rows,
     profile: baseProfile,
@@ -62,6 +78,7 @@ function mapRows(rows: OverviewMealItemRow[]) {
       endDate: '2026-04-25',
       bucketTimezone: 'local',
     },
+    previousCalorieAverages,
   });
 }
 
@@ -135,6 +152,16 @@ describe('mapOverviewRowsToDto', () => {
     }
   });
 
+  it('forwards the previous window averages untouched', () => {
+    // Three return paths carry this field; a dropped assignment on any of them
+    // would silently remove the delta from the card.
+    const overview = mapRows(
+      [row({ localDate: '2026-04-25', calories: 2000 })],
+      PREVIOUS
+    );
+    expect(overview.previousCalorieAverages).toEqual(PREVIOUS);
+  });
+
   describe('daySeries', () => {
     it('emits one day bucket per calendar day for the 7d range', () => {
       const overview = mapRows([
@@ -197,14 +224,48 @@ describe('mapOverviewRowsToDto', () => {
           endDate: '2026-04-25',
           bucketTimezone: 'local',
         },
+        previousCalorieAverages: NO_PREVIOUS,
       });
 
       expect(overview.daySeries.unit).toBe('week');
       const calories = overview.daySeries.series.find(
         (s) => s.metric === 'calories'
       );
-      // 30 days / 7 → 5 week buckets (final clamps to the period end).
+      // 30 days / 7 → 5 week buckets (the final one clamps to the period end).
       expect(calories?.buckets).toHaveLength(5);
+    });
+
+    it('buckets by week for the 90d range', () => {
+      const rows: OverviewMealItemRow[] = [];
+      // 90 fully-logged days ending 2026-04-25.
+      for (let i = 0; i < 90; i++) {
+        const date = new Date(
+          Date.parse('2026-04-25T00:00:00.000Z') - i * 86_400_000
+        )
+          .toISOString()
+          .slice(0, 10);
+        rows.push(row({ localDate: date, calories: 2000, proteinG: 100 }));
+      }
+      const overview = mapOverviewRowsToDto({
+        rows,
+        profile: baseProfile,
+        requestedRange: '90d',
+        resolvedRange: '90d',
+        loggedDaysLast30: 30,
+        period: {
+          startDate: '2026-01-26',
+          endDate: '2026-04-25',
+          bucketTimezone: 'local',
+        },
+        previousCalorieAverages: NO_PREVIOUS,
+      });
+
+      expect(overview.daySeries.unit).toBe('week');
+      const calories = overview.daySeries.series.find(
+        (s) => s.metric === 'calories'
+      );
+      // 90 days / 7 → 13 week buckets (the final one clamps to the period end).
+      expect(calories?.buckets).toHaveLength(13);
     });
 
     it('includes the default micronutrients in the series', () => {
@@ -239,6 +300,7 @@ describe('mapOverviewRowsToDto', () => {
           bucketTimezone: 'local',
         },
         dayScope,
+        previousCalorieAverages: NO_PREVIOUS,
       });
     }
 
@@ -275,7 +337,7 @@ describe('mapOverviewRowsToDto', () => {
       expect(overview.completeDays).toBe(1);
     });
 
-    it("days:'complete' with only under-logged days returns an empty body", () => {
+    it("days:'complete' with only under-logged days returns a zeroed body", () => {
       const overview = mapScoped(
         [
           row({ localDate: '2026-04-24', calories: 400 }),
@@ -284,10 +346,137 @@ describe('mapOverviewRowsToDto', () => {
         'complete'
       );
       expect(overview.completeDays).toBe(0);
-      expect(overview.macros).toHaveLength(0);
-      expect(overview.daySeries.series).toHaveLength(0);
+      // The body keeps its shape at zero rather than collapsing: every nutrient
+      // row is present with its real target and a null average, so the client
+      // renders the same page with "—" instead of a separate empty screen.
+      expect(overview.macros.length).toBeGreaterThan(0);
+      expect(overview.macros.every((m) => m.averagePerDay === 0)).toBe(true);
+      expect(overview.micronutrients.length).toBeGreaterThan(0);
+      expect(
+        overview.micronutrients.every(
+          (c) => c.averagePerDay === null && c.percentOfTarget === null
+        )
+      ).toBe(true);
+      expect(overview.micronutrients.every((c) => c.target !== null)).toBe(
+        true
+      );
       expect(overview.calorieAverages.complete.averagePerDay).toBeNull();
       expect(overview.calorieAverages.all.averagePerDay).toBe(350);
+
+      // The chart is the exception to the zeroed body: the days ARE there,
+      // none of them qualifying, so every logged column draws at its real
+      // height flagged for greying rather than the chart going blank.
+      const calories = overview.daySeries.series.find(
+        (s) => s.metric === 'calories'
+      );
+      expect(
+        calories?.buckets.find((b) => b.startDate === '2026-04-24')
+      ).toMatchObject({ value: 400, excluded: true });
+      expect(
+        calories?.buckets.find((b) => b.startDate === '2026-04-25')
+      ).toMatchObject({ value: 300, excluded: true });
+      // Nothing qualifies, so the whisker band has no spread to report.
+      expect(calories?.min).toBeNull();
+      expect(calories?.max).toBeNull();
+    });
+
+    it('a scope flip greys columns without moving any of them', () => {
+      // The invariant the toggle promises: it changes what is AVERAGED, not
+      // what was eaten, so no bar may move. What it does instead is grey.
+      const rows = [completeDay, partialDay];
+      const bucketsFor = (scope: 'all' | 'complete') =>
+        mapScoped(rows, scope).daySeries.series.find(
+          (s) => s.metric === 'calories'
+        )?.buckets ?? [];
+
+      const complete = bucketsFor('complete');
+      const all = bucketsFor('all');
+      const bucketOn = (buckets: typeof complete, date: string) =>
+        buckets.find((b) => b.startDate === date);
+
+      // The complete day holds its height across the toggle, counted either way.
+      expect(bucketOn(complete, '2026-04-24')).toMatchObject({
+        value: 2000,
+        excluded: false,
+      });
+      expect(bucketOn(all, '2026-04-24')).toMatchObject({
+        value: 2000,
+        excluded: false,
+      });
+      // The partial day keeps its real height under BOTH scopes — under
+      // 'complete' it is merely flagged, so the client greys it. Dropping it
+      // would leave a hole indistinguishable from a day nobody logged.
+      expect(bucketOn(complete, '2026-04-25')).toMatchObject({
+        value: 400,
+        excluded: true,
+      });
+      expect(bucketOn(all, '2026-04-25')).toMatchObject({
+        value: 400,
+        excluded: false,
+      });
+      // A day with nothing logged is a gap under both, and not "excluded" —
+      // there is nothing there to set aside.
+      expect(bucketOn(complete, '2026-04-19')).toMatchObject({
+        value: null,
+        excluded: false,
+      });
+      expect(bucketOn(all, '2026-04-19')).toMatchObject({
+        value: null,
+        excluded: false,
+      });
+
+      // The headline is averaged over the same day set the bars are.
+      expect(caloriesAvg(mapScoped(rows, 'complete'))).toBe(2000);
+      expect(caloriesAvg(mapScoped(rows, 'all'))).toBe(1200);
+    });
+
+    it('holds week-axis heights too, greying only the fully-partial weeks', () => {
+      // A week mixing a complete and a partial day keeps averaging both, in
+      // both scopes — the alternative (divide by the in-scope days) is exact
+      // against the headline but makes the column jump on a toggle, which
+      // reads as the data being unstable. A week with NO complete day is the
+      // one the scope actually drops, and that is what greys.
+      const weekRows = [
+        row({ localDate: '2026-04-20', calories: 2000 }),
+        row({ localDate: '2026-04-21', calories: 400 }),
+        row({ localDate: '2026-04-13', calories: 300 }),
+      ];
+      const bucketOn = (scope: 'all' | 'complete', date: string) =>
+        mapOverviewRowsToDto({
+          rows: weekRows,
+          profile: baseProfile,
+          requestedRange: '30d',
+          resolvedRange: '30d',
+          loggedDaysLast30: 3,
+          period: {
+            startDate: '2026-03-27',
+            endDate: '2026-04-25',
+            bucketTimezone: 'local',
+          },
+          dayScope: scope,
+          previousCalorieAverages: NO_PREVIOUS,
+        })
+          .daySeries.series.find((s) => s.metric === 'calories')
+          ?.buckets.find((b) => b.startDate <= date && b.endDate >= date);
+
+      // The mixed week: same height either way, counted either way.
+      expect(bucketOn('all', '2026-04-20')).toMatchObject({
+        value: 1200,
+        excluded: false,
+      });
+      expect(bucketOn('complete', '2026-04-20')).toMatchObject({
+        value: 1200,
+        excluded: false,
+      });
+      // The all-partial week: same height, but greyed under 'complete'.
+      expect(bucketOn('all', '2026-04-13')).toMatchObject({
+        value: 300,
+        excluded: false,
+      });
+      expect(bucketOn('complete', '2026-04-13')).toMatchObject({
+        value: 300,
+        excluded: true,
+      });
     });
 
     it('legacy (no scope) keeps the safety valve for all-partial periods', () => {

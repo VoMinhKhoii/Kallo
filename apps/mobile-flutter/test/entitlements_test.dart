@@ -339,7 +339,17 @@ void main() {
 
       expect(premium, isFalse);
       expect(stopwatch.elapsed, lessThan(const Duration(milliseconds: 500)));
-      expect(api.postCalls, 1);
+      // At most two, not exactly one: `pollUntilPremium` reconciles twice by
+      // design, and whether the second one fires here is a scheduling detail.
+      // The hung reconcile is supposed to eat the whole 20ms budget, leaving
+      // nothing for the retry window — but on a loaded machine it returns a
+      // sliver early, the window opens, and a second POST goes out legitimately.
+      // Pinning 1 pinned the fast-machine outcome; 2 is the documented ceiling
+      // and is what "does not spin on a hung reconcile" actually means.
+      // Floor as well as ceiling: the first reconcile is not optional, and a
+      // bare `lessThanOrEqualTo(2)` would also pass if none had fired at all.
+      expect(api.postCalls, greaterThanOrEqualTo(1));
+      expect(api.postCalls, lessThanOrEqualTo(2));
       expect(api.getCalls, 1);
       expect(
         c.read(entitlementsProvider(userA)).valueOrNull?.isPremium,

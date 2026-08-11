@@ -105,11 +105,11 @@
     "title": "Nutrition",
     "subtitle": "Review long-term macro and micronutrient patterns.",
     "loading": "Loading nutrition overview…",
+    "cardTitle": "Average",
     "range": {
       "label": "Nutrition range",
-      "1d": "Today",
-      "7d": "Week",
-      "30d": "Month",
+      "7d": "7 days",
+      "30d": "30 days",
       "90d": "90 days"
     },
     "nutrientGroups": {
@@ -166,6 +166,11 @@
       "target": "Target",
       "noTarget": "No target"
     },
+    "macrosShort": {
+      "protein": "Pro",
+      "carbohydrate": "Carbs",
+      "fat": "Fat"
+    },
     "grid": {
       "eyebrow": "Micronutrients",
       "title": "Micronutrient coverage",
@@ -186,6 +191,9 @@
       "collapse": "Hide trend"
     },
     "detail": {
+      "perDay": "per day",
+      "close": "Close details",
+      "noNutrients": "No nutrient data for this period.",
       "averageVsTarget": "Average vs target"
     },
     "confidence": {
@@ -513,12 +521,16 @@
     "rhythm": {
       "eyebrow": "The shape of your days",
       "calories": "kcal",
+      "loggedDays": "All",
+      "completeDays": "Complete days",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
       "days": "days",
       "noCompleteDays": "No fully-logged days yet — keep logging, or tap All.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Macro composition",
+      "diffUp": "up from the period before",
+      "diffDown": "down from the period before",
       "consistency": {
         "steady": "steady",
         "rhythmic": "rhythmic",

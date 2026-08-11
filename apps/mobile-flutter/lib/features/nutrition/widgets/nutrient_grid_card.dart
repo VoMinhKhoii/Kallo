@@ -26,9 +26,7 @@ class NutrientGridCard extends StatelessWidget {
     final locale = context.locale.languageCode;
     final label = tr(card.labelKey);
     final pct = card.percentOfTarget;
-    final isLimited =
-        card.displayState == ConfidenceDisplayState.limitedData ||
-        card.displayState == ConfidenceDisplayState.insufficientData;
+    final isLimited = isLowConfidence(card.displayState);
     final showExceed = shouldShowExceed(card.nutrientType, pct);
 
     // Success = a real, confident reading that's on target (floor met, or a

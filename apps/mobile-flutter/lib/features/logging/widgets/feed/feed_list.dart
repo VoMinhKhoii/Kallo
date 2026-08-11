@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/feed/view_state.dart';
@@ -8,6 +7,7 @@ import '../../logic/logging_spacing.dart';
 import '../terminal/logging_day_error_state.dart';
 import 'feed_meal_card.dart';
 import 'feed_no_meals_view.dart';
+import '../../../../shared/widgets/nham_refresh.dart';
 
 /// The scrollable day: the saved meal cards with the live [footer] as their
 /// last item, plus the day's error / empty / first-load branches.
@@ -84,9 +84,8 @@ class FeedList extends StatelessWidget {
       );
     }
 
-    return RefreshIndicator.adaptive(
+    return NhamRefresh(
       onRefresh: onRefresh,
-      color: NhamColors.accent,
       child: ListView.separated(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),

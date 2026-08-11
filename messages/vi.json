@@ -93,13 +93,19 @@
   "nutrition": {
     "eyebrow": "Phân tích xu hướng",
     "title": "Dinh dưỡng",
+    "cardTitle": "Trung bình",
     "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn từ những bữa ăn bạn đã ghi.",
     "loading": "Đang tải tổng quan dinh dưỡng…",
+    "detail": {
+      "perDay": "mỗi ngày",
+      "close": "Đóng chi tiết ngày",
+      "noNutrients": "Chưa có dữ liệu vi chất cho khoảng này."
+    },
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
-      "1d": "Hôm nay",
       "7d": "7 ngày",
-      "30d": "30 ngày"
+      "30d": "30 ngày",
+      "90d": "90 ngày"
     },
     "summary": {
       "label": "Tóm tắt dinh dưỡng",
@@ -130,6 +136,11 @@
       "weakest": "Yếu nhất",
       "target": "Mục tiêu",
       "noTarget": "Không có mục tiêu"
+    },
+    "macrosShort": {
+      "protein": "Đạm",
+      "carbohydrate": "Tinh bột",
+      "fat": "Chất béo"
     },
     "grid": {
       "title": "Độ phủ vi chất",
@@ -468,6 +479,8 @@
     },
     "rhythm": {
       "calories": "kcal",
+      "loggedDays": "Tất cả",
+      "completeDays": "Ngày đủ bữa",
       "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
       "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
       "dayCount": "{count} ngày",
@@ -492,7 +505,9 @@
         "bucketDay": "ngày",
         "bucketWeek": "tuần",
         "gap": "chưa ghi đủ bữa"
-      }
+      },
+      "diffUp": "tăng so với kỳ trước",
+      "diffDown": "giảm so với kỳ trước"
     },
     "focus": {
       "eyebrow": "Cần để ý",
