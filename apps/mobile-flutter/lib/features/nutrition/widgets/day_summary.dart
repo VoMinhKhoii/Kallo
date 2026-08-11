@@ -132,6 +132,7 @@ class DaySummary extends StatelessWidget {
                       label: kCompositionShort[key]!,
                       grams: macros.where((m) => m.key == key).firstOrNull,
                       color: kCompositionColors[key]!,
+                      icon: _macroIcons[key]!,
                       locale: locale,
                     ),
                 ],
@@ -171,17 +172,28 @@ class _CompositionBar extends StatelessWidget {
   }
 }
 
+/// One food per macro instead of an abstract colour swatch — beef, wheat, and a
+/// drop of oil for fat, which has no single ingredient the way the other two
+/// do. Same three as the web legend (keep in sync).
+const Map<String, IconData> _macroIcons = {
+  'protein': LucideIcons.beef300,
+  'carbohydrate': LucideIcons.wheat300,
+  'fat': LucideIcons.droplet300,
+};
+
 class _MacroLegend extends StatelessWidget {
   const _MacroLegend({
     required this.label,
     required this.grams,
     required this.color,
+    required this.icon,
     required this.locale,
   });
 
   final String label;
   final MacroPattern? grams;
   final Color color;
+  final IconData icon;
   final String locale;
 
   @override
@@ -190,38 +202,17 @@ class _MacroLegend extends StatelessWidget {
     final value =
         m == null ? '—' : '${formatLocalizedNumber(m.averagePerDay, locale)}g';
 
-    // Deviation from this macro's target (+over / −under), shown with an arrow.
-    int? dev;
-    if (m?.target != null && m!.target! > 0) {
-      dev = (m.averagePerDay / m.target! * 100 - 100).round();
-    }
-
+    // No ±% against target here. Three of them pushed the row onto two lines
+    // with the last item stranded and centred, and the nutrient grid below
+    // already reports every macro against its target properly.
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Longer rounded swatch (a short bar, not a tiny dot).
-        Container(
-          width: 16,
-          height: 6,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(NhamRadii.pill),
-          ),
-        ),
+        // The icon carries the band's colour, so it is the colour key as well
+        // as the name — no swatch to decode beside it.
+        Icon(icon, size: 14, color: color),
         const SizedBox(width: NhamSpacing.sp1_5),
         Text('$label $value', style: dashMeta(tabular: true)),
-        if (dev != null) ...[
-          const SizedBox(width: NhamSpacing.sp1),
-          Icon(
-            dev >= 0 ? LucideIcons.arrowUp300 : LucideIcons.arrowDown300,
-            size: 12,
-            color: kInkMuted,
-          ),
-          Text(
-            '${dev.abs()}%',
-            style: dashMeta(color: kInkMuted, tabular: true),
-          ),
-        ],
       ],
     );
   }

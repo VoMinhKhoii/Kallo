@@ -15,6 +15,7 @@ import { MacroTrendChart } from './macro-trend-chart';
 import {
   buildMacroTrendData,
   COMPOSITION_COLORS,
+  COMPOSITION_ICONS,
   COMPOSITION_KEYS,
   COMPOSITION_SHORT,
   KCAL_PER_GRAM,
@@ -164,21 +165,27 @@ export function DaySummary({
           </div>
         )}
 
-        {/* Centered legend: a short color bar (not a dot) + label + avg grams. */}
+        {/* Centered legend: the macro's food icon in its band colour, then the
+            label and average grams. The icon doubles as the colour key, so it
+            carries the band it names rather than sitting beside an abstract
+            swatch that has to be decoded. */}
         <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2">
-          {segments.map((segment) => (
-            <span
-              key={segment.key}
-              className="inline-flex items-center gap-1.5 text-[12px] text-nham-text tabular-nums"
-            >
+          {segments.map((segment) => {
+            const Icon = COMPOSITION_ICONS[segment.key];
+            return (
               <span
-                aria-hidden="true"
-                className="h-1.5 w-4 rounded-full"
-                style={{ backgroundColor: COMPOSITION_COLORS[segment.key] }}
-              />
-              {segment.label} {formatLocalizedNumber(segment.grams, locale)}g
-            </span>
-          ))}
+                key={segment.key}
+                className="inline-flex items-center gap-1.5 text-[12px] text-nham-text tabular-nums"
+              >
+                <Icon
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0"
+                  style={{ color: COMPOSITION_COLORS[segment.key] }}
+                />
+                {segment.label} {formatLocalizedNumber(segment.grams, locale)}g
+              </span>
+            );
+          })}
         </div>
       </div>
     </motion.section>

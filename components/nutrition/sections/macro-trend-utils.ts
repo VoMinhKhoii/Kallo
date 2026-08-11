@@ -1,3 +1,4 @@
+import { Beef, Droplet, type LucideIcon, Wheat } from 'lucide-react';
 import type {
   DaySeriesBucketUnit,
   MacroKey,
@@ -22,6 +23,17 @@ export const COMPOSITION_SHORT: Record<CompositionKey, string> = {
   protein: 'P',
   carbohydrate: 'C',
   fat: 'F',
+};
+
+/**
+ * The legend's key, one food per macro instead of an abstract colour swatch —
+ * beef, wheat, and a drop of oil for fat, which has no single ingredient the
+ * way the other two do. Same three on both platforms (keep in sync).
+ */
+export const COMPOSITION_ICONS: Record<CompositionKey, LucideIcon> = {
+  protein: Beef,
+  carbohydrate: Wheat,
+  fat: Droplet,
 };
 
 export interface MacroTrendPoint {
