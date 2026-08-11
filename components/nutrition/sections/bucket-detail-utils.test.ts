@@ -110,36 +110,44 @@ describe('buildBucketDetail', () => {
   });
 });
 
-describe('formatBucketRange', () => {
-  it('collapses a single-day bucket to one dated day', () => {
-    expect(
-      formatBucketRange(
-        { startDate: '2026-05-04', endDate: '2026-05-04' },
-        'en'
-      )
-    ).toBe('May 4, 2026');
+describe('formatDateSpan', () => {
+  it('collapses a single day to one dated day', () => {
+    expect(formatDateSpan('2026-05-04', '2026-05-04', 'en')).toBe('4 May 2026');
   });
 
-  it('renders a span for a week bucket, stating the year once', () => {
-    expect(
-      formatBucketRange(
-        { startDate: '2026-05-04', endDate: '2026-05-10' },
-        'en'
-      )
-    ).toBe('May 4 – May 10, 2026');
+  it('states the month and year once inside a single month', () => {
+    expect(formatDateSpan('2026-08-10', '2026-08-16', 'en')).toBe(
+      '10 – 16 Aug 2026'
+    );
+  });
+
+  it('repeats the month when the span crosses one', () => {
+    expect(formatDateSpan('2026-07-28', '2026-08-03', 'en')).toBe(
+      '28 Jul – 3 Aug 2026'
+    );
   });
 
   it('states both years when the span crosses one', () => {
     expect(formatDateSpan('2025-12-29', '2026-01-04', 'en')).toBe(
-      'Dec 29, 2025 – Jan 4, 2026'
+      '29 Dec 2025 – 4 Jan 2026'
     );
   });
 
-  it('follows the locale word order rather than an English pattern', () => {
-    // vi puts the day before the month, spelled "thg N".
-    const span = formatDateSpan('2026-08-05', '2026-08-11', 'vi');
-    expect(span).toContain('5');
-    expect(span).toContain('11');
-    expect(span.indexOf('5')).toBeLessThan(span.indexOf('thg'));
+  it('takes the month token from the locale', () => {
+    // vi spells the short month "thg 8", and day-first suits it natively.
+    expect(formatDateSpan('2026-08-10', '2026-08-16', 'vi')).toBe(
+      `10 – 16 ${new Intl.DateTimeFormat('vi', { month: 'short' }).format(
+        new Date('2026-08-16T00:00:00')
+      )} 2026`
+    );
+  });
+
+  it('routes bucket ranges through the same span', () => {
+    expect(
+      formatBucketRange(
+        { startDate: '2026-08-10', endDate: '2026-08-16' },
+        'en'
+      )
+    ).toBe('10 – 16 Aug 2026');
   });
 });

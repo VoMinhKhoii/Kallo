@@ -28,6 +28,7 @@ class DaySummary extends StatelessWidget {
     required this.todayIndex,
     required this.selectedIndex,
     required this.onSelect,
+    required this.isEmpty,
   });
 
   final List<MacroPattern> macros;
@@ -43,17 +44,16 @@ class DaySummary extends StatelessWidget {
   final int? selectedIndex;
   final ValueChanged<int> onSelect;
 
+  /// Nothing logged in the range: one figure, no scope swap to choose between.
+  final bool isEmpty;
+
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     final calories = macros.where((m) => m.key == 'calories').firstOrNull;
     final composition = buildComposition(macros);
 
-    // The active scope has no qualifying days (only reachable for 'complete'):
-    // the hero shows "—" and a hint, and the body/chart are absent.
     final activeAvg = calorieAverages.forScope(scope).averagePerDay;
-    final isEmptyComplete =
-        scope == NutritionDayScope.complete && activeAvg == null;
     final target = calories?.target;
 
     // For multi-day ranges with ≥2 buckets, show the macro-calorie trend chart;
@@ -97,6 +97,7 @@ class DaySummary extends StatelessWidget {
                           0),
                   hasSelection: selectedIndex != null,
                   isWeekBucket: daySeries.unit == 'week',
+                  isEmpty: isEmpty,
                 ),
               ),
               // Top-right: over/under vs the calorie goal for the active average.
@@ -109,13 +110,6 @@ class DaySummary extends StatelessWidget {
                 ),
             ],
           ),
-          if (isEmptyComplete) ...[
-            const SizedBox(height: NhamSpacing.sp3),
-            Text(
-              tr('nutrition.rhythm.noCompleteDays'),
-              style: dashMeta(color: kInkMuted),
-            ),
-          ],
           if (composition.totalKcal > 0) ...[
             const SizedBox(height: NhamSpacing.sp3),
             if (showTrend)

@@ -108,25 +108,29 @@ BucketDetailData? buildBucketDetail(NutritionDaySeries daySeries, int index) {
 DaySeriesBucket? _bucketAt(NutrientDaySeries series, int index) =>
     index >= 0 && index < series.buckets.length ? series.buckets[index] : null;
 
-/// A `start – end` date span carrying the year, e.g. "Aug 5 – Aug 11, 2026" or
-/// "5 thg 8 – 11 thg 8, 2026". A single day collapses to one date.
+/// A day-first date span: "10 – 16 Aug 2026", or "28 Jul – 3 Aug 2026" when it
+/// crosses a month. A single day collapses to "13 Aug 2026".
 ///
-/// Both ends go through the locale's own day/month/year ordering rather than a
-/// hand-built "5–11 Aug" pattern, which is English word order and reads wrong
-/// in Vietnamese. Mirror of web `formatDateSpan` (keep in sync).
+/// Day-first on purpose, and it happens to suit both languages this app ships:
+/// Vietnamese writes the day before the month anyway, and the month token comes
+/// from the locale ("Aug" / "thg 8"), so nothing is hand-translated. The month
+/// and year are stated once when both ends share them. Mirror of web
+/// `formatDateSpan` (keep in sync).
 String formatDateSpan(String startDate, String endDate, String locale) {
   final start = DateTime.tryParse(startDate);
   if (start == null) return '';
-  final withYear = DateFormat.yMMMd(locale);
-  if (startDate == endDate) return withYear.format(start);
+  String monthOf(DateTime d) => DateFormat.MMM(locale).format(d);
+  String full(DateTime d) => '${d.day} ${monthOf(d)} ${d.year}';
 
+  if (startDate == endDate) return full(start);
   final end = DateTime.tryParse(endDate);
-  if (end == null) return withYear.format(start);
-  // The year is stated once, on the end, unless the span crosses one.
-  final startText = start.year == end.year
-      ? DateFormat.MMMd(locale).format(start)
-      : withYear.format(start);
-  return '$startText – ${withYear.format(end)}';
+  if (end == null) return full(start);
+
+  if (start.year != end.year) return '${full(start)} – ${full(end)}';
+  if (start.month != end.month) {
+    return '${start.day} ${monthOf(start)} – ${full(end)}';
+  }
+  return '${start.day} – ${full(end)}';
 }
 
 /// Re-point the macro figures at one bucket, so the calorie hero and the gram

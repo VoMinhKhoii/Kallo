@@ -3,6 +3,7 @@ import type {
   MacroPattern,
   NutrientCardData,
   NutritionDaySeries,
+  NutritionOverview,
 } from '@/lib/nutrition/types';
 
 /** Charted macros, in the order the detail panel lists them. */
@@ -150,12 +151,14 @@ export function formatBucketRange(
 }
 
 /**
- * A `start – end` date span carrying the year, e.g. "Aug 5 – Aug 11, 2026" or
- * "5 thg 8 – 11 thg 8, 2026". A single day collapses to one date.
+ * A day-first date span: "10 – 16 Aug 2026", or "28 Jul – 3 Aug 2026" when it
+ * crosses a month. A single day collapses to "13 Aug 2026".
  *
- * Both ends go through the locale's own day/month/year ordering rather than a
- * hand-built "5–11 Aug" pattern, which is English word order and reads wrong in
- * Vietnamese. The Dart twin uses the same shape (keep in sync).
+ * Day-first on purpose, and it happens to suit both languages this app ships:
+ * Vietnamese writes the day before the month anyway, and the month token comes
+ * from the locale ("Aug" / "thg 8"), so nothing is hand-translated. The month
+ * and year are stated once when both ends share them. The Dart twin builds the
+ * same string (keep in sync).
  */
 export function formatDateSpan(
   startDate: string,
@@ -164,23 +167,67 @@ export function formatDateSpan(
 ): string {
   const start = new Date(`${startDate}T00:00:00`);
   if (Number.isNaN(start.getTime())) return '';
-  const withYear = new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-  if (startDate === endDate) return withYear.format(start);
+  const monthOf = (date: Date) =>
+    new Intl.DateTimeFormat(locale, { month: 'short' }).format(date);
+  const full = (date: Date) =>
+    `${date.getDate()} ${monthOf(date)} ${date.getFullYear()}`;
 
+  if (startDate === endDate) return full(start);
   const end = new Date(`${endDate}T00:00:00`);
-  if (Number.isNaN(end.getTime())) return withYear.format(start);
-  const dayMonth = new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'short',
-  });
-  // The year is stated once, on the end, unless the span crosses one.
-  const startText =
-    start.getFullYear() === end.getFullYear()
-      ? dayMonth.format(start)
-      : withYear.format(start);
-  return `${startText} – ${withYear.format(end)}`;
+  if (Number.isNaN(end.getTime())) return full(start);
+
+  if (start.getFullYear() !== end.getFullYear()) {
+    return `${full(start)} – ${full(end)}`;
+  }
+  if (start.getMonth() !== end.getMonth()) {
+    return `${start.getDate()} ${monthOf(start)} – ${full(end)}`;
+  }
+  return `${start.getDate()} – ${full(end)}`;
+}
+
+export interface NutritionView {
+  macros: MacroPattern[];
+  micronutrients: NutrientCardData[];
+  moreNutrients: NutrientCardData[];
+  /** The dates the figures cover: the range, or the selected bucket. */
+  dateSpan: string;
+}
+
+/**
+ * What the page should render for the current selection.
+ *
+ * With no column picked this is the overview as it arrived. With one picked
+ * every figure on the page — hero, gram legend, nutrient grid — is re-pointed
+ * at that bucket, which is the whole behaviour of tapping a column: it moves
+ * the page, it does not open a second one.
+ */
+export function buildNutritionView(
+  overview: NutritionOverview,
+  selectedIndex: number | null,
+  locale: string
+): NutritionView {
+  const detail =
+    selectedIndex === null
+      ? null
+      : buildBucketDetail(overview.daySeries, selectedIndex);
+
+  if (!detail) {
+    return {
+      macros: overview.macros,
+      micronutrients: overview.micronutrients,
+      moreNutrients: overview.moreNutrients,
+      dateSpan: formatDateSpan(
+        overview.period.startDate,
+        overview.period.endDate,
+        locale
+      ),
+    };
+  }
+
+  return {
+    macros: scopeMacrosToBucket(overview.macros, detail),
+    micronutrients: scopeCardsToBucket(overview.micronutrients, detail),
+    moreNutrients: scopeCardsToBucket(overview.moreNutrients, detail),
+    dateSpan: formatDateSpan(detail.startDate, detail.endDate, locale),
+  };
 }

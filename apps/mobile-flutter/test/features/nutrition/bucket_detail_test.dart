@@ -141,18 +141,21 @@ void main() {
   });
 
   group('formatDateSpan', () {
-    test('collapses a single-day bucket to one dated day', () {
-      expect(formatDateSpan('2026-05-04', '2026-05-04', 'en'), 'May 4, 2026');
+    test('collapses a single day to one dated day', () {
+      expect(formatDateSpan('2026-05-04', '2026-05-04', 'en'), '4 May 2026');
     });
 
-    test('renders a span for a week bucket, stating the year once', () {
-      expect(
-          formatDateSpan('2026-05-04', '2026-05-10', 'en'), 'May 4 – May 10, 2026');
+    test('states the month and year once inside a single month', () {
+      expect(formatDateSpan('2026-08-10', '2026-08-16', 'en'), '10 – 16 Aug 2026');
+    });
+
+    test('repeats the month when the span crosses one', () {
+      expect(formatDateSpan('2026-07-28', '2026-08-03', 'en'), '28 Jul – 3 Aug 2026');
     });
 
     test('states both years when the span crosses one', () {
       expect(formatDateSpan('2025-12-29', '2026-01-04', 'en'),
-          'Dec 29, 2025 – Jan 4, 2026');
+          '29 Dec 2025 – 4 Jan 2026');
     });
   });
 }

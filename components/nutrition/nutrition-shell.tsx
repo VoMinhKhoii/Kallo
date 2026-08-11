@@ -11,12 +11,7 @@ import type {
   NutritionRangeInput,
 } from '@/lib/nutrition/types';
 import { NutritionSkeleton } from './nutrition-skeleton';
-import {
-  buildBucketDetail,
-  formatDateSpan,
-  scopeCardsToBucket,
-  scopeMacrosToBucket,
-} from './sections/bucket-detail-utils';
+import { buildNutritionView } from './sections/bucket-detail-utils';
 import { DaySummary } from './sections/day-summary';
 import { findTodayIndex, localIsoDate } from './sections/macro-trend-utils';
 import { NutrientGrid } from './sections/nutrient-grid';
@@ -99,26 +94,8 @@ export function NutritionShell() {
   // Tapping a column re-points the WHOLE page at that bucket — the calorie
   // hero, the gram legend and the nutrient grid — rather than opening a second
   // panel that repeats them. Tapping anywhere else puts the range back.
-  const detail =
-    selectedIndex === null
-      ? null
-      : buildBucketDetail(overview.daySeries, selectedIndex);
-  const macros = detail
-    ? scopeMacrosToBucket(overview.macros, detail)
-    : overview.macros;
-  const micronutrients = detail
-    ? scopeCardsToBucket(overview.micronutrients, detail)
-    : overview.micronutrients;
-  const moreNutrients = detail
-    ? scopeCardsToBucket(overview.moreNutrients, detail)
-    : overview.moreNutrients;
-  const dateSpan = detail
-    ? formatDateSpan(detail.startDate, detail.endDate, locale)
-    : formatDateSpan(
-        overview.period.startDate,
-        overview.period.endDate,
-        locale
-      );
+  const { macros, micronutrients, moreNutrients, dateSpan } =
+    buildNutritionView(overview, selectedIndex, locale);
   const todayIndex = findTodayIndex(
     (overview.daySeries.series[0]?.buckets ?? []).map((bucket, index) => ({
       index,
@@ -162,7 +139,7 @@ export function NutritionShell() {
             <div
               aria-live="polite"
               aria-busy={overviewQuery.isFetching}
-              className="flex flex-col gap-7"
+              className="flex min-h-full flex-col gap-3"
             >
               <DaySummary
                 macros={macros}
@@ -172,6 +149,7 @@ export function NutritionShell() {
                 scope={dayScope}
                 onScopeChange={setDayScope}
                 dateSpan={dateSpan}
+                isEmpty={overview.loggedDays === 0}
                 todayIndex={todayIndex}
                 selectedIndex={selectedIndex}
                 onSelect={(index) =>
@@ -189,7 +167,12 @@ export function NutritionShell() {
                 micronutrients={micronutrients}
                 moreNutrients={moreNutrients}
               />
-              <SourceAttribution />
+              {/* The source line belongs to the page, not to the last section
+                  above it — `mt-auto` keeps it on the bottom edge when the
+                  content is short instead of floating mid-screen. */}
+              <div className="mt-auto pt-7">
+                <SourceAttribution />
+              </div>
             </div>
           </div>
         </div>

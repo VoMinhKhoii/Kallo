@@ -30,6 +30,8 @@ interface DaySummaryProps {
   onScopeChange: (scope: NutritionDayScope) => void;
   /** The dates the figures cover — the range, or the tapped bucket. */
   dateSpan: string;
+  /** Nothing logged in the range: one figure, no scope swap to choose between. */
+  isEmpty: boolean;
   todayIndex: number;
   selectedIndex: number | null;
   onSelect: (index: number) => void;
@@ -51,6 +53,7 @@ export function DaySummary({
   scope,
   onScopeChange,
   dateSpan,
+  isEmpty,
   todayIndex,
   selectedIndex,
   onSelect,
@@ -71,11 +74,6 @@ export function DaySummary({
     target !== null && target > 0 && activeAvg !== null
       ? activeAvg - target
       : null;
-  const showNoCompleteDays =
-    !isSelected &&
-    scope === 'complete' &&
-    calorieAverages.complete.averagePerDay === null;
-
   const composition = COMPOSITION_KEYS.map((key) => {
     const macro = macros.find((m) => m.key === key);
     const grams = macro && macro.averagePerDay > 0 ? macro.averagePerDay : 0;
@@ -116,6 +114,7 @@ export function DaySummary({
               dateSpan={dateSpan}
               selectedValue={isSelected ? activeAvg : undefined}
               isWeekBucket={daySeries.unit === 'week'}
+              isEmpty={isEmpty}
             />
           </div>
 
@@ -133,12 +132,6 @@ export function DaySummary({
             </div>
           ) : null}
         </div>
-
-        {showNoCompleteDays ? (
-          <p className="mt-3 text-[12px] text-nham-text-muted">
-            {t('rhythm.noCompleteDays')}
-          </p>
-        ) : null}
 
         <>
           {trendData ? (

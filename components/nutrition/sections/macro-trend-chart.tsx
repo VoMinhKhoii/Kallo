@@ -85,10 +85,14 @@ export function MacroTrendChart({
     );
   };
 
-  // Dimming the rest is what makes a tap legible without a tooltip: the picked
-  // column keeps its colour and the others step back.
-  const opacityFor = (index: number) =>
-    selectedIndex === null || selectedIndex === index ? 1 : 0.3;
+  // A selected column keeps its macro colours; the rest collapse to one flat
+  // grey. Fading them instead only washed them toward the page and left three
+  // pale bands still competing for attention — greying makes each unselected
+  // column read as a single quiet block.
+  const fillFor = (key: CompositionKey, index: number) =>
+    selectedIndex === null || selectedIndex === index
+      ? COMPOSITION_COLORS[key]
+      : 'var(--nham-chart-muted)';
 
   return (
     // Selecting a column and dismissing the selection are the same gesture at
@@ -142,10 +146,7 @@ export function MacroTrendChart({
               className="cursor-pointer"
             >
               {points.map((point) => (
-                <Cell
-                  key={point.startDate}
-                  fillOpacity={opacityFor(point.index)}
-                />
+                <Cell key={point.startDate} fill={fillFor(key, point.index)} />
               ))}
             </Bar>
           ))}

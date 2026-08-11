@@ -40,12 +40,14 @@ class MacroTrendChart extends StatelessWidget {
     if (data == null) return const SizedBox.shrink();
     final bars = data.bars;
 
-    // Dimming the rest is what makes a tap legible without a tooltip: the
-    // picked column keeps its colour and the others step back.
+    // A selected column keeps its macro colours; the rest collapse to one flat
+    // grey. Fading them instead only washed them toward the page and left three
+    // pale bands still competing for attention — greying makes each unselected
+    // column read as a single quiet block.
     Color shade(Color base, int i) =>
         selectedIndex == null || selectedIndex == i
             ? base
-            : base.withValues(alpha: 0.3);
+            : NhamColors.chartMuted;
 
     // Fewer, fatter columns for the 7-day view; slimmer ones for the busier
     // weekly axes (5 buckets at 30d, 13 at 90d) so they don't crowd.

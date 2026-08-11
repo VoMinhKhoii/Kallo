@@ -207,6 +207,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           selectedIndex: selected,
           onSelect: (index) => setState(
               () => _selectedIndex = _selectedIndex == index ? null : index),
+          isEmpty: overview.loggedDays == 0,
         ),
         // Nothing logged yet: the page keeps its shape at zero, and the prompt
         // sits under the card rather than replacing everything — so the layout
@@ -226,7 +227,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           ),
         ],
         if (vitamins.isNotEmpty) ...[
-          const SizedBox(height: 28),
+          const SizedBox(height: 12),
           _GroupHeader(label: tr('nutrition.nutrientGroups.vitamins')),
           const SizedBox(height: 12),
           _NutrientGrid(cards: vitamins),

@@ -188,6 +188,9 @@ abstract final class NhamColors {
   static const Color chartCarbs = Color(0xFFE09C84); // apricot
   static const Color chartFat = Color(0xFFE8C55C); // golden yellow
 
+  /// What an unselected column collapses to while another one is picked.
+  static const Color chartMuted = Color(0xFFCFCCC4);
+
   // ── Status ───────────────────────────────────────────────────────────
   static const Color success = Color(0xFF7CA368); // sage (heatmap/legacy)
   // Fresh emerald for "on target" cards — brighter + cleaner than the olive

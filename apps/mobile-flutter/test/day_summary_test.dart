@@ -44,10 +44,11 @@ DaySummary _daySummary({
       calorieAverages: averages,
       scope: scope,
       onScopeChange: onScopeChange ?? (_) {},
-      dateSpan: 'May 4 – May 10, 2026',
+      dateSpan: '10 – 16 Aug 2026',
       todayIndex: -1,
       selectedIndex: null,
       onSelect: (_) {},
+      isEmpty: false,
     );
 
 void main() {
@@ -64,8 +65,7 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('shows both averages with Complete as the hero by default',
-      (tester) async {
+  testWidgets('shows the active scope and names the other one', (tester) async {
     await tester.pumpWidget(
       _wrap(
         _daySummary(
@@ -76,18 +76,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Both averages are on screen at once.
+    // One figure, carrying its own denominator and the dates it covers.
     expect(find.text('2,000'), findsOneWidget);
-    expect(find.text('350'), findsOneWidget);
-    // The unit line carries the denominator, so neither figure is a bare
-    // number, and each states the dates it covers underneath.
     expect(find.textContaining('kcal per complete day'), findsOneWidget);
-    expect(find.textContaining('kcal per logged day'), findsOneWidget);
-    expect(find.text('May 4 – May 10, 2026'), findsNWidgets(2));
+    expect(find.text('10 – 16 Aug 2026'), findsOneWidget);
+    // The other scope is offered by NAME rather than shown as a loose number.
+    expect(find.text('350'), findsNothing);
+    expect(find.text('Logged days'), findsOneWidget);
   });
 
-  testWidgets('tapping the subtle secondary promotes that scope',
-      (tester) async {
+  testWidgets('the switch moves to the scope it names', (tester) async {
     NutritionDayScope? promoted;
     await tester.pumpWidget(
       _wrap(
@@ -100,14 +98,30 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // The "all" average is the secondary here; tapping it promotes 'all'.
-    await tester.tap(find.text('350'));
+    await tester.tap(find.text('Logged days'));
     await tester.pump();
 
     expect(promoted, NutritionDayScope.all);
   });
 
-  testWidgets('complete scope with no complete days shows the empty hint',
+  testWidgets('on logged days the switch points back to complete',
+      (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        _daySummary(
+          scope: NutritionDayScope.all,
+          averages: _averages(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('350'), findsOneWidget);
+    expect(find.textContaining('kcal per logged day'), findsOneWidget);
+    expect(find.text('Complete days'), findsOneWidget);
+  });
+
+  testWidgets('complete scope with no complete days reads as a dash',
       (tester) async {
     await tester.pumpWidget(
       _wrap(
@@ -119,9 +133,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Hero (complete) has no value; the all average is still shown.
+    // No hint copy any more — the dash says it, and the switch offers the way
+    // out by naming the other scope.
     expect(find.text('—'), findsOneWidget);
-    expect(find.text('350'), findsOneWidget);
-    expect(find.textContaining('No fully-logged days yet'), findsOneWidget);
+    expect(find.textContaining('Logged days'), findsOneWidget);
   });
 }

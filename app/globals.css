@@ -248,6 +248,8 @@
   --nham-chart-protein: #d46a86;
   --nham-chart-carbs: #e09c84;
   --nham-chart-fat: #e8c55c;
+  /* What an unselected column collapses to while another one is picked. */
+  --nham-chart-muted: #cfccc4;
   /* Semantic status tokens */
   --nham-success: #7ca368;
   /* Fresh emerald for "on target" nutrient cards — brighter + cleaner than the
@@ -331,6 +333,7 @@
   --nham-chart-protein: #d46a86;
   --nham-chart-carbs: #e09c84;
   --nham-chart-fat: #e8c55c;
+  --nham-chart-muted: #4a4336;
   /* Semantic status tokens */
   --nham-success: #7faf6a;
   --nham-success-faint: #16281f;

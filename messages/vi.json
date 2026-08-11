@@ -474,6 +474,8 @@
     },
     "rhythm": {
       "calories": "kcal",
+      "loggedDays": "Ngày ghi nhận",
+      "completeDays": "Ngày đủ bữa",
       "kcalPerLoggedDay": "kcal mỗi ngày ghi nhận",
       "kcalPerCompleteDay": "kcal mỗi ngày đủ bữa",
       "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
