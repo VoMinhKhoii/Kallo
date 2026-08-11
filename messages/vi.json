@@ -137,6 +137,11 @@
       "target": "Mục tiêu",
       "noTarget": "Không có mục tiêu"
     },
+    "macrosShort": {
+      "protein": "Đạm",
+      "carbohydrate": "Tinh bột",
+      "fat": "Chất béo"
+    },
     "grid": {
       "title": "Độ phủ vi chất",
       "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn.",

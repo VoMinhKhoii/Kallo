@@ -137,6 +137,11 @@
       "target": "Target",
       "noTarget": "No target"
     },
+    "macrosShort": {
+      "protein": "Pro",
+      "carbohydrate": "Carbs",
+      "fat": "Fat"
+    },
     "grid": {
       "title": "Micronutrient coverage",
       "description": "Use these cards to see which nutrients look adequate, which need more data, and which have source-specific caveats.",

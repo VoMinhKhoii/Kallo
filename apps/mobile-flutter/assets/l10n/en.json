@@ -166,6 +166,11 @@
       "target": "Target",
       "noTarget": "No target"
     },
+    "macrosShort": {
+      "protein": "Pro",
+      "carbohydrate": "Carbs",
+      "fat": "Fat"
+    },
     "grid": {
       "eyebrow": "Micronutrients",
       "title": "Micronutrient coverage",

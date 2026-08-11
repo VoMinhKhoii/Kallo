@@ -26,11 +26,6 @@ const Map<String, Color> kCompositionColors = {
   'fat': NhamColors.chartFat,
 };
 
-const Map<String, String> kCompositionShort = {
-  'protein': 'P',
-  'carbohydrate': 'C',
-  'fat': 'F',
-};
 
 const List<String> kOrderedMacros = ['protein', 'carbohydrate', 'fat', 'fiber'];
 

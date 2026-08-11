@@ -17,7 +17,6 @@ import {
   COMPOSITION_COLORS,
   COMPOSITION_ICONS,
   COMPOSITION_KEYS,
-  COMPOSITION_SHORT,
   KCAL_PER_GRAM,
 } from './macro-trend-utils';
 
@@ -44,7 +43,7 @@ interface DaySummaryProps {
  * the swappable dual-scope calorie hero on the left with an over/under-vs-target
  * note (read from the active scope) on the right. Multi-day ranges with ≥2
  * buckets show a stacked macro-calorie trend
- * chart; a single day keeps the static P/C/F composition bar. A centered gram
+ * chart; a single day keeps the static macro composition bar. A centered gram
  * legend sits below either.
  */
 export function DaySummary({
@@ -62,7 +61,6 @@ export function DaySummary({
   onSelect,
 }: DaySummaryProps) {
   const t = useTranslations('nutrition');
-  const tRoot = useTranslations();
   const locale = useLocale();
 
   const calories = macros.find((m) => m.key === 'calories');
@@ -85,7 +83,10 @@ export function DaySummary({
       key,
       grams,
       kcal: grams * KCAL_PER_GRAM[key],
-      label: macro ? tRoot(macro.labelKey) : COMPOSITION_SHORT[key],
+      // The legend's own short names, not `macro.labelKey`: these sit beside a
+      // number in a tight row, so they are clipped harder than the full names
+      // the nutrient grid uses ("Pro" / "Đạm", not "Protein" / "Chất đạm").
+      label: t(`macrosShort.${key}`),
     };
   });
   const totalKcal = composition.reduce((sum, c) => sum + c.kcal, 0);
@@ -168,7 +169,10 @@ export function DaySummary({
         {/* Centered legend: the macro's food icon in its band colour, then the
             label and average grams. The icon doubles as the colour key, so it
             carries the band it names rather than sitting beside an abstract
-            swatch that has to be decoded. */}
+            swatch that has to be decoded.
+            Centred on a fixed gap, where the Flutter mirror distributes the
+            slack: this column is far wider than a phone's, so the three never
+            crowd and spreading them would only strand them apart. */}
         <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2">
           {segments.map((segment) => {
             const Icon = COMPOSITION_ICONS[segment.key];

@@ -119,17 +119,28 @@ class DaySummary extends StatelessWidget {
             else
               _CompositionBar(segments: composition.segments),
             const SizedBox(height: NhamSpacing.sp3),
-            // Centered color key: which band is which macro (+ avg grams).
+            // Colour key: which band is which macro (+ avg grams).
+            //
+            // `spaceEvenly` with a small MINIMUM gap, rather than centring on a
+            // fixed one. The three items are different widths in both locales
+            // and much wider in Vietnamese ("Chất béo" against "Fat"), so a
+            // fixed gap either wraps the last one onto its own line or leaves
+            // the row lopsided. Distributing the slack keeps the gaps equal at
+            // any label width, and Wrap still breaks rather than overflowing if
+            // the text scale is turned up.
             SizedBox(
               width: double.infinity,
               child: Wrap(
-                alignment: WrapAlignment.center,
-                spacing: NhamSpacing.sp4,
+                alignment: WrapAlignment.spaceEvenly,
+                spacing: NhamSpacing.sp2,
                 runSpacing: NhamSpacing.sp1,
                 children: [
                   for (final key in kCompositionKeys)
                     _MacroLegend(
-                      label: kCompositionShort[key]!,
+                      // The legend's own short names, not `macros.<key>`: these
+                      // sit beside a number in a tight row, so they are clipped
+                      // harder than the full names the nutrient grid uses.
+                      label: tr('nutrition.macrosShort.$key'),
                       grams: macros.where((m) => m.key == key).firstOrNull,
                       color: kCompositionColors[key]!,
                       icon: _macroIcons[key]!,

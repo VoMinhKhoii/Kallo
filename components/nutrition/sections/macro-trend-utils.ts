@@ -19,12 +19,6 @@ export const COMPOSITION_COLORS: Record<CompositionKey, string> = {
   fat: 'var(--nham-chart-fat)',
 };
 
-export const COMPOSITION_SHORT: Record<CompositionKey, string> = {
-  protein: 'P',
-  carbohydrate: 'C',
-  fat: 'F',
-};
-
 /**
  * The legend's key, one food per macro instead of an abstract colour swatch —
  * beef, wheat, and a drop of oil for fat, which has no single ingredient the

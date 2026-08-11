@@ -166,6 +166,11 @@
       "target": "Mục tiêu",
       "noTarget": "Không có mục tiêu"
     },
+    "macrosShort": {
+      "protein": "Đạm",
+      "carbohydrate": "Tinh bột",
+      "fat": "Chất béo"
+    },
     "grid": {
       "eyebrow": "Vi chất",
       "title": "Độ phủ vi chất",
