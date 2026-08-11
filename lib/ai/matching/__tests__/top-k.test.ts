@@ -299,7 +299,7 @@ describe('rrfFuseCandidates', () => {
     expect(rrfFuseCandidates([], vector, 3)).toEqual(vector);
   });
 
-  it('ranks a candidate found by both arms above single-arm candidates', () => {
+  it('keeps ordering by RRF score when scores genuinely differ', () => {
     // Vector arm: wrong-ish semantic neighbor first, real match second.
     const vector = [
       C('semantic-neighbor', 0.84, 'vector'),
@@ -313,6 +313,40 @@ describe('rrfFuseCandidates', () => {
     // 'semantic-neighbor': 1/60 alone.
     expect(fused[0].foodCompositionId).toBe('real');
     expect(fused[1].foodCompositionId).toBe('semantic-neighbor');
+  });
+
+  it('prefers arm agreement when candidates have the same RRF score', () => {
+    const vector = [
+      C('single-arm', 0.99, 'vector'),
+      ...Array.from({ length: 60 }, (_, index) =>
+        C(`vector-filler-${index}`, 0.9 - index / 1000, 'vector')
+      ),
+      C('both-arms', 0.7, 'vector'),
+    ];
+    const fuzzy = [
+      ...Array.from({ length: 61 }, (_, index) =>
+        C(`fuzzy-filler-${index}`, 0.9 - index / 1000, 'fuzzy')
+      ),
+      C('both-arms', 0.7, 'fuzzy'),
+    ];
+
+    // single-arm: 1/61. both-arms: 1/122 + 1/122 = 1/61.
+    const fused = rrfFuseCandidates(vector, fuzzy, 2);
+    expect(fused.map((candidate) => candidate.foodCompositionId)).toEqual([
+      'both-arms',
+      'single-arm',
+    ]);
+  });
+
+  it('prefers vector rank over fuzzy similarity for single-arm ties', () => {
+    const vector = [C('egg-noodle', 0.795, 'vector')];
+    const fuzzy = [C('wheat-flour', 1.001, 'fuzzy')];
+
+    const fused = rrfFuseCandidates(vector, fuzzy, 2);
+    expect(fused.map((candidate) => candidate.foodCompositionId)).toEqual([
+      'egg-noodle',
+      'wheat-flour',
+    ]);
   });
 
   it('keeps the variant from the arm where the id ranks better', () => {
@@ -342,14 +376,6 @@ describe('rrfFuseCandidates', () => {
     const fuzzy = [C('d', 0.95), C('e', 0.9)];
     expect(rrfFuseCandidates(vector, fuzzy, 2)).toHaveLength(2);
     expect(rrfFuseCandidates(vector, fuzzy, 0)).toEqual([]);
-  });
-
-  it('breaks equal RRF scores by similarity', () => {
-    // a: vector rank 0 only (1/60). d: fuzzy rank 0 only (1/60). Same score.
-    const vector = [C('a', 0.75)];
-    const fuzzy = [C('d', 0.92)];
-    const fused = rrfFuseCandidates(vector, fuzzy, 2);
-    expect(fused[0].foodCompositionId).toBe('d');
   });
 });
 
