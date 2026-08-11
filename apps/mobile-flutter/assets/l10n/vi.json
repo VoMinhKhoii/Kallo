@@ -185,6 +185,9 @@
       "collapse": "Ẩn xu hướng"
     },
     "detail": {
+      "perDay": "mỗi ngày",
+      "close": "Đóng chi tiết ngày",
+      "noNutrients": "Chưa có dữ liệu vi chất cho khoảng này.",
       "averageVsTarget": "Trung bình so với mục tiêu"
     },
     "confidence": {

@@ -5,15 +5,19 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ResponsiveContainer,
   XAxis,
   YAxis,
 } from 'recharts';
 import type { DaySeriesBucketUnit } from '@/lib/nutrition/types';
+import { formatBucketRange } from './bucket-detail-utils';
 import {
   buildBucketTickLabels,
   buildMacroTrendAxis,
   COMPOSITION_COLORS,
+  COMPOSITION_KEYS,
+  type CompositionKey,
   type MacroTrendPoint,
 } from './macro-trend-utils';
 
@@ -21,15 +25,37 @@ interface MacroTrendChartProps {
   points: MacroTrendPoint[];
   maxY: number;
   unit: DaySeriesBucketUnit;
+  /** Index of the bucket holding today, or -1. Rendered heavier on the axis. */
+  todayIndex: number;
+  selectedIndex: number | null;
+  onSelect: (index: number) => void;
 }
+
+interface AxisTickProps {
+  x?: number;
+  y?: number;
+  index?: number;
+}
+
+/** Rounded top on the topmost band only. */
+const RADIUS: Partial<
+  Record<CompositionKey, [number, number, number, number]>
+> = { fat: [4, 4, 0, 0] };
 
 /**
  * Stacked macro-calorie bars — the Flutter `MacroTrendChart` port. One rounded
  * column per bucket, split bottom→top into protein / carbs / fat kcal bands in
- * the warm macro tokens that match the `DaySummary` legend. Multi-day ranges
- * only; no tooltip.
+ * the chart pigments that match the `DaySummary` legend. Multi-day ranges only;
+ * no tooltip — a column is tapped, not hovered.
  */
-export function MacroTrendChart({ points, maxY, unit }: MacroTrendChartProps) {
+export function MacroTrendChart({
+  points,
+  maxY,
+  unit,
+  todayIndex,
+  selectedIndex,
+  onSelect,
+}: MacroTrendChartProps) {
   const t = useTranslations('nutrition');
   const locale = useLocale();
 
@@ -39,16 +65,39 @@ export function MacroTrendChart({ points, maxY, unit }: MacroTrendChartProps) {
   // weekly axes (5 buckets at 30d, 13 at 90d) so they don't crowd.
   const barSize = points.length <= 7 ? 18 : 10;
 
+  const renderTick = ({ x, y, index }: AxisTickProps) => {
+    const i = index ?? 0;
+    const emphasised = i === todayIndex || i === selectedIndex;
+    return (
+      <text
+        x={x}
+        y={y}
+        dy={10}
+        textAnchor="middle"
+        fontSize={10}
+        // 500 is this palette's weight ceiling — today reads heavier than its
+        // neighbours without turning into a second heading.
+        fontWeight={emphasised ? 500 : 400}
+        fill={emphasised ? 'var(--nham-text)' : 'var(--nham-text-muted)'}
+      >
+        {tickLabels[i] ?? ''}
+      </text>
+    );
+  };
+
+  // Dimming the rest is what makes a tap legible without a tooltip: the picked
+  // column keeps its colour and the others step back.
+  const opacityFor = (index: number) =>
+    selectedIndex === null || selectedIndex === index ? 1 : 0.3;
+
   return (
-    <div
-      role="img"
-      aria-label={t('rhythm.macroTrendAria')}
-      className="mt-4 h-[248px] w-full"
-    >
+    <div className="mt-4 h-[248px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={points}
           margin={{ top: 8, right: 8, bottom: 4, left: 0 }}
+          role="img"
+          aria-label={t('rhythm.macroTrendAria')}
         >
           <CartesianGrid
             vertical={false}
@@ -61,8 +110,7 @@ export function MacroTrendChart({ points, maxY, unit }: MacroTrendChartProps) {
             interval={0}
             tickLine={false}
             axisLine={false}
-            tick={{ fontSize: 10, fill: 'var(--nham-text-muted)' }}
-            tickFormatter={(_v, i) => tickLabels[i] ?? ''}
+            tick={renderTick}
           />
           <YAxis
             domain={[0, topY]}
@@ -74,33 +122,39 @@ export function MacroTrendChart({ points, maxY, unit }: MacroTrendChartProps) {
             width={36}
           />
 
-          <Bar
-            dataKey="protein"
-            stackId="macros"
-            fill={COMPOSITION_COLORS.protein}
-            barSize={barSize}
-            isAnimationActive={false}
-          />
-          <Bar
-            dataKey="carbohydrate"
-            stackId="macros"
-            fill={COMPOSITION_COLORS.carbohydrate}
-            barSize={barSize}
-            isAnimationActive={false}
-          />
-          {/* Rounded top on the topmost band only. A bucket whose fat is 0 gets
-              a square top instead (recharts applies the stacked radius to the
-              fat rect, which has no height) — an accepted 4px cosmetic quirk. */}
-          <Bar
-            dataKey="fat"
-            stackId="macros"
-            fill={COMPOSITION_COLORS.fat}
-            radius={[4, 4, 0, 0]}
-            barSize={barSize}
-            isAnimationActive={false}
-          />
+          {COMPOSITION_KEYS.map((key) => (
+            <Bar
+              key={key}
+              dataKey={key}
+              stackId="macros"
+              fill={COMPOSITION_COLORS[key]}
+              radius={RADIUS[key]}
+              barSize={barSize}
+              isAnimationActive={false}
+              onClick={(_data, index) => onSelect(index)}
+              className="cursor-pointer"
+            >
+              {points.map((point) => (
+                <Cell
+                  key={point.startDate}
+                  fillOpacity={opacityFor(point.index)}
+                />
+              ))}
+            </Bar>
+          ))}
         </BarChart>
       </ResponsiveContainer>
+
+      {/* Keyboard/AT path to the same selection the columns offer on tap. */}
+      <ul className="sr-only">
+        {points.map((point) => (
+          <li key={point.startDate}>
+            <button type="button" onClick={() => onSelect(point.index)}>
+              {formatBucketRange(point, locale)}
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

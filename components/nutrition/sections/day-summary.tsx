@@ -12,7 +12,7 @@ import type {
 } from '@/lib/nutrition/types';
 import { formatLocalizedNumber } from '../primitives/helpers';
 import { CalorieScopeStats } from './calorie-scope-stats';
-import { MacroTrendChart } from './macro-trend-chart';
+import { MacroTrendSection } from './macro-trend-section';
 import {
   buildMacroTrendData,
   COMPOSITION_COLORS,
@@ -121,10 +121,10 @@ export function DaySummary({
       {totalKcal > 0 ? (
         <>
           {trendData ? (
-            <MacroTrendChart
+            <MacroTrendSection
               points={trendData.points}
               maxY={trendData.maxY}
-              unit={daySeries.unit}
+              daySeries={daySeries}
             />
           ) : (
             <div

@@ -95,6 +95,11 @@
     "title": "Dinh dưỡng",
     "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn từ những bữa ăn bạn đã ghi.",
     "loading": "Đang tải tổng quan dinh dưỡng…",
+    "detail": {
+      "perDay": "mỗi ngày",
+      "close": "Đóng chi tiết ngày",
+      "noNutrients": "Chưa có dữ liệu vi chất cho khoảng này."
+    },
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
       "7d": "7 ngày",

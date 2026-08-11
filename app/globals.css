@@ -243,7 +243,7 @@
      quieter --nham-macro-* set; do not merge the two. */
   --nham-chart-protein: #d46a86;
   --nham-chart-carbs: #e09c84;
-  --nham-chart-fat: #a6c495;
+  --nham-chart-fat: #e8c55c;
   /* Semantic status tokens */
   --nham-success: #7ca368;
   /* Fresh emerald for "on target" nutrient cards — brighter + cleaner than the
@@ -324,7 +324,7 @@
      against the dark card (#251f15) without the light-mode values washing out. */
   --nham-chart-protein: #d46a86;
   --nham-chart-carbs: #e09c84;
-  --nham-chart-fat: #a6c495;
+  --nham-chart-fat: #e8c55c;
   /* Semantic status tokens */
   --nham-success: #7faf6a;
   --nham-success-faint: #16281f;

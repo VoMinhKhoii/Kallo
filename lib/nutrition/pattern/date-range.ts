@@ -38,6 +38,23 @@ export function getNutritionPeriod({
       ? now.getTime()
       : now.getTime() - timezoneOffset * 60_000
   );
+  // 7d is the CURRENT calendar week, Monday→Sunday — not a trailing seven days.
+  // A window that starts on a rolling weekday can't be compared week to week,
+  // and the weekday initials under the columns stop lining up with anything.
+  // The tail of the week is simply empty until it is lived.
+  if (range === '7d') {
+    const monday = new Date(localizedNow);
+    // getUTCDay() is Sun=0; shift so Monday is 0.
+    monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setUTCDate(sunday.getUTCDate() + 6);
+    return {
+      startDate: formatIsoDate(monday),
+      endDate: formatIsoDate(sunday),
+      bucketTimezone,
+    };
+  }
+
   const startDate = new Date(localizedNow);
 
   startDate.setUTCDate(startDate.getUTCDate() - (RANGE_DAYS[range] - 1));

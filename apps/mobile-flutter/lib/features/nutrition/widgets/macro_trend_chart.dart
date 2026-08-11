@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../theme/nham_colors.dart';
+import '../logic/chart_axis.dart';
 import '../logic/format_date.dart';
+import '../logic/macro_trend_bars.dart';
 import '../logic/rhythm_logic.dart';
 
 /// A stacked **bar** chart of macro **calories** per bucket (day for 7d, week
@@ -17,110 +19,100 @@ import '../logic/rhythm_logic.dart';
 /// One rounded column per bucket, split into three regions filled with the
 /// nutrition chart pigments that match the `DaySummary` legend.
 class MacroTrendChart extends StatelessWidget {
-  const MacroTrendChart({super.key, required this.daySeries});
+  const MacroTrendChart({
+    super.key,
+    required this.daySeries,
+    required this.todayIndex,
+    required this.selectedIndex,
+    required this.onSelect,
+  });
 
   final NutritionDaySeries daySeries;
 
-  NutrientDaySeries? _seriesFor(String metric) =>
-      daySeries.series.where((s) => s.metric == metric).firstOrNull;
+  /// Index of the bucket holding today, or -1. Drawn heavier on the axis.
+  final int todayIndex;
+  final int? selectedIndex;
+  final ValueChanged<int> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final p = _seriesFor('protein');
-    final c = _seriesFor('carbohydrate');
-    final f = _seriesFor('fat');
+    final data = buildMacroTrendBars(daySeries);
+    if (data == null) return const SizedBox.shrink();
+    final bars = data.bars;
 
-    // All metrics share the same bucket axis; fall back to whichever exists.
-    final buckets = (p ?? c ?? f)?.buckets ?? const <DaySeriesBucket>[];
-    if (buckets.length < 2) return const SizedBox.shrink();
-
-    double? raw(NutrientDaySeries? s, int i) =>
-        s != null && i < s.buckets.length ? s.buckets[i].value : null;
-
-    final protein = kCompositionColors['protein']!;
-    final carbs = kCompositionColors['carbohydrate']!;
-    final fat = kCompositionColors['fat']!;
+    // Dimming the rest is what makes a tap legible without a tooltip: the
+    // picked column keeps its colour and the others step back.
+    Color shade(Color base, int i) =>
+        selectedIndex == null || selectedIndex == i
+            ? base
+            : base.withValues(alpha: 0.3);
 
     // Fewer, fatter columns for the 7-day view; slimmer ones for the busier
     // weekly axes (5 buckets at 30d, 13 at 90d) so they don't crowd.
-    final barWidth = buckets.length <= 7 ? 18.0 : 10.0;
+    final barWidth = bars.length <= 7 ? 18.0 : 10.0;
 
-    final groups = <BarChartGroupData>[];
-    var maxY = 0.0;
-    for (var i = 0; i < buckets.length; i++) {
-      final rp = raw(p, i);
-      final rc = raw(c, i);
-      final rf = raw(f, i);
-
-      // Null on all three = the bucket held no in-scope days, because the day
-      // was set aside as partial under the "complete days" scope. That is "no
-      // data", not "ate nothing": no stack bands, and it must not pull `maxY`.
-      //
-      // The group keeps a zero rod rather than an empty rod list. An empty list
-      // reports `BarChartGroupData.width == 0`, and `spaceBetween` lays groups
-      // out from their widths — so a gap would shift every column after it off
-      // the grid its axis labels sit on. A zero-height rod paints nothing and
-      // holds the slot.
-      if (rp == null && rc == null && rf == null) {
-        groups.add(
-          BarChartGroupData(
-            x: i,
-            barRods: [BarChartRodData(toY: 0, width: barWidth)],
-          ),
-        );
-        continue;
-      }
-
-      // A null on only SOME macros inside a bucket that does have days is a
-      // genuine zero for that macro.
-      final pk = (rp ?? 0) * kKcalPerGram['protein']!;
-      final ck = (rc ?? 0) * kKcalPerGram['carbohydrate']!;
-      final fk = (rf ?? 0) * kKcalPerGram['fat']!;
-      final total = pk + ck + fk;
-      if (total > maxY) maxY = total;
-      groups.add(
+    final groups = [
+      for (final bar in bars)
         BarChartGroupData(
-          x: i,
+          x: bar.index,
           barRods: [
-            BarChartRodData(
-              toY: total,
-              width: barWidth,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(4)),
-              // Stacked P/C/F kcal bands, matching the legend order & colors.
-              rodStackItems: [
-                BarChartRodStackItem(0, pk, protein),
-                BarChartRodStackItem(pk, pk + ck, carbs),
-                BarChartRodStackItem(pk + ck, total, fat),
-              ],
-            ),
+            // A gap keeps a zero rod rather than an empty rod list. An empty
+            // list reports `BarChartGroupData.width == 0`, and `spaceBetween`
+            // lays groups out from their widths — so a gap would shift every
+            // column after it off the grid its axis labels sit on. A
+            // zero-height rod paints nothing and holds the slot.
+            if (bar.isGap)
+              BarChartRodData(toY: 0, width: barWidth)
+            else
+              BarChartRodData(
+                toY: bar.total,
+                width: barWidth,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(4)),
+                // Stacked P/C/F kcal bands, matching the legend order & colors.
+                rodStackItems: [
+                  BarChartRodStackItem(0, bar.proteinKcal,
+                      shade(kCompositionColors['protein']!, bar.index)),
+                  BarChartRodStackItem(
+                      bar.proteinKcal,
+                      bar.proteinKcal + bar.carbsKcal,
+                      shade(kCompositionColors['carbohydrate']!, bar.index)),
+                  BarChartRodStackItem(bar.proteinKcal + bar.carbsKcal,
+                      bar.total, shade(kCompositionColors['fat']!, bar.index)),
+                ],
+              ),
           ],
         ),
-      );
-    }
-    if (maxY <= 0) return const SizedBox.shrink();
+    ];
 
     final tickLabels = buildBucketTickLabels(
-      [for (final b in buckets) b.startDate],
+      [for (final bar in bars) bar.startDate],
       daySeries.unit,
       context.locale.toString(),
     );
 
-    // Axis always reaches at least 3000 kcal so the 2500 / 3000 guides show,
-    // and grows past that if intake exceeds it.
-    final axisTarget = maxY > 3000 ? maxY : 3000.0;
-    final step = _niceStep(axisTarget);
-    final maxLabel = (axisTarget / step).ceil() * step;
-    final topY = maxLabel + step * 0.35; // headroom so the top label isn't clipped
+    final axis = buildMacroTrendAxis(data.maxY);
+    final step = axis.step;
+    final maxLabel = axis.maxLabel;
 
     return SizedBox(
       height: 248,
       child: BarChart(
         BarChartData(
           minY: 0,
-          maxY: topY,
+          maxY: axis.topY,
           alignment: BarChartAlignment.spaceBetween,
-          barTouchData: BarTouchData(enabled: false),
+          // Tap-to-select, not hover-to-peek: no tooltip, the tapped index is
+          // handed up and the breakdown renders below the chart.
+          barTouchData: BarTouchData(
+            enabled: true,
+            handleBuiltInTouches: false,
+            touchCallback: (event, response) {
+              if (event is! FlTapUpEvent) return;
+              final index = response?.spot?.touchedBarGroupIndex;
+              if (index != null) onSelect(index);
+            },
+          ),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
@@ -168,12 +160,19 @@ class MacroTrendChart extends StatelessWidget {
                   }
                   final label = tickLabels[i];
                   if (label.isEmpty) return const SizedBox.shrink();
+                  // 500 is this palette's weight ceiling — today reads heavier
+                  // than its neighbours without becoming a second heading.
+                  final emphasised = i == todayIndex || i == selectedIndex;
                   return Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       label,
-                      style: dashEyebrow(color: kInkMuted)
-                          .copyWith(letterSpacing: 0.4),
+                      style: dashEyebrow(color: emphasised ? kInk : kInkMuted)
+                          .copyWith(
+                        letterSpacing: 0.4,
+                        fontWeight:
+                            emphasised ? FontWeight.w500 : FontWeight.w400,
+                      ),
                     ),
                   );
                 },
@@ -185,15 +184,4 @@ class MacroTrendChart extends StatelessWidget {
       ),
     );
   }
-
-  /// A round kcal gridline step giving ~3–5 lines across the data range.
-  static double _niceStep(double maxV) {
-    const steps = [250.0, 500.0, 1000.0, 1500.0, 2000.0];
-    // <= 6 so a ~3000 axis keeps a 500 step (shows 2500 and 3000), not 1000.
-    for (final s in steps) {
-      if (maxV / s <= 6) return s;
-    }
-    return 2500;
-  }
-
 }

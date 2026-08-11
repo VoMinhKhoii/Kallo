@@ -23,12 +23,18 @@ import '../widgets/range_selector.dart';
 import '../widgets/source_attribution.dart';
 import '../widgets/suggested_foods_sheet.dart';
 
+/// Whether the suggested-foods CTA is offered.
+///
+/// Hidden for now. The sheet, its provider and its copy stay wired, so bringing
+/// it back is this one flip rather than a rebuild.
+const bool kShowSuggestedFoods = false;
+
 /// Nutrition screen — a dense, single-view micronutrient overview. A compact
 /// calorie/macro summary, then every tracked nutrient in a 2-column grid grouped
-/// by Vitamins / Minerals (progress shown inline, met nutrients greened), a
-/// FAO/WHO source line, and one CTA: suggested foods for the timeline's gaps.
+/// by Vitamins / Minerals (progress shown inline, met nutrients greened) and a
+/// FAO/WHO source line.
 ///
-/// The timeframe toggle (Today / 7d / 30d) lives in the header beside the menu.
+/// The timeframe toggle (7 / 30 / 90 days) lives in the header beside the menu.
 class NutritionScreen extends ConsumerStatefulWidget {
   const NutritionScreen({super.key});
 
@@ -161,7 +167,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         ),
         // The single CTA sits right under the summary so it's visible on load,
         // not buried below the full nutrient grid.
-        if (foodNutrients.isNotEmpty) ...[
+        if (kShowSuggestedFoods && foodNutrients.isNotEmpty) ...[
           const SizedBox(height: 12),
           _SuggestedFoodsButton(
             onTap:

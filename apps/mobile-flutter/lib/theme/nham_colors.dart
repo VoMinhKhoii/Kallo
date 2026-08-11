@@ -181,7 +181,7 @@ abstract final class NhamColors {
   /// Mirrors the web `--nham-chart-*` tokens in `app/globals.css`.
   static const Color chartProtein = Color(0xFFD46A86); // berry rose
   static const Color chartCarbs = Color(0xFFE09C84); // apricot
-  static const Color chartFat = Color(0xFFA6C495); // sage
+  static const Color chartFat = Color(0xFFE8C55C); // golden yellow
 
   // ── Status ───────────────────────────────────────────────────────────
   static const Color success = Color(0xFF7CA368); // sage (heatmap/legacy)

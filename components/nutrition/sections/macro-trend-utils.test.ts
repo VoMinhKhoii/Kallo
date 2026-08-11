@@ -8,7 +8,9 @@ import {
   buildBucketTickLabels,
   buildMacroTrendAxis,
   buildMacroTrendData,
+  findTodayIndex,
   formatBucketLabel,
+  localIsoDate,
   type MacroTrendPoint,
 } from './macro-trend-utils';
 
@@ -172,6 +174,53 @@ describe('formatBucketLabel', () => {
   });
 });
 
+describe('findTodayIndex', () => {
+  const point = (startDate: string, endDate: string): MacroTrendPoint => ({
+    index: 0,
+    startDate,
+    endDate,
+    protein: 0,
+    carbohydrate: 0,
+    fat: 0,
+  });
+
+  it('matches the exact day on a day axis', () => {
+    const points = [
+      point('2026-05-04', '2026-05-04'),
+      point('2026-05-05', '2026-05-05'),
+      point('2026-05-06', '2026-05-06'),
+    ];
+    expect(findTodayIndex(points, '2026-05-05')).toBe(1);
+  });
+
+  it('matches the containing week on a week axis', () => {
+    const points = [
+      point('2026-04-27', '2026-05-03'),
+      point('2026-05-04', '2026-05-10'),
+    ];
+    expect(findTodayIndex(points, '2026-05-07')).toBe(1);
+  });
+
+  it('returns -1 when today is outside the window', () => {
+    expect(
+      findTodayIndex([point('2026-05-04', '2026-05-04')], '2026-06-01')
+    ).toBe(-1);
+  });
+});
+
+describe('localIsoDate', () => {
+  it('reads the LOCAL calendar date, not the UTC one', () => {
+    // 22:30 on the 4th in a UTC+3 zone is still the 4th locally, while
+    // toISOString() would have to be the 4th or 5th depending on the host.
+    const local = new Date(2026, 4, 4, 22, 30);
+    expect(localIsoDate(local)).toBe('2026-05-04');
+  });
+
+  it('zero-pads month and day', () => {
+    expect(localIsoDate(new Date(2026, 0, 9, 12))).toBe('2026-01-09');
+  });
+});
+
 describe('buildBucketTickLabels', () => {
   /** `count` consecutive buckets stepping `stepDays` from `start`. */
   function points(
@@ -180,15 +229,18 @@ describe('buildBucketTickLabels', () => {
     stepDays: number
   ): MacroTrendPoint[] {
     const startMs = Date.parse(`${start}T00:00:00.000Z`);
-    return Array.from({ length: count }, (_, i) => ({
-      index: i,
-      startDate: new Date(startMs + i * stepDays * 86_400_000)
-        .toISOString()
-        .slice(0, 10),
-      protein: 0,
-      carbohydrate: 0,
-      fat: 0,
-    }));
+    const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+    return Array.from({ length: count }, (_, i) => {
+      const bucketStart = startMs + i * stepDays * 86_400_000;
+      return {
+        index: i,
+        startDate: iso(bucketStart),
+        endDate: iso(bucketStart + (stepDays - 1) * 86_400_000),
+        protein: 0,
+        carbohydrate: 0,
+        fat: 0,
+      };
+    });
   }
 
   it('labels every column on the 7-day axis', () => {

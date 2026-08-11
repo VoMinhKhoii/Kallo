@@ -8,7 +8,7 @@ import '../../../models/nutrition.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/helpers.dart';
 import '../logic/rhythm_logic.dart';
-import 'macro_trend_chart.dart';
+import 'macro_trend_section.dart';
 
 /// Compact calorie + macro summary at the top of the nutrition view. The hero
 /// calorie figure is the average over the active day scope; the other scope's
@@ -99,7 +99,7 @@ class DaySummary extends StatelessWidget {
           if (composition.totalKcal > 0) ...[
             const SizedBox(height: NhamSpacing.sp3),
             if (showTrend)
-              MacroTrendChart(daySeries: daySeries)
+              MacroTrendSection(daySeries: daySeries)
             else
               _CompositionBar(segments: composition.segments),
             const SizedBox(height: NhamSpacing.sp3),

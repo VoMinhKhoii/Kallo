@@ -27,10 +27,32 @@ export const COMPOSITION_SHORT: Record<CompositionKey, string> = {
 export interface MacroTrendPoint {
   index: number;
   startDate: string;
+  /** Same as `startDate` for day buckets; the week's last day for week ones. */
+  endDate: string;
   /** Null on every macro = the bucket has no in-scope days. Renders as a gap. */
   protein: number | null;
   carbohydrate: number | null;
   fat: number | null;
+}
+
+/** Today as a local `YYYY-MM-DD`, matching the server's local-date bucketing. */
+export function localIsoDate(now: Date = new Date()): string {
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+/**
+ * Index of the bucket holding `today`, or -1. Day buckets match exactly; week
+ * buckets match the week it falls in, so the current week reads as current.
+ */
+export function findTodayIndex(
+  points: MacroTrendPoint[],
+  today: string
+): number {
+  return points.findIndex(
+    (point) => today >= point.startDate && today <= point.endDate
+  );
 }
 
 /**
@@ -70,6 +92,7 @@ export function buildMacroTrendData(
       return {
         index: i,
         startDate: bucket.startDate,
+        endDate: bucket.endDate,
         protein: null,
         carbohydrate: null,
         fat: null,
@@ -86,6 +109,7 @@ export function buildMacroTrendData(
     return {
       index: i,
       startDate: bucket.startDate,
+      endDate: bucket.endDate,
       protein: p,
       carbohydrate: c,
       fat: f,

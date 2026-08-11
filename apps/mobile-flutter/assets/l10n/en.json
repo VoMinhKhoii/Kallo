@@ -185,6 +185,9 @@
       "collapse": "Hide trend"
     },
     "detail": {
+      "perDay": "per day",
+      "close": "Close day detail",
+      "noNutrients": "No nutrient data for this bucket.",
       "averageVsTarget": "Average vs target"
     },
     "confidence": {

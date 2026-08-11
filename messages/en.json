@@ -95,6 +95,11 @@
     "title": "Nutrition",
     "subtitle": "Review long-term macro and micronutrient patterns built from your logged meals.",
     "loading": "Loading nutrition overview…",
+    "detail": {
+      "perDay": "per day",
+      "close": "Close day detail",
+      "noNutrients": "No nutrient data for this bucket."
+    },
     "range": {
       "label": "Nutrition range",
       "7d": "7 days",
