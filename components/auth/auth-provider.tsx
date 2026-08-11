@@ -24,6 +24,14 @@ interface AuthDialogContextValue {
   checkEmail: { email: string; mode: CheckEmailMode } | null;
   /** In-app path to return to after auth (e.g. an invite link), or null. */
   next: string | null;
+  /**
+   * Google **Web** OAuth client ID, read from the server env and passed down
+   * (not `NEXT_PUBLIC_*`) so it stays a per-environment runtime value instead
+   * of being baked into the image at build time — same reasoning as the
+   * RevenueCat web key in `app/api/v1/account/billing-config`. Null disables
+   * the ID-token flow and leaves Google sign-in on the redirect fallback.
+   */
+  googleClientId: string | null;
   openDialog: (tab?: AuthTab) => void;
   closeDialog: () => void;
   setTab: (tab: AuthTab) => void;
@@ -45,12 +53,15 @@ export function useAuthDialog() {
 export function AuthProvider({
   children,
   next = null,
+  googleClientId = null,
   initialOpen = false,
   initialTab = 'sign-in',
 }: {
   children: React.ReactNode;
   /** A validated return path (e.g. arriving from an invite link). */
   next?: string | null;
+  /** `process.env.GOOGLE_WEB_CLIENT_ID`, resolved by the server page. */
+  googleClientId?: string | null;
   initialOpen?: boolean;
   initialTab?: AuthTab;
 }) {
@@ -90,6 +101,7 @@ export function AuthProvider({
         panel,
         checkEmail,
         next,
+        googleClientId,
         openDialog,
         closeDialog,
         setTab,

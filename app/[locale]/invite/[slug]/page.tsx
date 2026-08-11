@@ -9,6 +9,7 @@ import {
   getProfileBySlug,
 } from '@/lib/actions/groups/profile';
 import type { PublicProfile } from '@/lib/actions/groups/types';
+import { googleWebClientId } from '@/lib/auth/google-client-id';
 import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -80,7 +81,7 @@ export default async function InvitePage({
         title={t('signedOutTitle', { name })}
         body={t('signedOutBody')}
       >
-        <InviteAuthCta next={invitePath} />
+        <InviteAuthCta next={invitePath} googleClientId={googleWebClientId()} />
       </Shell>
     );
   }
