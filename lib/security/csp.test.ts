@@ -75,6 +75,22 @@ describe('buildCsp', () => {
       .find((directive) => directive.startsWith('script-src'));
     expect(scriptSrc).not.toContain('paddle.com');
     expect(scriptSrc).not.toContain('rev.cat');
+    expect(scriptSrc).not.toContain('accounts.google.com');
+  });
+
+  it('lets Google Identity Services frame and call back for web sign-in', async () => {
+    // Without these, enforcing the policy would silently break the ID-token
+    // flow and drop web Google sign-in back to the Supabase-branded redirect.
+    const csp = await build('n', false);
+    const directive = (name: string) =>
+      (csp.split('; ').find((d) => d.startsWith(`${name} `)) ?? '')
+        .split(' ')
+        .slice(1);
+
+    expect(directive('frame-src')).toContain('https://accounts.google.com');
+    expect(directive('connect-src')).toContain('https://accounts.google.com');
+    // Avatars on the personalized button come from a different Google host.
+    expect(directive('img-src')).toContain('https://*.googleusercontent.com');
   });
 
   it('locks down framing, base-uri, objects, and form-action', async () => {

@@ -19,8 +19,9 @@
  * generation are mutually exclusive (a documented Next.js constraint).
  *
  * Third-party origins are intentionally tiny: the browser talks to Supabase
- * (auth/REST over https + realtime over wss) and, on the paywall only, to
- * RevenueCat and Paddle. Fonts are self-hosted by `next/font`. `style-src`
+ * (auth/REST over https + realtime over wss), to Google Identity Services on
+ * the auth dialog, and, on the paywall only, to RevenueCat and Paddle. Fonts
+ * are self-hosted by `next/font`. `style-src`
  * keeps `'unsafe-inline'` because `next/font` and assorted libraries inject
  * inline `style` attributes, which cannot carry a nonce; inline *style*
  * injection is not an XSS vector.
@@ -48,6 +49,21 @@ const BILLING_CONNECT_ORIGINS = [
   'https://*.paddle.com',
 ];
 
+/**
+ * Google Identity Services, which mints the ID token for web Google sign-in on
+ * our own origin (`hooks/auth/use-google-identity.ts`). GIS renders its button
+ * inside an `accounts.google.com` iframe and calls back to the same origin, so
+ * it needs both `frame-src` and `connect-src`; the account picker itself is a
+ * popup window, which CSP does not govern.
+ *
+ * Not in `script-src` for the same reason Paddle isn't: `'strict-dynamic'`
+ * makes host allowlists inert there, and our own nonced bundle is what injects
+ * the GIS `<script>`.
+ */
+const GOOGLE_IDENTITY_ORIGIN = 'https://accounts.google.com';
+/** Avatars on the personalized button / One Tap card. */
+const GOOGLE_AVATAR_ORIGIN = 'https://*.googleusercontent.com';
+
 function supabaseOrigins(): { https: string; wss: string } | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!url) return null;
@@ -72,10 +88,17 @@ export function buildCsp(nonce: string, isDev: boolean): string {
     supabase?.https,
     supabase?.wss,
     ...BILLING_CONNECT_ORIGINS,
+    GOOGLE_IDENTITY_ORIGIN,
   ]
     .filter(Boolean)
     .join(' ');
-  const img = ["'self'", 'data:', 'blob:', supabase?.https]
+  const img = [
+    "'self'",
+    'data:',
+    'blob:',
+    supabase?.https,
+    GOOGLE_AVATAR_ORIGIN,
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -86,7 +109,7 @@ export function buildCsp(nonce: string, isDev: boolean): string {
     `img-src ${img}`,
     `font-src 'self'`,
     `connect-src ${connect}`,
-    `frame-src 'self' ${BILLING_FRAME_ORIGINS.join(' ')}`,
+    `frame-src 'self' ${BILLING_FRAME_ORIGINS.join(' ')} ${GOOGLE_IDENTITY_ORIGIN}`,
     `manifest-src 'self'`,
     `worker-src 'self'`,
     `object-src 'none'`,

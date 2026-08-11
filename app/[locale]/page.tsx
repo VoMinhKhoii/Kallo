@@ -13,6 +13,7 @@ import {
 } from '@/components/landing-page';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
 import type { Locale } from '@/i18n/config';
+import { googleWebClientId } from '@/lib/auth/google-client-id';
 import { safeNextPath } from '@/lib/auth/safe-next';
 import { getDocsTree } from '@/lib/docs/tree';
 import { createClient } from '@/lib/supabase/server';
@@ -51,7 +52,12 @@ export default async function Home({
   const sections = await getDocsTree(locale as Locale);
 
   return (
-    <AuthProvider next={next} initialOpen={initialOpen} initialTab={initialTab}>
+    <AuthProvider
+      next={next}
+      googleClientId={googleWebClientId()}
+      initialOpen={initialOpen}
+      initialTab={initialTab}
+    >
       {/* One fixed layer behind everything, so the drift runs the whole way
           down instead of stopping where the hero ends. */}
       <AmbientWash />
