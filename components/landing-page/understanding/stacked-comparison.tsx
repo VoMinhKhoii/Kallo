@@ -74,12 +74,25 @@ export function StackedComparison({
     >
       {/* Two things here are doing work rather than decoration.
 
-          The shadow is four casts, not one, so the card reads as a physical
-          slab dealt onto a pile: a hairline contact shadow holding it to the
-          page, then three progressively wider and softer ones. All are
-          espresso-tinted rather than black, because a neutral-black shadow on
-          cream greys the paper under it. The inset highlight along the top edge
-          is what sells the depth — light catching the lip.
+          The shadow casts UPWARD as well as down, and that is the whole point
+          rather than a flourish. These cards spend most of the scroll lying
+          across each other: a card is dealt over the one before it and covers
+          everything but its title band, so at some scroll position the covering
+          edge is always somewhere across the middle of the card beneath. That
+          is geometry, not a bug — but with only soft downward casts, both
+          panels being the same beige, the seam read as though the lower card
+          had been CROPPED rather than covered.
+
+          What sells contact is what happens where two physical things meet: a
+          tight dark band thrown up onto the surface underneath (`0 -6px 16px`,
+          plus a hairline `0 -1px 0` for the line itself), and a bright lip
+          along the top edge of the card doing the covering (`inset 0 2px 0`, at
+          0.85 rather than 0.6 — it has to survive being read against another
+          card rather than against open page). The wide downward casts stay:
+          they are what holds the whole pile off the page.
+
+          All espresso-tinted rather than black, because a neutral-black shadow
+          on cream greys the paper under it.
 
           The panel takes its NATURAL height — content plus the same padding on
           every card. It was pinned to one height so all four shared a release
@@ -94,7 +107,7 @@ export function StackedComparison({
           hide it, and the biggest drop between neighbours here is 4.81rem
           against a 5rem band, with 0.19rem to spare. Reorder the comparisons, or add a
           dish row, and that has to be re-checked. */}
-      <div className="overflow-hidden rounded-[2rem] border border-nham-border/60 bg-nham-hover shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_1px_2px_rgba(20,20,19,0.05),0_8px_16px_-8px_rgba(20,20,19,0.10),0_24px_48px_-16px_rgba(20,20,19,0.16),0_48px_96px_-32px_rgba(20,20,19,0.20)]">
+      <div className="overflow-hidden rounded-[2rem] border border-nham-border/60 bg-nham-hover shadow-[inset_0_2px_0_rgba(255,255,255,0.85),0_-6px_16px_-4px_rgba(20,20,19,0.16),0_-1px_0_rgba(20,20,19,0.06),0_8px_16px_-8px_rgba(20,20,19,0.10),0_24px_48px_-16px_rgba(20,20,19,0.16),0_48px_96px_-32px_rgba(20,20,19,0.20)]">
         {/* The title band. Its height is exactly the stack's step, so the strip
             each buried card still shows is precisely this band — you can read
             "Skin on, or skin off" off a card three deep in the pile. Everything
@@ -130,14 +143,14 @@ export function StackedComparison({
             {t(`categories.${comparison.id}.note`)}
           </p>
 
-          {/* Equal columns up to `lg`, content-width from `lg`.
-              `auto-cols-max` lets each card take exactly the width its own
-              sentence needs on one line, so the two cards end up different
-              widths and their dish rows sit level — which is the point, since
-              those rows are what you read across. Below `lg` there is not
-              enough width for two one-line sentences, so equal columns plus the
-              card's own two-line floor keeps the rows level instead. */}
-          <div className="mt-4 grid gap-3.5 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] 2xl:auto-cols-max 2xl:grid-flow-col 2xl:grid-cols-none 2xl:justify-start">
+          {/* `max-content` floors each column at its own one-line sentence, so
+              neither card can be squeezed into wrapping; `1fr` splits the
+              leftover so the pair fills the panel. This was `auto-cols-max`,
+              which did the first half and left the rest as empty beige.
+
+              Equal halves below `2xl`, where two one-line sentences do not fit
+              anyway; the subgrid keeps the rows level when one wraps. */}
+          <div className="mt-4 grid gap-3.5 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] 2xl:grid-cols-[minmax(max-content,1fr)_minmax(max-content,1fr)]">
             <CompareMealCard
               comparison={comparison}
               variant={before}

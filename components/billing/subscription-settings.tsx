@@ -10,7 +10,7 @@ import { PaywallDialog } from './paywall-dialog';
 // App-store management deep links for grants that originate from a mobile IAP.
 // The RC webhook records the originating store (event.store lowercased) on the
 // grant `store` column — `source` is always 'revenuecat' and can't be branched
-// on. Anything not in this map (rc_billing, ...) is web-managed.
+// on. Anything not in this map (paddle, ...) is web-managed via management_url.
 
 function daysUntil(iso: string | null): number {
   if (!iso) return Number.POSITIVE_INFINITY;
@@ -32,7 +32,7 @@ function formatDate(iso: string | null, locale: string): string | null {
  * entitlement state and offers the right next action per source:
  *  - free       → upgrade CTA into the paywall
  *  - trial      → days remaining + upgrade CTA
- *  - premium/web→ manage via the RevenueCat Billing customer portal
+ *  - premium/web→ manage via the Paddle customer portal
  *  - premium/app→ "manage in App Store / Google Play" deep link
  *  - lifetime   → no expiry, no management
  */

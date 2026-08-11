@@ -14,11 +14,13 @@ import type {
   NutritionOverview,
   NutritionRangeInput,
 } from '../../types';
+import { buildCalorieAverages } from './calorie-averages';
 import { buildDaySeries, RANGE_BUCKET_UNIT } from './day-series';
+import { buildEmptyOverview } from './empty-overview';
 import { buildMacroPatterns } from './macro-patterns';
 import { buildNutrientCards, toSummaryItem } from './nutrient-cards';
 import type { OverviewMealItemRow } from './query';
-import { type NutritionProfile, nullableNumber, sumRows } from './row-metrics';
+import { type NutritionProfile, nullableNumber } from './row-metrics';
 import { partitionSpotlight } from './spotlight';
 
 const DEFAULT_NUTRIENT_SET = new Set<NutritionNutrientKey>(DEFAULT_NUTRIENTS);
@@ -40,6 +42,8 @@ interface MapOverviewRowsInput {
    * always carries both scopes.
    */
   dayScope?: NutritionDayScope;
+  /** Equal-length window immediately before `period`, for the delta figure. */
+  previousCalorieAverages: CalorieAverages;
 }
 
 export function mapOverviewRowsToDto({
@@ -50,6 +54,7 @@ export function mapOverviewRowsToDto({
   loggedDaysLast30,
   period,
   dayScope,
+  previousCalorieAverages,
 }: MapOverviewRowsInput): NutritionOverview {
   const loggedDates = new Set(
     rows.filter((row) => row.calories > 0).map((row) => row.localDate)
@@ -62,46 +67,24 @@ export function mapOverviewRowsToDto({
   // gates on `loggedDays === 0` for the empty state, so this just removes a
   // hidden invariant trap from the data layer.
   if (loggedDays === 0) {
-    return {
+    return buildEmptyOverview({
+      profile,
       requestedRange,
       resolvedRange,
-      bucketTimezone: period.bucketTimezone,
+      loggedDaysLast30,
+      period,
+      previousCalorieAverages,
       loggedDays: 0,
       completeDays: 0,
       partialDays: 0,
-      loggedDaysLast30,
-      trendStatus: getTrendStatus(resolvedRange, 0),
-      period: {
-        startDate: period.startDate,
-        endDate: period.endDate,
-      },
-      summary: {
-        mostConsistent: [],
-        needsAttention: [],
-        limitedDataCount: 0,
-        macroConsistency: { averageConsistencyPct: 0, weakestMacro: null },
-      },
       calorieAverages: {
         all: { averagePerDay: null, days: 0 },
         complete: { averagePerDay: null, days: 0 },
       },
-      macros: [],
-      daySeries: {
-        unit: RANGE_BUCKET_UNIT[resolvedRange],
-        series: [],
-      },
-      micronutrients: [],
-      spotlight: [],
-      steady: [],
-      moreNutrients: [],
-      educationCards: [
-        {
-          id: 'vitamin_d',
-          titleKey: 'nutrition.education.vitaminD.title',
-          bodyKey: 'nutrition.education.vitaminD.body',
-        },
-      ],
-    };
+      // No columns to draw, so no series to ship — unlike the scoped-empty
+      // case below, where the days exist and every one of them greys.
+      daySeries: { unit: RANGE_BUCKET_UNIT[resolvedRange], series: [] },
+    });
   }
 
   // Days where the user logged only a meal or two then forgot drag averages
@@ -133,25 +116,10 @@ export function mapOverviewRowsToDto({
 
   // Both scopes' calorie averages, shipped regardless of `dayScope` so the
   // client can show one as hero and the other as a subtle secondary and swap
-  // them without a refetch.
+  // them without a refetch. Same helper the previous window is scored by, so
+  // the two sides of the delta can never drift apart.
+  const calorieAverages = buildCalorieAverages(dayCalorieList, calorieTarget);
   const loggedRows = rows.filter((row) => loggedDates.has(row.localDate));
-  const strictCompleteRows = rows.filter((row) =>
-    strict.completeDates.has(row.localDate)
-  );
-  const calorieAverages: CalorieAverages = {
-    all: {
-      averagePerDay:
-        loggedDays > 0 ? sumRows(loggedRows, 'calories') / loggedDays : null,
-      days: loggedDays,
-    },
-    complete: {
-      averagePerDay:
-        strict.completeDays > 0
-          ? sumRows(strictCompleteRows, 'calories') / strict.completeDays
-          : null,
-      days: strict.completeDays,
-    },
-  };
 
   // Pick the day set the body (macros/series/grid) averages over. Legacy
   // (`undefined`) keeps the valve so the web app is byte-identical to before;
@@ -182,50 +150,44 @@ export function mapOverviewRowsToDto({
             partialDays: legacy!.partialDays,
           };
 
-  // Strict `'complete'` scope with no qualifying days: return a body-empty DTO
-  // (the client shows a "no complete days yet" state) while still carrying the
-  // real day counts and both calorie averages.
+  // No qualifying days — the strict `'complete'` scope with no complete day in
+  // the window (nothing logged at all returned above).
+  //
+  // The body is still fully populated, at zero. An empty payload used to make
+  // the client swap in a separate "nothing here yet" screen, which hid the
+  // shape of the page from exactly the people who had not learned it yet. Every
+  // nutrient row is present with its real target, a `null` average that renders
+  // as "—", and a bar at zero: the page reads the same on day one as on day
+  // thirty, just empty.
+  //
+  // The chart is the exception: the days ARE there, none of them qualifying, so
+  // it draws them all greyed rather than going blank. That is the honest
+  // picture — "you logged these, none counted" — and it shows what flipping to
+  // "all" would bring in.
   if (averagingDayCount === 0) {
-    return {
+    return buildEmptyOverview({
+      profile,
       requestedRange,
       resolvedRange,
-      bucketTimezone: period.bucketTimezone,
+      loggedDaysLast30,
+      period,
+      previousCalorieAverages,
       loggedDays,
       completeDays,
       partialDays,
-      loggedDaysLast30,
-      trendStatus: getTrendStatus(resolvedRange, completeDays),
-      period: {
-        startDate: period.startDate,
-        endDate: period.endDate,
-      },
-      summary: {
-        mostConsistent: [],
-        needsAttention: [],
-        limitedDataCount: 0,
-        macroConsistency: { averageConsistencyPct: 0, weakestMacro: null },
-      },
       calorieAverages,
-      macros: [],
-      daySeries: {
-        unit: RANGE_BUCKET_UNIT[resolvedRange],
-        series: [],
-      },
-      micronutrients: [],
-      spotlight: [],
-      steady: [],
-      moreNutrients: [],
-      educationCards: [
-        {
-          id: 'vitamin_d',
-          titleKey: 'nutrition.education.vitaminD.title',
-          bodyKey: 'nutrition.education.vitaminD.body',
-        },
-      ],
-    };
+      daySeries: buildDaySeries({
+        scopedDates: new Set<string>(),
+        loggedRows,
+        loggedDates,
+        resolvedRange,
+        period: { startDate: period.startDate, endDate: period.endDate },
+        profile,
+        targets: resolveMicronutrientTargets(profile),
+      }),
+    });
   }
 
-  const completeDates = averagingDates;
   const completeRows = rows.filter((row) => averagingDates.has(row.localDate));
 
   // safeLoggedDays divides nutrient sums to produce the per-day average over the
@@ -268,9 +230,12 @@ export function mapOverviewRowsToDto({
       targets[card.nutrient].applicability !== 'hidden'
   );
   const { spotlight, steady } = partitionSpotlight(micronutrients);
+  // Heights over every logged day, greying driven by the scope — see
+  // `buildDaySeries` for why the bars are the fixed thing here.
   const daySeries = buildDaySeries({
-    completeRows,
-    completeDates,
+    scopedDates: averagingDates,
+    loggedRows,
+    loggedDates,
     resolvedRange,
     period: { startDate: period.startDate, endDate: period.endDate },
     profile,
@@ -295,6 +260,7 @@ export function mapOverviewRowsToDto({
       macroConsistency,
     },
     calorieAverages,
+    previousCalorieAverages,
     macros,
     daySeries,
     micronutrients,

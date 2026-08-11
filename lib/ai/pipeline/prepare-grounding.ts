@@ -6,6 +6,7 @@
  */
 
 import type { AppDb } from '@/lib/db';
+import { withDeadline } from '@/lib/with-deadline';
 import type { GeminiClient } from '../gemini';
 import {
   type IngredientV2MatchResult,
@@ -20,6 +21,7 @@ import {
 import type { MealItemWithCandidates } from '../prompts/grounded-estimation';
 import type { StreamEvent } from '../streaming/types';
 import type { UserContext } from '../types';
+import { MATCHING_TIMEOUT_MS } from './config/stage-timeouts';
 import { buildCallTwoPayload, withStageLogV2 } from './grounded-support';
 import type { AnalyzeMealTraceContext } from './orchestrator';
 import type { MealDecompositionV2 } from './schemas-v2';
@@ -57,12 +59,15 @@ export async function prepareGrounding(args: {
     { ingredientCount: flatIngredients.length, topK: args.topK },
     async (_ctx) => {
       emit({ type: 'stage', stage: 'matching' });
-      return matchTopKPerIngredient(
-        flatIngredients.map((f) => f.ingredient),
-        flatIngredients.map((f) => f.dishCookingMethod),
-        args.db,
-        args.gemini,
-        { k: args.topK, concurrency: args.matchConcurrency }
+      return withDeadline(
+        matchTopKPerIngredient(
+          flatIngredients.map((f) => f.ingredient),
+          flatIngredients.map((f) => f.dishCookingMethod),
+          args.db,
+          args.gemini,
+          { k: args.topK, concurrency: args.matchConcurrency }
+        ),
+        MATCHING_TIMEOUT_MS
       );
     }
   );

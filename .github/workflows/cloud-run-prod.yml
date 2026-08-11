@@ -251,6 +251,15 @@ jobs:
           # tightening likely applies here but is deliberately left unchanged in
           # this phase — prod's concurrency change must be benchmarked under
           # representative load before shipping.
+          #
+          # Webhook signing: if signature signing is enabled in RevenueCat, the
+          # server needs REVENUECAT_WEBHOOK_HMAC_SECRET or every production
+          # webhook fails auth. It is deliberately NOT in --set-secrets below —
+          # naming a secret that does not exist in Secret Manager fails the
+          # deploy, so create it first, then append:
+          #   REVENUECAT_WEBHOOK_HMAC_SECRET=kallo-prod-revenuecat-webhook-hmac-secret:latest
+          # Note `flags` is a folded scalar: everything indented under it is one
+          # string of gcloud arguments, so `#` inside it is NOT a comment.
           flags: >-
             --allow-unauthenticated
             --ingress=all
@@ -263,7 +272,7 @@ jobs:
             --min-instances=0
             --max-instances=20
             --set-secrets=DATABASE_URL=kallo-prod-database-url:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest,SUPABASE_SERVICE_ROLE_KEY=kallo-prod-supabase-service-role-key:latest,REVENUECAT_CUSTOMER_DELETE_API_KEY=kallo-prod-revenuecat-customer-delete-api-key:latest,REVENUECAT_REST_API_KEY=kallo-prod-revenuecat-rest-api-key:latest,REVENUECAT_WEBHOOK_SECRET=kallo-prod-revenuecat-webhook-secret:latest,RESEND_API_KEY=kallo-prod-resend-api-key:latest,SEND_EMAIL_HOOK_SECRET=kallo-prod-send-email-hook-secret:latest
-            --update-env-vars=^|^AI_PROVIDER=vertex|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|PIPELINE_V2_ENABLED=true|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|SUBSCRIPTION_LAUNCH_DATE=${{ vars.SUBSCRIPTION_LAUNCH_DATE }}|TRIAL_DAYS=${{ vars.TRIAL_DAYS || '7' }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false
+            --update-env-vars=^|^AI_PROVIDER=vertex|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|PIPELINE_V2_ENABLED=true|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|SUBSCRIPTION_LAUNCH_DATE=${{ vars.SUBSCRIPTION_LAUNCH_DATE }}|TRIAL_DAYS=${{ vars.TRIAL_DAYS || '7' }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_WEB_API_KEY_SANDBOX=${{ vars.REVENUECAT_WEB_API_KEY_SANDBOX }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false|GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}
       - name: Resolve smoke URL
         # Existing service → the candidate was deployed with --no-traffic, so smoke
         # its tagged URL (the live service URL still serves the old revision).

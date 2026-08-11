@@ -1,6 +1,7 @@
 'use client';
 import { Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { canonicalProductId } from '@/lib/billing/products';
 import type { Package } from '@/lib/billing/web-purchases';
 import { cn } from '@/lib/utils';
 
@@ -28,8 +29,14 @@ export function PackageCard({
   const product = rcPackage.webBillingProduct;
   // Product ids are allowlisted before rendering, so copy follows the product
   // being charged even if a dashboard package label is misconfigured.
-  const isAnnual = product.identifier === 'kallo_premium_annual';
-  const isLifetime = product.identifier === 'kallo_premium_lifetime';
+  //
+  // Resolve through the catalog rather than comparing the raw identifier: a
+  // Paddle-backed offering reports opaque `pri_…` ids, which match no canonical
+  // name and would silently render every plan — annual and lifetime included —
+  // as "Monthly / month" at the price of the real product.
+  const canonicalId = canonicalProductId(product.identifier);
+  const isAnnual = canonicalId === 'kallo_premium_annual';
+  const isLifetime = canonicalId === 'kallo_premium_lifetime';
 
   const cadence = isLifetime
     ? t('cadenceOnce')

@@ -18,12 +18,51 @@
  * under an enforced strict `script-src` they would be blocked. Nonce + static
  * generation are mutually exclusive (a documented Next.js constraint).
  *
- * Third-party origins are intentionally tiny: the only external service the
- * browser talks to is Supabase (auth/REST over https + realtime over wss), and
- * fonts are self-hosted by `next/font`. `style-src` keeps `'unsafe-inline'`
- * because `next/font` and assorted libraries inject inline `style` attributes,
- * which cannot carry a nonce; inline *style* injection is not an XSS vector.
+ * Third-party origins are intentionally tiny: the browser talks to Supabase
+ * (auth/REST over https + realtime over wss), to Google Identity Services on
+ * the auth dialog, and, on the paywall only, to RevenueCat and Paddle. Fonts
+ * are self-hosted by `next/font`. `style-src`
+ * keeps `'unsafe-inline'` because `next/font` and assorted libraries inject
+ * inline `style` attributes, which cannot carry a nonce; inline *style*
+ * injection is not an XSS vector.
  */
+
+/**
+ * Web checkout origins. RevenueCat is the subscription brain; Paddle is the
+ * billing engine and merchant of record, and its checkout renders as an iframe
+ * inside our page (see docs/BILLING.md).
+ *
+ * Paddle publishes no canonical CSP allowlist, so `*.paddle.com` covers the
+ * environment-specific checkout hosts (`buy.` in production, `sandbox-buy.` in
+ * sandbox) rather than guessing at subdomains. Narrow this to the exact hosts
+ * once a sandbox checkout has been run and the Report-Only violations name
+ * them.
+ *
+ * Deliberately absent from `script-src`: Paddle.js is served from
+ * `cdn.paddle.com`, but `'strict-dynamic'` makes host allowlists inert for
+ * scripts, and the RevenueCat bundle that injects it already carries the
+ * request nonce. Adding the host there would be dead configuration.
+ */
+const BILLING_FRAME_ORIGINS = ['https://*.paddle.com', 'https://pay.rev.cat'];
+const BILLING_CONNECT_ORIGINS = [
+  'https://api.revenuecat.com',
+  'https://*.paddle.com',
+];
+
+/**
+ * Google Identity Services, which mints the ID token for web Google sign-in on
+ * our own origin (`hooks/auth/use-google-identity.ts`). GIS renders its button
+ * inside an `accounts.google.com` iframe and calls back to the same origin, so
+ * it needs both `frame-src` and `connect-src`; the account picker itself is a
+ * popup window, which CSP does not govern.
+ *
+ * Not in `script-src` for the same reason Paddle isn't: `'strict-dynamic'`
+ * makes host allowlists inert there, and our own nonced bundle is what injects
+ * the GIS `<script>`.
+ */
+const GOOGLE_IDENTITY_ORIGIN = 'https://accounts.google.com';
+/** Avatars on the personalized button / One Tap card. */
+const GOOGLE_AVATAR_ORIGIN = 'https://*.googleusercontent.com';
 
 function supabaseOrigins(): { https: string; wss: string } | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -44,10 +83,22 @@ function supabaseOrigins(): { https: string; wss: string } | null {
  */
 export function buildCsp(nonce: string, isDev: boolean): string {
   const supabase = supabaseOrigins();
-  const connect = ["'self'", supabase?.https, supabase?.wss]
+  const connect = [
+    "'self'",
+    supabase?.https,
+    supabase?.wss,
+    ...BILLING_CONNECT_ORIGINS,
+    GOOGLE_IDENTITY_ORIGIN,
+  ]
     .filter(Boolean)
     .join(' ');
-  const img = ["'self'", 'data:', 'blob:', supabase?.https]
+  const img = [
+    "'self'",
+    'data:',
+    'blob:',
+    supabase?.https,
+    GOOGLE_AVATAR_ORIGIN,
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -58,6 +109,7 @@ export function buildCsp(nonce: string, isDev: boolean): string {
     `img-src ${img}`,
     `font-src 'self'`,
     `connect-src ${connect}`,
+    `frame-src 'self' ${BILLING_FRAME_ORIGINS.join(' ')} ${GOOGLE_IDENTITY_ORIGIN}`,
     `manifest-src 'self'`,
     `worker-src 'self'`,
     `object-src 'none'`,

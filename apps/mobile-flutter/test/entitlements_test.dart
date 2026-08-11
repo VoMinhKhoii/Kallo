@@ -308,7 +308,9 @@ void main() {
             );
 
         expect(premium, isFalse);
-        expect(api.postCalls, 1);
+        // Both provider attempts fail; neither may resurrect the cached
+        // premium snapshot. The count is the bound, not the behaviour.
+        expect(api.postCalls, 2);
         expect(api.getCalls, greaterThan(1));
         expect(
           c.read(entitlementsProvider(userA)).valueOrNull?.isPremium,
@@ -337,7 +339,17 @@ void main() {
 
       expect(premium, isFalse);
       expect(stopwatch.elapsed, lessThan(const Duration(milliseconds: 500)));
-      expect(api.postCalls, 1);
+      // At most two, not exactly one: `pollUntilPremium` reconciles twice by
+      // design, and whether the second one fires here is a scheduling detail.
+      // The hung reconcile is supposed to eat the whole 20ms budget, leaving
+      // nothing for the retry window — but on a loaded machine it returns a
+      // sliver early, the window opens, and a second POST goes out legitimately.
+      // Pinning 1 pinned the fast-machine outcome; 2 is the documented ceiling
+      // and is what "does not spin on a hung reconcile" actually means.
+      // Floor as well as ceiling: the first reconcile is not optional, and a
+      // bare `lessThanOrEqualTo(2)` would also pass if none had fired at all.
+      expect(api.postCalls, greaterThanOrEqualTo(1));
+      expect(api.postCalls, lessThanOrEqualTo(2));
       expect(api.getCalls, 1);
       expect(
         c.read(entitlementsProvider(userA)).valueOrNull?.isPremium,
@@ -365,8 +377,34 @@ void main() {
           );
 
       expect(premium, isFalse);
-      expect(api.postCalls, 1);
+      // Two provider calls, never more: one immediately after the store call
+      // and one mid-window. The rest of the window is cheap local reads.
+      expect(api.postCalls, 2);
       expect(api.getCalls, greaterThan(1));
+    });
+
+    test('retries the provider when the purchase lands after the first '
+        'reconcile', () async {
+      // The observed failure: the first reconcile ran before the provider had
+      // recorded the purchase, so it correctly found nothing. Local reads can
+      // never discover a grant the server does not have, so without a second
+      // provider call activation depends entirely on the webhook.
+      final api = FakeApiClient(
+        (_) => freeJson(),
+        postHandler: (index) => index == 0 ? freeJson() : premiumJson(),
+      );
+      final c = makeContainer(api);
+      await c.read(entitlementsProvider(userA).future);
+
+      final premium = await c
+          .read(entitlementsProvider(userA).notifier)
+          .pollUntilPremium(
+            interval: const Duration(milliseconds: 5),
+            timeout: const Duration(milliseconds: 30),
+          );
+
+      expect(premium, isTrue);
+      expect(api.postCalls, 2);
     });
   });
 

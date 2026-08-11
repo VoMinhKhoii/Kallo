@@ -42,6 +42,57 @@ describe('buildCsp', () => {
     expect(csp).toContain('wss://abc.supabase.co');
   });
 
+  it('lets the Paddle checkout iframe and RevenueCat API through', async () => {
+    const csp = await build('n', false);
+    // Assert per directive, not against the whole header: an origin that
+    // drifted from connect-src into frame-src (or the reverse) would still
+    // satisfy a bare `toContain` while breaking checkout or the API call.
+    const directive = (name: string) =>
+      (csp.split('; ').find((d) => d.startsWith(`${name} `)) ?? '')
+        .split(' ')
+        .slice(1);
+
+    expect(directive('frame-src')).toEqual(
+      expect.arrayContaining([
+        "'self'",
+        'https://*.paddle.com',
+        'https://pay.rev.cat',
+      ])
+    );
+    expect(directive('connect-src')).toEqual(
+      expect.arrayContaining([
+        'https://api.revenuecat.com',
+        'https://*.paddle.com',
+      ])
+    );
+    expect(directive('frame-src')).not.toContain('https://api.revenuecat.com');
+  });
+
+  it('keeps host allowlists out of script-src, which strict-dynamic ignores', async () => {
+    const csp = await build('n', false);
+    const scriptSrc = csp
+      .split('; ')
+      .find((directive) => directive.startsWith('script-src'));
+    expect(scriptSrc).not.toContain('paddle.com');
+    expect(scriptSrc).not.toContain('rev.cat');
+    expect(scriptSrc).not.toContain('accounts.google.com');
+  });
+
+  it('lets Google Identity Services frame and call back for web sign-in', async () => {
+    // Without these, enforcing the policy would silently break the ID-token
+    // flow and drop web Google sign-in back to the Supabase-branded redirect.
+    const csp = await build('n', false);
+    const directive = (name: string) =>
+      (csp.split('; ').find((d) => d.startsWith(`${name} `)) ?? '')
+        .split(' ')
+        .slice(1);
+
+    expect(directive('frame-src')).toContain('https://accounts.google.com');
+    expect(directive('connect-src')).toContain('https://accounts.google.com');
+    // Avatars on the personalized button come from a different Google host.
+    expect(directive('img-src')).toContain('https://*.googleusercontent.com');
+  });
+
   it('locks down framing, base-uri, objects, and form-action', async () => {
     const csp = await build('n', false);
     expect(csp).toContain("frame-ancestors 'none'");

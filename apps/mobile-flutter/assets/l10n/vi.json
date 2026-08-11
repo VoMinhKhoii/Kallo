@@ -105,11 +105,11 @@
     "title": "Dinh dưỡng",
     "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn.",
     "loading": "Đang tải tổng quan dinh dưỡng…",
+    "cardTitle": "Trung bình",
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
-      "1d": "Hôm nay",
-      "7d": "Tuần",
-      "30d": "Tháng",
+      "7d": "7 ngày",
+      "30d": "30 ngày",
       "90d": "90 ngày"
     },
     "nutrientGroups": {
@@ -166,6 +166,11 @@
       "target": "Mục tiêu",
       "noTarget": "Không có mục tiêu"
     },
+    "macrosShort": {
+      "protein": "Đạm",
+      "carbohydrate": "Tinh bột",
+      "fat": "Chất béo"
+    },
     "grid": {
       "eyebrow": "Vi chất",
       "title": "Độ phủ vi chất",
@@ -186,6 +191,9 @@
       "collapse": "Ẩn xu hướng"
     },
     "detail": {
+      "perDay": "mỗi ngày",
+      "close": "Đóng chi tiết",
+      "noNutrients": "Chưa có dữ liệu vi chất cho khoảng này.",
       "averageVsTarget": "Trung bình so với mục tiêu"
     },
     "confidence": {
@@ -513,12 +521,16 @@
     "rhythm": {
       "eyebrow": "Nhịp ăn mỗi ngày",
       "calories": "kcal",
+      "loggedDays": "Tất cả",
+      "completeDays": "Ngày đủ bữa",
       "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
       "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
       "days": "ngày",
       "noCompleteDays": "Chưa có ngày nào ghi đủ — hãy tiếp tục ghi, hoặc chạm Tất cả.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Tỷ lệ macro",
+      "diffUp": "tăng so với kỳ trước",
+      "diffDown": "giảm so với kỳ trước",
       "consistency": {
         "steady": "ổn định",
         "rhythmic": "đều đặn",
@@ -1442,7 +1454,7 @@
       "delete": "Xóa tài khoản",
       "deleteScreenTitle": "Xóa tài khoản",
       "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
-      "deleteSubscriptionWarning": "Xóa tài khoản Kallo không hủy gói đăng ký qua Apple hoặc Google. Hãy hủy trong cửa hàng trước để tránh phí về sau. Gói Kallo trên web sẽ được hủy trong quá trình xóa tài khoản. Bạn vẫn có thể xóa ngay.",
+      "deleteSubscriptionWarning": "Xóa tài khoản Kallo không hủy gói đăng ký đang hoạt động. Hãy hủy trước — trong App Store, Google Play, hoặc cổng thanh toán bạn đã dùng trên web — để tránh phí về sau. Bạn vẫn có thể xóa ngay.",
       "deleteManageSubscription": "Quản lý hoặc hủy gói",
       "deleteConfirmLabel": "Nhập {word} để xác nhận",
       "deleteConfirmWord": "XOA",
