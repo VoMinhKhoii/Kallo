@@ -12,4 +12,4 @@
  * One switch, deliberately, so turning the page back on is a single edit rather
  * than a hunt through the header, the hero and three plan cards.
  */
-export const AUTH_CTAS_LIVE = false;
+export const AUTH_CTAS_LIVE = true;

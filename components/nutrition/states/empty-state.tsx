@@ -14,6 +14,9 @@ export function EmptyState() {
       icon={Sprout}
       title={t('emptyV2.title')}
       description={t('emptyV2.description')}
+      // Its own block, and centred inside that — not centred against the whole
+      // page, which would drift with however much sits above and below it.
+      className="min-h-[18rem] justify-center"
     >
       <Button asChild>
         <Link href="/logging">{t('emptyV2.logMeal')}</Link>

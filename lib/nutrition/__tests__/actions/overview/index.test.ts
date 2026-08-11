@@ -4,10 +4,12 @@ import type { OverviewMealItemRow } from '@/lib/nutrition/actions/overview/query
 
 const {
   mockCountLoggedDaysLast30,
+  mockFetchDailyCalorieTotals,
   mockFetchOverviewRows,
   mockRequireAuthAndProfile,
 } = vi.hoisted(() => ({
   mockCountLoggedDaysLast30: vi.fn(),
+  mockFetchDailyCalorieTotals: vi.fn(),
   mockFetchOverviewRows: vi.fn(),
   mockRequireAuthAndProfile: vi.fn(),
 }));
@@ -18,6 +20,7 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('@/lib/nutrition/actions/overview/query', () => ({
   countLoggedDaysLast30: mockCountLoggedDaysLast30,
+  fetchDailyCalorieTotals: mockFetchDailyCalorieTotals,
   fetchOverviewRows: mockFetchOverviewRows,
 }));
 
@@ -113,6 +116,7 @@ describe('getNutritionOverview', () => {
     });
     mockCountLoggedDaysLast30.mockResolvedValue(14);
     mockFetchOverviewRows.mockResolvedValue(threeDayRows);
+    mockFetchDailyCalorieTotals.mockResolvedValue([]);
   });
 
   it('rejects invalid ranges', async () => {
@@ -128,6 +132,36 @@ describe('getNutritionOverview', () => {
     expect(fetchOverviewRows).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'user-1' })
     );
+  });
+
+  it('reads the previous window as a per-day calorie aggregate, not full item rows', async () => {
+    mockFetchDailyCalorieTotals.mockResolvedValue([
+      { date: '2026-04-13', calories: 2000 },
+      { date: '2026-04-14', calories: 1000 },
+      // Under half the 2000 kcal target — partial, so it counts toward `all`
+      // but not `complete`.
+      { date: '2026-04-15', calories: 400 },
+    ]);
+
+    const overview = await getNutritionOverview({
+      range: '7d',
+      timezoneOffset: null,
+    });
+
+    // The 7d window is Mon 20th–Sun 26th, so the previous one is the 13th–19th.
+    expect(mockFetchDailyCalorieTotals).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        startDate: '2026-04-13',
+        endDate: '2026-04-19',
+      })
+    );
+    // One query for the current window only — the previous one never pulls rows.
+    expect(mockFetchOverviewRows).toHaveBeenCalledTimes(1);
+    expect(overview.previousCalorieAverages).toEqual({
+      all: { averagePerDay: 1133.3333333333333, days: 3 },
+      complete: { averagePerDay: 1500, days: 2 },
+    });
   });
 
   it('returns ready 7d overview and sodium caveat from FAO condiment missing sodium', async () => {

@@ -230,7 +230,24 @@ template, so the templates in the dashboard no longer need hand-editing.
 console.cloud.google.com → **APIs & Services** → **Credentials** → open the OAuth
 **Web client** → under **Authorized JavaScript origins** add `https://kallo.fit` and
 `https://www.kallo.fit` → **Save**. (The redirect URI stays the Supabase
-`…supabase.co/auth/v1/callback` — leave it.)
+`…supabase.co/auth/v1/callback` — leave it; the fallback flow below still uses it.)
+
+The **JavaScript origins are load-bearing**, not optional. Web Google sign-in
+mints the ID token on our own origin via Google Identity Services and hands it to
+`signInWithIdToken` — the same call the Flutter app makes — so Google's account
+picker is labelled `kallo.fit` instead of the Supabase project ref. GIS refuses to
+run on an origin that isn't listed here.
+
+Set the client ID as a Cloud Run env var so the server pages can pass it down:
+repo **Settings → Secrets and variables → Actions → Variables** → add
+`GOOGLE_WEB_CLIENT_ID` (same value the Flutter build uses as `serverClientId`,
+already listed under the Supabase Google provider's *Authorized Client IDs*). The
+prod deploy passes it through `--update-env-vars`. It is a runtime var, not
+`NEXT_PUBLIC_*`, so changing it needs no image rebuild.
+
+**Rollback / degraded mode.** Unset the variable (or let GIS be blocked by an ad
+blocker) and the button falls back to the old `signInWithOAuth` redirect — users
+still sign in, they just see `…supabase.co` on the consent screen again.
 
 ---
 

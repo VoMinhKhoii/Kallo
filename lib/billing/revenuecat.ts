@@ -212,6 +212,17 @@ export function parseRevenueCatSnapshot(
   const premiumProduct = premium
     ? resolveProduct(premium.product_identifier)
     : null;
+  if (premium && !premiumProduct) {
+    // RevenueCat says this customer is entitled, but the product is not in our
+    // catalog, so no grant will be written and the customer keeps nothing they
+    // paid for. Silence here reads exactly like "customer has no subscription".
+    // The usual cause is a Paddle price id that exists in the dashboard but was
+    // never added to `PADDLE_PRICE_PRODUCTS` — most likely the production
+    // account, whose ids differ from sandbox. See docs/BILLING.md.
+    console.error(
+      `[billing] RevenueCat reports entitlement 'premium' backed by unmapped product ${premium.product_identifier}; no grant will be written`
+    );
+  }
   if (premium && premiumProduct?.entitlementKey === 'premium') {
     const expiresAt = laterDate(
       premium.expires_date,

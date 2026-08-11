@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/data/api_client.dart';
+import 'package:nham_mobile/data/billing/activation_pending.dart';
 import 'package:nham_mobile/data/billing/entitlement_lifecycle_sync.dart';
 import 'package:nham_mobile/data/billing/entitlements_provider.dart';
 
@@ -178,14 +179,60 @@ void main() {
     expect(api.getCalls, 2);
     expect(api.postCalls, 0);
   });
+
+  test('a purchase the server never projected still recovers', () async {
+    // `reconciliationRequired` is derived from existing grant rows, so a first
+    // purchase that never projected leaves no rows and no signal. Without the
+    // local marker this user would sit on free forever.
+    final api = _LifecycleApi(reconciliationRequired: false);
+    final pendingStore = _FakePendingStore(pending: true);
+    final container = _makeContainer(api, pendingStore: pendingStore);
+    final sync = container.read(entitlementLifecycleSyncProvider);
+
+    final operation = sync.synchronize(userA);
+    api.initialGet.complete(_entitlement());
+    await operation;
+
+    expect(api.postCalls, 1);
+    // Recovery found the purchase, so the signal is spent.
+    expect(pendingStore.pending, isFalse);
+  });
+
+  test('a recovery that still finds nothing keeps the signal', () async {
+    // The provider can still be ingesting the transaction. Retiring the marker
+    // on the first miss would strand a paying user on free forever.
+    final api = _LifecycleApi(
+      reconciliationRequired: false,
+      reconcileYieldsPremium: false,
+    );
+    final pendingStore = _FakePendingStore(pending: true);
+    final container = _makeContainer(api, pendingStore: pendingStore);
+    final sync = container.read(entitlementLifecycleSyncProvider);
+
+    final operation = sync.synchronize(userA);
+    api.initialGet.complete(_entitlement());
+    await operation;
+
+    expect(api.postCalls, 1);
+    expect(pendingStore.pending, isTrue);
+    expect(pendingStore.attempts, 1);
+  });
 }
 
-ProviderContainer _makeContainer(_LifecycleApi api) {
+ProviderContainer _makeContainer(
+  _LifecycleApi api, {
+  _FakePendingStore? pendingStore,
+}) {
   final container = ProviderContainer(
     overrides: [
       apiClientProvider.overrideWithValue(api),
       entitlementsUserIdProvider.overrideWithValue(
         '11111111-1111-1111-1111-111111111111',
+      ),
+      // Keeps these tests off the platform channel; the real store is keychain
+      // backed and silently unavailable in a plain unit test.
+      activationPendingStoreProvider.overrideWithValue(
+        pendingStore ?? _FakePendingStore(),
       ),
     ],
   );
@@ -193,10 +240,39 @@ ProviderContainer _makeContainer(_LifecycleApi api) {
   return container;
 }
 
+class _FakePendingStore implements ActivationPendingStore {
+  _FakePendingStore({this.pending = false});
+
+  bool pending;
+  var clears = 0;
+  var attempts = 0;
+
+  @override
+  Future<void> mark(String userId) async => pending = true;
+
+  @override
+  Future<void> clear(String userId) async {
+    pending = false;
+    clears += 1;
+  }
+
+  @override
+  Future<bool> isPending(String userId) async => pending;
+
+  @override
+  Future<void> recordRecoveryAttempt(String userId) async => attempts += 1;
+}
+
 class _LifecycleApi extends ApiClient {
-  _LifecycleApi({required this.reconciliationRequired});
+  _LifecycleApi({
+    required this.reconciliationRequired,
+    this.reconcileYieldsPremium = true,
+  });
 
   final bool reconciliationRequired;
+
+  /// False models a provider that has not ingested the transaction yet.
+  final bool reconcileYieldsPremium;
   final initialGet = Completer<Map<String, dynamic>>();
   var getCalls = 0;
   var postCalls = 0;
@@ -215,7 +291,9 @@ class _LifecycleApi extends ApiClient {
   @override
   Future<T> post<T>(String path, [Object? body]) {
     postCalls += 1;
-    return Future<T>.value(_entitlement(premium: true) as T);
+    return Future<T>.value(
+      _entitlement(premium: reconcileYieldsPremium) as T,
+    );
   }
 }
 

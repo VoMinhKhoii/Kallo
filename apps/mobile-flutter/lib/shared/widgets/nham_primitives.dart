@@ -6,47 +6,10 @@ import '../../theme/nham_theme.dart';
 import '../../theme/nham_typography.dart';
 import 'nham_text.dart';
 
-/// Full-bleed cream screen with safe-area insets.
-///
-/// RN port of `Screen` from `apps/mobile/src/theme/primitives.tsx`. Defaults to
-/// applying top + bottom safe-area padding; pass [top]/[bottom] to opt out of an
-/// edge (mirrors RN's `edges` prop).
-class Screen extends StatelessWidget {
-  const Screen({
-    super.key,
-    required this.child,
-    this.top = true,
-    this.bottom = true,
-  });
+// Screen lives in its own file (size gate); re-exported so the single
+// primitives import still reaches every primitive.
+export 'nham_screen.dart';
 
-  final Widget child;
-  final bool top;
-  final bool bottom;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: NhamColors.surface,
-      child: SafeArea(
-        top: top,
-        bottom: bottom,
-        // Tap anywhere on empty surface to dismiss the keyboard — the native
-        // mobile expectation. Interactive descendants (buttons, fields) win the
-        // gesture arena for their own taps, so only "background" taps drop focus.
-        // `opaque` makes the whole cream area hittable; `onTap` claims nothing
-        // that would interfere with scrolling.
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-          // Transparent Material ancestor so TextField/InkWell descendants
-          // resolve their Material lookup without painting over the cream
-          // surface.
-          child: Material(type: MaterialType.transparency, child: child),
-        ),
-      ),
-    );
-  }
-}
 
 /// White card with a hairline border (hierarchy from borders, not elevation).
 ///

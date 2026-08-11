@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 type CalloutTone = 'note' | 'caution' | 'tip';
 
 const TONES: Record<CalloutTone, { container: string; label: string }> = {
-  // White, not `nham-track`: the track wash is #f5f4f0 against a #f9f9f7
+  // White, not `nham-track`: the track wash is #f5f4f0 against a #fcfcfc
   // canvas — 1.04:1, so the aside had no visible edge at all.
   note: {
     container: 'border-nham-border bg-white',

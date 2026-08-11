@@ -26,9 +26,20 @@ function InviteAuthButton() {
   );
 }
 
-export function InviteAuthCta({ next }: { next: string }) {
+export function InviteAuthCta({
+  next,
+  googleClientId,
+}: {
+  next: string;
+  /** Resolved server-side by the invite page; see `AuthProvider`. */
+  googleClientId: string | null;
+}) {
   return (
-    <AuthProvider next={next} initialTab="sign-up">
+    <AuthProvider
+      next={next}
+      googleClientId={googleClientId}
+      initialTab="sign-up"
+    >
       <InviteAuthButton />
       <AuthDialog />
     </AuthProvider>

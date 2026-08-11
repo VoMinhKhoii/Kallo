@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
 import 'data/env.dart';
@@ -22,6 +23,10 @@ const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+  // `DateFormat.MMMd('vi')` and friends read locale symbols that easy_localization
+  // does not load. Without this, a localized date can throw LocaleDataException
+  // — the nutrition date spans and chart month anchors all go through it.
+  await initializeDateFormatting();
 
   // Lora (serif) is bundled under assets/google_fonts/ and resolved by
   // google_fonts — never fetch over HTTP, so a cold offline start still renders

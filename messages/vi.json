@@ -93,13 +93,19 @@
   "nutrition": {
     "eyebrow": "Phân tích xu hướng",
     "title": "Dinh dưỡng",
+    "cardTitle": "Trung bình",
     "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn từ những bữa ăn bạn đã ghi.",
     "loading": "Đang tải tổng quan dinh dưỡng…",
+    "detail": {
+      "perDay": "mỗi ngày",
+      "close": "Đóng chi tiết ngày",
+      "noNutrients": "Chưa có dữ liệu vi chất cho khoảng này."
+    },
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
-      "1d": "Hôm nay",
       "7d": "7 ngày",
-      "30d": "30 ngày"
+      "30d": "30 ngày",
+      "90d": "90 ngày"
     },
     "summary": {
       "label": "Tóm tắt dinh dưỡng",
@@ -130,6 +136,11 @@
       "weakest": "Yếu nhất",
       "target": "Mục tiêu",
       "noTarget": "Không có mục tiêu"
+    },
+    "macrosShort": {
+      "protein": "Đạm",
+      "carbohydrate": "Tinh bột",
+      "fat": "Chất béo"
     },
     "grid": {
       "title": "Độ phủ vi chất",
@@ -468,6 +479,8 @@
     },
     "rhythm": {
       "calories": "kcal",
+      "loggedDays": "Tất cả",
+      "completeDays": "Ngày đủ bữa",
       "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
       "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
       "dayCount": "{count} ngày",
@@ -492,7 +505,9 @@
         "bucketDay": "ngày",
         "bucketWeek": "tuần",
         "gap": "chưa ghi đủ bữa"
-      }
+      },
+      "diffUp": "tăng so với kỳ trước",
+      "diffDown": "giảm so với kỳ trước"
     },
     "focus": {
       "eyebrow": "Cần để ý",
@@ -791,11 +806,11 @@
         "submit": "Vào danh sách chờ",
         "submitting": "Đang gửi…",
         "success": "Kiểm tra hộp thư",
-        "successBody": "Chúng tôi vừa gửi bạn một liên kết. Nhấn vào đó để xác nhận chỗ của bạn — chỉ còn bước đó thôi.",
+        "successBody": "Chúng tôi vừa gửi bạn một liên kết. Nhấn vào đó để xác nhận — chỉ còn bước đó thôi.",
         "invalidEmail": "Nhập địa chỉ email hợp lệ.",
         "error": "Đã có lỗi xảy ra. Vui lòng thử lại.",
         "rateLimited": "Bạn thử hơi nhiều lần. Vui lòng đợi một lát rồi thử lại.",
-        "privacy": "Một email để xác nhận, một email khi tới lượt bạn. Không gì khác."
+        "privacy": "Một email để xác nhận, một email khi ứng dụng di động ra mắt. Không gì khác."
       }
     },
     "understanding": {
@@ -929,7 +944,7 @@
       "copyright": "© {year} Kallo. Mọi quyền được bảo lưu."
     },
     "waitlistStatus": {
-      "confirmed": "Bạn đã có tên trong danh sách. Chúng tôi sẽ báo khi tới lượt bạn.",
+      "confirmed": "Bạn đã có tên trong danh sách. Chúng tôi sẽ báo khi ứng dụng di động ra mắt.",
       "already": "Bạn đã có trong danh sách — không cần làm gì thêm.",
       "expired": "Liên kết đã hết hạn. Nhập lại email để nhận liên kết mới.",
       "invalid": "Liên kết không hợp lệ. Nhập lại email để nhận liên kết mới."
@@ -1538,7 +1553,7 @@
       "deleteDescription": "Xóa vĩnh viễn tài khoản và mọi dữ liệu bên trong.",
       "deleteAction": "Xóa tài khoản",
       "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
-      "deleteSubscriptionWarning": "Xóa tài khoản Kallo không hủy gói đăng ký qua Apple hoặc Google. Hãy hủy trong cửa hàng trước để tránh phí về sau. Gói Kallo trên web sẽ được hủy trong quá trình xóa tài khoản. Bạn vẫn có thể xóa ngay.",
+      "deleteSubscriptionWarning": "Xóa tài khoản Kallo không hủy gói đăng ký đang hoạt động. Hãy hủy trước — trong App Store, Google Play, hoặc cổng thanh toán bạn đã dùng trên web — để tránh phí về sau. Bạn vẫn có thể xóa ngay.",
       "deleteManageSubscription": "Quản lý hoặc hủy gói",
       "deleteConfirmLabel": "Nhập {word} để xác nhận",
       "deleteConfirmWord": "XÓA",
@@ -1630,7 +1645,7 @@
       "choosePlan": "Chọn",
       "opening": "Đang mở…",
       "unavailable": "Hiện chưa thể mua. Vui lòng thử lại sau.",
-      "finetext": "Hủy bất cứ lúc nào. Giá đã bao gồm thuế nếu có.",
+      "finetext": "Hủy bất cứ lúc nào. Thuế áp dụng (nếu có) sẽ hiển thị khi thanh toán.",
       "successToast": "Chào mừng đến với Kallo Premium.",
       "successPendingToast": "Đã nhận thanh toán — quyền premium sẽ xuất hiện trong giây lát.",
       "pendingToast": "Thanh toán đang chờ xử lý. Premium sẽ mở sau khi cửa hàng xác nhận.",

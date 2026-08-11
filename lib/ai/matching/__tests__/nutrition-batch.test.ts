@@ -36,12 +36,15 @@ describe('batchFetchNutrition', () => {
     ).not.toHaveBeenCalled();
   });
 
-  it('cold path: resolves only the meal IDs directly and kicks the bulk warm in the background', async () => {
+  it('cold path: finishes the meal-ID query before starting the background warm', async () => {
+    let resolveMealIds: ((rows: unknown[]) => void) | undefined;
     // Routing mock: id-scoped fetch → the meal rows; full-table warm → both.
     const execute = vi.fn().mockImplementation((query: unknown) => {
       const text = sqlText(query);
       if (text.includes('WHERE id IN')) {
-        return Promise.resolve([ROW_CHICKEN]);
+        return new Promise<unknown[]>((resolve) => {
+          resolveMealIds = resolve;
+        });
       }
       // Full-table warm (source_id = 1)
       return Promise.resolve([ROW_CHICKEN, ROW_RICE]);
@@ -51,7 +54,12 @@ describe('batchFetchNutrition', () => {
     // Cache is cold on entry.
     expect(isNutritionCacheInitialized()).toBe(false);
 
-    const map = await batchFetchNutrition(['fc-001'], db);
+    const mapPromise = batchFetchNutrition(['fc-001'], db);
+    await vi.waitFor(() => expect(resolveMealIds).toBeDefined());
+    expect(execute).toHaveBeenCalledTimes(1);
+
+    resolveMealIds?.([ROW_CHICKEN]);
+    const map = await mapPromise;
     expect(map.get('fc-001')?.caloriesKcal).toBe(165);
     expect(map.get('fc-001')?.foodGroupEn).toBe('Poultry Products');
 

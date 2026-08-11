@@ -7,7 +7,11 @@ import type {
 } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
 
-const RANGES = ['1d', '7d', '30d'] as const satisfies readonly NutritionRange[];
+const RANGES = [
+  '7d',
+  '30d',
+  '90d',
+] as const satisfies readonly NutritionRange[];
 
 interface NutritionHeaderProps {
   resolvedRange: NutritionRange;
