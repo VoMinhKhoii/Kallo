@@ -108,7 +108,16 @@ export function useGoogleIdentity() {
   }, [exchange]);
 
   useEffect(() => {
-    if (!googleClientId) return;
+    if (!googleClientId) {
+      // Every fallback path says why. Without this the button silently reverts
+      // to the redirect flow and the only symptom is a Supabase-branded
+      // consent screen — indistinguishable from the code not being deployed.
+      console.warn(
+        '[google-sign-in] GOOGLE_WEB_CLIENT_ID is unset — using the redirect flow. ' +
+          'Set it in .env.local (or the Cloud Run env) and restart the server.'
+      );
+      return;
+    }
     let cancelled = false;
     const container = containerRef.current;
 
@@ -175,9 +184,22 @@ export function useGoogleIdentity() {
    * could not be opened, which is the caller's cue to take the redirect flow.
    */
   const openPicker = useCallback((): boolean => {
-    const button =
-      containerRef.current?.querySelector<HTMLElement>('[role="button"]');
-    if (!button) return false;
+    const container = containerRef.current;
+    const button = container?.querySelector<HTMLElement>(
+      '[role="button"], button'
+    );
+    if (!button) {
+      // The overwhelmingly common cause is an origin Google doesn't recognise:
+      // GIS logs `[GSI_LOGGER]: The given origin is not allowed for the given
+      // client ID` and renders nothing. The other is GIS changing its markup.
+      console.warn(
+        '[google-sign-in] GIS rendered no clickable button — using the redirect flow. ' +
+          `Check for a [GSI_LOGGER] origin error above; ${window.location.origin} ` +
+          'must be an Authorized JavaScript origin on the OAuth client. ' +
+          `(container children: ${container?.childElementCount ?? 'no container'})`
+      );
+      return false;
+    }
     button.click();
     return true;
   }, []);
