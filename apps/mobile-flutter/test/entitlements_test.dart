@@ -346,6 +346,9 @@ void main() {
       // sliver early, the window opens, and a second POST goes out legitimately.
       // Pinning 1 pinned the fast-machine outcome; 2 is the documented ceiling
       // and is what "does not spin on a hung reconcile" actually means.
+      // Floor as well as ceiling: the first reconcile is not optional, and a
+      // bare `lessThanOrEqualTo(2)` would also pass if none had fired at all.
+      expect(api.postCalls, greaterThanOrEqualTo(1));
       expect(api.postCalls, lessThanOrEqualTo(2));
       expect(api.getCalls, 1);
       expect(

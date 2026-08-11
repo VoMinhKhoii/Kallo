@@ -125,7 +125,14 @@ export function NutritionShell() {
           <div className="mx-auto mb-3 w-full max-w-2xl">
             <NutritionHeader
               resolvedRange={range === 'auto' ? overview.resolvedRange : range}
-              onRangeChange={setRange}
+              // `selectedIndex` is positional, and the bucket axis is rebuilt
+              // on a range change — index 3 is a Thursday on 7d and some week
+              // in June on 90d. Carrying it over would silently scope the page
+              // to a bucket nobody picked. (The Flutter screen does the same.)
+              onRangeChange={(next) => {
+                setRange(next);
+                setSelectedIndex(null);
+              }}
               disabled={overviewQuery.isFetching}
             />
           </div>
