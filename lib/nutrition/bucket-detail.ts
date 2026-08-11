@@ -4,7 +4,7 @@ import type {
   NutrientCardData,
   NutritionDaySeries,
   NutritionOverview,
-} from '@/lib/nutrition/types';
+} from './types';
 
 /** Charted macros, in the order the detail panel lists them. */
 const DETAIL_MACROS: DaySeriesMetricKey[] = [
@@ -137,17 +137,6 @@ export function scopeCardsToBucket(
       contextMetrics: undefined,
     };
   });
-}
-
-/**
- * The panel's heading: a single date for a day bucket, a `start – end` span for
- * a week one. Parsed as local midnight so the label doesn't shift under UTC.
- */
-export function formatBucketRange(
-  detail: Pick<BucketDetail, 'startDate' | 'endDate'>,
-  locale: string
-): string {
-  return formatDateSpan(detail.startDate, detail.endDate, locale);
 }
 
 /**

@@ -6,12 +6,12 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getNutritionOverview } from '@/lib/nutrition/actions';
+import { buildNutritionView } from '@/lib/nutrition/bucket-detail';
 import type {
   NutritionDayScope,
   NutritionRangeInput,
 } from '@/lib/nutrition/types';
 import { NutritionSkeleton } from './nutrition-skeleton';
-import { buildNutritionView } from './sections/bucket-detail-utils';
 import { DaySummary } from './sections/day-summary';
 import { findTodayIndex, localIsoDate } from './sections/macro-trend-utils';
 import { NutrientGrid } from './sections/nutrient-grid';

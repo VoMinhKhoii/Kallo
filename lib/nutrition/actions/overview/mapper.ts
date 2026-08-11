@@ -16,6 +16,7 @@ import type {
 } from '../../types';
 import { buildCalorieAverages } from './calorie-averages';
 import { buildDaySeries, RANGE_BUCKET_UNIT } from './day-series';
+import { buildEmptyOverview } from './empty-overview';
 import { buildMacroPatterns } from './macro-patterns';
 import { buildNutrientCards, toSummaryItem } from './nutrient-cards';
 import type { OverviewMealItemRow } from './query';
@@ -45,41 +46,6 @@ interface MapOverviewRowsInput {
   previousCalorieAverages: CalorieAverages;
 }
 
-/**
- * Every nutrient row at zero: real targets, a null average that renders as "—".
- *
- * Both no-data paths use it — nothing logged at all, and the strict
- * `'complete'` scope with no complete day — so the page keeps its shape and
- * reads the same on day one as on day thirty, instead of swapping in a
- * separate screen that hides the layout from the people still learning it.
- */
-function buildZeroedCards(profile: NutritionProfile) {
-  const targets = resolveMicronutrientTargets(profile);
-  const cards = buildNutrientCards({
-    rows: [],
-    targets,
-    totalCalories: 0,
-    // Denominator only — every sum above it is 0. Zero here would divide by
-    // zero and put NaN on every card.
-    safeLoggedDays: 1,
-  }).map((card) => ({
-    ...card,
-    averagePerDay: null,
-    percentOfTarget: null,
-  }));
-
-  return {
-    micronutrients: cards.filter((card) =>
-      DEFAULT_NUTRIENT_SET.has(card.nutrient)
-    ),
-    moreNutrients: cards.filter(
-      (card) =>
-        !DEFAULT_NUTRIENT_SET.has(card.nutrient) &&
-        targets[card.nutrient].applicability !== 'hidden'
-    ),
-  };
-}
-
 export function mapOverviewRowsToDto({
   rows,
   profile,
@@ -101,48 +67,24 @@ export function mapOverviewRowsToDto({
   // gates on `loggedDays === 0` for the empty state, so this just removes a
   // hidden invariant trap from the data layer.
   if (loggedDays === 0) {
-    const zeroed = buildZeroedCards(profile);
-    return {
+    return buildEmptyOverview({
+      profile,
       requestedRange,
       resolvedRange,
-      bucketTimezone: period.bucketTimezone,
+      loggedDaysLast30,
+      period,
+      previousCalorieAverages,
       loggedDays: 0,
       completeDays: 0,
       partialDays: 0,
-      loggedDaysLast30,
-      trendStatus: getTrendStatus(resolvedRange, 0),
-      period: {
-        startDate: period.startDate,
-        endDate: period.endDate,
-      },
-      summary: {
-        mostConsistent: [],
-        needsAttention: [],
-        limitedDataCount: 0,
-        macroConsistency: { averageConsistencyPct: 0, weakestMacro: null },
-      },
       calorieAverages: {
         all: { averagePerDay: null, days: 0 },
         complete: { averagePerDay: null, days: 0 },
       },
-      previousCalorieAverages,
-      macros: buildMacroPatterns([], 1, profile),
-      daySeries: {
-        unit: RANGE_BUCKET_UNIT[resolvedRange],
-        series: [],
-      },
-      micronutrients: zeroed.micronutrients,
-      spotlight: [],
-      steady: [],
-      moreNutrients: zeroed.moreNutrients,
-      educationCards: [
-        {
-          id: 'vitamin_d',
-          titleKey: 'nutrition.education.vitaminD.title',
-          bodyKey: 'nutrition.education.vitaminD.body',
-        },
-      ],
-    };
+      // No columns to draw, so no series to ship — unlike the scoped-empty
+      // case below, where the days exist and every one of them greys.
+      daySeries: { unit: RANGE_BUCKET_UNIT[resolvedRange], series: [] },
+    });
   }
 
   // Days where the user logged only a meal or two then forgot drag averages
@@ -223,29 +165,17 @@ export function mapOverviewRowsToDto({
   // picture — "you logged these, none counted" — and it shows what flipping to
   // "all" would bring in.
   if (averagingDayCount === 0) {
-    const zeroed = buildZeroedCards(profile);
-    return {
+    return buildEmptyOverview({
+      profile,
       requestedRange,
       resolvedRange,
-      bucketTimezone: period.bucketTimezone,
+      loggedDaysLast30,
+      period,
+      previousCalorieAverages,
       loggedDays,
       completeDays,
       partialDays,
-      loggedDaysLast30,
-      trendStatus: getTrendStatus(resolvedRange, completeDays),
-      period: {
-        startDate: period.startDate,
-        endDate: period.endDate,
-      },
-      previousCalorieAverages,
-      summary: {
-        mostConsistent: [],
-        needsAttention: [],
-        limitedDataCount: 0,
-        macroConsistency: { averageConsistencyPct: 0, weakestMacro: null },
-      },
       calorieAverages,
-      macros: buildMacroPatterns([], 1, profile),
       daySeries: buildDaySeries({
         scopedDates: new Set<string>(),
         loggedRows,
@@ -255,18 +185,7 @@ export function mapOverviewRowsToDto({
         profile,
         targets: resolveMicronutrientTargets(profile),
       }),
-      micronutrients: zeroed.micronutrients,
-      spotlight: [],
-      steady: [],
-      moreNutrients: zeroed.moreNutrients,
-      educationCards: [
-        {
-          id: 'vitamin_d',
-          titleKey: 'nutrition.education.vitaminD.title',
-          bodyKey: 'nutrition.education.vitaminD.body',
-        },
-      ],
-    };
+    });
   }
 
   const completeRows = rows.filter((row) => averagingDates.has(row.localDate));

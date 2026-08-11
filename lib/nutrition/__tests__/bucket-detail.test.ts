@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import {
+  buildBucketDetail,
+  formatDateSpan,
+} from '@/lib/nutrition/bucket-detail';
 import type {
   DaySeriesBucket,
   NutrientDaySeries,
   NutritionDaySeries,
 } from '@/lib/nutrition/types';
-import {
-  buildBucketDetail,
-  formatBucketRange,
-  formatDateSpan,
-} from './bucket-detail-utils';
 
 function series(
   metric: NutrientDaySeries['metric'],
@@ -141,14 +140,5 @@ describe('formatDateSpan', () => {
         new Date('2026-08-16T00:00:00')
       )} 2026`
     );
-  });
-
-  it('routes bucket ranges through the same span', () => {
-    expect(
-      formatBucketRange(
-        { startDate: '2026-08-10', endDate: '2026-08-16' },
-        'en'
-      )
-    ).toBe('10 – 16 Aug 2026');
   });
 });

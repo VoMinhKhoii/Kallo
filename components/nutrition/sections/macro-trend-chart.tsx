@@ -10,8 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { formatDateSpan } from '@/lib/nutrition/bucket-detail';
 import type { DaySeriesBucketUnit } from '@/lib/nutrition/types';
-import { formatBucketRange } from './bucket-detail-utils';
 import {
   buildBucketTickLabels,
   buildMacroTrendAxis,
@@ -162,7 +162,7 @@ export function MacroTrendChart({
         {points.map((point) => (
           <li key={point.startDate}>
             <button type="button" onClick={() => onSelect(point.index)}>
-              {formatBucketRange(point, locale)}
+              {formatDateSpan(point.startDate, point.endDate, locale)}
             </button>
           </li>
         ))}
