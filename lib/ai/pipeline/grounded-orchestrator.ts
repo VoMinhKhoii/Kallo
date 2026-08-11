@@ -5,11 +5,9 @@ import {
   DEFAULT_MATCH_CONCURRENCY,
   type IngredientV2MatchResult,
 } from '../matching/top-k-cascade';
+import type { PortionResolution } from '../portion/types';
 import { attachVesselToMealItems } from '../portion/vessel-envelope';
-import {
-  buildMealItemOffsetByName,
-  buildPerMealItemOffsetMap,
-} from '../streaming/grounded-parsers';
+import { buildMealItemOffsetByName } from '../streaming/grounded-parsers';
 import type { StreamEvent } from '../streaming/types';
 import type { PipelineResponse, UserContext } from '../types';
 import { assembleResult } from './assembly';
@@ -69,6 +67,7 @@ export interface AnalyzeMealV2Options {
 export interface V2PipelineDiagnostics {
   decomposition: MealDecompositionV2;
   matchResults: IngredientV2MatchResult[];
+  portionResolutions: PortionResolution[];
   verdicts: ReturnType<typeof bridgeV2ToV1>['verdicts'];
   /** Per-ingredient plausibility trail — lets consumers (eval harness) tell a
    *  FLAGGED zero (genuinely_noncaloric, unresolved_estimate) from a silent one. */
@@ -165,7 +164,6 @@ export async function analyzeMealV2(
     });
     promptCharsCall2 = call2SystemPrompt.length;
 
-    const perItemOffsets = buildPerMealItemOffsetMap(decomposition.mealItems);
     // D4: Call 2 streams meal items in the prompt's SORTED order; the stream
     // handler attributes each item to its slice by name+occurrence.
     const offsetByName = buildMealItemOffsetByName(decomposition.mealItems);
@@ -282,6 +280,7 @@ export async function analyzeMealV2(
     options.onDiagnostics?.({
       decomposition,
       matchResults,
+      portionResolutions,
       verdicts: bridged.verdicts,
       plausibility: bridged.plausibility,
     });
@@ -294,7 +293,7 @@ export async function analyzeMealV2(
       grounded,
       streamedMealItemIds,
       alreadyStreamed: itemMacrosStreamed,
-      perItemOffsets,
+      offsetByName,
       goal: userContext.goal,
       aggression: userContext.aggression,
       emit,

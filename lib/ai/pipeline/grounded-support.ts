@@ -27,7 +27,6 @@ import type { VesselEnvelope } from '../portion/vessel-envelope';
 import type { MealItemWithCandidates } from '../prompts/grounded-estimation';
 import type { PromptPersonalizationContext } from '../prompts/types';
 import {
-  type buildPerMealItemOffsetMap,
   extractCompletedGroundedMealItems,
   type MealItemOffset,
   resolveStreamingV2MealItem,
@@ -266,7 +265,7 @@ export function flushUnstreamedItemMacros(args: {
   grounded: GroundedEstimation;
   streamedMealItemIds: Map<string, string>;
   alreadyStreamed: Set<string>;
-  perItemOffsets: ReturnType<typeof buildPerMealItemOffsetMap>;
+  offsetByName: Map<string, MealItemOffset>;
   goal: UserContext['goal'];
   aggression: UserContext['aggression'];
   emit: (event: StreamEvent) => void;
@@ -276,14 +275,18 @@ export function flushUnstreamedItemMacros(args: {
     grounded,
     streamedMealItemIds,
     alreadyStreamed,
-    perItemOffsets,
+    offsetByName,
     goal,
     aggression,
     emit,
   } = args;
+  const offsetOccCounts = new Map<string, number>();
   const nameOccCounts = new Map<string, number>();
   grounded.mealItems.forEach((rawItem, itemIdx) => {
-    const offset = perItemOffsets[itemIdx];
+    const offsetKey = rawItem.mealItemName.trim().toLocaleLowerCase('vi-VN');
+    const offsetOcc = (offsetOccCounts.get(offsetKey) ?? 0) + 1;
+    offsetOccCounts.set(offsetKey, offsetOcc);
+    const offset = offsetByName.get(`${offsetKey}::${offsetOcc}`);
     if (!offset) return;
     const cap = capitalizeFirst(rawItem.mealItemName);
     const occ = (nameOccCounts.get(cap) ?? 0) + 1;

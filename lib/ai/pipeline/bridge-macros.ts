@@ -64,7 +64,8 @@ export function resolveMacroSource(args: {
 }
 
 /**
- * Call 2 emits ABSOLUTE macro triples scoped to its OWN assumed `grams`. When
+ * Call 2 emits ABSOLUTE macro triples scoped to its OWN assumed edible mass
+ * (`grams`, or `grossG` after its model refusePct). When
  * the server portion anchor overrode that mass (resolver ladder steps 1-4),
  * the triples must be rescaled or the row displays the anchor's grams carrying
  * the LLM's macros — a 150g estimate anchored to 330g under-reports by 2.2×.
@@ -74,12 +75,17 @@ export function resolveMacroSource(args: {
  */
 export function scaleGroundedMacros(
   ground: GroundedIngredientEstimate | null,
-  resolvedGrams: number
+  resolvedGrams: number,
+  modelEdibleGrams?: number | null
 ): Pick<
   RawNutritionAdjustment['mealItems'][number]['ingredients'][number],
   'caloriesKcal' | 'proteinG' | 'carbohydrateG' | 'fatG'
 > {
-  const llmGrams = ground?.grams;
+  const llmGrams =
+    modelEdibleGrams ??
+    (ground && 'grams' in ground && typeof ground.grams === 'number'
+      ? ground.grams
+      : undefined);
   const raw =
     llmGrams != null && Number.isFinite(llmGrams) && llmGrams > 0
       ? resolvedGrams / llmGrams

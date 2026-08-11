@@ -9,6 +9,7 @@ import {
 import {
   createGeminiEstimator,
   GROUNDED_ESTIMATION_USER_MESSAGE,
+  getGroundedEstimationUserMessage,
   renderGeminiEstimatorPrompt,
 } from '../estimator/gemini-estimator';
 import {
@@ -98,6 +99,22 @@ const CALL2: GroundedEstimation = {
 // ---------------------------------------------------------------------------
 
 describe('createGeminiEstimator — round-trips the pre-refactor call identically', () => {
+  it('switches the user message to grossG/refusePct with the schema flag', () => {
+    const original = process.env.REFUSE_PCT_SCHEMA;
+    try {
+      process.env.REFUSE_PCT_SCHEMA = 'on';
+      expect(getGroundedEstimationUserMessage()).toContain(
+        'estimate grossG then refusePct'
+      );
+      expect(getGroundedEstimationUserMessage()).not.toContain(
+        'estimate grams scoped'
+      );
+    } finally {
+      if (original === undefined) delete process.env.REFUSE_PCT_SCHEMA;
+      else process.env.REFUSE_PCT_SCHEMA = original;
+    }
+  });
+
   it('calls generateStructuredOutputStream with the SAME prompt, model, message, and knobs', async () => {
     const gemini = createMockGemini({
       generateStructuredOutputStream: vi.fn().mockResolvedValue(CALL2),

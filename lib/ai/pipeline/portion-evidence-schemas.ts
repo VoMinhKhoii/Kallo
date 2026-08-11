@@ -23,8 +23,8 @@ export const sizeModifierSchema = z.enum(['small', 'medium', 'large']);
 /**
  * Structured explicit mass the user typed verbatim (e.g. "250gr ... cân sống").
  * Extraction ONLY — the LLM must NOT invent this when the user gave no weight.
- * `basis` mirrors `stateHint`'s raw/cooked axis so the resolver honors a raw
- * weight 1:1 with no cooking-yield fudge.
+ * `basis` describes whether the typed weight includes physical refuse. The
+ * separate `stateHint` field owns the raw/cooked axis.
  */
 export const explicitMassSchema = z
   .object({
@@ -36,9 +36,9 @@ export const explicitMassSchema = z
         'Verbatim mass in grams the user typed (e.g. 250 for "250gr").'
       ),
     basis: z
-      .enum(['raw', 'cooked'])
+      .enum(['gross_as_served', 'edible', 'unknown'])
       .describe(
-        '"raw" when the weight was measured before cooking ("cân sống"); "cooked" for as-eaten.'
+        '"gross_as_served" when the named object is bone-in/shell-on; "edible" for boneless, peeled, shelled, or fillet forms; otherwise "unknown".'
       ),
   })
   .strict();

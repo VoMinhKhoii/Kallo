@@ -20,6 +20,7 @@ import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
 import { ZERO_TRIPLE } from '../pipeline/bridge-verdicts';
 import type { RawNutritionAdjustment } from '../pipeline/nutrition';
 import { __testing as nutritionTesting } from '../pipeline/nutrition';
+import { resolveGroundedMass } from '../pipeline/refuse-mass';
 import type {
   DecomposedIngredientV2,
   GroundedIngredientEstimate,
@@ -154,7 +155,14 @@ export function resolveStreamingV2MealItem(
     const cookingMethod =
       decompForName?.cookingMethod ?? dishCookingMethod ?? null;
 
-    const grams = rawIng.grams;
+    const selectedCandidate = candidateFromVerdict(rawIng, candidates);
+    const mass = resolveGroundedMass({
+      ground: rawIng,
+      candidateInediblePct: selectedCandidate?.inediblePct ?? null,
+      canonicalName: decompForName?.canonicalName ?? rawIng.ingredientName,
+      rawName: decompForName?.rawName ?? rawIng.ingredientName,
+    });
+    const grams = mass.edibleG ?? 0;
     totalGrams += grams;
 
     const base = computeBaseFromVerdict(rawIng, candidates, grams);
@@ -232,34 +240,22 @@ function computeBaseFromVerdict(
   };
 }
 
+function candidateFromVerdict(
+  rawIng: GroundedIngredientEstimate,
+  candidates: IngredientV2MatchResult['candidates']
+): IngredientV2MatchResult['candidates'][number] | null {
+  const selected = rawIng.selectedCandidateId;
+  if (!selected || selected === 'none') return null;
+  const match = /^c(\d+)$/.exec(selected);
+  if (!match) return null;
+  const idx = Number.parseInt(match[1], 10) - 1;
+  return idx >= 0 && idx < candidates.length ? candidates[idx] : null;
+}
+
 export interface MealItemOffset {
   decomposedIngredients: DecomposedIngredientV2[];
   dishCookingMethod: string | null;
   flatIngredientStart: number;
-}
-
-/**
- * Map each v2 meal item to the `(decomposed ingredients slice, flat-ingredient
- * start offset)` pair the streaming resolver needs. Computed once per request
- * from the parsed v2 decomposition, so streaming chunks just look up by
- * meal-item index.
- */
-export function buildPerMealItemOffsetMap(
-  v2MealItems: Array<{
-    ingredients: DecomposedIngredientV2[];
-    cookingMethod: string;
-  }>
-): MealItemOffset[] {
-  let start = 0;
-  return v2MealItems.map((mi) => {
-    const entry = {
-      decomposedIngredients: mi.ingredients,
-      dishCookingMethod: mi.cookingMethod,
-      flatIngredientStart: start,
-    };
-    start += mi.ingredients.length;
-    return entry;
-  });
 }
 
 /**

@@ -2,7 +2,7 @@
  * V2 → V1 adapter.
  *
  * The v2 path produces (a) a slimmed decomposition, (b) top-K candidates per
- * ingredient, and (c) a grounded estimation with verdict + grams + macros.
+ * ingredient, and (c) a grounded estimation with verdict + mass + macros.
  * The existing v1 nutrition resolution + assembly + validation infrastructure
  * is rich (server-anchored P/C, prep-notes bands, kcal-from-identity, density
  * clamp, anomaly detection, goal adjustment, multi-meal aggregation). Rather
@@ -10,8 +10,10 @@
  * inputs from v2 outputs so v1 assembly runs unchanged.
  *
  * Key translation rule:
- *   - Call 2 emits grams scoped to the selected candidate's db_state. The
- *     server must scale DB per_100g × grams / 100 with NO convertCookedToRaw
+ *   - Legacy Call 2 emits edible grams. REFUSE_PCT_SCHEMA emits grossG plus
+ *     refusePct and the server derives edible grams. Either result is scoped
+ *     to the selected candidate's db_state and scales DB per_100g with NO
+ *     convertCookedToRaw
  *     fudge. We achieve this by synthesizing the v1 ingredient with
  *     `weightBasis: 'raw'` whenever the selected candidate's state is 'raw'
  *     (or 'unknown'). For cooked candidates, `weightBasis` is omitted and
@@ -45,6 +47,7 @@ import {
 import { ensureIdsOnDecomposition } from './ids';
 import type { RawNutritionAdjustment } from './nutrition';
 import { classifyIngredientPlausibility } from './plausibility';
+import { resolveGroundedMass } from './refuse-mass';
 import type { GroundedEstimation, MealDecompositionV2 } from './schemas-v2';
 
 export function bridgeV2ToV1(args: {
@@ -125,6 +128,41 @@ export function bridgeV2ToV1(args: {
         ground,
         candidates.length
       );
+      const cookingMethodForIng = ing.cookingMethod ?? mi.cookingMethod;
+      const portion = portionResolutions?.[flatIngredientIdx];
+      // Server ANCHOR override (Phase 3): when the portion resolver grounded
+      // grams (ladder steps 1–4), that number is authoritative — Call 2 must
+      // not drift from it. Prefer the resolver's grams over the LLM's.
+      const authoritativeMass =
+        portion &&
+        portion.grams != null &&
+        portion.provenance !== 'llm_range' &&
+        portion.provenance !== 'unresolved' &&
+        Number.isFinite(portion.grams.mid) &&
+        portion.grams.mid > 0
+          ? {
+              grams: portion.grams.mid,
+              basis: portion.massBasis ?? 'unknown',
+              provenance: portion.provenance,
+            }
+          : null;
+      const acceptedCandidate =
+        verdict === 'accepted' && selectedCandidateIdx !== null
+          ? candidates[selectedCandidateIdx]
+          : null;
+      const mass = resolveGroundedMass({
+        ground,
+        candidateInediblePct: acceptedCandidate?.inediblePct ?? null,
+        canonicalName: ing.canonicalName,
+        rawName: ing.rawName,
+        prepNotes: ing.prepNotes,
+        authoritativeMass,
+      });
+      const resolvedEdibleGrams = mass.edibleG;
+      // When the resolver couldn't ground a portion, label the ingredient
+      // unresolved in the telemetry trail regardless of whatever Call 2
+      // emitted. Diagnostic only — Call 2's edible grams still ship.
+      const resolverUnresolved = portion?.provenance === 'unresolved';
       verdicts.push({
         mealItemIdx,
         ingredientIdx,
@@ -132,48 +170,22 @@ export function bridgeV2ToV1(args: {
         selectedCandidateIdx,
         rejectReason,
         grounded: ground,
+        refuse: mass.refuse,
       });
-
-      const cookingMethodForIng = ing.cookingMethod ?? mi.cookingMethod;
-      const portion = portionResolutions?.[flatIngredientIdx];
-      // Server ANCHOR override (Phase 3): when the portion resolver grounded
-      // grams (ladder steps 1–4), that number is authoritative — Call 2 must
-      // not drift from it. Prefer the resolver's grams over the LLM's.
-      const anchorGrams =
-        portion &&
-        portion.grams != null &&
-        portion.provenance !== 'llm_range' &&
-        portion.provenance !== 'unresolved' &&
-        Number.isFinite(portion.grams.mid) &&
-        portion.grams.mid > 0
-          ? portion.grams.mid
-          : null;
-      // NO FALLBACK_GRAMS: a missing/invalid grams is left unresolved rather
-      // than coerced to a 1g placeholder row. `schemas-v2.ts` enforces
-      // grams.positive().finite() at parse time, so an invalid value here can
-      // only mean Call 2 dropped the ingredient entirely (verdict='missing').
-      const llmGrams =
-        ground?.grams != null &&
-        Number.isFinite(ground.grams) &&
-        ground.grams > 0
-          ? ground.grams
-          : null;
-      const resolvedGrams = anchorGrams ?? llmGrams;
-      // When the resolver couldn't ground a portion, label the ingredient
-      // unresolved in the telemetry trail regardless of whatever grams Call 2
-      // emitted. Diagnostic only — Call 2's grams still ship.
-      const resolverUnresolved = portion?.provenance === 'unresolved';
-
-      const acceptedCandidate =
-        verdict === 'accepted' && selectedCandidateIdx !== null
-          ? candidates[selectedCandidateIdx]
-          : null;
+      if (mass.refuse?.degenerateZero) {
+        console.warn('[v2-pipeline] refuse_pct_degenerate_zero', {
+          mealItemIdx,
+          ingredientIdx,
+          ingredientName: ing.rawName,
+          ...mass.refuse,
+        });
+      }
 
       // Where this ingredient's macros come from — see `resolveMacroSource`.
       const macroSource = resolveMacroSource({
         acceptedCandidate,
         ground,
-        resolvedGrams,
+        resolvedGrams: resolvedEdibleGrams,
         explicitZero: portion?.unresolvedReason === 'explicit_zero',
       });
       // A DB row anchors P/C/kcal; anything else rides Call 2's triple.
@@ -188,15 +200,15 @@ export function bridgeV2ToV1(args: {
       const carbsPer100g = isDbAnchored
         ? (acceptedCandidate?.nutrition?.carbohydrateG ?? null)
         : ground?.carbohydrateG != null &&
-            Number.isFinite(ground.grams) &&
-            ground.grams > 0
-          ? (ground.carbohydrateG.mid / ground.grams) * 100
+            mass.modelEdibleG != null &&
+            mass.modelEdibleG > 0
+          ? (ground.carbohydrateG.mid / mass.modelEdibleG) * 100
           : null;
 
       const state = resolverUnresolved
         ? 'unresolved_estimate'
         : classifyIngredientPlausibility({
-            grams: resolvedGrams,
+            grams: resolvedEdibleGrams,
             hasNutrition: ground != null,
             caloriesPer100g: acceptedCandidate?.nutrition?.caloriesKcal ?? null,
             carbsPer100g,
@@ -247,7 +259,7 @@ export function bridgeV2ToV1(args: {
         return;
       }
 
-      const grams = resolvedGrams as number;
+      const grams = resolvedEdibleGrams as number;
       let weightBasis: 'raw' | undefined;
       let v1Ing: DecomposedIngredient;
 
@@ -287,7 +299,7 @@ export function bridgeV2ToV1(args: {
         ingredientName: ing.rawName,
         // Rescaled when a server anchor overrode Call 2's mass — see
         // `scaleGroundedMacros`.
-        ...scaleGroundedMacros(ground, grams),
+        ...scaleGroundedMacros(ground, grams, mass.modelEdibleG),
       });
 
       flatIngredientIdx++;

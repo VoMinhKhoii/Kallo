@@ -14,6 +14,7 @@
 
 import type { GeminiClient } from '../../gemini';
 import { buildGroundedEstimationPrompt } from '../../prompts/grounded-estimation';
+import { isRefusePctSchemaEnabled } from '../config/prompt-ablation-flags';
 import {
   type GroundedEstimation,
   groundedEstimationSchema,
@@ -28,6 +29,12 @@ import type {
 /** The Call-2 user message — identical bytes to the pre-refactor inline call. */
 export const GROUNDED_ESTIMATION_USER_MESSAGE =
   'Verify each candidate (CRAG verdict), estimate grams scoped to the selected candidate state, and emit bounded macros per the rules above.';
+
+export function getGroundedEstimationUserMessage(): string {
+  return isRefusePctSchemaEnabled()
+    ? 'Verify each candidate (CRAG verdict), estimate grossG then refusePct scoped to the selected candidate state, and emit bounded macros per the rules above.'
+    : GROUNDED_ESTIMATION_USER_MESSAGE;
+}
 
 export function createGeminiEstimator(
   gemini: GeminiClient,
@@ -51,7 +58,7 @@ export function createGeminiEstimator(
           {
             schema: groundedEstimationSchema,
             systemPrompt,
-            userMessage: GROUNDED_ESTIMATION_USER_MESSAGE,
+            userMessage: getGroundedEstimationUserMessage(),
             model,
             temperature: input.temperature,
             topP: 1,
