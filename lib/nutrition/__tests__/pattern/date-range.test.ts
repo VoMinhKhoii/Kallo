@@ -3,6 +3,7 @@ import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 import {
   getNutritionPeriod,
+  getPreviousPeriod,
   localDateSqlExpression,
 } from '@/lib/nutrition/pattern/date-range';
 
@@ -81,6 +82,34 @@ describe('getNutritionPeriod', () => {
       endDate: '2026-04-26',
       bucketTimezone: 'local',
     });
+  });
+});
+
+describe('getPreviousPeriod', () => {
+  it('returns the seven days before a seven-day window', () => {
+    expect(
+      getPreviousPeriod({ startDate: '2026-08-10', endDate: '2026-08-16' })
+    ).toEqual({ startDate: '2026-08-03', endDate: '2026-08-09' });
+  });
+
+  it('returns the thirty days before a thirty-day window', () => {
+    expect(
+      getPreviousPeriod({ startDate: '2026-03-27', endDate: '2026-04-25' })
+    ).toEqual({ startDate: '2026-02-25', endDate: '2026-03-26' });
+  });
+
+  it('measures length from the period, so a forward-running week still maps to the week before', () => {
+    // The 7d window is the calendar week and can end after today; the previous
+    // window is still exactly the seven days before it, not "seven before now".
+    expect(
+      getPreviousPeriod({ startDate: '2026-08-10', endDate: '2026-08-16' })
+    ).toEqual({ startDate: '2026-08-03', endDate: '2026-08-09' });
+  });
+
+  it('steps back across a year boundary', () => {
+    expect(
+      getPreviousPeriod({ startDate: '2026-01-05', endDate: '2026-01-11' })
+    ).toEqual({ startDate: '2025-12-29', endDate: '2026-01-04' });
   });
 });
 

@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import type { userProfiles } from '@/lib/db/schema';
 import { mapOverviewRowsToDto } from '@/lib/nutrition/actions/overview/mapper';
 import type { OverviewMealItemRow } from '@/lib/nutrition/actions/overview/query';
+import type { CalorieAverages } from '@/lib/nutrition/types';
+
+/** No prior window logged — the delta figure simply has nothing to compare. */
+const NO_PREVIOUS: CalorieAverages = {
+  all: { averagePerDay: null, days: 0 },
+  complete: { averagePerDay: null, days: 0 },
+};
 
 const baseProfile = {
   biologicalSex: 'male',
@@ -62,6 +69,7 @@ function mapRows(rows: OverviewMealItemRow[]) {
       endDate: '2026-04-25',
       bucketTimezone: 'local',
     },
+    previousCalorieAverages: NO_PREVIOUS,
   });
 }
 
@@ -197,6 +205,7 @@ describe('mapOverviewRowsToDto', () => {
           endDate: '2026-04-25',
           bucketTimezone: 'local',
         },
+        previousCalorieAverages: NO_PREVIOUS,
       });
 
       expect(overview.daySeries.unit).toBe('week');
@@ -229,6 +238,7 @@ describe('mapOverviewRowsToDto', () => {
           endDate: '2026-04-25',
           bucketTimezone: 'local',
         },
+        previousCalorieAverages: NO_PREVIOUS,
       });
 
       expect(overview.daySeries.unit).toBe('week');
@@ -271,6 +281,7 @@ describe('mapOverviewRowsToDto', () => {
           bucketTimezone: 'local',
         },
         dayScope,
+        previousCalorieAverages: NO_PREVIOUS,
       });
     }
 

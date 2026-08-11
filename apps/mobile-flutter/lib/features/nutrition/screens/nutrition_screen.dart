@@ -234,6 +234,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           resolvedRange: overview.resolvedRange,
           daySeries: overview.daySeries,
           calorieAverages: overview.calorieAverages,
+          previousCalorieAverages: overview.previousCalorieAverages,
           scope: _dayScope,
           onScopeChange: (scope) => setState(() => _dayScope = scope),
           dateSpan: dateSpan,
@@ -261,7 +262,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           ),
         ],
         if (vitamins.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 28),
           _GroupHeader(label: tr('nutrition.nutrientGroups.vitamins')),
           const SizedBox(height: 12),
           _NutrientGrid(cards: vitamins),

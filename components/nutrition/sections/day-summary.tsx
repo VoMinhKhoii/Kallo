@@ -25,6 +25,8 @@ interface DaySummaryProps {
   daySeries: NutritionDaySeries;
   resolvedRange: NutritionRange;
   calorieAverages: CalorieAverages;
+  /** The same averages for the equal-length window before this one. */
+  previousCalorieAverages: CalorieAverages;
   scope: NutritionDayScope;
   onScopeChange: (scope: NutritionDayScope) => void;
   /** The dates the figures cover — the range, or the tapped bucket. */
@@ -49,6 +51,7 @@ export function DaySummary({
   daySeries,
   resolvedRange,
   calorieAverages,
+  previousCalorieAverages,
   scope,
   onScopeChange,
   dateSpan,
@@ -62,16 +65,17 @@ export function DaySummary({
   const locale = useLocale();
 
   const calories = macros.find((m) => m.key === 'calories');
-  const target = calories?.target ?? null;
   const isSelected = selectedIndex !== null;
-  // Over/under-target badge reads from the ACTIVE scope's average — or, while a
-  // column is selected, from that column.
   const activeAvg = isSelected
     ? (calories?.averagePerDay ?? null)
     : calorieAverages[scope].averagePerDay;
+  // How this window compares with the one before it, same length and same day
+  // scope. Absent while a column is selected — one bucket has no "period
+  // before" of its own — and absent when nothing was logged back then.
+  const previousAvg = previousCalorieAverages[scope].averagePerDay;
   const diff =
-    target !== null && target > 0 && activeAvg !== null
-      ? activeAvg - target
+    !isSelected && activeAvg !== null && previousAvg !== null
+      ? activeAvg - previousAvg
       : null;
   const composition = COMPOSITION_KEYS.map((key) => {
     const macro = macros.find((m) => m.key === key);

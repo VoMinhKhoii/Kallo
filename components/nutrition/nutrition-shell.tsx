@@ -139,13 +139,14 @@ export function NutritionShell() {
             <div
               aria-live="polite"
               aria-busy={overviewQuery.isFetching}
-              className="flex flex-1 flex-col gap-3"
+              className="flex flex-1 flex-col gap-7"
             >
               <DaySummary
                 macros={macros}
                 daySeries={overview.daySeries}
                 resolvedRange={overview.resolvedRange}
                 calorieAverages={overview.calorieAverages}
+                previousCalorieAverages={overview.previousCalorieAverages}
                 scope={dayScope}
                 onScopeChange={setDayScope}
                 dateSpan={dateSpan}

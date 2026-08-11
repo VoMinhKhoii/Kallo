@@ -22,6 +22,7 @@ class DaySummary extends StatelessWidget {
     required this.resolvedRange,
     required this.daySeries,
     required this.calorieAverages,
+    required this.previousCalorieAverages,
     required this.scope,
     required this.onScopeChange,
     required this.dateSpan,
@@ -35,6 +36,9 @@ class DaySummary extends StatelessWidget {
   final String resolvedRange;
   final NutritionDaySeries daySeries;
   final CalorieAverages calorieAverages;
+
+  /// The same averages for the equal-length window before this one.
+  final CalorieAverages previousCalorieAverages;
   final NutritionDayScope scope;
   final ValueChanged<NutritionDayScope> onScopeChange;
 
@@ -50,11 +54,9 @@ class DaySummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
-    final calories = macros.where((m) => m.key == 'calories').firstOrNull;
     final composition = buildComposition(macros);
 
     final activeAvg = calorieAverages.forScope(scope).averagePerDay;
-    final target = calories?.target;
 
     // For multi-day ranges with ≥2 buckets, show the macro-calorie trend chart;
     // a single day has no trend, so it keeps the composition bar.
@@ -93,10 +95,16 @@ class DaySummary extends StatelessWidget {
                     0),
             hasSelection: selectedIndex != null,
             isEmpty: isEmpty,
-            // Over/under vs the calorie goal for the active average. Absent
-            // when there is no goal or the active scope has no average.
-            diff: target != null && target > 0 && activeAvg != null
-                ? activeAvg - target
+            // How this window compares with the one before it, same length and
+            // same day scope. Absent while a column is selected — one bucket
+            // has no "period before" of its own — and absent when nothing was
+            // logged back then.
+            diff: selectedIndex == null &&
+                    activeAvg != null &&
+                    previousCalorieAverages.forScope(scope).averagePerDay !=
+                        null
+                ? activeAvg -
+                    previousCalorieAverages.forScope(scope).averagePerDay!
                 : null,
           ),
           if (composition.totalKcal > 0) ...[

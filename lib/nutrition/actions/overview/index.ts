@@ -1,12 +1,17 @@
 'use server';
 
 import { requireAuthAndProfile } from '@/lib/auth';
-import { getNutritionPeriod } from '../../pattern/date-range';
+import {
+  getNutritionPeriod,
+  getPreviousPeriod,
+} from '../../pattern/date-range';
 import { resolveInitialRange } from '../../pattern/summary';
 import { nutritionOverviewInputSchema } from '../../schemas';
 import type { NutritionOverview } from '../../types';
+import { buildCalorieAverages } from './calorie-averages';
 import { mapOverviewRowsToDto } from './mapper';
 import { countLoggedDaysLast30, fetchOverviewRows } from './query';
+import { nullableNumber } from './row-metrics';
 
 interface UtcBounds {
   startAt: Date;
@@ -47,6 +52,38 @@ function assertOverviewHasNoTrendArrays(overview: NutritionOverview): void {
   }
 }
 
+/**
+ * Both calorie averages for the equal-length window immediately before
+ * [period] — what the card's up/down figure is measured against.
+ *
+ * A second query, deliberately: the delta compares like with like, and the
+ * only way to know the previous window is to read it. It is scored by the same
+ * `buildCalorieAverages` the current window uses.
+ */
+async function fetchPreviousCalorieAverages({
+  userId,
+  period,
+  timezoneOffset,
+  calorieTarget,
+}: {
+  userId: string;
+  period: { startDate: string; endDate: string };
+  timezoneOffset: number | null;
+  calorieTarget: number | null;
+}) {
+  const previous = getPreviousPeriod(period);
+  const bounds = getUtcBounds(previous, timezoneOffset);
+  const rows = await fetchOverviewRows({
+    userId,
+    startDate: previous.startDate,
+    endDate: previous.endDate,
+    startAt: bounds.startAt,
+    exclusiveEndAt: bounds.exclusiveEndAt,
+    timezoneOffset,
+  });
+  return buildCalorieAverages(rows, calorieTarget);
+}
+
 export async function getNutritionOverview(
   input: unknown
 ): Promise<NutritionOverview> {
@@ -80,14 +117,23 @@ export async function getNutritionOverview(
       timezoneOffset: parsed.timezoneOffset,
     });
     const bounds = getUtcBounds(period, parsed.timezoneOffset);
-    rows = await fetchOverviewRows({
-      userId: user.id,
-      startDate: period.startDate,
-      endDate: period.endDate,
-      startAt: bounds.startAt,
-      exclusiveEndAt: bounds.exclusiveEndAt,
-      timezoneOffset: parsed.timezoneOffset,
-    });
+    const [autoRows, previousCalorieAverages] = await Promise.all([
+      fetchOverviewRows({
+        userId: user.id,
+        startDate: period.startDate,
+        endDate: period.endDate,
+        startAt: bounds.startAt,
+        exclusiveEndAt: bounds.exclusiveEndAt,
+        timezoneOffset: parsed.timezoneOffset,
+      }),
+      fetchPreviousCalorieAverages({
+        userId: user.id,
+        period,
+        timezoneOffset: parsed.timezoneOffset,
+        calorieTarget: nullableNumber(profile.calorieTarget),
+      }),
+    ]);
+    rows = autoRows;
     const overview = mapOverviewRowsToDto({
       rows,
       profile,
@@ -96,6 +142,7 @@ export async function getNutritionOverview(
       loggedDaysLast30,
       period,
       dayScope: parsed.days,
+      previousCalorieAverages,
     });
     assertOverviewHasNoTrendArrays(overview);
     return overview;
@@ -107,7 +154,8 @@ export async function getNutritionOverview(
     timezoneOffset: parsed.timezoneOffset,
   });
   const bounds = getUtcBounds(period, parsed.timezoneOffset);
-  [loggedDaysLast30, rows] = await Promise.all([
+  let previousCalorieAverages: NutritionOverview['previousCalorieAverages'];
+  [loggedDaysLast30, rows, previousCalorieAverages] = await Promise.all([
     countLoggedDaysLast30({
       userId: user.id,
       startDate: last30Period.startDate,
@@ -124,6 +172,12 @@ export async function getNutritionOverview(
       exclusiveEndAt: bounds.exclusiveEndAt,
       timezoneOffset: parsed.timezoneOffset,
     }),
+    fetchPreviousCalorieAverages({
+      userId: user.id,
+      period,
+      timezoneOffset: parsed.timezoneOffset,
+      calorieTarget: nullableNumber(profile.calorieTarget),
+    }),
   ]);
 
   const overview = mapOverviewRowsToDto({
@@ -134,6 +188,7 @@ export async function getNutritionOverview(
     loggedDaysLast30,
     period,
     dayScope: parsed.days,
+    previousCalorieAverages,
   });
 
   assertOverviewHasNoTrendArrays(overview);

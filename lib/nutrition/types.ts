@@ -196,6 +196,12 @@ export interface NutritionOverview {
    * complete days.
    */
   calorieAverages: CalorieAverages;
+  /**
+   * The same two averages for the window of equal length immediately before
+   * this one — 7d against the previous seven days, 30d the previous thirty.
+   * Both scopes read null when nothing was logged back then.
+   */
+  previousCalorieAverages: CalorieAverages;
   macros: MacroPattern[];
   /**
    * Per-bucket time series for the macros and default micronutrients. Days for

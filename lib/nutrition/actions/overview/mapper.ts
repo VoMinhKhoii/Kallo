@@ -40,6 +40,43 @@ interface MapOverviewRowsInput {
    * always carries both scopes.
    */
   dayScope?: NutritionDayScope;
+  /** Equal-length window immediately before `period`, for the delta figure. */
+  previousCalorieAverages: CalorieAverages;
+}
+
+/**
+ * Every nutrient row at zero: real targets, a null average that renders as "—".
+ *
+ * Both no-data paths use it — nothing logged at all, and the strict
+ * `'complete'` scope with no complete day — so the page keeps its shape and
+ * reads the same on day one as on day thirty, instead of swapping in a
+ * separate screen that hides the layout from the people still learning it.
+ */
+function buildZeroedCards(profile: NutritionProfile) {
+  const targets = resolveMicronutrientTargets(profile);
+  const cards = buildNutrientCards({
+    rows: [],
+    targets,
+    totalCalories: 0,
+    // Denominator only — every sum above it is 0. Zero here would divide by
+    // zero and put NaN on every card.
+    safeLoggedDays: 1,
+  }).map((card) => ({
+    ...card,
+    averagePerDay: null,
+    percentOfTarget: null,
+  }));
+
+  return {
+    micronutrients: cards.filter((card) =>
+      DEFAULT_NUTRIENT_SET.has(card.nutrient)
+    ),
+    moreNutrients: cards.filter(
+      (card) =>
+        !DEFAULT_NUTRIENT_SET.has(card.nutrient) &&
+        targets[card.nutrient].applicability !== 'hidden'
+    ),
+  };
 }
 
 export function mapOverviewRowsToDto({
@@ -50,6 +87,7 @@ export function mapOverviewRowsToDto({
   loggedDaysLast30,
   period,
   dayScope,
+  previousCalorieAverages,
 }: MapOverviewRowsInput): NutritionOverview {
   const loggedDates = new Set(
     rows.filter((row) => row.calories > 0).map((row) => row.localDate)
@@ -62,6 +100,7 @@ export function mapOverviewRowsToDto({
   // gates on `loggedDays === 0` for the empty state, so this just removes a
   // hidden invariant trap from the data layer.
   if (loggedDays === 0) {
+    const zeroed = buildZeroedCards(profile);
     return {
       requestedRange,
       resolvedRange,
@@ -85,15 +124,16 @@ export function mapOverviewRowsToDto({
         all: { averagePerDay: null, days: 0 },
         complete: { averagePerDay: null, days: 0 },
       },
-      macros: [],
+      previousCalorieAverages,
+      macros: buildMacroPatterns([], 1, profile),
       daySeries: {
         unit: RANGE_BUCKET_UNIT[resolvedRange],
         series: [],
       },
-      micronutrients: [],
+      micronutrients: zeroed.micronutrients,
       spotlight: [],
       steady: [],
-      moreNutrients: [],
+      moreNutrients: zeroed.moreNutrients,
       educationCards: [
         {
           id: 'vitamin_d',
@@ -192,19 +232,7 @@ export function mapOverviewRowsToDto({
   // as "—", and a bar at zero: the page reads the same on day one as on day
   // thirty, just empty.
   if (averagingDayCount === 0) {
-    const emptyTargets = resolveMicronutrientTargets(profile);
-    const emptyCards = buildNutrientCards({
-      rows: [],
-      targets: emptyTargets,
-      totalCalories: 0,
-      // Denominator only — every sum above it is 0. Zero here would divide by
-      // zero and put NaN on every card.
-      safeLoggedDays: 1,
-    }).map((card) => ({
-      ...card,
-      averagePerDay: null,
-      percentOfTarget: null,
-    }));
+    const zeroed = buildZeroedCards(profile);
     return {
       requestedRange,
       resolvedRange,
@@ -218,6 +246,7 @@ export function mapOverviewRowsToDto({
         startDate: period.startDate,
         endDate: period.endDate,
       },
+      previousCalorieAverages,
       summary: {
         mostConsistent: [],
         needsAttention: [],
@@ -230,16 +259,10 @@ export function mapOverviewRowsToDto({
         unit: RANGE_BUCKET_UNIT[resolvedRange],
         series: [],
       },
-      micronutrients: emptyCards.filter((card) =>
-        DEFAULT_NUTRIENT_SET.has(card.nutrient)
-      ),
+      micronutrients: zeroed.micronutrients,
       spotlight: [],
       steady: [],
-      moreNutrients: emptyCards.filter(
-        (card) =>
-          !DEFAULT_NUTRIENT_SET.has(card.nutrient) &&
-          emptyTargets[card.nutrient].applicability !== 'hidden'
-      ),
+      moreNutrients: zeroed.moreNutrients,
       educationCards: [
         {
           id: 'vitamin_d',
@@ -322,6 +345,7 @@ export function mapOverviewRowsToDto({
       macroConsistency,
     },
     calorieAverages,
+    previousCalorieAverages,
     macros,
     daySeries,
     micronutrients,

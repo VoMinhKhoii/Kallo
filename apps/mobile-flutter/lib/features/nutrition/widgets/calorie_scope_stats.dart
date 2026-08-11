@@ -48,9 +48,9 @@ class CalorieScopeStats extends StatelessWidget {
   /// a choice between two blanks — show the logged-day figure alone.
   final bool isEmpty;
 
-  /// Signed kcal against the calorie goal, or null when there is no goal. It
-  /// annotates the figure, so it sits on the figure's caption line rather than
-  /// in the corner the switch now occupies.
+  /// Signed kcal against the SAME-LENGTH window before this one, or null when
+  /// there is nothing back there to compare with. It qualifies the figure, so
+  /// it reads immediately after the unit.
   final double? diff;
 
   void _toggle() {
@@ -100,6 +100,13 @@ class CalorieScopeStats extends StatelessWidget {
                       style: dashBody(color: kInkMuted),
                     ),
                   ),
+                  if (diff != null) ...[
+                    const SizedBox(width: NhamSpacing.sp2),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: _CalorieDelta(diff: diff!, locale: locale),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -111,25 +118,16 @@ class CalorieScopeStats extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 2),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Expanded(
-              child: Text(dateSpan, style: dashMeta(color: kInkMuted)),
-            ),
-            if (diff != null) _CalorieTarget(diff: diff!, locale: locale),
-          ],
-        ),
+        Text(dateSpan, style: dashMeta(color: kInkMuted)),
       ],
     );
   }
 }
 
-/// The signed gap to the calorie goal — the arrow shows direction, the number
-/// how many kcal over or under.
-class _CalorieTarget extends StatelessWidget {
-  const _CalorieTarget({required this.diff, required this.locale});
+/// The signed gap to the window before this one — the arrow shows direction,
+/// the number how many kcal up or down.
+class _CalorieDelta extends StatelessWidget {
+  const _CalorieDelta({required this.diff, required this.locale});
 
   final double diff;
   final String locale;
@@ -147,8 +145,7 @@ class _CalorieTarget extends StatelessWidget {
         ),
         const SizedBox(width: 2),
         Text(
-          '${formatLocalizedNumber(diff.abs(), locale)} '
-          '${tr('nutrition.rhythm.calories')}',
+          formatLocalizedNumber(diff.abs(), locale),
           style: dashMeta(color: kInkMuted, tabular: true),
         ),
       ],

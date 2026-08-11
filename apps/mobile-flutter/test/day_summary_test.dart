@@ -42,6 +42,11 @@ DaySummary _daySummary({
       resolvedRange: '7d',
       daySeries: const NutritionDaySeries(unit: 'day', series: []),
       calorieAverages: averages,
+      // Nothing logged in the window before — no delta to draw.
+      previousCalorieAverages: const CalorieAverages(
+        all: CalorieScopeAverage(averagePerDay: null, days: 0),
+        complete: CalorieScopeAverage(averagePerDay: null, days: 0),
+      ),
       scope: scope,
       onScopeChange: onScopeChange ?? (_) {},
       dateSpan: '10 – 16 Aug 2026',

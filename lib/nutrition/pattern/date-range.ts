@@ -3,6 +3,8 @@ import { sql } from 'drizzle-orm';
 
 import type { BucketTimezone, NutritionRange } from '../types';
 
+const DAY_MS = 86_400_000;
+
 const RANGE_DAYS: Record<NutritionRange, number> = {
   '1d': 1,
   '7d': 7,
@@ -78,4 +80,31 @@ export function localDateSqlExpression(
   // injection because timezoneOffset is a JS number.
   const offsetMinutes = -timezoneOffset;
   return sql<string>`(((${column}) AT TIME ZONE 'UTC') + (${sql.raw(`'${offsetMinutes} minutes'`)})::interval)::date`;
+}
+
+/**
+ * The window of the same length immediately before [period] — 7d compares
+ * against the previous seven days, 30d the previous thirty, and so on.
+ *
+ * Length is measured inclusively from the period's own dates rather than from
+ * `RANGE_DAYS`, so the 7d calendar week (which can run past today) still maps
+ * to exactly the week before it.
+ */
+export function getPreviousPeriod(period: {
+  startDate: string;
+  endDate: string;
+}): { startDate: string; endDate: string } {
+  const start = new Date(`${period.startDate}T00:00:00.000Z`);
+  const end = new Date(`${period.endDate}T00:00:00.000Z`);
+  const days = Math.round((end.getTime() - start.getTime()) / DAY_MS) + 1;
+
+  const previousEnd = new Date(start);
+  previousEnd.setUTCDate(previousEnd.getUTCDate() - 1);
+  const previousStart = new Date(previousEnd);
+  previousStart.setUTCDate(previousStart.getUTCDate() - (days - 1));
+
+  return {
+    startDate: formatIsoDate(previousStart),
+    endDate: formatIsoDate(previousEnd),
+  };
 }
