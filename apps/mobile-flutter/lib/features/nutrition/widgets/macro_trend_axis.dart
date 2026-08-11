@@ -19,9 +19,10 @@ AxisTitles kcalAxisTitles({required double step, required double maxLabel}) {
     sideTitles: SideTitles(
       showTitles: true,
       interval: step,
-      // Four digits at 10pt, plus the 6pt gap below. Any wider and the last
-      // bucket's label runs off the right edge of the card.
-      reservedSize: 28,
+      // Four digits at 10pt plus the 6pt gap. Sized generously on purpose: at
+      // 28 "3000" wrapped to two lines, which is far uglier than a slightly
+      // wide gutter.
+      reservedSize: 34,
       getTitlesWidget: (value, meta) {
         if (value <= 0 || value > maxLabel) return const SizedBox.shrink();
         return Padding(
@@ -29,6 +30,10 @@ AxisTitles kcalAxisTitles({required double step, required double maxLabel}) {
           child: Text(
             value.round().toString(),
             textAlign: TextAlign.right,
+            // Belt and braces: a five-digit tick would otherwise wrap too.
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.visible,
             style: dashMeta(color: kInkMuted).copyWith(fontSize: 10),
           ),
         );

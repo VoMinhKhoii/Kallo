@@ -361,10 +361,9 @@ describe('mapOverviewRowsToDto', () => {
       expect(calories?.max).toBeNull();
     });
 
-    it('on the day axis, a scope flip only adds or removes partial columns', () => {
-      // The invariant the toggle promises, and the whole reason 7d buckets by
-      // day: a complete day's column is `total / 1` under either scope, so it
-      // cannot move. Only the partial day's column comes and goes.
+    it('a scope flip greys columns without moving any of them', () => {
+      // The invariant the toggle promises: it changes what is AVERAGED, not
+      // what was eaten, so no bar may move. What it does instead is grey.
       const rows = [completeDay, partialDay];
       const bucketsFor = (scope: 'all' | 'complete') =>
         mapScoped(rows, scope).daySeries.series.find(
@@ -412,22 +411,24 @@ describe('mapOverviewRowsToDto', () => {
       expect(caloriesAvg(mapScoped(rows, 'all'))).toBe(1200);
     });
 
-    it('on the week axis, a bucket re-averages with the scope it is under', () => {
-      // The cost of scoping the chart, pinned deliberately: a week divides by
-      // its own in-scope day count, so dropping the partial day raises the
-      // week — in lockstep with the headline above it, which is what keeps the
-      // card readable.
+    it('holds week-axis heights too, greying only the fully-partial weeks', () => {
+      // A week mixing a complete and a partial day keeps averaging both, in
+      // both scopes — the alternative (divide by the in-scope days) is exact
+      // against the headline but makes the column jump on a toggle, which
+      // reads as the data being unstable. A week with NO complete day is the
+      // one the scope actually drops, and that is what greys.
       const weekRows = [
         row({ localDate: '2026-04-20', calories: 2000 }),
         row({ localDate: '2026-04-21', calories: 400 }),
+        row({ localDate: '2026-04-13', calories: 300 }),
       ];
-      const weekBucket = (scope: 'all' | 'complete') =>
+      const bucketOn = (scope: 'all' | 'complete', date: string) =>
         mapOverviewRowsToDto({
           rows: weekRows,
           profile: baseProfile,
           requestedRange: '30d',
           resolvedRange: '30d',
-          loggedDaysLast30: 2,
+          loggedDaysLast30: 3,
           period: {
             startDate: '2026-03-27',
             endDate: '2026-04-25',
@@ -437,12 +438,26 @@ describe('mapOverviewRowsToDto', () => {
           previousCalorieAverages: NO_PREVIOUS,
         })
           .daySeries.series.find((s) => s.metric === 'calories')
-          ?.buckets.find(
-            (b) => b.startDate <= '2026-04-20' && b.endDate >= '2026-04-20'
-          )?.value;
+          ?.buckets.find((b) => b.startDate <= date && b.endDate >= date);
 
-      expect(weekBucket('all')).toBe(1200);
-      expect(weekBucket('complete')).toBe(2000);
+      // The mixed week: same height either way, counted either way.
+      expect(bucketOn('all', '2026-04-20')).toMatchObject({
+        value: 1200,
+        excluded: false,
+      });
+      expect(bucketOn('complete', '2026-04-20')).toMatchObject({
+        value: 1200,
+        excluded: false,
+      });
+      // The all-partial week: same height, but greyed under 'complete'.
+      expect(bucketOn('all', '2026-04-13')).toMatchObject({
+        value: 300,
+        excluded: false,
+      });
+      expect(bucketOn('complete', '2026-04-13')).toMatchObject({
+        value: 300,
+        excluded: true,
+      });
     });
 
     it('legacy (no scope) keeps the safety valve for all-partial periods', () => {

@@ -132,9 +132,9 @@ export function MacroTrendChart({
             axisLine={false}
             tick={{ fontSize: 10, fill: 'var(--nham-text-muted)' }}
             tickFormatter={(v: number) => String(Math.round(v))}
-            // Four digits at 10px plus the tick gap; the slack pays the right
-            // margin above.
-            width={28}
+            // Four digits at 10px plus the tick gap, sized generously — too
+            // tight and a "3000" tick wraps.
+            width={34}
           />
 
           {COMPOSITION_KEYS.map((key) => (

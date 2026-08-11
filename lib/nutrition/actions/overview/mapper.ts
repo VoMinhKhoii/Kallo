@@ -247,7 +247,6 @@ export function mapOverviewRowsToDto({
       calorieAverages,
       macros: buildMacroPatterns([], 1, profile),
       daySeries: buildDaySeries({
-        scopedRows: [],
         scopedDates: new Set<string>(),
         loggedRows,
         loggedDates,
@@ -312,11 +311,9 @@ export function mapOverviewRowsToDto({
       targets[card.nutrient].applicability !== 'hidden'
   );
   const { spotlight, steady } = partitionSpotlight(micronutrients);
-  // The same day set the headline, the gram legend and the grid above it use —
-  // a card that averages two different day sets reads as broken. See
-  // `buildDaySeries` for what that costs on the week axis.
+  // Heights over every logged day, greying driven by the scope — see
+  // `buildDaySeries` for why the bars are the fixed thing here.
   const daySeries = buildDaySeries({
-    scopedRows: completeRows,
     scopedDates: averagingDates,
     loggedRows,
     loggedDates,

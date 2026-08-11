@@ -122,21 +122,18 @@ interface BucketWindow {
   loggedDays: number;
 }
 
-/** Build one metric's bucket series. A bucket averages over its in-scope days;
- *  one holding logged days but none in scope falls back to its logged days and
- *  is flagged `excluded`, so the column is drawn greyed rather than vanishing.
- *  `null` only where nothing was logged at all. Pure over its inputs so the
- *  day-series builder stays a flat map over the metric specs. */
+/** Build one metric's bucket series. Every bucket averages over its LOGGED
+ *  days, whatever the scope; a bucket the scope has no day in is flagged
+ *  `excluded` so the column greys. `null` only where nothing was logged at all.
+ *  Pure over its inputs so the day-series builder stays a flat map over the
+ *  metric specs. */
 function buildMetricSeries(
   spec: DaySeriesMetricSpec,
   windows: BucketWindow[],
-  scopedRows: OverviewMealItemRow[],
   loggedRows: OverviewMealItemRow[]
 ): NutrientDaySeries {
   const buckets: DaySeriesBucket[] = windows.map((window) => {
-    const excluded = window.scopedDays === 0;
-    const days = excluded ? window.loggedDays : window.scopedDays;
-    if (days === 0) {
+    if (window.loggedDays === 0) {
       return {
         startDate: window.startDate,
         endDate: window.endDate,
@@ -145,21 +142,20 @@ function buildMetricSeries(
         excluded: false,
       };
     }
-    const rows = excluded ? loggedRows : scopedRows;
-    const total = rows.reduce((sum, row) => {
+    const total = loggedRows.reduce((sum, row) => {
       if (row.localDate < window.startDate || row.localDate > window.endDate) {
         return sum;
       }
       return sum + Math.max(0, row[spec.rowKey] ?? 0);
     }, 0);
-    const value = total / days;
+    const value = total / window.loggedDays;
     return {
       startDate: window.startDate,
       endDate: window.endDate,
       value,
       ratioOfTarget:
         spec.target && spec.target > 0 ? value / spec.target : null,
-      excluded,
+      excluded: window.scopedDays === 0,
     };
   });
 
@@ -183,27 +179,23 @@ function buildMetricSeries(
 
 /**
  * Build the per-bucket time series: each bucket's value is the per-day average
- * of the metric over that bucket's IN-SCOPE days.
+ * of the metric over that bucket's LOGGED days, in every scope, plus a flag for
+ * whether the current scope counts the bucket at all.
  *
- * Scoped by the same day set as the headline average, the gram legend and the
- * nutrient grid — one card must not average two different day sets. A chart
- * over every logged day under a headline over complete days puts the number
- * above every bar on an under-logged month, which reads as broken however it is
- * justified.
+ * The heights are deliberately scope-independent. The day scope changes what is
+ * AVERAGED, not what was eaten, so flipping it must not move a bar — a column
+ * that jumps on a toggle reads as the data being unstable, and this chart's job
+ * is to be the fixed thing the headline is measured against. What the toggle
+ * does instead is grey: `excluded` marks the buckets the scope leaves out, so
+ * you can see what it set aside rather than watching numbers rearrange.
  *
- * Days the scope sets aside are not dropped, though: a bucket with no in-scope
- * day still draws, averaged over its logged days and flagged `excluded` for the
- * client to grey. Removing it would leave a hole indistinguishable from a day
- * nobody logged, and the point of the toggle is to SEE what it sets aside.
- *
- * On a DAY axis (7d) that makes the toggle purely additive: a complete day is
- * `total / 1` under either scope, so its column cannot move, and the partial
- * days go grey rather than away. On a WEEK axis (30d/90d) a week holding a mix
- * does re-average when the partial days leave the divisor — but the headline
- * moves with it, so the card stays internally consistent.
+ * The trade this makes: on a WEEK axis a bucket mixing complete and partial
+ * days stays coloured and keeps averaging all of them, so it can sit a little
+ * under the complete-days headline above it. Exactness there would cost the
+ * stable heights, which is the worse trade. On a DAY axis there is no mixing at
+ * all — one column is one day, coloured or grey, exact either way.
  */
 export function buildDaySeries({
-  scopedRows,
   scopedDates,
   loggedRows,
   loggedDates,
@@ -212,13 +204,11 @@ export function buildDaySeries({
   profile,
   targets,
 }: {
-  /** Rows on `scopedDates` only — the numerator, matching the divisor below. */
-  scopedRows: OverviewMealItemRow[];
-  /** The day set the caller's scope averages over. */
+  /** The day set the caller's scope averages over — decides greying only. */
   scopedDates: Set<string>;
-  /** Rows on every logged day, for buckets the scope leaves empty. */
+  /** Rows on every logged day. The numerator for every bucket. */
   loggedRows: OverviewMealItemRow[];
-  /** Every day with calories, in scope or not. */
+  /** Every day with calories, in scope or not. The divisor. */
   loggedDates: Set<string>;
   resolvedRange: NutritionOverview['resolvedRange'];
   period: { startDate: string; endDate: string };
@@ -268,7 +258,7 @@ export function buildDaySeries({
   ];
 
   const series: NutrientDaySeries[] = metrics.map((spec) =>
-    buildMetricSeries(spec, windows, scopedRows, loggedRows)
+    buildMetricSeries(spec, windows, loggedRows)
   );
 
   return { unit, series };
