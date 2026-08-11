@@ -6,9 +6,11 @@ import '../../data/stream_analysis_controller.dart';
 import '../../logic/feed/view_state.dart';
 import '../../logic/logging_spacing.dart';
 import '../cheat_slider_card.dart';
+import '../entrances.dart';
 import '../meal_entry.dart';
+import '../streaming/streaming_entry.dart';
+import '../streaming/user_message_bubble.dart';
 import '../terminal/failed_attempt_card.dart';
-import '../streaming_entry.dart';
 
 /// The live tail of the feed, below every saved meal: the server's staged
 /// pending cards, the streaming card, the revealed (confirmable) answer, and
@@ -30,7 +32,12 @@ class FeedFooter extends StatelessWidget {
     required this.failedRetryable,
     required this.onRetry,
     required this.onDiscardFailed,
+    required this.loaderIndex,
   });
+
+  /// Which loader the in-flight analysis draws — picked once per meal by the
+  /// feed, so it survives any rebuild of this footer.
+  final int loaderIndex;
 
   final FeedViewState view;
   final String? revealRawInput;
@@ -64,12 +71,29 @@ class FeedFooter extends StatelessWidget {
     final lastRendered = pendingConfirmations.lastIndexWhere(
       (p) => p.cheatSpec != null || p.parsedMeal != null,
     );
+    // The user's own words, carried across the whole live turn: they go up the
+    // instant the meal is sent and stay put while the streamed rows below them
+    // are replaced by the finished card. Because the bubble survives that
+    // swap, both reveal cards below are handed an EMPTY rawInput — their own
+    // Lora quote would otherwise print the same sentence twice.
+    final bubbleText = view.isStreaming ? streamingRawInput : revealRawInput;
+    final showBubble =
+        (view.isStreaming || view.isRevealing || view.isCheatRevealing) &&
+        bubbleText != null &&
+        bubbleText.trim().isNotEmpty;
     // The footer's cards carry no margins of their own, so the stack spaces
     // them at the same block gap the card list uses above.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: LoggingSpacing.block,
       children: [
+        if (showBubble)
+          // A constant key: the bubble must NOT remount when the sibling below
+          // it changes type at reveal, or it would replay its entrance.
+          _MaybeEntrance(
+            key: const ValueKey('user-bubble'),
+            child: UserMessageBubble(text: bubbleText),
+          ),
         for (var i = 0; i < pendingConfirmations.length; i++)
           if (pendingConfirmations[i].cheatSpec case final cheatSpec?)
             CheatSliderCard(
@@ -97,23 +121,20 @@ class FeedFooter extends StatelessWidget {
                   (edits) => onConfirm(pendingConfirmations[i].id, edits),
             ),
         if (view.isStreaming)
-          StreamingEntry(
-            status: stream.status,
-            items: stream.items,
-            completedItems: stream.completedItems,
-            rawInput: streamingRawInput,
-            isLast: !hasFailed,
-          ),
-        // The completed answer in the streaming card's slot: per-row macros
-        // already real, totals count up, the spinner row swapped for
-        // Edit/Confirm. This IS a remount (StreamingEntry and MealEntry are
-        // different widgets) — the `revealing` flag softens the seam: the card
-        // background matches the streaming card's and the item rows crossfade
-        // in place instead of re-entering.
+          StreamingEntry(stream: stream, loaderIndex: loaderIndex),
+        // The completed answer, closing around the rows that were already on
+        // screen: per-row macros already real, totals count up, the ticker line
+        // swapped for Edit/Confirm. This IS a remount (StreamingEntry and
+        // MealEntry are different widgets) — the `revealing` flag softens the
+        // seam by crossfading the item rows in place instead of re-entering
+        // them, and both keep the same 16px content inset so nothing shifts
+        // sideways as the card chrome appears.
+        //
+        // rawInput is EMPTY on purpose: the bubble above still holds the words.
         if (view.isRevealing)
           MealEntry(
             key: ValueKey('reveal-${stream.analysisId}'),
-            rawInput: revealRawInput ?? '',
+            rawInput: showBubble ? '' : (revealRawInput ?? ''),
             parsedMeal: stream.result!,
             busy: confirmPending,
             revealing: true,
@@ -128,7 +149,8 @@ class FeedFooter extends StatelessWidget {
           CheatSliderCard(
             key: ValueKey('cheat-reveal-${stream.analysisId ?? 'clarify'}'),
             spec: stream.cheatSpec!,
-            rawInput: revealRawInput ?? '',
+            // Empty while the bubble carries the words — see above.
+            rawInput: showBubble ? '' : (revealRawInput ?? ''),
             busy: confirmPending,
             onConfirm: onConfirmCheatReveal,
             onClarify: onClarifyCheat,
@@ -142,5 +164,20 @@ class FeedFooter extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+/// Slides its child up on mount, unless the user has asked for less motion.
+/// `entrances.dart` carries no reduce-motion seam of its own, so it is gated
+/// here rather than played unconditionally.
+class _MaybeEntrance extends StatelessWidget {
+  const _MaybeEntrance({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    return FadeInUp(offset: 8, child: child);
   }
 }

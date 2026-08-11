@@ -29,6 +29,7 @@ import 'feed/feed_composer.dart';
 import 'feed/feed_footer.dart';
 import 'feed/feed_list.dart';
 import 'feed/macro_summary.dart';
+import 'loaders/loader_registry.dart';
 import 'meal_input.dart';
 import 'relog/mention_text_controller.dart';
 import 'sheets/manual_log_sheet.dart';
@@ -137,6 +138,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   String? _inFlightLabelText;
 
   String? get _inFlightLabel => _inFlightLabelText ?? _inFlightText;
+
+  /// Which of the twelve loaders this run draws. Rolled once per submit and
+  /// held for the whole run — a loader that changed mid-analysis would read as
+  /// a restart. Lives HERE, not in the streaming widget, so a rebuild of the
+  /// footer (a pending card arriving, say) cannot re-roll it.
+  int _loaderIndex = 0;
 
   /// A failed attempt, rendered as a feed card with "Try again" (terracotta).
   String? _failedText;
@@ -420,6 +427,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       // normal analysis.
       _inFlightCheat =
           isCheat ?? ref.read(mealLogModeProvider) == MealLogMode.cheat;
+      _loaderIndex = pickLoaderIndex();
     });
     _inputController.clear();
     _scrollToAnswer();
@@ -656,6 +664,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       view: view,
       stream: stream,
       streamingRawInput: _inFlightLabel,
+      loaderIndex: _loaderIndex,
       confirmPending: confirmPending,
       onConfirm: confirmActions.confirmPending,
       onConfirmReveal: confirmActions.confirmReveal,
@@ -737,6 +746,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     setState(() {
       _revealRawInput = null;
       _inFlightText = text;
+      // A clarify is a fresh analysis, so it gets a fresh loader — this path
+      // bypasses _runAnalyze and would otherwise reuse the last run's.
+      _loaderIndex = pickLoaderIndex();
     });
     _scrollToAnswer();
     startMealAnalysis(
