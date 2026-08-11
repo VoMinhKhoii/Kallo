@@ -239,30 +239,6 @@ export interface MealItemOffset {
 }
 
 /**
- * Map each v2 meal item to the `(decomposed ingredients slice, flat-ingredient
- * start offset)` pair the streaming resolver needs. Computed once per request
- * from the parsed v2 decomposition, so streaming chunks just look up by
- * meal-item index.
- */
-export function buildPerMealItemOffsetMap(
-  v2MealItems: Array<{
-    ingredients: DecomposedIngredientV2[];
-    cookingMethod: string;
-  }>
-): MealItemOffset[] {
-  let start = 0;
-  return v2MealItems.map((mi) => {
-    const entry = {
-      decomposedIngredients: mi.ingredients,
-      dishCookingMethod: mi.cookingMethod,
-      flatIngredientStart: start,
-    };
-    start += mi.ingredients.length;
-    return entry;
-  });
-}
-
-/**
  * Identity-based offset lookup keyed by `${lowercased name}::${occurrence}`
  * (1-based occurrence handles duplicate dish names like "Cơm trắng" × 2).
  *

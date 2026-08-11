@@ -42,6 +42,19 @@ Per-attempt LLM signals (now visible in console):
 
 Two tiers because **transient Gemini 5xx retries** are real and unavoidable; we don't want CI to fail on a one-off provider-pressure event but we do want it to fail on a sustained regression.
 
+### Runtime hard ceilings
+
+The percentile budgets above measure healthy behavior. Separate runtime
+ceilings guarantee that a single request terminates when a dependency wedges:
+
+- decomposition: 20s by default (`PIPELINE_DECOMPOSITION_TIMEOUT_MS`);
+- matching: 10s by default (`PIPELINE_MATCHING_TIMEOUT_MS`);
+- nutrition: 30s by default (`PIPELINE_NUTRITION_TIMEOUT_MS`).
+
+Matching uses a DB-safe promise deadline. Postgres.js queries do not accept an
+`AbortSignal`, so an expired query may settle later, but the request stops
+awaiting it and returns the structured retryable pipeline-timeout error.
+
 ### Tier 1 — Healthy run (no provider-pressure retry)
 
 Tagged when `pipeline_runs.retry_step2_count = 0` AND no `analysis_model_budget_events` row with `error_category IN ('rate_limit', 'server_error', 'timeout')` for the request.

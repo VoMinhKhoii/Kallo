@@ -6,10 +6,7 @@ import {
   type IngredientV2MatchResult,
 } from '../matching/top-k-cascade';
 import { attachVesselToMealItems } from '../portion/vessel-envelope';
-import {
-  buildMealItemOffsetByName,
-  buildPerMealItemOffsetMap,
-} from '../streaming/grounded-parsers';
+import { buildMealItemOffsetByName } from '../streaming/grounded-parsers';
 import type { StreamEvent } from '../streaming/types';
 import type { PipelineResponse, UserContext } from '../types';
 import { assembleResult } from './assembly';
@@ -165,7 +162,6 @@ export async function analyzeMealV2(
     });
     promptCharsCall2 = call2SystemPrompt.length;
 
-    const perItemOffsets = buildPerMealItemOffsetMap(decomposition.mealItems);
     // D4: Call 2 streams meal items in the prompt's SORTED order; the stream
     // handler attributes each item to its slice by name+occurrence.
     const offsetByName = buildMealItemOffsetByName(decomposition.mealItems);
@@ -294,7 +290,7 @@ export async function analyzeMealV2(
       grounded,
       streamedMealItemIds,
       alreadyStreamed: itemMacrosStreamed,
-      perItemOffsets,
+      offsetByName,
       goal: userContext.goal,
       aggression: userContext.aggression,
       emit,
