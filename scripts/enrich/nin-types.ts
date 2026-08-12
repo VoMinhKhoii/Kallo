@@ -5,10 +5,16 @@ export const NIN_SOURCE_NAME =
   'National Institute of Nutrition web snapshot (2026-08-12)';
 export const NIN_SNAPSHOT_DATE = '2026-08-12';
 
+const sourceIdSchema = z.string().trim().min(1);
+const nutrientValueSchema = z
+  .number()
+  .transform((value) => (value >= -0.05 && value < 0 ? 0 : value))
+  .pipe(z.number().nonnegative());
+
 export const nutritionSchema = z.object({
   name: z.string(),
   name_en: z.string().optional().default(''),
-  value: z.number().nullable(),
+  value: nutrientValueSchema.nullable(),
   unit: z
     .string()
     .nullable()
@@ -16,27 +22,27 @@ export const nutritionSchema = z.object({
 });
 
 export const snapshotRowSchema = z.object({
-  _id: z.string(),
-  code: z.string(),
+  _id: sourceIdSchema,
+  code: sourceIdSchema,
   name_vi: z.string().min(1),
   name_en: z.string().nullish(),
   category: z.string().min(1),
   categoryEn: z.string().nullish(),
   nutrition: z.array(nutritionSchema),
-  energy: z.number(),
+  energy: z.number().nonnegative(),
 });
 
 export const snapshotSchema = z.array(snapshotRowSchema).length(853);
 
 export const dbNameRowSchema = z.object({
-  id: z.string().min(1),
+  id: sourceIdSchema,
   namePrimary: z.string(),
   nameAlt: z.array(z.string().min(1)),
   source: z.enum(['fao', 'usda', 'other']),
 });
 
 export const insertedIdsSchema = z.array(
-  z.string().regex(/^nin_web_[a-zA-Z0-9_]+$/)
+  sourceIdSchema.regex(/^nin_web_[a-zA-Z0-9_]+$/)
 );
 
 export type SnapshotRow = z.infer<typeof snapshotRowSchema>;

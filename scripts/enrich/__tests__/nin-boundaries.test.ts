@@ -1,7 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { parseDbNames } from '../nin-duplicates';
 import { renderNinMigration } from '../nin-migration';
-import { type ConstructedRow, insertedIdsSchema } from '../nin-types';
+import {
+  type ConstructedRow,
+  dbNameRowSchema,
+  insertedIdsSchema,
+  nutritionSchema,
+  type SnapshotRow,
+  snapshotRowSchema,
+} from '../nin-types';
+
+function snapshotRow(overrides: Partial<SnapshotRow> = {}): SnapshotRow {
+  return {
+    _id: 'source-id',
+    code: '1',
+    name_vi: 'Gạo',
+    name_en: null,
+    category: 'Ngũ cốc',
+    categoryEn: null,
+    nutrition: [],
+    energy: 100,
+    ...overrides,
+  };
+}
 
 function constructedRow(
   overrides: Partial<ConstructedRow> = {}
@@ -38,6 +59,28 @@ describe('NIN ingest boundaries', () => {
     expect(() => parseDbNames('\tMissing ID\talias')).toThrow();
     expect(() => parseDbNames('only\ttwo-fields')).toThrow('expected 3 fields');
     expect(() => insertedIdsSchema.parse(['usda_1_raw'])).toThrow();
+  });
+
+  it('rejects negative nutrients and blank source identifiers', () => {
+    expect(
+      nutritionSchema.parse({ name: 'Carbohydrate', value: -0.03, unit: 'g' })
+    ).toMatchObject({ value: 0 });
+    expect(() =>
+      nutritionSchema.parse({ name: 'Protein', value: -1, unit: 'g' })
+    ).toThrow();
+    expect(() =>
+      snapshotRowSchema.parse(snapshotRow({ energy: -1 }))
+    ).toThrow();
+    expect(() => snapshotRowSchema.parse(snapshotRow({ _id: '  ' }))).toThrow();
+    expect(() =>
+      dbNameRowSchema.parse({
+        id: '  ',
+        namePrimary: 'Gạo',
+        nameAlt: [],
+        source: 'fao',
+      })
+    ).toThrow();
+    expect(insertedIdsSchema.parse(['  nin_web_1  '])).toEqual(['nin_web_1']);
   });
 
   it('renders deterministic, idempotent migration SQL in id order', () => {

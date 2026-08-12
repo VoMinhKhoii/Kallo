@@ -212,10 +212,8 @@ export function dedupeClones(rows: NormalizedRow[]): {
       });
       return { group: index + 1, kept: sorted[0], dropped: sorted.slice(1) };
     });
-  const droppedCodes = new Set(
-    groups.flatMap((group) => group.dropped.map((r) => r.code))
-  );
-  return { kept: rows.filter((row) => !droppedCodes.has(row.code)), groups };
+  const droppedRows = new Set(groups.flatMap((group) => group.dropped));
+  return { kept: rows.filter((row) => !droppedRows.has(row)), groups };
 }
 
 export function classify(row: NormalizedRow): {

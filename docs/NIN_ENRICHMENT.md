@@ -63,6 +63,8 @@ but false alias on a flavored NIN row.
   mineral water (`14008`), and ice (`14057`), whose proximate profiles establish
   true near-zero energy. They proceed to normal duplicate handling instead of
   being quarantined for the placeholder alone.
+- Negative nutrient values within the source's two-decimal rounding tolerance
+  (`-0.05` through `<0`) are clamped to zero; larger negative values are rejected.
 - The 1-kcal brewed-tea rows (`14069`, `14070`) are also retained because their
   reported macros independently compute to approximately 1 kcal. Their cloned
   vector keeps the generic `Trà túi lọc` representative rather than branded

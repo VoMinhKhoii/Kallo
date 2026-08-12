@@ -2967,7 +2967,7 @@ INSERT INTO "vietnamese_food_composition" (
   'Muscovy duck meat, boiled', 'Thịt và sản phẩm chế biến', 'Meat and processed products',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
   'cooked', 400,
-  23.68, -0.03,
+  23.68, 0,
   33.96, NULL, DATE '2026-08-12'
 )
 ON CONFLICT ("id") DO NOTHING;

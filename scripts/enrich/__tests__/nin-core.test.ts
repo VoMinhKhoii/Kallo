@@ -104,6 +104,20 @@ describe('NIN ingest core', () => {
     expect(result.groups[1]?.kept.code).toBe('8051');
   });
 
+  it('drops clone rows by identity when rows share a source code', () => {
+    const [representative, duplicate] = normalizeRows([
+      row({ _id: 'first', code: '42', name_vi: 'Cà bát' }),
+      row({ _id: 'second', code: '42', name_vi: 'Cà bát, luộc' }),
+    ]);
+
+    const result = dedupeClones([representative, duplicate]);
+
+    expect(result.kept).toEqual([representative]);
+    expect(result.groups).toEqual([
+      { group: 1, kept: representative, dropped: [duplicate] },
+    ]);
+  });
+
   it('treats a high-overlap same-code state rename as one lineage', () => {
     const index = buildDbNameIndex([
       {
