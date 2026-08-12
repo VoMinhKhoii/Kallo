@@ -53,3 +53,19 @@ but false alias on a flavored NIN row.
   The full directional scan found and fixed one systematic issue: explicitly
   cooked `7067 Dồi lợn, chín` and `7068 Giò bò, chín` no longer collapse onto
   legacy `_raw` lineages. Ripe `chín, tươi` fruit remains correctly raw.
+
+## Dev-DB validation results (2026-08-12)
+
+258 rows applied in one transaction; 258/258 embeddings verified.
+
+| metric | before | after |
+|---|---|---|
+| 104 gap queries with correct-family row in top-3 | 23 | 31 |
+| `xôi` returns raspberry rows (disaster) | yes | **no** (rank-1 `usda_20055_cooked`, then NIN xôi rows) |
+| `bánh cuốn` rank-1 | potato cake | **`nin_web_15009 Bánh cuốn`** |
+| stable queries (`ức gà`, `thịt heo`, `nước mắm`, `tôm`) rank-1 | — | unchanged |
+| `cơm` rank-1 | correct | unchanged (rank-2/3 churn only, pre-existing substring artifact) |
+
+Newly covered: nem lụi, nem rán, bánh cuốn, thịt chân giò luộc, xá xíu (toned + untoned).
+Remaining gaps are dominated by bowl dishes (bánh canh, bún bò...) — correctly excluded here;
+they belong to the recipe-composition follow-up.
