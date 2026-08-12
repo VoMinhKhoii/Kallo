@@ -12,10 +12,19 @@ function databaseUrl(): string {
   return encodeDbUrl(value);
 }
 
-export async function applyRows(rows: ConstructedRow[]): Promise<string[]> {
+export async function applyRows(
+  rows: ConstructedRow[],
+  options: { reapply?: boolean } = {}
+): Promise<string[]> {
   const client = postgres(databaseUrl(), { max: 1 });
   try {
     return await client.begin(async (tx) => {
+      if (options.reapply) {
+        await tx`
+          DELETE FROM vietnamese_food_composition
+          WHERE id LIKE 'nin_web_%'
+        `;
+      }
       await tx`
         INSERT INTO ingredient_sources (code, name)
         VALUES (${NIN_SOURCE_CODE}, ${'National Institute of Nutrition web snapshot (2026-08-12)'})

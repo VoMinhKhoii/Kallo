@@ -23,6 +23,16 @@ const COOKED_TOKENS = new Set([
   'kho',
   'tần',
 ]);
+const EXPLICIT_RAW_TOKENS = new Set(['tươi', 'sống', 'raw']);
+const DRIED_TOKENS = new Set(['khô', 'sấy']);
+const PREPARED_CATEGORIES = new Set([
+  'thức ăn truyền thống',
+  'traditional food',
+  'đồ hộp',
+  'canned food',
+]);
+const PREPARED_NAME_PATTERN =
+  /^(giò|chả|nem|pa[ -]?tê|patê|pate|xúc xích)( |$)|(^| )bánh (mì|mỳ)( |$)|(^| )(ăn liền|tiệt trùng|đóng hộp|hộp)( |$)|^sữa chua( |$)|^phó mát( |$)/i;
 const BOWL_CODES = new Set([
   '15023',
   '15024',
@@ -248,8 +258,28 @@ export function classify(row: NormalizedRow): {
   return { label: 'ingredient', reason: 'single ingredient/reference food' };
 }
 
-export function inferState(name: string): 'raw' | 'cooked' {
-  return tokens(name).some((token) => COOKED_TOKENS.has(token))
+export function inferState(
+  row: Pick<NormalizedRow, 'code' | 'name_vi' | 'category' | 'categoryEn'>
+): 'raw' | 'cooked' {
+  const nameTokens = tokens(row.name_vi);
+  const hasExplicitRawState = nameTokens.some((token) =>
+    EXPLICIT_RAW_TOKENS.has(token)
+  );
+  const hasDriedState = nameTokens.some((token) => DRIED_TOKENS.has(token));
+  const hasUnambiguousCookingToken = nameTokens.some(
+    (token) => token !== 'chín' && COOKED_TOKENS.has(token)
+  );
+
+  if (hasUnambiguousCookingToken) return 'cooked';
+  if (hasExplicitRawState || hasDriedState) return 'raw';
+  if (nameTokens.includes('chín')) return 'cooked';
+  if (row.code.startsWith('15')) return 'cooked';
+
+  const categories = [row.category, row.categoryEn].map(normalizeText);
+  if (categories.some((category) => PREPARED_CATEGORIES.has(category))) {
+    return 'cooked';
+  }
+  return PREPARED_NAME_PATTERN.test(normalizeText(row.name_vi))
     ? 'cooked'
     : 'raw';
 }
@@ -275,7 +305,7 @@ export function constructRows(rows: NormalizedRow[]): ConstructedRow[] {
       nameEn: row.name_en,
       typeVn: row.category,
       typeEn: row.categoryEn,
-      state: inferState(row.name_vi),
+      state: inferState(row),
       caloriesKcal: row.energy,
       proteinG: row.protein,
       carbohydrateG: row.carbohydrate,

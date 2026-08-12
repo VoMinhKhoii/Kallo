@@ -26,7 +26,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_10015', 'Sữa, bò, tiệt trùng, có đường, toàn phần, trắng ', ARRAY[]::text[],
   'Milk, cow, steralized, with sugar, whole, white', 'Sữa và sản phẩm chế biến', 'Milk and processed products',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 85,
+  'cooked', 85,
   3.9, 7.34,
   4.4, NULL, DATE '2026-08-12'
 )
@@ -54,7 +54,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_10031', 'Sữa chua, nước/uống, có đường', ARRAY[]::text[],
   'Yougurt, drink/liquid, with sugar, whole, white', 'Sữa và sản phẩm chế biến', 'Milk and processed products',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 62,
+  'cooked', 62,
   3.47, 4.66,
   3.25, NULL, DATE '2026-08-12'
 )
@@ -68,7 +68,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_10035', 'Sữa chua, đặc, có đường', ARRAY[]::text[],
   'Yougurt, thick, with sugar, whole, white', 'Sữa và sản phẩm chế biến', 'Milk and processed products',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 65,
+  'cooked', 65,
   3.3, 4.66,
   3.7, NULL, DATE '2026-08-12'
 )
@@ -82,7 +82,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_10036', 'Sữa chua, đặc, không đường', ARRAY[]::text[],
   'Yogurt, thick, without sugar, whole, white', 'Sữa và sản phẩm chế biến', 'Milk and processed products',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 61,
+  'cooked', 61,
   3.3, 3.6,
   3.7, NULL, DATE '2026-08-12'
 )
@@ -96,7 +96,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_10048', 'Sữa hộp Milo', ARRAY[]::text[],
   'Chocolate drink packaged', 'Sữa và sản phẩm chế biến', 'Milk and processed products',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 55,
+  'cooked', 55,
   0.92, 11.54,
   0.55, NULL, DATE '2026-08-12'
 )
@@ -138,7 +138,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_1032', 'Bánh mì, vuông, ngọt', ARRAY[]::text[],
   'Bread, square/sandwich type, sweet', 'Ngũ cốc và sản phẩm chế biến', 'Cereals and processed products',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 384,
+  'cooked', 384,
   7.89, 52.63,
   15.79, NULL, DATE '2026-08-12'
 )
@@ -194,7 +194,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_1043', 'Mỳ  ăn liền, lúa mì ', ARRAY[]::text[],
   'Instant noodle, wheat, uncooked', 'Ngũ cốc và sản phẩm chế biến', 'Cereals and processed products',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 364,
+  'cooked', 364,
   6.7, 70.9,
   5.9, NULL, DATE '2026-08-12'
 )
@@ -236,7 +236,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_11022', 'Cá ngừ hộp', ARRAY[]::text[],
   '', 'Đồ hộp', 'Canned food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 85,
+  'cooked', 85,
   19, 0.08,
   0.94, NULL, DATE '2026-08-12'
 )
@@ -684,7 +684,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_14054', 'Nước ép đào đóng hộp', ARRAY[]::text[],
   'Juice  packaged, Peach', 'Nước giải khát', 'Soft drinks',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 57,
+  'cooked', 57,
   0.27, 13.92,
   0.02, NULL, DATE '2026-08-12'
 )
@@ -740,7 +740,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15002', 'Bánh bèo', ARRAY[]::text[],
   'Bloating Fern-shaped cake', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 118,
+  'cooked', 118,
   1.8, 18.15,
   4.2, NULL, DATE '2026-08-12'
 )
@@ -754,7 +754,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15003', 'Bánh bột lọc', ARRAY[]::text[],
   'Rice dumpling cake', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 137,
+  'cooked', 137,
   6.8, 17.74,
   4.3, NULL, DATE '2026-08-12'
 )
@@ -768,7 +768,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15004', 'Bánh chay', ARRAY[]::text[],
   'Stuffed sticky rice balls, large', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 156,
+  'cooked', 156,
   3.3, 28.71,
   3.1, NULL, DATE '2026-08-12'
 )
@@ -796,7 +796,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15006', 'Bánh chưng', ARRAY['Bánh chưng']::text[],
   'Stuffed sticky rice cake', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 181,
+  'cooked', 181,
   4.3, 31.6,
   4.2, NULL, DATE '2026-08-12'
 )
@@ -810,7 +810,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15007', 'Bánh chuối', ARRAY[]::text[],
   'Banana cake', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 297,
+  'cooked', 297,
   2, 40.34,
   14.2, NULL, DATE '2026-08-12'
 )
@@ -824,7 +824,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15008', 'Bánh cốm', ARRAY[]::text[],
   'Young rice cake', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 250,
+  'cooked', 250,
   3.4, 58.5,
   0.3, NULL, DATE '2026-08-12'
 )
@@ -838,7 +838,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15009', 'Bánh cuốn', ARRAY['Bánh cuốn']::text[],
   'Stuffed pancake', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 129,
+  'cooked', 129,
   3, 17.4,
   5.3, NULL, DATE '2026-08-12'
 )
@@ -852,7 +852,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15010', 'Bánh cuốn nóng nhân thịt', ARRAY[]::text[],
   'Stuffed pancake, with pork', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 102,
+  'cooked', 102,
   2.1, 17.65,
   2.6, NULL, DATE '2026-08-12'
 )
@@ -866,7 +866,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15011', 'Bánh dẻo nhân thập cẩm', ARRAY[]::text[],
   'Sticky rice cake (filled with preserved fruit and meat)', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 349,
+  'cooked', 349,
   5, 60.3,
   9.8, NULL, DATE '2026-08-12'
 )
@@ -880,7 +880,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15012', 'Bánh dẻo nhân trứng', ARRAY[]::text[],
   'Sticky rice cake (filled with egg)', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 338,
+  'cooked', 338,
   7.4, 58.6,
   8.2, NULL, DATE '2026-08-12'
 )
@@ -894,7 +894,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15013', 'Bánh đúc nguội', ARRAY[]::text[],
   'Plain rice flan; rice cake made of rice flour, and lime water', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 88,
+  'cooked', 88,
   2, 15.36,
   2.1, NULL, DATE '2026-08-12'
 )
@@ -908,7 +908,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15014', 'Bánh đúc nóng', ARRAY[]::text[],
   'Plain rice flan; rice cake made of rice flour, and lime water, hot', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 108,
+  'cooked', 108,
   3.9, 8.95,
   6.3, NULL, DATE '2026-08-12'
 )
@@ -922,7 +922,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15015', 'Bánh gai', ARRAY[]::text[],
   'Stuffed sticky rice cake with ramie leaves', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 251,
+  'cooked', 251,
   4.7, 52.3,
   2.5, NULL, DATE '2026-08-12'
 )
@@ -936,7 +936,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15016', 'Bánh gio', ARRAY[]::text[],
   'Sticky rice cake with ash water', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 173,
+  'cooked', 173,
   2, 40.44,
   0.4, NULL, DATE '2026-08-12'
 )
@@ -950,7 +950,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15017', 'Bánh giò', ARRAY['Bánh giò']::text[],
   'Pyramidal rice dumpling (filled with meat, onion, mushroom), meat pie', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 234,
+  'cooked', 234,
   2.8, 16.3,
   17.5, NULL, DATE '2026-08-12'
 )
@@ -964,7 +964,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15018', 'Bánh khoai', ARRAY[]::text[],
   'Cake made of sweet potato meal (mixed with rice flour', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 141,
+  'cooked', 141,
   4.1, 27.64,
   1.6, NULL, DATE '2026-08-12'
 )
@@ -978,7 +978,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15019', 'Bánh khoái', ARRAY[]::text[],
   'Plain rice flan', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 159,
+  'cooked', 159,
   0.6, 16.26,
   10.2, NULL, DATE '2026-08-12'
 )
@@ -1006,7 +1006,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15021', 'Bánh khúc', ARRAY[]::text[],
   'Cake made of glutinous rice mixed with everlasting gnaphalium leaves (filled with green bean paste and sprinkled with grains of cooked glutinous rice)', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 249,
+  'cooked', 249,
   4.1, 49.7,
   3.8, NULL, DATE '2026-08-12'
 )
@@ -1020,7 +1020,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15022', 'Bánh mè', ARRAY[]::text[],
   'Bread with egg and sesame seed, fried', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 482,
+  'cooked', 482,
   5.5, 55.42,
   26.5, NULL, DATE '2026-08-12'
 )
@@ -1034,7 +1034,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15025', 'Bánh nếp', ARRAY[]::text[],
   'Sticky rice cake', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 216,
+  'cooked', 216,
   5, 41.77,
   3.2, NULL, DATE '2026-08-12'
 )
@@ -1076,7 +1076,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15028', 'Bánh phu thê (su sê, xu xuê)', ARRAY[]::text[],
   'Yellow-coloured wedding pastry', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 185,
+  'cooked', 185,
   2.1, 41.1,
   1.3, NULL, DATE '2026-08-12'
 )
@@ -1104,7 +1104,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15030', 'Bánh tẻ', ARRAY[]::text[],
   'Rice cake,, filled with meat', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 104,
+  'cooked', 104,
   1.5, 17.23,
   3.2, NULL, DATE '2026-08-12'
 )
@@ -1118,7 +1118,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15031', 'Bánh tôm', ARRAY[]::text[],
   'Crisp shrimp pastry', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 204,
+  'cooked', 204,
   4, 22.64,
   10.8, NULL, DATE '2026-08-12'
 )
@@ -1132,7 +1132,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15032', 'Bánh trôi', ARRAY[]::text[],
   'Stuffed sticky rice balls', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 202,
+  'cooked', 202,
   2.8, 46.37,
   0.6, NULL, DATE '2026-08-12'
 )
@@ -1146,7 +1146,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15040', 'Caramen', ARRAY[]::text[],
   'Caramel cake', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 109,
+  'cooked', 109,
   5.2, 12.81,
   4.1, NULL, DATE '2026-08-12'
 )
@@ -1160,7 +1160,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15041', 'Chả quế', ARRAY['Chả quế']::text[],
   'Roasted cinnamon pork', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 339,
+  'cooked', 339,
   18.3, 1.1,
   29, NULL, DATE '2026-08-12'
 )
@@ -1174,7 +1174,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15062', 'Nem lụi', ARRAY[]::text[],
   'Roll pork meat, grilled', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 183,
+  'cooked', 183,
   6.7, 9.07,
   13.3, NULL, DATE '2026-08-12'
 )
@@ -1216,7 +1216,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15069', 'Xôi đỗ xanh', ARRAY[]::text[],
   'Sticky rice with mungbean, cooked', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 230,
+  'cooked', 230,
   5.5, 51,
   0.4, NULL, DATE '2026-08-12'
 )
@@ -1230,7 +1230,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15070', 'Xôi gấc', ARRAY[]::text[],
   'Sticky rice with Gac fruit, cooked', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 231,
+  'cooked', 231,
   3.1, 52.9,
   0.8, NULL, DATE '2026-08-12'
 )
@@ -1244,7 +1244,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15071', 'Xôi lạc', ARRAY[]::text[],
   'Sticky rice with peanut, cooked', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 246,
+  'cooked', 246,
   4.2, 47.5,
   4.3, NULL, DATE '2026-08-12'
 )
@@ -1258,7 +1258,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15072', 'Xôi ngô', ARRAY[]::text[],
   'Sticky rice with corn, cooked', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 198,
+  'cooked', 198,
   4.4, 36,
   4, NULL, DATE '2026-08-12'
 )
@@ -1272,7 +1272,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15073', 'Xôi xéo', ARRAY[]::text[],
   'Sticky rice with mungbean paste, cooked', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 254,
+  'cooked', 254,
   4.3, 50.9,
   3.7, NULL, DATE '2026-08-12'
 )
@@ -1286,7 +1286,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15077', 'Bánh dày', ARRAY[]::text[],
   '', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 156,
+  'cooked', 156,
   3.3, 28.71,
   3.1, NULL, DATE '2026-08-12'
 )
@@ -1300,7 +1300,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_15078', 'Xôi đỗ đen', ARRAY[]::text[],
   '', 'Thức ăn truyền thống', 'Traditional food',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 230,
+  'cooked', 230,
   5.5, 51,
   0.4, NULL, DATE '2026-08-12'
 )
@@ -3176,7 +3176,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_7143', 'Xúc xích bò', ARRAY[]::text[],
   '', 'Thịt và sản phẩm chế biến', 'Meat and processed products',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 178,
+  'cooked', 178,
   10.2, 13.5,
   8.83, NULL, DATE '2026-08-12'
 )
@@ -3456,7 +3456,7 @@ INSERT INTO "vietnamese_food_composition" (
   'nin_web_8064', 'Chả cá basa', ARRAY[]::text[],
   'Basafish, fishball', 'Thủy sản và sản phẩm chế biến', 'Seafood and processed products',
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'NIN_WEB_2026'),
-  'raw', 186,
+  'cooked', 186,
   11.1, 6.12,
   13, NULL, DATE '2026-08-12'
 )

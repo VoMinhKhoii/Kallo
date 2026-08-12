@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   atwaterResult,
   classify,
+  constructRows,
   dedupeClones,
   normalizeRows,
 } from '../nin-core';
@@ -332,5 +333,38 @@ describe('NIN ingest core', () => {
       classify(normalizeRows([row({ code: '15040', name_vi: 'Caramen' })])[0])
         .label
     ).toBe('composite');
+  });
+
+  it('constructs prepared foods as cooked and preserves raw and dried states', () => {
+    const constructed = constructRows(
+      normalizeRows([
+        row({ code: '15006', name_vi: 'Bánh chưng' }),
+        row({ code: '15009', name_vi: 'Bánh cuốn' }),
+        row({ code: '15017', name_vi: 'Bánh giò' }),
+        row({ code: '1032', name_vi: 'Bánh mì, vuông, ngọt' }),
+        row({ code: '7143', name_vi: 'Xúc xích bò' }),
+        row({ code: '8064', name_vi: 'Chả cá basa' }),
+        row({
+          code: '11022',
+          name_vi: 'Cá ngừ',
+          category: 'Đồ hộp',
+          categoryEn: 'Canned food',
+        }),
+        row({ code: '4108', name_vi: 'Rau cải ngọt, tươi' }),
+        row({ code: '4125', name_vi: 'Mộc nhĩ, khô' }),
+      ])
+    );
+
+    expect(constructed.map(({ id, state }) => [id, state])).toEqual([
+      ['nin_web_15006', 'cooked'],
+      ['nin_web_15009', 'cooked'],
+      ['nin_web_15017', 'cooked'],
+      ['nin_web_1032', 'cooked'],
+      ['nin_web_7143', 'cooked'],
+      ['nin_web_8064', 'cooked'],
+      ['nin_web_11022', 'cooked'],
+      ['nin_web_4108', 'raw'],
+      ['nin_web_4125', 'raw'],
+    ]);
   });
 });

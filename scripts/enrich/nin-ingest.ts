@@ -208,10 +208,18 @@ async function main(): Promise<void> {
   }
 
   let insertedIds: string[] = [];
-  if (process.argv.includes('--apply')) {
-    insertedIds = await applyRows(constructed);
+  const reapply = process.argv.includes('--reapply');
+  if (process.argv.includes('--apply') || reapply) {
+    insertedIds = await applyRows(constructed, { reapply });
     writeJson(outDir, 'inserted-ids.json', insertedIds);
-    console.log(`Inserted ${insertedIds.length} rows in one transaction.`);
+    console.log(
+      `${reapply ? 'Reapplied' : 'Inserted'} ${insertedIds.length} rows in one transaction.`
+    );
+    if (reapply && !process.argv.includes('--embed')) {
+      console.log(
+        'Embedding input excludes state, but --reapply deletes stored vectors; rerun with --embed.'
+      );
+    }
   }
   if (process.argv.includes('--embed')) {
     if (insertedIds.length === 0) {
