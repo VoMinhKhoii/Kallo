@@ -61,6 +61,12 @@ data/usda_sr/
 data/translation-checkpoints/
 seed_food.sql
 
+# Local NIN ingestion snapshots and bulky generated artifacts
+scripts/enrich/input/
+scripts/enrich/out/*
+!scripts/enrich/out/dups.csv
+!scripts/enrich/out/manifest.json
+
 # Local git worktrees
 .worktrees/
 .gstack/

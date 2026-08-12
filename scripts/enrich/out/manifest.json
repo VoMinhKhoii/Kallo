@@ -1,0 +1,28 @@
+{
+  "snapshot": {
+    "sha256": "14fb2db79fc565444929fe5c2dff580677013e2158b9da1eb5b330d669a64419",
+    "pullDate": "2026-08-12",
+    "path": "scripts/enrich/input/nin-foods-853.json"
+  },
+  "counts": {
+    "loaded": 853,
+    "normalized": 853,
+    "quarantined": 32,
+    "afterQuarantine": 821,
+    "cloneGroups": 19,
+    "cloneRowsDropped": 24,
+    "afterClones": 797,
+    "bowlsExcluded": 33,
+    "afterDishExclusion": 764,
+    "vietnameseDuplicates": 510,
+    "usdaOnlyEquivalentsKept": 50,
+    "constructed": 254
+  },
+  "micronutrientsIngested": false,
+  "waterInArtifactOnly": true,
+  "aliasGaps": [
+    "No composition-safe plain cooked xôi carrier exists in NIN.",
+    "No cooked mung-bean row exists in NIN.",
+    "No hành phi row exists in NIN."
+  ]
+}
