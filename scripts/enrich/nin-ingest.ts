@@ -10,15 +10,19 @@ import {
   normalizeRows,
   snapshotSha256,
 } from './nin-core';
-import { applyRows, runEmbeddingBackfill } from './nin-db';
 import {
   buildDbNameIndex,
   findDuplicate,
   parseDbNames,
 } from './nin-duplicates';
-import { measureRetrieval } from './nin-measure';
 import { NIN_MIGRATION_PATH, renderNinMigration } from './nin-migration';
-import { insertedIdsSchema, snapshotSchema } from './nin-types';
+import {
+  insertedIdsSchema,
+  NIN_SNAPSHOT_DATE,
+  snapshotSchema,
+} from './nin-types';
+import { applyRows, runEmbeddingBackfill } from './runtime/nin-db';
+import { measureRetrieval } from './runtime/nin-measure';
 
 function option(name: string, fallback?: string): string | undefined {
   const index = process.argv.indexOf(name);
@@ -34,7 +38,7 @@ function requiredOption(name: string): string {
 async function main(): Promise<void> {
   const inputPath = requiredOption('--input');
   const dbNamesPath = requiredOption('--db-names');
-  const outDir = resolve(option('--out', 'scripts/enrich/out')!);
+  const outDir = resolve(option('--out') ?? 'scripts/enrich/out');
   const rawInput = readFileSync(inputPath, 'utf8');
   const sourceRows = snapshotSchema.parse(JSON.parse(rawInput));
 
@@ -164,7 +168,7 @@ async function main(): Promise<void> {
   const manifest = {
     snapshot: {
       sha256: snapshotSha256(rawInput),
-      pullDate: '2026-08-12',
+      pullDate: NIN_SNAPSHOT_DATE,
       path: `scripts/enrich/input/${basename(inputPath)}`,
     },
     counts,

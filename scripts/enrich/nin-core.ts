@@ -1,5 +1,10 @@
 import { createHash } from 'node:crypto';
-import { normalizeText, STATE_SUFFIX_TOKENS, tokens } from './nin-text';
+import {
+  COOKING_TOKENS,
+  normalizeText,
+  STATE_SUFFIX_TOKENS,
+  tokens,
+} from './nin-text';
 import type {
   ConstructedRow,
   FoodLabel,
@@ -7,22 +12,6 @@ import type {
   SnapshotRow,
 } from './nin-types';
 
-const COOKED_TOKENS = new Set([
-  'luộc',
-  'hấp',
-  'nướng',
-  'rán',
-  'chiên',
-  'rang',
-  'chần',
-  'quay',
-  'nấu',
-  'hầm',
-  'xào',
-  'chín',
-  'kho',
-  'tần',
-]);
 const EXPLICIT_RAW_TOKENS = new Set(['tươi', 'sống', 'raw']);
 const DRIED_TOKENS = new Set(['khô', 'sấy']);
 const PREPARED_CATEGORIES = new Set([
@@ -190,18 +179,14 @@ export function nutrientVector(row: NormalizedRow): string {
 function representativeScore(
   row: NormalizedRow
 ): [number, number, number, string] {
-  const modifiers = normalizeText(row.name_vi)
-    .split(' ')
-    .filter((token) => STATE_SUFFIX_TOKENS.has(token)).length;
+  const nameTokens = tokens(row.name_vi);
+  const modifiers = nameTokens.filter((token) =>
+    STATE_SUFFIX_TOKENS.has(token)
+  ).length;
   const genericPreference = GENERIC_CLONE_REPRESENTATIVE_CODES.has(row.code)
     ? 0
     : 1;
-  return [
-    genericPreference,
-    modifiers,
-    normalizeText(row.name_vi).split(' ').length,
-    row.code,
-  ];
+  return [genericPreference, modifiers, nameTokens.length, row.code];
 }
 
 export function dedupeClones(rows: NormalizedRow[]): {
@@ -266,8 +251,8 @@ export function inferState(
     EXPLICIT_RAW_TOKENS.has(token)
   );
   const hasDriedState = nameTokens.some((token) => DRIED_TOKENS.has(token));
-  const hasUnambiguousCookingToken = nameTokens.some(
-    (token) => token !== 'chín' && COOKED_TOKENS.has(token)
+  const hasUnambiguousCookingToken = nameTokens.some((token) =>
+    COOKING_TOKENS.has(token)
   );
 
   if (hasUnambiguousCookingToken) return 'cooked';

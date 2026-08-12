@@ -2,9 +2,12 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import postgres from 'postgres';
 import { encodeDbUrl } from '@/lib/db';
-import type { ConstructedRow } from './nin-types';
-
-export const NIN_SOURCE_CODE = 'NIN_WEB_2026';
+import {
+  type ConstructedRow,
+  NIN_SNAPSHOT_DATE,
+  NIN_SOURCE_CODE,
+  NIN_SOURCE_NAME,
+} from '../nin-types';
 
 function databaseUrl(): string {
   const value = process.env.DATABASE_URL;
@@ -26,8 +29,8 @@ export async function applyRows(
         `;
       }
       await tx`
-        INSERT INTO ingredient_sources (code, name)
-        VALUES (${NIN_SOURCE_CODE}, ${'National Institute of Nutrition web snapshot (2026-08-12)'})
+          INSERT INTO ingredient_sources (code, name)
+          VALUES (${NIN_SOURCE_CODE}, ${NIN_SOURCE_NAME})
         ON CONFLICT (code) DO NOTHING
       `;
       const [source] = await tx<{ id: number }[]>`
@@ -61,7 +64,7 @@ export async function applyRows(
             ${id}, ${row.namePrimary}, ${row.nameAlt}, ${row.nameEn},
             ${row.typeVn}, ${row.typeEn}, ${source.id}, ${row.state},
             ${row.caloriesKcal}, ${row.proteinG}, ${row.carbohydrateG},
-            ${row.fatG}, ${row.fiberG}, ${'2026-08-12'}
+            ${row.fatG}, ${row.fiberG}, ${NIN_SNAPSHOT_DATE}
           )
           ON CONFLICT (id) DO NOTHING
           RETURNING id

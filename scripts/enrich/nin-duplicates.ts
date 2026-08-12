@@ -1,4 +1,9 @@
-import { STATE_SUFFIX_TOKENS, tokens } from './nin-text';
+import {
+  COOKING_TOKENS,
+  foldText,
+  STATE_SUFFIX_TOKENS,
+  tokens,
+} from './nin-text';
 import {
   type DbNameRow,
   dbNameRowSchema,
@@ -8,22 +13,6 @@ import {
 const REASSIGNED_CODE_START = 4108;
 const REASSIGNED_CODE_END = 4126;
 const LINEAGE_TOKEN_OVERLAP_THRESHOLD = 0.8;
-const COOKING_TOKENS = new Set([
-  'luộc',
-  'hấp',
-  'nướng',
-  'rán',
-  'chiên',
-  'rang',
-  'chần',
-  'quay',
-  'nấu',
-  'hầm',
-  'xào',
-  'kho',
-  'tần',
-]);
-
 export function parseDbNames(content: string): DbNameRow[] {
   return content
     .split(/\r?\n/)
@@ -82,12 +71,7 @@ function foldedLineageTokens(value: string): Set<string> {
   return new Set(
     tokens(value)
       .filter((token) => !STATE_SUFFIX_TOKENS.has(token))
-      .map((token) =>
-        token
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replaceAll('đ', 'd')
-      )
+      .map(foldText)
   );
 }
 

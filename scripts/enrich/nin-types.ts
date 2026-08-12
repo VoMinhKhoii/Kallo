@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+export const NIN_SOURCE_CODE = 'NIN_WEB_2026';
+export const NIN_SOURCE_NAME =
+  'National Institute of Nutrition web snapshot (2026-08-12)';
+export const NIN_SNAPSHOT_DATE = '2026-08-12';
+
 export const nutritionSchema = z.object({
   name: z.string(),
   name_en: z.string().optional().default(''),

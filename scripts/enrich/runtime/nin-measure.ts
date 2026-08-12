@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { retrieveHybridTopK } from '@/lib/ai/matching/top-k-retrieval';
 import { type AppDb, encodeDbUrl } from '@/lib/db';
-import { normalizeText } from './nin-text';
+import { foldText } from '../nin-text';
 
 const STABLE_QUERIES = ['ức gà', 'thịt heo', 'nước mắm', 'cơm', 'tôm', 'xôi'];
 
@@ -17,18 +17,11 @@ function gapQueries(reportPath: string): string[] {
     .map((line) => line.slice(2).trim());
 }
 
-function folded(value: string): string {
-  return normalizeText(value)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replaceAll('đ', 'd');
-}
-
 function sameFamily(query: string, name: string): boolean {
-  const queryTokens = folded(query)
+  const queryTokens = foldText(query)
     .split(' ')
     .filter((token) => token.length > 1);
-  const nameTokens = new Set(folded(name).split(' '));
+  const nameTokens = new Set(foldText(name).split(' '));
   return (
     queryTokens.length > 0 &&
     queryTokens.every((token) => nameTokens.has(token))
@@ -93,7 +86,7 @@ export async function measureRetrieval(reportPath: string): Promise<unknown> {
         results
           .find((row) => row.query === 'xôi')
           ?.candidates.some((candidate) =>
-            folded(candidate.name).includes('mam xoi')
+            foldText(candidate.name).includes('mam xoi')
           ) ?? false,
       stableQueries: results.slice(gaps.length),
       gaps: gapResults,

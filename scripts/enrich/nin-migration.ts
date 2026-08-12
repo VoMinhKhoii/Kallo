@@ -1,11 +1,12 @@
-import type { ConstructedRow } from './nin-types';
+import {
+  type ConstructedRow,
+  NIN_SNAPSHOT_DATE,
+  NIN_SOURCE_CODE,
+  NIN_SOURCE_NAME,
+} from './nin-types';
 
 export const NIN_MIGRATION_PATH =
   'supabase/migrations/20260812100213_nin_foods_enrichment.sql';
-
-const NIN_SOURCE_CODE = 'NIN_WEB_2026';
-const NIN_SOURCE_NAME =
-  'National Institute of Nutrition web snapshot (2026-08-12)';
 
 interface MigrationMetadata {
   snapshotSha256: string;
@@ -50,7 +51,7 @@ function renderRow(row: ConstructedRow): string {
   (SELECT "id" FROM "ingredient_sources" WHERE "code" = ${sqlText(NIN_SOURCE_CODE)}),
   ${sqlText(row.state)}, ${sqlNumber(row.caloriesKcal)},
   ${sqlNumber(row.proteinG)}, ${sqlNumber(row.carbohydrateG)},
-  ${sqlNumber(row.fatG)}, ${sqlNumber(row.fiberG)}, DATE '2026-08-12'
+  ${sqlNumber(row.fatG)}, ${sqlNumber(row.fiberG)}, DATE '${NIN_SNAPSHOT_DATE}'
 )
 ON CONFLICT ("id") DO NOTHING;`;
 }
