@@ -90,3 +90,4 @@ scripts/eval/reports/
 # Anchored to this directory, so the hand-authored fixtures under
 # scripts/eval/fixtures/ stay tracked — they are source, these are output.
 scripts/eval/*.json
+scripts/eval/*.local.ts

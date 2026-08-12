@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { writeCsv, writeJson } from './nin-artifacts';
 import {
@@ -13,6 +13,7 @@ import {
 import { applyRows, runEmbeddingBackfill } from './nin-db';
 import { buildDbNameIndex, findDuplicate } from './nin-duplicates';
 import { measureRetrieval } from './nin-measure';
+import { NIN_MIGRATION_PATH, renderNinMigration } from './nin-migration';
 import { type DbNameRow, snapshotSchema } from './nin-types';
 
 function option(name: string, fallback?: string): string | undefined {
@@ -193,6 +194,19 @@ async function main(): Promise<void> {
   writeJson(outDir, 'manifest.json', manifest);
   console.log(JSON.stringify(manifest, null, 2));
 
+  if (process.argv.includes('--emit-migration')) {
+    const migrationPath = resolve(NIN_MIGRATION_PATH);
+    writeFileSync(
+      migrationPath,
+      renderNinMigration(constructed, {
+        snapshotSha256: manifest.snapshot.sha256,
+        pullDate: manifest.snapshot.pullDate,
+        counts,
+      })
+    );
+    console.log(`Wrote ${relative(process.cwd(), migrationPath)}.`);
+  }
+
   let insertedIds: string[] = [];
   if (process.argv.includes('--apply')) {
     insertedIds = await applyRows(constructed);
@@ -201,9 +215,10 @@ async function main(): Promise<void> {
   }
   if (process.argv.includes('--embed')) {
     if (insertedIds.length === 0) {
-      insertedIds = JSON.parse(
-        readFileSync(resolve(outDir, 'inserted-ids.json'), 'utf8')
-      );
+      const insertedIdsPath = resolve(outDir, 'inserted-ids.json');
+      insertedIds = existsSync(insertedIdsPath)
+        ? JSON.parse(readFileSync(insertedIdsPath, 'utf8'))
+        : constructed.map((row) => row.id);
     }
     await runEmbeddingBackfill(insertedIds);
   }
