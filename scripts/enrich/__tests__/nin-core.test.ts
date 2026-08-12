@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { atwaterResult, classify, normalizeRows } from '../nin-core';
+import {
+  atwaterResult,
+  classify,
+  dedupeClones,
+  normalizeRows,
+} from '../nin-core';
 import { buildDbNameIndex, findDuplicate } from '../nin-duplicates';
 import type { SnapshotRow } from '../nin-types';
 
@@ -41,6 +46,61 @@ describe('NIN ingest core', () => {
   it('always quarantines energy=1 placeholders', () => {
     const normalized = normalizeRows([row({ energy: 1, nutrition: [] })])[0];
     expect(atwaterResult(normalized).reasons).toContain('placeholder_energy_1');
+  });
+
+  it('retains verified near-zero foods instead of treating them as placeholders', () => {
+    const [salt, mineralWater, ice, tea] = normalizeRows([
+      row({ code: '13005', name_vi: 'Muối', energy: 1, nutrition: [] }),
+      row({ code: '14008', name_vi: 'Nước khoáng', energy: 1, nutrition: [] }),
+      row({ code: '14057', name_vi: 'Nước đá', energy: 1, nutrition: [] }),
+      row({ code: '14070', name_vi: 'Trà túi lọc', energy: 1, nutrition: [] }),
+    ]);
+
+    expect([salt.energy, mineralWater.energy, ice.energy]).toEqual([0, 0, 0]);
+    expect([salt, mineralWater, ice, tea].map(atwaterResult)).toEqual([
+      expect.objectContaining({ reasons: [] }),
+      expect.objectContaining({ reasons: [] }),
+      expect.objectContaining({ reasons: [] }),
+      expect.objectContaining({ reasons: [] }),
+    ]);
+  });
+
+  it('keeps review-mandated clone rows and prefers a generic clone carrier', () => {
+    const shrimpNutrition = row().nutrition.map((nutrient, index) =>
+      index === 0 ? { ...nutrient, value: 3 } : nutrient
+    );
+    const normalized = normalizeRows([
+      row({ code: '12090', name_vi: 'Bánh rán nhân đỗ' }),
+      row({ code: '12091', name_vi: 'Bánh tiêu' }),
+      row({ code: '15075', name_vi: 'Cháo dinh dưỡng thịt bò' }),
+      row({ code: '15076', name_vi: 'Cháo dinh dưỡng tôm' }),
+      row({ code: '14069', name_vi: 'Trà Neste' }),
+      row({ code: '14070', name_vi: 'Trà túi lọc' }),
+      row({
+        code: '8093',
+        name_vi: 'Tôm tít (bề bề)',
+        energy: 60,
+        nutrition: shrimpNutrition,
+      }),
+      row({
+        code: '8051',
+        name_vi: 'Tôm biển, tươi',
+        energy: 60,
+        nutrition: shrimpNutrition,
+      }),
+    ]);
+
+    const result = dedupeClones(normalized);
+    expect(result.kept.map((item) => item.code)).toEqual([
+      '12090',
+      '12091',
+      '15075',
+      '15076',
+      '14070',
+      '8051',
+    ]);
+    expect(result.groups[0]?.kept.code).toBe('14070');
+    expect(result.groups[1]?.kept.code).toBe('8051');
   });
 
   it('treats a high-overlap same-code state rename as one lineage', () => {
@@ -97,6 +157,60 @@ describe('NIN ingest core', () => {
         index
       )
     ).toMatchObject({ verdict: 'keep-no-match', matchBasis: 'none' });
+  });
+
+  it('does not collapse an explicitly cooked row onto a raw lineage', () => {
+    const index = buildDbNameIndex([
+      {
+        id: 'fao_vn_2007_7068_raw',
+        namePrimary: 'Giò bò',
+        nameAlt: [],
+        source: 'fao',
+      },
+    ]);
+    expect(
+      findDuplicate(
+        normalizeRows([row({ code: '7068', name_vi: 'Giò bò, chín' })])[0],
+        index
+      )
+    ).toMatchObject({ verdict: 'keep-no-match', matchBasis: 'none' });
+  });
+
+  it('does not collapse an explicitly raw row onto a cooked lineage', () => {
+    const index = buildDbNameIndex([
+      {
+        id: 'fao_vn_2007_5001_cooked',
+        namePrimary: 'Bưởi',
+        nameAlt: [],
+        source: 'fao',
+      },
+    ]);
+    expect(
+      findDuplicate(
+        normalizeRows([row({ code: '5001', name_vi: 'Bưởi, tươi' })])[0],
+        index
+      )
+    ).toMatchObject({ verdict: 'keep-no-match', matchBasis: 'none' });
+  });
+
+  it('treats ripe fresh fruit as raw rather than cooked', () => {
+    const index = buildDbNameIndex([
+      {
+        id: 'fao_vn_2007_5055_raw',
+        namePrimary: 'Xoài chín',
+        nameAlt: [],
+        source: 'fao',
+      },
+    ]);
+    expect(
+      findDuplicate(
+        normalizeRows([row({ code: '5055', name_vi: 'Xoài chín, tươi' })])[0],
+        index
+      )
+    ).toMatchObject({
+      verdict: 'duplicate-vietnamese',
+      matchBasis: 'code-lineage',
+    });
   });
 
   it('still name-matches shifted rows in the reassigned block', () => {
@@ -161,6 +275,10 @@ describe('NIN ingest core', () => {
       classify(
         normalizeRows([row({ code: '1009', name_vi: 'Bánh bao nhân thịt' })])[0]
       ).label
+    ).toBe('composite');
+    expect(
+      classify(normalizeRows([row({ code: '15040', name_vi: 'Caramen' })])[0])
+        .label
     ).toBe('composite');
   });
 });

@@ -36,6 +36,8 @@ export interface ExactAlias {
  *                                             noodle proxy)
  *   - Bánh hỏi       → "Bún"                 (fao_vn_2007_1020_raw, woven rice
  *                                             vermicelli proxy — proxy caveat)
+ *   - Xôi            → "Xôi trắng"           (usda_20055_cooked, unseasoned
+ *                                             cooked glutinous rice)
  *
  * Deliberately LEFT OUT (no correct DB row exists yet — a later phase adds
  * curated rows): Bánh canh (tapioca-based, no honest proxy), Hành phi.
@@ -62,6 +64,7 @@ export const EXACT_ALIASES: Record<string, ExactAlias> = {
   'bánh cuốn': { lang: 'vi', target: 'Bánh ướt' },
   'hủ tiếu': { lang: 'vi', target: 'Bánh phở' },
   'bánh hỏi': { lang: 'vi', target: 'Bún' },
+  xôi: { lang: 'vi', target: 'Xôi trắng' },
   // Instant noodles. The DB rows (usda_6583/6982/6983/27035_raw) existed all
   // along but kept their untranslated English `name_primary`, so a Vietnamese
   // query scored under the acceptance floors — "mì gói" peaked at 0.572 on

@@ -82,9 +82,33 @@ const COMPOSITE_CODES = new Set([
   '7118002',
   '11021',
   '3033',
+  '15040',
 ]);
 const COMPOSITE_PATTERN =
   /^(bánh|chả|giò|nem|xôi|kẹo|mứt|kem|sữa chua|tào phớ|thịt xiên)/i;
+
+// NIN uses 1 kcal as a placeholder on several broken rows. These three rows
+// have a complete near-zero proximate/mineral profile, so retain the foods and
+// correct only the new additive artifact rather than propagating the sentinel.
+const ZERO_KCAL_CORRECTIONS = new Set(['13005', '14008', '14057']);
+const VALID_ONE_KCAL_CODES = new Set(['14069', '14070']);
+
+// A copied nutrient vector is normally quarantined to one representative.
+// These rows are protected because the review decision requires each dish to
+// be labelled independently, or because identical nutrition is legitimate.
+const CLONE_DEDUPE_EXEMPT_CODES = new Set([
+  ...BOWL_CODES,
+  '12089',
+  '12090',
+  '12091',
+  ...ZERO_KCAL_CORRECTIONS,
+]);
+const GENERIC_CLONE_REPRESENTATIVE_CODES = new Set([
+  '14070', // Trà túi lọc over branded Trà Neste.
+  '7105002', // Common boiled chicken thigh over narrower poultry cuts.
+  '8051', // Generic fresh sea shrimp over mantis shrimp.
+  '8066', // Common white clam over the specific geoduck row.
+]);
 
 function nutrient(row: SnapshotRow, englishName: string): number | null {
   return (
@@ -105,6 +129,7 @@ export function normalizeRows(rows: SnapshotRow[]): NormalizedRow[] {
     const cleaned = { ...row, nutrition };
     return {
       ...cleaned,
+      energy: ZERO_KCAL_CORRECTIONS.has(row.code) ? 0 : row.energy,
       name_en: row.name_en?.trim() ?? '',
       categoryEn: row.categoryEn?.trim() ?? '',
       nutrients: Object.fromEntries(
@@ -137,7 +162,9 @@ export function atwaterResult(row: NormalizedRow): {
   if (relativeError > 0.2) {
     reasons.push(`atwater_relative_error=${relativeError.toFixed(3)}`);
   }
-  if (row.energy === 1) reasons.push('placeholder_energy_1');
+  if (row.energy === 1 && !VALID_ONE_KCAL_CODES.has(row.code)) {
+    reasons.push('placeholder_energy_1');
+  }
   if (row.code === '4139') reasons.push('fabricated_round_macro_vector');
   return { computed, relativeError, reasons };
 }
@@ -150,25 +177,43 @@ export function nutrientVector(row: NormalizedRow): string {
   );
 }
 
-function representativeScore(row: NormalizedRow): [number, number, string] {
+function representativeScore(
+  row: NormalizedRow
+): [number, number, number, string] {
   const modifiers = normalizeText(row.name_vi)
     .split(' ')
     .filter((token) => STATE_SUFFIX_TOKENS.has(token)).length;
-  return [modifiers, normalizeText(row.name_vi).split(' ').length, row.code];
+  const genericPreference = GENERIC_CLONE_REPRESENTATIVE_CODES.has(row.code)
+    ? 0
+    : 1;
+  return [
+    genericPreference,
+    modifiers,
+    normalizeText(row.name_vi).split(' ').length,
+    row.code,
+  ];
 }
 
 export function dedupeClones(rows: NormalizedRow[]): {
   kept: NormalizedRow[];
   groups: { group: number; kept: NormalizedRow; dropped: NormalizedRow[] }[];
 } {
-  const byVector = Map.groupBy(rows, nutrientVector);
+  const byVector = Map.groupBy(
+    rows.filter((row) => !CLONE_DEDUPE_EXEMPT_CODES.has(row.code)),
+    nutrientVector
+  );
   const groups = [...byVector.values()]
     .filter((group) => group.length > 1)
     .map((group, index) => {
       const sorted = [...group].sort((a, b) => {
         const aa = representativeScore(a);
         const bb = representativeScore(b);
-        return aa[0] - bb[0] || aa[1] - bb[1] || aa[2].localeCompare(bb[2]);
+        return (
+          aa[0] - bb[0] ||
+          aa[1] - bb[1] ||
+          aa[2] - bb[2] ||
+          aa[3].localeCompare(bb[3])
+        );
       });
       return { group: index + 1, kept: sorted[0], dropped: sorted.slice(1) };
     });

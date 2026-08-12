@@ -4,6 +4,21 @@ import type { DbNameRow, NormalizedRow } from './nin-types';
 const REASSIGNED_CODE_START = 4108;
 const REASSIGNED_CODE_END = 4126;
 const LINEAGE_TOKEN_OVERLAP_THRESHOLD = 0.8;
+const COOKING_TOKENS = new Set([
+  'luộc',
+  'hấp',
+  'nướng',
+  'rán',
+  'chiên',
+  'rang',
+  'chần',
+  'quay',
+  'nấu',
+  'hầm',
+  'xào',
+  'kho',
+  'tần',
+]);
 
 function contentSignature(value: string): string {
   const allTokens = tokens(value).sort();
@@ -56,6 +71,18 @@ function lineageTokenOverlap(left: string, right: string): number {
   return shared.length / smallerSize;
 }
 
+function lineageStateCompatible(rowName: string, dbId: string): boolean {
+  const rowTokens = new Set(tokens(rowName));
+  const explicitlyRaw =
+    rowTokens.has('tươi') || rowTokens.has('sống') || rowTokens.has('raw');
+  const explicitlyCooked =
+    [...rowTokens].some((token) => COOKING_TOKENS.has(token)) ||
+    (rowTokens.has('chín') && !explicitlyRaw);
+  if (dbId.endsWith('_raw') && explicitlyCooked) return false;
+  if (dbId.endsWith('_cooked') && explicitlyRaw) return false;
+  return true;
+}
+
 export function buildDbNameIndex(dbRows: DbNameRow[]): DbNameIndex {
   const bySignature: DbNameIndex['bySignature'] = new Map();
   const faoByCode: DbNameIndex['faoByCode'] = new Map();
@@ -98,9 +125,10 @@ export function findDuplicate(
   }
   if (!isReassignedCode(row.code)) {
     const lineage = (index.faoByCode.get(row.code) ?? []).find(
-      ({ matchedName }) =>
+      ({ dbRow, matchedName }) =>
         lineageTokenOverlap(row.name_vi, matchedName) >=
-        LINEAGE_TOKEN_OVERLAP_THRESHOLD
+          LINEAGE_TOKEN_OVERLAP_THRESHOLD &&
+        lineageStateCompatible(row.name_vi, dbRow.id)
     );
     if (lineage) {
       return {

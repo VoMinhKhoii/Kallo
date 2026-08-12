@@ -170,6 +170,9 @@ async function main(): Promise<void> {
     usdaOnlyEquivalentsKept: duplicateResults.filter(
       ({ verdict }) => verdict === 'keep-usda-only'
     ).length,
+    zeroKcalCorrections: normalized.filter(
+      (row, index) => row.energy !== sourceRows[index]?.energy
+    ).length,
     constructed: constructed.length,
   };
   const manifest = {
@@ -181,10 +184,10 @@ async function main(): Promise<void> {
     counts,
     micronutrientsIngested: false,
     waterInArtifactOnly: true,
-    aliasGaps: [
-      'No composition-safe plain cooked xôi carrier exists in NIN.',
-      'No cooked mung-bean row exists in NIN.',
-      'No hành phi row exists in NIN.',
+    aliasDecisions: [
+      'Plain xôi pre-match rewrites to xôi trắng on usda_20055_cooked.',
+      'Cooked mung bean uses unsalted usda_16081_cooked; plain đậu xanh stays state-ambiguous.',
+      'Hành phi is deferred pending a verified fried-shallot composition row.',
     ],
   };
   writeJson(outDir, 'manifest.json', manifest);
