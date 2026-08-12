@@ -111,3 +111,28 @@ but false alias on a flavored NIN row.
 Newly covered: nem lụi, nem rán, bánh cuốn, thịt chân giò luộc, xá xíu (toned + untoned).
 Remaining gaps are dominated by bowl dishes (bánh canh, bún bò...) — correctly excluded here;
 they belong to the recipe-composition follow-up.
+
+## End-to-end pipeline validation (16 meals × 2 repeats, prod model profile)
+
+NIN rows are selected and accepted by the full pipeline (Call 1 → matching → CRAG → Call 2):
+
+| meal (real prod input) | ingredient | matched |
+|---|---|---|
+| 1 cái bánh chưng | Bánh chưng | `nin_web_15006` |
+| 1 bánh cuốn trứng + 1 bánh cuốn thịt + chả | Bánh cuốn thịt / trứng | `nin_web_15010` / `nin_web_15009` |
+| …sữa + bánh cuốn + chả + nem | Nem | `nin_web_15063` |
+| cơm gạo lứt + chân giò luộc + rau lang + vải | Chân giò | `nin_web_7032002` |
+| nhiều bún + 8 cây nem lụi + chả giò tôm | Nem lụi | `nin_web_15062` |
+| 1 miếng chả quế | Chả quế | `nin_web_15041` |
+| 1 cái bánh giò | Bánh giò | `nin_web_15017` |
+
+Stable across both repeats; all verdicts plausible; zero regressions on non-NIN ingredients.
+
+Observations (pre-existing behaviors, not introduced by this change):
+- Standalone `1 phần bánh cuốn` decomposes into components and CRAG correctly declines the
+  whole-dish row for the sheet component (falls back to llm_range, output stays plausible).
+- `khoai lang luộc` / `xôi đỗ xanh` still anchor on raw rows via the cascade's state ranking —
+  tracked with the retrieval follow-up (DEV task #14). The state='cooked' fix in this branch was
+  required for NIN composites to be accepted at all (45 rows corrected after the probe caught
+  `nin_web_15009` rejected on state).
+- `bánh canh` remains unmatched by design (bowl dish, excluded) — recipe-composition follow-up.
