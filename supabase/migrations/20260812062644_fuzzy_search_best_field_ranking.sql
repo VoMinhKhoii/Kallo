@@ -1,3 +1,5 @@
+SET search_path TO public, extensions;
+
 -- Replace the canonical-name bonus with the measured R4 lexical ranking.
 --
 -- This intentionally reverses 20260613063500_fuzzy_search_canonical_tiebreak.sql.
@@ -19,8 +21,6 @@
 -- keeps a "phần ức" row (usda_5061_cooked) in its top three; after the
 -- existing vector arm is fused, measured R7 ranks usda_5057_raw first and
 -- usda_5062_raw third.
-SET search_path TO public, extensions;
-
 CREATE OR REPLACE FUNCTION public.fuzzy_match_ingredients_all_sources(
   query_text text,
   per_source_count int DEFAULT 3,
