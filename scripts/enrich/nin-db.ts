@@ -22,7 +22,7 @@ export async function applyRows(
       if (options.reapply) {
         await tx`
           DELETE FROM vietnamese_food_composition
-          WHERE id LIKE 'nin_web_%'
+          WHERE starts_with(id, 'nin_web_')
         `;
       }
       await tx`

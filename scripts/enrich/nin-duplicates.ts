@@ -1,5 +1,9 @@
 import { STATE_SUFFIX_TOKENS, tokens } from './nin-text';
-import type { DbNameRow, NormalizedRow } from './nin-types';
+import {
+  type DbNameRow,
+  dbNameRowSchema,
+  type NormalizedRow,
+} from './nin-types';
 
 const REASSIGNED_CODE_START = 4108;
 const REASSIGNED_CODE_END = 4126;
@@ -19,6 +23,31 @@ const COOKING_TOKENS = new Set([
   'kho',
   'tần',
 ]);
+
+export function parseDbNames(content: string): DbNameRow[] {
+  return content
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line, index) => {
+      const fields = line.split('\t');
+      if (fields.length !== 3) {
+        throw new Error(
+          `Invalid DB names TSV row ${index + 1}: expected 3 fields, received ${fields.length}`
+        );
+      }
+      const [id, namePrimary, alts] = fields;
+      return dbNameRowSchema.parse({
+        id,
+        namePrimary,
+        nameAlt: alts.split('|').filter(Boolean),
+        source: id.startsWith('fao_vn_2007_')
+          ? 'fao'
+          : id.startsWith('usda_')
+            ? 'usda'
+            : 'other',
+      });
+    });
+}
 
 function contentSignature(value: string): string {
   const allTokens = tokens(value).sort();

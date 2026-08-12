@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { basename, relative, resolve } from 'node:path';
 import { writeCsv, writeJson } from './nin-artifacts';
 import {
   atwaterResult,
@@ -11,10 +11,14 @@ import {
   snapshotSha256,
 } from './nin-core';
 import { applyRows, runEmbeddingBackfill } from './nin-db';
-import { buildDbNameIndex, findDuplicate } from './nin-duplicates';
+import {
+  buildDbNameIndex,
+  findDuplicate,
+  parseDbNames,
+} from './nin-duplicates';
 import { measureRetrieval } from './nin-measure';
 import { NIN_MIGRATION_PATH, renderNinMigration } from './nin-migration';
-import { type DbNameRow, snapshotSchema } from './nin-types';
+import { insertedIdsSchema, snapshotSchema } from './nin-types';
 
 function option(name: string, fallback?: string): string | undefined {
   const index = process.argv.indexOf(name);
@@ -25,25 +29,6 @@ function requiredOption(name: string): string {
   const value = option(name);
   if (!value) throw new Error(`Missing required option ${name}`);
   return resolve(value);
-}
-
-function parseDbNames(path: string): DbNameRow[] {
-  return readFileSync(path, 'utf8')
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .map((line) => {
-      const [id, namePrimary = '', alts = ''] = line.split('\t');
-      return {
-        id,
-        namePrimary,
-        nameAlt: alts.split('|').filter(Boolean),
-        source: id.startsWith('fao_vn_2007_')
-          ? 'fao'
-          : id.startsWith('usda_')
-            ? 'usda'
-            : 'other',
-      };
-    });
 }
 
 async function main(): Promise<void> {
@@ -118,7 +103,7 @@ async function main(): Promise<void> {
     .filter(({ label }) => label !== 'bowl')
     .map(({ row }) => row);
 
-  const dbNames = parseDbNames(dbNamesPath);
+  const dbNames = parseDbNames(readFileSync(dbNamesPath, 'utf8'));
   const dbNameIndex = buildDbNameIndex(dbNames);
   const duplicateResults = afterDishExclusion.map((row) => ({
     row,
@@ -180,7 +165,7 @@ async function main(): Promise<void> {
     snapshot: {
       sha256: snapshotSha256(rawInput),
       pullDate: '2026-08-12',
-      path: relative(process.cwd(), inputPath),
+      path: `scripts/enrich/input/${basename(inputPath)}`,
     },
     counts,
     micronutrientsIngested: false,
@@ -225,7 +210,9 @@ async function main(): Promise<void> {
     if (insertedIds.length === 0) {
       const insertedIdsPath = resolve(outDir, 'inserted-ids.json');
       insertedIds = existsSync(insertedIdsPath)
-        ? JSON.parse(readFileSync(insertedIdsPath, 'utf8'))
+        ? insertedIdsSchema.parse(
+            JSON.parse(readFileSync(insertedIdsPath, 'utf8'))
+          )
         : constructed.map((row) => row.id);
     }
     await runEmbeddingBackfill(insertedIds);

@@ -6,9 +6,14 @@ import {
   dedupeClones,
   normalizeRows,
 } from '../nin-core';
-import { buildDbNameIndex, findDuplicate } from '../nin-duplicates';
+import {
+  buildDbNameIndex,
+  findDuplicate,
+  parseDbNames,
+} from '../nin-duplicates';
 import { renderNinMigration } from '../nin-migration';
 import type { ConstructedRow, SnapshotRow } from '../nin-types';
+import { insertedIdsSchema } from '../nin-types';
 
 function row(overrides: Partial<SnapshotRow> = {}): SnapshotRow {
   return {
@@ -57,6 +62,20 @@ function constructedRow(
 }
 
 describe('NIN ingest core', () => {
+  it('validates external TSV and inserted-ID artifacts', () => {
+    expect(parseDbNames('fao_vn_2007_1_raw\tGạo tẻ\tcơm|gạo')).toEqual([
+      {
+        id: 'fao_vn_2007_1_raw',
+        namePrimary: 'Gạo tẻ',
+        nameAlt: ['cơm', 'gạo'],
+        source: 'fao',
+      },
+    ]);
+    expect(() => parseDbNames('\tMissing ID\talias')).toThrow();
+    expect(() => parseDbNames('only\ttwo-fields')).toThrow('expected 3 fields');
+    expect(() => insertedIdsSchema.parse(['usda_1_raw'])).toThrow();
+  });
+
   it('renders deterministic, idempotent migration SQL in id order', () => {
     const sql = renderNinMigration(
       [constructedRow(), constructedRow({ id: 'nin_web_1', code: '1' })],

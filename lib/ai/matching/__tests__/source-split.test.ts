@@ -20,6 +20,7 @@ describe('splitBySource', () => {
       candidate(2),
       candidate(3),
       candidate(4),
+      candidate(5),
     ]);
     expect(result.fao.map((row) => row.id)).toEqual(['source-1', 'source-4']);
     expect(result.usda.map((row) => row.id)).toEqual(['source-2']);

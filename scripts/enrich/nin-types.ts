@@ -23,6 +23,17 @@ export const snapshotRowSchema = z.object({
 
 export const snapshotSchema = z.array(snapshotRowSchema).length(853);
 
+export const dbNameRowSchema = z.object({
+  id: z.string().min(1),
+  namePrimary: z.string(),
+  nameAlt: z.array(z.string().min(1)),
+  source: z.enum(['fao', 'usda', 'other']),
+});
+
+export const insertedIdsSchema = z.array(
+  z.string().regex(/^nin_web_[a-zA-Z0-9_]+$/)
+);
+
 export type SnapshotRow = z.infer<typeof snapshotRowSchema>;
 export type FoodLabel = 'ingredient' | 'composite' | 'bowl' | 'condiment-broth';
 
@@ -55,9 +66,4 @@ export interface ConstructedRow {
   waterG: number | null;
 }
 
-export interface DbNameRow {
-  id: string;
-  namePrimary: string;
-  nameAlt: string[];
-  source: 'fao' | 'usda' | 'other';
-}
+export type DbNameRow = z.infer<typeof dbNameRowSchema>;
