@@ -411,7 +411,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     bool? isCheat,
     String? label,
   }) {
-    refreshRevealedAnalysisDay(
+    refreshStagedAnalysisDay(
       ref,
       userId: widget.profile.userId,
       fallbackDate: widget.date,
@@ -540,6 +540,15 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     _relogSnapshot = null;
     HapticFeedback.lightImpact();
     _scrollToAnswer();
+    // Pull the staged row into the day cache NOW, not at confirm. Until this
+    // lands the card exists only in stream state, and a hot reload (which makes
+    // Riverpod re-run Notifier.build) or a relaunch wiped it off the screen
+    // even though the server still had it staged.
+    refreshStagedAnalysisDay(
+      ref,
+      userId: widget.profile.userId,
+      fallbackDate: widget.date,
+    );
   }
 
   void _failAttempt(bool retryable, {bool paymentRequired = false}) {

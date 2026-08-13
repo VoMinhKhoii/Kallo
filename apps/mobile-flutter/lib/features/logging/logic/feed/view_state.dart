@@ -56,8 +56,15 @@ class FeedViewState {
             .where((m) => !pendingRemovalIds.contains(m.id))
             .toList()
           ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
+    // The revealed answer is already staged server-side, and the day is
+    // refreshed the moment it lands so the card survives a hot reload or a
+    // relaunch. Until the user confirms, that row and the reveal are the SAME
+    // meal — render both and it appears twice.
+    final revealedId = stream.status == StreamStatus.done ? stream.analysisId : null;
     final pendingConfirmations =
-        day?.pendingConfirmations ?? const <PendingMealConfirmation>[];
+        (day?.pendingConfirmations ?? const <PendingMealConfirmation>[])
+            .where((p) => p.id != revealedId)
+            .toList();
 
     // Legacy meals can carry unknown macros — when any do, the daily summary
     // can't be totalled honestly, so we show a quiet note instead of the ring.
