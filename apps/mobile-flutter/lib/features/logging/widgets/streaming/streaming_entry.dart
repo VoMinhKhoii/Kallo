@@ -53,6 +53,7 @@ class StreamingEntry extends StatelessWidget {
           // never held still.
           StreamTickerLine(
             frame: deriveStreamTicker(stream),
+            status: stream.status,
             loaderIndex: loaderIndex,
           ),
           if (hasItems) ...[
