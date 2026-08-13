@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../../../models/cheat.dart';
@@ -6,14 +7,14 @@ import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
 import '../cheat_slider_card.dart';
 import '../meal_entry.dart';
+import '../turn_header.dart';
 
 /// The analyses the SERVER has staged but the user hasn't confirmed yet.
 ///
 /// A different thing from the live turn below it: these are restored from
 /// `GET /api/v1/logging/day` on every load, so they survive a relaunch and
-/// carry their own `loggedAt` — which is why they stamp their divider from
-/// that rather than from the clock, and why they keep their own quote (no chat
-/// bubble is drawn above them).
+/// carry their own `loggedAt` — which is why they stamp their turn header from
+/// that rather than from the clock.
 ///
 /// They disappear 30 minutes after staging: the server only returns rows whose
 /// `expiresAt` is still in the future, so an abandoned analysis cannot come
@@ -63,15 +64,30 @@ class PendingConfirmationCards extends StatelessWidget {
               onConfirm: (levels) => onConfirmCheat(pending[i].id, levels),
             )
           else if (pending[i].parsedMeal case final parsedMeal?)
-            MealEntry(
+            Column(
               key: ValueKey(pending[i].id),
-              rawInput: pending[i].rawInput,
-              parsedMeal: parsedMeal,
-              // The time it was STAGED, not the time this card mounted.
-              loggedAt: DateTime.tryParse(pending[i].loggedAt)?.toLocal(),
-              busy: busy,
-              isLast: !tailIsBusy && i == lastRendered,
-              onConfirm: (edits) => onConfirm(pending[i].id, edits),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // The staged card wears the same turn header as a saved one —
+                // the time it was STAGED, not the time this card mounted, and
+                // the user's words as a sent message. MealEntry is told not to
+                // draw its own divider so there is exactly one.
+                TurnHeader(
+                  time: DateFormat.jm(context.locale.toString()).format(
+                    DateTime.tryParse(pending[i].loggedAt)?.toLocal() ??
+                        DateTime.now(),
+                  ),
+                  message: pending[i].rawInput,
+                ),
+                MealEntry(
+                  rawInput: pending[i].rawInput,
+                  parsedMeal: parsedMeal,
+                  showTimeDivider: false,
+                  busy: busy,
+                  isLast: !tailIsBusy && i == lastRendered,
+                  onConfirm: (edits) => onConfirm(pending[i].id, edits),
+                ),
+              ],
             ),
       ],
     );

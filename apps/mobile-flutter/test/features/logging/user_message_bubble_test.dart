@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/widgets/streaming/user_message_bubble.dart';
+import 'package:nham_mobile/features/logging/widgets/user_message_bubble.dart';
 import 'package:nham_mobile/theme/nham_colors.dart';
 
 Widget _wrap(String text, {double width = 390}) => MaterialApp(

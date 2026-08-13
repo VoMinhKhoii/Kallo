@@ -12,7 +12,7 @@ import '../meal_entry.dart';
 import '../meal_time_divider.dart';
 import 'pending_confirmation_cards.dart';
 import '../streaming/streaming_entry.dart';
-import '../streaming/user_message_bubble.dart';
+import '../user_message_bubble.dart';
 import '../terminal/failed_attempt_card.dart';
 
 /// The live tail of the feed, below every saved meal: the server's staged

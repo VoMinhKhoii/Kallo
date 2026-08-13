@@ -8,7 +8,7 @@ import 'package:nham_mobile/features/logging/logic/feed/view_state.dart';
 import 'package:nham_mobile/features/logging/widgets/feed/feed_footer.dart';
 import 'package:nham_mobile/features/logging/widgets/meal_time_divider.dart';
 import 'package:nham_mobile/features/logging/widgets/streaming/streaming_entry.dart';
-import 'package:nham_mobile/features/logging/widgets/streaming/user_message_bubble.dart';
+import 'package:nham_mobile/features/logging/widgets/user_message_bubble.dart';
 import 'package:nham_mobile/models/meal.dart';
 import 'package:nham_mobile/models/streaming.dart';
 
@@ -278,7 +278,7 @@ void main() {
     expect(divider.time, startsWith('12:15'));
   });
 
-  testWidgets('a pending confirmation keeps its own quote — nothing above it', (
+  testWidgets('a pending confirmation wears the same turn header as a saved meal', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -298,7 +298,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(UserMessageBubble), findsNothing);
-    expect(find.text('cơm gà'), findsOneWidget);
+    // Every meal in the feed reads the same way — divider, the user's words as
+    // a sent message, then the card, which keeps its own quote.
+    expect(find.byType(UserMessageBubble), findsOneWidget);
+    expect(find.byType(MealTimeDivider), findsOneWidget);
+    expect(find.text('cơm gà'), findsNWidgets(2));
   });
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 
-import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../theme/calm_tokens.dart';
+import '../../../theme/nham_colors.dart';
+import '../../../theme/nham_theme.dart';
 
 /// The user's meal, as a sent chat message.
 ///
