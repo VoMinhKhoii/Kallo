@@ -20,6 +20,7 @@ import { routing } from '@/i18n/navigation';
 import { googleWebClientId } from '@/lib/auth/google-client-id';
 import { safeNextPath } from '@/lib/auth/safe-next';
 import { getDocsTree } from '@/lib/docs/tree';
+import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { landingStructuredData } from '@/lib/seo/structured-data';
 import { SITE_URL } from '@/lib/site';
 import { createClient } from '@/lib/supabase/server';
@@ -52,7 +53,9 @@ export async function generateMetadata({
         'x-default': `${SITE_URL}/en`,
       },
     },
-    openGraph: { url: `${SITE_URL}/${locale}` },
+    // Spread, not `{ url }` alone: declaring `openGraph` replaces the layout's
+    // object, so setting only the url drops the preview image and site name.
+    openGraph: { ...SHARED_OPEN_GRAPH, url: `${SITE_URL}/${locale}`, locale },
   };
 }
 
