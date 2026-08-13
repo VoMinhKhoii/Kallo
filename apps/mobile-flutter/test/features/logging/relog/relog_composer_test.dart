@@ -58,6 +58,7 @@ const _candidatesJson = {
 const _view = FeedViewState(
   persistedMeals: [],
   pendingConfirmations: [],
+  entries: [],
   isLoading: false,
   hasError: false,
   hasUnknownDailyMacros: false,
@@ -70,7 +71,7 @@ const _view = FeedViewState(
   dailyFat: 0,
   hasFailedAttempt: false,
   isEmpty: true,
-  hasFooterItems: false,
+  hasLiveTail: false,
   showPartialDayNotice: false,
 );
 

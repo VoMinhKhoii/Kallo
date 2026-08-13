@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/features/logging/data/logging_models.dart';
 import 'package:nham_mobile/features/logging/data/stream_analysis_controller.dart';
+import 'package:nham_mobile/features/logging/logic/feed/feed_entries.dart';
 import 'package:nham_mobile/features/logging/logic/feed/view_state.dart';
 import 'package:nham_mobile/models/meal.dart';
 import 'package:nham_mobile/models/streaming.dart';
@@ -82,9 +83,11 @@ void main() {
       expect(view.isStreaming, isFalse);
       expect(view.pendingConfirmations, hasLength(1));
       expect(view.pendingConfirmations.single.id, 'a1');
-      // And the day is not mistaken for an empty one.
+      // And the day is not mistaken for an empty one — the staged row is a
+      // card in the list, even though nothing is live below it.
       expect(view.isEmpty, isFalse);
-      expect(view.hasFooterItems, isTrue);
+      expect(view.hasLiveTail, isFalse);
+      expect(view.entries.single, isA<StagedEntry>());
     });
 
     test('another meal staged alongside the reveal still shows', () {

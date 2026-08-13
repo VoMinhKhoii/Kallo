@@ -27,7 +27,6 @@ class MealEntry extends StatefulWidget {
     required this.rawInput,
     required this.onConfirm,
     this.busy = false,
-    this.isLast = false,
     this.revealing = false,
     this.showTimeDivider = true,
     this.loggedAt,
@@ -47,7 +46,6 @@ class MealEntry extends StatefulWidget {
   final String rawInput;
   final ValueChanged<List<MealQuantityEdit>> onConfirm;
   final bool busy;
-  final bool isLast;
 
   /// True for the streaming-reveal morph's first mount: the totals row counts
   /// up and the confirm CTA slides in as the spinner row slides out — the

@@ -12,14 +12,12 @@ class FeedMealCard extends StatelessWidget {
   const FeedMealCard({
     super.key,
     required this.meal,
-    required this.isLast,
     required this.onRemove,
     required this.onUpdate,
     required this.onLogAgain,
   });
 
   final PersistedMeal meal;
-  final bool isLast;
   final VoidCallback onRemove;
   final AmountEditSave onUpdate;
   final Future<void> Function() onLogAgain;
@@ -32,7 +30,6 @@ class FeedMealCard extends StatelessWidget {
               ? CheatMealCard(meal: meal, onRemove: onRemove)
               : PersistedMealCard(
                 meal: meal,
-                isLast: isLast,
                 onRemove: onRemove,
                 onUpdate: onUpdate,
                 onLogAgain: onLogAgain,

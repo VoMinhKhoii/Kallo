@@ -23,14 +23,12 @@ class PersistedMealCard extends StatefulWidget {
   const PersistedMealCard({
     super.key,
     required this.meal,
-    this.isLast = false,
     this.onRemove,
     this.onUpdate,
     this.onLogAgain,
   });
 
   final PersistedMeal meal;
-  final bool isLast;
 
   /// iOS trailing-swipe removal (destructive red) — fired when the card is
   /// dismissed. Null disables the swipe.

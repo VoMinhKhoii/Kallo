@@ -50,7 +50,6 @@ Widget _wrap(PersistedMeal meal) => EasyLocalization(
           body: SingleChildScrollView(
             child: FeedMealCard(
               meal: meal,
-              isLast: true,
               onRemove: () {},
               onUpdate: ({required edits, required removeIds}) async {},
               onLogAgain: () async {},

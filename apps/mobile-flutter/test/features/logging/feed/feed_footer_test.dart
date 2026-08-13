@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/data/logging_models.dart';
 import 'package:nham_mobile/features/logging/data/stream_analysis_controller.dart';
 import 'package:nham_mobile/features/logging/logic/feed/view_state.dart';
 import 'package:nham_mobile/features/logging/widgets/feed/feed_footer.dart';
@@ -33,10 +32,10 @@ const _meal = ParsedMeal(
 FeedViewState _view({
   bool streaming = false,
   bool revealing = false,
-  List<PendingMealConfirmation> pending = const [],
 }) => FeedViewState(
   persistedMeals: const [],
-  pendingConfirmations: pending,
+  pendingConfirmations: const [],
+  entries: const [],
   isLoading: false,
   hasError: false,
   hasUnknownDailyMacros: false,
@@ -49,7 +48,7 @@ FeedViewState _view({
   dailyFat: 0,
   hasFailedAttempt: false,
   isEmpty: false,
-  hasFooterItems: true,
+  hasLiveTail: true,
   showPartialDayNotice: false,
 );
 
@@ -82,9 +81,7 @@ Widget _wrap({
               confirmPending: false,
               loaderIndex: 0,
               sentAt: sentAt,
-              onConfirm: (_, _) {},
               onConfirmReveal: (_, _) {},
-              onConfirmCheat: (_, _) {},
               onConfirmCheatReveal: (_) {},
               onClarifyCheat: (_) {},
               failedText: null,
@@ -248,104 +245,4 @@ void main() {
     expect(tester.element(find.byType(UserMessageBubble)), same(before));
   });
 
-  testWidgets('a pending card is stamped when it was STAGED, not when it mounted', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _wrap(
-        view: _view(
-          pending: const [
-            PendingMealConfirmation(
-              id: 'p1',
-              rawInput: 'cơm gà',
-              // 12:15 local, staged well before this card ever mounted.
-              loggedAt: '2026-08-11T12:15:00.000',
-              parsedMeal: _meal,
-            ),
-          ],
-        ),
-        stream: StreamAnalysisState.initial,
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // Reading the clock here showed an hour-old pending meal as "just now".
-    // Matched on the widget's own value, not on find.text: intl separates the
-    // meridiem with U+202F, so a plain-space literal never matches.
-    final divider = tester.widget<MealTimeDivider>(
-      find.byType(MealTimeDivider),
-    );
-    expect(divider.time, startsWith('12:15'));
-  });
-
-  testWidgets('a pending confirmation wears the same turn header as a saved meal', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _wrap(
-        view: _view(
-          pending: const [
-            PendingMealConfirmation(
-              id: 'p1',
-              rawInput: 'cơm gà',
-              loggedAt: '2026-08-11T12:00:00.000Z',
-              parsedMeal: _meal,
-            ),
-          ],
-        ),
-        stream: StreamAnalysisState.initial,
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // Every meal in the feed reads the same way — divider, the user's words as
-    // a sent message, then the card, which keeps its own quote.
-    expect(find.byType(UserMessageBubble), findsOneWidget);
-    expect(find.byType(MealTimeDivider), findsOneWidget);
-    expect(find.text('cơm gà'), findsNWidgets(2));
-  });
-
-  testWidgets('a second meal sits BELOW the unconfirmed one, not around it', (
-    tester,
-  ) async {
-    const staged = PendingMealConfirmation(
-      id: 'p1',
-      rawInput: 'cơm gà',
-      loggedAt: '2026-08-11T12:00:00.000Z',
-      parsedMeal: _meal,
-    );
-
-    await tester.pumpWidget(
-      _wrap(
-        view: _view(streaming: true, pending: const [staged]),
-        stream: const StreamAnalysisState(
-          status: StreamStatus.decomposing,
-          isAnalyzing: true,
-        ),
-        streamingRawInput: _raw,
-        sentAt: DateTime(2026, 8, 11, 12, 15),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // The new turn's header used to render ABOVE the older staged card, with
-    // its own streaming rows below it — the turn split in half around a meal
-    // that came first.
-    // The staged meal now has a bubble of its own, so target the LIVE turn's
-    // by key rather than by type.
-    final newBubble = tester.getRect(
-      find.byKey(const ValueKey('user-bubble')),
-    );
-    final newRows = tester.getRect(find.byType(StreamingEntry));
-
-    // Every trace of the older meal — its bubble AND its card quote — sits
-    // above the new turn.
-    for (final staged in find.text('cơm gà').evaluate()) {
-      expect(
-        tester.getRect(find.byWidget(staged.widget)).bottom,
-        lessThanOrEqualTo(newBubble.top),
-      );
-    }
-    expect(newBubble.bottom, lessThanOrEqualTo(newRows.top));
-  });
 }

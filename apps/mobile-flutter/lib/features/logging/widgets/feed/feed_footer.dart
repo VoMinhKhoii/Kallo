@@ -10,14 +10,16 @@ import '../cheat_slider_card.dart';
 import '../entrances.dart';
 import '../meal_entry.dart';
 import '../meal_time_divider.dart';
-import 'pending_confirmation_cards.dart';
 import '../streaming/streaming_entry.dart';
 import '../user_message_bubble.dart';
 import '../terminal/failed_attempt_card.dart';
 
-/// The live tail of the feed, below every saved meal: the server's staged
-/// pending cards, the streaming card, the revealed (confirmable) answer, and
-/// the failed attempt.
+/// The live tail of the feed, below every card the day already holds: the
+/// streaming turn, the revealed (confirmable) answer, and the failed attempt.
+///
+/// Staged-but-unconfirmed meals are NOT here — they carry a real `loggedAt` and
+/// sit in the list among the saved meals, so confirming one changes a card in
+/// place instead of moving it between two blocks.
 class FeedFooter extends StatelessWidget {
   const FeedFooter({
     super.key,
@@ -25,9 +27,7 @@ class FeedFooter extends StatelessWidget {
     required this.stream,
     required this.streamingRawInput,
     required this.confirmPending,
-    required this.onConfirm,
     required this.onConfirmReveal,
-    required this.onConfirmCheat,
     required this.onConfirmCheatReveal,
     required this.onClarifyCheat,
     required this.revealRawInput,
@@ -56,11 +56,7 @@ class FeedFooter extends StatelessWidget {
   final StreamAnalysisState stream;
   final bool confirmPending;
   final void Function(String analysisId, List<MealQuantityEdit> edits)
-  onConfirm;
-  final void Function(String analysisId, List<MealQuantityEdit> edits)
   onConfirmReveal;
-  final void Function(String analysisId, CheatSliderLevels levels)
-  onConfirmCheat;
   final ValueChanged<CheatSliderLevels> onConfirmCheatReveal;
   final ValueChanged<String> onClarifyCheat;
   final String? failedText;
@@ -87,24 +83,10 @@ class FeedFooter extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: LoggingSpacing.turn,
       children: [
-        if (view.pendingConfirmations.isNotEmpty)
-          PendingConfirmationCards(
-            pending: view.pendingConfirmations,
-            busy: confirmPending,
-            tailIsBusy:
-                view.isStreaming ||
-                view.isRevealing ||
-                view.isCheatRevealing ||
-                hasFailed,
-            onConfirm: onConfirm,
-            onConfirmCheat: onConfirmCheat,
-          ),
         // The live turn's header goes directly above the live turn's OWN
-        // content, BELOW anything staged earlier. Emitted before the pending
-        // cards it split the turn in half: send a second meal while the first
-        // is unconfirmed and your new message appeared above the older meal,
-        // with its own streaming rows below it. The feed has to read down in
-        // the order things happened.
+        // content. The whole footer sits below every card the day already
+        // holds, so a meal sent while an older one is unconfirmed reads down
+        // in the order things happened.
         if (showBubble && sentAt != null)
           MealTimeDivider(
             key: const ValueKey('turn-divider'),
@@ -137,7 +119,6 @@ class FeedFooter extends StatelessWidget {
             parsedMeal: stream.result!,
             busy: confirmPending,
             revealing: true,
-            isLast: !hasFailed,
             onConfirm: (edits) => onConfirmReveal(stream.analysisId!, edits),
           ),
         // The cheat reveal: an interactive slider card when the estimate is

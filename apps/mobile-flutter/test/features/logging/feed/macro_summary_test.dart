@@ -50,6 +50,7 @@ Widget _wrap(Widget child, {double textScale = 1.0}) => EasyLocalization(
 const _view = FeedViewState(
   persistedMeals: [],
   pendingConfirmations: [],
+  entries: [],
   isLoading: false,
   hasError: false,
   hasUnknownDailyMacros: false,
@@ -62,7 +63,7 @@ const _view = FeedViewState(
   dailyFat: 60,
   hasFailedAttempt: false,
   isEmpty: false,
-  hasFooterItems: false,
+  hasLiveTail: false,
   showPartialDayNotice: false,
 );
 
