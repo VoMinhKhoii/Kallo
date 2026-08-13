@@ -26,8 +26,8 @@
   },
   "metadata": {
     "root": {
-      "title": "Kallo — AI Meal Tracker",
-      "description": "Describe what you ate in your own words — Kallo derives the calories and macros from trusted data."
+      "title": "Kallo — AI Nutrition Tracker",
+      "description": "Describe what you ate in your own words — Kallo derives the full nutrition breakdown from trusted data."
     },
     "dashboard": {
       "title": "Dashboard — Kallo"

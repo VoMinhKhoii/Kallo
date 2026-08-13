@@ -6,10 +6,10 @@ export default function manifest(): MetadataRoute.Manifest {
     // The manifest is served once at the origin root with no locale segment, so
     // it cannot follow `metadata.root` per locale the way <title> does. It takes
     // the English/global wording — the same choice the `en` metadata makes.
-    name: 'Kallo — AI Meal Tracker',
+    name: 'Kallo — AI Nutrition Tracker',
     short_name: 'Kallo',
     description:
-      'Describe what you ate in your own words — Kallo derives the calories and macros from trusted data.',
+      'Describe what you ate in your own words — Kallo derives the full nutrition breakdown from trusted data.',
     start_url: '/dashboard',
     scope: '/',
     display: 'standalone',
