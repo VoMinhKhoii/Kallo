@@ -248,6 +248,36 @@ void main() {
     expect(tester.element(find.byType(UserMessageBubble)), same(before));
   });
 
+  testWidgets('a pending card is stamped when it was STAGED, not when it mounted', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        view: _view(
+          pending: const [
+            PendingMealConfirmation(
+              id: 'p1',
+              rawInput: 'cơm gà',
+              // 12:15 local, staged well before this card ever mounted.
+              loggedAt: '2026-08-11T12:15:00.000',
+              parsedMeal: _meal,
+            ),
+          ],
+        ),
+        stream: StreamAnalysisState.initial,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Reading the clock here showed an hour-old pending meal as "just now".
+    // Matched on the widget's own value, not on find.text: intl separates the
+    // meridiem with U+202F, so a plain-space literal never matches.
+    final divider = tester.widget<MealTimeDivider>(
+      find.byType(MealTimeDivider),
+    );
+    expect(divider.time, startsWith('12:15'));
+  });
+
   testWidgets('a pending confirmation keeps its own quote — nothing above it', (
     tester,
   ) async {

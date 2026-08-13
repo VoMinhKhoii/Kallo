@@ -10,6 +10,7 @@ import '../cheat_slider_card.dart';
 import '../entrances.dart';
 import '../meal_entry.dart';
 import '../meal_time_divider.dart';
+import 'pending_confirmation_cards.dart';
 import '../streaming/streaming_entry.dart';
 import '../streaming/user_message_bubble.dart';
 import '../terminal/failed_attempt_card.dart';
@@ -69,15 +70,7 @@ class FeedFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pendingConfirmations = view.pendingConfirmations;
     final hasFailed = failedText != null;
-    // The index of the last pending entry that actually RENDERS. An entry with
-    // neither a cheatSpec nor a parsedMeal draws nothing, so comparing against
-    // `length - 1` would hand `isLast` to no one whenever such an entry sits
-    // at the end of the list.
-    final lastRendered = pendingConfirmations.lastIndexWhere(
-      (p) => p.cheatSpec != null || p.parsedMeal != null,
-    );
     // The user's own words, carried across the whole live turn: they go up the
     // instant the meal is sent and stay put while the streamed rows below them
     // are replaced by the finished card. Because the bubble survives that
@@ -109,32 +102,18 @@ class FeedFooter extends StatelessWidget {
             key: const ValueKey('user-bubble'),
             child: UserMessageBubble(text: bubbleText),
           ),
-        for (var i = 0; i < pendingConfirmations.length; i++)
-          if (pendingConfirmations[i].cheatSpec case final cheatSpec?)
-            CheatSliderCard(
-              key: ValueKey(pendingConfirmations[i].id),
-              spec: cheatSpec,
-              rawInput: pendingConfirmations[i].rawInput,
-              busy: confirmPending,
-              onConfirm:
-                  (levels) =>
-                      onConfirmCheat(pendingConfirmations[i].id, levels),
-            )
-          else if (pendingConfirmations[i].parsedMeal case final parsedMeal?)
-            MealEntry(
-              key: ValueKey(pendingConfirmations[i].id),
-              rawInput: pendingConfirmations[i].rawInput,
-              parsedMeal: parsedMeal,
-              busy: confirmPending,
-              isLast:
-                  !view.isStreaming &&
-                  !view.isRevealing &&
-                  !view.isCheatRevealing &&
-                  !hasFailed &&
-                  i == lastRendered,
-              onConfirm:
-                  (edits) => onConfirm(pendingConfirmations[i].id, edits),
-            ),
+        if (view.pendingConfirmations.isNotEmpty)
+          PendingConfirmationCards(
+            pending: view.pendingConfirmations,
+            busy: confirmPending,
+            tailIsBusy:
+                view.isStreaming ||
+                view.isRevealing ||
+                view.isCheatRevealing ||
+                hasFailed,
+            onConfirm: onConfirm,
+            onConfirmCheat: onConfirmCheat,
+          ),
         if (view.isStreaming)
           StreamingEntry(stream: stream, loaderIndex: loaderIndex),
         // The completed answer, closing around the rows that were already on

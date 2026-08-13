@@ -30,7 +30,12 @@ class MealEntry extends StatefulWidget {
     this.isLast = false,
     this.revealing = false,
     this.showTimeDivider = true,
+    this.loggedAt,
   });
+
+  /// When the analysis was staged, for a card restored from the server. Null
+  /// for the live reveal, which has not been staged with a time yet.
+  final DateTime? loggedAt;
 
   /// Whether to draw the time divider above the card.
   ///
@@ -57,10 +62,17 @@ class _MealEntryState extends State<MealEntry> {
   late List<MealItem> _items = widget.parsedMeal.items;
   late final List<MealItem> _original = widget.parsedMeal.items;
 
-  /// An unconfirmed meal has no `loggedAt` yet, so the divider shows when the
-  /// analysis landed. Captured once at mount rather than read in `build`, so
-  /// the time doesn't creep forward every time a stepper rebuilds the card.
-  final DateTime _enteredAt = DateTime.now();
+  /// What the divider shows.
+  ///
+  /// A card staged server-side carries a real [MealEntry.loggedAt] and must use
+  /// it: reading the clock instead stamped a meal analysed at 12:15 with the
+  /// time the app happened to be REOPENED, which is how a pending meal from an
+  /// hour ago showed up as "just now".
+  ///
+  /// Only the live reveal has no `loggedAt` yet, and there "now" is right.
+  /// Captured once at mount rather than read in `build`, so the time doesn't
+  /// creep forward every time a stepper rebuilds the card.
+  late final DateTime _enteredAt = widget.loggedAt ?? DateTime.now();
   bool _editing = false;
   bool _confirmCoolingDown = false;
   Timer? _confirmTimer;
