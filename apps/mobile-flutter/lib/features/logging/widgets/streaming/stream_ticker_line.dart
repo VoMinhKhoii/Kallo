@@ -12,7 +12,12 @@ import 'ticker_flip.dart';
 import 'ticker_text.dart';
 
 /// How long one action verb holds before the line flips to the next.
-const Duration _verbDwell = Duration(milliseconds: 1600);
+///
+/// The flip itself eats 360ms of this (180 out, 180 in), so the verb is only
+/// STILL for dwell − 360. At 1600 that left ~1.24s of settled reading and the
+/// line felt hurried; 2400 gives just over two seconds, which also suits the
+/// longer Vietnamese verbs.
+const Duration _verbDwell = Duration(milliseconds: 2400);
 
 /// How many numbered `verbs.<stage>N` keys to look for. Probing stops early at
 /// the first missing key, so a stage may carry fewer — but not more without

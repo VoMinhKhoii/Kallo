@@ -38,6 +38,9 @@ Widget _wrap(
       ),
     );
 
+/// One full verb dwell — kept in step with `_verbDwell` in the widget.
+const _dwell = Duration(milliseconds: 2400);
+
 /// The rendered ticker line.
 String _line(WidgetTester tester) {
   final text = tester.widget<Text>(find.byType(Text));
@@ -70,17 +73,22 @@ void main() {
     await tester.pump();
     expect(_line(tester), 'Weighing…');
 
+    // Still holding just before the dwell is up — this is what pins the pace,
+    // so shortening _verbDwell without meaning to fails here.
+    await tester.pump(_dwell - const Duration(milliseconds: 100));
+    expect(_line(tester), 'Weighing…');
+
     // One dwell plus the flip: the next verb of the SAME stage.
-    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 400));
     expect(_line(tester), 'Calculating…');
 
-    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pump(_dwell);
     await tester.pump(const Duration(milliseconds: 400));
     expect(_line(tester), 'Crunching…');
 
     // And it wraps rather than running out.
-    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pump(_dwell);
     await tester.pump(const Duration(milliseconds: 400));
     expect(_line(tester), 'Weighing…');
 
@@ -90,7 +98,7 @@ void main() {
   testWidgets('a new stage restarts at its own first verb', (tester) async {
     await tester.pumpWidget(_wrap(const PhaseFrame(StreamStatus.estimating), status: StreamStatus.estimating));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pump(_dwell);
     await tester.pump(const Duration(milliseconds: 400));
     expect(_line(tester), 'Calculating…');
 
@@ -138,12 +146,12 @@ void main() {
     await tester.pump();
     expect(_line(tester), 'Phở bò · 480 kcal');
 
-    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pump(_dwell);
     await tester.pump(const Duration(milliseconds: 400));
     expect(_line(tester), 'Foraging…');
 
     // And it keeps cycling that stage rather than stalling on one verb.
-    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pump(_dwell);
     await tester.pump(const Duration(milliseconds: 400));
     expect(_line(tester), 'Sourcing…');
 
@@ -158,7 +166,7 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pump(_dwell);
     await tester.pump(const Duration(milliseconds: 400));
     expect(_line(tester), 'Weighing…');
 
