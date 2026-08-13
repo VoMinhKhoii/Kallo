@@ -61,6 +61,12 @@ data/usda_sr/
 data/translation-checkpoints/
 seed_food.sql
 
+# Local NIN ingestion snapshots and bulky generated artifacts
+scripts/enrich/input/
+scripts/enrich/out/*
+!scripts/enrich/out/dups.csv
+!scripts/enrich/out/manifest.json
+
 # Local git worktrees
 .worktrees/
 .gstack/
@@ -84,3 +90,4 @@ scripts/eval/reports/
 # Anchored to this directory, so the hand-authored fixtures under
 # scripts/eval/fixtures/ stay tracked — they are source, these are output.
 scripts/eval/*.json
+scripts/eval/*.local.ts

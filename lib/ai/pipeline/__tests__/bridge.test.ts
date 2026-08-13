@@ -105,6 +105,174 @@ function nullNutritionMatch(): IngredientV2MatchResult[] {
 }
 
 describe('bridgeV2ToV1 — accepted verdict', () => {
+  it('derives edible resolvedGrams from grossG and refusePct', () => {
+    const v2: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'đậu hũ',
+          cookingMethod: 'hấp',
+          ingredients: [{ rawName: 'đậu hũ', canonicalName: 'Đậu hũ' }],
+        },
+      ],
+    };
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'đậu hũ',
+          ingredients: [
+            {
+              ingredientName: 'đậu hũ',
+              grossG: 100,
+              refusePct: 50,
+              caloriesKcal: { low: 70, mid: 80, high: 90 },
+              proteinG: { low: 7, mid: 8, high: 9 },
+              carbohydrateG: { low: 1, mid: 2, high: 3 },
+              fatG: { low: 3, mid: 4, high: 5 },
+            },
+          ],
+        },
+      ],
+    };
+    const out = bridgeV2ToV1({
+      v2,
+      matches: [{ ingredientIndex: 0, candidates: [] }],
+      grounded,
+      mealContext: 'đậu hũ',
+    });
+    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(50);
+    expect(out.verdicts[0].refuse).toMatchObject({
+      modelRefusePct: 50,
+      appliedRefusePct: 50,
+    });
+  });
+
+  it('converts an explicit gross rib anchor to edible mass end to end', () => {
+    const v2: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'sườn heo',
+          cookingMethod: 'nướng',
+          ingredients: [
+            {
+              rawName: '1 miếng sườn heo',
+              canonicalName: 'Sườn heo',
+              explicitMass: { grams: 200, basis: 'gross_as_served' },
+            },
+          ],
+        },
+      ],
+    };
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'sườn heo',
+          ingredients: [
+            {
+              ingredientName: '1 miếng sườn heo',
+              grossG: 220,
+              refusePct: 50,
+              caloriesKcal: { low: 0, mid: 0, high: 0 },
+              proteinG: { low: 0, mid: 0, high: 0 },
+              carbohydrateG: { low: 0, mid: 0, high: 0 },
+              fatG: { low: 0, mid: 0, high: 0 },
+            },
+          ],
+        },
+      ],
+    };
+    const out = bridgeV2ToV1({
+      v2,
+      matches: [{ ingredientIndex: 0, candidates: [] }],
+      grounded,
+      mealContext: '1 miếng sườn heo 200g',
+      portionResolutions: [
+        {
+          grams: { low: 200, mid: 200, high: 200 },
+          massBasis: 'gross_as_served',
+          provenance: 'explicit_user_mass',
+          confidence: 'high',
+          note: 'explicit gross mass',
+        },
+      ],
+    });
+
+    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(100);
+    expect(out.verdicts[0].refuse).toMatchObject({
+      grossG: 200,
+      modelRefusePct: 50,
+      appliedRefusePct: 50,
+      appliedRefuseSource: 'model_cut_band',
+      edibleG: 100,
+      massBasis: 'gross_as_served',
+    });
+  });
+
+  it('does not let an unknown-basis ingredient bypass modeled refuse', () => {
+    const v2: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'cá kho',
+          cookingMethod: 'kho',
+          ingredients: [
+            {
+              rawName: 'unknown-basis ingredient',
+              canonicalName: 'Cá kho',
+              explicitMass: { grams: 300, basis: 'unknown' },
+            },
+          ],
+        },
+      ],
+    };
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'cá kho',
+          ingredients: [
+            {
+              ingredientName: 'unknown-basis ingredient',
+              grossG: 200,
+              refusePct: 25,
+              caloriesKcal: { low: 0, mid: 0, high: 0 },
+              proteinG: { low: 0, mid: 0, high: 0 },
+              carbohydrateG: { low: 0, mid: 0, high: 0 },
+              fatG: { low: 0, mid: 0, high: 0 },
+            },
+          ],
+        },
+      ],
+    };
+    const out = bridgeV2ToV1({
+      v2,
+      matches: [{ ingredientIndex: 0, candidates: [] }],
+      grounded,
+      mealContext: 'unknown-basis ingredient 300g',
+      portionResolutions: [
+        {
+          grams: { low: 300, mid: 300, high: 300 },
+          massBasis: 'unknown',
+          provenance: 'explicit_user_mass',
+          confidence: 'high',
+          note: 'basis unresolved',
+        },
+      ],
+    });
+
+    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(150);
+    expect(out.verdicts[0].refuse).toMatchObject({
+      grossG: 200,
+      appliedRefusePct: 25,
+      appliedRefuseSource: 'model_unknown_form',
+      edibleG: 150,
+      massBasis: 'gross_as_served',
+    });
+  });
+
   it('produces a v1 decomposition with grams from Call 2 and weightBasis omitted for cooked candidates', () => {
     const out = bridgeV2ToV1({
       v2: v2Decomp(),
@@ -599,6 +767,7 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
       portionResolutions: [
         {
           grams: { low: 300, mid: 330, high: 360 },
+          massBasis: 'edible',
           provenance: 'retrieved_prior',
           confidence: 'high',
           note: 'prior',
@@ -616,7 +785,13 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
       grounded: groundedAccepted(),
       mealContext: 'm',
       portionResolutions: [
-        { grams: null, provenance: 'llm_range', confidence: 'none', note: '' },
+        {
+          grams: null,
+          massBasis: null,
+          provenance: 'llm_range',
+          confidence: 'none',
+          note: '',
+        },
       ],
     });
     expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(150);
@@ -631,6 +806,7 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
       portionResolutions: [
         {
           grams: null,
+          massBasis: null,
           provenance: 'unresolved',
           confidence: 'none',
           unresolvedReason: 'ambiguous_food',
@@ -678,6 +854,7 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
       portionResolutions: [
         {
           grams: { low: 300, mid: 330, high: 360 },
+          massBasis: 'edible',
           provenance: 'retrieved_prior',
           confidence: 'high',
           note: 'prior',
@@ -772,6 +949,7 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
       portionResolutions: [
         {
           grams: null,
+          massBasis: null,
           provenance: 'unresolved',
           confidence: 'none',
           unresolvedReason: 'explicit_zero',
@@ -1134,6 +1312,7 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
       portionResolutions: [
         {
           grams: null,
+          massBasis: null,
           provenance: 'unresolved',
           confidence: 'none',
           unresolvedReason: 'explicit_zero',
@@ -1182,6 +1361,7 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
       portionResolutions: [
         {
           grams: null,
+          massBasis: null,
           provenance: 'unresolved',
           confidence: 'none',
           unresolvedReason: 'unresolved_portion',
@@ -1189,6 +1369,7 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
         },
         {
           grams: null,
+          massBasis: null,
           provenance: 'unresolved',
           confidence: 'none',
           unresolvedReason: 'explicit_zero',

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildGroundedIngredientEstimateSchema,
   decomposedIngredientV2Schema,
   groundedEstimationSchema,
   groundedIngredientEstimateSchema,
@@ -72,13 +73,16 @@ describe('decomposedIngredientV2Schema', () => {
     expect(parsed.sizeModifier).toBe('large');
   });
 
-  it('accepts a structured explicitMass with a raw/cooked basis', () => {
+  it('accepts a structured explicitMass with a physical mass basis', () => {
     const parsed = decomposedIngredientV2Schema.parse({
       rawName: 'ức gà',
       canonicalName: 'Ức gà',
-      explicitMass: { grams: 250, basis: 'raw' },
+      explicitMass: { grams: 250, basis: 'gross_as_served' },
     });
-    expect(parsed.explicitMass).toEqual({ grams: 250, basis: 'raw' });
+    expect(parsed.explicitMass).toEqual({
+      grams: 250,
+      basis: 'gross_as_served',
+    });
   });
 
   it('ACCEPTS a zero count (explicit user zero → clarify), REJECTS negative/invalid', () => {
@@ -112,7 +116,7 @@ describe('decomposedIngredientV2Schema', () => {
       decomposedIngredientV2Schema.parse({
         rawName: 'x',
         canonicalName: 'x',
-        explicitMass: { grams: -5, basis: 'raw' },
+        explicitMass: { grams: -5, basis: 'edible' },
       })
     ).toThrow();
     expect(() =>
@@ -280,6 +284,29 @@ describe('mealDecompositionV2Schema', () => {
 });
 
 describe('groundedIngredientEstimateSchema', () => {
+  it('requires valid grossG and refusePct when REFUSE_PCT_SCHEMA is on', () => {
+    const schema = buildGroundedIngredientEstimateSchema({
+      REFUSE_PCT_SCHEMA: 'on',
+    });
+    const base = {
+      ingredientName: 'sườn dê',
+      grossG: 100,
+      refusePct: 50,
+      caloriesKcal: { low: 100, mid: 110, high: 120 },
+      proteinG: { low: 8, mid: 10, high: 12 },
+      carbohydrateG: { low: 0, mid: 0, high: 0 },
+      fatG: { low: 4, mid: 5, high: 6 },
+    };
+    expect(schema.parse(base)).toMatchObject({ grossG: 100, refusePct: 50 });
+    const { refusePct: _refusePct, ...withoutRefuse } = base;
+    expect(() => schema.parse(withoutRefuse)).toThrow();
+    expect(() => schema.parse({ ...base, refusePct: -1 })).toThrow();
+    expect(() => schema.parse({ ...base, refusePct: 81 })).toThrow();
+    expect(() => schema.parse({ ...base, refusePct: 10.5 })).toThrow();
+    expect(() => schema.parse({ ...base, grossG: 0 })).toThrow();
+    expect(() => schema.parse({ ...base, grams: 50 })).toThrow();
+  });
+
   it('accepts an accepted candidate', () => {
     const parsed = groundedIngredientEstimateSchema.parse({
       ingredientName: 'đùi gà',

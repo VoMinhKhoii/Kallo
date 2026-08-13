@@ -56,6 +56,17 @@ export function logV2Telemetry(input: V2TelemetryInput): void {
     acc[p] = (acc[p] ?? 0) + 1;
     return acc;
   }, {});
+  const refusePctDecisions = input.verdicts.flatMap((verdict) =>
+    verdict.refuse
+      ? [
+          {
+            mealItemIdx: verdict.mealItemIdx,
+            ingredientIdx: verdict.ingredientIdx,
+            ...verdict.refuse,
+          },
+        ]
+      : []
+  );
   console.info('[v2-pipeline] verdicts', {
     totalIngredients,
     accepted,
@@ -70,6 +81,7 @@ export function logV2Telemetry(input: V2TelemetryInput): void {
     nutritionChunkCount: input.nutritionChunkCount,
     languageRetryCount: input.languageRetryCount,
     portionProvenance: portionProvenanceCounts,
+    refusePctDecisions,
   });
 }
 

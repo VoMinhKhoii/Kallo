@@ -58,6 +58,22 @@ function dish(ingredients: PieceDishLike['ingredients']): PieceDishLike & {
 }
 
 describe('resolvePieceVessel', () => {
+  it('does not classify hạt dẻ as animal protein through folded dê', () => {
+    expect(
+      resolvePieceVessel(
+        item([{ name: 'hạt dẻ', grams: 150 }]),
+        dish([
+          {
+            rawName: 'hạt dẻ',
+            canonicalName: 'Hạt dẻ',
+            count: 1,
+            unitToken: 'miếng',
+          },
+        ])
+      )
+    ).toBeNull();
+  });
+
   it('classifies one salmon piece at 160 g as protein tier 3', () => {
     expect(
       resolvePieceVessel(
@@ -441,6 +457,7 @@ describe('nearestPieceTier', () => {
       'khua',
       'khoanh',
       'phi le',
+      'cuc',
       'fillet',
       'piece',
       'pieces',

@@ -12,6 +12,7 @@ import type { NoMacroReason } from './bridge-macros';
 import type { MealDecompositionWithIds } from './ids';
 import type { RawNutritionAdjustment } from './nutrition';
 import type { IngredientPlausibility } from './plausibility';
+import type { RefuseResolutionTelemetry } from './refuse-mass';
 import type { GroundedIngredientEstimate } from './schemas-v2';
 
 export interface VerdictPerIngredient {
@@ -26,6 +27,8 @@ export interface VerdictPerIngredient {
   rejectReason: string | null;
   /** Reference to the v2 grounded output (null when missing). */
   grounded: GroundedIngredientEstimate | null;
+  /** Gross→edible decision trail when REFUSE_PCT_SCHEMA is enabled. */
+  refuse?: RefuseResolutionTelemetry | null;
 }
 
 /**

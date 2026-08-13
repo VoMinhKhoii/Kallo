@@ -1,14 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { INSTANT_NOODLE_ROW, PRE_MATCH_ALIASES } from '../../matching/aliases';
-import { AMBIGUOUS, getConcept, resolveConcept } from '../concepts';
-import { PIECE_UNIT_TOKENS } from '../piece-vessel';
-import { applySizeModifier, findPrior } from '../priors';
+import { AMBIGUOUS } from '../lexicon/concept-aliases';
+import {
+  conceptFoldCollisions,
+  getConcept,
+  resolveConcept,
+  surfaceFormsForConcept,
+} from '../lexicon/concepts';
 import {
   foldCollisions,
   lookupUnit,
   resolveUnitType,
   unitsForLocale,
-} from '../unit-lexicon';
+  unitsForType,
+} from '../lexicon/unit-lexicon';
+import { PIECE_UNIT_TOKENS } from '../piece-vessel';
+import { applySizeModifier, findPrior, PORTION_PRIORS } from '../priors';
+import { MAX_RELATIVE_BAND_WIDTH } from '../resolver';
 
 describe('unit lexicon', () => {
   it('maps VN counters to unit types (NOT grams)', () => {
@@ -17,6 +25,7 @@ describe('unit lexicon', () => {
     expect(resolveUnitType('tô')).toBe('container');
     expect(resolveUnitType('ly')).toBe('volume');
     expect(resolveUnitType('bánh bao')).toBe('count');
+    expect(resolveUnitType('cục')).toBe('count');
   });
 
   it('maps English/global units', () => {
@@ -58,6 +67,9 @@ describe('food concepts (alias → concept)', () => {
     expect(resolveConcept('trứng cút')).toBe('quail-egg');
     expect(resolveConcept('Bánh mỳ')).toBe('banh-mi-loaf');
     expect(resolveConcept('chicken breast')).toBe('chicken-breast');
+    expect(resolveConcept('ĐÙI GÀ')).toBe('chicken-thigh');
+    expect(resolveConcept('cá phi lê')).toBe('fish-fillet');
+    expect(resolveConcept('nem lui')).toBe('nem-lui');
   });
 
   it('generic words resolve to AMBIGUOUS, never a single guessed concept', () => {
@@ -66,11 +78,20 @@ describe('food concepts (alias → concept)', () => {
     expect(resolveConcept('bowl')).toBe(AMBIGUOUS);
     expect(resolveConcept('rice')).toBe(AMBIGUOUS);
     expect(resolveConcept('bánh')).toBe(AMBIGUOUS);
+    expect(resolveConcept('miếng cá')).toBe(AMBIGUOUS);
+    expect(resolveConcept('cua')).toBe(AMBIGUOUS);
+    expect(resolveConcept('trứng gà luộc')).toBe(AMBIGUOUS);
   });
 
   it('unknown surface form → null (defer to LLM)', () => {
     expect(resolveConcept('totally unknown food')).toBeNull();
     expect(resolveConcept(undefined)).toBeNull();
+  });
+
+  it('folds Vietnamese diacritics only after an exact miss', () => {
+    expect(resolveConcept('dui ga')).toBe('chicken-thigh');
+    expect(resolveConcept('ca phi le')).toBe('fish-fillet');
+    expect(resolveConcept('nem lui')).toBe('nem-lui');
   });
 
   it('concepts with a DB row link carry a verified name_primary', () => {
@@ -153,6 +174,37 @@ describe('portion priors', () => {
     expect(banhBaoSlice).toBeNull();
   });
 
+  it('loosens slice to count only for a piece-like token after exact miss', () => {
+    const wingPiece = findPrior({
+      conceptId: 'chicken-wing',
+      unitType: 'slice',
+      locale: 'vi',
+      form: 'any',
+      pieceLikeUnit: true,
+    });
+    expect(wingPiece?.conceptId).toBe('chicken-wing');
+    expect(wingPiece?.unitType).toBe('count');
+
+    expect(
+      findPrior({
+        conceptId: 'chicken-wing',
+        unitType: 'slice',
+        locale: 'vi',
+        form: 'any',
+        pieceLikeUnit: false,
+      })
+    ).toBeNull();
+    expect(
+      findPrior({
+        conceptId: 'chicken-wing',
+        unitType: 'container',
+        locale: 'vi',
+        form: 'any',
+        pieceLikeUnit: true,
+      })
+    ).toBeNull();
+  });
+
   it('applySizeModifier picks low/mid/high', () => {
     const band = { low: 10, mid: 20, high: 30 };
     expect(applySizeModifier(band, 'small')).toBe(10);
@@ -190,6 +242,7 @@ describe('unit token tables agree', () => {
       ['lát', 'lat'],
       ['khúc', 'khuc'],
       ['phi lê', 'phi le'],
+      ['cục', 'cuc'],
       ['tô', 'to'],
       ['đĩa', 'dia'],
     ]) {
@@ -218,6 +271,93 @@ describe('unit token tables agree', () => {
       expect(PIECE_UNIT_TOKENS.has(singular), singular).toBe(true);
       expect(PIECE_UNIT_TOKENS.has(plural), plural).toBe(true);
     }
+  });
+});
+
+describe('concept/prior reachability invariants', () => {
+  const HEAD_PORTION_CASES = [
+    ['rib-piece', 'sườn dê', 'miếng'],
+    ['chicken-wing', 'cánh gà', 'con'],
+    ['chicken-thigh', 'đùi gà', 'cái'],
+    ['whole-fish', 'cá nguyên con', 'con'],
+    ['fish-section', 'khúc cá', 'khúc'],
+    ['fish-fillet', 'cá phi lê', 'miếng'],
+    ['shell-on-shrimp', 'tôm nguyên vỏ', 'con'],
+    ['peeled-shrimp', 'tôm bóc vỏ', 'con'],
+    ['whole-crab', 'ghẹ nguyên con', 'con'],
+    ['picked-crab-meat', 'thịt cua', 'phần'],
+    ['egg-in-shell', 'trứng gà nguyên vỏ', 'quả'],
+    ['peeled-egg', 'trứng gà bóc vỏ', 'quả'],
+  ] as const;
+
+  it.each(
+    HEAD_PORTION_CASES
+  )('reaches %s from the real surface %s and unit %s', (conceptId, surface, unit) => {
+    const unitType = resolveUnitType(unit);
+    expect(resolveConcept(surface)).toBe(conceptId);
+    expect(unitType).not.toBeNull();
+    const prior = findPrior({
+      conceptId,
+      unitType: unitType!,
+      locale: 'vi',
+      form: 'any',
+      pieceLikeUnit: true,
+    });
+    const edibleConcepts = new Set([
+      'fish-fillet',
+      'peeled-shrimp',
+      'picked-crab-meat',
+      'peeled-egg',
+    ]);
+    const expectedBasis = edibleConcepts.has(conceptId)
+      ? 'edible'
+      : 'gross_as_served';
+    expect(prior?.massBasis).toBe(expectedBasis);
+  });
+
+  it('keeps every prior reachable from a real concept surface and unit type', () => {
+    for (const prior of PORTION_PRIORS) {
+      const surfaces = surfaceFormsForConcept(prior.conceptId);
+      const units = unitsForType(prior.unitType);
+      expect(
+        surfaces,
+        `${prior.conceptId} has no real surface form`
+      ).not.toEqual([]);
+      expect(
+        units,
+        `${prior.conceptId}/${prior.unitType} has no real unit surface`
+      ).not.toEqual([]);
+      expect(resolveConcept(surfaces[0])).toBe(prior.conceptId);
+      const resolvedUnitType = resolveUnitType(units[0].token);
+      expect(resolvedUnitType).toBe(prior.unitType);
+      expect(
+        findPrior({
+          conceptId: prior.conceptId,
+          unitType: resolvedUnitType!,
+          locale: prior.locale,
+          form: prior.form,
+        })
+      ).not.toBeNull();
+    }
+  });
+
+  it('does not anchor the ambiguous bare `sườn` surface as an 85g rib piece', () => {
+    expect(resolveConcept('sườn')).toBeNull();
+  });
+
+  it('keeps every prior band within the resolver width ceiling', () => {
+    for (const prior of PORTION_PRIORS) {
+      const relativeWidth =
+        (prior.perUnit.high - prior.perUnit.low) / prior.perUnit.mid;
+      expect(
+        relativeWidth,
+        `${prior.conceptId}/${prior.unitType} band is too wide`
+      ).toBeLessThanOrEqual(MAX_RELATIVE_BAND_WIDTH);
+    }
+  });
+
+  it('keeps folded unit collisions empty', () => {
+    expect(foldCollisions()).toEqual([]);
   });
 });
 
@@ -278,5 +418,28 @@ describe('instant noodles — the `1 gói mì` path', () => {
     expect(concept?.label).toContain('Mì gói');
     expect(concept?.dbRowName).toBe(INSTANT_NOODLE_ROW);
     expect(PRE_MATCH_ALIASES['mì tôm']).toBe(INSTANT_NOODLE_ROW);
+  });
+});
+
+describe('concept fold collisions', () => {
+  it('never folds into an AMBIGUOUS marker', () => {
+    // `fold('bún') === 'bun'`, and bare English `bun` is a deliberate
+    // AMBIGUOUS generic. Folding into it sent bún bò / bún riêu / bún chả to
+    // the clarify path on 19 of 697 real-log ingredients.
+    expect(resolveConcept('bún')).not.toBe(AMBIGUOUS);
+    expect(resolveConcept('bun')).toBe(AMBIGUOUS);
+  });
+
+  it('blocks the canh gà soup collision without hiding exact cánh gà', () => {
+    expect(resolveConcept('canh gà')).toBeNull();
+    expect(resolveConcept('cánh gà')).toBe('chicken-wing');
+  });
+
+  it('refuses to guess when two concepts share a folded key', () => {
+    // bơ/bò → `bo`, dưa/dừa/dứa → `dua`. Requiring diacritics is correct;
+    // first-wins would silently misroute on iteration order.
+    for (const key of conceptFoldCollisions()) {
+      expect(resolveConcept(key)).toBeNull();
+    }
   });
 });

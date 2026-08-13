@@ -12,7 +12,8 @@
  * later phase reason about per-locale coverage.
  */
 
-import type { Locale, UnitLexiconEntry, UnitType } from './types';
+import type { Locale, UnitLexiconEntry, UnitType } from '../types';
+import { collisionsFor, fold, foldedLookupFor } from './fold';
 
 function normalize(token: string): string {
   // Internal runs collapse too, not just the ends: the multi-word entries
@@ -29,7 +30,9 @@ const ENTRIES: UnitLexiconEntry[] = [
   { token: 'trái', locale: 'vi', unitType: 'count' },
   { token: 'con', locale: 'vi', unitType: 'count' },
   { token: 'viên', locale: 'vi', unitType: 'count' },
+  { token: 'cục', locale: 'vi', unitType: 'count' },
   { token: 'cây', locale: 'vi', unitType: 'count' },
+  { token: 'phần', locale: 'vi', unitType: 'count' },
   { token: 'xiên', locale: 'vi', unitType: 'count' },
   { token: 'ổ', locale: 'vi', unitType: 'count' },
   { token: 'bánh bao', locale: 'vi', unitType: 'count' }, // the item IS its own counter
@@ -118,32 +121,16 @@ for (const e of ENTRIES) LEXICON.set(normalize(e.token), e);
  * Folding is a FALLBACK, never a replacement: an exact accented match always
  * wins, so nothing that resolved before resolves differently now.
  */
-function fold(token: string): string {
-  return normalize(token)
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .replace(/đ/g, 'd');
-}
-
-const FOLDED = new Map<string, UnitLexiconEntry>();
-for (const e of ENTRIES) {
-  const key = fold(e.token);
-  // `đĩa`/`dĩa` are two spellings of one word and agree on their type. A future
-  // collision that does NOT agree is a real ambiguity — first entry wins here,
-  // and `lexicon-concepts-priors.test.ts` fails so it can't pass unnoticed.
-  if (!FOLDED.has(key)) FOLDED.set(key, e);
-}
+const foldedEntries = ENTRIES.map((entry) => [entry.token, entry] as const);
+const FOLDED = foldedLookupFor(foldedEntries, (entry) => entry.unitType, {
+  collapseWhitespace: true,
+});
 
 /** Entries sharing a folded key but disagreeing on type — must stay empty. */
-export function foldCollisions(): Array<[string, UnitType, UnitType]> {
-  const out: Array<[string, UnitType, UnitType]> = [];
-  for (const e of ENTRIES) {
-    const winner = FOLDED.get(fold(e.token));
-    if (winner && winner.unitType !== e.unitType) {
-      out.push([fold(e.token), winner.unitType, e.unitType]);
-    }
-  }
-  return out;
+export function foldCollisions(): string[] {
+  return collisionsFor(foldedEntries, (entry) => entry.unitType, {
+    collapseWhitespace: true,
+  });
 }
 
 /**
@@ -158,10 +145,50 @@ export function resolveUnitType(token: string | undefined): UnitType | null {
 /** Full lexicon entry (type + locale) for a token, or null. */
 export function lookupUnit(token: string | undefined): UnitLexiconEntry | null {
   if (!token) return null;
-  return LEXICON.get(normalize(token)) ?? FOLDED.get(fold(token)) ?? null;
+  return (
+    LEXICON.get(normalize(token)) ??
+    FOLDED.get(fold(token, { collapseWhitespace: true })) ??
+    null
+  );
 }
 
 /** All entries for a locale — used by tests / coverage reporting. */
 export function unitsForLocale(locale: Locale): UnitLexiconEntry[] {
   return ENTRIES.filter((e) => e.locale === locale);
+}
+
+/** All real surface units registered for an invariant's unit-type coverage. */
+export function unitsForType(unitType: UnitType): UnitLexiconEntry[] {
+  return ENTRIES.filter((entry) => entry.unitType === unitType);
+}
+
+const PIECE_LIKE_FOLDED = new Set([
+  'mieng',
+  'lat',
+  'khuc',
+  'khua',
+  'khoanh',
+  'phi le',
+  'cuc',
+  'piece',
+  'pieces',
+  'slice',
+  'slices',
+  'steak',
+  'steaks',
+  'fillet',
+  'fillets',
+  'filet',
+  'filets',
+  'chunk',
+  'chunks',
+  'cut',
+  'cuts',
+]);
+
+/** Whether a token describes a cut/piece eligible for slice↔count loosening. */
+export function isPieceLikeUnitToken(token: string | undefined): boolean {
+  return token
+    ? PIECE_LIKE_FOLDED.has(fold(token, { collapseWhitespace: true }))
+    : false;
 }

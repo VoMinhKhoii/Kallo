@@ -34,6 +34,7 @@ describe('EXACT_ALIASES staples (verified DB targets)', () => {
     ['bánh cuốn', 'Bánh ướt'],
     ['hủ tiếu', 'Bánh phở'],
     ['bánh hỏi', 'Bún'],
+    ['xôi', 'Xôi trắng'],
   ])('%s → %s', (key, target) => {
     expect(EXACT_ALIASES[key]?.target).toBe(target);
   });
@@ -62,6 +63,7 @@ describe('resolvePreMatchAlias', () => {
     expect(resolvePreMatchAlias('Bánh Cuốn')).toBe('Bánh ướt');
     expect(resolvePreMatchAlias('hủ tiếu')).toBe('Bánh phở');
     expect(resolvePreMatchAlias('bánh hỏi')).toBe('Bún');
+    expect(resolvePreMatchAlias('xôi')).toBe('Xôi trắng');
   });
 
   it('still rewrites the original wrong-match corrections', () => {

@@ -65,6 +65,19 @@ describe('decomposition-v2 prompt', () => {
     const out = buildDecompositionV2Prompt(baseUserContext);
     expect(out).toMatch(/cân sống/);
     expect(out).toMatch(/raw_weight/);
+    expect(out).toMatch(
+      /"rawName": "ức gà"[^\n]+"explicitMass": \{ "grams": 300, "basis": "edible" \}/
+    );
+  });
+
+  it('keeps explicitMass in both weighted examples', () => {
+    const out = buildDecompositionV2Prompt(baseUserContext);
+    expect(out).toMatch(
+      /"rawName": "cơm"[^\n]+"explicitMass": \{ "grams": 100, "basis": "unknown" \}/
+    );
+    expect(out).toMatch(
+      /"rawName": "ức gà"[^\n]+"explicitMass": \{ "grams": 300, "basis": "edible" \}/
+    );
   });
 
   it('production builder includes the bỏ da bỏ mỡ → prepNotes example', () => {
