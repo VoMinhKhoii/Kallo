@@ -304,4 +304,48 @@ void main() {
     expect(find.byType(MealTimeDivider), findsOneWidget);
     expect(find.text('cơm gà'), findsNWidgets(2));
   });
+
+  testWidgets('a second meal sits BELOW the unconfirmed one, not around it', (
+    tester,
+  ) async {
+    const staged = PendingMealConfirmation(
+      id: 'p1',
+      rawInput: 'cơm gà',
+      loggedAt: '2026-08-11T12:00:00.000Z',
+      parsedMeal: _meal,
+    );
+
+    await tester.pumpWidget(
+      _wrap(
+        view: _view(streaming: true, pending: const [staged]),
+        stream: const StreamAnalysisState(
+          status: StreamStatus.decomposing,
+          isAnalyzing: true,
+        ),
+        streamingRawInput: _raw,
+        sentAt: DateTime(2026, 8, 11, 12, 15),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The new turn's header used to render ABOVE the older staged card, with
+    // its own streaming rows below it — the turn split in half around a meal
+    // that came first.
+    // The staged meal now has a bubble of its own, so target the LIVE turn's
+    // by key rather than by type.
+    final newBubble = tester.getRect(
+      find.byKey(const ValueKey('user-bubble')),
+    );
+    final newRows = tester.getRect(find.byType(StreamingEntry));
+
+    // Every trace of the older meal — its bubble AND its card quote — sits
+    // above the new turn.
+    for (final staged in find.text('cơm gà').evaluate()) {
+      expect(
+        tester.getRect(find.byWidget(staged.widget)).bottom,
+        lessThanOrEqualTo(newBubble.top),
+      );
+    }
+    expect(newBubble.bottom, lessThanOrEqualTo(newRows.top));
+  });
 }

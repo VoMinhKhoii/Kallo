@@ -61,10 +61,14 @@ class FeedViewState {
     // relaunch. Until the user confirms, that row and the reveal are the SAME
     // meal — render both and it appears twice.
     final revealedId = stream.status == StreamStatus.done ? stream.analysisId : null;
+    // Oldest first, like persistedMeals above. The server hands these back
+    // `ORDER BY logged_at DESC`, so taking them as-is put two unconfirmed meals
+    // on screen in the opposite order to every other card in the day.
     final pendingConfirmations =
         (day?.pendingConfirmations ?? const <PendingMealConfirmation>[])
             .where((p) => p.id != revealedId)
-            .toList();
+            .toList()
+          ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
 
     // Legacy meals can carry unknown macros — when any do, the daily summary
     // can't be totalled honestly, so we show a quiet note instead of the ring.

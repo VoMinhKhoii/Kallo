@@ -87,21 +87,6 @@ class FeedFooter extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: LoggingSpacing.block,
       children: [
-        // The live turn's timestamp, from the moment of sending — the feed's
-        // timeline should not skip a beat while the analysis runs. The reveal
-        // card below is told not to draw its own (showTimeDivider: false).
-        if (showBubble && sentAt != null)
-          MealTimeDivider(
-            key: const ValueKey('turn-divider'),
-            time: DateFormat.jm(context.locale.toString()).format(sentAt!),
-          ),
-        if (showBubble)
-          // A constant key: the bubble must NOT remount when the sibling below
-          // it changes type at reveal, or it would replay its entrance.
-          _MaybeEntrance(
-            key: const ValueKey('user-bubble'),
-            child: UserMessageBubble(text: bubbleText),
-          ),
         if (view.pendingConfirmations.isNotEmpty)
           PendingConfirmationCards(
             pending: view.pendingConfirmations,
@@ -113,6 +98,25 @@ class FeedFooter extends StatelessWidget {
                 hasFailed,
             onConfirm: onConfirm,
             onConfirmCheat: onConfirmCheat,
+          ),
+        // The live turn's header goes directly above the live turn's OWN
+        // content, BELOW anything staged earlier. Emitted before the pending
+        // cards it split the turn in half: send a second meal while the first
+        // is unconfirmed and your new message appeared above the older meal,
+        // with its own streaming rows below it. The feed has to read down in
+        // the order things happened.
+        if (showBubble && sentAt != null)
+          MealTimeDivider(
+            key: const ValueKey('turn-divider'),
+            time: DateFormat.jm(context.locale.toString()).format(sentAt!),
+          ),
+        if (showBubble)
+          // A constant key: the bubble must NOT remount when the sibling below
+          // it changes type at reveal, or it would replay its entrance. The key
+          // also survives the index shifting as pending cards come and go.
+          _MaybeEntrance(
+            key: const ValueKey('user-bubble'),
+            child: UserMessageBubble(text: bubbleText),
           ),
         if (view.isStreaming)
           StreamingEntry(stream: stream, loaderIndex: loaderIndex),

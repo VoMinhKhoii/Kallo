@@ -123,4 +123,33 @@ void main() {
       expect(view.pendingConfirmations, hasLength(1));
     });
   });
+
+  group('the day reads down in the order things happened', () {
+    test('staged meals come back oldest first, not newest first', () {
+      // The server hands these back ORDER BY logged_at DESC.
+      const later = PendingMealConfirmation(
+        id: 'a2',
+        rawInput: 'cơm gà',
+        loggedAt: '2026-08-11T13:30:00.000Z',
+        parsedMeal: _parsed,
+      );
+      const earlier = PendingMealConfirmation(
+        id: 'a1',
+        rawInput: 'phở bò',
+        loggedAt: '2026-08-11T12:15:00.000Z',
+        parsedMeal: _parsed,
+      );
+
+      final view = _view(
+        pending: const [later, earlier],
+        stream: StreamAnalysisState.initial,
+      );
+
+      expect(
+        view.pendingConfirmations.map((p) => p.id),
+        ['a1', 'a2'],
+        reason: 'two unconfirmed meals must not read backwards',
+      );
+    });
+  });
 }
