@@ -6,6 +6,7 @@ import 'package:nham_mobile/features/logging/data/logging_models.dart';
 import 'package:nham_mobile/features/logging/data/stream_analysis_controller.dart';
 import 'package:nham_mobile/features/logging/logic/feed/view_state.dart';
 import 'package:nham_mobile/features/logging/widgets/feed/feed_footer.dart';
+import 'package:nham_mobile/features/logging/widgets/meal_time_divider.dart';
 import 'package:nham_mobile/features/logging/widgets/streaming/streaming_entry.dart';
 import 'package:nham_mobile/features/logging/widgets/streaming/user_message_bubble.dart';
 import 'package:nham_mobile/models/meal.dart';
@@ -57,6 +58,7 @@ Widget _wrap({
   required StreamAnalysisState stream,
   String? streamingRawInput,
   String? revealRawInput,
+  DateTime? sentAt,
 }) => EasyLocalization(
   supportedLocales: const [Locale('en'), Locale('vi')],
   path: 'assets/l10n',
@@ -79,6 +81,7 @@ Widget _wrap({
               revealRawInput: revealRawInput,
               confirmPending: false,
               loaderIndex: 0,
+              sentAt: sentAt,
               onConfirm: (_, _) {},
               onConfirmReveal: (_, _) {},
               onConfirmCheat: (_, _) {},
@@ -128,7 +131,7 @@ void main() {
     expect(find.text(_raw), findsOneWidget);
   });
 
-  testWidgets('at reveal: the bubble stays and the words are NOT printed twice', (
+  testWidgets('at reveal: the bubble stays and the card regains its quote', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -144,10 +147,71 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // The card forms UNDER the bubble, so it must suppress its own Lora quote.
+    // The bubble stays, and the card carries its own quote again — the words
+    // deliberately appear twice.
     expect(find.byType(UserMessageBubble), findsOneWidget);
     expect(find.byType(StreamingEntry), findsNothing);
-    expect(find.text(_raw), findsOneWidget);
+    expect(find.text(_raw), findsNWidgets(2));
+  });
+
+  testWidgets('the turn is stamped from the moment of sending, once', (
+    tester,
+  ) async {
+    final sentAt = DateTime(2026, 8, 11, 12, 15);
+
+    // While streaming there is no card at all, so the divider can only be the
+    // footer's own — the timeline must not wait for the answer to land.
+    await tester.pumpWidget(
+      _wrap(
+        view: _view(streaming: true),
+        stream: const StreamAnalysisState(
+          status: StreamStatus.decomposing,
+          isAnalyzing: true,
+        ),
+        streamingRawInput: _raw,
+        sentAt: sentAt,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(MealTimeDivider), findsOneWidget);
+
+    // And at reveal the card must NOT add a second one.
+    await tester.pumpWidget(
+      _wrap(
+        view: _view(revealing: true),
+        stream: const StreamAnalysisState(
+          status: StreamStatus.done,
+          result: _meal,
+          analysisId: 'a1',
+        ),
+        revealRawInput: _raw,
+        sentAt: sentAt,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(MealTimeDivider), findsOneWidget);
+  });
+
+  testWidgets('the divider sits above the bubble, not under it', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        view: _view(streaming: true),
+        stream: const StreamAnalysisState(
+          status: StreamStatus.decomposing,
+          isAnalyzing: true,
+        ),
+        streamingRawInput: _raw,
+        sentAt: DateTime(2026, 8, 11, 12, 15),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getRect(find.byType(MealTimeDivider)).bottom,
+      lessThanOrEqualTo(tester.getRect(find.byType(UserMessageBubble)).top),
+    );
   });
 
   testWidgets('the bubble survives the streaming → reveal swap without remounting', (

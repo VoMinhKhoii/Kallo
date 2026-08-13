@@ -47,7 +47,16 @@ class StreamingEntry extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // The loading state is PINNED at the top. Below the rows it slid down
+          // by a row's height every time a dish landed, so the one thing on
+          // screen that is meant to say "still working" was the thing that
+          // never held still.
+          StreamTickerLine(
+            frame: deriveStreamTicker(stream),
+            loaderIndex: loaderIndex,
+          ),
           if (hasItems) ...[
+            const SizedBox(height: NhamSpacing.sp1),
             for (var i = 0; i < completed.length; i++)
               FadeInLeft(
                 key: ValueKey(completed[i].id),
@@ -61,12 +70,7 @@ class StreamingEntry extends StatelessWidget {
                 offset: 8,
                 child: _PendingNameRow(name: pendingNames[i]),
               ),
-            const SizedBox(height: NhamSpacing.sp1),
           ],
-          StreamTickerLine(
-            frame: deriveStreamTicker(stream),
-            loaderIndex: loaderIndex,
-          ),
         ],
       ),
     );

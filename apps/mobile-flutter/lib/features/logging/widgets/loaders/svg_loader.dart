@@ -16,6 +16,13 @@ import '../../../../theme/nham_colors.dart';
 typedef LoaderPainterBuilder =
     CustomPainter Function(ValueListenable<double> clock, Color color);
 
+/// Where the clock rests when the platform asks for reduced motion.
+///
+/// Picked by rendering the whole pool at several offsets and choosing the one
+/// where every loader reads: at 0 the ECG has drawn nothing and the drip has
+/// not fallen; by here the trace has its spike and the drip its ripple.
+const double _restingSeconds = 0.95;
+
 /// One loader in the pool.
 @immutable
 class SvgLoaderSpec {
@@ -88,11 +95,16 @@ class _SvgLoaderViewState extends State<SvgLoaderView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reduced motion: hold the resting first frame instead of animating —
-    // the same seam `pulse.dart` and the old streaming spinner use.
+    // Reduced motion: hold one still frame instead of animating — the same
+    // seam `pulse.dart` and the old streaming spinner use.
+    //
+    // NOT frame zero. Several loaders are mid-gesture by design and start
+    // empty — the ECG trace has drawn nothing at t=0, the drip has not fallen —
+    // so pinning to zero would show a reduced-motion user a blank box. A small
+    // offset lands every loader somewhere legible.
     if (MediaQuery.disableAnimationsOf(context)) {
       if (_ticker.isActive) _ticker.stop();
-      _clock.value = 0;
+      _clock.value = _restingSeconds;
     } else if (!_ticker.isActive) {
       _ticker.start();
     }

@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-import 'loader_math.dart';
-import 'svg_loader.dart';
+import '../loader_math.dart';
+import '../svg_loader.dart';
 
 /// Loaders built from rounded rects whose heights walk a sampled value list.
 

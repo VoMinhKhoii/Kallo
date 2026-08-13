@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/cheat.dart';
@@ -8,6 +9,7 @@ import '../../logic/logging_spacing.dart';
 import '../cheat_slider_card.dart';
 import '../entrances.dart';
 import '../meal_entry.dart';
+import '../meal_time_divider.dart';
 import '../streaming/streaming_entry.dart';
 import '../streaming/user_message_bubble.dart';
 import '../terminal/failed_attempt_card.dart';
@@ -33,11 +35,16 @@ class FeedFooter extends StatelessWidget {
     required this.onRetry,
     required this.onDiscardFailed,
     required this.loaderIndex,
+    required this.sentAt,
   });
 
   /// Which loader the in-flight analysis draws — picked once per meal by the
   /// feed, so it survives any rebuild of this footer.
   final int loaderIndex;
+
+  /// When the user hit send. The live turn's time divider goes above the chat
+  /// bubble from that moment, rather than appearing only once the card lands.
+  final DateTime? sentAt;
 
   final FeedViewState view;
   final String? revealRawInput;
@@ -87,6 +94,14 @@ class FeedFooter extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: LoggingSpacing.block,
       children: [
+        // The live turn's timestamp, from the moment of sending — the feed's
+        // timeline should not skip a beat while the analysis runs. The reveal
+        // card below is told not to draw its own (showTimeDivider: false).
+        if (showBubble && sentAt != null)
+          MealTimeDivider(
+            key: const ValueKey('turn-divider'),
+            time: DateFormat.jm(context.locale.toString()).format(sentAt!),
+          ),
         if (showBubble)
           // A constant key: the bubble must NOT remount when the sibling below
           // it changes type at reveal, or it would replay its entrance.
@@ -130,11 +145,12 @@ class FeedFooter extends StatelessWidget {
         // them, and both keep the same 16px content inset so nothing shifts
         // sideways as the card chrome appears.
         //
-        // rawInput is EMPTY on purpose: the bubble above still holds the words.
         if (view.isRevealing)
           MealEntry(
             key: ValueKey('reveal-${stream.analysisId}'),
-            rawInput: showBubble ? '' : (revealRawInput ?? ''),
+            rawInput: revealRawInput ?? '',
+            // The footer already drew the divider above the bubble.
+            showTimeDivider: false,
             parsedMeal: stream.result!,
             busy: confirmPending,
             revealing: true,
@@ -149,8 +165,7 @@ class FeedFooter extends StatelessWidget {
           CheatSliderCard(
             key: ValueKey('cheat-reveal-${stream.analysisId ?? 'clarify'}'),
             spec: stream.cheatSpec!,
-            // Empty while the bubble carries the words — see above.
-            rawInput: showBubble ? '' : (revealRawInput ?? ''),
+            rawInput: revealRawInput ?? '',
             busy: confirmPending,
             onConfirm: onConfirmCheatReveal,
             onClarify: onClarifyCheat,

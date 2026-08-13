@@ -1,9 +1,7 @@
-import 'dart:math' as math;
-
 import 'package:flutter/widgets.dart';
 
-import 'loader_math.dart';
-import 'svg_loader.dart';
+import '../loader_math.dart';
+import '../svg_loader.dart';
 
 /// Loaders built from circles on a fixed lattice, varying radius or opacity.
 
@@ -72,58 +70,6 @@ class GridPainter extends LoaderPainter {
   }
 }
 
-/// Two counter-rotating rings of dots: four inside turning one way, eight
-/// outside turning the other, much slower.
-class CirclesPainter extends LoaderPainter {
-  CirclesPainter(super.clock, super.color);
-
-  static const double _innerDur = 2.5;
-  static const double _outerDur = 8;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final s = size.width / 135;
-    final centre = Offset(67 * s, 67 * s);
-    final paint = Paint()..color = color;
-
-    void ring({
-      required int count,
-      required double radius,
-      required double dotRadius,
-      required double turns,
-      required double startAngle,
-    }) {
-      final step = 2 * math.pi / count;
-      for (var i = 0; i < count; i++) {
-        final angle = startAngle + turns * 2 * math.pi + i * step;
-        canvas.drawCircle(
-          centre +
-              Offset(math.cos(angle) * radius * s, math.sin(angle) * radius * s),
-          dotRadius * s,
-          paint,
-        );
-      }
-    }
-
-    // Inner: four dots, anticlockwise.
-    ring(
-      count: 4,
-      radius: 19.45,
-      dotRadius: 10,
-      turns: -loaderPhase(seconds, _innerDur),
-      startAngle: -math.pi / 2,
-    );
-    // Outer: eight dots, clockwise and far slower.
-    ring(
-      count: 8,
-      radius: 55,
-      dotRadius: 12,
-      turns: loaderPhase(seconds, _outerDur),
-      startAngle: -math.pi / 2,
-    );
-  }
-}
-
 const threeDotsLoader = SvgLoaderSpec(
   id: 'three-dots',
   widthFactor: 1.5,
@@ -132,5 +78,3 @@ const threeDotsLoader = SvgLoaderSpec(
 );
 
 const gridLoader = SvgLoaderSpec(id: 'grid', painter: GridPainter.new);
-
-const circlesLoader = SvgLoaderSpec(id: 'circles', painter: CirclesPainter.new);

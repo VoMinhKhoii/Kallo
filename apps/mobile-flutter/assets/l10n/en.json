@@ -1185,7 +1185,27 @@
       "estimating": "Estimating nutrition…",
       "assembling": "Putting it all together…",
       "analyzing": "Analyzing…",
-      "stillWorking": "Still working on it — almost there."
+      "stillWorking": "Still working on it — almost there.",
+      "verbs": {
+        "connecting1": "Connecting…",
+        "connecting2": "Warming up…",
+        "connecting3": "Kindling…",
+        "decomposing1": "Prepping…",
+        "decomposing2": "Chopping…",
+        "decomposing3": "Unpacking…",
+        "matching1": "Foraging…",
+        "matching2": "Sourcing…",
+        "matching3": "Gathering…",
+        "estimating1": "Weighing…",
+        "estimating2": "Calculating…",
+        "estimating3": "Crunching…",
+        "assembling1": "Plating…",
+        "assembling2": "Garnishing…",
+        "assembling3": "Finishing…",
+        "analyzing1": "Analyzing…",
+        "analyzing2": "Simmering…",
+        "analyzing3": "Marinating…"
+      }
     },
     "failedAttempt": {
       "message": "We couldn't read this one. Your note is safe — give it another try.",

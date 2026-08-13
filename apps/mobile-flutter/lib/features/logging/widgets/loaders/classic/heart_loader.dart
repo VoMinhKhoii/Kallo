@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-import 'loader_math.dart';
-import 'svg_loader.dart';
+import '../loader_math.dart';
+import '../svg_loader.dart';
 
 /// Three hearts breathing in and out of step. The only path-based loader.
 class HeartsPainter extends LoaderPainter {

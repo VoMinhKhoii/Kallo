@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/features/logging/data/stream_analysis_controller.dart';
+import 'package:nham_mobile/features/logging/widgets/streaming/stream_ticker_line.dart';
 import 'package:nham_mobile/features/logging/widgets/streaming/streaming_entry.dart';
 import 'package:nham_mobile/models/meal.dart';
 import 'package:nham_mobile/models/streaming.dart';
@@ -61,7 +62,9 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('shows the stage label before any dish is known', (tester) async {
+  testWidgets('shows the stage action verb before any dish is known', (
+    tester,
+  ) async {
     await _pump(
       tester,
       const StreamAnalysisState(
@@ -69,7 +72,7 @@ void main() {
         isAnalyzing: true,
       ),
     );
-    expect(find.text('Matching ingredients…'), findsOneWidget);
+    expect(find.text('Foraging…'), findsOneWidget);
   });
 
   testWidgets('streams data out: resolved rows, then detected names', (
@@ -121,6 +124,26 @@ void main() {
       ),
     );
     expect(find.textContaining('· 210 kcal'), findsOneWidget);
+  });
+
+  testWidgets('pins the loading line ABOVE the rows so it cannot drift', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      StreamAnalysisState(
+        status: StreamStatus.estimating,
+        isAnalyzing: true,
+        items: const ['Rau thơm'],
+        completedItems: [_item('a', 'Phở bò', 480)],
+      ),
+    );
+
+    // Below the rows it slid down by a row's height every time a dish landed —
+    // the one element meant to say "still working" was the one that moved.
+    final ticker = tester.getRect(find.byType(StreamTickerLine));
+    expect(ticker.bottom, lessThanOrEqualTo(tester.getRect(find.text('Phở bò')).top));
+    expect(ticker.bottom, lessThanOrEqualTo(tester.getRect(find.text('Rau thơm')).top));
   });
 
   testWidgets('renders BARE — no card chrome around the streamed rows', (

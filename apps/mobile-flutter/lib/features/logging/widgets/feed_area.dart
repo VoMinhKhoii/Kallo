@@ -145,6 +145,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// footer (a pending card arriving, say) cannot re-roll it.
   int _loaderIndex = 0;
 
+  /// When the current turn was sent. Drives the divider above the chat bubble,
+  /// so the timeline is stamped the moment the user hits send rather than when
+  /// the answer lands.
+  DateTime? _sentAt;
+
   /// A failed attempt, rendered as a feed card with "Try again" (terracotta).
   String? _failedText;
 
@@ -428,6 +433,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       _inFlightCheat =
           isCheat ?? ref.read(mealLogModeProvider) == MealLogMode.cheat;
       _loaderIndex = pickLoaderIndex();
+      _sentAt = DateTime.now();
     });
     _inputController.clear();
     _scrollToAnswer();
@@ -665,6 +671,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       stream: stream,
       streamingRawInput: _inFlightLabel,
       loaderIndex: _loaderIndex,
+      sentAt: _sentAt,
       confirmPending: confirmPending,
       onConfirm: confirmActions.confirmPending,
       onConfirmReveal: confirmActions.confirmReveal,
@@ -746,9 +753,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     setState(() {
       _revealRawInput = null;
       _inFlightText = text;
-      // A clarify is a fresh analysis, so it gets a fresh loader — this path
-      // bypasses _runAnalyze and would otherwise reuse the last run's.
+      // A clarify is a fresh analysis, so it gets a fresh loader and a fresh
+      // timestamp — this path bypasses _runAnalyze and would otherwise reuse
+      // the previous run's.
       _loaderIndex = pickLoaderIndex();
+      _sentAt = DateTime.now();
     });
     _scrollToAnswer();
     startMealAnalysis(

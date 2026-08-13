@@ -43,25 +43,30 @@ void main() {
   });
 
   group('registry', () {
-    test('carries the full twelve-loader collection, uniquely named', () {
-      expect(kSvgLoaders, hasLength(12));
+    test('is spinner-free and uniquely named', () {
+      expect(kSvgLoaders, hasLength(19));
       expect(
         kSvgLoaders.map((l) => l.id).toSet(),
         {
-          'audio',
-          'ball-triangle',
-          'bars',
-          'circles',
-          'grid',
-          'hearts',
-          'oval',
-          'puff',
-          'rings',
-          'spinning-circles',
-          'tail-spin',
-          'three-dots',
+          // The non-circular survivors of the SVG-Loaders set.
+          'audio', 'bars', 'grid', 'hearts', 'three-dots',
+          // Kitchen.
+          'bubbles', 'knife-chop', 'pan-flip', 'pour-drip', 'rice-fall',
+          'steam', 'whisk',
+          // Motion.
+          'bounce', 'dash', 'ecg', 'flip-squares', 'jelly', 'ladder', 'wave',
         },
       );
+    });
+
+    test('carries none of the retired spinners', () {
+      // These read as a generic loading circle, which is the one thing this
+      // pool exists not to be.
+      const retired = {
+        'oval', 'tail-spin', 'rings', 'puff', 'spinning-circles', 'circles',
+        'ball-triangle',
+      };
+      expect(kSvgLoaders.map((l) => l.id).toSet().intersection(retired), isEmpty);
     });
 
     test('every loader renders at a positive size', () {
@@ -75,14 +80,14 @@ void main() {
     test('picks stay in range', () {
       final random = Random(1);
       for (var i = 0; i < 200; i++) {
-        expect(pickLoaderIndex(random), inInclusiveRange(0, 11));
+        expect(pickLoaderIndex(random), inInclusiveRange(0, 18));
       }
     });
 
     test('loaderAt wraps instead of throwing on a stale index', () {
       // The index is persisted across rebuilds; it must never crash the feed.
       expect(loaderAt(0).id, kSvgLoaders.first.id);
-      expect(loaderAt(12).id, kSvgLoaders.first.id);
+      expect(loaderAt(19).id, kSvgLoaders.first.id);
       expect(loaderAt(-1).id, kSvgLoaders[1].id);
     });
   });
