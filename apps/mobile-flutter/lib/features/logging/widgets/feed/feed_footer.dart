@@ -85,7 +85,7 @@ class FeedFooter extends StatelessWidget {
     // them at the same block gap the card list uses above.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: LoggingSpacing.block,
+      spacing: LoggingSpacing.turn,
       children: [
         if (view.pendingConfirmations.isNotEmpty)
           PendingConfirmationCards(

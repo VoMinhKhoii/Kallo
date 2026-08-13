@@ -27,10 +27,10 @@ class TurnHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         MealTimeDivider(time: time),
-        const SizedBox(height: LoggingSpacing.block),
+        const SizedBox(height: LoggingSpacing.turn),
         if (text != null && text.isNotEmpty) ...[
           UserMessageBubble(text: text),
-          const SizedBox(height: LoggingSpacing.block),
+          const SizedBox(height: LoggingSpacing.turn),
         ],
       ],
     );

@@ -52,7 +52,7 @@ class PendingConfirmationCards extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: LoggingSpacing.block,
+      spacing: LoggingSpacing.turn,
       children: [
         for (var i = 0; i < pending.length; i++)
           if (pending[i].cheatSpec case final cheatSpec?)

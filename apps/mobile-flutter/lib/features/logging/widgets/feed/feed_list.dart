@@ -97,10 +97,10 @@ class FeedList extends StatelessWidget {
           dockHeight,
         ),
         itemCount: persistedMeals.length + (view.hasFooterItems ? 1 : 0),
-        // The ONE gap between cards — no card carries a bottom margin of its
+        // The ONE gap between turns — no card carries a bottom margin of its
         // own, so this separator is the whole story.
         separatorBuilder:
-            (_, __) => const SizedBox(height: LoggingSpacing.block),
+            (_, __) => const SizedBox(height: LoggingSpacing.turn),
         itemBuilder: (context, index) {
           if (index < persistedMeals.length) {
             final meal = persistedMeals[index];

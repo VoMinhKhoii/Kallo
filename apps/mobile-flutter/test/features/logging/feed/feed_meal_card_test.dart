@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/features/logging/data/logging_models.dart';
 import 'package:nham_mobile/features/logging/widgets/feed/feed_meal_card.dart';
 import 'package:nham_mobile/features/logging/widgets/meal_time_divider.dart';
+import 'package:nham_mobile/features/logging/logic/logging_spacing.dart';
+import 'package:nham_mobile/theme/nham_colors.dart';
 import 'package:nham_mobile/features/logging/widgets/user_message_bubble.dart';
 
 import '../../../l10n_test_loader.dart';
@@ -107,5 +109,29 @@ void main() {
 
     expect(find.byType(MealTimeDivider), findsOneWidget);
     expect(find.byType(UserMessageBubble), findsNothing);
+  });
+
+  testWidgets('divider, message and card sit on one rhythm', (tester) async {
+    await tester.pumpWidget(_wrap(_meal));
+    await tester.pumpAndSettle();
+
+    final divider = tester.getRect(find.byType(MealTimeDivider));
+    final bubble = tester.getRect(find.byType(UserMessageBubble));
+    final card = tester.getRect(
+      find
+          .byWidgetPredicate(
+            (w) =>
+                w is DecoratedBox &&
+                w.decoration is BoxDecoration &&
+                (w.decoration as BoxDecoration).color == NhamColors.elev,
+          )
+          .first,
+    );
+
+    // One beat for the whole turn. Any difference between these reads as a
+    // mistake rather than as hierarchy, so they are asserted equal — not
+    // merely "roughly right".
+    expect(bubble.top - divider.bottom, closeTo(LoggingSpacing.turn, 0.5));
+    expect(card.top - bubble.bottom, closeTo(LoggingSpacing.turn, 0.5));
   });
 }
