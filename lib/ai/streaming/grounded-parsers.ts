@@ -16,20 +16,21 @@
  */
 
 import { mealItemHasDiscreteOil } from '@/lib/ai/absorbed-oil';
-import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
-import { ZERO_TRIPLE } from '../pipeline/bridge-verdicts';
-import type { RawNutritionAdjustment } from '../pipeline/nutrition';
-import { __testing as nutritionTesting } from '../pipeline/nutrition';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import { ZERO_TRIPLE } from '@/lib/ai/pipeline/bridge-verdicts';
+import type { RawNutritionAdjustment } from '@/lib/ai/pipeline/nutrition';
+import { __testing as nutritionTesting } from '@/lib/ai/pipeline/nutrition';
+import { resolveGroundedMass } from '@/lib/ai/pipeline/refuse-mass';
 import type {
   DecomposedIngredientV2,
   GroundedIngredientEstimate,
   GroundedMealItem,
-} from '../pipeline/schemas-v2';
+} from '@/lib/ai/pipeline/schemas-v2';
 import type {
   IngredientLlmNutrition,
   MacroBase,
   MealItemNutrition,
-} from '../types';
+} from '@/lib/ai/types';
 
 /**
  * Same partial-JSON marker as v1's nutrition stream. Each `{"mealItemName":`
@@ -154,7 +155,15 @@ export function resolveStreamingV2MealItem(
     const cookingMethod =
       decompForName?.cookingMethod ?? dishCookingMethod ?? null;
 
-    const grams = rawIng.grams;
+    const selectedCandidate = candidateFromVerdict(rawIng, candidates);
+    const mass = resolveGroundedMass({
+      ground: rawIng,
+      candidateInediblePct: selectedCandidate?.inediblePct ?? null,
+      canonicalName: decompForName?.canonicalName ?? rawIng.ingredientName,
+      rawName: decompForName?.rawName ?? rawIng.ingredientName,
+      prepNotes: decompForName?.prepNotes,
+    });
+    const grams = mass.edibleG ?? 0;
     totalGrams += grams;
 
     const base = computeBaseFromVerdict(rawIng, candidates, grams);
@@ -230,6 +239,18 @@ function computeBaseFromVerdict(
     carbohydrateG: (per100g.carbohydrateG ?? 0) * (grams / 100),
     fatG: (per100g.fatG ?? 0) * (grams / 100),
   };
+}
+
+function candidateFromVerdict(
+  rawIng: GroundedIngredientEstimate,
+  candidates: IngredientV2MatchResult['candidates']
+): IngredientV2MatchResult['candidates'][number] | null {
+  const selected = rawIng.selectedCandidateId;
+  if (!selected || selected === 'none') return null;
+  const match = /^c(\d+)$/.exec(selected);
+  if (!match) return null;
+  const idx = Number.parseInt(match[1], 10) - 1;
+  return idx >= 0 && idx < candidates.length ? candidates[idx] : null;
 }
 
 export interface MealItemOffset {

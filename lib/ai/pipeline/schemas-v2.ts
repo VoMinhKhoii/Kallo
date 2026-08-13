@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isRefusePctSchemaEnabled } from './config/prompt-ablation-flags';
 import {
   explicitMassSchema,
   sizeModifierSchema,
@@ -77,7 +78,7 @@ export const decomposedIngredientV2Schema = z
     explicitMass: explicitMassSchema
       .optional()
       .describe(
-        'Set ONLY when the user typed an explicit weight (e.g. "250gr ức gà cân sống" → {grams:250, basis:"raw"}). Never invent a mass.'
+        'Set ONLY when the user typed an explicit weight. `basis` is the physical mass basis: gross_as_served for a named bone-in/shell-on object, edible for a boneless/peeled/fillet form, otherwise unknown. Cooking state belongs in stateHint. Never invent a mass.'
       ),
     prepNotes: z
       .array(z.string().min(1).max(60))
@@ -166,67 +167,98 @@ export type MealDecompositionV2 = z.infer<typeof mealDecompositionV2Schema>;
  *   - omitted   — only valid when the server passed zero candidates
  *                 (auto-unmatched path).
  *
- * `grams` is the LLM's portion estimate, now state-correct because the LLM
- * saw the selected candidate's `db_state`. Server scales DB per_100g ×
- * grams / 100 with NO yield-factor fudge.
+ * The default schema asks for edible `grams`. REFUSE_PCT_SCHEMA replaces that
+ * field with ordered `grossG`, `refusePct`; the server derives edible mass.
+ * Both variants follow the selected candidate's `db_state` with no yield
+ * fudge.
  */
-export const groundedIngredientEstimateSchema = z
-  .object({
-    ingredientName: z
-      .string()
-      .describe('Must match the ingredient name from decomposition.'),
-    selectedCandidateId: z
-      .union([z.string().min(1), z.literal('none')])
-      .optional()
-      .describe(
-        'CRAG verdict: candidate id ("c1"…) to accept that match, or "none" to reject all candidates and route through unmatched path. Omit only when the input had no candidates.'
+export function buildGroundedIngredientEstimateSchema(
+  env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env
+) {
+  const massFields = isRefusePctSchemaEnabled(env)
+    ? {
+        grossG: z
+          .number()
+          .positive()
+          .finite()
+          .describe(
+            'Whole as-served mass in grams INCLUDING bone, shell, rind, or other refuse not eaten. Uses the same raw-vs-cooked basis rules as grams. Must be > 0.'
+          ),
+        refusePct: z
+          .number()
+          .int()
+          .min(0)
+          .max(80)
+          .describe(
+            'REQUIRED integer share of grossG that is inedible bone, shell, or rind. Emit explicit 0 for boneless/shell-off foods; never omit.'
+          ),
+      }
+    : {
+        // `.positive().finite()` is genuinely enforcing: Zod's
+        // `schema.parse()` (run post-provider-parse in gemini.ts) rejects
+        // 0/negative/NaN/Infinity grams and THROWS, which routes the whole
+        // call into the existing `withRetry` parse-retry path — instead of
+        // the old silent grams=1 fallback in bridge.ts. We enforce at the Zod
+        // layer rather than relying on the provider JSON schema because
+        // Gemini's `responseJsonSchema` does not reliably honor
+        // `exclusiveMinimum`.
+        grams: z
+          .number()
+          .positive()
+          .finite()
+          .describe(
+            "As-eaten or raw mass in grams, scoped to the selected candidate's state when present. Must be > 0."
+          ),
+      };
+
+  return z
+    .object({
+      ingredientName: z
+        .string()
+        .describe('Must match the ingredient name from decomposition.'),
+      selectedCandidateId: z
+        .union([z.string().min(1), z.literal('none')])
+        .optional()
+        .describe(
+          'CRAG verdict: candidate id ("c1"…) to accept that match, or "none" to reject all candidates and route through unmatched path. Omit only when the input had no candidates.'
+        ),
+      rejectReason: z
+        .string()
+        .max(120)
+        .optional()
+        .describe(
+          'When selectedCandidateId="none", a short reason (e.g. "category mismatch — ức gà ≠ generic chicken meat"). Used for telemetry, not user-facing.'
+        ),
+      ...massFields,
+      // ALWAYS REQUIRED — the D3 "slimmed matched output" optionality is
+      // deliberately reverted. It saved Call-2 output tokens for matched rows
+      // (the server overwrites P/C/kcal from the DB anyway), but the same
+      // optionality applied on the UNMATCHED path where these numbers are the
+      // only source: prod meal "mì gói sứa" had its noodles' carbohydrateG
+      // simply omitted, ZERO_TRIPLE'd, and persisted at C:0g / 412 kcal.
+      // Requiring the fields puts enforcement in the PROVIDER's JSON decoder
+      // (zod → toJSONSchema emits them in `required`, so Gemini structurally
+      // cannot omit them); zod parse remains the backstop. A genuine zero is a
+      // valid value — plausibility telemetry, not schema, judges plausibility.
+      caloriesKcal: boundedEstimateSchema.describe(
+        'Calories in kcal for the as-eaten portion. ALWAYS emit. For matched ingredients the server re-derives kcal from the DB anchor; for unmatched ingredients your value is the truth.'
       ),
-    rejectReason: z
-      .string()
-      .max(120)
-      .optional()
-      .describe(
-        'When selectedCandidateId="none", a short reason (e.g. "category mismatch — ức gà ≠ generic chicken meat"). Used for telemetry, not user-facing.'
+      proteinG: boundedEstimateSchema.describe(
+        'Protein in grams. ALWAYS emit; 0 is a valid value for genuinely protein-free foods. For matched ingredients the server anchors to the DB base.'
       ),
-    // `.positive().finite()` is genuinely enforcing: Zod's `schema.parse()`
-    // (run post-provider-parse in gemini.ts) rejects 0/negative/NaN/Infinity
-    // grams and THROWS, which routes the whole call into the existing
-    // `withRetry` parse-retry path — instead of the old silent grams=1
-    // fallback in bridge.ts. We enforce at the Zod layer rather than relying
-    // on the provider JSON schema because Gemini's `responseJsonSchema` does
-    // not reliably honor `exclusiveMinimum` (same class of limitation that
-    // forced the cheat-slider `.max()` drop above).
-    grams: z
-      .number()
-      .positive()
-      .finite()
-      .describe(
-        "As-eaten or raw mass in grams, scoped to the selected candidate's state when present. Must be > 0."
+      carbohydrateG: boundedEstimateSchema.describe(
+        'Carbohydrates in grams. ALWAYS emit; 0 is a valid value for genuinely carb-free foods. For matched ingredients the server anchors to the DB base.'
       ),
-    // ALWAYS REQUIRED — the D3 "slimmed matched output" optionality is
-    // deliberately reverted. It saved Call-2 output tokens for matched rows
-    // (the server overwrites P/C/kcal from the DB anyway), but the same
-    // optionality applied on the UNMATCHED path where these numbers are the
-    // only source: prod meal "mì gói sứa" had its noodles' carbohydrateG
-    // simply omitted, ZERO_TRIPLE'd, and persisted at C:0g / 412 kcal.
-    // Requiring the fields puts enforcement in the PROVIDER's JSON decoder
-    // (zod → toJSONSchema emits them in `required`, so Gemini structurally
-    // cannot omit them); zod parse remains the backstop. A genuine zero is a
-    // valid value — plausibility telemetry, not schema, judges plausibility.
-    caloriesKcal: boundedEstimateSchema.describe(
-      'Calories in kcal for the as-eaten portion. ALWAYS emit. For matched ingredients the server re-derives kcal from the DB anchor; for unmatched ingredients your value is the truth.'
-    ),
-    proteinG: boundedEstimateSchema.describe(
-      'Protein in grams. ALWAYS emit; 0 is a valid value for genuinely protein-free foods. For matched ingredients the server anchors to the DB base.'
-    ),
-    carbohydrateG: boundedEstimateSchema.describe(
-      'Carbohydrates in grams. ALWAYS emit; 0 is a valid value for genuinely carb-free foods. For matched ingredients the server anchors to the DB base.'
-    ),
-    fatG: boundedEstimateSchema.describe(
-      'Fat in grams for the as-eaten portion. ALWAYS emit — always LLM-driven (cooking-method effect); subject to hallucination guard.'
-    ),
-  })
-  .strict();
+      fatG: boundedEstimateSchema.describe(
+        'Fat in grams for the as-eaten portion. ALWAYS emit — always LLM-driven (cooking-method effect); subject to hallucination guard.'
+      ),
+    })
+    .strict();
+}
+
+/** Build-time-selected Call-2 ingredient schema; REFUSE_PCT_SCHEMA defaults OFF. */
+export const groundedIngredientEstimateSchema =
+  buildGroundedIngredientEstimateSchema();
 
 export const groundedMealItemSchema = z
   .object({

@@ -6,14 +6,18 @@ import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../theme/nham_theme.dart';
 
-// Today / Week / Month — the header-anchored timeframe toggle (90d retired).
+// 7 days / 30 days / 90 days — the header-anchored timeframe toggle.
 //
-// All three labels are the same KIND of token on purpose. They used to mix a
-// word with two abbreviations ("Today / 7d / 30d"), which left the first
-// segment crowded and the other two swimming in an equal-width cell. It read
-// worse in Vietnamese, where "7 ngày" had been clipped to "7n" — not something
-// the language actually abbreviates that way.
-const List<String> _ranges = ['1d', '7d', '30d'];
+// All three labels are the same KIND of token on purpose: a day count, spelled
+// out. The mixed set this replaced ("Today / Week / Month") named three
+// different units, so the segments carried no common scale. Spelled out, not
+// abbreviated — Vietnamese renders these as "7 ngày", and the old "7n" clip is
+// not something the language actually does.
+//
+// Today (`1d`) is deliberately absent: a single day has no trend to draw, and
+// the dashboard already owns the today view. It stays valid in the API and in
+// `NutritionRangeInput` so already-shipped builds that still request it work.
+const List<String> _ranges = ['7d', '30d', '90d'];
 
 /// A compact, equal-width segmented control (iOS style): a warm track with a
 /// single white "thumb" sliding under the active segment. Lives in the header
@@ -31,16 +35,18 @@ class NutritionRangeSelector extends StatelessWidget {
   final bool disabled;
 
   NutritionRangeInput _inputFor(String range) => switch (range) {
-        '1d' => NutritionRangeInput.d1,
         '7d' => NutritionRangeInput.d7,
         '30d' => NutritionRangeInput.d30,
+        '90d' => NutritionRangeInput.d90,
         _ => NutritionRangeInput.auto,
       };
 
   @override
   Widget build(BuildContext context) {
-    final activeIndex =
-        _ranges.indexOf(resolvedRange).clamp(0, _ranges.length - 1);
+    // NOT clamped to 0: `1d` is still a valid server response (retired from
+    // this control, kept in the API), and clamping would light up `7d` as
+    // though the user had picked it. -1 leaves every segment inactive.
+    final activeIndex = _ranges.indexOf(resolvedRange);
 
     return Opacity(
       opacity: disabled ? 0.6 : 1,
@@ -58,26 +64,29 @@ class NutritionRangeSelector extends StatelessWidget {
               final segWidth = constraints.maxWidth / _ranges.length;
               return Stack(
                 children: [
-                  // Sliding white thumb under the active segment.
-                  AnimatedAlign(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
-                    alignment: Alignment(
-                      _ranges.length == 1
-                          ? 0
-                          : -1 + 2 * (activeIndex / (_ranges.length - 1)),
-                      0,
-                    ),
-                    child: Container(
-                      width: segWidth,
-                      height: constraints.maxHeight,
-                      decoration: BoxDecoration(
-                        color: kCardSurface,
-                        borderRadius: BorderRadius.circular(NhamRadii.pill),
-                        boxShadow: const [NhamShadows.xs],
+                  // Sliding white thumb under the active segment. Absent when
+                  // nothing matches (a `1d` response), rather than sliding off
+                  // the end of the track on a negative index.
+                  if (activeIndex >= 0)
+                    AnimatedAlign(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment(
+                        _ranges.length == 1
+                            ? 0
+                            : -1 + 2 * (activeIndex / (_ranges.length - 1)),
+                        0,
+                      ),
+                      child: Container(
+                        width: segWidth,
+                        height: constraints.maxHeight,
+                        decoration: BoxDecoration(
+                          color: kCardSurface,
+                          borderRadius: BorderRadius.circular(NhamRadii.pill),
+                          boxShadow: const [NhamShadows.xs],
+                        ),
                       ),
                     ),
-                  ),
                   Row(
                     children: [
                       for (var i = 0; i < _ranges.length; i++)

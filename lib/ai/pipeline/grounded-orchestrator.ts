@@ -5,6 +5,7 @@ import {
   DEFAULT_MATCH_CONCURRENCY,
   type IngredientV2MatchResult,
 } from '../matching/top-k-cascade';
+import type { PortionResolution } from '../portion/types';
 import { attachVesselToMealItems } from '../portion/vessel-envelope';
 import { buildMealItemOffsetByName } from '../streaming/grounded-parsers';
 import type { StreamEvent } from '../streaming/types';
@@ -66,6 +67,7 @@ export interface AnalyzeMealV2Options {
 export interface V2PipelineDiagnostics {
   decomposition: MealDecompositionV2;
   matchResults: IngredientV2MatchResult[];
+  portionResolutions: PortionResolution[];
   verdicts: ReturnType<typeof bridgeV2ToV1>['verdicts'];
   /** Per-ingredient plausibility trail — lets consumers (eval harness) tell a
    *  FLAGGED zero (genuinely_noncaloric, unresolved_estimate) from a silent one. */
@@ -278,6 +280,7 @@ export async function analyzeMealV2(
     options.onDiagnostics?.({
       decomposition,
       matchResults,
+      portionResolutions,
       verdicts: bridged.verdicts,
       plausibility: bridged.plausibility,
     });

@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
  * types into the composer. A hairline card in Geist Mono is the whole idea.
  *
  * Every block fills with WHITE, not `nham-track`. The docs canvas is
- * `nham-surface` (#f9f9f7) and the track wash is #f5f4f0 — a contrast ratio of
+ * `nham-surface` (#fcfcfc) and the track wash is #f5f4f0 — a contrast ratio of
  * 1.04:1, which is invisible. The palette has no neutral fill that separates
  * from this canvas on its own, so separation comes from the hairline plus a
  * white card sitting a step lighter, exactly as product cards do.

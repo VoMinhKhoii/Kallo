@@ -1,135 +1,16 @@
 /// Nutrition-related data models.
 ///
-/// Ported from `lib/nutrition/types.ts`.
+/// Ported from `lib/nutrition/types.ts`. The enums and their wire-value
+/// extensions live in `nutrition_enums.dart` and are re-exported here, so the
+/// single `models/nutrition.dart` import still reaches everything.
 library;
 
-enum NutritionRange { d1, d7, d30, d90 }
+// Imported for this file's own use AND re-exported, so callers keep the one
+// `models/nutrition.dart` import.
+import 'nutrition_enums.dart';
 
-extension NutritionRangeValue on NutritionRange {
-  String get value => switch (this) {
-        NutritionRange.d1 => '1d',
-        NutritionRange.d7 => '7d',
-        NutritionRange.d30 => '30d',
-        NutritionRange.d90 => '90d',
-      };
-}
+export 'nutrition_enums.dart';
 
-/// Input range that may include 'auto'.
-enum NutritionRangeInput { auto, d1, d7, d30, d90 }
-
-extension NutritionRangeInputValue on NutritionRangeInput {
-  String get value => switch (this) {
-        NutritionRangeInput.auto => 'auto',
-        NutritionRangeInput.d1 => '1d',
-        NutritionRangeInput.d7 => '7d',
-        NutritionRangeInput.d30 => '30d',
-        NutritionRangeInput.d90 => '90d',
-      };
-}
-
-enum BucketTimezone { local, utc }
-
-/// Which day set the overview averages/series are scoped to.
-enum NutritionDayScope { complete, all }
-
-extension NutritionDayScopeValue on NutritionDayScope {
-  String get value => switch (this) {
-        NutritionDayScope.complete => 'complete',
-        NutritionDayScope.all => 'all',
-      };
-}
-
-enum TargetSource { vietnamRda, whoFao, nasem, unsupported }
-
-TargetSource targetSourceFromString(String s) => switch (s) {
-      'vietnam_rda' => TargetSource.vietnamRda,
-      'who_fao' => TargetSource.whoFao,
-      'nasem' => TargetSource.nasem,
-      'unsupported' => TargetSource.unsupported,
-      _ => throw ArgumentError('Unknown TargetSource: $s'),
-    };
-
-String targetSourceToString(TargetSource s) => switch (s) {
-      TargetSource.vietnamRda => 'vietnam_rda',
-      TargetSource.whoFao => 'who_fao',
-      TargetSource.nasem => 'nasem',
-      TargetSource.unsupported => 'unsupported',
-    };
-
-enum NutrientGroup { mineral, vitamin, other }
-
-enum ConfidenceDisplayState {
-  normal,
-  limitedData,
-  warningPoints,
-  insufficientData,
-}
-
-ConfidenceDisplayState confidenceDisplayStateFromString(String s) => switch (s) {
-      'normal' => ConfidenceDisplayState.normal,
-      'limited_data' => ConfidenceDisplayState.limitedData,
-      'warning_points' => ConfidenceDisplayState.warningPoints,
-      'insufficient_data' => ConfidenceDisplayState.insufficientData,
-      _ => throw ArgumentError('Unknown ConfidenceDisplayState: $s'),
-    };
-
-String confidenceDisplayStateToString(ConfidenceDisplayState s) => switch (s) {
-      ConfidenceDisplayState.normal => 'normal',
-      ConfidenceDisplayState.limitedData => 'limited_data',
-      ConfidenceDisplayState.warningPoints => 'warning_points',
-      ConfidenceDisplayState.insufficientData => 'insufficient_data',
-    };
-
-enum NutritionStatus { belowTarget, adequate, aboveTarget, limitedData }
-
-NutritionStatus nutritionStatusFromString(String s) => switch (s) {
-      'below_target' => NutritionStatus.belowTarget,
-      'adequate' => NutritionStatus.adequate,
-      'above_target' => NutritionStatus.aboveTarget,
-      'limited_data' => NutritionStatus.limitedData,
-      _ => throw ArgumentError('Unknown NutritionStatus: $s'),
-    };
-
-String nutritionStatusToString(NutritionStatus s) => switch (s) {
-      NutritionStatus.belowTarget => 'below_target',
-      NutritionStatus.adequate => 'adequate',
-      NutritionStatus.aboveTarget => 'above_target',
-      NutritionStatus.limitedData => 'limited_data',
-    };
-
-enum NutrientType { floor, ceiling, range }
-
-/// All supported nutrient keys.
-enum NutritionNutrientKey {
-  fiberG,
-  sodiumMg,
-  calciumMg,
-  ironMg,
-  magnesiumMg,
-  phosphorusMg,
-  potassiumMg,
-  zincMg,
-  copperMcg,
-  manganeseMg,
-  betaCaroteneMcg,
-  vitaminAMcg,
-  vitaminDMcg,
-  vitaminEMg,
-  vitaminKMcg,
-  vitaminCMg,
-  vitaminB1Mg,
-  vitaminB2Mg,
-  vitaminPpMg,
-  vitaminB5Mg,
-  vitaminB6Mg,
-  vitaminB9Mcg,
-  vitaminB12Mcg,
-  vitaminHMcg,
-}
-
-enum MacroKey { calories, protein, carbohydrate, fat }
-
-enum MacroGoal { cutting, bulking, maintaining }
 
 class NutrientMeta {
   final NutritionNutrientKey key;
@@ -550,11 +431,16 @@ class DaySeriesBucket {
   final double? value;
   final double? ratioOfTarget;
 
+  /// Logged, but set aside by the current day scope — `value` covers its logged
+  /// days and it is not part of the headline. Drawn in the muted pigment.
+  final bool excluded;
+
   const DaySeriesBucket({
     required this.startDate,
     required this.endDate,
     required this.value,
     required this.ratioOfTarget,
+    this.excluded = false,
   });
 
   factory DaySeriesBucket.fromJson(Map<String, dynamic> json) => DaySeriesBucket(
@@ -562,6 +448,7 @@ class DaySeriesBucket {
         endDate: json['endDate'] as String,
         value: (json['value'] as num?)?.toDouble(),
         ratioOfTarget: (json['ratioOfTarget'] as num?)?.toDouble(),
+        excluded: json['excluded'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -569,6 +456,7 @@ class DaySeriesBucket {
         'endDate': endDate,
         'value': value,
         'ratioOfTarget': ratioOfTarget,
+        'excluded': excluded,
       };
 }
 
@@ -728,6 +616,11 @@ class NutritionOverview {
   final ({String startDate, String endDate}) period;
   final NutritionSummary summary;
   final CalorieAverages calorieAverages;
+
+  /// The same two averages for the equal-length window immediately before this
+  /// one — 7d against the previous seven days, 30d the previous thirty. Both
+  /// scopes read null when nothing was logged back then.
+  final CalorieAverages previousCalorieAverages;
   final List<MacroPattern> macros;
   final List<NutrientCardData> micronutrients;
   final List<NutrientCardData> spotlight;
@@ -748,6 +641,7 @@ class NutritionOverview {
     required this.period,
     required this.summary,
     required this.calorieAverages,
+    required this.previousCalorieAverages,
     required this.macros,
     required this.micronutrients,
     required this.spotlight,
@@ -776,6 +670,16 @@ class NutritionOverview {
           json['summary'] as Map<String, dynamic>),
       calorieAverages: CalorieAverages.fromJson(
           json['calorieAverages'] as Map<String, dynamic>),
+      // Optional on the wire: a server that predates the comparison figure
+      // omits it, and a hard cast there would fail the whole overview rather
+      // than dropping one delta.
+      previousCalorieAverages: switch (json['previousCalorieAverages']) {
+        final Map<String, dynamic> j => CalorieAverages.fromJson(j),
+        _ => const CalorieAverages(
+            all: CalorieScopeAverage(averagePerDay: null, days: 0),
+            complete: CalorieScopeAverage(averagePerDay: null, days: 0),
+          ),
+      },
       macros: (json['macros'] as List<dynamic>)
           .map((e) => MacroPattern.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -815,6 +719,7 @@ class NutritionOverview {
         },
         'summary': summary.toJson(),
         'calorieAverages': calorieAverages.toJson(),
+        'previousCalorieAverages': previousCalorieAverages.toJson(),
         'macros': macros.map((e) => e.toJson()).toList(),
         'micronutrients': micronutrients.map((e) => e.toJson()).toList(),
         'spotlight': spotlight.map((e) => e.toJson()).toList(),
@@ -836,6 +741,7 @@ class NutritionOverview {
     ({String startDate, String endDate})? period,
     NutritionSummary? summary,
     CalorieAverages? calorieAverages,
+    CalorieAverages? previousCalorieAverages,
     List<MacroPattern>? macros,
     List<NutrientCardData>? micronutrients,
     List<NutrientCardData>? spotlight,
@@ -856,6 +762,8 @@ class NutritionOverview {
         period: period ?? this.period,
         summary: summary ?? this.summary,
         calorieAverages: calorieAverages ?? this.calorieAverages,
+        previousCalorieAverages:
+            previousCalorieAverages ?? this.previousCalorieAverages,
         macros: macros ?? this.macros,
         micronutrients: micronutrients ?? this.micronutrients,
         spotlight: spotlight ?? this.spotlight,

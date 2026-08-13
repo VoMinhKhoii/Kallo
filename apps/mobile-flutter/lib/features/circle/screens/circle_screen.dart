@@ -7,7 +7,6 @@ import '../../../shared/widgets/nham_sheet.dart';
 import '../../../shared/widgets/widgets.dart';
 import '../../../shell/app_header.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/chat_group_providers.dart';
 import '../data/circle_providers.dart';
@@ -18,6 +17,7 @@ import '../widgets/group_info_sheet.dart';
 import '../widgets/meal_invites.dart';
 import '../widgets/thread_feed.dart';
 import '../widgets/view_switcher.dart';
+import '../../../shared/widgets/nham_refresh.dart';
 
 Future<void> _showGroupInfoSheet(BuildContext context, String groupId) =>
     showNhamSheet<void>(
@@ -59,9 +59,7 @@ class CircleScreen extends ConsumerWidget {
             child: Text(tr('groups.page.title'), style: dashHeadline()),
           ),
         ),
-        child: RefreshIndicator(
-          color: NhamColors.accent,
-          backgroundColor: NhamColors.elev,
+        child: NhamRefresh(
           onRefresh: () => _refresh(ref, selected),
           child: ThreadFeed(
             scope: selected,

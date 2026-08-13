@@ -129,6 +129,7 @@ async function lexicalSearch(
            v.calories_kcal, v.protein_g, v.carbohydrate_g, v.fat_g
     FROM fuzzy_match_ingredients_all_sources(${q}, ${limit}, 0.15) f
     JOIN vietnamese_food_composition v ON v.id = f.id
+    WHERE f.similarity >= 0.15
     ORDER BY f.similarity DESC, f.source_id ASC, length(f.name_primary) ASC
     LIMIT ${limit}
   `);

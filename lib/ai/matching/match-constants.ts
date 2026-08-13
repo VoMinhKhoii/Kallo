@@ -10,6 +10,8 @@ export const CONFIDENCE_THRESHOLDS = {
 /** Source IDs for food composition databases */
 export const SOURCE_FAO = 1;
 export const SOURCE_USDA = 2;
+export const SOURCE_OPEN_FOOD_FACTS = 3;
+export const SOURCE_NIN = 4;
 
 /** Minimum similarity to accept a FAO vector match (higher bar for curated VN data) */
 export const FAO_VECTOR_THRESHOLD = 0.8;
@@ -61,8 +63,12 @@ export function splitBySource(rows: SourcedMatchRow[]): {
   const fao: FuzzyMatchRow[] = [];
   const usda: FuzzyMatchRow[] = [];
   for (const row of rows) {
-    if (row.source_id === SOURCE_FAO) fao.push(row);
-    else if (row.source_id === SOURCE_USDA) usda.push(row);
+    if (row.source_id === SOURCE_USDA) usda.push(row);
+    else if (row.source_id === SOURCE_FAO || row.source_id === SOURCE_NIN) {
+      // Curated Vietnamese sources (FAO and additive NIN snapshots) share the
+      // stricter domestic-source acceptance threshold.
+      fao.push(row);
+    }
   }
   return { fao, usda };
 }

@@ -98,6 +98,41 @@ export async function countLoggedDaysLast30(
   return Number(row?.count ?? 0);
 }
 
+/** One row per logged day: the day and its total calories. */
+export interface DailyCalorieTotal {
+  date: string;
+  calories: number;
+}
+
+/**
+ * Per-day calorie totals for a window — an aggregate, not the item rows.
+ *
+ * The previous-period comparison only needs each day's calories to score both
+ * day scopes, so it groups in SQL rather than pulling every meal item with its
+ * twenty-odd nutrient columns and summing them in JS. Same index and predicate
+ * as `fetchOverviewRows`, a fraction of the rows and one column.
+ */
+export async function fetchDailyCalorieTotals(
+  args: OverviewQueryArgs
+): Promise<DailyCalorieTotal[]> {
+  const { localDate, where } = getOverviewWhere(args);
+
+  const rows = await db
+    .select({
+      date: localDate,
+      calories: sql<number>`sum(coalesce(${mealItems.caloriesKcal}, 0))::float8`,
+    })
+    .from(meals)
+    .innerJoin(mealItems, eq(mealItems.mealId, meals.id))
+    .where(where)
+    .groupBy(localDate);
+
+  return rows.map((row) => ({
+    date: row.date,
+    calories: Number(row.calories),
+  }));
+}
+
 export async function fetchOverviewRows(
   args: OverviewQueryArgs
 ): Promise<OverviewMealItemRow[]> {

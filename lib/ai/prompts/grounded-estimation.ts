@@ -2,6 +2,12 @@ import {
   PROTEIN_PORTION_DESCRIPTION,
   RICE_PORTION_DESCRIPTION,
 } from '../constants';
+import {
+  isPromptSizingHintsEnabled,
+  isProteinPortionDefaultEnabled,
+  isRefusePctSchemaEnabled,
+  isVesselGuardEnabled,
+} from '../pipeline/config/prompt-ablation-flags';
 import type {
   DecomposedDishV2,
   DecomposedIngredientV2,
@@ -17,9 +23,9 @@ import type { PromptPersonalizationContext } from './types';
  * What it does:
  *   1. CRAG verdict — for each ingredient with candidate matches, pick the
  *      correct one or reject all ("none" → unmatched path).
- *   2. Grams — emit as-eaten or pre-cooking mass in grams, scoped to the
- *      selected candidate's state. The server scales 1:1 with no
- *      convertCookedToRaw fudge.
+ *   2. Mass — emit edible grams by default, or grossG + refusePct behind the
+ *      schema flag, scoped to the selected candidate state. The server
+ *      derives edible mass with no convertCookedToRaw fudge.
  *   3. Macros — bounded triples, server-anchored for matched-without-prep-notes,
  *      LLM-driven within tight bands when prep_notes is non-empty.
  *
@@ -72,12 +78,10 @@ export interface IngredientWithCandidates {
   /** Candidates already sorted by similarity desc. May be empty (unmatched). */
   candidates: MatchCandidate[];
   /**
-   * Server-resolved portion ANCHOR (Phase 3). When the portion resolver
-   * grounded grams via the fallback ladder (explicit mass / packaged serving /
-   * a concept-scoped prior), the mid grams is passed here so Call 2 does NOT
-   * freely re-estimate the weight — it anchors to this number and only does
-   * macro / prep adjustment. Absent when the resolver returned null (LLM
-   * estimates grams as before).
+   * Server-resolved EDIBLE-mass anchor (Phase 3). Gross-as-served portion
+   * resolutions are deliberately withheld from this legacy attribute and
+   * remain authoritative only in the bridge, where refuse is deducted once.
+   * Absent when the resolver returned null or a gross-basis band.
    */
   resolvedGramsAnchor?: number | null;
 }
@@ -99,12 +103,18 @@ function buildUserContextBlock(
       userContext.countryOfResidence
     ),
   ].filter((line): line is string => line !== null);
+  const sizingHintsEnabled = isPromptSizingHintsEnabled();
+  const ricePortionLine = sizingHintsEnabled
+    ? `  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}\n`
+    : '';
+  const proteinPortionLine =
+    sizingHintsEnabled && isProteinPortionDefaultEnabled()
+      ? `  default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}\n`
+      : '';
 
   return `<user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
-  default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
-  sugar_braised: ${cookingHabits.sugarBraised}
+${ricePortionLine}${proteinPortionLine}  sugar_braised: ${cookingHabits.sugarBraised}
   broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>`;
 }
@@ -124,8 +134,8 @@ function renderIngredient(ing: IngredientWithCandidates): string {
     `canonicalName="${escapeXmlAttribute(inputIng.canonicalName)}"`,
   ];
   if (ing.resolvedGramsAnchor != null && ing.resolvedGramsAnchor > 0) {
-    // Server ANCHOR: the portion resolver already grounded the weight. Echo it
-    // back verbatim as grams; do NOT re-estimate.
+    // EDIBLE server anchor. Under REFUSE_PCT_SCHEMA the model still reports
+    // grossG/refusePct for telemetry, but this value remains authoritative.
     attrs.push(`resolved_grams="${ing.resolvedGramsAnchor.toFixed(1)}"`);
   }
   // User-stated quantity evidence, passed through even when the resolver
@@ -140,6 +150,12 @@ function renderIngredient(ing: IngredientWithCandidates): string {
   }
   if (inputIng.sizeModifier) {
     attrs.push(`user_size="${escapeXmlAttribute(inputIng.sizeModifier)}"`);
+  }
+  if (inputIng.explicitMass && isRefusePctSchemaEnabled()) {
+    attrs.push(`user_mass_g="${inputIng.explicitMass.grams.toFixed(1)}"`);
+    attrs.push(
+      `mass_basis="${escapeXmlAttribute(inputIng.explicitMass.basis)}"`
+    );
   }
   if (cookingMethod) {
     attrs.push(`cooking="${escapeXmlAttribute(cookingMethod)}"`);
@@ -209,6 +225,7 @@ function buildIngredientDataBlock(mealItems: MealItemWithCandidates[]): string {
       `cookingMethod="${escapeXmlAttribute(mi.mealItem.cookingMethod)}"`,
     ];
     if (mi.vesselEnvelope) {
+      const vesselGuardEnabled = isVesselGuardEnabled();
       const vesselSize =
         mi.mealItem.vesselSize ??
         (mi.vesselEnvelope.tier === 1
@@ -218,11 +235,19 @@ function buildIngredientDataBlock(mealItems: MealItemWithCandidates[]): string {
             : 'large');
       attrs.push(
         `vessel="${escapeXmlAttribute(mi.vesselEnvelope.token)}"`,
-        `vessel_size="${escapeXmlAttribute(vesselSize)}"`,
-        `vessel_ml="${mi.vesselEnvelope.vesselMl}"`,
-        `dish_class="${escapeXmlAttribute(mi.vesselEnvelope.dishClass)}"`,
-        `serve_total_guard_g="${mi.vesselEnvelope.guardG.low}-${mi.vesselEnvelope.guardG.high}"`
+        `vessel_size="${escapeXmlAttribute(vesselSize)}"`
       );
+      if (vesselGuardEnabled) {
+        attrs.push(`vessel_ml="${mi.vesselEnvelope.vesselMl}"`);
+      }
+      attrs.push(
+        `dish_class="${escapeXmlAttribute(mi.vesselEnvelope.dishClass)}"`
+      );
+      if (vesselGuardEnabled) {
+        attrs.push(
+          `serve_total_guard_g="${mi.vesselEnvelope.guardG.low}-${mi.vesselEnvelope.guardG.high}"`
+        );
+      }
     }
     out += `  <meal_item ${attrs.join(' ')}>\n`;
     for (const ing of mi.ingredients) {

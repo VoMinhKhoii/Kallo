@@ -264,11 +264,16 @@ export const RRF_K = 60;
  *
  * Cosine similarity and trigram word-similarity live on incomparable scales,
  * so candidates are fused by RANK within each (already threshold-gated) arm:
- * score(id) = Σ 1/(RRF_K + rank). A candidate both arms agree on outranks a
- * candidate only one arm found — which is exactly the signal that separates
- * "semantically adjacent but wrong" vector hits from real matches. When an id
- * appears in both arms, the variant from the arm where it ranks better is
- * kept (tie → vector, whose similarity feeds confidence classification).
+ * score(id) = Σ 1/(RRF_K + rank + 1). Agreement contributes through both
+ * arms and breaks equal-score ties, helping separate "semantically adjacent
+ * but wrong" vector hits from real matches. When an id appears in both arms,
+ * the variant from the arm where it ranks better is kept (tie → vector, whose
+ * similarity feeds confidence classification).
+ * Final ordering never compares those similarities: the previous similarity
+ * tie-break violated the scale separation above. Equal RRF scores now prefer
+ * arm agreement, then vector rank. The bake-off accepts a known `rau`
+ * regression (`Poi` over `Rau bí`) because aggregate disaster rate improves;
+ * do not special-case it here.
  *
  * Each arm's per-source acceptance thresholds (and the state-mismatch
  * penalty) have already been applied by buildMatchTopK, so fusion can only
@@ -286,18 +291,32 @@ export function rrfFuseCandidates(
 
   const fused = new Map<
     string,
-    { score: number; bestRank: number; candidate: MatchInfo }
+    {
+      score: number;
+      arms: number;
+      vectorRank: number;
+      bestRank: number;
+      candidate: MatchInfo;
+    }
   >();
-  const addArm = (list: MatchInfo[]) => {
+  const addArm = (list: MatchInfo[], isVector: boolean) => {
     list.forEach((candidate, rank) => {
       const id = candidate.foodCompositionId;
       const contribution = 1 / (RRF_K + rank + 1);
       const existing = fused.get(id);
       if (!existing) {
-        fused.set(id, { score: contribution, bestRank: rank, candidate });
+        fused.set(id, {
+          score: contribution,
+          arms: 1,
+          vectorRank: isVector ? rank : Number.POSITIVE_INFINITY,
+          bestRank: rank,
+          candidate,
+        });
         return;
       }
       existing.score += contribution;
+      existing.arms++;
+      if (isVector) existing.vectorRank = rank;
       // Keep the variant from the arm where this id ranks strictly better.
       // The vector arm is added first, so it wins rank ties.
       if (rank < existing.bestRank) {
@@ -306,13 +325,18 @@ export function rrfFuseCandidates(
       }
     });
   };
-  addArm(vectorList);
-  addArm(fuzzyList);
+  addArm(vectorList, true);
+  addArm(fuzzyList, false);
 
   return Array.from(fused.values())
     .sort(
       (a, b) =>
-        b.score - a.score || b.candidate.similarity - a.candidate.similarity
+        b.score - a.score ||
+        b.arms - a.arms ||
+        a.vectorRank - b.vectorRank ||
+        a.candidate.foodCompositionId.localeCompare(
+          b.candidate.foodCompositionId
+        )
     )
     .slice(0, k)
     .map((entry) => entry.candidate);

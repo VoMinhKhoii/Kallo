@@ -1,0 +1,770 @@
+code,name,verdict,match_basis,db_id,db_name,matched_name
+10001,Sữa bò tươi,duplicate-vietnamese,name,fao_vn_2007_10001_raw,Sữa bò tươi,Sữa bò tươi
+10002,Sữa dê tươi,duplicate-vietnamese,name,fao_vn_2007_10002_raw,Sữa dê tươi,Sữa dê tươi
+10003,Sữa mẹ (sữa người),duplicate-vietnamese,name,fao_vn_2007_10003_raw,Sữa mẹ (sữa người),Sữa mẹ (sữa người)
+10004,Sữa chua,duplicate-vietnamese,code-lineage,fao_vn_2007_10004_raw,Sữa chua (từ sữa bò),Sữa chua (từ sữa bò)
+10005,Sữa chua vớt béo,duplicate-vietnamese,name,fao_vn_2007_10005_raw,Sữa chua vớt béo,Sữa chua vớt béo
+10006,Sữa bột toàn phần,duplicate-vietnamese,name,fao_vn_2007_10006_raw,Sữa bột toàn phần,Sữa bột toàn phần
+10007,Sữa bột tách béo,duplicate-vietnamese,name,fao_vn_2007_10007_raw,Sữa bột tách béo,Sữa bột tách béo
+10008,Sữa đặc có đường Việt Nam,duplicate-vietnamese,name,fao_vn_2007_10008_raw,Sữa đặc có đường Việt Nam,Sữa đặc có đường Việt Nam
+10009,Phó mát,duplicate-vietnamese,code-lineage,fao_vn_2007_10009_raw,Pho mát,Pho mát
+1001,"Gạo, trắng, nếp cái, sống",duplicate-vietnamese,code-lineage,fao_vn_2007_1001_raw,Gạo nếp cái,Gạo nếp cái
+10015,"Sữa, bò, tiệt trùng, có đường, toàn phần, trắng ",keep-no-match,none,,,
+1002,"Gạo, trắng, nếp thường, sống",keep-no-match,none,,,
+1003,"Gạo, trắng, tẻ, giã tay, sống",duplicate-vietnamese,code-lineage,fao_vn_2007_1003_raw,Gạo tẻ giã,Gạo tẻ giã
+10031,"Sữa chua, nước/uống, có đường",keep-no-match,none,,,
+10035,"Sữa chua, đặc, có đường",keep-no-match,none,,,
+10036,"Sữa chua, đặc, không đường",keep-no-match,none,,,
+1004,"Gạo, trắng, tẻ, xát máy, sống",duplicate-vietnamese,code-lineage,fao_vn_2007_1004_raw,Gạo tẻ máy,Gạo tẻ máy
+10047,"Sữa đặc có đường, Việt Nam",duplicate-vietnamese,name,fao_vn_2007_10008_raw,Sữa đặc có đường Việt Nam,Sữa đặc có đường Việt Nam
+10048,Sữa hộp Milo,keep-no-match,none,,,
+1005,"Gạo, tẻ, chưa xát (gạo lứt), sống",duplicate-vietnamese,code-lineage,fao_vn_2007_1005_raw,Gạo lứt,Gạo lứt
+1006,"Kê, hạt, sống",duplicate-vietnamese,code-lineage,fao_vn_2007_1006_raw,Kê,Kê
+1007,"Ngô, cả bắp, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_1007_raw,Ngô bắp tươi,Ngô bắp tươi
+1007014,"Ngô tươi, tẻ, nướng",keep-no-match,none,,,
+1008,"Ngô, vàng, hạt, khô",duplicate-vietnamese,name,fao_vn_2007_1008_raw,Ngô vàng hạt khô,Ngô vàng hạt khô
+1009,"Bánh bao, nhân thịt",duplicate-vietnamese,name,fao_vn_2007_1009_cooked,Bánh bao nhân thịt,Bánh bao nhân thịt
+1010,Bánh đa nem,duplicate-vietnamese,name,fao_vn_2007_1010_raw,Bánh đa nem,Bánh đa nem
+1011,Bánh đúc,duplicate-vietnamese,name,fao_vn_2007_1011_raw,Bánh đúc,Bánh đúc
+1012,Bánh mỳ ,duplicate-vietnamese,name,fao_vn_2007_1012_raw,Bánh mỳ,Bánh mỳ
+1013,Bánh phở,duplicate-vietnamese,name,fao_vn_2007_1013_raw,Bánh phở,Bánh phở
+1014,Bánh quẩy,duplicate-vietnamese,name,fao_vn_2007_1014_cooked,Bánh quẩy,Bánh quẩy
+1015,Bỏng ngô,duplicate-vietnamese,name,fao_vn_2007_1015_raw,Bỏng ngô,Bỏng ngô
+1016,"Bột gạo, gạo nếp thường",duplicate-vietnamese,code-lineage,fao_vn_2007_1016_raw,Bột gạo nếp,Bột gạo nếp
+1017,"Bột gạo, gạo tẻ",duplicate-vietnamese,code-lineage,fao_vn_2007_1017_raw,Bột gạo tẻ,Bột gạo tẻ
+1018,"Bột mì, trắng ",duplicate-vietnamese,code-lineage,fao_vn_2007_1018_raw,Bột mì,Bột mì
+1019,"Bột ngô, ngô vàng",duplicate-vietnamese,code-lineage,fao_vn_2007_1019_raw,Bột ngô vàng,Bột ngô vàng
+1020,"Bún, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_1020_raw,Bún,Bún
+1021,"Cốm, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_1021_raw,Cốm,Cốm
+1022,"Mỳ sợi, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_1022_raw,Mỳ sợi,Mỳ sợi
+1023,"Ngô, cả bắp, nếp, luộc",duplicate-vietnamese,code-lineage,fao_vn_2007_1023_cooked,Ngô nếp luộc,Ngô nếp luộc
+1024002,Xôi nếp cẩm,keep-no-match,none,,,
+1032,"Bánh mì, vuông, ngọt",keep-no-match,none,,,
+1038,Bánh bao chay,keep-no-match,none,,,
+1041,"Bánh đa (đỏ, trắng)",keep-no-match,none,,,
+1041002,"Bánh đa (đỏ, trắng), luộc",keep-no-match,none,,,
+1043,"Mỳ  ăn liền, lúa mì ",keep-no-match,none,,,
+1043002,"Mỳ ăn liền, lúa mì, luộc",keep-no-match,none,,,
+1046002,"Nui, luộc",keep-usda-only,name,usda_20121_cooked,"Mì ống, đã nấu chín, được làm giàu dinh dưỡng, không thêm muối.",nui luộc
+11001,Chuối nước đường,duplicate-vietnamese,name,fao_vn_2007_11001_raw,Chuối nước đường,Chuối nước đường
+11002,Dưa chuột hộp,duplicate-vietnamese,name,fao_vn_2007_11002_raw,Dưa chuột hộp,Dưa chuột hộp
+11003,Dứa hộp,duplicate-vietnamese,name,fao_vn_2007_11003_raw,Dứa hộp,Dứa hộp
+11004,Lạc chao dầu,duplicate-vietnamese,name,fao_vn_2007_11004_cooked,Lạc chao dầu,Lạc chao dầu
+11005,Mắc coọc nước đường,duplicate-vietnamese,name,fao_vn_2007_11005_raw,Mắc coọc nước đường,Mắc coọc nước đường
+11006,Mận nước đường,duplicate-vietnamese,name,fao_vn_2007_11006_raw,Mận nước đường,Mận nước đường
+11007,Mứt bí ngô,duplicate-vietnamese,name,fao_vn_2007_11007_raw,Mứt bí ngô,Mứt bí ngô
+11008,Mứt cam có vỏ,duplicate-vietnamese,name,fao_vn_2007_11008_raw,Mứt cam có vỏ,Mứt cam có vỏ
+11009,Mứt chuối,duplicate-vietnamese,name,fao_vn_2007_11009_raw,Mứt chuối,Mứt chuối
+11010,Mứt dứa,duplicate-vietnamese,name,fao_vn_2007_11010_raw,Mứt dứa,Mứt dứa
+11011,Mứt đu đủ,duplicate-vietnamese,name,fao_vn_2007_11011_raw,Mứt đu đủ,Mứt đu đủ
+11012,Nhãn nước đường,duplicate-vietnamese,name,fao_vn_2007_11012_raw,Nhãn nước đường,Nhãn nước đường
+11013,Nước dứa hộp,duplicate-vietnamese,name,fao_vn_2007_11013_raw,Nước dứa hộp,Nước dứa hộp
+11014,Vải nước đường,duplicate-vietnamese,name,fao_vn_2007_11014_raw,Vải nước đường,Vải nước đường
+11015,Cá thu hộp,duplicate-vietnamese,name,fao_vn_2007_11015_raw,Cá thu hộp,Cá thu hộp
+11016,Cá trích hộp,duplicate-vietnamese,name,fao_vn_2007_11016_raw,Cá trích hộp,Cá trích hộp
+11017,Thịt bò hộp,duplicate-vietnamese,name,fao_vn_2007_11017_raw,Thịt bò hộp,Thịt bò hộp
+11018,Thịt gà hộp,duplicate-vietnamese,name,fao_vn_2007_11018_raw,Thịt gà hộp,Thịt gà hộp
+11019,Thịt lợn hộp,duplicate-vietnamese,name,fao_vn_2007_11019_raw,Thịt lợn hộp,Thịt lợn hộp
+11020,"Thịt lợn, thịt bò xay hộp",duplicate-vietnamese,name,fao_vn_2007_11020_raw,"Thịt lợn, thịt bò xay hộp","Thịt lợn, thịt bò xay hộp"
+11021,Thịt vịt hầm,duplicate-vietnamese,name,fao_vn_2007_11021_raw,Thịt vịt hầm,Thịt vịt hầm
+11022,Cá ngừ hộp,keep-no-match,none,,,
+12001,Bánh bích cốt,duplicate-vietnamese,name,fao_vn_2007_12001_raw,Bánh bích cốt,Bánh bích cốt
+12002,Bánh bích quy,duplicate-vietnamese,name,fao_vn_2007_12002_raw,Bánh bích quy,Bánh bích quy
+12003,Bánh chả,duplicate-vietnamese,name,fao_vn_2007_12003_raw,Bánh chả,Bánh chả
+12004,Bánh con cá,duplicate-vietnamese,name,fao_vn_2007_12004_raw,Bánh con cá,Bánh con cá
+12005,Bánh đậu xanh,duplicate-vietnamese,name,fao_vn_2007_12005_raw,Bánh đậu xanh,Bánh đậu xanh
+12006,Bánh kem xốp,duplicate-vietnamese,name,fao_vn_2007_12006_raw,Bánh kem xốp,Bánh kem xốp
+12007,Bánh khảo chay,duplicate-vietnamese,name,fao_vn_2007_12007_raw,Bánh khảo chay,Bánh khảo chay
+12008,Bánh quế,duplicate-vietnamese,name,fao_vn_2007_12008_raw,Bánh quế,Bánh quế
+12009,Bánh sô cô la,duplicate-vietnamese,name,fao_vn_2007_12009_raw,Bánh sô cô la,Bánh sô cô la
+12010,Bánh thỏi sô cô la,duplicate-vietnamese,name,fao_vn_2007_12010_raw,Bánh thỏi sô cô la,Bánh thỏi sô cô la
+12011,Bánh trứng nhện,duplicate-vietnamese,name,fao_vn_2007_12011_raw,Bánh trứng nhện,Bánh trứng nhện
+12012,Bột ca cao,duplicate-vietnamese,name,fao_vn_2007_12012_raw,Bột ca cao,Bột ca cao
+12013,Đường cát,duplicate-vietnamese,name,fao_vn_2007_12013_raw,Đường cát,Đường cát
+12014,Đường kính,duplicate-vietnamese,name,fao_vn_2007_12014_raw,Đường kính,Đường kính
+12015,Kẹo bơ cứng,duplicate-vietnamese,name,fao_vn_2007_12015_raw,Kẹo bơ cứng,Kẹo bơ cứng
+12016,Kẹo cà phê,duplicate-vietnamese,name,fao_vn_2007_12016_raw,Kẹo cà phê,Kẹo cà phê
+12017,Kẹo cam chanh,duplicate-vietnamese,name,fao_vn_2007_12017_raw,Kẹo cam chanh,Kẹo cam chanh
+12018,Kẹo dừa mềm,duplicate-vietnamese,name,fao_vn_2007_12018_raw,Kẹo dừa mềm,Kẹo dừa mềm
+12020,Kẹo lạc,duplicate-vietnamese,name,fao_vn_2007_12020_raw,Kẹo lạc,Kẹo lạc
+12021,Kẹo Pastille (kẹo ngậm bạc hà),duplicate-vietnamese,name,fao_vn_2007_12021_raw,Kẹo Pastille (kẹo ngậm bạc hà),Kẹo Pastille (kẹo ngậm bạc hà)
+12022,Kẹo sô cô la,duplicate-vietnamese,name,fao_vn_2007_12022_raw,Kẹo sô cô la,Kẹo sô cô la
+12023,Kẹo sữa,duplicate-vietnamese,name,fao_vn_2007_12023_raw,Kẹo sữa,Kẹo sữa
+12024,Kẹo vừng viên,duplicate-vietnamese,name,fao_vn_2007_12024_raw,Kẹo vừng viên,Kẹo vừng viên
+12025,Mạch nha,duplicate-vietnamese,name,fao_vn_2007_12025_raw,Mạch nha,Mạch nha
+12026,Mật ong,duplicate-vietnamese,name,fao_vn_2007_12026_raw,Mật ong,Mật ong
+12027,Mứt lạc,duplicate-vietnamese,name,fao_vn_2007_12027_raw,Mứt lạc,Mứt lạc
+12044,Bánh chocopie,keep-no-match,none,,,
+12053,Bánh sữa,keep-no-match,none,,,
+12063,Thạch POKE hương trái cây ,keep-no-match,none,,,
+12066,"Bim bim, gạo, mặn",keep-no-match,none,,,
+12072,Đậu phộng da cá,keep-no-match,none,,,
+12073,Kem ngô,keep-no-match,none,,,
+12078,Kem đậu xanh,keep-no-match,none,,,
+12084,Bánh bông lan,keep-usda-only,name,usda_18133_raw,"Bánh bông lan, bánh làm sẵn",bánh bông lan
+12085,Bánh gấu,keep-no-match,none,,,
+12086,Bánh ngũ cốc cao năng lượng,keep-no-match,none,,,
+12087,Bánh quy tròn nhân kem Ritz,keep-no-match,none,,,
+12088,Bánh trứng Custas,keep-no-match,none,,,
+12089,Bánh gối,keep-no-match,none,,,
+12090,Bánh rán nhân đỗ,keep-no-match,none,,,
+12091,Bánh tiêu,keep-no-match,none,,,
+13001,Cary bột,duplicate-vietnamese,name,fao_vn_2007_13001_raw,Cary bột,Cary bột
+13002,Gừng khô (bột),duplicate-vietnamese,name,fao_vn_2007_13002_raw,Gừng khô (bột),Gừng khô (bột)
+13003,Gừng tươi,duplicate-vietnamese,name,fao_vn_2007_13003_raw,Gừng tươi,Gừng tươi
+13004,Hạt tiêu,duplicate-vietnamese,name,fao_vn_2007_13004_raw,Hạt tiêu,Hạt tiêu
+13005,Muối,duplicate-vietnamese,name,fao_vn_2007_13005_raw,Muối,Muối
+13006,"Nghệ khô, bột",duplicate-vietnamese,name,fao_vn_2007_13006_raw,"Nghệ khô, bột","Nghệ khô, bột"
+13007,Nghệ tươi,duplicate-vietnamese,name,fao_vn_2007_13007_raw,Nghệ tươi,Nghệ tươi
+13008,ớt khô bột,duplicate-vietnamese,name,fao_vn_2007_13008_raw,ớt khô bột,ớt khô bột
+13009,Riềng,duplicate-vietnamese,name,fao_vn_2007_13009_raw,Riềng,Riềng
+13010,Magi,duplicate-vietnamese,name,fao_vn_2007_13010_raw,Magi,Magi
+13011,Mắm tôm đặc,duplicate-vietnamese,name,fao_vn_2007_13011_raw,Mắm tôm đặc,Mắm tôm đặc
+13012,Mắm tôm loãng,duplicate-vietnamese,name,fao_vn_2007_13012_raw,Mắm tôm loãng,Mắm tôm loãng
+13013,Mắm tép chua,duplicate-vietnamese,name,fao_vn_2007_13013_raw,Mắm tép chua,Mắm tép chua
+13014,Nước mắm cá (loại đặc biệt),duplicate-vietnamese,name,fao_vn_2007_13014_raw,Nước mắm cá (loại đặc biệt),Nước mắm cá (loại đặc biệt)
+13015,Nước mắm loại I,duplicate-vietnamese,code-lineage,fao_vn_2007_13015_raw,Nước mắm cá loại I,Nước mắm cá loại I
+13016,Nước mắm loại II,duplicate-vietnamese,name,fao_vn_2007_13016_raw,Nước mắm loại II,Nước mắm loại II
+13017,Nước mắm cá,duplicate-vietnamese,name,fao_vn_2007_13017_raw,Nước mắm cá,Nước mắm cá
+13018,Nước mắm cô,duplicate-vietnamese,name,fao_vn_2007_13018_raw,Nước mắm cô,Nước mắm cô
+13019,Tương ngô,duplicate-vietnamese,name,fao_vn_2007_13019_raw,Tương ngô,Tương ngô
+13020,Tương nếp,duplicate-vietnamese,name,fao_vn_2007_13020_raw,Tương nếp,Tương nếp
+13021,Tương ớt,duplicate-vietnamese,name,fao_vn_2007_13021_raw,Tương ớt,Tương ớt
+13022,Xì dầu,duplicate-vietnamese,name,fao_vn_2007_13022_raw,Xì dầu,Xì dầu
+13023,Sốt mayonnaise,duplicate-vietnamese,name,fao_vn_2007_13023_raw,Sốt mayonnaise,Sốt mayonnaise
+13025,Bột canh,keep-no-match,none,,,
+13026,Bột nêm,keep-no-match,none,,,
+13027,Dầu hào,keep-usda-only,name,usda_6176_raw,"Nước sốt, hàu, sẵn sàng để dùng",dầu hào
+13039,Ớt tươi,keep-no-match,none,,,
+13044,Mù tạt,keep-no-match,none,,,
+13045,Bột chiên giòn,keep-no-match,none,,,
+13046,Bột năng,keep-no-match,none,,,
+13054,Sa tế,keep-no-match,none,,,
+13059,Lá chanh,keep-no-match,none,,,
+13067,Bột chiên xù,keep-usda-only,name,usda_18079_raw,"Bánh mì vụn, khô, bào nhỏ, không gia vị",bột chiên xù
+13072,Hạt ý dĩ,keep-usda-only,name,usda_20005_raw,"Lúa mạch, đã xay xát, chưa xay xát",hạt ý dĩ
+13074,Nước ướp thịt kho,keep-no-match,none,,,
+13075,Gói thuốc bắc (dùng để hầm thịt),keep-no-match,none,,,
+14001,"Bia (cồn: 4,5 g)",duplicate-vietnamese,name,fao_vn_2007_14001_raw,"Bia (cồn: 4,5 g)","Bia (cồn: 4,5 g)"
+14002,Cô nhắc (cồn 32 g),duplicate-vietnamese,name,fao_vn_2007_14002_raw,Cô nhắc (cồn 32 g),Cô nhắc (cồn 32 g)
+14003,Cốc tain (cồn 13 g),duplicate-vietnamese,code-lineage,fao_vn_2007_14003_raw,Cốc tai (cồn 13 g),Cốc tai (cồn 13 g)
+14004,Coca cola,duplicate-vietnamese,name,fao_vn_2007_14004_raw,Coca cola,Coca cola
+14005,Nước cam tươi,duplicate-vietnamese,name,fao_vn_2007_14005_raw,Nước cam tươi,Nước cam tươi
+14006,Nước dừa non tươi,duplicate-vietnamese,name,fao_vn_2007_14006_raw,Nước dừa non tươi,Nước dừa non tươi
+14007,Nước ép cà chua,duplicate-vietnamese,name,fao_vn_2007_14007_raw,Nước ép cà chua,Nước ép cà chua
+14008,Nước khoáng,duplicate-vietnamese,name,fao_vn_2007_14008_raw,Nước khoáng,Nước khoáng
+14009,Nước quít tươi,duplicate-vietnamese,name,fao_vn_2007_14009_raw,Nước quít tươi,Nước quít tươi
+14011,Rượu nếp (80g/ 24 ml) (cồn 5 g),duplicate-vietnamese,name,fao_vn_2007_14011_raw,Rượu nếp (80g/ 24 ml) (cồn 5 g),Rượu nếp (80g/ 24 ml) (cồn 5 g)
+14012,Rượu trắng (cồn 39 g),duplicate-vietnamese,name,fao_vn_2007_14012_raw,Rượu trắng (cồn 39 g),Rượu trắng (cồn 39 g)
+14013,"Rượu vang đỏ (cồn 9,5 g)",duplicate-vietnamese,name,fao_vn_2007_14013_raw,"Rượu vang đỏ (cồn 9,5 g)","Rượu vang đỏ (cồn 9,5 g)"
+14014,"Rượu vang trắng (cồn 9,5 g)",duplicate-vietnamese,name,fao_vn_2007_14014_raw,"Rượu vang trắng (cồn 9,5 g)","Rượu vang trắng (cồn 9,5 g)"
+14015,Rượu vang trắng ngọt (cồn 10.2 g),duplicate-vietnamese,name,fao_vn_2007_14015_raw,Rượu vang trắng ngọt (cồn 10.2 g),Rượu vang trắng ngọt (cồn 10.2 g)
+14016,"Rượu Whisky (cồn 35,2 g)",duplicate-vietnamese,name,fao_vn_2007_14016_raw,"Rượu Whisky (cồn 35,2 g)","Rượu Whisky (cồn 35,2 g)"
+14026,Cà phê sữa hòa tan,keep-no-match,none,,,
+14040,Nước mía,keep-no-match,none,,,
+14047,Nước ép dưa hấu,keep-no-match,none,,,
+14054,Nước ép đào đóng hộp,keep-no-match,none,,,
+14057,Nước đá,keep-no-match,none,,,
+14070,Trà túi lọc,keep-no-match,none,,,
+15001,Bánh bao chiên có nhân,keep-no-match,none,,,
+15002,Bánh bèo,keep-no-match,none,,,
+15003,Bánh bột lọc,keep-no-match,none,,,
+15004,Bánh chay,keep-no-match,none,,,
+15005,Bánh chín tầng mây,keep-no-match,none,,,
+15006,Bánh chưng,keep-no-match,none,,,
+15007,Bánh chuối,keep-no-match,none,,,
+15008,Bánh cốm,keep-no-match,none,,,
+15009,Bánh cuốn,keep-no-match,none,,,
+15010,Bánh cuốn nóng nhân thịt,keep-no-match,none,,,
+15011,Bánh dẻo nhân thập cẩm,keep-no-match,none,,,
+15012,Bánh dẻo nhân trứng,keep-no-match,none,,,
+15013,Bánh đúc nguội,keep-no-match,none,,,
+15014,Bánh đúc nóng,keep-no-match,none,,,
+15015,Bánh gai,keep-no-match,none,,,
+15016,Bánh gio,keep-no-match,none,,,
+15017,Bánh giò,keep-no-match,none,,,
+15018,Bánh khoai,keep-no-match,none,,,
+15019,Bánh khoái,keep-no-match,none,,,
+15020,Bánh khoai sọ chiên,keep-no-match,none,,,
+15021,Bánh khúc,keep-no-match,none,,,
+15022,Bánh mè,keep-no-match,none,,,
+15025,Bánh nếp,keep-no-match,none,,,
+15026,Bánh nướng nhân thập cẩm,keep-no-match,none,,,
+15027,Bánh nướng nhân trứng đỗ xanh,keep-no-match,none,,,
+15028,"Bánh phu thê (su sê, xu xuê)",keep-no-match,none,,,
+15029,Bánh rán bọc đường,keep-no-match,none,,,
+15030,Bánh tẻ,keep-no-match,none,,,
+15031,Bánh tôm,keep-no-match,none,,,
+15032,Bánh trôi,keep-no-match,none,,,
+15040,Caramen,keep-no-match,none,,,
+15041,Chả quế,keep-no-match,none,,,
+15062,Nem lụi,keep-no-match,none,,,
+15063,Nem rán,keep-no-match,none,,,
+15068,Thịt xiên nướng,keep-no-match,none,,,
+15069,Xôi đỗ xanh,keep-no-match,none,,,
+15070,Xôi gấc,keep-no-match,none,,,
+15071,Xôi lạc,keep-no-match,none,,,
+15072,Xôi ngô,keep-no-match,none,,,
+15073,Xôi xéo,keep-no-match,none,,,
+15077,Bánh dày,keep-no-match,none,,,
+15078,Xôi đỗ đen,keep-no-match,none,,,
+2001,"Củ ấu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2001_raw,Củ ấu,Củ ấu
+2002,"Củ cái, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2002_raw,Củ cái,Củ cái
+2003,"Củ dong, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2003_raw,Củ dong,Củ dong
+2003002,Củ dong luộc,keep-no-match,none,,,
+2004,"Củ sắn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2004_raw,Củ sắn,Củ sắn
+2004014,Củ sắn nướng,keep-no-match,none,,,
+2005,"Củ sắn dây, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2005_raw,Củ sắn dây,Củ sắn dây
+2005002,"Củ sắn dây, luộc",keep-no-match,none,,,
+2006,"Củ súng, bóc vỏ, khô",keep-no-match,none,,,
+2007,"Củ từ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2007_raw,Củ từ,Củ từ
+2007002,Củ từ luộc,keep-usda-only,name,usda_11701_cooked,"Mũi tên, luộc chín, để ráo nước, thêm muối.",củ từ luộc
+2008,"Khoai lang, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2008_raw,Khoai lang,Khoai lang
+2008002,"Khoai lang, luộc",keep-usda-only,name,usda_11510_cooked,"Khoai lang luộc, không vỏ.",khoai lang luộc
+2008014,"Khoai lang, nướng ",keep-usda-only,name,usda_11508_cooked,"Khoai lang, nấu chín, nướng cả vỏ, phần thịt, không muối",khoai lang nướng
+2009,"Khoai lang nghệ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2009_raw,Khoai lang nghệ,Khoai lang nghệ
+2010,"Khoai môn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2010_raw,Khoai môn,Khoai môn
+2011,"Khoai nước, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2011_raw,Khoai nước,Khoai nước
+2012,"Khoai riềng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2012_raw,Khoai riềng,Khoai riềng
+2012002,Khoai riềng luộc,keep-no-match,none,,,
+2013,"Khoai sọ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2013_raw,Khoai sọ,Khoai sọ
+2013002,"Khoai sọ, luộc",keep-usda-only,name,usda_11519_cooked,"Khoai môn, đã nấu chín, không thêm muối.",khoai sọ luộc
+2014,"Khoai tây, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_2014_raw,Khoai tây,Khoai tây
+2014002,"Khoai tây, luộc",keep-usda-only,name,usda_11365_cooked,"Khoai tây luộc, nấu cả vỏ, phần thịt, không thêm muối.",khoai tây luộc
+2015,"Miến dong, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_2015_raw,Miến dong,Miến dong
+2016,Bột dong lọc,duplicate-vietnamese,name,fao_vn_2007_2016_raw,Bột dong lọc,Bột dong lọc
+2017,Bột khoai lang,duplicate-vietnamese,name,fao_vn_2007_2017_raw,Bột khoai lang,Bột khoai lang
+2018,Bột khoai riềng (bột đao),duplicate-vietnamese,name,fao_vn_2007_2018_raw,Bột khoai riềng (bột đao),Bột khoai riềng (bột đao)
+2019,Bột khoai tây (lọc),duplicate-vietnamese,name,fao_vn_2007_2019_raw,Bột khoai tây (lọc),Bột khoai tây (lọc)
+2020,Bột sắn,duplicate-vietnamese,name,fao_vn_2007_2020_raw,Bột sắn,Bột sắn
+2022,"Khoai lang, khô",duplicate-vietnamese,name,fao_vn_2007_2022_raw,Khoai lang khô,Khoai lang khô
+2023,"Khoai tây, khô",duplicate-vietnamese,name,fao_vn_2007_2023_raw,Khoai tây khô,Khoai tây khô
+2024,"Khoai tây lát, chiên",duplicate-vietnamese,name,fao_vn_2007_2024_raw,Khoai tây lát chiên,Khoai tây lát chiên
+2025,"Sắn, củ, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_2025_raw,Sắn khô,Sắn khô
+2026,Trân châu sắn,duplicate-vietnamese,name,fao_vn_2007_2026_raw,Trân châu sắn,Trân châu sắn
+2026002,Trân châu sắn luộc ,keep-no-match,none,,,
+3001,"Cùi dừa già, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_3001_raw,Cùi dừa già,Cùi dừa già
+3002,"Cùi dừa non, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_3002_raw,Cùi dừa non,Cùi dừa non
+3003,"Đậu cô ve, hạt, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3003_raw,Đậu cô ve (hạt),Đậu cô ve (hạt)
+3004,"Đậu đen, hạt, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3004_raw,Đậu đen (hạt),Đậu đen (hạt)
+3005,"Đậu đũa, hạt, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3005_raw,Đậu đũa (hạt),Đậu đũa (hạt)
+3006,"Đậu Hà lan, hạt, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3006_raw,Đậu Hà lan (hạt),Đậu Hà lan (hạt)
+3007,"Đậu tương, đậu nành, hạt khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3007_raw,Đậu tương (đậu nành),Đậu tương (đậu nành)
+3008,"Đậu trắng (đậu tây), hạt, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3008_raw,Đậu trắng hạt (Đậu Tây),Đậu trắng hạt (Đậu Tây)
+3009,"Đậu trứng cuốc, hạt, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3009_raw,Đậu trứng cuốc,Đậu trứng cuốc
+3010,"Đậu xanh (đậu tắt), hạt, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3010_raw,Đậu xanh (đậu tắt),Đậu xanh (đậu tắt)
+3011,"Hạt dẻ to, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3011_raw,Hạt dẻ to,Hạt dẻ to
+3012,"Hạt dẻ to, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_3012_raw,Hạt dẻ tươi,Hạt dẻ tươi
+3013,"Hạt dẻ, khô",duplicate-vietnamese,name,fao_vn_2007_3013_raw,Hạt dẻ khô,Hạt dẻ khô
+3014,"Hạt đen, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3014_raw,Hạt đen,Hạt đen
+3015,"Hạt điều, khô ",duplicate-vietnamese,code-lineage,fao_vn_2007_3015_raw,Hạt điều,Hạt điều
+3016,"Hạt mít, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_3016_raw,Hạt mít,Hạt mít
+3017,"Lạc hạt, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3017_raw,Lạc hạt,Lạc hạt
+3018,"Quả cọ, tươi",duplicate-vietnamese,name,fao_vn_2007_3018_raw,Quả cọ tươi,Quả cọ tươi
+3019,"Quả đại hái, tươi",duplicate-vietnamese,name,fao_vn_2007_3019_raw,Quả đại hái tươi,Quả đại hái tươi
+3020,"Vừng (đen, trắng), hạt, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_3020_raw,"Vừng (đen, trắng)","Vừng (đen, trắng)"
+3020011,Vừng rang,keep-usda-only,name,usda_12024_cooked,"Hạt mè, hạt nguyên, rang và nướng.",vừng rang
+3021,"Bột đậu tương, đã loại béo",duplicate-vietnamese,code-lineage,fao_vn_2007_3021_raw,Bột đậu tương đã loại béo (đậu nành),Bột đậu tương đã loại béo (đậu nành)
+3022,"Bột đậu tương, rang chín",duplicate-vietnamese,name,fao_vn_2007_3022_cooked,Bột đậu tương rang chín,Bột đậu tương rang chín
+3023,Bột đậu xanh,duplicate-vietnamese,name,fao_vn_2007_3023_raw,Bột đậu xanh,Bột đậu xanh
+3024,Bột lạc,duplicate-vietnamese,name,fao_vn_2007_3024_raw,Bột lạc,Bột lạc
+3025,"Đậu phụ, sống",duplicate-vietnamese,code-lineage,fao_vn_2007_3025_raw,Đậu phụ,Đậu phụ
+3025002,Đậu phụ luộc,keep-no-match,none,,,
+3026,"Đậu phụ chúc, sống",duplicate-vietnamese,code-lineage,fao_vn_2007_3026_raw,Đậu phụ chúc,Đậu phụ chúc
+3027,"Đậu phụ, nướng",duplicate-vietnamese,name,fao_vn_2007_3027_cooked,Đậu phụ nướng,Đậu phụ nướng
+3028,"Hạt bí đỏ, rang",duplicate-vietnamese,name,fao_vn_2007_3028_cooked,Hạt bí đỏ rang,Hạt bí đỏ rang
+3029,"Hạt dưa hấu, rang",duplicate-vietnamese,code-lineage,fao_vn_2007_3029_cooked,Hạt dưa đỏ rang (dưa hấu),Hạt dưa đỏ rang (dưa hấu)
+3030,"Hạt điều khô, chiên dầu",duplicate-vietnamese,name,fao_vn_2007_3030_raw,"Hạt điều khô, chiên dầu","Hạt điều khô, chiên dầu"
+3031,Sữa bột đậu nành,duplicate-vietnamese,name,fao_vn_2007_3031_cooked,Sữa bột đậu nành,Sữa bột đậu nành
+3032,Sữa đậu nành (100g đậu/lít),duplicate-vietnamese,name,fao_vn_2007_3032_raw,Sữa đậu nành (100g đậu/lít),Sữa đậu nành (100g đậu/lít)
+3033,Tào phớ,duplicate-vietnamese,name,fao_vn_2007_3033_raw,Tào phớ,Tào phớ
+3036002,Đậu ngự luộc,keep-usda-only,name,usda_11714_cooked,"Đậu lima, hạt non, luộc chín, để ráo nước, thêm muối.",đậu ngự luộc
+3037002,Đậu ván luộc,keep-usda-only,name,usda_11788_cooked,"Đậu hyacinth, hạt non, nấu chín, luộc, để ráo nước, thêm muối.",đậu ván luộc
+3038,Đậu phụ non Tứ Xuyên,keep-no-match,none,,,
+3039002,Hạt sen tươi luộc,keep-no-match,none,,,
+3041011,Hạt hướng dương rang,keep-usda-only,name,usda_12038_cooked,"Hạt hướng dương, nhân hạt, rang dầu, không muối.",hạt hướng dương rang
+3042011,Hạt hạnh nhân rang,keep-no-match,none,,,
+3043011,Hạt óc chó rang,keep-no-match,none,,,
+3044011,Hạt macca rang,keep-no-match,none,,,
+3046011,Hạt dẻ cười rang,keep-usda-only,name,usda_12152_cooked,"Các loại hạt, hạt dẻ cười, rang khô, không thêm muối.",hạt dẻ cười rang
+4001,"Quả bầu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4001_raw,Bầu,Bầu
+4001002,"Bầu, luộc",keep-usda-only,name,usda_11219_cooked,"Bí ngòi hoa trắng (bí bầu), luộc chín, để ráo nước, không thêm muối.",bầu luộc
+4002,"Quả bí đao (bí xanh), tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4002_raw,Bí đao (bí xanh),Bí đao (bí xanh)
+4002002,"Bí đao (bí xanh), luộc",keep-no-match,none,,,
+4003,"Quả bí ngô, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4003_raw,Bí ngô,Bí ngô
+4003002,"Bí ngô, luộc",keep-usda-only,name,usda_11423_cooked,"Bí ngô, đã nấu chín, luộc, để ráo nước, không thêm muối.",bí ngô luộc
+4004,"Quả cà bát, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4004_raw,Cà bát,Cà bát
+4004002,"Cà bát, luộc",keep-no-match,none,,,
+4005,"Quả cà chua, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4005_raw,Cà chua,Cà chua
+4006,"Quả cà pháo, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4006_raw,Cà pháo,Cà pháo
+4007,"Củ cà rốt, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4007_raw,"Cà rốt (củ đỏ, vàng)","Cà rốt (củ đỏ, vàng)"
+4007002,"Cà rốt (củ đỏ, vàng), luộc",keep-no-match,none,,,
+4008,"Củ cà rốt, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_4008_raw,Cà rốt khô,Cà rốt khô
+4009,"Quả cà tím, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4009_raw,Cà tím,Cà tím
+4009002,"Cà tím, luộc",keep-usda-only,name,usda_11783_cooked,"Cà tím, luộc chín, để ráo nước, thêm muối.",cà tím luộc
+4010,"Cải bắp trắng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4010_raw,Cải bắp,Cải bắp
+4010002,"Cải bắp, luộc",keep-usda-only,name,usda_11751_cooked,"Bắp cải thường, luộc chín, để ráo nước, thêm muối.",bắp cải luộc
+4011,"Cải bắp đỏ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4011_raw,Cải bắp đỏ,Cải bắp đỏ
+4011002,"Cải bắp đỏ, luộc",keep-usda-only,name,usda_11113_cooked,"Bắp cải đỏ, luộc chín, để ráo nước, không thêm muối.",bắp cải đỏ luộc
+4012,"Cải bắp trắng, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_4012_raw,Cải bắp khô,Cải bắp khô
+4013,"Cải cúc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4013_raw,Cải cúc,Cải cúc
+4014,"Cải soong, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4014_raw,Cải soong,Cải soong
+4015,"Cải thìa (cải trắng), tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4015_raw,Cải thìa (cải trắng),Cải thìa (cải trắng)
+4015002,"Cải thìa (cải trắng), luộc",keep-no-match,none,,,
+4016,"Cải xanh, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4016_raw,Cải xanh,Cải xanh
+4016002,"Cải xanh, luộc",keep-no-match,none,,,
+4017,"Cần ta, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4017_raw,Cần ta,Cần ta
+4018,"Cần tây, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4018_raw,Cần tây,Cần tây
+4019,"Chuối xanh, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4019_raw,Chuối xanh,Chuối xanh
+4019002,"Chuối xanh, luộc",keep-usda-only,name,usda_9543_cooked,Chuối xanh luộc,Chuối xanh luộc
+4020,"Củ cải đỏ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4020_raw,Củ cải đỏ,Củ cải đỏ
+4020002,"Củ cải đỏ, luộc",keep-no-match,none,,,
+4021,"Củ cải trắng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4021_raw,Củ cải trắng,Củ cải trắng
+4021002,"Củ cải trắng, luộc",keep-usda-only,name,usda_11431_cooked,"Củ cải trắng kiểu Á, luộc chín, để ráo nước, không thêm muối.",củ cải trắng luộc
+4022,"Củ cải trắng, khô",duplicate-vietnamese,name,fao_vn_2007_4022_raw,Củ cải trắng khô,Củ cải trắng khô
+4023,"Củ đậu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4023_raw,Củ đậu,Củ đậu
+4024,"Củ niễng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4024_raw,Củ niễng,Củ niễng
+4025,"Dọc củ cải, non, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4025_raw,Dọc củ cải (non),Dọc củ cải (non)
+4026,"Dọc mùng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4026_raw,Dọc mùng,Dọc mùng
+4027,"Dưa chuột, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4027_raw,Dưa chuột,Dưa chuột
+4028,"Dưa gang, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4028_raw,Dưa gang,Dưa gang
+4029,"Đậu cô ve, quả, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4029_raw,Đậu cô ve,Đậu cô ve
+4029002,"Đậu cô ve, luộc",keep-usda-only,name,usda_11053_cooked,"Đậu que, đậu xanh, đã nấu chín, luộc, để ráo nước, không thêm muối.",đậu cô ve luộc
+4030,"Đậu đũa, quả, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4030_raw,Đậu đũa,Đậu đũa
+4030002,"Đậu đũa, luộc",keep-usda-only,name,usda_11779_cooked,"Đậu đũa, quả non có hạt, luộc chín, để ráo nước, thêm muối.",đậu đũa luộc
+4031,"Đậu Hà Lan, quả, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4031_raw,Đậu Hà Lan,Đậu Hà Lan
+4032,"Đậu rồng, quả non, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4032_raw,Đậu rồng (quả non),Đậu rồng (quả non)
+4033,"Đu đủ xanh, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4033_raw,Đu đủ xanh,Đu đủ xanh
+4034,"Quả gấc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4034_raw,Gấc,Gấc
+4035,"Giá đậu tương, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4035_raw,Giá đậu tương,Giá đậu tương
+4036,"Giá đậu xanh, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4036_raw,Giá đậu xanh,Giá đậu xanh
+4036002,"Giá đậu xanh, luộc",keep-usda-only,name,usda_11718_cooked,"Đậu xanh, hạt chín, nảy mầm, nấu chín, luộc, để ráo nước, thêm muối.",giá đậu xanh luộc
+4037,"Hành củ, tươi",duplicate-vietnamese,name,fao_vn_2007_4037_raw,Hành củ tươi,Hành củ tươi
+4038,"Hành lá (hành hoa), tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4038_raw,Hành lá (hành hoa),Hành lá (hành hoa)
+4039,"Hành tây, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4039_raw,Hành tây,Hành tây
+4040,"Hạt sen, tươi",duplicate-vietnamese,name,fao_vn_2007_4040_raw,Hạt sen tươi,Hạt sen tươi
+4041,"Hạt sen, khô",duplicate-vietnamese,name,fao_vn_2007_4041_raw,Hạt sen khô,Hạt sen khô
+4042,"Hẹ lá, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4042_raw,Hẹ lá,Hẹ lá
+4043,"Hoa chuối, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4043_raw,Hoa chuối,Hoa chuối
+4044,"Hoa lý, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4044_raw,Hoa lý,Hoa lý
+4045,"Quả khế, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4045_raw,Khế,Khế
+4046,"Lá lốt, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4046_raw,Lá lốt,Lá lốt
+4047,"Lá me, tươi ",duplicate-vietnamese,code-lineage,fao_vn_2007_4047_raw,Lá me,Lá me
+4048,"Lá mơ lông, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4048_raw,Lá mơ lông,Lá mơ lông
+4049,"Lá sắn, tươi",duplicate-vietnamese,name,fao_vn_2007_4049_raw,Lá sắn tươi,Lá sắn tươi
+4050,"Măng chua, măng tre",duplicate-vietnamese,code-lineage,fao_vn_2007_4050_raw,Măng chua,Măng chua
+4051,"Măng tre, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_4051_raw,Măng khô,Măng khô
+4052,"Măng tây, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4052_raw,Măng tây,Măng tây
+4053,"Măng tre, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4053_raw,Măng tre,Măng tre
+4054,"Mướp, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4054_raw,Mướp,Mướp
+4054002,"Mướp, luộc",keep-usda-only,name,usda_11785_cooked,"Bí, bầu khô (bí dùng làm khăn lau bát đĩa), nấu chín, luộc, để ráo nước, thêm muối.",mướp luộc
+4055,"Mướp đắng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4055_raw,Mướp đắng,Mướp đắng
+4055002,"Mướp đắng, luộc",keep-usda-only,name,usda_11711_cooked,"Mướp đắng (mướp đắng), quả, luộc chín, để ráo nước, thêm muối.",mướp đắng luộc
+4056,"Mướp Nhật bản, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4056_raw,Mướp Nhật bản,Mướp Nhật bản
+4057,"Ngải cứu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4057_raw,Ngải cứu,Ngải cứu
+4058,"Ngô bao tử, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4058_raw,Ngô bao tử,Ngô bao tử
+4059,"Ngó sen, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4059_raw,Ngó sen,Ngó sen
+4060,"Nụ mướp, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4060_raw,Nụ mướp,Nụ mướp
+4061,"Ớt đỏ to, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4061_raw,ớt đỏ to,ớt đỏ to
+4062,"Ớt vàng to, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4062_raw,ớt vàng to,ớt vàng to
+4063,"Ớt xanh to, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4063_raw,ớt xanh to,ớt xanh to
+4064,"Quả dọc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4064_raw,Quả dọc,Quả dọc
+4065,"Quả me chua, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4065_raw,Quả me chua,Quả me chua
+4066,"Rau bí, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4066_raw,Rau bí,Rau bí
+4066002,"Rau bí, luộc",keep-no-match,none,,,
+4067,"Rau câu, khô",duplicate-vietnamese,name,fao_vn_2007_4067_raw,Rau câu khô,Rau câu khô
+4068,"Rau câu, tươi",duplicate-vietnamese,name,fao_vn_2007_4068_raw,Rau câu tươi,Rau câu tươi
+4069,"Rau diếp, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4069_raw,Rau diếp,Rau diếp
+4070,"Rau đay, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4070_raw,Rau đay,Rau đay
+4071,"Rau giấp cá, diếp cá, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4071_raw,"Rau giấp cá, diếp cá","Rau giấp cá, diếp cá"
+4072,"Rau giền cơm, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4072_raw,Rau giền cơm,Rau giền cơm
+4072002,"Rau giền cơm, luộc",keep-no-match,none,,,
+4073,"Rau giền đỏ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4073_raw,Rau giền đỏ,Rau giền đỏ
+4073002,"Rau giền đỏ, luộc",keep-no-match,none,,,
+4074,"Rau giền trắng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4074_raw,Rau giền trắng,Rau giền trắng
+4074002,"Rau giền trắng, luộc",keep-no-match,none,,,
+4075,"Rau húng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4075_raw,Rau húng,Rau húng
+4076,"Rau khoai lang, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4076_raw,Rau khoai lang,Rau khoai lang
+4076002,"Rau khoai lang, luộc",keep-no-match,none,,,
+4077,"Rau kinh giới, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4077_raw,Rau kinh giới,Rau kinh giới
+4078,"Rau má rừng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4078_raw,Rau má rừng,Rau má rừng
+4079,"Rau má, má mơ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4079_raw,"Rau má, má mơ","Rau má, má mơ"
+4080,"Rau mồng tơi, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4080_raw,Rau mồng tơi,Rau mồng tơi
+4080002,"Rau mồng tơi, luộc",keep-usda-only,name,usda_11802_cooked,"Rau bina New Zealand, luộc chín, để ráo nước, thêm muối.",rau mồng tơi luộc
+4081,"Rau mùi, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4081_raw,Rau mùi,Rau mùi
+4082,"Rau mùi tàu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4082_raw,Rau mùi tàu,Rau mùi tàu
+4083,"Rau muống,  tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4083_raw,Rau muống,Rau muống
+4083002,"Rau muống, luộc",keep-usda-only,name,usda_11504_cooked,"Bắp cải nước luộc, để ráo nước, không thêm muối.",rau muống luộc
+4084,"Rau muống, khô",duplicate-vietnamese,name,fao_vn_2007_4084_raw,Rau muống khô,Rau muống khô
+4085,"Rau ngổ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4085_raw,Rau ngổ,Rau ngổ
+4086,"Rau ngót, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4086_raw,Rau ngót,Rau ngót
+4087,"Rau ngót, khô",duplicate-vietnamese,name,fao_vn_2007_4087_raw,Rau ngót khô,Rau ngót khô
+4088,"Rau răm, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4088_raw,Rau răm,Rau răm
+4089,"Rau rút, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4089_raw,Rau rút,Rau rút
+4090,"Rau sà lách, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4090_raw,Rau sà lách,Rau sà lách
+4091,"Rau sam, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4091_raw,Rau sam,Rau sam
+4092,"Rau sắng chùa hương, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4092_raw,Rau sắng (chùa Hương),Rau sắng (chùa Hương)
+4093,"Rau tàu bay, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4093_raw,Rau tàu bay,Rau tàu bay
+4094,"Rau thơm, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4094_raw,Rau thơm,Rau thơm
+4095,"Quả sấu xanh, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4095_raw,Sấu xanh,Sấu xanh
+4096,"Củ su hào, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4096_raw,Su hào,Su hào
+4096002,"Su hào, luộc",keep-usda-only,name,usda_11793_cooked,"Củ cải Kohlrabi, luộc chín, để ráo nước, thêm muối.",su hào luộc
+4097,"Củ su hào, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_4097_raw,Su hào khô,Su hào khô
+4098,"Quả su su, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4098_raw,"Su su, quả","Su su, quả"
+4098002,"Su su, luộc",keep-usda-only,name,usda_11766_cooked,"Quả chayote, nấu chín, luộc, để ráo nước, với muối.",su su luộc
+4099,"Súp lơ trắng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4099_raw,Súp lơ trắng,Súp lơ trắng
+4099002,"Súp lơ trắng, luộc",keep-usda-only,name,usda_11761_cooked,"Súp lơ trắng, luộc chín, để ráo nước, thêm muối.",súp lơ trắng luộc
+4100,"Súp lơ xanh, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4100_raw,Súp lơ xanh,Súp lơ xanh
+4100002,"Súp lơ xanh, luộc",keep-usda-only,name,usda_11742_cooked,"Bông cải xanh, luộc chín, để ráo nước, thêm muối.",súp lơ xanh luộc
+4101,"Thìa là, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4101_raw,Thìa là,Thìa là
+4102,"Tía tô, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4102_raw,Tía tô,Tía tô
+4103,"Tỏi ta, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4103_raw,Tỏi ta,Tỏi ta
+4104,"Tỏi tây, cả lá, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4104_raw,Tỏi tây (cả lá),Tỏi tây (cả lá)
+4105,"Trám đen, quả chín, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4105_raw,Trám đen chín,Trám đen chín
+4106,"Trám xanh, trám trắng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4106_raw,"Trám xanh sống, trám trắng","Trám xanh sống, trám trắng"
+4107,"Lá xương sông, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_4107_raw,Xương sông,Xương sông
+4108,"Rau cải ngọt, tươi",keep-no-match,none,,,
+4108002,"Cải ngọt, luộc",keep-usda-only,name,usda_11801_cooked,"Rau cải mù tạt (loại non), luộc chín, để ráo nước, thêm muối.",cải ngọt luộc
+4109,"Rau cải thảo, tươi",keep-no-match,none,,,
+4109002,"Cải thảo, luộc",keep-usda-only,name,usda_11755_cooked,"Bắp cải Trung Quốc (pe-tsai), đã nấu chín, luộc, để ráo nước, với muối.",cải thảo luộc
+4110,"Ngọn su su, tươi",keep-no-match,none,,,
+4110002,"Ngọn su su, luộc",keep-no-match,none,,,
+4111,"Quả đậu ván, tươi",keep-no-match,none,,,
+4112,"Cà chua, muối",duplicate-vietnamese,name,fao_vn_2007_4108_raw,Cà chua muối,Cà chua muối
+4113,"Cà pháo, muối nén",keep-no-match,none,,,
+4114,"Cà pháo, muối sổi ",keep-no-match,none,,,
+4115,Dưa cải bắp,duplicate-vietnamese,name,fao_vn_2007_4111_raw,Dưa cải bắp,Dưa cải bắp
+4116,Dưa cải bẹ,duplicate-vietnamese,name,fao_vn_2007_4112_raw,Dưa cải bẹ,Dưa cải bẹ
+4117,Dưa cải sen,duplicate-vietnamese,name,fao_vn_2007_4113_raw,Dưa cải sen,Dưa cải sen
+4118,"Dưa chuột, muối",duplicate-vietnamese,name,fao_vn_2007_4114_raw,Dưa chuột muối,Dưa chuột muối
+4119,Dưa giá đậu xanh,duplicate-vietnamese,name,fao_vn_2007_4115_raw,Dưa giá (đậu xanh),Dưa giá (đậu xanh)
+4120,"Hành củ, muối",duplicate-vietnamese,name,fao_vn_2007_4116_raw,Hành củ muối,Hành củ muối
+4121,"Kiệu, muối",duplicate-vietnamese,name,fao_vn_2007_4117_raw,Kiệu muối,Kiệu muối
+4122,"Nhút (dưa muối từ mít non, lá đậu xanh non...)",keep-no-match,none,,,
+4123,"Men bia, khô",duplicate-vietnamese,name,fao_vn_2007_4119_raw,Men bia khô,Men bia khô
+4124,"Men bia, tươi",duplicate-vietnamese,name,fao_vn_2007_4120_raw,Men bia tươi,Men bia tươi
+4125,"Mộc nhĩ, khô",keep-usda-only,name,usda_11988_raw,"Nấm mộc nhĩ, nấm tai mèo, nấm khô",mộc nhĩ khô
+4126,"Nấm hương, khô",duplicate-vietnamese,name,fao_vn_2007_4122_raw,Nấm hương khô,Nấm hương khô
+4127,"Nấm hương, tươi",duplicate-vietnamese,name,fao_vn_2007_4123_raw,Nấm hương tươi,Nấm hương tươi
+4128,"Nấm mỡ (Nấm tây), tươi",keep-no-match,none,,,
+4129,"Nấm rơm, tươi",keep-no-match,none,,,
+4130,"Nấm thường, tươi",duplicate-vietnamese,name,fao_vn_2007_4126_raw,Nấm thường tươi,Nấm thường tươi
+4132,Hành khô,keep-usda-only,name,usda_11677_raw,Hành tím,Hành khô
+4133,Nấm kim châm,keep-usda-only,name,usda_11950_raw,"Nấm, nấm kim châm, sống",nấm kim châm
+4134,Cải ngồng,keep-no-match,none,,,
+4134002,"Cải ngồng, luộc",keep-no-match,none,,,
+4135,Rau cải chíp,keep-no-match,none,,,
+4135002,Rau cải chíp luộc,keep-no-match,none,,,
+5001,"Bưởi, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5001_raw,Bưởi,Bưởi
+5002,"Cam, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5002_raw,Cam,Cam
+5003,"Chanh, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5003_raw,Chanh,Chanh
+5004,"Chôm chôm, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5004_raw,Chôm chôm,Chôm chôm
+5005,"Chuối, khô",duplicate-vietnamese,name,fao_vn_2007_5005_raw,Chuối khô,Chuối khô
+5006,"Chuối tây, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5006_raw,Chuối tây,Chuối tây
+5007,"Chuối tiêu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5007_raw,Chuối tiêu,Chuối tiêu
+5008,"Dâu gia, tươi ",duplicate-vietnamese,code-lineage,fao_vn_2007_5008_raw,Dâu gia,Dâu gia
+5009,"Dâu tây, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5009_raw,Dâu tây,Dâu tây
+5010,"Dưa bở, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5010_raw,Dưa bở,Dưa bở
+5011,"Dưa hấu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5011_raw,Dưa hấu,Dưa hấu
+5012,"Dưa hồng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5012_raw,Dưa hồng,Dưa hồng
+5013,"Dưa lê, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5013_raw,Dưa lê,Dưa lê
+5014,"Dứa ta, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5014_raw,Dứa ta,Dứa ta
+5015,"Dứa tây, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5015_raw,Dứa tây,Dứa tây
+5016,"Đào, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5016_raw,Đào,Đào
+5017,"Đu đủ chín, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5017_raw,Đu đủ chín,Đu đủ chín
+5018,"Gioi, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5018_raw,Gioi,Gioi
+5019,"Hồng bì, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5019_raw,Hồng bì,Hồng bì
+5020,"Hồng đỏ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5020_raw,Hồng đỏ,Hồng đỏ
+5021,"Hồng ngâm, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5021_raw,Hồng ngâm,Hồng ngâm
+5022,"Hồng xiêm, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5022_raw,Hồng xiêm,Hồng xiêm
+5023,"Lê, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5023_raw,Lê,Lê
+5024,"Lựu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5024_raw,Lựu,Lựu
+5025,"Mãng cầu xiêm, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5025_raw,Mãng cầu xiêm,Mãng cầu xiêm
+5026,"Mắc coọc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5026_raw,Mắc coọc,Mắc coọc
+5027,"Mận tím, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5027_raw,Mận,Mận
+5028,"Mít dai, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5028_raw,Mít dai,Mít dai
+5029,Mít khô,duplicate-vietnamese,name,fao_vn_2007_5029_raw,Mít khô,Mít khô
+5030,"Mít mật , tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5030_raw,Mít mật,Mít mật
+5031,"Mơ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5031_raw,Mơ,Mơ
+5032,"Mơ, khô",duplicate-vietnamese,name,fao_vn_2007_5032_raw,Mơ khô,Mơ khô
+5033,"Muỗm, quéo, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5033_raw,"Muỗm, quéo","Muỗm, quéo"
+5034,"Na, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5034_raw,Na,Na
+5035,"Nhãn, tươi ",duplicate-vietnamese,code-lineage,fao_vn_2007_5035_raw,Nhãn,Nhãn
+5036,"Nhãn, khô",duplicate-vietnamese,name,fao_vn_2007_5036_raw,Nhãn khô,Nhãn khô
+5037,"Nho ngọt, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5037_raw,Nho ngọt,Nho ngọt
+5038,"Nho ta (nho chua), tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5038_raw,Nho ta (nho chua),Nho ta (nho chua)
+5039,"Nhót, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5039_raw,Nhót,Nhót
+5040,"Ổi, quả chín, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5040_raw,ổi,ổi
+5041,"Quả bơ vỏ tím, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5041_raw,Quả bơ vỏ tím,Quả bơ vỏ tím
+5042,"Quả bơ vỏ xanh, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5042_raw,Quả bơ vỏ xanh,Quả bơ vỏ xanh
+5043,"Quả cóc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5043_raw,Quả cóc,Quả cóc
+5044,"Quả thanh long, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5044_raw,Quả thanh long,Quả thanh long
+5045,"Quả trứng gà, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5045_raw,Quả trứng gà,Quả trứng gà
+5046,"Quất chín, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5046_raw,Quất chín (cả vỏ),Quất chín (cả vỏ)
+5047,"Quít, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5047_raw,Quít,Quít
+5048,"Sầu riêng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5048_raw,Sầu riêng,Sầu riêng
+5049,"Sấu chín, tươi   ",duplicate-vietnamese,code-lineage,fao_vn_2007_5049_raw,Sấu chín,Sấu chín
+5050,"Táo ta, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5050_raw,Táo ta,Táo ta
+5051,"Táo tây, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5051_raw,Táo tây,Táo tây
+5052,"Vải, tươi   ",duplicate-vietnamese,code-lineage,fao_vn_2007_5052_raw,Vải,Vải
+5053,"Vải, khô",duplicate-vietnamese,name,fao_vn_2007_5053_raw,Vải khô,Vải khô
+5054,"Vú sữa, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5054_raw,Vú sữa,Vú sữa
+5055,"Xoài chín, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5055_raw,Xoài chín,Xoài chín
+5056,"Quả kiwi, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_5056_raw,Quả kiwi,Quả kiwi
+5058,Táo mèo,keep-no-match,none,,,
+5060,Dưa lưới,keep-usda-only,name,usda_9181_raw,"Dưa lưới, dưa vàng, sống",dưa lưới
+5061,Măng cụt,keep-no-match,none,,,
+6001,Bơ,duplicate-vietnamese,name,fao_vn_2007_6001_raw,Bơ,Bơ
+6003,"Mỡ lợn, muối",duplicate-vietnamese,name,fao_vn_2007_6003_raw,Mỡ lợn muối,Mỡ lợn muối
+6004,"Mỡ lợn, nước",duplicate-vietnamese,name,fao_vn_2007_6004_raw,Mỡ lợn nước,Mỡ lợn nước
+6005,Bơ thực vật,duplicate-vietnamese,name,fao_vn_2007_6005_raw,Bơ thực vật,Bơ thực vật
+6006,Dầu bông,duplicate-vietnamese,name,fao_vn_2007_6006_raw,Dầu bông,Dầu bông
+6007,Dầu cám gạo,duplicate-vietnamese,name,fao_vn_2007_6007_raw,Dầu cám gạo,Dầu cám gạo
+6008,Dầu cọ,duplicate-vietnamese,name,fao_vn_2007_6008_raw,Dầu cọ,Dầu cọ
+6009,Dầu dừa,duplicate-vietnamese,name,fao_vn_2007_6009_raw,Dầu dừa,Dầu dừa
+6010,Dầu đậu tương,duplicate-vietnamese,name,fao_vn_2007_6010_raw,Dầu đậu tương,Dầu đậu tương
+6011,Dầu lạc,duplicate-vietnamese,name,fao_vn_2007_6011_raw,Dầu lạc,Dầu lạc
+6012,Dầu mè,duplicate-vietnamese,name,fao_vn_2007_6012_raw,Dầu mè,Dầu mè
+6013,Dầu ngô ,duplicate-vietnamese,name,fao_vn_2007_6013_raw,Dầu ngô,Dầu ngô
+6014,Dầu oliu,duplicate-vietnamese,name,fao_vn_2007_6014_raw,Dầu oliu,Dầu oliu
+6023,Dầu hỗn hợp,keep-no-match,none,,,
+7001,"Thịt bê, mỡ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7001_raw,Thịt bê mỡ,Thịt bê mỡ
+7002,"Thịt bê, nạc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7002_raw,Thịt bê nạc,Thịt bê nạc
+7003,"Thịt bò, loại I, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7003_raw,Thịt bò loại I,Thịt bò loại I
+7004,"Thịt bò, loại II, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7004_raw,Thịt bò loại II,Thịt bò loại II
+7005,"Thịt bò, lưng, nạc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7005_raw,"Thịt bò, lưng, nạc","Thịt bò, lưng, nạc"
+7005018,"Thịt bò, lưng, nạc, chần",keep-no-match,none,,,
+7006,"Thịt bò, lưng, nạc và mỡ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7006_raw,"Thịt bò, lưng, nạc và mỡ","Thịt bò, lưng, nạc và mỡ"
+7006018,"Thịt bò, lưng, nạc và mỡ, chần",keep-no-match,none,,,
+7007,"Thịt bồ câu, cả con non (ra ràng), tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7007_raw,Thịt bồ câu ra ràng,Thịt bồ câu ra ràng
+7008,"Thịt chó, sấn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7008_raw,Thịt chó sấn,Thịt chó sấn
+7009,"Thịt chó, vai, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7009_raw,Thịt chó vai,Thịt chó vai
+7010,"Thịt cừu, nạc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7010_raw,"Thịt cừu, nạc","Thịt cừu, nạc"
+7011,"Thịt dê, nạc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7011_raw,"Thịt dê, nạc","Thịt dê, nạc"
+7011003,"Thịt dê, nạc, hấp",keep-no-match,none,,,
+7012,"Thịt gà rừng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7012_raw,Thịt gà rừng,Thịt gà rừng
+7013,"Thịt gà ta, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7013_raw,Thịt gà ta,Thịt gà ta
+7014,"Thịt gà tây, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7014_raw,Thịt gà tây,Thịt gà tây
+7015,"Thịt hươu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7015_raw,Thịt hươu,Thịt hươu
+7016,"Thịt lợn, mỡ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7016_raw,Thịt lợn mỡ,Thịt lợn mỡ
+7017,"Thịt lợn, nạc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7017_raw,Thịt lợn nạc,Thịt lợn nạc
+7018,"Thịt lợn, nửa nạc, nửa mỡ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7018_raw,"Thịt lợn nửa nạc, nửa mỡ","Thịt lợn nửa nạc, nửa mỡ"
+7018002,"Thịt lợn nửa nạc, nửa mỡ, luộc",keep-no-match,none,,,
+7019,"Thịt ngỗng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7019_raw,Thịt ngỗng,Thịt ngỗng
+7019002,"Thịt ngỗng, luộc",keep-no-match,none,,,
+7020,"Thịt ngựa, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7020_raw,Thịt ngựa,Thịt ngựa
+7021,"Thịt thỏ nhà, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7021_raw,Thịt thỏ nhà,Thịt thỏ nhà
+7022,"Thịt thỏ rừng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7022_raw,Thịt thỏ rừng,Thịt thỏ rừng
+7023,"Thịt trâu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7023_raw,Thịt trâu,Thịt trâu
+7024,"Thịt trâu, bắp, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7024_raw,Thịt trâu bắp,Thịt trâu bắp
+7024002,"Thịt trâu bắp, luộc",keep-no-match,none,,,
+7024018,"Thịt trâu bắp, chần",keep-no-match,none,,,
+7025,"Thịt trâu, cổ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7025_raw,Thịt trâu cổ,Thịt trâu cổ
+7026,"Thịt trâu, đùi, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7026_raw,Thịt trâu đùi,Thịt trâu đùi
+7027,"Thịt trâu, đùi, tươi",keep-no-match,none,,,
+7027002,"Thịt trâu thăn, luộc",keep-no-match,none,,,
+7027018,"Thịt trâu thăn, chần",keep-no-match,none,,,
+7028,"Thịt vịt, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7028_raw,Thịt vịt,Thịt vịt
+7028002,"Thịt vịt, luộc",keep-no-match,none,,,
+7029,"Bầu dục bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7029_raw,Bầu dục bò,Bầu dục bò
+7029002,"Bầu dục bò, luộc",keep-no-match,none,,,
+7030,"Bầu dục lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7030_raw,Bầu dục lợn,Bầu dục lợn
+7030002,"Bầu dục lợn, luộc",keep-no-match,none,,,
+7031,"Bì lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7031_raw,Bì lợn,Bì lợn
+7032,"Chân giò lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7032_raw,Chân giò lợn,Chân giò lợn
+7032002,"Thịt chân giò lợn, luộc",keep-no-match,none,,,
+7033,"Dạ dày bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7033_raw,Dạ dày bò,Dạ dày bò
+7034,"Dạ dày lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7034_raw,Dạ dày lợn,Dạ dày lợn
+7034002,"Dạ dày lợn, luộc",keep-no-match,none,,,
+7035,"Đầu bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7035_raw,Đầu bò,Đầu bò
+7036,"Đầu lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7036_raw,Đầu lợn,Đầu lợn
+7037,"Đuôi bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7037_raw,Đuôi bò,Đuôi bò
+7038,"Đuôi lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7038_raw,Đuôi lợn,Đuôi lợn
+7039,"Gan bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7039_raw,Gan bò,Gan bò
+7040,"Gan gà, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7040_raw,Gan gà,Gan gà
+7040002,"Gan gà, luộc",keep-usda-only,name,usda_5028_cooked,"Thịt gà, gan, tất cả các loại, nấu chín, ninh nhừ",gan gà luộc
+7041,"Gan lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7041_raw,Gan lợn,Gan lợn
+7041002,"Gan lợn, luộc",keep-no-match,none,,,
+7042,"Gan vịt, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7042_raw,Gan vịt,Gan vịt
+7042002,"Gan vịt, luộc",keep-no-match,none,,,
+7043,"Gân chân bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7043_raw,Gân chân bò,Gân chân bò
+7043006,"Thịt bò, gân, kho/om",keep-no-match,none,,,
+7044,"Lưỡi bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7044_raw,Lưỡi bò,Lưỡi bò
+7044002,"Lưỡi bò, luộc",keep-usda-only,name,usda_13340_cooked,"Thịt bò, các loại nội tạng và phụ phẩm, lưỡi bò, đã nấu chín, ninh nhừ.",lưỡi bò luộc
+7045,"Lưỡi lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7045_raw,Lưỡi lợn,Lưỡi lợn
+7045002,"Lưỡi lợn, luộc",keep-no-match,none,,,
+7046,"Lòng lợn (ruột già), tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7046_raw,Lòng lợn (ruột già),Lòng lợn (ruột già)
+7047,"Lòng lợn (ruột non), tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7047_raw,Lòng lợn (ruột non),Lòng lợn (ruột non)
+7047002,"Lòng lợn (ruột non), luộc",keep-no-match,none,,,
+7048,"Mề gà, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7048_raw,Mề gà,Mề gà
+7048002,"Mề gà, luộc",keep-usda-only,name,usda_5024_cooked,"Gà, mề gà, tất cả các loại, nấu chín, ninh nhừ",mề gà luộc
+7049,"Óc bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7049_raw,óc bò,óc bò
+7049002,"Óc bò, luộc",keep-no-match,none,,,
+7050,"Óc lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7050_raw,óc lợn,óc lợn
+7050002,"Óc lợn, luộc",keep-no-match,none,,,
+7051,"Phổi bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7051_raw,Phổi bò,Phổi bò
+7052,"Phổi lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7052_raw,Phổi lợn,Phổi lợn
+7053,"Sườn lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7053_raw,Sườn lợn,Sườn lợn
+7054,"Tai lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7054_raw,Tai lợn,Tai lợn
+7054002,"Tai lợn, luộc",keep-usda-only,name,usda_10101_cooked,"Thịt lợn tươi, các loại thịt nội tạng và phụ phẩm, tai lợn đông lạnh, đã nấu chín, hầm.",Tai lợn luộc
+7055,"Tim bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7055_raw,Tim bò,Tim bò
+7055002,"Tim bò, luộc",keep-usda-only,name,usda_13322_cooked,"Thịt bò, nội tạng động vật và các sản phẩm phụ, tim, đã nấu chín, hầm",tim bò luộc
+7056,"Tim gà, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7056_raw,Tim gà,Tim gà
+7056002,"Tim gà, luộc",keep-usda-only,name,usda_5026_cooked,"Thịt gà, tim, đủ loại, nấu chín, hầm",tim gà luộc
+7057,"Tim lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7057_raw,Tim lợn,Tim lợn
+7057002,"Tim lợn, luộc",keep-no-match,none,,,
+7058,"Tiết bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7058_raw,Tiết bò,Tiết bò
+7058002,"Tiết bò, luộc",keep-no-match,none,,,
+7059,"Tiết lợn, luộc",duplicate-vietnamese,name,fao_vn_2007_7059_cooked,Tiết lợn luộc,Tiết lợn luộc
+7061,"Tủy xương bò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7061_raw,Tủy xương bò,Tủy xương bò
+7062,"Tủy xương lợn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7062_raw,Tủy xương lợn,Tủy xương lợn
+7063,Ba tê lợn,duplicate-vietnamese,code-lineage,fao_vn_2007_7063_raw,Ba tê,Ba tê
+7064,Chả lợn,duplicate-vietnamese,name,fao_vn_2007_7064_cooked,Chả lợn,Chả lợn
+7065,Chả quế lợn,duplicate-vietnamese,name,fao_vn_2007_7065_cooked,Chả quế lợn,Chả quế lợn
+7066,Dăm bông lợn,duplicate-vietnamese,name,fao_vn_2007_7066_raw,Dăm bông lợn,Dăm bông lợn
+7067,"Dồi lợn, chín",keep-no-match,none,,,
+7068,"Giò bò, chín",keep-no-match,none,,,
+7069,"Giò lụa, chín",duplicate-vietnamese,code-lineage,fao_vn_2007_7069_cooked,Giò lụa,Giò lụa
+7070,"Giò thủ lợn, chín",duplicate-vietnamese,code-lineage,fao_vn_2007_7070_cooked,Giò thủ lợn,Giò thủ lợn
+7071,"Lạp xường, lạp sườn",duplicate-vietnamese,code-lineage,fao_vn_2007_7071_raw,Lạp xường,Lạp xường
+7072,Nem chạo,duplicate-vietnamese,name,fao_vn_2007_7072_raw,Nem chạo,Nem chạo
+7073,Nem chua,duplicate-vietnamese,name,fao_vn_2007_7073_raw,Nem chua,Nem chua
+7074,Ruốc thịt lợn,duplicate-vietnamese,name,fao_vn_2007_7074_raw,Ruốc thịt lợn,Ruốc thịt lợn
+7075,Thịt bò khô,duplicate-vietnamese,name,fao_vn_2007_7075_raw,Thịt bò khô,Thịt bò khô
+7076,Thịt trâu khô,duplicate-vietnamese,name,fao_vn_2007_7076_raw,Thịt trâu khô,Thịt trâu khô
+7077,Xúc xích,duplicate-vietnamese,name,fao_vn_2007_7077_raw,Xúc xích,Xúc xích
+7078,Bột cóc,duplicate-vietnamese,name,fao_vn_2007_7078_raw,Bột cóc,Bột cóc
+7079,"Châu chấu, sống",duplicate-vietnamese,code-lineage,fao_vn_2007_7079_raw,Châu chấu,Châu chấu
+7080,"Ếch (thịt đùi), tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7080_raw,ếch (thịt đùi),ếch (thịt đùi)
+7081,"Nhộng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7081_raw,Nhộng,Nhộng
+7082,"Lòng gà (cả bộ), tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_7082_raw,Lòng gà (cả bộ),Lòng gà (cả bộ)
+7083,"Thịt lợn, nạc vai, tươi",keep-no-match,none,,,
+7083002,"Thịt lợn nạc vai, luộc",keep-no-match,none,,,
+7084,"Thịt lợn, nạc mông, tươi",keep-no-match,none,,,
+7084002,"Thịt lợn nạc mông, luộc",keep-no-match,none,,,
+7085,"Thịt lợn, nạc thăn, tươi",keep-no-match,none,,,
+7085002,"Thịt lợn nạc thăn, luộc",keep-no-match,none,,,
+7086,"Thịt lợn nửa nạc, nửa mỡ, nướng",keep-no-match,none,,,
+7087,"Thịt gà công nghiệp, cánh, tươi",keep-no-match,none,,,
+7088,"Thịt gà công nghiệp, đùi, tươi",keep-no-match,none,,,
+7088002,"Thịt gà công nghiệp, đùi, luộc",keep-no-match,none,,,
+7089,"Thịt gà công nghiệp, lườn, raw",keep-no-match,none,,,
+7090,"Thịt ngan, tươi",keep-no-match,none,,,
+7090002,"Thịt ngan, luộc",keep-no-match,none,,,
+7091,"Chả lá lốt, rán",keep-no-match,none,,,
+7094,"Thịt bò, bắp, sống",keep-no-match,none,,,
+7094003,"Thịt bò, bắp, hấp",keep-no-match,none,,,
+7095003,"Thịt bò, vai, hấp",keep-no-match,none,,,
+7105002,"Thịt gà, ta, đùi, luộc",keep-no-match,none,,,
+7106002,"Thịt gà, ta, lườn, đùi, luộc",keep-no-match,none,,,
+7108002,"Thịt gà, ta, chân, đùi, luộc",keep-no-match,none,,,
+7111002,"Thịt gà, công nghiệp, cổ, luộc",keep-no-match,none,,,
+7112,"Thịt lợn, mông, sống",keep-no-match,none,,,
+7113002,"Thịt vịt, lườn, luộc",keep-no-match,none,,,
+7114002,"Thịt vịt, đùi, luộc",keep-no-match,none,,,
+7118002,"Mọc, từ thịt lợn, nấu canh",keep-no-match,none,,,
+7123002,"Tiết ngan, luộc",keep-no-match,none,,,
+7142,Thịt xá xíu,keep-no-match,none,,,
+7143,Xúc xích bò,keep-usda-only,name,usda_7022_raw,"Xúc xích Frankfurter, thịt bò, không cần hâm nóng",xúc xích bò
+7144,Tiết gà,keep-no-match,none,,,
+8001,"Cá bống, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8001_raw,Cá bống,Cá bống
+8002,"Cá chày, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8002_raw,Cá chày,Cá chày
+8003,"Cá chép, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8003_raw,Cá chép,Cá chép
+8004,"Cá dưa, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8004_raw,Cá dưa,Cá dưa
+8005,"Cá dầu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8005_raw,Cá dầu,Cá dầu
+8006,"Cá diếc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8006_raw,Cá diếc,Cá diếc
+8007,"Cá đao, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8007_raw,Cá đao,Cá đao
+8008,"Cá đé, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8008_raw,Cá đé,Cá đé
+8009,"Cá đối, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8009_raw,Cá đối,Cá đối
+8010,"Cá đồng tiền, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8010_raw,Cá đồng tiền,Cá đồng tiền
+8011,"Cá hồi, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8011_raw,Cá hồi,Cá hồi
+8012,"Cá khô (chim, thu, nụ, đé), sống",duplicate-vietnamese,code-lineage,fao_vn_2007_8012_raw,"Cá khô (chim, thu, nụ, đé)","Cá khô (chim, thu, nụ, đé)"
+8013,"Cá lác, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8013_raw,Cá lác,Cá lác
+8013002,"Cá lác, luộc",keep-no-match,none,,,
+8013008,"Cá lác, chiên giòn",keep-no-match,none,,,
+8014,"Cá mè, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8014_raw,Cá mè,Cá mè
+8015,"Cá mòi (cá sardin), tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8015_raw,Cá mòi,Cá mòi
+8016,"Cá mỡ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8016_raw,Cá mỡ,Cá mỡ
+8017,"Cá mối, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8017_raw,Cá mối,Cá mối
+8018,"Cá nạc, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8018_raw,Cá nạc,Cá nạc
+8019,"Cá ngừ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8019_raw,Cá ngừ,Cá ngừ
+8020,"Cá nục, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8020_raw,Cá nục,Cá nục
+8020002,"Cá nục, luộc",keep-no-match,none,,,
+8020014,"Cá nục, nướng",keep-usda-only,name,usda_15201_cooked,"Cá, cá thu, cá mú Thái Bình Dương và cá chẽm, nhiều loại khác nhau, nấu chín, sấy khô.",cá nục nướng
+8021,"Cá phèn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8021_raw,Cá phèn,Cá phèn
+8022,"Cá quả, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8022_raw,Cá quả,Cá quả
+8023,"Cá rô đồng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8023_raw,Cá rô đồng,Cá rô đồng
+8024,"Cá rô phi, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8024_raw,Cá rô phi,Cá rô phi
+8024008,"Cá rô phi, chiên giòn",keep-no-match,none,,,
+8025,"Cá thờn bơn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8025_raw,Cá thờn bơn (cá bơn),Cá thờn bơn (cá bơn)
+8026,"Cá thu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8026_raw,Cá thu,Cá thu
+8027,"Cá thu đao, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8027_raw,Cá thu đao,Cá thu đao
+8028,"Cá trạch, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8028_raw,Cá trạch (cá chạch),Cá trạch (cá chạch)
+8029,"Cá trắm cỏ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8029_raw,Cá trắm cỏ,Cá trắm cỏ
+8030,"Cá trê, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8030_raw,Cá trê,Cá trê
+8031,"Cá trích, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8031_raw,Cá trích,Cá trích
+8032,"Cá trôi, tươi ",duplicate-vietnamese,code-lineage,fao_vn_2007_8032_raw,Cá trôi,Cá trôi
+8033,"Cua bể, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8033_raw,Cua bể,Cua bể
+8034,"Cua đồng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8034_raw,Cua đồng,Cua đồng
+8035,"Cua ghẹ, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8035_raw,ghẹ,ghẹ
+8036,"Hải sâm, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8036_raw,Hải sâm,Hải sâm
+8037,"Hến, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8037_raw,Hến,Hến
+8038,"Lươn, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8038_raw,Lươn,Lươn
+8039,"Mực khô, sống",duplicate-vietnamese,code-lineage,fao_vn_2007_8039_raw,Mực khô,Mực khô
+8040,"Mực, tươi",duplicate-vietnamese,name,fao_vn_2007_8040_raw,Mực tươi,Mực tươi
+8040003,"Mực tươi, hấp",keep-no-match,none,,,
+8040014,"Mực tươi, nướng",keep-no-match,none,,,
+8041,"Ốc bươu, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8041_raw,ốc bươu,ốc bươu
+8041002,"Ốc bươu, luộc",keep-no-match,none,,,
+8042,"Ốc đá, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8042_raw,ốc đá,ốc đá
+8043,"Ốc nhồi, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8043_raw,ốc nhồi,ốc nhồi
+8043003,"Ốc nhồi, hấp",keep-no-match,none,,,
+8044,"Ốc vặn, raw",duplicate-vietnamese,code-lineage,fao_vn_2007_8044_raw,ốc vặn,ốc vặn
+8044002,"Ốc vặn, luộc",keep-no-match,none,,,
+8045,"Rạm, muối, đồ",duplicate-vietnamese,name,fao_vn_2007_8045_cooked,"Rạm (muối, đồ)","Rạm (muối, đồ)"
+8046,"Rạm, tươi",duplicate-vietnamese,name,fao_vn_2007_8046_raw,Rạm tươi,Rạm tươi
+8047,"Rươi, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8047_raw,Rươi,Rươi
+8048,"Sò, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8048_raw,Sò,Sò
+8049,"Tép gạo, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8049_raw,Tép gạo,Tép gạo
+8050,"Tép khô, sống",duplicate-vietnamese,code-lineage,fao_vn_2007_8050_raw,Tép khô,Tép khô
+8051,"Tôm biển, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8051_raw,Tôm biển,Tôm biển
+8051002,"Tôm biển, luộc",keep-no-match,none,,,
+8051014,"Tôm biển, nướng",keep-no-match,none,,,
+8052,"Tôm đồng, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8052_raw,Tôm đồng,Tôm đồng
+8052002,"Tôm đồng, luộc",keep-no-match,none,,,
+8052014,"Tôm đồng, nướng",keep-no-match,none,,,
+8053,"Tôm biển, khô",duplicate-vietnamese,code-lineage,fao_vn_2007_8053_raw,Tôm khô,Tôm khô
+8054,"Trai, nước ngọt, tươi",duplicate-vietnamese,code-lineage,fao_vn_2007_8054_raw,Trai,Trai
+8055,"Bánh phồng tôm, rán",duplicate-vietnamese,name,fao_vn_2007_8055_cooked,Bánh phồng tôm rán,Bánh phồng tôm rán
+8056,"Bánh phồng tôm, sống",duplicate-vietnamese,name,fao_vn_2007_8056_raw,Bánh phồng tôm sống,Bánh phồng tôm sống
+8057,"Bột cá, sống",duplicate-vietnamese,code-lineage,fao_vn_2007_8057_raw,Bột cá,Bột cá
+8058,Ruốc cá quả,duplicate-vietnamese,name,fao_vn_2007_8058_raw,Ruốc cá quả,Ruốc cá quả
+8059,Ruốc tôm,duplicate-vietnamese,name,fao_vn_2007_8059_raw,Ruốc tôm,Ruốc tôm
+8060,Cá chim,keep-no-match,none,,,
+8061,Cá chim trắng,keep-usda-only,name,usda_15068_raw,"Cá pompano, Florida, sống",cá chim trắng
+8062,Cá điêu hồng,keep-usda-only,name,usda_15261_raw,"Cá, cá rô phi, sống",cá điêu hồng
+8063,"Cá basa, phi lê",keep-no-match,none,,,
+8064,Chả cá basa,keep-no-match,none,,,
+8064008,"Chả cá basa, rán",keep-no-match,none,,,
+8065,Con trùng trục,keep-no-match,none,,,
+8066,Ngao biển trắng,keep-no-match,none,,,
+8069,Thịt cua,keep-no-match,none,,,
+8070002,"Sò huyết, luộc",keep-no-match,none,,,
+8074002,"Ốc móng tay, luộc",keep-no-match,none,,,
+8079002,"Sò dương, luộc",keep-no-match,none,,,
+8079014,"Sò dương, nướng",keep-no-match,none,,,
+8080002,"Sò điệp, luộc",keep-no-match,none,,,
+8080003,"Sò điệp, hấp",keep-usda-only,name,usda_90240_cooked,"Động vật thân mềm, sò điệp (vịnh và biển), đã nấu chín, hấp",sò điệp hấp
+8092,"Cá basa, tươi",keep-no-match,none,,,
+9001,Trứng gà ta,duplicate-vietnamese,code-lineage,fao_vn_2007_9001_raw,Trứng gà,Trứng gà
+9002,Lòng đỏ trứng gà,duplicate-vietnamese,name,fao_vn_2007_9002_raw,Lòng đỏ trứng gà,Lòng đỏ trứng gà
+9003,Lòng trắng trứng gà,duplicate-vietnamese,name,fao_vn_2007_9003_raw,Lòng trắng trứng gà,Lòng trắng trứng gà
+9004,Trứng vịt,duplicate-vietnamese,name,fao_vn_2007_9004_raw,Trứng vịt,Trứng vịt
+9005,Lòng đỏ trứng vịt,duplicate-vietnamese,name,fao_vn_2007_9005_raw,Lòng đỏ trứng vịt,Lòng đỏ trứng vịt
+9006,Lòng trắng trứng vịt,duplicate-vietnamese,name,fao_vn_2007_9006_raw,Lòng trắng trứng vịt,Lòng trắng trứng vịt
+9007,Trứng chim cút,duplicate-vietnamese,name,fao_vn_2007_9007_raw,Trứng chim cút,Trứng chim cút
+9008,Trứng cá,duplicate-vietnamese,name,fao_vn_2007_9008_raw,Trứng cá,Trứng cá
+9009,Trứng cá muối,duplicate-vietnamese,name,fao_vn_2007_9009_raw,Trứng cá muối,Trứng cá muối
+9010,Trứng vịt lộn,duplicate-vietnamese,name,fao_vn_2007_9010_raw,Trứng vịt lộn,Trứng vịt lộn
+9011,Bột trứng,duplicate-vietnamese,name,fao_vn_2007_9011_raw,Bột trứng,Bột trứng
+9012,Trứng gà công nghiệp,keep-no-match,none,,,
