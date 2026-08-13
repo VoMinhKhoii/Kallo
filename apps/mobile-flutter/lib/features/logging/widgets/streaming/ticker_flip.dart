@@ -11,7 +11,21 @@ import 'package:flutter/widgets.dart';
 /// two (or three) ticker texts on top of each other. `mode="wait"` queues
 /// instead, which is what this does: exactly one line is ever in the tree.
 class TickerFlip extends StatefulWidget {
-  const TickerFlip({super.key, required this.frameKey, required this.child});
+  const TickerFlip({
+    super.key,
+    required this.frameKey,
+    required this.child,
+    this.prefix,
+  });
+
+  /// A word that stays PUT while [child] flips beneath it.
+  ///
+  /// Vietnamese builds every action verb as `Đang <verb>`, so flipping the
+  /// whole phrase re-animated the same word every time. The prefix is adopted
+  /// at the same midpoint as [child] — never animated, but never out of step
+  /// with what is painted either, so it cannot linger over a dish that has no
+  /// prefix at all.
+  final Widget? prefix;
 
   /// Identity of the current frame. A change starts a flip; an equal value must
   /// leave the line completely alone.
@@ -46,6 +60,7 @@ class _TickerFlipState extends State<TickerFlip>
   /// entirely — the new line would simply appear.
   late String _shownKey;
   late Widget _shownChild;
+  Widget? _shownPrefix;
 
   /// Whether this flip has passed its midpoint and swapped content.
   bool _swapped = false;
@@ -62,6 +77,7 @@ class _TickerFlipState extends State<TickerFlip>
   void _adopt() {
     _shownKey = widget.frameKey;
     _shownChild = widget.child;
+    _shownPrefix = widget.prefix;
   }
 
   void _onTick() {
@@ -90,7 +106,10 @@ class _TickerFlipState extends State<TickerFlip>
     if (widget.frameKey == _shownKey) {
       // Same frame, rebuilt content (a locale change, a restyle): take it
       // silently. Animating here would flip the line for no reason.
-      if (!_controller.isAnimating) _shownChild = widget.child;
+      if (!_controller.isAnimating) {
+        _shownChild = widget.child;
+        _shownPrefix = widget.prefix;
+      }
       return;
     }
     if (MediaQuery.disableAnimationsOf(context)) {
@@ -108,8 +127,22 @@ class _TickerFlipState extends State<TickerFlip>
 
   @override
   Widget build(BuildContext context) {
-    if (MediaQuery.disableAnimationsOf(context)) return widget.child;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return _withPrefix(widget.prefix, widget.child);
+    }
+    return _withPrefix(_shownPrefix, _animated());
+  }
 
+  /// The static half sits OUTSIDE the transition, so it holds still.
+  Widget _withPrefix(Widget? prefix, Widget child) {
+    if (prefix == null) return child;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [prefix, Flexible(child: child)],
+    );
+  }
+
+  Widget _animated() {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {

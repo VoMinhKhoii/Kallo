@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../../../models/streaming.dart';
+import '../../logic/feed/stage_verbs.dart';
 import '../../logic/feed/stream_ticker.dart';
 import '../loaders/loader_registry.dart';
 import 'ticker_flip.dart';
@@ -18,12 +19,6 @@ import 'ticker_text.dart';
 /// line felt hurried; 2400 gives just over two seconds, which also suits the
 /// longer Vietnamese verbs.
 const Duration _verbDwell = Duration(milliseconds: 2400);
-
-/// How many numbered `verbs.<stage>N` keys to look for. Probing stops early at
-/// the first missing key, so a stage may carry fewer — but not more without
-/// raising this, and easy_localization logs a warning for every miss, so it is
-/// deliberately the exact count the locale files ship rather than a loose cap.
-const int _maxVerbsPerStage = 3;
 
 /// The ONE loading state while a meal analyses: a loader picked for this run
 /// and a single line that flips through action verbs, then through dish names
@@ -60,6 +55,8 @@ class StreamTickerLine extends StatefulWidget {
 class _StreamTickerLineState extends State<StreamTickerLine> {
   Timer? _timer;
 
+  final StageVerbs _verbs = StageVerbs();
+
   /// Which verb of the current stage is showing. Advances every dwell.
   int _verb = 0;
 
@@ -91,37 +88,32 @@ class _StreamTickerLineState extends State<StreamTickerLine> {
       // A dish just landed. Interrupt whatever verb was showing and give it the
       // line — that is the only genuinely new information on screen.
       _showingItem = true;
-      _restartDwell();
+      _sync(restart: true);
+      return;
     }
     _sync();
   }
 
-  void _sync() {
-    // The timer runs for the WHOLE run, not just while a verb is showing: it is
-    // what hands the line back from a dish to the stage's verbs once that dish
-    // has had its moment.
+  /// Runs for the WHOLE run, not just while a verb shows: the same tick is what
+  /// hands the line back from a dish to the stage's verbs. [restart] re-bases
+  /// the dwell so a dish gets a full one.
+  void _sync({bool restart = false}) {
     if (_reduceMotion) {
       _timer?.cancel();
       _timer = null;
       return;
     }
-    _timer ??= Timer.periodic(_verbDwell, (_) => _tick());
-  }
-
-  void _restartDwell() {
-    if (_reduceMotion) return;
-    _timer?.cancel();
-    _timer = Timer.periodic(_verbDwell, (_) => _tick());
+    if (restart) _timer?.cancel();
+    if (restart || _timer == null) {
+      _timer = Timer.periodic(_verbDwell, (_) => _tick());
+    }
   }
 
   void _tick() {
     if (!mounted) return;
     setState(() {
       if (_showingItem) {
-        // The dish has had its dwell; fall back to the stage's verbs so the
-        // line keeps saying what the pipeline is DOING. Without this the first
-        // dish name detected during `decomposing` held the line for the rest of
-        // the run and the matching/estimating verbs were never reachable.
+        // The dish has had its dwell; hand the line back to the stage's verbs.
         _showingItem = false;
       } else {
         _verb++;
@@ -140,15 +132,14 @@ class _StreamTickerLineState extends State<StreamTickerLine> {
   /// Falls back to the stage's flat single-string label when its verb keys are
   /// missing — `tr` returns the key itself for an unknown key, so a bad l10n
   /// edit degrades to the previous copy rather than printing a raw key.
+  /// The verb showing for this stage, and the key that identifies it.
+  ///
+  /// Falls back to the stage's flat single-string label when the locale has no
+  /// verbs for it, so a bad l10n edit degrades to the previous copy rather than
+  /// printing a raw key.
   (String text, String key) _phaseText(String labelKey) {
     final stage = labelKey.split('.').last;
-    final verbs = <String>[];
-    for (var i = 1; i <= _maxVerbsPerStage; i++) {
-      final key = 'logging.streaming.verbs.$stage$i';
-      final value = key.tr();
-      if (value == key) break;
-      verbs.add(value);
-    }
+    final verbs = _verbs.forStage(stage, context.locale);
     if (verbs.isEmpty) return (labelKey.tr(), '$labelKey-0');
     final i = _verb % verbs.length;
     return (verbs[i], '$labelKey-$i');
@@ -156,7 +147,7 @@ class _StreamTickerLineState extends State<StreamTickerLine> {
 
   @override
   Widget build(BuildContext context) {
-    final (line, key) = _resolve();
+    final (line, key, prefix) = _resolve();
     return Row(
       children: [
         SizedBox.square(
@@ -175,24 +166,30 @@ class _StreamTickerLineState extends State<StreamTickerLine> {
         Expanded(
           child: Semantics(
             liveRegion: true,
-            child: TickerFlip(frameKey: key, child: line),
+            child: TickerFlip(frameKey: key, prefix: prefix, child: line),
           ),
         ),
       ],
     );
   }
 
-  (Widget, String) _resolve() {
+  (Widget, String, Widget?) _resolve() {
     // Under reduced motion nothing rotates, so the dish — the informative half
     // — is what the line settles on whenever there is one.
     final frame = widget.frame;
     if ((_showingItem || (_reduceMotion && _hasItem)) && frame != null) {
-      return (TickerText.dish(frame), frame.key);
+      // A dish is the meal's own words — no "Đang" belongs in front of it.
+      return (TickerText.dish(frame), frame.key, null);
     }
     // Otherwise: the verb for whatever stage the pipeline is actually in — even
     // when `frame` is a dish, which is what makes the matching and estimating
     // verbs reachable at all.
     final (text, key) = _phaseText(phaseLabelKey(widget.status));
-    return (TickerText.verb(text), key);
+    final prefix = _verbs.prefix;
+    return (
+      TickerText.verb(text),
+      key,
+      prefix.isEmpty ? null : TickerText.verb('$prefix '),
+    );
   }
 }

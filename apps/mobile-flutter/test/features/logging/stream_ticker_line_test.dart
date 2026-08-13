@@ -13,17 +13,21 @@ Widget _wrap(
   StreamTickerFrame? frame, {
   StreamStatus status = StreamStatus.estimating,
   bool reduceMotion = false,
+  Locale locale = const Locale('en'),
 }) =>
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('vi')],
       path: 'assets/l10n',
       fallbackLocale: const Locale('en'),
+      // tr() resolves through EasyLocalization's own controller — setting
+      // MaterialApp.locale alone leaves it on English.
+      startLocale: locale,
       assetLoader: const FsL10nLoader(),
       child: Builder(
         builder: (context) => MaterialApp(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
-          locale: context.locale,
+          locale: locale,
           home: MediaQuery(
             data: MediaQueryData(disableAnimations: reduceMotion),
             child: Scaffold(
@@ -41,11 +45,15 @@ Widget _wrap(
 /// One full verb dwell — kept in step with `_verbDwell` in the widget.
 const _dwell = Duration(milliseconds: 2400);
 
-/// The rendered ticker line.
-String _line(WidgetTester tester) {
-  final text = tester.widget<Text>(find.byType(Text));
-  return text.textSpan!.toPlainText();
-}
+/// The rendered ticker line, prefix included.
+String _line(WidgetTester tester) => tester
+    .widgetList<Text>(find.byType(Text))
+    .map((t) => t.textSpan!.toPlainText())
+    .join();
+
+/// Just the part that flips — the last Text, after any static prefix.
+String _flipped(WidgetTester tester) =>
+    tester.widgetList<Text>(find.byType(Text)).last.textSpan!.toPlainText();
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -235,5 +243,92 @@ void main() {
     await tester.pump();
     final span = tester.widget<Text>(find.byType(Text)).textSpan! as TextSpan;
     expect(span.style?.color, NhamColors.btn);
+  });
+
+  group('Vietnamese', () {
+    const vi = Locale('vi');
+
+    testWidgets('opens each stage on its own first verb', (tester) async {
+      for (final (status, expected) in const [
+        (StreamStatus.connecting, 'Đang kết nối…'),
+        (StreamStatus.decomposing, 'Đang sơ chế…'),
+        (StreamStatus.matching, 'Đang tra cứu…'),
+        (StreamStatus.estimating, 'Đang tính toán…'),
+        (StreamStatus.assembling, 'Đang bày biện…'),
+      ]) {
+        await tester.pumpWidget(
+          _wrap(
+            PhaseFrame(status),
+            status: status,
+            locale: vi,
+            reduceMotion: true,
+          ),
+        );
+        await tester.pump();
+        expect(_line(tester), expected, reason: status.name);
+      }
+    });
+
+    testWidgets('holds "Đang" still and flips only the rest', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          const PhaseFrame(StreamStatus.estimating),
+          status: StreamStatus.estimating,
+          locale: vi,
+        ),
+      );
+      await tester.pump();
+      expect(_line(tester), 'Đang tính toán…');
+      // The opener is its own Text OUTSIDE the transition; only the remainder
+      // is inside it, so "Đang" does not re-animate on every verb.
+      expect(_flipped(tester), 'tính toán…');
+
+      await tester.pump(_dwell);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_line(tester), 'Đang cân đo…');
+      expect(_flipped(tester), 'cân đo…');
+
+      await tester.pumpWidget(_wrap(null, reduceMotion: true));
+    });
+
+    testWidgets('a stage with two verbs wraps after the second', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          const PhaseFrame(StreamStatus.matching),
+          status: StreamStatus.matching,
+          locale: vi,
+        ),
+      );
+      await tester.pump();
+      expect(_line(tester), 'Đang tra cứu…');
+
+      await tester.pump(_dwell);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_line(tester), 'Đang lựa nguyên liệu…');
+
+      // Two verbs, so it comes back round rather than probing a third.
+      await tester.pump(_dwell);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_line(tester), 'Đang tra cứu…');
+
+      await tester.pumpWidget(_wrap(null, reduceMotion: true));
+    });
+
+    testWidgets('a dish carries no opener', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          const MacrosFrame(id: 'a', name: 'Phở bò', calories: 480),
+          status: StreamStatus.estimating,
+          locale: vi,
+          reduceMotion: true,
+        ),
+      );
+      await tester.pump();
+      // "Đang Phở bò" would be nonsense.
+      expect(_line(tester), 'Phở bò · 480 kcal');
+      await tester.pumpAndSettle();
+    });
   });
 }

@@ -1187,6 +1187,7 @@
       "analyzing": "Analyzing…",
       "stillWorking": "Still working on it — almost there.",
       "verbs": {
+        "prefix": "",
         "connecting1": "Connecting…",
         "connecting2": "Warming up…",
         "connecting3": "Kindling…",
