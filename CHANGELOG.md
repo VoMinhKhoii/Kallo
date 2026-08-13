@@ -1,5 +1,90 @@
 # Changelog
 
+## [1.11.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.10.0...v1.11.0) (2026-08-13)
+
+
+### Features
+
+* **ai:** define the edible/gross mass basis and derive it from refusePct ([7abc5ee](https://github.com/VoMinhKhoii/Kallo/commit/7abc5ee34e67f7efc6af6cf0aad5e253b60eab79))
+* **auth:** mint Google ID tokens on our own origin for web sign-in ([4a45180](https://github.com/VoMinhKhoii/Kallo/commit/4a45180a406b30294db14d4b2768e0c4633c8c79))
+* **auth:** show Kallo on the Google consent screen for web sign-in ([5dc21df](https://github.com/VoMinhKhoii/Kallo/commit/5dc21df3650c7dc35344dda0ae6f52e2660a2264))
+* **billing:** add Paddle-backed web checkout ([f912a51](https://github.com/VoMinhKhoii/Kallo/commit/f912a512eac19aef2fcac40e3ca2c5369e7db36d))
+* **data:** land NIN enrichment migration ([c45cfc3](https://github.com/VoMinhKhoii/Kallo/commit/c45cfc309595b4bfcc0a76cfc8b9dda5e0a1a00e))
+* **db:** NIN foods-table enrichment pipeline (additive-only, dev-gated) ([dda1f5d](https://github.com/VoMinhKhoii/Kallo/commit/dda1f5d334c18dd4fe08dc3f8fba3ad687d0ecd6))
+* **db:** NIN foods-table enrichment pipeline (additive-only) ([0004ba2](https://github.com/VoMinhKhoii/Kallo/commit/0004ba28f57e1db8524aa359a105bcc563fa6d9a))
+* **landing:** open signup and point the waitlist at the mobile launch ([3579013](https://github.com/VoMinhKhoii/Kallo/commit/3579013d3726c2632a17d2ba399fa58a11bde83a))
+* **nutrition:** 7d/30d/90d ranges, column selection, and a scope toggle that greys instead of moving ([cc1c8a3](https://github.com/VoMinhKhoii/Kallo/commit/cc1c8a32a952f4bbc6903386aa320ea9059dcccc))
+* **nutrition:** compare the calorie figure against the previous period ([d6b2645](https://github.com/VoMinhKhoii/Kallo/commit/d6b26454365dfe700a5ef8461ad62ad1d5992eed))
+* **nutrition:** food icons for the macro legend, one line again ([b722435](https://github.com/VoMinhKhoii/Kallo/commit/b72243539539f414755dbbf6a40489869bf137f0))
+* **nutrition:** localized macro legend labels, evenly spaced ([ce25ac0](https://github.com/VoMinhKhoii/Kallo/commit/ce25ac0e6294d06ea4167e1c3333c8c239d0a199))
+* **nutrition:** name the scope switch, day-first dates, shared empty state ([61ba15d](https://github.com/VoMinhKhoii/Kallo/commit/61ba15d4d88616c84a3e28ed71109f4dcad5795e))
+* **nutrition:** offer 7d/30d/90d, brighten the chart, fix scope drift ([8187621](https://github.com/VoMinhKhoii/Kallo/commit/8187621b46db8179f7ab8d21a31b53b44f49384e))
+* **nutrition:** selection re-scopes the page, yellow fat, zeroed empty state ([5f58ec5](https://github.com/VoMinhKhoii/Kallo/commit/5f58ec551163fdfcc63e6881d9339796a4dda19b))
+* **nutrition:** yellow fat band, calendar week, tap a column for its micros ([c0cda17](https://github.com/VoMinhKhoii/Kallo/commit/c0cda175c13e1723388b2fded7973b9d5899d046))
+
+
+### Bug Fixes
+
+* **ai:** address CodeRabbit full-review findings on the refuse path ([dbd432f](https://github.com/VoMinhKhoii/Kallo/commit/dbd432f31694b1e5c09ef72a08ed281c26414df8))
+* **ai:** address timeout review feedback ([85e82d8](https://github.com/VoMinhKhoii/Kallo/commit/85e82d81b9b8c869c94f63786d1d5f45405a1168))
+* **ai:** bound cold matching before Call 2 ([d8780ae](https://github.com/VoMinhKhoii/Kallo/commit/d8780ae44df410e7a392d50e7f2c67b248cc7572))
+* **ai:** bound cold matching before Call 2 ([384cc8a](https://github.com/VoMinhKhoii/Kallo/commit/384cc8a0dfeadc9917711dcb4f13a679887220ff))
+* **ai:** harden refuse classification against fold collisions ([883fa72](https://github.com/VoMinhKhoii/Kallo/commit/883fa72614dd07d5892a096a62bb37f9fe852f03))
+* **ai:** map flushed macros by meal identity ([f57cf1a](https://github.com/VoMinhKhoii/Kallo/commit/f57cf1ac01dda953113571dd172e8a35b2a8e33d))
+* **ai:** map flushed macros by meal identity ([f3f2663](https://github.com/VoMinhKhoii/Kallo/commit/f3f26635d9418320ef5501df65a7cb128b59bafd))
+* **ai:** stop saturated lexical scores deciding candidate order ([da88be7](https://github.com/VoMinhKhoii/Kallo/commit/da88be7052854a63f0ce1b70541d68b6ebc824d1))
+* **auth:** clear the Google button when the ID token exchange throws ([020fb59](https://github.com/VoMinhKhoii/Kallo/commit/020fb59ace487884fb30107286f7e65d9e462941))
+* **auth:** say why Google sign-in fell back to the redirect flow ([cd475c3](https://github.com/VoMinhKhoii/Kallo/commit/cd475c3c33eb5afcc1c11d60be8147ee8c36b0f4))
+* **auth:** treat a blank GOOGLE_WEB_CLIENT_ID as unconfigured ([b33dc83](https://github.com/VoMinhKhoii/Kallo/commit/b33dc839ac8cb2f7272e87956117aaf62c77c52b))
+* **billing:** correct the Terms' deletion promise and stop offering web lifetime ([133412d](https://github.com/VoMinhKhoii/Kallo/commit/133412d6190b755680c0b3ee903cc9d89b18e5ea))
+* **billing:** keep the deferred-plan filter out of the error log ([014ac81](https://github.com/VoMinhKhoii/Kallo/commit/014ac814f1d666087b3ef511745f447b69dc8ddc))
+* **billing:** stop a superseded poll caching a stale entitlement snapshot ([4c82b32](https://github.com/VoMinhKhoii/Kallo/commit/4c82b3221c8e6e2614ca289ba5cbaf81fa6a69af))
+* **data:** address CodeRabbit findings — row-identity clone dedupe, stricter schemas ([0b995a6](https://github.com/VoMinhKhoii/Kallo/commit/0b995a6f3c64c6b364416f7c4aff020a933b8141))
+* **data:** harden NIN enrichment landing ([ca17fc8](https://github.com/VoMinhKhoii/Kallo/commit/ca17fc800588faa06ff87ec87ce3e1c34a086b9a))
+* **data:** prepared NIN composites are cooked, not raw ([7ee6254](https://github.com/VoMinhKhoii/Kallo/commit/7ee6254db989bf62e47bf7331bab3cddf6eef67d))
+* **data:** review NIN ingestion decisions ([eed32e4](https://github.com/VoMinhKhoii/Kallo/commit/eed32e48bc4d54197650d9d75e70000d405d798d))
+* **db:** repair alcohol rows missing ethanol energy ([f245a5f](https://github.com/VoMinhKhoii/Kallo/commit/f245a5f5cd3a88d214dda4740675164263a84b01))
+* **landing:** fill the comparison panels, and make a covering card read as depth ([16af251](https://github.com/VoMinhKhoii/Kallo/commit/16af2519378e42791c21965ae5321036707830c6))
+* **landing:** let the meal cards fill the panel they sit in ([414833d](https://github.com/VoMinhKhoii/Kallo/commit/414833debc29c3dfd61e02aab5d50cb390f960ac))
+* **landing:** make a covering card read as depth, not as a crop ([a25f717](https://github.com/VoMinhKhoii/Kallo/commit/a25f717e3c6855e31182a8bb8ff46ad4886fb89d))
+* **nutrition:** a selected column keeps its colour even when the scope drops it ([12430c7](https://github.com/VoMinhKhoii/Kallo/commit/12430c77a5d273ab365941befd79921cd3e4d23e))
+* **nutrition:** address CodeRabbit review — selection, a11y, and contracts ([3f3c5d4](https://github.com/VoMinhKhoii/Kallo/commit/3f3c5d4a8373c464949ec91b9e84e917adc3be18))
+* **nutrition:** clear the bucket selection when the range changes ([259fced](https://github.com/VoMinhKhoii/Kallo/commit/259fced446592ff9bee63e8135857a771b65f260))
+* **nutrition:** grey the set-aside columns instead of dropping them ([3c6689c](https://github.com/VoMinhKhoii/Kallo/commit/3c6689cecfd742f5b7cfa8d18131557331a94b72))
+* **nutrition:** keep the trend bars weekly and steady across day scope ([84d9d30](https://github.com/VoMinhKhoii/Kallo/commit/84d9d30ed6cf977834cfc7b3cdd73c8c86471b46))
+* **nutrition:** one day set per card, and an axis that fits the data ([ce56d1b](https://github.com/VoMinhKhoii/Kallo/commit/ce56d1b38dcf8f01815a59997db1eb7cafa8f09f))
+* **nutrition:** pin the source line, box the empty state, keep data on switch ([6e30a20](https://github.com/VoMinhKhoii/Kallo/commit/6e30a20f33c4bd3b223733f40c8bd0cf87b43216))
+* **nutrition:** the scope toggle greys columns, it never moves them ([682e71b](https://github.com/VoMinhKhoii/Kallo/commit/682e71b33e5889cf5cf3b2328d127e418811fb08))
+* **portion:** make every declared prior reachable, and add head piece priors ([a43ead6](https://github.com/VoMinhKhoii/Kallo/commit/a43ead6cd36800ae50530b4c6a026242d2b1466f))
+* **portion:** stop diacritic folding from routing bún to clarify ([d1267f7](https://github.com/VoMinhKhoii/Kallo/commit/d1267f74c31fa09a83ae1825630bbfdcd2eb5777))
+* repair alcohol row energy values ([0ade5b7](https://github.com/VoMinhKhoii/Kallo/commit/0ade5b7edb7af753cede226ddf40a125433d284d))
+* **search:** autocomplete route enforces its own similarity floor ([8e5382b](https://github.com/VoMinhKhoii/Kallo/commit/8e5382b4207ec63c15a02fe7baadbd07e5e26f43))
+* **search:** rank on the best-matching field, not name_primary ([fbd6f56](https://github.com/VoMinhKhoii/Kallo/commit/fbd6f5633bf859829b33c3c4a201da1571f1bb7b))
+* **security:** allow Google Identity Services through the CSP ([a3e2d97](https://github.com/VoMinhKhoii/Kallo/commit/a3e2d97a23fb4dd0cee564c9465ea18c73171748))
+
+
+### Refactor
+
+* **billing:** split the paywall's purchase machine out of the dialog ([6788aca](https://github.com/VoMinhKhoii/Kallo/commit/6788acae9f56478a35d18619acd913d4b65b8dfe))
+* **data:** simplify NIN enrichment modules ([330ebc5](https://github.com/VoMinhKhoii/Kallo/commit/330ebc5893da651753586646eb7b57d644969db2))
+* **nutrition:** one zero-state builder, drop a wrapper, fix a layer ([232ea03](https://github.com/VoMinhKhoii/Kallo/commit/232ea03887a1034e58abdd86c80fb17b8de6cfc1))
+* **nutrition:** plain kcal, figure back on top, "All" for logged days ([da0d4ca](https://github.com/VoMinhKhoii/Kallo/commit/da0d4cac28a573a6f8b66ed593f7ca1a912c5e2a))
+* **nutrition:** switch to the top-right corner, scope named in the title ([0dc9472](https://github.com/VoMinhKhoii/Kallo/commit/0dc9472231c686126d3f8d9904709237e2341ba0))
+* **portion:** one folded index for concepts and units ([e8fc71f](https://github.com/VoMinhKhoii/Kallo/commit/e8fc71f9ca5b97a8fcbd2c71492f665479133f28))
+* **theme:** adopt #FCFCFC as the app canvas on both platforms ([208a1ef](https://github.com/VoMinhKhoii/Kallo/commit/208a1ef9fda604dd9e50988012e335292b2d4a6e))
+
+
+### Documentation
+
+* bring the README up to date ([6a87208](https://github.com/VoMinhKhoii/Kallo/commit/6a8720849a8ec34edc3375b1b821b5abc7146435))
+* bring the README up to date ([d537ca5](https://github.com/VoMinhKhoii/Kallo/commit/d537ca5e2ffc6a384052240beb1c6ae3af5e4b76))
+* bring the README up to date, and keep eval captures out of git ([a29a466](https://github.com/VoMinhKhoii/Kallo/commit/a29a466a9c16e511bb5787a7c4a6562a228afbda))
+* bring the README up to date, and keep eval captures out of git ([93ec9bc](https://github.com/VoMinhKhoii/Kallo/commit/93ec9bc71e765870d2ffb783815b9568e7cb82c4))
+* **enrich:** record dev-DB validation results ([0b36385](https://github.com/VoMinhKhoii/Kallo/commit/0b36385796495745d78a793fa2c24e0719703e30))
+* **enrich:** record end-to-end pipeline validation ([0c3307e](https://github.com/VoMinhKhoii/Kallo/commit/0c3307e8cf2317b0f8fc7a86285ca99e82b09aef))
+* **legal:** state an actual refund policy ([ed6e57c](https://github.com/VoMinhKhoii/Kallo/commit/ed6e57c361fd28e19cacad268c1dba93cb6af5b0))
+* **legal:** state an actual refund policy, not just who handles refunds ([8b5fba2](https://github.com/VoMinhKhoii/Kallo/commit/8b5fba22551b1772ee0f4495f19f75cfa4447055))
+
 ## [1.10.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.9.0...v1.10.0) (2026-08-09)
 
 
