@@ -12,8 +12,8 @@
  * the resulting `AbortSignal` in, exactly as the inline call did.
  */
 
-import type { GeminiClient } from '../../gemini';
-import { buildGroundedEstimationPrompt } from '../../prompts/grounded-estimation';
+import type { GeminiClient } from '@/lib/ai/gemini';
+import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/grounded-estimation';
 import { isRefusePctSchemaEnabled } from '../config/prompt-ablation-flags';
 import {
   type GroundedEstimation,

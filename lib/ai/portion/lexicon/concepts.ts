@@ -15,7 +15,7 @@
  * time; the verification is documented in the concept registry `source`.
  */
 
-import { INSTANT_NOODLE_ROW } from '../../matching/aliases';
+import { INSTANT_NOODLE_ROW } from '@/lib/ai/matching/aliases';
 import type { ConceptId, FoodConcept } from '../types';
 import {
   ALIAS_TO_CONCEPT,

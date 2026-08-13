@@ -63,13 +63,25 @@ function normalizedEvidence(args: {
   return `${normalized} ${folded}`;
 }
 
+function removeNegatedServedForms(value: string): string {
+  return value
+    .replace(
+      /(?:không|chưa|khong|chua)\s+(?:bỏ|rút|bóc|lột|bo|rut|boc|lot)\s+(?:xương|vỏ|xuong|vo)/g,
+      ''
+    )
+    .replace(
+      /\b(?:not|never)\s+(?:boneless|peeled|shelled|skinless|deboned)\b/g,
+      ''
+    );
+}
+
 /** Served-form evidence that proves the food reaching the plate has no refuse. */
 export function hasExplicitEdibleForm(args: {
   canonicalName: string;
   rawName: string;
   prepNotes?: string[];
 }): boolean {
-  const value = normalizedEvidence(args);
+  const value = removeNegatedServedForms(normalizedEvidence(args));
   return (
     /\b(?:boneless|fillets?|filets?|peeled|shelled|picked|skinless|shell off)\b/.test(
       value

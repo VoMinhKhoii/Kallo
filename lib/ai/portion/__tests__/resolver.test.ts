@@ -46,6 +46,32 @@ describe('resolvePortion — fallback ladder', () => {
     expect(r.confidence).toBe('high');
   });
 
+  it('step 1: unknown mass becomes edible when no refuse-bearing cut exists', () => {
+    const r = resolvePortion(
+      conceptInput({
+        conceptId: 'chicken-breast',
+        canonicalName: 'Ức gà',
+        rawName: 'ức gà',
+      }),
+      { explicitMass: { grams: 300, basis: 'unknown' } }
+    );
+    expect(r.grams?.mid).toBe(300);
+    expect(r.massBasis).toBe('edible');
+  });
+
+  it('step 1: unknown mass becomes gross for a refuse-bearing cut', () => {
+    const r = resolvePortion(
+      conceptInput({
+        conceptId: 'rib-piece',
+        canonicalName: 'Sườn heo',
+        rawName: 'sườn heo',
+      }),
+      { explicitMass: { grams: 300, basis: 'unknown' } }
+    );
+    expect(r.grams?.mid).toBe(300);
+    expect(r.massBasis).toBe('gross_as_served');
+  });
+
   it('step 1 outranks a prior when both are present', () => {
     const r = resolvePortion(conceptInput(), {
       count: 2,
@@ -242,7 +268,7 @@ describe('D4 regression — raw-weight honored verbatim', () => {
     expect(r.massBasis).toBe('gross_as_served');
   });
 
-  it('preserves unknown basis when the named ingredient has no refuse cut', () => {
+  it('maps unknown basis to edible when the ingredient has no refuse cut', () => {
     const r = resolvePortion(
       conceptInput({
         conceptId: null,
@@ -252,7 +278,7 @@ describe('D4 regression — raw-weight honored verbatim', () => {
       { explicitMass: { grams: 200, basis: 'unknown' } }
     );
     expect(r.grams?.mid).toBe(200);
-    expect(r.massBasis).toBe('unknown');
+    expect(r.massBasis).toBe('edible');
   });
 });
 

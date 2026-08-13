@@ -66,7 +66,7 @@ describe('decomposition-v2 prompt', () => {
     expect(out).toMatch(/cân sống/);
     expect(out).toMatch(/raw_weight/);
     expect(out).toMatch(
-      /"rawName": "ức gà"[^\n]+"explicitMass": \{ "grams": 300, "basis": "unknown" \}/
+      /"rawName": "ức gà"[^\n]+"explicitMass": \{ "grams": 300, "basis": "edible" \}/
     );
   });
 
@@ -76,7 +76,7 @@ describe('decomposition-v2 prompt', () => {
       /"rawName": "cơm"[^\n]+"explicitMass": \{ "grams": 100, "basis": "unknown" \}/
     );
     expect(out).toMatch(
-      /"rawName": "ức gà"[^\n]+"explicitMass": \{ "grams": 300, "basis": "unknown" \}/
+      /"rawName": "ức gà"[^\n]+"explicitMass": \{ "grams": 300, "basis": "edible" \}/
     );
   });
 

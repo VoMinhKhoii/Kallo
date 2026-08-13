@@ -83,7 +83,8 @@ export function resolvePortion(
 
   // ---- Step 1: explicit user mass -------------------------------------
   // Unknown mass on a refuse-bearing named cut defaults to gross-as-served.
-  // For boneless foods, rice, and liquids gross and edible are equivalent.
+  // For foods with no refuse-bearing cut, gross and edible are equivalent, so
+  // preserve the user's explicit grams as an edible anchor downstream.
   const explicit = quantity.explicitMass;
   if (explicit && Number.isFinite(explicit.grams) && explicit.grams > 0) {
     const g = explicit.grams;
@@ -92,7 +93,11 @@ export function resolvePortion(
       concept.rawName ?? ''
     );
     const massBasis =
-      explicit.basis === 'unknown' && cut ? 'gross_as_served' : explicit.basis;
+      explicit.basis === 'unknown'
+        ? cut
+          ? 'gross_as_served'
+          : 'edible'
+        : explicit.basis;
     return {
       grams: { low: g, mid: g, high: g },
       massBasis,

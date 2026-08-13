@@ -109,6 +109,26 @@ describe('resolveRefusePct', () => {
   });
 
   it.each([
+    'không bỏ xương',
+    'chưa rút xương',
+    'khong boc vo',
+    'not boneless',
+  ])('does not treat negated served-form evidence as edible: %s', (prepNote) => {
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 25,
+        candidateInediblePct: null,
+        canonicalName: 'đùi gà',
+        rawName: 'đùi gà',
+        prepNotes: [prepNote],
+      })
+    ).toMatchObject({
+      appliedRefusePct: 25,
+      appliedRefuseSource: 'model_unknown_form',
+    });
+  });
+
+  it.each([
     ['cá phi lê', '', 40],
     ['tom boc vo', 'peeled shrimp', 45],
     ['thit cua', 'picked crab meat', 65],

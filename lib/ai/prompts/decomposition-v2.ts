@@ -225,7 +225,7 @@ ${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
           "name": "ức gà nấu chậm",
           "cookingMethod": "nấu",
           "ingredients": [
-            { "rawName": "ức gà", "canonicalName": "Ức gà", "stateHint": "raw_weight", "stateNote": "cân sống", "explicitMass": { "grams": 300, "basis": "unknown" } }
+            { "rawName": "ức gà", "canonicalName": "Ức gà", "stateHint": "raw_weight", "stateNote": "cân sống", "explicitMass": { "grams": 300, "basis": "edible" } }
           ]
         }
       ]
