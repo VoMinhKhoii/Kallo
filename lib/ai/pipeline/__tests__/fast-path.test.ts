@@ -79,6 +79,7 @@ function unmatched(): IngredientV2MatchResult {
 function anchor(mid: number): PortionResolution {
   return {
     grams: { low: mid * 0.9, mid, high: mid * 1.1 },
+    massBasis: 'edible',
     provenance: 'curated_prior',
     confidence: 'high',
     note: 'test anchor',
@@ -88,6 +89,7 @@ function anchor(mid: number): PortionResolution {
 function llmRange(): PortionResolution {
   return {
     grams: null,
+    massBasis: null,
     provenance: 'llm_range',
     confidence: 'none',
     note: 'defer to Call 2',

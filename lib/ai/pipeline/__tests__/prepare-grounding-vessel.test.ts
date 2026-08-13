@@ -13,6 +13,7 @@ vi.mock('../../portion/ingredient-portion', () => ({
   resolvePortionsForCallTwo: vi.fn((ingredients: unknown[]) => ({
     resolutions: ingredients.map(() => ({
       grams: null,
+      massBasis: null,
       provenance: 'llm_range',
       confidence: 'none',
       note: 'test',
