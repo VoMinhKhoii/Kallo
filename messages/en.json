@@ -1138,7 +1138,16 @@
       "matching": "Matching ingredients…",
       "estimating": "Estimating nutrition…",
       "assembling": "Putting it all together…",
-      "analyzing": "Analyzing…"
+      "analyzing": "Analyzing…",
+      "verbs": {
+        "prefix": "",
+        "connecting": ["Connecting…", "Warming up…", "Kindling…"],
+        "decomposing": ["Prepping…", "Chopping…", "Unpacking…"],
+        "matching": ["Foraging…", "Sourcing…", "Gathering…"],
+        "estimating": ["Weighing…", "Calculating…", "Crunching…"],
+        "assembling": ["Plating…", "Garnishing…", "Finishing…"],
+        "analyzing": ["Analyzing…", "Simmering…", "Marinating…"]
+      }
     },
     "mealEntry": {
       "edit": "Edit",

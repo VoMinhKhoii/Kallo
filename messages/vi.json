@@ -1137,7 +1137,16 @@
       "matching": "Đang khớp nguyên liệu…",
       "estimating": "Đang ước tính dinh dưỡng…",
       "assembling": "Đang tổng hợp kết quả…",
-      "analyzing": "Đang phân tích…"
+      "analyzing": "Đang phân tích…",
+      "verbs": {
+        "prefix": "Đang",
+        "connecting": ["kết nối…", "bắc bếp…"],
+        "decomposing": ["sơ chế…", "bóc tách…", "chuẩn bị…"],
+        "matching": ["tra cứu…", "lựa nguyên liệu…"],
+        "estimating": ["tính toán…", "cân đo…", "nhẩm…"],
+        "assembling": ["bày biện…", "trình bày…", "dọn mâm…"],
+        "analyzing": ["phân tích…", "ngẫm…"]
+      }
     },
     "mealEntry": {
       "edit": "Sửa",

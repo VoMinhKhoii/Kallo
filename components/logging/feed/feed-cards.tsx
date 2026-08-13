@@ -1,6 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
+import { useRef } from 'react';
 import { CheatSliderCard } from '@/components/logging/feed/cheat/cheat-slider-card';
 import { MealEntry } from '@/components/logging/feed/meal-entry/meal-entry';
 import {
@@ -42,6 +43,12 @@ export function FeedCards({
   onConfirmCheatMeal,
   onCheatClarify,
 }: FeedCardsProps) {
+  // Which messages the user actually watched stream. The reveal has to know:
+  // its card closes around rows that are already on screen, while a card
+  // restored from the server on load has nothing behind it and should enter
+  // normally. A ref, not state — this must not cause a render of its own.
+  const streamedIds = useRef(new Set<string>());
+
   return (
     <div className="mx-auto w-full max-w-3xl">
       <div className="flex flex-col gap-5 sm:gap-8">
@@ -75,6 +82,7 @@ export function FeedCards({
         <AnimatePresence initial={false}>
           {unconfirmedMessages.map((msg) => {
             if (msg.isStreaming) {
+              streamedIds.current.add(msg.id);
               return <StreamingMealEntry key={msg.id} message={msg} />;
             }
 
@@ -98,6 +106,7 @@ export function FeedCards({
                   key={msg.id}
                   message={msg}
                   isConfirming={isConfirming}
+                  revealing={streamedIds.current.has(msg.id)}
                   onConfirm={(edits) => onConfirmMeal(msg, edits)}
                 />
               );

@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry/meal-entry-item';
 import { PortionPicker } from '@/components/logging/feed/meal-entry/portion/portion-picker';
-import { TimeDivider } from '@/components/logging/feed/time-divider';
+import { TurnHeader } from '@/components/logging/feed/turn-header';
 import {
   applyQuantityChange,
   deriveQuantityEdits,
@@ -25,12 +25,15 @@ interface MealEntryProps {
   // Disables the confirm action while a save is in flight, so a fast
   // double-click can't dispatch two saves (two mealIds → two inserts).
   isConfirming?: boolean;
+  /** The answer to a run just watched: it takes over in place, not enters. */
+  revealing?: boolean;
 }
 
 export function MealEntry({
   message,
   onConfirm,
   isConfirming,
+  revealing = false,
 }: MealEntryProps) {
   const t = useTranslations('logging.mealEntry');
   const locale = useLocale();
@@ -81,11 +84,13 @@ export function MealEntry({
 
   return (
     <motion.article
-      initial={{ opacity: 0 }}
+      // A CONTINUATION, not an arrival: the message and dishes were on screen
+      // a frame ago, so fading the block in blinks what was being read.
+      initial={revealing ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       className="relative"
     >
-      <TimeDivider timeLabel={timeLabel} />
+      <TurnHeader timeLabel={timeLabel} message={message.userInput} />
 
       {/* Card */}
       <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">

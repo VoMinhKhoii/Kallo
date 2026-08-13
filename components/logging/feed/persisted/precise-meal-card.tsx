@@ -9,7 +9,7 @@ import {
   formatCaloriesOrNA,
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
-import { TimeDivider } from '@/components/logging/feed/time-divider';
+import { TurnHeader } from '@/components/logging/feed/turn-header';
 import { MealAmountEditor } from './meal-amount-editor';
 import { MealDetails } from './meal-details';
 // The NL-refine is submitted as `${rawInput} (${correction})` — the joining
@@ -65,13 +65,13 @@ export function PrecisePersistedMealCard({
       exit={{ opacity: 0, height: 0 }}
       className="relative"
     >
-      <TimeDivider timeLabel={timeLabel}>
+      <TurnHeader timeLabel={timeLabel} message={meal.rawInput}>
         {isFractional && (
           <span className="rounded-full bg-nham-hover px-2 py-0.5 font-medium font-sans-display text-[10px] text-nham-text">
             {t('portionChip', { portion: portionText })}
           </span>
         )}
-      </TimeDivider>
+      </TurnHeader>
 
       {/* Card */}
       <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
