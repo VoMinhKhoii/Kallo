@@ -1,6 +1,6 @@
 {
   "name": "nham",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "private": true,
   "scripts": {
     "setup:env": "bash scripts/link-worktree-env.sh",
