@@ -15,6 +15,7 @@ import {
 } from '@/lib/docs/navigation';
 import { getToc } from '@/lib/docs/toc';
 import { getDocsLinks } from '@/lib/docs/tree';
+import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/site';
 
 export function generateStaticParams() {
@@ -53,9 +54,14 @@ export async function generateMetadata({
       },
     },
     openGraph: {
+      // Spread, not a bare `{ url, title, description }`: declaring `openGraph`
+      // replaces the layout's object rather than extending it, so without this
+      // every docs page shares with no preview image — which is what shipped.
+      ...SHARED_OPEN_GRAPH,
       url,
       title: doc.frontmatter.title,
       description: doc.frontmatter.description,
+      locale,
     },
   };
 }
