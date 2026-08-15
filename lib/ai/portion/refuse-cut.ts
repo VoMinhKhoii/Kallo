@@ -125,5 +125,10 @@ export function classifyRefuseCut(
   if (porkKnuckle || drumstick || ((vietnameseLeg || englishLeg) && boneIn)) {
     return { cutClass: 'bone_in_leg', low: 25, high: 35 };
   }
+  // Bare stock bones ("xương heo", "cục xương") deliberately have NO keyword
+  // class: a runtime band misfired on bone broth ("nước dùng xương heo") in
+  // real-meal replay. The prompt's refuse anchor guides the model instead;
+  // deterministic protection is planned as row-level `refuse_reference_form`
+  // plus a structured servedForm from the model, not name matching.
   return null;
 }

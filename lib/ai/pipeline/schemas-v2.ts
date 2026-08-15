@@ -256,7 +256,7 @@ export function buildGroundedIngredientEstimateSchema(
     .strict();
 }
 
-/** Build-time-selected Call-2 ingredient schema; REFUSE_PCT_SCHEMA defaults OFF. */
+/** Build-time-selected Call-2 ingredient schema; REFUSE_PCT_SCHEMA defaults ON. */
 export const groundedIngredientEstimateSchema =
   buildGroundedIngredientEstimateSchema();
 

@@ -91,7 +91,7 @@ describe('prompt ablation flags', () => {
     expect(isInediblePortionRuleEnabled({})).toBe(false);
     expect(isPromptSizingHintsEnabled({})).toBe(true);
     expect(isVesselGuardEnabled({})).toBe(true);
-    expect(isRefusePctSchemaEnabled({})).toBe(false);
+    expect(isRefusePctSchemaEnabled({})).toBe(true);
     expect(
       isProteinPortionDefaultEnabled({ PROTEIN_PORTION_DEFAULT: 'off' })
     ).toBe(false);
@@ -103,5 +103,6 @@ describe('prompt ablation flags', () => {
     );
     expect(isVesselGuardEnabled({ VESSEL_GUARD: 'off' })).toBe(false);
     expect(isRefusePctSchemaEnabled({ REFUSE_PCT_SCHEMA: 'on' })).toBe(true);
+    expect(isRefusePctSchemaEnabled({ REFUSE_PCT_SCHEMA: 'off' })).toBe(false);
   });
 });

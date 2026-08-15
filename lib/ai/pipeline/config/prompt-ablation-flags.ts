@@ -33,5 +33,7 @@ export function isVesselGuardEnabled(
 export function isRefusePctSchemaEnabled(
   env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env
 ): boolean {
-  return readBooleanEnv(REFUSE_PCT_SCHEMA_ENV, false, env);
+  // Default ON since the stock-bone hardening: prod inherits the gross+refuse
+  // schema without env configuration. REFUSE_PCT_SCHEMA=false is the kill switch.
+  return readBooleanEnv(REFUSE_PCT_SCHEMA_ENV, true, env);
 }
