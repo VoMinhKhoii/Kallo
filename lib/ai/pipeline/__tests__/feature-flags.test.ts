@@ -2,10 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { readBooleanEnv } from '../config/feature-flags';
 import { isPortionVesselEnabled } from '../config/portion-vessel-flag';
 import {
-  isInediblePortionRuleEnabled,
   isPromptSizingHintsEnabled,
   isProteinPortionDefaultEnabled,
-  isRefusePctSchemaEnabled,
   isVesselGuardEnabled,
 } from '../config/prompt-ablation-flags';
 
@@ -88,21 +86,14 @@ describe('isPortionVesselEnabled', () => {
 describe('prompt ablation flags', () => {
   it('preserves production defaults and toggles independently', () => {
     expect(isProteinPortionDefaultEnabled({})).toBe(true);
-    expect(isInediblePortionRuleEnabled({})).toBe(false);
     expect(isPromptSizingHintsEnabled({})).toBe(true);
     expect(isVesselGuardEnabled({})).toBe(true);
-    expect(isRefusePctSchemaEnabled({})).toBe(true);
     expect(
       isProteinPortionDefaultEnabled({ PROTEIN_PORTION_DEFAULT: 'off' })
     ).toBe(false);
-    expect(isInediblePortionRuleEnabled({ INEDIBLE_PORTION_RULE: 'on' })).toBe(
-      true
-    );
     expect(isPromptSizingHintsEnabled({ PROMPT_SIZING_HINTS: 'off' })).toBe(
       false
     );
     expect(isVesselGuardEnabled({ VESSEL_GUARD: 'off' })).toBe(false);
-    expect(isRefusePctSchemaEnabled({ REFUSE_PCT_SCHEMA: 'on' })).toBe(true);
-    expect(isRefusePctSchemaEnabled({ REFUSE_PCT_SCHEMA: 'off' })).toBe(false);
   });
 });

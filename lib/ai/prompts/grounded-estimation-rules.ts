@@ -1,10 +1,8 @@
 import { renderAbsorbedOilPromptRule } from '@/lib/ai/absorbed-oil';
 import { RICE_PORTION_DESCRIPTION } from '../constants';
 import {
-  isInediblePortionRuleEnabled,
   isPromptSizingHintsEnabled,
   isProteinPortionDefaultEnabled,
-  isRefusePctSchemaEnabled,
   isVesselGuardEnabled,
 } from '../pipeline/config/prompt-ablation-flags';
 import { PORTION_PRIORS } from '../portion/priors';
@@ -19,13 +17,6 @@ const PRIOR_LABELS: Record<string, string> = {
   'pan-seared-protein-serving': 'phần protein áp chảo',
 };
 
-const DYNAMIC_ANCHOR_ONLY_PRIORS = new Set([
-  'fish-fillet',
-  'peeled-shrimp',
-  'picked-crab-meat',
-  'peeled-egg',
-]);
-
 export function renderPriorLines(): string {
   const render = ({
     conceptId,
@@ -36,35 +27,8 @@ export function renderPriorLines(): string {
     return `    - 1 ${label} ≈ ${perUnit.mid}g (${perUnit.low}–${perUnit.high}g).`;
   };
 
-  if (isRefusePctSchemaEnabled()) {
-    return PORTION_PRIORS.map(render).join('\n');
-  }
-
-  // Gross priors cannot enter the legacy edible-grams prompt. Preserve the
-  // retired edible thigh/fish hint bytes until that prompt arm is removed;
-  // this keeps REFUSE_PCT_SCHEMA=off snapshots and ablation comparisons exact.
-  return PORTION_PRIORS.filter(
-    (prior) =>
-      prior.massBasis === 'edible' &&
-      !DYNAMIC_ANCHOR_ONLY_PRIORS.has(prior.conceptId)
-  )
-    .flatMap((prior) =>
-      prior.conceptId === 'chicken-breast'
-        ? [
-            render(prior),
-            '    - 1 đùi gà ≈ 150g (140–165g).',
-            '    - 1 miếng cá ≈ 60g (50–70g).',
-          ]
-        : [render(prior)]
-    )
-    .join('\n');
+  return PORTION_PRIORS.map(render).join('\n');
 }
-
-const VESSEL_RULE = `
-
-<vessel_rule>
-  When a <meal_item> carries serve_total_guard_g="L-H": the SERVED total of that dish — every ingredient at full serving with broth/liquid at 100% — must land inside [L, H] grams. resolved_grams anchors and explicit user weights are AUTHORITATIVE: never rescale them; fit the band by adjusting only non-anchored ingredients. If the anchored ingredients alone already exceed the band, the band yields — anchors always win; never distort other ingredients to compensate for an over-band anchored total. EATEN vs SERVED: emit grams for what was EATEN — solids fully eaten; broth/liquid grams = served broth × broth_consumption from <user_context> (leave_it ≈ 10%, some ≈ 50%, finish_it = 100%). The eaten total may fall below the band when broth is not drunk; the SERVED total must still be plausible for the vessel. Portion cues on ingredients shift within the band: ít/little ≈ −30%, nhiều/extra ≈ +40%, nửa/half = ×0.5.
-</vessel_rule>`;
 
 const REFUSE_VESSEL_RULE = `
 
@@ -74,20 +38,8 @@ const REFUSE_VESSEL_RULE = `
 
 export function buildStaticPrefix(hasVessel = false): string {
   const sizingHintsEnabled = isPromptSizingHintsEnabled();
-  const refusePctSchemaEnabled = isRefusePctSchemaEnabled();
   const vesselRule =
-    hasVessel && isVesselGuardEnabled()
-      ? refusePctSchemaEnabled
-        ? REFUSE_VESSEL_RULE
-        : VESSEL_RULE
-      : '';
-  // Mutual exclusion is load-bearing: the legacy prose nets refuse out of
-  // grams in-model, while REFUSE_PCT_SCHEMA nets it out on the server.
-  const inediblePortionRule =
-    isInediblePortionRuleEnabled() && !refusePctSchemaEnabled
-      ? `
-  Every DB per-100 g row is for EDIBLE FLESH, never bone or shell. \`db_inedible_pct\`, when shown on a candidate, is the refuse share of that cut AS PURCHASED — use it only to convert a market/whole weight into edible weight, never as a discount on the macros, and never on a weight the user already gave you as flesh. When the user names a bone-in or shell-on cut and no \`db_inedible_pct\` is shown, net out the refuse yourself before emitting grams: rib ≈ 45–60 % bone, wing ≈ 35–45 %, whole fish ≈ 40–45 %, shell-on shrimp ≈ 40–50 %. Deduct ONCE — never both from \`db_inedible_pct\` and from your own estimate.`
-      : '';
+    hasVessel && isVesselGuardEnabled() ? REFUSE_VESSEL_RULE : '';
   const cuisinePriors = sizingHintsEnabled
     ? `  Use cuisine priors:\n${renderPriorLines()}\n`
     : '';
@@ -98,45 +50,30 @@ export function buildStaticPrefix(hasVessel = false): string {
     sizingHintsEnabled && isProteinPortionDefaultEnabled()
       ? '  When a protein has no count/unit/anchor, size it per default_protein_portion in <user_context>.\n'
       : '';
-  const roleMass = refusePctSchemaEnabled
-    ? 'estimate the whole as-served mass and its inedible share'
-    : 'estimate the as-eaten or pre-cooking mass in grams';
-  const outputMassContract = refusePctSchemaEnabled
-    ? 'Always emit grossG > 0 and integer refusePct from 0–80 (explicit 0 for boneless/shell-off foods), and every macro triple ordered low ≤ mid ≤ high, non-negative.'
-    : 'Always emit grams > 0, and every macro triple ordered low ≤ mid ≤ high, non-negative.';
-  const gramsRule = refusePctSchemaEnabled
-    ? `  If an ingredient carries resolved_grams="N", N is AUTHORITATIVE EDIBLE mass (explicit user weight, package size, or an edible-basis curated concept prior). Emit grossG and refusePct consistent with edible mass N; the server retains N as the anchor. Do NOT re-estimate, scale, or "correct" N. You may still adjust macros / fat for cooking method and prep_notes. Gross PORTION_PRIORS use basis-explicit labels such as "cả xương"/"nguyên vỏ"; the server retains their gross anchor and performs the one refuse deduction.
+  const roleMass = 'estimate the whole as-served mass and its inedible share';
+  const outputMassContract =
+    'Always emit grossG > 0 and integer refusePct from 0–80 (explicit 0 for boneless/shell-off foods), and every macro triple ordered low ≤ mid ≤ high, non-negative.';
+  const gramsRule = `  If an ingredient carries resolved_grams="N", N is AUTHORITATIVE EDIBLE mass (explicit user weight, package size, or an edible-basis curated concept prior). Emit grossG and refusePct consistent with edible mass N; the server retains N as the anchor. Do NOT re-estimate, scale, or "correct" N. You may still adjust macros / fat for cooking method and prep_notes. Gross PORTION_PRIORS use basis-explicit labels such as "cả xương"/"nguyên vỏ"; the server retains their gross anchor and performs the one refuse deduction.
   If an ingredient carries user_mass_g="N" with mass_basis="gross_as_served", N is AUTHORITATIVE grossG; emit grossG=N and estimate refusePct. With mass_basis="edible", resolved_grams is authoritative. With mass_basis="unknown", infer conservatively from the named physical form.
   Otherwise, estimate the portion served. BASIS RULE — overrides every other sizing hint in this section: grossG is the WHOLE piece as served, INCLUDING bone/shell/skin/rind not eaten, in the SAME state as the selected candidate's db_state. refusePct is the integer share of grossG that is inedible; boneless/shell-off foods MUST emit 0. The SERVER computes edible mass = grossG × (1 − refusePct/100); never emit edibleG.
     - db_state="cooked": grossG = cooked / as-served whole mass.
     - db_state="raw" (includes DRY staples: dried noodles, raw rice, dry beans): grossG = raw/dry whole mass. Convert from the as-served portion using the cooking yields you know (meat loses water when cooked; dried staples absorb it, ending ~2.5–3× heavier). Cross-check edible mass with db_per_100g_kcal: edibleG × density must give a plausible total for the dish — a dry-basis row (~350–450 kcal/100g) carrying a cooked-basis mass reads 2–3× too high.
     - db_state="unknown": treat as cooked unless the user weighed raw.
   Refuse anchors: rib ≈ 40–60%; wing ≈ 30–50%; whole fish ≈ 35–50%; fish steak/section ≈ 15–30%; shell-on shrimp ≈ 35–55%; whole crab ≈ 55–75%; egg still in shell ≈ 10–15%; bone-in thigh/drumstick ≈ 25–35%; bare stock/soup bones (xương heo/bò/gà, xương ống, cục xương) ≈ 50–75% — only clinging meat and marrow are edible, and a candidate named "chỉ lấy phần nạc"/"separable lean only" still describes edible flesh per 100 g, so grossG stays the whole bone-in mass with a matching nonzero refusePct; boneless/peeled/picked/shell-off = 0.
-  db_inedible_pct, when present on a candidate, is the DB row's measured inedible share for its own physical form. Still emit your independent refusePct estimate so both can be compared in telemetry. The server does NOT use db_inedible_pct in arithmetic unless a future row-level physical-form tag proves it compatible with the served form.`
-    : `  If an ingredient carries resolved_grams="N", the server already grounded the portion (explicit user weight, package size, or a curated concept prior). Emit grams EXACTLY = N. Do NOT re-estimate, scale, or "correct" it. You may still adjust macros / fat for cooking method and prep_notes. resolved_grams is already in the selected candidate's state.
-  Otherwise, estimate the portion the user actually ate. BASIS RULE — overrides every other sizing hint in this section: emit grams in the SAME state as the selected candidate's db_state.
-    - db_state="cooked": grams = cooked / as-eaten mass.
-    - db_state="raw" (includes DRY staples: dried noodles, raw rice, dry beans): grams = raw/dry mass. Convert from the as-eaten portion using the cooking yields you know (meat loses water when cooked; dried staples absorb it, ending ~2.5–3× heavier). Cross-check with db_per_100g_kcal: grams × density must give a plausible total for the dish — a dry-basis row (~350–450 kcal/100g) carrying a cooked-basis mass reads 2–3× too high.
-    - db_state="unknown": treat as cooked unless the user weighed raw.`;
-  const zeroMassContract = refusePctSchemaEnabled
-    ? 'emit normal best-effort fields (grossG must be > 0 and refusePct is required)'
-    : 'emit normal best-effort fields (grams must be > 0)';
-  const serverScalingRule = refusePctSchemaEnabled
-    ? '  Server scales DB per_100g × edible mass / 100 after applying the accepted candidate override / refuse clamp — no further yield conversion happens server-side.'
-    : '  Server scales DB per_100g × grams / 100 — no further yield conversion happens server-side.';
-  const outputIngredient = refusePctSchemaEnabled
-    ? '  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grossG, refusePct, caloriesKcal{low,mid,high}, proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.'
-    : '  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grams, caloriesKcal{low,mid,high}, proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.';
-  const finalBasisRule = refusePctSchemaEnabled
-    ? "    - grossG MUST be in the SELECTED candidate's db_state basis and include the whole served piece; refusePct carries the inedible share. Dry/raw row → dry/raw grossG."
-    : "    - grams MUST be in the SELECTED candidate's db_state basis. Dry/raw row → dry/raw grams, even though you picture the food as eaten.";
-  const verdictMassField = refusePctSchemaEnabled ? 'grossG' : 'grams';
-  const matchedMacroRule = refusePctSchemaEnabled
-    ? '    - protein, carb, calories: emit your best estimate for the EDIBLE portion (grossG after refusePct), but know the server OVERRIDES them with DB-anchored base = (per_100g × edible mass) / 100 and derives kcal from 4P + 4C + 9F — keep these three brief (flat triples are fine); your effort belongs in grossG, refusePct, and fat.'
-    : '    - protein, carb, calories: emit your best estimate, but know the server OVERRIDES them with DB-anchored base = (per_100g × grams) / 100 and derives kcal from 4P + 4C + 9F — keep these three brief (flat triples are fine); your effort belongs in grams and fat.';
-  const finalSanityRule = refusePctSchemaEnabled
-    ? '    - Sanity-check: edible mass × db_per_100g_kcal / 100 must be a believable kcal for that ingredient. ~250g edible against a ~440 kcal/100g dry-noodle row is ~1100 kcal — wrong basis; the dry packet is ~80g.'
-    : '    - Sanity-check: grams × db_per_100g_kcal / 100 must be a believable kcal for that ingredient. ~250g against a ~440 kcal/100g dry-noodle row is ~1100 kcal — wrong basis; the dry packet is ~80g.';
+  db_inedible_pct, when present on a candidate, is the DB row's measured inedible share for its own physical form. Still emit your independent refusePct estimate so both can be compared in telemetry. The server does NOT use db_inedible_pct in arithmetic unless a future row-level physical-form tag proves it compatible with the served form.`;
+  const zeroMassContract =
+    'emit normal best-effort fields (grossG must be > 0 and refusePct is required)';
+  const serverScalingRule =
+    '  Server scales DB per_100g × edible mass / 100 after applying the accepted candidate override / refuse clamp — no further yield conversion happens server-side.';
+  const outputIngredient =
+    '  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grossG, refusePct, caloriesKcal{low,mid,high}, proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.';
+  const finalBasisRule =
+    "    - grossG MUST be in the SELECTED candidate's db_state basis and include the whole served piece; refusePct carries the inedible share. Dry/raw row → dry/raw grossG.";
+  const verdictMassField = 'grossG';
+  const matchedMacroRule =
+    '    - protein, carb, calories: emit your best estimate for the EDIBLE portion (grossG after refusePct), but know the server OVERRIDES them with DB-anchored base = (per_100g × edible mass) / 100 and derives kcal from 4P + 4C + 9F — keep these three brief (flat triples are fine); your effort belongs in grossG, refusePct, and fat.';
+  const finalSanityRule =
+    '    - Sanity-check: edible mass × db_per_100g_kcal / 100 must be a believable kcal for that ingredient. ~250g edible against a ~440 kcal/100g dry-noodle row is ~1100 kcal — wrong basis; the dry packet is ~80g.';
   return `You are a grounded nutrition estimator. Return JSON only.
 
 <role>
@@ -170,7 +107,7 @@ ${gramsRule}
 ${cuisinePriors}  Absorbed cooking fat: for chiên/rán/xào/áp chảo/fried/pan-seared/stir-fried items, the cooking oil MUST be counted exactly ONCE.
     - If the ingredient list ALREADY contains the cooking fat as its own entry (dầu ăn, dầu, mỡ, oil, butter, ghee, lard): that row carries the entire oil. Every OTHER ingredient in the dish keeps fatG at its own natural fat — do NOT also add absorbed oil to them, or the same oil is counted twice.
     - Only when NO such row exists may you fold absorbed oil into the fried food's fatG (${renderAbsorbedOilPromptRule()}; scale within the range using oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat.
-    - Skip entirely when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).${inediblePortionRule}
+    - Skip entirely when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
 ${stapleCarbRule}${proteinPortionRule}  For kho/braised/caramelized dishes, added sugar follows sugar_braised in <user_context> (low ≈ 5g, medium ≈ 10–15g, high ≈ 20–25g carbs from sugar per serving).
   If user_count="0" on an ingredient: the user typed an explicit zero. The server has flagged it for a clarify and will DISCARD your numbers for it — ${zeroMassContract} and never treat the zero as one standard serving in meal-level reasoning.
 ${serverScalingRule}

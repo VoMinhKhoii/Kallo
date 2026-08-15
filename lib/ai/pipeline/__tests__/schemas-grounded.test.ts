@@ -284,10 +284,8 @@ describe('mealDecompositionV2Schema', () => {
 });
 
 describe('groundedIngredientEstimateSchema', () => {
-  it('requires valid grossG and refusePct when REFUSE_PCT_SCHEMA is on', () => {
-    const schema = buildGroundedIngredientEstimateSchema({
-      REFUSE_PCT_SCHEMA: 'on',
-    });
+  it('requires valid grossG and refusePct', () => {
+    const schema = buildGroundedIngredientEstimateSchema();
     const base = {
       ingredientName: 'sườn dê',
       grossG: 100,
@@ -305,21 +303,6 @@ describe('groundedIngredientEstimateSchema', () => {
     expect(() => schema.parse({ ...base, refusePct: 10.5 })).toThrow();
     expect(() => schema.parse({ ...base, grossG: 0 })).toThrow();
     expect(() => schema.parse({ ...base, grams: 50 })).toThrow();
-  });
-
-  it('keeps the legacy grams shape behind the REFUSE_PCT_SCHEMA=off kill switch', () => {
-    const schema = buildGroundedIngredientEstimateSchema({
-      REFUSE_PCT_SCHEMA: 'off',
-    });
-    const parsed = schema.parse({
-      ingredientName: 'sườn dê',
-      grams: 100,
-      caloriesKcal: { low: 100, mid: 110, high: 120 },
-      proteinG: { low: 8, mid: 10, high: 12 },
-      carbohydrateG: { low: 0, mid: 0, high: 0 },
-      fatG: { low: 4, mid: 5, high: 6 },
-    });
-    expect(parsed).toMatchObject({ grams: 100 });
   });
 
   it('accepts an accepted candidate', () => {

@@ -188,23 +188,6 @@ export function resolveGroundedMass(args: {
       refuse: null,
     };
   }
-  if ('grams' in ground) {
-    const modelGrams =
-      typeof ground.grams === 'number' && Number.isFinite(ground.grams)
-        ? ground.grams
-        : null;
-    const edibleAnchor =
-      args.authoritativeMass?.basis === 'edible'
-        ? args.authoritativeMass.grams
-        : null;
-    return {
-      edibleG: edibleAnchor ?? modelGrams,
-      modelEdibleG: modelGrams,
-      massBasis: 'edible',
-      refuse: null,
-    };
-  }
-
   const decision = resolveRefusePct({
     modelRefusePct: ground.refusePct,
     candidateInediblePct: args.candidateInediblePct,

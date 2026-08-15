@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { isRefusePctSchemaEnabled } from './config/prompt-ablation-flags';
 import {
   explicitMassSchema,
   sizeModifierSchema,
@@ -167,49 +166,35 @@ export type MealDecompositionV2 = z.infer<typeof mealDecompositionV2Schema>;
  *   - omitted   — only valid when the server passed zero candidates
  *                 (auto-unmatched path).
  *
- * The default schema asks for edible `grams`. REFUSE_PCT_SCHEMA replaces that
- * field with ordered `grossG`, `refusePct`; the server derives edible mass.
- * Both variants follow the selected candidate's `db_state` with no yield
- * fudge.
+ * The schema asks for ordered `grossG`, `refusePct`; the server derives
+ * edible mass = grossG × (1 − refusePct/100). Both fields follow the selected
+ * candidate's `db_state` with no yield fudge.
  */
-export function buildGroundedIngredientEstimateSchema(
-  env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env
-) {
-  const massFields = isRefusePctSchemaEnabled(env)
-    ? {
-        grossG: z
-          .number()
-          .positive()
-          .finite()
-          .describe(
-            'Whole as-served mass in grams INCLUDING bone, shell, rind, or other refuse not eaten. Uses the same raw-vs-cooked basis rules as grams. Must be > 0.'
-          ),
-        refusePct: z
-          .number()
-          .int()
-          .min(0)
-          .max(80)
-          .describe(
-            'REQUIRED integer share of grossG that is inedible bone, shell, or rind. Emit explicit 0 for boneless/shell-off foods; never omit.'
-          ),
-      }
-    : {
-        // `.positive().finite()` is genuinely enforcing: Zod's
-        // `schema.parse()` (run post-provider-parse in gemini.ts) rejects
-        // 0/negative/NaN/Infinity grams and THROWS, which routes the whole
-        // call into the existing `withRetry` parse-retry path — instead of
-        // the old silent grams=1 fallback in bridge.ts. We enforce at the Zod
-        // layer rather than relying on the provider JSON schema because
-        // Gemini's `responseJsonSchema` does not reliably honor
-        // `exclusiveMinimum`.
-        grams: z
-          .number()
-          .positive()
-          .finite()
-          .describe(
-            "As-eaten or raw mass in grams, scoped to the selected candidate's state when present. Must be > 0."
-          ),
-      };
+export function buildGroundedIngredientEstimateSchema() {
+  // `.positive().finite()` is genuinely enforcing: Zod's `schema.parse()`
+  // (run post-provider-parse in gemini.ts) rejects 0/negative/NaN/Infinity
+  // masses and THROWS, which routes the whole call into the existing
+  // `withRetry` parse-retry path — instead of the old silent grams=1 fallback
+  // in bridge.ts. We enforce at the Zod layer rather than relying on the
+  // provider JSON schema because Gemini's `responseJsonSchema` does not
+  // reliably honor `exclusiveMinimum`.
+  const massFields = {
+    grossG: z
+      .number()
+      .positive()
+      .finite()
+      .describe(
+        'Whole as-served mass in grams INCLUDING bone, shell, rind, or other refuse not eaten. Uses the same raw-vs-cooked basis rules as grams. Must be > 0.'
+      ),
+    refusePct: z
+      .number()
+      .int()
+      .min(0)
+      .max(80)
+      .describe(
+        'REQUIRED integer share of grossG that is inedible bone, shell, or rind. Emit explicit 0 for boneless/shell-off foods; never omit.'
+      ),
+  };
 
   return z
     .object({
@@ -256,7 +241,7 @@ export function buildGroundedIngredientEstimateSchema(
     .strict();
 }
 
-/** Build-time-selected Call-2 ingredient schema; REFUSE_PCT_SCHEMA defaults ON. */
+/** Call-2 ingredient schema: gross mass + refuse share, edible derived server-side. */
 export const groundedIngredientEstimateSchema =
   buildGroundedIngredientEstimateSchema();
 

@@ -66,7 +66,8 @@ function groundedAccepted(): GroundedEstimation {
           {
             ingredientName: 'đùi gà',
             selectedCandidateId: 'c1',
-            grams: 150,
+            grossG: 150,
+            refusePct: 0,
             caloriesKcal: { low: 270, mid: 290, high: 310 },
             proteinG: { low: 38, mid: 40, high: 42 },
             carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -347,7 +348,8 @@ describe('bridgeV2ToV1 — rejected verdict ("none")', () => {
               ingredientName: 'đùi gà',
               selectedCandidateId: 'none',
               rejectReason: 'category mismatch — thigh ≠ whole-bird aggregate',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               caloriesKcal: { low: 250, mid: 280, high: 310 },
               proteinG: { low: 25, mid: 28, high: 30 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -384,7 +386,8 @@ describe('bridgeV2ToV1 — unmatched (no candidates emitted)', () => {
           ingredients: [
             {
               ingredientName: 'đùi gà',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               caloriesKcal: { low: 270, mid: 290, high: 310 },
               proteinG: { low: 38, mid: 40, high: 42 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -436,7 +439,8 @@ describe('bridgeV2ToV1 — matched P/C/kcal are DB-anchored regardless of LLM va
             {
               ingredientName: 'đùi gà',
               selectedCandidateId: 'c1',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               // Cheap flat placeholders — discarded for matched ingredients.
               caloriesKcal: ZERO_TRIPLE,
               proteinG: ZERO_TRIPLE,
@@ -549,7 +553,8 @@ describe('bridgeV2ToV1 — unmatched macro plausibility (all triples required)',
           ingredients: [
             {
               ingredientName: 'nước lọc',
-              grams: 300,
+              grossG: 300,
+              refusePct: 0,
               caloriesKcal: ZERO_TRIPLE,
               proteinG: ZERO_TRIPLE,
               carbohydrateG: ZERO_TRIPLE,
@@ -580,7 +585,8 @@ describe('bridgeV2ToV1 — unmatched macro plausibility (all triples required)',
           ingredients: [
             {
               ingredientName: 'ức gà',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               caloriesKcal: { low: 240, mid: 250, high: 260 },
               proteinG: { low: 44, mid: 46, high: 48 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -613,7 +619,8 @@ describe('bridgeV2ToV1 — unmatched macro plausibility (all triples required)',
             {
               ingredientName: 'đùi gà',
               selectedCandidateId: 'c1',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               caloriesKcal: ZERO_TRIPLE,
               proteinG: ZERO_TRIPLE,
               carbohydrateG: ZERO_TRIPLE,
@@ -648,7 +655,8 @@ describe('bridgeV2ToV1 — selectedCandidateId out of range', () => {
             {
               ingredientName: 'đùi gà',
               selectedCandidateId: 'c9',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               caloriesKcal: { low: 0, mid: 0, high: 0 },
               proteinG: { low: 0, mid: 0, high: 0 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -735,7 +743,8 @@ describe('bridgeV2ToV1 — case-insensitive name matching', () => {
             {
               ingredientName: 'đùi gà', // lowercase
               selectedCandidateId: 'c1',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               caloriesKcal: { low: 270, mid: 290, high: 310 },
               proteinG: { low: 38, mid: 40, high: 42 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -836,7 +845,8 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
           ingredients: [
             {
               ingredientName: 'đùi gà',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               caloriesKcal: { low: 90, mid: 100, high: 110 },
               proteinG: { low: 4, mid: 5, high: 6 },
               carbohydrateG: { low: 18, mid: 20, high: 22 },
@@ -928,7 +938,8 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
     const ing = grounded.mealItems[0].ingredients[0];
     ing.proteinG = ZERO_TRIPLE;
     ing.carbohydrateG = ZERO_TRIPLE;
-    ing.grams = 14; // a pat of butter: fat is ~80% of the mass
+    ing.grossG = 14; // a pat of butter: fat is ~80% of the mass
+    ing.refusePct = 0;
     ing.fatG = { low: 10, mid: 11, high: 12 };
     const out = bridgeV2ToV1({
       v2: v2Decomp(),
@@ -1006,7 +1017,8 @@ describe('bridgeV2ToV1 — carb-staple floor (bánh ướt chả bò)', () => {
           ingredients: [
             {
               ingredientName: 'bánh ướt',
-              grams: 250,
+              grossG: 250,
+              refusePct: 0,
               // The bug: the LLM assigned P/F but C≈0 to a starch base.
               caloriesKcal: { low: 120, mid: 135, high: 150 },
               proteinG: { low: 14, mid: 15, high: 16 },
@@ -1015,7 +1027,8 @@ describe('bridgeV2ToV1 — carb-staple floor (bánh ướt chả bò)', () => {
             },
             {
               ingredientName: 'chả bò',
-              grams: 60,
+              grossG: 60,
+              refusePct: 0,
               caloriesKcal: { low: 130, mid: 140, high: 150 },
               proteinG: { low: 12, mid: 13, high: 14 },
               carbohydrateG: { low: 1, mid: 2, high: 3 },
@@ -1083,7 +1096,8 @@ describe('bridgeV2ToV1 — unmatched staple with an explicit zero carb (mì gói
           ingredients: [
             {
               ingredientName,
-              grams: 350,
+              grossG: 350,
+              refusePct: 0,
               caloriesKcal: { low: 380, mid: 410, high: 440 },
               proteinG: { low: 18, mid: 20, high: 22 },
               carbohydrateG,
@@ -1138,7 +1152,8 @@ describe('bridgeV2ToV1 — unmatched staple with an explicit zero carb (mì gói
             ingredients: [
               {
                 ingredientName: 'mì chính',
-                grams: 3,
+                grossG: 3,
+                refusePct: 0,
                 caloriesKcal: ZERO_TRIPLE,
                 proteinG: ZERO_TRIPLE,
                 carbohydrateG: ZERO_TRIPLE,
@@ -1213,7 +1228,8 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
       {
         ingredientName: 'sữa tươi',
         selectedCandidateId: 'c1',
-        grams: 200,
+        grossG: 200,
+        refusePct: 0,
         caloriesKcal: { low: 140, mid: 150, high: 160 },
         proteinG: { low: 7, mid: 7.8, high: 8.5 },
         carbohydrateG: { low: 9, mid: 9.6, high: 10.5 },
@@ -1236,7 +1252,8 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
                 ingredients: [
                   {
                     ingredientName: 'mì gói',
-                    grams: 350,
+                    grossG: 350,
+                    refusePct: 0,
                     caloriesKcal: { low: 380, mid: 410, high: 440 },
                     proteinG: { low: 18, mid: 20, high: 22 },
                     carbohydrateG: { low: 50, mid: 55, high: 60 },
