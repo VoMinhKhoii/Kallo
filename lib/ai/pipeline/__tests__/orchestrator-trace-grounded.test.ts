@@ -100,7 +100,8 @@ describe('analyzeMealV2 — admin/audit observability', () => {
             {
               ingredientName: 'cơm',
               selectedCandidateId: 'none',
-              grams: 200,
+              grossG: 200,
+              refusePct: 0,
               caloriesKcal: { low: 250, mid: 260, high: 270 },
               proteinG: { low: 5, mid: 5, high: 5 },
               carbohydrateG: { low: 55, mid: 56, high: 57 },
@@ -160,7 +161,8 @@ describe('analyzeMealV2 — admin/audit observability', () => {
             {
               ingredientName: 'cơm',
               selectedCandidateId: 'none',
-              grams: 200,
+              grossG: 200,
+              refusePct: 0,
               caloriesKcal: { low: 250, mid: 260, high: 270 },
               proteinG: { low: 5, mid: 5, high: 5 },
               carbohydrateG: { low: 55, mid: 56, high: 57 },
@@ -200,7 +202,8 @@ describe('analyzeMealV2 — admin/audit observability', () => {
             {
               ingredientName: 'cơm',
               selectedCandidateId: 'none',
-              grams: 200,
+              grossG: 200,
+              refusePct: 0,
               caloriesKcal: { low: 250, mid: 260, high: 270 },
               proteinG: { low: 5, mid: 5, high: 5 },
               carbohydrateG: { low: 55, mid: 56, high: 57 },

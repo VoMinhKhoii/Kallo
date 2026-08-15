@@ -108,7 +108,8 @@ function groundedItem(
       {
         ingredientName: ingName,
         selectedCandidateId: 'c1',
-        grams: 100,
+        grossG: 100,
+        refusePct: 0,
         caloriesKcal: { low: 10, mid: 20, high: 30 },
         proteinG: { low: 1, mid: 2, high: 3 },
         carbohydrateG: { low: 1, mid: 2, high: 3 },

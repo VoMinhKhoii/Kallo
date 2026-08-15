@@ -104,7 +104,8 @@ describe('analyzeMealV2 — Call 1 item_name streaming', () => {
             {
               ingredientName: 'cơm',
               selectedCandidateId: 'none',
-              grams: 200,
+              grossG: 200,
+              refusePct: 0,
               caloriesKcal: { low: 250, mid: 260, high: 270 },
               proteinG: { low: 5, mid: 5, high: 5 },
               carbohydrateG: { low: 55, mid: 56, high: 57 },
@@ -118,7 +119,8 @@ describe('analyzeMealV2 — Call 1 item_name streaming', () => {
             {
               ingredientName: 'đùi gà',
               selectedCandidateId: 'none',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               caloriesKcal: { low: 300, mid: 330, high: 360 },
               proteinG: { low: 35, mid: 36, high: 37 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -226,7 +228,8 @@ describe('analyzeMealV2 — Call 1 item_name streaming', () => {
           {
             ingredientName: 'cơm',
             selectedCandidateId: 'none',
-            grams: 200,
+            grossG: 200,
+            refusePct: 0,
             caloriesKcal: { low: 250, mid: 260, high: 270 },
             proteinG: { low: 5, mid: 5, high: 5 },
             carbohydrateG: { low: 55, mid: 56, high: 57 },
@@ -296,7 +299,8 @@ describe('analyzeMealV2 — Call 2 item_macros streaming', () => {
             {
               ingredientName: 'cơm',
               selectedCandidateId: 'none',
-              grams: 200,
+              grossG: 200,
+              refusePct: 0,
               caloriesKcal: { low: 250, mid: 260, high: 270 },
               proteinG: { low: 5, mid: 5, high: 5 },
               carbohydrateG: { low: 55, mid: 56, high: 57 },
@@ -310,7 +314,8 @@ describe('analyzeMealV2 — Call 2 item_macros streaming', () => {
             {
               ingredientName: 'đùi gà',
               selectedCandidateId: 'none',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               caloriesKcal: { low: 300, mid: 330, high: 360 },
               proteinG: { low: 35, mid: 36, high: 37 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -381,7 +386,8 @@ describe('analyzeMealV2 — Call 2 item_macros streaming', () => {
             {
               ingredientName: 'cơm',
               selectedCandidateId: 'none',
-              grams: 200,
+              grossG: 200,
+              refusePct: 0,
               caloriesKcal: { low: 250, mid: 260, high: 270 },
               proteinG: { low: 5, mid: 5, high: 5 },
               carbohydrateG: { low: 55, mid: 56, high: 57 },
@@ -443,7 +449,8 @@ describe('analyzeMealV2 — Call 2 item_macros streaming', () => {
           ingredients: [
             {
               ingredientName: 'nem lụi',
-              grams: 200,
+              grossG: 200,
+              refusePct: 0,
               caloriesKcal: { low: 480, mid: 540, high: 600 },
               proteinG: { low: 28, mid: 32, high: 36 },
               carbohydrateG: { low: 4, mid: 5, high: 6 },
@@ -504,7 +511,8 @@ describe('analyzeMealV2 — Call 2 item_macros streaming', () => {
             {
               ingredientName: 'cơm',
               selectedCandidateId: 'none',
-              grams: 200,
+              grossG: 200,
+              refusePct: 0,
               caloriesKcal: { low: 250, mid: 260, high: 270 },
               proteinG: { low: 5, mid: 5, high: 5 },
               carbohydrateG: { low: 55, mid: 56, high: 57 },

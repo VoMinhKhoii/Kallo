@@ -31,10 +31,8 @@ const baseUserContext: PromptPersonalizationContext = {
 
 const FLAG_BASELINE = {
   PROTEIN_PORTION_DEFAULT: 'on',
-  INEDIBLE_PORTION_RULE: 'off',
   PROMPT_SIZING_HINTS: 'on',
   VESSEL_GUARD: 'on',
-  REFUSE_PCT_SCHEMA: 'off',
 } as const;
 const originalFlags = new Map(
   Object.keys(FLAG_BASELINE).map((key) => [key, process.env[key]])
@@ -314,26 +312,8 @@ describe('grounded-estimation prompt structure', () => {
     });
   });
 
-  it('toggles the inedible-portion rule independently at build time', () => {
-    withRestoredEnv(['INEDIBLE_PORTION_RULE'], () => {
-      process.env.INEDIBLE_PORTION_RULE = 'off';
-      expect(buildStaticPrefix()).not.toContain(
-        'Every DB per-100 g row is for EDIBLE FLESH'
-      );
-
-      process.env.INEDIBLE_PORTION_RULE = 'on';
-      const enabled = buildStaticPrefix();
-      expect(enabled).toContain('Every DB per-100 g row is for EDIBLE FLESH');
-      expect(enabled).toContain(
-        'Deduct ONCE — never both from `db_inedible_pct` and from your own estimate.'
-      );
-    });
-  });
-
-  it('renders refuse fields and excludes the legacy deduction rule when enabled', () => {
-    withRestoredEnv(['REFUSE_PCT_SCHEMA', 'INEDIBLE_PORTION_RULE'], () => {
-      process.env.REFUSE_PCT_SCHEMA = 'on';
-      process.env.INEDIBLE_PORTION_RULE = 'on';
+  it('renders refuse fields and never the legacy deduction rule', () => {
+    {
       const enabled = buildStaticPrefix();
       expect(enabled).toContain('grossG > 0 and integer refusePct');
       expect(enabled).toContain(
@@ -352,28 +332,19 @@ describe('grounded-estimation prompt structure', () => {
       expect(enabled).toContain(
         'accept it and emit grossG in its basis per the grams_rule'
       );
-    });
+    }
   });
 
-  it('renders explicit mass basis only behind REFUSE_PCT_SCHEMA', () => {
-    withRestoredEnv(['REFUSE_PCT_SCHEMA'], () => {
-      const mealItem = mealItemWithIng(
-        [candidate()],
-        ing({
-          explicitMass: { grams: 200, basis: 'gross_as_served' },
-        })
-      );
-
-      process.env.REFUSE_PCT_SCHEMA = 'off';
-      const disabled = buildPrompt('1 miếng sườn 200g', [mealItem]);
-      expect(disabled).not.toContain('user_mass_g=');
-      expect(disabled).not.toContain('mass_basis=');
-
-      process.env.REFUSE_PCT_SCHEMA = 'on';
-      const enabled = buildPrompt('1 miếng sườn 200g', [mealItem]);
-      expect(enabled).toContain('user_mass_g="200.0"');
-      expect(enabled).toContain('mass_basis="gross_as_served"');
-    });
+  it('renders explicit mass basis attributes', () => {
+    const mealItem = mealItemWithIng(
+      [candidate()],
+      ing({
+        explicitMass: { grams: 200, basis: 'gross_as_served' },
+      })
+    );
+    const enabled = buildPrompt('1 miếng sườn 200g', [mealItem]);
+    expect(enabled).toContain('user_mass_g="200.0"');
+    expect(enabled).toContain('mass_basis="gross_as_served"');
   });
 
   it('toggles all sizing-hint prompt signals together at build time', () => {
@@ -439,20 +410,17 @@ describe('grounded-estimation prompt structure', () => {
 
 describe('renderPriorLines', () => {
   it('contains one rendered line for every portion prior', () => {
-    withRestoredEnv(['REFUSE_PCT_SCHEMA'], () => {
-      process.env.REFUSE_PCT_SCHEMA = 'on';
-      const lines = renderPriorLines().split('\n');
-      expect(lines).toHaveLength(PORTION_PRIORS.length);
-      for (const prior of PORTION_PRIORS) {
-        expect(
-          lines.some((line) =>
-            line.includes(
-              `≈ ${prior.perUnit.mid}g (${prior.perUnit.low}–${prior.perUnit.high}g)`
-            )
+    const lines = renderPriorLines().split('\n');
+    expect(lines).toHaveLength(PORTION_PRIORS.length);
+    for (const prior of PORTION_PRIORS) {
+      expect(
+        lines.some((line) =>
+          line.includes(
+            `≈ ${prior.perUnit.mid}g (${prior.perUnit.low}–${prior.perUnit.high}g)`
           )
-        ).toBe(true);
-      }
-    });
+        )
+      ).toBe(true);
+    }
   });
 
   it('renders a unique label for every portion prior', () => {
