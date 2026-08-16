@@ -127,9 +127,9 @@ class _ComposerDockState extends State<ComposerDock> {
                 children: [
                   const Positioned(
                     top: -ComposerGlow.bleedTop,
-                    left: -NhamSpacing.sp6,
-                    right: -NhamSpacing.sp6,
-                    bottom: -NhamSpacing.sp6,
+                    left: -ComposerGlow.bleedEdge,
+                    right: -ComposerGlow.bleedEdge,
+                    bottom: -ComposerGlow.bleedEdge,
                     child: ComposerGlow(),
                   ),
                   widget.child,

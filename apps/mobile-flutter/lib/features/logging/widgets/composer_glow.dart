@@ -9,10 +9,21 @@ import 'package:flutter/widgets.dart';
 class ComposerGlow extends StatelessWidget {
   const ComposerGlow({super.key});
 
-  /// How far the halo reaches ABOVE the dock. It has to clear the scrim band
-  /// and then some: the gradient needs room to reach zero alpha before the box
-  /// ends, or the box edge is what you see instead of the light.
-  static const double bleedTop = 64;
+  /// How far the halo reaches ABOVE the dock's opaque base.
+  ///
+  /// Exactly [ComposerDock.scrimHeight], and it must not grow past it. The dock
+  /// floats OVER the feed, so anything the halo paints above the scrim lands on
+  /// meal cards that are still fully opaque and tints them tan — at 140 the
+  /// bottom two cards went visibly warm and the last one nearly disappeared.
+  /// Stopping at the scrim means the halo fades in over exactly the band where
+  /// the scrim is fading cards out: content and light cross over, which is what
+  /// makes the join invisible.
+  static const double bleedTop = 32;
+
+  /// How far it reaches past the dock's other three edges. Sideways this only
+  /// has to beat the dock's own padding; downward it covers the home-indicator
+  /// inset, and the keyboard covers whatever is left when it is open.
+  static const double bleedEdge = 48;
 
   @override
   Widget build(BuildContext context) {
@@ -22,16 +33,20 @@ class ComposerGlow extends StatelessWidget {
     // design wants, with no custom GradientTransform to maintain.
     return IgnorePointer(
       child: Transform.scale(
-        scaleX: 2.6,
+        // Wide enough that the light reaches both screen edges. A halo that
+        // stops short of them reads as a blob centred on the input instead of
+        // as the surface under it being lit.
+        scaleX: 3.2,
         child: const DecoratedBox(
           decoration: BoxDecoration(
             gradient: RadialGradient(
               center: Alignment(0, 0.35),
               // Flutter measures `radius` against the box's SHORTEST side, so
               // on a box this wide it is the HEIGHT that decides where the
-              // fade ends. Anything above ~0.75 leaves alpha on the top edge,
-              // and the halo gains a hard horizontal line across the feed.
-              radius: 0.65,
+              // fade ends. The centre sits 0.35 down, which leaves 0.675 of the
+              // height above it; the outermost stop must land inside that or
+              // the halo gains a hard horizontal line across the feed.
+              radius: 0.7,
               // Alpha only ever DECREASES outward. Layering a gold core over
               // a wider tan wash the way the web gradient does needs two
               // gradients; folded into one stop list it instead paints a tan
@@ -51,10 +66,10 @@ class ComposerGlow extends StatelessWidget {
     );
   }
 
-  /// Gold and tan mixed, at 44% — the warmest point, right under the input.
-  /// Reads lighter than the number suggests: the ramp is tight (see `radius`),
-  /// so only the middle of the halo is ever near full strength.
-  static const Color _core = Color(0x70DCBB7A);
-  static const Color _tan = Color(0x38C9A87C); // tan @ 22%
+  /// Gold and tan mixed, at 48% — the warmest point, right under the input.
+  /// Reads lighter than the number suggests: it is the peak of a ramp spread
+  /// over the whole lower third of the screen, never a flat fill.
+  static const Color _core = Color(0x7ADCBB7A);
+  static const Color _tan = Color(0x3DC9A87C); // tan @ 24%
   static const Color _tanOut = Color(0x00C9A87C);
 }
