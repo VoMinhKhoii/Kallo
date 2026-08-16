@@ -23,6 +23,8 @@ interface FeedAreaProps {
   onInitialMealApplied?: () => void;
   onSelectDate: (date: string) => void;
   onPaymentRequired?: () => void;
+  /** The server's answer for this day, when it had one. See `useFeedController`. */
+  initiallyHasEntries?: boolean;
 }
 
 // "Fix with words" (natural-language refine) is hidden for now. It currently
@@ -43,6 +45,7 @@ export function FeedArea({
   onInitialMealApplied,
   onSelectDate,
   onPaymentRequired,
+  initiallyHasEntries,
 }: FeedAreaProps) {
   const feed = useFeedController({
     selectedDate,
@@ -52,6 +55,7 @@ export function FeedArea({
     isDateNavigationPending,
     onInitialMealApplied,
     onPaymentRequired,
+    initiallyHasEntries,
   });
   const { day } = feed;
 
@@ -97,7 +101,9 @@ export function FeedArea({
           )}
           data-testid="meal-card-scroll"
         >
-          {day.isDayLoading && <LoggingDaySkeleton />}
+          {/* No ghost cards for a day the server already told us is empty —
+              they would flash in and out for no reason. */}
+          {day.isDayLoading && feed.mayHaveEntries && <LoggingDaySkeleton />}
 
           {!day.isDayLoading && day.isDayError && (
             <LoggingDayErrorState

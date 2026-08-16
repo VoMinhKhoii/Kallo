@@ -509,4 +509,63 @@ describe('FeedArea', () => {
       queryKey: ['meal-dates'],
     });
   });
+
+  describe('the first paint, before the day query answers', () => {
+    /** The day query still in flight — the state the first paint has to survive. */
+    function dayIsLoading() {
+      mockUseLoggingDay.mockReturnValue({
+        data: undefined,
+        isError: false,
+        isFetching: true,
+        isLoading: true,
+        refetch: vi.fn(),
+      });
+    }
+
+    function renderFeed(initiallyHasEntries?: boolean) {
+      return render(
+        <FeedArea
+          selectedDate="2026-05-04"
+          today={TODAY}
+          profile={profile}
+          onSelectDate={vi.fn()}
+          initiallyHasEntries={initiallyHasEntries}
+        />
+      );
+    }
+
+    it('opens on the empty layout when the server says the day is empty', () => {
+      dayIsLoading();
+      renderFeed(false);
+
+      // The composer belongs in the middle of an empty day, and the empty-day
+      // question above it is the tell that it is there. Without the server's
+      // answer the client assumed the day had meals, docked the composer, and
+      // then slid it up the screen once the query landed.
+      expect(screen.getByRole('paragraph')).toBeInTheDocument();
+      // And no ghost cards for a day we have already been told holds nothing.
+      expect(
+        screen.queryByTestId('logging-day-skeleton')
+      ).not.toBeInTheDocument();
+    });
+
+    it('opens on the populated layout when the server says the day has meals', () => {
+      dayIsLoading();
+      renderFeed(true);
+
+      expect(screen.queryByRole('paragraph')).not.toBeInTheDocument();
+      expect(screen.getByTestId('logging-day-skeleton')).toBeInTheDocument();
+    });
+
+    it('falls back to the old assumption when the server could not answer', () => {
+      // A first-ever visit: no timezone cookie yet, so there is no honest
+      // answer to give and the client does what it always did.
+      dayIsLoading();
+      renderFeed(undefined);
+
+      expect(screen.queryByRole('paragraph')).not.toBeInTheDocument();
+      expect(screen.getByTestId('logging-day-skeleton')).toBeInTheDocument();
+    });
+  });
+
 });

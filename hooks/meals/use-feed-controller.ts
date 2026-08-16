@@ -41,6 +41,12 @@ export function useFeedController(args: {
   isDateNavigationPending: boolean;
   onInitialMealApplied: (() => void) | undefined;
   onPaymentRequired: (() => void) | undefined;
+  /**
+   * The SERVER's answer to "does this day hold anything?", read before the page
+   * was sent. Undefined when it could not answer — no timezone cookie yet, or
+   * the lookup failed.
+   */
+  initiallyHasEntries: boolean | undefined;
 }) {
   const {
     selectedDate,
@@ -50,6 +56,7 @@ export function useFeedController(args: {
     isDateNavigationPending,
     onInitialMealApplied,
     onPaymentRequired,
+    initiallyHasEntries,
   } = args;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -210,8 +217,19 @@ export function useFeedController(args: {
   // ChatGPT-style: before anything is logged the composer sits centered with
   // the prompt; once there's content it animates down to the bottom while the
   // cards animate in. Not mode-based — purely content-driven.
+  // While the day is still loading the client cannot know whether it is empty,
+  // so it used to assume "not empty" and dock the composer — then an empty day
+  // resolving moved it to the centre, which is a bar sliding across the screen
+  // on every cold load. The server already looked this up, so the loading state
+  // now answers with what it was told and the first paint is simply correct.
+  // With no answer to go on, the old assumption stands.
+  const mayHaveEntries = day.isDayLoading
+    ? initiallyHasEntries !== false
+    : hasContent;
   const isEmptyComposer =
-    !hasContent && !stream.isAnalyzing && !day.isDayLoading && !day.isDayError;
+    !stream.isAnalyzing &&
+    !day.isDayError &&
+    (day.isDayLoading ? initiallyHasEntries === false : !hasContent);
 
   // The composer's layout spring is for the user LOGGING something — the bar
   // gliding down to the bottom as their first meal card takes the space. It is
@@ -261,6 +279,7 @@ export function useFeedController(args: {
     yesterdayPromptDismissed,
     setYesterdayPromptDismissed,
     hasContent,
+    mayHaveEntries,
     isEmptyComposer,
     animateComposerLayout,
     isToday,
