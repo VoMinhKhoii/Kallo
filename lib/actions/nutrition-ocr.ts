@@ -58,7 +58,12 @@ const stageOcrMealSchema = z.object({
 });
 
 function scanErrorCode(error: unknown): OcrErrorCode {
-  const code = (error as { code?: unknown } | null)?.code;
+  const providerError = error as {
+    code?: unknown;
+    status?: unknown;
+  } | null;
+  const code = providerError?.code;
+  if (providerError?.status === 429) return 'rate_limited';
   if (
     code === 'invalid_image' ||
     code === 'no_label_detected' ||

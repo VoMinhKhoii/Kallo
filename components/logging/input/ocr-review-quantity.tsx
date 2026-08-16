@@ -22,6 +22,7 @@ interface OcrReviewQuantityProps {
 export function OcrReviewQuantity(props: OcrReviewQuantityProps) {
   const parsedAmount = Number(props.amountText.replace(',', '.'));
   const stepAmount = Number.isFinite(parsedAmount) ? parsedAmount : 0;
+  const decreasedAmount = stepAmount - 1;
   return (
     <fieldset className="space-y-3 rounded-xl border border-[#EAE7E0] bg-nham-track/30 p-3.5">
       <legend className="px-1 font-medium text-[13px] text-nham-text">
@@ -31,7 +32,11 @@ export function OcrReviewQuantity(props: OcrReviewQuantityProps) {
         <button
           type="button"
           aria-label={props.decreaseLabel}
-          onClick={() => props.onCommit(String(Math.max(1, stepAmount - 1)))}
+          onClick={() =>
+            props.onCommit(
+              decreasedAmount > 0 ? String(decreasedAmount) : props.amountText
+            )
+          }
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EAE7E0] bg-white hover:bg-nham-track"
         >
           <Minus className="h-3.5 w-3.5" />

@@ -95,6 +95,31 @@ describe('useOcrReviewState', () => {
     expect(result.current.nutrition.magnesiumMg).toBe(60);
   });
 
+  it('flags unparseable optional nutrients and blocks confirmation', () => {
+    const data: ParsedNutritionLabel = {
+      ...metadata,
+      servingSize: null,
+      basis: 'per_100g',
+      per100g: nutrition({
+        calories: 200,
+        proteinGrams: 10,
+        carbsGrams: 20,
+        fatGrams: 5,
+      }),
+    };
+    const { result } = renderHook(() =>
+      useOcrReviewState(data, 'Scanned food')
+    );
+
+    expect(result.current.canConfirm).toBe(true);
+
+    act(() => result.current.setNutrientText('magnesiumMg', '12g'));
+
+    expect(result.current.getNutrientValue('magnesiumMg')).toBeNull();
+    expect(result.current.nutrientHasError('magnesiumMg')).toBe(true);
+    expect(result.current.canConfirm).toBe(false);
+  });
+
   it('models a serving without gram or ml size as one serving', () => {
     const data: ParsedNutritionLabel = {
       ...metadata,

@@ -112,6 +112,13 @@ export function useOcrReviewState(
   const nutrition = Object.fromEntries(
     OCR_NUTRIENT_KEYS.map((key) => [key, getNutrientValue(key)])
   ) as NutritionValues;
+  const nutrientParseFailures = new Set(
+    OCR_NUTRIENT_KEYS.filter(
+      (key) =>
+        nutrientTexts[key].trim() !== '' &&
+        parseLocaleDecimal(nutrientTexts[key]) === null
+    )
+  );
   const parsedNutrition = nutritionValuesSchema.safeParse(nutrition);
   const fieldErrors = parsedNutrition.success
     ? {}
@@ -127,6 +134,7 @@ export function useOcrReviewState(
   const canConfirm =
     amountIsValid &&
     productIsValid &&
+    nutrientParseFailures.size === 0 &&
     parsedNutrition.success &&
     requiredValues.every((value) => value !== null);
 
@@ -159,7 +167,6 @@ export function useOcrReviewState(
     parsedAmount,
     amountIsValid,
     unit: reviewColumn.unit,
-    amountStep: reviewColumn.unit === 'serving' ? 1 : 1,
     commitAmount,
     servingAmount: getShortcuts(data, reviewColumn.unit).servingAmount,
     packageAmount: getShortcuts(data, reviewColumn.unit).packageAmount,
@@ -168,7 +175,8 @@ export function useOcrReviewState(
       setNutrientTexts((current) => ({ ...current, [key]: value })),
     getNutrientValue,
     nutrientHasError: (key: keyof NutritionValues) =>
-      nutrientTexts[key] !== '' && Boolean(fieldErrors[key]?.length),
+      nutrientParseFailures.has(key) ||
+      (nutrientTexts[key] !== '' && Boolean(fieldErrors[key]?.length)),
     nutrition,
     canConfirm,
     servingDescription: data?.servingSizeDescription ?? null,

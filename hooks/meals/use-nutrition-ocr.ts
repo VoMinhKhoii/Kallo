@@ -21,6 +21,8 @@ const ENCODE_ATTEMPTS = [
   { quality: 0.5, scale: 0.65 },
 ] as const;
 
+class OcrImageEnvironmentError extends Error {}
+
 function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -62,7 +64,9 @@ export async function compressNutritionLabelImage(file: File): Promise<{
     throw new Error('Image file is too large, empty, or unsupported');
   }
   if (typeof createImageBitmap !== 'function') {
-    throw new Error('This browser cannot safely resize images');
+    throw new OcrImageEnvironmentError(
+      'This browser cannot safely resize images'
+    );
   }
 
   let bitmap: ImageBitmap;
@@ -86,7 +90,9 @@ export async function compressNutritionLabelImage(file: File): Promise<{
     source.width = bitmap.width;
     source.height = bitmap.height;
     const context = source.getContext('2d');
-    if (!context) throw new Error('Canvas context unavailable');
+    if (!context) {
+      throw new OcrImageEnvironmentError('Canvas context unavailable');
+    }
     context.drawImage(bitmap, 0, 0);
 
     for (const attempt of ENCODE_ATTEMPTS) {
@@ -94,7 +100,9 @@ export async function compressNutritionLabelImage(file: File): Promise<{
       canvas.width = Math.round(source.width * attempt.scale);
       canvas.height = Math.round(source.height * attempt.scale);
       const outputContext = canvas.getContext('2d');
-      if (!outputContext) throw new Error('Canvas context unavailable');
+      if (!outputContext) {
+        throw new OcrImageEnvironmentError('Canvas context unavailable');
+      }
       outputContext.drawImage(source, 0, 0, canvas.width, canvas.height);
 
       const blob = await canvasToBlob(canvas, attempt.quality);
@@ -125,7 +133,11 @@ export function useNutritionOcr() {
       try {
         compressed = await compressNutritionLabelImage(file);
       } catch (error) {
-        setErrorCode('invalid_image');
+        setErrorCode(
+          error instanceof OcrImageEnvironmentError
+            ? 'server_error'
+            : 'invalid_image'
+        );
         throw error;
       } finally {
         setIsCompressing(false);

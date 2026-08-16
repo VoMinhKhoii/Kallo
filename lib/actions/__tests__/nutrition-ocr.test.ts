@@ -224,7 +224,7 @@ describe('scanNutritionLabelAction', () => {
   });
 
   it.each([
-    ['provider 429', { status: 429, code: 'rate_limited' }, 'rate_limited'],
+    ['provider 429', { status: 429 }, 'rate_limited'],
     [
       'provider timeout',
       new DOMException('Nutrition label OCR timed out', 'AbortError'),
