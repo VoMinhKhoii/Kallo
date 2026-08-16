@@ -12,7 +12,7 @@ import type {
   HeatmapRange,
   TimeRange,
 } from '@/lib/types/dashboard';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { DashboardSectionState } from './dashboard-section-state';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { HeatmapSkeleton } from './progress/progress-section-skeleton';

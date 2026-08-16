@@ -1,5 +1,6 @@
-import { AppError, Errors } from '@/lib/errors';
-import { withDeadline } from '@/lib/with-deadline';
+import { withDeadline } from '@/lib/async/with-deadline';
+import { AppError } from '@/lib/errors/app-error';
+import { Errors } from '@/lib/errors/catalog';
 import { resendClient } from './client';
 import {
   EMAIL_SEND_TIMEOUT_MS,

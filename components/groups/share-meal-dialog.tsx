@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { useFriends } from '@/hooks/social/use-friends';
 import { useShareMealWithFriends } from '@/hooks/social/use-share-meal-with-friends';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 type Mode = 'copy' | 'split';
 

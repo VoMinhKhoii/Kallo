@@ -4,7 +4,8 @@ const checkAnalysisGuards = vi.fn();
 vi.mock('@/lib/rate-limit/analysis-guards', () => ({ checkAnalysisGuards }));
 
 const { withRelogGuard } = await import('@/lib/rate-limit/relog-guard');
-const { serializeError, isAppError } = await import('@/lib/errors');
+const { isAppError } = await import('@/lib/errors/app-error');
+const { serializeError } = await import('@/lib/errors/serialize');
 
 const release = vi.fn();
 

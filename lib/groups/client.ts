@@ -1,10 +1,10 @@
 // ---------------------------------------------------------------------------
-// Group tracking — client-side REST helpers + response types
+// Group tracking — client-side REST helpers
 // ---------------------------------------------------------------------------
 // Thin fetch wrappers around /api/v1/groups/* used by the TanStack hooks. Web
 // calls these REST endpoints (the same contract the mobile port will use). The
-// pure service-fn response shapes are re-exported as types from the server file
-// for client typing only.
+// response shapes are the pure service fns' own types — import them from their
+// defining modules, not from here.
 
 import type {
   CircleFeedEntry,
@@ -14,34 +14,8 @@ import type {
 } from '@/lib/actions/groups/types';
 import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
-import { parseApiError } from '@/lib/errors';
+import { postJson, request } from '@/lib/api/client-fetch';
 import type { ShareReply } from '@/lib/groups/shares/replies';
-
-export type {
-  CircleFeedEntry,
-  CircleMember,
-  FriendsThreadFeedPage,
-  MealShareInvite,
-  PublicProfile,
-  ShareReply,
-};
-
-async function request<T>(input: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw parseApiError(body);
-  }
-  return response.json() as Promise<T>;
-}
-
-function postJson<T>(url: string, body: unknown): Promise<T> {
-  return request<T>(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-}
 
 export function fetchCircleFeed(
   timezoneOffset: number

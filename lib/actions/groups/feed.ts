@@ -22,7 +22,10 @@ import {
 } from '@/lib/groups/public-identity';
 import { reactionsForShares } from '@/lib/groups/shares/reactions';
 import { repliesForShares } from '@/lib/groups/shares/replies';
-import { circleFeedSchema, friendsThreadFeedSchema } from '@/lib/validation';
+import {
+  circleFeedSchema,
+  friendsThreadFeedSchema,
+} from '@/lib/validation/social';
 
 import {
   CIRCLE_FEED_FRIEND_CAP,

@@ -8,7 +8,7 @@ import {
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-import { MIN_DISH_GRAMS } from '@/lib/meal-utils';
+import { MIN_DISH_GRAMS } from '@/lib/meals/quantity-recalculation';
 
 import { AmountEditorRow, type EditableRow } from './amount-editor-row';
 import { computeEditedTotals } from './amount-editor-totals';

@@ -6,15 +6,17 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import type {
+  ChatGroupDetail,
+  ChatGroupIdentity,
+  GroupMealFeedPage,
+} from '@/lib/actions/chat-groups/types';
 import {
   addGroupMembers,
-  type ChatGroupDetail,
-  type ChatGroupIdentity,
   createChatGroup,
   fetchChatGroup,
   fetchGroupMealFeed,
   fetchMyChatGroups,
-  type GroupMealFeedPage,
   leaveGroup,
   removeGroupMember,
   renameGroup,

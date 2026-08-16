@@ -52,7 +52,7 @@ const {
   };
 });
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: mockUser,
     profile: {
@@ -123,7 +123,7 @@ import {
   buildPersistedMeal,
   buildPersistedMealItemGroup,
 } from '@/lib/actions/persisted-meal';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 
 // Valid v4 UUIDs (Zod v4 validates version+variant bits)
 const UUID_1 = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';

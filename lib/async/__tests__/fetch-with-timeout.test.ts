@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { AppError } from '@/lib/errors';
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
+import { AppError } from '@/lib/errors/app-error';
 
 describe('fetchWithTimeout', () => {
   it('resolves when fn completes before timeout', async () => {

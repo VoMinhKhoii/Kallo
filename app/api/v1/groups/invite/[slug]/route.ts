@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { getFriendshipStatus } from '@/lib/actions/groups/friendship';
 import { getProfileBySlug } from '@/lib/actions/groups/profile';
 import { handleRouteError } from '@/lib/api/respond';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';

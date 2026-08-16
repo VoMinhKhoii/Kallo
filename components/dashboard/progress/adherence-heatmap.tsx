@@ -13,7 +13,7 @@ import type {
   HeatmapData,
   HeatmapRange,
 } from '@/lib/types/dashboard';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { getHeatmapColor, heatmapLegendGradient } from './heatmap-colors';
 import { HeatmapMonthHeaderRow } from './heatmap-month-headers';
 

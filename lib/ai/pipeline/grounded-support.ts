@@ -21,7 +21,7 @@
  *     comparison is a separate file).
  */
 import { randomUUID } from 'node:crypto';
-import { capitalizeFirst } from '@/lib/utils';
+import { capitalizeFirst } from '@/lib/text/capitalize';
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
 import type { VesselEnvelope } from '../portion/vessel-envelope';
 import type { MealItemWithCandidates } from '../prompts/grounded-estimation';

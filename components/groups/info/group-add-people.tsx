@@ -9,7 +9,7 @@ import { labelFor } from '@/components/groups/invite/profile-identity';
 import { Input } from '@/components/ui/input';
 import { useAddGroupMembers } from '@/hooks/social/use-chat-groups';
 import { useFriends } from '@/hooks/social/use-friends';
-import type { ChatGroupDetail } from '@/lib/chat-groups/client';
+import type { ChatGroupDetail } from '@/lib/actions/chat-groups/types';
 
 /** Grow the group from the actor's accepted friends — same Messenger-style
  * picker as creation, scoped to friends not already in the group. */

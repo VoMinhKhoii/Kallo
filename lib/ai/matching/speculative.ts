@@ -1,5 +1,5 @@
 import type { AppDb } from '@/lib/db';
-import { capitalizeFirst } from '@/lib/utils';
+import { capitalizeFirst } from '@/lib/text/capitalize';
 import type { GeminiClient } from '../gemini';
 import {
   cacheQueryEmbedding,

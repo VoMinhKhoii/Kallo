@@ -22,7 +22,7 @@ import {
 import { Link } from '@/i18n/navigation';
 import type { SidebarExpandMode } from '@/lib/sidebar/types';
 import { createClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 export interface UserMenuUser {
   email: string | null;

@@ -5,7 +5,7 @@ import type {
   NutritionRange,
   NutritionRangeInput,
 } from '@/lib/nutrition/types';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 const RANGES = [
   '7d',

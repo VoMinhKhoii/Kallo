@@ -18,7 +18,7 @@ const loadRelogMealCandidates = vi.fn();
 const resolveRelogSources = vi.fn();
 
 vi.mock('@/lib/rate-limit/analysis-guards', () => ({ checkAnalysisGuards }));
-vi.mock('@/lib/auth', () => ({ requireAuthAndProfile }));
+vi.mock('@/lib/auth/session', () => ({ requireAuthAndProfile }));
 vi.mock('@/lib/logging/relog/dish-query', () => ({ loadRelogDishCandidates }));
 vi.mock('@/lib/logging/relog/meal-query', () => ({ loadRelogMealCandidates }));
 vi.mock('@/lib/db', () => ({

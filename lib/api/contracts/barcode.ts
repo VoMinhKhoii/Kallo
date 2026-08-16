@@ -8,7 +8,10 @@
  */
 import { z } from 'zod';
 import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/validation/primitives';
 
 /**
  * The one source of truth for what a barcode string looks like — shared by

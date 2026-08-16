@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { cache } from 'react';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { createClient } from '@/lib/supabase/server';
 
 interface AuthResult {

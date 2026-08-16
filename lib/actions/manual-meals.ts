@@ -17,11 +17,11 @@ import {
   type SaveManualMealInput,
   saveManualMealSchema,
 } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { mealItems, meals, vietnameseFoodComposition } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { scaleNutritionValues } from '@/lib/logging/manual-logging';
 import { insertDefaultCircleShare } from './meals/insert-default-share';
 

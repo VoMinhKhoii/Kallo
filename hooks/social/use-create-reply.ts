@@ -3,8 +3,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { createShareReply, type ShareReply } from '@/lib/groups/client';
+import { createShareReply } from '@/lib/groups/client';
 import { isFeedQuery, mapFeedEntries } from '@/lib/groups/feed-cache';
+import type { ShareReply } from '@/lib/groups/shares/replies';
 
 function appendReply(
   entry: unknown,

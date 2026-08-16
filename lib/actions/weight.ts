@@ -2,41 +2,47 @@
 
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { buildWeightTrendSummary } from '@/lib/dashboard/weight-trend';
+import {
+  dayKeyToUtcDate,
+  toLocalDayKey,
+  toUtcDayKey,
+} from '@/lib/date/day-key';
+import { MS_PER_DAY } from '@/lib/date/ms';
 import { db } from '@/lib/db';
 import { bodyWeightLog, userProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import type { WeightRange, WeightSummaryData } from '@/lib/types/weight';
-import { dateStringSchema, weightLogSchema } from '@/lib/validation';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/validation/primitives';
+import { weightLogSchema } from '@/lib/validation/weight';
 
 const weightRangeSchema = z.object({
   range: z.enum(['30d', '90d']),
-  timezoneOffset: z.number().int().min(-840).max(720),
+  timezoneOffset: timezoneOffsetSchema,
 });
 
 const deleteWeightSchema = z.object({
   loggedDate: dateStringSchema,
 });
 
-function toLocalDateString(date: Date, timezoneOffset: number): string {
-  return new Date(date.getTime() - timezoneOffset * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
-}
-
 function shiftDate(dateString: string, deltaDays: number): string {
-  const date = new Date(`${dateString}T00:00:00.000Z`);
+  const date = dayKeyToUtcDate(dateString);
   date.setUTCDate(date.getUTCDate() + deltaDays);
-  return date.toISOString().slice(0, 10);
+  return toUtcDayKey(date);
 }
 
+/** Inclusive-ish span between two day keys, floored at 1 — a single logged day
+ *  still counts as a day of elapsed plan. */
 function daysBetween(startDate: string, endDate: string): number {
-  const start = new Date(`${startDate}T00:00:00.000Z`);
-  const end = new Date(`${endDate}T00:00:00.000Z`);
+  const start = dayKeyToUtcDate(startDate);
+  const end = dayKeyToUtcDate(endDate);
   return Math.max(
     1,
-    Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000))
+    Math.round((end.getTime() - start.getTime()) / MS_PER_DAY)
   );
 }
 
@@ -152,7 +158,7 @@ export async function loadWeightSummaryAction(input: {
   const parsed = weightRangeSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
 
-  const todayDate = toLocalDateString(new Date(), parsed.timezoneOffset);
+  const todayDate = toLocalDayKey(new Date(), parsed.timezoneOffset);
   const rangeDays = parsed.range === '30d' ? 30 : 90;
   const startDate = shiftDate(todayDate, -(rangeDays - 1));
 

@@ -11,6 +11,7 @@ import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { loaderIndexForKey } from '@/components/shared/loaders/registry';
 import { StreamTicker } from '@/components/shared/stream-ticker/stream-ticker';
 import { deriveStreamTicker } from '@/components/shared/stream-ticker/stream-ticker-frame';
+import { formatTime } from '@/lib/date/format-time';
 import type { ChatMessage, MealItem } from '@/lib/types/meal';
 
 const DEFAULT_SKELETON_COUNT = 3;
@@ -84,10 +85,7 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
   const anonymousCount = Math.max(0, DEFAULT_SKELETON_COUNT - totalKnown);
   const showAnonymous = phase !== 'assembling' && phase !== 'done';
 
-  const timeLabel = message.timestamp.toLocaleTimeString(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const timeLabel = formatTime(message.timestamp, locale);
 
   const ticker = deriveStreamTicker({
     isAnalyzing: true,

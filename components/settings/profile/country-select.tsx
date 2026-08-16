@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { COUNTRIES } from '@/lib/onboarding/countries';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 export function CountrySelect({
   value,

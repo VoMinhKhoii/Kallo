@@ -1,6 +1,6 @@
 import { Minus, Plus, X } from 'lucide-react';
-import { MIN_DISH_GRAMS } from '@/lib/meal-utils';
-import { cn } from '@/lib/utils';
+import { MIN_DISH_GRAMS } from '@/lib/meals/quantity-recalculation';
+import { cn } from '@/lib/ui/cn';
 
 export interface EditableRow {
   id: string;

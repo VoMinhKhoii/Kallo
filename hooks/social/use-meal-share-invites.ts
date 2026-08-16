@@ -3,11 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
 import { circleFeedKeys } from '@/hooks/social/use-circle-feed';
+import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
 import {
   acceptMealShareInvite,
   dismissMealShareInvite,
   fetchMealShareInvites,
-  type MealShareInvite,
 } from '@/lib/groups/client';
 
 export const mealShareInvitesKeys = {

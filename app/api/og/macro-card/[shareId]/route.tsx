@@ -1,9 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ImageResponse } from '@vercel/og';
-import { type NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { KALLO_WORDMARK_D, KALLO_WORDMARK_VIEWBOX } from '@/lib/brand/kallo';
-import { Errors, serializeError } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
+import { serializeError } from '@/lib/errors/serialize';
 import {
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
@@ -154,10 +155,9 @@ export async function GET(
       } catch {
         // ignore logging failures
       }
-      return NextResponse.json(Errors.rateLimited().toJSON(), {
-        status: 429,
-        headers: { 'Retry-After': String(guard.retryAfterSeconds) },
-      });
+      return serializeError(
+        Errors.rateLimited(undefined, guard.retryAfterSeconds)
+      );
     }
 
     const { data: share } = await supabase

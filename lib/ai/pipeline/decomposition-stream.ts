@@ -1,7 +1,7 @@
 import { extractMealItemNameOccurrences } from '@/lib/ai/streaming/parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { MealDecomposition } from '@/lib/ai/types';
-import { capitalizeFirst } from '@/lib/utils';
+import { capitalizeFirst } from '@/lib/text/capitalize';
 import { createCompactIdSequence } from './id-sequence';
 import type { MealDecompositionWithIds } from './ids';
 

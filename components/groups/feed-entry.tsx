@@ -7,9 +7,9 @@ import { ShareReplies } from '@/components/groups/share-replies';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { useLogSharedMeal } from '@/hooks/social/use-log-shared-meal';
 import { useToggleReaction } from '@/hooks/social/use-toggle-reaction';
+import type { CircleFeedEntry } from '@/lib/actions/groups/types';
 import { formatElapsed } from '@/lib/date/format-elapsed';
-import type { CircleFeedEntry } from '@/lib/groups/client';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 function formatMacro(value: number | null, na: string): string {
   return value == null ? na : `${Math.round(value)}g`;

@@ -1,5 +1,4 @@
 import { count, desc, eq, sql } from 'drizzle-orm';
-import { z } from 'zod';
 
 import type { AppDb } from '@/lib/db';
 import {
@@ -7,10 +6,7 @@ import {
   pipelineRequests,
   promptVersions,
 } from '@/lib/db/schema';
-
-// ─── Filters schema ───────────────────────────────────────────────────────────
-
-const uuidSchema = z.string().uuid();
+import { uuidSchema } from '@/lib/validation/primitives';
 
 export async function listPrompts(db: AppDb) {
   const rows = await db

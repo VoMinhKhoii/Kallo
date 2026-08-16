@@ -6,7 +6,7 @@ import {
   type FeedbackListRow,
 } from '@/lib/admin/feedback-queries';
 import { formatUtcTimestamp } from '@/lib/admin/format';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 const TYPE_STYLES: Record<string, string> = {
   bug: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',

@@ -15,7 +15,7 @@ import {
   type RelogItemsInput,
   relogItemsSchema,
 } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { mealItems, meals } from '@/lib/db/schema';

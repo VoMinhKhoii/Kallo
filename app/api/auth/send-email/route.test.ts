@@ -8,7 +8,7 @@ import {
   type Mock,
   vi,
 } from 'vitest';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 
 type SendEmailFn = typeof import('@/lib/email/send').sendEmail;
 

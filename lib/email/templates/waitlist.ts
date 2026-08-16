@@ -1,5 +1,5 @@
 import type { EmailMessage } from '@/lib/email/send';
-import { SITE_URL } from '@/lib/site';
+import { SITE_URL } from '@/lib/seo/site';
 import {
   button,
   type EmailLocale,

@@ -5,13 +5,13 @@ import { and, eq, sql } from 'drizzle-orm';
 import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups';
 import { db as defaultDb } from '@/lib/db';
 import { circleEvents, friendships } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { orderedPair } from '@/lib/groups/friendship';
 import {
   acceptInviteSchema,
   blockFriendSchema,
   removeFriendSchema,
-} from '@/lib/validation';
+} from '@/lib/validation/social';
 
 import { getOrCreateMyProfile, getProfileBySlug } from './profile';
 import type { Db, PublicProfile } from './types';

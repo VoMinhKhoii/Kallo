@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { DsCard, DsMeta, DsSection } from './specimen';
 
 const STEPS = [

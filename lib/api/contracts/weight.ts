@@ -3,7 +3,7 @@
  *
  * Imported by both the web hooks and the mobile (React Native) client, so this
  * file must stay free of server-only / db / supabase imports. Schemas depend
- * only on `zod` and the pure `@/lib/validation` / `@/lib/api/contracts/common`
+ * only on `zod` and the pure `@/lib/validation/*` / `@/lib/api/contracts/common`
  * re-exports; the response type is re-exported from the pure
  * `@/lib/types/weight` module.
  */
@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { timezoneOffsetSchema } from '@/lib/api/contracts/common';
 
 /** Body schema for `POST /api/v1/weight` (re-export of the shared validator). */
-export { weightLogSchema } from '@/lib/validation';
+export { weightLogSchema } from '@/lib/validation/weight';
 
 /**
  * Query schema for `GET /api/v1/weight/summary`. The weight-summary range is

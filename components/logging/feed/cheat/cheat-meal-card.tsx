@@ -16,7 +16,8 @@ import {
   activeAnchorLabel,
   CHEAT_SLIDER_COLORS,
 } from '@/lib/cheat/slider-nutrition';
-import { cn } from '@/lib/utils';
+import { formatTime } from '@/lib/date/format-time';
+import { cn } from '@/lib/ui/cn';
 
 interface CheatMealCardProps {
   meal: PersistedMeal;
@@ -48,10 +49,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
   const locale = useLocale();
   const [isCollapsed, setIsCollapsed] = useState(true);
 
-  const timeLabel = new Date(meal.loggedAt).toLocaleTimeString(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const timeLabel = formatTime(meal.loggedAt, locale);
 
   const calories = formatCaloriesOrNA(meal.nutrition.caloriesKcal);
   // Cheat calories are an estimate the user placed themselves — flag it with ≈

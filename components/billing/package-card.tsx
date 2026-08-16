@@ -3,7 +3,7 @@ import { Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { canonicalProductId } from '@/lib/billing/products';
 import type { Package } from '@/lib/billing/web-purchases';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 interface PackageCardProps {
   rcPackage: Package;

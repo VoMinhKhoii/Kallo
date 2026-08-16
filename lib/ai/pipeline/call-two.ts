@@ -15,8 +15,8 @@
  * runtime always passes the Gemini adapter.
  */
 
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
-import { capitalizeFirst } from '@/lib/utils';
+import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
+import { capitalizeFirst } from '@/lib/text/capitalize';
 import type { GeminiCallTrace } from '../gemini';
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
 import type { MealItemWithCandidates } from '../prompts/grounded-estimation';

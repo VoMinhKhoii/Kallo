@@ -8,8 +8,8 @@ import { GroupAddPeople } from '@/components/groups/info/group-add-people';
 import { GroupLeaveButton } from '@/components/groups/info/group-leave-button';
 import { GroupMembersList } from '@/components/groups/info/group-members-list';
 import { useRenameGroup } from '@/hooks/social/use-chat-groups';
-import type { ChatGroupDetail } from '@/lib/chat-groups/client';
-import { cn } from '@/lib/utils';
+import type { ChatGroupDetail } from '@/lib/actions/chat-groups/types';
+import { cn } from '@/lib/ui/cn';
 
 /** Messenger-style collapsible section: bold heading row with a chevron that
  * flips as it opens. Sections default open — the chevron is for tidying up. */

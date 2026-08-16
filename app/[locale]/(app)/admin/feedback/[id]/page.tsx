@@ -9,7 +9,7 @@ import { formatUtcTimestamp } from '@/lib/admin/format';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import { db } from '@/lib/db';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { StatusForm } from './_components/status-form';
 
 export const dynamic = 'force-dynamic';

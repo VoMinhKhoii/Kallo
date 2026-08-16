@@ -1,5 +1,5 @@
 import type { StreamErrorEvent } from '@/lib/ai/streaming';
-import { isAppError } from '@/lib/errors';
+import { isAppError } from '@/lib/errors/app-error';
 
 /**
  * Map a thrown value to a terminal SSE `error` event.

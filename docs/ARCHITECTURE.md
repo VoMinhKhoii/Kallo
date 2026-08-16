@@ -42,9 +42,10 @@ not yet — see the `logging` row below.
 | `ai/portion/` | gram anchors from portion evidence | split |
 | `ai/prompts/` | prompt text and its builders | split |
 | `ai/streaming/` | SSE event encoding and parsing | ok |
-| `api/` | route-handler plumbing: auth guard, respond, query parse | ok |
+| `api/` | the `/api/v1` wire edge: auth guard, respond, query parse, client fetch | ok |
 | `api/contracts/` | Zod wire contracts shared by web and mobile | split |
-| `auth/` | redirect and next-param safety | split |
+| `async/` | concurrency primitives — bounding a slow operation, zero domain knowledge | ok |
+| `auth/` | session/profile guard, redirect and next-param safety | split |
 | `barcode/` | Open Food Facts lookup and decode | ok |
 | `billing/` | RevenueCat purchase side | split |
 | `brand/` | brand constants | ok |
@@ -56,18 +57,24 @@ not yet — see the `logging` row below.
 | `docs/` | in-app docs loader, toc, nav, search | ok |
 | `email/` | transactional send + templates | ok |
 | `entitlements/` | entitlement grants and reconciliation | split |
+| `errors/` | the error taxonomy and its two edges — HTTP response, browser parse | ok |
 | `groups/` | social circle: feed, identity, visibility, transport | split |
 | `i18n/` | root-locale resolution | ok |
 | `logging/` | meal logging domain + relog | ok |
+| `meals/` | dish quantity edits and the macro rescaling they imply | ok |
 | `nutrition/` | nutrition overview, catalog, pattern analysis | ok |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data | split |
+| `platform/` | runtime environment detection (webview, OS) from the user agent | ok |
 | `rate-limit/` | analysis abuse guards | split |
 | `security/` | webhook signatures **and** CSP **and** request IP | split |
-| `seo/` | structured data | ok |
+| `seo/` | canonical origin, structured data, open-graph | ok |
 | `sidebar/` | sidebar cookie state | ok |
 | `supabase/` | client factories (browser, server, admin, middleware) | **reference shape** |
+| `text/` | string shaping for display and input parsing — no domain knowledge | ok |
 | `types/` | cross-cutting DTOs | split |
+| `ui/` | the Tailwind class-merge helper — the only `lib/` folder that knows about styling | ok |
 | `uploads/` | image and avatar file handling | ok |
+| `validation/` | Zod request schemas — primitives plus one file per domain | ok |
 | `waitlist/` | waitlist signup, confirm, token | ok |
 
 ## `components/` — presentation

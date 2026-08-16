@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { withDeadline } from './with-deadline';
+import { withDeadline } from '@/lib/async/with-deadline';
 
 describe('withDeadline', () => {
   afterEach(() => {

@@ -2,12 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { circleFeedKeys } from '@/hooks/social/use-circle-feed';
-import {
-  blockFriend,
-  type CircleMember,
-  fetchFriends,
-  removeFriend,
-} from '@/lib/groups/client';
+import type { CircleMember } from '@/lib/actions/groups/types';
+import { blockFriend, fetchFriends, removeFriend } from '@/lib/groups/client';
 
 export const friendsKeys = {
   all: ['friends'] as const,

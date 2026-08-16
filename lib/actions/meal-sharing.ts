@@ -18,7 +18,7 @@
 import { and, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
 import { scaleOwnMealInPlace } from '@/lib/actions/meal-sharing/scale';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import {
@@ -27,12 +27,12 @@ import {
   mealShareInvites,
   meals,
 } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import {
   acceptMealShareInviteSchema,
   dismissMealShareInviteSchema,
   shareMealWithFriendsSchema,
-} from '@/lib/validation';
+} from '@/lib/validation/social';
 import type { ConfirmMealResponse, PersistedMeal } from './meals/types';
 
 // A "use server" module may only export async server actions — no value or type

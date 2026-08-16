@@ -1,7 +1,7 @@
 import { toJSONSchema } from 'zod';
+import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
 import type { AppDb } from '@/lib/db';
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
-import { capitalizeFirst } from '@/lib/utils';
+import { capitalizeFirst } from '@/lib/text/capitalize';
 import type { GeminiClient } from '../gemini';
 import {
   buildLanguageCorrectionMessage,

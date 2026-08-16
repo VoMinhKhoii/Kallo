@@ -1,4 +1,4 @@
-import { isAppError } from '@/lib/errors';
+import { isAppError } from '@/lib/errors/app-error';
 import type { PipelineErrorType, PipelineResponse } from '../types';
 
 const NON_FOOD_MESSAGE =

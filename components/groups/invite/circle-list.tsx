@@ -8,7 +8,7 @@ import {
   useFriends,
   useRemoveFriend,
 } from '@/hooks/social/use-friends';
-import type { CircleMember } from '@/lib/groups/client';
+import type { CircleMember } from '@/lib/actions/groups/types';
 import { ProfileIdentity } from './profile-identity';
 
 /** The signed-in user's accepted connections, each with Remove/Block actions

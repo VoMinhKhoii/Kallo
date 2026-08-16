@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useRemoveGroupMember } from '@/hooks/social/use-chat-groups';
-import type { ChatGroupDetail } from '@/lib/chat-groups/client';
+import type { ChatGroupDetail } from '@/lib/actions/chat-groups/types';
 
 /** Member rows with avatars; the owner additionally gets a confirm-gated
  * remove action on every row but their own (self-removal is "Leave group"). */

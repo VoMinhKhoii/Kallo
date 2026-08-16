@@ -7,7 +7,7 @@ import { FEEDBACK_STATUSES } from '@/lib/admin/feedback-queries';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import { db } from '@/lib/db';
 import { userFeedback } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 
 const updateSchema = z.object({
   id: z.string().uuid(),

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getUtcDayRangeForLocalDate,
   getUtcInstantForLocalDate,
-} from './local-day';
+} from '@/lib/date/local-day';
 
 describe('local day timezone helpers', () => {
   it('converts a UTC+7 local day to the correct UTC range', () => {

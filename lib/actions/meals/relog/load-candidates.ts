@@ -1,7 +1,7 @@
 'use server';
 
 import { relogCandidatesQuerySchema } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { loadRelogDishCandidates } from '@/lib/logging/relog/dish-query';
 import { loadRelogMealCandidates } from '@/lib/logging/relog/meal-query';

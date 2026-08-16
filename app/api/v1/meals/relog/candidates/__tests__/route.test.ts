@@ -9,7 +9,7 @@ vi.mock('@/lib/actions/meals/relog/load-candidates', () => ({
   loadRelogCandidatesAction,
 }));
 
-vi.mock('@/lib/auth', () => ({ requireAuthAndProfile }));
+vi.mock('@/lib/auth/session', () => ({ requireAuthAndProfile }));
 
 vi.mock('@/lib/rate-limit/analysis-guards', () => ({ checkAnalysisGuards }));
 
@@ -71,7 +71,7 @@ describe('GET /api/v1/meals/relog/candidates', () => {
     it('authenticates BEFORE validating the query', async () => {
       // Otherwise a bad `limit` returns 400 to an anonymous caller and a valid
       // one returns 401 — a free oracle for which params are well-formed.
-      const { Errors } = await import('@/lib/errors');
+      const { Errors } = await import('@/lib/errors/catalog');
       requireAuthAndProfile.mockRejectedValueOnce(Errors.notAuthenticated());
 
       const res = await GET(makeRequest('?limit=999'));

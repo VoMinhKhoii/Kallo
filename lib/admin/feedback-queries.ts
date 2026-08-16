@@ -7,6 +7,7 @@ import {
 } from '@/lib/api/contracts/feedback';
 import type { AppDb } from '@/lib/db';
 import { userFeedback } from '@/lib/db/schema';
+import { uuidSchema } from '@/lib/validation/primitives';
 
 export const FEEDBACK_STATUSES = [
   'open',
@@ -29,8 +30,6 @@ export const FEEDBACK_TYPE_LABELS: Record<string, string> = {
   ingredient: 'Ingredient request',
   idea: 'Idea',
 };
-
-const uuidSchema = z.string().uuid();
 
 // URLSearchParams sends strings; `all` collapses a filter to "no constraint".
 const allOr = <T extends readonly [string, ...string[]]>(values: T) =>

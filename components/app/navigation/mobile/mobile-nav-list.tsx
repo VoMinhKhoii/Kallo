@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { isActiveRoute, type NavItemConfig } from '../nav-items';
 
 interface MobileNavListProps {

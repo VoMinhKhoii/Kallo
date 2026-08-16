@@ -25,8 +25,8 @@
  * Small meals keep the single-call path — see `shouldChunkCall2`.
  */
 
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
-import { mapWithConcurrency } from '@/lib/utils';
+import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
+import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import type { MealItemWithCandidates } from '../../prompts/grounded-estimation';
 import type { PromptPersonalizationContext } from '../../prompts/types';
 import type { GroundedEstimation, GroundedMealItem } from '../schemas-v2';

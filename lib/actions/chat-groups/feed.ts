@@ -9,7 +9,7 @@ import { sharedGroupMealsBefore } from '@/lib/groups/feed/group-meals';
 import { toSharedMealEntry } from '@/lib/groups/meal-feed';
 import { reactionsForShares } from '@/lib/groups/shares/reactions';
 import { repliesForShares } from '@/lib/groups/shares/replies';
-import { groupMealFeedSchema } from '@/lib/validation';
+import { groupMealFeedSchema } from '@/lib/validation/chat';
 import { type ChatGroupDb, requireGroupAccess } from './membership';
 import type { GroupMealFeedPage } from './types';
 

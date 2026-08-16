@@ -17,7 +17,7 @@ import {
 import type {
   ChatGroupDetail,
   ChatGroupMember,
-} from '@/lib/chat-groups/client';
+} from '@/lib/actions/chat-groups/types';
 
 const COLLAPSED_KEY = 'kallo-group-info-collapsed';
 const STACK_LIMIT = 5;

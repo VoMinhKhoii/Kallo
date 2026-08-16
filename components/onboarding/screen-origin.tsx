@@ -11,7 +11,7 @@ import {
   type StepOneLocaleDraft,
   writeStepOneLocaleDraft,
 } from '@/lib/onboarding/step-one-locale-draft';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { LanguageToggle } from './language-toggle';
 
 interface ScreenOriginProps {

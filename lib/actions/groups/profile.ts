@@ -4,7 +4,7 @@
 import { eq } from 'drizzle-orm';
 import { db as defaultDb } from '@/lib/db';
 import { publicProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import {
   HANDLE_MAX_LENGTH,
   isValidHandle,
@@ -20,7 +20,7 @@ import {
   handleSchema,
   renameProfileSchema,
   upsertPublicProfileSchema,
-} from '@/lib/validation';
+} from '@/lib/validation/social';
 
 import type { Db, PublicProfile } from './types';
 

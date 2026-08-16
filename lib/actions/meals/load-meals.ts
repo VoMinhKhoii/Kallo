@@ -9,12 +9,15 @@ import {
 } from '@/lib/actions/persisted-meal';
 import { toParsedMeal } from '@/lib/ai/mappers';
 import type { PipelineResult } from '@/lib/ai/types';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { mealItems, mealShares, meals, pendingAnalyses } from '@/lib/db/schema';
 import type { CheatSliderSpec, CheatSlidersPersisted } from '@/lib/types/cheat';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/validation/primitives';
 import type {
   LoggingDayData,
   PendingMealConfirmation,

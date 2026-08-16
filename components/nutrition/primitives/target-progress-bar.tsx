@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 interface TargetProgressBarProps {
   /** Current percent toward target (0..100+); null when no target is set. */

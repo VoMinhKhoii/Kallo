@@ -1,6 +1,7 @@
 'use server';
 
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
+import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import {
   getNutritionPeriod,
   getPreviousPeriod,
@@ -26,29 +27,16 @@ interface UtcBounds {
   exclusiveEndAt: Date;
 }
 
-function localDateMidnightUtc(
-  date: string,
-  timezoneOffset: number | null
-): number {
-  const midnightUtc = Date.parse(`${date}T00:00:00.000Z`);
-  return timezoneOffset === null
-    ? midnightUtc
-    : midnightUtc + timezoneOffset * 60_000;
-}
-
 function getUtcBounds(
   period: { startDate: string; endDate: string },
   timezoneOffset: number | null
 ): UtcBounds {
-  const startAt = new Date(
-    localDateMidnightUtc(period.startDate, timezoneOffset)
-  );
-  const exclusiveEnd =
-    localDateMidnightUtc(period.endDate, timezoneOffset) + 24 * 60 * 60 * 1000;
+  // A null offset means "bucket in UTC", which is the zero shift.
+  const offset = timezoneOffset ?? 0;
 
   return {
-    startAt,
-    exclusiveEndAt: new Date(exclusiveEnd),
+    startAt: getUtcDayRangeForLocalDate(period.startDate, offset).dayStart,
+    exclusiveEndAt: getUtcDayRangeForLocalDate(period.endDate, offset).dayEnd,
   };
 }
 

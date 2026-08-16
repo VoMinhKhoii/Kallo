@@ -1,9 +1,13 @@
 import type { SQL, SQLWrapper } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 
+import {
+  dayKeyToUtcDate,
+  toLocalCalendarDate,
+  toUtcDayKey,
+} from '@/lib/date/day-key';
+import { MS_PER_DAY } from '@/lib/date/ms';
 import type { BucketTimezone, NutritionRange } from '../types';
-
-const DAY_MS = 86_400_000;
 
 const RANGE_DAYS: Record<NutritionRange, number> = {
   '1d': 1,
@@ -24,10 +28,6 @@ interface NutritionPeriod {
   bucketTimezone: BucketTimezone;
 }
 
-function formatIsoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
 export function getNutritionPeriod({
   range,
   now = new Date(),
@@ -35,11 +35,8 @@ export function getNutritionPeriod({
 }: GetNutritionPeriodOptions): NutritionPeriod {
   const bucketTimezone: BucketTimezone =
     timezoneOffset === null ? 'utc' : 'local';
-  const localizedNow = new Date(
-    timezoneOffset === null
-      ? now.getTime()
-      : now.getTime() - timezoneOffset * 60_000
-  );
+  // A null offset means "bucket in UTC", which is the zero shift.
+  const localizedNow = toLocalCalendarDate(now, timezoneOffset ?? 0);
   // 7d is the CURRENT calendar week, Monday→Sunday — not a trailing seven days.
   // A window that starts on a rolling weekday can't be compared week to week,
   // and the weekday initials under the columns stop lining up with anything.
@@ -51,8 +48,8 @@ export function getNutritionPeriod({
     const sunday = new Date(monday);
     sunday.setUTCDate(sunday.getUTCDate() + 6);
     return {
-      startDate: formatIsoDate(monday),
-      endDate: formatIsoDate(sunday),
+      startDate: toUtcDayKey(monday),
+      endDate: toUtcDayKey(sunday),
       bucketTimezone,
     };
   }
@@ -62,8 +59,8 @@ export function getNutritionPeriod({
   startDate.setUTCDate(startDate.getUTCDate() - (RANGE_DAYS[range] - 1));
 
   return {
-    startDate: formatIsoDate(startDate),
-    endDate: formatIsoDate(localizedNow),
+    startDate: toUtcDayKey(startDate),
+    endDate: toUtcDayKey(localizedNow),
     bucketTimezone,
   };
 }
@@ -94,9 +91,9 @@ export function getPreviousPeriod(period: {
   startDate: string;
   endDate: string;
 }): { startDate: string; endDate: string } {
-  const start = new Date(`${period.startDate}T00:00:00.000Z`);
-  const end = new Date(`${period.endDate}T00:00:00.000Z`);
-  const days = Math.round((end.getTime() - start.getTime()) / DAY_MS) + 1;
+  const start = dayKeyToUtcDate(period.startDate);
+  const end = dayKeyToUtcDate(period.endDate);
+  const days = Math.round((end.getTime() - start.getTime()) / MS_PER_DAY) + 1;
 
   const previousEnd = new Date(start);
   previousEnd.setUTCDate(previousEnd.getUTCDate() - 1);
@@ -104,7 +101,7 @@ export function getPreviousPeriod(period: {
   previousStart.setUTCDate(previousStart.getUTCDate() - (days - 1));
 
   return {
-    startDate: formatIsoDate(previousStart),
-    endDate: formatIsoDate(previousEnd),
+    startDate: toUtcDayKey(previousStart),
+    endDate: toUtcDayKey(previousEnd),
   };
 }

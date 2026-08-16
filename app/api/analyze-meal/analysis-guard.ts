@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import { db } from '@/lib/db';
 import { analysisGuardEvents } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import type { AnalysisGuardAllowedResult } from '@/lib/rate-limit/analysis-guard-types';
 import {
   buildAnalysisGuardEvent,

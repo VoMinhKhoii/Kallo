@@ -18,7 +18,7 @@ import {
   cookingHabitsSchema,
 } from '@/lib/onboarding/schemas';
 import type { CookingHabits } from '@/lib/onboarding/types';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 interface ScreenCookingProps {
   defaultValues: Partial<CookingHabits>;

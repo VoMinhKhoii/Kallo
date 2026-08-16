@@ -5,7 +5,7 @@ const { mockRequireAuthAndProfile, mockLimit } = vi.hoisted(() => ({
   mockLimit: vi.fn(),
 }));
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile: mockRequireAuthAndProfile,
 }));
 
@@ -20,7 +20,7 @@ vi.mock('@/lib/db', () => {
   return { db: chain };
 });
 
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getFoodSourceCandidates } from '@/lib/nutrition/actions/candidates';
 
 describe('getFoodSourceCandidates', () => {

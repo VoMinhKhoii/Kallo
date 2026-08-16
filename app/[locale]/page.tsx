@@ -19,8 +19,8 @@ import { googleWebClientId } from '@/lib/auth/google-client-id';
 import { safeNextPath } from '@/lib/auth/safe-next';
 import { getDocsTree } from '@/lib/docs/tree';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
+import { SITE_URL } from '@/lib/seo/site';
 import { landingStructuredData } from '@/lib/seo/structured-data';
-import { SITE_URL } from '@/lib/site';
 import { createClient } from '@/lib/supabase/server';
 
 /**

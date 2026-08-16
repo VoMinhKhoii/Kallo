@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/popover';
 import { useIsMobile } from '@/hooks/ui/use-mobile';
 import type { ClientVessel } from '@/lib/ai/portion/vessel-types';
-import { applyQuantityChange } from '@/lib/meal-utils';
+import { applyQuantityChange } from '@/lib/meals/quantity-recalculation';
 import type { MealItem } from '@/lib/types/meal';
 
 interface PortionPickerProps {

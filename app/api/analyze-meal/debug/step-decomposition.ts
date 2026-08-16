@@ -6,7 +6,7 @@ import { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/ids';
 import { ingredientDisplayName } from '@/lib/ai/pipeline/ingredient-accessors';
 import { mealDecompositionSchema } from '@/lib/ai/pipeline/schemas';
 import { getDecompositionPromptBuilder } from '@/lib/ai/prompts';
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
 
 import { DEBUG_LLM_TIMEOUT_MS, serializeAttempt } from './debug-shared';
 

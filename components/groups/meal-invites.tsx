@@ -10,7 +10,7 @@ import {
   useDismissMealShareInvite,
   useMealShareInvites,
 } from '@/hooks/social/use-meal-share-invites';
-import type { MealShareInvite } from '@/lib/groups/client';
+import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
 
 function formatKcal(value: number | null, na: string): string {
   return value == null ? na : `${Math.round(value)} kcal`;

@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ZodError } from 'zod';
 
 var mockDbSelect: ReturnType<typeof vi.fn>;
 var mockBuildCalorieAdherenceHeatmapData: ReturnType<typeof vi.fn>;
 var mockLoadWeightSummaryAction: ReturnType<typeof vi.fn>;
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: { id: 'user-123', email: 'test@example.com' },
     profile: {
@@ -202,5 +203,50 @@ describe('loadVerdictAction', () => {
       range: '30d',
       timezoneOffset: 0,
     });
+  });
+});
+
+/**
+ * Both dashboard actions validate the same `timezoneOffset` field, so they must
+ * accept the same values. Real UTC offsets span -12:00..+14:00; expressed in
+ * the codebase's `Date.getTimezoneOffset()` sign convention (inverted) that is
+ * -840..720, which is what the shared `timezoneOffsetSchema` enforces.
+ */
+describe('dashboard timezoneOffset validation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /** Whichever error the action throws, was it the input validation? */
+  async function zodErrorFrom(run: () => Promise<unknown>) {
+    try {
+      await run();
+      return null;
+    } catch (error) {
+      return error instanceof ZodError ? error : null;
+    }
+  }
+
+  const heatmap = (timezoneOffset: number) => () =>
+    loadCalorieAdherenceHeatmap({ range: '30d', timezoneOffset });
+  const verdict = (timezoneOffset: number) => () =>
+    loadVerdictAction({ timezoneOffset });
+
+  it.each([
+    -1441, -1440, -841, 721, 1440, 1441,
+  ])('both actions reject out-of-range offset %i', async (timezoneOffset) => {
+    expect(await zodErrorFrom(heatmap(timezoneOffset))).toBeInstanceOf(
+      ZodError
+    );
+    expect(await zodErrorFrom(verdict(timezoneOffset))).toBeInstanceOf(
+      ZodError
+    );
+  });
+
+  it.each([
+    -840, -420, 0, 330, 720,
+  ])('both actions accept in-range offset %i', async (timezoneOffset) => {
+    expect(await zodErrorFrom(heatmap(timezoneOffset))).toBeNull();
+    expect(await zodErrorFrom(verdict(timezoneOffset))).toBeNull();
   });
 });

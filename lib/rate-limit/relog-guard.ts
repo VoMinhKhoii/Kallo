@@ -1,4 +1,4 @@
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { checkAnalysisGuards } from '@/lib/rate-limit/analysis-guards';
 
 /**

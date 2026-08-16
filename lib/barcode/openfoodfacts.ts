@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
 import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 // Open Food Facts can be slow/unresponsive; bound the wait so the server
 // action (awaited directly by the client dialog) never hangs indefinitely.

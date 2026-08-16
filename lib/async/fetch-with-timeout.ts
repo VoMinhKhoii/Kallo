@@ -1,12 +1,17 @@
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 
 /**
- * Wrap an async operation with a timeout.
+ * Wrap an async operation with a timeout, aborting it when the timeout fires.
+ *
+ * **The `lib/async` pair.** This folder holds the two ways to bound a slow
+ * operation, and they split on one question: can the work be cancelled? This
+ * one aborts the operation through an `AbortSignal`;
+ * `@/lib/async/with-deadline` does NOT — it only stops awaiting.
  *
  * **Important**: This is intended for `fetch` calls and other abort-aware
  * operations. Do NOT use for database queries — `postgres.js` has no
- * `AbortSignal` support, so the underlying query continues running even
- * after the timeout fires.
+ * `AbortSignal` support, so the underlying query continues running even after
+ * the timeout fires. Use `withDeadline` for those.
  *
  * @param fn      — Async function to execute. Receives an `AbortSignal`
  *                  that callers can forward to `fetch()`.

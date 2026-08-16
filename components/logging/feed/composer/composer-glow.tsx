@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from 'motion/react';
 import { EMPTY_ENTRANCE, ENTRANCE_EASE } from '@/lib/logging/empty-entrance';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 /**
  * The warm halo behind the meal composer.

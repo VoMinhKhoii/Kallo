@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import type { NutrientCardData } from '@/lib/nutrition/types';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import {
   formatLocalizedNumber,
   isLowConfidence,

@@ -3,11 +3,11 @@
 import { and, eq } from 'drizzle-orm';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import { duplicateMealSchema } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { mealItems, meals } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import type { ConfirmMealResponse } from './types';
 
 // ---------------------------------------------------------------------------

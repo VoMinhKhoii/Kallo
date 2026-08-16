@@ -10,9 +10,10 @@ import {
   meals,
   publicProfiles,
 } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { todayLocalDate } from '@/lib/groups/meal-feed';
-import { circleFeedSchema, createChatGroupSchema } from '@/lib/validation';
+import { createChatGroupSchema } from '@/lib/validation/chat';
+import { circleFeedSchema } from '@/lib/validation/social';
 import { ensureDirectChatsForAcceptedFriends } from './direct-chats';
 import { acceptedFriendsAmong, type ChatGroupDb } from './membership';
 import type { ChatGroupIdentity } from './types';

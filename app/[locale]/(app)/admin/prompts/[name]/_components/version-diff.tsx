@@ -1,5 +1,5 @@
 import { diffLines } from 'diff';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 interface VersionDiffProps {
   labelA: string;

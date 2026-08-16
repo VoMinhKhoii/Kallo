@@ -22,7 +22,7 @@ const { mockUser, mockCanViewShare, mockTxSelect, mockTxInsert, mockTx } =
     };
   });
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: mockUser,
     profile: {},

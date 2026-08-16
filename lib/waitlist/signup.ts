@@ -4,8 +4,8 @@ import { type AppDb, db as appDb } from '@/lib/db';
 import { waitlistSignups } from '@/lib/db/schema';
 import { sendEmail as defaultSendEmail } from '@/lib/email/send';
 import { waitlistConfirmEmail } from '@/lib/email/templates/waitlist';
-import { Errors } from '@/lib/errors';
-import { SITE_URL } from '@/lib/site';
+import { Errors } from '@/lib/errors/catalog';
+import { SITE_URL } from '@/lib/seo/site';
 import { hashIp, issueConfirmationToken } from '@/lib/waitlist/token';
 
 /**

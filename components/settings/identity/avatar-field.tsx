@@ -6,7 +6,7 @@ import { useRef } from 'react';
 import { toast } from 'sonner';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { useRemoveAvatar, useUploadAvatar } from '@/hooks/profile/use-profile';
-import type { PublicProfile } from '@/lib/groups/client';
+import type { PublicProfile } from '@/lib/actions/groups/types';
 import { IMAGE_TYPES, MAX_IMAGE_BYTES } from '@/lib/uploads/image-file';
 
 const BUTTON_CLASS =

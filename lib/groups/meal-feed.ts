@@ -17,6 +17,7 @@ import {
   or,
   sql,
 } from 'drizzle-orm';
+import { toLocalDayKey } from '@/lib/date/day-key';
 import type { AppDb, AppTransaction } from '@/lib/db';
 import { db as defaultDb } from '@/lib/db';
 import {
@@ -67,8 +68,7 @@ export interface SharedMealRow {
 
 /** Local calendar date (YYYY-MM-DD) for a viewer's timezone offset. */
 export function todayLocalDate(timezoneOffset: number): string {
-  const local = new Date(Date.now() - timezoneOffset * 60 * 1000);
-  return local.toISOString().slice(0, 10);
+  return toLocalDayKey(Date.now(), timezoneOffset);
 }
 
 /**

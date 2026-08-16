@@ -3,7 +3,7 @@
 import { Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { chromeIntentUrl, isAndroid } from '@/lib/in-app-browser';
+import { chromeIntentUrl, isAndroid } from '@/lib/platform/in-app-browser';
 
 /**
  * Shown in place of the Google button when the app runs inside an in-app

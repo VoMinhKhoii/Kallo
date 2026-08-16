@@ -1,7 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 import { getBillingConfig } from '@/lib/entitlements/config';
 import { checkFeatureAccess } from '@/lib/entitlements/service';
-import { Errors, type FeatureLockedReason } from '@/lib/errors';
+import type { FeatureLockedReason } from '@/lib/errors/app-error';
+import { Errors } from '@/lib/errors/catalog';
 
 interface BillingAccessInput {
   locale: string;

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 
 const MAX_UUID = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
 const POSTGRES_TIMESTAMP =

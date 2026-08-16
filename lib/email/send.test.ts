@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppError } from '@/lib/errors';
+import { AppError } from '@/lib/errors/app-error';
 
 const sendMock = vi.fn();
 

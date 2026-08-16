@@ -7,7 +7,7 @@ import {
 } from '@/lib/ai/matching/embedding-cache';
 import { ingredientSearchQuerySchema } from '@/lib/api/contracts/ingredients';
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import type { IngredientSearchResult } from '@/lib/logging/manual-logging';
 

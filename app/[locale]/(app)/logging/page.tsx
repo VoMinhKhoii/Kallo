@@ -9,7 +9,8 @@ import {
   LoggingShell,
 } from '@/components/logging/logging-shell';
 import { dayHasEntries } from '@/lib/actions/meals/day-has-entries';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
+import { toLocalDayKey } from '@/lib/date/day-key';
 import { parseLoggingSearchParams } from './search-params';
 
 const DEFAULT_PROFILE: LoggingProfile = {
@@ -87,16 +88,11 @@ async function readInitiallyHasEntries(
 
   try {
     return await dayHasEntries({
-      date: date ?? todayInOffset(timezoneOffset),
+      // Today in the browser's zone is the day the feed opens on.
+      date: date ?? toLocalDayKey(Date.now(), timezoneOffset),
       timezoneOffset,
     });
   } catch {
     return undefined;
   }
-}
-
-/** Today's date in the browser's zone, which is the day the feed opens on. */
-function todayInOffset(timezoneOffset: number): string {
-  const local = new Date(Date.now() - timezoneOffset * 60_000);
-  return local.toISOString().slice(0, 10);
 }

@@ -10,6 +10,7 @@ import {
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
+import { formatTime } from '@/lib/date/format-time';
 import { MealAmountEditor } from './meal-amount-editor';
 import { MealDetails } from './meal-details';
 // The NL-refine is submitted as `${rawInput} (${correction})` — the joining
@@ -48,10 +49,7 @@ export function PrecisePersistedMealCard({
   // works for tweaking the share).
   const refine = isFractional ? undefined : onRefine;
 
-  const timeLabel = new Date(meal.loggedAt).toLocaleTimeString(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const timeLabel = formatTime(meal.loggedAt, locale);
 
   const calories = formatCaloriesOrNA(meal.nutrition.caloriesKcal);
   const protein = formatMacroOrNA(meal.nutrition.proteinG);

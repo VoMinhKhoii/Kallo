@@ -5,7 +5,7 @@ import { useMyChatGroups } from '@/hooks/social/use-chat-groups';
 import { useCircleFeed } from '@/hooks/social/use-circle-feed';
 import { useFriendsFeedReadMarker } from '@/hooks/social/use-friend-thread-feed';
 import { Link, usePathname } from '@/i18n/navigation';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 const PILL_BASE =
   'inline-flex items-center gap-[7px] whitespace-nowrap rounded-full ' +

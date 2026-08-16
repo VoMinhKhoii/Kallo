@@ -12,10 +12,10 @@ import {
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import type { NutritionValues } from '@/lib/ai/types';
 import { updateMealSchema } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { mealItems, mealShares, meals } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import type { ConfirmMealResponse } from './types';
 
 const deleteMealSchema = z.object({

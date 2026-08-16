@@ -1,5 +1,5 @@
+import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import type { AppDb } from '@/lib/db';
-import { mapWithConcurrency } from '@/lib/utils';
 import {
   fetchInediblePctForIds,
   getInedibleCache,

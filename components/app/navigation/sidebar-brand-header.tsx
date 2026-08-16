@@ -4,7 +4,7 @@ import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { KalloMark } from '@/components/brand/kallo-mark';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { SidebarTooltip } from './sidebar-tooltip';
 
 interface SidebarBrandHeaderProps {

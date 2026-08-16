@@ -1,7 +1,7 @@
 import { Link } from '@/i18n/navigation';
 import { formatUtcTimestamp } from '@/lib/admin/format';
 import type { RequestListRow } from '@/lib/admin/queries';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 interface RequestsTableProps {
   rows: RequestListRow[];

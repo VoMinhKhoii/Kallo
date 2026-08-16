@@ -42,7 +42,7 @@ vi.mock('@/hooks/ui/use-in-app-browser', () => ({
   useIsInAppBrowser: () => false,
 }));
 
-vi.mock('@/lib/in-app-browser', () => ({
+vi.mock('@/lib/platform/in-app-browser', () => ({
   isInAppBrowser: () => false,
   isAndroid: () => false,
   chromeIntentUrl: (url: string) => url,

@@ -15,8 +15,8 @@ import {
   ingredientDisplayName as ingredientRawName,
 } from '@/lib/ai/pipeline/ingredient-accessors';
 import type { DecomposedIngredient, UnmatchedIngredient } from '@/lib/ai/types';
+import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import type { AppDb } from '@/lib/db';
-import { mapWithConcurrency } from '@/lib/utils';
 
 /**
  * Phase 3b: alias fallback — retry unmatched ingredients with alias-expanded

@@ -9,7 +9,7 @@ vi.mock('@/lib/db', () => ({
 }));
 
 // Import after mocks are set up
-const { requireAuthAndProfile } = await import('@/lib/auth');
+const { requireAuthAndProfile } = await import('@/lib/auth/session');
 
 // ---------------------------------------------------------------------------
 // Helpers to build mock deps

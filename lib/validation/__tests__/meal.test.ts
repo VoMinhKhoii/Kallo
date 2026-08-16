@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mealMessageSchema, weightLogSchema } from '@/lib/validation';
+import { mealMessageSchema } from '@/lib/validation/meal';
 
 function mealBody(message: string) {
   return {
@@ -184,26 +184,6 @@ describe('mealMessageSchema', () => {
         },
       ],
     });
-    expect(result.success).toBe(false);
-  });
-});
-
-describe('weightLogSchema', () => {
-  it('accepts a real calendar date', () => {
-    const result = weightLogSchema.safeParse({
-      loggedDate: '2026-04-24',
-      weightKg: 70.5,
-    });
-
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects impossible calendar dates', () => {
-    const result = weightLogSchema.safeParse({
-      loggedDate: '2026-02-30',
-      weightKg: 70.5,
-    });
-
     expect(result.success).toBe(false);
   });
 });

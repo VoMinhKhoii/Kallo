@@ -1,7 +1,7 @@
 import type { InferSelectModel } from 'drizzle-orm';
 import type { RequestDetailLlmCall } from '@/lib/admin/queries';
 import type { pipelineLlmCalls, pipelineStageLogs } from '@/lib/db/schema';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { JsonViewer } from './json-viewer';
 
 type StageLog = InferSelectModel<typeof pipelineStageLogs>;

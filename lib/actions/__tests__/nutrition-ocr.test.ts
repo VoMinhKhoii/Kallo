@@ -30,7 +30,7 @@ const { mockRequireAuthAndProfile, mockUser } = vi.hoisted(() => ({
   mockUser: { id: 'user-123', email: 'test@example.com' },
 }));
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile: mockRequireAuthAndProfile,
 }));
 

@@ -7,7 +7,7 @@ import {
   type StageRelogAnalysisInput,
   stageRelogAnalysisSchema,
 } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { buildRelogPipelineResult } from '@/lib/logging/relog/build-relog-pipeline-result';

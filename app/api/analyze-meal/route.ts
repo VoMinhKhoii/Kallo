@@ -14,9 +14,9 @@ import {
 } from '@/lib/ai/pipeline/telemetry/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
+import { withDeadline } from '@/lib/async/with-deadline';
 import { db } from '@/lib/db';
 import { buildRelogRawInput } from '@/lib/logging/relog/relog';
-import { withDeadline } from '@/lib/with-deadline';
 import { acquireAnalysisGuard } from './analysis-guard';
 import { applyRelogRefs } from './apply-relog-refs';
 import { getBillingAccessError } from './billing-access';

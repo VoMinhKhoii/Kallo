@@ -4,7 +4,7 @@ import { Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-import { MEAL_TEXT_MAX_LENGTH } from '@/lib/validation';
+import { MEAL_TEXT_MAX_LENGTH } from '@/lib/validation/meal';
 
 // The NL-refine is submitted as `${rawInput} (${correction})` — the joining
 

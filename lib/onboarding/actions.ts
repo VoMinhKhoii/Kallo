@@ -3,7 +3,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
 import { hasSavedOnboardingProfileData } from '@/lib/onboarding/progress';
 import { createClient } from '@/lib/supabase/server';

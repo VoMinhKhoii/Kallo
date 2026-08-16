@@ -2,15 +2,18 @@
 
 import { and, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { groupOccasions } from '@/lib/cheat/occasion-grouping';
 import { withLevelsAsDefaults } from '@/lib/cheat/slider-nutrition';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { meals, pendingAnalyses } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import type { CheatSliderSpec, CheatSlidersPersisted } from '@/lib/types/cheat';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/validation/primitives';
 import type { RecentCheatOccasion } from './types';
 
 // ---------------------------------------------------------------------------

@@ -12,8 +12,8 @@
 import { and, eq } from 'drizzle-orm';
 import { db as defaultDb } from '@/lib/db';
 import { mealShares, meals } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
-import { setMealShareVisibilitySchema } from '@/lib/validation';
+import { Errors } from '@/lib/errors/catalog';
+import { setMealShareVisibilitySchema } from '@/lib/validation/social';
 
 type Db = typeof defaultDb;
 

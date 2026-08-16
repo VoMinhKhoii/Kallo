@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { formatKcal, formatMacro } from '@/lib/logging/manual-logging';
 import type { RelogCandidate } from '@/lib/logging/relog/relog';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 interface RelogPickerOptionProps {
   candidate: RelogCandidate;

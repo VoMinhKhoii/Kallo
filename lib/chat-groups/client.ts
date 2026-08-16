@@ -1,46 +1,19 @@
 // ---------------------------------------------------------------------------
-// Chat groups — client-side REST helpers + response types
+// Chat groups — client-side REST helpers
 // ---------------------------------------------------------------------------
 // Thin fetch wrappers around /api/v1/chat-groups/* used by the TanStack hooks.
-// Mirrors lib/groups/client.ts's conventions; kept in its own module since
-// chat-groups is a separate domain from the Circle friend-graph (see
-// lib/actions/chat-groups.ts's module comment for why).
+// Transport only; kept in its own module since chat-groups is a separate domain
+// from the Circle friend-graph (see lib/actions/chat-groups.ts's module comment
+// for why). Response shapes live in lib/actions/chat-groups/types — import them
+// from there, not from here.
 
 import type {
   ChatGroupDetail,
   ChatGroupIdentity,
-  ChatGroupMember,
   ChatGroupMessage,
-  GroupMealFeedEntry,
   GroupMealFeedPage,
-} from '@/lib/actions/chat-groups';
-import { parseApiError } from '@/lib/errors';
-
-export type {
-  ChatGroupDetail,
-  ChatGroupIdentity,
-  ChatGroupMember,
-  ChatGroupMessage,
-  GroupMealFeedEntry,
-  GroupMealFeedPage,
-};
-
-async function request<T>(input: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw parseApiError(body);
-  }
-  return response.json() as Promise<T>;
-}
-
-function postJson<T>(url: string, body: unknown): Promise<T> {
-  return request<T>(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-}
+} from '@/lib/actions/chat-groups/types';
+import { postJson, request } from '@/lib/api/client-fetch';
 
 /** Create a named group chat from a multi-select of the actor's friends. */
 export function createChatGroup(input: {

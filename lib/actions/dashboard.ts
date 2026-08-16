@@ -2,11 +2,14 @@
 
 import { and, asc, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import {
   buildCalorieAdherenceHeatmapData,
   getLocalDateKey,
 } from '@/lib/dashboard/adherence';
+import { dayKeyToUtcDate, toUtcDayKey } from '@/lib/date/day-key';
+import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
+import { MS_PER_DAY } from '@/lib/date/ms';
 import { db } from '@/lib/db';
 import { bodyWeightLog, meals } from '@/lib/db/schema';
 import type {
@@ -14,15 +17,16 @@ import type {
   HeatmapRange,
   VerdictData,
 } from '@/lib/types/dashboard';
+import { timezoneOffsetSchema } from '@/lib/validation/primitives';
 import { loadWeightSummaryAction } from './weight';
 
 const loadCalorieAdherenceHeatmapSchema = z.object({
   range: z.enum(['30d', '90d', 'year']),
-  timezoneOffset: z.number().int().min(-840).max(720),
+  timezoneOffset: timezoneOffsetSchema,
 });
 
 const loadVerdictSchema = z.object({
-  timezoneOffset: z.number().int().min(-1440).max(1440),
+  timezoneOffset: timezoneOffsetSchema,
 });
 
 const RANGE_DAYS = {
@@ -30,23 +34,15 @@ const RANGE_DAYS = {
   '90d': 90,
 } as const;
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 function addDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * MS_PER_DAY);
-}
-
-function dateKeyToUtcDate(dateKey: string): Date {
-  return new Date(`${dateKey}T00:00:00.000Z`);
 }
 
 function getUtcBoundaryForLocalDate(
   dateKey: string,
   timezoneOffset: number
 ): Date {
-  const boundary = dateKeyToUtcDate(dateKey);
-  boundary.setTime(boundary.getTime() + timezoneOffset * 60 * 1000);
-  return boundary;
+  return getUtcDayRangeForLocalDate(dateKey, timezoneOffset).dayStart;
 }
 
 function average(values: number[]): number {
@@ -63,7 +59,7 @@ export async function loadCalorieAdherenceHeatmap(input: {
 
   const now = new Date();
   const endKey = getLocalDateKey(now, parsed.timezoneOffset);
-  const endDate = dateKeyToUtcDate(endKey);
+  const endDate = dayKeyToUtcDate(endKey);
   const startDate =
     parsed.range === 'year'
       ? new Date(Date.UTC(Number(endKey.slice(0, 4)), 0, 1))
@@ -72,8 +68,8 @@ export async function loadCalorieAdherenceHeatmap(input: {
     parsed.range === 'year'
       ? new Date(Date.UTC(Number(endKey.slice(0, 4)) + 1, 0, 1))
       : addDays(endDate, 1);
-  const startKey = startDate.toISOString().slice(0, 10);
-  const nextEndKey = rangeEndDate.toISOString().slice(0, 10);
+  const startKey = toUtcDayKey(startDate);
+  const nextEndKey = toUtcDayKey(rangeEndDate);
 
   const utcStart = getUtcBoundaryForLocalDate(startKey, parsed.timezoneOffset);
   const utcEnd = getUtcBoundaryForLocalDate(nextEndKey, parsed.timezoneOffset);
@@ -126,10 +122,10 @@ export async function loadVerdictAction(input: {
 
   const now = new Date();
   const endKey = getLocalDateKey(now, timezoneOffset);
-  const endDate = dateKeyToUtcDate(endKey);
+  const endDate = dayKeyToUtcDate(endKey);
   const startDate = addDays(endDate, -6);
-  const startKey = startDate.toISOString().slice(0, 10);
-  const nextEndKey = addDays(endDate, 1).toISOString().slice(0, 10);
+  const startKey = toUtcDayKey(startDate);
+  const nextEndKey = toUtcDayKey(addDays(endDate, 1));
   const utcStart = getUtcBoundaryForLocalDate(startKey, timezoneOffset);
   const utcEnd = getUtcBoundaryForLocalDate(nextEndKey, timezoneOffset);
 
@@ -153,8 +149,8 @@ export async function loadVerdictAction(input: {
     orderedWeights.length > 0 ? currentWeight - firstWeight : 0;
   const elapsedDays =
     firstWeightRow && lastWeightRow
-      ? (dateKeyToUtcDate(lastWeightRow.loggedDate).getTime() -
-          dateKeyToUtcDate(firstWeightRow.loggedDate).getTime()) /
+      ? (dayKeyToUtcDate(lastWeightRow.loggedDate).getTime() -
+          dayKeyToUtcDate(firstWeightRow.loggedDate).getTime()) /
         MS_PER_DAY
       : 0;
   const weeklyRate =

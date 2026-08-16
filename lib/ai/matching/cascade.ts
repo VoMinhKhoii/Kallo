@@ -25,8 +25,8 @@ import type {
   MatchedIngredient,
   UnmatchedIngredient,
 } from '@/lib/ai/types';
+import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import type { AppDb } from '@/lib/db';
-import { mapWithConcurrency } from '@/lib/utils';
 
 // Re-export all constants and types for backward compat (index.ts barrel imports from here)
 export { rerankCandidates } from './candidate-ranking';

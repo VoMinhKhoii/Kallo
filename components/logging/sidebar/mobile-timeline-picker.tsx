@@ -20,7 +20,7 @@ import {
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import {
   addDays,
   buildCenteredStripFromAnchor,

@@ -8,7 +8,7 @@ import { WebviewGoogleNotice } from '@/components/auth/webview-google-notice';
 import { GoogleLogo } from '@/components/shared/brand-logos';
 import { useGoogleIdentity } from '@/hooks/auth/use-google-identity';
 import { useIsInAppBrowser } from '@/hooks/ui/use-in-app-browser';
-import { isInAppBrowser } from '@/lib/in-app-browser';
+import { isInAppBrowser } from '@/lib/platform/in-app-browser';
 import { createClient } from '@/lib/supabase/client';
 
 export function GoogleSignInButton() {

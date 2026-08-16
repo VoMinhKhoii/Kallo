@@ -6,10 +6,10 @@
 
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { mealShareReplies, mealShares, publicProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import {
   publicProfileColumns,
   toPublicIdentity,

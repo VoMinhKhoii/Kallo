@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { parseDecimalInput } from '@/lib/utils';
+import { parseDecimalInput } from '@/lib/text/parse-decimal';
 
 type DecimalInputProps = Omit<
   React.ComponentProps<'input'>,

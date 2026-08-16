@@ -1,5 +1,5 @@
 import { ArrowRight, CheckCircle2, CircleSlash, XCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { CandidatePool } from './matching/candidate-pool';
 import { pickConfidenceTone } from './stage-primitives';
 import type { MatchDiagnosticRow } from './types';

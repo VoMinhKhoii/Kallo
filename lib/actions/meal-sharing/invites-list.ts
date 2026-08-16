@@ -1,7 +1,7 @@
 'use server';
 
 import { and, desc, eq, or } from 'drizzle-orm';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import {
   friendships,

@@ -5,8 +5,8 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import type { FriendsThreadFeedPage } from '@/lib/actions/groups/types';
 import {
-  type FriendsThreadFeedPage,
   fetchFriendsFeedReadMarker,
   fetchFriendsThreadFeed,
 } from '@/lib/groups/client';

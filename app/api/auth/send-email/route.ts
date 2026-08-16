@@ -6,7 +6,7 @@ import {
   resolveAuthEmails,
 } from '@/lib/email/auth-email';
 import { sendEmail as defaultSendEmail } from '@/lib/email/send';
-import { isAppError } from '@/lib/errors';
+import { isAppError } from '@/lib/errors/app-error';
 import {
   readSignatureHeaders,
   verifyStandardWebhook,

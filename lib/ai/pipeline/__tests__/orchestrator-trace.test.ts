@@ -62,7 +62,7 @@ vi.mock('@/lib/ai/pipeline/telemetry/trace', () => ({
   _resetPromptVersionCacheForTests: vi.fn(),
 }));
 
-vi.mock('@/lib/fetch-with-timeout', () => ({
+vi.mock('@/lib/async/fetch-with-timeout', () => ({
   fetchWithTimeout: (fn: (signal: AbortSignal) => unknown) =>
     fn(new AbortController().signal),
 }));

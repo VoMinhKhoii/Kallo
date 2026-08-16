@@ -7,10 +7,11 @@ import {
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
-import { Errors, serializeError } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
+import { serializeError } from '@/lib/errors/serialize';
 import type { AnalysisGuardAllowedResult } from '@/lib/rate-limit/analysis-guard-types';
 import { createClient } from '@/lib/supabase/server';
-import { mealMessageSchema } from '@/lib/validation';
+import { mealMessageSchema } from '@/lib/validation/meal';
 
 // Shared with the waitlist route; the implementation lives in lib/security.
 export { getRequestIp } from '@/lib/security/request-ip';

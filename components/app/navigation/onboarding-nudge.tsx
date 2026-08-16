@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useTransition } from 'react';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 /**
  * Warm, on-brand onboarding-incomplete nudge.

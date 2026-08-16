@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { barcodeSchema } from '@/lib/api/contracts/barcode';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
 import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
 import {
@@ -11,7 +11,10 @@ import {
   stageBarcodeMeal,
 } from '@/lib/barcode/service';
 import type { BarcodeErrorCode } from '@/lib/barcode/types';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/validation/primitives';
 
 export type { BarcodeErrorCode } from '@/lib/barcode/types';
 

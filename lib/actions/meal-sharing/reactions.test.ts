@@ -25,7 +25,7 @@ const {
   };
 });
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: mockUser,
     profile: {},

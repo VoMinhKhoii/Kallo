@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { timezoneOffsetSchema as sharedTimezoneOffsetSchema } from '@/lib/validation/primitives';
 import { CANDIDATE_NUTRIENTS } from './catalog/nutrients';
 
 export const nutritionRangeSchema = z.enum(['1d', '7d', '30d', '90d']);
@@ -9,12 +10,9 @@ export const nutritionRangeInputSchema = z.enum([
   '30d',
   '90d',
 ]);
-export const timezoneOffsetSchema = z
-  .number()
-  .int()
-  .min(-840)
-  .max(720)
-  .nullable();
+// Same range as the shared primitive, but nullable: a nutrition query may omit
+// the offset entirely. Derived rather than restated so the bounds stay in one place.
+export const timezoneOffsetSchema = sharedTimezoneOffsetSchema.nullable();
 
 export const nutritionDayScopeSchema = z.enum(['all', 'complete']);
 

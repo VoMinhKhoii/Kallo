@@ -19,12 +19,13 @@ import {
   defaultLevels,
   resolveSliderNutrition,
 } from '@/lib/cheat/slider-nutrition';
+import { formatTime } from '@/lib/date/format-time';
 import type {
   CheatSlider,
   CheatSliderLevels,
   CheatSliderSpec,
 } from '@/lib/types/cheat';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 // One food-domain icon per macro axis — encodes the slider's identity (and
 // shares its accent color), replacing the decorative status dot.
@@ -65,10 +66,7 @@ export function CheatSliderCard({
     [spec, levels]
   );
 
-  const timeLabel = timestamp.toLocaleTimeString(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const timeLabel = formatTime(timestamp, locale);
 
   // Vague-input fallback: a single clarifying question instead of sliders.
   if (spec.clarifyingQuestion) {

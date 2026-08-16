@@ -9,13 +9,16 @@
  *   - `export type` re-exports of the actions' return types (erased at runtime).
  */
 import { z } from 'zod';
+import { relogRefSchema } from '@/lib/validation/meal';
 import {
   dateStringSchema,
-  relogRefSchema,
   timezoneOffsetSchema,
-} from '@/lib/validation';
+} from '@/lib/validation/primitives';
 
-export { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+export {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/validation/primitives';
 
 /**
  * Request body for `POST /api/v1/meals/confirm` → `confirmAndSaveMealAction`.

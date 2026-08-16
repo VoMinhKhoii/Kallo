@@ -9,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { db as defaultDb } from '@/lib/db';
 import { publicProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import type { createClient } from '@/lib/supabase/server';
 import { processAvatarImage } from '@/lib/uploads/avatar-image';
 import {

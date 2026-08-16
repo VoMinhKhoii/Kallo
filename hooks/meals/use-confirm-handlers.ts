@@ -20,7 +20,7 @@ import type {
   MacroBreakdown,
   MealQuantityEdit,
 } from '@/lib/types/meal';
-import { MEAL_TEXT_MAX_LENGTH } from '@/lib/validation';
+import { MEAL_TEXT_MAX_LENGTH } from '@/lib/validation/meal';
 
 const emptyMacros: MacroBreakdown = {
   calories: 0,

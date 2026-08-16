@@ -18,7 +18,7 @@ import {
   rowMacros,
   totalsForRows,
 } from '@/lib/logging/manual-logging';
-import { recalculateTotals } from '@/lib/meal-utils';
+import { recalculateTotals } from '@/lib/meals/quantity-recalculation';
 import type { CheatSliderLevels, CheatSliderSpec } from '@/lib/types/cheat';
 import type { MacroBreakdown, MealItem, ParsedMeal } from '@/lib/types/meal';
 

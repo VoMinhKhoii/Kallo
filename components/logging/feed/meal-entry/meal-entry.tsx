@@ -8,11 +8,12 @@ import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entr
 import { MealEntryItem } from '@/components/logging/feed/meal-entry/meal-entry-item';
 import { PortionPicker } from '@/components/logging/feed/meal-entry/portion/portion-picker';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
+import { formatTime } from '@/lib/date/format-time';
 import {
   applyQuantityChange,
   deriveQuantityEdits,
   recalculateTotals,
-} from '@/lib/meal-utils';
+} from '@/lib/meals/quantity-recalculation';
 import type { ChatMessage, MealItem, MealQuantityEdit } from '@/lib/types/meal';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a
@@ -77,10 +78,7 @@ export function MealEntry({
     onConfirm?.(edits);
   };
 
-  const timeLabel = message.timestamp.toLocaleTimeString(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const timeLabel = formatTime(message.timestamp, locale);
 
   return (
     <motion.article

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { TocEntry } from '@/lib/docs/toc';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 /**
  * The "on this page" rail, with scroll-spy.

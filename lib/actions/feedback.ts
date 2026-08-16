@@ -6,7 +6,7 @@ import type { SubmitFeedbackInput } from '@/lib/api/contracts/feedback';
 import { submitFeedbackSchema } from '@/lib/api/contracts/feedback';
 import { db } from '@/lib/db';
 import { userFeedback } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { createClient } from '@/lib/supabase/server';
 import {
   IMAGE_TYPES,

@@ -12,7 +12,7 @@ import { PartialYesterdayPrompt } from '@/components/logging/feed/partial-day/pa
 import type { LoggingProfile } from '@/components/logging/logging-shell';
 import { addDays } from '@/components/logging/sidebar/timeline-utils';
 import { useFeedController } from '@/hooks/meals/use-feed-controller';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 interface FeedAreaProps {
   selectedDate: string;

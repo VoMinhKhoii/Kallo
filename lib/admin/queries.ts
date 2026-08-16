@@ -8,10 +8,9 @@ import {
   pipelineRequests,
   pipelineStageLogs,
 } from '@/lib/db/schema';
+import { uuidSchema } from '@/lib/validation/primitives';
 
 // ─── Filters schema ───────────────────────────────────────────────────────────
-
-const uuidSchema = z.string().uuid();
 
 export const requestFiltersSchema = z.object({
   status: z

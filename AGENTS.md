@@ -92,7 +92,7 @@ The full module map — one line per folder stating its single concern — is `d
 - Client data: TanStack Query. Server mutations: Server Actions. `app/api/*` routes only for external access. Errors: `sonner` toast (user) + `console.error` (dev).
 
 ### Styling & UI
-- Tailwind CSS 4 + CSS variables; merge classes with `cn()` from `@/lib/utils`; `next-themes` for dark/light — never hard-code colors.
+- Tailwind CSS 4 + CSS variables; merge classes with `cn()` from `@/lib/ui/cn`; `next-themes` for dark/light — never hard-code colors.
 - Biome formatting: 80-char lines, 2-space indent, single quotes (JS/TS) / double (JSX), semicolons, ES5 trailing commas.
 - `motion` for entrance/exit + complex animations; CSS transitions for simple hover/focus. Skeletons for page loads, spinners for action loads. Semantic HTML, ARIA labels, focus management. `next/image` with explicit dimensions.
 

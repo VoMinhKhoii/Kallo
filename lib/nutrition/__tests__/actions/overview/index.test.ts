@@ -14,7 +14,7 @@ const {
   mockRequireAuthAndProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile: mockRequireAuthAndProfile,
 }));
 
@@ -24,7 +24,7 @@ vi.mock('@/lib/nutrition/actions/overview/query', () => ({
   fetchOverviewRows: mockFetchOverviewRows,
 }));
 
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getNutritionOverview } from '@/lib/nutrition/actions/overview';
 import { fetchOverviewRows } from '@/lib/nutrition/actions/overview/query';
 

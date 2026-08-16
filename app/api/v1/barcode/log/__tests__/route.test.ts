@@ -5,7 +5,7 @@ const requireAuthAndProfile = vi.fn();
 const stageBarcodeMeal = vi.fn();
 const confirmAndSaveMealAction = vi.fn();
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile,
 }));
 
@@ -92,7 +92,7 @@ describe('POST /api/v1/barcode/log', () => {
   });
 
   it('rejects an unauthenticated request with 401', async () => {
-    const { Errors } = await import('@/lib/errors');
+    const { Errors } = await import('@/lib/errors/catalog');
     requireAuthAndProfile.mockRejectedValueOnce(Errors.notAuthenticated());
 
     const res = await POST(makeRequest(validBody));
@@ -115,7 +115,7 @@ describe('POST /api/v1/barcode/log', () => {
   });
 
   it('propagates AppErrors thrown by confirm (e.g. consumed analysis)', async () => {
-    const { Errors } = await import('@/lib/errors');
+    const { Errors } = await import('@/lib/errors/catalog');
     confirmAndSaveMealAction.mockRejectedValueOnce(
       Errors.validationFailed('Phân tích không tồn tại hoặc đã được lưu.')
     );

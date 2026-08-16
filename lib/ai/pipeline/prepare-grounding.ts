@@ -5,8 +5,8 @@
  * streaming or telemetry entanglement beyond the matching stage log.
  */
 
+import { withDeadline } from '@/lib/async/with-deadline';
 import type { AppDb } from '@/lib/db';
-import { withDeadline } from '@/lib/with-deadline';
 import type { GeminiClient } from '../gemini';
 import {
   type IngredientV2MatchResult,

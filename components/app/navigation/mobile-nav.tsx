@@ -17,7 +17,7 @@ import {
 import { useMealShareInviteCount } from '@/hooks/social/use-meal-share-invites';
 import { Link, usePathname } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { MobileMenuButton } from './mobile/mobile-menu-button';
 import { MobileNavList } from './mobile/mobile-nav-list';
 import { deriveLabel } from './mobile/mobile-user-label';

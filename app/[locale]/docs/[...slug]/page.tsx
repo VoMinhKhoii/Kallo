@@ -16,7 +16,7 @@ import {
 import { getToc } from '@/lib/docs/toc';
 import { getDocsLinks } from '@/lib/docs/tree';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
-import { SITE_URL } from '@/lib/site';
+import { SITE_URL } from '@/lib/seo/site';
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>

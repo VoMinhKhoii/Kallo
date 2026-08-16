@@ -3,7 +3,7 @@ import {
   chromeIntentUrl,
   isAndroid,
   isInAppBrowser,
-} from '@/lib/in-app-browser';
+} from '@/lib/platform/in-app-browser';
 
 describe('isInAppBrowser', () => {
   it.each([

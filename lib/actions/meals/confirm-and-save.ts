@@ -16,7 +16,7 @@ import {
   sumBoundedNutrition,
 } from '@/lib/ai/pipeline/goal-adjustment';
 import type { PipelineResult } from '@/lib/ai/types';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import {
   mealItems,
@@ -24,7 +24,7 @@ import {
   pendingAnalyses,
   unmatchedIngredients,
 } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { goalEnumSchema } from '@/lib/onboarding/schemas';
 import type { Goal } from '@/lib/onboarding/types';
 import type { CheatSliderLevels } from '@/lib/types/cheat';

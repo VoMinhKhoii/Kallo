@@ -3,7 +3,7 @@ import { useTranslations } from 'next-intl';
 import { DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Package } from '@/lib/billing/web-purchases';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { PackageCard } from './package-card';
 
 interface PaywallOfferProps {

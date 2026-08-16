@@ -8,13 +8,16 @@ import { and, eq, getTableColumns, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { mealItems, mealShares, meals } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { canViewShare } from '@/lib/groups/share-visibility';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/validation/primitives';
 
 const logSharedMealSchema = z.object({
   shareId: z.string().uuid('shareId phải là UUID hợp lệ.').toLowerCase(),

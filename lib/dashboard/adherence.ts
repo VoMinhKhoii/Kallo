@@ -1,3 +1,9 @@
+import {
+  dayKeyToUtcDate,
+  toLocalDayKey,
+  toUtcDayKey,
+} from '@/lib/date/day-key';
+import { MS_PER_DAY } from '@/lib/date/ms';
 import { classifyDayCompleteness } from '@/lib/nutrition/pattern/completeness';
 import type {
   HeatmapCell,
@@ -28,22 +34,12 @@ const RANGE_DAYS: Record<Exclude<DashboardTimeRange, 'year'>, number> = {
   '90d': 90,
 };
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 /**
  * Fallback calorie target for the per-day ring's progress fill when the profile
  * has none yet (onboarding incomplete). Mirrors the dashboard client's
  * DEFAULT_PROFILE calorie target so the ring and the calorie card agree.
  */
 const DEFAULT_RING_CALORIE_TARGET = 2000;
-
-function toDateKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-function dateKeyToUtcDate(dateKey: string): Date {
-  return new Date(`${dateKey}T00:00:00.000Z`);
-}
 
 function addDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * MS_PER_DAY);
@@ -131,8 +127,7 @@ function buildMonthHeaders(
 }
 
 export function getLocalDateKey(date: Date, timezoneOffset: number): string {
-  const localDate = new Date(date.getTime() - timezoneOffset * 60 * 1000);
-  return toDateKey(localDate);
+  return toLocalDayKey(date, timezoneOffset);
 }
 
 export function buildCalorieAdherenceHeatmapData({
@@ -143,7 +138,7 @@ export function buildCalorieAdherenceHeatmapData({
   now = new Date(),
 }: BuildCalorieAdherenceHeatmapInput): HeatmapData {
   const endKey = getLocalDateKey(now, timezoneOffset);
-  const endDate = dateKeyToUtcDate(endKey);
+  const endDate = dayKeyToUtcDate(endKey);
   const { startDate, rangeEndDate } = getRangeBounds(range, endDate, endKey);
   const startWeek = startOfMondayWeek(startDate);
   const endWeek = startOfMondayWeek(rangeEndDate);
@@ -152,7 +147,7 @@ export function buildCalorieAdherenceHeatmapData({
   const cells: HeatmapCell[][] = Array.from({ length: 7 }, (_, dayIndex) =>
     Array.from({ length: weekCount }, (_, weekIndex): HeatmapCell => {
       const date = addDays(startWeek, weekIndex * 7 + dayIndex);
-      const dateKey = toDateKey(date);
+      const dateKey = toUtcDayKey(date);
       const status =
         date.getTime() < startDate.getTime()
           ? 'outside'
@@ -191,7 +186,7 @@ export function buildCalorieAdherenceHeatmapData({
     current.getTime() <= endDate.getTime();
     current = addDays(current, 1)
   ) {
-    const key = toDateKey(current);
+    const key = toUtcDayKey(current);
     const calories = caloriesByDate.get(key);
     if (calories === undefined) continue;
 

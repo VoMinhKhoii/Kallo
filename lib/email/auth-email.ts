@@ -8,7 +8,7 @@ import {
 } from '@/lib/email/templates/auth-link';
 import { authOtpEmail } from '@/lib/email/templates/auth-otp';
 import type { EmailLocale } from '@/lib/email/templates/layout';
-import { SITE_URL } from '@/lib/site';
+import { SITE_URL } from '@/lib/seo/site';
 
 /**
  * Translates a Supabase "Send Email" auth-hook payload into the concrete

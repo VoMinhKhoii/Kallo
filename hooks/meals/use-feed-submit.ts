@@ -10,7 +10,7 @@ import type {
 import type { RelogRef } from '@/lib/logging/relog/relog';
 import type { CheatIntensity } from '@/lib/types/cheat';
 import type { ChatMessage } from '@/lib/types/meal';
-import { mealTextSchema } from '@/lib/validation';
+import { mealTextSchema } from '@/lib/validation/meal';
 
 interface UseFeedSubmitParams {
   stream: StreamAnalysisState & {

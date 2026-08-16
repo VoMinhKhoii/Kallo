@@ -4,7 +4,7 @@ import {
   deriveQuantityEdits,
   MIN_DISH_GRAMS,
   recalculateTotals,
-} from '@/lib/meal-utils';
+} from '@/lib/meals/quantity-recalculation';
 import type { MealItem } from '@/lib/types/meal';
 
 const sampleItems: MealItem[] = [

@@ -1,11 +1,14 @@
+import { dayKeyToUtcDate, toLocalCalendarDate } from '@/lib/date/day-key';
+import { MS_PER_DAY } from '@/lib/date/ms';
+
 export function getUtcDayRangeForLocalDate(
   date: string,
   timezoneOffset: number
 ) {
   const offsetMs = timezoneOffset * 60 * 1000;
-  const dayStart = new Date(`${date}T00:00:00.000Z`);
+  const dayStart = dayKeyToUtcDate(date);
   dayStart.setTime(dayStart.getTime() + offsetMs);
-  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+  const dayEnd = new Date(dayStart.getTime() + MS_PER_DAY);
 
   return { dayStart, dayEnd };
 }
@@ -16,7 +19,7 @@ export function getUtcInstantForLocalDate(
   timeSource = new Date()
 ) {
   const [year, month, day] = date.split('-').map(Number);
-  const localNow = new Date(timeSource.getTime() - timezoneOffset * 60 * 1000);
+  const localNow = toLocalCalendarDate(timeSource, timezoneOffset);
   const localDateTimeMs =
     Date.UTC(
       year,

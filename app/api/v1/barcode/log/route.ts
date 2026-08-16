@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { logBarcodeMealSchema } from '@/lib/api/contracts/barcode';
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { stageBarcodeMeal } from '@/lib/barcode/service';
 import { mapBarcodeServiceError } from '../_errors';
 

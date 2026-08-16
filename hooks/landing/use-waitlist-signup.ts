@@ -2,7 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
-import { parseApiError } from '@/lib/errors';
+import { parseApiError } from '@/lib/errors/client';
 
 /**
  * Submit an address to the landing-page waitlist.

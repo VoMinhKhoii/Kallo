@@ -3,7 +3,7 @@
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 interface CalorieRingProps {
   current: number;

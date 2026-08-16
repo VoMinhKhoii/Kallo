@@ -1,5 +1,5 @@
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import {
   type BillingEnvironment,
   getBillingEnvironment,

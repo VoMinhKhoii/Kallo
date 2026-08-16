@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 interface EmptyStateProps {
   /** A single Lucide glyph, drawn thin inside a soft accent disc. */

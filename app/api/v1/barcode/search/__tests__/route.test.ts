@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const requireAuthAndProfile = vi.fn();
 const searchBarcodeProduct = vi.fn();
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile,
 }));
 
@@ -78,7 +78,7 @@ describe('GET /api/v1/barcode/search', () => {
   });
 
   it('rejects an unauthenticated request with 401', async () => {
-    const { Errors } = await import('@/lib/errors');
+    const { Errors } = await import('@/lib/errors/catalog');
     requireAuthAndProfile.mockRejectedValueOnce(Errors.notAuthenticated());
 
     const res = await GET(makeRequest({ code: '5449000000996' }));

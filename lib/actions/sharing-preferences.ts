@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { sharingPreferencesSchema } from '@/lib/api/contracts/onboarding';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { createClient } from '@/lib/supabase/server';
 
 export async function setAutoShareToCircle(enabled: boolean) {

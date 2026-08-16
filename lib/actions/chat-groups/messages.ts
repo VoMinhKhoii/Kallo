@@ -8,7 +8,7 @@ import {
 import {
   getChatGroupSchema,
   sendChatGroupMessageSchema,
-} from '@/lib/validation';
+} from '@/lib/validation/chat';
 import { type ChatGroupDb, requireGroupAccess } from './membership';
 import type { ChatGroupMessage } from './types';
 

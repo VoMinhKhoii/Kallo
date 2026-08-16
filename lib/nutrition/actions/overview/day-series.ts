@@ -1,3 +1,5 @@
+import { dayKeyToUtcDate, toUtcDayKey } from '@/lib/date/day-key';
+import { MS_PER_DAY } from '@/lib/date/ms';
 import { DEFAULT_NUTRIENTS, getNutrientMeta } from '../../catalog/nutrients';
 import type { MicronutrientTarget } from '../../catalog/reference-targets';
 import type {
@@ -72,14 +74,13 @@ const DAY_SERIES_MACROS: {
 ];
 
 function addDays(date: string, days: number): string {
-  const parsed = Date.parse(`${date}T00:00:00.000Z`);
-  return new Date(parsed + days * 86_400_000).toISOString().slice(0, 10);
+  return toUtcDayKey(dayKeyToUtcDate(date).getTime() + days * MS_PER_DAY);
 }
 
 function diffDays(start: string, end: string): number {
-  const a = Date.parse(`${start}T00:00:00.000Z`);
-  const b = Date.parse(`${end}T00:00:00.000Z`);
-  return Math.round((b - a) / 86_400_000);
+  const a = dayKeyToUtcDate(start).getTime();
+  const b = dayKeyToUtcDate(end).getTime();
+  return Math.round((b - a) / MS_PER_DAY);
 }
 
 /**

@@ -12,7 +12,7 @@ import {
   rowMacros,
   totalsForRows,
 } from '@/lib/logging/manual-logging';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 const EMPTY_RESULTS: IngredientSearchResult[] = [];
 

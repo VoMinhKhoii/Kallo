@@ -11,7 +11,7 @@ vi.mock('@/lib/db', () => ({
   db: { execute },
 }));
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile,
 }));
 
@@ -278,7 +278,7 @@ describe('GET /api/v1/ingredients/search', () => {
   });
 
   it('rejects an unauthenticated request', async () => {
-    const { Errors } = await import('@/lib/errors');
+    const { Errors } = await import('@/lib/errors/catalog');
     requireAuthAndProfile.mockRejectedValueOnce(Errors.notAuthenticated());
 
     const res = await GET(makeRequest({ q: 'com' }));

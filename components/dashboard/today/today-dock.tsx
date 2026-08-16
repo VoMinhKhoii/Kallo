@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { CalorieRing } from '@/components/shared/calorie-ring';
 import { MacroBars } from '@/components/shared/macro-bars';
 import type { MealEntry, NutritionData } from '@/lib/types/dashboard';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 import { MealList } from './meal-list';
 
 interface TodayDockProps {

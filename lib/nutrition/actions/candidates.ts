@@ -1,7 +1,7 @@
 'use server';
 
 import { and, desc, notIlike, notInArray, sql } from 'drizzle-orm';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { vietnameseFoodComposition } from '@/lib/db/schema';
 import { NUTRIENT_META } from '../catalog/nutrients';

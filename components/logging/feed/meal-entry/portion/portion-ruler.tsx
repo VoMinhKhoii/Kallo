@@ -15,7 +15,7 @@ import {
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { PIECE_TIERS, pieceAssetFor } from '@/lib/ai/portion/vessel-data';
 import type { PieceVessel } from '@/lib/ai/portion/vessel-types';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 interface PortionRulerProps {
   anchors: PortionAnchor[];

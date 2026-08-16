@@ -8,7 +8,7 @@ import type {
   NutritionValues,
   PipelineResult,
 } from '@/lib/ai/types';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { pendingAnalyses } from '@/lib/db/schema';
@@ -26,7 +26,10 @@ import {
   nutritionValuesSchema,
   ocrConfidenceSchema,
 } from '@/lib/nutrition/ocr-schema';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/validation/primitives';
 
 const scanLabelSchema = z.object({
   imageBase64: z

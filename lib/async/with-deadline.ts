@@ -1,4 +1,4 @@
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 
 /**
  * Race a promise against a deadline.
@@ -6,11 +6,17 @@ import { Errors } from '@/lib/errors';
  * On timeout, rejects with `onTimeout()` (default: PIPELINE_TIMEOUT) and stops
  * waiting on the underlying promise.
  *
- * **Difference from `fetchWithTimeout`:** this does NOT abort the underlying
- * operation. Use it for work that has no cancellation — notably `postgres.js`
- * queries, which ignore `AbortSignal` and keep running after a timeout. The
- * point is to stop *awaiting* so a stalled query can't wedge an SSE stream open
- * (the query may still settle later; its result is discarded).
+ * **The `lib/async` pair.** This folder holds the two ways to bound a slow
+ * operation, and they split on one question: can the work be cancelled?
+ * `@/lib/async/fetch-with-timeout` aborts the operation through an
+ * `AbortSignal`; `withDeadline` does NOT — it only stops awaiting. Reach for
+ * the sibling whenever the callee honours `AbortSignal` (`fetch`, LLM
+ * providers); reach for this one when it does not.
+ *
+ * Use it for work that has no cancellation — notably `postgres.js` queries,
+ * which ignore `AbortSignal` and keep running after a timeout. The point is to
+ * stop *awaiting* so a stalled query can't wedge an SSE stream open (the query
+ * may still settle later; its result is discarded).
  *
  * @param promise   — The operation to bound.
  * @param timeoutMs — Maximum time to wait before rejecting.

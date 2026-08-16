@@ -1,5 +1,5 @@
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/auth/session';
 import {
   fetchRevenueCatSnapshot,
   getBillingEnvironmentForUser,
@@ -8,7 +8,7 @@ import {
 import { getBillingConfig } from '@/lib/entitlements/config';
 import { reconcileRevenueCatGrants } from '@/lib/entitlements/grants';
 import { getEntitlementState } from '@/lib/entitlements/service';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/errors/catalog';
 import { checkAnalysisGuards } from '@/lib/rate-limit/analysis-guards';
 
 export const runtime = 'nodejs';

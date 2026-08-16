@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { weightSummaryKeys } from '@/hooks/weight/use-weight-summary';
 import { deleteWeightLogAction, logWeightAction } from '@/lib/actions/weight';
 import type { WeightSummaryData } from '@/lib/types/weight';
-import type { WeightLogInput } from '@/lib/validation';
+import type { WeightLogInput } from '@/lib/validation/weight';
 
 type WeightSummarySnapshot = Array<
   [readonly unknown[], WeightSummaryData | undefined]

@@ -8,8 +8,8 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { useWaitlistSignup } from '@/hooks/landing/use-waitlist-signup';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
-import { ApiError } from '@/lib/errors';
-import { cn } from '@/lib/utils';
+import { ApiError } from '@/lib/errors/client';
+import { cn } from '@/lib/ui/cn';
 
 /**
  * Landing-page waitlist capture — the hero's primary call to action.

@@ -3,7 +3,7 @@
  *
  * The writer's whole job is faithfulness — copy stored rows verbatim, sum the
  * meal from those rows, re-sequence dish order, refuse ineligible sources — and
- * none of that is provable against a mocked query builder. So only `@/lib/auth`
+ * none of that is provable against a mocked query builder. So only `@/lib/auth/session`
  * is mocked here; the transaction, the `FOR UPDATE` lock, the inserts and the
  * numeric round-trip are real.
  *
@@ -71,7 +71,7 @@ const OWNER = seedUserId ?? '00000000-0000-0000-0000-000000000001';
 const STRANGER = '00000000-0000-0000-0000-0000000000ff';
 let actingUserId = OWNER;
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile: vi.fn(async () => ({
     user: { id: actingUserId, email: 'relog@test.local' },
     profile: { goal: 'maintaining', aggression: null },

@@ -3,7 +3,7 @@
 import { type RefObject, useRef } from 'react';
 import { MentionOverlay } from '@/components/logging/input/relog/mention-overlay';
 import type { MentionSegment } from '@/lib/logging/relog/mentions';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/cn';
 
 interface ComposerTextFieldProps {
   textareaRef: RefObject<HTMLTextAreaElement | null>;
