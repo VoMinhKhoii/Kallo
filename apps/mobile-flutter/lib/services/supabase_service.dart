@@ -1,6 +1,3 @@
-import 'dart:async';
-
-import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Supabase singleton wrapper.
@@ -14,33 +11,23 @@ abstract final class SupabaseService {
   ///
   /// Uses `flutter_secure_storage` under the hood (Supabase Flutter's default
   /// on mobile) for keychain-backed session persistence.
+  ///
+  /// Token auto-refresh is left to supabase_flutter: its `SupabaseAuth` is a
+  /// `WidgetsBindingObserver` that registers itself on init and starts/stops
+  /// the refresh ticker on resume/pause, gated on `autoRefreshToken` (default
+  /// `true`). Registering a second observer here only doubles the refresh
+  /// attempt on every resume — the very call that can push an auth error onto
+  /// `onAuthStateChange`.
   static Future<void> initialize({
     required String url,
     required String anonKey,
-  }) async {
-    await Supabase.initialize(
+  }) {
+    return Supabase.initialize(
       url: url,
       anonKey: anonKey,
       authOptions: const FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
       ),
     );
-
-    // Keep tokens fresh only while the app is foregrounded (Supabase guidance).
-    WidgetsBinding.instance.addObserver(_AppLifecycleObserver());
-  }
-}
-
-/// Starts/stops Supabase auto-refresh based on app lifecycle.
-class _AppLifecycleObserver extends WidgetsBindingObserver {
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    final auth = Supabase.instance.client.auth;
-    if (state == AppLifecycleState.resumed) {
-      auth.startAutoRefresh();
-    } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached) {
-      auth.stopAutoRefresh();
-    }
   }
 }

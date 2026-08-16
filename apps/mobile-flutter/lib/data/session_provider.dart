@@ -30,24 +30,23 @@ Stream<Session?> buildSessionStream({
   required Stream<AuthState> events,
   required Session? Function() currentSession,
 }) {
-  late final StreamController<Session?> controller;
+  final controller = StreamController<Session?>();
   StreamSubscription<AuthState>? subscription;
 
-  controller = StreamController<Session?>(
-    onListen: () {
+  controller
+    ..onListen = () {
       // Seed with the session Supabase restored from secure storage on init, so
       // the very first frame already reflects signed-in/out without a flash.
+      // This is the only guarantee the provider ever resolves: without it the
+      // app would depend on gotrue's `BehaviorSubject` replaying an event, and
+      // the router would hold the splash forever if it ever stopped.
       controller.add(currentSession());
       subscription = events.listen(
         (event) => controller.add(event.session),
         onError: (Object _, StackTrace __) => controller.add(currentSession()),
       );
-    },
-    onCancel: () async {
-      await subscription?.cancel();
-      subscription = null;
-    },
-  );
+    }
+    ..onCancel = () => subscription?.cancel();
 
   return controller.stream;
 }
@@ -68,15 +67,8 @@ final sessionProvider = StreamProvider<Session?>((ref) {
 });
 
 /// Convenience: the resolved session or `null` while loading / signed out.
-///
-/// Falls back to the client's authoritative session when the stream has no
-/// value (still loading, or errored): an auth-stream hiccup must never read as
-/// "signed out" to the screens — the router already reads `currentSession`
-/// directly for exactly this reason, and the two must not disagree.
 final currentSessionProvider = Provider<Session?>((ref) {
-  final session = ref.watch(sessionProvider);
-  if (session.hasValue) return session.value;
-  return SupabaseService.client.auth.currentSession;
+  return ref.watch(sessionProvider).valueOrNull;
 });
 
 /// Imperative auth actions for the auth surface (sign-in / sign-up / sign-out).
