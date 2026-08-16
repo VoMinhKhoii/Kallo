@@ -129,8 +129,8 @@ export function useOcrCamera(isActive: boolean) {
             .filter((device) => device.kind === 'videoinput')
             .map((device) => ({ id: device.deviceId, label: device.label }))
         );
+        setIsCameraActive(true);
       }
-      setIsCameraActive(true);
     } catch (error) {
       if (requestGeneration !== requestGenerationRef.current) return;
       console.warn('Failed to access OCR camera:', error);

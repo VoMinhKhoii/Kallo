@@ -1,6 +1,8 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import type { CameraStatus } from '@/hooks/meals/use-barcode-camera-scanner';
 
 interface BarcodeCameraViewProps {
@@ -34,6 +36,19 @@ export function BarcodeCameraView({
 }: BarcodeCameraViewProps) {
   const hasError =
     cameraStatus === 'permission-denied' || cameraStatus === 'error';
+  const previousStatusRef = useRef<CameraStatus | null>(null);
+
+  useEffect(() => {
+    if (hasError && previousStatusRef.current !== cameraStatus) {
+      toast.error(
+        cameraStatus === 'permission-denied'
+          ? permissionDeniedText
+          : cameraErrorText
+      );
+    }
+    previousStatusRef.current = cameraStatus;
+  }, [cameraErrorText, cameraStatus, hasError, permissionDeniedText]);
+
   return (
     <div className="space-y-3">
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black shadow-sm sm:aspect-video">
@@ -85,7 +100,7 @@ export function BarcodeCameraView({
             {cameras.length > 1 && (
               <select
                 aria-label={selectCameraLabel}
-                value={selectedCameraId || cameras[0]?.id}
+                value={selectedCameraId ?? ''}
                 onChange={(e) => onCameraChange(e.target.value)}
                 className="mx-auto block rounded-lg border border-[#EAE7E0] bg-white px-2.5 py-1 text-xs"
               >

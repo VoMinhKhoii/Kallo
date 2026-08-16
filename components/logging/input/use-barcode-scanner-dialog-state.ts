@@ -90,6 +90,7 @@ export function useBarcodeScannerDialogState({
     cameraStatus,
     cameras,
     selectedCameraId,
+    effectiveCameraId,
     setSelectedCameraId,
     stopScanner,
   } = useBarcodeCameraScanner({
@@ -218,6 +219,7 @@ export function useBarcodeScannerDialogState({
     cameraStatus,
     cameras,
     selectedCameraId,
+    effectiveCameraId,
     setSelectedCameraId,
     handleSearch,
     handleStageMeal,

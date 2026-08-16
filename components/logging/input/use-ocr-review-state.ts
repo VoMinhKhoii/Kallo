@@ -159,6 +159,7 @@ export function useOcrReviewState(
   };
 
   return {
+    initialNutrition: reviewColumn.values,
     productName,
     setProductName,
     productIsValid,

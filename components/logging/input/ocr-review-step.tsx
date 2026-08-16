@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import type {
   OcrReviewPayload,
@@ -39,6 +40,7 @@ export function OcrReviewStep({
   onConfirm,
 }: OcrReviewStepProps) {
   const t = useTranslations('logging');
+  const [hasInteracted, setHasInteracted] = useState(false);
   const review = useOcrReviewState(data, t('ocrDefaultProductName'));
   const toItem = (
     definition: (typeof OCR_MACRO_DEFINITIONS)[number],
@@ -58,7 +60,7 @@ export function OcrReviewStep({
     toItem(definition, true)
   );
   const micronutrientItems = OCR_MICRONUTRIENT_DEFINITIONS.filter(
-    (definition) => review.getNutrientText(definition.key) !== ''
+    (definition) => review.initialNutrition[definition.key] !== null
   ).map((definition) => toItem(definition));
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -88,7 +90,11 @@ export function OcrReviewStep({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+    <form
+      onSubmit={handleSubmit}
+      onChange={() => setHasInteracted(true)}
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
         <div className="space-y-1.5">
           <label
@@ -149,12 +155,8 @@ export function OcrReviewStep({
         />
 
         <OcrNutrientGrid items={macroItems} />
-        {!review.canConfirm && (
-          <p
-            role="alert"
-            aria-live="polite"
-            className="text-[12px] text-nham-danger"
-          >
+        {hasInteracted && !review.canConfirm && (
+          <p role="alert" className="text-[12px] text-nham-danger">
             {t('ocrRequiredValues')}
           </p>
         )}

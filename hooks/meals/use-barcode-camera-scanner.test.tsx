@@ -6,6 +6,7 @@ const scanner = vi.hoisted(() => ({
   start: vi.fn(),
   stop: vi.fn(),
   getCameras: vi.fn(),
+  getRunningTrackSettings: vi.fn(),
 }));
 
 vi.mock('html5-qrcode', () => {
@@ -16,6 +17,7 @@ vi.mock('html5-qrcode', () => {
     get isScanning() {
       return scanner.isScanning;
     }
+    getRunningTrackSettings = scanner.getRunningTrackSettings;
   }
   return {
     Html5Qrcode,
@@ -35,6 +37,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   scanner.isScanning = false;
   scanner.stop.mockResolvedValue(undefined);
+  scanner.getRunningTrackSettings.mockReturnValue({
+    deviceId: 'rear-camera',
+  });
   scanner.getCameras.mockResolvedValue([
     { id: 'front-camera', label: 'Front Camera' },
     { id: 'rear-camera', label: 'Back Camera' },
@@ -44,7 +49,7 @@ beforeEach(() => {
 describe('useBarcodeCameraScanner', () => {
   it('prefers a labeled rear camera over devices[0]', async () => {
     scanner.start.mockResolvedValue(undefined);
-    const { unmount } = renderHook(() =>
+    const { result, unmount } = renderHook(() =>
       useBarcodeCameraScanner({
         isActive: true,
         onDecode: vi.fn(),
@@ -53,6 +58,9 @@ describe('useBarcodeCameraScanner', () => {
 
     await waitFor(() => expect(scanner.start).toHaveBeenCalledOnce());
     expect(scanner.start.mock.calls[0][0]).toBe('rear-camera');
+    await waitFor(() =>
+      expect(result.current.effectiveCameraId).toBe('rear-camera')
+    );
     unmount();
   });
 

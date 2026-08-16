@@ -70,6 +70,9 @@ export function useBarcodeCameraScanner({
     useState<CameraStatus>('initializing');
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
+  const [effectiveCameraId, setEffectiveCameraId] = useState<string | null>(
+    null
+  );
   const qrCodeScannerRef = useRef<Html5Qrcode | null>(null);
   // Guards a concurrent stop() — two callers (decode success + effect cleanup)
   // can both observe isScanning === true before either stop() resolves.
@@ -188,6 +191,11 @@ export function useBarcodeCameraScanner({
           }
           return;
         }
+        const runningCameraId = scanner.getRunningTrackSettings().deviceId;
+        setEffectiveCameraId(
+          runningCameraId ??
+            (typeof cameraConfig === 'string' ? cameraConfig : null)
+        );
         setCameraStatus('scanning');
       } catch (err) {
         console.error('Failed to start scanner:', err);
@@ -220,6 +228,7 @@ export function useBarcodeCameraScanner({
     cameraStatus,
     cameras,
     selectedCameraId,
+    effectiveCameraId,
     setSelectedCameraId,
     stopScanner,
   };

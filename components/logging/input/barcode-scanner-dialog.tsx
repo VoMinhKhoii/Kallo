@@ -40,7 +40,7 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
     isStaging,
     cameraStatus,
     cameras,
-    selectedCameraId,
+    effectiveCameraId,
     setSelectedCameraId,
     handleSearch,
     handleStageMeal,
@@ -157,7 +157,7 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
                     <BarcodeCameraView
                       cameraStatus={cameraStatus}
                       cameras={cameras}
-                      selectedCameraId={selectedCameraId}
+                      selectedCameraId={effectiveCameraId}
                       onCameraChange={setSelectedCameraId}
                       initializingText={t('barcodeCameraInitializing')}
                       scanningText={t('barcodeCameraScanning')}

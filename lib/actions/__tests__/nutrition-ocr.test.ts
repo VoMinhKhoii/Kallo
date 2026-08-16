@@ -259,11 +259,12 @@ describe('OCR review to staging seam', () => {
 
     const confirm = screen.getByRole('button', { name: 'confirm' });
     expect(confirm).toBeDisabled();
-    expect(screen.getByRole('alert')).toHaveTextContent('ocrRequiredValues');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('ocrNutrients.protein (g)'), {
       target: { value: '3,5' },
     });
+    expect(screen.getByRole('alert')).toHaveTextContent('ocrRequiredValues');
     fireEvent.change(screen.getByLabelText('ocrNutrients.carbohydrates (g)'), {
       target: { value: '20' },
     });
