@@ -3,7 +3,7 @@
     Mirrors components/landing-page/{header,hero,cta-section,footer}.tsx
     Compressed into a single file for the kit. */
 function Landing({ onEnterApp }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   useLucide();
 
   return (
@@ -17,7 +17,7 @@ function Landing({ onEnterApp }) {
 }
 
 function LandingHeader({ onSignIn, onGetStarted }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   return (
     <header style={{
       position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
@@ -50,7 +50,7 @@ function LandingHeader({ onSignIn, onGetStarted }) {
 }
 
 function LandingHero({ onCTA }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const fullText = "2 mực kho mặn + 50gr nạc dăm luộc + 1 chén cơm + canh chua";
   const [typed, setTyped] = React.useState("");
   const [showResult, setShowResult] = React.useState(false);
@@ -237,7 +237,7 @@ function LandingHero({ onCTA }) {
 }
 
 function LandingCTA({ onCTA }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   return (
     <section style={{ background: "#fff", padding: "120px 24px" }}>
       <div style={{ maxWidth: 880, margin: "0 auto", textAlign: "center" }}>
@@ -290,7 +290,7 @@ function LandingCTA({ onCTA }) {
 }
 
 function LandingFooter() {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   return (
     <footer style={{ background: T.color.surface, borderTop: "1px solid rgba(232,213,181,0.3)" }}>
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "64px 24px" }}>
@@ -320,7 +320,7 @@ function LandingFooter() {
 }
 
 function FooterCol({ title, links }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   return (
     <div>
       <h4 style={{ margin: "0 0 16px", fontFamily: T.font.sans, fontWeight: 500, fontSize: 14, color: T.color.text }}>{title}</h4>

@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../../shared/widgets/skeleton.dart';
 
 /// Flat feed-row loading state matching avatar, text, macros, and actions.
@@ -22,7 +22,7 @@ class CircleWallSkeleton extends StatelessWidget {
             for (var i = 0; i < rows; i++)
               Padding(
                 padding: EdgeInsets.only(
-                  bottom: i == rows - 1 ? 0 : NhamSpacing.sp4,
+                  bottom: i == rows - 1 ? 0 : KalloSpacing.sp4,
                 ),
                 child: const _SkeletonRow(),
               ),
@@ -42,7 +42,7 @@ class _SkeletonRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SkeletonCircle(size: 36),
-        SizedBox(width: NhamSpacing.sp3),
+        SizedBox(width: KalloSpacing.sp3),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,13 +50,13 @@ class _SkeletonRow extends StatelessWidget {
               Row(
                 children: [
                   SkeletonBar(width: 96, height: 12),
-                  SizedBox(width: NhamSpacing.sp2),
+                  SizedBox(width: KalloSpacing.sp2),
                   SkeletonBar(width: 56, height: 10),
                 ],
               ),
-              SizedBox(height: NhamSpacing.sp2),
+              SizedBox(height: KalloSpacing.sp2),
               SkeletonBar(widthFactor: 0.7, height: 14),
-              SizedBox(height: NhamSpacing.sp2),
+              SizedBox(height: KalloSpacing.sp2),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -64,9 +64,9 @@ class _SkeletonRow extends StatelessWidget {
                   SkeletonBar(width: 64, height: 12),
                 ],
               ),
-              SizedBox(height: NhamSpacing.sp2),
+              SizedBox(height: KalloSpacing.sp2),
               SkeletonBar(width: 92, height: 10),
-              SizedBox(height: NhamSpacing.sp4),
+              SizedBox(height: KalloSpacing.sp4),
               Divider(height: 1, color: kHairline),
             ],
           ),

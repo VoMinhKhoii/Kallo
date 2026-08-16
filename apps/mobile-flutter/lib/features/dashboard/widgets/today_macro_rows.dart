@@ -9,7 +9,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/dashboard_spacing.dart';
 
 class MacroBarData {
@@ -44,9 +44,9 @@ class MacroRow extends StatelessWidget {
             style: dashMeta(color: kInk),
           ),
         ),
-        const SizedBox(width: NhamSpacing.sp3),
+        const SizedBox(width: KalloSpacing.sp3),
         Expanded(child: _MacroBar(pct: pct, color: bar.color, idx: idx)),
-        const SizedBox(width: NhamSpacing.sp3),
+        const SizedBox(width: KalloSpacing.sp3),
         // Fixed-width right column so every bar ends at the same x and the
         // values line up (shared with the meal-row kcal column).
         SizedBox(
@@ -130,7 +130,7 @@ class _MacroBarState extends State<_MacroBar>
     // Reduced motion: render the fill at its resting width, no sweep.
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(NhamRadii.pill),
+      borderRadius: BorderRadius.circular(KalloRadii.pill),
       child: Container(
         height: 8, // h-2
         color: kTrack,
@@ -148,7 +148,7 @@ class _MacroBarState extends State<_MacroBar>
                         height: 8,
                         decoration: BoxDecoration(
                           color: widget.color,
-                          borderRadius: BorderRadius.circular(NhamRadii.pill),
+                          borderRadius: BorderRadius.circular(KalloRadii.pill),
                         ),
                       ),
                     ),

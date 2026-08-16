@@ -6,8 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../theme/calm_tokens.dart';
-import '../../theme/nham_colors.dart';
-import '../../theme/nham_theme.dart';
+import '../../theme/kallo_colors.dart';
+import '../../theme/kallo_theme.dart';
 import 'feedback_screen.dart' show FeedbackType;
 
 class FeedbackTypeChip extends StatelessWidget {
@@ -34,14 +34,14 @@ class FeedbackTypeChip extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
+          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3),
           decoration: BoxDecoration(
             color: selected
-                ? NhamColors.hover
-                : NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+                ? KalloColors.hover
+                : KalloColors.elev,
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
             border: Border.all(
-              color: selected ? kInk.withValues(alpha: 0.3) : NhamColors.borderSoft,
+              color: selected ? kInk.withValues(alpha: 0.3) : KalloColors.borderSoft,
             ),
           ),
           child: Column(
@@ -84,18 +84,18 @@ class FeedbackScreenshotField extends StatelessWidget {
     if (selected != null) {
       return Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
+          horizontal: KalloSpacing.sp3,
           vertical: 10,
         ),
         decoration: BoxDecoration(
-          color: NhamColors.elev,
-          borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-          border: Border.all(color: NhamColors.borderSoft),
+          color: KalloColors.elev,
+          borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+          border: Border.all(color: KalloColors.borderSoft),
         ),
         child: Row(
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(NhamRadii.sm),
+              borderRadius: BorderRadius.circular(KalloRadii.sm),
               child: Image.file(
                 File(selected.path),
                 width: 36,
@@ -143,12 +143,12 @@ class FeedbackScreenshotField extends StatelessWidget {
         onTap: onAdd,
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
+            horizontal: KalloSpacing.sp3,
             vertical: 10,
           ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            border: Border.all(color: NhamColors.borderSoft),
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+            border: Border.all(color: KalloColors.borderSoft),
           ),
           child: Row(
             children: [

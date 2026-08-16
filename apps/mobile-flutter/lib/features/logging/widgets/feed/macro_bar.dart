@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 
 /// A single macro bar whose fill sweeps 0→pct (1000ms, delay 200ms, easeOut).
 class MacroBar extends StatefulWidget {
@@ -56,10 +56,10 @@ class _MacroBarState extends State<MacroBar>
     // Reduced motion: render the fill at its resting width, no sweep.
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(NhamRadii.pill),
+      borderRadius: BorderRadius.circular(KalloRadii.pill),
       child: Container(
         height: 6, // h-1.5
-        color: NhamColors.track,
+        color: KalloColors.track,
         child: AnimatedBuilder(
           animation: _anim,
           builder:
@@ -70,7 +70,7 @@ class _MacroBarState extends State<MacroBar>
                 child: Container(
                   decoration: BoxDecoration(
                     color: widget.color,
-                    borderRadius: BorderRadius.circular(NhamRadii.pill),
+                    borderRadius: BorderRadius.circular(KalloRadii.pill),
                   ),
                 ),
               ),

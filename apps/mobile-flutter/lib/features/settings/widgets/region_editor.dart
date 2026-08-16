@@ -6,8 +6,8 @@ import '../../onboarding/widgets/language_toggle.dart';
 import '../data/profile_providers.dart';
 import '../panels/regional.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import 'instant_commit_editor.dart';
 import 'profile_form_controller.dart';
 
@@ -30,7 +30,7 @@ class RegionEditor extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _LanguageField(),
-          SizedBox(height: NhamSpacing.sp6),
+          SizedBox(height: KalloSpacing.sp6),
           Regional(),
         ],
       ),
@@ -61,16 +61,16 @@ class _LanguageFieldState extends State<_LanguageField> {
             const Icon(
               LucideIcons.languages300,
               size: 16,
-              color: NhamColors.textMuted,
+              color: KalloColors.textMuted,
             ),
-            const SizedBox(width: NhamSpacing.sp2),
+            const SizedBox(width: KalloSpacing.sp2),
             Text(
               tr('settings.language'),
               style: dashBody(),
             ),
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         LanguageToggle(
           value: current,
           onChange: (v) {

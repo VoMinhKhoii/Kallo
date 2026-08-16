@@ -4,8 +4,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/relog.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/widgets/quiet_action_button.dart';
 import '../../logic/logging_spacing.dart';
 import 'relog_picker_group.dart';
@@ -76,9 +76,9 @@ class RelogPickerPopup extends StatelessWidget {
           // No border, like the notice: a solid band does not need one. The
           // shadows stay, unlike the notice, because that sits inside the card
           // while this floats over the feed and has to lift off it.
-          color: NhamColors.bandSurface,
-          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-          boxShadow: const [NhamShadows.md, NhamShadows.xs],
+          color: KalloColors.bandSurface,
+          borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+          boxShadow: const [KalloShadows.md, KalloShadows.xs],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -92,10 +92,10 @@ class RelogPickerPopup extends StatelessWidget {
                     isEmpty
                         ? Padding(
                           padding: const EdgeInsets.fromLTRB(
-                            NhamSpacing.sp3,
+                            KalloSpacing.sp3,
                             0,
-                            NhamSpacing.sp3,
-                            NhamSpacing.sp3,
+                            KalloSpacing.sp3,
+                            KalloSpacing.sp3,
                           ),
                           child: Row(
                             children: [
@@ -103,7 +103,7 @@ class RelogPickerPopup extends StatelessWidget {
                                 child: Text(
                                   emptyMessage,
                                   style: dashMeta(
-                                    color: NhamColors.bandForeground,
+                                    color: KalloColors.bandForeground,
                                   ),
                                 ),
                               ),
@@ -120,10 +120,10 @@ class RelogPickerPopup extends StatelessWidget {
                         : ListView(
                           shrinkWrap: true,
                           padding: const EdgeInsets.fromLTRB(
-                            NhamSpacing.sp2,
+                            KalloSpacing.sp2,
                             0,
-                            NhamSpacing.sp2,
-                            NhamSpacing.sp2,
+                            KalloSpacing.sp2,
+                            KalloSpacing.sp2,
                           ),
                           children: [
                             RelogPickerGroup(
@@ -183,7 +183,7 @@ class _CloseRow extends StatelessWidget {
             child: Icon(
               LucideIcons.x300,
               size: LoggingIcons.size,
-              color: NhamColors.bandForeground70,
+              color: KalloColors.bandForeground70,
             ),
           ),
         ),

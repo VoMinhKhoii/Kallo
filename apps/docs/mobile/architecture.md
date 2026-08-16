@@ -32,10 +32,10 @@ lib/
     supabase_service.dart   Supabase initialization
   models/              DTOs: meal, nutrition, dashboard, weight, onboarding, streaming
   features/            one folder per surface (see below)
-  shared/widgets/      cross-cutting primitives (nham_primitives, nham_text,
+  shared/widgets/      cross-cutting primitives (kallo_primitives, kallo_text,
                        decimal_input, target_progress_bar, section_eyebrow)
   shell/               app shell: header, sidebar/drawer, tab scaffold
-  theme/               nham_colors, nham_typography, nham_theme
+  theme/               kallo_colors, kallo_typography, kallo_theme
 ```
 
 ### Features (one module per surface)
@@ -87,8 +87,8 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
   auth-gated routing. Riverpod controllers wrap streaming (`stream_analysis_controller.dart`).
 - **Navigation:** `go_router` with a shell route. The shell is a **left slide-in drawer**
   (hamburger), not a bottom tab bar — matching the web mobile nav.
-- **Sheets:** `showNhamSheet` (`shared/widgets/nham_sheet.dart`) + `NhamSheetSurface` +
-  `NhamSheetHeader` (`nham_sheet_header.dart`). `isScrollControlled` defaults to **true** —
+- **Sheets:** `showNhamSheet` (`shared/widgets/kallo_sheet.dart`) + `KalloSheetSurface` +
+  `KalloSheetHeader` (`kallo_sheet_header.dart`). `isScrollControlled` defaults to **true** —
   Material's default caps a sheet at 9/16 of the screen and clips the rest, which pushed
   action rows off-screen on short phones and in landscape. A sheet whose body is a plain
   `Column` also passes `scrollable: true` so it caps at 90% height and scrolls past it;
@@ -98,8 +98,8 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
 - **Data:** `api_client.dart` hits `/api/v1`. Note Drizzle decimals serialize as **strings**, and
   targets are **null** for not-fully-onboarded profiles — models tolerate nulls and fall back to
   the same defaults as the web app.
-- **Theming:** warm earthy palette on a cream surface (`theme/nham_colors.dart`), Lora serif +
-  DM Sans (`theme/nham_typography.dart`) — see the `kallo-design` skill for the brand source.
+- **Theming:** warm earthy palette on a cream surface (`theme/kallo_colors.dart`), Lora serif +
+  DM Sans (`theme/kallo_typography.dart`) — see the `kallo-design` skill for the brand source.
 
 ## Web parity
 

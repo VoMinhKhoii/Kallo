@@ -10,7 +10,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/skeleton.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/dashboard_spacing.dart';
 
 // Re-export the shared skeleton primitives so dashboard widgets can pull the
@@ -125,8 +125,8 @@ class DashboardSkeleton extends StatelessWidget {
     // header / bar below inherits it and fades in phase.
     return ListView(
       padding: EdgeInsets.only(
-        left: NhamSpacing.sp3,
-        right: NhamSpacing.sp3,
+        left: KalloSpacing.sp3,
+        right: KalloSpacing.sp3,
         top: DashboardSpacing.block,
         bottom: bottomInset + 76,
       ),

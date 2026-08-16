@@ -4,7 +4,7 @@
     Collapsed by default: shows quoted meal text + macro inline + kcal total.
     Expanded: groups list with per-group macros + total row. */
 function MealCard({ meal, defaultExpanded = false }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const [expanded, setExpanded] = React.useState(defaultExpanded);
 
   const fmt = v => v == null ? "N/A" : `${Math.round(v)}g`;

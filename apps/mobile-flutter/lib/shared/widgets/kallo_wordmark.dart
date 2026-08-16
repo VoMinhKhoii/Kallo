@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../theme/nham_colors.dart';
+import '../../theme/kallo_colors.dart';
 
 /// The Kallo wordmark — the segmented K as its capital plus "allo", from
 /// `docs/brand/kallo/assets/kallo-wordmark.svg`. The capital IS the brand
@@ -27,7 +27,7 @@ class KalloWordmark extends StatelessWidget {
       height: height,
       width: height * _aspectRatio,
       colorFilter: ColorFilter.mode(
-        color ?? NhamColors.text,
+        color ?? KalloColors.text,
         BlendMode.srcIn,
       ),
       semanticsLabel: 'Kallo',

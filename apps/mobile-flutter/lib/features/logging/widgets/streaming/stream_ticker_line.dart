@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../../../models/streaming.dart';
 import '../../logic/feed/stage_verbs.dart';
 import '../../logic/feed/stream_ticker.dart';
@@ -151,18 +151,18 @@ class _StreamTickerLineState extends State<StreamTickerLine> {
     return Row(
       children: [
         SizedBox.square(
-          dimension: NhamSpacing.sp8, // 32 — the web h-8 w-8 box
+          dimension: KalloSpacing.sp8, // 32 — the web h-8 w-8 box
           child: Center(
             child: SvgLoaderView(
               spec: loaderAt(widget.loaderIndex),
               size: 20,
               // The brand brown: the loader and the verb beside it are the app
               // working, so they carry the logo's umber rather than muted ink.
-              color: NhamColors.btn,
+              color: KalloColors.btn,
             ),
           ),
         ),
-        const SizedBox(width: NhamSpacing.sp3), // gap-3
+        const SizedBox(width: KalloSpacing.sp3), // gap-3
         Expanded(
           child: Semantics(
             liveRegion: true,

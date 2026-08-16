@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 
 /// Centered time divider that sits on top of a meal card: a hairline, the time
 /// (── 1:04 AM ──), and a hairline — replacing the old left-rail time label.
@@ -20,7 +20,7 @@ class MealTimeDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     const line = Expanded(
       child: Divider(
-        color: NhamColors.borderFaint,
+        color: KalloColors.borderFaint,
         height: 1,
         thickness: 1,
       ),
@@ -29,7 +29,7 @@ class MealTimeDivider extends StatelessWidget {
       children: [
         line,
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: Text(time, style: dashMeta(),),
         ),
         line,

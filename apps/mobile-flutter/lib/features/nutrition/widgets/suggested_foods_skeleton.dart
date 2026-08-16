@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/skeleton.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// Candidates load skeleton — a few pill-shaped bars mirroring the food chips.
 class CandidatesSkeleton extends StatelessWidget {
@@ -14,12 +14,12 @@ class CandidatesSkeleton extends StatelessWidget {
       label: tr('nutrition.candidates.loading'),
       child: const SkeletonPulse(
         child: Wrap(
-          spacing: NhamSpacing.sp2,
-          runSpacing: NhamSpacing.sp2,
+          spacing: KalloSpacing.sp2,
+          runSpacing: KalloSpacing.sp2,
           children: [
-            SkeletonBar(width: 96, height: 30, radius: NhamRadii.pill),
-            SkeletonBar(width: 72, height: 30, radius: NhamRadii.pill),
-            SkeletonBar(width: 120, height: 30, radius: NhamRadii.pill),
+            SkeletonBar(width: 96, height: 30, radius: KalloRadii.pill),
+            SkeletonBar(width: 72, height: 30, radius: KalloRadii.pill),
+            SkeletonBar(width: 120, height: 30, radius: KalloRadii.pill),
           ],
         ),
       ),

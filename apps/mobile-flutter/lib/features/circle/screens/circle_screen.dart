@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/nham_sheet.dart';
+import '../../../shared/widgets/kallo_sheet.dart';
 import '../../../shared/widgets/widgets.dart';
 import '../../../shell/app_header.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/chat_group_providers.dart';
 import '../data/circle_providers.dart';
 import '../data/feed_providers.dart';
@@ -17,7 +17,7 @@ import '../widgets/group_info_sheet.dart';
 import '../widgets/meal_invites.dart';
 import '../widgets/thread_feed.dart';
 import '../widgets/view_switcher.dart';
-import '../../../shared/widgets/nham_refresh.dart';
+import '../../../shared/widgets/kallo_refresh.dart';
 
 Future<void> _showGroupInfoSheet(BuildContext context, String groupId) =>
     showNhamSheet<void>(
@@ -53,13 +53,13 @@ class CircleScreen extends ConsumerWidget {
         // dashboard greeting; the add control takes the trailing slot it was
         // already reserving space for.
         header: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(
             trailing: const CircleAddMenu(),
             child: Text(tr('groups.page.title'), style: dashHeadline()),
           ),
         ),
-        child: NhamRefresh(
+        child: KalloRefresh(
           onRefresh: () => _refresh(ref, selected),
           child: ThreadFeed(
             scope: selected,
@@ -68,10 +68,10 @@ class CircleScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const ViewSwitcher(),
-                const SizedBox(height: NhamSpacing.sp3),
+                const SizedBox(height: KalloSpacing.sp3),
                 const MealInvitesSection(),
                 if (selected != null) ...[
-                  const SizedBox(height: NhamSpacing.sp3),
+                  const SizedBox(height: KalloSpacing.sp3),
                   _GroupHeader(
                     groupId: selected,
                     name: name,

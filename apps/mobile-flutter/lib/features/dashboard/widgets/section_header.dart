@@ -4,8 +4,8 @@ library;
 
 import 'package:flutter/material.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../../theme/calm_tokens.dart';
 import '../logic/dashboard_spacing.dart';
 
@@ -150,7 +150,7 @@ class _SectionStateState extends State<SectionState> {
                 shape: BoxShape.circle,
               ),
               child: Icon(widget.icon,
-                  size: NhamIcons.size, color: kInkMuted),
+                  size: KalloIcons.size, color: kInkMuted),
             ),
             const SizedBox(height: DashboardSpacing.section),
           ],
@@ -170,12 +170,12 @@ class _SectionStateState extends State<SectionState> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: NhamSpacing.sp4,
-                  vertical: NhamSpacing.sp2,
+                  horizontal: KalloSpacing.sp4,
+                  vertical: KalloSpacing.sp2,
                 ),
                 decoration: BoxDecoration(
-                  color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-                  borderRadius: BorderRadius.circular(NhamRadii.pill),
+                  color: _pressed ? KalloColors.btnHover : KalloColors.btn,
+                  borderRadius: BorderRadius.circular(KalloRadii.pill),
                 ),
                 child: Text(
                   widget.actionLabel!,

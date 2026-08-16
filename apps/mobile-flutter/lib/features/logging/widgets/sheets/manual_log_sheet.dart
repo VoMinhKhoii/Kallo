@@ -8,12 +8,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/ingredient.dart';
 import '../../../../shared/widgets/decimal_input.dart';
-import '../../../../shared/widgets/nham_sheet.dart';
-import '../../../../shared/widgets/nham_sheet_header.dart';
-import '../../../../shared/widgets/nham_text.dart';
+import '../../../../shared/widgets/kallo_sheet.dart';
+import '../../../../shared/widgets/kallo_sheet_header.dart';
+import '../../../../shared/widgets/kallo_text.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/manual_log_providers.dart';
 
 /// Open the manual-log sheet: search the food database, enter exact grams,
@@ -95,43 +95,43 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
 
     return Padding(
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: NhamSheetSurface(
+      child: KalloSheetSurface(
         constraints: BoxConstraints(maxHeight: maxHeight),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            NhamSheetHeader(
+            KalloSheetHeader(
               title: 'logging.manualLogging.title'.tr(),
               subtitle: 'logging.manualLogging.subtitle'.tr(),
             ),
-            const SizedBox(height: NhamSpacing.sp2),
+            const SizedBox(height: KalloSpacing.sp2),
 
             // Search field.
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp4),
+              padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
               child: TextField(
                 controller: _searchController,
                 autofocus: true,
                 style: dashBody(),
-                cursorColor: NhamColors.accent,
+                cursorColor: KalloColors.accent,
                 decoration: InputDecoration(
                   isDense: true,
                   prefixIcon: const Icon(
                     LucideIcons.search300,
                     size: 18,
-                    color: NhamColors.textMuted,
+                    color: KalloColors.textMuted,
                   ),
                   hintText: 'logging.manualLogging.searchPlaceholder'.tr(),
                   hintStyle: dashBody(color: kInkMuted),
                   filled: true,
-                  fillColor: NhamColors.elev,
+                  fillColor: KalloColors.elev,
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: NhamSpacing.sp3,
-                    vertical: NhamSpacing.sp2,
+                    horizontal: KalloSpacing.sp3,
+                    vertical: KalloSpacing.sp2,
                   ),
-                  border: _searchBorder(NhamColors.inputBorder),
-                  enabledBorder: _searchBorder(NhamColors.inputBorder),
-                  focusedBorder: _searchBorder(NhamColors.borderAccent40),
+                  border: _searchBorder(KalloColors.inputBorder),
+                  enabledBorder: _searchBorder(KalloColors.inputBorder),
+                  focusedBorder: _searchBorder(KalloColors.borderAccent40),
                 ),
               ),
             ),
@@ -140,10 +140,10 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
             Flexible(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(
-                  NhamSpacing.sp4,
-                  NhamSpacing.sp3,
-                  NhamSpacing.sp4,
-                  NhamSpacing.sp3,
+                  KalloSpacing.sp4,
+                  KalloSpacing.sp3,
+                  KalloSpacing.sp4,
+                  KalloSpacing.sp3,
                 ),
                 children: [
                   Consumer(
@@ -153,11 +153,11 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          NhamText(
+                          KalloText(
                             'logging.manualLogging.selected'.tr(),
-                            variant: NhamTextVariant.eyebrow,
+                            variant: KalloTextVariant.eyebrow,
                           ),
-                          const SizedBox(height: NhamSpacing.sp2),
+                          const SizedBox(height: KalloSpacing.sp2),
                           for (final item in state.items)
                             _SelectedItemRow(
                               key: ValueKey(item.id),
@@ -172,7 +172,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                                       .read(manualLogProvider.notifier)
                                       .removeItem(item.id),
                             ),
-                          const SizedBox(height: NhamSpacing.sp3),
+                          const SizedBox(height: KalloSpacing.sp3),
                         ],
                       );
                     },
@@ -193,26 +193,26 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
             if (_errorText != null)
               Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: NhamSpacing.sp4,
+                  horizontal: KalloSpacing.sp4,
                 ),
-                child: NhamText(
+                child: KalloText(
                   _errorText!,
-                  variant: NhamTextVariant.small,
-                  style: dashMeta(color: NhamColors.danger),
+                  variant: KalloTextVariant.small,
+                  style: dashMeta(color: KalloColors.danger),
                 ),
               ),
 
             // Pinned totals + save bar.
             Container(
               padding: EdgeInsets.fromLTRB(
-                NhamSpacing.sp4,
-                NhamSpacing.sp3,
-                NhamSpacing.sp4,
-                (keyboardInset > 0 ? 0 : bottomInset) + NhamSpacing.sp3,
+                KalloSpacing.sp4,
+                KalloSpacing.sp3,
+                KalloSpacing.sp4,
+                (keyboardInset > 0 ? 0 : bottomInset) + KalloSpacing.sp3,
               ),
               decoration: const BoxDecoration(
-                color: NhamColors.elev,
-                border: Border(top: BorderSide(color: NhamColors.borderFaint)),
+                color: KalloColors.elev,
+                border: Border(top: BorderSide(color: KalloColors.borderFaint)),
               ),
               child: Consumer(
                 builder: (context, ref, _) {
@@ -220,7 +220,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                   return Row(
                     children: [
                       Expanded(child: _TotalsSummary(totals: state.totals)),
-                      const SizedBox(width: NhamSpacing.sp3),
+                      const SizedBox(width: KalloSpacing.sp3),
                       _SaveButton(
                         enabled: state.canSave,
                         saving: state.isSaving,
@@ -238,7 +238,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
   }
 
   OutlineInputBorder _searchBorder(Color color) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(NhamRadii.lg),
+    borderRadius: BorderRadius.circular(KalloRadii.lg),
     borderSide: BorderSide(color: color),
   );
 }
@@ -256,7 +256,7 @@ class _StateBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
-        color: NhamColors.hover,
+        color: KalloColors.hover,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -290,12 +290,12 @@ class _SelectedItemRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final kcal = item.macros?.caloriesKcal;
     return Container(
-      margin: const EdgeInsets.only(bottom: NhamSpacing.sp2),
-      padding: const EdgeInsets.all(NhamSpacing.sp2),
+      margin: const EdgeInsets.only(bottom: KalloSpacing.sp2),
+      padding: const EdgeInsets.all(KalloSpacing.sp2),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.lg),
-        border: Border.all(color: NhamColors.borderFaint),
+        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.lg),
+        border: Border.all(color: KalloColors.borderFaint),
       ),
       child: Row(
         children: [
@@ -306,9 +306,9 @@ class _SelectedItemRow extends StatelessWidget {
                 Row(
                   children: [
                     Flexible(
-                      child: NhamText(
+                      child: KalloText(
                         item.ingredient.namePrimary,
-                        variant: NhamTextVariant.itemName,
+                        variant: KalloTextVariant.itemName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -318,17 +318,17 @@ class _SelectedItemRow extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 2),
-                NhamText(
+                KalloText(
                   kcal == null
                       ? '—'
                       : '${kcal.round()} ${'logging.manualLogging.kcal'.tr()}',
-                  variant: NhamTextVariant.numCaption,
+                  variant: KalloTextVariant.numCaption,
                   style: dashMeta(tabular: true),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: NhamSpacing.sp2),
+          const SizedBox(width: KalloSpacing.sp2),
           SizedBox(
             width: 76,
             child: DecimalInput(
@@ -339,15 +339,15 @@ class _SelectedItemRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          NhamText(
+          KalloText(
             'logging.manualLogging.gramsUnit'.tr(),
-            variant: NhamTextVariant.small,
+            variant: KalloTextVariant.small,
             style: dashMeta(),
           ),
           IconButton(
             onPressed: disabled ? null : onRemove,
             icon: const Icon(LucideIcons.x300, size: 16),
-            color: NhamColors.textMuted50,
+            color: KalloColors.textMuted50,
             tooltip: 'logging.manualLogging.removeItem'.tr(),
             visualDensity: VisualDensity.compact,
           ),
@@ -376,31 +376,31 @@ class _ResultsSection extends StatelessWidget {
       children: [
         if (isRecents)
           Padding(
-            padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
-            child: NhamText(
+            padding: const EdgeInsets.only(bottom: KalloSpacing.sp2),
+            child: KalloText(
               'logging.manualLogging.recentFoods'.tr(),
-              variant: NhamTextVariant.eyebrow,
+              variant: KalloTextVariant.eyebrow,
             ),
           ),
         resultsAsync.when(
           loading:
               () => Padding(
-                padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp4),
+                padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp4),
                 child: Center(
-                  child: NhamText(
+                  child: KalloText(
                     'logging.manualLogging.searching'.tr(),
-                    variant: NhamTextVariant.small,
+                    variant: KalloTextVariant.small,
                     style: dashMeta(),
                   ),
                 ),
               ),
           error:
               (_, __) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp4),
-                child: NhamText(
+                padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp4),
+                child: KalloText(
                   'errors.internal'.tr(),
-                  variant: NhamTextVariant.small,
-                  style: dashMeta(color: NhamColors.danger),
+                  variant: KalloTextVariant.small,
+                  style: dashMeta(color: KalloColors.danger),
                 ),
               ),
           data: (results) {
@@ -409,21 +409,21 @@ class _ResultsSection extends StatelessWidget {
               // search rather than show an alarming "no results".
               if (isRecents) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp6),
+                  padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp6),
                   child: Center(
-                    child: NhamText(
+                    child: KalloText(
                       'logging.manualLogging.recentsHint'.tr(),
-                      variant: NhamTextVariant.small,
+                      variant: KalloTextVariant.small,
                       style: dashMeta(),
                     ),
                   ),
                 );
               }
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp4),
-                child: NhamText(
+                padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp4),
+                child: KalloText(
                   'logging.manualLogging.noResults'.tr(),
-                  variant: NhamTextVariant.small,
+                  variant: KalloTextVariant.small,
                   style: dashMeta(),
                 ),
               );
@@ -472,12 +472,12 @@ class _ResultTileState extends State<_ResultTile> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         decoration: BoxDecoration(
-          color: _pressed ? NhamColors.hover40 : Colors.transparent,
-          borderRadius: BorderRadius.circular(NhamRadii.md),
+          color: _pressed ? KalloColors.hover40 : Colors.transparent,
+          borderRadius: BorderRadius.circular(KalloRadii.md),
         ),
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp2,
-          vertical: NhamSpacing.sp2,
+          horizontal: KalloSpacing.sp2,
+          vertical: KalloSpacing.sp2,
         ),
         child: Row(
             children: [
@@ -488,9 +488,9 @@ class _ResultTileState extends State<_ResultTile> {
                     Row(
                       children: [
                         Flexible(
-                          child: NhamText(
+                          child: KalloText(
                             result.namePrimary,
-                            variant: NhamTextVariant.body,
+                            variant: KalloTextVariant.body,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -507,9 +507,9 @@ class _ResultTileState extends State<_ResultTile> {
                       ],
                     ),
                     if (result.nameEn != null && result.nameEn!.isNotEmpty)
-                      NhamText(
+                      KalloText(
                         result.nameEn!,
-                        variant: NhamTextVariant.small,
+                        variant: KalloTextVariant.small,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: dashMeta(),
@@ -517,19 +517,19 @@ class _ResultTileState extends State<_ResultTile> {
                   ],
                 ),
               ),
-              const SizedBox(width: NhamSpacing.sp2),
-              NhamText(
+              const SizedBox(width: KalloSpacing.sp2),
+              KalloText(
                 kcal == null
                     ? '—'
                     : '${kcal.round()} ${'logging.manualLogging.kcalPer100g'.tr()}',
-                variant: NhamTextVariant.numCaption,
+                variant: KalloTextVariant.numCaption,
                 style: dashMeta(tabular: true),
               ),
-              const SizedBox(width: NhamSpacing.sp1),
+              const SizedBox(width: KalloSpacing.sp1),
               const Icon(
                 LucideIcons.circlePlus300,
                 size: 18,
-                color: NhamColors.text,
+                color: KalloColors.text,
               ),
             ],
           ),
@@ -551,14 +551,14 @@ class _TotalsSummary extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        NhamText(
+        KalloText(
           '${_fmt(totals.caloriesKcal)} ${'logging.manualLogging.kcal'.tr()}',
-          variant: NhamTextVariant.macroValue,
+          variant: KalloTextVariant.macroValue,
         ),
         const SizedBox(height: 2),
-        NhamText(
+        KalloText(
           'P: ${_fmtG(totals.proteinG)} · C: ${_fmtG(totals.carbohydrateG)} · F: ${_fmtG(totals.fatG)}',
-          variant: NhamTextVariant.numCaption,
+          variant: KalloTextVariant.numCaption,
           style: dashMeta(tabular: true),
         ),
       ],
@@ -608,12 +608,12 @@ class _SaveButtonState extends State<_SaveButton> {
             opacity: enabled ? 1 : 0.4,
             child: Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: NhamSpacing.sp5,
-                vertical: NhamSpacing.sp3,
+                horizontal: KalloSpacing.sp5,
+                vertical: KalloSpacing.sp3,
               ),
               decoration: BoxDecoration(
-                color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-                borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+                color: _pressed ? KalloColors.btnHover : KalloColors.btn,
+                borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
               ),
               child: widget.saving
                   ? const SizedBox(

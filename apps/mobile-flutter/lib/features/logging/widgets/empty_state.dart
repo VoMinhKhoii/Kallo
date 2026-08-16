@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/kallo_mark.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../circle/data/circle_providers.dart';
 import 'entrances.dart';
 
@@ -78,7 +78,7 @@ class _EmptyStateState extends ConsumerState<EmptyState> {
         : '${_key}Named'.tr(namedArgs: {'name': name});
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp10),
+      padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -89,11 +89,11 @@ class _EmptyStateState extends ConsumerState<EmptyState> {
             // the mark reads as the brand, not as an accent decoration.
             child: KalloMark(height: 28, color: kInk),
           ),
-          const SizedBox(height: NhamSpacing.sp5),
+          const SizedBox(height: KalloSpacing.sp5),
           FadeInDown(
             delay: const Duration(milliseconds: 100),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp6),
+              padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp6),
               child: Text(
                 prompt,
                 textAlign: TextAlign.center,

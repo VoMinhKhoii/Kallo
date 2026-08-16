@@ -6,7 +6,7 @@
     Width animates between 260 ↔ 68 over 220ms.
 */
 function Sidebar({ current, onNavigate, collapsed, onToggle }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   useLucide();
 
   const items = [
@@ -100,7 +100,7 @@ function Sidebar({ current, onNavigate, collapsed, onToggle }) {
 }
 
 function SectionHeader({ collapsed, label }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   return (
     <div style={{ height: 20, display: "flex", alignItems: "center", padding: "0 12px", marginBottom: 8, position: "relative" }}>
       {collapsed ? (
@@ -113,7 +113,7 @@ function SectionHeader({ collapsed, label }) {
 }
 
 function NavRow({ item, collapsed, active, onClick }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const [hover, setHover] = React.useState(false);
   const style = {
     display: "flex", alignItems: "center",

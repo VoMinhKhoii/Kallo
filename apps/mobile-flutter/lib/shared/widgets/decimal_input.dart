@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../theme/nham_colors.dart';
-import '../../theme/nham_theme.dart';
-import '../../theme/nham_typography.dart';
+import '../../theme/kallo_colors.dart';
+import '../../theme/kallo_theme.dart';
+import '../../theme/kallo_typography.dart';
 
 /// `parseDecimalInput`, vendored verbatim from the RN/web
 /// `lib/dashboard/logic/format.ts`. Tolerates the comma decimal separator
@@ -139,29 +139,29 @@ class _DecimalInputState extends State<DecimalInput> {
       onChanged: (raw) => widget.onValueChange(_textToValue(raw)),
       onSubmitted: widget.onSubmitted,
       // Input: radii.md(8), 1px inputBorder, elev bg, 12/8 padding, 14px text.
-      style: NhamTextStyles.sansRegular(fontSize: 14)
-          .copyWith(color: NhamColors.text),
-      cursorColor: NhamColors.accent,
+      style: KalloTextStyles.sansRegular(fontSize: 14)
+          .copyWith(color: KalloColors.text),
+      cursorColor: KalloColors.accent,
       decoration: InputDecoration(
         isDense: true,
         hintText: widget.hintText,
-        hintStyle: NhamTextStyles.sansRegular(fontSize: 14)
-            .copyWith(color: NhamColors.textWarm),
+        hintStyle: KalloTextStyles.sansRegular(fontSize: 14)
+            .copyWith(color: KalloColors.textWarm),
         filled: true,
-        fillColor: NhamColors.elev,
+        fillColor: KalloColors.elev,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
-          vertical: NhamSpacing.sp2,
+          horizontal: KalloSpacing.sp3,
+          vertical: KalloSpacing.sp2,
         ),
-        border: _border(NhamColors.inputBorder),
-        enabledBorder: _border(NhamColors.inputBorder),
-        focusedBorder: _border(NhamColors.inputBorder),
+        border: _border(KalloColors.inputBorder),
+        enabledBorder: _border(KalloColors.inputBorder),
+        focusedBorder: _border(KalloColors.inputBorder),
       ),
     );
   }
 
   OutlineInputBorder _border(Color color) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(NhamRadii.md),
+        borderRadius: BorderRadius.circular(KalloRadii.md),
         borderSide: BorderSide(color: color),
       );
 }

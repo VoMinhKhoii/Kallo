@@ -107,8 +107,8 @@ aligned with future production promotion by image digest.
 
 | Service type | Naming pattern | Lifecycle | Traffic purpose |
 |---|---|---|---|
-| Shared internal app | `kallo-internal` | Long-lived | Latest approved code from `main` |
-| PR preview app | `kallo-pr-<number>` | Ephemeral | Feature review before merge |
+| Shared internal app | `nham-internal` | Long-lived | Latest approved code from `main` |
+| PR preview app | `nham-pr-<number>` | Ephemeral | Feature review before merge |
 
 Each service is a full Cloud Run service. The preview model is intentionally not
 "one service with many revisions" because the team needs stable, PR-specific URLs
@@ -255,7 +255,7 @@ On PR open, synchronize, or reopen for a branch in this repository:
 1. run CI prerequisites or depend on successful CI status
 2. build the application image
 3. push the image to Artifact Registry
-4. deploy or update `kallo-pr-<number>`
+4. deploy or update `nham-pr-<number>`
 5. run post-deploy smoke checks against that preview URL
 6. comment or update the PR with the preview URL, commit SHA, and deploy status
 
@@ -276,7 +276,7 @@ On push to `main`:
 1. wait for successful CI
 2. build the application image once
 3. push it to Artifact Registry
-4. deploy the image to `kallo-internal`
+4. deploy the image to `nham-internal`
 5. run post-deploy smoke checks
 6. if smoke checks fail, automatically roll back to the previous healthy revision
 
@@ -401,7 +401,7 @@ This catches platform misconfiguration before a broken revision is created.
 After each deploy:
 
 - PR previews run smoke checks and report failure back to the PR
-- `main` deploys run smoke checks against `kallo-internal`
+- `main` deploys run smoke checks against `nham-internal`
 
 Smoke verification must use concrete, deterministic checks rather than "site seems
 up" heuristics. The first-pass design should use:
@@ -415,7 +415,7 @@ If the shared internal service fails post-deploy smoke verification, the workflo
 should trigger an automatic rollback to the last known good revision or image.
 
 For rollback purposes, "last known good" means the most recent deployed revision or
-image for `kallo-internal` whose post-deploy smoke checks completed successfully.
+image for `nham-internal` whose post-deploy smoke checks completed successfully.
 
 ### 11.3 Failure isolation
 
@@ -440,7 +440,7 @@ reconstruction.
 ## 11.5 Preview cleanup contract
 
 An "orphaned" preview service is any Cloud Run service whose name matches
-`kallo-pr-<number>` where `<number>` is not an open pull request in the repository.
+`nham-pr-<number>` where `<number>` is not an open pull request in the repository.
 
 The scheduled cleanup workflow should therefore:
 

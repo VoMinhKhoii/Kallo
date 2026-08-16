@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../controls/country_select.dart';
 import '../widgets/profile_form_controller.dart';
 
@@ -25,14 +25,14 @@ class Regional extends StatelessWidget {
           tr('settings.regionalPanel.description'),
           style: dashBody(color: kInkMuted),
         ),
-        const SizedBox(height: NhamSpacing.sp5),
+        const SizedBox(height: KalloSpacing.sp5),
         _CountryField(
           icon: LucideIcons.globe300,
           label: tr('onboarding.origin.countryOfOrigin'),
           value: v.countryOfOrigin,
           onChange: (s) => form.update((f) => f.countryOfOrigin = s),
         ),
-        const SizedBox(height: NhamSpacing.sp4),
+        const SizedBox(height: KalloSpacing.sp4),
         _CountryField(
           icon: LucideIcons.mapPin300,
           label: tr('onboarding.origin.countryOfResidence'),
@@ -64,15 +64,15 @@ class _CountryField extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: NhamColors.textMuted),
-            const SizedBox(width: NhamSpacing.sp2),
+            Icon(icon, size: 16, color: KalloColors.textMuted),
+            const SizedBox(width: KalloSpacing.sp2),
             Text(
               label,
               style: dashBody(),
             ),
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         CountrySelect(value: value, onChange: onChange),
       ],
     );

@@ -7,7 +7,7 @@ import 'package:nham_mobile/features/logging/widgets/streaming/stream_ticker_lin
 import 'package:nham_mobile/features/logging/widgets/streaming/streaming_entry.dart';
 import 'package:nham_mobile/models/meal.dart';
 import 'package:nham_mobile/models/streaming.dart';
-import 'package:nham_mobile/theme/nham_colors.dart';
+import 'package:nham_mobile/theme/kallo_colors.dart';
 
 import '../../l10n_test_loader.dart';
 
@@ -35,7 +35,7 @@ Widget _wrap(StreamAnalysisState stream) => EasyLocalization(
       home: MediaQuery(
         data: const MediaQueryData(disableAnimations: true),
         child: Scaffold(
-          backgroundColor: NhamColors.surface,
+          backgroundColor: KalloColors.surface,
           body: SingleChildScrollView(
             child: StreamingEntry(stream: stream, loaderIndex: 0),
           ),
@@ -171,7 +171,7 @@ void main() {
         .whereType<BoxDecoration>();
 
     for (final decoration in decorations) {
-      expect(decoration.color, isNot(NhamColors.elev));
+      expect(decoration.color, isNot(KalloColors.elev));
       expect(decoration.border, isNull);
       expect(decoration.boxShadow, anyOf(isNull, isEmpty));
     }

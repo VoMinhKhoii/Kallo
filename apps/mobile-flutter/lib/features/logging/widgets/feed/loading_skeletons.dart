@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
 import 'pulse.dart';
 
@@ -17,18 +17,18 @@ class MacroSummarySkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget tile(int i) => Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp3), // p-3
+      padding: const EdgeInsets.all(KalloSpacing.sp3), // p-3
       decoration: BoxDecoration(
         color: const Color(0x40F0EAE0), // bg-kallo-hover/25
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
-        border: Border.all(color: NhamColors.borderHalf), // border/50
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg), // 2xl
+        border: Border.all(color: KalloColors.borderHalf), // border/50
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          skeletonBar(_labelWidths[i], 12, NhamColors.border70), // border/70
-          const SizedBox(height: NhamSpacing.sp2), // mb-2
-          skeletonBar(64, 20, NhamColors.track), // h-5 w-16 track skeleton pill
+          skeletonBar(_labelWidths[i], 12, KalloColors.border70), // border/70
+          const SizedBox(height: KalloSpacing.sp2), // mb-2
+          skeletonBar(64, 20, KalloColors.track), // h-5 w-16 track skeleton pill
         ],
       ),
     );
@@ -39,15 +39,15 @@ class MacroSummarySkeleton extends StatelessWidget {
           Row(
             children: [
               Expanded(child: tile(0)),
-              const SizedBox(width: NhamSpacing.sp3), // gap-3
+              const SizedBox(width: KalloSpacing.sp3), // gap-3
               Expanded(child: tile(1)),
             ],
           ),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
           Row(
             children: [
               Expanded(child: tile(2)),
-              const SizedBox(width: NhamSpacing.sp3),
+              const SizedBox(width: KalloSpacing.sp3),
               Expanded(child: tile(3)),
             ],
           ),
@@ -73,15 +73,15 @@ class LoggingDaySkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          skeletonBar(64, 12, NhamColors.border70), // border/70 time bar
-          const SizedBox(height: NhamSpacing.sp2), // mb-2
+          skeletonBar(64, 12, KalloColors.border70), // border/70 time bar
+          const SizedBox(height: KalloSpacing.sp2), // mb-2
           Container(
-            padding: const EdgeInsets.all(NhamSpacing.sp4), // p-5→16
+            padding: const EdgeInsets.all(KalloSpacing.sp4), // p-5→16
             decoration: BoxDecoration(
               color: const Color(0x33F0EAE0), // bg-kallo-hover/20
-              borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
-              border: Border.all(color: NhamColors.borderSoft), // /60
-              boxShadow: const [NhamShadows.sm],
+              borderRadius: BorderRadius.circular(KalloRadii.containerLg), // 2xl
+              border: Border.all(color: KalloColors.borderSoft), // /60
+              boxShadow: const [KalloShadows.sm],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,45 +91,45 @@ class LoggingDaySkeleton extends StatelessWidget {
                       (_, c) => skeletonBar(
                         c.maxWidth * 2 / 3,
                         20,
-                        NhamColors.border70,
+                        KalloColors.border70,
                       ),
                 ),
-                const SizedBox(height: NhamSpacing.sp4), // mb-4
+                const SizedBox(height: KalloSpacing.sp4), // mb-4
                 LayoutBuilder(
                   builder:
                       (_, c) =>
-                          skeletonBar(c.maxWidth, 12, NhamColors.borderSoft),
+                          skeletonBar(c.maxWidth, 12, KalloColors.borderSoft),
                 ),
-                const SizedBox(height: NhamSpacing.sp2),
+                const SizedBox(height: KalloSpacing.sp2),
                 LayoutBuilder(
                   builder:
                       (_, c) => skeletonBar(
                         c.maxWidth * 5 / 6,
                         12,
-                        NhamColors.borderHalf,
+                        KalloColors.borderHalf,
                       ),
                 ),
-                const SizedBox(height: NhamSpacing.sp2),
+                const SizedBox(height: KalloSpacing.sp2),
                 LayoutBuilder(
                   builder:
                       (_, c) => skeletonBar(
                         c.maxWidth * 3 / 5,
                         12,
-                        NhamColors.borderBiscotti40,
+                        KalloColors.borderBiscotti40,
                       ),
                 ),
                 const SizedBox(height: LoggingSpacing.section),
                 const Divider(
                   height: 1,
                   thickness: 1,
-                  color: NhamColors.borderHalf,
+                  color: KalloColors.borderHalf,
                 ),
                 const SizedBox(height: LoggingSpacing.section),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    skeletonBar(112, 12, NhamColors.borderHalf), // w-28
-                    skeletonBar(64, 16, NhamColors.accent35), // accent/25
+                    skeletonBar(112, 12, KalloColors.borderHalf), // w-28
+                    skeletonBar(64, 16, KalloColors.accent35), // accent/25
                   ],
                 ),
               ],

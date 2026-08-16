@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/logging_spacing.dart';
 import 'composer_glow.dart';
 
@@ -37,7 +37,7 @@ class ComposerDock extends StatefulWidget {
   /// Height of the fade band above the opaque base. Deep enough that a meal
   /// card's last line dissolves rather than blinking out; short enough that the
   /// reserved scroll padding stays honest.
-  static const double scrimHeight = NhamSpacing.sp8; // 32
+  static const double scrimHeight = KalloSpacing.sp8; // 32
 
   @override
   State<ComposerDock> createState() => _ComposerDockState();
@@ -90,7 +90,7 @@ class _ComposerDockState extends State<ComposerDock> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    // NhamColors.surface at 0 / 35 / 85 / 100% alpha. Eased,
+                    // KalloColors.surface at 0 / 35 / 85 / 100% alpha. Eased,
                     // not linear: a straight alpha ramp still reads as a
                     // visible seam where it meets transparency. All four stops
                     // come from the token — the first three used to restate
@@ -98,10 +98,10 @@ class _ComposerDockState extends State<ComposerDock> {
                     // toward the *old* colour, i.e. the seam it exists to
                     // remove.
                     colors: [
-                      NhamColors.surface0,
-                      NhamColors.surface35,
-                      NhamColors.surface85,
-                      NhamColors.surface,
+                      KalloColors.surface0,
+                      KalloColors.surface35,
+                      KalloColors.surface85,
+                      KalloColors.surface,
                     ],
                     stops: [0, 0.45, 0.8, 1],
                   ),
@@ -111,11 +111,11 @@ class _ComposerDockState extends State<ComposerDock> {
             // The opaque base — everything from the composer card down is a
             // solid surface, including the home-indicator inset.
             Container(
-              color: NhamColors.surface,
+              color: KalloColors.surface,
               padding: EdgeInsets.fromLTRB(
-                NhamSpacing.sp3,
+                KalloSpacing.sp3,
                 0,
-                NhamSpacing.sp3,
+                KalloSpacing.sp3,
                 bottomInset + LoggingSpacing.block,
               ),
               // The halo sits under the composer card and over the base. Not

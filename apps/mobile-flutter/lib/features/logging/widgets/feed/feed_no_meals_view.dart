@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../logic/feed/view_state.dart';
 import '../empty_state.dart';
 import 'loading_skeletons.dart';
@@ -43,9 +43,9 @@ class FeedNoMealsView extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: EdgeInsets.fromLTRB(
-          NhamSpacing.sp3,
+          KalloSpacing.sp3,
           0,
-          NhamSpacing.sp3,
+          KalloSpacing.sp3,
           dockHeight,
         ),
         child: body,
@@ -78,9 +78,9 @@ class FeedNoMealsView extends StatelessWidget {
                 curve: Curves.easeOutCubic,
                 padding: EdgeInsets.fromLTRB(
                   0,
-                  NhamSpacing.sp6,
+                  KalloSpacing.sp6,
                   0,
-                  NhamSpacing.sp6 + dockHeight,
+                  KalloSpacing.sp6 + dockHeight,
                 ),
                 child: Center(child: body),
               ),

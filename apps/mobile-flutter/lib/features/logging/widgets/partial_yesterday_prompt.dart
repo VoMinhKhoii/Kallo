@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
@@ -65,17 +65,17 @@ class PartialYesterdayPrompt extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        NhamSpacing.sp3,
-        NhamSpacing.sp3,
-        NhamSpacing.sp3,
+        KalloSpacing.sp3,
+        KalloSpacing.sp3,
+        KalloSpacing.sp3,
         0,
       ),
       child: Container(
-        padding: const EdgeInsets.all(NhamSpacing.sp3),
+        padding: const EdgeInsets.all(KalloSpacing.sp3),
         decoration: BoxDecoration(
-          color: NhamColors.elev,
-          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-          border: Border.all(color: NhamColors.borderSoft),
+          color: KalloColors.elev,
+          borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+          border: Border.all(color: KalloColors.borderSoft),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,7 +86,7 @@ class PartialYesterdayPrompt extends ConsumerWidget {
                 children: [
                   Text(
                     '$t.title'.tr(),
-                    style: dashBody(weight: FontWeight.w500).merge(const TextStyle(color: NhamColors.danger)),
+                    style: dashBody(weight: FontWeight.w500).merge(const TextStyle(color: KalloColors.danger)),
                   ),
                   const SizedBox(height: 4), // mt-1
                   Text(
@@ -98,7 +98,7 @@ class PartialYesterdayPrompt extends ConsumerWidget {
                     ),
                     style: dashMeta(),
                   ),
-                  const SizedBox(height: NhamSpacing.sp3), // mt-3
+                  const SizedBox(height: KalloSpacing.sp3), // mt-3
                   _OpenButton(
                     label: '$t.open'.tr(),
                     onTap: () => onOpenDay(yesterday),
@@ -106,7 +106,7 @@ class PartialYesterdayPrompt extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(width: NhamSpacing.sp3),
+            const SizedBox(width: KalloSpacing.sp3),
             _DismissButton(
               label: '$t.dismiss'.tr(),
               onTap:
@@ -154,14 +154,14 @@ class _OpenButtonState extends State<_OpenButton> {
           duration: const Duration(milliseconds: 150),
           constraints: const BoxConstraints(minHeight: 32), // min-h-8
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
+            horizontal: KalloSpacing.sp3,
             vertical: 6, // py-1.5
           ),
           decoration: BoxDecoration(
-            color: _pressed ? NhamColors.hover : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.pill),
+            color: _pressed ? KalloColors.hover : Colors.transparent,
+            borderRadius: BorderRadius.circular(KalloRadii.pill),
             border: Border.all(
-              color: _pressed ? NhamColors.accent50 : NhamColors.borderSoft,
+              color: _pressed ? KalloColors.accent50 : KalloColors.borderSoft,
             ),
           ),
           child: Row(
@@ -170,7 +170,7 @@ class _OpenButtonState extends State<_OpenButton> {
               const Icon(
                 LucideIcons.arrowLeft300,
                 size: 16,
-                color: NhamColors.text,
+                color: KalloColors.text,
               ),
               const SizedBox(width: 8), // gap-2
               Text(
@@ -214,13 +214,13 @@ class _DismissButtonState extends State<_DismissButton> {
           height: 32,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _pressed ? NhamColors.hover : Colors.transparent,
+            color: _pressed ? KalloColors.hover : Colors.transparent,
             shape: BoxShape.circle,
           ),
           child: Icon(
             LucideIcons.x300,
             size: 16,
-            color: _pressed ? NhamColors.text : NhamColors.textMuted,
+            color: _pressed ? KalloColors.text : KalloColors.textMuted,
           ),
         ),
       ),

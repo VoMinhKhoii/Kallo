@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:nham_mobile/features/logging/widgets/composer_dock.dart';
-import 'package:nham_mobile/theme/nham_colors.dart';
+import 'package:nham_mobile/theme/kallo_colors.dart';
 
 /// The dock is what lets the feed flow UNDER the composer. Its contract is
 /// small but load-bearing: it must be a solid surface, and it must report its
@@ -80,7 +80,7 @@ void main() {
           )
           .first,
     );
-    expect(dock.color, NhamColors.surface);
+    expect(dock.color, KalloColors.surface);
   });
 }
 

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../../../models/cheat.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/logging_models.dart';
 import '../logic/logging_spacing.dart';
 import '../logic/slider_nutrition.dart';
@@ -32,11 +32,11 @@ class CheatMealExpandedDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
+          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
           const SizedBox(height: LoggingSpacing.section),
           if (persisted != null) ...[
             Text('logging.cheatMealCard.youSet'.tr(), style: dashMeta()),
-            const SizedBox(height: NhamSpacing.sp2),
+            const SizedBox(height: KalloSpacing.sp2),
             for (final slider in persisted.spec.sliders)
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -51,7 +51,7 @@ class CheatMealExpandedDetails extends StatelessWidget {
             const Divider(
               height: 1,
               thickness: 1,
-              color: NhamColors.borderFaint,
+              color: KalloColors.borderFaint,
             ),
             const SizedBox(height: LoggingSpacing.section),
           ],
@@ -68,7 +68,7 @@ class CheatMealExpandedDetails extends StatelessWidget {
                       child: Text(
                         macroLine, style: dashMeta(tabular: true),),
                     ),
-                    const SizedBox(width: NhamSpacing.sp4),
+                    const SizedBox(width: KalloSpacing.sp4),
                     Text(
                       caloriesApprox, style: dashValue(),),
                   ],
@@ -102,9 +102,9 @@ class _YouSetRow extends StatelessWidget {
           slider.label,
           style: dashBody(weight: FontWeight.w500),
         ),
-        const SizedBox(width: NhamSpacing.sp2),
+        const SizedBox(width: KalloSpacing.sp2),
         _StopScale(level: level, color: cheatSliderColor(slider.key)),
-        const SizedBox(width: NhamSpacing.sp3),
+        const SizedBox(width: KalloSpacing.sp3),
         Expanded(
           child: Text(
             activeAnchorLabel(slider, level),
@@ -143,7 +143,7 @@ class _StopScale extends StatelessWidget {
                   color: i < filled ? color : Colors.transparent,
                   shape: BoxShape.circle,
                   border:
-                      i < filled ? null : Border.all(color: NhamColors.border),
+                      i < filled ? null : Border.all(color: KalloColors.border),
                 ),
               ),
             ),

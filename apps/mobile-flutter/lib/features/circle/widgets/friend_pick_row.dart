@@ -4,9 +4,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/circle.dart';
 import '../../../shared/widgets/profile_avatar.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 
 class FriendPickRow extends StatelessWidget {
   const FriendPickRow({
@@ -33,29 +33,29 @@ class FriendPickRow extends StatelessWidget {
         },
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
-            vertical: NhamSpacing.sp2_5,
+            horizontal: KalloSpacing.sp3,
+            vertical: KalloSpacing.sp2_5,
           ),
           decoration: BoxDecoration(
-            color: selected ? NhamColors.accent10 : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+            color: selected ? KalloColors.accent10 : Colors.transparent,
+            borderRadius: BorderRadius.circular(KalloRadii.containerLg),
           ),
           child: Row(
             children: [
               ProfileAvatarDisc(profile: profile, size: 32),
-              const SizedBox(width: NhamSpacing.sp3),
+              const SizedBox(width: KalloSpacing.sp3),
               Expanded(
                 child: Text(
                   profile.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: NhamTextStyles.sansRegular(
-                    fontSize: NhamFontSize.sm,
-                  ).copyWith(color: NhamColors.text),
+                  style: KalloTextStyles.sansRegular(
+                    fontSize: KalloFontSize.sm,
+                  ).copyWith(color: KalloColors.text),
                 ),
               ),
               if (selected)
-                const Icon(LucideIcons.check300, size: 16, color: NhamColors.btn),
+                const Icon(LucideIcons.check300, size: 16, color: KalloColors.btn),
             ],
           ),
         ),

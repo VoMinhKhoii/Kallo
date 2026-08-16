@@ -2,12 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/widgets/nham_sheet.dart';
-import '../../../shared/widgets/nham_sheet_header.dart';
+import '../../../shared/widgets/kallo_sheet.dart';
+import '../../../shared/widgets/kallo_sheet_header.dart';
 import '../../../shared/widgets/top_toast.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 import '../data/circle_providers.dart';
 import 'friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
@@ -83,49 +83,49 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
     final count = _selected.length;
     final portion = count > 0 ? '1/${count + 1}' : '—';
 
-    return NhamSheetSurface(
+    return KalloSheetSurface(
       constraints: BoxConstraints(maxHeight: maxHeight),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          NhamSheetHeader(title: tr('groups.shareMeal.title')),
+          KalloSheetHeader(title: tr('groups.shareMeal.title')),
           Flexible(
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
-                NhamSpacing.sp4,
+                KalloSpacing.sp4,
                 0,
-                NhamSpacing.sp4,
-                viewInsets + NhamSpacing.sp5,
+                KalloSpacing.sp4,
+                viewInsets + KalloSpacing.sp5,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     tr('groups.shareMeal.description'),
-                    style: NhamTextStyles.sansRegular(
-                      fontSize: NhamFontSize.detail,
-                      height: NhamLeading.relaxed,
-                    ).copyWith(color: NhamColors.textMuted),
+                    style: KalloTextStyles.sansRegular(
+                      fontSize: KalloFontSize.detail,
+                      height: KalloLeading.relaxed,
+                    ).copyWith(color: KalloColors.textMuted),
                   ),
-                  const SizedBox(height: NhamSpacing.sp4),
+                  const SizedBox(height: KalloSpacing.sp4),
                   ShareMealModeSelector(
                     mode: _mode,
                     onChanged: (mode) => setState(() => _mode = mode),
                   ),
                   // Only once a friend is picked — no bare em-dash placeholder.
                   if (_mode == 'split' && _selected.isNotEmpty) ...[
-                    const SizedBox(height: NhamSpacing.sp3),
+                    const SizedBox(height: KalloSpacing.sp3),
                     Text(
                       tr(
                         'groups.shareMeal.splitPreview',
                         namedArgs: {'portion': portion},
                       ),
-                      style: NhamTextStyles.sansMedium(
-                        fontSize: NhamFontSize.xs,
-                      ).copyWith(color: NhamColors.text),
+                      style: KalloTextStyles.sansMedium(
+                        fontSize: KalloFontSize.xs,
+                      ).copyWith(color: KalloColors.text),
                     ),
                   ],
-                  const SizedBox(height: NhamSpacing.sp4),
+                  const SizedBox(height: KalloSpacing.sp4),
                   friendsAsync.when(
                     loading: () => FriendListSkeleton(
                       semanticsLabel: tr('groups.shareMeal.loadingFriends'),
@@ -133,9 +133,9 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                     error:
                         (_, __) => Text(
                           tr('groups.shareMeal.error'),
-                          style: NhamTextStyles.sansRegular(
-                            fontSize: NhamFontSize.detail,
-                          ).copyWith(color: NhamColors.textMuted),
+                          style: KalloTextStyles.sansRegular(
+                            fontSize: KalloFontSize.detail,
+                          ).copyWith(color: KalloColors.textMuted),
                         ),
                     data: (members) {
                       final friends =
@@ -143,9 +143,9 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                       if (friends.isEmpty) {
                         return Text(
                           tr('groups.shareMeal.noFriends'),
-                          style: NhamTextStyles.sansRegular(
-                            fontSize: NhamFontSize.detail,
-                          ).copyWith(color: NhamColors.textMuted),
+                          style: KalloTextStyles.sansRegular(
+                            fontSize: KalloFontSize.detail,
+                          ).copyWith(color: KalloColors.textMuted),
                         );
                       }
                       return Column(
@@ -156,13 +156,13 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                               selected: _selected.contains(m.profile.userId),
                               onTap: () => _toggle(m.profile.userId),
                             ),
-                            const SizedBox(height: NhamSpacing.sp1),
+                            const SizedBox(height: KalloSpacing.sp1),
                           ],
                         ],
                       );
                     },
                   ),
-                  const SizedBox(height: NhamSpacing.sp4),
+                  const SizedBox(height: KalloSpacing.sp4),
                   SubmitButton(
                     label:
                         count == 0

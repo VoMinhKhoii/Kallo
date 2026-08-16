@@ -16,8 +16,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/dashboard.dart';
 import '../../../shared/widgets/widgets.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/dashboard_providers.dart';
 import '../logic/heatmap_colors.dart';
 import '../logic/heatmap_month_labels.dart';
@@ -42,7 +42,7 @@ const double _gap90d = 2; // GAP['90d']
 /// `T2`…`T7`, `CN`, which wrapped to two lines inside a fixed 16.
 const double _minDayLabelWidth = 16;
 const double _dayLabelPadRight = 4;
-const double _dayLabelGutter = NhamSpacing.sp1; // gap-1 (4px)
+const double _dayLabelGutter = KalloSpacing.sp1; // gap-1 (4px)
 const double _monthStripHeight = 16; // h-4
 const double _bubbleHalfW = 60;
 const double _legendBarHeight = 6;
@@ -65,7 +65,7 @@ class AdherenceHeatmap extends ConsumerWidget {
           (_, __) => Container(
             constraints: const BoxConstraints(minHeight: 180),
             alignment: Alignment.center,
-            padding: const EdgeInsets.all(NhamSpacing.sp4),
+            padding: const EdgeInsets.all(KalloSpacing.sp4),
             decoration: BoxDecoration(
               color: kCardSurface,
               borderRadius: BorderRadius.circular(kCardRadius),
@@ -82,10 +82,10 @@ class AdherenceHeatmap extends ConsumerWidget {
                     style: dashMeta(color: kInkMuted),
                   ),
                 ),
-                const SizedBox(height: NhamSpacing.sp3),
-                NhamButton(
+                const SizedBox(height: KalloSpacing.sp3),
+                KalloButton(
                   title: tr('dashboard.retry'),
-                  variant: NhamButtonVariant.ghost,
+                  variant: KalloButtonVariant.ghost,
                   onPressed:
                       () => ref.invalidate(dashboardBundleProvider(args)),
                 ),
@@ -206,7 +206,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     final dayLabelWidth = _dayLabelWidth(dayLabels, dayLabelStyle);
 
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: const EdgeInsets.all(KalloSpacing.sp4),
       decoration: BoxDecoration(
         color: kCardSurface, // solid white
         borderRadius: BorderRadius.circular(kCardRadius),
@@ -230,7 +230,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
               // days reads as noise, and a new user shouldn't see "0% on
               // track" over an empty grid.
               Padding(
-                padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
+                padding: const EdgeInsets.only(bottom: KalloSpacing.sp2),
                 child: Text(
                   (data != null && adherence.loggedDays >= 3)
                       ? tr(
@@ -258,7 +258,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                             margin: EdgeInsets.only(
                               top:
                                   i == 0
-                                      ? _monthStripHeight + NhamSpacing.sp1
+                                      ? _monthStripHeight + KalloSpacing.sp1
                                       : _gap90d,
                             ),
                             padding: const EdgeInsets.only(
@@ -317,7 +317,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                           ],
                         ),
                       ),
-                      const SizedBox(height: NhamSpacing.sp1),
+                      const SizedBox(height: KalloSpacing.sp1),
                       // Cell grid.
                       Stack(
                         clipBehavior: Clip.none,
@@ -360,19 +360,19 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                                   double.infinity,
                                 ),
                               ),
-                              bottom: gridHeight - _bubble!.y + NhamSpacing.sp1,
+                              bottom: gridHeight - _bubble!.y + KalloSpacing.sp1,
                               child: Container(
                                 constraints: const BoxConstraints(
                                   maxWidth: _bubbleHalfW * 2,
                                 ),
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: NhamSpacing.sp1,
+                                  vertical: KalloSpacing.sp1,
                                   horizontal: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: NhamColors.text,
+                                  color: KalloColors.text,
                                   borderRadius: BorderRadius.circular(
-                                    NhamRadii.sm,
+                                    KalloRadii.sm,
                                   ),
                                 ),
                                 child: Text(
@@ -391,14 +391,14 @@ class _HeatmapBodyState extends State<_HeatmapBody>
 
               // Legend.
               Padding(
-                padding: const EdgeInsets.only(top: NhamSpacing.sp2),
+                padding: const EdgeInsets.only(top: KalloSpacing.sp2),
                 child: Row(
                   children: [
                     Text(
                       tr('dashboard.adherenceHeatmap.offTarget'),
                       style: dashMeta(color: kInkMuted),
                     ),
-                    const SizedBox(width: NhamSpacing.sp2),
+                    const SizedBox(width: KalloSpacing.sp2),
                     Expanded(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(
@@ -426,7 +426,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                         ),
                       ),
                     ),
-                    const SizedBox(width: NhamSpacing.sp2),
+                    const SizedBox(width: KalloSpacing.sp2),
                     Text(
                       tr('dashboard.adherenceHeatmap.onTarget'),
                       style: dashMeta(color: kInkMuted),

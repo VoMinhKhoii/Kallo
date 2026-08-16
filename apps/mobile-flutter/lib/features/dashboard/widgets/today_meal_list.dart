@@ -8,7 +8,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/logging_day.dart';
 import '../logic/dashboard_format.dart';
 import '../logic/dashboard_spacing.dart';
@@ -103,7 +103,7 @@ class _MealRow extends StatelessWidget {
               style: dashBody(),
             ),
           ),
-          const SizedBox(width: NhamSpacing.sp2),
+          const SizedBox(width: KalloSpacing.sp2),
           SizedBox(
             width: dashboardValueColumnWidth,
             // Shares the macro rows' right edge, so it needs the same guard:

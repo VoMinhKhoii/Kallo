@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../theme/calm_tokens.dart';
-import '../../theme/nham_colors.dart';
-import '../../theme/nham_theme.dart';
+import '../../theme/kallo_colors.dart';
+import '../../theme/kallo_theme.dart';
 
 /// The unified sheet header: a centered grab handle, then a row with the X
 /// close button on the LEFT, a bold centered title (with an optional
@@ -14,8 +14,8 @@ import '../../theme/nham_theme.dart';
 /// Pass [title] for the common case, or [titleWidget] to supply a dynamic
 /// header (e.g. an inline-editable name). [onClose] defaults to popping the
 /// route; [closeEnabled] gates the button while a sheet is mid-save.
-class NhamSheetHeader extends StatelessWidget {
-  const NhamSheetHeader({
+class KalloSheetHeader extends StatelessWidget {
+  const KalloSheetHeader({
     super.key,
     this.title,
     this.titleWidget,
@@ -47,22 +47,22 @@ class NhamSheetHeader extends StatelessWidget {
       children: [
         // Grab handle, top-center.
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp2),
+          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),
           child: Container(
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: NhamColors.border,
+              color: KalloColors.border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            NhamSpacing.sp2,
+            KalloSpacing.sp2,
             0,
-            NhamSpacing.sp2,
-            NhamSpacing.sp1,
+            KalloSpacing.sp2,
+            KalloSpacing.sp1,
           ),
           child: Row(
             children: [
@@ -70,8 +70,8 @@ class NhamSheetHeader extends StatelessWidget {
                 onPressed: closeEnabled
                     ? (onClose ?? () => Navigator.of(context).pop())
                     : null,
-                icon: const Icon(LucideIcons.x300, size: NhamIcons.size),
-                color: NhamColors.textMuted,
+                icon: const Icon(LucideIcons.x300, size: KalloIcons.size),
+                color: KalloColors.textMuted,
                 tooltip: 'common.cancel'.tr(),
               ),
               Expanded(

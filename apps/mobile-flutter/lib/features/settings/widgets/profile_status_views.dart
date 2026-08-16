@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 
 /// Empty state when no profile exists yet (onboarding never ran).
 class ProfileEmpty extends StatelessWidget {
@@ -14,26 +14,26 @@ class ProfileEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
+      padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp5),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             tr('settings.profilePage.emptyTitle'),
-            style: NhamTextStyles.serifRegular(
-              fontSize: NhamFontSize.h3,
+            style: KalloTextStyles.serifRegular(
+              fontSize: KalloFontSize.h3,
             ).copyWith(
-              letterSpacing: NhamTracking.tight,
-              color: NhamColors.text,
+              letterSpacing: KalloTracking.tight,
+              color: KalloColors.text,
             ),
           ),
-          const SizedBox(height: NhamSpacing.sp4),
+          const SizedBox(height: KalloSpacing.sp4),
           Text(
             tr('settings.profilePage.emptyDescription'),
             style: dashBody(color: kInkMuted),
           ),
-          const SizedBox(height: NhamSpacing.sp4),
+          const SizedBox(height: KalloSpacing.sp4),
           // RN routes "Start setup" to /logging (where the onboarding overlay
           // resumes). go_router resolves via the root navigator from any
           // descendant context, so this crosses tabs correctly.
@@ -48,12 +48,12 @@ class ProfileEmpty extends StatelessWidget {
                 onTap: () => context.go('/logging'),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: NhamSpacing.sp5,
+                    horizontal: KalloSpacing.sp5,
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: NhamColors.text,
-                    borderRadius: BorderRadius.circular(NhamRadii.pill),
+                    color: KalloColors.text,
+                    borderRadius: BorderRadius.circular(KalloRadii.pill),
                   ),
                   child: Text(
                     tr('settings.profilePage.startSetup'),
@@ -83,21 +83,21 @@ class ProfileLoadError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
+      padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp5),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             tr('common.error'),
-            style: NhamTextStyles.serifRegular(
-              fontSize: NhamFontSize.h3,
+            style: KalloTextStyles.serifRegular(
+              fontSize: KalloFontSize.h3,
             ).copyWith(
-              letterSpacing: NhamTracking.tight,
-              color: NhamColors.text,
+              letterSpacing: KalloTracking.tight,
+              color: KalloColors.text,
             ),
           ),
-          const SizedBox(height: NhamSpacing.sp4),
+          const SizedBox(height: KalloSpacing.sp4),
           Align(
             alignment: Alignment.centerLeft,
             child: Semantics(
@@ -109,12 +109,12 @@ class ProfileLoadError extends StatelessWidget {
                 onTap: onRetry,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: NhamSpacing.sp5,
+                    horizontal: KalloSpacing.sp5,
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: NhamColors.text,
-                    borderRadius: BorderRadius.circular(NhamRadii.pill),
+                    color: KalloColors.text,
+                    borderRadius: BorderRadius.circular(KalloRadii.pill),
                   ),
                   child: Text(
                     tr('common.retry'),

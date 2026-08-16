@@ -58,7 +58,7 @@ void main() {
         path: 'assets/l10n',
         fallbackLocale: const Locale('en'),
         assetLoader: assetLoader,
-        child: const ProviderScope(child: NhamApp()),
+        child: const ProviderScope(child: KalloApp()),
       ),
     );
     await tester.pumpAndSettle();
@@ -72,7 +72,8 @@ void main() {
   });
 
   test('localized user-facing copy uses the Kallo brand', () {
-    final legacyBrand = RegExp(r'\b(?:Kallo|Nham)\b');
+    // Names the retired brand on purpose — do not "modernise" this literal.
+    final legacyBrand = RegExp(r'\b(?:Nhẩm|Nham)\b');
 
     Iterable<String> strings(Object? value) sync* {
       if (value is String) {

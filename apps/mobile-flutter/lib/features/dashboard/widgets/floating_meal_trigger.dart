@@ -20,8 +20,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../logging/widgets/sheets/quick_log_sheet.dart';
 
 /// Session-scoped FAB position (top-left, in the dashboard content's local
@@ -31,8 +31,8 @@ final mealFabPositionProvider = StateProvider<Offset?>((ref) => null);
 
 // FAB geometry / movement bounds.
 const double _fabSize = 44; // h-11 w-11
-const double _fabMargin = NhamSpacing.sp4; // 16 — edge inset
-const double _fabBottomGap = NhamSpacing.sp5; // 20 — default bottom rest
+const double _fabMargin = KalloSpacing.sp4; // 16 — edge inset
+const double _fabBottomGap = KalloSpacing.sp5; // 20 — default bottom rest
 
 class FloatingMealTrigger extends ConsumerStatefulWidget {
   const FloatingMealTrigger({super.key});
@@ -146,10 +146,10 @@ class _FloatingMealTriggerState extends ConsumerState<FloatingMealTrigger> {
                         decoration: BoxDecoration(
                           color:
                               _fabPressed
-                                  ? NhamColors.btnHover
-                                  : NhamColors.btn,
+                                  ? KalloColors.btnHover
+                                  : KalloColors.btn,
                           borderRadius: BorderRadius.circular(
-                            NhamRadii.containerLg,
+                            KalloRadii.containerLg,
                           ), // 16
                           boxShadow: [
                             // Deeper shadow while dragging reads as "above" the
@@ -163,7 +163,7 @@ class _FloatingMealTriggerState extends ConsumerState<FloatingMealTrigger> {
                         ),
                         child: const Icon(
                           LucideIcons.utensilsCrossed300,
-                          size: NhamIcons.size,
+                          size: KalloIcons.size,
                           color: Colors.white,
                         ),
                       ),

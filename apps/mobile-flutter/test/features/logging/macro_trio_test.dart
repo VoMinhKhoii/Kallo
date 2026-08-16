@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:nham_mobile/features/logging/widgets/macro_trio.dart';
 import 'package:nham_mobile/theme/calm_tokens.dart';
-import 'package:nham_mobile/theme/nham_theme.dart';
+import 'package:nham_mobile/theme/kallo_theme.dart';
 
 /// The width a meal row actually gets inside the card on a 390pt phone: the
 /// feed's gutter plus the card's own padding. Every claim below is about that
@@ -42,7 +42,7 @@ Widget _row(
                 style: dashBody(),
               ),
             ),
-            const SizedBox(width: NhamSpacing.sp3),
+            const SizedBox(width: KalloSpacing.sp3),
             MacroTrio(protein: p, carbs: c, fat: f, calories: kcal),
           ],
         ),
@@ -136,14 +136,14 @@ void main() {
                 Row(
                   children: [
                     Expanded(child: Text('x')),
-                    SizedBox(width: NhamSpacing.sp3),
+                    SizedBox(width: KalloSpacing.sp3),
                     MacroTrio(protein: 0, carbs: 16, fat: 5, calories: 113),
                   ],
                 ),
                 Row(
                   children: [
                     Expanded(child: Text('y')),
-                    SizedBox(width: NhamSpacing.sp3),
+                    SizedBox(width: KalloSpacing.sp3),
                     MacroTrio(protein: 49, carbs: 105, fat: 9, calories: 526),
                   ],
                 ),
@@ -231,7 +231,7 @@ void main() {
                     Row(
                       children: [
                         const Expanded(child: Text('x')),
-                        const SizedBox(width: NhamSpacing.sp3),
+                        const SizedBox(width: KalloSpacing.sp3),
                         MacroTrio(
                           protein: r.$1,
                           carbs: r.$2,
@@ -353,7 +353,7 @@ void main() {
                 Row(
                   children: [
                     Expanded(child: Text('Cơm gà')),
-                    SizedBox(width: NhamSpacing.sp3),
+                    SizedBox(width: KalloSpacing.sp3),
                     MacroTrio(protein: 49, carbs: 61, fat: 9, calories: 526),
                   ],
                 ),

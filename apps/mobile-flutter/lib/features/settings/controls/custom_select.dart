@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// A single option for [CustomSelect].
 class CustomSelectOption {
@@ -120,8 +120,8 @@ class _CustomSelectState extends State<CustomSelect>
 
     final borderColor =
         _open
-            ? NhamColors.accent
-            : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
+            ? KalloColors.accent
+            : (_pressed ? KalloColors.accent50 : KalloColors.inputBorder);
 
     return Semantics(
       button: true,
@@ -140,28 +140,28 @@ class _CustomSelectState extends State<CustomSelect>
             // Outer ring: `ring-1 ring-accent/20` when open, sitting 1px outside
             // the 1px border at the same `rounded-lg` (8px) radius.
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(NhamRadii.md + 1),
+              borderRadius: BorderRadius.circular(KalloRadii.md + 1),
               border: Border.all(
-                color: _open ? NhamColors.accent20 : Colors.transparent,
+                color: _open ? KalloColors.accent20 : Colors.transparent,
                 width: 1,
               ),
             ),
             child: Container(
               decoration: BoxDecoration(
-                color: NhamColors.elev,
-                borderRadius: BorderRadius.circular(NhamRadii.md),
+                color: KalloColors.elev,
+                borderRadius: BorderRadius.circular(KalloRadii.md),
                 border: Border.all(color: borderColor, width: 1),
-                boxShadow: _open ? const [NhamShadows.sm] : null,
+                boxShadow: _open ? const [KalloShadows.sm] : null,
               ),
               padding: const EdgeInsets.symmetric(
-                horizontal: NhamSpacing.sp3,
-                vertical: NhamSpacing.sp2,
+                horizontal: KalloSpacing.sp3,
+                vertical: KalloSpacing.sp2,
               ),
               child: Row(
                 children: [
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.only(right: NhamSpacing.sp2),
+                      padding: const EdgeInsets.only(right: KalloSpacing.sp2),
                       child: Text(
                         selected ?? widget.placeholder ?? '',
                         maxLines: 1,
@@ -253,9 +253,9 @@ class _DropdownOverlay extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 6), // py-1.5
                     decoration: BoxDecoration(
-                      color: NhamColors.elev,
-                      borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-                      border: Border.all(color: NhamColors.inputBorder),
+                      color: KalloColors.elev,
+                      borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+                      border: Border.all(color: KalloColors.inputBorder),
                       boxShadow: const [
                         // shadow-[0_8px_30px_rgb(0,0,0,0.08)]
                         BoxShadow(
@@ -320,10 +320,10 @@ class _DropdownRowState extends State<_DropdownRow> {
         onTapCancel: () => setState(() => _pressed = false),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150), // transition-colors
-          color: _pressed ? NhamColors.track : Colors.transparent,
+          color: _pressed ? KalloColors.track : Colors.transparent,
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
-            vertical: NhamSpacing.sp2 + 2, // py-2.5 = 10
+            horizontal: KalloSpacing.sp3,
+            vertical: KalloSpacing.sp2 + 2, // py-2.5 = 10
           ),
           child: Row(
             children: [
@@ -341,7 +341,7 @@ class _DropdownRowState extends State<_DropdownRow> {
                 const Icon(
                   LucideIcons.check300,
                   size: 16,
-                  color: NhamColors.text,
+                  color: KalloColors.text,
                 )
               else
                 const SizedBox(width: 16, height: 16),

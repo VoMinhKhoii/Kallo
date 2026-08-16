@@ -4,7 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:nham_mobile/features/logging/logic/logging_spacing.dart';
 import 'package:nham_mobile/features/logging/widgets/meal_action_icon_button.dart';
-import 'package:nham_mobile/theme/nham_colors.dart';
+import 'package:nham_mobile/theme/kallo_colors.dart';
 
 /// The selected wash and the tap target are deliberately different sizes, and
 /// the wash has to stay on the Material ink layer. Both have regressed once:
@@ -46,7 +46,7 @@ void main() {
     );
     expect(
       (ink.decoration! as BoxDecoration).color,
-      NhamColors.hover,
+      KalloColors.hover,
     );
   });
 

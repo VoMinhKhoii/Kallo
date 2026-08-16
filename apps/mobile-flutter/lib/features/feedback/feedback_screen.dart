@@ -10,13 +10,13 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/api_client.dart';
 import 'feedback_fields.dart';
-import '../../shared/widgets/nham_primitives.dart';
+import '../../shared/widgets/kallo_primitives.dart';
 import '../../shared/widgets/scroll_separator.dart';
 import '../../shared/widgets/quiet_action_button.dart';
 import '../../shell/app_header.dart';
 import '../../theme/calm_tokens.dart';
-import '../../theme/nham_colors.dart';
-import '../../theme/nham_theme.dart';
+import '../../theme/kallo_colors.dart';
+import '../../theme/kallo_theme.dart';
 
 /// Marketing version — kept in sync with `pubspec.yaml` (no `package_info_plus`
 /// dependency), mirroring the `_appVersion` constant in the settings screen.
@@ -206,7 +206,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       bottom: false,
       child: ScrollSeparator(
         header: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(onBack: () => Navigator.of(context).pop()),
         ),
         child: _sent ? _buildSent() : _buildForm(),
@@ -217,32 +217,32 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   Widget _buildSent() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(LucideIcons.circleCheck300, size: 40, color: kInk),
-            const SizedBox(height: NhamSpacing.sp4),
+            const SizedBox(height: KalloSpacing.sp4),
             Text(
               tr('settings.feedback.successTitle'),
               textAlign: TextAlign.center,
               style: dashHeadline(),
             ),
-            const SizedBox(height: NhamSpacing.sp2),
+            const SizedBox(height: KalloSpacing.sp2),
             Text(
               tr('settings.feedback.successBody'),
               textAlign: TextAlign.center,
               style: dashBody(color: kInkMuted),
             ),
-            const SizedBox(height: NhamSpacing.sp5),
-            NhamButton(
+            const SizedBox(height: KalloSpacing.sp5),
+            KalloButton(
               title: tr('settings.feedback.done'),
               onPressed: () => Navigator.of(context).pop(),
             ),
-            const SizedBox(height: NhamSpacing.sp2),
-            NhamButton(
+            const SizedBox(height: KalloSpacing.sp2),
+            KalloButton(
               title: tr('settings.feedback.sendAnother'),
-              variant: NhamButtonVariant.ghost,
+              variant: KalloButtonVariant.ghost,
               onPressed: _reset,
             ),
           ],
@@ -254,24 +254,24 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   Widget _buildForm() {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-        NhamSpacing.sp3,
-        NhamSpacing.sp2,
-        NhamSpacing.sp3,
-        NhamSpacing.sp6,
+        KalloSpacing.sp3,
+        KalloSpacing.sp2,
+        KalloSpacing.sp3,
+        KalloSpacing.sp6,
       ),
       children: [
         Text(tr('settings.feedback.title'), style: dashHeadline()),
         const SizedBox(height: 4),
         Text(tr('settings.feedback.description'), style: dashMeta()),
-        const SizedBox(height: NhamSpacing.sp4),
+        const SizedBox(height: KalloSpacing.sp4),
 
         // Type selector.
         Text(tr('settings.feedback.typeLabel'), style: dashMeta()),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         Row(
           children: [
             for (var i = 0; i < _feedbackTypes.length; i++) ...[
-              if (i > 0) const SizedBox(width: NhamSpacing.sp2),
+              if (i > 0) const SizedBox(width: KalloSpacing.sp2),
               Expanded(
                 child: FeedbackTypeChip(
                   type: _feedbackTypes[i],
@@ -282,20 +282,20 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             ],
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp4),
+        const SizedBox(height: KalloSpacing.sp4),
 
         // Message.
         Text(tr('settings.feedback.messageLabel'), style: dashMeta()),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         Container(
           decoration: BoxDecoration(
-            color: NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            border: Border.all(color: NhamColors.borderSoft),
+            color: KalloColors.elev,
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+            border: Border.all(color: KalloColors.borderSoft),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp4,
-            vertical: NhamSpacing.sp3,
+            horizontal: KalloSpacing.sp4,
+            vertical: KalloSpacing.sp3,
           ),
           child: TextField(
             controller: _message,
@@ -332,7 +332,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             style: dashMeta(tabular: true),
           ),
         ),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
 
         // Screenshot.
         FeedbackScreenshotField(
@@ -349,11 +349,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         ),
 
         if (_error != null) ...[
-          const SizedBox(height: NhamSpacing.sp3),
-          Text(_error!, style: dashMeta(color: NhamColors.danger)),
+          const SizedBox(height: KalloSpacing.sp3),
+          Text(_error!, style: dashMeta(color: KalloColors.danger)),
         ],
 
-        const SizedBox(height: NhamSpacing.sp5),
+        const SizedBox(height: KalloSpacing.sp5),
         // The quiet confirm the logging card's Save uses, parked at the end of
         // its row — not a full-width umber CTA. The umber is spent on one
         // primary action per surface, and a feedback form's submit isn't it.

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 
 // 7 days / 30 days / 90 days — the header-anchored timeframe toggle.
 //
@@ -57,7 +57,7 @@ class NutritionRangeSelector extends StatelessWidget {
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: kTrack,
-            borderRadius: BorderRadius.circular(NhamRadii.pill),
+            borderRadius: BorderRadius.circular(KalloRadii.pill),
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -82,8 +82,8 @@ class NutritionRangeSelector extends StatelessWidget {
                         height: constraints.maxHeight,
                         decoration: BoxDecoration(
                           color: kCardSurface,
-                          borderRadius: BorderRadius.circular(NhamRadii.pill),
-                          boxShadow: const [NhamShadows.xs],
+                          borderRadius: BorderRadius.circular(KalloRadii.pill),
+                          boxShadow: const [KalloShadows.xs],
                         ),
                       ),
                     ),

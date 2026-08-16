@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import 'share_meal_mode_card.dart';
 
 class ShareMealModeSelector extends StatelessWidget {
@@ -26,7 +26,7 @@ class ShareMealModeSelector extends StatelessWidget {
             onTap: () => onChanged('copy'),
           ),
         ),
-        const SizedBox(width: NhamSpacing.sp2),
+        const SizedBox(width: KalloSpacing.sp2),
         Expanded(
           child: ModeCard(
             label: tr('groups.shareMeal.mode.split.label'),

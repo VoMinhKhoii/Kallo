@@ -2,8 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/tdee.dart';
 
 /// RN port of the web aggression `<input type=range>` (body-metrics.tsx).
@@ -30,11 +30,11 @@ class AggressionSlider extends StatelessWidget {
     final sign = isCutting ? '−' : '+'; // − or +
 
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: const EdgeInsets.all(KalloSpacing.sp4),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.inputBorder),
+        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        border: Border.all(color: KalloColors.inputBorder),
       ),
       child: Column(
         children: [
@@ -58,13 +58,13 @@ class AggressionSlider extends StatelessWidget {
             textAlign: TextAlign.center,
             style: dashBody(weight: FontWeight.w500),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor: NhamColors.accent,
-              inactiveTrackColor: NhamColors.inputBorder,
-              thumbColor: NhamColors.accent,
-              overlayColor: NhamColors.accent20,
+              activeTrackColor: KalloColors.accent,
+              inactiveTrackColor: KalloColors.inputBorder,
+              thumbColor: KalloColors.accent,
+              overlayColor: KalloColors.accent20,
               trackHeight: 4,
               // Native `<input type=range accent-...>`: small round thumb, no
               // tick snapping visuals, tighter overlay.
@@ -80,7 +80,7 @@ class AggressionSlider extends StatelessWidget {
               onChanged: onChange,
             ),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

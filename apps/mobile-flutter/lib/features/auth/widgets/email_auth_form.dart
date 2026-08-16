@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_typography.dart';
 import '../providers/auth_form_controller.dart';
 import '../screens/forgot_password_screen.dart';
 import 'auth_submit_button.dart';
@@ -88,7 +88,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
                   const Icon(
                     LucideIcons.arrowLeft300,
                     size: 16,
-                    color: NhamColors.textMuted,
+                    color: KalloColors.textMuted,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -104,9 +104,9 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
           _createMode
               ? tr('auth.dialog.signUpTitle')
               : tr('auth.dialog.signInTitle'),
-          style: NhamTextStyles.serifRegular(
-            fontSize: NhamFontSize.h3,
-          ).copyWith(color: NhamColors.text),
+          style: KalloTextStyles.serifRegular(
+            fontSize: KalloFontSize.h3,
+          ).copyWith(color: KalloColors.text),
         ),
         const SizedBox(height: 16),
         AuthTextField(
@@ -169,7 +169,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
           const SizedBox(height: 12),
           Text(
             state.error!,
-            style: dashMeta(color: NhamColors.danger),
+            style: dashMeta(color: KalloColors.danger),
           ),
         ],
         const SizedBox(height: 16),
@@ -205,7 +205,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
                     _createMode
                         ? tr('auth.signUp.signInLink')
                         : tr('auth.signIn.signUpLink'),
-                    style: dashBody(color: NhamColors.textMuted, weight: FontWeight.w500),
+                    style: dashBody(color: KalloColors.textMuted, weight: FontWeight.w500),
                   ),
                 ),
               ),

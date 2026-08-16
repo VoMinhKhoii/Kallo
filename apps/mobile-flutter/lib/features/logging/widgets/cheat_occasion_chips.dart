@@ -6,8 +6,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/cheat.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/logging_providers.dart';
 
 /// "Log it again" chips — recent de-duplicated cheat occasions, shown above the
@@ -36,7 +36,7 @@ class CheatOccasionChips extends ConsumerWidget {
     if (occasions.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
+      padding: const EdgeInsets.only(bottom: KalloSpacing.sp2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -48,8 +48,8 @@ class CheatOccasionChips extends ConsumerWidget {
             ),
           ),
           Wrap(
-            spacing: NhamSpacing.sp2,
-            runSpacing: NhamSpacing.sp2,
+            spacing: KalloSpacing.sp2,
+            runSpacing: KalloSpacing.sp2,
             children: [
               for (final occasion in occasions)
                 _OccasionChip(
@@ -109,14 +109,14 @@ class _OccasionChipState extends State<_OccasionChip> {
             duration: const Duration(milliseconds: 150),
             constraints: const BoxConstraints(maxWidth: 224),
             padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp3,
+              horizontal: KalloSpacing.sp3,
               vertical: 6,
             ),
             decoration: BoxDecoration(
-              color: _pressed ? NhamColors.hover40 : NhamColors.elev,
-              borderRadius: BorderRadius.circular(NhamRadii.pill),
+              color: _pressed ? KalloColors.hover40 : KalloColors.elev,
+              borderRadius: BorderRadius.circular(KalloRadii.pill),
               border: Border.all(
-                color: _pressed ? NhamColors.accent60 : NhamColors.borderSoft,
+                color: _pressed ? KalloColors.accent60 : KalloColors.borderSoft,
               ),
             ),
             child: Row(
@@ -125,7 +125,7 @@ class _OccasionChipState extends State<_OccasionChip> {
                 const Icon(
                   LucideIcons.cookie300,
                   size: 12,
-                  color: NhamColors.textMuted,
+                  color: KalloColors.textMuted,
                 ),
                 const SizedBox(width: 6),
                 Flexible(

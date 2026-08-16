@@ -3,7 +3,7 @@
     macro/micronutrient pattern analysis (see components/nutrition/ in
     the source repo). Out of scope for this kit. */
 function NutritionScreen() {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   return (
     <main style={{ flex: 1, padding: "32px", overflowY: "auto", fontFamily: T.font.sans }}>
       <div style={{ maxWidth: 720, margin: "60px auto", textAlign: "center" }}>

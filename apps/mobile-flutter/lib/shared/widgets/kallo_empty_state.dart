@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/calm_tokens.dart';
-import '../../theme/nham_colors.dart';
-import '../../theme/nham_typography.dart';
+import '../../theme/kallo_colors.dart';
+import '../../theme/kallo_typography.dart';
 
 /// The app's canonical empty state: a centred mark / title / description column
 /// with one action beneath it. Warm and quiet — a blank page, not a loud
@@ -10,8 +10,8 @@ import '../../theme/nham_typography.dart';
 /// nothing, and pass a [mark] and [action] appropriate to that surface.
 ///
 /// Twin of the web `components/ui/empty-state.tsx` (keep in sync).
-class NhamEmptyState extends StatelessWidget {
-  const NhamEmptyState({
+class KalloEmptyState extends StatelessWidget {
+  const KalloEmptyState({
     super.key,
     required this.title,
     required this.description,
@@ -49,10 +49,10 @@ class NhamEmptyState extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: NhamTextStyles.serifMedium(fontSize: 24).copyWith(
+            style: KalloTextStyles.serifMedium(fontSize: 24).copyWith(
               height: 30 / 24,
               letterSpacing: -0.36,
-              color: NhamColors.text,
+              color: KalloColors.text,
             ),
           ),
           const SizedBox(height: 12),
@@ -72,8 +72,8 @@ class NhamEmptyState extends StatelessWidget {
 }
 
 /// The pill action the empty state pairs with: ink fill, cream label.
-class NhamEmptyStateAction extends StatefulWidget {
-  const NhamEmptyStateAction({
+class KalloEmptyStateAction extends StatefulWidget {
+  const KalloEmptyStateAction({
     super.key,
     required this.label,
     required this.onTap,
@@ -83,10 +83,10 @@ class NhamEmptyStateAction extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<NhamEmptyStateAction> createState() => _NhamEmptyStateActionState();
+  State<KalloEmptyStateAction> createState() => _NhamEmptyStateActionState();
 }
 
-class _NhamEmptyStateActionState extends State<NhamEmptyStateAction> {
+class _NhamEmptyStateActionState extends State<KalloEmptyStateAction> {
   bool _pressed = false;
 
   @override
@@ -102,14 +102,14 @@ class _NhamEmptyStateActionState extends State<NhamEmptyStateAction> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(
-            color: NhamColors.text,
+            color: KalloColors.text,
             borderRadius: BorderRadius.circular(9999),
           ),
           child: Text(
             widget.label,
             style: dashBody(
               weight: FontWeight.w500,
-              color: NhamColors.surface,
+              color: KalloColors.surface,
             ),
           ),
         ),

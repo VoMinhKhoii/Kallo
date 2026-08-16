@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 class MealEntryConfirmButton extends StatefulWidget {
   const MealEntryConfirmButton({
@@ -37,22 +37,22 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
     // meal.
     final tappable = !widget.disabled && widget.onTap != null;
     final active = _pressed && tappable;
-    final fg = editing ? NhamColors.btn : Colors.white;
+    final fg = editing ? KalloColors.btn : Colors.white;
 
     final Color bg;
     if (editing) {
       bg = active ? _btn5 : Colors.transparent;
     } else {
-      bg = active ? NhamColors.btnHover : NhamColors.btn;
+      bg = active ? KalloColors.btnHover : KalloColors.btn;
     }
     final BoxBorder? border =
         editing
             ? Border.all(
-              color: active ? NhamColors.btn : NhamColors.btnBorderGhost,
+              color: active ? KalloColors.btn : KalloColors.btnBorderGhost,
             )
             : null;
     final List<BoxShadow>? shadow =
-        editing ? null : [active ? NhamShadows.md : NhamShadows.sm];
+        editing ? null : [active ? KalloShadows.md : KalloShadows.sm];
 
     return Semantics(
       button: true,
@@ -77,7 +77,7 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
             ), // py-2.5 px-3
             decoration: BoxDecoration(
               color: bg,
-              borderRadius: BorderRadius.circular(NhamRadii.xl), // rounded-xl
+              borderRadius: BorderRadius.circular(KalloRadii.xl), // rounded-xl
               border: border,
               boxShadow: shadow,
             ),

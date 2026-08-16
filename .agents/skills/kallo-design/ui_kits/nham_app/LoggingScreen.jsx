@@ -6,7 +6,7 @@
       - the streaming pipeline is faked with a 1.6s delay
 */
 function LoggingScreen({ meals, addMeal }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const today = new Date();
   const dates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today); d.setDate(today.getDate() - i);
@@ -105,7 +105,7 @@ function LoggingScreen({ meals, addMeal }) {
 }
 
 function DateRow({ date, active, hasMeals, onClick }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const [hover, setHover] = React.useState(false);
   const isToday = date.toDateString() === new Date().toDateString();
   return (
@@ -144,7 +144,7 @@ function DateRow({ date, active, hasMeals, onClick }) {
 }
 
 function EmptyState({ onPick }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const suggestions = ["2 mực kho + cơm", "Phở bò tái", "Bún chả Hà Nội"];
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "40px 20px" }}>

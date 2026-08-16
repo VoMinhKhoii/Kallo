@@ -5,8 +5,8 @@
 library;
 
 export 'decimal_input.dart';
-export 'nham_primitives.dart';
-export 'nham_text.dart';
+export 'kallo_primitives.dart';
+export 'kallo_text.dart';
 export 'scroll_separator.dart';
 export 'section_eyebrow.dart';
 export 'skeleton.dart';

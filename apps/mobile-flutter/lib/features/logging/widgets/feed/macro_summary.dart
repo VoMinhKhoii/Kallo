@@ -4,8 +4,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../../data/logging_models.dart';
 import '../../logic/feed/view_state.dart';
@@ -32,29 +32,29 @@ class MacroSummary extends StatelessWidget {
         'dashboard.protein'.tr(),
         view.dailyProtein,
         profile.proteinTargetG,
-        NhamColors.macroProtein,
+        KalloColors.macroProtein,
       ),
       _MacroBarData(
         'dashboard.carbs'.tr(),
         view.dailyCarbs,
         profile.carbsTargetG,
-        NhamColors.macroCarbs,
+        KalloColors.macroCarbs,
       ),
       _MacroBarData(
         'dashboard.fat'.tr(),
         view.dailyFat,
         profile.fatTargetG,
-        NhamColors.macroFat,
+        KalloColors.macroFat,
       ),
     ];
 
     return FadeInUp(
       child: Container(
-        color: NhamColors.surface,
+        color: KalloColors.surface,
         padding: const EdgeInsets.fromLTRB(
-          NhamSpacing.sp3,
+          KalloSpacing.sp3,
           LoggingSpacing.block,
-          NhamSpacing.sp3,
+          KalloSpacing.sp3,
           LoggingSpacing.block,
         ),
         child:
@@ -89,14 +89,14 @@ class MacroSummary extends StatelessWidget {
                     // The ring column is sized by its kcal line (~106 at Meta
                     // 12), not by the 78pt ring, so it is already the widest
                     // thing competing with the bars. Keep its gap at sp3.
-                    const SizedBox(width: NhamSpacing.sp3),
+                    const SizedBox(width: KalloSpacing.sp3),
                     Expanded(
                       child: Column(
                         children: [
                           for (var i = 0; i < macroBars.length; i++) ...[
                             _MacroRow(data: macroBars[i]),
                             if (i != macroBars.length - 1)
-                              const SizedBox(height: NhamSpacing.sp2), // gap-2
+                              const SizedBox(height: KalloSpacing.sp2), // gap-2
                           ],
                         ],
                       ),
@@ -163,9 +163,9 @@ class _MacroRow extends StatelessWidget {
         ),
         // Tighter than the sp3 this row used: the gaps flank the bar, and every
         // point spent on them is a point the bar does not get.
-        const SizedBox(width: NhamSpacing.sp2),
+        const SizedBox(width: KalloSpacing.sp2),
         Expanded(child: MacroBar(pct: pct, color: data.color)),
-        const SizedBox(width: NhamSpacing.sp2),
+        const SizedBox(width: KalloSpacing.sp2),
         SizedBox(
           width: _valueColumn,
           // Scale down rather than clip. The column fits the widest realistic

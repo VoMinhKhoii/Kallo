@@ -4,7 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/helpers.dart';
 import '../logic/rhythm_logic.dart';
 import 'calorie_scope_stats.dart';
@@ -71,7 +71,7 @@ class DaySummary extends StatelessWidget {
     final showTrend = resolvedRange != '1d' && bucketCount >= 2;
 
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp5),
+      padding: const EdgeInsets.all(KalloSpacing.sp5),
       decoration: BoxDecoration(
         color: kCardSurface,
         borderRadius: BorderRadius.circular(kCardRadius),
@@ -108,7 +108,7 @@ class DaySummary extends StatelessWidget {
                 : null,
           ),
           if (composition.totalKcal > 0) ...[
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: KalloSpacing.sp3),
             if (showTrend)
               MacroTrendChart(
                 daySeries: daySeries,
@@ -118,7 +118,7 @@ class DaySummary extends StatelessWidget {
               )
             else
               _CompositionBar(segments: composition.segments),
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: KalloSpacing.sp3),
             // Colour key: which band is which macro (+ avg grams).
             //
             // `spaceEvenly` with a small MINIMUM gap, rather than centring on a
@@ -132,8 +132,8 @@ class DaySummary extends StatelessWidget {
               width: double.infinity,
               child: Wrap(
                 alignment: WrapAlignment.spaceEvenly,
-                spacing: NhamSpacing.sp2,
-                runSpacing: NhamSpacing.sp1,
+                spacing: KalloSpacing.sp2,
+                runSpacing: KalloSpacing.sp1,
                 children: [
                   for (final key in kCompositionKeys)
                     _MacroLegend(
@@ -165,7 +165,7 @@ class _CompositionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(NhamRadii.pill),
+      borderRadius: BorderRadius.circular(KalloRadii.pill),
       child: SizedBox(
         height: 8,
         child: Row(
@@ -222,7 +222,7 @@ class _MacroLegend extends StatelessWidget {
         // The icon carries the band's colour, so it is the colour key as well
         // as the name — no swatch to decode beside it.
         Icon(icon, size: 14, color: color),
-        const SizedBox(width: NhamSpacing.sp1_5),
+        const SizedBox(width: KalloSpacing.sp1_5),
         Text('$label $value', style: dashMeta(tabular: true)),
       ],
     );

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// RN port of `components/onboarding/wizard/step-indicator.tsx`.
 ///
@@ -50,8 +50,8 @@ class _Pill extends StatelessWidget {
       width: active ? 24 : 8,
       height: 6,
       decoration: BoxDecoration(
-        color: active || done ? NhamColors.text : NhamColors.inputBorder,
-        borderRadius: BorderRadius.circular(NhamRadii.pill),
+        color: active || done ? KalloColors.text : KalloColors.inputBorder,
+        borderRadius: BorderRadius.circular(KalloRadii.pill),
       ),
     );
   }

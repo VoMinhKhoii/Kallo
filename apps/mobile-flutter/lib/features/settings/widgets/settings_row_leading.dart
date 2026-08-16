@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// Leading glyph — the app-wide control size, so a settings icon carries its
 /// row instead of trailing it.
-const double kSettingsRowIcon = NhamIcons.size; // 24
+const double kSettingsRowIcon = KalloIcons.size; // 24
 
 /// Width of the leading icon column — every label starts at
 /// `rowPadH + kSettingsRowGutter`. The gutter is exactly the glyph, so the

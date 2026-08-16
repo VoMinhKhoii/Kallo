@@ -5,10 +5,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/barcode_product.dart';
 import '../../../../shared/widgets/decimal_input.dart';
-import '../../../../shared/widgets/nham_text.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
-import '../../../../theme/nham_typography.dart';
+import '../../../../shared/widgets/kallo_text.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
+import '../../../../theme/kallo_typography.dart';
 import '../../logic/barcode_amount.dart';
 
 /// The quantity step of the barcode sheet: pick an amount by serving, whole
@@ -89,33 +89,33 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
         Flexible(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp4,
-              NhamSpacing.sp2,
-              NhamSpacing.sp4,
-              NhamSpacing.sp3,
+              KalloSpacing.sp4,
+              KalloSpacing.sp2,
+              KalloSpacing.sp4,
+              KalloSpacing.sp3,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Product header: brand eyebrow + serif name.
                 if (product.brand != null && product.brand!.isNotEmpty)
-                  NhamText(
+                  KalloText(
                     product.brand!.toUpperCase(),
-                    variant: NhamTextVariant.eyebrow,
+                    variant: KalloTextVariant.eyebrow,
                   ),
-                NhamText(product.name, variant: NhamTextVariant.h3),
-                const SizedBox(height: NhamSpacing.sp3),
+                KalloText(product.name, variant: KalloTextVariant.h3),
+                const SizedBox(height: KalloSpacing.sp3),
 
                 // Amount-mode segmented control (only when there's a choice).
                 if (_modes.length > 1) ...[
-                  NhamText(
+                  KalloText(
                     'logging.barcode.amountModeLabel'.tr(),
-                    variant: NhamTextVariant.small,
-                    style: NhamTextStyles.sansSemiBold(
-                      fontSize: NhamFontSize.xs,
-                    ).copyWith(color: NhamColors.text),
+                    variant: KalloTextVariant.small,
+                    style: KalloTextStyles.sansSemiBold(
+                      fontSize: KalloFontSize.xs,
+                    ).copyWith(color: KalloColors.text),
                   ),
-                  const SizedBox(height: NhamSpacing.sp2),
+                  const SizedBox(height: KalloSpacing.sp2),
                   _SegmentedControl(
                     segments: [
                       for (final mode in _modes)
@@ -126,7 +126,7 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: NhamSpacing.sp3),
+                  const SizedBox(height: KalloSpacing.sp3),
                 ],
 
                 // Amount picker for the selected mode.
@@ -151,7 +151,7 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
                     },
                   ),
                 },
-                const SizedBox(height: NhamSpacing.sp3),
+                const SizedBox(height: KalloSpacing.sp3),
 
                 _NutritionPreview(product: product, grams: grams),
               ],
@@ -162,17 +162,17 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
         if (widget.errorText != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp4,
+              KalloSpacing.sp4,
               0,
-              NhamSpacing.sp4,
-              NhamSpacing.sp2,
+              KalloSpacing.sp4,
+              KalloSpacing.sp2,
             ),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: NhamText(
+              child: KalloText(
                 widget.errorText!,
-                variant: NhamTextVariant.small,
-                style: const TextStyle(color: NhamColors.danger),
+                variant: KalloTextVariant.small,
+                style: const TextStyle(color: KalloColors.danger),
               ),
             ),
           ),
@@ -180,14 +180,14 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
         // Pinned footer: back + add meal.
         Container(
           padding: EdgeInsets.fromLTRB(
-            NhamSpacing.sp4,
-            NhamSpacing.sp3,
-            NhamSpacing.sp4,
-            MediaQuery.of(context).padding.bottom + NhamSpacing.sp3,
+            KalloSpacing.sp4,
+            KalloSpacing.sp3,
+            KalloSpacing.sp4,
+            MediaQuery.of(context).padding.bottom + KalloSpacing.sp3,
           ),
           decoration: const BoxDecoration(
-            color: NhamColors.elev,
-            border: Border(top: BorderSide(color: NhamColors.borderFaint)),
+            color: KalloColors.elev,
+            border: Border(top: BorderSide(color: KalloColors.borderFaint)),
           ),
           child: Row(
             children: [
@@ -215,8 +215,8 @@ class _SegmentedControl extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: NhamColors.hover,
-        borderRadius: BorderRadius.circular(NhamRadii.lg),
+        color: KalloColors.hover,
+        borderRadius: BorderRadius.circular(KalloRadii.lg),
       ),
       child: Row(
         children: [
@@ -232,14 +232,14 @@ class _SegmentedControl extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     padding: const EdgeInsets.symmetric(
-                      vertical: NhamSpacing.sp2,
+                      vertical: KalloSpacing.sp2,
                     ),
                     decoration: BoxDecoration(
                       color:
                           segment.selected
-                              ? NhamColors.elev
+                              ? KalloColors.elev
                               : Colors.transparent,
-                      borderRadius: BorderRadius.circular(NhamRadii.md),
+                      borderRadius: BorderRadius.circular(KalloRadii.md),
                       boxShadow:
                           segment.selected
                               ? [
@@ -254,13 +254,13 @@ class _SegmentedControl extends StatelessWidget {
                     child: Center(
                       child: Text(
                         segment.label,
-                        style: NhamTextStyles.sansSemiBold(
-                          fontSize: NhamFontSize.xs,
+                        style: KalloTextStyles.sansSemiBold(
+                          fontSize: KalloFontSize.xs,
                         ).copyWith(
                           color:
                               segment.selected
-                                  ? NhamColors.text
-                                  : NhamColors.textMuted,
+                                  ? KalloColors.text
+                                  : KalloColors.textMuted,
                         ),
                       ),
                     ),
@@ -296,11 +296,11 @@ class _StepperButton extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: NhamColors.elev,
-              borderRadius: BorderRadius.circular(NhamRadii.lg),
-              border: Border.all(color: NhamColors.inputBorder),
+              color: KalloColors.elev,
+              borderRadius: BorderRadius.circular(KalloRadii.lg),
+              border: Border.all(color: KalloColors.inputBorder),
             ),
-            child: Icon(icon, size: 18, color: NhamColors.text),
+            child: Icon(icon, size: 18, color: KalloColors.text),
           ),
         ),
       ),
@@ -337,9 +337,9 @@ class _ServingPicker extends StatelessWidget {
             ),
             Expanded(
               child: Center(
-                child: NhamText(
+                child: KalloText(
                   '$servings',
-                  variant: NhamTextVariant.macroValue,
+                  variant: KalloTextVariant.macroValue,
                 ),
               ),
             ),
@@ -353,11 +353,11 @@ class _ServingPicker extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp1),
-        NhamText(
+        const SizedBox(height: KalloSpacing.sp1),
+        KalloText(
           '${'logging.barcode.perServing'.tr(namedArgs: {'grams': '${servingSizeG.round()}'})} · ${'logging.barcode.totalGrams'.tr(namedArgs: {'grams': '$totalGrams'})}',
-          variant: NhamTextVariant.numCaption,
-          style: const TextStyle(color: NhamColors.textMuted),
+          variant: KalloTextVariant.numCaption,
+          style: const TextStyle(color: KalloColors.textMuted),
         ),
       ],
     );
@@ -373,26 +373,26 @@ class _PackageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(NhamSpacing.sp3),
+      padding: const EdgeInsets.all(KalloSpacing.sp3),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.lg),
-        border: Border.all(color: NhamColors.borderFaint),
+        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.lg),
+        border: Border.all(color: KalloColors.borderFaint),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          NhamText(
+          KalloText(
             'logging.barcode.wholePackage'.tr(),
-            variant: NhamTextVariant.itemName,
+            variant: KalloTextVariant.itemName,
           ),
           const SizedBox(height: 2),
-          NhamText(
+          KalloText(
             'logging.barcode.totalGrams'.tr(
               namedArgs: {'grams': '${packageSizeG.round()}'},
             ),
-            variant: NhamTextVariant.numCaption,
-            style: const TextStyle(color: NhamColors.textMuted),
+            variant: KalloTextVariant.numCaption,
+            style: const TextStyle(color: KalloColors.textMuted),
           ),
         ],
       ),
@@ -425,7 +425,7 @@ class _GramsPicker extends StatelessWidget {
               label: 'logging.barcode.decreaseGrams'.tr(),
               onTap: disabled || grams <= 1 ? null : () => onAdjust(-gramStep),
             ),
-            const SizedBox(width: NhamSpacing.sp2),
+            const SizedBox(width: KalloSpacing.sp2),
             Expanded(
               child: DecimalInput(
                 // Keyed so stepper taps (which change state outside the
@@ -437,7 +437,7 @@ class _GramsPicker extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(width: NhamSpacing.sp2),
+            const SizedBox(width: KalloSpacing.sp2),
             _StepperButton(
               icon: LucideIcons.plus300,
               label: 'logging.barcode.increaseGrams'.tr(),
@@ -448,11 +448,11 @@ class _GramsPicker extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         // Quick one-tap portions.
         Wrap(
-          spacing: NhamSpacing.sp2,
-          runSpacing: NhamSpacing.sp1,
+          spacing: KalloSpacing.sp2,
+          runSpacing: KalloSpacing.sp1,
           children: [
             for (final option in quickGramOptions)
               _QuickChip(
@@ -490,25 +490,25 @@ class _QuickChip extends StatelessWidget {
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
+            horizontal: KalloSpacing.sp3,
             // Tap-target height: ~40px with the xs label, close to the app's
             // 44pt convention — the previous 6px made ~30px chips in a tight
             // row, inviting mis-taps.
             vertical: 10,
           ),
           decoration: BoxDecoration(
-            color: selected ? NhamColors.hover : NhamColors.elev,
+            color: selected ? KalloColors.hover : KalloColors.elev,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected ? NhamColors.border : NhamColors.inputBorder,
+              color: selected ? KalloColors.border : KalloColors.inputBorder,
             ),
           ),
           child: Text(
             label,
-            style: NhamTextStyles.sansMedium(
-              fontSize: NhamFontSize.xs,
+            style: KalloTextStyles.sansMedium(
+              fontSize: KalloFontSize.xs,
             ).copyWith(
-              color: selected ? NhamColors.text : NhamColors.textMuted,
+              color: selected ? KalloColors.text : KalloColors.textMuted,
             ),
           ),
         ),
@@ -545,42 +545,42 @@ class _NutritionPreview extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(NhamSpacing.sp3),
+      padding: const EdgeInsets.all(KalloSpacing.sp3),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.borderSoft),
+        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        border: Border.all(color: KalloColors.borderSoft),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          NhamText(
+          KalloText(
             'logging.barcode.nutritionForAmount'.tr(
               namedArgs: {'grams': '$grams'},
             ),
-            variant: NhamTextVariant.eyebrow,
+            variant: KalloTextVariant.eyebrow,
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              NhamText(
+              KalloText(
                 calories == null ? '—' : '${calories.round()}',
-                variant: NhamTextVariant.h3,
-                style: NhamTextStyles.serifRegular(
-                  fontSize: NhamFontSize.h2,
-                ).copyWith(color: NhamColors.text),
+                variant: KalloTextVariant.h3,
+                style: KalloTextStyles.serifRegular(
+                  fontSize: KalloFontSize.h2,
+                ).copyWith(color: KalloColors.text),
               ),
               const SizedBox(width: 4),
-              NhamText(
+              KalloText(
                 'logging.manualLogging.kcal'.tr(),
-                variant: NhamTextVariant.small,
-                style: const TextStyle(color: NhamColors.textMuted),
+                variant: KalloTextVariant.small,
+                style: const TextStyle(color: KalloColors.textMuted),
               ),
             ],
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Row(
             children: [
               for (final macro in macros)
@@ -588,15 +588,15 @@ class _NutritionPreview extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      NhamText(
+                      KalloText(
                         macro.label,
-                        variant: NhamTextVariant.small,
-                        style: const TextStyle(color: NhamColors.textMuted),
+                        variant: KalloTextVariant.small,
+                        style: const TextStyle(color: KalloColors.textMuted),
                       ),
                       const SizedBox(height: 2),
-                      NhamText(
+                      KalloText(
                         macro.value == null ? '—' : '${_fmt(macro.value)}g',
-                        variant: NhamTextVariant.macroValue,
+                        variant: KalloTextVariant.macroValue,
                       ),
                     ],
                   ),
@@ -630,14 +630,14 @@ class _BackLink extends StatelessWidget {
               const Icon(
                 LucideIcons.arrowLeft300,
                 size: 16,
-                color: NhamColors.textMuted,
+                color: KalloColors.textMuted,
               ),
               const SizedBox(width: 6),
               Text(
                 'logging.barcode.back'.tr(),
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: NhamColors.textMuted),
+                style: KalloTextStyles.sansMedium(
+                  fontSize: KalloFontSize.sm,
+                ).copyWith(color: KalloColors.textMuted),
               ),
             ],
           ),
@@ -682,12 +682,12 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
           duration: const Duration(milliseconds: 150),
           child: Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp5,
-              vertical: NhamSpacing.sp3,
+              horizontal: KalloSpacing.sp5,
+              vertical: KalloSpacing.sp3,
             ),
             decoration: BoxDecoration(
-              color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-              borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+              color: _pressed ? KalloColors.btnHover : KalloColors.btn,
+              borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
             ),
             child:
                 widget.saving
@@ -701,8 +701,8 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
                     )
                     : Text(
                       'logging.barcode.addMeal'.tr(),
-                      style: NhamTextStyles.sansSemiBold(
-                        fontSize: NhamFontSize.sm,
+                      style: KalloTextStyles.sansSemiBold(
+                        fontSize: KalloFontSize.sm,
                       ).copyWith(color: Colors.white),
                     ),
           ),

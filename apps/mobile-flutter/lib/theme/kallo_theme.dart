@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'nham_colors.dart';
-import 'nham_typography.dart';
+import 'kallo_colors.dart';
+import 'kallo_typography.dart';
 
 /// Spacing scale: sp1=4 .. sp20=80, plus the recurring Tailwind fractional
 /// steps (sp0_5=2, sp1_5=6, sp2_5=10, sp3_5=14) used across the design.
-abstract final class NhamSpacing {
+abstract final class KalloSpacing {
   static const double sp0_5 = 2; // mt-0.5
   static const double sp1 = 4;
   static const double sp1_5 = 6; // gap-1.5 / h-1.5
@@ -28,7 +28,7 @@ abstract final class NhamSpacing {
 /// App-wide on purpose: the design doc states this as a system rule, not a
 /// per-surface decision, and the two per-surface copies of it were byte
 /// identical with zero overrides between them.
-abstract final class NhamIcons {
+abstract final class KalloIcons {
   /// Glyph size. 24 — Material's own default, and the size a row glyph has to
   /// be to carry its row rather than trail it (the Threads settings reference).
   /// 16 read as a decoration beside 14pt labels.
@@ -40,7 +40,7 @@ abstract final class NhamIcons {
 }
 
 /// Border-radius scale.
-abstract final class NhamRadii {
+abstract final class KalloRadii {
   static const double sm = 6;
   static const double md = 8;
   static const double lg = 10;
@@ -55,7 +55,7 @@ abstract final class NhamRadii {
 }
 
 /// Neutral ink-tinted, very low-contrast shadows (never #000-based).
-abstract final class NhamShadows {
+abstract final class KalloShadows {
   static const BoxShadow xs = BoxShadow(
     color: Color(0x0A141413), // opacity ~4%
     blurRadius: 2,
@@ -90,126 +90,126 @@ abstract final class NhamShadows {
 }
 
 /// Builds the Nham [ThemeData]. Surface = cream, card = white.
-abstract final class NhamTheme {
+abstract final class KalloTheme {
   static ThemeData light() {
     final colorScheme = const ColorScheme.light(
-      surface: NhamColors.surface,
-      onSurface: NhamColors.text,
-      primary: NhamColors.accent,
-      onPrimary: NhamColors.elev,
-      secondary: NhamColors.btn,
-      onSecondary: NhamColors.elev,
-      error: NhamColors.danger,
-      onError: NhamColors.elev,
-      outline: NhamColors.border,
-      surfaceContainerLowest: NhamColors.elev,
+      surface: KalloColors.surface,
+      onSurface: KalloColors.text,
+      primary: KalloColors.accent,
+      onPrimary: KalloColors.elev,
+      secondary: KalloColors.btn,
+      onSecondary: KalloColors.elev,
+      error: KalloColors.danger,
+      onError: KalloColors.elev,
+      outline: KalloColors.border,
+      surfaceContainerLowest: KalloColors.elev,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: NhamColors.surface,
-      cardColor: NhamColors.elev,
-      dividerColor: NhamColors.border,
+      scaffoldBackgroundColor: KalloColors.surface,
+      cardColor: KalloColors.elev,
+      dividerColor: KalloColors.border,
       textTheme: TextTheme(
-        displayLarge: NhamTextStyles.displayLarge().copyWith(
-          color: NhamColors.text,
+        displayLarge: KalloTextStyles.displayLarge().copyWith(
+          color: KalloColors.text,
         ),
-        headlineLarge: NhamTextStyles.heading1().copyWith(
-          color: NhamColors.text,
+        headlineLarge: KalloTextStyles.heading1().copyWith(
+          color: KalloColors.text,
         ),
-        headlineMedium: NhamTextStyles.heading2().copyWith(
-          color: NhamColors.text,
+        headlineMedium: KalloTextStyles.heading2().copyWith(
+          color: KalloColors.text,
         ),
-        headlineSmall: NhamTextStyles.heading3().copyWith(
-          color: NhamColors.text,
+        headlineSmall: KalloTextStyles.heading3().copyWith(
+          color: KalloColors.text,
         ),
-        titleLarge: NhamTextStyles.heading4().copyWith(color: NhamColors.text),
-        bodyLarge: NhamTextStyles.bodyLarge().copyWith(color: NhamColors.text),
-        bodyMedium: NhamTextStyles.body().copyWith(color: NhamColors.text),
-        bodySmall: NhamTextStyles.bodySmall().copyWith(
-          color: NhamColors.textMuted,
+        titleLarge: KalloTextStyles.heading4().copyWith(color: KalloColors.text),
+        bodyLarge: KalloTextStyles.bodyLarge().copyWith(color: KalloColors.text),
+        bodyMedium: KalloTextStyles.body().copyWith(color: KalloColors.text),
+        bodySmall: KalloTextStyles.bodySmall().copyWith(
+          color: KalloColors.textMuted,
         ),
-        labelLarge: NhamTextStyles.buttonLabel().copyWith(
-          color: NhamColors.text,
+        labelLarge: KalloTextStyles.buttonLabel().copyWith(
+          color: KalloColors.text,
         ),
-        labelSmall: NhamTextStyles.caption().copyWith(
-          color: NhamColors.textMuted,
+        labelSmall: KalloTextStyles.caption().copyWith(
+          color: KalloColors.textMuted,
         ),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: NhamColors.surface,
-        foregroundColor: NhamColors.text,
+        backgroundColor: KalloColors.surface,
+        foregroundColor: KalloColors.text,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
       cardTheme: CardThemeData(
-        color: NhamColors.elev,
+        color: KalloColors.elev,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(NhamRadii.xxl),
-          side: const BorderSide(color: NhamColors.border, width: 1),
+          borderRadius: BorderRadius.circular(KalloRadii.xxl),
+          side: const BorderSide(color: KalloColors.border, width: 1),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: NhamColors.btn,
-          foregroundColor: NhamColors.elev,
+          backgroundColor: KalloColors.btn,
+          foregroundColor: KalloColors.elev,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
           ),
-          textStyle: NhamTextStyles.buttonLabel(),
+          textStyle: KalloTextStyles.buttonLabel(),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: NhamColors.btn,
-          side: const BorderSide(color: NhamColors.btnBorderGhost),
+          foregroundColor: KalloColors.btn,
+          side: const BorderSide(color: KalloColors.btnBorderGhost),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
           ),
-          textStyle: NhamTextStyles.buttonLabel(),
+          textStyle: KalloTextStyles.buttonLabel(),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: NhamColors.elev,
+        fillColor: KalloColors.elev,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(NhamRadii.lg),
-          borderSide: const BorderSide(color: NhamColors.borderBiscotti40),
+          borderRadius: BorderRadius.circular(KalloRadii.lg),
+          borderSide: const BorderSide(color: KalloColors.borderBiscotti40),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(NhamRadii.lg),
-          borderSide: const BorderSide(color: NhamColors.borderBiscotti40),
+          borderRadius: BorderRadius.circular(KalloRadii.lg),
+          borderSide: const BorderSide(color: KalloColors.borderBiscotti40),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(NhamRadii.lg),
-          borderSide: const BorderSide(color: NhamColors.accent, width: 1.5),
+          borderRadius: BorderRadius.circular(KalloRadii.lg),
+          borderSide: const BorderSide(color: KalloColors.accent, width: 1.5),
         ),
-        hintStyle: NhamTextStyles.body().copyWith(
-          color: NhamColors.placeholderMuted40,
+        hintStyle: KalloTextStyles.body().copyWith(
+          color: KalloColors.placeholderMuted40,
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp4,
-          vertical: NhamSpacing.sp3,
+          horizontal: KalloSpacing.sp4,
+          vertical: KalloSpacing.sp3,
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: NhamColors.border,
+        color: KalloColors.border,
         thickness: 1,
         space: 0,
       ),
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(
-          color: NhamColors.text,
-          borderRadius: BorderRadius.circular(NhamRadii.md),
+          color: KalloColors.text,
+          borderRadius: BorderRadius.circular(KalloRadii.md),
         ),
-        textStyle: NhamTextStyles.sansRegular(
-          fontSize: NhamFontSize.xs,
-        ).copyWith(color: NhamColors.surface),
+        textStyle: KalloTextStyles.sansRegular(
+          fontSize: KalloFontSize.xs,
+        ).copyWith(color: KalloColors.surface),
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
-          vertical: NhamSpacing.sp1_5,
+          horizontal: KalloSpacing.sp3,
+          vertical: KalloSpacing.sp1_5,
         ),
         preferBelow: true,
         triggerMode: TooltipTriggerMode.longPress,
@@ -218,16 +218,16 @@ abstract final class NhamTheme {
       // Branded toasts: espresso pill, cream text, soft radius — not the stock
       // dark-gray Material pill (sign-out errors, the undo toast, etc.).
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: NhamColors.text, // espresso
-        contentTextStyle: NhamTextStyles.body().copyWith(
-          fontSize: NhamFontSize.sm,
-          color: NhamColors.surface, // cream
+        backgroundColor: KalloColors.text, // espresso
+        contentTextStyle: KalloTextStyles.body().copyWith(
+          fontSize: KalloFontSize.sm,
+          color: KalloColors.surface, // cream
         ),
-        actionTextColor: NhamColors.accent,
+        actionTextColor: KalloColors.accent,
         behavior: SnackBarBehavior.floating,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(NhamRadii.xl),
+          borderRadius: BorderRadius.circular(KalloRadii.xl),
         ),
       ),
     );

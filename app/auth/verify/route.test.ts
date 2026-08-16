@@ -131,7 +131,7 @@ describe('handleVerify', () => {
           url: 'http://0.0.0.0:8080/auth/verify',
           headers: {
             host: '0.0.0.0:8080',
-            'x-forwarded-host': 'kallo-internal.example.com',
+            'x-forwarded-host': 'nham-internal.example.com',
             'x-forwarded-proto': 'https',
           },
         }
@@ -139,7 +139,7 @@ describe('handleVerify', () => {
       { supabase: mockSupabase() }
     );
     expect(res.headers.get('location')).toBe(
-      'https://kallo-internal.example.com/en/logging'
+      'https://nham-internal.example.com/en/logging'
     );
   });
 });

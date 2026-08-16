@@ -51,7 +51,7 @@ implementation: Value 17 for the one figure per card, Body 14 for content, Meta
 12 for everything quiet — with the serif quote at 17 as the single editorial
 moment. Anything outside those three needs a comment saying why.
 
-Do NOT mix `NhamTextVariant` with `dash*` on the same screen. `NhamText` does
+Do NOT mix `KalloTextVariant` with `dash*` on the same screen. `KalloText` does
 `base.merge(style)`, so a `dash*` override silently beats the variant's size and
 weight — which is how one card ended up rendering collapsed kcal at 17/500 and
 its total kcal three lines below at 16/700. On calm surfaces, use plain `Text`
@@ -87,7 +87,7 @@ surface-tinted cards that would read grey on the canvas become solid white.
 | `kInk` | `#141413` | primary data — numbers, meal names, macro labels |
 | `kInkMuted` | `#6E6D66` | everything secondary — labels, units, captions, dates |
 
-`NhamColors` mirrors these plus `textSoft #3D3D3A` (long body), `hover #F0EAE0`
+`KalloColors` mirrors these plus `textSoft #3D3D3A` (long body), `hover #F0EAE0`
 (warm select wash), and the unchanged accent `#C9A87C`, button umber `#695E4E`,
 `success`, and macro colours.
 
@@ -126,13 +126,13 @@ re-deciding it.
 
 **Press wash.** Warm washes are for *selection* and for anything covering a
 lighter surface. A control that sits **transparent on the canvas** presses with
-`NhamColors.pressWash` (ink @ 6%) instead: the warm washes are lighter than the
+`KalloColors.pressWash` (ink @ 6%) instead: the warm washes are lighter than the
 canvas, so on the page they composite to within ~3 points of it and the press
 simply doesn't register. Warm for selected, ink for pressed-on-page.
 
 ## Spacing — one 12px rhythm
 
-`12px` (`NhamSpacing.sp3`) between **all** major stacked components:
+`12px` (`KalloSpacing.sp3`) between **all** major stacked components:
 greeting ↔ week strip ↔ card title ↔ card ↔ card. Card padding `16` (`sp4`),
 card radius `22`. Card padding is **16 horizontal / 12 vertical** where the card
 opens or closes on text (`LoggingSpacing.card`): the first and last lines each
@@ -177,8 +177,8 @@ is how cards ended up 20px apart when the separator said 8.
 
 ### Icons
 
-One glyph size and one hit target, app-wide: `NhamIcons.size` **24** on
-`NhamIcons.hit` 36 for every icon-only control and every row-leading glyph —
+One glyph size and one hit target, app-wide: `KalloIcons.size` **24** on
+`KalloIcons.hit` 36 for every icon-only control and every row-leading glyph —
 chevrons, steppers, row-removes, composer controls, send/stop, settings rows.
 (`LoggingIcons.size`/`.hit` are aliases of these, not independent values.) The
 pressed wash hugs the glyph rather than filling the hit box: the target can grow
@@ -212,7 +212,7 @@ ring's label was the last holdout at 8px and is on Meta 12 like every other
 caption. Lower-case, not the old uppercase: it keeps Vietnamese ("còn lại")
 inside the fixed 78px ring, which uppercase at 12 would not.
 
-Note the trap that hid there. `NhamText` upper-cases its `eyebrow` and
+Note the trap that hid there. `KalloText` upper-cases its `eyebrow` and
 `macroLabel` variants *in the widget*, so a call site moving to plain `Text`
 silently loses the transform — and any casing inconsistency in the strings
 (`"left"` vs `"Over"`) stops being masked. Normalise casing at the call site
@@ -243,13 +243,13 @@ mobile UI — no longer provisional.
 | **Dashboard** | ✅ 40/14/12 + Lora 22 | `dashboard/logic/dashboard_spacing.dart` (12px) | Hero replaces Value here |
 | **Settings** | ✅ 22/14/12 | `settings/logic/settings_spacing.dart` | rows split 4+8 (below) |
 | **Feedback** | ✅ | uses the 12px default | |
-| **Shell / drawer** | ✅ | `NhamSpacing` directly | selected state matches web |
+| **Shell / drawer** | ✅ | `KalloSpacing` directly | selected state matches web |
 | **Circle** | 🔸 header + add-menu + padding only | 12px root inset | the feed's 35 files are unported |
 | **Nutrition** | 🔸 range selector + padding | 12px root inset | `dashEyebrow` + raw sizes remain |
-| **Logging `sheets/`** | ❌ | — | 4 files, 35 `NhamText` calls, still the old scale |
+| **Logging `sheets/`** | ❌ | — | 4 files, 35 `KalloText` calls, still the old scale |
 | **Onboarding / Auth** | 🔸 palette only | deliberately wider (32–40) | narrative screens, not data |
 
-The `nham_text.dart` `NhamTextVariant` defaults and the logging `mealQuote`
+The `kallo_text.dart` `KalloTextVariant` defaults and the logging `mealQuote`
 serif remain outside the calm set on purpose.
 
 ### Two app-wide changes worth remembering
@@ -274,7 +274,7 @@ Reach for these before writing a local variant:
   summary, not the date strip, because the summary doesn't move — a rule above
   a static block claims content passed beneath it when none did.
 - **`shared/widgets/quiet_action_button.dart`** — the warm-wash pill for
-  "commit what I just typed". NOT the umber `NhamButton`, which is reserved for
+  "commit what I just typed". NOT the umber `KalloButton`, which is reserved for
   the one primary action per surface; a form's own submit is not that one.
 - **`logging/widgets/macro_trio.dart`** — P/C/F + kcal as fixed columns. Packed
   left-to-right, the columns drift with the digits and a card of ingredients
@@ -285,7 +285,7 @@ Reach for these before writing a local variant:
 
 ### The drawer's selected state
 
-Selected = `NhamColors.hover` (#F0EAE0) wash + `kInk` + semibold. Idle =
+Selected = `KalloColors.hover` (#F0EAE0) wash + `kInk` + semibold. Idle =
 `kInkMuted`. This is web parity
 (`components/app/navigation/mobile/mobile-nav-list.tsx`). Flutter had it
 *inverted* — solid umber with white content, and ink when idle, i.e. the colour
@@ -302,7 +302,7 @@ white.
 
 ## Traps — each of these shipped a visible bug
 
-**`NhamText` merges.** `base.merge(style)`, so a `dash*` override silently
+**`KalloText` merges.** `base.merge(style)`, so a `dash*` override silently
 beats the variant's size. It also upper-cases `eyebrow` and `macroLabel`
 *inside the widget*, and defaults `macroValue` to `TextAlign.right`. Moving a
 call site to plain `Text` drops the transform silently — check the rendered
@@ -350,16 +350,16 @@ tab while the pressed fill still floats inside the screen edge.
 
 ### Porting a surface
 
-1. Inventory it: `grep -rhoE "NhamTextVariant\.[a-zA-Z]+|dash[A-Z][a-zA-Z]*\(|fontSize: [0-9.]+" <dir> | sort | uniq -c`.
+1. Inventory it: `grep -rhoE "KalloTextVariant\.[a-zA-Z]+|dash[A-Z][a-zA-Z]*\(|fontSize: [0-9.]+" <dir> | sort | uniq -c`.
 2. Map every hit onto three sizes. More than three on one screen means the
    mapping is wrong, not that the screen is special. Hero 40 and the Lora 22
    greeting are the documented exemptions — one editorial moment per viewport.
-3. Replace `NhamText(variant:)` with plain `Text(style: dash*())`, minding the
+3. Replace `KalloText(variant:)` with plain `Text(style: dash*())`, minding the
    merge and uppercase traps above.
 4. Name the surface's gaps in one constants file. Presentational surfaces keep
    the 12px default; only a dense scrolling list earns tighter.
 5. Strip card-owned bottom margins — the parent stack owns every gap.
 6. One glyph size + one hit target for icon-only controls.
-7. Audit the third colour: `grep -rn "NhamColors.stone\|textWarm\|textSoft" <dir>`.
+7. Audit the third colour: `grep -rn "KalloColors.stone\|textWarm\|textSoft" <dir>`.
 8. Re-check on device at 100%, at the smallest Dynamic Type step, **and in
    Vietnamese** — which is where every localization trap above surfaced.

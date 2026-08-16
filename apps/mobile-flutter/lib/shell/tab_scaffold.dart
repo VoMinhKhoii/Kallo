@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import '../theme/nham_colors.dart';
+import '../theme/kallo_colors.dart';
 import 'sidebar.dart';
 
 /// App shell for the primary surfaces.
@@ -83,7 +83,7 @@ class _TabScaffoldState extends State<TabScaffold>
     return NavDrawerScope(
       open: _open,
       child: Scaffold(
-        backgroundColor: NhamColors.surface,
+        backgroundColor: KalloColors.surface,
         body: Stack(
           children: [
             widget.navigationShell,
@@ -184,10 +184,10 @@ class _NavDrawer extends StatelessWidget {
                 },
                 child: DecoratedBox(
                   decoration: const BoxDecoration(
-                    color: NhamColors.surface,
+                    color: KalloColors.surface,
                     border: Border(
                       right: BorderSide(
-                        color: NhamColors.borderSoft, // border @ 60%
+                        color: KalloColors.borderSoft, // border @ 60%
                         width: 1,
                       ),
                     ),

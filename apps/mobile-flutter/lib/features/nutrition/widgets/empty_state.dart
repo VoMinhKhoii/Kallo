@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../shared/widgets/nham_empty_state.dart';
+import '../../../shared/widgets/kallo_empty_state.dart';
 import '../../../shared/widgets/seed_mark.dart';
 import 'fade_in_down.dart';
 
@@ -17,11 +17,11 @@ class EmptyState extends StatelessWidget {
     return FadeInDown(
       duration: const Duration(milliseconds: 550),
       delay: const Duration(milliseconds: 100),
-      child: NhamEmptyState(
+      child: KalloEmptyState(
         mark: const SeedMark(),
         title: tr('nutrition.emptyV2.title'),
         description: tr('nutrition.emptyV2.description'),
-        action: NhamEmptyStateAction(
+        action: KalloEmptyStateAction(
           label: tr('nutrition.emptyV2.logMeal'),
           onTap: () => context.go('/logging'),
         ),

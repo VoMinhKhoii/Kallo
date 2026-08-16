@@ -2,7 +2,7 @@
 /** AppShell — sidebar + main column for authenticated screens.
     Mirrors components/app/app-shell.tsx layout. */
 function AppShell({ current, onNavigate, onExitApp, children }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const [collapsed, setCollapsed] = React.useState(false);
   useLucide();
 
@@ -28,7 +28,7 @@ function AppShell({ current, onNavigate, onExitApp, children }) {
 }
 
 function TopBar({ onExit }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   return (
     <header style={{
       flexShrink: 0, padding: "12px 24px",

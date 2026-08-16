@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/logging_spacing.dart';
 
 /// The unconfirmed meal's card: solid white on the neutral canvas.
 ///
 /// White is not negotiable per-instance. The reveal path used to paint it
-/// [NhamColors.surface] "to match the streaming card's background" — but the
-/// streaming card is [NhamColors.elev], white, so the two never matched. What
+/// [KalloColors.surface] "to match the streaming card's background" — but the
+/// streaming card is [KalloColors.elev], white, so the two never matched. What
 /// it actually did was paint the card in the CANVAS colour, which is why a
 /// meal awaiting confirmation looked transparent: its fill was the page behind
 /// it. Both cards being white is what removes the seam the parameter was
@@ -33,12 +33,12 @@ class MealEntryCard extends StatelessWidget {
       duration: const Duration(milliseconds: 150), // transition-colors
       padding: LoggingSpacing.card,
       decoration: BoxDecoration(
-        color: NhamColors.elev, // solid white card on neutral canvas
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+        color: KalloColors.elev, // solid white card on neutral canvas
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
         border: Border.all(
-          color: editing ? NhamColors.accent40 : NhamColors.borderSoft,
+          color: editing ? KalloColors.accent40 : KalloColors.borderSoft,
         ),
-        boxShadow: const [NhamShadows.sm],
+        boxShadow: const [KalloShadows.sm],
       ),
       child: child,
     );

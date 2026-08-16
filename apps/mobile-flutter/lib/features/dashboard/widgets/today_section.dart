@@ -12,8 +12,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../logging/data/logging_providers.dart' show pendingMealProvider;
 import '../../logging/widgets/count_up.dart';
 import '../data/dashboard_providers.dart';
@@ -127,8 +127,8 @@ class _FirstRunCard extends ConsumerWidget {
         // Deliberately NOT DashboardSpacing.card: this is the one editorial
         // empty state (serif question + hint + chips) and its air is the point.
         padding: const EdgeInsets.symmetric(
-          vertical: NhamSpacing.sp6,
-          horizontal: NhamSpacing.sp4,
+          vertical: KalloSpacing.sp6,
+          horizontal: KalloSpacing.sp4,
         ),
         decoration: BoxDecoration(
           color: kCardSurface,
@@ -184,10 +184,10 @@ class _FirstRunChipState extends State<_FirstRunChip> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: _pressed ? NhamColors.border15 : NhamColors.elev,
-          borderRadius: BorderRadius.circular(NhamRadii.pill),
+          color: _pressed ? KalloColors.border15 : KalloColors.elev,
+          borderRadius: BorderRadius.circular(KalloRadii.pill),
           border: Border.all(
-            color: _pressed ? NhamColors.accent50 : NhamColors.borderSoft,
+            color: _pressed ? KalloColors.accent50 : KalloColors.borderSoft,
           ),
         ),
         child: Text(widget.label, style: dashMeta(color: kInk)),
@@ -233,19 +233,19 @@ class _Dock extends StatelessWidget {
         tr('dashboard.protein'),
         round0(totalProtein),
         targets.proteinTargetG.round(),
-        NhamColors.macroProtein,
+        KalloColors.macroProtein,
       ),
       MacroBarData(
         tr('dashboard.carbs'),
         round0(totalCarbs),
         targets.carbsTargetG.round(),
-        NhamColors.macroCarbs,
+        KalloColors.macroCarbs,
       ),
       MacroBarData(
         tr('dashboard.fat'),
         round0(totalFat),
         targets.fatTargetG.round(),
-        NhamColors.macroFat,
+        KalloColors.macroFat,
       ),
     ];
 
@@ -326,7 +326,7 @@ class _Dock extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: NhamSpacing.sp4),
+                    const SizedBox(width: KalloSpacing.sp4),
                     CalorieRing(
                       current: calories.toDouble(),
                       target: targets.calorieTarget,
@@ -334,7 +334,7 @@ class _Dock extends StatelessWidget {
                       strokeWidth: 6,
                       center: const Icon(
                         LucideIcons.flame300,
-                        size: NhamIcons.size,
+                        size: KalloIcons.size,
                         color: kInk,
                       ),
                     ),

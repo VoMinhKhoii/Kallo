@@ -17,8 +17,8 @@ import type {
   SidebarRestingState,
 } from '@/lib/sidebar/types';
 
-export const SIDEBAR_STATE_COOKIE = 'nham_sidebar_state';
-export const SIDEBAR_EXPAND_MODE_COOKIE = 'nham_sidebar_expand_mode';
+export const SIDEBAR_STATE_COOKIE = 'kallo_sidebar_state';
+export const SIDEBAR_EXPAND_MODE_COOKIE = 'kallo_sidebar_expand_mode';
 export const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 export function parseSidebarState(

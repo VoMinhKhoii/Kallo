@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../shared/widgets/kallo_wordmark.dart';
-import '../theme/nham_colors.dart';
-import '../theme/nham_theme.dart';
+import '../theme/kallo_colors.dart';
+import '../theme/kallo_theme.dart';
 
 /// Drawer header — the brand wordmark, and nothing else.
 ///
@@ -19,14 +19,14 @@ class SidebarHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(
-        NhamSpacing.sp3,
-        NhamSpacing.sp5,
-        NhamSpacing.sp3,
-        NhamSpacing.sp4,
+        KalloSpacing.sp3,
+        KalloSpacing.sp5,
+        KalloSpacing.sp3,
+        KalloSpacing.sp4,
       ),
       decoration: const BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: NhamColors.borderBiscotti40, width: 1),
+          bottom: BorderSide(color: KalloColors.borderBiscotti40, width: 1),
         ),
       ),
       child: const Align(

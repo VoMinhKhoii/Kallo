@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/nham_text.dart';
+import '../../../shared/widgets/kallo_text.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/logging_models.dart';
 import '../logic/format.dart';
 import '../logic/logging_spacing.dart';
@@ -77,10 +77,10 @@ class _CheatMealCardState extends State<CheatMealCard>
       onDismissed: (_) => onRemove(),
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
+        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp5),
         decoration: BoxDecoration(
-          color: NhamColors.danger,
-          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+          color: KalloColors.danger,
+          borderRadius: BorderRadius.circular(KalloRadii.containerLg),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -140,10 +140,10 @@ class _CheatMealCardState extends State<CheatMealCard>
             padding: LoggingSpacing.card,
             decoration: BoxDecoration(
               // Warm accent tint over the card white (web bg-kallo-accent/4).
-              color: Color.alphaBlend(NhamColors.accent05, NhamColors.elev),
-              borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-              border: Border.all(color: NhamColors.accent30),
-              boxShadow: const [NhamShadows.sm],
+              color: Color.alphaBlend(KalloColors.accent05, KalloColors.elev),
+              borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+              border: Border.all(color: KalloColors.accent30),
+              boxShadow: const [KalloShadows.sm],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,10 +161,10 @@ class _CheatMealCardState extends State<CheatMealCard>
                             CheatBadge(
                               label: 'logging.cheatMealCard.badge'.tr(),
                             ),
-                            const SizedBox(height: NhamSpacing.sp2),
-                            NhamText(
+                            const SizedBox(height: KalloSpacing.sp2),
+                            KalloText(
                               meal.rawInput,
-                              variant: NhamTextVariant.mealQuote,
+                              variant: KalloTextVariant.mealQuote,
                               style: const TextStyle(
                                 fontSize: 17,
                                 height: 28 / 17,
@@ -173,7 +173,7 @@ class _CheatMealCardState extends State<CheatMealCard>
                           ],
                         ),
                       ),
-                      const SizedBox(width: NhamSpacing.sp3),
+                      const SizedBox(width: KalloSpacing.sp3),
                       _ChevronToggle(expand: _expand, onTap: _toggle),
                     ],
                   ),
@@ -193,7 +193,7 @@ class _CheatMealCardState extends State<CheatMealCard>
                     );
                   },
                   child: Padding(
-                    padding: const EdgeInsets.only(top: NhamSpacing.sp2),
+                    padding: const EdgeInsets.only(top: KalloSpacing.sp2),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -201,7 +201,7 @@ class _CheatMealCardState extends State<CheatMealCard>
                           child: Text(
                             _macroLine(meal), style: dashMeta(tabular: true),),
                         ),
-                        const SizedBox(width: NhamSpacing.sp3),
+                        const SizedBox(width: KalloSpacing.sp3),
                         Text(
                           caloriesApprox,
                           style: dashValue(),
@@ -287,7 +287,7 @@ class _ChevronToggleState extends State<_ChevronToggle> {
               duration: const Duration(milliseconds: 150),
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: _pressed ? NhamColors.hover40 : Colors.transparent,
+                color: _pressed ? KalloColors.hover40 : Colors.transparent,
                 shape: BoxShape.circle,
               ),
               child: RotationTransition(
@@ -296,7 +296,7 @@ class _ChevronToggleState extends State<_ChevronToggle> {
                   LucideIcons.chevronDown300,
                   // Same glyph size/ink as the action icons beneath the card.
                   size: LoggingIcons.size,
-                  color: NhamColors.text,
+                  color: KalloColors.text,
                 ),
               ),
             ),

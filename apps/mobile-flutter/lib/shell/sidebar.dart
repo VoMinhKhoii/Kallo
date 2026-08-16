@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/circle/data/circle_providers.dart';
 import '../features/onboarding/providers/onboarding_providers.dart';
-import '../theme/nham_colors.dart';
+import '../theme/kallo_colors.dart';
 import 'sidebar_footer.dart';
 import 'sidebar_header.dart';
 import 'sidebar_nav_list.dart';
@@ -38,7 +38,7 @@ class Sidebar extends ConsumerWidget {
         ref.watch(mealShareInvitesProvider).valueOrNull?.length ?? 0;
 
     return Material(
-      color: NhamColors.surface,
+      color: KalloColors.surface,
       // Top inset only — the footer applies its own bottom safe-area padding.
       child: SafeArea(
         bottom: false,

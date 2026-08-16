@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../macro_trio.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
 
@@ -23,7 +23,7 @@ class PersistedMealExpandedDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
+          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
           const SizedBox(height: LoggingSpacing.section),
           Padding(
             padding: const EdgeInsets.only(bottom: LoggingSpacing.section),
@@ -50,7 +50,7 @@ class PersistedMealExpandedDetails extends StatelessWidget {
                             style: dashBody(),
                           ),
                         ),
-                        const SizedBox(width: NhamSpacing.sp3), // gap-3
+                        const SizedBox(width: KalloSpacing.sp3), // gap-3
                         MacroTrio(
                           protein: group.nutrition.proteinG,
                           carbs: group.nutrition.carbohydrateG,
@@ -63,7 +63,7 @@ class PersistedMealExpandedDetails extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
+          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
           const SizedBox(height: LoggingSpacing.section),
           MealTotalsRow(
             label: 'logging.persistedMealCard.total'.tr(),

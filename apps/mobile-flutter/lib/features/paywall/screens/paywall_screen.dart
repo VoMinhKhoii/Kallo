@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/billing/entitlements_provider.dart';
-import '../../../shared/widgets/nham_primitives.dart';
+import '../../../shared/widgets/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../paywall_controller.dart';
 import '../widgets/paywall_premium_body.dart';
 import '../widgets/paywall_purchase_body.dart';
@@ -33,10 +33,10 @@ class PaywallScreen extends ConsumerWidget {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
-                NhamSpacing.sp5,
-                NhamSpacing.sp4,
-                NhamSpacing.sp5,
-                NhamSpacing.sp8,
+                KalloSpacing.sp5,
+                KalloSpacing.sp4,
+                KalloSpacing.sp5,
+                KalloSpacing.sp8,
               ),
               child: entitlement.when(
                 data:
@@ -89,8 +89,8 @@ class _CloseHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: NhamSpacing.sp4,
-        vertical: NhamSpacing.sp3,
+        horizontal: KalloSpacing.sp4,
+        vertical: KalloSpacing.sp3,
       ),
       child: Align(
         alignment: Alignment.centerRight,
@@ -100,7 +100,7 @@ class _CloseHeader extends StatelessWidget {
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: onClose,
-            child: const Icon(LucideIcons.x300, size: NhamIcons.size, color: kInkMuted),
+            child: const Icon(LucideIcons.x300, size: KalloIcons.size, color: kInkMuted),
           ),
         ),
       ),

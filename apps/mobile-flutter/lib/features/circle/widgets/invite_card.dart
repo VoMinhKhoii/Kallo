@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/circle.dart';
-import '../../../shared/widgets/nham_text.dart';
+import '../../../shared/widgets/kallo_text.dart';
 import '../../../shared/widgets/top_toast.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 import '../data/circle_providers.dart';
 import '../../../shared/widgets/profile_avatar.dart';
 import 'invite_action.dart';
@@ -76,12 +76,12 @@ class _InviteCardState extends ConsumerState<InviteCard> {
     final invite = widget.invite;
     final portion = _portionLabel(invite.portionFactor);
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: const EdgeInsets.all(KalloSpacing.sp4),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.borderSoft),
-        boxShadow: const [NhamShadows.sm],
+        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        border: Border.all(color: KalloColors.borderSoft),
+        boxShadow: const [KalloShadows.sm],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +89,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
           Row(
             children: [
               ProfileAvatarDisc(profile: invite.from, size: 24),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               Expanded(
                 child: Text(
                   tr(
@@ -98,64 +98,64 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                         : 'groups.invites.sharedCopy',
                     namedArgs: {'name': invite.from.label},
                   ),
-                  style: NhamTextStyles.sansRegular(
-                    fontSize: NhamFontSize.xs,
-                  ).copyWith(color: NhamColors.text),
+                  style: KalloTextStyles.sansRegular(
+                    fontSize: KalloFontSize.xs,
+                  ).copyWith(color: KalloColors.text),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: NhamText(
+                child: KalloText(
                   invite.rawInput,
-                  variant: NhamTextVariant.mealQuote,
+                  variant: KalloTextVariant.mealQuote,
                   style: const TextStyle(fontSize: 17, height: 28 / 17),
                 ),
               ),
               if (invite.isSplit && portion.isNotEmpty)
                 Container(
-                  margin: const EdgeInsets.only(left: NhamSpacing.sp2, top: 2),
+                  margin: const EdgeInsets.only(left: KalloSpacing.sp2, top: 2),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: NhamColors.accent10,
-                    borderRadius: BorderRadius.circular(NhamRadii.pill),
+                    color: KalloColors.accent10,
+                    borderRadius: BorderRadius.circular(KalloRadii.pill),
                   ),
                   child: Text(
                     tr(
                       'groups.invites.portion',
                       namedArgs: {'portion': portion},
                     ),
-                    style: NhamTextStyles.sansMedium(
-                      fontSize: NhamFontSize.xxs,
-                    ).copyWith(color: NhamColors.text),
+                    style: KalloTextStyles.sansMedium(
+                      fontSize: KalloFontSize.xxs,
+                    ).copyWith(color: KalloColors.text),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              NhamText(
+              KalloText(
                 'P: ${_fmtG(invite.proteinG)}  C: ${_fmtG(invite.carbohydrateG)}  F: ${_fmtG(invite.fatG)}',
-                variant: NhamTextVariant.captionTabular,
+                variant: KalloTextVariant.captionTabular,
               ),
-              NhamText(
+              KalloText(
                 _fmtKcal(invite.caloriesKcal),
-                variant: NhamTextVariant.numStrong,
+                variant: KalloTextVariant.numStrong,
               ),
             ],
           ),
-          const SizedBox(height: NhamSpacing.sp3),
-          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
+          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
+          const SizedBox(height: KalloSpacing.sp3),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -165,7 +165,7 @@ class _InviteCardState extends ConsumerState<InviteCard> {
                 onTap: _busy ? null : _dismiss,
                 filled: false,
               ),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               InviteAction(
                 icon: LucideIcons.check300,
                 label: tr('groups.invites.accept'),

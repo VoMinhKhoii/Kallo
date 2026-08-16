@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import '../../../models/onboarding.dart';
 import '../../../shared/widgets/decimal_input.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 import '../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../logic/tdee.dart';
 import '../widgets/aggression_slider.dart';
@@ -226,23 +226,23 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
         Text(
           tr('onboarding.bodyMetrics.title'),
           // tracking-tight: -0.025em × 24px ≈ -0.6
-          style: NhamTextStyles.serifMedium(
+          style: KalloTextStyles.serifMedium(
             fontSize: 24,
-          ).copyWith(letterSpacing: -0.6, color: NhamColors.text),
+          ).copyWith(letterSpacing: -0.6, color: KalloColors.text),
         ),
-        const SizedBox(height: NhamSpacing.sp1),
+        const SizedBox(height: KalloSpacing.sp1),
         Text(
           tr('onboarding.bodyMetrics.subtitle'),
           style: dashBody(color: kInkMuted),
         ),
-        const SizedBox(height: NhamSpacing.sp5), // space-y-5
+        const SizedBox(height: KalloSpacing.sp5), // space-y-5
         // Metrics card.
         Container(
-          padding: const EdgeInsets.all(NhamSpacing.sp5),
+          padding: const EdgeInsets.all(KalloSpacing.sp5),
           decoration: BoxDecoration(
-            color: NhamColors.elev,
+            color: KalloColors.elev,
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: NhamColors.inputBorder),
+            border: Border.all(color: KalloColors.inputBorder),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -255,7 +255,7 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
             ],
           ),
         ),
-        const SizedBox(height: NhamSpacing.sp5), // space-y-5
+        const SizedBox(height: KalloSpacing.sp5), // space-y-5
         // Goal card (when TDEE known) or the dashed unlock placeholder.
         if (tdee != null) _buildGoalCard(tdee) else _buildUnlockPlaceholder(),
       ],
@@ -272,7 +272,7 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
             tr('onboarding.bodyMetrics.unlockTitle'),
             style: dashBody(weight: FontWeight.w500),
           ),
-          const SizedBox(height: NhamSpacing.sp1), // mt-1
+          const SizedBox(height: KalloSpacing.sp1), // mt-1
           Text(
             tr('onboarding.bodyMetrics.unlockHint'),
             style: dashMeta(),
@@ -307,7 +307,7 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
             _report();
           },
         ),
-        const SizedBox(height: NhamSpacing.sp4),
+        const SizedBox(height: KalloSpacing.sp4),
 
         // weight + height row
         Row(
@@ -328,7 +328,7 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
                 ),
               ),
             ),
-            const SizedBox(width: NhamSpacing.sp4),
+            const SizedBox(width: KalloSpacing.sp4),
             Expanded(
               child: _Cell(
                 label:
@@ -347,7 +347,7 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
             ),
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp4),
+        const SizedBox(height: KalloSpacing.sp4),
 
         // age row (+ empty cell)
         Row(
@@ -368,11 +368,11 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
                 ),
               ),
             ),
-            const SizedBox(width: NhamSpacing.sp4),
+            const SizedBox(width: KalloSpacing.sp4),
             const Expanded(child: SizedBox()),
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp4),
+        const SizedBox(height: KalloSpacing.sp4),
 
         // activity level (full)
         _FieldLabel(tr('onboarding.bodyMetrics.activityLevel')),
@@ -436,20 +436,20 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
   Widget _buildGoalCard(int tdee) {
     final targetCalories = _finalTargets?.calories ?? 0;
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp5),
+      padding: const EdgeInsets.all(KalloSpacing.sp5),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
+        color: KalloColors.elev,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: NhamColors.inputBorder),
+        border: Border.all(color: KalloColors.inputBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // TDEE hero + goal control, with a bottom divider (border-[#EAE7E0]/80).
           _TdeeHero(tdee: tdee),
-          const SizedBox(height: NhamSpacing.sp4), // gap-4
+          const SizedBox(height: KalloSpacing.sp4), // gap-4
           _FieldLabel(tr('onboarding.bodyMetrics.goal')),
-          const SizedBox(height: NhamSpacing.sp2), // mb-2
+          const SizedBox(height: KalloSpacing.sp2), // mb-2
           _GoalStrip(
             value: _goal,
             onChange: (g) {
@@ -462,11 +462,11 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
               _report();
             },
           ),
-          const SizedBox(height: NhamSpacing.sp4), // pb-4 divider gap
+          const SizedBox(height: KalloSpacing.sp4), // pb-4 divider gap
           const _Divider(color: Color(0xCCE8E6DC)), // border @80%
 
           if (_goal != 'maintaining') ...[
-            const SizedBox(height: NhamSpacing.sp4), // space-y-4
+            const SizedBox(height: KalloSpacing.sp4), // space-y-4
             AggressionSlider(
               value: _aggression,
               goal: _goal == 'cutting' ? 'cutting' : 'bulking',
@@ -478,7 +478,7 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
           ],
 
           if (targetCalories > 0) ...[
-            const SizedBox(height: NhamSpacing.sp4), // space-y-4
+            const SizedBox(height: KalloSpacing.sp4), // space-y-4
             // Daily-target hero card (gradient) — calorie target + caption +
             // P/C/F for the selected split. Sits right below the goal toggle.
             _DailyTargetCard(
@@ -487,14 +487,14 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
               goal: _goal,
               macros: _finalTargets,
             ),
-            const SizedBox(height: NhamSpacing.sp4),
+            const SizedBox(height: KalloSpacing.sp4),
             _FieldLabel(tr('onboarding.bodyMetrics.carbSplit')),
-            const SizedBox(height: NhamSpacing.sp2), // mb-2
+            const SizedBox(height: KalloSpacing.sp2), // mb-2
             // Carb split cards (gap-2.5) — High / Moderate / Low.
             Column(
               children: [
                 for (var i = 0; i < _carbSplits.length; i++) ...[
-                  if (i > 0) const SizedBox(height: NhamSpacing.sp2_5),
+                  if (i > 0) const SizedBox(height: KalloSpacing.sp2_5),
                   _CarbCard(
                     id: _carbSplits[i],
                     active: _carbSplit == _carbSplits[i],
@@ -557,11 +557,11 @@ class _DailyTargetCard extends StatelessWidget {
     final m = macros;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(NhamSpacing.sp5),
+      padding: const EdgeInsets.all(KalloSpacing.sp5),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.inputBorder),
+        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        border: Border.all(color: KalloColors.inputBorder),
       ),
       child: Column(
         children: [
@@ -570,7 +570,7 @@ class _DailyTargetCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: dashEyebrow(),
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Text.rich(
             TextSpan(
               children: [
@@ -581,18 +581,18 @@ class _DailyTargetCard extends StatelessWidget {
                 ),
               ],
             ),
-            style: NhamTextStyles.serifRegular(
+            style: KalloTextStyles.serifRegular(
               fontSize: 36,
-            ).copyWith(color: NhamColors.text),
+            ).copyWith(color: KalloColors.text),
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Text(
             caption.toString(),
             textAlign: TextAlign.center,
             style: dashMeta(),
           ),
           if (m != null) ...[
-            const SizedBox(height: NhamSpacing.sp4),
+            const SizedBox(height: KalloSpacing.sp4),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -636,7 +636,7 @@ class _TdeeHero extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _FieldLabel(tr('onboarding.bodyMetrics.tdee')),
-        const SizedBox(height: NhamSpacing.sp1), // mb-1
+        const SizedBox(height: KalloSpacing.sp1), // mb-1
         Text.rich(
           TextSpan(
             children: [
@@ -648,9 +648,9 @@ class _TdeeHero extends StatelessWidget {
             ],
           ),
           // text-4xl (36px) tracking-tighter
-          style: NhamTextStyles.serifRegular(
+          style: KalloTextStyles.serifRegular(
             fontSize: 36,
-          ).copyWith(letterSpacing: -1, color: NhamColors.text),
+          ).copyWith(letterSpacing: -1, color: KalloColors.text),
         ),
       ],
     );
@@ -673,11 +673,11 @@ class DottedBorderBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _DashedBorderPainter(color: NhamColors.inputBorder, radius: 28),
+      painter: _DashedBorderPainter(color: KalloColors.inputBorder, radius: 28),
       child: Container(
-        padding: const EdgeInsets.all(NhamSpacing.sp5),
+        padding: const EdgeInsets.all(KalloSpacing.sp5),
         decoration: BoxDecoration(
-          color: NhamColors.cardCream, // #FFFCF8
+          color: KalloColors.cardCream, // #FFFCF8
           borderRadius: BorderRadius.circular(28),
         ),
         child: child,
@@ -754,7 +754,7 @@ class _Cell extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             error!,
-            style: dashMeta(color: NhamColors.danger),
+            style: dashMeta(color: KalloColors.danger),
           ),
         ],
       ],
@@ -776,15 +776,15 @@ class _GoalStrip extends StatelessWidget {
       'bulking': tr('onboarding.bodyMetrics.bulking'),
     };
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp1),
+      padding: const EdgeInsets.all(KalloSpacing.sp1),
       decoration: BoxDecoration(
         color: const Color(0x80E8E6DC), // hairline @50%
-        borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+        borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
       ),
       child: Row(
         children: [
           for (var i = 0; i < _goals.length; i++) ...[
-            if (i > 0) const SizedBox(width: NhamSpacing.sp1),
+            if (i > 0) const SizedBox(width: KalloSpacing.sp1),
             Expanded(
               child: _GoalButton(
                 label: labels[_goals[i]]!,
@@ -833,15 +833,15 @@ class _GoalButtonState extends State<_GoalButton> {
         curve: const Cubic(0.25, 0.1, 0.25, 1),
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(
-          vertical: NhamSpacing.sp1_5, // py-1.5
-          horizontal: NhamSpacing.sp3, // px-3
+          vertical: KalloSpacing.sp1_5, // py-1.5
+          horizontal: KalloSpacing.sp3, // px-3
         ),
         decoration:
             widget.active
                 ? BoxDecoration(
-                  color: NhamColors.elev,
-                  borderRadius: BorderRadius.circular(NhamRadii.md),
-                  boxShadow: const [NhamShadows.sm], // shadow-sm
+                  color: KalloColors.elev,
+                  borderRadius: BorderRadius.circular(KalloRadii.md),
+                  boxShadow: const [KalloShadows.sm], // shadow-sm
                 )
                 : const BoxDecoration(),
         child: Text(
@@ -901,8 +901,8 @@ class _CarbCardState extends State<_CarbCard> {
 
     final borderColor =
         active
-            ? NhamColors.text.withValues(alpha: 0.3)
-            : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
+            ? KalloColors.text.withValues(alpha: 0.3)
+            : (_pressed ? KalloColors.accent50 : KalloColors.inputBorder);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -913,8 +913,8 @@ class _CarbCardState extends State<_CarbCard> {
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: active ? NhamColors.hover : NhamColors.elev,
-          borderRadius: BorderRadius.circular(NhamRadii.xxxl), // rounded-[22px]
+          color: active ? KalloColors.hover : KalloColors.elev,
+          borderRadius: BorderRadius.circular(KalloRadii.xxxl), // rounded-[22px]
           border: Border.all(color: borderColor),
           boxShadow:
               active
@@ -935,12 +935,12 @@ class _CarbCardState extends State<_CarbCard> {
             Container(
               color:
                   active
-                      ? NhamColors
+                      ? KalloColors
                           .selectedSegment // #FBF2E6
-                      : NhamColors.track, // #F5F4F0
+                      : KalloColors.track, // #F5F4F0
               padding: const EdgeInsets.symmetric(
-                horizontal: NhamSpacing.sp3_5, // px-3.5
-                vertical: NhamSpacing.sp2_5, // py-2.5
+                horizontal: KalloSpacing.sp3_5, // px-3.5
+                vertical: KalloSpacing.sp2_5, // py-2.5
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -960,13 +960,13 @@ class _CarbCardState extends State<_CarbCard> {
             // Body (px-3.5 py-3) — stacked P/F/C rows (space-y-1.5).
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: NhamSpacing.sp3_5,
-                vertical: NhamSpacing.sp3,
+                horizontal: KalloSpacing.sp3_5,
+                vertical: KalloSpacing.sp3,
               ),
               child: Column(
                 children: [
                   for (var i = 0; i < rows.length; i++) ...[
-                    if (i > 0) const SizedBox(height: NhamSpacing.sp1_5),
+                    if (i > 0) const SizedBox(height: KalloSpacing.sp1_5),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

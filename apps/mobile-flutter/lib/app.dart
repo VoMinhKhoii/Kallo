@@ -12,7 +12,7 @@ import 'data/session_provider.dart';
 import 'features/circle/circle_deep_links.dart';
 import 'features/logging/data/logging_providers.dart';
 import 'router.dart';
-import 'theme/nham_theme.dart';
+import 'theme/kallo_theme.dart';
 
 /// Root app widget — ported from the RN `RootLayout` (`app/_layout.tsx`).
 ///
@@ -21,14 +21,14 @@ import 'theme/nham_theme.dart';
 /// in `main()`, the equivalent of RN's `LocaleProvider`). The status-bar style
 /// is forced dark-content to match RN's `<StatusBar style="dark" />` on the
 /// cream surface.
-class NhamApp extends ConsumerStatefulWidget {
-  const NhamApp({super.key});
+class KalloApp extends ConsumerStatefulWidget {
+  const KalloApp({super.key});
 
   @override
-  ConsumerState<NhamApp> createState() => _NhamAppState();
+  ConsumerState<KalloApp> createState() => _NhamAppState();
 }
 
-class _NhamAppState extends ConsumerState<NhamApp> with WidgetsBindingObserver {
+class _NhamAppState extends ConsumerState<KalloApp> with WidgetsBindingObserver {
   bool _didSyncInitialSession = false;
 
   @override
@@ -99,7 +99,7 @@ class _NhamAppState extends ConsumerState<NhamApp> with WidgetsBindingObserver {
       child: MaterialApp.router(
         title: 'Kallo',
         debugShowCheckedModeBanner: false,
-        theme: NhamTheme.light(),
+        theme: KalloTheme.light(),
         routerConfig: router,
         // Dynamic Type is respected, but capped: the feed's fixed-width
         // columns overflow past ~1.3x.

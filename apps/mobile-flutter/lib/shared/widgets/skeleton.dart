@@ -1,6 +1,6 @@
 /// Skeleton loading primitives — a calm fade-pulse over placeholder blocks.
 ///
-/// These draw warm `NhamColors.track` placeholder bars and pulse them under one
+/// These draw warm `KalloColors.track` placeholder bars and pulse them under one
 /// shared controller, so a loading state previews its own shape. The pulse
 /// (opacity 1.0↔0.5 on a 1000ms reversing controller, `cubic-bezier(0.4,0,0.6,1)`
 /// ease — Flutter's take on Tailwind `animate-pulse`) matches the nutrition ref.
@@ -9,7 +9,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../theme/calm_tokens.dart';
-import '../../theme/nham_colors.dart';
+import '../../theme/kallo_colors.dart';
 
 /// Marker letting a nested [SkeletonPulse] inherit an ancestor's pulse.
 class _PulseScope extends InheritedWidget {
@@ -90,7 +90,7 @@ class SkeletonBar extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: NhamColors.track,
+        color: KalloColors.track,
         borderRadius: BorderRadius.circular(radius),
       ),
     );
@@ -114,7 +114,7 @@ class SkeletonCircle extends StatelessWidget {
         width: size,
         height: size,
         decoration: const BoxDecoration(
-          color: NhamColors.track,
+          color: KalloColors.track,
           shape: BoxShape.circle,
         ),
       );

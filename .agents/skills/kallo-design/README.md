@@ -180,7 +180,7 @@ For this design system, lucide is loaded from CDN: `https://unpkg.com/lucide@lat
 │   ├── 16-icons.html               ← lucide usage
 │   └── 17-brand-logo.html          ← wordmark + mark
 └── ui_kits/
-    └── nham_app/
+    └── kallo_app/
         ├── README.md
         ├── index.html              ← click-thru: landing → app → logging → dashboard
         ├── Landing.jsx

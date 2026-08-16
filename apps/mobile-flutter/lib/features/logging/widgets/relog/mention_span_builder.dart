@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/nham_colors.dart';
+import '../../../../theme/kallo_colors.dart';
 import '../../logic/relog/mentions.dart';
 
 /// How the composer's value is PAINTED, split from what the value contains.
@@ -37,7 +37,7 @@ TextSpan? buildMentionTextSpan({
   // fill, no chip, no macros — so the only thing marking it as a reference
   // rather than prose is the colour.
   final mentionStyle = (style ?? const TextStyle()).copyWith(
-    color: NhamColors.mention,
+    color: KalloColors.mention,
   );
   return TextSpan(
     style: style,

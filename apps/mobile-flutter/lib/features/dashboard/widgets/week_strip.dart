@@ -17,7 +17,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/dashboard.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 import '../../logging/logic/timeline_utils.dart';
 import '../data/dashboard_providers.dart';
 import '../logic/dashboard_spacing.dart';
@@ -111,7 +111,7 @@ class _DayCell extends StatelessWidget {
     // target (consumed ÷ target, clamped to a full sweep when over). Days with
     // no logged calories show only the track.
     final arcColor =
-        (consumed != null && consumed > 0) ? NhamColors.accent : null;
+        (consumed != null && consumed > 0) ? KalloColors.accent : null;
     final fraction =
         consumed != null ? consumed.clamp(0.0, 1.0).toDouble() : 0.0;
 
@@ -211,7 +211,7 @@ class _DayRingPainter extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = _stroke
-          ..color = NhamColors.track, // same grey track as the calorie ring,
+          ..color = KalloColors.track, // same grey track as the calorie ring,
         // so the accent progress arc reads clearly
       );
     }

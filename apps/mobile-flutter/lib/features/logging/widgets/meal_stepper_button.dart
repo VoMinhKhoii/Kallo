@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/logging_spacing.dart';
 
 /// A 28x28 (w-7 h-7) stepper button inside the shared logging tap target:
@@ -51,14 +51,14 @@ class _MealStepperButtonState extends State<MealStepperButton> {
               height: 28,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: _pressed ? NhamColors.hover : NhamColors.elev,
-                borderRadius: BorderRadius.circular(NhamRadii.md),
-                border: Border.all(color: NhamColors.borderSoft),
+                color: _pressed ? KalloColors.hover : KalloColors.elev,
+                borderRadius: BorderRadius.circular(KalloRadii.md),
+                border: Border.all(color: KalloColors.borderSoft),
               ),
               child: Icon(
                 widget.icon,
                 size: LoggingIcons.size,
-                color: NhamColors.text,
+                color: KalloColors.text,
               ),
             ),
           ),

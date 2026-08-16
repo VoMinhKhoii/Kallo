@@ -18,7 +18,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 import '../logic/dashboard_format.dart';
 
 class CalorieRing extends StatefulWidget {
@@ -169,7 +169,7 @@ class _RingPainter extends CustomPainter {
     final track = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
-      ..color = NhamColors.track;
+      ..color = KalloColors.track;
     canvas.drawCircle(center, radius, track);
 
     if (ratio <= 0) return;
@@ -178,7 +178,7 @@ class _RingPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
-      ..color = NhamColors.accent;
+      ..color = KalloColors.accent;
     canvas.drawArc(rect, _start, _tau * ratio.clamp(0, 1).toDouble(), false, base);
 
     // Over target — the overflow arc continues in offTarget @ ~40% alpha.
@@ -188,7 +188,7 @@ class _RingPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round
-        ..color = NhamColors.offTarget.withValues(alpha: 0.4);
+        ..color = KalloColors.offTarget.withValues(alpha: 0.4);
       canvas.drawArc(rect, _start, _tau * overflow, false, over);
     }
   }

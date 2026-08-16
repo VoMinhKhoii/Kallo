@@ -17,8 +17,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../../theme/calm_tokens.dart';
 import '../logic/weight_chart_axis.dart';
 
@@ -93,7 +93,7 @@ class WeightChartCanvas extends StatelessWidget {
     // its own size.
     final axisLabel = dashMeta(color: kInkMuted);
     final gridLine = FlLine(
-      color: NhamColors.border.withValues(alpha: 0.5),
+      color: KalloColors.border.withValues(alpha: 0.5),
       strokeWidth: 1,
     );
 
@@ -131,10 +131,10 @@ class WeightChartCanvas extends StatelessWidget {
                 show: true,
                 border: Border(
                   left: BorderSide(
-                    color: NhamColors.border.withValues(alpha: 0.5),
+                    color: KalloColors.border.withValues(alpha: 0.5),
                   ),
                   bottom: BorderSide(
-                    color: NhamColors.border.withValues(alpha: 0.5),
+                    color: KalloColors.border.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -189,7 +189,7 @@ class WeightChartCanvas extends StatelessWidget {
                 verticalLines: [
                   VerticalLine(
                     x: lastIndex.toDouble(),
-                    color: NhamColors.accent.withValues(alpha: 0.35),
+                    color: KalloColors.accent.withValues(alpha: 0.35),
                     strokeWidth: 1,
                   ),
                 ],
@@ -204,7 +204,7 @@ class WeightChartCanvas extends StatelessWidget {
                           getDotPainter: (spot, pct, bar, idx) =>
                               FlDotCirclePainter(
                             radius: 4,
-                            color: NhamColors.accent,
+                            color: KalloColors.accent,
                             strokeWidth: 2,
                             strokeColor: Colors.white,
                           ),
@@ -215,7 +215,7 @@ class WeightChartCanvas extends StatelessWidget {
                 touchTooltipData: LineTouchTooltipData(
                   getTooltipColor: (_) => kCardSurface,
                   tooltipBorder: const BorderSide(color: kHairline),
-                  tooltipRoundedRadius: NhamRadii.md,
+                  tooltipRoundedRadius: KalloRadii.md,
                   getTooltipItems: (touchedSpots) => touchedSpots.map((s) {
                     // Skip the dotted forecast bar (drawn first when present).
                     if (showForecast && s.barIndex == 0) return null;
@@ -235,7 +235,7 @@ class WeightChartCanvas extends StatelessWidget {
                       FlSpot(forecastDay, projectedEndWeight),
                     ],
                     isCurved: false,
-                    color: NhamColors.accent.withValues(alpha: 0.6),
+                    color: KalloColors.accent.withValues(alpha: 0.6),
                     barWidth: 2,
                     dashArray: const [3, 3],
                     dotData: const FlDotData(show: false),
@@ -244,17 +244,17 @@ class WeightChartCanvas extends StatelessWidget {
                 LineChartBarData(
                   spots: actualSpots,
                   isCurved: false,
-                  color: NhamColors.accent,
+                  color: KalloColors.accent,
                   barWidth: 2,
                   isStrokeCapRound: false,
                   isStrokeJoinRound: false,
                   dotData: FlDotData(
                     show: true,
                     getDotPainter: (spot, pct, bar, idx) => idx == lastIndex
-                        ? const _TodayDotPainter(color: NhamColors.accent)
+                        ? const _TodayDotPainter(color: KalloColors.accent)
                         : FlDotCirclePainter(
                             radius: 3,
-                            color: NhamColors.accent,
+                            color: KalloColors.accent,
                             strokeColor: Colors.white,
                             strokeWidth: 1.5,
                           ),

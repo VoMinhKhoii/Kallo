@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_theme.dart';
 
 /// A continuously pulsing wrapper (Tailwind animate-pulse: opacity 1→.5→1 over
 /// 2s cubic-bezier(0.4,0,0.6,1)).
@@ -52,6 +52,6 @@ Widget skeletonBar(double width, double height, Color color) => Container(
   height: height,
   decoration: BoxDecoration(
     color: color,
-    borderRadius: BorderRadius.circular(NhamRadii.pill),
+    borderRadius: BorderRadius.circular(KalloRadii.pill),
   ),
 );

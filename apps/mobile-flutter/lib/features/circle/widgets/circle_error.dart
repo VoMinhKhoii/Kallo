@@ -2,9 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 
 /// Retryable error state for the Circle read surfaces (wall, circle list,
 /// invite preview). A failed fetch must not masquerade as an empty state — a
@@ -24,47 +24,47 @@ class CircleErrorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp10),
+      padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp10),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 448),
-          padding: const EdgeInsets.all(NhamSpacing.sp4),
+          padding: const EdgeInsets.all(KalloSpacing.sp4),
           decoration: BoxDecoration(
-            color: NhamColors.danger06,
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-            border: Border.all(color: NhamColors.danger30),
+            color: KalloColors.danger06,
+            borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+            border: Border.all(color: KalloColors.danger30),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Padding(
-                padding: EdgeInsets.only(top: NhamSpacing.sp0_5),
+                padding: EdgeInsets.only(top: KalloSpacing.sp0_5),
                 child: Icon(
                   LucideIcons.circleAlert300,
                   size: 20,
-                  color: NhamColors.danger,
+                  color: KalloColors.danger,
                 ),
               ),
-              const SizedBox(width: NhamSpacing.sp3),
+              const SizedBox(width: KalloSpacing.sp3),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       tr('groups.error.title'),
-                      style: NhamTextStyles.sansSemiBold(
-                        fontSize: NhamFontSize.detail,
-                      ).copyWith(color: NhamColors.text),
+                      style: KalloTextStyles.sansSemiBold(
+                        fontSize: KalloFontSize.detail,
+                      ).copyWith(color: KalloColors.text),
                     ),
-                    const SizedBox(height: NhamSpacing.sp1),
+                    const SizedBox(height: KalloSpacing.sp1),
                     Text(
                       tr('groups.error.body'),
-                      style: NhamTextStyles.sansRegular(
-                        fontSize: NhamFontSize.detail,
-                        height: NhamLeading.normal,
-                      ).copyWith(color: NhamColors.textMuted),
+                      style: KalloTextStyles.sansRegular(
+                        fontSize: KalloFontSize.detail,
+                        height: KalloLeading.normal,
+                      ).copyWith(color: KalloColors.textMuted),
                     ),
-                    const SizedBox(height: NhamSpacing.sp3),
+                    const SizedBox(height: KalloSpacing.sp3),
                     _RetryPill(onRetry: onRetry, isRetrying: isRetrying),
                   ],
                 ),
@@ -126,12 +126,12 @@ class _RetryPillState extends State<_RetryPill>
         onTap: widget.isRetrying ? null : widget.onRetry,
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3_5,
-            vertical: NhamSpacing.sp2,
+            horizontal: KalloSpacing.sp3_5,
+            vertical: KalloSpacing.sp2,
           ),
           decoration: BoxDecoration(
-            color: NhamColors.danger10,
-            borderRadius: BorderRadius.circular(NhamRadii.pill),
+            color: KalloColors.danger10,
+            borderRadius: BorderRadius.circular(KalloRadii.pill),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -141,14 +141,14 @@ class _RetryPillState extends State<_RetryPill>
                 child: const Icon(
                   LucideIcons.refreshCw300,
                   size: 16,
-                  color: NhamColors.danger,
+                  color: KalloColors.danger,
                 ),
               ),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               Text(
                 tr('groups.error.retry'),
-                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.detail)
-                    .copyWith(color: NhamColors.danger),
+                style: KalloTextStyles.sansMedium(fontSize: KalloFontSize.detail)
+                    .copyWith(color: KalloColors.danger),
               ),
             ],
           ),

@@ -15,7 +15,7 @@ Vietnamese-diacritic rule, no-emoji, Lucide icons) but **diverge in type, tokens
 and layout**. Read only the doc for the surface you're building — not both.
 
 - **Web** (Next.js / React — marketing + app): the sections below, plus
-  `README.md`, `colors_and_type.css`, `preview/`, `ui_kits/nham_app/`. Type is
+  `README.md`, `colors_and_type.css`, `preview/`, `ui_kits/kallo_app/`. Type is
   **Be Vietnam Pro + Lora** (Be Vietnam Pro replaced DM Sans as the primary UI
   sans web-wide — full Vietnamese diacritics; DM Sans remains only as a legacy
   fallback); tokens are `--kallo-*` CSS custom properties. Everything in
@@ -30,7 +30,7 @@ and layout**. Read only the doc for the surface you're building — not both.
 1. **Read `README.md`** first — it has the full Content Fundamentals, Visual Foundations, and Iconography rules. It is the source of truth.
 2. **Pull tokens from `colors_and_type.css`** — every color, type family, radius, shadow, and spacing variable lives there as a CSS custom property. Import it directly rather than re-deriving the palette.
 3. **Inspect the preview cards in `preview/`** — 17 cards covering color, type, spacing, components and brand. Each is a self-contained HTML snippet you can crib from.
-4. **Steal from the UI kit at `ui_kits/nham_app/`** — JSX recreations of the Landing page, App Shell, Sidebar, MealInput, MealCard, TodayDock, Heatmap, WeightChart, and three screen-level compositions. The kit boots from `index.html` with no build step.
+4. **Steal from the UI kit at `ui_kits/kallo_app/`** — JSX recreations of the Landing page, App Shell, Sidebar, MealInput, MealCard, TodayDock, Heatmap, WeightChart, and three screen-level compositions. The kit boots from `index.html` with no build step.
 5. **Use real assets** — `assets/logo-wordmark.svg`, `assets/mark-nh.svg`, `assets/favicon.svg`. Do not redraw the wordmark.
 
 ## When the user asks you to build something
@@ -86,5 +86,5 @@ colors_and_type.css      ← All design tokens, ready to import.
 SKILL.md                 ← This file.
 assets/                  ← Logo wordmark, app mark, favicon.
 preview/                 ← 17 design-system specimen cards.
-ui_kits/nham_app/        ← JSX UI kit + click-through index.html.
+ui_kits/kallo_app/        ← JSX UI kit + click-through index.html.
 ```

@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 
 import '../../../shell/app_header.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/timeline_utils.dart';
 
 /// The collapsed date pill that lives in the app header. Tapping it asks the
@@ -50,18 +50,18 @@ class _TimelineChipState extends State<TimelineChip> {
         child: Container(
           height: 44,
           constraints: const BoxConstraints(maxWidth: 288), // max-w-72
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp4),
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
           decoration: BoxDecoration(
-            color: NhamColors.surface,
-            borderRadius: BorderRadius.circular(NhamRadii.pill),
-            border: Border.all(color: NhamColors.borderHalf), // border/50
+            color: KalloColors.surface,
+            borderRadius: BorderRadius.circular(KalloRadii.pill),
+            border: Border.all(color: KalloColors.borderHalf), // border/50
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(LucideIcons.calendar300,
-                  size: 14, color: NhamColors.textMuted),
-              const SizedBox(width: NhamSpacing.sp2), // gap-2
+                  size: 14, color: KalloColors.textMuted),
+              const SizedBox(width: KalloSpacing.sp2), // gap-2
               Flexible(
                 child: Text(
                   formatted,
@@ -71,13 +71,13 @@ class _TimelineChipState extends State<TimelineChip> {
                 ),
               ),
               if (hasMeal) ...[
-                const SizedBox(width: NhamSpacing.sp2),
+                const SizedBox(width: KalloSpacing.sp2),
                 Container(
                   width: 6,
                   height: 6,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: NhamColors.accent,
+                    color: KalloColors.accent,
                   ),
                 ),
               ],
@@ -311,7 +311,7 @@ class _TimelineStripState extends State<TimelineStrip> {
           _NavButton(
             icon: LucideIcons.chevronLeft300,
             onTap: _scrollPrev,
-            color: NhamColors.textMuted,
+            color: KalloColors.textMuted,
           ),
           const SizedBox(width: 4), // gap-1
           Expanded(
@@ -337,7 +337,7 @@ class _TimelineStripState extends State<TimelineStrip> {
             icon: LucideIcons.chevronRight300,
             onTap: _canNavigateNext ? _scrollNext : null,
             color: _canNavigateNext
-                ? NhamColors.textMuted
+                ? KalloColors.textMuted
                 : const Color(0x4D6E6D66), // text-kallo-text-muted/30
           ),
         ],
@@ -416,8 +416,8 @@ class _NavButtonState extends State<_NavButton> {
           height: 40, // h-10
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _pressed ? NhamColors.hover40 : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.pill),
+            color: _pressed ? KalloColors.hover40 : Colors.transparent,
+            borderRadius: BorderRadius.circular(KalloRadii.pill),
           ),
           child: Icon(widget.icon, size: 16, color: widget.color),
         ),
@@ -462,12 +462,12 @@ class _DayCellState extends State<_DayCell> {
 
     Color? bg;
     if (isSelected) {
-      bg = NhamColors.accent20; // bg-kallo-accent/20
+      bg = KalloColors.accent20; // bg-kallo-accent/20
     } else if (isToday) {
-      bg = NhamColors.accent10; // bg-kallo-accent/10 (today, not selected)
+      bg = KalloColors.accent10; // bg-kallo-accent/10 (today, not selected)
     }
     // Non-selected hover/press affordance: bg-kallo-hover/40.
-    if (_pressed && !isSelected) bg = NhamColors.hover40;
+    if (_pressed && !isSelected) bg = KalloColors.hover40;
 
     final labelColor = isSelected ? kInk : kInkMuted;
 
@@ -480,7 +480,7 @@ class _DayCellState extends State<_DayCell> {
         height: 6,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isSelected ? NhamColors.surface80 : NhamColors.accent,
+          color: isSelected ? KalloColors.surface80 : KalloColors.accent,
         ),
       );
     } else {
@@ -489,7 +489,7 @@ class _DayCellState extends State<_DayCell> {
         height: 6,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: NhamColors.borderFaint), // border/30
+          border: Border.all(color: KalloColors.borderFaint), // border/30
         ),
       );
     }

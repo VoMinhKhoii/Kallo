@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 
 /// The user's meal, as a sent chat message.
 ///
@@ -11,7 +11,7 @@ import '../../../../theme/nham_theme.dart';
 /// why the reveal card is handed an empty `rawInput` — its own Lora quote would
 /// otherwise print the same sentence a second line below this one.
 ///
-/// Umber (`NhamColors.btn`), not the tan accent: this bubble carries running
+/// Umber (`KalloColors.btn`), not the tan accent: this bubble carries running
 /// text, and the palette rule is that tan "survives only on non-text moments"
 /// and never colours running text. Tan would also fail contrast against white
 /// (2.1:1); umber clears AA at 5.9:1.
@@ -31,22 +31,22 @@ class UserMessageBubble extends StatelessWidget {
           alignment: Alignment.centerRight,
           child: Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp3_5, // 14
-              vertical: NhamSpacing.sp2_5, // 10
+              horizontal: KalloSpacing.sp3_5, // 14
+              vertical: KalloSpacing.sp2_5, // 10
             ),
             decoration: const BoxDecoration(
-              color: NhamColors.btn,
+              color: KalloColors.btn,
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(NhamRadii.xxl), // 18
-                topRight: Radius.circular(NhamRadii.xxl),
-                bottomLeft: Radius.circular(NhamRadii.xxl),
+                topLeft: Radius.circular(KalloRadii.xxl), // 18
+                topRight: Radius.circular(KalloRadii.xxl),
+                bottomLeft: Radius.circular(KalloRadii.xxl),
                 // The tightened corner that makes it read as sent, not received.
-                bottomRight: Radius.circular(NhamRadii.sm), // 6
+                bottomRight: Radius.circular(KalloRadii.sm), // 6
               ),
             ),
             child: Text(
               text,
-              style: dashBody(color: NhamColors.bandForeground),
+              style: dashBody(color: KalloColors.bandForeground),
             ),
           ),
         ),

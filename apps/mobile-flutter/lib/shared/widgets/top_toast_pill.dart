@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../theme/calm_tokens.dart';
-import '../../theme/nham_colors.dart';
-import '../../theme/nham_theme.dart';
+import '../../theme/kallo_colors.dart';
+import '../../theme/kallo_theme.dart';
 
 /// A top-toast's tone — sets the leading icon + its color.
 enum TopToastVariant { success, error }
@@ -41,23 +41,23 @@ class TopToastPill extends StatelessWidget {
       type: MaterialType.transparency,
       child: Container(
         margin: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
-          vertical: NhamSpacing.sp2,
+          horizontal: KalloSpacing.sp3,
+          vertical: KalloSpacing.sp2,
         ),
         // 16 horizontal / 12 vertical — the same optical card inset the rest of
         // the app uses; the action side gives back half so the tappable label
         // sits on the pill's edge without the row reading lopsided.
         padding: EdgeInsets.fromLTRB(
-          NhamSpacing.sp4,
-          NhamSpacing.sp3,
-          _hasAction ? NhamSpacing.sp2 : NhamSpacing.sp4,
-          NhamSpacing.sp3,
+          KalloSpacing.sp4,
+          KalloSpacing.sp3,
+          _hasAction ? KalloSpacing.sp2 : KalloSpacing.sp4,
+          KalloSpacing.sp3,
         ),
         decoration: BoxDecoration(
           // Solid white, not the retired cream — #FFFCF8 read yellow against
           // the neutral canvas.
           color: kCardSurface,
-          borderRadius: BorderRadius.circular(NhamRadii.pill),
+          borderRadius: BorderRadius.circular(KalloRadii.pill),
           border: Border.all(color: kHairline),
           boxShadow: kCardShadows,
         ),
@@ -71,9 +71,9 @@ class TopToastPill extends StatelessWidget {
               // Status colour rides the icon, never the copy.
               size: 16,
               color:
-                  variant == TopToastVariant.error ? NhamColors.danger : kInk,
+                  variant == TopToastVariant.error ? KalloColors.danger : kInk,
             ),
-            const SizedBox(width: NhamSpacing.sp2),
+            const SizedBox(width: KalloSpacing.sp2),
             Flexible(
               child: Text(
                 message,
@@ -82,14 +82,14 @@ class TopToastPill extends StatelessWidget {
               ),
             ),
             if (_hasAction) ...[
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: onAction,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: NhamSpacing.sp2,
-                    vertical: NhamSpacing.sp1,
+                    horizontal: KalloSpacing.sp2,
+                    vertical: KalloSpacing.sp1,
                   ),
                   // Medium is the weight ceiling — semibold read thick in
                   // Be Vietnam Pro.

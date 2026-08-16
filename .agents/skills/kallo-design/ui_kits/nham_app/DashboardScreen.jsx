@@ -3,7 +3,7 @@
     Mirrors components/dashboard/dashboard-shell.tsx structure: a 3-row
     vertical layout with eyebrow + content per row. */
 function DashboardScreen({ nutrition, meals, weightData, heatmapData, onLogMeal }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
 
   return (
     <main style={{
@@ -56,7 +56,7 @@ function DashboardScreen({ nutrition, meals, weightData, heatmapData, onLogMeal 
 }
 
 function SectionTitle({ title }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   return (
     <div style={{ marginBottom: 6 }}>
       <Eyebrow>{title}</Eyebrow>
@@ -65,7 +65,7 @@ function SectionTitle({ title }) {
 }
 
 function HeatmapLegend() {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const steps = [
     { color: T.color.heat[0], label: "On target" },
     { color: T.color.heat[1], label: "Close" },

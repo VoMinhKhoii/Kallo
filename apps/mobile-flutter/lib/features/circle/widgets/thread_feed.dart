@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/feed_providers.dart';
 import '../data/feed_time.dart';
 import 'circle_error.dart';
@@ -60,12 +60,12 @@ class ThreadFeed extends ConsumerWidget {
   Widget _list(Widget body) => ListView(
     physics: const AlwaysScrollableScrollPhysics(),
     padding: const EdgeInsets.fromLTRB(
-      NhamSpacing.sp3,
-      NhamSpacing.sp2,
-      NhamSpacing.sp3,
-      NhamSpacing.sp8,
+      KalloSpacing.sp3,
+      KalloSpacing.sp2,
+      KalloSpacing.sp3,
+      KalloSpacing.sp8,
     ),
-    children: [header, const SizedBox(height: NhamSpacing.sp3), body],
+    children: [header, const SizedBox(height: KalloSpacing.sp3), body],
   );
 
   Widget _dataList(BuildContext context, SharedMealFeedState state) {
@@ -80,7 +80,7 @@ class ThreadFeed extends ConsumerWidget {
         ),
       );
     }
-    final children = <Widget>[header, const SizedBox(height: NhamSpacing.sp3)];
+    final children = <Widget>[header, const SizedBox(height: KalloSpacing.sp3)];
     String? previousDay;
     for (final entry in state.entries) {
       final date = DateTime.parse(entry.meal.sharedAt);
@@ -89,7 +89,7 @@ class ThreadFeed extends ConsumerWidget {
       children.add(
         Padding(
           key: ValueKey(entry.meal.shareId),
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp4),
+          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp4),
           child: FeedEntry(entry: entry),
         ),
       );
@@ -99,7 +99,7 @@ class ThreadFeed extends ConsumerWidget {
     if (state.isLoadingMore) {
       children.add(
         Padding(
-          padding: const EdgeInsets.all(NhamSpacing.sp2),
+          padding: const EdgeInsets.all(KalloSpacing.sp2),
           child: Text(
             tr('groups.wall.loadingMore'),
             textAlign: TextAlign.center,
@@ -111,10 +111,10 @@ class ThreadFeed extends ConsumerWidget {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
-        NhamSpacing.sp3,
-        NhamSpacing.sp2,
-        NhamSpacing.sp3,
-        NhamSpacing.sp8,
+        KalloSpacing.sp3,
+        KalloSpacing.sp2,
+        KalloSpacing.sp3,
+        KalloSpacing.sp8,
       ),
       children: children,
     );
@@ -134,12 +134,12 @@ class _DaySeparator extends StatelessWidget {
       ThreadDayLabelKind.date => label.dateLabel!,
     };
     return Padding(
-      padding: const EdgeInsets.only(top: NhamSpacing.sp4),
+      padding: const EdgeInsets.only(top: KalloSpacing.sp4),
       child: Row(
         children: [
           const Expanded(child: Divider(color: kHairline)),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp2),
+            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp2),
             child: Text(text, style: dashMeta()),
           ),
           const Expanded(child: Divider(color: kHairline)),
@@ -165,23 +165,23 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp10),
+    padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp10),
     child: Column(
       children: [
         const Icon(LucideIcons.users300, color: kInkMuted, size: 24),
-        const SizedBox(height: NhamSpacing.sp3),
+        const SizedBox(height: KalloSpacing.sp3),
         Text(
           tr(titleKey, namedArgs: namedArgs),
           style: dashBody(weight: FontWeight.w500),
         ),
-        const SizedBox(height: NhamSpacing.sp1),
+        const SizedBox(height: KalloSpacing.sp1),
         Text(
           tr(descriptionKey, namedArgs: namedArgs),
           textAlign: TextAlign.center,
           style: dashMeta(),
         ),
         if (showAdd) ...[
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
           TextButton.icon(
             onPressed: onAdd,
             icon: const Icon(LucideIcons.userPlus300, size: 16),

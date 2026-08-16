@@ -8,7 +8,7 @@ name: Cloud Run Prod
 #
 # Transitional note: until the non-prod DB is split off (see
 # docs/SHARED_STAGING_CICD.md), kallo-prod-database-url and
-# kallo-nonprod-database-url point at the SAME database. `supabase db push` is
+# nham-nonprod-database-url point at the SAME database. `supabase db push` is
 # effectively idempotent (each applies only what is pending), so re-running this
 # workflow is safe.
 on:

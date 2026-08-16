@@ -7,13 +7,13 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../data/api_client.dart';
 import '../../../data/env.dart';
 import '../../../models/circle.dart';
-import '../../../shared/widgets/nham_sheet.dart';
-import '../../../shared/widgets/nham_sheet_header.dart';
-import '../../../shared/widgets/nham_text.dart';
+import '../../../shared/widgets/kallo_sheet.dart';
+import '../../../shared/widgets/kallo_sheet_header.dart';
+import '../../../shared/widgets/kallo_text.dart';
 import '../../../shared/widgets/top_toast.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 import '../data/circle_providers.dart';
 import '../../../shared/widgets/profile_avatar.dart';
 import 'add_friend_skeleton.dart';
@@ -46,33 +46,33 @@ class _AddFriendSheet extends ConsumerWidget {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     final maxHeight = MediaQuery.of(context).size.height * 0.85;
 
-    return NhamSheetSurface(
+    return KalloSheetSurface(
       constraints: BoxConstraints(maxHeight: maxHeight),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          NhamSheetHeader(title: tr('groups.invite.title')),
+          KalloSheetHeader(title: tr('groups.invite.title')),
           Flexible(
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
-                NhamSpacing.sp4,
+                KalloSpacing.sp4,
                 0,
-                NhamSpacing.sp4,
-                viewInsets + NhamSpacing.sp5,
+                KalloSpacing.sp4,
+                viewInsets + KalloSpacing.sp5,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     tr('groups.invite.description'),
-                    style: NhamTextStyles.sansRegular(
-                      fontSize: NhamFontSize.detail,
-                      height: NhamLeading.relaxed,
-                    ).copyWith(color: NhamColors.textMuted),
+                    style: KalloTextStyles.sansRegular(
+                      fontSize: KalloFontSize.detail,
+                      height: KalloLeading.relaxed,
+                    ).copyWith(color: KalloColors.textMuted),
                   ),
-                  const SizedBox(height: NhamSpacing.sp4),
+                  const SizedBox(height: KalloSpacing.sp4),
                   const _ProfileSection(),
-                  const SizedBox(height: NhamSpacing.sp5),
+                  const SizedBox(height: KalloSpacing.sp5),
                   const _CircleListSection(),
                 ],
               ),
@@ -103,7 +103,7 @@ class _ProfileSection extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _DisplayNameRow(profile: profile),
-          const SizedBox(height: NhamSpacing.sp4),
+          const SizedBox(height: KalloSpacing.sp4),
           _InviteLinkRow(profile: profile),
         ],
       ),
@@ -173,7 +173,7 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
         children: [
           _FieldLabel(
               icon: LucideIcons.user300, label: tr('groups.invite.appearTitle')),
-          const SizedBox(height: NhamSpacing.sp1_5),
+          const SizedBox(height: KalloSpacing.sp1_5),
           Row(
             children: [
               Expanded(
@@ -188,11 +188,11 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
                     isDense: true,
                     counterText: '',
                   ),
-                  style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                      .copyWith(color: NhamColors.text),
+                  style: KalloTextStyles.sansRegular(fontSize: KalloFontSize.sm)
+                      .copyWith(color: KalloColors.text),
                 ),
               ),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               _IconAction(
                 icon: LucideIcons.check300,
                 semanticsLabel: tr('groups.invite.save'),
@@ -200,7 +200,7 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
                 onTap: _save,
                 filled: true,
               ),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               _IconAction(
                 icon: LucideIcons.x300,
                 semanticsLabel: tr('groups.invite.cancel'),
@@ -208,11 +208,11 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
               ),
             ],
           ),
-          const SizedBox(height: NhamSpacing.sp1_5),
+          const SizedBox(height: KalloSpacing.sp1_5),
           Text(
             tr('groups.invite.appearHint'),
-            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xxs)
-                .copyWith(color: NhamColors.textMuted),
+            style: KalloTextStyles.sansRegular(fontSize: KalloFontSize.xxs)
+                .copyWith(color: KalloColors.textMuted),
           ),
         ],
       );
@@ -223,19 +223,19 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
       children: [
         _FieldLabel(
             icon: LucideIcons.user300, label: tr('groups.invite.appearTitle')),
-        const SizedBox(height: NhamSpacing.sp1_5),
+        const SizedBox(height: KalloSpacing.sp1_5),
         Row(
           children: [
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: NhamSpacing.sp3,
-                  vertical: NhamSpacing.sp2_5,
+                  horizontal: KalloSpacing.sp3,
+                  vertical: KalloSpacing.sp2_5,
                 ),
                 decoration: BoxDecoration(
-                  color: NhamColors.track,
-                  borderRadius: BorderRadius.circular(NhamRadii.lg),
-                  border: Border.all(color: NhamColors.borderSoft),
+                  color: KalloColors.track,
+                  borderRadius: BorderRadius.circular(KalloRadii.lg),
+                  border: Border.all(color: KalloColors.borderSoft),
                 ),
                 child: Text(
                   _current.isNotEmpty
@@ -243,17 +243,17 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
                       : tr('groups.invite.appearFallback'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: NhamTextStyles.sansRegular(
-                    fontSize: NhamFontSize.detail,
+                  style: KalloTextStyles.sansRegular(
+                    fontSize: KalloFontSize.detail,
                   ).copyWith(
                     color: _current.isNotEmpty
-                        ? NhamColors.text
-                        : NhamColors.textMuted70,
+                        ? KalloColors.text
+                        : KalloColors.textMuted70,
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: NhamSpacing.sp2),
+            const SizedBox(width: KalloSpacing.sp2),
             _IconAction(
               icon: LucideIcons.pencil300,
               semanticsLabel: tr('groups.invite.appearEdit'),
@@ -358,7 +358,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
         children: [
           _FieldLabel(
               icon: LucideIcons.pencil300, label: tr('groups.invite.editTitle')),
-          const SizedBox(height: NhamSpacing.sp1_5),
+          const SizedBox(height: KalloSpacing.sp1_5),
           Row(
             children: [
               Expanded(
@@ -376,11 +376,11 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
                     isDense: true,
                     counterText: '',
                   ),
-                  style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                      .copyWith(color: NhamColors.text),
+                  style: KalloTextStyles.sansRegular(fontSize: KalloFontSize.sm)
+                      .copyWith(color: KalloColors.text),
                 ),
               ),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               _IconAction(
                 icon: LucideIcons.check300,
                 semanticsLabel: tr('groups.invite.save'),
@@ -389,7 +389,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
                 onTap: _save,
                 filled: true,
               ),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               _IconAction(
                 icon: LucideIcons.x300,
                 semanticsLabel: tr('groups.invite.cancel'),
@@ -397,14 +397,14 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
               ),
             ],
           ),
-          const SizedBox(height: NhamSpacing.sp1_5),
+          const SizedBox(height: KalloSpacing.sp1_5),
           Text(
             showIssue
                 ? tr('groups.invite.endInvalid')
                 : tr('groups.invite.editHint'),
-            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xxs)
+            style: KalloTextStyles.sansRegular(fontSize: KalloFontSize.xxs)
                 .copyWith(
-              color: showIssue ? NhamColors.danger : NhamColors.textMuted,
+              color: showIssue ? KalloColors.danger : KalloColors.textMuted,
             ),
           ),
         ],
@@ -416,30 +416,30 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
       children: [
         _FieldLabel(
             icon: LucideIcons.link2300, label: tr('groups.invite.yourLink')),
-        const SizedBox(height: NhamSpacing.sp1_5),
+        const SizedBox(height: KalloSpacing.sp1_5),
         Row(
           children: [
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: NhamSpacing.sp3,
-                  vertical: NhamSpacing.sp2_5,
+                  horizontal: KalloSpacing.sp3,
+                  vertical: KalloSpacing.sp2_5,
                 ),
                 decoration: BoxDecoration(
-                  color: NhamColors.track,
-                  borderRadius: BorderRadius.circular(NhamRadii.lg),
-                  border: Border.all(color: NhamColors.borderSoft),
+                  color: KalloColors.track,
+                  borderRadius: BorderRadius.circular(KalloRadii.lg),
+                  border: Border.all(color: KalloColors.borderSoft),
                 ),
                 child: Text(
                   _inviteLink(widget.profile.handle),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
-                      .copyWith(color: NhamColors.textMuted),
+                  style: KalloTextStyles.sansRegular(fontSize: KalloFontSize.xs)
+                      .copyWith(color: KalloColors.textMuted),
                 ),
               ),
             ),
-            const SizedBox(width: NhamSpacing.sp2),
+            const SizedBox(width: KalloSpacing.sp2),
             _IconAction(
               icon: LucideIcons.pencil300,
               semanticsLabel: tr('groups.invite.editTitle'),
@@ -448,15 +448,15 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
                 setState(() => _editing = true);
               },
             ),
-            const SizedBox(width: NhamSpacing.sp2),
+            const SizedBox(width: KalloSpacing.sp2),
             _CopyButton(onTap: _copy),
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp1_5),
+        const SizedBox(height: KalloSpacing.sp1_5),
         Text(
           tr('groups.invite.hint'),
-          style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xxs)
-              .copyWith(color: NhamColors.textMuted60),
+          style: KalloTextStyles.sansRegular(fontSize: KalloFontSize.xxs)
+              .copyWith(color: KalloColors.textMuted60),
         ),
       ],
     );
@@ -483,22 +483,22 @@ class _CircleListSection extends ConsumerWidget {
         if (circle.isEmpty) {
           return Text(
             tr('groups.circle.empty'),
-            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
-                .copyWith(color: NhamColors.textMuted),
+            style: KalloTextStyles.sansRegular(fontSize: KalloFontSize.xs)
+                .copyWith(color: KalloColors.textMuted),
           );
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            NhamText(
+            KalloText(
               tr('groups.circle.title',
                   namedArgs: {'count': '${circle.length}'}),
-              variant: NhamTextVariant.eyebrow,
+              variant: KalloTextVariant.eyebrow,
             ),
-            const SizedBox(height: NhamSpacing.sp2),
+            const SizedBox(height: KalloSpacing.sp2),
             for (final member in circle) ...[
               _MemberRow(member: member),
-              const SizedBox(height: NhamSpacing.sp2),
+              const SizedBox(height: KalloSpacing.sp2),
             ],
           ],
         );
@@ -537,23 +537,23 @@ class _MemberRowState extends ConsumerState<_MemberRow> {
   Widget build(BuildContext context) {
     final profile = widget.member.profile;
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp3),
+      padding: const EdgeInsets.all(KalloSpacing.sp3),
       decoration: BoxDecoration(
-        color: NhamColors.track,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.borderSoft),
+        color: KalloColors.track,
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        border: Border.all(color: KalloColors.borderSoft),
       ),
       child: Row(
         children: [
           ProfileAvatarDisc(profile: profile, size: 36),
-          const SizedBox(width: NhamSpacing.sp3),
+          const SizedBox(width: KalloSpacing.sp3),
           Expanded(
             child: Text(
               profile.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                  .copyWith(color: NhamColors.text),
+              style: KalloTextStyles.sansRegular(fontSize: KalloFontSize.sm)
+                  .copyWith(color: KalloColors.text),
             ),
           ),
           Opacity(
@@ -562,17 +562,17 @@ class _MemberRowState extends ConsumerState<_MemberRow> {
               onTap: _removing ? null : _remove,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: NhamSpacing.sp2_5,
-                  vertical: NhamSpacing.sp1_5,
+                  horizontal: KalloSpacing.sp2_5,
+                  vertical: KalloSpacing.sp1_5,
                 ),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(NhamRadii.md),
-                  border: Border.all(color: NhamColors.borderSoft),
+                  borderRadius: BorderRadius.circular(KalloRadii.md),
+                  border: Border.all(color: KalloColors.borderSoft),
                 ),
                 child: Text(
                   tr('groups.circle.remove'),
-                  style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
-                      .copyWith(color: NhamColors.textMuted),
+                  style: KalloTextStyles.sansMedium(fontSize: KalloFontSize.xs)
+                      .copyWith(color: KalloColors.textMuted),
                 ),
               ),
             ),
@@ -597,9 +597,9 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 13, color: NhamColors.textMuted),
-        const SizedBox(width: NhamSpacing.sp1_5),
-        NhamText(label, variant: NhamTextVariant.eyebrow),
+        Icon(icon, size: 13, color: KalloColors.textMuted),
+        const SizedBox(width: KalloSpacing.sp1_5),
+        KalloText(label, variant: KalloTextVariant.eyebrow),
       ],
     );
   }
@@ -619,23 +619,23 @@ class _CopyButton extends StatelessWidget {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
-          vertical: NhamSpacing.sp2_5,
+          horizontal: KalloSpacing.sp3,
+          vertical: KalloSpacing.sp2_5,
         ),
         decoration: BoxDecoration(
-          color: NhamColors.track,
-          borderRadius: BorderRadius.circular(NhamRadii.lg),
-          border: Border.all(color: NhamColors.borderSoft),
+          color: KalloColors.track,
+          borderRadius: BorderRadius.circular(KalloRadii.lg),
+          border: Border.all(color: KalloColors.borderSoft),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.copy300, size: 14, color: NhamColors.text),
-            const SizedBox(width: NhamSpacing.sp1_5),
+            const Icon(LucideIcons.copy300, size: 14, color: KalloColors.text),
+            const SizedBox(width: KalloSpacing.sp1_5),
             Text(
               tr('groups.invite.copy'),
-              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
-                  .copyWith(color: NhamColors.text),
+              style: KalloTextStyles.sansMedium(fontSize: KalloFontSize.xs)
+                  .copyWith(color: KalloColors.text),
             ),
           ],
         ),
@@ -679,9 +679,9 @@ class _IconAction extends StatelessWidget {
             height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: filled ? NhamColors.btn : NhamColors.track,
-              borderRadius: BorderRadius.circular(NhamRadii.lg),
-              border: filled ? null : Border.all(color: NhamColors.borderSoft),
+              color: filled ? KalloColors.btn : KalloColors.track,
+              borderRadius: BorderRadius.circular(KalloRadii.lg),
+              border: filled ? null : Border.all(color: KalloColors.borderSoft),
             ),
             child: loading
                 ? const SizedBox(
@@ -695,7 +695,7 @@ class _IconAction extends StatelessWidget {
                 : Icon(
                     icon,
                     size: 18,
-                    color: filled ? Colors.white : NhamColors.textMuted,
+                    color: filled ? Colors.white : KalloColors.textMuted,
                   ),
           ),
         ),

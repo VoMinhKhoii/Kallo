@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/onboarding/providers/onboarding_providers.dart';
 import '../theme/calm_tokens.dart';
-import '../theme/nham_colors.dart';
-import '../theme/nham_theme.dart';
+import '../theme/kallo_colors.dart';
+import '../theme/kallo_theme.dart';
 
 /// Mobile onboarding nudge — the drawer's one attention object: a white card
 /// with an accent ring, a step counter, title, description, progress bar and
@@ -37,10 +37,10 @@ class OnboardingNudge extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: const EdgeInsets.all(KalloSpacing.sp4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(kCardRadius),
-        color: NhamColors.elev,
+        color: KalloColors.elev,
         border: Border.all(color: const Color(0x40C9A87C), width: 1),
       ),
       child: Column(
@@ -53,24 +53,24 @@ class OnboardingNudge extends ConsumerWidget {
             ),
             style: dashMeta(),
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Text(
             tr('app.onboardingNudge.title'),
             // Medium, not semibold — 500 is the weight ceiling; Be Vietnam
             // Pro reads heavy above it.
             style: dashBody(weight: FontWeight.w500),
           ),
-          const SizedBox(height: NhamSpacing.sp1),
+          const SizedBox(height: KalloSpacing.sp1),
           Text(
             tr('app.onboardingNudge.description'),
             style: dashMeta(),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
           ClipRRect(
-            borderRadius: BorderRadius.circular(NhamRadii.pill),
+            borderRadius: BorderRadius.circular(KalloRadii.pill),
             child: Container(
               height: 4,
-              color: NhamColors.borderBiscotti40,
+              color: KalloColors.borderBiscotti40,
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   return AnimatedContainer(
@@ -78,15 +78,15 @@ class OnboardingNudge extends ConsumerWidget {
                     curve: Curves.easeOut,
                     width: constraints.maxWidth * progressPct,
                     decoration: BoxDecoration(
-                      color: NhamColors.accent,
-                      borderRadius: BorderRadius.circular(NhamRadii.pill),
+                      color: KalloColors.accent,
+                      borderRadius: BorderRadius.circular(KalloRadii.pill),
                     ),
                   );
                 },
               ),
             ),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
           NudgeCta(onTap: onResume),
         ],
       ),
@@ -121,13 +121,13 @@ class _NudgeCtaState extends State<NudgeCta> {
         curve: Curves.easeInOut,
         width: double.infinity,
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
-          vertical: NhamSpacing.sp2,
+          horizontal: KalloSpacing.sp3,
+          vertical: KalloSpacing.sp2,
         ),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-          borderRadius: BorderRadius.circular(NhamRadii.md),
+          color: _pressed ? KalloColors.btnHover : KalloColors.btn,
+          borderRadius: BorderRadius.circular(KalloRadii.md),
           boxShadow: const [
             BoxShadow(
               color: Color(0x33695E4E),

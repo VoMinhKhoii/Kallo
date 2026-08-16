@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/cheat.dart';
-import '../../../shared/widgets/nham_text.dart';
+import '../../../shared/widgets/kallo_text.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/logging_spacing.dart';
 import '../logic/slider_nutrition.dart';
 
@@ -15,10 +15,10 @@ import '../logic/slider_nutrition.dart';
 /// the live card and the persisted recap stay in lockstep. Macro axes reuse the
 /// shared macro palette; drinks borrows the warm accent.
 Color cheatSliderColor(CheatSliderKey key) => switch (key) {
-  CheatSliderKey.protein => NhamColors.macroProtein,
-  CheatSliderKey.carbs => NhamColors.macroCarbs,
-  CheatSliderKey.fat => NhamColors.macroFat,
-  CheatSliderKey.drinks => NhamColors.accent,
+  CheatSliderKey.protein => KalloColors.macroProtein,
+  CheatSliderKey.carbs => KalloColors.macroCarbs,
+  CheatSliderKey.fat => KalloColors.macroFat,
+  CheatSliderKey.drinks => KalloColors.accent,
 };
 
 /// One food-domain icon per axis — encodes the slider's identity (and shares
@@ -108,22 +108,22 @@ class _CheatSliderCardState extends State<CheatSliderCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: NhamText(
+                    child: KalloText(
                       widget.rawInput,
-                      variant: NhamTextVariant.mealQuote,
+                      variant: KalloTextVariant.mealQuote,
                       style: const TextStyle(fontSize: 17, height: 1.625),
                     ),
                   ),
-                  const SizedBox(width: NhamSpacing.sp3),
+                  const SizedBox(width: KalloSpacing.sp3),
                   CheatBadge(label: 'logging.cheatSliders.badge'.tr()),
                 ],
               ),
-              const SizedBox(height: NhamSpacing.sp3),
+              const SizedBox(height: KalloSpacing.sp3),
 
               // Live calorie + macro readout — updates as sliders move.
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.end,
-                spacing: NhamSpacing.sp3,
+                spacing: KalloSpacing.sp3,
                 runSpacing: 2,
                 children: [
                   Text(
@@ -136,10 +136,10 @@ class _CheatSliderCardState extends State<CheatSliderCard> {
                   ),
                 ],
               ),
-              const SizedBox(height: NhamSpacing.sp4),
+              const SizedBox(height: KalloSpacing.sp4),
 
               for (final (index, slider) in widget.spec.sliders.indexed) ...[
-                if (index > 0) const SizedBox(height: NhamSpacing.sp4),
+                if (index > 0) const SizedBox(height: KalloSpacing.sp4),
                 _CheatSliderRow(
                   slider: slider,
                   level: _levels[slider.key] ?? slider.defaultLevel,
@@ -370,22 +370,22 @@ class _ClarifyCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (rawInput.isNotEmpty) ...[
-            NhamText(
+            KalloText(
               rawInput,
-              variant: NhamTextVariant.mealQuote,
+              variant: KalloTextVariant.mealQuote,
               style: const TextStyle(fontSize: 17, height: 1.625),
             ),
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: KalloSpacing.sp3),
           ],
           Text(
             question.prompt,
             style: dashBody(),
           ),
           if (options.isNotEmpty) ...[
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: KalloSpacing.sp3),
             Wrap(
-              spacing: NhamSpacing.sp2,
-              runSpacing: NhamSpacing.sp2,
+              spacing: KalloSpacing.sp2,
+              runSpacing: KalloSpacing.sp2,
               children: [
                 for (final option in options)
                   _ClarifyChip(
@@ -445,14 +445,14 @@ class _ClarifyChipState extends State<_ClarifyChip> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp3,
+              horizontal: KalloSpacing.sp3,
               vertical: 6,
             ),
             decoration: BoxDecoration(
-              color: _pressed ? NhamColors.hover40 : Colors.transparent,
-              borderRadius: BorderRadius.circular(NhamRadii.pill),
+              color: _pressed ? KalloColors.hover40 : Colors.transparent,
+              borderRadius: BorderRadius.circular(KalloRadii.pill),
               border: Border.all(
-                color: _pressed ? NhamColors.accent60 : NhamColors.borderSoft,
+                color: _pressed ? KalloColors.accent60 : KalloColors.borderSoft,
               ),
             ),
             child: Text(
@@ -479,8 +479,8 @@ class CheatBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: NhamColors.accent15,
-        borderRadius: BorderRadius.circular(NhamRadii.pill),
+        color: KalloColors.accent15,
+        borderRadius: BorderRadius.circular(KalloRadii.pill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -533,10 +533,10 @@ class _SaveButtonState extends State<_SaveButton> {
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
             decoration: BoxDecoration(
               color:
-                  _pressed && tappable ? NhamColors.btnHover : NhamColors.btn,
-              borderRadius: BorderRadius.circular(NhamRadii.xl),
+                  _pressed && tappable ? KalloColors.btnHover : KalloColors.btn,
+              borderRadius: BorderRadius.circular(KalloRadii.xl),
               boxShadow: [
-                _pressed && tappable ? NhamShadows.md : NhamShadows.sm,
+                _pressed && tappable ? KalloShadows.md : KalloShadows.sm,
               ],
             ),
             child: Row(
@@ -568,10 +568,10 @@ class _Card extends StatelessWidget {
     return Container(
       padding: LoggingSpacing.card,
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.borderSoft),
-        boxShadow: const [NhamShadows.sm],
+        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        border: Border.all(color: KalloColors.borderSoft),
+        boxShadow: const [KalloShadows.sm],
       ),
       child: child,
     );

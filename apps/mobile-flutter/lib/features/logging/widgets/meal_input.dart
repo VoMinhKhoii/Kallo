@@ -4,8 +4,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/logging_spacing.dart';
 import 'meal_input_controls.dart';
 import 'relog/mention_text_controller.dart';
@@ -208,13 +208,13 @@ class _MealInputState extends State<MealInput>
         final t = _focus.value;
         final borderColor =
             Color.lerp(
-              NhamColors.borderBiscotti40,
-              NhamColors.borderAccent40,
+              KalloColors.borderBiscotti40,
+              KalloColors.borderAccent40,
               t,
             )!;
         // Interpolate the input glow opacity (resting → focus).
         final glow = BoxShadow(
-          color: NhamColors.accent.withValues(alpha: 0.06 + t * 0.06),
+          color: KalloColors.accent.withValues(alpha: 0.06 + t * 0.06),
           blurRadius: 20,
           offset: const Offset(0, 4),
         );
@@ -223,12 +223,12 @@ class _MealInputState extends State<MealInput>
           // controls carry theirs on the column below.
           decoration: BoxDecoration(
             // Opaque: the feed reads through the DOCK, never through the field.
-            color: NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+            color: KalloColors.elev,
+            borderRadius: BorderRadius.circular(KalloRadii.containerLg),
             border: Border.all(color: borderColor),
             // Ink contact + ambient under the accent glow — what lifts the
             // card off the feed scrolling behind it.
-            boxShadow: [NhamShadows.md, NhamShadows.xs, glow],
+            boxShadow: [KalloShadows.md, KalloShadows.xs, glow],
           ),
           child: child,
         );
@@ -243,9 +243,9 @@ class _MealInputState extends State<MealInput>
           if (widget.notice != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                NhamSpacing.sp1,
-                NhamSpacing.sp1,
-                NhamSpacing.sp1,
+                KalloSpacing.sp1,
+                KalloSpacing.sp1,
+                KalloSpacing.sp1,
                 0,
               ),
               child: widget.notice!,
@@ -269,7 +269,7 @@ class _MealInputState extends State<MealInput>
                     keyboardType: TextInputType.multiline,
                     textInputAction: TextInputAction.newline,
                     style: dashBody(),
-                    cursorColor: NhamColors.accent,
+                    cursorColor: KalloColors.accent,
                     decoration: InputDecoration(
                       isCollapsed: true,
                       border: InputBorder.none,
@@ -283,7 +283,7 @@ class _MealInputState extends State<MealInput>
                     ),
                   ),
                 ),
-                const SizedBox(height: NhamSpacing.sp2),
+                const SizedBox(height: KalloSpacing.sp2),
                 // Line 2 — mode selector on the left, send/stop on the right.
                 Row(
                   children: [

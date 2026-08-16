@@ -3,7 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/nutrition.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 import '../logic/chart_axis.dart';
 import '../logic/format_date.dart';
 import '../logic/macro_trend_bars.dart';
@@ -46,7 +46,7 @@ class MacroTrendChart extends StatelessWidget {
     // left three pale bands still competing for attention; greying makes each
     // one read as a single quiet block.
     Color shade(Color base, MacroBar bar) =>
-        isColumnDimmed(bar, selectedIndex) ? NhamColors.chartMuted : base;
+        isColumnDimmed(bar, selectedIndex) ? KalloColors.chartMuted : base;
 
     // Fewer, fatter columns for the 7-day view; slimmer ones for the busier
     // weekly axes (5 buckets at 30d, 13 at 90d) so they don't crowd.
@@ -131,7 +131,7 @@ class MacroTrendChart extends StatelessWidget {
               drawVerticalLine: false,
               horizontalInterval: step,
               getDrawingHorizontalLine: (value) => const FlLine(
-                color: NhamColors.borderBiscotti40,
+                color: KalloColors.borderBiscotti40,
                 strokeWidth: 1,
                 dashArray: [4, 4],
               ),

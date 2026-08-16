@@ -8,7 +8,7 @@ library;
 import 'dart:ui';
 
 import '../../../models/nutrition.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 
 const Map<String, double> kKcalPerGram = {
   'protein': 4,
@@ -21,9 +21,9 @@ const List<String> kCompositionKeys = ['protein', 'carbohydrate', 'fat'];
 // The nutrition page's own, brighter pigments — NOT the quieter `macro*` trio
 // the dashboard dock, logging feed and cheat sliders use.
 const Map<String, Color> kCompositionColors = {
-  'protein': NhamColors.chartProtein,
-  'carbohydrate': NhamColors.chartCarbs,
-  'fat': NhamColors.chartFat,
+  'protein': KalloColors.chartProtein,
+  'carbohydrate': KalloColors.chartCarbs,
+  'fat': KalloColors.chartFat,
 };
 
 

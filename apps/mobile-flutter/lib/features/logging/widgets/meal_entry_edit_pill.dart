@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 class MealEntryEditPill extends StatelessWidget {
   const MealEntryEditPill({
@@ -40,10 +40,10 @@ class MealEntryEditPill extends StatelessWidget {
             horizontal: 10,
           ), // py-1 px-2.5
           decoration: BoxDecoration(
-            color: editing ? NhamColors.accent10 : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.pill),
+            color: editing ? KalloColors.accent10 : Colors.transparent,
+            borderRadius: BorderRadius.circular(KalloRadii.pill),
             border: Border.all(
-              color: editing ? NhamColors.accent50 : NhamColors.borderSoft,
+              color: editing ? KalloColors.accent50 : KalloColors.borderSoft,
             ),
           ),
           child: Row(
@@ -54,7 +54,7 @@ class MealEntryEditPill extends StatelessWidget {
                     ? LucideIcons.check300
                     : LucideIcons.pencil300, // Check / Pencil
                 size: 12,
-                color: editing ? NhamColors.text : NhamColors.textMuted,
+                color: editing ? KalloColors.text : KalloColors.textMuted,
               ),
               const SizedBox(width: 6), // gap-1.5
               Text(
@@ -62,7 +62,7 @@ class MealEntryEditPill extends StatelessWidget {
                     ? 'logging.mealEntry.done'.tr()
                     : 'logging.mealEntry.edit'.tr(),
                 style: dashMeta().merge(
-                  TextStyle(color: editing ? NhamColors.text : kInkMuted),
+                  TextStyle(color: editing ? KalloColors.text : kInkMuted),
                 ),
               ),
             ],

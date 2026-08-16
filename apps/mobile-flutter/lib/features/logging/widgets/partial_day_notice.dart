@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../logic/logging_spacing.dart';
 
@@ -40,14 +40,14 @@ class PartialDayNotice extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(
-        NhamSpacing.sp3,
-        NhamSpacing.sp2_5,
-        NhamSpacing.sp2,
-        NhamSpacing.sp2_5,
+        KalloSpacing.sp3,
+        KalloSpacing.sp2_5,
+        KalloSpacing.sp2,
+        KalloSpacing.sp2_5,
       ),
       decoration: BoxDecoration(
         color: kInkMuted,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

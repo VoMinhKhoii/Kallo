@@ -3,7 +3,7 @@
     Mirrors components/logging/input/meal-input.tsx — submit on Enter,
     auto-resize, disabled-while-analyzing, optional Stop button. */
 function MealInput({ value, onChange, onSubmit, onCancel, disabled, placeholder }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const ref = React.useRef(null);
   React.useLayoutEffect(() => {
     const el = ref.current; if (!el) return;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/nham_colors.dart';
+import '../../theme/kallo_colors.dart';
 
 /// The 56x56 sprouting-seed line mark (RN inline SVG → CustomPaint).
 class SeedMark extends StatelessWidget {
@@ -33,7 +33,7 @@ class _SeedMarkPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.25
       ..strokeJoin = StrokeJoin.round
-      ..color = NhamColors.textMuted.withValues(alpha: 0.55);
+      ..color = KalloColors.textMuted.withValues(alpha: 0.55);
     canvas.drawPath(outline, outlinePaint);
 
     // Dashed central vein.
@@ -41,7 +41,7 @@ class _SeedMarkPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
       ..strokeCap = StrokeCap.round
-      ..color = NhamColors.textMuted.withValues(alpha: 0.45);
+      ..color = KalloColors.textMuted.withValues(alpha: 0.45);
     const dash = 2.0;
     const gap = 3.0;
     var y = 16.0;

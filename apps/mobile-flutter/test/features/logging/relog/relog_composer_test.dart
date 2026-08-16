@@ -17,7 +17,7 @@ import 'package:nham_mobile/features/logging/widgets/relog/relog_picker_option.d
 import 'package:nham_mobile/features/logging/widgets/relog/relog_picker_popup.dart';
 import 'package:nham_mobile/models/cheat.dart';
 import 'package:nham_mobile/models/relog.dart';
-import 'package:nham_mobile/theme/nham_colors.dart';
+import 'package:nham_mobile/theme/kallo_colors.dart';
 
 import '../../../l10n_test_loader.dart';
 
@@ -282,7 +282,7 @@ void main() {
             .first,
       );
       final decoration = decorated.decoration! as BoxDecoration;
-      expect(decoration.color, NhamColors.bandSurface);
+      expect(decoration.color, KalloColors.bandSurface);
       expect(
         decoration.border,
         isNull,
@@ -300,7 +300,7 @@ void main() {
       for (final label in ['Phở bò', 'DISHES', '410 kcal']) {
         expect(
           tester.widget<Text>(find.text(label)).style?.color,
-          NhamColors.bandForeground,
+          KalloColors.bandForeground,
           reason: '"$label" is not full white on the band',
         );
       }
@@ -413,7 +413,7 @@ void main() {
         withComposing: false,
       );
       final tinted = span.children!.cast<TextSpan>().where(
-        (s) => s.style?.color == NhamColors.mention,
+        (s) => s.style?.color == KalloColors.mention,
       );
       expect(tinted.map((s) => s.text), ['/Phở bò']);
     });

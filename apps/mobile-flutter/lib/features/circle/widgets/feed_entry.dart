@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../models/circle.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/feed_time.dart';
 import '../../../shared/widgets/profile_avatar.dart';
 import 'feed_entry_actions.dart';
@@ -36,14 +36,14 @@ class FeedEntry extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ProfileAvatarDisc(profile: entry.friend, size: 36),
-        const SizedBox(width: NhamSpacing.sp3),
+        const SizedBox(width: KalloSpacing.sp3),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: NhamSpacing.sp2,
+                spacing: KalloSpacing.sp2,
                 runSpacing: 3,
                 children: [
                   Text(name, style: dashBody(weight: FontWeight.w500)),
@@ -61,7 +61,7 @@ class FeedEntry extends StatelessWidget {
                   if (meal.portionFactor < 1)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: NhamSpacing.sp2,
+                        horizontal: KalloSpacing.sp2,
                         vertical: 1,
                       ),
                       decoration: BoxDecoration(
@@ -91,7 +91,7 @@ class FeedEntry extends StatelessWidget {
                       style: dashMeta(tabular: true),
                     ),
                   ),
-                  const SizedBox(width: NhamSpacing.sp2),
+                  const SizedBox(width: KalloSpacing.sp2),
                   Text(
                     _calories(meal.caloriesKcal),
                     style: dashBody(weight: FontWeight.w500, tabular: true),

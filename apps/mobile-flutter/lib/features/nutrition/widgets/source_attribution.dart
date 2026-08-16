@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/nham_sheet.dart';
-import '../../../shared/widgets/nham_sheet_header.dart';
+import '../../../shared/widgets/kallo_sheet.dart';
+import '../../../shared/widgets/kallo_sheet_header.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// A quiet line under the nutrient grid attributing the daily targets to
 /// recognized reference intakes (WHO/FAO · Vietnam RDA · NASEM DRI). Tapping it
@@ -26,7 +26,7 @@ class SourceAttribution extends StatelessWidget {
             size: 13,
             color: kInkMuted,
           ),
-          const SizedBox(width: NhamSpacing.sp1_5),
+          const SizedBox(width: KalloSpacing.sp1_5),
           Flexible(
             child: Text(
               tr('nutrition.sources.caption'),
@@ -34,7 +34,7 @@ class SourceAttribution extends StatelessWidget {
               style: dashMeta(color: kInkMuted),
             ),
           ),
-          const SizedBox(width: NhamSpacing.sp1),
+          const SizedBox(width: KalloSpacing.sp1),
           const Icon(LucideIcons.info300, size: 13, color: kInkMuted),
         ],
       ),
@@ -46,25 +46,25 @@ void _showCitations(BuildContext context) {
   final bottomInset = MediaQuery.of(context).padding.bottom;
   showNhamSheet<void>(
     context,
-    builder: (_) => NhamSheetSurface(
+    builder: (_) => KalloSheetSurface(
       // Citation list grows with the data source count — scroll, don't clip.
       scrollable: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          NhamSheetHeader(title: tr('nutrition.sources.title')),
+          KalloSheetHeader(title: tr('nutrition.sources.title')),
           Padding(
             padding: EdgeInsets.fromLTRB(
-              NhamSpacing.sp5,
-              NhamSpacing.sp1,
-              NhamSpacing.sp5,
-              bottomInset + NhamSpacing.sp5,
+              KalloSpacing.sp5,
+              KalloSpacing.sp1,
+              KalloSpacing.sp5,
+              bottomInset + KalloSpacing.sp5,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(tr('nutrition.sources.intro'), style: dashMeta()),
-                const SizedBox(height: NhamSpacing.sp4),
+                const SizedBox(height: KalloSpacing.sp4),
                 _Citation(
                   label: tr('nutrition.targetSources.whoFao'),
                   detail: tr('nutrition.sources.whoFao'),
@@ -95,7 +95,7 @@ class _Citation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
+      padding: const EdgeInsets.only(bottom: KalloSpacing.sp3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

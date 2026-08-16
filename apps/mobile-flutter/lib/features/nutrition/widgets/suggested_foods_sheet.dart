@@ -4,12 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/nham_sheet.dart';
-import '../../../shared/widgets/nham_sheet_header.dart';
+import '../../../shared/widgets/kallo_sheet.dart';
+import '../../../shared/widgets/kallo_sheet_header.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/status.dart';
 import '../providers/candidates_response.dart';
 import '../providers/food_candidates_provider.dart';
@@ -50,26 +50,26 @@ class _SuggestedFoodsSheet extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     final maxHeight = MediaQuery.of(context).size.height * 0.8;
 
-    return NhamSheetSurface(
+    return KalloSheetSurface(
       constraints: BoxConstraints(maxHeight: maxHeight),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          NhamSheetHeader(title: tr('nutrition.suggestedFoods.title')),
+          KalloSheetHeader(title: tr('nutrition.suggestedFoods.title')),
           Flexible(
             child: ListView.separated(
               shrinkWrap: true,
               padding: EdgeInsets.fromLTRB(
-                NhamSpacing.sp4,
-                NhamSpacing.sp1,
-                NhamSpacing.sp4,
-                bottomInset + NhamSpacing.sp5,
+                KalloSpacing.sp4,
+                KalloSpacing.sp1,
+                KalloSpacing.sp4,
+                bottomInset + KalloSpacing.sp5,
               ),
               itemCount: nutrients.length,
               separatorBuilder: (_, __) => const Divider(
-                height: NhamSpacing.sp5,
+                height: KalloSpacing.sp5,
                 thickness: 1,
-                color: NhamColors.borderFaint,
+                color: KalloColors.borderFaint,
               ),
               itemBuilder: (_, i) => _NutrientGap(card: nutrients[i]),
             ),
@@ -115,16 +115,16 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
               child: Text(tr(card.labelKey),
                   style: dashBody(weight: FontWeight.w600)),
             ),
-            const SizedBox(width: NhamSpacing.sp2),
+            const SizedBox(width: KalloSpacing.sp2),
             if (shortBy != null && shortBy > 0)
               Text(
                 tr('nutrition.suggestedFoods.short',
                     namedArgs: {'value': shortBy.toString()}),
-                style: dashMeta(color: NhamColors.offTarget, tabular: true),
+                style: dashMeta(color: KalloColors.offTarget, tabular: true),
               ),
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp2_5),
+        const SizedBox(height: KalloSpacing.sp2_5),
         async.when(
           loading: () => const CandidatesSkeleton(),
           error: (_, __) => Text(tr('nutrition.candidates.error'),
@@ -157,8 +157,8 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Wrap(
-          spacing: NhamSpacing.sp2,
-          runSpacing: NhamSpacing.sp2,
+          spacing: KalloSpacing.sp2,
+          runSpacing: KalloSpacing.sp2,
           children: [
             for (final f in visible)
               _FoodChip(
@@ -174,7 +174,7 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
           ],
         ),
         if (canRefresh) ...[
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           _RefreshButton(
             onTap: () => setState(
               () => _cursor = (_cursor + rotatingSlots) % rest.length,
@@ -216,17 +216,17 @@ class _FoodChip extends StatelessWidget {
           6,
         ),
         decoration: BoxDecoration(
-          color: reserved ? NhamColors.accent10 : NhamColors.track,
-          borderRadius: BorderRadius.circular(NhamRadii.pill),
+          color: reserved ? KalloColors.accent10 : KalloColors.track,
+          borderRadius: BorderRadius.circular(KalloRadii.pill),
           border: Border.all(
-            color: reserved ? NhamColors.accent50 : NhamColors.borderSoft,
+            color: reserved ? KalloColors.accent50 : KalloColors.borderSoft,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (reserved) ...[
-              const Icon(LucideIcons.check300, size: 13, color: NhamColors.text),
+              const Icon(LucideIcons.check300, size: 13, color: KalloColors.text),
               const SizedBox(width: 4),
             ],
             Flexible(
@@ -234,7 +234,7 @@ class _FoodChip extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: dashMeta(color: reserved ? NhamColors.text : kInk),
+                style: dashMeta(color: reserved ? KalloColors.text : kInk),
               ),
             ),
           ],

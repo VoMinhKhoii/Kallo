@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// A single subscription package card — plan name, live store price, an
 /// optional "best value" flag, and a tap-to-purchase affordance (with a busy
@@ -60,13 +60,13 @@ class _PackageCardState extends State<PackageCard> {
 
     final content = Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: NhamSpacing.sp4,
-        vertical: NhamSpacing.sp4,
+        horizontal: KalloSpacing.sp4,
+        vertical: KalloSpacing.sp4,
       ),
       decoration: BoxDecoration(
-        color: _pressed ? NhamColors.accent10 : NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.xxl),
-        border: Border.all(color: NhamColors.border),
+        color: _pressed ? KalloColors.accent10 : KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.xxl),
+        border: Border.all(color: KalloColors.border),
       ),
       child: Row(
         children: [
@@ -86,7 +86,7 @@ class _PackageCardState extends State<PackageCard> {
               height: 18,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation(NhamColors.accent),
+                valueColor: AlwaysStoppedAnimation(KalloColors.accent),
               ),
             )
           else

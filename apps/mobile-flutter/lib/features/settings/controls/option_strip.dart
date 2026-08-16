@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// A single option for [OptionStrip], with an optional hint sub-label and an
 /// optional leading icon (Lucide) rendered beside the label.
@@ -42,10 +42,10 @@ class OptionStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp1),
+      padding: const EdgeInsets.all(KalloSpacing.sp1),
       decoration: BoxDecoration(
-        color: NhamColors.track,
-        borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+        color: KalloColors.track,
+        borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -107,11 +107,11 @@ class _OptionButtonState extends State<_OptionButton> {
           duration: const Duration(milliseconds: 150), // transition-all
           alignment: Alignment.center,
           // py-2
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp2),
+          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),
           decoration: BoxDecoration(
-            color: widget.active ? NhamColors.elev : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.md), // rounded-lg = 8
-            boxShadow: widget.active ? const [NhamShadows.sm] : null,
+            color: widget.active ? KalloColors.elev : Colors.transparent,
+            borderRadius: BorderRadius.circular(KalloRadii.md), // rounded-lg = 8
+            boxShadow: widget.active ? const [KalloShadows.sm] : null,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

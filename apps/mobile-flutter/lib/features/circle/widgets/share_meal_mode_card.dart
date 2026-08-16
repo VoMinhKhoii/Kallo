@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 
 class ModeCard extends StatelessWidget {
   const ModeCard({
@@ -28,14 +28,14 @@ class ModeCard extends StatelessWidget {
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
-            vertical: NhamSpacing.sp2_5,
+            horizontal: KalloSpacing.sp3,
+            vertical: KalloSpacing.sp2_5,
           ),
           decoration: BoxDecoration(
-            color: selected ? NhamColors.accent10 : NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.lg),
+            color: selected ? KalloColors.accent10 : KalloColors.elev,
+            borderRadius: BorderRadius.circular(KalloRadii.lg),
             border: Border.all(
-              color: selected ? NhamColors.accent50 : NhamColors.borderSoft,
+              color: selected ? KalloColors.accent50 : KalloColors.borderSoft,
             ),
           ),
           child: Column(
@@ -43,16 +43,16 @@ class ModeCard extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.detail,
-                ).copyWith(color: NhamColors.text),
+                style: KalloTextStyles.sansMedium(
+                  fontSize: KalloFontSize.detail,
+                ).copyWith(color: KalloColors.text),
               ),
               const SizedBox(height: 2),
               Text(
                 hint,
-                style: NhamTextStyles.sansRegular(
-                  fontSize: NhamFontSize.xxs,
-                ).copyWith(color: NhamColors.textMuted),
+                style: KalloTextStyles.sansRegular(
+                  fontSize: KalloFontSize.xxs,
+                ).copyWith(color: KalloColors.textMuted),
               ),
             ],
           ),

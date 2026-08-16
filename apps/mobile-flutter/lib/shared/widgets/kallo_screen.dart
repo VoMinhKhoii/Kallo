@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/nham_colors.dart';
+import '../../theme/kallo_colors.dart';
 
 /// Full-bleed cream screen with safe-area insets.
 ///
@@ -22,7 +22,7 @@ class Screen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: NhamColors.surface,
+      color: KalloColors.surface,
       child: SafeArea(
         top: top,
         bottom: bottom,

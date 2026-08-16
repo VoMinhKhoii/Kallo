@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// The dashboard's ONE vertical rhythm. Every gap on the tab resolves to one of
 /// these steps, so greeting → week strip → section header → card → section reads
@@ -14,27 +14,27 @@ import '../../../theme/nham_theme.dart';
 abstract final class DashboardSpacing {
   /// Between the tab's stacked components: week strip ↔ section header ↔ card,
   /// and one section ↔ the next.
-  static const double block = NhamSpacing.sp3; // 12
+  static const double block = KalloSpacing.sp3; // 12
 
   /// Inside a card: the space above/below the hairline and between the card's
   /// zones (hero · macros · meals).
-  static const double section = NhamSpacing.sp3; // 12
+  static const double section = KalloSpacing.sp3; // 12
 
   /// Vertical padding on one item row (a macro bar, a meal line). Neighbouring
   /// rows therefore sit `row * 2` apart, so a list breathes without doubling to
   /// [block]; `row * 2` is also the gap where a row list is spaced by an
   /// explicit `SizedBox` instead of per-row padding.
-  static const double row = NhamSpacing.sp1; // 4
+  static const double row = KalloSpacing.sp1; // 4
 
   /// A card's own inset. Vertical is 12, not the horizontal 16, so the padding
   /// reads EQUAL on all four sides: the first and last lines each carry ~4px of
   /// line-height slack above/below their glyphs, which a flat 16 would stack on
   /// top of. Optical balance, not geometric.
   static const EdgeInsets card = EdgeInsets.fromLTRB(
-    NhamSpacing.sp4, // 16
-    NhamSpacing.sp3, // 12
-    NhamSpacing.sp4,
-    NhamSpacing.sp3,
+    KalloSpacing.sp4, // 16
+    KalloSpacing.sp3, // 12
+    KalloSpacing.sp4,
+    KalloSpacing.sp3,
   );
 }
 

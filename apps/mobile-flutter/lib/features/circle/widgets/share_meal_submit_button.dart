@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 
 class SubmitButton extends StatelessWidget {
   const SubmitButton({
@@ -28,10 +28,10 @@ class SubmitButton extends StatelessWidget {
         child: Container(
           width: double.infinity,
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
+          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3),
           decoration: BoxDecoration(
-            color: NhamColors.btn,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            color: KalloColors.btn,
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -47,11 +47,11 @@ class SubmitButton extends StatelessWidget {
                 )
               else
                 const Icon(LucideIcons.users300, size: 16, color: Colors.white),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               Text(
                 label,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
+                style: KalloTextStyles.sansMedium(
+                  fontSize: KalloFontSize.sm,
                 ).copyWith(color: Colors.white),
               ),
             ],

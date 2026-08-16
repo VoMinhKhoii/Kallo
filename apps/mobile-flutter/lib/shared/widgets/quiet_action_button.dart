@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/calm_tokens.dart';
-import '../../theme/nham_colors.dart';
-import '../../theme/nham_theme.dart';
+import '../../theme/kallo_colors.dart';
+import '../../theme/kallo_theme.dart';
 
-/// The app's quiet confirm: a warm [NhamColors.hover] pill with an ink label,
+/// The app's quiet confirm: a warm [KalloColors.hover] pill with an ink label,
 /// sized to its text and parked at the end of its row.
 ///
 /// This is the shape the logging card's Save uses, and the one every
 /// "commit what I just typed" action should take. It deliberately is NOT the
-/// umber [NhamButton] — the design system spends that on one primary CTA per
+/// umber [KalloButton] — the design system spends that on one primary CTA per
 /// surface, and a form's own submit is not that one.
 ///
 /// While [busy] it swaps in an inline spinner and the [busyLabel], keeping the
@@ -35,11 +35,11 @@ class QuietActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(NhamRadii.xl);
+    final radius = BorderRadius.circular(KalloRadii.xl);
     return Opacity(
       opacity: enabled ? 1 : 0.6,
       child: Material(
-        color: NhamColors.hover,
+        color: KalloColors.hover,
         borderRadius: radius,
         child: InkWell(
           // Gate here, not just on Opacity. `enabled: false` used to dim the

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// The switch names the scope it moves TO, and the arrow points that way:
 /// complete days sit to the left of logged days.
@@ -38,8 +38,8 @@ class ScopeSwitch extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 44),
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp2,
-            vertical: NhamSpacing.sp1,
+            horizontal: KalloSpacing.sp2,
+            vertical: KalloSpacing.sp1,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

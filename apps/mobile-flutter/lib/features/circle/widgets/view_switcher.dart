@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/circle.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/chat_group_providers.dart';
 import '../data/circle_providers.dart';
 import '../data/feed_providers.dart';
@@ -54,7 +54,7 @@ class ViewSwitcher extends ConsumerWidget {
                           null,
             ),
             for (final group in groups) ...[
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               _Pill(
                 label: group.title,
                 selected: selected == group.id,
@@ -66,7 +66,7 @@ class ViewSwitcher extends ConsumerWidget {
               ),
             ],
             if (groupsAsync.hasError) ...[
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               _Pill(
                 label: tr('groups.switcher.retry'),
                 selected: false,
@@ -118,11 +118,11 @@ class _Pill extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp4,
-          vertical: NhamSpacing.sp2,
+          horizontal: KalloSpacing.sp4,
+          vertical: KalloSpacing.sp2,
         ),
         decoration: BoxDecoration(
-          color: selected ? NhamColors.accent10 : Colors.white,
+          color: selected ? KalloColors.accent10 : Colors.white,
           border: selected ? null : Border.all(color: kHairline),
           borderRadius: BorderRadius.circular(999),
         ),

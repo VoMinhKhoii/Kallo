@@ -22,8 +22,8 @@ import 'features/settings/screens/settings_screen.dart';
 import 'services/supabase_service.dart';
 import 'shell/placeholder_screen.dart';
 import 'shell/tab_scaffold.dart';
-import 'theme/nham_colors.dart';
-import 'theme/nham_typography.dart';
+import 'theme/kallo_colors.dart';
+import 'theme/kallo_typography.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -338,12 +338,12 @@ class _SplashScreenState extends State<_SplashScreen>
   Widget build(BuildContext context) {
     final wordmark = Text(
       'Kallo',
-      style: NhamTextStyles.serifRegular(
+      style: KalloTextStyles.serifRegular(
         fontSize: 32,
-      ).copyWith(color: NhamColors.text),
+      ).copyWith(color: KalloColors.text),
     );
     return ColoredBox(
-      color: NhamColors.surface,
+      color: KalloColors.surface,
       child: Center(
         child: FadeTransition(
           opacity: Tween<double>(begin: 0.5, end: 1.0).animate(

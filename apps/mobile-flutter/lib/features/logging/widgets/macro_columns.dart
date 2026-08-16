@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// The fixed columns every macro readout on the logging tab is laid out in.
 ///
@@ -57,8 +57,8 @@ abstract final class MacroColumns {
   /// and the next. Both are small because each cell already carries its own
   /// trailing slack — the air after a short figure separates the macros on its
   /// own, and an explicit gap on top of it reads as a gulf.
-  static const double gap = NhamSpacing.sp1;
-  static const double cellGap = NhamSpacing.sp0_5;
+  static const double gap = KalloSpacing.sp1;
+  static const double cellGap = KalloSpacing.sp0_5;
 
   /// The whole P/C/F block: three cells plus the two gaps inside it.
   static const double split = cell * 3 + cellGap * 2;

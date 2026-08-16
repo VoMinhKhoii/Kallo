@@ -4,10 +4,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/env.dart';
 import '../../../services/supabase_service.dart';
-import '../../../shared/widgets/nham_primitives.dart';
+import '../../../shared/widgets/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_typography.dart';
 import '../widgets/auth_submit_button.dart';
 import '../widgets/auth_text_field.dart';
 
@@ -96,9 +96,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           tr('auth.forgot.title'),
           textAlign: TextAlign.center,
-          style: NhamTextStyles.serifRegular(
-            fontSize: NhamFontSize.h3,
-          ).copyWith(color: NhamColors.text),
+          style: KalloTextStyles.serifRegular(
+            fontSize: KalloFontSize.h3,
+          ).copyWith(color: KalloColors.text),
         ),
         const SizedBox(height: 8),
         Text(
@@ -155,9 +155,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           tr('auth.forgot.sentTitle'),
           textAlign: TextAlign.center,
-          style: NhamTextStyles.serifRegular(
-            fontSize: NhamFontSize.h3,
-          ).copyWith(color: NhamColors.text),
+          style: KalloTextStyles.serifRegular(
+            fontSize: KalloFontSize.h3,
+          ).copyWith(color: KalloColors.text),
         ),
         const SizedBox(height: 8),
         Text(
@@ -169,9 +169,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           _email.text.trim(),
           textAlign: TextAlign.center,
-          style: NhamTextStyles.serifRegular(
+          style: KalloTextStyles.serifRegular(
             fontSize: 16,
-          ).copyWith(color: NhamColors.text),
+          ).copyWith(color: KalloColors.text),
         ),
         const SizedBox(height: 24),
         AuthSubmitButton(
@@ -204,7 +204,7 @@ class _BackHeader extends StatelessWidget {
               const Icon(
                 LucideIcons.arrowLeft300,
                 size: 16,
-                color: NhamColors.textMuted,
+                color: KalloColors.textMuted,
               ),
               const SizedBox(width: 6),
               Text(

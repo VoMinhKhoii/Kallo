@@ -1,10 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/nham_primitives.dart';
+import '../../../shared/widgets/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 class PaywallSpinner extends StatelessWidget {
   const PaywallSpinner({super.key});
@@ -15,7 +15,7 @@ class PaywallSpinner extends StatelessWidget {
     height: 22,
     child: CircularProgressIndicator(
       strokeWidth: 2,
-      valueColor: AlwaysStoppedAnimation(NhamColors.accent),
+      valueColor: AlwaysStoppedAnimation(KalloColors.accent),
     ),
   );
 }
@@ -27,7 +27,7 @@ class PaywallCenteredNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp6),
+    padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp6),
     child: Center(child: child),
   );
 }
@@ -47,17 +47,17 @@ class PaywallNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: const EdgeInsets.all(KalloSpacing.sp4),
       decoration: BoxDecoration(
-        color: NhamColors.track,
-        borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+        color: KalloColors.track,
+        borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (leading != null) ...[
             leading!,
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: KalloSpacing.sp3),
           ],
           Text(title, style: dashBody(weight: FontWeight.w500)),
           const SizedBox(height: 4),
@@ -84,10 +84,10 @@ class PaywallRetryNote extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         PaywallNote(title: message, body: tr('common.retry')),
-        const SizedBox(height: NhamSpacing.sp3),
-        NhamButton(
+        const SizedBox(height: KalloSpacing.sp3),
+        KalloButton(
           title: tr('common.retry'),
-          variant: NhamButtonVariant.secondary,
+          variant: KalloButtonVariant.secondary,
           onPressed: onRetry,
         ),
       ],

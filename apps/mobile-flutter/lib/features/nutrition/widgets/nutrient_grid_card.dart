@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../shared/widgets/target_progress_bar.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/helpers.dart';
 import '../logic/status.dart';
 
@@ -51,11 +51,11 @@ class NutrientGridCard extends StatelessWidget {
     }
 
     final Color figureColor = showExceed
-        ? NhamColors.offTarget
+        ? KalloColors.offTarget
         : isLimited || pct == null
             ? kInkMuted
             : adequate
-                ? NhamColors.successDark
+                ? KalloColors.successDark
                 : kInk;
 
     // Absolute average / goal in the nutrient's own unit (g or mg/mcg).
@@ -74,14 +74,14 @@ class NutrientGridCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: NhamSpacing.sp3,
-        vertical: NhamSpacing.sp3,
+        horizontal: KalloSpacing.sp3,
+        vertical: KalloSpacing.sp3,
       ),
       decoration: BoxDecoration(
-        color: adequate ? NhamColors.successFaint : kCardSurface,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+        color: adequate ? KalloColors.successFaint : kCardSurface,
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
         border: Border.all(
-          color: adequate ? NhamColors.successBorder : NhamColors.borderSoft,
+          color: adequate ? KalloColors.successBorder : KalloColors.borderSoft,
         ),
       ),
       child: Column(
@@ -100,22 +100,22 @@ class NutrientGridCard extends StatelessWidget {
                   style: dashMeta(color: kInk),
                 ),
               ),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               Text(
                 figure,
                 style: dashMeta(color: figureColor, tabular: true),
               ),
             ],
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           TargetProgressBar(
             percentOfTarget: pct,
             showExceed: showExceed,
             delay: barDelay ?? Duration.zero,
             semanticLabel: label,
-            fillColor: adequate ? NhamColors.successAccent : null,
+            fillColor: adequate ? KalloColors.successAccent : null,
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Text(
             goalText,
             maxLines: 1,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/nham_colors.dart';
-import '../../theme/nham_typography.dart';
+import '../../theme/kallo_colors.dart';
+import '../../theme/kallo_typography.dart';
 
 /// RN port of `apps/mobile/src/components/shared/section-eyebrow.tsx`.
 ///
@@ -59,11 +59,11 @@ class _SectionEyebrowState extends State<SectionEyebrow>
   }
 
   // Web: text-[11px] tracking-[0.22em] (~2.42px), bold stone, uppercase.
-  static final TextStyle _label = NhamTextStyles.sansBold(fontSize: 11)
-      .copyWith(letterSpacing: 2.4, color: NhamColors.stone);
+  static final TextStyle _label = KalloTextStyles.sansBold(fontSize: 11)
+      .copyWith(letterSpacing: 2.4, color: KalloColors.stone);
 
-  static final TextStyle _dot = NhamTextStyles.sansBold(fontSize: 11)
-      .copyWith(letterSpacing: 0, color: NhamColors.border);
+  static final TextStyle _dot = KalloTextStyles.sansBold(fontSize: 11)
+      .copyWith(letterSpacing: 0, color: KalloColors.border);
 
   @override
   Widget build(BuildContext context) {

@@ -67,7 +67,7 @@ flutter:
     - assets/google_fonts/
   # Be Vietnam Pro is the UI sans (replaces DM Sans, whose bundled subset lacked
   # Vietnamese diacritics). Declared as a native family — referenced directly by
-  # NhamTextStyles.sansFamily — so the full Vietnamese glyph set is guaranteed.
+  # KalloTextStyles.sansFamily — so the full Vietnamese glyph set is guaranteed.
   fonts:
     - family: BeVietnamPro
       fonts:

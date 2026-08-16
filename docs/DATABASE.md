@@ -27,7 +27,7 @@ Never hand-write DDL for tables/columns. Never add CHECK constraints directly in
 
 ### Shared staging preview rule
 
-While `PREVIEW_DATABASE_MODE=shared`, PR previews and `kallo-internal` point at
+While `PREVIEW_DATABASE_MODE=shared`, PR previews and `nham-internal` point at
 the same non-prod Supabase database. To keep that survivable:
 
 - prefer append-only migrations for normal feature work

@@ -4,7 +4,7 @@
     Days are columns; weekdays are rows. Color scale is the 5-step diverging
     warm scale lifted from heatmap-colors.ts. */
 function Heatmap({ data, weekdays = ["M","T","W","T","F","S","S"] }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   // data: 2D array [weekIndex][weekday] of 0..4 step or null for empty
   return (
     <div style={{ display: "flex", gap: 6, height: "100%", padding: 4 }}>

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/nham_colors.dart';
+import '../theme/kallo_colors.dart';
 
 class InviteBadge extends StatelessWidget {
   const InviteBadge({super.key});
@@ -11,7 +11,7 @@ class InviteBadge extends StatelessWidget {
       width: 8,
       height: 8,
       decoration: const BoxDecoration(
-        color: NhamColors.accent,
+        color: KalloColors.accent,
         shape: BoxShape.circle,
       ),
     );
@@ -65,9 +65,9 @@ class _OnboardingDotState extends State<OnboardingDot>
         width: 8,
         height: 8,
         decoration: BoxDecoration(
-          color: NhamColors.accent,
+          color: KalloColors.accent,
           shape: BoxShape.circle,
-          border: Border.all(color: NhamColors.surface, width: 2),
+          border: Border.all(color: KalloColors.surface, width: 2),
         ),
       ),
     );

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/logging_spacing.dart';
 
 class MealActionIconButton extends StatelessWidget {
@@ -32,7 +32,7 @@ class MealActionIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // Active is carried by the warm hover wash behind the icon, not the icon
     // colour — the glyph stays ink (never tan) in every non-danger state.
-    final foreground = danger ? NhamColors.danger : NhamColors.text;
+    final foreground = danger ? KalloColors.danger : KalloColors.text;
     final enabled = onTap != null && !pending;
 
     return Tooltip(
@@ -62,7 +62,7 @@ class MealActionIconButton extends StatelessWidget {
             radius: LoggingIcons.wash / 2,
             containedInkWell: true,
             highlightShape: BoxShape.rectangle,
-            borderRadius: BorderRadius.circular(NhamRadii.md),
+            borderRadius: BorderRadius.circular(KalloRadii.md),
             child: SizedBox.square(
               dimension: LoggingIcons.hit,
               child: Center(
@@ -75,8 +75,8 @@ class MealActionIconButton extends StatelessWidget {
                   width: LoggingIcons.wash,
                   height: LoggingIcons.wash,
                   decoration: BoxDecoration(
-                    color: active ? NhamColors.hover : Colors.transparent,
-                    borderRadius: BorderRadius.circular(NhamRadii.md),
+                    color: active ? KalloColors.hover : Colors.transparent,
+                    borderRadius: BorderRadius.circular(KalloRadii.md),
                   ),
                   child: Center(
                     child:

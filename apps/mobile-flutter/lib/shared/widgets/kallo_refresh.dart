@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/nham_colors.dart';
+import '../../theme/kallo_colors.dart';
 
 /// The app's one pull-to-refresh.
 ///
@@ -10,8 +10,8 @@ import '../../theme/nham_colors.dart';
 /// Material, one of those over `BouncingScrollPhysics`, which put an Android
 /// spinner on top of an iOS bounce. Use this instead of `RefreshIndicator`
 /// directly so they cannot drift apart again.
-class NhamRefresh extends StatelessWidget {
-  const NhamRefresh({
+class KalloRefresh extends StatelessWidget {
+  const KalloRefresh({
     super.key,
     required this.onRefresh,
     required this.child,
@@ -27,8 +27,8 @@ class NhamRefresh extends StatelessWidget {
       // Ink, not `accent`: the tan is ~2.24:1 on a light surface, which is
       // under the bar for a standalone mark. Ignored by the Cupertino
       // variant, which draws its own spinner.
-      color: NhamColors.text,
-      backgroundColor: NhamColors.elev,
+      color: KalloColors.text,
+      backgroundColor: KalloColors.elev,
       child: child,
     );
   }

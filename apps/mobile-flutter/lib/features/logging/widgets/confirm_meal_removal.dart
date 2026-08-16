@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 
 Future<bool> confirmMealRemoval(BuildContext context) async {
   final confirmed = await showDialog<bool>(
@@ -17,7 +17,7 @@ Future<bool> confirmMealRemoval(BuildContext context) async {
               child: Text('common.cancel'.tr()),
             ),
             TextButton(
-              style: TextButton.styleFrom(foregroundColor: NhamColors.danger),
+              style: TextButton.styleFrom(foregroundColor: KalloColors.danger),
               onPressed: () {
                 HapticFeedback.mediumImpact();
                 Navigator.pop(dialogContext, true);

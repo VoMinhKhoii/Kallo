@@ -17,8 +17,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/api_client.dart';
 import '../../../shared/widgets/widgets.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/dashboard_providers.dart';
 import '../logic/dashboard_spacing.dart';
 import '../../../theme/calm_tokens.dart';
@@ -187,7 +187,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Field on its own row, full width. The "Today's weight" label now
-        // lives in the hosting sheet's header (NhamSheetHeader title).
+        // lives in the hosting sheet's header (KalloSheetHeader title).
         TextField(
           controller: _controller,
           onChanged: _onChanged,
@@ -198,7 +198,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
           ],
           autocorrect: false,
-          cursorColor: NhamColors.accent,
+          cursorColor: KalloColors.accent,
           // Body at medium weight — the surface holds three sizes (Hero /
           // Body / Meta), so a number entry reads as data via weight, not a
           // size of its own.
@@ -210,12 +210,12 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
             // surface, border only on focus / error. (kFieldFill is white now,
             // which would vanish on the white bottom sheet.)
             fillColor: hasError
-                ? NhamColors.danger.withValues(alpha: 0.06)
-                : NhamColors.track,
+                ? KalloColors.danger.withValues(alpha: 0.06)
+                : KalloColors.track,
             // Off the DashboardSpacing scale on purpose: this is the field's
             // own inset, tuned so the single line clears a 48pt tap target.
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp4,
+              horizontal: KalloSpacing.sp4,
               vertical: 15,
             ),
             // Suffix in-flow (no Positioned overlay → no overlap).
@@ -223,9 +223,9 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
             suffixStyle: dashMeta(color: kInkMuted),
             border: _border(Colors.transparent),
             enabledBorder:
-                _border(hasError ? NhamColors.danger : Colors.transparent),
+                _border(hasError ? KalloColors.danger : Colors.transparent),
             focusedBorder:
-                _border(hasError ? NhamColors.danger : NhamColors.accent),
+                _border(hasError ? KalloColors.danger : KalloColors.accent),
             disabledBorder: _border(Colors.transparent),
           ),
         ),
@@ -251,8 +251,8 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
               _feedback!.message,
               style: dashMeta(
                 color: _feedback!.kind == _FeedbackKind.success
-                    ? NhamColors.success
-                    : NhamColors.danger,
+                    ? KalloColors.success
+                    : KalloColors.danger,
               ),
             ),
           )
@@ -261,7 +261,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
             padding: const EdgeInsets.only(top: DashboardSpacing.row * 2),
             child: Text(
               _validationError!,
-              style: dashMeta(color: NhamColors.danger),
+              style: dashMeta(color: KalloColors.danger),
             ),
           )
         else if (showEditHint)
@@ -277,7 +277,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
   }
 
   OutlineInputBorder _border(Color color) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(NhamRadii.xl),
+        borderRadius: BorderRadius.circular(KalloRadii.xl),
         borderSide: BorderSide(
           color: color,
           width: color == Colors.transparent ? 0 : 1.5,
@@ -316,13 +316,13 @@ class _SubmitButton extends StatelessWidget {
         child: Container(
           // Stands on its own row now — own comfortable vertical height.
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp5,
-            vertical: NhamSpacing.sp3,
+            horizontal: KalloSpacing.sp5,
+            vertical: KalloSpacing.sp3,
           ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: pressed && !pending ? NhamColors.btnHover : NhamColors.btn,
-            borderRadius: BorderRadius.circular(NhamRadii.xl),
+            color: pressed && !pending ? KalloColors.btnHover : KalloColors.btn,
+            borderRadius: BorderRadius.circular(KalloRadii.xl),
           ),
           child: pending
               ? const SizedBox(

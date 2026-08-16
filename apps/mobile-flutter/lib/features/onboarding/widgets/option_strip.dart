@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 class OptionStripItem {
   final String value;
@@ -29,9 +29,9 @@ class OptionStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp1),
+      padding: const EdgeInsets.all(KalloSpacing.sp1),
       decoration: BoxDecoration(
-        color: NhamColors.track,
+        color: KalloColors.track,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -84,14 +84,14 @@ class _SegmentState extends State<_Segment> {
         duration: const Duration(milliseconds: 150),
         curve: const Cubic(0.25, 0.1, 0.25, 1),
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp2, // px-2
-          vertical: NhamSpacing.sp2_5, // py-2.5
+          horizontal: KalloSpacing.sp2, // px-2
+          vertical: KalloSpacing.sp2_5, // py-2.5
         ),
         decoration: widget.active
             ? BoxDecoration(
-                color: NhamColors.elev,
-                borderRadius: BorderRadius.circular(NhamRadii.md),
-                boxShadow: const [NhamShadows.sm], // shadow-sm
+                color: KalloColors.elev,
+                borderRadius: BorderRadius.circular(KalloRadii.md),
+                boxShadow: const [KalloShadows.sm], // shadow-sm
               )
             : const BoxDecoration(),
         child: Column(
@@ -105,7 +105,7 @@ class _SegmentState extends State<_Segment> {
             ),
             if (widget.item.hint != null)
               Padding(
-                padding: const EdgeInsets.only(top: NhamSpacing.sp1), // mt-1
+                padding: const EdgeInsets.only(top: KalloSpacing.sp1), // mt-1
                 child: Opacity(
                   opacity: 0.7,
                   child: Text(

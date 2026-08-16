@@ -24,7 +24,7 @@ class CountUpText extends StatefulWidget {
   final Duration duration;
   final Curve curve;
 
-  /// Required, not defaulted. This used to fall back to a [NhamTextVariant]
+  /// Required, not defaulted. This used to fall back to a [KalloTextVariant]
   /// whose size a caller's `style:` silently overrode — the merge trap the
   /// design doc warns about. Every call site already passes a `dash*` token;
   /// making it required stops a future one from quietly rendering at 16.

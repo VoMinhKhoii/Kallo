@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../theme/nham_theme.dart';
+import '../theme/kallo_theme.dart';
 import 'sidebar_nav_row.dart';
 
 // Order + membership mirror `NAV_ITEMS` exactly:
@@ -63,8 +63,8 @@ class SidebarNavList extends StatelessWidget {
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(
-        horizontal: NhamSpacing.sp3,
-        vertical: NhamSpacing.sp3,
+        horizontal: KalloSpacing.sp3,
+        vertical: KalloSpacing.sp3,
       ),
       child: Column(
         children: [

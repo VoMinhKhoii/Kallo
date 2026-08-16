@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/circle.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import 'create_group_empty.dart';
 import 'friend_list_skeleton.dart';
 import 'friend_pick_row.dart';
@@ -78,7 +78,7 @@ class CreateGroupMemberPicker extends StatelessWidget {
                 style: dashMeta(),
               ),
             ),
-            const SizedBox(height: NhamSpacing.sp1),
+            const SizedBox(height: KalloSpacing.sp1),
             Expanded(
               child:
                   filtered.isEmpty

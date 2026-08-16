@@ -5,7 +5,7 @@ import '../../../models/circle.dart';
 import '../../../shared/widgets/profile_avatar.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/feed_mutations.dart';
 import '../data/feed_time.dart';
 
@@ -82,7 +82,7 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
     final locale = context.locale.languageCode;
     final hidden = widget.repliesTotal - widget.replies.length;
     return Padding(
-      padding: const EdgeInsets.only(top: NhamSpacing.sp3),
+      padding: const EdgeInsets.only(top: KalloSpacing.sp3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -91,11 +91,11 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
               tr('groups.feed.earlierReplies', namedArgs: {'count': '$hidden'}),
               style: dashMeta(),
             ),
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: KalloSpacing.sp3),
           ],
           for (final reply in widget.replies) ...[
             _ReplyRow(reply: reply, locale: locale),
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: KalloSpacing.sp3),
           ],
           if (_open) _composer() else _replyButton(),
         ],
@@ -141,7 +141,7 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
         ),
       ),
       if (_controller.text.trim().isNotEmpty) ...[
-        const SizedBox(width: NhamSpacing.sp2),
+        const SizedBox(width: KalloSpacing.sp2),
         TextButton(
           onPressed: _submitting ? null : _submit,
           child: Text(tr('groups.feed.reply'), style: dashMeta(color: kInk)),
@@ -164,7 +164,7 @@ class _ReplyRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ProfileAvatarDisc(profile: reply.author, size: 28),
-        const SizedBox(width: NhamSpacing.sp2),
+        const SizedBox(width: KalloSpacing.sp2),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

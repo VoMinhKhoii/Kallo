@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 import '../widgets/auth_page.dart';
 
 /// The sign-up route.
@@ -13,7 +13,7 @@ class SignUpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: NhamColors.surface,
+      backgroundColor: KalloColors.surface,
       body: AuthPage(),
     );
   }

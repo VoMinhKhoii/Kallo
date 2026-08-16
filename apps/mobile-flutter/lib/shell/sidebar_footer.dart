@@ -6,8 +6,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../features/onboarding/widgets/onboarding_dialog.dart';
 import '../theme/calm_tokens.dart';
-import '../theme/nham_colors.dart';
-import '../theme/nham_theme.dart';
+import '../theme/kallo_colors.dart';
+import '../theme/kallo_theme.dart';
 import 'sidebar_nav_list.dart';
 import 'sidebar_nav_row.dart' show kSidebarIconSize;
 import 'sidebar_onboarding_nudge.dart';
@@ -34,14 +34,14 @@ class SidebarFooter extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Color(0x66FFFFFF),
         border: Border(
-          top: BorderSide(color: NhamColors.borderBiscotti40, width: 1),
+          top: BorderSide(color: KalloColors.borderBiscotti40, width: 1),
         ),
       ),
       padding: EdgeInsets.fromLTRB(
-        NhamSpacing.sp3,
-        NhamSpacing.sp3,
-        NhamSpacing.sp3,
-        bottomInset + NhamSpacing.sp3,
+        KalloSpacing.sp3,
+        KalloSpacing.sp3,
+        KalloSpacing.sp3,
+        bottomInset + KalloSpacing.sp3,
       ),
       child: Column(
         children: [
@@ -104,7 +104,7 @@ class _FooterRowState extends State<FooterRow> {
     // when idle), so the drawer read as two different components.
     final Color contentColor = active ? kInk : kInkMuted;
     final Color? fill =
-        active ? NhamColors.hover : (_pressed ? NhamColors.pressWash : null);
+        active ? KalloColors.hover : (_pressed ? KalloColors.pressWash : null);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -119,7 +119,7 @@ class _FooterRowState extends State<FooterRow> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: fill,
-          borderRadius: BorderRadius.circular(NhamRadii.md),
+          borderRadius: BorderRadius.circular(KalloRadii.md),
         ),
         child: Row(
           children: [

@@ -21,7 +21,7 @@ import 'dart:ui';
 ///
 /// The `surface*` alpha ramps below MUST keep this hue: a scrim that fades
 /// toward a stale canvas colour is a visible seam.
-abstract final class NhamColors {
+abstract final class KalloColors {
   // ── Core surfaces ────────────────────────────────────────────────────
   static const Color surface = Color(
     0xFFFCFCFC,
@@ -217,7 +217,7 @@ abstract final class NhamColors {
   /// The obvious picks miss AA on this canvas: iOS system red `#FF3B30` is
   /// 3.1:1 and Tailwind red-600 `#DC2626` is 4.27:1, both below the 4.5
   /// threshold. `danger` is a TEXT colour here (delete/sign-out row labels,
-  /// error copy, `NhamButtonVariant.danger`), so it has to clear it outright
+  /// error copy, `KalloButtonVariant.danger`), so it has to clear it outright
   /// rather than lean on the large-text exemption.
   ///
   /// [danger] is for ACTIONS and ERRORS only. "Your numbers are off" is

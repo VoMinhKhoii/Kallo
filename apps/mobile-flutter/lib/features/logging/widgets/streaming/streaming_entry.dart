@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../../../models/meal.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/stream_analysis_controller.dart';
 import '../../logic/feed/stream_ticker.dart';
 import '../../logic/logging_spacing.dart';
@@ -43,7 +43,7 @@ class StreamingEntry extends StatelessWidget {
     return Padding(
       // Matches LoggingSpacing.card's horizontal inset, so a row does not jump
       // sideways the moment the reveal card closes around it.
-      padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp4),
+      padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -57,7 +57,7 @@ class StreamingEntry extends StatelessWidget {
             loaderIndex: loaderIndex,
           ),
           if (hasItems) ...[
-            const SizedBox(height: NhamSpacing.sp1),
+            const SizedBox(height: KalloSpacing.sp1),
             for (var i = 0; i < completed.length; i++)
               FadeInLeft(
                 key: ValueKey(completed[i].id),
@@ -100,7 +100,7 @@ class _CompletedRow extends StatelessWidget {
               style: dashBody(),
             ),
           ),
-          const SizedBox(width: NhamSpacing.sp3),
+          const SizedBox(width: KalloSpacing.sp3),
           MacroTrio(
             protein: item.macros.protein,
             carbs: item.macros.carbs,

@@ -5,17 +5,17 @@ import '../../theme/calm_tokens.dart';
 /// Shared chrome for every modal bottom sheet in the app.
 ///
 /// One surface (solid white, top-rounded at [kCardRadius]) and one header
-/// (`NhamSheetHeader`, in nham_sheet_header.dart) so the hand-rolled sheets
+/// (`KalloSheetHeader`, in kallo_sheet_header.dart) so the hand-rolled sheets
 /// stop diverging. Callers keep their own body and height mechanics.
 
 /// Opens a modal sheet with the standard transparent-background chrome — the
-/// surface itself is painted by [NhamSheetSurface], which the [builder] returns.
+/// surface itself is painted by [KalloSheetSurface], which the [builder] returns.
 ///
 /// [isScrollControlled] defaults to TRUE. Material's default caps a sheet at
 /// 9/16 of the screen and clips the rest, taking the action row off-screen —
 /// the three sheets that hadn't opted out all overflowed on a short phone or in
 /// landscape. Safe by default now. Sizing to content is only half of it: see
-/// [NhamSheetSurface.scrollable]. Guarded by `test/sheet_overflow_test.dart`.
+/// [KalloSheetSurface.scrollable]. Guarded by `test/sheet_overflow_test.dart`.
 Future<T?> showNhamSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
@@ -40,8 +40,8 @@ Future<T?> showNhamSheet<T>(
 /// the body scroll past that, keeping the action row reachable on a short
 /// phone, at 1.3x Dynamic Type, and in landscape. Sheets that already own a
 /// `ListView`/`SingleChildScrollView` must NOT set it — two nested scrollables.
-class NhamSheetSurface extends StatelessWidget {
-  const NhamSheetSurface({
+class KalloSheetSurface extends StatelessWidget {
+  const KalloSheetSurface({
     super.key,
     required this.child,
     this.constraints,

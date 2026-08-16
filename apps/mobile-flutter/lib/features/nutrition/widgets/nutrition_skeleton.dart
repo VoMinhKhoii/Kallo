@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/skeleton.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 
 /// Single-column loading skeleton mirroring the mobile editorial stack.
 /// RN port of `apps/mobile/src/components/nutrition/states/nutrition-skeleton.tsx`.
@@ -22,7 +22,7 @@ class NutritionSkeleton extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 20),
               decoration: const BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: NhamColors.borderHalf),
+                  bottom: BorderSide(color: KalloColors.borderHalf),
                 ),
               ),
               child: const Column(
@@ -41,7 +41,7 @@ class NutritionSkeleton extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: NhamColors.borderSoft),
+                border: Border.all(color: KalloColors.borderSoft),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -79,7 +79,7 @@ class NutritionSkeleton extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: NhamColors.borderHalf),
+                  border: Border.all(color: KalloColors.borderHalf),
                 ),
                 child: Column(
                   children: [
@@ -91,7 +91,7 @@ class NutritionSkeleton extends StatelessWidget {
                         ),
                         decoration: const BoxDecoration(
                           border: Border(
-                            bottom: BorderSide(color: NhamColors.borderFaint),
+                            bottom: BorderSide(color: KalloColors.borderFaint),
                           ),
                         ),
                         child: const Row(
@@ -129,7 +129,7 @@ class NutritionSkeleton extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(width: 3, color: NhamColors.accent30),
+                  Container(width: 3, color: KalloColors.accent30),
                   const SizedBox(width: 20),
                   const Expanded(
                     child: Column(

@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 
 import '../../../../models/relog.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../logic/format.dart';
 import '../macro_trio.dart';
 
@@ -67,12 +67,12 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
             // The popup is an INK band, so the press lightens rather than
             // warms. The warm hover wash is lighter than the canvas but darker
             // than nothing on this surface — on the band it would barely move.
-            color: _pressed ? NhamColors.pressWashOnInk : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.md),
+            color: _pressed ? KalloColors.pressWashOnInk : Colors.transparent,
+            borderRadius: BorderRadius.circular(KalloRadii.md),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp2,
-            vertical: NhamSpacing.sp2,
+            horizontal: KalloSpacing.sp2,
+            vertical: KalloSpacing.sp2,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,21 +90,21 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: dashBody(
-                        color: NhamColors.bandForeground,
+                        color: KalloColors.bandForeground,
                         weight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       macroSplit,
                       style: dashMeta(
-                        color: NhamColors.bandForeground,
+                        color: KalloColors.bandForeground,
                         tabular: true,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               // A FIXED cell, not a flexible one. Flexible sizes to content,
               // so `137 kcal` and `1024 kcal` claim different widths and the
               // column goes ragged down the list — the same defect the meal
@@ -124,7 +124,7 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
                     maxLines: 1,
                     softWrap: false,
                     style: dashMeta(
-                      color: NhamColors.bandForeground,
+                      color: KalloColors.bandForeground,
                       tabular: true,
                     ),
                   ),

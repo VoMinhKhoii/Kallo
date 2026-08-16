@@ -79,7 +79,7 @@ Future<void> main() async {
       supportedLocales: const [Locale('en'), Locale('vi')],
       path: 'assets/l10n',
       fallbackLocale: const Locale('en'),
-      child: const ProviderScope(child: NhamApp()),
+      child: const ProviderScope(child: KalloApp()),
     ),
   );
 }

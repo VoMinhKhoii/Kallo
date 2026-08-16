@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../models/cheat.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../settings/controls/option_strip.dart';
 
 /// The light/medium/heavy indulgence picker shown above the composer whenever
@@ -36,7 +36,7 @@ class CheatIntensityRow extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: NhamSpacing.sp3),
+        const SizedBox(width: KalloSpacing.sp3),
         SizedBox(
           width: 200,
           child: OptionStrip(

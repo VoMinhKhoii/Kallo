@@ -6,13 +6,13 @@ import 'package:go_router/go_router.dart';
 import '../../../data/api_client.dart';
 import '../../../data/billing/entitlements_provider.dart';
 import '../../../data/session_provider.dart';
-import '../../../shared/widgets/nham_primitives.dart';
+import '../../../shared/widgets/kallo_primitives.dart';
 import '../../../shared/widgets/scroll_separator.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../paywall/store_subscriptions.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/settings_spacing.dart';
 import '../widgets/settings_header.dart';
 
@@ -91,15 +91,15 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
               // No title here — it lives in the header bar. This is the
               // consequence line that used to sit under it.
               Text(tr('settings.account.deleteConsequence'), style: dashBody()),
-              const SizedBox(height: NhamSpacing.sp3),
+              const SizedBox(height: KalloSpacing.sp3),
               Container(
-                padding: const EdgeInsets.all(NhamSpacing.sp3),
+                padding: const EdgeInsets.all(KalloSpacing.sp3),
                 decoration: BoxDecoration(
-                  color: NhamColors.danger.withValues(alpha: 0.06),
+                  color: KalloColors.danger.withValues(alpha: 0.06),
                   border: Border.all(
-                    color: NhamColors.danger.withValues(alpha: 0.3),
+                    color: KalloColors.danger.withValues(alpha: 0.3),
                   ),
-                  borderRadius: BorderRadius.circular(NhamRadii.xxxl),
+                  borderRadius: BorderRadius.circular(KalloRadii.xxxl),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -109,10 +109,10 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
                       style: dashBody(),
                     ),
                     if (entitlement?.managementUrl != null) ...[
-                      const SizedBox(height: NhamSpacing.sp2),
-                      NhamButton(
+                      const SizedBox(height: KalloSpacing.sp2),
+                      KalloButton(
                         title: tr('settings.account.deleteManageSubscription'),
-                        variant: NhamButtonVariant.secondary,
+                        variant: KalloButtonVariant.secondary,
                         onPressed:
                             () => openStoreSubscriptions(
                               context,
@@ -123,7 +123,7 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: NhamSpacing.sp5),
+              const SizedBox(height: KalloSpacing.sp5),
               Text(
                 tr(
                   'settings.account.deleteConfirmLabel',
@@ -140,22 +140,22 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
                 style: dashBody(),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: NhamColors.surface,
+                  fillColor: KalloColors.surface,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 12,
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-                    borderSide: const BorderSide(color: NhamColors.border),
+                    borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+                    borderSide: const BorderSide(color: KalloColors.border),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-                    borderSide: const BorderSide(color: NhamColors.danger),
+                    borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+                    borderSide: const BorderSide(color: KalloColors.danger),
                   ),
                 ),
               ),
-              const SizedBox(height: NhamSpacing.sp4),
+              const SizedBox(height: KalloSpacing.sp4),
               _DeleteButton(
                 enabled: _canDelete,
                 deleting: _deleting,
@@ -189,8 +189,8 @@ class _DeleteButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: NhamColors.danger,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            color: KalloColors.danger,
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
           ),
           child: Center(
             child:

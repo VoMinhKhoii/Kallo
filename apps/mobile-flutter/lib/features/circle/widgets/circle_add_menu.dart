@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/nham_sheet.dart';
+import '../../../shared/widgets/kallo_sheet.dart';
 import '../../../theme/calm_tokens.dart';
 import 'add_friend_sheet.dart';
 import 'create_group_sheet.dart';
@@ -21,7 +21,7 @@ enum _AddAction { friend, group }
 /// sheet offering "Add friend" / "Create group".
 ///
 /// This was the app's ONLY `PopupMenuButton`, and it showed: with no
-/// `popupMenuTheme` in `nham_theme.dart` its radius, elevation, 48px rows and label
+/// `popupMenuTheme` in `kallo_theme.dart` its radius, elevation, 48px rows and label
 /// type were raw Material defaults, so the menu read as a different product
 /// from every other chooser here. Everywhere else the app either opens its own
 /// bottom sheet ([showNhamSheet]) or, for "pick one action", a

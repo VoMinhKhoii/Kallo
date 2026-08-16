@@ -7,8 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:nham_mobile/features/logging/widgets/meal_entry.dart';
 import 'package:nham_mobile/models/meal.dart';
-import 'package:nham_mobile/theme/nham_colors.dart';
-import 'package:nham_mobile/theme/nham_theme.dart';
+import 'package:nham_mobile/theme/kallo_colors.dart';
+import 'package:nham_mobile/theme/kallo_theme.dart';
 
 import '../../l10n_test_loader.dart';
 
@@ -193,14 +193,14 @@ void main() {
                         .firstWhere(
                           (c) =>
                               (c.decoration as BoxDecoration?)?.borderRadius ==
-                              BorderRadius.circular(NhamRadii.containerLg),
+                              BorderRadius.circular(KalloRadii.containerLg),
                         )
                         .decoration
                     as BoxDecoration)
                 .border!
             as Border;
 
-    expect(cardBorder().top.color, NhamColors.borderSoft);
+    expect(cardBorder().top.color, KalloColors.borderSoft);
 
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
@@ -208,7 +208,7 @@ void main() {
     // The grey per-row wash is gone. What signals edit mode is the card's own
     // hairline going to the accent this app already uses for a focused input —
     // said once, in existing vocabulary, without insetting anything.
-    expect(cardBorder().top.color, NhamColors.accent40);
+    expect(cardBorder().top.color, KalloColors.accent40);
   });
 
   testWidgets('the card is white, including on the reveal', (tester) async {
@@ -240,13 +240,13 @@ void main() {
                   .firstWhere(
                     (c) =>
                         (c.decoration as BoxDecoration?)?.borderRadius ==
-                        BorderRadius.circular(NhamRadii.containerLg),
+                        BorderRadius.circular(KalloRadii.containerLg),
                   )
                   .decoration
               as BoxDecoration;
       expect(
         decoration.color,
-        NhamColors.elev,
+        KalloColors.elev,
         reason: 'revealing: $revealing',
       );
     }

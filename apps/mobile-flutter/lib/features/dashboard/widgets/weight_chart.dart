@@ -13,9 +13,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/weight.dart';
-import '../../../shared/widgets/nham_sheet_header.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../shared/widgets/kallo_sheet_header.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/dashboard_providers.dart';
 import 'compact_weight_log.dart';
 import '../../../theme/calm_tokens.dart';
@@ -33,7 +33,7 @@ class WeightChart extends ConsumerWidget {
     final async = ref.watch(weightSummaryProvider(args));
 
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: const EdgeInsets.all(KalloSpacing.sp4),
       decoration: BoxDecoration(
         color: kCardSurface, // solid white
         borderRadius: BorderRadius.circular(kCardRadius),
@@ -56,10 +56,10 @@ class WeightChart extends ConsumerWidget {
             children: [
               const Icon(
                 LucideIcons.cloudOff300,
-                size: NhamIcons.size,
+                size: KalloIcons.size,
                 color: kInkMuted,
               ),
-              const SizedBox(height: NhamSpacing.sp2),
+              const SizedBox(height: KalloSpacing.sp2),
               Text(
                 tr('dashboard.progressLoadError'),
                 textAlign: TextAlign.center,
@@ -113,19 +113,19 @@ class _Body extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(kg, style: dashBody(color: kInkMuted)),
                   if (hasTrend) ...[
-                    const SizedBox(width: NhamSpacing.sp2),
+                    const SizedBox(width: KalloSpacing.sp2),
                     _TrendBadge(delta: delta),
                   ],
                 ],
               ),
             ),
-            const SizedBox(width: NhamSpacing.sp2),
+            const SizedBox(width: KalloSpacing.sp2),
             _LogButton(
               onTap: () => _openLogSheet(context, data, todayDate, args),
             ),
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp4),
+        const SizedBox(height: KalloSpacing.sp4),
 
         WeightChartCanvas(
           weights: data.weights,
@@ -171,7 +171,7 @@ class _LogButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(NhamRadii.xl);
+    final radius = BorderRadius.circular(KalloRadii.xl);
     return Semantics(
       button: true,
       label: tr('dashboard.weightCard.logWeight'),
@@ -180,14 +180,14 @@ class _LogButton extends StatelessWidget {
           borderRadius: radius,
           boxShadow: [
             BoxShadow(
-              color: NhamColors.accent.withValues(alpha: 0.3),
+              color: KalloColors.accent.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Material(
-          color: NhamColors.accent,
+          color: KalloColors.accent,
           borderRadius: radius,
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -195,8 +195,8 @@ class _LogButton extends StatelessWidget {
             child: Container(
               constraints: const BoxConstraints(minHeight: 40),
               padding: const EdgeInsets.symmetric(
-                horizontal: NhamSpacing.sp3,
-                vertical: NhamSpacing.sp2,
+                horizontal: KalloSpacing.sp3,
+                vertical: KalloSpacing.sp2,
               ),
               alignment: Alignment.center,
               child: Row(
@@ -248,13 +248,13 @@ void _openLogSheet(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              NhamSheetHeader(
+              KalloSheetHeader(
                 title: tr('dashboard.weightCard.todaysWeight'),
               ),
-              const SizedBox(height: NhamSpacing.sp3),
+              const SizedBox(height: KalloSpacing.sp3),
               Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: NhamSpacing.sp5,
+                  horizontal: KalloSpacing.sp5,
                 ),
                 child: CompactWeightLog(
                   currentWeight: data.currentWeight,
@@ -269,7 +269,7 @@ void _openLogSheet(
               // by the keyboard, so only add the home-indicator inset while the
               // keypad is dismissed — otherwise the gap above the keys balloons.
               SizedBox(
-                height: NhamSpacing.sp4 +
+                height: KalloSpacing.sp4 +
                     (mq.viewInsets.bottom > 0 ? 0 : mq.viewPadding.bottom),
               ),
             ],

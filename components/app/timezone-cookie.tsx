@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 
 /** Where the browser leaves its UTC offset for the server to read. */
-export const TIMEZONE_COOKIE = 'nham_tzo';
+export const TIMEZONE_COOKIE = 'kallo_tzo';
 
 /**
  * Writes the browser's UTC offset into a cookie, once per load.

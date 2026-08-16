@@ -2,7 +2,7 @@
 /** WeightChart — sparkline placeholder. The real component uses Recharts
     with a tooltip and a projected-trend line. */
 function WeightChart({ data, target }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const W = 620, H = 180, PAD = 24;
   const xs = data.map((_, i) => PAD + i * ((W - 2*PAD) / (data.length - 1)));
   const ys = data.map(d => {

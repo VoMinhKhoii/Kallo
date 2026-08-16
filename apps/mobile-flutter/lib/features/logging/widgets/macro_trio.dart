@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/format.dart';
 import 'count_up.dart';
 import 'macro_columns.dart';
@@ -107,7 +107,7 @@ class MealTotalsRow extends StatelessWidget {
             style: dashBody(weight: FontWeight.w500, tabular: true),
           ),
         ),
-        const SizedBox(width: NhamSpacing.sp3),
+        const SizedBox(width: KalloSpacing.sp3),
         MacroSplit(protein: protein, carbs: carbs, fat: fat),
         const SizedBox(width: MacroColumns.gap),
         MacroKcal(

@@ -8,8 +8,8 @@ import '../logic/profile_payload.dart';
 import 'profile_form_controller.dart';
 import 'profile_form_values.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// A focused settings editor for non-numeric preferences (cooking habits,
 /// region & language). Toggle/select changes instant-commit — the moment a
@@ -165,17 +165,17 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
       controller: _controller,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
-          NhamSpacing.sp3, // the app-wide 12 content inset
-          NhamSpacing.sp2,
-          NhamSpacing.sp3,
-          NhamSpacing.sp8,
+          KalloSpacing.sp3, // the app-wide 12 content inset
+          KalloSpacing.sp2,
+          KalloSpacing.sp3,
+          KalloSpacing.sp8,
         ),
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         children: [
           // No title here — it lives in the header bar. This is the subtitle
           // that used to sit under it.
           Padding(
-            padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
+            padding: const EdgeInsets.only(bottom: KalloSpacing.sp4),
             child: Text(
               widget.subtitle,
               style: dashMeta(),
@@ -183,18 +183,18 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
           ),
           if (_errorText != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
+              padding: const EdgeInsets.only(bottom: KalloSpacing.sp3),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(
                       _errorText!,
-                      style: dashBody(color: NhamColors.danger),
+                      style: dashBody(color: KalloColors.danger),
                     ),
                   ),
                   if (_failedValues != null) ...[
-                    const SizedBox(width: NhamSpacing.sp3),
+                    const SizedBox(width: KalloSpacing.sp3),
                     Semantics(
                       button: true,
                       excludeSemantics: true,

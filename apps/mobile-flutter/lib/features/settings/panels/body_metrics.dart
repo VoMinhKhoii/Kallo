@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import '../../../models/onboarding.dart';
 import '../../../shared/widgets/decimal_input.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../controls/aggression_slider.dart';
 import '../controls/custom_select.dart';
 import '../logic/number_format.dart';
@@ -89,7 +89,7 @@ class BodyMetrics extends StatelessWidget {
                     const SizedBox(height: 6), // gap-1.5
                     Text(
                       form.errorFor(ProfileField.biologicalSex)!,
-                      style: dashMeta(color: NhamColors.danger),
+                      style: dashMeta(color: KalloColors.danger),
                     ),
                   ],
                 ],
@@ -112,7 +112,7 @@ class BodyMetrics extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: NhamSpacing.sp4),
+                const SizedBox(width: KalloSpacing.sp4),
                 Expanded(
                   child: _Field(
                     label: '${t('height')} (${t('heightUnit')})',
@@ -148,7 +148,7 @@ class BodyMetrics extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: NhamSpacing.sp4),
+                const SizedBox(width: KalloSpacing.sp4),
                 const Expanded(child: SizedBox.shrink()),
               ],
             ),
@@ -171,23 +171,23 @@ class BodyMetrics extends StatelessWidget {
 
         // ── Goal → pace → split → target (gated on a computed TDEE) ─────
         if (tdee != null) ...[
-          const SizedBox(height: NhamSpacing.sp8),
+          const SizedBox(height: KalloSpacing.sp8),
           Container(
-            padding: const EdgeInsets.only(top: NhamSpacing.sp6),
+            padding: const EdgeInsets.only(top: KalloSpacing.sp6),
             decoration: const Border(
-              top: BorderSide(color: NhamColors.inputBorder),
+              top: BorderSide(color: KalloColors.inputBorder),
             ).toDecoration(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _GoalSegments(form: form),
                 if (v.goal != Goal.maintaining) ...[
-                  const SizedBox(height: NhamSpacing.sp8),
+                  const SizedBox(height: KalloSpacing.sp8),
                   _AggressionField(form: form),
                 ],
-                const SizedBox(height: NhamSpacing.sp8),
+                const SizedBox(height: KalloSpacing.sp8),
                 _CarbSplitField(form: form, targetCalories: targetCalories),
-                const SizedBox(height: NhamSpacing.sp8),
+                const SizedBox(height: KalloSpacing.sp8),
                 _HeroTarget(
                   tdee: tdee,
                   targetCalories: targetCalories,
@@ -223,7 +223,7 @@ class _Group extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var i = 0; i < children.length; i++) ...[
-          if (i > 0) const SizedBox(height: NhamSpacing.sp4),
+          if (i > 0) const SizedBox(height: KalloSpacing.sp4),
           children[i],
         ],
       ],
@@ -294,7 +294,7 @@ class _NumberField extends StatelessWidget {
           const SizedBox(height: 6), // gap-1.5
           Text(
             error!,
-            style: dashMeta(color: NhamColors.danger),
+            style: dashMeta(color: KalloColors.danger),
           ),
         ],
       ],
@@ -320,17 +320,17 @@ class _GoalSegments extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _FieldLabel(t('goal')),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         Container(
-          padding: const EdgeInsets.all(NhamSpacing.sp1),
+          padding: const EdgeInsets.all(KalloSpacing.sp1),
           decoration: BoxDecoration(
-            color: NhamColors.inputBorder40,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            color: KalloColors.inputBorder40,
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
           ),
           child: Row(
             children: [
               for (var i = 0; i < _goals.length; i++) ...[
-                if (i > 0) const SizedBox(width: NhamSpacing.sp1),
+                if (i > 0) const SizedBox(width: KalloSpacing.sp1),
                 Expanded(
                   child: _SegmentButton(
                     label: goalLabel[_goals[i]]!,
@@ -378,13 +378,13 @@ class _SegmentButtonState extends State<_SegmentButton> {
         alignment: Alignment.center,
         // px-2 py-2
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp2,
-          vertical: NhamSpacing.sp2,
+          horizontal: KalloSpacing.sp2,
+          vertical: KalloSpacing.sp2,
         ),
         decoration: BoxDecoration(
-          color: widget.active ? NhamColors.elev : Colors.transparent,
-          borderRadius: BorderRadius.circular(NhamRadii.md), // rounded-lg = 8
-          boxShadow: widget.active ? const [NhamShadows.sm] : null,
+          color: widget.active ? KalloColors.elev : Colors.transparent,
+          borderRadius: BorderRadius.circular(KalloRadii.md), // rounded-lg = 8
+          boxShadow: widget.active ? const [KalloShadows.sm] : null,
         ),
         child: Text(
           widget.label,
@@ -412,7 +412,7 @@ class _AggressionField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _FieldLabel(label),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         AggressionSlider(
           value: form.values.aggression,
           onChange: (d) => form.update((f) => f.aggression = d),
@@ -446,9 +446,9 @@ class _CarbSplitField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _FieldLabel(t('carbSplit')),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         for (var i = 0; i < _carbSplits.length; i++) ...[
-          if (i > 0) const SizedBox(height: NhamSpacing.sp3),
+          if (i > 0) const SizedBox(height: KalloSpacing.sp3),
           _CarbCard(
             label: info[_carbSplits[i]]!.label,
             desc: info[_carbSplits[i]]!.desc,
@@ -488,8 +488,8 @@ class _CarbCardState extends State<_CarbCard> {
     // Unselected `hover:border-[#C9A87C]/50` — border lightens to accent50 on
     // press; selected keeps the solid accent border + shadow-sm.
     final borderColor = widget.active
-        ? NhamColors.text.withValues(alpha: 0.3)
-        : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
+        ? KalloColors.text.withValues(alpha: 0.3)
+        : (_pressed ? KalloColors.accent50 : KalloColors.inputBorder);
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: (_) => setState(() => _pressed = true),
@@ -497,12 +497,12 @@ class _CarbCardState extends State<_CarbCard> {
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150), // transition-all
-        padding: const EdgeInsets.all(NhamSpacing.sp4),
+        padding: const EdgeInsets.all(KalloSpacing.sp4),
         decoration: BoxDecoration(
-          color: widget.active ? NhamColors.hover : NhamColors.elev,
-          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+          color: widget.active ? KalloColors.hover : KalloColors.elev,
+          borderRadius: BorderRadius.circular(KalloRadii.containerLg),
           border: Border.all(color: borderColor),
-          boxShadow: widget.active ? const [NhamShadows.sm] : null,
+          boxShadow: widget.active ? const [KalloShadows.sm] : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,19 +511,19 @@ class _CarbCardState extends State<_CarbCard> {
               widget.label,
               style: dashBody(weight: FontWeight.w500),
             ),
-            const SizedBox(height: NhamSpacing.sp1),
+            const SizedBox(height: KalloSpacing.sp1),
             Text(
               widget.desc,
               style: dashMeta(),
             ),
             // gap-1 + mt-1 → ~8px above the macros row.
-            const SizedBox(height: NhamSpacing.sp2),
+            const SizedBox(height: KalloSpacing.sp2),
             Row(
               children: [
                 _macro('P ${widget.macros.proteinG.round()}g'),
-                const SizedBox(width: NhamSpacing.sp3),
+                const SizedBox(width: KalloSpacing.sp3),
                 _macro('C ${widget.macros.carbsG.round()}g'),
-                const SizedBox(width: NhamSpacing.sp3),
+                const SizedBox(width: KalloSpacing.sp3),
                 _macro('F ${widget.macros.fatG.round()}g'),
               ],
             ),
@@ -571,16 +571,16 @@ class _HeroTarget extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp5),
+      padding: const EdgeInsets.all(KalloSpacing.sp5),
       decoration: BoxDecoration(
-        color: NhamColors.accent07,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.accent40),
+        color: KalloColors.accent07,
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        border: Border.all(color: KalloColors.accent40),
       ),
       child: Column(
         children: [
           _FieldLabel(t('calorieTarget')),
-          const SizedBox(height: NhamSpacing.sp1),
+          const SizedBox(height: KalloSpacing.sp1),
           Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -605,11 +605,11 @@ class _HeroTarget extends StatelessWidget {
             textAlign: TextAlign.center,
             style: dashMeta(),
           ),
-          const SizedBox(height: NhamSpacing.sp5),
+          const SizedBox(height: KalloSpacing.sp5),
           Container(
-            padding: const EdgeInsets.only(top: NhamSpacing.sp4),
+            padding: const EdgeInsets.only(top: KalloSpacing.sp4),
             decoration: const Border(
-              top: BorderSide(color: NhamColors.accent20),
+              top: BorderSide(color: KalloColors.accent20),
             ).toDecoration(),
             child: Row(
               children: [

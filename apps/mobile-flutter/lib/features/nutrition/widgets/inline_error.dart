@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/nham_text.dart';
+import '../../../shared/widgets/kallo_text.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 
 /// RN port of `apps/mobile/src/components/nutrition/states/inline-error.tsx`.
 class InlineError extends StatefulWidget {
@@ -32,13 +32,13 @@ class _InlineErrorState extends State<InlineError> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NhamColors.borderSoft),
-        color: NhamColors.elev,
+        border: Border.all(color: KalloColors.borderSoft),
+        color: KalloColors.elev,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          NhamText(widget.message, variant: NhamTextVariant.body),
+          KalloText(widget.message, variant: KalloTextVariant.body),
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerLeft,
@@ -72,15 +72,15 @@ class _InlineErrorState extends State<InlineError> {
                     ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: NhamColors.borderSoft),
+                      border: Border.all(color: KalloColors.borderSoft),
                       color:
                           (_pressed && !widget.isRetrying)
-                              ? NhamColors.hover
+                              ? KalloColors.hover
                               : null,
                     ),
-                    child: NhamText(
+                    child: KalloText(
                       widget.retryLabel,
-                      variant: NhamTextVariant.small,
+                      variant: KalloTextVariant.small,
                       style: dashBody(weight: FontWeight.w500),
                     ),
                   ),

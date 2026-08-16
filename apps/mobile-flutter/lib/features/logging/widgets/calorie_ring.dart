@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../features/dashboard/logic/dashboard_format.dart' show formatCount;
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 
 /// The calorie ring fills with CONSUMED calories (`current / target`) — it fills
 /// up as you eat, matching the dashboard ring, the week strip, and the heatmap
@@ -13,7 +13,7 @@ import '../../../theme/nham_colors.dart';
 /// `cubic-bezier(0.16, 1, 0.3, 1)`.
 ///
 /// Over target: the base arc completes in tan, then an overflow arc continues
-/// past 12 o'clock in ~40%-alpha [NhamColors.offTarget] — never red, never a
+/// past 12 o'clock in ~40%-alpha [KalloColors.offTarget] — never red, never a
 /// pill. The default in-ring content shows the calories `left`, flipping to
 /// `over` when past target. [center] overrides that content.
 class CalorieRing extends StatefulWidget {
@@ -135,7 +135,7 @@ class _DefaultCenter extends StatelessWidget {
         Text(
           // Lower-cased explicitly: the strings disagree ("left" vs "Over"),
           // and the uppercase transform that used to hide that lived on the
-          // NhamText eyebrow variant this no longer uses. Lower also keeps
+          // KalloText eyebrow variant this no longer uses. Lower also keeps
           // Vietnamese ("còn lại") well inside the fixed 78px ring, which
           // uppercase at this size would not.
           (over ? tr('dashboard.over') : tr('dashboard.left')).toLowerCase(),
@@ -164,7 +164,7 @@ class _RingPainter extends CustomPainter {
     final track = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
-      ..color = NhamColors.track;
+      ..color = KalloColors.track;
     canvas.drawCircle(center, radius, track);
 
     if (ratio <= 0) return;
@@ -173,7 +173,7 @@ class _RingPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
-      ..color = NhamColors.accent;
+      ..color = KalloColors.accent;
     canvas.drawArc(
       rect,
       _start,
@@ -189,7 +189,7 @@ class _RingPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round
-        ..color = NhamColors.offTarget.withValues(alpha: 0.4);
+        ..color = KalloColors.offTarget.withValues(alpha: 0.4);
       canvas.drawArc(rect, _start, 2 * math.pi * overflow, false, over);
     }
   }

@@ -2,8 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/constants.dart';
 
 /// Mirror of `components/onboarding/screen-body-metrics.tsx` aggression block.
@@ -31,11 +31,11 @@ class AggressionSlider extends StatelessWidget {
 
     return Container(
       // rounded-2xl border #EAE7E0 bg white p-4
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: const EdgeInsets.all(KalloSpacing.sp4),
       decoration: BoxDecoration(
         color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.inputBorder),
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        border: Border.all(color: KalloColors.inputBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -67,10 +67,10 @@ class AggressionSlider extends StatelessWidget {
           // Slider: dark espresso filled track + thumb on #EAE7E0, h-1.5 (6px).
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor: NhamColors.text,
-              inactiveTrackColor: NhamColors.inputBorder,
-              thumbColor: NhamColors.text,
-              overlayColor: NhamColors.text40,
+              activeTrackColor: KalloColors.text,
+              inactiveTrackColor: KalloColors.inputBorder,
+              thumbColor: KalloColors.text,
+              overlayColor: KalloColors.text40,
               trackHeight: 6,
               showValueIndicator: ShowValueIndicator.never,
             ),
@@ -106,12 +106,12 @@ class AggressionSlider extends StatelessWidget {
           // Tinted deficit/surplus info box.
           Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp3,
-              vertical: NhamSpacing.sp2,
+              horizontal: KalloSpacing.sp3,
+              vertical: KalloSpacing.sp2,
             ),
             decoration: BoxDecoration(
-              color: NhamColors.track, // bg-[#F5F4F0]
-              borderRadius: BorderRadius.circular(NhamRadii.md), // rounded-lg
+              color: KalloColors.track, // bg-[#F5F4F0]
+              borderRadius: BorderRadius.circular(KalloRadii.md), // rounded-lg
             ),
             child: Text.rich(
               TextSpan(

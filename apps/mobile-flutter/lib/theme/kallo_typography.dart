@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Font size constants matching the web/RN design system.
-abstract final class NhamFontSize {
+abstract final class KalloFontSize {
   static const double display = 48;
   static const double h1 = 40;
   static const double h2 = 32;
@@ -18,7 +18,7 @@ abstract final class NhamFontSize {
 }
 
 /// Line-height multipliers.
-abstract final class NhamLeading {
+abstract final class KalloLeading {
   static const double display = 1.1;
   static const double tight = 1.2;
   static const double snug = 1.35;
@@ -27,7 +27,7 @@ abstract final class NhamLeading {
 }
 
 /// Letter-spacing values (in logical pixels).
-abstract final class NhamTracking {
+abstract final class KalloTracking {
   static const double eyebrow = 2.0;
   static const double wide = 0.6;
   static const double tight = -0.3;
@@ -41,7 +41,7 @@ abstract final class NhamTracking {
 /// previous DM Sans, whose bundled subset lacked Vietnamese diacritics and made
 /// `phở` / `bún chả` fall back mid-word; Be Vietnam Pro covers the full
 /// Vietnamese set, so all UI text renders in one consistent typeface.
-abstract final class NhamTextStyles {
+abstract final class KalloTextStyles {
   /// The bundled sans family (declared in pubspec `fonts:`).
   static const String sansFamily = 'BeVietnamPro';
 
@@ -105,39 +105,39 @@ abstract final class NhamTextStyles {
   // ── Semantic presets ──────────────────────────────────────────────
 
   static TextStyle displayLarge() => serifRegular(
-    fontSize: NhamFontSize.display,
-    height: NhamLeading.display,
-  ).copyWith(letterSpacing: NhamTracking.display);
+    fontSize: KalloFontSize.display,
+    height: KalloLeading.display,
+  ).copyWith(letterSpacing: KalloTracking.display);
 
   static TextStyle heading1() =>
-      serifRegular(fontSize: NhamFontSize.h1, height: NhamLeading.tight);
+      serifRegular(fontSize: KalloFontSize.h1, height: KalloLeading.tight);
 
   static TextStyle heading2() =>
-      serifRegular(fontSize: NhamFontSize.h2, height: NhamLeading.tight);
+      serifRegular(fontSize: KalloFontSize.h2, height: KalloLeading.tight);
 
   static TextStyle heading3() =>
-      serifMedium(fontSize: NhamFontSize.h3, height: NhamLeading.snug);
+      serifMedium(fontSize: KalloFontSize.h3, height: KalloLeading.snug);
 
   static TextStyle heading4() =>
-      serifMedium(fontSize: NhamFontSize.h4, height: NhamLeading.snug);
+      serifMedium(fontSize: KalloFontSize.h4, height: KalloLeading.snug);
 
   static TextStyle bodyLarge() =>
-      sansRegular(fontSize: NhamFontSize.lg, height: NhamLeading.normal);
+      sansRegular(fontSize: KalloFontSize.lg, height: KalloLeading.normal);
 
   static TextStyle body() =>
-      sansRegular(fontSize: NhamFontSize.md, height: NhamLeading.normal);
+      sansRegular(fontSize: KalloFontSize.md, height: KalloLeading.normal);
 
   static TextStyle bodySmall() =>
-      sansRegular(fontSize: NhamFontSize.sm, height: NhamLeading.normal);
+      sansRegular(fontSize: KalloFontSize.sm, height: KalloLeading.normal);
 
   static TextStyle caption() =>
-      sansRegular(fontSize: NhamFontSize.xs, height: NhamLeading.normal);
+      sansRegular(fontSize: KalloFontSize.xs, height: KalloLeading.normal);
 
   static TextStyle eyebrow() => sansSemiBold(
-    fontSize: NhamFontSize.eyebrow,
-    height: NhamLeading.normal,
-  ).copyWith(letterSpacing: NhamTracking.eyebrow);
+    fontSize: KalloFontSize.eyebrow,
+    height: KalloLeading.normal,
+  ).copyWith(letterSpacing: KalloTracking.eyebrow);
 
   static TextStyle buttonLabel() =>
-      sansSemiBold(fontSize: NhamFontSize.sm, height: NhamLeading.snug);
+      sansSemiBold(fontSize: KalloFontSize.sm, height: KalloLeading.snug);
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../shell/app_header.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// The settings tab's ONE top bar.
 ///
@@ -30,7 +30,7 @@ class SettingsHeader extends StatelessWidget {
     return Padding(
       // The app-wide root inset (dashboard, logging, circle) — the bar starts
       // exactly where every other tab's header does.
-      padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+      padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
       child: AppHeader(
         onBack: onBack ?? () => Navigator.of(context).maybePop(),
         child: Text(

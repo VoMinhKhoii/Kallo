@@ -5,7 +5,7 @@
     Mirrors components/dashboard/today/today-dock.tsx
 */
 function TodayDock({ nutrition, meals, onLogMeal }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
 
   const remaining = Math.max(0, nutrition.calories.target - nutrition.calories.current);
 
@@ -99,7 +99,7 @@ function TodayDock({ nutrition, meals, onLogMeal }) {
 }
 
 function CalorieRing({ current, target, size = 72, strokeWidth = 6 }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.min(1, current / target);
@@ -121,7 +121,7 @@ function CalorieRing({ current, target, size = 72, strokeWidth = 6 }) {
 }
 
 function MacroBar({ label, current, target, color }) {
-  const T = window.NhamTokens;
+  const T = window.KalloTokens;
   const pct = Math.min(100, Math.round((current / target) * 100));
   return (
     <div>

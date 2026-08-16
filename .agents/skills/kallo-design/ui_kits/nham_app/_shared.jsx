@@ -1,6 +1,6 @@
 /* eslint-disable */
 /** Shared tiny helpers used across the kit. */
-const T = window.NhamTokens;
+const T = window.KalloTokens;
 
 /** Lucide icon, declarative. `<Icon name="arrow-up" size={16} />`
     We re-run lucide.createIcons() after each render so the <i> tags

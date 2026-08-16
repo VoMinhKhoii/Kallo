@@ -7,10 +7,10 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/session_provider.dart';
-import '../../../shared/widgets/nham_primitives.dart';
+import '../../../shared/widgets/kallo_primitives.dart';
 import '../../../shared/widgets/scroll_separator.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/countries.dart';
 import '../data/profile_providers.dart';
 import '../logic/settings_spacing.dart';
@@ -296,7 +296,7 @@ class _Centered extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: Padding(
-      padding: const EdgeInsets.all(NhamSpacing.sp6),
+      padding: const EdgeInsets.all(KalloSpacing.sp6),
       child: child,
     ),
   );

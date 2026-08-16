@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/settings_spacing.dart';
 import 'settings_row_leading.dart';
 
 /// Half of the app-wide 12 content inset; the list padding owns the other 4.
 /// See [SettingsSpacing.rowList].
 const double _kRowPadH = SettingsSpacing.rowPadH; // 8
-const double _kRowPadV = NhamSpacing.sp2_5; // 10
-const double _kIconGap = NhamSpacing.sp3; // 12 — icon column → label
+const double _kRowPadV = KalloSpacing.sp2_5; // 10
+const double _kIconGap = KalloSpacing.sp3; // 12 — icon column → label
 
 /// One flat settings row. Covers every row shape:
 ///
@@ -81,11 +81,11 @@ class _SettingsRowState extends State<SettingsRow> {
   Widget build(BuildContext context) {
     // Icon and label are both primary content — one ink (red on a
     // danger row), no press-state colour change.
-    final Color inkColor = widget.danger ? NhamColors.danger : kInk;
+    final Color inkColor = widget.danger ? KalloColors.danger : kInk;
     final Color fill =
         widget.danger
-            ? NhamColors.danger10
-            : NhamColors.pressWash;
+            ? KalloColors.danger10
+            : KalloColors.pressWash;
 
     final row = Container(
       padding: const EdgeInsets.symmetric(
@@ -94,7 +94,7 @@ class _SettingsRowState extends State<SettingsRow> {
       ),
       decoration: BoxDecoration(
         color: _pressed ? fill : Colors.transparent,
-        borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+        borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
       ),
       // The OUTER row stays centred so the chevron / value / switch sits on the
       // row's mid-line, where a trailing control belongs on a two-line row. The

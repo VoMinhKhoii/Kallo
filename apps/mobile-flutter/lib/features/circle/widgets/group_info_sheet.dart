@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/api_client.dart';
-import '../../../shared/widgets/nham_sheet.dart';
-import '../../../shared/widgets/nham_sheet_header.dart';
+import '../../../shared/widgets/kallo_sheet.dart';
+import '../../../shared/widgets/kallo_sheet_header.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/chat_group_providers.dart';
 import '../data/feed_providers.dart';
 import 'group_add_people.dart';
@@ -90,7 +90,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
   }
 
   @override
-  Widget build(BuildContext context) => NhamSheetSurface(
+  Widget build(BuildContext context) => KalloSheetSurface(
     constraints: BoxConstraints(
       maxHeight: MediaQuery.sizeOf(context).height * .9,
     ),
@@ -112,7 +112,7 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
               (group) => Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  NhamSheetHeader(
+                  KalloSheetHeader(
                     titleWidget: _editingName
                         ? Row(
                             children: [
@@ -169,10 +169,10 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                   Flexible(
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(
-                        NhamSpacing.sp5,
-                        NhamSpacing.sp2,
-                        NhamSpacing.sp5,
-                        NhamSpacing.sp5,
+                        KalloSpacing.sp5,
+                        KalloSpacing.sp2,
+                        KalloSpacing.sp5,
+                        KalloSpacing.sp5,
                       ),
                       children: [
                         Text(
@@ -180,11 +180,11 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
                           style: dashMeta(),
                         ),
                         GroupMembersList(group: group),
-                        const SizedBox(height: NhamSpacing.sp4),
+                        const SizedBox(height: KalloSpacing.sp4),
                         Text(tr('groups.info.addPeople'), style: dashMeta()),
-                        const SizedBox(height: NhamSpacing.sp2),
+                        const SizedBox(height: KalloSpacing.sp2),
                         GroupAddPeople(group: group),
-                        const Divider(height: NhamSpacing.sp6, color: kHairline),
+                        const Divider(height: KalloSpacing.sp6, color: kHairline),
                         TextButton.icon(
                           onPressed: _leave,
                           icon: const Icon(LucideIcons.logOut300, size: 16),

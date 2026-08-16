@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../models/relog.dart';
-import '../../../../theme/nham_colors.dart';
+import '../../../../theme/kallo_colors.dart';
 import '../../logic/relog/mentions.dart';
 import '../../logic/relog/slash_token.dart';
 import 'mention_span_builder.dart';
@@ -22,7 +22,7 @@ import 'mention_span_builder.dart';
 /// mention whose text the user broke — that is what stops a half-deleted dish
 /// name from still logging a dish.
 /// A committed pick keeps the `/` it was summoned with (see [mentionPrefix])
-/// and is painted in [NhamColors.mention] — nothing else. No fill, no chip, no
+/// and is painted in [KalloColors.mention] — nothing else. No fill, no chip, no
 /// macro preview: the sentence reads `/Phở bò và 2 quả trứng`, so the token is
 /// visibly a reference rather than prose even before you register the colour.
 class MentionTextEditingController extends TextEditingController {

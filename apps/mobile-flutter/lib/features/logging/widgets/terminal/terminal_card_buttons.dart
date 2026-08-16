@@ -2,8 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 
 /// Solid-umber primary pill for the terminal feed cards — currently the
 /// failed-attempt "Try again". Icon + label, a pressed-state
@@ -56,9 +56,9 @@ class _TerminalPrimaryButtonState extends State<TerminalPrimaryButton> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
             decoration: BoxDecoration(
-              color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-              borderRadius: BorderRadius.circular(NhamRadii.xl),
-              boxShadow: [_pressed ? NhamShadows.md : NhamShadows.sm],
+              color: _pressed ? KalloColors.btnHover : KalloColors.btn,
+              borderRadius: BorderRadius.circular(KalloRadii.xl),
+              boxShadow: [_pressed ? KalloShadows.md : KalloShadows.sm],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -105,8 +105,8 @@ class _TerminalDiscardButtonState extends State<TerminalDiscardButton> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           decoration: BoxDecoration(
-            color: _pressed ? NhamColors.hover : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.xl),
+            color: _pressed ? KalloColors.hover : Colors.transparent,
+            borderRadius: BorderRadius.circular(KalloRadii.xl),
           ),
           child: Text(
             'logging.discard'.tr(),

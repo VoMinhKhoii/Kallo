@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/features/dashboard/logic/dashboard_spacing.dart';
 import 'package:nham_mobile/features/dashboard/widgets/today_macro_rows.dart';
 import 'package:nham_mobile/theme/calm_tokens.dart';
-import 'package:nham_mobile/theme/nham_colors.dart';
+import 'package:nham_mobile/theme/kallo_colors.dart';
 
 Widget _wrap(Widget child, {double textScale = 1.0}) => MaterialApp(
   home: MediaQuery(
@@ -60,8 +60,8 @@ void main() {
     await loader.load();
   });
 
-  const threeDigit = MacroBarData('CARBS', 120, 135, NhamColors.macroCarbs);
-  const fourDigit = MacroBarData('CARBS', 1024, 350, NhamColors.macroCarbs);
+  const threeDigit = MacroBarData('CARBS', 120, 135, KalloColors.macroCarbs);
+  const fourDigit = MacroBarData('CARBS', 1024, 350, KalloColors.macroCarbs);
 
   testWidgets('keeps a three-digit value on one line', (tester) async {
     await _pumpRow(tester, threeDigit);

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/circle.dart';
 import '../../theme/calm_tokens.dart';
-import '../../theme/nham_typography.dart';
+import '../../theme/kallo_typography.dart';
 
 /// Per-person initials-disc tints. A person's seed (or handle) picks one, so
 /// people are visually distinguishable in a list. Mirrors the web feed's
@@ -83,7 +83,7 @@ class _InitialsDisc extends StatelessWidget {
     ),
     child: Text(
       initial,
-      style: NhamTextStyles.sansMedium(
+      style: KalloTextStyles.sansMedium(
         fontSize: size <= 28 ? 10 : 12,
       ).copyWith(color: kInk),
     ),

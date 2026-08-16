@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/meal.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 import '../logic/logging_spacing.dart';
 import 'macro_trio.dart';
 import 'meal_entry_header.dart';
@@ -44,7 +44,7 @@ class MealEntryBody extends StatelessWidget {
   static const Divider _hairline = Divider(
     height: 1,
     thickness: 1,
-    color: NhamColors.borderFaint,
+    color: KalloColors.borderFaint,
   );
 
   @override

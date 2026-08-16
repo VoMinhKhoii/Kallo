@@ -8,16 +8,16 @@ library;
 import 'dart:ui';
 
 import '../../../models/nutrition.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 
 enum StatusKey { onTarget, close, slight, moderate, far }
 
 const Map<StatusKey, Color> kStatusColors = {
-  StatusKey.onTarget: NhamColors.heatmapOnTarget,
-  StatusKey.close: NhamColors.heatmapClose,
-  StatusKey.slight: NhamColors.heatmapSlight,
-  StatusKey.moderate: NhamColors.heatmapModerate,
-  StatusKey.far: NhamColors.heatmapFar,
+  StatusKey.onTarget: KalloColors.heatmapOnTarget,
+  StatusKey.close: KalloColors.heatmapClose,
+  StatusKey.slight: KalloColors.heatmapSlight,
+  StatusKey.moderate: KalloColors.heatmapModerate,
+  StatusKey.far: KalloColors.heatmapFar,
 };
 
 StatusKey statusKeyFor(NutrientCardData card) {

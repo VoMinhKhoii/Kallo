@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// The email submit button.
 ///
@@ -41,7 +41,7 @@ class _AuthSubmitButtonState extends State<AuthSubmitButton> {
   Widget build(BuildContext context) {
     // hover:bg-[#3D3425] → on press lerp the espresso fill toward the hover
     // shade, 200ms.
-    final fill = _pressed ? NhamColors.btnDarkHover2 : NhamColors.text;
+    final fill = _pressed ? KalloColors.btnDarkHover2 : KalloColors.text;
 
     return Opacity(
       opacity: widget.busy ? 0.6 : 1.0,
@@ -54,12 +54,12 @@ class _AuthSubmitButtonState extends State<AuthSubmitButton> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp4,
-            vertical: NhamSpacing.sp3,
+            horizontal: KalloSpacing.sp4,
+            vertical: KalloSpacing.sp3,
           ),
           decoration: BoxDecoration(
             color: fill,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
           ),
           alignment: Alignment.center,
           child: Row(
@@ -72,7 +72,7 @@ class _AuthSubmitButtonState extends State<AuthSubmitButton> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: NhamColors.elev,
+                    color: KalloColors.elev,
                   ),
                 ),
                 const SizedBox(width: 8), // gap-2
@@ -80,7 +80,7 @@ class _AuthSubmitButtonState extends State<AuthSubmitButton> {
               Text(
                 widget.label,
                 style: dashBody(weight: FontWeight.w500)
-                    .copyWith(color: NhamColors.elev, letterSpacing: -0.2),
+                    .copyWith(color: KalloColors.elev, letterSpacing: -0.2),
               ),
             ],
           ),

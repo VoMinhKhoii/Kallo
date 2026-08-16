@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/nham_colors.dart';
+import '../../theme/kallo_colors.dart';
 
 /// RN port of `apps/mobile/src/components/shared/target-progress-bar.tsx`.
 ///
@@ -97,10 +97,10 @@ class _TargetProgressBarState extends State<TargetProgressBar>
   @override
   Widget build(BuildContext context) {
     final fillColor = !_hasValue
-        ? NhamColors.stone50
+        ? KalloColors.stone50
         : widget.showExceed
-            ? NhamColors.offTarget
-            : widget.fillColor ?? NhamColors.text;
+            ? KalloColors.offTarget
+            : widget.fillColor ?? KalloColors.text;
 
     final bar = LayoutBuilder(
       builder: (context, constraints) {
@@ -118,7 +118,7 @@ class _TargetProgressBarState extends State<TargetProgressBar>
                   child: Container(
                     height: 4,
                     decoration: BoxDecoration(
-                      color: NhamColors.track,
+                      color: KalloColors.track,
                       borderRadius: BorderRadius.circular(9999),
                     ),
                   ),
@@ -154,8 +154,8 @@ class _TargetProgressBarState extends State<TargetProgressBar>
                   height: 7,
                   child: ColoredBox(
                     color: widget.showExceed
-                        ? NhamColors.offTarget70
-                        : NhamColors.stone70,
+                        ? KalloColors.offTarget70
+                        : KalloColors.stone70,
                   ),
                 ),
             ],

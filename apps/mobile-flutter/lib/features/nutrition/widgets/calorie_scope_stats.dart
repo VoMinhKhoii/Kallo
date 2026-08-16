@@ -5,7 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/helpers.dart';
 import 'scope_switch.dart';
 
@@ -105,7 +105,7 @@ class CalorieScopeStats extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: NhamSpacing.sp2),
+                  const SizedBox(width: KalloSpacing.sp2),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 2),
                     child: Text(
@@ -114,7 +114,7 @@ class CalorieScopeStats extends StatelessWidget {
                     ),
                   ),
                   if (diff != null) ...[
-                    const SizedBox(width: NhamSpacing.sp2),
+                    const SizedBox(width: KalloSpacing.sp2),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 2),
                       child: _CalorieDelta(diff: diff!, locale: locale),
@@ -125,7 +125,7 @@ class CalorieScopeStats extends StatelessWidget {
             ),
             if (showSwitch)
               Transform.translate(
-                offset: const Offset(NhamSpacing.sp2, -NhamSpacing.sp1),
+                offset: const Offset(KalloSpacing.sp2, -KalloSpacing.sp1),
                 child: ScopeSwitch(onComplete: onComplete, onTap: _toggle),
               ),
           ],

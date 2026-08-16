@@ -2,12 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/calm_tokens.dart';
-import '../theme/nham_colors.dart';
-import '../theme/nham_theme.dart';
+import '../theme/kallo_colors.dart';
+import '../theme/kallo_theme.dart';
 
 /// The drawer's ONE glyph size — nav rows and the footer rows below them,
 /// which import this rather than restating it.
-const double kSidebarIconSize = NhamIcons.size;
+const double kSidebarIconSize = KalloIcons.size;
 
 /// One drawer nav destination — mirrors the web `NavItemConfig`
 /// (`components/app/nav-items.ts`): href, i18n label key, Lucide icon, and the
@@ -29,7 +29,7 @@ class NavItem {
 
 /// A primary nav row, matched to web `mobile-nav-list.tsx`.
 ///
-/// Selected = the warm hover wash (`NhamColors.hover` #F0EAE0) behind `kInk` at
+/// Selected = the warm hover wash (`KalloColors.hover` #F0EAE0) behind `kInk` at
 /// semibold; idle = `kInkMuted` on no fill, with a `pressWash` press animated
 /// over ~150ms (`transition-colors`). Flutter used to invert this — a solid
 /// umber pill with white content and a drop shadow, i.e. the strongest possible
@@ -71,7 +71,7 @@ class _NavRowState extends State<NavRow> {
     // which paints the canvas — the warm wash is lighter than that and would
     // not register, so the press is the neutral ink one.
     final Color? fill =
-        active ? NhamColors.hover : (_pressed ? NhamColors.pressWash : null);
+        active ? KalloColors.hover : (_pressed ? KalloColors.pressWash : null);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -85,7 +85,7 @@ class _NavRowState extends State<NavRow> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: fill,
-          borderRadius: BorderRadius.circular(NhamRadii.md),
+          borderRadius: BorderRadius.circular(KalloRadii.md),
         ),
         child: Row(
           children: [
@@ -107,7 +107,7 @@ class _NavRowState extends State<NavRow> {
                 width: 8,
                 height: 8,
                 decoration: const BoxDecoration(
-                  color: NhamColors.accent,
+                  color: KalloColors.accent,
                   shape: BoxShape.circle,
                 ),
               ),

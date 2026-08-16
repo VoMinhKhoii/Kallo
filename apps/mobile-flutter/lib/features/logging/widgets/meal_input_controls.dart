@@ -10,8 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/logging_spacing.dart';
 
 /// The mode control on the input bar's second line — a minimal icon + label
@@ -53,12 +53,12 @@ class _ComposerModeButtonState extends State<ComposerModeButton> {
               scale: _pressed ? 0.96 : 1,
               duration: const Duration(milliseconds: 200),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp1),
+                padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp1),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(widget.icon,
-                        size: LoggingIcons.size, color: NhamColors.btn),
+                        size: LoggingIcons.size, color: KalloColors.btn),
                     const SizedBox(width: 6),
                     // Regular weight, same as the field's own text.
                     Text(widget.label, style: dashBody(color: kInkMuted)),
@@ -110,7 +110,7 @@ class _ComposerBarcodeButtonState extends State<ComposerBarcodeButton> {
               child: const Icon(
                 LucideIcons.scanBarcode300,
                 size: LoggingIcons.size,
-                color: NhamColors.btn,
+                color: KalloColors.btn,
               ),
             ),
           ),
@@ -173,12 +173,12 @@ class _ComposerActionButtonState extends State<ComposerActionButton> {
                   // Sized off the glyph, not a magic number: the pill has to
                   // keep visible padding around the icon, and the icon is now
                   // the app-wide 24 rather than 16.
-                  width: widget.iconSize + NhamSpacing.sp3,
-                  height: widget.iconSize + NhamSpacing.sp3,
+                  width: widget.iconSize + KalloSpacing.sp3,
+                  height: widget.iconSize + KalloSpacing.sp3,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-                    borderRadius: BorderRadius.circular(NhamRadii.md),
+                    color: _pressed ? KalloColors.btnHover : KalloColors.btn,
+                    borderRadius: BorderRadius.circular(KalloRadii.md),
                   ),
                   child: Icon(
                     widget.icon,

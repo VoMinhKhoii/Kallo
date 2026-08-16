@@ -42,7 +42,7 @@
     "components/dashboard/progress/weight-chart.tsx": 249,
     "components/logging/feed/meal-entry/meal-entry.tsx": 239,
     "apps/mobile-flutter/lib/features/dashboard/widgets/week_strip.dart": 239,
-    "apps/mobile-flutter/lib/shared/widgets/nham_text.dart": 237,
+    "apps/mobile-flutter/lib/shared/widgets/kallo_text.dart": 237,
     "components/logging/input/barcode-scanner-dialog.tsx": 232,
     "apps/mobile-flutter/lib/features/nutrition/widgets/day_summary.dart": 232,
     "apps/mobile-flutter/lib/features/logging/widgets/partial_yesterday_prompt.dart": 229,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../shared/widgets/kallo_text.dart';
+import '../../../theme/kallo_theme.dart';
 import 'meal_entry_edit_pill.dart';
 
 /// The unconfirmed card's top line: what the user typed, and the Edit ↔ Done
@@ -28,9 +28,9 @@ class MealEntryHeader extends StatelessWidget {
       children: [
         if (rawInput.isNotEmpty)
           Expanded(
-            child: NhamText(
+            child: KalloText(
               rawInput,
-              variant: NhamTextVariant.mealQuote,
+              variant: KalloTextVariant.mealQuote,
               style: const TextStyle(
                 fontSize: 17,
                 height: 1.625, // leading-relaxed
@@ -39,7 +39,7 @@ class MealEntryHeader extends StatelessWidget {
           )
         else
           const Spacer(),
-        const SizedBox(width: NhamSpacing.sp2),
+        const SizedBox(width: KalloSpacing.sp2),
         MealEntryEditPill(editing: editing, onTap: onToggleEditing),
       ],
     );

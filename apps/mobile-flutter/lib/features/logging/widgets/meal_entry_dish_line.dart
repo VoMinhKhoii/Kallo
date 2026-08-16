@@ -3,7 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/meal.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/logging_spacing.dart';
 import '../logic/meal_utils.dart';
 import 'macro_trio.dart';
@@ -63,7 +63,7 @@ class MealEntryDishLine extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: NhamSpacing.sp3), // gap-3
+          const SizedBox(width: KalloSpacing.sp3), // gap-3
           // The SHARED trio, not a hand-rolled Row. Content-sized cells put
           // `C:` at a different x on every row — `P: 0g` and `P: 49g` are not
           // the same width — so a card of items read as ragged. MacroTrio pins

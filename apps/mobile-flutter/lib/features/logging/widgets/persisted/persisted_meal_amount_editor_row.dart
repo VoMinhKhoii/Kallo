@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../logic/amount_editor_totals.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_utils.dart';
@@ -56,7 +56,7 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: NhamSpacing.sp2),
+            const SizedBox(width: KalloSpacing.sp2),
             if (showSteppers) ...[
               MealStepperButton(
                 icon: LucideIcons.minus300,
@@ -135,7 +135,7 @@ class _RemoveToggle extends StatelessWidget {
             child: Icon(
               LucideIcons.x300,
               size: LoggingIcons.size,
-              color: removed ? NhamColors.danger : NhamColors.text,
+              color: removed ? KalloColors.danger : KalloColors.text,
             ),
           ),
         ),

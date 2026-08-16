@@ -5,8 +5,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../features/circle/data/circle_providers.dart';
 import '../features/onboarding/providers/onboarding_providers.dart';
-import '../theme/nham_colors.dart';
-import '../theme/nham_theme.dart';
+import '../theme/kallo_colors.dart';
+import '../theme/kallo_theme.dart';
 import 'app_header_back_button.dart';
 import 'app_header_status_dots.dart';
 import 'tab_scaffold.dart';
@@ -42,7 +42,7 @@ class AppHeader extends StatelessWidget {
         onBack != null ? AppHeaderBackButton(onBack: onBack!) : const AppMenuButton();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp1),
+      padding: const EdgeInsets.only(bottom: KalloSpacing.sp1),
       child: Row(
         children: [
           leading,
@@ -109,13 +109,13 @@ class _AppMenuButtonState extends ConsumerState<AppMenuButton> {
                   height: 36,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: _pressed ? NhamColors.pressWash : null,
-                    borderRadius: BorderRadius.circular(NhamRadii.sm),
+                    color: _pressed ? KalloColors.pressWash : null,
+                    borderRadius: BorderRadius.circular(KalloRadii.sm),
                   ),
                   child: const Icon(
                     LucideIcons.menu300,
-                    size: NhamIcons.size,
-                    color: NhamColors.text,
+                    size: KalloIcons.size,
+                    color: KalloColors.text,
                   ),
                 ),
                 if (onboardingIncomplete)

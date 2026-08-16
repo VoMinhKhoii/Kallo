@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../shared/widgets/widgets.dart';
 import '../theme/calm_tokens.dart';
-import '../theme/nham_theme.dart';
+import '../theme/kallo_theme.dart';
 import 'app_header.dart';
 
 /// Stand-in surface for nav destinations whose feature screens don't exist in
@@ -23,7 +23,7 @@ class PlaceholderScreen extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
             // Back affordance: a deep link can land here directly, so the
             // header must always offer a way out (pop if possible, else home).
             child: AppHeader(

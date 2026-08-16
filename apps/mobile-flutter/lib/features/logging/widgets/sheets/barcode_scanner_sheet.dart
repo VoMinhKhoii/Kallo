@@ -5,12 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../../../shared/widgets/nham_sheet.dart';
-import '../../../../shared/widgets/nham_sheet_header.dart';
-import '../../../../shared/widgets/nham_text.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
-import '../../../../theme/nham_typography.dart';
+import '../../../../shared/widgets/kallo_sheet.dart';
+import '../../../../shared/widgets/kallo_sheet_header.dart';
+import '../../../../shared/widgets/kallo_text.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
+import '../../../../theme/kallo_typography.dart';
 import '../../data/barcode_providers.dart';
 import 'barcode_product_step.dart';
 
@@ -165,12 +165,12 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
         ignoring: saving,
         child: Padding(
           padding: EdgeInsets.only(bottom: keyboardInset),
-          child: NhamSheetSurface(
+          child: KalloSheetSurface(
             constraints: BoxConstraints(maxHeight: maxHeight),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                NhamSheetHeader(
+                KalloSheetHeader(
                   title: 'logging.barcode.title'.tr(),
                   subtitle: 'logging.barcode.subtitle'.tr(),
                   closeEnabled: !saving,
@@ -257,15 +257,15 @@ class _ScannerView extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
-        NhamSpacing.sp2,
-        NhamSpacing.sp4,
-        bottomInset + NhamSpacing.sp3,
+        KalloSpacing.sp4,
+        KalloSpacing.sp2,
+        KalloSpacing.sp4,
+        bottomInset + KalloSpacing.sp3,
       ),
       child: Column(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+            borderRadius: BorderRadius.circular(KalloRadii.containerLg),
             child: AspectRatio(
               aspectRatio: 3 / 4,
               child: LayoutBuilder(
@@ -301,8 +301,8 @@ class _ScannerView extends StatelessWidget {
                       ),
                       // Torch toggle, bottom-right of the viewport.
                       Positioned(
-                        right: NhamSpacing.sp3,
-                        bottom: NhamSpacing.sp3,
+                        right: KalloSpacing.sp3,
+                        bottom: KalloSpacing.sp3,
                         child: _TorchButton(controller: controller),
                       ),
                     ],
@@ -311,13 +311,13 @@ class _ScannerView extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
-          NhamText(
+          const SizedBox(height: KalloSpacing.sp3),
+          KalloText(
             'logging.barcode.scanning'.tr(),
-            variant: NhamTextVariant.small,
-            style: const TextStyle(color: NhamColors.textMuted),
+            variant: KalloTextVariant.small,
+            style: const TextStyle(color: KalloColors.textMuted),
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           _QuietButton(
             icon: LucideIcons.keyboard300,
             label: 'logging.barcode.manualEntry'.tr(),
@@ -356,7 +356,7 @@ class _ScanFramePainter extends CustomPainter {
     // Corner brackets in the signature tan.
     final bracket =
         Paint()
-          ..color = NhamColors.accent
+          ..color = KalloColors.accent
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3
           ..strokeCap = StrokeCap.round;
@@ -438,7 +438,7 @@ class _TorchButton extends StatelessWidget {
               decoration: BoxDecoration(
                 color:
                     on
-                        ? NhamColors.accent
+                        ? KalloColors.accent
                         : Colors.black.withValues(alpha: 0.35),
                 shape: BoxShape.circle,
               ),
@@ -468,27 +468,27 @@ class _CameraErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     final denied = error.errorCode == MobileScannerErrorCode.permissionDenied;
     return Container(
-      color: NhamColors.elev,
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      color: KalloColors.elev,
+      padding: const EdgeInsets.all(KalloSpacing.sp4),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             denied ? LucideIcons.cameraOff300 : LucideIcons.camera300,
             size: 28,
-            color: NhamColors.danger,
+            color: KalloColors.danger,
           ),
-          const SizedBox(height: NhamSpacing.sp2),
-          NhamText(
+          const SizedBox(height: KalloSpacing.sp2),
+          KalloText(
             (denied
                     ? 'logging.barcode.cameraDenied'
                     : 'logging.barcode.cameraError')
                 .tr(),
-            variant: NhamTextVariant.small,
+            variant: KalloTextVariant.small,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: NhamColors.textMuted),
+            style: const TextStyle(color: KalloColors.textMuted),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
           _QuietButton(
             icon: LucideIcons.keyboard300,
             label: 'logging.barcode.manualEntry'.tr(),
@@ -516,10 +516,10 @@ class _ManualEntryView extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
-        NhamSpacing.sp2,
-        NhamSpacing.sp4,
-        bottomInset + NhamSpacing.sp3,
+        KalloSpacing.sp4,
+        KalloSpacing.sp2,
+        KalloSpacing.sp4,
+        bottomInset + KalloSpacing.sp3,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -530,35 +530,35 @@ class _ManualEntryView extends StatelessWidget {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onSubmitted: (_) => onSubmit(),
-            style: NhamTextStyles.sansRegular(
-              fontSize: NhamFontSize.sm,
-            ).copyWith(color: NhamColors.text),
-            cursorColor: NhamColors.accent,
+            style: KalloTextStyles.sansRegular(
+              fontSize: KalloFontSize.sm,
+            ).copyWith(color: KalloColors.text),
+            cursorColor: KalloColors.accent,
             decoration: InputDecoration(
               isDense: true,
               prefixIcon: const Icon(
                 LucideIcons.scanBarcode300,
                 size: 18,
-                color: NhamColors.textMuted,
+                color: KalloColors.textMuted,
               ),
               hintText: 'logging.barcode.placeholder'.tr(),
-              hintStyle: NhamTextStyles.sansRegular(
-                fontSize: NhamFontSize.sm,
-              ).copyWith(color: NhamColors.placeholderMuted40),
+              hintStyle: KalloTextStyles.sansRegular(
+                fontSize: KalloFontSize.sm,
+              ).copyWith(color: KalloColors.placeholderMuted40),
               filled: true,
-              fillColor: NhamColors.elev,
+              fillColor: KalloColors.elev,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: NhamSpacing.sp3,
-                vertical: NhamSpacing.sp2,
+                horizontal: KalloSpacing.sp3,
+                vertical: KalloSpacing.sp2,
               ),
-              border: _border(NhamColors.inputBorder),
-              enabledBorder: _border(NhamColors.inputBorder),
-              focusedBorder: _border(NhamColors.borderAccent40),
+              border: _border(KalloColors.inputBorder),
+              enabledBorder: _border(KalloColors.inputBorder),
+              focusedBorder: _border(KalloColors.borderAccent40),
             ),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
           _PrimaryButton(label: 'logging.barcode.search'.tr(), onTap: onSubmit),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Center(
             child: _QuietButton(
               icon: LucideIcons.camera300,
@@ -572,7 +572,7 @@ class _ManualEntryView extends StatelessWidget {
   }
 
   OutlineInputBorder _border(Color color) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(NhamRadii.lg),
+    borderRadius: BorderRadius.circular(KalloRadii.lg),
     borderSide: BorderSide(color: color),
   );
 }
@@ -585,10 +585,10 @@ class _SearchingView extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
-        NhamSpacing.sp6,
-        NhamSpacing.sp4,
-        bottomInset + NhamSpacing.sp6,
+        KalloSpacing.sp4,
+        KalloSpacing.sp6,
+        KalloSpacing.sp4,
+        bottomInset + KalloSpacing.sp6,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -598,14 +598,14 @@ class _SearchingView extends StatelessWidget {
             height: 22,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: NhamColors.accent,
+              color: KalloColors.accent,
             ),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
-          NhamText(
+          const SizedBox(height: KalloSpacing.sp3),
+          KalloText(
             'logging.barcode.searching'.tr(),
-            variant: NhamTextVariant.small,
-            style: const TextStyle(color: NhamColors.textMuted),
+            variant: KalloTextVariant.small,
+            style: const TextStyle(color: KalloColors.textMuted),
           ),
         ],
       ),
@@ -636,21 +636,21 @@ class _ErrorCard extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
-        NhamSpacing.sp2,
-        NhamSpacing.sp4,
-        bottomInset + NhamSpacing.sp3,
+        KalloSpacing.sp4,
+        KalloSpacing.sp2,
+        KalloSpacing.sp4,
+        bottomInset + KalloSpacing.sp3,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.all(NhamSpacing.sp3),
+            padding: const EdgeInsets.all(KalloSpacing.sp3),
             decoration: BoxDecoration(
-              color: NhamColors.danger.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+              color: KalloColors.danger.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(KalloRadii.containerLg),
               border: Border.all(
-                color: NhamColors.danger.withValues(alpha: 0.35),
+                color: KalloColors.danger.withValues(alpha: 0.35),
               ),
             ),
             child: Column(
@@ -661,42 +661,42 @@ class _ErrorCard extends StatelessWidget {
                     const Icon(
                       LucideIcons.scanBarcode300,
                       size: 18,
-                      color: NhamColors.danger,
+                      color: KalloColors.danger,
                     ),
-                    const SizedBox(width: NhamSpacing.sp2),
+                    const SizedBox(width: KalloSpacing.sp2),
                     Expanded(
-                      child: NhamText(
+                      child: KalloText(
                         message,
-                        variant: NhamTextVariant.body,
-                        style: const TextStyle(color: NhamColors.text),
+                        variant: KalloTextVariant.body,
+                        style: const TextStyle(color: KalloColors.text),
                       ),
                     ),
                   ],
                 ),
                 if (barcode != null && barcode!.isNotEmpty) ...[
-                  const SizedBox(height: NhamSpacing.sp1),
-                  NhamText(
+                  const SizedBox(height: KalloSpacing.sp1),
+                  KalloText(
                     barcode!,
-                    variant: NhamTextVariant.numCaption,
-                    style: const TextStyle(color: NhamColors.textMuted),
+                    variant: KalloTextVariant.numCaption,
+                    style: const TextStyle(color: KalloColors.textMuted),
                   ),
                 ],
               ],
             ),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
           _PrimaryButton(
             label: 'logging.barcode.scanAgain'.tr(),
             onTap: onScanAgain,
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           if (showDescribeFallback) ...[
             _OutlineButton(
               icon: LucideIcons.pencilLine300,
               label: 'logging.barcode.logByText'.tr(),
               onTap: onDescribeInstead,
             ),
-            const SizedBox(height: NhamSpacing.sp2),
+            const SizedBox(height: KalloSpacing.sp2),
           ],
           Center(
             child: _QuietButton(
@@ -746,15 +746,15 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
           duration: const Duration(milliseconds: 150),
           child: Container(
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
+            padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3),
             decoration: BoxDecoration(
-              color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-              borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+              color: _pressed ? KalloColors.btnHover : KalloColors.btn,
+              borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
             ),
             child: Text(
               widget.label,
-              style: NhamTextStyles.sansSemiBold(
-                fontSize: NhamFontSize.sm,
+              style: KalloTextStyles.sansSemiBold(
+                fontSize: KalloFontSize.sm,
               ).copyWith(color: Colors.white),
             ),
           ),
@@ -787,22 +787,22 @@ class _OutlineButton extends StatelessWidget {
         },
         child: Container(
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
+          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3),
           decoration: BoxDecoration(
-            color: NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            border: Border.all(color: NhamColors.border),
+            color: KalloColors.elev,
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+            border: Border.all(color: KalloColors.border),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: NhamColors.text),
+              Icon(icon, size: 16, color: KalloColors.text),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: NhamColors.text),
+                style: KalloTextStyles.sansMedium(
+                  fontSize: KalloFontSize.sm,
+                ).copyWith(color: KalloColors.text),
               ),
             ],
           ),
@@ -839,13 +839,13 @@ class _QuietButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: NhamColors.textMuted),
+              Icon(icon, size: 16, color: KalloColors.textMuted),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: NhamColors.textMuted),
+                style: KalloTextStyles.sansMedium(
+                  fontSize: KalloFontSize.sm,
+                ).copyWith(color: KalloColors.textMuted),
               ),
             ],
           ),

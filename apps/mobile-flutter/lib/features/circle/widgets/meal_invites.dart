@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/widgets/nham_text.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../shared/widgets/kallo_text.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 import '../data/circle_providers.dart';
 import 'invite_card.dart';
 
@@ -22,14 +22,14 @@ class MealInvitesSection extends ConsumerWidget {
       // A failed fetch must not read as "no invites" — a quiet, tappable retry.
       error:
           (_, __) => Padding(
-            padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
+            padding: const EdgeInsets.only(bottom: KalloSpacing.sp4),
             child: GestureDetector(
               onTap: () => ref.invalidate(mealShareInvitesProvider),
               child: Text(
                 tr('groups.invites.loadError'),
-                style: NhamTextStyles.sansRegular(
-                  fontSize: NhamFontSize.xs,
-                ).copyWith(color: NhamColors.textMuted),
+                style: KalloTextStyles.sansRegular(
+                  fontSize: KalloFontSize.xs,
+                ).copyWith(color: KalloColors.textMuted),
               ),
             ),
           ),
@@ -38,16 +38,16 @@ class MealInvitesSection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            NhamText(
+            KalloText(
               tr('groups.invites.title'),
-              variant: NhamTextVariant.eyebrow,
+              variant: KalloTextVariant.eyebrow,
             ),
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: KalloSpacing.sp3),
             for (final invite in invites) ...[
               InviteCard(invite: invite),
-              const SizedBox(height: NhamSpacing.sp3),
+              const SizedBox(height: KalloSpacing.sp3),
             ],
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: KalloSpacing.sp3),
           ],
         );
       },

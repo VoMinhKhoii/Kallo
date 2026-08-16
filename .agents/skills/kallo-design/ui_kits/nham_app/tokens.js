@@ -2,7 +2,7 @@
 // Shared design tokens for the Kallo UI kit.
 // Mirrors the --kallo-* CSS custom properties in colors_and_type.css
 // so JSX inline styles don't have to hardcode hex values.
-window.NhamTokens = {
+window.KalloTokens = {
   color: {
     surface:    "#fefbf6",
     elev:       "#ffffff",

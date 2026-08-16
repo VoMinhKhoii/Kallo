@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../../../models/onboarding.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../controls/option_strip.dart';
 import '../widgets/profile_form_controller.dart';
 
@@ -80,7 +80,7 @@ class Cooking extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < fields.length; i++) ...[
-          if (i > 0) const SizedBox(height: NhamSpacing.sp6),
+          if (i > 0) const SizedBox(height: KalloSpacing.sp6),
           _CookingCard(field: fields[i]),
         ],
       ],
@@ -108,11 +108,11 @@ class _CookingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      padding: const EdgeInsets.all(KalloSpacing.sp4),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.inputBorder),
+        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        border: Border.all(color: KalloColors.inputBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -121,7 +121,7 @@ class _CookingCard extends StatelessWidget {
             field.label,
             style: dashBody(weight: FontWeight.w500),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
           OptionStrip(
             options: field.options,
             value: field.value,

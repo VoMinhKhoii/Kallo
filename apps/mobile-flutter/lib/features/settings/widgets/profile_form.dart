@@ -10,8 +10,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../features/logging/widgets/count_up.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/profile_providers.dart';
 import '../logic/profile_payload.dart';
 import '../panels/body_metrics.dart';
@@ -120,28 +120,28 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
         children: [
           ListView(
             padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp3, // the app-wide 12 content inset
-              NhamSpacing.sp2,
-              NhamSpacing.sp3,
-              NhamSpacing.sp16,
+              KalloSpacing.sp3, // the app-wide 12 content inset
+              KalloSpacing.sp2,
+              KalloSpacing.sp3,
+              KalloSpacing.sp16,
             ),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             children: [
               // No title here — it lives in the header bar. This is the
               // subtitle that used to sit under it.
               Padding(
-                padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
+                padding: const EdgeInsets.only(bottom: KalloSpacing.sp4),
                 child: Text(
                   tr('settings.profilePanel.bodyMetricsSubtitle'),
                   style: dashMeta(),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.all(NhamSpacing.sp3),
+                padding: const EdgeInsets.all(KalloSpacing.sp3),
                 decoration: BoxDecoration(
-                  color: NhamColors.cream,
-                  borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-                  border: Border.all(color: NhamColors.inputBorder),
+                  color: KalloColors.cream,
+                  borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+                  border: Border.all(color: KalloColors.inputBorder),
                 ),
                 child: const BodyMetrics(),
               ),
@@ -237,10 +237,10 @@ class _SaveBarState extends State<_SaveBar>
             // pb-3 (12) floats the card above the bottom edge; sm:px parity →
             // px-5 (20) on mobile.
             padding: EdgeInsets.fromLTRB(
-              NhamSpacing.sp5,
+              KalloSpacing.sp5,
               0,
-              NhamSpacing.sp5,
-              bottomInset + NhamSpacing.sp3,
+              KalloSpacing.sp5,
+              bottomInset + KalloSpacing.sp3,
             ),
             child: Stack(
               children: [
@@ -248,7 +248,7 @@ class _SaveBarState extends State<_SaveBar>
                 const Positioned(
                   left: 0,
                   right: 0,
-                  top: -NhamSpacing.sp8,
+                  top: -KalloSpacing.sp8,
                   bottom: 0,
                   child: IgnorePointer(
                     child: DecoratedBox(
@@ -257,9 +257,9 @@ class _SaveBarState extends State<_SaveBar>
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                           colors: [
-                            NhamColors.surface,
-                            NhamColors.surface,
-                            NhamColors.surface0,
+                            KalloColors.surface,
+                            KalloColors.surface,
+                            KalloColors.surface0,
                           ],
                           stops: [0, 0.55, 1], // from-55%
                         ),
@@ -306,18 +306,18 @@ class _BackdropCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(NhamRadii.containerLg), // rounded-2xl
+      borderRadius: BorderRadius.circular(KalloRadii.containerLg), // rounded-2xl
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // backdrop-blur-sm
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp5, // px-5
+            horizontal: KalloSpacing.sp5, // px-5
             vertical: 14, // py-3.5
           ),
           decoration: BoxDecoration(
-            color: NhamColors.cream95,
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-            border: Border.all(color: NhamColors.inputBorder),
+            color: KalloColors.cream95,
+            borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+            border: Border.all(color: KalloColors.inputBorder),
             boxShadow: const [
               // shadow-lg
               BoxShadow(
@@ -343,11 +343,11 @@ class _BackdropCard extends StatelessWidget {
                   children: [
                     if (errorText != null)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
+                        padding: const EdgeInsets.only(bottom: KalloSpacing.sp2),
                         child: Text(
                           errorText!,
                           textAlign: TextAlign.right,
-                          style: dashMeta(color: NhamColors.danger),
+                          style: dashMeta(color: KalloColors.danger),
                         ),
                       ),
                     Row(
@@ -357,7 +357,7 @@ class _BackdropCard extends StatelessWidget {
                           label: tr('common.cancel'),
                           onTap: saving ? null : onCancel,
                         ),
-                        const SizedBox(width: NhamSpacing.sp3),
+                        const SizedBox(width: KalloSpacing.sp3),
                         _SaveButton(
                           saving: saving,
                           onTap: saving ? null : onSave,
@@ -395,12 +395,12 @@ class _GhostButtonState extends State<_GhostButton> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150), // transition-colors
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp5, // px-5
+          horizontal: KalloSpacing.sp5, // px-5
           vertical: 10, // py-2.5
         ),
         decoration: BoxDecoration(
-          color: _pressed ? NhamColors.track : Colors.transparent,
-          borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // rounded-xl
+          color: _pressed ? KalloColors.track : Colors.transparent,
+          borderRadius: BorderRadius.circular(KalloRadii.buttonXl), // rounded-xl
         ),
         child: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 150),
@@ -437,7 +437,7 @@ class _SavedConfirmation extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        const Icon(LucideIcons.check300, size: 16, color: NhamColors.success),
+        const Icon(LucideIcons.check300, size: 16, color: KalloColors.success),
         const SizedBox(width: 8),
         Text(
           tr('settings.saved'),
@@ -447,7 +447,7 @@ class _SavedConfirmation extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             '·',
-            style: dashBody(weight: FontWeight.w500, color: NhamColors.border),
+            style: dashBody(weight: FontWeight.w500, color: KalloColors.border),
           ),
         ),
         CountUpText(
@@ -490,13 +490,13 @@ class _SaveButtonState extends State<_SaveButton> {
           constraints: const BoxConstraints(minWidth: 88),
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp5, // px-5
+            horizontal: KalloSpacing.sp5, // px-5
             vertical: 10, // py-2.5
           ),
           decoration: BoxDecoration(
-            color: _pressed ? NhamColors.btnDarkHover : NhamColors.text,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // rounded-xl
-            boxShadow: const [NhamShadows.sm],
+            color: _pressed ? KalloColors.btnDarkHover : KalloColors.text,
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl), // rounded-xl
+            boxShadow: const [KalloShadows.sm],
           ),
           child: widget.saving
               ? const SizedBox(
@@ -504,12 +504,12 @@ class _SaveButtonState extends State<_SaveButton> {
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(NhamColors.cream),
+                    valueColor: AlwaysStoppedAnimation(KalloColors.cream),
                   ),
                 )
               : Text(
                   tr('settings.save'),
-                  style: dashBody(weight: FontWeight.w500, color: NhamColors.cream),
+                  style: dashBody(weight: FontWeight.w500, color: KalloColors.cream),
                 ),
         ),
       ),

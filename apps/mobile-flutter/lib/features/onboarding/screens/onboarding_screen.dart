@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 import '../providers/onboarding_providers.dart';
 import '../widgets/onboarding_wizard.dart';
 
@@ -21,7 +21,7 @@ class OnboardingScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: NhamColors.cream,
+      backgroundColor: KalloColors.cream,
       body: SafeArea(
         child: OnboardingWizard(
           onComplete: () => context.go('/welcome'),
