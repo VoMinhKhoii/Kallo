@@ -104,7 +104,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         '--pdf',
-        default='VTN FCT 2007.pdf',
+        default='data/vtn_fct_2007/source/VTN FCT 2007.pdf',
         help='Path to source PDF.',
     )
     parser.add_argument(

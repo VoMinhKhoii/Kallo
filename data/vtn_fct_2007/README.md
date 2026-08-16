@@ -8,6 +8,10 @@ This folder stores extraction-first artifacts for FAO Vietnam Food Composition T
 - No Supabase table creation
 - No database write operations
 
+## Source
+
+- `source/VTN FCT 2007.pdf` — the input the scripts below read (default `--pdf`).
+
 ## Scripts
 
 - `python3 scripts/vtn_fct/extract_vtn_fct_2007.py`

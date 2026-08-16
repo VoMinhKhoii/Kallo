@@ -49,12 +49,12 @@ matches everywhere.
 ```bash
 # Full extraction (no OCR)
 python3 scripts/vtn_fct/extract_vtn_fct_2007.py \
-  --pdf "VTN FCT 2007.pdf" \
+  --pdf "data/vtn_fct_2007/source/VTN FCT 2007.pdf" \
   --out data/vtn_fct_2007
 
 # With OCR header fallback for mojibake repair
 python3 scripts/vtn_fct/extract_vtn_fct_2007.py \
-  --pdf "VTN FCT 2007.pdf" \
+  --pdf "data/vtn_fct_2007/source/VTN FCT 2007.pdf" \
   --out data/vtn_fct_2007 \
   --ocr-header-fallback
 

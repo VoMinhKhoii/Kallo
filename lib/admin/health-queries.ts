@@ -1,13 +1,8 @@
 import { and, count, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
-import { z } from 'zod';
 
 import type { AppDb } from '@/lib/db';
 import { pipelineRequests } from '@/lib/db/schema';
 import { REPLAY_EXCLUSION } from './queries';
-
-// ─── Filters schema ───────────────────────────────────────────────────────────
-
-const _uuidSchema = z.string().uuid();
 
 export interface HealthAggregates {
   successRate24h: number | null;

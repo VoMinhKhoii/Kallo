@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 import { ButtonsSection } from '@/components/design-system/buttons-section';
 import { ColorsSection } from '@/components/design-system/colors-section';
@@ -22,8 +23,8 @@ const TOC = [
 /**
  * Living style guide for the small stuff — typography ramp, spacing rhythm,
  * radii, warm shadows, and the button table — rendered by the exact tokens
- * production uses (app/globals.css + components/ui/button.tsx). Unlisted
- * and noindexed, like the design-lab routes. The full brand guide lives in
+ * production uses (app/globals.css + components/ui/button.tsx). Development
+ * only — it 404s in production builds. The full brand guide lives in
  * .agents/skills/nham-design/.
  */
 export default async function DesignSystemPage({
@@ -31,6 +32,8 @@ export default async function DesignSystemPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
+  if (process.env.NODE_ENV === 'production') notFound();
+
   const { locale } = await params;
   setRequestLocale(locale);
 

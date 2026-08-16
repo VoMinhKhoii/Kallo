@@ -6,7 +6,7 @@ import {
   formatCaloriesValue,
   formatMacroValue,
 } from '@/components/logging/feed/format-inline-nutrition';
-import { MealEntryItemSkeleton } from '@/components/logging/feed/skeletons';
+import { MealEntryItemSkeleton } from '@/components/logging/feed/skeletons/meal-entry-item-skeleton';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { loaderIndexForKey } from '@/components/shared/loaders/registry';
 import { StreamTicker } from '@/components/shared/stream-ticker/stream-ticker';

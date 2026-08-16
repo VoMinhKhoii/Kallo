@@ -44,7 +44,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/.planning
 supabase/.temp/
 __pycache__/
 
@@ -67,9 +66,14 @@ scripts/enrich/out/*
 !scripts/enrich/out/dups.csv
 !scripts/enrich/out/manifest.json
 
-# Local git worktrees
+# Local git worktrees — hundreds of thousands of files, each a full checkout.
 .worktrees/
+.claude/worktrees/
 .gstack/
+
+# Per-developer agent scratch state (Codex CLI, context captures) — noise, not source.
+.codex/
+.context/
 
 # Local Claude Code MCP server config (no secrets, but per-developer)
 .mcp.json
@@ -90,4 +94,6 @@ scripts/eval/reports/
 # Anchored to this directory, so the hand-authored fixtures under
 # scripts/eval/fixtures/ stay tracked — they are source, these are output.
 scripts/eval/*.json
+
+# One-off local eval harnesses — throwaway probes, not a shared entry point.
 scripts/eval/*.local.ts

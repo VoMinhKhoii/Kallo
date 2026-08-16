@@ -7,13 +7,11 @@ import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { OAuthErrorToast } from '@/components/auth/oauth-error-toast';
 import { DocsFooter } from '@/components/docs/docs-footer';
-import {
-  AmbientWash,
-  Header,
-  MealCardHero,
-  PricingSection,
-  UnderstandingSection,
-} from '@/components/landing-page';
+import { AmbientWash } from '@/components/landing-page/ambient-wash';
+import { Header } from '@/components/landing-page/header';
+import { MealCardHero } from '@/components/landing-page/hero/meal-card-hero';
+import { PricingSection } from '@/components/landing-page/pricing/pricing-section';
+import { UnderstandingSection } from '@/components/landing-page/understanding/understanding-section';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
 import type { Locale } from '@/i18n/config';
 import { routing } from '@/i18n/navigation';
