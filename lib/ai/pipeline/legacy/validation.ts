@@ -1,15 +1,16 @@
-import { convertCookedToRaw, MAX_KCAL_PER_100G } from '@/lib/ai/constants';
 import {
   ingredientDisplayName,
   ingredientGrams,
 } from '@/lib/ai/pipeline/contracts/ingredient-accessors';
+import { MAX_KCAL_PER_100G } from '@/lib/ai/pipeline/contracts/nutrition-limits';
+import { convertCookedToRaw } from '@/lib/ai/portion/cooked-to-raw';
+import type { DecomposedMealItem } from '@/lib/ai/types/decomposition';
 import type {
-  DecomposedMealItem,
   MatchedIngredient,
-  NutritionAdjustment,
-  PipelineResult,
   UnmatchedIngredient,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/matching';
+import type { NutritionAdjustment } from '@/lib/ai/types/nutrition-adjustment';
+import type { PipelineResult } from '@/lib/ai/types/result';
 
 // ---------------------------------------------------------------------------
 // Thresholds (exported for test assertions)
@@ -17,7 +18,7 @@ import type {
 
 export const THRESHOLDS = {
   /** No ingredient can exceed pure fat energy density. Re-exported from
-   *  `lib/ai/constants.ts` so the validator and the resolver share one value. */
+   *  `lib/ai/pipeline/contracts/nutrition-limits.ts` so the validator and the resolver share one value. */
   MAX_KCAL_PER_100G,
   /** Spec §1.4 — per-100g macro caps; high bound triggers the envelope. */
   DENSITY_PROTEIN_PER_100G_MAX: 100,

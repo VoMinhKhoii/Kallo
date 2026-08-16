@@ -17,18 +17,18 @@
  * `ensureIdsOnDecomposition` has run.
  */
 
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type {
   DecomposedDishV2,
   DecomposedIngredientV2,
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { PortionResolution } from '@/lib/ai/portion/types';
+import type { DecomposedIngredient } from '@/lib/ai/types/decomposition';
 import type {
-  DecomposedIngredient,
   MatchedIngredient,
   UnmatchedIngredient,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/matching';
 import type { RawNutritionAdjustment } from './macro-resolution';
 import {
   resolveMacroSource,

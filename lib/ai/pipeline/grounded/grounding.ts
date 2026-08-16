@@ -5,11 +5,10 @@
  * streaming or telemetry entanglement beyond the matching stage log.
  */
 
-import type { GeminiClient } from '@/lib/ai/gemini';
 import {
   type IngredientV2MatchResult,
   matchTopKPerIngredient,
-} from '@/lib/ai/matching/top-k-cascade';
+} from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
@@ -18,10 +17,11 @@ import type { PortionResolution } from '@/lib/ai/portion/types';
 import {
   resolveVesselEnvelope,
   type VesselEnvelope,
-} from '@/lib/ai/portion/vessel-envelope';
-import type { MealItemWithCandidates } from '@/lib/ai/prompts/grounded-estimation';
+} from '@/lib/ai/portion/vessel/envelope';
+import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { withDeadline } from '@/lib/async/with-deadline';
 import type { AppDb } from '@/lib/db';
 import { withStageLogV2 } from './stage-log';

@@ -11,13 +11,14 @@ import 'package:kallo_mobile/models/vessel.dart';
 /// bundled renders an invisible-but-tappable button, and one whose real
 /// dimensions drift from its declared aspect renders stretched — both silently.
 ///
-/// This is the Dart counterpart of `lib/ai/portion/__tests__/vessel-assets.test.ts`,
+/// This is the Dart counterpart of
+/// `lib/ai/portion/data/__tests__/vessel-assets.test.ts`,
 /// which exists because exactly this shipped broken on web once. Dart has no
 /// image-metadata reader in the test VM, so the aspect is pinned against the
 /// web's own declarations rather than re-measured — the web test measures the
 /// art, this one keeps the two declarations identical, and the pair covers it.
 
-final _webVesselData = File('../../lib/ai/portion/vessel-data.ts');
+final _webVesselData = File('../../lib/ai/portion/data/vessel-tables.ts');
 final _webAnchors = File(
   '../../components/logging/feed/meal-entry/portion/portion-anchors.ts',
 );
@@ -70,7 +71,7 @@ void main() {
       // Skipped when the web tree isn't checked out beside the app (a
       // standalone Flutter checkout); in the monorepo it always runs.
       if (!_webVesselData.existsSync()) {
-        markTestSkipped('web vessel-data.ts not present');
+        markTestSkipped('web vessel-tables.ts not present');
         return;
       }
       final source = _webVesselData.readAsStringSync();

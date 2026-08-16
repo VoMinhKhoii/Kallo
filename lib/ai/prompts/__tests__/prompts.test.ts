@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
+import { ASSUMPTION_TEXT } from '@/lib/ai/prompts/assumptions';
 import {
-  ASSUMPTION_TEXT,
   buildCompressedDecompositionPrompt,
   buildDecompositionPrompt,
-  buildNutritionPrompt,
   getDecompositionPromptLabel,
-} from '@/lib/ai/prompts';
+} from '@/lib/ai/prompts/build/decomposition';
+import { buildNutritionPrompt } from '@/lib/ai/prompts/build/nutrition';
+import type { DecomposedMealItem } from '@/lib/ai/types/decomposition';
 import type {
-  DecomposedMealItem,
   MatchedIngredient,
   UnmatchedIngredient,
-  UserContext,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/matching';
+import type { UserContext } from '@/lib/ai/types/user-context';
 
 const sampleUserContext: UserContext = {
   goal: 'cutting',

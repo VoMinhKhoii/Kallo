@@ -7,8 +7,8 @@ import {
   buildPersistedMeal,
   extractNutritionValues,
 } from '@/lib/actions/persisted-meal';
-import { toParsedMeal } from '@/lib/ai/mappers';
-import type { PipelineResult } from '@/lib/ai/types';
+import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
+import type { PipelineResult } from '@/lib/ai/types/result';
 import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';

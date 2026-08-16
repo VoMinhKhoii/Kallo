@@ -1,6 +1,5 @@
-import type { GeminiClient } from '@/lib/ai/gemini';
-import { matchIngredients } from '@/lib/ai/matching';
-import type { RrfMeasurement } from '@/lib/ai/matching/rrf-measurement';
+import type { RrfMeasurement } from '@/lib/ai/matching/rank/rrf-measurement';
+import { matchIngredients } from '@/lib/ai/matching/retrieve/legacy/cascade';
 import { assembleResult } from '@/lib/ai/pipeline/assemble/assemble';
 import { isPipelineV2Enabled } from '@/lib/ai/pipeline/config/grounded-path-flag';
 import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
@@ -31,8 +30,10 @@ import {
   recordAnalysisModelBudgetEventBestEffort,
 } from '@/lib/ai/pipeline/telemetry/budget';
 import { withStageLog } from '@/lib/ai/pipeline/telemetry/stage-log';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { PipelineResponse, UserContext } from '@/lib/ai/types';
+import type { PipelineResponse } from '@/lib/ai/types/result';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import type { AppDb } from '@/lib/db';
 
 const MODEL_PROFILE = resolveModelProfile();

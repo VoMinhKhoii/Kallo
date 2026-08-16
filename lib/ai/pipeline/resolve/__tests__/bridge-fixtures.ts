@@ -7,8 +7,8 @@
  * rather than being duplicated in each file.
  */
 
-import { NULL_NUTRITION_VALUES } from '@/lib/ai/__tests__/test-helpers';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 

@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import type { AppDb } from '@/lib/db';
 import { pipelineRequests } from '@/lib/db/schema';
 

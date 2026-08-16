@@ -12,7 +12,7 @@ import {
   type ContainerFamily,
   VESSEL_FAMILIES,
   type VesselTier,
-} from '@/lib/ai/portion/vessel-data';
+} from '@/lib/ai/portion/data/vessel-tables';
 
 interface PortionContainerBodyProps {
   family: ContainerFamily;

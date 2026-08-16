@@ -1,5 +1,4 @@
 import { ThinkingLevel } from '@google/genai';
-import type { GeminiClient } from '@/lib/ai/gemini';
 import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import {
   type CheatEstimate,
@@ -8,11 +7,12 @@ import {
 import {
   buildCheatEstimatePrompt,
   type CheatEstimatePromptInput,
-} from '@/lib/ai/prompts/cheat-estimate';
+} from '@/lib/ai/prompts/build/cheat-estimate';
 import { sanitizePromptContextValue } from '@/lib/ai/prompts/sanitize';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import type { CheatIntensity, CheatSliderSpec } from '@/lib/types/cheat';
 import { canonicalizeAnchors, clampLevel } from './slider-nutrition';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
-import type { NutritionValues } from '@/lib/ai/types';
+import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import {
   createEmptyRow,
   hasCompleteRow,

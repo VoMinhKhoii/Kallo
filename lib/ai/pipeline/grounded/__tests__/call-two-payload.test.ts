@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import { buildCallTwoPayload } from '@/lib/ai/pipeline/grounded/grounding';
-import type { VesselEnvelope } from '@/lib/ai/portion/vessel-envelope';
+import type { VesselEnvelope } from '@/lib/ai/portion/vessel/envelope';
 
 describe('grounded vessel threading', () => {
   it('attaches envelopes to meal items by decomposition index', () => {

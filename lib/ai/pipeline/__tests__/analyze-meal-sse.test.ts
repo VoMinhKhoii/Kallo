@@ -26,8 +26,11 @@ vi.mock('@/lib/async/fetch-with-timeout', () => ({
     fn(new AbortController().signal),
 }));
 
-vi.mock('@/lib/ai/matching', () => ({
+vi.mock('@/lib/ai/matching/retrieve/legacy/cascade', () => ({
   matchIngredients: mockMatchIngredients,
+}));
+
+vi.mock('@/lib/ai/matching/unmatched-log', () => ({
   logUnmatchedIngredients: vi.fn(),
 }));
 
@@ -47,22 +50,25 @@ vi.mock('@/lib/ai/pipeline/legacy/validation', () => ({
   THRESHOLDS: { MIN_TOTAL_KCAL: 1 },
 }));
 
-vi.mock('@/lib/ai/prompts', () => ({
+vi.mock('@/lib/ai/prompts/build/decomposition', () => ({
   buildDecompositionPrompt: vi.fn().mockReturnValue('decomp-system-prompt'),
   getDecompositionPromptBuilder: vi
     .fn()
     .mockReturnValue(vi.fn().mockReturnValue('decomp-system-prompt')),
+}));
+
+vi.mock('@/lib/ai/prompts/build/nutrition', () => ({
   buildNutritionPrompt: vi.fn().mockReturnValue('nutrition-system-prompt'),
   getNutritionPromptBuilder: vi
     .fn()
     .mockReturnValue(vi.fn().mockReturnValue('nutrition-system-prompt')),
 }));
 
-import type { GeminiClient } from '@/lib/ai/gemini';
 // Imported after mocks
 import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 
 const COMPACT_MEAL_ID_RE = /^m[1-9]\d*$/;
 

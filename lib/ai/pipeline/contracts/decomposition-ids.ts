@@ -2,7 +2,7 @@ import type {
   DecomposedIngredient,
   DecomposedMealItem,
   MealDecomposition,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/decomposition';
 import { createCompactIdSequence, isCompactPipelineId } from './compact-id';
 
 export const generateMealItemId = (): string =>

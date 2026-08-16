@@ -1,5 +1,4 @@
-import type { GeminiClient } from '@/lib/ai/gemini';
-import type { matchIngredients } from '@/lib/ai/matching';
+import type { matchIngredients } from '@/lib/ai/matching/retrieve/legacy/cascade';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import { NUTRITION_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
@@ -19,13 +18,15 @@ import {
 } from '@/lib/ai/pipeline/telemetry/budget';
 import { withStageLog } from '@/lib/ai/pipeline/telemetry/stage-log';
 import { buildLlmStageTrace } from '@/lib/ai/pipeline/telemetry/trace';
-import { getNutritionPromptBuilder } from '@/lib/ai/prompts';
+import { getNutritionPromptBuilder } from '@/lib/ai/prompts/build/nutrition';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import {
   computeStreamingMealItem,
   extractCompletedMealItemNutrition,
 } from '@/lib/ai/streaming/parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { NutritionAdjustment, UserContext } from '@/lib/ai/types';
+import type { NutritionAdjustment } from '@/lib/ai/types/nutrition-adjustment';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
 import type { AppDb } from '@/lib/db';
 import { capitalizeFirst } from '@/lib/text/capitalize';

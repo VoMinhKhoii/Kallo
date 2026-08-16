@@ -7,7 +7,7 @@
  * ONE `assembly` stage log so the admin timeline shows a single row for the
  * whole bridge → reconcile → assemble hop.
  */
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { assembleResult } from '@/lib/ai/pipeline/assemble/assemble';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
@@ -18,9 +18,9 @@ import type { PortionResolution } from '@/lib/ai/portion/types';
 import {
   attachVesselToMealItems,
   type VesselEnvelope,
-} from '@/lib/ai/portion/vessel-envelope';
+} from '@/lib/ai/portion/vessel/envelope';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { withStageLogV2 } from './stage-log';
 
 export type AssemblyStageResult = ReturnType<typeof assembleResult> & {

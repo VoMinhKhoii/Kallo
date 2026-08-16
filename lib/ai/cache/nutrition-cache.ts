@@ -1,11 +1,11 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import type * as schema from '@/lib/db/schema';
 import {
   NUTRITION_CACHE_SELECT_COLUMNS,
   parseNutritionRow,
-} from '../matching/nutrition-db';
-import type { NutritionPer100g } from '../types';
+} from '@/lib/ai/cache/nutrition-rows';
+import type { NutritionPer100g } from '@/lib/ai/types/matching';
+import type * as schema from '@/lib/db/schema';
 
 /**
  * Module-level singleton nutrition cache.

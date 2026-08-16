@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkDecompositionLanguage } from '@/lib/ai/language/guard';
-import type { MealDecomposition } from '@/lib/ai/types';
+import type { MealDecomposition } from '@/lib/ai/types/decomposition';
 
 function decomposition(names: string[]): MealDecomposition {
   return {

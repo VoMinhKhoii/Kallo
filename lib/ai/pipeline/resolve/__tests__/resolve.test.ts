@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 // The carb-staple scenarios assert that the gate consuming this bridge's

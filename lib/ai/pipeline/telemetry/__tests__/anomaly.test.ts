@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   NULL_BOUNDED_NUTRITION,
   NULL_NUTRITION_VALUES,
-} from '@/lib/ai/__tests__/test-helpers';
+} from '@/lib/ai/__fixtures__/test-helpers';
 import {
   type AnomalyCause,
   classifyV2Anomalies,
@@ -11,12 +11,14 @@ import {
   V2_ANOMALY_THRESHOLDS,
 } from '@/lib/ai/pipeline/telemetry/anomaly';
 import type {
-  BoundedEstimate,
   MatchedIngredient,
+  UnmatchedIngredient,
+} from '@/lib/ai/types/matching';
+import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
+import type {
   PipelineResult,
   ProcessedIngredient,
-  UnmatchedIngredient,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/result';
 
 // ---------------------------------------------------------------------------
 // Builders

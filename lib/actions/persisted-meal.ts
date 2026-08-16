@@ -11,9 +11,9 @@ import type {
   PersistedMeal,
   PersistedMealItemGroup,
 } from '@/lib/actions/meals/types';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
-import type { NutritionValues } from '@/lib/ai/types';
+import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 
 /** Infer meal slot from time of day as fallback. Shared by both save paths so
  *  AI-confirmed and manually-logged meals classify identically. */

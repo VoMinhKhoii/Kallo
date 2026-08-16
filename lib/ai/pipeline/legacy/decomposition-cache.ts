@@ -1,6 +1,12 @@
 import { createHash } from 'node:crypto';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 
+/**
+ * Cache-key derivation for the v1 decomposition L4 cache. The cache itself is
+ * the generic primitive in `@/lib/ai/cache/l4-cache`; only the key shape below
+ * is v1-specific, so it stays in `legacy/` and is deleted with the flag.
+ */
+
 const ALLOWED_CONTEXT_KEYS = [
   'countryOfOrigin',
   'countryOfResidence',
@@ -66,59 +72,4 @@ export function buildDecompositionCacheKey(
   });
   const hash = sha256Hex(payload).slice(0, 48);
   return `l4:dec:${hash}`;
-}
-
-export interface L4Cache<V> {
-  get: (key: string) => V | null;
-  set: (key: string, value: V) => void;
-  size: () => number;
-  clear: () => void;
-}
-
-export interface L4CacheConfig {
-  maxEntries: number;
-  ttlMs: number;
-  now?: () => number;
-}
-
-interface Entry<V> {
-  value: V;
-  expiresAt: number;
-}
-
-export function createL4Cache<V>(cfg: L4CacheConfig): L4Cache<V> {
-  const now = cfg.now ?? (() => Date.now());
-  const map = new Map<string, Entry<V>>();
-
-  return {
-    get(key) {
-      const entry = map.get(key);
-      if (!entry) {
-        return null;
-      }
-      if (entry.expiresAt <= now()) {
-        map.delete(key);
-        return null;
-      }
-
-      map.delete(key);
-      map.set(key, entry);
-      return entry.value;
-    },
-    set(key, value) {
-      if (map.has(key)) {
-        map.delete(key);
-      }
-      map.set(key, { value, expiresAt: now() + cfg.ttlMs });
-      while (map.size > cfg.maxEntries) {
-        const oldest = map.keys().next().value;
-        if (oldest === undefined) {
-          break;
-        }
-        map.delete(oldest);
-      }
-    },
-    size: () => map.size,
-    clear: () => map.clear(),
-  };
 }

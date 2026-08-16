@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   NULL_BOUNDED_NUTRITION,
   NULL_NUTRITION_VALUES,
-} from '@/lib/ai/__tests__/test-helpers';
-import type { BoundedNutrition, PipelineResult } from '@/lib/ai/types';
+} from '@/lib/ai/__fixtures__/test-helpers';
+import type { BoundedNutrition } from '@/lib/ai/types/nutrition-values';
+import type { PipelineResult } from '@/lib/ai/types/result';
 
 // ---------------------------------------------------------------------------
 // Mocks

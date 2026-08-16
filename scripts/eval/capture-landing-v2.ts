@@ -9,7 +9,7 @@
  * case rather than the run.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 
 const OUT = 'scripts/eval/landing-v2.json';
 const CASE_TIMEOUT_MS = 180_000;
@@ -234,9 +234,9 @@ const keyOf = (s: Sample) => `${s.category}.${s.locale}.${s.variant}`;
 const [{ analyzeMealV2 }, gemini, { db }, { toParsedMeal }] = await Promise.all(
   [
     import('@/lib/ai/pipeline/grounded/orchestrator'),
-    import('@/lib/ai/gemini'),
+    import('@/lib/ai/provider/provider'),
     import('@/lib/db'),
-    import('@/lib/ai/mappers'),
+    import('@/lib/ai/adapters/parsed-meal'),
   ]
 );
 const provider = gemini.resolveGeminiProvider();

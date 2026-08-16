@@ -10,12 +10,12 @@
  * Cross-cutting: `stage-log.ts` (admin timeline), `escalation.ts` (anomaly pass
  * + gated re-run), `run-record.ts` (console telemetry + `pipeline_runs`).
  */
-import type { GeminiClient } from '@/lib/ai/gemini';
+
 import {
   DEFAULT_K,
   DEFAULT_MATCH_CONCURRENCY,
   type IngredientV2MatchResult,
-} from '@/lib/ai/matching/top-k-cascade';
+} from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import { isPortionVesselEnabled } from '@/lib/ai/pipeline/config/portion-vessel-flag';
@@ -30,8 +30,10 @@ import type { bridgeV2ToV1 } from '@/lib/ai/pipeline/resolve/resolve';
 import { initV2BudgetAccounting } from '@/lib/ai/pipeline/telemetry/budget';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { PipelineResponse, UserContext } from '@/lib/ai/types';
+import type { PipelineResponse } from '@/lib/ai/types/result';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import type { AppDb } from '@/lib/db';
 import { runAssemblyStage } from './assembly';
 import { runCallTwoStage } from './call-two/call-two';

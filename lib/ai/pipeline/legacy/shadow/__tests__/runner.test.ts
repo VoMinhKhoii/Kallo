@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   NULL_BOUNDED_NUTRITION,
   NULL_NUTRITION_VALUES,
-} from '@/lib/ai/__tests__/test-helpers';
+} from '@/lib/ai/__fixtures__/test-helpers';
 import {
   runShadow,
   runShadowAsync,
@@ -10,7 +10,8 @@ import {
   type ShadowRunnerDeps,
   type ShadowRunPersistRow,
 } from '@/lib/ai/pipeline/legacy/shadow/runner';
-import type { BoundedNutrition, PipelineResponse } from '@/lib/ai/types';
+import type { BoundedNutrition } from '@/lib/ai/types/nutrition-values';
+import type { PipelineResponse } from '@/lib/ai/types/result';
 
 function makePipelineResponse(args: {
   caloriesMid: number;

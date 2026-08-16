@@ -7,9 +7,13 @@
  * `macro-guard.ts`; the DB anchor itself comes from `macro-base.ts`.
  */
 
-import { absorbedOil, isDiscreteOilIngredient } from '@/lib/ai/absorbed-oil';
-import { MAX_KCAL_PER_100G } from '@/lib/ai/constants';
-import type { BoundedEstimate, MacroBase } from '@/lib/ai/types';
+import { MAX_KCAL_PER_100G } from '@/lib/ai/pipeline/contracts/nutrition-limits';
+import type { MacroBase } from '@/lib/ai/types/nutrition-adjustment';
+import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
+import {
+  absorbedOil,
+  isDiscreteOilIngredient,
+} from '@/lib/nutrition/absorbed-oil';
 import type { RawNutritionAdjustment } from '../macro-resolution';
 import { scalePer100g } from './macro-base';
 import {
@@ -27,7 +31,7 @@ import {
  * Hard density ceiling for unmatched ingredients: kcal/100g cannot exceed pure
  * fat. If the LLM emits a per-100g density above this, we scale all four
  * macros down so the triple becomes physically plausible. Aliased from
- * `MAX_KCAL_PER_100G` in `lib/ai/constants.ts` (single source of truth).
+ * `MAX_KCAL_PER_100G` in `lib/ai/pipeline/contracts/nutrition-limits.ts` (single source of truth).
  */
 const UNMATCHED_DENSITY_CEILING = MAX_KCAL_PER_100G;
 

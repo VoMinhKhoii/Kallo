@@ -36,7 +36,14 @@ not yet — see the `logging` row below.
 | `actions/` | Server Actions — orchestration over domain modules | split |
 | `admin/` | admin authorization **and** admin read queries | split |
 | `ai/` | everything that talks to an LLM provider | split |
-| `ai/matching/` | retrieval, ranking and aliasing of food candidates | split |
+| `ai/__fixtures__/` | test doubles shared across `lib/ai` suites — never imported by product code | ok |
+| `ai/adapters/` | the pipeline's two app-facing edges — profile row → `UserContext` in, `PipelineResult` → `ParsedMeal` out | ok |
+| `ai/cache/` | every in-memory cache the pipeline keeps — one file per cache, plus the generic bounded/TTL `l4-cache` primitive | ok |
+| `ai/matching/` | anchor an ingredient name to food-composition rows — shared vocabulary plus three sub-concerns | ok |
+| `ai/matching/alias/` | the curated name-rewrite tables and the unmatched-name rescue that uses them | ok |
+| `ai/matching/rank/` | score, gate and fuse candidate rows — pure functions, no DB | ok |
+| `ai/matching/retrieve/` | the v2 top-K cascade: exact hit → embeddings → hybrid vector+fuzzy → nutrition | ok |
+| `ai/matching/retrieve/legacy/` | the v1 single-best cascade — delete whole with `PIPELINE_V2_ENABLED` | ok |
 | `ai/pipeline/` | the meal-analysis pipeline — entry `analyze-meal.ts` picks the path | split |
 | `ai/pipeline/assemble/` | build the final `PipelineResult` and its displayed totals | ok |
 | `ai/pipeline/config/` | every knob the pipeline reads from the environment | ok |
@@ -49,9 +56,16 @@ not yet — see the `logging` row below.
 | `ai/pipeline/legacy/` | the `PIPELINE_V2_ENABLED=false` fallback — delete whole with the flag | split |
 | `ai/pipeline/resolve/` | turn Call-2 verdicts into grams and bounded macros | ok |
 | `ai/pipeline/telemetry/` | every observability row the pipeline writes | ok |
-| `ai/portion/` | gram anchors from portion evidence | split |
-| `ai/prompts/` | prompt text and its builders | split |
+| `ai/portion/` | gram anchors from portion evidence | ok |
+| `ai/portion/data/` | the module's reference tables — portion priors and vessel dimensions, citations only | ok |
+| `ai/portion/lexicon/` | surface tokens → units and food concepts | ok |
+| `ai/portion/vessel/` | a vessel word → a grams envelope, and the geometry both pickers render | ok |
+| `ai/prompts/` | prompt text and its builders | ok |
+| `ai/prompts/build/` | assemble a prompt: pick the variant, sanitize context, render the runtime XML | ok |
+| `ai/prompts/text/` | the verbatim prompt strings — data, and the bytes are load-bearing | ok |
+| `ai/provider/` | the LLM SDK edge — the only folder that may import a provider SDK | ok |
 | `ai/streaming/` | SSE event encoding and parsing | ok |
+| `ai/types/` | the pipeline's shared vocabulary — one file per stage, no logic | ok |
 | `api/` | the `/api/v1` wire edge: auth guard, respond, query parse, client fetch | ok |
 | `api/contracts/` | Zod wire contracts shared by web and mobile | split |
 | `async/` | concurrency primitives — bounding a slow operation, zero domain knowledge | ok |
@@ -72,7 +86,7 @@ not yet — see the `logging` row below.
 | `i18n/` | root-locale resolution | ok |
 | `logging/` | meal logging domain + relog | ok |
 | `meals/` | dish quantity edits and the macro rescaling they imply | ok |
-| `nutrition/` | nutrition overview, catalog, pattern analysis | ok |
+| `nutrition/` | nutrition overview, catalog, pattern analysis, cooking-fat absorption | split |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data | split |
 | `platform/` | runtime environment detection (webview, OS) from the user agent | ok |
 | `rate-limit/` | analysis abuse guards | split |

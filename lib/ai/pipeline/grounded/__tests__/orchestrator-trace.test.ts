@@ -2,14 +2,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createMockGemini,
   createSourceAwareMockDb,
-} from '@/lib/ai/__tests__/test-helpers';
+} from '@/lib/ai/__fixtures__/test-helpers';
 import {
   DECOMPOSITION_TIMEOUT_MS,
   NUTRITION_TIMEOUT_MS,
 } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 
 // Capture logStage calls — v2 must populate the same admin/audit timeline
 // v1 populates so requests/[id] shows stages. buildLlmStageTrace is also

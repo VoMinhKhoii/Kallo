@@ -1,4 +1,4 @@
-import type { RrfMeasurement } from '@/lib/ai/matching/rrf-measurement';
+import type { RrfMeasurement } from '@/lib/ai/matching/rank/rrf-measurement';
 
 export interface RrfAggregate {
   rrfSampled: boolean;

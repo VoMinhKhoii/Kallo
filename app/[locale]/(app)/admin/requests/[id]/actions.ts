@@ -4,13 +4,6 @@ import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { redirect } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin/require-admin';
-import {
-  createGeminiClient,
-  type GeminiClient,
-  resolveGeminiProvider,
-  type StreamOptions,
-  type StructuredOutputParams,
-} from '@/lib/ai/gemini';
 import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
 import {
   logPipelineStart,
@@ -18,7 +11,14 @@ import {
 } from '@/lib/ai/pipeline/telemetry/logging';
 import { hashUserId } from '@/lib/ai/pipeline/telemetry/run-telemetry';
 import { logLlmCall } from '@/lib/ai/pipeline/telemetry/trace';
-import type { UserContext } from '@/lib/ai/types';
+import {
+  createGeminiClient,
+  type GeminiClient,
+  resolveGeminiProvider,
+  type StreamOptions,
+  type StructuredOutputParams,
+} from '@/lib/ai/provider/provider';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { db } from '@/lib/db';
 import {
   analysisGuardEvents,

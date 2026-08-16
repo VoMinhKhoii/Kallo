@@ -38,7 +38,7 @@ Report only vulnerabilities a real attacker could exploit:
 `lib/security/csp.ts` · `middleware.ts` (auth/session + origin lock) ·
 `lib/auth/session.ts`, `lib/auth/safe-next.ts`, `lib/auth/redirects.ts` ·
 `app/api/**` route handlers · `app/auth/**` ·
-`'use server'` actions in `lib/actions/**`, `lib/ai/actions.ts`, and
+`'use server'` actions in `lib/actions/**` and
 `app/[locale]/(app)/admin/**/actions.ts` ·
 `lib/db/**` (query scoping, raw SQL) · `supabase/migrations/**` (RLS coverage) ·
 `lib/rate-limit/**` (abuse guards) · `lib/uploads/**` ·

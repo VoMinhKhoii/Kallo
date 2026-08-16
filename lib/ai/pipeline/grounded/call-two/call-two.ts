@@ -7,8 +7,8 @@
  * stage log. Returns the estimation plus the streaming state the orchestrator
  * needs for its post-assembly flush.
  */
-import type { GeminiClient } from '@/lib/ai/gemini';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import type { ModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
@@ -19,12 +19,13 @@ import {
 } from '@/lib/ai/pipeline/estimator/gemini-estimator';
 import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
 import { buildLlmStageTrace } from '@/lib/ai/pipeline/telemetry/trace';
-import type { MealItemWithCandidates } from '@/lib/ai/prompts/grounded-estimation';
+import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { MealItemOffset } from '@/lib/ai/streaming/grounded-parsers';
 import { buildMealItemOffsetByName } from '@/lib/ai/streaming/grounded-parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { withStageLogV2 } from '../stage-log';
 import {
   createCall2StreamHandler,

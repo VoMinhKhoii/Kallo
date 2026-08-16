@@ -8,7 +8,7 @@ import {
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { PortionContainerBody } from '@/components/logging/feed/meal-entry/portion/portion-container-body';
 import { PortionRuler } from '@/components/logging/feed/meal-entry/portion/portion-ruler';
-import type { ClientVessel } from '@/lib/ai/portion/vessel-types';
+import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 
 interface PortionPickerBodyProps {
   vessel: ClientVessel;

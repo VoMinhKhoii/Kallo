@@ -3,7 +3,7 @@ import {
   logPipelineEnd,
   logPipelineStart,
 } from '@/lib/ai/pipeline/telemetry/logging';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import type { AppDb } from '@/lib/db';
 
 // ---------------------------------------------------------------------------

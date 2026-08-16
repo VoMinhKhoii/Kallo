@@ -1,13 +1,13 @@
-import { mealItemHasDiscreteOil } from '@/lib/ai/absorbed-oil';
 import type { MealDecompositionWithIds } from '@/lib/ai/pipeline/contracts/decomposition-ids';
+import type { MatchedIngredient } from '@/lib/ai/types/matching';
 import type {
-  BoundedEstimate,
   IngredientLlmNutrition,
   MacroBase,
-  MatchedIngredient,
   MealItemNutrition,
   NutritionAdjustment,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/nutrition-adjustment';
+import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
+import { mealItemHasDiscreteOil } from '@/lib/nutrition/absorbed-oil';
 import { resolveIngredientMacros } from './macros/bounded-macros';
 import { computeMacroBaseMap } from './macros/macro-base';
 

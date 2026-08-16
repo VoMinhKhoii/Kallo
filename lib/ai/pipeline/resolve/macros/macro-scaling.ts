@@ -14,7 +14,7 @@
  */
 
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
-import type { BoundedEstimate } from '@/lib/ai/types';
+import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
 import type { RawNutritionAdjustment } from '../macro-resolution';
 import type { NoMacroReason } from '../output';
 import { ZERO_TRIPLE } from '../verdicts';

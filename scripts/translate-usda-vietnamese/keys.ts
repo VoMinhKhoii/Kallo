@@ -1,7 +1,7 @@
 /**
  * Gemini client slots for round-robin load distribution.
  *
- * Two providers, selected by AI_PROVIDER (same contract as lib/ai/gemini.ts):
+ * Two providers, selected by AI_PROVIDER (same contract as lib/ai/provider/client.ts):
  *   - "vertex":    ONE slot backed by Vertex AI via Application Default
  *                  Credentials (GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION).
  *                  No API keys. This is what production inference uses, and

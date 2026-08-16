@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { type SourcedMatchRow, splitBySource } from '../match-constants';
+import {
+  type SourcedMatchRow,
+  splitBySource,
+} from '@/lib/ai/matching/match-constants';
 
 function candidate(sourceId: number): SourcedMatchRow {
   return {

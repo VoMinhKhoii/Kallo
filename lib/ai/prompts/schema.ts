@@ -81,7 +81,7 @@ export type ProviderJsonSchema = ReturnType<
  * modes ('full', 'slim'). `toJSONSchema` + `stripDescriptionAndRuntimeIdKeys`
  * are pure, so the result is stable per (schema-ref, mode). Memoizing avoids
  * 10-100 ms of per-request schema serialization on the LLM hot path
- * (Phase C2: lib/ai/gemini.ts:208,257).
+ * (Phase C2: lib/ai/provider/{structured-output,streaming}.ts).
  */
 const providerSchemaCache = new WeakMap<
   ZodType<unknown>,

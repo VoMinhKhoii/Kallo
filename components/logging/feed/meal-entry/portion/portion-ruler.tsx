@@ -13,8 +13,9 @@ import {
   positionBreaks,
   rulerStep,
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
-import { PIECE_TIERS, pieceAssetFor } from '@/lib/ai/portion/vessel-data';
-import type { PieceVessel } from '@/lib/ai/portion/vessel-types';
+import { PIECE_TIERS } from '@/lib/ai/portion/data/vessel-tables';
+import { pieceAssetFor } from '@/lib/ai/portion/vessel/geometry';
+import type { PieceVessel } from '@/lib/ai/portion/vessel/types';
 import { cn } from '@/lib/ui/cn';
 
 interface PortionRulerProps {

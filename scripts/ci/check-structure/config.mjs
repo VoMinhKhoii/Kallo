@@ -40,27 +40,43 @@ export const FOLDER_EXEMPT = new Map([
   ],
 ]);
 
-/** Files whose length is data, not logic. Structure review still applies. */
+/**
+ * Files whose length is data, not logic. Structure review still applies.
+ *
+ * The bar: the file declares a table, a catalogue, or verbatim prompt text and
+ * nothing that branches on it. A file that mixes a table with the functions
+ * that read it does NOT qualify — split the table out and exempt only the
+ * table (that is what `lib/ai/prompts/{text,build}/`,
+ * `lib/ai/portion/data/` and `reference-target-tables.ts` are).
+ */
 export const SIZE_EXEMPT = new Map([
   [
     'lib/db/schema.ts',
     'Drizzle schema source of truth — Domain A stays one declaration site',
   ],
   [
-    'lib/nutrition/catalog/reference-targets.ts',
-    'pure data catalog of reference nutrition targets',
+    'lib/nutrition/catalog/reference-target-tables.ts',
+    'published RDA/RNI/DRI tables with citations — no resolution logic',
   ],
   [
-    'lib/ai/prompts/nutrition.ts',
-    'prompt text — splitting hurts prompt legibility',
+    'lib/ai/portion/data/priors.ts',
+    'the PORTION_PRIORS table — one sourced grams band per concept, no lookup logic',
   ],
   [
-    'lib/ai/prompts/grounded-estimation.ts',
-    'prompt text — splitting hurts prompt legibility',
+    'lib/ai/portion/data/vessel-tables.ts',
+    'vessel dimensions, density/fill constants and the piece-tier art manifest',
   ],
   [
-    'lib/ai/prompts/decomposition.ts',
-    'prompt text — splitting hurts prompt legibility',
+    'lib/ai/prompts/text/decomposition.ts',
+    'verbatim Call-1 prompt text — bytes are load-bearing for model output',
+  ],
+  [
+    'lib/ai/prompts/text/decomposition-v2.ts',
+    'verbatim V2 Call-1 prompt text — bytes are load-bearing for model output',
+  ],
+  [
+    'lib/ai/prompts/text/nutrition.ts',
+    'verbatim Call-2 prompt text — bytes are load-bearing for model output',
   ],
 ]);
 

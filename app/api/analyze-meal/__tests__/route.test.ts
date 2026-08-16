@@ -103,7 +103,7 @@ vi.mock('@/lib/db/schema', () => ({
   pipelineRequests: mockPipelineRequests,
 }));
 
-vi.mock('@/lib/ai/gemini', () => ({
+vi.mock('@/lib/ai/provider/provider', () => ({
   createGeminiClient: (...args: unknown[]) => mockCreateGeminiClient(...args),
   resolveGeminiProvider: () => {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -135,7 +135,7 @@ vi.mock('@/lib/ai/pipeline/analyze-meal', () => ({
   analyzeMeal: (...args: unknown[]) => mockAnalyzeMeal(...args),
 }));
 
-vi.mock('@/lib/ai/matching', () => ({
+vi.mock('@/lib/ai/matching/unmatched-log', () => ({
   logUnmatchedIngredients: () => Promise.resolve(),
 }));
 
@@ -156,12 +156,22 @@ interface MockPipelineData {
   displayedNutrition?: MockNutrition;
 }
 
-vi.mock('@/lib/ai/mappers', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/ai/mappers')>();
+vi.mock('@/lib/ai/adapters/user-context', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/lib/ai/adapters/user-context')>();
 
   return {
     ...actual,
     buildUserContext: (...args: unknown[]) => mockBuildUserContext(...args),
+  };
+});
+
+vi.mock('@/lib/ai/adapters/parsed-meal', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/lib/ai/adapters/parsed-meal')>();
+
+  return {
+    ...actual,
     toParsedMeal: (data: MockPipelineData) => ({
       mealName: data.mealItems?.[0]?.name ?? 'Meal',
       items: (data.mealItems ?? []).map((mi: MockMealItem) => ({

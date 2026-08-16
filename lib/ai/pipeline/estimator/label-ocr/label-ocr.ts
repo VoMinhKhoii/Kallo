@@ -1,4 +1,7 @@
-import { createGeminiClient, resolveGeminiProvider } from '@/lib/ai/gemini';
+import {
+  createGeminiClient,
+  resolveGeminiProvider,
+} from '@/lib/ai/provider/provider';
 import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';
 import { normalizeNutritionLabelOcr } from './normalization';
 import { rawNutritionLabelOcrSchema } from './raw-schema';

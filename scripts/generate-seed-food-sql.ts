@@ -2,7 +2,7 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { normalizeIngredientKey } from '@/lib/ai/matching/embedding-cache';
+import { normalizeIngredientKey } from '@/lib/ai/cache/embedding-cache';
 import { isMainModule } from '@/scripts/runtime';
 
 type CsvRow = Record<string, string>;

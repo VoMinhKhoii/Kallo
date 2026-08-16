@@ -1,4 +1,5 @@
-import type { PipelineErrorType, PipelineResponse } from '@/lib/ai/types';
+import type { PipelineErrorType } from '@/lib/ai/types/errors';
+import type { PipelineResponse } from '@/lib/ai/types/result';
 import { isAppError } from '@/lib/errors/app-error';
 
 const NON_FOOD_MESSAGE =

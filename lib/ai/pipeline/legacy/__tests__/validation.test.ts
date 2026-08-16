@@ -2,20 +2,20 @@ import { describe, expect, it } from 'vitest';
 import {
   NULL_BOUNDED_NUTRITION,
   NULL_NUTRITION_VALUES,
-} from '@/lib/ai/__tests__/test-helpers';
+} from '@/lib/ai/__fixtures__/test-helpers';
 import {
   detectAnomalies,
   THRESHOLDS,
   validateDecompositionOutput,
   validateNutritionOutput,
 } from '@/lib/ai/pipeline/legacy/validation';
+import type { DecomposedMealItem } from '@/lib/ai/types/decomposition';
 import type {
-  DecomposedMealItem,
   MatchedIngredient,
-  NutritionAdjustment,
-  PipelineResult,
   UnmatchedIngredient,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/matching';
+import type { NutritionAdjustment } from '@/lib/ai/types/nutrition-adjustment';
+import type { PipelineResult } from '@/lib/ai/types/result';
 
 // ---------------------------------------------------------------------------
 // Helpers

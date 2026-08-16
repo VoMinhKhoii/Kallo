@@ -8,9 +8,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { ResolvedDish } from '@/lib/actions/meals/relog/expand-refs';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { goalAdjustNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
-import type { NutritionValues, PipelineMealItem } from '@/lib/ai/types';
+import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
+import type { PipelineMealItem } from '@/lib/ai/types/result';
 import {
   buildFrozenMealItem,
   buildRelogPipelineResult,

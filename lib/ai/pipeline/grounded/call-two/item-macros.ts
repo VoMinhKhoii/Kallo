@@ -17,7 +17,7 @@
  * item is ever emitted twice.
  */
 
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type {
   GroundedEstimation,
   GroundedMealItem,
@@ -30,7 +30,7 @@ import {
 } from '@/lib/ai/streaming/grounded-parsers';
 import { computeStreamingMealItem } from '@/lib/ai/streaming/parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { capitalizeFirst } from '@/lib/text/capitalize';
 
 // ---------------------------------------------------------------------------

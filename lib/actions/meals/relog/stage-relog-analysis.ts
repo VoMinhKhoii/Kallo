@@ -2,7 +2,7 @@
 
 import { upsertPendingAnalysis } from '@/app/api/analyze-meal/persist-analysis';
 import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
-import { toParsedMeal } from '@/lib/ai/mappers';
+import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import {
   type StageRelogAnalysisInput,
   stageRelogAnalysisSchema,

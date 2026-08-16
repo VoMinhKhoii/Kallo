@@ -1,4 +1,4 @@
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import type { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
@@ -9,7 +9,7 @@ import {
   buildPipelineRunRow,
   writePipelineRun,
 } from '@/lib/ai/pipeline/telemetry/run-telemetry';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 
 export interface V2TelemetryInput {
   decomposition: MealDecompositionV2;

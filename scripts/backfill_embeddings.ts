@@ -10,7 +10,7 @@
  *     --ids=usda_6008_raw,usda_6170_raw
  *
  * Requires DATABASE_URL, plus one of two providers (same contract as
- * lib/ai/gemini.ts and scripts/translate-usda-vietnamese/keys.ts):
+ * lib/ai/provider/client.ts and scripts/translate-usda-vietnamese/keys.ts):
  *   - AI_PROVIDER=vertex: GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION, auth via
  *     Application Default Credentials. This is what the prod deploy uses, so
  *     the backfill bills the same quota as the service it is deploying.

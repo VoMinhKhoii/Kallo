@@ -16,9 +16,9 @@ import {
 } from '@/lib/ai/pipeline/telemetry/anomaly';
 import type {
   MatchedIngredient,
-  PipelineResult,
   UnmatchedIngredient,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/matching';
+import type { PipelineResult } from '@/lib/ai/types/result';
 
 /**
  * Env flag gating the v2 correctness-escalation re-run. Default OFF: the

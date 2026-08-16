@@ -19,7 +19,6 @@
  *     Net effect: the yield-factor table is bypassed for every v2 ingredient.
  */
 
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type {
   DecomposedDishV2,
   DecomposedIngredientV2,
@@ -30,11 +29,12 @@ import type {
   GroundedIngredientEstimate,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type {
-  BoundedEstimate,
   DecomposedIngredient,
   DecomposedMealItem,
-  MatchedIngredient,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/decomposition';
+import type { MatchedIngredient } from '@/lib/ai/types/matching';
+import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { VerdictPerIngredient } from './output';
 
 export const ZERO_TRIPLE: BoundedEstimate = { low: 0, mid: 0, high: 0 };

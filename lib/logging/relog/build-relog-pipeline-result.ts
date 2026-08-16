@@ -18,19 +18,21 @@ import type {
   SourceItemRow,
 } from '@/lib/actions/meals/relog/expand-refs';
 import { extractNutritionValues } from '@/lib/actions/persisted-meal';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import {
   sumBoundedNutrition,
   sumDisplayedNutrition,
 } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import type {
   BoundedNutrition,
-  MealConfidence,
   NutritionValues,
+} from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
+import type {
+  MealConfidence,
   PipelineMealItem,
   PipelineResult,
   ProcessedIngredient,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/result';
 import { weakestConfidence } from '@/lib/logging/relog/relog';
 
 /** The `meal_items` columns a frozen relog item needs, on top of the grouping

@@ -84,7 +84,7 @@ vi.mock('@/lib/db', () => ({
 vi.mock('@/lib/ai/pipeline/analyze-meal', () => ({
   analyzeMeal: analyzeMealSpy,
 }));
-vi.mock('@/lib/ai/gemini', () => ({
+vi.mock('@/lib/ai/provider/provider', () => ({
   createGeminiClient: createGeminiClientSpy,
   resolveGeminiProvider: () => {
     const apiKey = process.env.GEMINI_API_KEY;

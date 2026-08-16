@@ -27,17 +27,19 @@
  *     Net effect: the yield-factor table is bypassed for every v2 ingredient.
  */
 
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/contracts/decomposition-ids';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import type {
   DecomposedIngredient,
-  MatchedIngredient,
   MealDecomposition,
+} from '@/lib/ai/types/decomposition';
+import type {
+  MatchedIngredient,
   UnmatchedIngredient,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/matching';
 import type { RawNutritionAdjustment } from './macro-resolution';
 import type {
   CarvedOutIngredient,

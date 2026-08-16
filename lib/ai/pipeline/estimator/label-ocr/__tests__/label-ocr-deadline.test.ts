@@ -4,7 +4,7 @@ const { generateStructuredOutput } = vi.hoisted(() => ({
   generateStructuredOutput: vi.fn(),
 }));
 
-vi.mock('@/lib/ai/gemini', () => ({
+vi.mock('@/lib/ai/provider/provider', () => ({
   resolveGeminiProvider: vi.fn(() => ({
     provider: 'ai-studio',
     apiKey: 'test-key',

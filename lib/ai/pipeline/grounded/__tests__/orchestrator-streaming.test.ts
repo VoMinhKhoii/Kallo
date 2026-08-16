@@ -2,12 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createMockGemini,
   createSourceAwareMockDb,
-} from '@/lib/ai/__tests__/test-helpers';
+} from '@/lib/ai/__fixtures__/test-helpers';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { analyzeMealV2 } from '@/lib/ai/pipeline/grounded/orchestrator';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 
 afterEach(() => {
   vi.restoreAllMocks();

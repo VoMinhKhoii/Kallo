@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { extractNutritionValues } from '@/lib/actions/persisted-meal';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type {
   BoundedNutrition,
   NutritionValues,
-  PipelineResult,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
+import type { PipelineResult } from '@/lib/ai/types/result';
 import {
   fetchProductFromOpenFoodFacts,
   type ParsedBarcodeProduct,

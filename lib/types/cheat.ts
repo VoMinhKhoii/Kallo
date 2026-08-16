@@ -1,4 +1,5 @@
-import type { MealConfidence, MealSlot } from '@/lib/ai/types';
+import type { MealSlot } from '@/lib/ai/types/decomposition';
+import type { MealConfidence } from '@/lib/ai/types/result';
 
 /**
  * Cheat-meal slider model.

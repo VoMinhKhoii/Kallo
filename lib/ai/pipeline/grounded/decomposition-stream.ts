@@ -2,7 +2,7 @@ import { createCompactIdSequence } from '@/lib/ai/pipeline/contracts/compact-id'
 import type { MealDecompositionWithIds } from '@/lib/ai/pipeline/contracts/decomposition-ids';
 import { extractMealItemNameOccurrences } from '@/lib/ai/streaming/parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { MealDecomposition } from '@/lib/ai/types';
+import type { MealDecomposition } from '@/lib/ai/types/decomposition';
 import { capitalizeFirst } from '@/lib/text/capitalize';
 
 interface DecompositionStreamControllerInput {

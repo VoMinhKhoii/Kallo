@@ -7,14 +7,14 @@
  * `assemble.ts` (the 24 micronutrients) cannot drift apart.
  */
 
-import { convertCookedToRaw } from '@/lib/ai/constants';
 import type { MealDecompositionWithIds } from '@/lib/ai/pipeline/contracts/decomposition-ids';
 import { ingredientGrams } from '@/lib/ai/pipeline/contracts/ingredient-accessors';
+import { convertCookedToRaw } from '@/lib/ai/portion/cooked-to-raw';
 import type {
-  MacroBase,
   MatchedIngredient,
   NutritionPer100g,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/matching';
+import type { MacroBase } from '@/lib/ai/types/nutrition-adjustment';
 
 const ingredientCookingMethod = (
   mealItem: MealDecompositionWithIds['mealItems'][number],

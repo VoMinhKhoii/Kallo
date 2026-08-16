@@ -11,10 +11,10 @@
  * non-deterministic and a re-run genuinely can succeed.
  */
 
-import { logUnmatchedIngredients } from '@/lib/ai/matching';
+import { logUnmatchedIngredients } from '@/lib/ai/matching/unmatched-log';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
-import type { PipelineUnresolved } from '@/lib/ai/types';
+import type { PipelineUnresolved } from '@/lib/ai/types/result';
 import type { db as appDb } from '@/lib/db';
 
 export async function emitPartialFailure(args: {

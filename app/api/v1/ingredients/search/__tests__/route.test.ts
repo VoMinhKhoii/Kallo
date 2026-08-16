@@ -15,12 +15,12 @@ vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile,
 }));
 
-vi.mock('@/lib/ai/matching/embedding-cache', () => ({
+vi.mock('@/lib/ai/cache/embedding-cache', () => ({
   resolveQueryEmbedding,
   cacheQueryEmbedding,
 }));
 
-vi.mock('@/lib/ai/gemini', () => ({
+vi.mock('@/lib/ai/provider/provider', () => ({
   resolveGeminiProvider: () => ({ kind: 'test' }),
   createGeminiClient: () => ({ generateEmbeddingBatch }),
 }));

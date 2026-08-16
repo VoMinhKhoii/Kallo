@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { NULL_NUTRITION_VALUES } from '@/lib/ai/__tests__/test-helpers';
+import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
 import type { MealDecompositionWithIds } from '@/lib/ai/pipeline/contracts/decomposition-ids';
 import {
   computeDbScalingGrams,
   computeMacroBaseMap,
 } from '@/lib/ai/pipeline/resolve/macros/macro-base';
-import type { MatchedIngredient } from '@/lib/ai/types';
+import type { MatchedIngredient } from '@/lib/ai/types/matching';
 
 const noNutrition = NULL_NUTRITION_VALUES;
 

@@ -3,13 +3,16 @@ import { mealDecompositionSchema } from '@/lib/ai/pipeline/contracts/schemas/dec
 import { nutritionAdjustmentSchema } from '@/lib/ai/pipeline/contracts/schemas/nutrition-adjustment';
 import {
   buildCompressedDecompositionPrompt,
-  buildCompressedNutritionPrompt,
   buildDecompositionPrompt,
+} from '@/lib/ai/prompts/build/decomposition';
+import {
+  buildCompressedNutritionPrompt,
   buildNutritionPrompt,
-} from '@/lib/ai/prompts';
+} from '@/lib/ai/prompts/build/nutrition';
 import { toProviderJsonSchema } from '@/lib/ai/prompts/schema';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
-import type { MatchedIngredient, UserContext } from '@/lib/ai/types';
+import type { MatchedIngredient } from '@/lib/ai/types/matching';
+import type { UserContext } from '@/lib/ai/types/user-context';
 
 // ---------------------------------------------------------------------------
 // Fixtures

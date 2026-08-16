@@ -1,4 +1,3 @@
-import type { GeminiClient } from '@/lib/ai/gemini';
 import {
   buildLanguageCorrectionMessage,
   checkDecompositionLanguage,
@@ -17,10 +16,12 @@ import { buildLlmStageTrace } from '@/lib/ai/pipeline/telemetry/trace';
 import {
   buildDecompositionV2Prompt,
   wrapUserMealTextAsData,
-} from '@/lib/ai/prompts/decomposition-v2';
+} from '@/lib/ai/prompts/build/decomposition-v2';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { MealDecomposition, UserContext } from '@/lib/ai/types';
+import type { MealDecomposition } from '@/lib/ai/types/decomposition';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
 import type { AppDb } from '@/lib/db';
 import { capitalizeFirst } from '@/lib/text/capitalize';

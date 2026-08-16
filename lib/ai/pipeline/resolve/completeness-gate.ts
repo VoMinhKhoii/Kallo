@@ -13,7 +13,7 @@
  *      macro source, where the withholding meaningfully under-counts the meal.
  */
 
-import type { PipelineUnresolved } from '@/lib/ai/types';
+import type { PipelineUnresolved } from '@/lib/ai/types/result';
 import type { CarvedOutIngredient } from './output';
 import { isCarbStapleName } from './plausibility/food-classes';
 

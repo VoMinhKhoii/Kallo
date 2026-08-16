@@ -3,8 +3,9 @@
 // grams — nutrition is computed exactly from per-100g data, no AI involved.
 // Imported by both web client code and server routes/actions, so this module
 // must stay pure (no server-only or browser-only imports).
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
-import type { NutritionValues } from '@/lib/ai/types';
+
+import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 
 /** Round a kcal value for display; unknown renders as an em dash, never 0. */
 export function formatKcal(value: number | null): string {

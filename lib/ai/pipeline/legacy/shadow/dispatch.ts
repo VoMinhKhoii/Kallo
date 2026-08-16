@@ -5,7 +5,7 @@ import {
   ANALYSIS_MODEL_BUDGET_ROUTE,
   ANALYSIS_MODEL_PROVIDER,
 } from '@/lib/ai/pipeline/telemetry/budget';
-import type { PipelineResponse } from '@/lib/ai/types';
+import type { PipelineResponse } from '@/lib/ai/types/result';
 import type { AppDb } from '@/lib/db';
 import { checkNonessentialAnalysisGuards } from '@/lib/rate-limit/analysis-guards';
 import {

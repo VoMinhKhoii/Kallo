@@ -12,7 +12,7 @@ import {
 } from '@/hooks/meals/use-meal-mutations';
 import { deleteMealAction } from '@/lib/actions/meals/mutate-meal';
 import type { LoggingDayData, PersistedMeal } from '@/lib/actions/meals/types';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { CompleteManualMealRow } from '@/lib/logging/manual-logging';
 import type { ParsedMeal } from '@/lib/types/meal';
 

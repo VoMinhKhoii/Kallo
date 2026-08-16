@@ -1,5 +1,5 @@
 import { createHmac, randomUUID } from 'node:crypto';
-import type { AmbiguityFlag } from '@/lib/ai/types';
+import type { AmbiguityFlag } from '@/lib/ai/types/decomposition';
 import type { AppDb } from '@/lib/db';
 import type { RrfAggregate } from './rrf-aggregation';
 

@@ -1,4 +1,4 @@
-import type { PipelineResponse } from '@/lib/ai/types';
+import type { PipelineResponse } from '@/lib/ai/types/result';
 
 export interface ShadowDivergence {
   /** |candidateCal - primaryCal| / primaryCal (mid values). */

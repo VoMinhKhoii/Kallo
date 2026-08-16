@@ -1,4 +1,4 @@
-import type { MealDecomposition } from '@/lib/ai/types';
+import type { MealDecomposition } from '@/lib/ai/types/decomposition';
 
 type DecompositionIngredient =
   MealDecomposition['mealItems'][number]['ingredients'][number];

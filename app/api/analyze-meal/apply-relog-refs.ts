@@ -1,5 +1,5 @@
 import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
-import type { PipelineResult } from '@/lib/ai/types';
+import type { PipelineResult } from '@/lib/ai/types/result';
 import { db } from '@/lib/db';
 import {
   buildFrozenMealItem,

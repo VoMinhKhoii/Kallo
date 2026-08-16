@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { GoogleGenAI } from '@google/genai';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { retrieveHybridTopK } from '@/lib/ai/matching/top-k-retrieval';
+import { retrieveHybridTopK } from '@/lib/ai/matching/retrieve/top-k-retrieval';
 import { type AppDb, encodeDbUrl } from '@/lib/db';
 import { foldText } from '../nin-text';
 

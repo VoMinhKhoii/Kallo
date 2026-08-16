@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 
 const { mockMatchTopK } = vi.hoisted(() => ({
   mockMatchTopK: vi.fn(),
 }));
 
-vi.mock('@/lib/ai/matching/top-k-cascade', () => ({
+vi.mock('@/lib/ai/matching/retrieve/top-k-cascade', () => ({
   matchTopKPerIngredient: mockMatchTopK,
 }));
 

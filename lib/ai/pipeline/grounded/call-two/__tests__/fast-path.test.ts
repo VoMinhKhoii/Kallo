@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { NULL_NUTRITION_VALUES } from '@/lib/ai/__tests__/test-helpers';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import { assembleResult } from '@/lib/ai/pipeline/assemble/assemble';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
@@ -11,7 +11,8 @@ import {
 import { reconcileNutritionIds } from '@/lib/ai/pipeline/resolve/macro-resolution';
 import { bridgeV2ToV1 } from '@/lib/ai/pipeline/resolve/resolve';
 import type { PortionResolution } from '@/lib/ai/portion/types';
-import type { NutritionPer100g, UserContext } from '@/lib/ai/types';
+import type { NutritionPer100g } from '@/lib/ai/types/matching';
+import type { UserContext } from '@/lib/ai/types/user-context';
 
 // ---------------------------------------------------------------------------
 // Fixtures

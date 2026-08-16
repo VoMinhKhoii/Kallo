@@ -7,7 +7,7 @@
  * partition be tested without a provider.
  */
 
-import type { MealItemWithCandidates } from '@/lib/ai/prompts/grounded-estimation';
+import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
 
 /**
  * Chunk Call 2 only when the meal has MORE than this many ingredients total.

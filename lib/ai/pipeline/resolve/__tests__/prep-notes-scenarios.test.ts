@@ -13,14 +13,15 @@
  * variance between scenarios.
  */
 import { describe, expect, it } from 'vitest';
-import { NULL_NUTRITION_VALUES } from '@/lib/ai/__tests__/test-helpers';
+import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
 import type { MealDecompositionWithIds } from '@/lib/ai/pipeline/contracts/decomposition-ids';
 import {
   computeMacroBaseMap,
   type RawNutritionAdjustment,
   reconcileNutritionIds,
 } from '@/lib/ai/pipeline/resolve/macro-resolution';
-import type { BoundedEstimate, MatchedIngredient } from '@/lib/ai/types';
+import type { MatchedIngredient } from '@/lib/ai/types/matching';
+import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
 
 // ---------------------------------------------------------------------------
 // Synthetic DB entries (per-100g) — sourced from FAO_VN_2007 / USDA priors.

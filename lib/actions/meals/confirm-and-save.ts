@@ -10,12 +10,12 @@ import {
   inferMealSlot,
   nutritionValuesToRow,
 } from '@/lib/actions/persisted-meal';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,
 } from '@/lib/ai/pipeline/assemble/goal-adjustment';
-import type { PipelineResult } from '@/lib/ai/types';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
+import type { PipelineResult } from '@/lib/ai/types/result';
 import { requireAuthAndProfile } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import {

@@ -8,7 +8,10 @@
 
 import type { MealDecompositionWithIds } from '@/lib/ai/pipeline/contracts/decomposition-ids';
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
-import type { MatchedIngredient, UnmatchedIngredient } from '@/lib/ai/types';
+import type {
+  MatchedIngredient,
+  UnmatchedIngredient,
+} from '@/lib/ai/types/matching';
 import type { RawNutritionAdjustment } from './macro-resolution';
 import type { IngredientPlausibility } from './plausibility/plausibility';
 import type { RefuseResolutionTelemetry } from './refuse-mass';

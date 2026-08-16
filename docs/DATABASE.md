@@ -178,7 +178,7 @@ The query-side embedding (for the ingredient name output by the LLM) is resolved
 
 | Tier | Source | Latency | Location |
 |------|--------|---------|----------|
-| L1 | In-memory `Map<string, number[]>` | ~0ms | `lib/ai/matching/embedding-cache.ts` |
+| L1 | In-memory `Map<string, number[]>` | ~0ms | `lib/ai/cache/embedding-cache.ts` |
 | L2 | Exact match: `WHERE name_vi = $1` | ~1-3ms | Supabase (PK scan) |
 | L3 | Gemini API (`gemini-embedding-001`) | ~400-700ms | External API (rare after seed) |
 
@@ -188,6 +188,7 @@ The query-side embedding (for the ingredient name output by the LLM) is resolved
 - **L2 hit**: Exact match on `name_vi` or `lower(name_en)`. Promotes both `name_vi` and `name_en` into L1.
 - **L2 miss**: Neither `name_vi` nor `lower(name_en)` matched. The system logs a `synonym_candidates` row asynchronously (fire-and-forget) and continues to L3.
 - **L3 fallback**: Calls Gemini API, then fire-and-forget inserts into L2 (as `name_vi`) + sets L1. `ON CONFLICT DO NOTHING` for concurrency safety.
+- **Provider memo (in front of L3)**: `lib/ai/cache/provider-embedding-memo.ts` is a second in-memory map at the SDK call boundary, keyed on the **raw** text (no `normalizeIngredientKey`), so it is not interchangeable with L1. It catches the speculative-prewarm race (background embed lands after the matcher's L1 read) and is the only cache left when `PIPELINE_EMBEDDING_CACHE_ENABLED=false`. Unbounded, no TTL.
 - **L1 priming**: `warmEmbeddingCache()` is now explicit only; the live request path does not kick off a full-table warm-up on cache miss. L1 is primarily primed by `nutrition-cache.loadAll()` when VN FCT rows are fetched, avoiding extra DB contention on cold requests.
 - **pg_trgm**: Removed from the live lookup path. GIN trgm indexes remain for a future background synonym discovery job that writes to `synonym_candidates`.
 - **Seed migration**: `20260319034000_seed_query_embeddings_from_fct.sql` copies `(name_primary, name_en, embedding)` from `vietnamese_food_composition`.

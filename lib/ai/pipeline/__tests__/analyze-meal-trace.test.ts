@@ -67,8 +67,11 @@ vi.mock('@/lib/async/fetch-with-timeout', () => ({
     fn(new AbortController().signal),
 }));
 
-vi.mock('@/lib/ai/matching', () => ({
+vi.mock('@/lib/ai/matching/retrieve/legacy/cascade', () => ({
   matchIngredients: mockMatchIngredients,
+}));
+
+vi.mock('@/lib/ai/matching/unmatched-log', () => ({
   logUnmatchedIngredients: vi.fn(),
 }));
 
@@ -96,25 +99,28 @@ vi.mock('@/lib/ai/streaming/parsers', () => ({
   extractMealItemNameOccurrences: vi.fn().mockReturnValue([]),
 }));
 
-vi.mock('@/lib/ai/prompts', () => ({
+vi.mock('@/lib/ai/prompts/build/decomposition', () => ({
   buildDecompositionPrompt: vi.fn().mockReturnValue('decomp-system-prompt'),
   getDecompositionPromptBuilder: vi
     .fn()
     .mockReturnValue(vi.fn().mockReturnValue('decomp-system-prompt')),
+}));
+
+vi.mock('@/lib/ai/prompts/build/nutrition', () => ({
   buildNutritionPrompt: vi.fn().mockReturnValue('nutrition-system-prompt'),
   getNutritionPromptBuilder: vi
     .fn()
     .mockReturnValue(vi.fn().mockReturnValue('nutrition-system-prompt')),
 }));
 
-import { createMockGemini } from '@/lib/ai/__tests__/test-helpers';
+import { createMockGemini } from '@/lib/ai/__fixtures__/test-helpers';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 // Import after mocks
 import {
   _resetL4DecompositionCacheForTests,
   analyzeMeal,
 } from '@/lib/ai/pipeline/analyze-meal';
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { analysisModelBudgetEvents, pipelineRuns } from '@/lib/db/schema';
 
 // ---------------------------------------------------------------------------

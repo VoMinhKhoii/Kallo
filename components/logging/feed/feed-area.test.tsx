@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { forwardRef, useImperativeHandle } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import { FeedArea } from './feed-area';
 
 vi.mock('@/components/logging/feed/macro-summary', () => ({

@@ -22,7 +22,7 @@
  *                              unrelated to the Gemini provider below)
  *   DATABASE_URL             — Supabase connection string
  *
- *   Gemini provider for Phase 2/4 — same contract as lib/ai/gemini.ts:
+ *   Gemini provider for Phase 2/4 — same contract as lib/ai/provider/client.ts:
  *   AI_PROVIDER=vertex       — Vertex AI via ADC (what prod uses; billed quota,
  *                              no free-tier daily cap). Then also needs
  *                              GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION.

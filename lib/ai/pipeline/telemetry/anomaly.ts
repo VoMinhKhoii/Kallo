@@ -24,12 +24,12 @@
  * phase; the seam is left explicit).
  */
 
-import { MAX_KCAL_PER_100G } from '@/lib/ai/constants';
+import { MAX_KCAL_PER_100G } from '@/lib/ai/pipeline/contracts/nutrition-limits';
 import type {
   MatchedIngredient,
-  PipelineResult,
   UnmatchedIngredient,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/matching';
+import type { PipelineResult } from '@/lib/ai/types/result';
 
 /**
  * Likely CAUSE of an anomaly. Distinct from `validation.ts`'s `AnomalyType`

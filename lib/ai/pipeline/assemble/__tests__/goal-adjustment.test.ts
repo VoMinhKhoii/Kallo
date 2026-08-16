@@ -9,7 +9,7 @@ import type {
   BoundedEstimate,
   BoundedNutrition,
   NutritionValues,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/nutrition-values';
 
 // ---------------------------------------------------------------------------
 // Helper: create a bounded estimate

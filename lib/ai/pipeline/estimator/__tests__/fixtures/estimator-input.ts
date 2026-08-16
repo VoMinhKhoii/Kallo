@@ -2,7 +2,7 @@
 
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { GroundedEstimatorInput } from '@/lib/ai/pipeline/estimator/types';
-import type { MealItemWithCandidates } from '@/lib/ai/prompts/grounded-estimation';
+import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
 
 export const mealItems: MealItemWithCandidates[] = [
   {

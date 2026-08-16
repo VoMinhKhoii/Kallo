@@ -1,14 +1,14 @@
 import {
   GOAL_ADJUSTED_NUTRIENTS,
   GOAL_BOUND_DIRECTION,
-  NUTRITION_KEYS,
-} from '@/lib/ai/constants';
+} from '@/lib/ai/pipeline/assemble/goal-bounds';
 import type {
   BoundedEstimate,
   BoundedNutrition,
   GoalAdjustedNutrient,
   NutritionValues,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { Goal } from '@/lib/onboarding/types';
 
 /**

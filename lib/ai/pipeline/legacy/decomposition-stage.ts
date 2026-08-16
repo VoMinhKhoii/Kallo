@@ -1,5 +1,5 @@
 import { toJSONSchema } from 'zod';
-import type { GeminiClient } from '@/lib/ai/gemini';
+import { createL4Cache } from '@/lib/ai/cache/l4-cache';
 import {
   buildLanguageCorrectionMessage,
   checkDecompositionLanguage,
@@ -31,15 +31,16 @@ import {
 } from '@/lib/ai/pipeline/telemetry/budget';
 import { withStageLog } from '@/lib/ai/pipeline/telemetry/stage-log';
 import { buildLlmStageTrace } from '@/lib/ai/pipeline/telemetry/trace';
-import { getDecompositionPromptBuilder } from '@/lib/ai/prompts';
+import { getDecompositionPromptBuilder } from '@/lib/ai/prompts/build/decomposition';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { MealDecomposition, UserContext } from '@/lib/ai/types';
+import type { MealDecomposition } from '@/lib/ai/types/decomposition';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
 import type { AppDb } from '@/lib/db';
 import { capitalizeFirst } from '@/lib/text/capitalize';
 import {
   buildDecompositionCacheKey,
-  createL4Cache,
   sha256Hex,
   stableStringify,
 } from './decomposition-cache';

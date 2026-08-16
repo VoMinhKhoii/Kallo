@@ -1,4 +1,4 @@
-import type { ClientVessel } from '@/lib/ai/portion/vessel-types';
+import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 
 export interface MacroBreakdown {
   calories: number;

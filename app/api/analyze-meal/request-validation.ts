@@ -3,7 +3,7 @@ import type { NextRequest, NextResponse } from 'next/server';
 import {
   type GeminiProviderConfig,
   resolveGeminiProvider,
-} from '@/lib/ai/gemini';
+} from '@/lib/ai/provider/provider';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';

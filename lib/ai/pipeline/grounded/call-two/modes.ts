@@ -15,14 +15,14 @@
  * events go out through `./item-macros`.
  */
 
-import type { GeminiCallTrace } from '@/lib/ai/gemini';
 import { NUTRITION_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { shouldChunkCall2 } from '@/lib/ai/pipeline/estimator/chunk-policy';
 import { runChunkedCall2 } from '@/lib/ai/pipeline/estimator/chunked-call2';
 import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
-import type { MealItemWithCandidates } from '@/lib/ai/prompts/grounded-estimation';
+import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
+import type { GeminiCallTrace } from '@/lib/ai/provider/provider';
 import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
 import { type ChunkEmitContext, emitChunkItemMacros } from './item-macros';
 

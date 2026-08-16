@@ -48,7 +48,7 @@ vi.mock('@/lib/barcode/openfoodfacts', async (importActual) => {
   };
 });
 
-import type { PipelineResult } from '@/lib/ai/types';
+import type { PipelineResult } from '@/lib/ai/types/result';
 import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
 // Import modules under test
 import { searchBarcodeAction, stageBarcodeMealAction } from '../barcode';

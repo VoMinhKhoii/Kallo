@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import type { GeminiAttemptMetadata } from '@/lib/ai/gemini';
+import type { GeminiAttemptMetadata } from '@/lib/ai/provider/provider';
 import { db } from '@/lib/db';
 import type * as schema from '@/lib/db/schema';
 

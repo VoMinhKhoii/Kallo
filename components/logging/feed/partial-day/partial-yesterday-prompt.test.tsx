@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
-import type { NutritionValues } from '@/lib/ai/types';
+import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import { PartialYesterdayPrompt } from './partial-yesterday-prompt';
 
 const mockUseLoggingDay = vi.fn();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createMockGemini } from '@/lib/ai/__tests__/test-helpers';
+import { createMockGemini } from '@/lib/ai/__fixtures__/test-helpers';
 import {
   ESTIMATOR_NAMES,
   ESTIMATOR_PRICING,

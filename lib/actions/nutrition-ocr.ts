@@ -1,13 +1,13 @@
 'use server';
 
 import { z } from 'zod';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
 import type {
   BoundedNutrition,
   NutritionValues,
-  PipelineResult,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
+import type { PipelineResult } from '@/lib/ai/types/result';
 import { requireAuthAndProfile } from '@/lib/auth/session';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';

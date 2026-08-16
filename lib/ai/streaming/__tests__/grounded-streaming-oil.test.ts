@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { NULL_NUTRITION_VALUES } from '@/lib/ai/__tests__/test-helpers';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedMealItem } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { resolveStreamingV2MealItem } from '@/lib/ai/streaming/grounded-parsers';

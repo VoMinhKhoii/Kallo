@@ -1,26 +1,33 @@
-import { GOAL_ADJUSTED_NUTRIENTS, NUTRITION_KEYS } from '@/lib/ai/constants';
+import { GOAL_ADJUSTED_NUTRIENTS } from '@/lib/ai/pipeline/assemble/goal-bounds';
 import {
   ingredientDisplayName,
   ingredientGrams,
 } from '@/lib/ai/pipeline/contracts/ingredient-accessors';
 import { normalizeBoundedEstimate } from '@/lib/ai/pipeline/contracts/schemas/bounded-estimate';
 import { computeDbScalingGrams } from '@/lib/ai/pipeline/resolve/macro-resolution';
+import type { MealDecomposition } from '@/lib/ai/types/decomposition';
+import type {
+  MatchedIngredient,
+  UnmatchedIngredient,
+} from '@/lib/ai/types/matching';
+import type {
+  IngredientLlmNutrition,
+  IngredientNutrition,
+  NutritionAdjustment,
+} from '@/lib/ai/types/nutrition-adjustment';
 import type {
   BoundedEstimate,
   BoundedNutrition,
-  IngredientLlmNutrition,
-  IngredientNutrition,
-  MatchedIngredient,
-  MealConfidence,
-  MealDecomposition,
-  NutritionAdjustment,
   NutritionValues,
+} from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
+import type {
+  MealConfidence,
   PipelineMealItem,
   PipelineResult,
   ProcessedIngredient,
-  UnmatchedIngredient,
-  UserContext,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/result';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,

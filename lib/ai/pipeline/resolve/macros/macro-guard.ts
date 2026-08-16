@@ -11,7 +11,7 @@
  * per-ingredient policy decisions live.
  */
 
-import type { BoundedEstimate } from '@/lib/ai/types';
+import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
 
 export const HALLUCINATION_GUARD_RATIO = 3;
 

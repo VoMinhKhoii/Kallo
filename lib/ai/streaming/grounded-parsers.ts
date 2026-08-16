@@ -15,8 +15,7 @@
  *      run unchanged.
  */
 
-import { mealItemHasDiscreteOil } from '@/lib/ai/absorbed-oil';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type {
   GroundedIngredientEstimate,
@@ -30,7 +29,8 @@ import type {
   IngredientLlmNutrition,
   MacroBase,
   MealItemNutrition,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/nutrition-adjustment';
+import { mealItemHasDiscreteOil } from '@/lib/nutrition/absorbed-oil';
 
 /**
  * Same partial-JSON marker as v1's nutrition stream. Each `{"mealItemName":`

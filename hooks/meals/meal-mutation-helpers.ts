@@ -6,8 +6,8 @@ import type {
   PersistedMeal,
   PersistedMealItemGroup,
 } from '@/lib/actions/meals/types';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
-import type { NutritionValues } from '@/lib/ai/types';
+import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { SaveManualMealInput } from '@/lib/api/contracts/meals';
 import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';

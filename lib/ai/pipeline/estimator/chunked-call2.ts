@@ -30,7 +30,7 @@ import type {
   GroundedEstimation,
   GroundedMealItem,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
-import type { MealItemWithCandidates } from '@/lib/ai/prompts/grounded-estimation';
+import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';

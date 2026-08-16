@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { NULL_NUTRITION_VALUES } from '@/lib/ai/__tests__/test-helpers';
+import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
 import { assembleResult } from '@/lib/ai/pipeline/assemble/assemble';
-import type {
-  BoundedEstimate,
-  MatchedIngredient,
-  MealDecomposition,
-  NutritionAdjustment,
-  UserContext,
-} from '@/lib/ai/types';
+import type { MealDecomposition } from '@/lib/ai/types/decomposition';
+import type { MatchedIngredient } from '@/lib/ai/types/matching';
+import type { NutritionAdjustment } from '@/lib/ai/types/nutrition-adjustment';
+import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
+import type { UserContext } from '@/lib/ai/types/user-context';
 
 const userContext: UserContext = {
   goal: 'cutting',

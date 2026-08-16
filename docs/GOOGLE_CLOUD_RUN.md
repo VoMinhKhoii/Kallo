@@ -478,7 +478,7 @@ The production service calls Gemini through **Vertex AI** via Application
 Default Credentials. Local dev and the helper scripts in
 `scripts/` continue to use the Google AI Studio API key from `GEMINI_API_KEY`.
 
-The selection is controlled by `AI_PROVIDER` in `lib/ai/gemini.ts:resolveGeminiProvider`:
+The selection is controlled by `AI_PROVIDER` in `lib/ai/provider/client.ts:resolveGeminiProvider`:
 
 | `AI_PROVIDER` | Auth | Required env |
 | --- | --- | --- |

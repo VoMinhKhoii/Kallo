@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createMockGemini } from '@/lib/ai/__tests__/test-helpers';
-import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/grounded-estimation';
+import { createMockGemini } from '@/lib/ai/__fixtures__/test-helpers';
+import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/build/grounded-estimation';
 import {
   createGeminiEstimator,
   GROUNDED_ESTIMATION_USER_MESSAGE,

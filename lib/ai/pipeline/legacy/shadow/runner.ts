@@ -2,7 +2,7 @@ import type {
   PipelineResponse,
   PipelineResult,
   ProcessedIngredient,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/result';
 import { computeDivergence, type ShadowDivergence } from './divergence';
 import type { ShadowGuardAbortReason } from './guards';
 

@@ -1,10 +1,13 @@
 import { sql } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
-import { createGeminiClient, resolveGeminiProvider } from '@/lib/ai/gemini';
 import {
   cacheQueryEmbedding,
   resolveQueryEmbedding,
-} from '@/lib/ai/matching/embedding-cache';
+} from '@/lib/ai/cache/embedding-cache';
+import {
+  createGeminiClient,
+  resolveGeminiProvider,
+} from '@/lib/ai/provider/provider';
 import { ingredientSearchQuerySchema } from '@/lib/api/contracts/ingredients';
 import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/auth/session';

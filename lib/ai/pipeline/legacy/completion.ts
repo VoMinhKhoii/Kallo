@@ -1,17 +1,14 @@
-import type { matchIngredients } from '@/lib/ai/matching';
-import type { RrfMeasurement } from '@/lib/ai/matching/rrf-measurement';
+import type { RrfMeasurement } from '@/lib/ai/matching/rank/rrf-measurement';
+import type { matchIngredients } from '@/lib/ai/matching/retrieve/legacy/cascade';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { aggregateRrfMeasurements } from '@/lib/ai/pipeline/telemetry/rrf-aggregation';
 import {
   buildPipelineRunRow,
   writePipelineRun,
 } from '@/lib/ai/pipeline/telemetry/run-telemetry';
-import type {
-  AmbiguityFlag,
-  PipelineResponse,
-  PipelineResult,
-  UserContext,
-} from '@/lib/ai/types';
+import type { AmbiguityFlag } from '@/lib/ai/types/decomposition';
+import type { PipelineResponse, PipelineResult } from '@/lib/ai/types/result';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import {
   DECOMPOSITION_MODEL,
   type DecompositionStageResult,

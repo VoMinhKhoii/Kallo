@@ -1,16 +1,16 @@
 import type { NextRequest } from 'next/server';
-import { createGeminiClient } from '@/lib/ai/gemini';
+import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import {
   buildAiRequestContext,
   buildUserContext,
-  toParsedMeal,
-} from '@/lib/ai/mappers';
-import { logUnmatchedIngredients } from '@/lib/ai/matching';
+} from '@/lib/ai/adapters/user-context';
+import { logUnmatchedIngredients } from '@/lib/ai/matching/unmatched-log';
 import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
 import {
   logPipelineEnd,
   logPipelineStart,
 } from '@/lib/ai/pipeline/telemetry/logging';
+import { createGeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
 import { withDeadline } from '@/lib/async/with-deadline';

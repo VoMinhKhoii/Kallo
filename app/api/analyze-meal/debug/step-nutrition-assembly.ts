@@ -1,16 +1,16 @@
-import type { GeminiClient } from '@/lib/ai/gemini';
-import type { buildUserContext } from '@/lib/ai/mappers';
+import type { buildUserContext } from '@/lib/ai/adapters/user-context';
 import { assembleResult } from '@/lib/ai/pipeline/assemble/assemble';
 import type { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import type { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/contracts/decomposition-ids';
 import { nutritionAdjustmentSchema } from '@/lib/ai/pipeline/contracts/schemas/nutrition-adjustment';
 import { reconcileNutritionIds } from '@/lib/ai/pipeline/resolve/macro-resolution';
-import { getNutritionPromptBuilder } from '@/lib/ai/prompts';
+import { getNutritionPromptBuilder } from '@/lib/ai/prompts/build/nutrition';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type {
   MatchedIngredient,
-  NutritionAdjustment,
   UnmatchedIngredient,
-} from '@/lib/ai/types';
+} from '@/lib/ai/types/matching';
+import type { NutritionAdjustment } from '@/lib/ai/types/nutrition-adjustment';
 import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
 
 import {

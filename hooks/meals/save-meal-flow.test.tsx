@@ -26,7 +26,7 @@ import type {
   PendingMealConfirmation,
   PersistedMeal,
 } from '@/lib/actions/meals/types';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { ParsedMeal } from '@/lib/types/meal';
 
 // ---------------------------------------------------------------------------

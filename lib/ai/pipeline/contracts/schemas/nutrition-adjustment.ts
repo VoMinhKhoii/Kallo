@@ -23,7 +23,7 @@ import { boundedEstimateSchema } from './bounded-estimate';
 //
 // For **unmatched** ingredients (no DB row): the LLM's P/C/F triples flow
 // through verbatim, kcal is derived from the macro identity, and a hard
-// density clamp (`MAX_KCAL_PER_100G` from `lib/ai/constants.ts`) scales the
+// density clamp (`MAX_KCAL_PER_100G` from `lib/ai/pipeline/contracts/nutrition-limits.ts`) scales the
 // whole triple down if it exceeds the physical ceiling.
 
 /**
