@@ -40,13 +40,17 @@ class ComposerGlow extends StatelessWidget {
         child: const DecoratedBox(
           decoration: BoxDecoration(
             gradient: RadialGradient(
-              center: Alignment(0, 0.35),
+              // Sat lower than centre, which buys the fade room to finish.
+              // Alignment y=0.45 is 72.5% down the box, so there is 0.725 of
+              // the height above it.
+              center: Alignment(0, 0.45),
               // Flutter measures `radius` against the box's SHORTEST side, so
-              // on a box this wide it is the HEIGHT that decides where the
-              // fade ends. The centre sits 0.35 down, which leaves 0.675 of the
-              // height above it; the outermost stop must land inside that or
-              // the halo gains a hard horizontal line across the feed.
-              radius: 0.7,
+              // on a box this wide it is the HEIGHT that decides where the fade
+              // ends: it reaches 0.62 of the height, a clear 0.1 short of the
+              // top edge. At 0.7 from a higher centre that margin was under
+              // 0.05, and the alpha still left on the edge drew a faint line
+              // across the feed — the seam this whole shape exists to avoid.
+              radius: 0.62,
               // Alpha only ever DECREASES outward. Layering a gold core over
               // a wider tan wash the way the web gradient does needs two
               // gradients; folded into one stop list it instead paints a tan
@@ -57,8 +61,11 @@ class ComposerGlow extends StatelessWidget {
               // The last stop fades to the SAME colour at zero alpha rather
               // than to a bare transparent — interpolating toward
               // transparent-black fringes the halo grey against the cream.
+              // The tail runs all the way to the edge of the gradient rather
+              // than stopping at 0.9: ending early puts a corner in the ramp,
+              // and a corner is visible as a ring even where the alpha is 0.
               colors: [_core, _tan, _tanOut],
-              stops: [0, 0.5, 0.9],
+              stops: [0, 0.45, 1],
             ),
           ),
         ),

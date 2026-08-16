@@ -154,6 +154,7 @@ export function FeedArea({
           onChangeIntensity={feed.setCheatIntensity}
           selectedDate={selectedDate}
           onBarcodeSuccess={feed.handleBarcodeSuccess}
+          animateLayout={feed.animateComposerLayout}
         />
       </div>
     </main>

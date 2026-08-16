@@ -34,7 +34,7 @@ export function ComposerGlow({ className }: { className?: string }) {
         // Bleeds well past the input on every side, and SYMMETRICALLY: the
         // gradient is centred in this box, so an uneven inset would hang the
         // light above or below the thing it is meant to be lighting.
-        'pointer-events-none absolute -inset-x-16 -inset-y-28 z-0',
+        'pointer-events-none absolute -inset-x-24 -inset-y-36 z-0',
         className
       )}
       style={{ background: 'var(--nham-composer-glow)' }}

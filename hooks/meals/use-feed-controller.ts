@@ -19,6 +19,7 @@ import {
 } from '@/hooks/meals/use-meal-mutations';
 import { useMealPrefill } from '@/hooks/meals/use-meal-prefill';
 import { useRecentCheatOccasions } from '@/hooks/meals/use-recent-cheat-occasions';
+import { useSettledOnce } from '@/hooks/meals/use-settled-once';
 import { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
 import { useStreamingScroll } from '@/hooks/meals/use-streaming-scroll';
 import { useStreamingTerminalEffects } from '@/hooks/meals/use-streaming-terminal-effects';
@@ -212,6 +213,16 @@ export function useFeedController(args: {
   const isEmptyComposer =
     !hasContent && !stream.isAnalyzing && !day.isDayLoading && !day.isDayError;
 
+  // The composer's layout spring is for the user LOGGING something — the bar
+  // gliding down to the bottom as their first meal card takes the space. It is
+  // NOT for data arriving: while the day query is in flight the composer is
+  // docked at the bottom, and an empty day resolving moves it to the centre, so
+  // every cold load of an empty day ended with the bar visibly flying up the
+  // screen. Held off until the query has answered once; the reposition that
+  // answer causes then happens in the same frame as the skeleton clearing,
+  // which reads as the page loading rather than as the bar travelling.
+  const animateComposerLayout = useSettledOnce(day.isDayLoading);
+
   const isToday = selectedDate === today;
   const isPastDay = selectedDate < today;
   const showPartialDayNotice =
@@ -251,6 +262,7 @@ export function useFeedController(args: {
     setYesterdayPromptDismissed,
     hasContent,
     isEmptyComposer,
+    animateComposerLayout,
     isToday,
     showPartialDayNotice,
   };

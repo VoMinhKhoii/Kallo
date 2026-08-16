@@ -34,6 +34,11 @@ interface FeedComposerProps {
   onChangeIntensity: (intensity: CheatIntensity) => void;
   selectedDate: string;
   onBarcodeSuccess: () => void;
+  /**
+   * Whether a change of position should be sprung. False until the day query
+   * has answered once — see `animateComposerLayout`.
+   */
+  animateLayout: boolean;
 }
 
 /**
@@ -56,6 +61,7 @@ export function FeedComposer({
   onChangeIntensity,
   selectedDate,
   onBarcodeSuccess,
+  animateLayout,
 }: FeedComposerProps) {
   const {
     relogPicker,
@@ -67,7 +73,7 @@ export function FeedComposer({
   const reduceMotion = useReducedMotion();
   return (
     <motion.div
-      layout
+      layout={animateLayout}
       transition={{ type: 'spring', stiffness: 320, damping: 34 }}
       className="relative shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4"
     >
@@ -80,10 +86,12 @@ export function FeedComposer({
         />
       )}
       {/* The first beat: the input is what you came for, so it arrives before
-          the light behind it and the question above it. */}
+          the light behind it and the question above it. A fade, NOT a rise —
+          the bar has to be where it belongs from the first frame, and anything
+          that moves it reads as the page still settling. */}
       <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={reduceMotion ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{
           duration: 0.45,
           delay: EMPTY_ENTRANCE.input,
