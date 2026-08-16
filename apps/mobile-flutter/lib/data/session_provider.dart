@@ -1,7 +1,55 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/supabase_service.dart';
+
+/// Builds the session stream from a gotrue auth-event stream.
+///
+/// Extracted from [sessionProvider] so the error-resilience contract below is
+/// unit-testable without a live Supabase client.
+///
+/// **gotrue pushes auth failures onto `onAuthStateChange` as stream ERRORS**
+/// (`GoTrueClient.notifyException`): a token-refresh network blip surfaces as
+/// `AuthRetryableFetchException`, and an expired session on resume surfaces as
+/// `AuthException('Session expired.')` right after gotrue signs the user out.
+/// Those errors must never terminate this subscription — this stream is the
+/// app's only source of signed-in state, so a dead stream leaves every screen
+/// rendering "not signed in" until the process restarts, *including after a
+/// successful re-sign-in*, because the new session event never arrives.
+///
+/// On an error we therefore stay subscribed and re-emit [currentSession], the
+/// value gotrue updates synchronously, so the UI resyncs with what the client
+/// actually holds instead of going dark.
+///
+/// Subscribing in `onListen` (rather than lazily, as `await for` did) also
+/// closes a second hole: `onAuthStateChange` is a broadcast stream, so any
+/// event fired before the subscription was attached was dropped outright.
+Stream<Session?> buildSessionStream({
+  required Stream<AuthState> events,
+  required Session? Function() currentSession,
+}) {
+  final controller = StreamController<Session?>();
+  StreamSubscription<AuthState>? subscription;
+
+  controller
+    ..onListen = () {
+      // Seed with the session Supabase restored from secure storage on init, so
+      // the very first frame already reflects signed-in/out without a flash.
+      // This is the only guarantee the provider ever resolves: without it the
+      // app would depend on gotrue's `BehaviorSubject` replaying an event, and
+      // the router would hold the splash forever if it ever stopped.
+      controller.add(currentSession());
+      subscription = events.listen(
+        (event) => controller.add(event.session),
+        onError: (Object _, StackTrace __) => controller.add(currentSession()),
+      );
+    }
+    ..onCancel = () => subscription?.cancel();
+
+  return controller.stream;
+}
 
 /// Streams the current Supabase auth session.
 ///
@@ -10,16 +58,12 @@ import '../services/supabase_service.dart';
 /// `StreamProvider` gives us the same `{ session, loading }` shape the RN
 /// consumers had — `AsyncLoading` ⇆ `loading`, `AsyncData(session)` ⇆ the
 /// resolved value (which may be `null` when signed out).
-final sessionProvider = StreamProvider<Session?>((ref) async* {
+final sessionProvider = StreamProvider<Session?>((ref) {
   final auth = SupabaseService.client.auth;
-
-  // Seed with the session Supabase restored from secure storage on init, so
-  // the very first frame already reflects signed-in/out without a flash.
-  yield auth.currentSession;
-
-  await for (final event in auth.onAuthStateChange) {
-    yield event.session;
-  }
+  return buildSessionStream(
+    events: auth.onAuthStateChange,
+    currentSession: () => auth.currentSession,
+  );
 });
 
 /// Convenience: the resolved session or `null` while loading / signed out.
