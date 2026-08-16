@@ -217,19 +217,19 @@ export function useFeedController(args: {
   // ChatGPT-style: before anything is logged the composer sits centered with
   // the prompt; once there's content it animates down to the bottom while the
   // cards animate in. Not mode-based — purely content-driven.
-  // While the day is still loading the client cannot know whether it is empty,
-  // so it used to assume "not empty" and dock the composer — then an empty day
-  // resolving moved it to the centre, which is a bar sliding across the screen
-  // on every cold load. The server already looked this up, so the loading state
-  // now answers with what it was told and the first paint is simply correct.
-  // With no answer to go on, the old assumption stands.
-  const mayHaveEntries = day.isDayLoading
-    ? initiallyHasEntries !== false
+  // What we currently believe this day holds. While the query is in flight that
+  // is whatever the server worked out before the page was sent; once it answers,
+  // the answer itself. Undefined means the server had nothing to offer — no
+  // timezone cookie on a first visit — and the old assumption stands.
+  //
+  // ONE belief, read by everything that depends on it. Expressed twice it was
+  // two ternaries in opposite polarity (`!== false` against `=== false`) that a
+  // reader had to reconcile to see they were the same question.
+  const expectEntries = day.isDayLoading
+    ? (initiallyHasEntries ?? true)
     : hasContent;
   const isEmptyComposer =
-    !stream.isAnalyzing &&
-    !day.isDayError &&
-    (day.isDayLoading ? initiallyHasEntries === false : !hasContent);
+    !expectEntries && !stream.isAnalyzing && !day.isDayError;
 
   // The composer's layout spring is for the user LOGGING something — the bar
   // gliding down to the bottom as their first meal card takes the space. It is
@@ -279,7 +279,7 @@ export function useFeedController(args: {
     yesterdayPromptDismissed,
     setYesterdayPromptDismissed,
     hasContent,
-    mayHaveEntries,
+    expectEntries,
     isEmptyComposer,
     animateComposerLayout,
     isToday,

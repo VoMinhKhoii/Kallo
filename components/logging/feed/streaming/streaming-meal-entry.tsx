@@ -7,10 +7,10 @@ import {
   formatMacroValue,
 } from '@/components/logging/feed/format-inline-nutrition';
 import { MealEntryItemSkeleton } from '@/components/logging/feed/skeletons';
-import { TurnHeader } from '@/components/logging/feed/turn-header';
+import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { loaderIndexForKey } from '@/components/shared/loaders/registry';
-import { StreamTicker } from '@/components/shared/stream-ticker';
-import { deriveStreamTicker } from '@/components/shared/stream-ticker-frame';
+import { StreamTicker } from '@/components/shared/stream-ticker/stream-ticker';
+import { deriveStreamTicker } from '@/components/shared/stream-ticker/stream-ticker-frame';
 import type { ChatMessage, MealItem } from '@/lib/types/meal';
 
 const DEFAULT_SKELETON_COUNT = 3;

@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { StreamTickerFrame } from '@/components/shared/stream-ticker-frame';
-import { deriveStreamTicker } from '@/components/shared/stream-ticker-frame';
+import type { StreamTickerFrame } from '@/components/shared/stream-ticker/stream-ticker-frame';
+import { deriveStreamTicker } from '@/components/shared/stream-ticker/stream-ticker-frame';
 import type { MealItem } from '@/lib/types/meal';
 
 // The global setup mock carries no messages, so `t.has` is false everywhere and
@@ -51,7 +51,9 @@ vi.mock('motion/react', () => ({
   useReducedMotion: () => false,
 }));
 
-const { StreamTicker } = await import('@/components/shared/stream-ticker');
+const { StreamTicker } = await import(
+  '@/components/shared/stream-ticker/stream-ticker'
+);
 
 function macros(calories: number) {
   return { calories, protein: 0, carbs: 0, fat: 0 };

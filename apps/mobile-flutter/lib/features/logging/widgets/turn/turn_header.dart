@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../logic/logging_spacing.dart';
+import '../../logic/logging_spacing.dart';
 import 'meal_time_divider.dart';
 import 'user_message_bubble.dart';
 

@@ -11,7 +11,7 @@ import {
 import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { TurnHeader } from '@/components/logging/feed/turn-header';
+import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import {

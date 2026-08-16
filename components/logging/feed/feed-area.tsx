@@ -1,8 +1,8 @@
 'use client';
 
-import { EmptyPrompt } from '@/components/logging/feed/empty-prompt';
+import { EmptyPrompt } from '@/components/logging/feed/composer/empty-prompt';
+import { FeedComposer } from '@/components/logging/feed/composer/feed-composer';
 import { FeedCards } from '@/components/logging/feed/feed-cards';
-import { FeedComposer } from '@/components/logging/feed/feed-composer';
 import {
   LoggingDayErrorState,
   LoggingDaySkeleton,
@@ -103,7 +103,7 @@ export function FeedArea({
         >
           {/* No ghost cards for a day the server already told us is empty —
               they would flash in and out for no reason. */}
-          {day.isDayLoading && feed.mayHaveEntries && <LoggingDaySkeleton />}
+          {day.isDayLoading && feed.expectEntries && <LoggingDaySkeleton />}
 
           {!day.isDayLoading && day.isDayError && (
             <LoggingDayErrorState

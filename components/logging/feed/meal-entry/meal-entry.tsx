@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry/meal-entry-item';
 import { PortionPicker } from '@/components/logging/feed/meal-entry/portion/portion-picker';
-import { TurnHeader } from '@/components/logging/feed/turn-header';
+import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import {
   applyQuantityChange,
   deriveQuantityEdits,

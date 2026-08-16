@@ -6,7 +6,7 @@ import '../../../../models/meal.dart';
 import '../../data/logging_models.dart';
 import '../cheat_slider_card.dart';
 import '../meal_entry.dart';
-import '../turn_header.dart';
+import '../turn/turn_header.dart';
 
 /// One analysis the SERVER has staged but the user hasn't confirmed yet.
 ///

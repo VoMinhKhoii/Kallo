@@ -8,7 +8,7 @@ import {
   type LoggingProfile,
   LoggingShell,
 } from '@/components/logging/logging-shell';
-import { dayHasEntries } from '@/lib/actions/meals/load-meals';
+import { dayHasEntries } from '@/lib/actions/meals/day-has-entries';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { parseLoggingSearchParams } from './search-params';
 

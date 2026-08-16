@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EmptyPrompt } from '@/components/logging/feed/empty-prompt';
+import { EmptyPrompt } from '@/components/logging/feed/composer/empty-prompt';
 
 const profile = vi.hoisted(() => ({ data: undefined as unknown }));
 vi.mock('@/hooks/profile/use-profile', () => ({

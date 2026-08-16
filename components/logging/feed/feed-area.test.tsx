@@ -567,5 +567,4 @@ describe('FeedArea', () => {
       expect(screen.getByTestId('logging-day-skeleton')).toBeInTheDocument();
     });
   });
-
 });

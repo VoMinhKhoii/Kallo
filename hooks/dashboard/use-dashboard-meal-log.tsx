@@ -6,7 +6,7 @@ import { pickLoaderIndex } from '@/components/shared/loaders/registry';
 import {
   deriveStreamTicker,
   type StreamTickerFrame,
-} from '@/components/shared/stream-ticker-frame';
+} from '@/components/shared/stream-ticker/stream-ticker-frame';
 import { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
 import { useDashboardAutoSave } from './use-dashboard-autosave';
 

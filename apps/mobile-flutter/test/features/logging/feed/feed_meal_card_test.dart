@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/features/logging/data/logging_models.dart';
 import 'package:nham_mobile/features/logging/widgets/feed/feed_meal_card.dart';
-import 'package:nham_mobile/features/logging/widgets/meal_time_divider.dart';
+import 'package:nham_mobile/features/logging/widgets/turn/meal_time_divider.dart';
 import 'package:nham_mobile/features/logging/logic/logging_spacing.dart';
 import 'package:nham_mobile/theme/nham_colors.dart';
-import 'package:nham_mobile/features/logging/widgets/user_message_bubble.dart';
+import 'package:nham_mobile/features/logging/widgets/turn/user_message_bubble.dart';
 
 import '../../../l10n_test_loader.dart';
 

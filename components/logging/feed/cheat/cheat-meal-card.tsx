@@ -9,7 +9,7 @@ import {
   formatCaloriesOrNA,
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
-import { TurnHeader } from '@/components/logging/feed/turn-header';
+import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { Badge } from '@/components/ui/badge';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import {

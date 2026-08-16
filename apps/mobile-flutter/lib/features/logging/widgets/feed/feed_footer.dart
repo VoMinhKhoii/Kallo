@@ -9,9 +9,9 @@ import '../../logic/logging_spacing.dart';
 import '../cheat_slider_card.dart';
 import '../entrances.dart';
 import '../meal_entry.dart';
-import '../meal_time_divider.dart';
+import '../turn/meal_time_divider.dart';
 import '../streaming/streaming_entry.dart';
-import '../user_message_bubble.dart';
+import '../turn/user_message_bubble.dart';
 import '../terminal/failed_attempt_card.dart';
 
 /// The live tail of the feed, below every card the day already holds: the

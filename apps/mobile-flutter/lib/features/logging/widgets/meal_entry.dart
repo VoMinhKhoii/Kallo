@@ -11,7 +11,7 @@ import 'entrances.dart';
 import 'meal_entry_card.dart';
 import 'meal_entry_confirm_button.dart';
 import 'meal_entry_body.dart';
-import 'meal_time_divider.dart';
+import 'turn/meal_time_divider.dart';
 import 'portion/portion_pick_flow.dart';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a stepper

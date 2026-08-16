@@ -11,7 +11,7 @@ import {
   useState,
 } from 'react';
 import { MealTriggerNotice } from '@/components/dashboard/today/meal-trigger-notice';
-import { StreamTicker } from '@/components/shared/stream-ticker';
+import { StreamTicker } from '@/components/shared/stream-ticker/stream-ticker';
 import type { DashboardMealStream } from '@/hooks/dashboard/use-dashboard-meal-log';
 import { cn } from '@/lib/utils';
 

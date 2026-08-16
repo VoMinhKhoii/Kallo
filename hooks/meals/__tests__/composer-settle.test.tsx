@@ -2,15 +2,13 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useSettledOnce } from '@/hooks/meals/use-settled-once';
 
-// The real hook `useFeedController` reads for `animateComposerLayout`, driven
-// directly: standing up the whole feed would want a query client, a stream, a
-// profile and a composer ref to assert one boolean.
-const useAnimateComposerLayout = useSettledOnce;
-
+// Driven directly rather than through `useFeedController`: standing up the whole
+// feed would want a query client, a stream, a profile and a composer ref to
+// assert one boolean.
 describe('the composer layout spring', () => {
   it('stays off through the render that resolves the day', () => {
     const { result, rerender } = renderHook(
-      ({ loading }: { loading: boolean }) => useAnimateComposerLayout(loading),
+      ({ loading }: { loading: boolean }) => useSettledOnce(loading),
       { initialProps: { loading: true } }
     );
     expect(result.current).toBe(false);
@@ -24,7 +22,7 @@ describe('the composer layout spring', () => {
 
   it('turns on for every render after that', () => {
     const { result, rerender } = renderHook(
-      ({ loading }: { loading: boolean }) => useAnimateComposerLayout(loading),
+      ({ loading }: { loading: boolean }) => useSettledOnce(loading),
       { initialProps: { loading: true } }
     );
     rerender({ loading: false });
@@ -37,7 +35,7 @@ describe('the composer layout spring', () => {
 
   it('stays on once settled, even if the day goes loading again', () => {
     const { result, rerender } = renderHook(
-      ({ loading }: { loading: boolean }) => useAnimateComposerLayout(loading),
+      ({ loading }: { loading: boolean }) => useSettledOnce(loading),
       { initialProps: { loading: false } }
     );
     rerender({ loading: true });
