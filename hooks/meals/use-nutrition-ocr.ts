@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { scanNutritionLabelAction } from '@/lib/actions/nutrition-ocr';
 import {
-  isOcrImageMimeType,
+  isOcrSourceImageMimeType,
   OCR_CLIENT_RESIZE_WIDTH,
   OCR_MAX_IMAGE_BYTES,
   OCR_MAX_SOURCE_FILE_BYTES,
@@ -59,7 +59,7 @@ export async function compressNutritionLabelImage(file: File): Promise<{
   if (
     file.size === 0 ||
     file.size > OCR_MAX_SOURCE_FILE_BYTES ||
-    !isOcrImageMimeType(file.type)
+    !isOcrSourceImageMimeType(file.type)
   ) {
     throw new Error('Image file is too large, empty, or unsupported');
   }

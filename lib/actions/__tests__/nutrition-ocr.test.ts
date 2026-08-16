@@ -147,6 +147,8 @@ describe('scanNutritionLabelAction', () => {
   it('rejects unsupported, spoofed, and malformed image bytes before Gemini', async () => {
     for (const input of [
       { imageBase64: validPngBase64, mimeType: 'image/gif' },
+      { imageBase64: validPngBase64, mimeType: 'image/heic' },
+      { imageBase64: validPngBase64, mimeType: 'image/heif' },
       { imageBase64: validPngBase64, mimeType: 'image/jpeg' },
       { imageBase64: 'bm90IGFuIGltYWdl', mimeType: 'image/png' },
     ]) {

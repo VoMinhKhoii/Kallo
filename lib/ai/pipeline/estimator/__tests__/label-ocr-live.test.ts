@@ -37,7 +37,7 @@ const fixtures = [
 ];
 
 describe('Live Nutrition Label OCR extraction', () => {
-  it.skipIf(!process.env.RUN_LIVE_OCR_TESTS).each(fixtures)(
+  it.skipIf(process.env.RUN_LIVE_OCR_TESTS !== 'true').each(fixtures)(
     'extracts exact normalized values from $name',
     async ({ file, expected }) => {
       const fixture = await readFile(file);

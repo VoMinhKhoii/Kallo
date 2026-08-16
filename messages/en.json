@@ -1140,7 +1140,7 @@
     "ocrUnit": {
       "g": "g",
       "ml": "ml",
-      "serving": "servings"
+      "serving": "{count, plural, one {serving} other {servings}}"
     },
     "ocrNutrients": {
       "calories": "Calories",

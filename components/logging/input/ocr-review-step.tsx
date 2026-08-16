@@ -140,7 +140,11 @@ export function OcrReviewStep({
 
         <OcrReviewQuantity
           amountText={review.amountText}
-          unit={t(`ocrUnit.${review.unit}`)}
+          unit={
+            review.unit === 'serving'
+              ? t('ocrUnit.serving', { count: review.parsedAmount ?? 0 })
+              : t(`ocrUnit.${review.unit}`)
+          }
           amountIsValid={review.amountIsValid}
           servingAmount={review.servingAmount}
           packageAmount={review.packageAmount}

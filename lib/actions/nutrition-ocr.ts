@@ -14,8 +14,8 @@ import { db } from '@/lib/db';
 import { pendingAnalyses } from '@/lib/db/schema';
 import { validateNutritionLabelImage } from '@/lib/nutrition/ocr-image';
 import {
-  OCR_ACCEPTED_MIME_TYPES,
   OCR_MAX_IMAGE_BYTES,
+  OCR_UPLOAD_MIME_TYPES,
 } from '@/lib/nutrition/ocr-image-constants';
 import type {
   OcrErrorCode,
@@ -40,7 +40,7 @@ const scanLabelSchema = z.object({
       const padding = value.endsWith('==') ? 2 : value.endsWith('=') ? 1 : 0;
       return (value.length * 3) / 4 - padding <= OCR_MAX_IMAGE_BYTES;
     }, 'Image payload is too large'),
-  mimeType: z.enum(OCR_ACCEPTED_MIME_TYPES),
+  mimeType: z.enum(OCR_UPLOAD_MIME_TYPES),
 });
 
 const stageOcrMealSchema = z.object({

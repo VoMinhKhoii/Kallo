@@ -35,7 +35,7 @@ describe('nutrition OCR image validation', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('recognizes HEIC and HEIF ISO-BMFF brands, but not AVIF', () => {
+  it('does not advertise ISO-BMFF formats to the server decoder', () => {
     const bmff = (brand: string) =>
       Buffer.concat([
         Buffer.from([0, 0, 0, 20]),
@@ -43,8 +43,8 @@ describe('nutrition OCR image validation', () => {
         Buffer.from(brand),
         Buffer.alloc(4),
       ]);
-    expect(detectOcrImageMime(bmff('heic'))).toBe('image/heic');
-    expect(detectOcrImageMime(bmff('mif1'))).toBe('image/heif');
+    expect(detectOcrImageMime(bmff('heic'))).toBeNull();
+    expect(detectOcrImageMime(bmff('mif1'))).toBeNull();
     expect(detectOcrImageMime(bmff('avif'))).toBeNull();
   });
 
