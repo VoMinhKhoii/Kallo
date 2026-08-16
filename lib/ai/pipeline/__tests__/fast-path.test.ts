@@ -201,7 +201,8 @@ describe('buildFastPathEstimation — synthesized estimation shape', () => {
     expect(est.mealItems).toHaveLength(1);
     const ing = est.mealItems[0].ingredients[0];
     expect(ing.selectedCandidateId).toBe('c1');
-    expect(ing.grams).toBe(150);
+    expect(ing.grossG).toBe(150);
+    expect(ing.refusePct).toBe(0);
     // cooked DB row → dbScalingGrams = grams; fat = 3.6 × 150 / 100 = 5.4.
     expect(ing.fatG.mid).toBeCloseTo(5.4, 3);
     // Flat triple (low = mid = high) so the guard passes it byte-identically.
@@ -300,7 +301,8 @@ describe('fast path produces the SAME macros the full path would', () => {
             {
               ingredientName: 'ức gà',
               selectedCandidateId: 'c1',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               // Deliberately wrong P/C to prove the server re-derives from DB.
               proteinG: { low: 999, mid: 999, high: 999 },
               carbohydrateG: { low: 999, mid: 999, high: 999 },

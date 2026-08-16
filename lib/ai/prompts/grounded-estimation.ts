@@ -5,7 +5,6 @@ import {
 import {
   isPromptSizingHintsEnabled,
   isProteinPortionDefaultEnabled,
-  isRefusePctSchemaEnabled,
   isVesselGuardEnabled,
 } from '../pipeline/config/prompt-ablation-flags';
 import type {
@@ -151,7 +150,7 @@ function renderIngredient(ing: IngredientWithCandidates): string {
   if (inputIng.sizeModifier) {
     attrs.push(`user_size="${escapeXmlAttribute(inputIng.sizeModifier)}"`);
   }
-  if (inputIng.explicitMass && isRefusePctSchemaEnabled()) {
+  if (inputIng.explicitMass) {
     attrs.push(`user_mass_g="${inputIng.explicitMass.grams.toFixed(1)}"`);
     attrs.push(
       `mass_basis="${escapeXmlAttribute(inputIng.explicitMass.basis)}"`

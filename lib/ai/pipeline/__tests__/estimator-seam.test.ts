@@ -83,7 +83,8 @@ const CALL2: GroundedEstimation = {
         {
           ingredientName: 'ức gà',
           selectedCandidateId: 'c1',
-          grams: 150,
+          grossG: 150,
+          refusePct: 0,
           caloriesKcal: { low: 240, mid: 250, high: 260 },
           proteinG: { low: 44, mid: 46, high: 48 },
           carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -103,24 +104,16 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('createGeminiEstimator — round-trips the pre-refactor call identically', () => {
-  it('switches the user message to grossG/refusePct with the schema flag', () => {
-    const original = process.env.REFUSE_PCT_SCHEMA;
-    try {
-      process.env.REFUSE_PCT_SCHEMA = 'on';
-      expect(getGroundedEstimationUserMessage()).toContain(
-        'estimate grossG then refusePct'
-      );
-      expect(getGroundedEstimationUserMessage()).not.toContain(
-        'estimate grams scoped'
-      );
-    } finally {
-      if (original === undefined) delete process.env.REFUSE_PCT_SCHEMA;
-      else process.env.REFUSE_PCT_SCHEMA = original;
-    }
+  it('asks for grossG/refusePct in the user message', () => {
+    expect(getGroundedEstimationUserMessage()).toContain(
+      'estimate grossG then refusePct'
+    );
+    expect(getGroundedEstimationUserMessage()).not.toContain(
+      'estimate grams scoped'
+    );
   });
 
   it('calls generateStructuredOutputStream with the SAME prompt, model, message, and knobs', async () => {
-    vi.stubEnv('REFUSE_PCT_SCHEMA', 'off');
     const gemini = createMockGemini({
       generateStructuredOutputStream: vi.fn().mockResolvedValue(CALL2),
     });

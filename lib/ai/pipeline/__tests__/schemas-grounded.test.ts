@@ -284,10 +284,8 @@ describe('mealDecompositionV2Schema', () => {
 });
 
 describe('groundedIngredientEstimateSchema', () => {
-  it('requires valid grossG and refusePct when REFUSE_PCT_SCHEMA is on', () => {
-    const schema = buildGroundedIngredientEstimateSchema({
-      REFUSE_PCT_SCHEMA: 'on',
-    });
+  it('requires valid grossG and refusePct', () => {
+    const schema = buildGroundedIngredientEstimateSchema();
     const base = {
       ingredientName: 'sườn dê',
       grossG: 100,
@@ -311,7 +309,8 @@ describe('groundedIngredientEstimateSchema', () => {
     const parsed = groundedIngredientEstimateSchema.parse({
       ingredientName: 'đùi gà',
       selectedCandidateId: 'c1',
-      grams: 150,
+      grossG: 150,
+      refusePct: 0,
       caloriesKcal: { low: 300, mid: 330, high: 360 },
       proteinG: { low: 35, mid: 36, high: 37 },
       carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -326,7 +325,8 @@ describe('groundedIngredientEstimateSchema', () => {
       selectedCandidateId: 'none',
       rejectReason:
         'category mismatch — ức gà ≠ Thịt gà ta whole-bird aggregate',
-      grams: 150,
+      grossG: 150,
+      refusePct: 0,
       caloriesKcal: { low: 150, mid: 180, high: 210 },
       proteinG: { low: 30, mid: 33, high: 35 },
       carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -339,7 +339,8 @@ describe('groundedIngredientEstimateSchema', () => {
   it('accepts an unmatched ingredient (no selectedCandidateId)', () => {
     const parsed = groundedIngredientEstimateSchema.parse({
       ingredientName: 'nem lụi',
-      grams: 200,
+      grossG: 200,
+      refusePct: 0,
       caloriesKcal: { low: 480, mid: 540, high: 600 },
       proteinG: { low: 28, mid: 32, high: 36 },
       carbohydrateG: { low: 4, mid: 5, high: 6 },
@@ -356,7 +357,8 @@ describe('groundedIngredientEstimateSchema', () => {
     // executable guard that the optionality never quietly returns.
     const base = {
       ingredientName: 'mì gói',
-      grams: 80,
+      grossG: 80,
+      refusePct: 0,
       caloriesKcal: { low: 340, mid: 355, high: 370 },
       proteinG: { low: 7, mid: 8, high: 9 },
       carbohydrateG: { low: 46, mid: 48, high: 50 },
@@ -378,7 +380,8 @@ describe('groundedIngredientEstimateSchema', () => {
   it('accepts explicit zero triples — 0 is a value, absence is a violation', () => {
     const parsed = groundedIngredientEstimateSchema.parse({
       ingredientName: 'mì chính',
-      grams: 3,
+      grossG: 3,
+      refusePct: 0,
       caloriesKcal: { low: 0, mid: 0, high: 0 },
       proteinG: { low: 0, mid: 0, high: 0 },
       carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -393,7 +396,8 @@ describe('groundedIngredientEstimateSchema', () => {
         ingredientName: 'x',
         selectedCandidateId: 'none',
         rejectReason: 'x'.repeat(121),
-        grams: 100,
+        grossG: 100,
+        refusePct: 0,
         caloriesKcal: { low: 0, mid: 0, high: 0 },
         proteinG: { low: 0, mid: 0, high: 0 },
         carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -413,7 +417,8 @@ describe('groundedEstimationSchema', () => {
             {
               ingredientName: 'cơm',
               selectedCandidateId: 'c1',
-              grams: 200,
+              grossG: 200,
+              refusePct: 0,
               caloriesKcal: { low: 250, mid: 260, high: 270 },
               proteinG: { low: 5, mid: 5, high: 5 },
               carbohydrateG: { low: 55, mid: 56, high: 57 },

@@ -80,7 +80,8 @@ function oilMatch(ingredientIndex: number): IngredientV2MatchResult {
 const friedPotatoEstimate = {
   ingredientName: 'khoai tây',
   selectedCandidateId: 'c1',
-  grams: 200,
+  grossG: 200,
+  refusePct: 0,
   caloriesKcal: triple(400),
   proteinG: triple(4),
   carbohydrateG: triple(34),
@@ -90,7 +91,8 @@ const friedPotatoEstimate = {
 const oilEstimate = {
   ingredientName: 'dầu ăn',
   selectedCandidateId: 'c1',
-  grams: 25,
+  grossG: 25,
+  refusePct: 0,
   caloriesKcal: triple(221),
   proteinG: triple(0),
   carbohydrateG: triple(0),

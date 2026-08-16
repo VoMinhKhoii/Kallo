@@ -210,6 +210,139 @@ describe('resolveRefusePct', () => {
   });
 
   it.each([
+    ['xương heo', ''],
+    ['xuong heo', ''],
+    ['xương', '4 cục xương heo'],
+    ['cục xương', ''],
+    ['xương ống bò', ''],
+    ['xương đuôi', ''],
+    ['xương gà', 'canh xương gà hầm'],
+    ['pork bones', ''],
+    ['soup bones', ''],
+  ])('applies the model refusePct verbatim for bare stock bones (no keyword band): %s', (canonicalName, rawName) => {
+    // Deliberate: bones have no keyword class (a band misfired on bone broth
+    // in real-meal replay). The prompt anchor guides the model; deterministic
+    // protection arrives with row-level refuse_reference_form.
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 60,
+        candidateInediblePct: null,
+        canonicalName,
+        rawName,
+      })
+    ).toMatchObject({
+      appliedRefusePct: 60,
+      appliedRefuseSource: 'model_unknown_form',
+      cutClass: null,
+    });
+  });
+
+  it.each([
+    ['sườn heo', 'rib'],
+    ['đùi gà có xương', 'bone_in_leg'],
+  ])('keeps existing cut classes intact: %s', (canonicalName, cutClass) => {
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 45,
+        candidateInediblePct: null,
+        canonicalName,
+        rawName: '',
+      }).cutClass
+    ).toBe(cutClass);
+  });
+
+  it.each([
+    'xương sông',
+    'lá xương sông',
+    'xuong song',
+  ])('does not classify the herb %s as a stock bone', (canonicalName) => {
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 5,
+        candidateInediblePct: null,
+        canonicalName,
+        rawName: '',
+      })
+    ).toMatchObject({
+      appliedRefusePct: 5,
+      appliedRefuseSource: 'model_unknown_form',
+      cutClass: null,
+    });
+  });
+
+  it.each([
+    ['nước dùng xương heo', ''],
+    ['nuoc dung xuong heo', ''],
+    ['nước hầm xương gà', ''],
+    ['pork bone broth', ''],
+  ])('never bands bone broth despite the bones in its name: %s', (canonicalName, rawName) => {
+    // Broth carries the bones' name but is liquid — 0% refuse is correct.
+    // Regression guard for the real-meal replay misfire; must hold even if a
+    // bone keyword class is ever reintroduced.
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 0,
+        candidateInediblePct: null,
+        canonicalName,
+        rawName,
+      })
+    ).toMatchObject({
+      appliedRefusePct: 0,
+      cutClass: null,
+    });
+  });
+
+  it('does not fabricate "bo xuong" across the normalized/folded copy boundary (unaccented)', () => {
+    // Fully unaccented input: the normalized copy IS the folded copy, and a
+    // plain-space join between them recreated the phantom "bo xuong".
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 65,
+        candidateInediblePct: null,
+        canonicalName: 'xuong ong bo',
+        rawName: 'xuong ong bo',
+      })
+    ).toMatchObject({
+      appliedRefusePct: 65,
+      appliedRefuseSource: 'model_unknown_form',
+    });
+  });
+
+  it('does not fabricate "bỏ xương" across the canonical/raw field boundary', () => {
+    // "xương ống bò" + "xương ống bò" joined with a bare space folds to
+    // "...ong bo xuong ong..." — a phantom bỏ-xương match that zeroed refuse
+    // on every beef-bone meal.
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 65,
+        candidateInediblePct: null,
+        canonicalName: 'Xương ống bò',
+        rawName: 'Xương ống bò',
+      })
+    ).toMatchObject({
+      appliedRefusePct: 65,
+      appliedRefuseSource: 'model_unknown_form',
+    });
+  });
+
+  it.each([
+    ['thịt heo nạc', ''],
+    ['thịt heo bỏ xương', ''],
+  ])('served-form evidence forces zero refuse for bone-worded edible cuts: %s', (canonicalName, rawName) => {
+    expect(
+      resolveRefusePct({
+        modelRefusePct: 55,
+        candidateInediblePct: null,
+        canonicalName,
+        rawName,
+      })
+    ).toMatchObject({
+      appliedRefusePct: 0,
+      appliedRefuseSource: 'explicit_served_form',
+    });
+  });
+
+  it.each([
     'sườn cốt lết',
     'suon cotlet',
     'pork chop',

@@ -177,7 +177,10 @@ export function buildFastPathEstimation(args: {
         return {
           ingredientName: ing.rawName,
           selectedCandidateId: 'c1',
-          grams,
+          // The resolver anchor is edible mass; a synthetic refusePct of 0
+          // keeps edibleG = grossG through the shared refuse math.
+          grossG: grams,
+          refusePct: 0,
           // Echo the DB-anchored base as flat triples. Fat: guardMacro passes
           // it through byte-identical to the reconcile path's
           // flatTriple(base.fatG). P/C/kcal: overwritten downstream from the

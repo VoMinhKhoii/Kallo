@@ -46,12 +46,15 @@ function normalizedEvidence(args: {
   rawName: string;
   prepNotes?: string[];
 }): string {
+  // Join fields with ';' so multi-word patterns cannot match across a field
+  // boundary ("xương ống bò" + "xương…" would otherwise fold to a phantom
+  // "bo xuong" and zero the refuse).
   const normalized = [
     args.canonicalName,
     args.rawName,
     ...(args.prepNotes ?? []),
   ]
-    .join(' ')
+    .join(' ; ')
     .toLocaleLowerCase('vi-VN')
     .replace(/[_-]+/g, ' ')
     .replace(/\s+/g, ' ')
@@ -60,7 +63,10 @@ function normalizedEvidence(args: {
     .normalize('NFD')
     .replace(/\p{M}/gu, '')
     .replace(/đ/g, 'd');
-  return `${normalized} ${folded}`;
+  // ';' between the copies too: with already-unaccented input the normalized
+  // copy IS the folded copy, and a bare-space join recreated the phantom
+  // cross-boundary match ("…ong bo" + "xuong…" → "bo xuong").
+  return `${normalized} ; ${folded}`;
 }
 
 function removeNegatedServedForms(value: string): string {
@@ -182,23 +188,6 @@ export function resolveGroundedMass(args: {
       refuse: null,
     };
   }
-  if ('grams' in ground) {
-    const modelGrams =
-      typeof ground.grams === 'number' && Number.isFinite(ground.grams)
-        ? ground.grams
-        : null;
-    const edibleAnchor =
-      args.authoritativeMass?.basis === 'edible'
-        ? args.authoritativeMass.grams
-        : null;
-    return {
-      edibleG: edibleAnchor ?? modelGrams,
-      modelEdibleG: modelGrams,
-      massBasis: 'edible',
-      refuse: null,
-    };
-  }
-
   const decision = resolveRefusePct({
     modelRefusePct: ground.refusePct,
     candidateInediblePct: args.candidateInediblePct,
