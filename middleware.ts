@@ -59,7 +59,9 @@ export async function middleware(request: NextRequest) {
   // CSP it lives in) reach the RSC render, where Next extracts `nonce-…` and
   // stamps its own inline scripts. btoa (not Buffer) keeps this Edge-safe.
   const nonce = btoa(crypto.randomUUID());
-  const csp = buildCsp(nonce, process.env.NODE_ENV === 'development');
+  // `reportOnly: true` matches the header actually sent below. Flip both
+  // together when enforcing.
+  const csp = buildCsp(nonce, process.env.NODE_ENV === 'development', true);
   request.headers.set('x-nonce', nonce);
   request.headers.set('content-security-policy', csp);
 
