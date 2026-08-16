@@ -1,10 +1,10 @@
 import type { GeminiClient } from '@/lib/ai/gemini';
 import type { buildUserContext } from '@/lib/ai/mappers';
-import { assembleResult } from '@/lib/ai/pipeline/assembly';
+import { assembleResult } from '@/lib/ai/pipeline/assemble/assemble';
 import type { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
-import type { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/ids';
-import { reconcileNutritionIds } from '@/lib/ai/pipeline/nutrition';
-import { nutritionAdjustmentSchema } from '@/lib/ai/pipeline/schemas';
+import type { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/contracts/decomposition-ids';
+import { nutritionAdjustmentSchema } from '@/lib/ai/pipeline/contracts/schemas/nutrition-adjustment';
+import { reconcileNutritionIds } from '@/lib/ai/pipeline/resolve/macro-resolution';
 import { getNutritionPromptBuilder } from '@/lib/ai/prompts';
 import type {
   MatchedIngredient,

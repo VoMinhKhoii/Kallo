@@ -222,7 +222,7 @@ export interface UnmatchedIngredient {
 //
 // Contract (2026-05-13): the LLM emits absolute {low, mid, high} per macro,
 // but only `fatG` flows downstream for matched ingredients. At resolve time
-// (`lib/ai/pipeline/nutrition.ts`):
+// (`lib/ai/pipeline/resolve/macro-resolution.ts`):
 //   - matched P and C are flat triples at the DB-anchored base value;
 //   - matched fat keeps the LLM triple subject to the 3× hallucination guard
 //     (which also catches structurally-invalid triples and falls back to a

@@ -18,10 +18,10 @@
  * SDKs are wired (Phase 5 follow-up, tomorrow).
  */
 
-import type { GeminiCallTrace } from '../../gemini';
-import type { MealItemWithCandidates } from '../../prompts/grounded-estimation';
-import type { PromptPersonalizationContext } from '../../prompts/types';
-import type { GroundedEstimation } from '../schemas-v2';
+import type { GeminiCallTrace } from '@/lib/ai/gemini';
+import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import type { MealItemWithCandidates } from '@/lib/ai/prompts/grounded-estimation';
+import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 
 /**
  * Structured, provider-independent Call-2 input. Deliberately NOT a rendered

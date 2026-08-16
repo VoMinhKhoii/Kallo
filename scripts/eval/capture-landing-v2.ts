@@ -233,7 +233,7 @@ const keyOf = (s: Sample) => `${s.category}.${s.locale}.${s.variant}`;
 
 const [{ analyzeMealV2 }, gemini, { db }, { toParsedMeal }] = await Promise.all(
   [
-    import('@/lib/ai/pipeline/grounded-orchestrator'),
+    import('@/lib/ai/pipeline/grounded/orchestrator'),
     import('@/lib/ai/gemini'),
     import('@/lib/db'),
     import('@/lib/ai/mappers'),

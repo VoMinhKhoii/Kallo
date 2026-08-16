@@ -17,15 +17,15 @@
 
 import { mealItemHasDiscreteOil } from '@/lib/ai/absorbed-oil';
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
-import { ZERO_TRIPLE } from '@/lib/ai/pipeline/bridge-verdicts';
-import type { RawNutritionAdjustment } from '@/lib/ai/pipeline/nutrition';
-import { __testing as nutritionTesting } from '@/lib/ai/pipeline/nutrition';
-import { resolveGroundedMass } from '@/lib/ai/pipeline/refuse-mass';
+import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type {
-  DecomposedIngredientV2,
   GroundedIngredientEstimate,
   GroundedMealItem,
-} from '@/lib/ai/pipeline/schemas-v2';
+} from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import type { RawNutritionAdjustment } from '@/lib/ai/pipeline/resolve/macro-resolution';
+import { __testing as nutritionTesting } from '@/lib/ai/pipeline/resolve/macro-resolution';
+import { resolveGroundedMass } from '@/lib/ai/pipeline/resolve/refuse-mass';
+import { ZERO_TRIPLE } from '@/lib/ai/pipeline/resolve/verdicts';
 import type {
   IngredientLlmNutrition,
   MacroBase,

@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
-import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr';
+import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
 import type {
   BoundedNutrition,
   NutritionValues,

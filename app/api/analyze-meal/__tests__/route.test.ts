@@ -131,7 +131,7 @@ vi.mock('@/lib/ai/pipeline/telemetry/logging', () => ({
   logPipelineEnd: (...args: unknown[]) => mockLogPipelineEnd(...args),
 }));
 
-vi.mock('@/lib/ai/pipeline', () => ({
+vi.mock('@/lib/ai/pipeline/analyze-meal', () => ({
   analyzeMeal: (...args: unknown[]) => mockAnalyzeMeal(...args),
 }));
 

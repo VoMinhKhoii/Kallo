@@ -34,7 +34,7 @@ vi.mock('@/lib/auth/session', () => ({
   requireAuthAndProfile: mockRequireAuthAndProfile,
 }));
 
-vi.mock('@/lib/ai/pipeline/estimator/label-ocr', () => ({
+vi.mock('@/lib/ai/pipeline/estimator/label-ocr/label-ocr', () => ({
   scanNutritionLabelWithGemini: vi.fn(),
 }));
 
@@ -42,7 +42,7 @@ import {
   scanNutritionLabelAction,
   stageOcrMealAction,
 } from '@/lib/actions/nutrition-ocr';
-import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr';
+import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
 import { OCR_MAX_IMAGE_BYTES } from '@/lib/nutrition/ocr-image-constants';
 
 let validPngBase64: string;

@@ -19,7 +19,7 @@ import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import {
   ingredientCanonicalName,
   ingredientDisplayName as ingredientRawName,
-} from '@/lib/ai/pipeline/ingredient-accessors';
+} from '@/lib/ai/pipeline/contracts/ingredient-accessors';
 import type {
   DecomposedIngredient,
   MatchedIngredient,

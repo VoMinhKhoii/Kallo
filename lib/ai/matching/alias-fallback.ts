@@ -13,7 +13,7 @@ import {
 import {
   ingredientCanonicalName,
   ingredientDisplayName as ingredientRawName,
-} from '@/lib/ai/pipeline/ingredient-accessors';
+} from '@/lib/ai/pipeline/contracts/ingredient-accessors';
 import type { DecomposedIngredient, UnmatchedIngredient } from '@/lib/ai/types';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import type { AppDb } from '@/lib/db';

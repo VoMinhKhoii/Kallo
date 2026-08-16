@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GeminiClient } from '@/lib/ai/gemini';
-import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/schemas-v2';
+import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { AppDb } from '@/lib/db';
 import { clearNutritionCache } from '../../cache/nutrition-cache';
 import { clearMemoryCache } from '../embedding-cache';

@@ -1,5 +1,5 @@
 import '@/lib/__test-utils__/server-only-shim';
-import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr';
+import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
 
 const SAMPLE_URLS = [
   {

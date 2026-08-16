@@ -12,7 +12,7 @@ import {
   nutritionValuesToRow,
 } from '@/lib/actions/persisted-meal';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
-import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
+import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import {
   type SaveManualMealInput,
   saveManualMealSchema,

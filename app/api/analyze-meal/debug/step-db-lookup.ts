@@ -12,11 +12,11 @@ import {
   resolveQueryEmbedding,
 } from '@/lib/ai/matching/embedding-cache';
 import { fetchNutritionPer100g } from '@/lib/ai/matching/nutrition-db';
-import type { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/ids';
+import type { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/contracts/decomposition-ids';
 import {
   ingredientDisplayName,
   ingredientCanonicalName as ingredientSearchName,
-} from '@/lib/ai/pipeline/ingredient-accessors';
+} from '@/lib/ai/pipeline/contracts/ingredient-accessors';
 import type { MatchedIngredient, UnmatchedIngredient } from '@/lib/ai/types';
 import { db } from '@/lib/db';
 import type * as schema from '@/lib/db/schema';

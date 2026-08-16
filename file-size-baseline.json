@@ -61,8 +61,6 @@
     "apps/mobile-flutter/lib/features/logging/widgets/entrances.dart": 201
   },
   "folders": {
-    "lib/ai/pipeline": 46,
-    "lib/ai/pipeline/__tests__": 45,
     "apps/mobile-flutter/lib/features/logging/widgets": 39,
     "lib": 38,
     "hooks/meals": 37,

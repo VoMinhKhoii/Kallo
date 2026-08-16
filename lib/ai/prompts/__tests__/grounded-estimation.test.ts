@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import type {
   DecomposedDishV2,
   DecomposedIngredientV2,
-} from '../../pipeline/schemas-v2';
+} from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import { PORTION_PRIORS } from '../../portion/priors';
 import {
   buildGroundedEstimationPrompt,

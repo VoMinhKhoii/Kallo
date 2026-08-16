@@ -402,7 +402,7 @@ async function runBenchmarkMeal(
   applyVariantEnv(variant);
 
   const [{ analyzeMeal }, { createGeminiClient }, { db }] = await Promise.all([
-    import('@/lib/ai/pipeline'),
+    import('@/lib/ai/pipeline/analyze-meal'),
     import('@/lib/ai/gemini'),
     import('@/lib/db'),
   ]);

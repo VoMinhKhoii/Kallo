@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
 import { useLoggingDay } from '@/hooks/meals/use-logging-day';
-import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
+import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 
 /**
  * Day-level data for the feed: the logging-day query plus the derived

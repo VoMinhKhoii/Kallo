@@ -1,3 +1,5 @@
+import { deriveExpectedState } from '@/lib/ai/pipeline/contracts/cooking-method-state';
+import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import type { AppDb } from '@/lib/db';
 import {
@@ -7,8 +9,6 @@ import {
 } from '../cache/nutrition-cache';
 import type { GeminiClient } from '../gemini';
 import { readBooleanEnv } from '../pipeline/config/feature-flags';
-import { deriveExpectedState } from '../pipeline/cooking-method-state';
-import type { DecomposedIngredientV2 } from '../pipeline/schemas-v2';
 import type { NutritionPer100g } from '../types';
 import { resolvePreMatchAlias } from './aliases';
 import { filterByExplicitState } from './candidate-ranking';

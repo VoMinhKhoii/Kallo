@@ -14,7 +14,7 @@ import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,
-} from '@/lib/ai/pipeline/goal-adjustment';
+} from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import type { PipelineResult } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth/session';
 import { db } from '@/lib/db';

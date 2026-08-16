@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
 import { Errors } from '@/lib/errors/catalog';
 import type { GeminiClient } from '../gemini';
-import { analyzeMeal } from '../pipeline';
 import type {
   IngredientLlmNutrition,
   MealDecomposition,

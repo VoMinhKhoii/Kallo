@@ -37,8 +37,18 @@ not yet — see the `logging` row below.
 | `admin/` | admin authorization **and** admin read queries | split |
 | `ai/` | everything that talks to an LLM provider | split |
 | `ai/matching/` | retrieval, ranking and aliasing of food candidates | split |
-| `ai/pipeline/` | the meal-analysis pipeline | split |
+| `ai/pipeline/` | the meal-analysis pipeline — entry `analyze-meal.ts` picks the path | split |
+| `ai/pipeline/assemble/` | build the final `PipelineResult` and its displayed totals | ok |
+| `ai/pipeline/config/` | every knob the pipeline reads from the environment | ok |
+| `ai/pipeline/contracts/` | the shapes both paths agree on — ids, vocabulary, failure taxonomy | ok |
+| `ai/pipeline/contracts/schemas/` | the Zod wire shapes the LLM reads and writes, one file per call | ok |
 | `ai/pipeline/estimator/` | provider-agnostic grounded-estimation seam | **reference shape** |
+| `ai/pipeline/estimator/label-ocr/` | read a packaged nutrition-facts label from a photo — belongs in `lib/nutrition/`, parked here | ok |
+| `ai/pipeline/grounded/` | the default run: Call 1 decompose → ground → Call 2 estimate | ok |
+| `ai/pipeline/grounded/call-two/` | stage 3 — run Call 2 in its three modes and emit per-item macros | ok |
+| `ai/pipeline/legacy/` | the `PIPELINE_V2_ENABLED=false` fallback — delete whole with the flag | split |
+| `ai/pipeline/resolve/` | turn Call-2 verdicts into grams and bounded macros | ok |
+| `ai/pipeline/telemetry/` | every observability row the pipeline writes | ok |
 | `ai/portion/` | gram anchors from portion evidence | split |
 | `ai/prompts/` | prompt text and its builders | split |
 | `ai/streaming/` | SSE event encoding and parsing | ok |
@@ -50,7 +60,7 @@ not yet — see the `logging` row below.
 | `billing/` | RevenueCat purchase side | split |
 | `brand/` | brand constants | ok |
 | `chat-groups/` | chat-group client transport | split |
-| `cheat/` | cheat-meal slider math | ok |
+| `cheat/` | cheat-meal domain: slider math, occasion grouping, and its one-shot LLM estimate | ok |
 | `dashboard/` | dashboard aggregations | ok |
 | `date/` | local-day and timezone math — the only place it may live | ok |
 | `db/` | Drizzle schema and client | ok |

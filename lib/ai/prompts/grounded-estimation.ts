@@ -1,3 +1,7 @@
+import type {
+  DecomposedDishV2,
+  DecomposedIngredientV2,
+} from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import {
   PROTEIN_PORTION_DESCRIPTION,
   RICE_PORTION_DESCRIPTION,
@@ -7,10 +11,6 @@ import {
   isProteinPortionDefaultEnabled,
   isVesselGuardEnabled,
 } from '../pipeline/config/prompt-ablation-flags';
-import type {
-  DecomposedDishV2,
-  DecomposedIngredientV2,
-} from '../pipeline/schemas-v2';
 import type { VesselEnvelope } from '../portion/vessel-envelope';
 import { buildStaticPrefix } from './grounded-estimation-rules';
 import { buildPromptContextLine } from './sanitize';
@@ -43,7 +43,8 @@ import type { PromptPersonalizationContext } from './types';
  * unless padded; treat the layout as "ready to benefit when prefix grows"
  * rather than "actively cached".
  *
- * Output schema: groundedEstimationSchema in `pipeline/schemas.ts`.
+ * Output schema: groundedEstimationSchema in
+ * `pipeline/contracts/schemas/grounded-estimation.ts`.
  */
 
 const escapeXmlAttribute = (value: string): string =>

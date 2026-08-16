@@ -9,7 +9,7 @@ import {
   nutritionValuesToRow,
   scaleNutritionRow,
 } from '@/lib/actions/persisted-meal';
-import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
+import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import type { NutritionValues } from '@/lib/ai/types';
 import { updateMealSchema } from '@/lib/api/contracts/meals';
 import { requireAuthAndProfile } from '@/lib/auth/session';

@@ -81,7 +81,7 @@ vi.mock('@/lib/db', () => ({
 // ---------------------------------------------------------------------------
 // Other mocks
 // ---------------------------------------------------------------------------
-vi.mock('@/lib/ai/pipeline/orchestrator', () => ({
+vi.mock('@/lib/ai/pipeline/analyze-meal', () => ({
   analyzeMeal: analyzeMealSpy,
 }));
 vi.mock('@/lib/ai/gemini', () => ({

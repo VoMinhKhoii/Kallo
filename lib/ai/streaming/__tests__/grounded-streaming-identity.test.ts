@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { NULL_NUTRITION_VALUES } from '@/lib/ai/__tests__/test-helpers';
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
+import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import {
   createCall2StreamHandler,
   flushUnstreamedItemMacros,
-} from '@/lib/ai/pipeline/grounded-support';
-import type {
-  GroundedEstimation,
-  MealDecompositionV2,
-} from '@/lib/ai/pipeline/schemas-v2';
+} from '@/lib/ai/pipeline/grounded/call-two/item-macros';
 import { buildMealItemOffsetByName } from '@/lib/ai/streaming/grounded-parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 

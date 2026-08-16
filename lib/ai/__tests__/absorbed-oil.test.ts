@@ -7,8 +7,8 @@ import {
   mealItemHasDiscreteOil,
   renderAbsorbedOilPromptRule,
 } from '@/lib/ai/absorbed-oil';
-import type { RawNutritionAdjustment } from '@/lib/ai/pipeline/nutrition';
-import { __testing } from '@/lib/ai/pipeline/nutrition';
+import type { RawNutritionAdjustment } from '@/lib/ai/pipeline/resolve/macro-resolution';
+import { __testing } from '@/lib/ai/pipeline/resolve/macro-resolution';
 
 const vegetableEstimate: RawNutritionAdjustment['mealItems'][number]['ingredients'][number] =
   {

@@ -13,11 +13,11 @@
  */
 
 import type { GeminiClient } from '@/lib/ai/gemini';
-import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/grounded-estimation';
 import {
   type GroundedEstimation,
   groundedEstimationSchema,
-} from '../schemas-v2';
+} from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/grounded-estimation';
 import type {
   GroundedEstimator,
   GroundedEstimatorInput,

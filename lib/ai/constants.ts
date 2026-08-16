@@ -47,8 +47,8 @@ export const GOAL_ADJUSTED_NUTRIENTS = [
 
 /**
  * Physical kcal-per-100g ceiling for any food. Pure fat is ~900 kcal/100g — no
- * real ingredient exceeds it. Used by `pipeline/validation.ts` as an anomaly
- * envelope AND by `pipeline/nutrition.ts` as a hard clamp for unmatched
+ * real ingredient exceeds it. Used by `pipeline/legacy/validation.ts` as an anomaly
+ * envelope AND by `pipeline/resolve/macro-resolution.ts` as a hard clamp for unmatched
  * ingredients. Single source of truth so the clamp and the validator can never
  * drift apart.
  */

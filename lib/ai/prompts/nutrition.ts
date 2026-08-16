@@ -1,12 +1,12 @@
 import {
-  PROTEIN_PORTION_DESCRIPTION,
-  RICE_PORTION_DESCRIPTION,
-} from '../constants';
-import {
   ingredientCanonicalName,
   ingredientDisplayName,
   ingredientGrams,
-} from '../pipeline/ingredient-accessors';
+} from '@/lib/ai/pipeline/contracts/ingredient-accessors';
+import {
+  PROTEIN_PORTION_DESCRIPTION,
+  RICE_PORTION_DESCRIPTION,
+} from '../constants';
 import type {
   DecomposedMealItem,
   MacroBase,

@@ -2,6 +2,8 @@
 
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
+import { makeErrorResponse } from '@/lib/ai/pipeline/contracts/failure';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
 import { createClient } from '@/lib/supabase/server';
@@ -12,8 +14,6 @@ import {
 } from './gemini';
 import { buildUserContext } from './mappers';
 import { logUnmatchedIngredients } from './matching';
-import { analyzeMeal } from './pipeline';
-import { makeErrorResponse } from './pipeline/errors';
 import type { PipelineResponse } from './types';
 
 const rawInputSchema = z

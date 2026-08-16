@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { NULL_NUTRITION_VALUES } from '@/lib/ai/__tests__/test-helpers';
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
-import type {
-  DecomposedIngredientV2,
-  GroundedMealItem,
-} from '@/lib/ai/pipeline/schemas-v2';
+import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import type { GroundedMealItem } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { resolveStreamingV2MealItem } from '@/lib/ai/streaming/grounded-parsers';
 
 // ---------------------------------------------------------------------------
@@ -12,7 +10,7 @@ import { resolveStreamingV2MealItem } from '@/lib/ai/streaming/grounded-parsers'
 // also grant that row's siblings an absorbed-oil allowance — the oil is then in
 // the total twice.
 //
-// The reconciled path (`pipeline/nutrition.ts`) applied this from the start.
+// The reconciled path (`pipeline/resolve/macro-resolution.ts`) applied this from the start.
 // The stream-time resolver did not: it called `resolveIngredientMacros` without
 // `siblingOilPresent`, which defaults to false. So the preview showed the oil
 // twice and then quietly shed it once reconciliation landed — the user watched

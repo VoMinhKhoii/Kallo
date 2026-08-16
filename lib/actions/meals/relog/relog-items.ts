@@ -10,7 +10,7 @@ import {
   inferMealSlot,
   nutritionValuesToRow,
 } from '@/lib/actions/persisted-meal';
-import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
+import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import {
   type RelogItemsInput,
   relogItemsSchema,

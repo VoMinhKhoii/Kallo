@@ -11,7 +11,7 @@ import {
   type StreamOptions,
   type StructuredOutputParams,
 } from '@/lib/ai/gemini';
-import { analyzeMeal } from '@/lib/ai/pipeline/orchestrator';
+import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
 import {
   logPipelineStart,
   setPipelineFinalState,

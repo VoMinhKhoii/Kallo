@@ -103,7 +103,7 @@ async function runCase(
   const tracker = createStageTracker();
   const startedAt = Date.now();
   let diagnostics:
-    | import('@/lib/ai/pipeline/grounded-orchestrator').V2PipelineDiagnostics
+    | import('@/lib/ai/pipeline/grounded/orchestrator').V2PipelineDiagnostics
     | undefined;
   let response: PipelineResponse | undefined;
   let thrownError: string | null = null;
@@ -199,7 +199,7 @@ async function runCase(
 async function loadPipeline(estimatorName: EvalCliOptions['estimator']) {
   const [{ analyzeMealV2 }, geminiModule, { db }, { resolveModelProfile }] =
     await Promise.all([
-      import('@/lib/ai/pipeline/grounded-orchestrator'),
+      import('@/lib/ai/pipeline/grounded/orchestrator'),
       import('@/lib/ai/gemini'),
       import('@/lib/db'),
       import('@/lib/ai/pipeline/config/model-profile'),

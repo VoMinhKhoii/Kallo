@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  mealDecompositionSchema,
-  nutritionAdjustmentSchema,
-} from '@/lib/ai/pipeline/schemas';
+import { mealDecompositionSchema } from '@/lib/ai/pipeline/contracts/schemas/decomposition';
+import { nutritionAdjustmentSchema } from '@/lib/ai/pipeline/contracts/schemas/nutrition-adjustment';
 import {
   buildCompressedDecompositionPrompt,
   buildCompressedNutritionPrompt,

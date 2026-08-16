@@ -6,8 +6,7 @@ import {
   toParsedMeal,
 } from '@/lib/ai/mappers';
 import { logUnmatchedIngredients } from '@/lib/ai/matching';
-import { analyzeMeal } from '@/lib/ai/pipeline';
-import { estimateCheatMeal } from '@/lib/ai/pipeline/cheat-estimate';
+import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
 import {
   logPipelineEnd,
   logPipelineStart,
@@ -15,6 +14,7 @@ import {
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
 import { withDeadline } from '@/lib/async/with-deadline';
+import { estimateCheatMeal } from '@/lib/cheat/estimate';
 import { db } from '@/lib/db';
 import { buildRelogRawInput } from '@/lib/logging/relog/relog';
 import { acquireAnalysisGuard } from './analysis-guard';

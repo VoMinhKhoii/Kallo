@@ -22,7 +22,7 @@ import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import {
   sumBoundedNutrition,
   sumDisplayedNutrition,
-} from '@/lib/ai/pipeline/goal-adjustment';
+} from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import type {
   BoundedNutrition,
   MealConfidence,
