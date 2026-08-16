@@ -67,7 +67,8 @@ describe('analyzeMealV2 — accepted candidate, server-anchored P/C', () => {
             {
               ingredientName: 'đùi gà',
               selectedCandidateId: 'c1',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               caloriesKcal: { low: 0, mid: 0, high: 0 },
               proteinG: { low: 0, mid: 0, high: 0 }, // server overrides anyway
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -157,7 +158,8 @@ describe('analyzeMealV2 — rejected verdict ("none") routes through unmatched p
               ingredientName: 'ức gà',
               selectedCandidateId: 'none',
               rejectReason: 'ức gà ≠ Thịt gà ta whole-bird aggregate',
-              grams: 150,
+              grossG: 150,
+              refusePct: 0,
               caloriesKcal: { low: 160, mid: 180, high: 200 },
               proteinG: { low: 30, mid: 33, high: 35 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -228,7 +230,8 @@ describe('analyzeMealV2 — no candidates → unmatched, LLM macros flow through
           ingredients: [
             {
               ingredientName: 'nem lụi',
-              grams: 200,
+              grossG: 200,
+              refusePct: 0,
               caloriesKcal: { low: 480, mid: 540, high: 600 },
               proteinG: { low: 28, mid: 32, high: 36 },
               carbohydrateG: { low: 4, mid: 5, high: 6 },
@@ -286,7 +289,8 @@ describe('analyzeMealV2 — vessel result surface', () => {
           ingredients: [
             {
               ingredientName: 'phở bò',
-              grams: 500,
+              grossG: 500,
+              refusePct: 0,
               caloriesKcal: { low: 400, mid: 450, high: 500 },
               proteinG: { low: 20, mid: 25, high: 30 },
               carbohydrateG: { low: 50, mid: 55, high: 60 },

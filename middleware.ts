@@ -59,7 +59,9 @@ export async function middleware(request: NextRequest) {
   // CSP it lives in) reach the RSC render, where Next extracts `nonce-…` and
   // stamps its own inline scripts. btoa (not Buffer) keeps this Edge-safe.
   const nonce = btoa(crypto.randomUUID());
-  const csp = buildCsp(nonce, process.env.NODE_ENV === 'development');
+  // `reportOnly: true` matches the header actually sent below. Flip both
+  // together when enforcing.
+  const csp = buildCsp(nonce, process.env.NODE_ENV === 'development', true);
   request.headers.set('x-nonce', nonce);
   request.headers.set('content-security-policy', csp);
 
@@ -79,8 +81,10 @@ export const config = {
     // The origin-lock must run on everything that reaches Next — including /api
     // and the auth routes (see SKIP_INTL_PREFIXES) — so the matcher only omits
     // truly static public assets that need neither protection nor locale
-    // rewriting. `robots.txt` and `sitemap.xml` are omitted so next-intl does
-    // not rewrite the generated SEO routes to /{locale}/….
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|geojson)$).*)',
+    // rewriting. `robots.txt`, `sitemap.xml` and `llms.txt` are omitted so
+    // next-intl does not rewrite the generated SEO routes to /{locale}/… —
+    // each is a single fixed path that crawlers request at the origin root and
+    // that has no locale-prefixed counterpart to redirect to.
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|geojson)$).*)',
   ],
 };

@@ -271,7 +271,15 @@ bool _isFirstSession(User? user) {
 class _GoRouterAuthRefresh extends ChangeNotifier {
   _GoRouterAuthRefresh(GoTrueClient auth) {
     notifyListeners();
-    _sub = auth.onAuthStateChange.listen((_) => notifyListeners());
+    _sub = auth.onAuthStateChange.listen(
+      (_) => notifyListeners(),
+      // gotrue surfaces auth failures (refresh blips, expired-session
+      // recovery) as errors on this stream. A `listen` without an error
+      // handler forwards them to the zone's uncaught-error handler; re-running
+      // the redirect is the right response instead, since the client may have
+      // dropped the session along the way.
+      onError: (Object _, StackTrace __) => notifyListeners(),
+    );
   }
 
   late final StreamSubscription<AuthState> _sub;
