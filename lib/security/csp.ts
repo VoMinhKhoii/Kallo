@@ -80,8 +80,20 @@ function supabaseOrigins(): { https: string; wss: string } | null {
 /**
  * Build the CSP header value for a request, embedding the per-request `nonce`.
  * `isDev` adds `'unsafe-eval'` (Next.js dev/HMR needs eval) — never in prod.
+ *
+ * `reportOnly` drops `upgrade-insecure-requests`. That directive is defined to
+ * be ignored in a report-only policy, and Chrome logs an error saying so on
+ * every page load — which is a real console error users and audits see, for a
+ * directive that was doing nothing. It comes back automatically on the day the
+ * header is switched to enforcing (see the rollout note above). Nothing is lost
+ * meanwhile: the origin is HTTPS-only behind HSTS, so there is no insecure
+ * request left to upgrade.
  */
-export function buildCsp(nonce: string, isDev: boolean): string {
+export function buildCsp(
+  nonce: string,
+  isDev: boolean,
+  reportOnly = false
+): string {
   const supabase = supabaseOrigins();
   const connect = [
     "'self'",
@@ -116,6 +128,6 @@ export function buildCsp(nonce: string, isDev: boolean): string {
     `base-uri 'self'`,
     `form-action 'self'`,
     `frame-ancestors 'none'`,
-    `upgrade-insecure-requests`,
+    ...(reportOnly ? [] : [`upgrade-insecure-requests`]),
   ].join('; ');
 }

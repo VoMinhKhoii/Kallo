@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const ORIGINAL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-async function build(nonce: string, isDev: boolean) {
+async function build(nonce: string, isDev: boolean, reportOnly = false) {
   // Re-import per call so the module reads the current env each time.
   const { buildCsp } = await import('./csp');
-  return buildCsp(nonce, isDev);
+  return buildCsp(nonce, isDev, reportOnly);
 }
 
 describe('buildCsp', () => {
@@ -100,6 +100,20 @@ describe('buildCsp', () => {
     expect(csp).toContain("base-uri 'self'");
     expect(csp).toContain("form-action 'self'");
     expect(csp).toContain('upgrade-insecure-requests');
+  });
+
+  // The directive is defined to be ignored in a report-only policy, and Chrome
+  // logs a console error for it on every page load. It must be absent while the
+  // rollout is report-only, and present the moment the header enforces.
+  it('omits upgrade-insecure-requests only while report-only', async () => {
+    const reportOnly = await build('n', false, true);
+    expect(reportOnly).not.toContain('upgrade-insecure-requests');
+    // Everything else the directive sits next to is unaffected.
+    expect(reportOnly).toContain("frame-ancestors 'none'");
+    expect(reportOnly).toContain("default-src 'self'");
+
+    const enforced = await build('n', false, false);
+    expect(enforced).toContain('upgrade-insecure-requests');
   });
 
   it('degrades gracefully when the Supabase URL is unset', async () => {
