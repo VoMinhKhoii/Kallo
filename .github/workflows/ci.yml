@@ -26,8 +26,8 @@ jobs:
         with:
           version: 2.4.2
       - run: biome ci .
-      - name: File size ratchet
-        run: node scripts/check-file-sizes.mjs
+      - name: Structure gate (size, folders, test placement, barrels)
+        run: node scripts/ci/check-structure/check-structure.mjs
 
   typecheck:
     name: Type Check

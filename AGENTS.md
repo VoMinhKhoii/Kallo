@@ -27,7 +27,7 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
   | `vercel-react-view-transitions` | Page/route/shared-element/enter-exit animations via the View Transition API. |
   | `thermo-nuclear-code-quality-review` | **Pre-PR structural/maintainability review**, and whenever a change grows a file near the 400/200 LOC limits or adds files to a crowded folder. |
 
-- **Gates before signing off**: `bunx @biomejs/biome check .` (auto-fix with `--write`), `bun check:filesize`, tests for new features/fixes (Vitest).
+- **Gates before signing off**: `bunx @biomejs/biome check .` (auto-fix with `--write`), `bun check:structure`, tests for new features/fixes (Vitest).
 - **Zod validation** for all external inputs (API params, form data, URL params); React Hook Form + `@hookform/resolvers` for forms.
 - **Pre-read docs**: `docs/DATABASE.md` before DB/migration work; `docs/DATA.md` before food-data work; `docs/EMAIL.md` before touching anything that sends email (auth emails run through our own Supabase hook, not Supabase's mailer); `docs/superpowers/specs/2026-05-08-pipeline-latency-budget.md` before touching `analyzeMeal`, the matching cascade, or the Gemini wrapper.
 - **Context7 MCP** for up-to-date library docs — required research before locking designs around third-party behavior (state ownership, routing, persistence).
@@ -39,7 +39,7 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
 ## 3. Commands
 
 - Dev: `bun dev` · Build: `bun run build` · Start: `bun start`
-- Quality: `bunx @biomejs/biome check .` (`--write` to fix) · `bun check:filesize` (400/200 LOC ratchet) · `bun test` / `bun test:watch`
+- Quality: `bunx @biomejs/biome check .` (`--write` to fix) · `bun check:structure` (size + folder + test-placement + barrel gate) · `bun test` / `bun test:watch`
 - DB: `bun db:generate` (Drizzle migration from schema) · `bun db:migrate` (apply locally) · `bun db:studio` · `bun dbr:status` · `bun dbr:push` / `bun dbr:reset` (**user only**)
 - DB search tests (remote DB): `bun --env-file=.env.local vitest run lib/db/__tests__/`
 - **Task board** ("ttr"): team planning board is **Tuturuuu** via the `ttr` CLI (installed + logged in; workspace **Nhẩm**). Log roadmap items to the Planning board → Backlog. Full doc: `docs/TASK_BOARD.md`.
@@ -56,9 +56,9 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
                           groups, logging, supabase, rate-limit, security, types, …)
 /hooks/<feature>        — custom React hooks
 /i18n, /messages        — next-intl locales
-/scripts                — one-off + CI scripts (incl. check-file-sizes.mjs)
+/scripts                — one-off + CI scripts (gate: ci/check-structure/)
 /supabase/migrations    — all SQL migrations (Drizzle-generated + manual)
-/docs                   — project docs (DATABASE, DATA, superpowers specs)
+/docs                   — project docs (ARCHITECTURE, DATABASE, DATA, specs)
 /apps/mobile-flutter    — Flutter app (own AGENTS.md; docs in /apps/docs/mobile)
 ```
 
@@ -71,13 +71,21 @@ Key files: `lib/db/schema.ts` (schema source of truth) · `lib/db/index.ts` (cli
 ## 5. Key Conventions
 
 ### File & Folder Organization (enforced)
-- **Size limits**: 400 LOC per source file, 200 LOC per component file — enforced in CI by `bun check:filesize` with a ratchet baseline (`file-size-baseline.json`: legacy files may shrink, never grow; no new violations). Exemptions (data-not-logic files) live in `scripts/check-file-sizes.mjs` with justifications.
-- **Feature-first nesting**: UI in `components/<feature>/` (sub-concern subfolders like `logging/{feed,input,sidebar}/`), logic in `lib/<feature>/`, hooks in `hooks/<feature>/`, actions in `lib/actions/<feature>/`. No dumping new files at folder top level.
-- **~8 files per folder**: past that, group into sub-concern subfolders.
-- **One component per file**; presentation vs state (hooks) vs domain/data (lib) vs orchestration (actions/routes) live in separate files and layers.
-- **Colocate, then promote**: feature-private helpers stay in the feature folder; promote to shared only on a second consumer. `app/**/_components/` only for truly page-specific pieces.
-- **No barrel files** (re-export `index.ts` hubs); import directly via aliases.
-- **Split along seams** (subcomponents to siblings, pure functions to `lib/`, stage-per-file), never mechanical "part2/helpers" splits. Full rubric: `thermo-nuclear-code-quality-review` skill.
+
+**The folder is the module.** A folder owns exactly one concern and exposes one public entry file named after that concern. Everything else in it is folder-private — nothing outside imports it. This is what keeps files small *without* scattering a single idea across a fog of shallow files: callers learn one small interface per folder, while internals stay short enough to read in one sitting. `lib/ai/pipeline/estimator/` and `components/nutrition/` are the reference shapes.
+
+- **Size limits**: **400 LOC per source file is a hard ceiling; 100–200 LOC is the target range.** 200 LOC for component/widget files. Enforced by `bun check:structure` with a ratchet baseline (`file-size-baseline.json`: frozen legacy entries may shrink, never grow; no new violations). Data-not-logic exemptions live in `scripts/ci/check-structure/config.mjs` with justifications.
+- **≤10 direct entries per folder** (a subfolder counts as one entry). Past that, the folder has more than one concern — **name the missing sub-concern and split**. Treat the count as a concern-count signal, not a size signal.
+- **Feature-first nesting**: UI in `components/<feature>/`, logic in `lib/<feature>/`, hooks in `hooks/<feature>/`, actions in `lib/actions/<feature>/`. No dumping new files at folder top level.
+- **A name is either a file or a folder, never both.** `lib/foo.ts` beside `lib/foo/` makes `@/lib/foo` resolve to the file silently.
+- **Tests live in `__tests__/` beside their subject**, one module's tests per folder. A `__tests__/` that needs sub-concern folders means the module it tests does too. Test files may exceed the size limits — a thorough test beats a short one — but they must test the module they sit under.
+- **One component per file**; presentation vs state (hooks) vs domain/data (lib) vs orchestration (actions/routes) live in separate files and layers. Nothing in `hooks/` exports a non-hook, and `hooks/` never imports from `components/`.
+- **Colocate, then promote**: feature-private helpers stay in the feature folder; promote to shared only on a second consumer. `app/**/_components/` only for truly page-specific pieces — a folder with its own schemas, types and derivation logic is a feature module, not a page part.
+- **No barrel files** (re-export `index.ts` hubs); import directly via aliases. A real module that happens to be called `index.ts` gets renamed after its concern.
+- **Split along seams** (subcomponents to siblings, pure functions to `lib/`, stage-per-file), never mechanical "part2/helpers" splits. If you cannot name the concern, do not make the split. Full rubric: `thermo-nuclear-code-quality-review` skill.
+- **Folder-count exemptions** (external tool contracts, not judgement calls): `supabase/migrations/` (see §7) and `components/ui/` (shadcn CLI resolves `@/components/ui/<name>` flat).
+
+The full module map — one line per folder stating its single concern — is `docs/ARCHITECTURE.md`. Keep it current in the same change that moves a folder.
 
 ### Components & Data
 - Server Components by default; `'use client'` only for state/effects/browser APIs. TypeScript interfaces for props. Composition over configuration.
@@ -95,6 +103,7 @@ Key files: `lib/db/schema.ts` (schema source of truth) · `lib/db/index.ts` (cli
 ## 7. Database (summary — full doc: `docs/DATABASE.md`)
 
 - **Two domains, never mixed**: Drizzle owns tables/columns/FKs/indexes (`lib/db/schema.ts` → `bun db:generate`); RLS/policies/functions/triggers are hand-written SQL in `supabase/migrations/`. Drizzle migrations must be timestamped before manual ones referencing their columns.
+- **`supabase/migrations/` stays flat — do not "organize" it into subfolders.** The Supabase CLI resolves migrations as flat `<timestamp>_name.sql` files and compares them against `supabase_migrations.schema_migrations`; `config.toml`'s `[db.migrations] schema_paths` applies to declarative schemas, not to this folder. Our own `scripts/check-append-only-migrations.mjs` and `scripts/check-migration-timestamps.js` also read it non-recursively, so subfolders would silently drop files out of CI. It is an append-only ledger, not a module — the ≤10-files-per-folder rule is waived here (`FOLDER_EXEMPT` in `scripts/ci/check-structure/config.mjs`). Renaming a committed migration fails CI by design; group them in `supabase/migrations/README.md` instead.
 - **Migration flow**: edit schema → generate → rename the random migration name to something meaningful (SQL filename + `meta/_journal.json` tag) → review SQL → user pushes. After a failed remote push: `supabase migration repair --status reverted <timestamp> --linked`.
 - **Ingredient search**: pg_trgm fuzzy first, pgvector fallback. Vietnamese diacritics are semantically load-bearing (bò=beef, bơ=butter, bổ=nutritious) — never unaccent query AND data; short words need threshold 0.15, not 0.25+; "wrong" trigram matches are expected (the LLM layer judges quality).
 - **Supabase quirks**: pgvector/pg_trgm migrations need `SET search_path TO public, extensions;` at top; `bun` scripts need `--env-file=.env.local`; use `encodeDbUrl()` for special-char passwords.

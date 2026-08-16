@@ -71,7 +71,7 @@ Common tasks:
 bun run test            # Vitest
 bunx biome check --write <path>   # lint and format; scope it to what you touched
 bunx tsc --noEmit       # types
-bun run check:filesize  # file-size ratchet, enforced in CI
+bun run check:structure # size + folder + test-placement + barrel gate, enforced in CI
 bun run eval:pipeline   # estimation quality harness
 bun run dev:mobile      # Flutter client
 ```
