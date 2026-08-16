@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import type { RefObject } from 'react';
 import { CheatOccasionChips } from '@/components/logging/feed/cheat/cheat-occasion-chips';
 import { ComposerGlow } from '@/components/logging/feed/composer-glow';
@@ -13,6 +13,7 @@ import { RelogPickerPopup } from '@/components/logging/input/relog/relog-picker-
 import { StagedList } from '@/components/logging/input/relog/staged-list';
 import type { useRelogComposer } from '@/hooks/meals/relog/use-relog-composer';
 import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
+import { EMPTY_ENTRANCE, ENTRANCE_EASE } from '@/lib/logging/empty-entrance';
 import type { CheatIntensity } from '@/lib/types/cheat';
 
 const RELOG_LISTBOX_ID = 'relog-picker-listbox';
@@ -63,6 +64,7 @@ export function FeedComposer({
     hasStagedRelog,
     isRelogEnabled,
   } = relog;
+  const reduceMotion = useReducedMotion();
   return (
     <motion.div
       layout
@@ -77,7 +79,18 @@ export function FeedComposer({
           onSelect={onSelectCheatOccasion}
         />
       )}
-      <div className="relative z-10 mx-auto w-full max-w-3xl">
+      {/* The first beat: the input is what you came for, so it arrives before
+          the light behind it and the question above it. */}
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: 0.45,
+          delay: EMPTY_ENTRANCE.input,
+          ease: ENTRANCE_EASE,
+        }}
+        className="relative z-10 mx-auto w-full max-w-3xl"
+      >
         <MealInput
           ref={inputRef}
           onSubmit={onSubmit}
@@ -121,7 +134,7 @@ export function FeedComposer({
             ) : null
           }
         />
-      </div>
+      </motion.div>
     </motion.div>
   );
 }

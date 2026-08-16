@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMyProfile } from '@/hooks/profile/use-profile';
+import { EMPTY_ENTRANCE, ENTRANCE_EASE } from '@/lib/logging/empty-entrance';
 import { drawEmptyPromptKey } from '@/lib/logging/empty-prompt';
 
 /**
@@ -39,9 +40,15 @@ export function EmptyPrompt() {
 
   return (
     <motion.p
-      initial={{ opacity: 0, y: 6 }}
+      // The last beat: it slides up into the space above the input, once the
+      // input and the light under it have settled.
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      transition={{
+        duration: 0.5,
+        delay: EMPTY_ENTRANCE.prompt,
+        ease: ENTRANCE_EASE,
+      }}
       className="relative z-10 mx-auto mb-5 max-w-3xl text-balance px-2 text-center font-serif text-[22px] text-nham-text leading-snug sm:text-[26px]"
     >
       {name ? t(`${key}Named`, { name }) : t(key)}

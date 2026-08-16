@@ -228,20 +228,33 @@
   --nham-btn-hover: #5a5043;
   /* The warm halo behind the meal composer — the page's one lit surface, so
      the input does not float on flat canvas. Two ellipses, a gold core inside
-     a tan wash. Both fade to zero WELL inside their box: a stop that is still
-     visible at the edge shows the halo's bounding rectangle as a hard line.
+     a tan wash.
+
+     Every radius is a percentage PER AXIS, and each one plus its offset from
+     centre has to stay under 100%, or the ellipse is cut off by its own box
+     and you see the rectangle instead of the light. The first pass used a 122%
+     vertical radius centred 74% down: it overshot the top by 9% of the box and
+     the bottom by half of one, which is exactly the pair of hard horizontal
+     edges that showed up on screen. `composer-glow.test.ts` checks the four
+     edges so it cannot come back.
+
+     Three stops each, not two. A two-stop ramp is linear in radius, and the
+     kink where it reaches zero reads as a faint ring even though the alpha
+     there is 0; the middle stop bends it into something that lands softly.
      Fades end on the same colour at zero alpha rather than `transparent`,
      which some engines interpolate through transparent-black and fringe grey. */
   --nham-composer-glow:
     radial-gradient(
-      52% 104% at 46% 70%,
-      rgba(240, 205, 120, 0.2),
-      rgba(240, 205, 120, 0) 62%
+      34% 34% at 47% 47%,
+      rgba(240, 205, 120, 0.22),
+      rgba(240, 205, 120, 0.08) 52%,
+      rgba(240, 205, 120, 0) 100%
     ),
     radial-gradient(
-      60% 122% at 54% 74%,
-      rgba(201, 168, 124, 0.32),
-      rgba(201, 168, 124, 0) 68%
+      48% 48% at 50% 50%,
+      rgba(201, 168, 124, 0.34),
+      rgba(201, 168, 124, 0.13) 55%,
+      rgba(201, 168, 124, 0) 100%
     );
   /* The one deliberate exception to "no default blue": relog mentions in the
      composer. A picked dish is a REFERENCE to stored data, not typed prose, and
@@ -339,14 +352,16 @@
      and the light values wash the espresso canvas out to mud. */
   --nham-composer-glow:
     radial-gradient(
-      52% 104% at 46% 70%,
-      rgba(240, 205, 120, 0.1),
-      rgba(240, 205, 120, 0) 62%
+      34% 34% at 47% 47%,
+      rgba(240, 205, 120, 0.12),
+      rgba(240, 205, 120, 0.04) 52%,
+      rgba(240, 205, 120, 0) 100%
     ),
     radial-gradient(
-      60% 122% at 54% 74%,
-      rgba(201, 168, 124, 0.18),
-      rgba(201, 168, 124, 0) 68%
+      48% 48% at 50% 50%,
+      rgba(201, 168, 124, 0.2),
+      rgba(201, 168, 124, 0.08) 55%,
+      rgba(201, 168, 124, 0) 100%
     );
   --nham-btn-hover: #d4b88c;
   --nham-macro-protein: #c9a87c;

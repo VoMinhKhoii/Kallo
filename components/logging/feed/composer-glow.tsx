@@ -1,3 +1,7 @@
+'use client';
+
+import { motion, useReducedMotion } from 'motion/react';
+import { EMPTY_ENTRANCE, ENTRANCE_EASE } from '@/lib/logging/empty-entrance';
 import { cn } from '@/lib/utils';
 
 /**
@@ -10,17 +14,27 @@ import { cn } from '@/lib/utils';
  * Purely decorative: `aria-hidden`, and `pointer-events-none` so it never eats
  * a click meant for the field it sits under. The gradient lives in
  * `--nham-composer-glow` (light and dark) rather than here, so the colour
- * decision stays with the palette.
+ * decision stays with the palette — including the rule that every radius has to
+ * stay inside this box, or its rectangle shows.
  */
 export function ComposerGlow({ className }: { className?: string }) {
+  const reduceMotion = useReducedMotion();
+
   return (
-    <div
+    <motion.div
       aria-hidden
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{
+        duration: 0.7,
+        delay: EMPTY_ENTRANCE.glow,
+        ease: ENTRANCE_EASE,
+      }}
       className={cn(
-        // Bleeds well past the input on every side — a halo cropped to the
-        // input's own box reads as a rectangle, which is the one thing it must
-        // not do.
-        'pointer-events-none absolute -inset-x-16 -top-32 -bottom-12 z-0',
+        // Bleeds well past the input on every side, and SYMMETRICALLY: the
+        // gradient is centred in this box, so an uneven inset would hang the
+        // light above or below the thing it is meant to be lighting.
+        'pointer-events-none absolute -inset-x-16 -inset-y-28 z-0',
         className
       )}
       style={{ background: 'var(--nham-composer-glow)' }}
