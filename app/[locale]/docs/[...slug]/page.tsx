@@ -121,13 +121,13 @@ export default async function DocPage({
             everything below is the document, so it is full-strength ink
             rather than the hairline used between rows. */}
         <div className="mt-3 text-center">
-          <h1 className="text-balance font-bold font-serif text-h1 text-nham-text">
+          <h1 className="text-balance font-bold font-serif text-h1 text-kallo-text">
             {frontmatter.title}
           </h1>
           <LastUpdated date={frontmatter.lastUpdated} locale={locale} />
         </div>
 
-        <hr className="mt-8 border-nham-text border-t" />
+        <hr className="mt-8 border-kallo-text border-t" />
 
         <div className="mt-10">
           <Content />

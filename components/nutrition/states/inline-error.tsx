@@ -16,7 +16,7 @@ export function InlineError({
   return (
     <div
       role="alert"
-      className="rounded-2xl border border-nham-border/60 bg-card p-4 text-nham-text"
+      className="rounded-2xl border border-kallo-border/60 bg-card p-4 text-kallo-text"
     >
       <p>{message}</p>
       <button
@@ -24,7 +24,7 @@ export function InlineError({
         onClick={onRetry}
         disabled={isRetrying}
         aria-busy={isRetrying}
-        className="mt-3 inline-flex touch-manipulation items-center rounded-xl border border-nham-border/60 px-4 py-2 font-medium text-nham-text text-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-3 inline-flex touch-manipulation items-center rounded-xl border border-kallo-border/60 px-4 py-2 font-medium text-kallo-text text-sm transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface disabled:cursor-not-allowed disabled:opacity-50"
       >
         {retryLabel}
       </button>

@@ -3,7 +3,7 @@ import { SITE_URL } from '@/lib/site';
 /**
  * Shared shell for every transactional email.
  *
- * Email clients are not browsers: no CSS variables (so the `--nham-*` tokens
+ * Email clients are not browsers: no CSS variables (so the `--kallo-*` tokens
  * from app/globals.css are inlined as literal hex here, the same constraint the
  * Satori OG route lives under), no external stylesheets, and table layout is
  * still the only thing Outlook renders predictably. Everything is inline.

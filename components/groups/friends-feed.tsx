@@ -45,7 +45,7 @@ export function FriendsFeed() {
           trigger={
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-nham-btn px-3.5 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-nham-btn/90"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-kallo-btn px-3.5 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90"
             >
               <UserPlus className="h-3.5 w-3.5" />
               {t('addFriend')}

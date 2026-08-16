@@ -1,0 +1,61 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <style>
+    .lane { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .col { padding: 14px; border-radius: var(--radius-xl); border: 1px solid var(--border-soft); background: #fff; min-height: 0;}
+    .col.bad { border-color: rgba(211, 123, 105, 0.35); background: color-mix(in srgb, var(--kallo-danger) 4%, #fff); }
+    .col.good { border-color: rgba(124, 163, 104, 0.35); background: color-mix(in srgb, var(--kallo-success) 4%, #fff); }
+    .col .head { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-weight: 700; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px; }
+    .col.bad .head { color: var(--kallo-danger); }
+    .col.good .head { color: var(--kallo-success); }
+    .col .head::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+    .col .demo { padding: 10px 12px; border-radius: 12px; }
+    .caption { font-family: var(--font-mono); font-size: 10px; color: var(--fg-stone); margin-top: 8px; line-height: 1.4; }
+    .head-row { display:flex; align-items: center; gap: 8px; }
+  </style>
+
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — destructive red</div>
+      <div class="demo" style="background: oklch(0.577 0.245 27.325 / 0.1);">
+        <span style="display:inline-flex; align-items:center; gap:6px; padding: 4px 10px; border-radius: 999px; background: oklch(0.577 0.245 27.325 / 0.1); color: oklch(0.577 0.245 27.325); font-family: var(--font-ui); font-size: 12px; font-weight: 600;">
+          <span style="font-size: 14px; line-height: 0;">↓</span> Behind
+        </span>
+      </div>
+      <div class="caption">`bg-destructive/10` — cold default-red breaks the warm palette</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — Lora italic, terracotta accent</div>
+      <div class="demo" style="background: #fefbf6; display: flex; gap: 10px; align-items: baseline;">
+        <span aria-hidden="true" style="width: 6px; height: 6px; border-radius: 999px; background: var(--kallo-danger); flex-shrink: 0; align-self: center;"></span>
+        <p style="margin:0; font-family: var(--font-ui); font-size: 13px; color: var(--fg-muted); line-height: 1.5;">
+          <span style="font-family: var(--font-display); font-style: italic; color: var(--kallo-danger); font-weight: 400;">Needs attention.</span> The trend is softer than the plan right now.
+        </p>
+      </div>
+      <div class="caption">Terracotta italic = concern (not tan, that's highlight). One status dot earns its place.</div>
+    </div>
+  </div>
+
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — tiny-dot disease</div>
+      <div class="demo" style="background: #fff;">
+        <div style="display:flex; align-items: center; gap: 8px; padding: 4px 0; font-family: var(--font-ui); font-size: 13px;"><span style="width:6px;height:6px;border-radius:999px;background:var(--kallo-accent)"></span>Protein <span style="margin-left:auto; color:var(--fg-muted)">22%</span></div>
+        <div style="display:flex; align-items: center; gap: 8px; padding: 4px 0; font-family: var(--font-ui); font-size: 13px;"><span style="width:6px;height:6px;border-radius:999px;background:var(--kallo-accent)"></span>Carbs <span style="margin-left:auto; color:var(--fg-muted)">50%</span></div>
+        <div style="display:flex; align-items: center; gap: 8px; padding: 4px 0; font-family: var(--font-ui); font-size: 13px;"><span style="width:6px;height:6px;border-radius:999px;background:var(--kallo-accent)"></span>Fat <span style="margin-left:auto; color:var(--fg-muted)">28%</span></div>
+      </div>
+      <div class="caption">All dots same color = decoration, not information.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — bars or no dot</div>
+      <div class="demo" style="background: #fff;">
+        <div style="display:flex; justify-content: space-between; align-items: center; padding: 4px 0; font-family: var(--font-ui); font-size: 13px;"><span>Protein</span><span style="color:var(--fg); font-variant-numeric: tabular-nums; font-weight: 600;">38<span style="color:var(--fg-muted); font-weight: 400;">/140g</span></span></div>
+        <div style="height:4px; background:var(--bg-wash); border-radius:999px;"><div style="height:100%; width:27%; background:var(--kallo-macro-protein); border-radius:999px;"></div></div>
+        <div style="display:flex; justify-content: space-between; align-items: center; padding: 6px 0 4px; font-family: var(--font-ui); font-size: 13px;"><span>Carbs</span><span style="color:var(--fg); font-variant-numeric: tabular-nums; font-weight: 600;">125<span style="color:var(--fg-muted); font-weight: 400;">/250g</span></span></div>
+        <div style="height:4px; background:var(--bg-wash); border-radius:999px;"><div style="height:100%; width:50%; background:var(--kallo-macro-carbs); border-radius:999px;"></div></div>
+      </div>
+      <div class="caption">The bar IS the status indicator. Drop the dot.</div>
+    </div>
+  </div>
+</div></body></html>

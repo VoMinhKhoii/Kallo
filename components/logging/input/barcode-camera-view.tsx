@@ -53,17 +53,17 @@ export function BarcodeCameraView({
     <div className="space-y-3">
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black shadow-sm sm:aspect-video">
         <div
-          id="nham-barcode-scanner"
+          id="kallo-barcode-scanner"
           className="[&_#qr-shaded-region]:hidden! h-full w-full [&>video]:h-full [&>video]:w-full [&>video]:object-cover"
         />
         <div className="pointer-events-none absolute inset-0 z-10">
           <div className="absolute inset-0 bg-black/20" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative aspect-[1.8/1] w-[88%] max-w-[340px] rounded-xl border-2 border-nham-accent/80 shadow-[0_0_0_100vmax_rgba(0,0,0,0.35)]">
-              <div className="absolute -top-1 -left-1 h-4 w-4 rounded-tl border-nham-accent border-t-4 border-l-4" />
-              <div className="absolute -top-1 -right-1 h-4 w-4 rounded-tr border-nham-accent border-t-4 border-r-4" />
-              <div className="absolute -bottom-1 -left-1 h-4 w-4 rounded-bl border-nham-accent border-b-4 border-l-4" />
-              <div className="absolute -right-1 -bottom-1 h-4 w-4 rounded-br border-nham-accent border-r-4 border-b-4" />
+            <div className="relative aspect-[1.8/1] w-[88%] max-w-[340px] rounded-xl border-2 border-kallo-accent/80 shadow-[0_0_0_100vmax_rgba(0,0,0,0.35)]">
+              <div className="absolute -top-1 -left-1 h-4 w-4 rounded-tl border-kallo-accent border-t-4 border-l-4" />
+              <div className="absolute -top-1 -right-1 h-4 w-4 rounded-tr border-kallo-accent border-t-4 border-r-4" />
+              <div className="absolute -bottom-1 -left-1 h-4 w-4 rounded-bl border-kallo-accent border-b-4 border-l-4" />
+              <div className="absolute -right-1 -bottom-1 h-4 w-4 rounded-br border-kallo-accent border-r-4 border-b-4" />
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@ export function BarcodeCameraView({
         {hasError && (
           <div
             role="alert"
-            className="space-y-2 rounded-xl bg-nham-danger/10 p-3 text-nham-danger"
+            className="space-y-2 rounded-xl bg-kallo-danger/10 p-3 text-kallo-danger"
           >
             <p>
               {cameraStatus === 'permission-denied'
@@ -82,7 +82,7 @@ export function BarcodeCameraView({
             <button
               type="button"
               onClick={onFallback}
-              className="rounded-lg bg-nham-ink px-3 py-1.5 font-medium text-white text-xs"
+              className="rounded-lg bg-kallo-ink px-3 py-1.5 font-medium text-white text-xs"
             >
               {fallbackText}
             </button>

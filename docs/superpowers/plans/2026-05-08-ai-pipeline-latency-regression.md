@@ -103,8 +103,8 @@ Expected: exit code 0 for the dirty patch when tracked files are dirty, and the 
 ### Task 2: Create clean comparison worktrees
 
 **Files:**
-- Create sibling worktree: `/Users/khoivo/Documents/nham-latency-main`
-- Create sibling worktree: `/Users/khoivo/Documents/nham-latency-branch-clean`
+- Create sibling worktree: `/Users/khoivo/Documents/kallo-latency-main`
+- Create sibling worktree: `/Users/khoivo/Documents/kallo-latency-branch-clean`
 
 - [ ] **Step 1: Fetch refs**
 
@@ -121,7 +121,7 @@ Expected: fetch succeeds.
 Run:
 
 ```bash
-git worktree add /Users/khoivo/Documents/nham-latency-main origin/main
+git worktree add /Users/khoivo/Documents/kallo-latency-main origin/main
 ```
 
 Expected: worktree is created at the requested path. If the path already exists, inspect it before reusing it.
@@ -131,7 +131,7 @@ Expected: worktree is created at the requested path. If the path already exists,
 Run:
 
 ```bash
-git worktree add --detach /Users/khoivo/Documents/nham-latency-branch-clean feat/ai-pipeline-prompt-context
+git worktree add --detach /Users/khoivo/Documents/kallo-latency-branch-clean feat/ai-pipeline-prompt-context
 ```
 
 Expected: detached worktree is created at the requested path without the current dirty reliability edits. Detached mode is required because `feat/ai-pipeline-prompt-context` is already checked out in the original worktree.
@@ -144,7 +144,7 @@ Run:
 git worktree list
 ```
 
-Expected: output includes the original repo, `nham-latency-main`, and `nham-latency-branch-clean`.
+Expected: output includes the original repo, `kallo-latency-main`, and `kallo-latency-branch-clean`.
 
 ### Task 3: Prepare env parity without leaking secrets
 
@@ -167,7 +167,7 @@ Expected: prints only variable names with `<set>`, no secret values.
 When running Bun scripts in any worktree, use:
 
 ```bash
-bun --env-file=/Users/khoivo/Documents/nham-ai-pipeline-impl/.env.local <command>
+bun --env-file=/Users/khoivo/Documents/kallo-ai-pipeline-impl/.env.local <command>
 ```
 
 Expected: all worktrees share the same local env values without copying `.env.local`.
@@ -561,7 +561,7 @@ Expected: PASS.
 ### Task 7: Benchmark clean main control
 
 **Files:**
-- Worktree: `/Users/khoivo/Documents/nham-latency-main`
+- Worktree: `/Users/khoivo/Documents/kallo-latency-main`
 - Output: `/Users/khoivo/.copilot/session-state/cf76dadc-ab82-4062-bb5e-2c718c049c50/files/latency-main.json`
 
 - [ ] **Step 1: Copy or apply the benchmark harness to the main worktree without changing production code**
@@ -594,7 +594,7 @@ Expected: `STABLE_PROFILE` resolves to `gemini-3.1-flash-lite`. If main differs,
 Run in the main worktree:
 
 ```bash
-bun --env-file=/Users/khoivo/Documents/nham-ai-pipeline-impl/.env.local scripts/benchmark-ai-pipeline-latency.ts --variant=all-off --runs=2 --output=/Users/khoivo/.copilot/session-state/cf76dadc-ab82-4062-bb5e-2c718c049c50/files/latency-main.json
+bun --env-file=/Users/khoivo/Documents/kallo-ai-pipeline-impl/.env.local scripts/benchmark-ai-pipeline-latency.ts --variant=all-off --runs=2 --output=/Users/khoivo/.copilot/session-state/cf76dadc-ab82-4062-bb5e-2c718c049c50/files/latency-main.json
 ```
 
 Expected: all measured runs succeed. Warm-cache p50 for normal meals should be near 8-10s.
@@ -602,7 +602,7 @@ Expected: all measured runs succeed. Warm-cache p50 for normal meals should be n
 ### Task 8: Benchmark clean branch without uncommitted reliability changes
 
 **Files:**
-- Worktree: `/Users/khoivo/Documents/nham-latency-branch-clean`
+- Worktree: `/Users/khoivo/Documents/kallo-latency-branch-clean`
 - Output: `/Users/khoivo/.copilot/session-state/cf76dadc-ab82-4062-bb5e-2c718c049c50/files/latency-branch-clean.json`
 
 - [ ] **Step 1: Copy or apply the benchmark harness to the clean branch worktree**
@@ -625,7 +625,7 @@ Expected: the complete benchmark harness is available locally in the clean branc
 Run in the clean branch worktree:
 
 ```bash
-bun --env-file=/Users/khoivo/Documents/nham-ai-pipeline-impl/.env.local scripts/benchmark-ai-pipeline-latency.ts --variant=all --runs=2 --output=/Users/khoivo/.copilot/session-state/cf76dadc-ab82-4062-bb5e-2c718c049c50/files/latency-branch-clean.json
+bun --env-file=/Users/khoivo/Documents/kallo-ai-pipeline-impl/.env.local scripts/benchmark-ai-pipeline-latency.ts --variant=all --runs=2 --output=/Users/khoivo/.copilot/session-state/cf76dadc-ab82-4062-bb5e-2c718c049c50/files/latency-branch-clean.json
 ```
 
 Expected: output contains all five variants. Failures are useful evidence; do not paper over them.
@@ -643,7 +643,7 @@ Expected: prints the first variant or stage that exceeds the 10s gate or is mate
 ### Task 9: Benchmark dirty branch with reliability changes
 
 **Files:**
-- Worktree: original repo `/Users/khoivo/Documents/nham-ai-pipeline-impl`
+- Worktree: original repo `/Users/khoivo/Documents/kallo-ai-pipeline-impl`
 - Output: `/Users/khoivo/.copilot/session-state/cf76dadc-ab82-4062-bb5e-2c718c049c50/files/latency-branch-dirty.json`
 
 - [ ] **Step 1: Run all variants on the dirty branch**
@@ -920,16 +920,16 @@ Expected: commit succeeds only after the user approves the final file set.
 ### Task 15: Clean up temporary worktrees after approval
 
 **Files:**
-- Remove worktree: `/Users/khoivo/Documents/nham-latency-main`
-- Remove worktree: `/Users/khoivo/Documents/nham-latency-branch-clean`
+- Remove worktree: `/Users/khoivo/Documents/kallo-latency-main`
+- Remove worktree: `/Users/khoivo/Documents/kallo-latency-branch-clean`
 
 - [ ] **Step 1: Remove benchmark worktrees**
 
 Run after all data has been captured and no uncommitted changes remain in the temporary worktrees:
 
 ```bash
-git worktree remove /Users/khoivo/Documents/nham-latency-main
-git worktree remove /Users/khoivo/Documents/nham-latency-branch-clean
+git worktree remove /Users/khoivo/Documents/kallo-latency-main
+git worktree remove /Users/khoivo/Documents/kallo-latency-branch-clean
 ```
 
 Expected: temporary worktrees are removed. If Git refuses because a worktree is dirty, inspect it and preserve any benchmark output before retrying.

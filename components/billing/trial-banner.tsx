@@ -33,20 +33,20 @@ export function TrialBanner({
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 rounded-2xl border border-nham-accent/40 bg-nham-accent/5 px-4 py-3 font-sans-display">
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-kallo-accent/40 bg-kallo-accent/5 px-4 py-3 font-sans-display">
         <div className="flex min-w-0 items-center gap-2.5">
           <Sparkles
             aria-hidden="true"
-            className="h-4 w-4 shrink-0 text-nham-accent"
+            className="h-4 w-4 shrink-0 text-kallo-accent"
           />
-          <p className="min-w-0 text-[14px] text-nham-text">
+          <p className="min-w-0 text-[14px] text-kallo-text">
             {t('daysRemaining', { days: data.trial.daysRemaining })}
           </p>
         </div>
         <button
           type="button"
           onClick={() => setPaywallOpen(true)}
-          className="shrink-0 rounded-xl bg-nham-ink px-3.5 py-1.5 font-medium text-[13px] text-nham-surface transition-colors hover:bg-nham-ink-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+          className="shrink-0 rounded-xl bg-kallo-ink px-3.5 py-1.5 font-medium text-[13px] text-kallo-surface transition-colors hover:bg-kallo-ink-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
         >
           {t('upgrade')}
         </button>

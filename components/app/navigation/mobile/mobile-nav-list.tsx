@@ -42,8 +42,8 @@ export function MobileNavList({
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
                 active
-                  ? 'bg-nham-hover text-[#141413]'
-                  : 'text-[#6E6D66] hover:bg-nham-hover hover:text-[#141413]'
+                  ? 'bg-kallo-hover text-[#141413]'
+                  : 'text-[#6E6D66] hover:bg-kallo-hover hover:text-[#141413]'
               )}
             >
               <Icon className="h-5 w-5" aria-hidden="true" />
@@ -56,7 +56,7 @@ export function MobileNavList({
                 {tNav(item.labelKey)}
               </span>
               {item.id === 'groups' && inviteCount > 0 && (
-                <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-nham-accent" />
+                <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-kallo-accent" />
               )}
             </Link>
           </li>

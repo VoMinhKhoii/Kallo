@@ -7,7 +7,7 @@ import '../../../theme/nham_theme.dart';
 /// as a single stack instead of a pile of blocks each with its own margin.
 ///
 /// The dashboard is a PRESENTATIONAL surface, so it keeps the design system's
-/// 12px default (see `.agents/skills/nham-design/mobile.md`, "Spacing — one 12px
+/// 12px default (see `.agents/skills/kallo-design/mobile.md`, "Spacing — one 12px
 /// rhythm"). The logging feed's tighter 8px `block` is the documented exception
 /// for a dense scrolling list — it is NOT the new default and does not apply
 /// here; a dashboard at 8 loses the separation between its three sections.

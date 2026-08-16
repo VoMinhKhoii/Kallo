@@ -12,10 +12,10 @@ import type {
  * shared macro palette; drinks borrows the warm accent.
  */
 export const CHEAT_SLIDER_COLORS: Record<CheatSliderKey, string> = {
-  protein: 'var(--color-nham-macro-protein)',
-  carbs: 'var(--color-nham-macro-carbs)',
-  fat: 'var(--color-nham-macro-fat)',
-  drinks: 'var(--color-nham-accent)',
+  protein: 'var(--color-kallo-macro-protein)',
+  carbs: 'var(--color-kallo-macro-carbs)',
+  fat: 'var(--color-kallo-macro-fat)',
+  drinks: 'var(--color-kallo-accent)',
 };
 
 /**

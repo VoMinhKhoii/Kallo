@@ -33,19 +33,19 @@ export function BarcodeManualInput({
           onChange={(e) => onBarcodeChange(e.target.value)}
           autoFocus
           disabled={isSearching}
-          className="rounded-lg border-[#EAE7E0] bg-white pl-10 font-sans-display text-[14px] text-nham-text"
+          className="rounded-lg border-[#EAE7E0] bg-white pl-10 font-sans-display text-[14px] text-kallo-text"
         />
       </div>
       {searchError && (
         <div
           role="alert"
-          className="space-y-2 rounded-lg bg-nham-danger/10 p-3 font-sans-display text-[13px] text-nham-danger"
+          className="space-y-2 rounded-lg bg-kallo-danger/10 p-3 font-sans-display text-[13px] text-kallo-danger"
         >
           <p>{searchError}</p>
           <button
             type="button"
             onClick={onFallbackClick}
-            className="block font-medium text-[12px] text-nham-accent hover:underline"
+            className="block font-medium text-[12px] text-kallo-accent hover:underline"
           >
             {fallbackPromptText} &rarr;
           </button>

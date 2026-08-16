@@ -1,6 +1,6 @@
 # Google Cloud Run Setup
 
-> **Updated (2026-07):** The `nham-internal`, `nham-staging`, and PR-preview
+> **Updated (2026-07):** The `kallo-internal`, `kallo-staging`, and PR-preview
 > pipelines were retired to cut cost. `kallo-prod` is now the only Cloud Run
 > deploy target. Sections below that describe the internal/staging/preview
 > services are historical.
@@ -45,7 +45,7 @@ retains two database modes for legacy cleanup and future re-enablement:
 
 | Mode | What staging services use | When to use |
 | --- | --- | --- |
-| `shared` | The shared non-prod Supabase database behind `nham-nonprod-database-url` | Current mode (no branching) |
+| `shared` | The shared non-prod Supabase database behind `kallo-nonprod-database-url` | Current mode (no branching) |
 | `branch` | A per-PR Supabase branch created via `supabase branches` | Future mode once the project has Supabase branching enabled |
 
 Set GitHub Actions variable `PREVIEW_DATABASE_MODE` to control that dormant
@@ -94,7 +94,7 @@ bucket:
 ```bash
 export GCP_PROJECT_ID="cal-487315"
 export GCP_REGION="asia-southeast1"
-export GCS_PREVIEW_SEED_BUCKET="nham-preview-seeds"
+export GCS_PREVIEW_SEED_BUCKET="kallo-preview-seeds"
 export GCP_DEPLOYER_SERVICE_ACCOUNT="github-deployer@cal-487315.iam.gserviceaccount.com"
 
 gcloud storage buckets create "gs://$GCS_PREVIEW_SEED_BUCKET" \
@@ -150,7 +150,7 @@ state. The workflow:
 
 1. checks out the default branch
 2. verifies that `SUPABASE_PROJECT_ID` matches the project behind
-   `nham-nonprod-database-url`
+   `kallo-nonprod-database-url`
 3. runs `supabase db reset --linked --yes`
 4. reapplies the generated `seed_food.sql` from GCS
 5. verifies that the rebuilt DB has core tables, seeded food rows, the
@@ -172,10 +172,10 @@ Use names close to these so the guide and workflows stay easy to map:
 | Workload Identity Provider | `github` |
 | Deployer service account | `github-deployer` |
 | Runtime service account | `cloud-run-runtime` |
-| Internal Cloud Run service | `nham-internal` |
-| Shared staging Cloud Run service | `nham-staging` |
-| Preview Cloud Run services | `nham-pr-<number>` |
-| Staging lease bucket | `nham-staging-leases` |
+| Internal Cloud Run service | `kallo-internal` |
+| Shared staging Cloud Run service | `kallo-staging` |
+| Preview Cloud Run services | `kallo-pr-<number>` |
+| Staging lease bucket | `kallo-staging-leases` |
 
 ## Required APIs
 
@@ -412,7 +412,7 @@ authentication, and runtime secrets stay in Secret Manager.
 
 `NEXT_PUBLIC_SUPABASE_URL` and
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are **build-time inputs** for the shared
-CI image used by `nham-internal` and by previews while
+CI image used by `kallo-internal` and by previews while
 `PREVIEW_DATABASE_MODE=shared`.
 
 That means:
@@ -420,17 +420,17 @@ That means:
 - changing them requires a new CI image build
 - changing Cloud Run runtime env vars later will not fix stale client bundle
   config
-- shared-mode previews and `nham-internal` both read the same public Supabase
+- shared-mode previews and `kallo-internal` both read the same public Supabase
   config from GitHub Actions variables
 - if we later switch to `PREVIEW_DATABASE_MODE=branch`, preview images rebuild
-  after branch env is fetched from Supabase, while `nham-internal` keeps using
+  after branch env is fetched from Supabase, while `kallo-internal` keeps using
   the shared GitHub Actions variables
 
 ### Preview runtime notes
 
 | Mode | Public Supabase config | Server `DATABASE_URL` | Cleanup behavior |
 | --- | --- | --- | --- |
-| `shared` (current default) | Comes from `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` GitHub variables baked into the CI image | Secret Manager-backed `nham-nonprod-database-url` | PR close deletes only the preview Cloud Run service; DB recovery happens through **Reset Staging Database** |
+| `shared` (current default) | Comes from `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` GitHub variables baked into the CI image | Secret Manager-backed `kallo-nonprod-database-url` | PR close deletes only the preview Cloud Run service; DB recovery happens through **Reset Staging Database** |
 | `branch` (future Supabase Pro path) | Comes from Supabase branch env fetched during the preview build | Injected with `--update-env-vars=DATABASE_URL=...` for that PR branch | PR close and scheduled cleanup delete both the preview Cloud Run service and the Supabase branch |
 
 ## 8. Cloud Run defaults used by the workflows
@@ -456,7 +456,7 @@ That means:
 - Plain runtime env includes the production billing boundary, RevenueCat app
   allowlist/project/public web key, and the explicit dark-launch controls.
 
-### Preview services: `nham-pr-<number>` (disabled by default)
+### Preview services: `kallo-pr-<number>` (disabled by default)
 
 - CPU: `1`
 - Memory: `1Gi`
@@ -466,7 +466,7 @@ That means:
 - Max instances: `3`
 - Public URL enabled
 - `DATABASE_URL` source depends on `PREVIEW_DATABASE_MODE`:
-  - shared mode uses Secret Manager-backed `nham-nonprod-database-url`
+  - shared mode uses Secret Manager-backed `kallo-nonprod-database-url`
   - branch mode injects the per-branch URL with `--update-env-vars`
 - `GEMINI_API_KEY` stays Secret Manager-backed in both modes
 - Preview services are retired. If a temporary QA lane is designed later, it
@@ -511,7 +511,7 @@ fallback works without re-issuing the secret.
 | --- | --- |
 | `CI` | Validate repo, then build and push SHA-tagged image |
 | `Cloud Run Preview` | Disabled automatic preview deploy path retained for future/manual recovery work |
-| `Cloud Run Internal` | Deploy `main` to `nham-internal`, with smoke-triggered rollback |
+| `Cloud Run Internal` | Deploy `main` to `kallo-internal`, with smoke-triggered rollback |
 | `Cloud Run Preview Cleanup` | Delete legacy preview Cloud Run services on PR close, remove matching Supabase branches, and clean up orphan previews nightly |
 | `Cloud Run Staging` | Manual shared-staging promotion with lease protection, migrations, smoke check, and PR comment updates |
 | `Cloud Run Ops` | Manual internal ops plus legacy preview refresh operations |
@@ -537,7 +537,7 @@ gcloud artifacts docker images describe "$IMAGE_TAG" \
 Inspect current internal traffic:
 
 ```bash
-gcloud run services describe nham-internal \
+gcloud run services describe kallo-internal \
   --region="$GCP_REGION" \
   --format='table(status.traffic.revisionName,status.traffic.percent)'
 ```
@@ -547,7 +547,7 @@ List revisions for rollback selection:
 ```bash
 gcloud run revisions list \
   --region="$GCP_REGION" \
-  --service=nham-internal
+  --service=kallo-internal
 ```
 
 ## 11. Manual verification checklist
@@ -563,7 +563,7 @@ Run these after setup:
    - the PR gets a staging comment when `ref` is `pr-<number>` or ends with `#<number>`
    - `https://<staging-url>/api/healthz` returns the expected health JSON
 3. Merge a known-good change to `main` and confirm:
-   - `Cloud Run Internal` deploys `nham-internal`
+   - `Cloud Run Internal` deploys `kallo-internal`
    - smoke checks pass without rollback
 4. Run a controlled rollback drill in a non-production window:
    - force smoke verification to fail once
@@ -572,7 +572,7 @@ Run these after setup:
    - redeploy internal by digest
    - confirm deployment-record artifacts are uploaded
 6. If you still have legacy preview services to clean up, close the PR or run the cleanup workflow and confirm:
-   - `Cloud Run Preview Cleanup` deletes `nham-pr-<number>` and the matching Supabase branch
+   - `Cloud Run Preview Cleanup` deletes `kallo-pr-<number>` and the matching Supabase branch
    - the old preview URL no longer serves the app
 
 ## 12. Known boundaries of the current setup
@@ -588,7 +588,7 @@ Run these after setup:
   reset commands.
 - The manual **Reset Staging Database** workflow is the exception: it verifies
   `SUPABASE_PROJECT_ID` matches the database behind
-  `nham-nonprod-database-url`, then runs `supabase db reset --linked --yes`,
+  `kallo-nonprod-database-url`, then runs `supabase db reset --linked --yes`,
   reapplies `seed_food.sql`, and replays the `public.user_profiles` backfill so
   existing `auth.users` rows are restored safely.
 - A later production environment with different `NEXT_PUBLIC_*` values will need

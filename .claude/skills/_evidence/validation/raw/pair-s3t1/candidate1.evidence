@@ -2,7 +2,7 @@
 61bd6b5 fix(utils): accept EU thousands format in weight input
 861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
 87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
-8a80c07 docs(design): fold the mobile system into the nham-design skill
+8a80c07 docs(design): fold the mobile system into the kallo-design skill
 === DIFF vs planted HEAD ===
 diff --git a/lib/utils.test.ts b/lib/utils.test.ts
 index 8ca3bd1..5976a6a 100644

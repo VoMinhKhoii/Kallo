@@ -98,7 +98,7 @@ export function MealAmountEditor({
   const canSave = remaining.length > 0;
 
   return (
-    <div className="mt-5 border-nham-border border-t pt-4">
+    <div className="mt-5 border-kallo-border border-t pt-4">
       <div className="space-y-1">
         {rows.map((row) => (
           <AmountEditorRow
@@ -111,18 +111,18 @@ export function MealAmountEditor({
         ))}
       </div>
 
-      <div className="mt-4 border-nham-border/50 border-t pt-3">
+      <div className="mt-4 border-kallo-border/50 border-t pt-3">
         <div className="flex items-center justify-between">
-          <span className="font-bold font-sans-display text-[13px] text-nham-text">
+          <span className="font-bold font-sans-display text-[13px] text-kallo-text">
             {t('total')}
           </span>
           <div className="flex items-center gap-4">
-            <span className="font-sans-display text-[11px] text-nham-text-muted tabular-nums">
+            <span className="font-sans-display text-[11px] text-kallo-text-muted tabular-nums">
               P: {formatMacroOrNA(totals.proteinG)}
               {'  '}C: {formatMacroOrNA(totals.carbohydrateG)}
               {'  '}F: {formatMacroOrNA(totals.fatG)}
             </span>
-            <span className="font-bold font-sans-display text-nham-text tabular-nums">
+            <span className="font-bold font-sans-display text-kallo-text tabular-nums">
               {formatCaloriesOrNA(totals.caloriesKcal)}
             </span>
           </div>
@@ -131,7 +131,7 @@ export function MealAmountEditor({
 
       {/* Natural-language refine — talk to fix it, the same way you logged it. */}
       {onRefine && (
-        <div className="mt-4 border-nham-border/50 border-t pt-4">
+        <div className="mt-4 border-kallo-border/50 border-t pt-4">
           <RefineField meal={meal} onRefine={onRefine} />
         </div>
       )}
@@ -141,7 +141,7 @@ export function MealAmountEditor({
           type="button"
           onClick={onCancel}
           disabled={isSaving}
-          className="rounded-full px-3 py-1.5 font-medium font-sans-display text-[12px] text-nham-text-muted/80 transition-colors hover:bg-nham-hover/40 hover:text-nham-text disabled:opacity-60"
+          className="rounded-full px-3 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text-muted/80 transition-colors hover:bg-kallo-hover/40 hover:text-kallo-text disabled:opacity-60"
         >
           {t('cancelEdit')}
         </button>
@@ -150,7 +150,7 @@ export function MealAmountEditor({
           onClick={handleSave}
           disabled={isSaving || !canSave}
           aria-busy={isSaving}
-          className="inline-flex items-center gap-1.5 rounded-full bg-nham-hover px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text transition-colors hover:bg-nham-hover/70 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-full bg-kallo-hover px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text transition-colors hover:bg-kallo-hover/70 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           {isSaving ? t('savingEdit') : t('saveEdit')}

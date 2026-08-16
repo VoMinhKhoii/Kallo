@@ -99,7 +99,7 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
   targets are **null** for not-fully-onboarded profiles — models tolerate nulls and fall back to
   the same defaults as the web app.
 - **Theming:** warm earthy palette on a cream surface (`theme/nham_colors.dart`), Lora serif +
-  DM Sans (`theme/nham_typography.dart`) — see the `nham-design` skill for the brand source.
+  DM Sans (`theme/nham_typography.dart`) — see the `kallo-design` skill for the brand source.
 
 ## Web parity
 

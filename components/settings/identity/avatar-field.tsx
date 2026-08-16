@@ -10,7 +10,7 @@ import type { PublicProfile } from '@/lib/groups/client';
 import { IMAGE_TYPES, MAX_IMAGE_BYTES } from '@/lib/uploads/image-file';
 
 const BUTTON_CLASS =
-  'inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-nham-border bg-white px-3.5 py-2 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60';
+  'inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-white px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60';
 
 /** Avatar preview with upload/remove — the photo half of the identity panel. */
 export function AvatarField({ profile }: { profile: PublicProfile }) {
@@ -82,7 +82,7 @@ export function AvatarField({ profile }: { profile: PublicProfile }) {
             onClick={handleRemove}
             disabled={busy}
             aria-busy={remove.isPending}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 font-medium text-[13px] text-nham-text-muted transition-colors duration-150 hover:bg-nham-hover/40 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 font-medium text-[13px] text-kallo-text-muted transition-colors duration-150 hover:bg-kallo-hover/40 hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
           >
             {remove.isPending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />

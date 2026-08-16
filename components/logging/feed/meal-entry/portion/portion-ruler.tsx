@@ -148,19 +148,19 @@ export function PortionRuler({
         aria-label={ariaLabel}
         className="relative flex h-4 w-full touch-none select-none items-center"
       >
-        <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-nham-border/50">
-          <SliderPrimitive.Range className="absolute h-full rounded-full bg-nham-text/30" />
+        <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-kallo-border/50">
+          <SliderPrimitive.Range className="absolute h-full rounded-full bg-kallo-text/30" />
           {positions.map((pos) => (
             <span
               key={`tick-${pos}`}
-              className="absolute top-0 h-full w-px bg-nham-text/25"
+              className="absolute top-0 h-full w-px bg-kallo-text/25"
               style={{ left: `${pos}%` }}
             />
           ))}
         </SliderPrimitive.Track>
         <SliderPrimitive.Thumb
           aria-valuetext={ariaValueText}
-          className="block size-4 shrink-0 rounded-full border border-nham-text/30 bg-nham-surface shadow-sm outline-hidden transition-[box-shadow] hover:ring-4 hover:ring-nham-text/10 focus-visible:ring-4 focus-visible:ring-nham-accent/30"
+          className="block size-4 shrink-0 rounded-full border border-kallo-text/30 bg-kallo-surface shadow-sm outline-hidden transition-[box-shadow] hover:ring-4 hover:ring-kallo-text/10 focus-visible:ring-4 focus-visible:ring-kallo-accent/30"
         />
       </SliderPrimitive.Root>
 
@@ -168,7 +168,7 @@ export function PortionRuler({
         {anchors.map((anchor, index) => (
           <span
             key={`label-${anchor.tier}`}
-            className="absolute -translate-x-1/2 whitespace-nowrap text-[10px] text-nham-text-muted tabular-nums"
+            className="absolute -translate-x-1/2 whitespace-nowrap text-[10px] text-kallo-text-muted tabular-nums"
             style={{ left: `${positions[index]}%` }}
           >
             {anchor.value} g

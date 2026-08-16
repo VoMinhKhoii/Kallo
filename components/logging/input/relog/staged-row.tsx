@@ -19,24 +19,24 @@ export function StagedRow({ entry, disabled, onRemove }: StagedRowProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="min-w-0 flex-1 truncate font-sans-display text-nham-text text-sm">
+      <span className="min-w-0 flex-1 truncate font-sans-display text-kallo-text text-sm">
         {entry.label}
       </span>
-      <span className="shrink-0 font-sans-display text-nham-text-muted/70 text-xs tabular-nums">
+      <span className="shrink-0 font-sans-display text-kallo-text-muted/70 text-xs tabular-nums">
         {t('macroSplit', {
           protein: formatMacro(entry.summary.proteinG),
           carbs: formatMacro(entry.summary.carbohydrateG),
           fat: formatMacro(entry.summary.fatG),
         })}
       </span>
-      <span className="w-14 shrink-0 text-right font-sans-display text-nham-text-muted text-xs tabular-nums">
+      <span className="w-14 shrink-0 text-right font-sans-display text-kallo-text-muted text-xs tabular-nums">
         {t('rowKcal', { kcal: formatKcal(entry.summary.caloriesKcal) })}
       </span>
       <button
         type="button"
         disabled={disabled}
         onClick={onRemove}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-nham-text-muted/40 transition-colors hover:bg-nham-hover/30 hover:text-nham-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40 disabled:opacity-40"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-kallo-text-muted/40 transition-colors hover:bg-kallo-hover/30 hover:text-kallo-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 disabled:opacity-40"
         aria-label={t('removeStaged', { name: entry.label })}
       >
         <X className="h-3.5 w-3.5" />

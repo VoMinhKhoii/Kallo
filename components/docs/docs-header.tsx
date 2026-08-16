@@ -24,18 +24,18 @@ export async function DocsHeader({
   const t = await getTranslations('docs');
 
   return (
-    <header className="sticky top-0 z-40 border-nham-border border-b bg-nham-surface">
+    <header className="sticky top-0 z-40 border-kallo-border border-b bg-kallo-surface">
       <div className="mx-auto flex h-16 max-w-[90rem] items-center gap-3 px-4 sm:px-6">
         <Link
-          className="flex items-center gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+          className="flex items-center gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
           href="/docs/overview"
         >
-          <KalloWordmark className="h-6 w-auto text-nham-text" />
+          <KalloWordmark className="h-6 w-auto text-kallo-text" />
           <span
             aria-hidden="true"
-            className="hidden h-5 w-px bg-nham-border sm:block"
+            className="hidden h-5 w-px bg-kallo-border sm:block"
           />
-          <span className="hidden font-serif text-base text-nham-text-muted sm:block">
+          <span className="hidden font-serif text-base text-kallo-text-muted sm:block">
             {t('title')}
           </span>
         </Link>
@@ -44,7 +44,7 @@ export async function DocsHeader({
           <DocsSearch entries={searchEntries} />
           <DocsLocaleToggle />
           <Link
-            className="hidden h-9 items-center rounded-lg bg-nham-btn px-3.5 font-medium font-sans-display text-caption text-nham-surface transition-colors hover:bg-nham-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent sm:flex"
+            className="hidden h-9 items-center rounded-lg bg-kallo-btn px-3.5 font-medium font-sans-display text-caption text-kallo-surface transition-colors hover:bg-kallo-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent sm:flex"
             href="/"
           >
             {t('openApp')}

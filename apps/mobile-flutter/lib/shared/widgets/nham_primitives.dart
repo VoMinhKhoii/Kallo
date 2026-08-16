@@ -50,7 +50,7 @@ enum NhamButtonVariant { primary, secondary, danger, ghost }
 /// space[4]` (16), `paddingHorizontal: space[5]` (20), centered label.
 ///
 /// Press feedback follows the shadcn button affordance — a background
-/// color-shift (e.g. `nham-btn` → `nham-btn-hover`) animated over ~150ms
+/// color-shift (e.g. `kallo-btn` → `kallo-btn-hover`) animated over ~150ms
 /// (`transition-all`), NOT an opacity dim. Disabled dims to 0.55.
 class NhamButton extends StatefulWidget {
   const NhamButton({
@@ -92,7 +92,7 @@ class _NhamButtonState extends State<NhamButton> {
         bg = _pressed ? NhamColors.hover : NhamColors.elev;
         border = Border.all(color: NhamColors.border);
       case NhamButtonVariant.danger:
-        // hover:bg-nham-danger/10
+        // hover:bg-kallo-danger/10
         bg = _pressed ? NhamColors.danger10 : Colors.transparent;
       case NhamButtonVariant.ghost:
         bg = _pressed ? NhamColors.pressWash : Colors.transparent;

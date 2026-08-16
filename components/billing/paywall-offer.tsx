@@ -33,23 +33,23 @@ export function PaywallOffer({
   return (
     <div className="flex flex-col px-6 pt-6 pb-6">
       <header>
-        <span className="inline-flex items-center gap-1.5 text-[11px] text-nham-accent uppercase tracking-[0.14em]">
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-kallo-accent uppercase tracking-[0.14em]">
           <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
           {t('eyebrow')}
         </span>
-        <DialogTitle className="mt-2 font-normal font-serif text-2xl text-nham-text leading-snug">
+        <DialogTitle className="mt-2 font-normal font-serif text-2xl text-kallo-text leading-snug">
           {t('titleLead')}{' '}
-          <span className="text-nham-accent italic [font-weight:300]">
+          <span className="text-kallo-accent italic [font-weight:300]">
             {t('titleAccent')}
           </span>
         </DialogTitle>
-        <DialogDescription className="mt-2 text-[14px] text-nham-text-soft leading-relaxed">
+        <DialogDescription className="mt-2 text-[14px] text-kallo-text-soft leading-relaxed">
           {t('subtitle')}
         </DialogDescription>
       </header>
 
       {trialActive && (
-        <p className="mt-3 rounded-xl bg-nham-hover/50 px-3.5 py-2.5 text-[13px] text-nham-text-soft">
+        <p className="mt-3 rounded-xl bg-kallo-hover/50 px-3.5 py-2.5 text-[13px] text-kallo-text-soft">
           {t('trialCountdown', { days: daysRemaining })}
         </p>
       )}
@@ -58,11 +58,11 @@ export function PaywallOffer({
         {perks.map((perk) => (
           <li
             key={perk}
-            className="flex items-start gap-2 text-[14px] text-nham-text"
+            className="flex items-start gap-2 text-[14px] text-kallo-text"
           >
             <Check
               aria-hidden="true"
-              className="mt-0.5 h-4 w-4 shrink-0 text-nham-accent"
+              className="mt-0.5 h-4 w-4 shrink-0 text-kallo-accent"
             />
             <span>{perk}</span>
           </li>
@@ -71,7 +71,7 @@ export function PaywallOffer({
 
       <div className="mt-5">
         {offeringsFailed ? (
-          <p className="rounded-xl border border-nham-border/70 bg-white px-4 py-4 text-center text-[13.5px] text-nham-text-muted">
+          <p className="rounded-xl border border-kallo-border/70 bg-white px-4 py-4 text-center text-[13.5px] text-kallo-text-muted">
             {t('unavailable')}
           </p>
         ) : offeringsPending ? (
@@ -80,7 +80,7 @@ export function PaywallOffer({
             <Skeleton className="h-24 rounded-2xl" />
           </div>
         ) : packages.length === 0 ? (
-          <p className="rounded-xl border border-nham-border/70 bg-white px-4 py-4 text-center text-[13.5px] text-nham-text-muted">
+          <p className="rounded-xl border border-kallo-border/70 bg-white px-4 py-4 text-center text-[13.5px] text-kallo-text-muted">
             {t('unavailable')}
           </p>
         ) : (
@@ -103,7 +103,7 @@ export function PaywallOffer({
         )}
       </div>
 
-      <p className="mt-4 text-center text-[12px] text-nham-text-muted">
+      <p className="mt-4 text-center text-[12px] text-kallo-text-muted">
         {t('finetext')}
       </p>
     </div>

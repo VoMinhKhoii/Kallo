@@ -161,7 +161,7 @@ class _SectionStateState extends State<SectionState> {
           ),
           if (hasAction) ...[
             const SizedBox(height: DashboardSpacing.section),
-            // hover:bg-nham-btn-hover — map web hover to the pressed state.
+            // hover:bg-kallo-btn-hover — map web hover to the pressed state.
             GestureDetector(
               onTapDown: (_) => setState(() => _pressed = true),
               onTapUp: (_) => setState(() => _pressed = false),

@@ -52,7 +52,7 @@ export function LocaleSwitcher() {
         return (
           <div className="flex items-center" key={code}>
             {index > 0 && (
-              <span aria-hidden="true" className="h-3 w-px bg-nham-border" />
+              <span aria-hidden="true" className="h-3 w-px bg-kallo-border" />
             )}
             <button
               type="button"
@@ -67,8 +67,8 @@ export function LocaleSwitcher() {
               className={cn(
                 'cursor-pointer px-2.5 py-1 text-[11px] uppercase tracking-[0.08em] transition-colors disabled:cursor-wait',
                 selected
-                  ? 'font-semibold text-nham-text'
-                  : 'font-normal text-nham-text-soft hover:text-nham-text'
+                  ? 'font-semibold text-kallo-text'
+                  : 'font-normal text-kallo-text-soft hover:text-kallo-text'
               )}
             >
               {short}

@@ -139,7 +139,7 @@ class _CheatMealCardState extends State<CheatMealCard>
           Container(
             padding: LoggingSpacing.card,
             decoration: BoxDecoration(
-              // Warm accent tint over the card white (web bg-nham-accent/4).
+              // Warm accent tint over the card white (web bg-kallo-accent/4).
               color: Color.alphaBlend(NhamColors.accent05, NhamColors.elev),
               borderRadius: BorderRadius.circular(NhamRadii.containerLg),
               border: Border.all(color: NhamColors.accent30),

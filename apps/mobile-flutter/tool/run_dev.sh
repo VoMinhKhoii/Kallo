@@ -14,7 +14,7 @@
 #   ./tool/run_dev.sh back     # sync /tmp -> repo (save edits you made in /tmp)
 #
 # Config (env overrides):
-#   WORK            working copy dir            (default: /tmp/nham-flutter)
+#   WORK            working copy dir            (default: /tmp/kallo-flutter)
 #   API_BASE_URL    backend for the app         (default: http://localhost:3000)
 #   NHAM_ENV_FILE   path to a .env.local with the dev Supabase creds
 #                   (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
@@ -23,7 +23,7 @@
 set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WORK="${WORK:-/tmp/nham-flutter}"
+WORK="${WORK:-/tmp/kallo-flutter}"
 RSYNC_EXCLUDES=(--exclude build/ --exclude .dart_tool/ --exclude .idea/ \
   --exclude ios/Pods/ --exclude ios/Flutter/ephemeral/ --exclude '*.iml')
 

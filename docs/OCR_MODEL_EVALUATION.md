@@ -1,7 +1,7 @@
 # Nutrition Label OCR Model Evaluation & Benchmark Summary
 
 > [!NOTE]
-> This document preserves model comparison benchmarks, latency metrics, accuracy evaluations, and unit parsing fidelity (`g` vs `ml`, micronutrient precision) across Gemini Multimodal Vision models for the **Nhẩm** Nutrition Label OCR scanner.
+> This document preserves model comparison benchmarks, latency metrics, accuracy evaluations, and unit parsing fidelity (`g` vs `ml`, micronutrient precision) across Gemini Multimodal Vision models for the **Kallo** Nutrition Label OCR scanner.
 
 ---
 

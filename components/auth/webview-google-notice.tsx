@@ -33,17 +33,17 @@ export function WebviewGoogleNotice() {
   };
 
   return (
-    <div className="rounded-xl border border-nham-border bg-nham-hover/50 px-4 py-3">
+    <div className="rounded-xl border border-kallo-border bg-kallo-hover/50 px-4 py-3">
       <div className="flex gap-2.5">
         <Globe
-          className="mt-0.5 h-4 w-4 shrink-0 text-nham-text-muted"
+          className="mt-0.5 h-4 w-4 shrink-0 text-kallo-text-muted"
           aria-hidden="true"
         />
         <div className="space-y-1.5">
-          <p className="font-medium font-sans-display text-nham-text text-sm">
+          <p className="font-medium font-sans-display text-kallo-text text-sm">
             {t('webviewNoticeTitle')}
           </p>
-          <p className="text-nham-text-muted text-xs">
+          <p className="text-kallo-text-muted text-xs">
             {t('webviewNotice')}
             {!android && ` ${t('webviewNoticeIosHint')}`}
           </p>
@@ -52,7 +52,7 @@ export function WebviewGoogleNotice() {
               <button
                 type="button"
                 onClick={openInChrome}
-                className="font-sans-display font-semibold text-nham-text text-xs underline-offset-2 hover:underline"
+                className="font-sans-display font-semibold text-kallo-text text-xs underline-offset-2 hover:underline"
               >
                 {t('webviewOpenInChrome')}
               </button>
@@ -60,7 +60,7 @@ export function WebviewGoogleNotice() {
             <button
               type="button"
               onClick={copyLink}
-              className="font-sans-display font-semibold text-nham-text text-xs underline-offset-2 hover:underline"
+              className="font-sans-display font-semibold text-kallo-text text-xs underline-offset-2 hover:underline"
             >
               {t('webviewCopyLink')}
             </button>

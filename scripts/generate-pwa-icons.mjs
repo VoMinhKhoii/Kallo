@@ -1,4 +1,4 @@
-// Generates the Nhẩm PWA / app icons from the brand "Nh" mark.
+// Generates the Kallo PWA / app icons from the brand "Nh" mark.
 //
 // The mark is the Lora "Nh" ligature in espresso ink on a warm tan disc over a
 // cream surface (brand palette: cream #fefbf6, espresso #2C2416, tan #c9a87c).

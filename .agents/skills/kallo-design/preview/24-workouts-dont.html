@@ -1,0 +1,154 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <style>
+    .lead { font-family: var(--font-ui); font-size: 12px; color: var(--fg-muted); line-height: 1.55; }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .col { padding: 14px; border-radius: var(--radius-xl); border: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 8px; background: #fff;}
+    .col.bad { border-color: rgba(211, 123, 105, 0.35); background: color-mix(in srgb, var(--kallo-danger) 4%, #fff); }
+    .col.good { border-color: rgba(124, 163, 104, 0.35); background: color-mix(in srgb, var(--kallo-success) 4%, #fff); }
+    .head { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-weight: 700; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; }
+    .bad .head { color: var(--kallo-danger); }
+    .good .head { color: var(--kallo-success); }
+    .head::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+    .demo { padding: 12px; border-radius: 12px; background: #fff; font-family: var(--font-ui); font-size: 12px;}
+    .caption { font-family: var(--font-mono); font-size: 10px; color: var(--fg-stone); line-height: 1.4; margin-top: auto; }
+  </style>
+  <p class="lead">Anti-patterns specific to fitness apps — the gravity that pulls every workout UI toward MyFitnessPal. None of these belong in Kallo. (Composer is <em style="color: var(--kallo-accent); font-family: var(--font-display); font-style: italic; font-weight: 400;">not</em> on the list — both form and natural language are valid; see card 26.)</p>
+
+  <!-- Pair 1: page-level dashboard vs canvas -->
+  <div class="pair">
+    <div class="col bad">
+      <div class="head">DON'T — data-app dashboard</div>
+      <div class="demo" style="padding: 8px; background: #fafbfc;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
+          <div style="background:#fff; padding: 6px; border-radius: 4px; border: 1px solid #e5e7eb;"><div style="font-size:8px; color:#6b7280;">TOT VOL</div><div style="font-size:13px; font-weight:700;">12,400 kg</div></div>
+          <div style="background:#fff; padding: 6px; border-radius: 4px; border: 1px solid #e5e7eb;"><div style="font-size:8px; color:#6b7280;">SETS</div><div style="font-size:13px; font-weight:700;">86</div></div>
+          <div style="background:#fff; padding: 6px; border-radius: 4px; border: 1px solid #e5e7eb;"><div style="font-size:8px; color:#6b7280;">PRs</div><div style="font-size:13px; font-weight:700; color:#22c55e;">+3</div></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px;">
+          <div style="background:#fff; padding: 6px; border-radius: 4px; border: 1px solid #e5e7eb; height: 36px;"><div style="font-size:8px; color:#6b7280;">RINGS</div></div>
+          <div style="background:#fff; padding: 6px; border-radius: 4px; border: 1px solid #e5e7eb; height: 36px;"><div style="font-size:8px; color:#6b7280;">LEADERBOARD</div></div>
+        </div>
+        <div style="background:#fff; padding: 6px; border-radius: 4px; border: 1px solid #e5e7eb; margin-top: 4px;"><div style="font-size:8px; color:#6b7280;">YEAR HEATMAP</div></div>
+      </div>
+      <div class="caption">Six stat cards · rings · leaderboard · year-heatmap, all above the fold. Reads as Strava, not as a notebook.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — one open session</div>
+      <div class="demo" style="padding: 12px 14px; background: #f5f4f0;">
+        <div style="font-family: var(--font-ui); font-size: 8px; font-weight: 700; letter-spacing: 0.2em; color: var(--fg-stone); text-transform: uppercase;">Session 14</div>
+        <div style="font-family: var(--font-display); font-size: 18px; color: var(--fg); margin-top: 2px;">Push day<span style="font-style: italic; color: var(--kallo-accent); font-weight: 300;"> — on rhythm.</span></div>
+        <div style="height:1px; background: linear-gradient(to right, var(--kallo-accent), transparent 60%); margin: 8px 0;"></div>
+        <div style="font-family: var(--font-display); font-size: 13px; color: var(--fg);">Bench press</div>
+        <div style="margin-top: 4px; padding-left: 10px; border-left: 1px solid var(--border-soft); font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); line-height: 1.6;">
+          1   70 kg × 8   RPE 7<br>
+          2   70 kg × 8   RPE 7<br>
+          3   72.5 kg × 6  RPE 8
+        </div>
+      </div>
+      <div class="caption">One session, one canvas. Stats compress to a single summary line at the bottom. See card 25 for the full page.</div>
+    </div>
+  </div>
+
+  <!-- Pair 2: muscle group chips with monograms -->
+  <div class="pair">
+    <div class="col bad">
+      <div class="head">DON'T — neon body chart</div>
+      <div class="demo" style="display: flex; gap: 4px; flex-wrap: wrap;">
+        <span style="background: #ef4444; color: #fff; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;">Chest</span>
+        <span style="background: #3b82f6; color: #fff; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;">Back</span>
+        <span style="background: #22c55e; color: #fff; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;">Legs</span>
+        <span style="background: #eab308; color: #fff; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;">Shoulders</span>
+        <span style="background: #a855f7; color: #fff; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;">Arms</span>
+      </div>
+      <div class="caption">Five competing brand colors. The whole palette breaks in one row.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — monogram + warm tint</div>
+      <div class="demo" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+        <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(201,168,124,0.15); padding: 3px 12px 3px 4px; border-radius: 999px; font-family: var(--font-ui); font-size: 11px; color: var(--fg); font-weight: 500;">
+          <span style="width: 18px; height: 18px; border-radius: 999px; background: rgba(201,168,124,0.4); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 11px; font-weight: 500;">C</span>
+          Chest
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(139,115,85,0.12); padding: 3px 12px 3px 4px; border-radius: 999px; font-family: var(--font-ui); font-size: 11px; color: var(--fg); font-weight: 500;">
+          <span style="width: 18px; height: 18px; border-radius: 999px; background: rgba(139,115,85,0.35); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 11px; font-weight: 500;">B</span>
+          Back
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(168,162,158,0.12); padding: 3px 12px 3px 4px; border-radius: 999px; font-family: var(--font-ui); font-size: 11px; color: var(--fg); font-weight: 500;">
+          <span style="width: 18px; height: 18px; border-radius: 999px; background: rgba(168,162,158,0.35); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 11px; font-weight: 500;">L</span>
+          Legs
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(232,213,181,0.4); padding: 3px 12px 3px 4px; border-radius: 999px; font-family: var(--font-ui); font-size: 11px; color: var(--fg); font-weight: 500;">
+          <span style="width: 18px; height: 18px; border-radius: 999px; background: rgba(232,213,181,0.7); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 11px; font-weight: 500;">S</span>
+          Shoulders
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.8); border: 1px solid var(--border-soft); padding: 3px 12px 3px 4px; border-radius: 999px; font-family: var(--font-ui); font-size: 11px; color: var(--fg-muted); font-weight: 500;">
+          <span style="width: 18px; height: 18px; border-radius: 999px; background: rgba(255,255,255,0.6); border: 1px solid var(--border-soft); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 11px; font-weight: 500;">A</span>
+          Arms
+        </span>
+      </div>
+      <div class="caption">Each chip carries a Lora <em style="font-family:inherit; color: var(--kallo-accent); font-style: italic;">monogram</em> in a tinted disc. Readable without color; warm palette only. Disambiguates at a glance.</div>
+    </div>
+  </div>
+
+  <!-- Pair 3: gamification (FIXED: single font) -->
+  <div class="pair">
+    <div class="col bad">
+      <div class="head">DON'T — streak gamification</div>
+      <div class="demo" style="background: linear-gradient(135deg, #fef3c7, #fef9e8); padding: 12px; border: 1px solid #f59e0b;">
+        <div style="font-size: 24px; line-height: 1;">🔥</div>
+        <div style="font-family: var(--font-ui); font-weight: 700; font-size: 16px; color: #b45309; margin-top: 6px;">12-day streak!</div>
+        <div style="font-size: 10px; color: #92400e; margin-top: 2px;">+50 XP · 3 badges unlocked</div>
+      </div>
+      <div class="caption">Fire emoji, yellow gradient, XP, badges. Hostile to the calm voice.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — quiet observation</div>
+      <div class="demo" style="background: #fff; border: 1px solid var(--border-soft); border-radius: 18px; padding: 14px;">
+        <div style="font-family: var(--font-display); font-weight: 400; font-size: 19px; color: var(--fg); line-height: 1.4; letter-spacing: -0.01em;">
+          Three training days this week, <span style="font-style: italic; color: var(--kallo-accent); font-weight: 300;">on rhythm.</span>
+        </div>
+        <div style="font-family: var(--font-display); font-size: 12px; color: var(--fg-muted); margin-top: 6px; font-style: italic; font-weight: 400;">3 of last 4 weeks at 3+ sessions</div>
+      </div>
+      <div class="caption">One font (Lora), one observation, one italic accent. Trust line in the same family, italicized muted — no eyebrow, no second face.</div>
+    </div>
+  </div>
+
+  <!-- Pair 4: rings + 1RM precision -->
+  <div class="pair">
+    <div class="col bad">
+      <div class="head">DON'T — fake 1RM + 3 rings</div>
+      <div class="demo" style="display: flex; gap: 12px; align-items: center;">
+        <div style="position: relative; width: 56px; height: 56px;">
+          <div style="position: absolute; inset: 0; border: 4px solid #ef4444; border-radius: 999px; border-bottom-color: transparent;"></div>
+          <div style="position: absolute; inset: 5px; border: 4px solid #22c55e; border-radius: 999px; border-right-color: transparent;"></div>
+          <div style="position: absolute; inset: 10px; border: 4px solid #3b82f6; border-radius: 999px; border-top-color: transparent;"></div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-ui); font-size: 11px; color: var(--fg-stone);">EST. 1RM</div>
+          <div style="font-family: var(--font-display); font-size: 22px; color: var(--fg);">93.4 kg</div>
+        </div>
+      </div>
+      <div class="caption">Apple Watch rings + one-decimal "estimate". Three rings = three loud colors; 1RM is a calculation, not a measurement.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — one ring or no ring</div>
+      <div class="demo" style="display: flex; gap: 12px; align-items: center;">
+        <div style="position: relative; width: 56px; height: 56px;">
+          <svg width="56" height="56" style="transform: rotate(-90deg);">
+            <circle cx="28" cy="28" r="24" stroke="var(--bg-wash)" stroke-width="4" fill="none"/>
+            <circle cx="28" cy="28" r="24" stroke="var(--kallo-accent)" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="150" stroke-dashoffset="35"/>
+          </svg>
+          <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size: 18px; color: var(--kallo-accent);">↗</div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-ui); font-size: 10px; color: var(--fg-stone); font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;">Est. 1RM · bench</div>
+          <div style="font-family: var(--font-display); font-size: 22px; color: var(--fg); font-variant-numeric: tabular-nums;">88<span style="color: var(--fg-muted); font-style: italic; font-size: 16px; margin-left: 4px;">–94 kg</span></div>
+          <div style="font-size: 10px; color: var(--fg-stone); margin-top: 2px; font-family: var(--font-display); font-style: italic; font-weight: 400;">from last 6 logged top sets · bounded</div>
+        </div>
+      </div>
+      <div class="caption">A single tan ring (or no ring). 1RM as a range, never a single decimal.</div>
+    </div>
+  </div>
+</div></body></html>

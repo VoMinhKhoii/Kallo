@@ -1,9 +1,9 @@
 # Mobile design system
 
-The canonical Nhẩm **mobile** (Flutter) design system — type scale, the two text
-colours, and the 12px spacing rhythm — lives in the `nham-design` skill:
+The canonical Kallo **mobile** (Flutter) design system — type scale, the two text
+colours, and the 12px spacing rhythm — lives in the `kallo-design` skill:
 
-> **`.agents/skills/nham-design/mobile.md`**
+> **`.agents/skills/kallo-design/mobile.md`**
 
 The reference implementation is
 `lib/theme/calm_tokens.dart` (`dashHero` / `dashValue`

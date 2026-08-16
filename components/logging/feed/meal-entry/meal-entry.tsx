@@ -93,11 +93,11 @@ export function MealEntry({
       <TurnHeader timeLabel={timeLabel} message={message.userInput} />
 
       {/* Card */}
-      <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
+      <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
         {/* Header: quoted input + controls */}
         <div className="flex items-start justify-between gap-3">
           {message.userInput && (
-            <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
+            <p className="font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]">
               {message.userInput}
             </p>
           )}
@@ -108,7 +108,7 @@ export function MealEntry({
                 aria-label={t('toggleDetails')}
                 aria-expanded={!isCollapsed}
                 onClick={() => setIsCollapsed((prev) => !prev)}
-                className="rounded-full p-1 text-nham-text-muted/60 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
+                className="rounded-full p-1 text-kallo-text-muted/60 transition-colors hover:bg-kallo-hover/40 hover:text-kallo-text"
               >
                 <ChevronDown
                   className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
@@ -123,8 +123,8 @@ export function MealEntry({
                 onClick={() => setIsEditing((prev) => !prev)}
                 className={
                   isEditing
-                    ? 'flex items-center gap-1.5 rounded-full border border-nham-border bg-nham-hover px-2.5 py-1 text-nham-text transition-colors hover:bg-nham-hover/70'
-                    : 'flex items-center gap-1.5 rounded-full border border-nham-border/50 px-2.5 py-1 text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:bg-nham-hover/40 hover:text-nham-text'
+                    ? 'flex items-center gap-1.5 rounded-full border border-kallo-border bg-kallo-hover px-2.5 py-1 text-kallo-text transition-colors hover:bg-kallo-hover/70'
+                    : 'flex items-center gap-1.5 rounded-full border border-kallo-border/50 px-2.5 py-1 text-kallo-text-muted transition-colors hover:border-kallo-accent/50 hover:bg-kallo-hover/40 hover:text-kallo-text'
                 }
               >
                 {isEditing ? (
@@ -157,12 +157,12 @@ export function MealEntry({
               transition={{ duration: 0.15 }}
               className="mt-2 flex items-center justify-between font-sans-display"
             >
-              <span className="text-[11px] text-nham-text-muted tabular-nums">
+              <span className="text-[11px] text-kallo-text-muted tabular-nums">
                 P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
                 {Math.round(currentTotals.carbs)}g{'  '}F:{' '}
                 {Math.round(currentTotals.fat)}g
               </span>
-              <span className="font-bold text-nham-text text-sm tabular-nums">
+              <span className="font-bold text-kallo-text text-sm tabular-nums">
                 {Math.round(currentTotals.calories)} kcal
               </span>
             </motion.div>
@@ -180,7 +180,7 @@ export function MealEntry({
               transition={{ duration: 0.2, ease: 'easeInOut' }}
               style={{ overflow: 'hidden' }}
             >
-              <div className="mt-5 border-nham-border border-t pt-4">
+              <div className="mt-5 border-kallo-border border-t pt-4">
                 {/* Items list */}
                 <div className="mb-4 space-y-1">
                   {items.map((item, idx) => (
@@ -203,18 +203,18 @@ export function MealEntry({
                 </div>
 
                 {/* Totals — flat, no card */}
-                <div className="border-nham-border/50 border-t pt-3">
+                <div className="border-kallo-border/50 border-t pt-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold font-sans-display text-[13px] text-nham-text">
+                    <span className="font-bold font-sans-display text-[13px] text-kallo-text">
                       {t('total')}
                     </span>
                     <div className="flex items-center gap-4">
-                      <span className="font-sans-display text-[11px] text-nham-text-muted tabular-nums">
+                      <span className="font-sans-display text-[11px] text-kallo-text-muted tabular-nums">
                         P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
                         {Math.round(currentTotals.carbs)}g{'  '}F:{' '}
                         {Math.round(currentTotals.fat)}g
                       </span>
-                      <span className="font-bold font-sans-display text-nham-text tabular-nums">
+                      <span className="font-bold font-sans-display text-kallo-text tabular-nums">
                         {Math.round(currentTotals.calories)} kcal
                       </span>
                     </div>

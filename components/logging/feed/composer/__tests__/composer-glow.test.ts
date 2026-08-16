@@ -3,12 +3,12 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Every `radial-gradient(...)` declared for `--nham-composer-glow`, in both the
+ * Every `radial-gradient(...)` declared for `--kallo-composer-glow`, in both the
  * light and the dark palette.
  */
 function glowGradients(): { block: string; gradients: string[] }[] {
   const css = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8');
-  const blocks = css.match(/--nham-composer-glow:[\s\S]*?\);\n/g) ?? [];
+  const blocks = css.match(/--kallo-composer-glow:[\s\S]*?\);\n/g) ?? [];
   return blocks.map((block) => ({ block, gradients: splitGradients(block) }));
 }
 

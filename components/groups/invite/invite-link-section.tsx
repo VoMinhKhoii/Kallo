@@ -26,7 +26,7 @@ export function InviteLinkSection() {
 
   if (isLoading || !profile) {
     return (
-      <div className="h-[76px] rounded-xl bg-nham-track motion-safe:animate-pulse" />
+      <div className="h-[76px] rounded-xl bg-kallo-track motion-safe:animate-pulse" />
     );
   }
 
@@ -132,7 +132,7 @@ export function InviteLinkSection() {
               onClick={save}
               disabled={!canSave}
               aria-label={t('save')}
-              className="inline-flex shrink-0 items-center rounded-lg bg-nham-btn px-3 text-white transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex shrink-0 items-center rounded-lg bg-kallo-btn px-3 text-white transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {saveProfile.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -162,7 +162,7 @@ export function InviteLinkSection() {
             <button
               type="button"
               onClick={copy}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-nham-btn px-4 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-nham-btn/90"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-kallo-btn px-4 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90"
             >
               {copied ? (
                 <>
@@ -182,7 +182,7 @@ export function InviteLinkSection() {
 
       <p
         aria-live="polite"
-        className={`px-1 font-sans-display text-[11px] ${issue ? 'text-nham-danger' : 'text-[#6E6D66]'}`}
+        className={`px-1 font-sans-display text-[11px] ${issue ? 'text-kallo-danger' : 'text-[#6E6D66]'}`}
       >
         {editing ? issue || t('editHint') : t('hint')}
       </p>

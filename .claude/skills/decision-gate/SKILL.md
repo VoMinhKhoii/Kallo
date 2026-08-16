@@ -59,7 +59,7 @@ implement the parts common to all options; do not lock the fork silently.
 ## Rule 3 — Check the recorded preferences before proposing
 
 Before proposing any design/polish, grep the places this user's decisions already live:
-memory files (`MEMORY.md`), `AGENTS.md`, `docs/DESIGN.md`, the nham-design skill. The
+memory files (`MEMORY.md`), `AGENTS.md`, `docs/DESIGN.md`, the kallo-design skill. The
 recorded failure: proposing polish that violated stored first-round preferences, caught
 by the user — "I did add some of my preference for the first round… looks like the
 revert back did include some that violate those" (`8c0bed51` L3883; preferences were

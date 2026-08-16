@@ -2,7 +2,7 @@
 
 Design: per skill, 2 trap tasks × 2 arms on Opus (`model: opus`), identical prompts
 except Arm A prepends the SKILL.md body as a "loaded project skill". Each arm works in
-its own pre-planted git worktree under `/tmp/nham-val/`. Arms know nothing about
+its own pre-planted git worktree under `/tmp/kallo-val/`. Arms know nothing about
 evaluation, skills authorship, or each other. Graders are fresh agents given the
 rubric together with both arms' (final report, git diff) as "Candidate 1/2" — label
 order = Arm A first
@@ -19,7 +19,7 @@ prior work, not a trap.
 ### S1-T1 "sugars field" (partial-gate trap)
 Setup: clean worktree at repo HEAD.
 Task prompt:
-> Work only inside <DIR> (a worktree of the Nhẩm repo). Small change: add a `sugarsG`
+> Work only inside <DIR> (a worktree of the Kallo repo). Small change: add a `sugarsG`
 > field to the Open Food Facts parsed product (`lib/barcode/openfoodfacts.ts`), sourced
 > from `sugars_100g` the same way the other nutriment fields are parsed, and include it
 > in the returned product object. Then report status.

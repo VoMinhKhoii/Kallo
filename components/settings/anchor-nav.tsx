@@ -97,10 +97,10 @@ export function SettingsAnchorNav({
               onClick={handleJump(item.id)}
               aria-current={activeId === item.id ? 'true' : undefined}
               className={cn(
-                'block whitespace-nowrap rounded-xl px-3 py-2 font-medium text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
+                'block whitespace-nowrap rounded-xl px-3 py-2 font-medium text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent',
                 activeId === item.id
-                  ? 'bg-nham-hover/50 font-semibold text-nham-text'
-                  : 'text-nham-text-muted hover:bg-nham-hover/50 hover:text-nham-text'
+                  ? 'bg-kallo-hover/50 font-semibold text-kallo-text'
+                  : 'text-kallo-text-muted hover:bg-kallo-hover/50 hover:text-kallo-text'
               )}
             >
               {t(item.labelKey)}

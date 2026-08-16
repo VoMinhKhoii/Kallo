@@ -19,7 +19,7 @@
 
 ## Coordination with `feat/admin-pipeline-dashboard` worktree (DESCOPE)
 
-A parallel worktree (`/Users/khoivo/Documents/nham-admin-dashboard`, branch `feat/admin-pipeline-dashboard`) is shipping the prompt-version registry, per-LLM-call audit log, per-stage I/O log, and replay UI. Its schema additions (already implemented and ahead of this branch in commit count) are:
+A parallel worktree (`/Users/khoivo/Documents/kallo-admin-dashboard`, branch `feat/admin-pipeline-dashboard`) is shipping the prompt-version registry, per-LLM-call audit log, per-stage I/O log, and replay UI. Its schema additions (already implemented and ahead of this branch in commit count) are:
 
 - **`prompt_versions`** — auto-registered on first use, keyed by `(name, code_hash)`, with `template_sample`, `model`, `git_sha`, `first_seen_at`. Hash auto-rolls on any source change → strictly richer than hand-bumped SemVer.
 - **`pipeline_llm_calls`** — per-attempt: `prompt_rendered`, `response_raw`, `tokens_*`, `latency_ms`, `attempt`, FK to `prompt_versions`. This IS the per-call audit trail.

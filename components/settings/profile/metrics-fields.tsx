@@ -14,10 +14,10 @@ import {
 import type { ProfileFormValues } from './form-schema';
 
 const inputClass =
-  'w-full rounded-lg border border-nham-border bg-white px-3 py-2 text-[14px] text-nham-text transition-colors hover:border-nham-accent/50 focus:border-nham-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40';
+  'w-full rounded-lg border border-kallo-border bg-white px-3 py-2 text-[14px] text-kallo-text transition-colors hover:border-kallo-accent/50 focus:border-kallo-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40';
 
 const fieldLabelClass =
-  'mb-1.5 block font-medium text-[13px] text-nham-text-muted';
+  'mb-1.5 block font-medium text-[13px] text-kallo-text-muted';
 
 type NumberFieldName = Extract<
   keyof ProfileFormValues,

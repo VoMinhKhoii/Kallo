@@ -95,7 +95,7 @@ export function GroupAddPeople({ group }: { group: ChatGroupDetail }) {
           type="button"
           onClick={submit}
           disabled={addMembers.isPending}
-          className="inline-flex w-full items-center justify-center rounded-xl bg-nham-btn px-4 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center rounded-xl bg-kallo-btn px-4 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t('addCta')} · {selected.size}
         </button>

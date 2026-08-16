@@ -88,19 +88,19 @@ export function PortionContainerBody({
               </div>
               <span
                 className={`mt-1 h-0.5 w-6 rounded-full transition-colors ${
-                  selected ? 'bg-nham-accent' : 'bg-transparent'
+                  selected ? 'bg-kallo-accent' : 'bg-transparent'
                 }`}
               />
             </button>
           );
         })}
       </div>
-      <p className="mb-1 text-center text-[13px] text-nham-text-muted">
+      <p className="mb-1 text-center text-[13px] text-kallo-text-muted">
         {nearest.label} · {nearestGlyph?.sizeLabel}
       </p>
-      <p className="mb-4 text-center text-nham-text tabular-nums">
+      <p className="mb-4 text-center text-kallo-text tabular-nums">
         <span className="font-semibold text-lg">{grams} g</span>
-        <span className="text-[13px] text-nham-text-muted">
+        <span className="text-[13px] text-kallo-text-muted">
           {' · '}
           {formatCaloriesValue(kcal)}
         </span>

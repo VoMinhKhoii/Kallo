@@ -347,7 +347,7 @@ void main() {
     );
 
     test('the mention blue clears AA on the composer\'s white field', () {
-      // The web's --nham-mention (#4A90D9) measures 3.34:1 on white — under AA
+      // The web's --kallo-mention (#4A90D9) measures 3.34:1 on white — under AA
       // for 14px body text. This one is picked to clear 4.5:1; if someone
       // syncs it back to the web value, this fails.
       expect(_contrastOnWhite(NhamColors.mention), greaterThanOrEqualTo(4.5));

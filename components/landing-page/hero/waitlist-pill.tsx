@@ -35,14 +35,14 @@ export function WaitlistPill() {
     return (
       <output
         aria-live="polite"
-        className="mx-auto flex w-full max-w-2xl items-start gap-3 rounded-[1.75rem] border border-nham-border bg-white px-5 py-4 text-left"
+        className="mx-auto flex w-full max-w-2xl items-start gap-3 rounded-[1.75rem] border border-kallo-border bg-white px-5 py-4 text-left"
       >
-        <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-nham-text" />
+        <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-kallo-text" />
         <div>
-          <p className="font-medium font-sans-display text-nham-text text-sm">
+          <p className="font-medium font-sans-display text-kallo-text text-sm">
             {t('success')}
           </p>
-          <p className="mt-1 font-sans-display text-nham-text-soft text-sm">
+          <p className="mt-1 font-sans-display text-kallo-text-soft text-sm">
             {t('successBody')}
           </p>
         </div>
@@ -68,15 +68,15 @@ export function WaitlistPill() {
       className="mx-auto w-full max-w-2xl"
     >
       <div
-        // `cn()`, not a template string: the base sets `border-nham-border`
-        // and the error state adds `border-nham-danger/60`. Both write
+        // `cn()`, not a template string: the base sets `border-kallo-border`
+        // and the error state adds `border-kallo-danger/60`. Both write
         // border-color at equal specificity, so which one wins comes down to
         // the order they happen to sit in the generated stylesheet rather than
         // the order they are written here — the error border was a coin toss.
         // tailwind-merge drops the loser instead.
         className={cn(
-          'flex w-full flex-col gap-3 rounded-[1.75rem] border border-nham-border bg-white p-3 shadow-[0_20px_50px_-20px_rgba(105,94,78,0.35)] transition-colors focus-within:border-nham-accent focus-within:ring-[3px] focus-within:ring-nham-accent/25 sm:h-16 sm:flex-row sm:items-center sm:gap-3 sm:rounded-full sm:py-2 sm:pr-2 sm:pl-6',
-          errors.email && 'border-nham-danger/60'
+          'flex w-full flex-col gap-3 rounded-[1.75rem] border border-kallo-border bg-white p-3 shadow-[0_20px_50px_-20px_rgba(105,94,78,0.35)] transition-colors focus-within:border-kallo-accent focus-within:ring-[3px] focus-within:ring-kallo-accent/25 sm:h-16 sm:flex-row sm:items-center sm:gap-3 sm:rounded-full sm:py-2 sm:pr-2 sm:pl-6',
+          errors.email && 'border-kallo-danger/60'
         )}
       >
         <label htmlFor="hero-waitlist-email" className="sr-only">
@@ -90,14 +90,14 @@ export function WaitlistPill() {
           aria-invalid={errors.email ? true : undefined}
           aria-describedby={errors.email ? 'hero-waitlist-error' : undefined}
           disabled={signup.isPending}
-          className="min-w-0 flex-1 bg-transparent px-2 py-2 text-base text-nham-text outline-none placeholder:text-[#B0A695] disabled:cursor-default sm:px-0 sm:py-0 sm:text-lg"
+          className="min-w-0 flex-1 bg-transparent px-2 py-2 text-base text-kallo-text outline-none placeholder:text-[#B0A695] disabled:cursor-default sm:px-0 sm:py-0 sm:text-lg"
           {...register('email')}
         />
 
         <button
           type="submit"
           disabled={signup.isPending}
-          className="group flex h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-nham-ink px-5 font-medium font-sans-display text-nham-surface text-sm transition-[transform,background-color] hover:bg-nham-ink-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          className="group flex h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-kallo-ink px-5 font-medium font-sans-display text-kallo-surface text-sm transition-[transform,background-color] hover:bg-kallo-ink-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           <span className="whitespace-nowrap">
             {signup.isPending ? t('submitting') : t('submit')}
@@ -109,7 +109,7 @@ export function WaitlistPill() {
       {errors.email && (
         <p
           id="hero-waitlist-error"
-          className="mt-2 font-sans-display text-nham-danger text-xs"
+          className="mt-2 font-sans-display text-kallo-danger text-xs"
         >
           {errors.email.message}
         </p>
@@ -117,12 +117,12 @@ export function WaitlistPill() {
       {signup.isError && (
         <p
           aria-live="polite"
-          className="mt-2 font-sans-display text-nham-danger text-xs"
+          className="mt-2 font-sans-display text-kallo-danger text-xs"
         >
           {failureMessage}
         </p>
       )}
-      <p className="mt-3 font-sans-display text-nham-text-soft text-xs">
+      <p className="mt-3 font-sans-display text-kallo-text-soft text-xs">
         {t('privacy')}
       </p>
     </form>

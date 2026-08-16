@@ -123,7 +123,7 @@ export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
     return (
       <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-        <DrawerContent className="border-nham-border/60 bg-nham-surface">
+        <DrawerContent className="border-kallo-border/60 bg-kallo-surface">
           <DrawerTitle className="sr-only">{t('title')}</DrawerTitle>
           <div className="px-4 pt-3 pb-6">{body}</div>
         </DrawerContent>
@@ -137,7 +137,7 @@ export function PortionPicker({ item, items, onApply }: PortionPickerProps) {
       <PopoverContent
         align="start"
         sideOffset={8}
-        className="w-96 rounded-xl border-nham-border/60 bg-card p-4 text-nham-text shadow-lg shadow-nham-text/[0.06]"
+        className="w-96 rounded-xl border-kallo-border/60 bg-card p-4 text-kallo-text shadow-kallo-text/[0.06] shadow-lg"
       >
         {body}
       </PopoverContent>

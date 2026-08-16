@@ -2,7 +2,7 @@
 
 Same protocol as [specs.md](specs.md): per skill 2 trap tasks × 2 arms on Opus,
 identical prompts except the skill preamble in Arm A; planted worktrees under
-/tmp/nham-val2/; fresh blind graders (never told a skill exists) score anonymized
+/tmp/kallo-val2/; fresh blind graders (never told a skill exists) score anonymized
 pairs against these rubrics. Label order: task 1 → skill=Candidate 1; task 2 →
 skill=Candidate 2. `feature-workflow` is a composition/router and is NOT arm-testable
 single-shot; it ships labeled composition, unvalidated.

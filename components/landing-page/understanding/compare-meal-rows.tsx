@@ -46,13 +46,13 @@ export function CompareMealRows({
   const Arrow = shifted && shifted.delta > 0 ? ArrowUp : ArrowDown;
 
   return (
-    <div className="mt-2.5 flex-1 border-nham-border border-t pt-1.5">
+    <div className="mt-2.5 flex-1 border-kallo-border border-t pt-1.5">
       {variant.items.map((item) => (
         <div
           key={item.id}
           className="flex items-center justify-between gap-2 py-1 font-sans-display text-[13px]"
         >
-          <span className="min-w-0 truncate font-medium text-nham-text">
+          <span className="min-w-0 truncate font-medium text-kallo-text">
             {t(`${base}.items.${item.id}`)}
           </span>
           <div className="flex shrink-0 items-center gap-1.5">
@@ -63,7 +63,7 @@ export function CompareMealRows({
                 two cards share the width from `md`, and at those sizes a triple
                 as large as the calories crowds the dish name off its own row —
                 so it steps down rather than the row giving way. */}
-            <div className="flex items-center gap-1 text-[11px] text-nham-text-soft tabular-nums lg:text-[13px]">
+            <div className="flex items-center gap-1 text-[11px] text-kallo-text-soft tabular-nums lg:text-[13px]">
               {MACROS.map(({ key, label }) => {
                 const marked =
                   item.id === shifted?.id && comparison.moves === key;
@@ -96,8 +96,8 @@ export function CompareMealRows({
                         strokeWidth={3}
                         className={`h-2.5 w-2.5 shrink-0 ${
                           shifted.delta > 0
-                            ? 'text-nham-success-dark'
-                            : 'text-nham-danger'
+                            ? 'text-kallo-success-dark'
+                            : 'text-kallo-danger'
                         }`}
                       />
                     )}
@@ -105,7 +105,7 @@ export function CompareMealRows({
                 );
               })}
             </div>
-            <span className="font-bold text-nham-text tabular-nums">
+            <span className="font-bold text-kallo-text tabular-nums">
               {formatCaloriesValue(item.calories)}
             </span>
           </div>

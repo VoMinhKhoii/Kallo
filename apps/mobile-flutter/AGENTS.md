@@ -15,7 +15,7 @@ Builds run from a `/tmp` mirror (iCloud file-provider breaks codesigning) and sh
 
 - `flutter analyze` and `flutter test` — after each coherent chunk, and always before signing off.
 - `bun check:structure` (from the repo root) — the 400/200 LOC ratchet covers `.dart` files: 400 per source file, 200 per widget file (`lib/**/widgets/**`, `lib/shell/`).
-- Design/UI work requires the `nham-design` skill (mobile platform: `mobile.md` — Be Vietnam Pro, calm Threads-tuned type scale), same as the root rule.
+- Design/UI work requires the `kallo-design` skill (mobile platform: `mobile.md` — Be Vietnam Pro, calm Threads-tuned type scale), same as the root rule.
 
 ## 3. Structure Conventions
 

@@ -1,0 +1,23 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <style>
+    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: var(--text-sm); font-weight: 500; }
+    .dot { width: 8px; height: 8px; border-radius: 999px; }
+    .item { flex: 1; padding: 18px; border-radius: var(--radius-2xl); border: 1px solid var(--border-soft); background: #fff; }
+    .item .hex { font-family: var(--font-mono); font-size: 11px; color: var(--fg-stone); margin-top: 10px; }
+    .item .label { font-size: 13px; color: var(--fg-muted); margin-top: 8px; }
+  </style>
+  <div class="row">
+    <div class="item">
+      <span class="pill" style="background:color-mix(in srgb, #7ca368 14%, #fff); color:#4d6b3f"><span class="dot" style="background:#7ca368"></span>On target</span>
+      <div class="label">success — used for on-target heatmap days and progress "on pace"</div>
+      <div class="hex">#7ca368 · --kallo-success</div>
+    </div>
+    <div class="item">
+      <span class="pill" style="background:color-mix(in srgb, #d37b69 14%, #fff); color:#8a3d2b"><span class="dot" style="background:#d37b69"></span>Needs attention</span>
+      <div class="label">danger — used for "far over" / "needs attention" verdicts. terracotta, never red.</div>
+      <div class="hex">#d37b69 · --kallo-danger</div>
+    </div>
+  </div>
+</div></body></html>

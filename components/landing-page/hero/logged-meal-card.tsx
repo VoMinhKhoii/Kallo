@@ -95,7 +95,7 @@ export function LoggedMealCard({
           onSelectMeal();
           setIsCollapsed((prev) => !prev);
         }}
-        className="relative isolate flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-nham-border/60 bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md"
+        className="relative isolate flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-kallo-border/60 bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md"
       >
         <Image
           src={meal.art}
@@ -112,13 +112,13 @@ export function LoggedMealCard({
         <div className="flex w-full items-start justify-between gap-3">
           <span
             id={`hero-meal-${meal.id}`}
-            className="min-w-0 font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
+            className="min-w-0 font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]"
           >
             {t(`meals.${meal.id}.input`)}
           </span>
           <span
             aria-hidden="true"
-            className="shrink-0 rounded-full p-1 text-nham-text"
+            className="shrink-0 rounded-full p-1 text-kallo-text"
           >
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
@@ -128,12 +128,12 @@ export function LoggedMealCard({
 
         {isCollapsed ? (
           <div className="mt-2 flex items-center justify-between font-sans-display">
-            <span className="text-[11px] text-nham-text tabular-nums">
+            <span className="text-[11px] text-kallo-text tabular-nums">
               P: {formatMacroValue(totals.protein)}
               {'  '}C: {formatMacroValue(totals.carbs)}
               {'  '}F: {formatMacroValue(totals.fat)}
             </span>
-            <span className="font-bold text-nham-text text-sm tabular-nums">
+            <span className="font-bold text-kallo-text text-sm tabular-nums">
               {formatCaloriesValue(totals.calories)}
             </span>
           </div>

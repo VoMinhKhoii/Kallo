@@ -17,7 +17,7 @@ export function MealDetails({
 }) {
   const t = useTranslations('logging.persistedMealCard');
   return (
-    <div className="mt-5 border-nham-border border-t pt-4">
+    <div className="mt-5 border-kallo-border border-t pt-4">
       <div className="mb-4 space-y-1">
         {meal.mealItemGroups.map((group) => {
           const gProtein = formatMacroOrNA(group.nutrition.proteinG);
@@ -29,16 +29,16 @@ export function MealDetails({
               key={`${group.order}-${group.name}`}
               className="flex items-center justify-between py-2 font-sans-display text-[13px]"
             >
-              <span className="min-w-0 truncate font-medium text-nham-text">
+              <span className="min-w-0 truncate font-medium text-kallo-text">
                 {group.name}
               </span>
               <div className="flex shrink-0 items-center gap-3">
-                <div className="flex gap-2 text-[10px] text-nham-text-muted tabular-nums">
+                <div className="flex gap-2 text-[10px] text-kallo-text-muted tabular-nums">
                   <span className="text-right">P:{gProtein}</span>
                   <span className="text-right">C:{gCarbs}</span>
                   <span className="text-right">F:{gFat}</span>
                 </div>
-                <span className="text-right font-bold text-nham-text tabular-nums">
+                <span className="text-right font-bold text-kallo-text tabular-nums">
                   {gCal}
                 </span>
               </div>
@@ -48,18 +48,18 @@ export function MealDetails({
       </div>
 
       {/* Totals */}
-      <div className="border-nham-border/50 border-t pt-3">
+      <div className="border-kallo-border/50 border-t pt-3">
         <div className="flex items-center justify-between">
-          <span className="font-bold font-sans-display text-[13px] text-nham-text">
+          <span className="font-bold font-sans-display text-[13px] text-kallo-text">
             {t('total')}
           </span>
           <div className="flex items-center gap-4">
-            <span className="font-sans-display text-[11px] text-nham-text-muted tabular-nums">
+            <span className="font-sans-display text-[11px] text-kallo-text-muted tabular-nums">
               P: {totals.protein}
               {'  '}C: {totals.carbs}
               {'  '}F: {totals.fat}
             </span>
-            <span className="font-bold font-sans-display text-nham-text tabular-nums">
+            <span className="font-bold font-sans-display text-kallo-text tabular-nums">
               {totals.calories}
             </span>
           </div>

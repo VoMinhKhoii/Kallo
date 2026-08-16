@@ -3,7 +3,7 @@ import 'dart:ui';
 /// The Nham design system color palette.
 ///
 /// Transcribed from the web's `globals.css` `:root` tokens (the canonical
-/// `--nham-*` values). Visual direction: neutral canvas / ink / hairline with
+/// `--kallo-*` values). Visual direction: neutral canvas / ink / hairline with
 /// warm interaction washes; tan accent kept for non-text moments only.
 ///
 /// The canvas is `#FCFCFC`, matching the web token exactly — the two were
@@ -62,7 +62,7 @@ abstract final class NhamColors {
   /// prose, and the warm palette has no hue that reads "this token is not free
   /// text" without also reading as a warning.
   ///
-  /// Darker than the web's `--nham-mention` (#4A90D9) on purpose. That value is
+  /// Darker than the web's `--kallo-mention` (#4A90D9) on purpose. That value is
   /// 3.34:1 on the composer's white field — under AA for 14px body text. This
   /// one measures 4.86:1 at the same size, which is the bar every other text
   /// token in this palette is held to.
@@ -186,7 +186,7 @@ abstract final class NhamColors {
   /// hue instead of by value, so a column still reads at 6px. The dashboard,
   /// logging feed and cheat sliders keep the quieter set; do not merge the two.
   ///
-  /// Mirrors the web `--nham-chart-*` tokens in `app/globals.css`.
+  /// Mirrors the web `--kallo-chart-*` tokens in `app/globals.css`.
   static const Color chartProtein = Color(0xFFD46A86); // berry rose
   static const Color chartCarbs = Color(0xFFE09C84); // apricot
   static const Color chartFat = Color(0xFFE8C55C); // golden yellow

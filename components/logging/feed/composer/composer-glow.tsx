@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
  *
  * Purely decorative: `aria-hidden`, and `pointer-events-none` so it never eats
  * a click meant for the field it sits under. The gradient lives in
- * `--nham-composer-glow` (light and dark) rather than here, so the colour
+ * `--kallo-composer-glow` (light and dark) rather than here, so the colour
  * decision stays with the palette — including the rule that every radius has to
  * stay inside this box, or its rectangle shows.
  */
@@ -37,7 +37,7 @@ export function ComposerGlow({ className }: { className?: string }) {
         'pointer-events-none absolute -inset-x-24 -inset-y-36 z-0',
         className
       )}
-      style={{ background: 'var(--nham-composer-glow)' }}
+      style={{ background: 'var(--kallo-composer-glow)' }}
     />
   );
 }

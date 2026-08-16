@@ -22,7 +22,7 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
   | `feature-workflow` | **Invoke FIRST for any non-trivial fix, feature, or refactor.** The umbrella dev loop (orient/probe → decision gate → implement with per-phase verification → `verify-before-done` → `grill-your-own-work` → ship). Validation records: `.claude/skills/_evidence/` (incl. the failed `absorb-steering` skill in `failed-skills/`). |
   | `vercel-react-best-practices` | **Default for all React/Next.js code**: components, pages, data fetching, hooks, server actions, bundle/perf. |
   | `vercel-composition-patterns` | Component architecture: prop-heavy refactors, compound components, context, React 19 patterns. |
-  | `nham-design` | **Required for ANY design/UI work, however small**: brand palette, Lora + DM Sans, icon allowlist, drift watchlist. |
+  | `kallo-design` | **Required for ANY design/UI work, however small**: brand palette, Lora + DM Sans, icon allowlist, drift watchlist. |
   | `web-design-guidelines` | UI/UX audits: layout, accessibility, responsive, forms, contrast, typography. |
   | `vercel-react-view-transitions` | Page/route/shared-element/enter-exit animations via the View Transition API. |
   | `thermo-nuclear-code-quality-review` | **Pre-PR structural/maintainability review**, and whenever a change grows a file near the 400/200 LOC limits or adds files to a crowded folder. |
@@ -42,7 +42,7 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
 - Quality: `bunx @biomejs/biome check .` (`--write` to fix) · `bun check:structure` (size + folder + test-placement + barrel gate) · `bun test` / `bun test:watch`
 - DB: `bun db:generate` (Drizzle migration from schema) · `bun db:migrate` (apply locally) · `bun db:studio` · `bun dbr:status` · `bun dbr:push` / `bun dbr:reset` (**user only**)
 - DB search tests (remote DB): `bun --env-file=.env.local vitest run lib/db/__tests__/`
-- **Task board** ("ttr"): team planning board is **Tuturuuu** via the `ttr` CLI (installed + logged in; workspace **Nhẩm**). Log roadmap items to the Planning board → Backlog. Full doc: `docs/TASK_BOARD.md`.
+- **Task board** ("ttr"): team planning board is **Tuturuuu** via the `ttr` CLI (installed + logged in; workspace **Kallo**). Log roadmap items to the Planning board → Backlog. Full doc: `docs/TASK_BOARD.md`.
 
 ## 4. Architecture
 
@@ -111,7 +111,7 @@ The full module map — one line per folder stating its single concern — is `d
 ## 8. Gotchas
 
 - **Embeddings**: `gemini-embedding-001` (768 dims) — `text-embedding-004` is deprecated. Batch with ~35s delays per 50 requests on the free tier; honor 429 retry-after headers.
-- **OG images** (`app/api/og/macro-card/[shareId]/route.tsx` renders via Satori — not a browser): every element with 2+ children needs explicit `display: 'flex'`; literal hex colors only (no `var(--nham-*)`); load fonts from `_fonts/*.ttf` via `readFile`.
+- **OG images** (`app/api/og/macro-card/[shareId]/route.tsx` renders via Satori — not a browser): every element with 2+ children needs explicit `display: 'flex'`; literal hex colors only (no `var(--kallo-*)`); load fonts from `_fonts/*.ttf` via `readFile`.
 - **New `/auth/*` routes** must be handled in the `middleware.ts` matcher/origin-lock flow, or next-intl rewrites them to `/{locale}/auth/...` and 404s — tests don't catch this (they call handlers directly).
 - Check `package.json` scripts before assuming a command exists; run tests immediately after editing test files (don't batch edits, then debug multiple failures).
 

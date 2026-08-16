@@ -86,12 +86,12 @@
 - [ ] **Step 1: Remove all 6 worktrees**
 
 ```bash
-git worktree remove ../nham-stream-a --force 2>/dev/null || true
-git worktree remove ../nham-stream-b --force 2>/dev/null || true
-git worktree remove ../nham-stream-c --force 2>/dev/null || true
-git worktree remove ../nham-stream-d --force 2>/dev/null || true
-git worktree remove ../nham-stream-e --force 2>/dev/null || true
-git worktree remove ../nham-usda-enrichment --force 2>/dev/null || true
+git worktree remove ../kallo-stream-a --force 2>/dev/null || true
+git worktree remove ../kallo-stream-b --force 2>/dev/null || true
+git worktree remove ../kallo-stream-c --force 2>/dev/null || true
+git worktree remove ../kallo-stream-d --force 2>/dev/null || true
+git worktree remove ../kallo-stream-e --force 2>/dev/null || true
+git worktree remove ../kallo-usda-enrichment --force 2>/dev/null || true
 ```
 
 - [ ] **Step 2: Delete local branches**
@@ -395,7 +395,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
       "card3Text": "A stir-fry with minimal oil vs. deep-fried — same ingredient, very different calories"
     },
     "solution": {
-      "title": "How Nhẩm works",
+      "title": "How Kallo works",
       "subtitle": "Describe what you ate in your own words. Our AI handles the rest.",
       "step1Title": "Tell us what you ate",
       "step1Text": "Type in Vietnamese or English — \"cơm tấm sườn bì chả\" or \"broken rice with pork\"",
@@ -411,7 +411,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
     },
     "footer": {
       "tagline": "Vietnamese meal tracking, powered by AI",
-      "copyright": "© {year} Nhẩm. All rights reserved."
+      "copyright": "© {year} Kallo. All rights reserved."
     }
   },
   "dashboard": {
@@ -631,7 +631,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
       "card3Text": "Xào ít dầu và chiên ngập dầu — cùng nguyên liệu, calo rất khác nhau"
     },
     "solution": {
-      "title": "Nhẩm hoạt động thế nào",
+      "title": "Kallo hoạt động thế nào",
       "subtitle": "Mô tả bạn đã ăn gì bằng lời. AI lo phần còn lại.",
       "step1Title": "Cho chúng tôi biết bạn ăn gì",
       "step1Text": "Nhập tiếng Việt hoặc tiếng Anh — \"cơm tấm sườn bì chả\" hoặc \"broken rice with pork\"",
@@ -647,7 +647,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
     },
     "footer": {
       "tagline": "Theo dõi bữa ăn Việt, được hỗ trợ bởi AI",
-      "copyright": "© {year} Nhẩm. Mọi quyền được bảo lưu."
+      "copyright": "© {year} Kallo. Mọi quyền được bảo lưu."
     }
   },
   "dashboard": {
@@ -888,7 +888,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Nhẩm — Vietnamese Meal Tracker',
+  title: 'Kallo — Vietnamese Meal Tracker',
   description: 'Track Vietnamese meals with AI-powered nutrition analysis',
 };
 

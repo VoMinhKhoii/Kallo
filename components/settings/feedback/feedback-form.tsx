@@ -61,7 +61,7 @@ export function FeedbackForm({
     <div className="space-y-5 p-card-sm">
       {/* Type */}
       <div>
-        <p className="text-[15px] text-nham-text">{t('typeLabel')}</p>
+        <p className="text-[15px] text-kallo-text">{t('typeLabel')}</p>
         <div className="mt-2">
           <OptionStrip
             options={FEEDBACK_TYPES.map((option) => ({
@@ -80,11 +80,11 @@ export function FeedbackForm({
         <div className="flex items-baseline justify-between gap-3">
           <label
             htmlFor="feedback-message"
-            className="text-[15px] text-nham-text"
+            className="text-[15px] text-kallo-text"
           >
             {t('messageLabel')}
           </label>
-          <span className="text-[12px] text-nham-text-muted tabular-nums">
+          <span className="text-[12px] text-kallo-text-muted tabular-nums">
             {message.length} / {MAX_LENGTH}
           </span>
         </div>
@@ -96,12 +96,12 @@ export function FeedbackForm({
           maxLength={MAX_LENGTH}
           rows={3}
           aria-required="true"
-          className="mt-2 w-full resize-y rounded-xl border border-nham-border bg-white px-3 py-2.5 text-[14px] text-nham-text placeholder:text-nham-text-muted focus-visible:border-nham-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60"
+          className="mt-2 w-full resize-y rounded-xl border border-kallo-border bg-white px-3 py-2.5 text-[14px] text-kallo-text placeholder:text-kallo-text-muted focus-visible:border-kallo-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60"
         />
       </div>
 
       {(fileError || submitError) && (
-        <p role="alert" className="text-[13px] text-nham-danger">
+        <p role="alert" className="text-[13px] text-kallo-danger">
           {fileError ?? submitError}
         </p>
       )}
@@ -116,19 +116,19 @@ export function FeedbackForm({
           className="hidden"
         />
         {file ? (
-          <div className="flex min-w-0 items-center gap-2 rounded-xl border border-nham-border bg-white px-3 py-2 text-[13px]">
+          <div className="flex min-w-0 items-center gap-2 rounded-xl border border-kallo-border bg-white px-3 py-2 text-[13px]">
             <ImageIcon
-              className="size-4 shrink-0 text-nham-text-muted"
+              className="size-4 shrink-0 text-kallo-text-muted"
               aria-hidden
             />
-            <span className="min-w-0 flex-1 truncate text-nham-text">
+            <span className="min-w-0 flex-1 truncate text-kallo-text">
               {file.name}
             </span>
             <button
               type="button"
               onClick={clearFile}
               aria-label={t('removeScreenshot')}
-              className="shrink-0 rounded-md p-1 text-nham-text-muted transition-colors hover:text-nham-text"
+              className="shrink-0 rounded-md p-1 text-kallo-text-muted transition-colors hover:text-kallo-text"
             >
               <X className="size-4" aria-hidden />
             </button>
@@ -137,7 +137,7 @@ export function FeedbackForm({
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
-            className="flex items-center gap-2 rounded-xl border border-nham-border border-dashed bg-white px-3 py-2 text-[13px] text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:text-nham-text"
+            className="flex items-center gap-2 rounded-xl border border-kallo-border border-dashed bg-white px-3 py-2 text-[13px] text-kallo-text-muted transition-colors hover:border-kallo-accent/50 hover:text-kallo-text"
           >
             <ImagePlus className="size-4" aria-hidden />
             {t('addScreenshot')}
@@ -147,7 +147,7 @@ export function FeedbackForm({
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="rounded-lg bg-nham-btn px-4 py-2 font-medium text-sm text-white transition-opacity disabled:opacity-50"
+          className="rounded-lg bg-kallo-btn px-4 py-2 font-medium text-sm text-white transition-opacity disabled:opacity-50"
         >
           {pending ? t('submitting') : t('submit')}
         </button>

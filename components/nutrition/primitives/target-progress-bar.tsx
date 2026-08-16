@@ -50,7 +50,7 @@ export function TargetProgressBar({
       aria-valuenow={valueNow}
       className="relative h-1 flex-1"
     >
-      <div className="absolute inset-y-0 right-0 left-0 rounded-full bg-nham-track" />
+      <div className="absolute inset-y-0 right-0 left-0 rounded-full bg-kallo-track" />
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${fillWidth}%` }}
@@ -58,12 +58,12 @@ export function TargetProgressBar({
         className={cn(
           'absolute inset-y-0 left-0 rounded-full',
           adequate
-            ? 'bg-nham-success-accent'
+            ? 'bg-kallo-success-accent'
             : !hasValue
-              ? 'bg-nham-stone/50'
+              ? 'bg-kallo-stone/50'
               : showExceed
-                ? 'bg-nham-danger'
-                : 'bg-nham-text'
+                ? 'bg-kallo-danger'
+                : 'bg-kallo-text'
         )}
       />
       {hasValue && !adequate ? (
@@ -71,7 +71,7 @@ export function TargetProgressBar({
           aria-hidden="true"
           className={cn(
             'absolute top-[-3px] block h-[7px] w-px',
-            showExceed ? 'bg-nham-danger/70' : 'bg-nham-stone/70'
+            showExceed ? 'bg-kallo-danger/70' : 'bg-kallo-stone/70'
           )}
           style={{ left: 'calc(100% - 1px)' }}
         />

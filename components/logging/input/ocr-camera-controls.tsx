@@ -41,7 +41,7 @@ export function OcrCameraControls(props: OcrCameraControlsProps) {
           <select
             value={props.selectedCameraId ?? ''}
             onChange={(event) => props.onCameraChange(event.target.value)}
-            className="w-full rounded-md bg-white px-2 py-1 text-nham-ink"
+            className="w-full rounded-md bg-white px-2 py-1 text-kallo-ink"
           >
             <option value="" disabled>
               {props.cameraLabel}
@@ -70,7 +70,7 @@ export function OcrCameraControls(props: OcrCameraControlsProps) {
           <select
             value={props.focusMode ?? ''}
             onChange={(event) => props.onFocusChange(event.target.value)}
-            className="w-full rounded-md bg-white px-2 py-1 text-nham-ink"
+            className="w-full rounded-md bg-white px-2 py-1 text-kallo-ink"
           >
             {props.capabilities.focusModes.map((mode) => (
               <option key={mode} value={mode}>
@@ -95,7 +95,7 @@ export function OcrCameraControls(props: OcrCameraControlsProps) {
               );
               if (next) props.onResolutionChange(next);
             }}
-            className="w-full rounded-md bg-white px-2 py-1 text-nham-ink"
+            className="w-full rounded-md bg-white px-2 py-1 text-kallo-ink"
           >
             {props.capabilities.resolutions.map((item) => (
               <option

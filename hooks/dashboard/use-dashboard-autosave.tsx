@@ -65,7 +65,7 @@ export function useDashboardAutoSave(args: {
                   removeMeal({ mealId });
                   toast.dismiss(toastId);
                 }}
-                className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-nham-btn px-2.5 py-1.5 font-medium text-white text-xs transition-colors hover:bg-nham-btn-hover"
+                className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-kallo-btn px-2.5 py-1.5 font-medium text-white text-xs transition-colors hover:bg-kallo-btn-hover"
               >
                 <Undo2 aria-hidden className="h-3.5 w-3.5" />
                 {t('streaming.undo')}

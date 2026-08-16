@@ -39,7 +39,7 @@ export function NutrientGrid({
 function Group({ label, cards }: { label: string; cards: NutrientCardData[] }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="font-medium text-[11px] text-nham-text-muted uppercase tracking-[0.08em]">
+      <h2 className="font-medium text-[11px] text-kallo-text-muted uppercase tracking-[0.08em]">
         {label}
       </h2>
       <div className="grid grid-cols-2 gap-3">

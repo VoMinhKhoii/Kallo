@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 /// The composer is the one thing the logging tab asks you to do, and it sat on
 /// flat canvas — correct, and completely inert. The halo makes it the screen's
 /// lit surface without adding a border, a fill or a shadow to the input itself.
-/// The web build carries the same treatment (`--nham-composer-glow`).
+/// The web build carries the same treatment (`--kallo-composer-glow`).
 class ComposerGlow extends StatelessWidget {
   const ComposerGlow({super.key});
 

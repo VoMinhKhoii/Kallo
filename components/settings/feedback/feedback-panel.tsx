@@ -34,18 +34,18 @@ export function FeedbackPanel() {
             <h3
               ref={form.sentHeading}
               tabIndex={-1}
-              className="font-serif text-lg text-nham-text outline-none"
+              className="font-serif text-kallo-text text-lg outline-none"
             >
               {t('successTitle')}
             </h3>
-            <p className="mt-1 max-w-sm text-[14px] text-nham-text-soft">
+            <p className="mt-1 max-w-sm text-[14px] text-kallo-text-soft">
               {t('successBody')}
             </p>
           </div>
           <button
             type="button"
             onClick={form.reset}
-            className="rounded-lg border border-nham-border bg-white px-4 py-2 font-medium text-nham-text text-sm transition-colors hover:border-nham-accent/50"
+            className="rounded-lg border border-kallo-border bg-white px-4 py-2 font-medium text-kallo-text text-sm transition-colors hover:border-kallo-accent/50"
           >
             {t('sendAnother')}
           </button>

@@ -29,7 +29,7 @@ export function DocsLocaleToggle() {
   const [isPending, startTransition] = useTransition();
 
   return (
-    <div className="flex items-center gap-0.5 rounded-lg border border-nham-border bg-white p-0.5">
+    <div className="flex items-center gap-0.5 rounded-lg border border-kallo-border bg-white p-0.5">
       {LOCALES.map(({ code, short, label }) => {
         const selected = code === locale;
 
@@ -39,10 +39,10 @@ export function DocsLocaleToggle() {
             aria-pressed={selected}
             className={cn(
               'rounded-md px-2 py-1 font-sans-display text-caption transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent',
               selected
-                ? 'bg-nham-hover font-semibold text-nham-text'
-                : 'text-nham-text-muted hover:text-nham-text',
+                ? 'bg-kallo-hover font-semibold text-kallo-text'
+                : 'text-kallo-text-muted hover:text-kallo-text',
               isPending && 'opacity-70'
             )}
             disabled={isPending || selected}

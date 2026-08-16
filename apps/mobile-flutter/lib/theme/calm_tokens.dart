@@ -12,7 +12,7 @@
 /// labels. One editorial serif moment (the greeting) per viewport. The
 /// throughline — hierarchy comes from contrast + weight, not from loud type.
 ///
-/// Canonical doc: `.agents/skills/nham-design/mobile.md`.
+/// Canonical doc: `.agents/skills/kallo-design/mobile.md`.
 ///
 /// Colour values are NOT restated here: every surface/ink token DERIVES from
 /// [NhamColors] (the single source of truth for the palette). This file owns

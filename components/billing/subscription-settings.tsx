@@ -51,7 +51,7 @@ export function SubscriptionSettings({
 
   if (isPending) {
     return (
-      <div className="flex items-center gap-2 rounded-2xl border border-nham-border/70 bg-white px-4 py-5 text-[14px] text-nham-text-muted">
+      <div className="flex items-center gap-2 rounded-2xl border border-kallo-border/70 bg-white px-4 py-5 text-[14px] text-kallo-text-muted">
         <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
         {t('loading')}
       </div>
@@ -60,7 +60,7 @@ export function SubscriptionSettings({
 
   if (isError || !data) {
     return (
-      <div className="rounded-2xl border border-nham-border/70 bg-white px-4 py-5 text-[14px] text-nham-text-muted">
+      <div className="rounded-2xl border border-kallo-border/70 bg-white px-4 py-5 text-[14px] text-kallo-text-muted">
         {t('loadError')}
       </div>
     );
@@ -79,7 +79,7 @@ export function SubscriptionSettings({
     <div className="flex flex-col gap-3 font-sans-display">
       {showExpiryBanner && <ExpiryReminderBanner daysRemaining={expiryDays} />}
 
-      <div className="rounded-2xl border border-nham-border/70 bg-white px-4 py-4">
+      <div className="rounded-2xl border border-kallo-border/70 bg-white px-4 py-4">
         {data.tier === 'premium' ? (
           <PremiumState data={data} locale={locale} t={t} />
         ) : (
@@ -117,11 +117,11 @@ function FreeState({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="flex items-center gap-1.5 text-[15px] text-nham-text">
-          <Sparkles aria-hidden="true" className="h-4 w-4 text-nham-accent" />
+        <p className="flex items-center gap-1.5 text-[15px] text-kallo-text">
+          <Sparkles aria-hidden="true" className="h-4 w-4 text-kallo-accent" />
           {trialActive ? t('trialPlan') : t('freePlan')}
         </p>
-        <p className="mt-0.5 text-[13px] text-nham-text-muted">
+        <p className="mt-0.5 text-[13px] text-kallo-text-muted">
           {trialActive
             ? t('trialRemaining', { days: daysRemaining })
             : t('freeDescription')}
@@ -130,7 +130,7 @@ function FreeState({
       <button
         type="button"
         onClick={onUpgrade}
-        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-nham-ink px-4 py-2 font-medium text-[14px] text-nham-surface transition-colors hover:bg-nham-ink-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-kallo-ink px-4 py-2 font-medium text-[14px] text-kallo-surface transition-colors hover:bg-kallo-ink-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
       >
         {t('upgradeCta')}
       </button>
@@ -152,11 +152,11 @@ function PremiumState({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <p className="flex items-center gap-1.5 text-[15px] text-nham-text">
-          <Sparkles aria-hidden="true" className="h-4 w-4 text-nham-accent" />
+        <p className="flex items-center gap-1.5 text-[15px] text-kallo-text">
+          <Sparkles aria-hidden="true" className="h-4 w-4 text-kallo-accent" />
           {data.isLifetime ? t('lifetimePlan') : t('premiumPlan')}
         </p>
-        <p className="mt-0.5 text-[13px] text-nham-text-muted">
+        <p className="mt-0.5 text-[13px] text-kallo-text-muted">
           {data.isLifetime
             ? t('lifetimeDescription')
             : data.willRenew && renewalDate
@@ -166,20 +166,20 @@ function PremiumState({
                 : t('premiumDescription')}
         </p>
         {data.isLifetime && data.hasActiveSubscription && (
-          <p className="mt-1 text-[13px] text-nham-danger">
+          <p className="mt-1 text-[13px] text-kallo-danger">
             {t('lifetimeSubscriptionWarning')}
           </p>
         )}
       </div>
 
       {data.hasActiveSubscription && (
-        <div className="border-nham-border/60 border-t pt-3">
+        <div className="border-kallo-border/60 border-t pt-3">
           {data.managementUrl ? (
             <a
               href={data.managementUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-nham-border bg-nham-surface px-3.5 py-2 font-medium text-[13px] text-nham-text transition-colors hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-kallo-border bg-kallo-surface px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
             >
               <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
               {data.managementStore === 'app_store'
@@ -189,7 +189,7 @@ function PremiumState({
                   : t('manageWeb')}
             </a>
           ) : (
-            <p className="text-[13px] text-nham-text-muted leading-relaxed">
+            <p className="text-[13px] text-kallo-text-muted leading-relaxed">
               {t('manageUnavailable')}
             </p>
           )}

@@ -1,6 +1,6 @@
 /// Nutrient-row status logic vendored from web `components/nutrition/rows/
 /// nutrient-row.tsx` + `nutrient-detail.tsx` (keep in sync). `kStatusColors`
-/// maps the web's `var(--nham-heatmap-*)` to the mobile heatmap tokens.
+/// maps the web's `var(--kallo-heatmap-*)` to the mobile heatmap tokens.
 ///
 /// Ported from `apps/mobile/src/lib/nutrition/logic/status.ts`.
 library;

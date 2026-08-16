@@ -89,24 +89,24 @@ export function NutrientGridCard({
       className={cn(
         'rounded-2xl border p-3',
         adequate
-          ? 'border-nham-success-border bg-nham-success-faint'
-          : 'border-nham-border/60 bg-card'
+          ? 'border-kallo-success-border bg-kallo-success-faint'
+          : 'border-kallo-border/60 bg-card'
       )}
     >
       <div className="flex items-baseline gap-2">
-        <span className="min-w-0 flex-1 truncate text-[12px] text-nham-text">
+        <span className="min-w-0 flex-1 truncate text-[12px] text-kallo-text">
           {label}
         </span>
         <span
           className={cn(
             'shrink-0 text-[12px] tabular-nums',
             showExceed
-              ? 'text-nham-danger'
+              ? 'text-kallo-danger'
               : isLimited || pct === null
-                ? 'text-nham-text-muted'
+                ? 'text-kallo-text-muted'
                 : adequate
-                  ? 'text-nham-success-dark'
-                  : 'text-nham-text'
+                  ? 'text-kallo-success-dark'
+                  : 'text-kallo-text'
           )}
         >
           {figure}
@@ -122,7 +122,7 @@ export function NutrientGridCard({
           adequate={adequate}
         />
       </div>
-      <p className="mt-2 truncate text-[12px] text-nham-text-muted tabular-nums">
+      <p className="mt-2 truncate text-[12px] text-kallo-text-muted tabular-nums">
         {goalText}
       </p>
     </div>

@@ -32,7 +32,7 @@ The repo already contains:
 - `.github/workflows/cloud-run-preview.yml`
 - `.github/workflows/cloud-run-preview-cleanup.yml`
 - a successful WIF-based Google Cloud auth path
-- Cloud Run preview services named `nham-pr-<number>`
+- Cloud Run preview services named `kallo-pr-<number>`
 
 This work should extend that lane rather than invent a parallel pipeline.
 
@@ -179,7 +179,7 @@ committing it to Git.
 - preview container image built specifically for that PR branch config, using an
   Artifact Registry tag shaped like:
   `${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REPO}/nham:pr-<number>-<sha>`
-- preview Cloud Run service `nham-pr-<number>`
+- preview Cloud Run service `kallo-pr-<number>`
 - PR comment with preview URL
 
 ### 5.4 Cleanup workflow
@@ -191,7 +191,7 @@ resources that no longer map to an open PR.
 
 **Behavior:**
 
-- delete Cloud Run service `nham-pr-<number>`
+- delete Cloud Run service `kallo-pr-<number>`
 - delete Supabase branch `pr-<number>`
 - keep the scheduled orphan sweep and extend it to Supabase branches, not only
   Cloud Run services
@@ -214,7 +214,7 @@ final Cloud Run deploy step:
 4. compute:
    - `PR_NUMBER`
    - `BRANCH_NAME=pr-${PR_NUMBER}`
-    - `SERVICE_NAME=nham-pr-${PR_NUMBER}`
+    - `SERVICE_NAME=kallo-pr-${PR_NUMBER}`
    - `PREVIEW_IMAGE_TAG=pr-${PR_NUMBER}-${HEAD_SHA}`
 5. apply workflow-level concurrency keyed by PR number so same-PR preview runs
    are serialized rather than racing each other
@@ -275,7 +275,7 @@ deleted and recreated rather than silently reseeded on every synchronize event.
 | Resource | Pattern |
 | --- | --- |
 | Supabase branch | `pr-<number>` |
-| Cloud Run service | `nham-pr-<number>` |
+| Cloud Run service | `kallo-pr-<number>` |
 
 The PR number is the shared join key across both systems.
 

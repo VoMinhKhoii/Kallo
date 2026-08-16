@@ -51,7 +51,7 @@ export function GroupMembersList({ group }: { group: ChatGroupDetail }) {
                     <button
                       type="button"
                       aria-label={t('removeLabel', { name })}
-                      className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#6E6D66] opacity-0 transition-all hover:bg-nham-danger/10 hover:text-nham-danger focus-visible:opacity-100 group-hover/member:opacity-100"
+                      className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#6E6D66] opacity-0 transition-all hover:bg-kallo-danger/10 hover:text-kallo-danger focus-visible:opacity-100 group-hover/member:opacity-100"
                     >
                       <X className="size-3.5" />
                     </button>
@@ -70,7 +70,7 @@ export function GroupMembersList({ group }: { group: ChatGroupDetail }) {
                       <AlertDialogAction
                         variant="ghost"
                         disabled={removeMember.isPending}
-                        className="text-nham-danger hover:bg-transparent hover:text-nham-danger"
+                        className="text-kallo-danger hover:bg-transparent hover:text-kallo-danger"
                         onClick={(event) => {
                           event.preventDefault();
                           removeMember.mutate(member.userId, {

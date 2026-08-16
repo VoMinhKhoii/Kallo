@@ -71,7 +71,7 @@ export function CalorieRing({
           fill="none"
           stroke="currentColor"
           vectorEffect="non-scaling-stroke"
-          className="text-nham-track"
+          className="text-kallo-track"
           style={strokeStyle}
         />
         <motion.circle
@@ -79,7 +79,7 @@ export function CalorieRing({
           cy={CENTER}
           r={RADIUS}
           fill="none"
-          stroke="var(--nham-accent)"
+          stroke="var(--kallo-accent)"
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
           initial={{ strokeDashoffset: CIRCUMFERENCE }}
@@ -96,13 +96,13 @@ export function CalorieRing({
       >
         {center ?? (
           <>
-            <span className="font-normal font-serif text-[22px] text-nham-text tabular-nums leading-none">
+            <span className="font-normal font-serif text-[22px] text-kallo-text tabular-nums leading-none">
               {remaining.toLocaleString()}
             </span>
-            <span className="mt-0.5 font-medium text-[8px] text-nham-text-muted uppercase tracking-[0.15em]">
+            <span className="mt-0.5 font-medium text-[8px] text-kallo-text-muted uppercase tracking-[0.15em]">
               {t('left')}
             </span>
-            <span className="mt-0.5 text-[9px] text-nham-text-muted tabular-nums">
+            <span className="mt-0.5 text-[9px] text-kallo-text-muted tabular-nums">
               / {target.toLocaleString()}
             </span>
           </>

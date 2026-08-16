@@ -117,7 +117,7 @@ export function PaywallDialog({
       open={open}
       onOpenChange={handleOpenChange}
     >
-      <DialogContent className="max-h-[min(90dvh,48rem)] max-w-md gap-0 overflow-y-auto overscroll-contain rounded-2xl border-nham-border/70 bg-nham-surface p-0">
+      <DialogContent className="max-h-[min(90dvh,48rem)] max-w-md gap-0 overflow-y-auto overscroll-contain rounded-2xl border-kallo-border/70 bg-kallo-surface p-0">
         {purchase.succeeded || purchase.activationPending ? (
           <PaywallStatus
             activationPending={purchase.activationPending}

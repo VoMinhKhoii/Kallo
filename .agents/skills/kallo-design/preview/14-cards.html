@@ -1,0 +1,27 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <style>
+    .stage { padding-left: 44px; position: relative; }
+    .dot { position: absolute; left: 0; top: 28px; width: 8px; height: 8px; border-radius: 999px; border: 2px solid var(--kallo-accent); background: #fff; }
+    .line { position: absolute; left: 3px; top: 28px; bottom: 0; width: 1px; background: var(--border-soft); }
+    .time { font-family: var(--font-ui); font-weight: 700; font-size: 11px; letter-spacing: 0.15em; color: color-mix(in srgb, var(--kallo-text-muted) 60%, transparent); text-transform: uppercase; margin-bottom: 8px; }
+    .meal-card { background: #fff; border: 1px solid var(--border-soft); border-radius: var(--radius-3xl); padding: 18px 20px; box-shadow: var(--shadow-sm); }
+    .quote { font-family: var(--font-display); font-weight: 400; font-size: 17px; line-height: 1.5; color: var(--fg); margin: 0; }
+    .chev { float: right; color: color-mix(in srgb, var(--kallo-text-muted) 60%, transparent); margin-left: 8px; font-size: 14px;}
+    .summary { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
+    .macros { font-size: 11px; color: var(--fg-muted); }
+    .kcal { font-weight: 700; color: var(--fg); font-size: 14px; }
+  </style>
+  <div class="stage">
+    <span class="dot"></span><span class="line"></span>
+    <div class="time">12:47</div>
+    <article class="meal-card">
+      <p class="quote">&ldquo;2 mực kho mặn + 50gr nạc dăm luộc + 1 chén cơm + canh chua&rdquo;<span class="chev">▾</span></p>
+      <div class="summary">
+        <span class="macros">P: 38g  C: 72g  F: 14g</span>
+        <span class="kcal">585 kcal</span>
+      </div>
+    </article>
+  </div>
+</div></body></html>

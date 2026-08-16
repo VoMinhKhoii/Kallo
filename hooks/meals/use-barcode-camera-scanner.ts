@@ -130,7 +130,7 @@ export function useBarcodeCameraScanner({
         await new Promise((resolve) => setTimeout(resolve, 150));
         if (!isMounted) return;
 
-        const scanner = new Html5Qrcode('nham-barcode-scanner', {
+        const scanner = new Html5Qrcode('kallo-barcode-scanner', {
           formatsToSupport: [
             Html5QrcodeSupportedFormats.EAN_13,
             Html5QrcodeSupportedFormats.EAN_8,

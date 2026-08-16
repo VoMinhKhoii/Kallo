@@ -121,7 +121,7 @@ class _ComposerBarcodeButtonState extends State<ComposerBarcodeButton> {
 }
 
 /// The 32x32, rounded-md, btn-umber submit/stop button. Pressed → scale 0.95 +
-/// btn-hover bg (RN `active:bg-nham-btn-hover active:scale-95`). Disabled → 0.3.
+/// btn-hover bg (RN `active:bg-kallo-btn-hover active:scale-95`). Disabled → 0.3.
 class ComposerActionButton extends StatefulWidget {
   const ComposerActionButton({
     super.key,

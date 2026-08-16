@@ -78,7 +78,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
           {DAY_LABELS.map((d, i) => (
             <div
               key={`lbl-${i}`}
-              className="flex h-full items-center justify-end pr-1.5 font-medium text-nham-text-muted text-xs"
+              className="flex h-full items-center justify-end pr-1.5 font-medium text-kallo-text-muted text-xs"
               style={{ gridRow: i + 2, gridColumn: 1 }}
             >
               {d}
@@ -122,16 +122,16 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                             }
                       }
                       className={cn(
-                        'relative aspect-square w-full cursor-default rounded-[3px] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60',
+                        'relative aspect-square w-full cursor-default rounded-[3px] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60',
                         // Cheat day: a calm warm ring instead of intensity
                         // grading — recognizable, never red.
-                        isCheat && 'ring-1 ring-nham-cheat ring-inset'
+                        isCheat && 'ring-1 ring-kallo-cheat ring-inset'
                       )}
                       style={{
                         gridRow: di + 2,
                         gridColumn: wi + 2,
                         backgroundColor: isCheat
-                          ? 'var(--nham-cheat-fill)'
+                          ? 'var(--kallo-cheat-fill)'
                           : isLogged
                             ? bg
                             : undefined,
@@ -145,16 +145,16 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                             // taupe so the grid reads on the white card;
                             // future/outside days recede to a fainter step.
                             isMuted
-                              ? 'bg-nham-text-muted/6'
-                              : 'bg-nham-text-muted/12',
-                            isPartial && 'border border-nham-border'
+                              ? 'bg-kallo-text-muted/6'
+                              : 'bg-kallo-text-muted/12',
+                            isPartial && 'border border-kallo-border'
                           )}
                         />
                       )}
                       {isCheat && (
                         <span
                           aria-hidden
-                          className="absolute inset-0 flex items-center justify-center text-[8px] text-nham-cheat"
+                          className="absolute inset-0 flex items-center justify-center text-[8px] text-kallo-cheat"
                         >
                           ●
                         </span>
@@ -163,7 +163,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
-                    className="bg-nham-text text-nham-surface text-xs"
+                    className="bg-kallo-text text-kallo-surface text-xs"
                   >
                     {tooltipText}
                   </TooltipContent>
@@ -178,14 +178,14 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
             className="flex items-center gap-2 pt-2"
             style={{ gridRow: 9, gridColumn: `2 / span ${numWeeks}` }}
           >
-            <span className="text-nham-text-muted text-xs">
+            <span className="text-kallo-text-muted text-xs">
               {t('offTarget')}
             </span>
             <div
               className="h-1.5 flex-1 rounded-full"
               style={{ background: heatmapLegendGradient() }}
             />
-            <span className="text-nham-text-muted text-xs">
+            <span className="text-kallo-text-muted text-xs">
               {t('onTarget')}
             </span>
           </div>

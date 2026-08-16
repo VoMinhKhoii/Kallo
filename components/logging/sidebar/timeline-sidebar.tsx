@@ -94,7 +94,7 @@ export function TimelineSidebar({
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-12 rounded-lg bg-nham-track motion-safe:animate-pulse"
+              className="h-12 rounded-lg bg-kallo-track motion-safe:animate-pulse"
               aria-busy="true"
             />
           ))}
@@ -111,8 +111,8 @@ export function TimelineSidebar({
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden overscroll-contain">
         {/* Error state */}
         {isError && (
-          <div className="ml-3 flex flex-col gap-2 rounded-lg border border-nham-danger/30 bg-nham-danger/10 p-3">
-            <div className="flex items-center gap-2 text-nham-danger text-sm">
+          <div className="ml-3 flex flex-col gap-2 rounded-lg border border-kallo-danger/30 bg-kallo-danger/10 p-3">
+            <div className="flex items-center gap-2 text-kallo-danger text-sm">
               <AlertCircle className="h-4 w-4" aria-hidden="true" />
               <span className="flex-1 font-medium">
                 {t('failedToLoadDates')}
@@ -121,7 +121,7 @@ export function TimelineSidebar({
             <button
               type="button"
               onClick={onRetry}
-              className="rounded-lg bg-nham-danger/15 px-3 py-2 font-medium text-nham-danger text-sm transition-[background-color,color] hover:bg-nham-danger/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-danger focus-visible:ring-offset-2"
+              className="rounded-lg bg-kallo-danger/15 px-3 py-2 font-medium text-kallo-danger text-sm transition-[background-color,color] hover:bg-kallo-danger/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-danger focus-visible:ring-offset-2"
             >
               {t('retryDates')}
             </button>
@@ -130,7 +130,7 @@ export function TimelineSidebar({
 
         {/* Empty state */}
         {!hasSavedMeals && (
-          <div className="ml-3 rounded-lg border border-nham-border/40 bg-nham-hover/30 p-3 text-center text-nham-text-muted text-sm">
+          <div className="ml-3 rounded-lg border border-kallo-border/40 bg-kallo-hover/30 p-3 text-center text-kallo-text-muted text-sm">
             {t('noPreviousMeals')}
           </div>
         )}
@@ -147,7 +147,7 @@ export function TimelineSidebar({
                 onClick={() => toggleMonth(month.key)}
                 aria-expanded={isMonthExpanded}
                 aria-controls={`month-${month.key}`}
-                className="group ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2"
+                className="group ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2"
               >
                 <span className="min-w-0 flex-1 truncate text-left font-medium font-sans-display text-[10px] uppercase tracking-[0.04em] group-hover:font-bold">
                   {month.month}/{month.year}
@@ -190,13 +190,13 @@ export function TimelineSidebar({
                           onClick={() => toggleWeek(week.key)}
                           aria-expanded={isWeekExpanded}
                           aria-controls={`week-${week.key}`}
-                          className="group ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 rounded-md px-1 py-1.5 text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2"
+                          className="group ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 rounded-md px-1 py-1.5 text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2"
                         >
                           <span className="flex min-w-0 flex-1 items-baseline gap-2 text-left font-sans-display tracking-tight">
                             <span className="shrink-0 font-semibold text-[13px] group-hover:font-bold">
                               {t('week', { number: week.weekNumber })}
                             </span>
-                            <span className="min-w-0 truncate font-medium text-[11px] text-nham-text-muted/75">
+                            <span className="min-w-0 truncate font-medium text-[11px] text-kallo-text-muted/75">
                               {weekRangeLabel}
                             </span>
                           </span>
@@ -242,7 +242,7 @@ export function TimelineSidebar({
                                         row above (row height ~32px + mt-1 gap = ~20px). */}
                                     <div
                                       aria-hidden="true"
-                                      className="pointer-events-none absolute z-[2] w-0.5 bg-nham-accent"
+                                      className="pointer-events-none absolute z-[2] w-0.5 bg-kallo-accent"
                                       style={{
                                         left: '-15px',
                                         top: isFirst ? '-0.25rem' : '-3px',
@@ -258,7 +258,7 @@ export function TimelineSidebar({
                                     {!isLast && (
                                       <div
                                         aria-hidden="true"
-                                        className="pointer-events-none absolute z-[2] w-0.5 bg-nham-accent"
+                                        className="pointer-events-none absolute z-[2] w-0.5 bg-kallo-accent"
                                         style={{
                                           left: '-15px',
                                           top: '50%',
@@ -271,7 +271,7 @@ export function TimelineSidebar({
                                         line into the day button */}
                                     <div
                                       aria-hidden="true"
-                                      className="pointer-events-none absolute z-[2] -translate-y-full rounded-bl-lg border-nham-accent border-b-2 border-l-2"
+                                      className="pointer-events-none absolute z-[2] -translate-y-full rounded-bl-lg border-kallo-accent border-b-2 border-l-2"
                                       style={{
                                         left: '-15px',
                                         top: '50%',

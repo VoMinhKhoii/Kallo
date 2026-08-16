@@ -49,7 +49,7 @@ export function EmptyPrompt() {
         delay: EMPTY_ENTRANCE.prompt,
         ease: ENTRANCE_EASE,
       }}
-      className="relative z-10 mx-auto mb-5 max-w-3xl text-balance px-2 text-center font-serif text-[22px] text-nham-text leading-snug sm:text-[26px]"
+      className="relative z-10 mx-auto mb-5 max-w-3xl text-balance px-2 text-center font-serif text-[22px] text-kallo-text leading-snug sm:text-[26px]"
     >
       {name ? t(`${key}Named`, { name }) : t(key)}
     </motion.p>

@@ -21,14 +21,14 @@
 - [ ] **Step 1: Create a dedicated worktree from the approved spec branch**
 
 ```bash
-cd /Users/khoivo/Documents/nham-nutrition-page
-git worktree add ../nham-nutrition-page-impl -b feat/nutrition-page-implementation feat/nutrition-page
-cd ../nham-nutrition-page-impl
+cd /Users/khoivo/Documents/kallo-nutrition-page
+git worktree add ../kallo-nutrition-page-impl -b feat/nutrition-page-implementation feat/nutrition-page
+cd ../kallo-nutrition-page-impl
 git --no-pager status --short
 git --no-pager branch --show-current
 ```
 
-Expected: new worktree at `/Users/khoivo/Documents/nham-nutrition-page-impl`, clean status, branch `feat/nutrition-page-implementation`.
+Expected: new worktree at `/Users/khoivo/Documents/kallo-nutrition-page-impl`, clean status, branch `feat/nutrition-page-implementation`.
 
 - [ ] **Step 2: Install dependencies if needed**
 
@@ -2521,7 +2521,7 @@ Add to `messages/en.json`:
 {
   "metadata": {
     "nutrition": {
-      "title": "Nutrition — Nhẩm"
+      "title": "Nutrition — Kallo"
     }
   },
   "app": {
@@ -2538,7 +2538,7 @@ Add Vietnamese equivalents:
 {
   "metadata": {
     "nutrition": {
-      "title": "Dinh dưỡng — Nhẩm"
+      "title": "Dinh dưỡng — Kallo"
     }
   },
   "app": {

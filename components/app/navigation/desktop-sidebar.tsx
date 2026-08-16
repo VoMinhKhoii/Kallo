@@ -44,7 +44,7 @@ function SectionHeader({
     <div className="relative flex h-5 items-center px-3">
       <span
         className={cn(
-          'overflow-hidden whitespace-nowrap font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.06em] transition-all duration-300',
+          'overflow-hidden whitespace-nowrap font-medium font-sans-display text-[10px] text-kallo-text-muted uppercase tracking-[0.06em] transition-all duration-300',
           collapsed ? 'max-w-0 opacity-0' : 'max-w-32 opacity-100'
         )}
       >
@@ -53,7 +53,7 @@ function SectionHeader({
       <div
         aria-hidden="true"
         className={cn(
-          'absolute inset-x-1 top-1/2 h-px bg-gradient-to-r from-transparent via-nham-border/60 to-transparent transition-opacity duration-300',
+          'absolute inset-x-1 top-1/2 h-px bg-gradient-to-r from-transparent via-kallo-border/60 to-transparent transition-opacity duration-300',
           collapsed ? 'opacity-100' : 'opacity-0'
         )}
       />
@@ -176,7 +176,7 @@ export function DesktopSidebar({
       onBlurCapture={handleFocusLeave}
       onClick={handleAsideClick}
       className={cn(
-        'sticky top-3 flex h-full shrink-0 flex-col rounded-xl border border-nham-border/60 bg-white shadow-nham-text/[0.03] shadow-sm transition-[width,opacity,filter] duration-[220ms] ease-out',
+        'sticky top-3 flex h-full shrink-0 flex-col rounded-xl border border-kallo-border/60 bg-white shadow-kallo-text/[0.03] shadow-sm transition-[width,opacity,filter] duration-[220ms] ease-out',
         collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH,
         pinnedCollapsed && collapsed && 'cursor-pointer'
       )}
@@ -223,7 +223,7 @@ export function DesktopSidebar({
       {/* Footer — onboarding nudge + user menu, pinned to bottom.
           Onboarding lives here (not in the scroll region) so toggling
           collapse/expand never reflows nav items. */}
-      <div className="shrink-0 border-nham-border/40 border-t bg-white/40 p-2.5">
+      <div className="shrink-0 border-kallo-border/40 border-t bg-white/40 p-2.5">
         {onboardingIncomplete && onResumeOnboarding && !collapsed && (
           <div className="mb-2.5">
             <OnboardingNudge

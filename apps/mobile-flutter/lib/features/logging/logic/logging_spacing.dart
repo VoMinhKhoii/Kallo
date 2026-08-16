@@ -17,7 +17,7 @@ abstract final class LoggingSpacing {
   ///
   /// Wider than [block]: at 8 the turns ran together, with a card's CTA nearly
   /// touching the next turn's timestamp. 12 is the app-wide rhythm
-  /// (`nham-design/mobile.md`), so this is the house step rather than a new one.
+  /// (`kallo-design/mobile.md`), so this is the house step rather than a new one.
   static const double turn = NhamSpacing.sp3; // 12
 
   /// Inside a card: the space above/below every hairline and between the

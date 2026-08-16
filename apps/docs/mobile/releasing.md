@@ -83,7 +83,7 @@ The lane does **manual distribution signing scoped to the `Runner` target only**
 
 1. `cert` + `get_provisioning_profile` (via the API key) create an **Apple Distribution**
    certificate and an **App Store** provisioning profile (`com.khoivo.nham AppStore`) into an
-   **isolated keychain** (`nham-ci.keychain-db`) — no GUI prompts.
+   **isolated keychain** (`kallo-ci.keychain-db`) — no GUI prompts.
 2. `flutter build ios --release --no-codesign --dart-define=…` compiles Dart with the prod
    defines (the build phase doesn't need a cert this way).
 3. `update_code_signing_settings(targets: ["Runner"])` sets manual signing **on Runner only**.
@@ -145,11 +145,11 @@ never mints a new certificate (which would burn Apple's cert cap). The `signing`
 
 ### One-time setup
 
-1. **Create a private "match" repo** (e.g. `VoMinhKhoii/nham-ios-certs`) — empty is fine.
+1. **Create a private "match" repo** (e.g. `VoMinhKhoii/kallo-ios-certs`) — empty is fine.
 2. **Seed it locally** from the app dir, authenticating with the same ASC API key:
    ```bash
    cd apps/mobile-flutter/ios
-   export MATCH_GIT_URL=https://github.com/<you>/nham-ios-certs.git
+   export MATCH_GIT_URL=https://github.com/<you>/kallo-ios-certs.git
    export MATCH_PASSWORD=<pick a strong passphrase>   # encrypts the repo
    bundle install
    bundle exec fastlane match appstore                 # creates + stores cert + profile

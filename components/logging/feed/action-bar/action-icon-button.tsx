@@ -45,9 +45,9 @@ export function ActionIconButton({
             size="icon-sm"
             aria-label={label}
             className={cn(
-              'rounded-md text-nham-text hover:bg-nham-hover/40',
-              danger && 'hover:bg-nham-danger/10 hover:text-nham-danger',
-              active && 'bg-nham-hover text-nham-text',
+              'rounded-md text-kallo-text hover:bg-kallo-hover/40',
+              danger && 'hover:bg-kallo-danger/10 hover:text-kallo-danger',
+              active && 'bg-kallo-hover text-kallo-text',
               className
             )}
             {...props}
@@ -59,7 +59,7 @@ export function ActionIconButton({
             )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent className="rounded-md bg-nham-text font-sans-display text-nham-surface text-xs">
+        <TooltipContent className="rounded-md bg-kallo-text font-sans-display text-kallo-surface text-xs">
           {label}
         </TooltipContent>
       </Tooltip>

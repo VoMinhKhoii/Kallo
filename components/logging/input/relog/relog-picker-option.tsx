@@ -56,20 +56,20 @@ export function RelogPickerOption({
       onMouseEnter={onHighlight}
       className={cn(
         'flex cursor-pointer items-center gap-2 px-3 py-2',
-        isHighlighted && 'bg-nham-hover/30'
+        isHighlighted && 'bg-kallo-hover/30'
       )}
     >
-      <span className="min-w-0 flex-1 truncate font-sans-display text-nham-text text-sm">
+      <span className="min-w-0 flex-1 truncate font-sans-display text-kallo-text text-sm">
         {candidate.name}
       </span>
-      <span className="shrink-0 font-sans-display text-nham-text-muted/70 text-xs tabular-nums">
+      <span className="shrink-0 font-sans-display text-kallo-text-muted/70 text-xs tabular-nums">
         {t('macroSplit', {
           protein: formatMacro(candidate.proteinG),
           carbs: formatMacro(candidate.carbohydrateG),
           fat: formatMacro(candidate.fatG),
         })}
       </span>
-      <span className="shrink-0 font-sans-display text-nham-text-muted text-xs tabular-nums">
+      <span className="shrink-0 font-sans-display text-kallo-text-muted text-xs tabular-nums">
         {t('optionKcal', { kcal: formatKcal(candidate.caloriesKcal) })}
       </span>
     </div>

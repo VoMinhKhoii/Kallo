@@ -338,7 +338,7 @@ class _TimelineStripState extends State<TimelineStrip> {
             onTap: _canNavigateNext ? _scrollNext : null,
             color: _canNavigateNext
                 ? NhamColors.textMuted
-                : const Color(0x4D6E6D66), // text-nham-text-muted/30
+                : const Color(0x4D6E6D66), // text-kallo-text-muted/30
           ),
         ],
       ),
@@ -462,11 +462,11 @@ class _DayCellState extends State<_DayCell> {
 
     Color? bg;
     if (isSelected) {
-      bg = NhamColors.accent20; // bg-nham-accent/20
+      bg = NhamColors.accent20; // bg-kallo-accent/20
     } else if (isToday) {
-      bg = NhamColors.accent10; // bg-nham-accent/10 (today, not selected)
+      bg = NhamColors.accent10; // bg-kallo-accent/10 (today, not selected)
     }
-    // Non-selected hover/press affordance: bg-nham-hover/40.
+    // Non-selected hover/press affordance: bg-kallo-hover/40.
     if (_pressed && !isSelected) bg = NhamColors.hover40;
 
     final labelColor = isSelected ? kInk : kInkMuted;

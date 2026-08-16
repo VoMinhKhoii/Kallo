@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-04-30-admin-pipeline-dashboard-design.md`
 
-**Worktree:** `/Users/khoivo/Documents/nham-admin-dashboard` on `feat/admin-pipeline-dashboard`.
+**Worktree:** `/Users/khoivo/Documents/kallo-admin-dashboard` on `feat/admin-pipeline-dashboard`.
 
 **Conventions to follow** (from `AGENTS.md`):
 - Run lint/format with `bunx @biomejs/biome@2.4.2 check .` (and `--write` to fix).

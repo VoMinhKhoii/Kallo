@@ -50,7 +50,7 @@ const WASHES = [
  * elements for the entire page rather than three per section.
  *
  * The sections above this are transparent; the cream comes from `body`. A
- * section painting its own `bg-nham-surface` would cover this entirely.
+ * section painting its own `bg-kallo-surface` would cover this entirely.
  *
  * The veil is what keeps type legible over the blobs — it pulls the middle of
  * the viewport back toward paper and lets the colour survive only at the

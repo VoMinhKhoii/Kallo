@@ -113,7 +113,7 @@ export function UserMenu({
       aria-haspopup="menu"
       aria-expanded={open}
       className={cn(
-        'group/usermenu relative flex w-full items-center rounded-lg text-left transition-colors hover:bg-[#141413]/[0.04] focus-visible:bg-[#141413]/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
+        'group/usermenu relative flex w-full items-center rounded-lg text-left transition-colors hover:bg-[#141413]/[0.04] focus-visible:bg-[#141413]/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent',
         collapsed ? 'justify-center gap-0 p-1' : 'gap-3 p-1.5'
       )}
     >
@@ -122,17 +122,17 @@ export function UserMenu({
         {showOnboardingDot && (
           <span
             aria-hidden="true"
-            className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 animate-pulse-dot rounded-full bg-[#141413] ring-2 ring-nham-surface"
+            className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 animate-pulse-dot rounded-full bg-[#141413] ring-2 ring-kallo-surface"
           />
         )}
       </span>
       {!collapsed && (
         <span className="min-w-0 flex-1 overflow-hidden">
-          <span className="block truncate font-medium font-sans-display text-[12px] text-nham-text">
+          <span className="block truncate font-medium font-sans-display text-[12px] text-kallo-text">
             {label}
           </span>
           {user.email && (
-            <span className="block truncate font-sans-display text-[10.5px] text-nham-text-muted">
+            <span className="block truncate font-sans-display text-[10.5px] text-kallo-text-muted">
               {user.email}
             </span>
           )}
@@ -152,8 +152,8 @@ export function UserMenu({
       >
         {label && (
           <>
-            <DropdownMenuLabel className="px-2 py-1.5 text-[11px] text-nham-text-muted">
-              <span className="block truncate font-medium text-nham-text">
+            <DropdownMenuLabel className="px-2 py-1.5 text-[11px] text-kallo-text-muted">
+              <span className="block truncate font-medium text-kallo-text">
                 {label}
               </span>
               {user.email && (
@@ -173,9 +173,9 @@ export function UserMenu({
               onCheckedChange={(checked) =>
                 onExpandModeChange?.(checked ? 'hover' : 'click')
               }
-              className="gap-2 text-[12px] text-nham-text focus:bg-[#141413]/[0.04] focus:text-nham-text"
+              className="gap-2 text-[12px] text-kallo-text focus:bg-[#141413]/[0.04] focus:text-kallo-text"
             >
-              <MousePointerClick className="h-3.5 w-3.5 text-nham-text-muted" />
+              <MousePointerClick className="h-3.5 w-3.5 text-kallo-text-muted" />
               {t('expandOnHover')}
             </DropdownMenuCheckboxItem>
             <DropdownMenuSeparator className="bg-[#141413]/10" />
@@ -185,7 +185,7 @@ export function UserMenu({
         <DropdownMenuItem asChild>
           <Link
             href="/settings"
-            className="flex items-center gap-2 text-[12px] text-nham-text focus:bg-[#141413]/[0.04] focus:text-nham-text"
+            className="flex items-center gap-2 text-[12px] text-kallo-text focus:bg-[#141413]/[0.04] focus:text-kallo-text"
           >
             <UserIcon className="h-3.5 w-3.5" />
             {t('profile')}
@@ -194,7 +194,7 @@ export function UserMenu({
         <DropdownMenuItem asChild>
           <Link
             href="/settings"
-            className="flex items-center gap-2 text-[12px] text-nham-text focus:bg-[#141413]/[0.04] focus:text-nham-text"
+            className="flex items-center gap-2 text-[12px] text-kallo-text focus:bg-[#141413]/[0.04] focus:text-kallo-text"
           >
             <Settings className="h-3.5 w-3.5" />
             {t('settings')}
@@ -207,7 +207,7 @@ export function UserMenu({
           onClick={handleSignOut}
           disabled={signingOut}
           aria-busy={signingOut}
-          className="flex items-center gap-2 text-[12px] text-nham-danger focus:bg-nham-danger/10 focus:text-nham-danger"
+          className="flex items-center gap-2 text-[12px] text-kallo-danger focus:bg-kallo-danger/10 focus:text-kallo-danger"
         >
           <LogOut className="h-3.5 w-3.5" />
           {t('signOut')}

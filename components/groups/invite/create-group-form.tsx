@@ -105,7 +105,7 @@ export function CreateGroupForm({
             <button
               type="button"
               onClick={onAddFriend}
-              className="rounded-xl bg-nham-btn px-3.5 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-nham-btn/90"
+              className="rounded-xl bg-kallo-btn px-3.5 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90"
             >
               {t('addFriendCta')}
             </button>
@@ -154,7 +154,7 @@ export function CreateGroupForm({
         type="button"
         onClick={submit}
         disabled={!canSubmit}
-        className="inline-flex w-full items-center justify-center rounded-xl bg-nham-btn px-4 py-2.5 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex w-full items-center justify-center rounded-xl bg-kallo-btn px-4 py-2.5 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {createGroup.isPending ? t('creating') : t('submit')}
       </button>

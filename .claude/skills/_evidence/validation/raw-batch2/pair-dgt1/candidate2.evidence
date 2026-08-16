@@ -1,7 +1,7 @@
 === LOG ===
 861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
 87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
-8a80c07 docs(design): fold the mobile system into the nham-design skill
+8a80c07 docs(design): fold the mobile system into the kallo-design skill
 === STATUS ===
  M components/logging/input/barcode-product-step.tsx
  M components/logging/input/barcode-scanner-dialog.tsx
@@ -206,7 +206,7 @@ index 8f451d6..9e00dd2 100644
 +                  type="button"
 +                  onClick={handleClearServing}
 +                  disabled={isSavingOverride}
-+                  className="font-medium font-sans-display text-[#8B8682] text-[13px] transition-colors hover:text-nham-danger disabled:opacity-50"
++                  className="font-medium font-sans-display text-[#8B8682] text-[13px] transition-colors hover:text-kallo-danger disabled:opacity-50"
 +                >
 +                  {t('barcodeResetServing')}
 +                </button>

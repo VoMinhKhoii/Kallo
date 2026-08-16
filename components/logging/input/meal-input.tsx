@@ -271,7 +271,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       <button
         type="button"
         onClick={onCancel}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-kallo-btn text-white transition-all duration-200 hover:bg-kallo-btn-hover active:scale-95"
         aria-label={t('stopAnalyzing')}
       >
         <Square className="h-3.5 w-3.5 fill-current" />
@@ -281,7 +281,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
         type="button"
         onClick={onSubmit}
         disabled={!canSubmit}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95 disabled:opacity-30"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-kallo-btn text-white transition-all duration-200 hover:bg-kallo-btn-hover active:scale-95 disabled:opacity-30"
         aria-label={t('submit')}
       >
         <ArrowUp className="h-4 w-4" />
@@ -292,7 +292,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
 
     return (
       /* `relative` anchors popupSlot, which opens upward over the feed. */
-      <div className="relative flex flex-col gap-2 rounded-2xl border border-nham-border/40 bg-white p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
+      <div className="relative flex flex-col gap-2 rounded-2xl border border-kallo-border/40 bg-white p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-kallo-accent)_6%,transparent)] transition-all duration-300 focus-within:border-kallo-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-kallo-accent)_12%,transparent)]">
         {popupSlot}
 
         {/* Manual mode: DB-backed ingredient rows */}
@@ -332,7 +332,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
                   type="button"
                   disabled={disabled}
                   onClick={() => setIsBarcodeOpen(true)}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-nham-border/40 text-nham-text-muted transition-all duration-200 hover:bg-nham-hover hover:text-nham-text active:scale-95 disabled:opacity-30"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-kallo-border/40 text-kallo-text-muted transition-all duration-200 hover:bg-kallo-hover hover:text-kallo-text active:scale-95 disabled:opacity-30"
                   aria-label={t('barcodeScan')}
                 >
                   <Barcode className="h-4 w-4" />

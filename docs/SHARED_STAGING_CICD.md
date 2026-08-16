@@ -1,6 +1,6 @@
 # Shared Staging CI/CD Guide
 
-> **Retired (2026-07):** The `nham-internal`, `nham-staging`, and PR-preview Cloud
+> **Retired (2026-07):** The `kallo-internal`, `kallo-staging`, and PR-preview Cloud
 > Run pipelines described here have been removed to cut cost. The only surviving
 > deploy pipeline is `cloud-run-prod.yml` (`kallo-prod`), which applies migrations
 > to the DB on each `main` merge. This document is kept for historical reference;
@@ -13,13 +13,13 @@ non-production database.
 
 ## Services
 
-- `nham-internal` — auto-deployed from `main`. This is the dogfood environment.
+- `kallo-internal` — auto-deployed from `main`. This is the dogfood environment.
   Refuses to deploy if any local migration is missing from the shared non-prod DB
   (see "Migration drift guard" below).
-- `nham-staging` — auto-deployed when CI completes successfully on the
+- `kallo-staging` — auto-deployed when CI completes successfully on the
   `staging` branch (via `workflow_run`); also available as a manual
   `workflow_dispatch` for ad-hoc deploys of arbitrary refs/PRs.
-- `nham-pr-<number>` — preview service footprint kept only for legacy/manual
+- `kallo-pr-<number>` — preview service footprint kept only for legacy/manual
   recovery workflows; automatic PR previews are disabled
 
 All non-production deploy targets currently read the same non-prod database URL
@@ -28,12 +28,12 @@ from Secret Manager when they are active.
 ## Branch model
 
 - `staging` — long-lived branch. Pushes here run CI; once CI is green,
-  `nham-staging` auto-deploys via a `workflow_run` trigger that applies any
+  `kallo-staging` auto-deploys via a `workflow_run` trigger that applies any
   new migrations to the shared non-prod DB along the way. Use this branch to
   validate schema changes before merging to `main`. CI failures on `staging`
   block the auto-deploy entirely (no lease acquired, no `db push`).
-- `main` — feeds `nham-internal` (dogfooding). Also the future source of
-  `nham-prod` once the prod environment is provisioned (see
+- `main` — feeds `kallo-internal` (dogfooding). Also the future source of
+  `kallo-prod` once the prod environment is provisioned (see
   "Future production environment" below).
 
 ## Automatic flows
@@ -51,14 +51,14 @@ validation gate as PRs to `main` — without it, a push to `staging` would only
 get checked by the deploy workflow itself, which is too late to be a useful
 gate. The internal-deploy workflow has an explicit `head_branch == 'main'`
 guard, so CI completing on `staging` will not accidentally deploy
-`nham-internal`.
+`kallo-internal`.
 
 ### 2. Preview deploy (`.github/workflows/cloud-run-preview.yml`)
 
 This workflow is intentionally disabled right now:
 
 - the deploy job is gated behind `if: false`
-- CI success does **not** create or refresh `nham-pr-<number>`
+- CI success does **not** create or refresh `kallo-pr-<number>`
 - the shared-db preview logic remains in the repo only for legacy cleanup and
   future re-enablement work
 
@@ -75,13 +75,13 @@ After a successful `main` CI run:
   guard** (`assert-migrations-applied`): the deploy fails fast if any
   `supabase/migrations/*.sql` version is missing from
   `supabase_migrations.schema_migrations` on the shared non-prod DB.
-- If the guard passes, GitHub Actions deploys `nham-internal`.
+- If the guard passes, GitHub Actions deploys `kallo-internal`.
 - Smoke checks run automatically.
 - Failed smoke checks roll traffic back to the previous revision.
 
 #### Migration drift guard
 
-`nham-internal` and `nham-staging` share the same non-prod database. To prevent
+`kallo-internal` and `kallo-staging` share the same non-prod database. To prevent
 the dogfood environment from running with stale schema, internal deploys assert
 that every local migration is already applied. If you merge a PR that adds new
 migrations without first deploying via `staging` (or the manual staging
@@ -116,7 +116,7 @@ In both cases, the workflow does this:
 4. validates the migrations are append-only (defense in depth — manual
    dispatches may target refs CI hasn't yet validated)
 5. runs `supabase db push` against the shared non-prod DB
-6. deploys `nham-staging`
+6. deploys `kallo-staging`
 7. runs the normal smoke check
 8. comments on the PR with the staging URL when the manual `ref` is
    `pr-<number>` or ends with `#<number>` (auto deploys never have a PR
@@ -132,7 +132,7 @@ replaced.
 Because of that, we do **not** rely on GitHub concurrency to protect a shared
 database. Instead, shared staging uses a real lock:
 
-- bucket: `gs://nham-staging-leases`
+- bucket: `gs://kallo-staging-leases`
 - object: `staging/lease.json`
 
 The lease records:
@@ -163,7 +163,7 @@ The reset replays migrations from a chosen ref (defaults to `staging`, which is
 the canonical pre-prod source of truth). The optional `ref` workflow input
 exists for emergency recovery — for example, if `staging` itself contains a
 broken migration, an operator can override with `main` or any other branch/SHA
-that has known-good migrations. After the reset, `nham-internal` will see the
+that has known-good migrations. After the reset, `kallo-internal` will see the
 chosen ref's schema (since it shares the same DB), so the override should match
 or precede whatever's currently merged to `main`.
 
@@ -171,10 +171,10 @@ or precede whatever's currently merged to `main`.
 
 ### Use legacy/manual preview services only for:
 
-- cleanup of older `nham-pr-<number>` services
+- cleanup of older `kallo-pr-<number>` services
 - one-off operational recovery while the preview path is disabled
 
-### Use `nham-staging` for:
+### Use `kallo-staging` for:
 
 - coordinated manual QA
 - multi-step flows on a shared branch/ref
@@ -193,17 +193,17 @@ Make sure:
 Current supporting resources:
 
 - Secret Manager:
-  - `nham-nonprod-database-url`
-  - `nham-nonprod-gemini-api-key`
+  - `kallo-nonprod-database-url`
+  - `kallo-nonprod-gemini-api-key`
 - GitHub repo variable:
-  - `GCS_STAGING_LEASE_BUCKET=nham-staging-leases`
+  - `GCS_STAGING_LEASE_BUCKET=kallo-staging-leases`
 - GCS bucket:
-  - `gs://nham-staging-leases`
+  - `gs://kallo-staging-leases`
 
 ## Production environment (`kallo-prod`)
 
 Production runs as the `kallo-prod` Cloud Run service, fronting the **kallo.fit**
-domain (the app is rebranding Nhẩm → Kallo). Deploy pipeline:
+domain (the app is rebranding Kallo → Kallo). Deploy pipeline:
 
 - **Workflow:** `.github/workflows/cloud-run-prod.yml` — triggered by a
   successful `CI` run on `main` (`workflow_run`), the same gate as internal. It
@@ -237,19 +237,19 @@ Full domain / DNS / Cloudflare / Supabase / OAuth runbook:
 
 To preserve real data and the already-wired Google/Apple OAuth, `kallo-prod`
 reuses the **current dogfood Supabase project** as production
-(`kallo-prod-database-url` = that project's DB URL). Because `nham-internal` and
-`nham-staging` still read `nham-nonprod-database-url`, which currently points at
+(`kallo-prod-database-url` = that project's DB URL). Because `kallo-internal` and
+`kallo-staging` still read `kallo-nonprod-database-url`, which currently points at
 that same project, there is a transitional overlap:
 
 - Both `cloud-run-internal` and `cloud-run-prod` apply migrations to that DB on a
   `main` merge. `supabase db push` applies only what is pending (idempotent); if
   the two race, re-running `cloud-run-prod` is safe.
 - `reset-staging-db.yml` is **guarded**: it hard-fails while
-  `nham-nonprod-database-url` and `kallo-prod-database-url` are byte-identical,
+  `kallo-nonprod-database-url` and `kallo-prod-database-url` are byte-identical,
   so it cannot wipe production during the overlap.
 
 **Fast-follow (removes the overlap):** create a fresh non-prod Supabase project,
-repoint `nham-nonprod-database-url` (and `SUPABASE_PROJECT_ID`) at it for
+repoint `kallo-nonprod-database-url` (and `SUPABASE_PROJECT_ID`) at it for
 internal/staging. The reset guard then self-heals (the two secrets differ) and
 the migration race disappears; `kallo-prod` owns its DB outright.
 

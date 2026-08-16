@@ -52,14 +52,14 @@ export function CheatModePicker({
         type="button"
         disabled={disabled}
         aria-label={t('modePicker.ariaLabel')}
-        className="flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 font-medium font-sans-display text-nham-text text-xs transition-colors hover:bg-nham-hover/50 disabled:opacity-50"
+        className="flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 font-medium font-sans-display text-kallo-text text-xs transition-colors hover:bg-kallo-hover/50 disabled:opacity-50"
       >
         <span className="max-w-[8rem] truncate">{triggerLabel}</span>
-        <ChevronDown className="h-3 w-3 text-nham-text-muted/70" />
+        <ChevronDown className="h-3 w-3 text-kallo-text-muted/70" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-64 border-nham-border/60 font-sans-display"
+        className="w-64 border-kallo-border/60 font-sans-display"
       >
         {MODES.map((m) => {
           const selected = mode === m;
@@ -73,15 +73,15 @@ export function CheatModePicker({
               className="items-start gap-2"
             >
               <span className="min-w-0 flex-1">
-                <span className="block font-medium text-nham-text text-sm">
+                <span className="block font-medium text-kallo-text text-sm">
                   {t(`mode.${m}`)}
                 </span>
-                <span className="mt-0.5 block text-[11px] text-nham-text-muted leading-snug">
+                <span className="mt-0.5 block text-[11px] text-kallo-text-muted leading-snug">
                   {t(`mode.${m}Description`)}
                 </span>
               </span>
               {selected && (
-                <Check className="mt-0.5 size-4 shrink-0 text-nham-text" />
+                <Check className="mt-0.5 size-4 shrink-0 text-kallo-text" />
               )}
             </DropdownMenuItem>
           );
@@ -90,10 +90,10 @@ export function CheatModePicker({
         {mode === 'cheat' && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="pb-0 text-nham-text-muted text-xs">
+            <DropdownMenuLabel className="pb-0 text-kallo-text-muted text-xs">
               {t('cheatIntensity.label')}
             </DropdownMenuLabel>
-            <p className="px-2 pb-1 text-[11px] text-nham-text-muted/70">
+            <p className="px-2 pb-1 text-[11px] text-kallo-text-muted/70">
               {t('cheatIntensity.helper')}
             </p>
             {INTENSITIES.map((level) => {
@@ -108,7 +108,7 @@ export function CheatModePicker({
                     {t(`cheatIntensity.${level}`)}
                   </span>
                   {selected && (
-                    <Check className="size-4 shrink-0 text-nham-text" />
+                    <Check className="size-4 shrink-0 text-kallo-text" />
                   )}
                 </DropdownMenuItem>
               );

@@ -90,12 +90,12 @@ export function ComposerTextField({
           isPopupOpen ? popupActiveDescendantId : undefined
         }
         className={cn(
-          'relative w-full resize-none bg-transparent py-1.5 font-[var(--font-dm-sans)] font-normal text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50',
+          'relative w-full resize-none bg-transparent py-1.5 font-[var(--font-dm-sans)] font-normal text-sm leading-5 placeholder:text-kallo-text-muted/40 focus:outline-none disabled:opacity-50',
           // Hand the glyphs to the mirror, but keep the real caret and the
           // selection highlight on the textarea itself.
           hasMentions
-            ? 'text-transparent caret-nham-text selection:bg-nham-accent/30'
-            : 'text-nham-text'
+            ? 'text-transparent caret-kallo-text selection:bg-kallo-accent/30'
+            : 'text-kallo-text'
         )}
       />
     </div>

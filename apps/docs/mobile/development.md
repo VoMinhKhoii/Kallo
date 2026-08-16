@@ -28,7 +28,7 @@ cd apps/mobile-flutter
 
 `tool/run_dev.sh` does everything for the app:
 
-1. Mirrors the app to `/tmp/nham-flutter` (out of iCloud — see below).
+1. Mirrors the app to `/tmp/kallo-flutter` (out of iCloud — see below).
 2. Boots / reuses an iOS Simulator.
 3. Reads dev Supabase creds from a `.env.local` (the repo root, or a sibling worktree).
 4. Runs `flutter run` with the **dev** `--dart-define`s (localhost API + dev Supabase).
@@ -37,10 +37,10 @@ Then use the live keys in that terminal: **`r`** hot reload · **`R`** hot resta
 
 ### Editing during a session
 
-The app runs from `/tmp/nham-flutter`, so hot reload watches **that** copy. Edit files there while iterating, then sync your changes back into the repo before committing:
+The app runs from `/tmp/kallo-flutter`, so hot reload watches **that** copy. Edit files there while iterating, then sync your changes back into the repo before committing:
 
 ```bash
-./tool/run_dev.sh back        # rsync /tmp/nham-flutter -> apps/mobile-flutter
+./tool/run_dev.sh back        # rsync /tmp/kallo-flutter -> apps/mobile-flutter
 git status                    # review, then commit
 ```
 
@@ -52,7 +52,7 @@ git status                    # review, then commit
 
 | Var | Default | Purpose |
 |-----|---------|---------|
-| `WORK` | `/tmp/nham-flutter` | working-copy dir |
+| `WORK` | `/tmp/kallo-flutter` | working-copy dir |
 | `API_BASE_URL` | `http://localhost:3000` | backend the app calls |
 | `NHAM_ENV_FILE` | auto-discovered | path to a `.env.local` with the Supabase creds |
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` | from `.env.local` | set to skip the `.env.local` lookup |

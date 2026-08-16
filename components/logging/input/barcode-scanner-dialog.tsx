@@ -61,7 +61,7 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
         onPointerDownOutside={(event) => {
           if (isStaging) event.preventDefault();
         }}
-        className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-[24px] border border-[#EAE7E0] bg-[#FDFCF8] p-0 font-sans-display text-nham-text sm:max-w-md"
+        className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-[24px] border border-[#EAE7E0] bg-[#FDFCF8] p-0 font-sans-display text-kallo-text sm:max-w-md"
       >
         <BarcodeDialogHeader
           title={
@@ -85,7 +85,7 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
         {step === 'input' ? (
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="border-[#EAE7E0]/70 border-b px-6 pt-3 pb-1">
-              <div className="grid grid-cols-2 rounded-xl bg-nham-track p-1">
+              <div className="grid grid-cols-2 rounded-xl bg-kallo-track p-1">
                 {SCAN_TYPES.map((st) => (
                   <button
                     key={st}
@@ -96,8 +96,8 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
                     }}
                     className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-medium text-[13px] transition-all ${
                       scanType === st
-                        ? 'bg-white text-nham-text shadow-sm'
-                        : 'text-[#8B8682] hover:text-nham-text'
+                        ? 'bg-white text-kallo-text shadow-sm'
+                        : 'text-[#8B8682] hover:text-kallo-text'
                     }`}
                   >
                     {st === 'barcode' ? (
@@ -133,7 +133,7 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
                 className="flex min-h-0 flex-1 flex-col"
               >
                 <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
-                  <div className="grid grid-cols-2 rounded-xl bg-nham-track/60 p-1">
+                  <div className="grid grid-cols-2 rounded-xl bg-kallo-track/60 p-1">
                     {SCAN_MODES.map((m) => (
                       <button
                         key={m}
@@ -142,8 +142,8 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
                         onClick={() => setScanMode(m)}
                         className={`rounded-lg px-3 py-1.5 font-medium font-sans-display text-[12px] transition-all ${
                           scanMode === m
-                            ? 'bg-white text-nham-text shadow-sm'
-                            : 'text-[#8B8682] hover:text-nham-text'
+                            ? 'bg-white text-kallo-text shadow-sm'
+                            : 'text-[#8B8682] hover:text-kallo-text'
                         }`}
                       >
                         {m === 'camera'
@@ -187,11 +187,11 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
                 </div>
 
                 {scanMode === 'manual' && (
-                  <div className="flex shrink-0 justify-end border-[#EAE7E0]/70 border-t bg-nham-track/50 px-6 py-4">
+                  <div className="flex shrink-0 justify-end border-[#EAE7E0]/70 border-t bg-kallo-track/50 px-6 py-4">
                     <button
                       type="submit"
                       disabled={isSearching || !barcode.trim()}
-                      className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-nham-ink px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm disabled:opacity-50"
+                      className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-kallo-ink px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm disabled:opacity-50"
                     >
                       {isSearching ? (
                         <>

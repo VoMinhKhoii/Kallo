@@ -19,7 +19,7 @@ class MacroSummarySkeleton extends StatelessWidget {
     Widget tile(int i) => Container(
       padding: const EdgeInsets.all(NhamSpacing.sp3), // p-3
       decoration: BoxDecoration(
-        color: const Color(0x40F0EAE0), // bg-nham-hover/25
+        color: const Color(0x40F0EAE0), // bg-kallo-hover/25
         borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
         border: Border.all(color: NhamColors.borderHalf), // border/50
       ),
@@ -78,7 +78,7 @@ class LoggingDaySkeleton extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(NhamSpacing.sp4), // p-5→16
             decoration: BoxDecoration(
-              color: const Color(0x33F0EAE0), // bg-nham-hover/20
+              color: const Color(0x33F0EAE0), // bg-kallo-hover/20
               borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
               border: Border.all(color: NhamColors.borderSoft), // /60
               boxShadow: const [NhamShadows.sm],

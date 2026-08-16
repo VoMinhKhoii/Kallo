@@ -135,7 +135,7 @@ function CountryPicker({
 
   return (
     <div ref={containerRef} className="relative min-w-0">
-      <label className="mb-2 flex items-center gap-2 font-bold text-[13px] text-nham-text">
+      <label className="mb-2 flex items-center gap-2 font-bold text-[13px] text-kallo-text">
         {icon}
         {label}
       </label>
@@ -154,16 +154,16 @@ function CountryPicker({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={cn(
-          'flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30',
+          'flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30',
           isOpen
-            ? 'border-nham-accent bg-white'
-            : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-nham-accent/50'
+            ? 'border-kallo-accent bg-white'
+            : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-kallo-accent/50'
         )}
       >
         <span
           className={
             value
-              ? 'min-w-0 truncate text-[14px] text-nham-text'
+              ? 'min-w-0 truncate text-[14px] text-kallo-text'
               : 'text-[#8B8682] text-[14px]'
           }
         >
@@ -207,7 +207,7 @@ function CountryPicker({
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label={`Search ${label.toLowerCase()}`}
                 placeholder={searchPlaceholder}
-                className="w-full rounded-lg bg-nham-track px-3 py-2 text-[13px] text-nham-text outline-none placeholder:text-[#8B8682] focus-visible:ring-2 focus-visible:ring-nham-accent/30"
+                className="w-full rounded-lg bg-kallo-track px-3 py-2 text-[13px] text-kallo-text outline-none placeholder:text-[#8B8682] focus-visible:ring-2 focus-visible:ring-kallo-accent/30"
               />
             </div>
             <div
@@ -230,8 +230,8 @@ function CountryPicker({
                     }}
                     className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] transition-colors ${
                       value === country.value
-                        ? 'bg-nham-hover font-semibold text-nham-text'
-                        : 'text-nham-text hover:bg-nham-track'
+                        ? 'bg-kallo-hover font-semibold text-kallo-text'
+                        : 'text-kallo-text hover:bg-kallo-track'
                     }`}
                   >
                     <span className="truncate">{country.value}</span>
@@ -283,7 +283,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
   return (
     <div className="space-y-6 lg:space-y-7">
       <div className="max-w-2xl">
-        <h2 className="mb-2 font-normal font-serif text-2xl text-nham-text tracking-tight">
+        <h2 className="mb-2 font-normal font-serif text-2xl text-kallo-text tracking-tight">
           {t('origin.title')}
         </h2>
         <p className="font-sans-display text-[#8B8682] text-[15px] leading-relaxed">
@@ -293,8 +293,8 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
 
       {/* Language preference */}
       <div className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
-        <label className="mb-3 flex items-center gap-2 font-bold text-[13px] text-nham-text">
-          <Languages className="h-4 w-4 text-nham-text-muted" />
+        <label className="mb-3 flex items-center gap-2 font-bold text-[13px] text-kallo-text">
+          <Languages className="h-4 w-4 text-kallo-text-muted" />
           {t('origin.preferredLanguage')}
         </label>
         <LanguageToggle
@@ -323,7 +323,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
           <CountryPicker
             label={t('origin.countryOfOrigin')}
             hint={t('origin.countryOfOriginHint')}
-            icon={<Globe className="h-4 w-4 text-nham-text-muted" />}
+            icon={<Globe className="h-4 w-4 text-kallo-text-muted" />}
             value={origin}
             onChange={(v) => {
               setOrigin(v);
@@ -337,7 +337,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
           <CountryPicker
             label={t('origin.countryOfResidence')}
             hint={t('origin.countryOfResidenceHint')}
-            icon={<MapPin className="h-4 w-4 text-nham-text-muted" />}
+            icon={<MapPin className="h-4 w-4 text-kallo-text-muted" />}
             value={residence}
             onChange={(v) => {
               setResidence(v);

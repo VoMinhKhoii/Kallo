@@ -52,14 +52,14 @@ export function CheckEmailPanel() {
 
   return (
     <div className="space-y-5 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-nham-hover">
-        <MailCheck className="h-5 w-5 text-nham-text-muted" />
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-kallo-hover">
+        <MailCheck className="h-5 w-5 text-kallo-text-muted" />
       </div>
       <div className="space-y-2">
-        <p className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
+        <p className="font-sans-display text-kallo-text-muted text-sm leading-relaxed">
           {mode === 'reset' ? t('descriptionReset') : t('descriptionConfirm')}
         </p>
-        <p className="font-serif text-base text-nham-text">{email}</p>
+        <p className="font-serif text-base text-kallo-text">{email}</p>
       </div>
 
       <div className="space-y-3">
@@ -67,7 +67,7 @@ export function CheckEmailPanel() {
           type="button"
           onClick={handleResend}
           disabled={cooldown > 0}
-          className="font-sans-display text-nham-text-muted text-sm transition-colors hover:text-nham-text disabled:text-nham-text-muted/60 disabled:hover:text-nham-text-muted/60"
+          className="font-sans-display text-kallo-text-muted text-sm transition-colors hover:text-kallo-text disabled:text-kallo-text-muted/60 disabled:hover:text-kallo-text-muted/60"
         >
           {cooldown > 0 ? t('resendIn', { seconds: cooldown }) : t('resend')}
         </button>
@@ -75,7 +75,7 @@ export function CheckEmailPanel() {
         <button
           type="button"
           onClick={showAuth}
-          className="mx-auto flex items-center gap-1.5 font-sans-display text-nham-text-muted text-sm transition-colors hover:text-nham-text"
+          className="mx-auto flex items-center gap-1.5 font-sans-display text-kallo-text-muted text-sm transition-colors hover:text-kallo-text"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           {t('back')}

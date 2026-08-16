@@ -27,16 +27,16 @@ export function LanguageToggle({ value, onChange }: LanguageToggleProps) {
             className={cn(
               'flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors',
               selected
-                ? 'border-nham-text/30 bg-nham-hover'
-                : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-nham-accent/50'
+                ? 'border-kallo-text/30 bg-kallo-hover'
+                : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-kallo-accent/50'
             )}
           >
             <Flag className="h-5 w-7 shrink-0 rounded-[3px]" />
-            <span className="min-w-0 truncate font-medium text-[14px] text-nham-text">
+            <span className="min-w-0 truncate font-medium text-[14px] text-kallo-text">
               {label}
             </span>
             {selected && (
-              <Check className="ml-auto h-4 w-4 shrink-0 text-nham-text" />
+              <Check className="ml-auto h-4 w-4 shrink-0 text-kallo-text" />
             )}
           </button>
         );

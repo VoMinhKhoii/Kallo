@@ -95,15 +95,15 @@ export function MobileNav({
         <SheetContent
           side="left"
           showCloseButton={false}
-          className="flex h-full w-[88vw] max-w-[320px] flex-col gap-0 border-nham-border/60 bg-nham-surface p-0"
+          className="flex h-full w-[88vw] max-w-[320px] flex-col gap-0 border-kallo-border/60 bg-kallo-surface p-0"
         >
-          <SheetHeader className="gap-1 border-nham-border/40 border-b px-4 py-4 text-left">
-            <KalloWordmark className="mb-2 h-4 w-auto text-nham-text" />
-            <SheetTitle className="font-sans-display text-[15px] text-nham-text">
+          <SheetHeader className="gap-1 border-kallo-border/40 border-b px-4 py-4 text-left">
+            <KalloWordmark className="mb-2 h-4 w-auto text-kallo-text" />
+            <SheetTitle className="font-sans-display text-[15px] text-kallo-text">
               {label || tMenu('account')}
             </SheetTitle>
             {user.email ? (
-              <SheetDescription className="font-sans-display text-[11.5px] text-nham-text-muted">
+              <SheetDescription className="font-sans-display text-[11.5px] text-kallo-text-muted">
                 {user.email}
               </SheetDescription>
             ) : null}
@@ -121,7 +121,7 @@ export function MobileNav({
             />
           </nav>
 
-          <div className="shrink-0 border-nham-border/40 border-t bg-white/40 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          <div className="shrink-0 border-kallo-border/40 border-t bg-white/40 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
             {onboardingIncomplete && onResumeOnboarding ? (
               <div className="mb-3">
                 <OnboardingNudge
@@ -141,11 +141,11 @@ export function MobileNav({
             <div className="flex items-center gap-3 rounded-xl bg-white px-3 py-2.5">
               <ProfileAvatar avatarUrl={user.avatarUrl} label={label} />
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate font-medium font-sans-display text-[13px] text-nham-text">
+                <span className="truncate font-medium font-sans-display text-[13px] text-kallo-text">
                   {label || tMenu('account')}
                 </span>
                 {user.email ? (
-                  <span className="truncate font-sans-display text-[11px] text-nham-text-muted">
+                  <span className="truncate font-sans-display text-[11px] text-kallo-text-muted">
                     {user.email}
                   </span>
                 ) : null}
@@ -159,8 +159,8 @@ export function MobileNav({
               className={cn(
                 'mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors',
                 settingsActive
-                  ? 'bg-nham-hover text-[#141413]'
-                  : 'text-[#6E6D66] hover:bg-nham-hover hover:text-[#141413]'
+                  ? 'bg-kallo-hover text-[#141413]'
+                  : 'text-[#6E6D66] hover:bg-kallo-hover hover:text-[#141413]'
               )}
             >
               <Settings className="h-4 w-4" aria-hidden="true" />
@@ -174,7 +174,7 @@ export function MobileNav({
               onClick={handleSignOut}
               disabled={signingOut}
               aria-busy={signingOut}
-              className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-nham-danger transition-colors hover:bg-nham-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-kallo-danger transition-colors hover:bg-kallo-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <LogOut className="h-4 w-4" aria-hidden="true" />
               <span className="font-medium font-sans-display text-[13px]">

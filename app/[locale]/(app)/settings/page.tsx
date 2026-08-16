@@ -77,16 +77,16 @@ export default async function SettingsPage({
             <SettingsGroup>
               <IdentityRows />
             </SettingsGroup>
-            <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-nham-border bg-white px-4 py-12 text-center">
-              <h2 className="font-serif text-lg text-nham-text">
+            <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-kallo-border bg-white px-4 py-12 text-center">
+              <h2 className="font-serif text-kallo-text text-lg">
                 {tProfile('emptyTitle')}
               </h2>
-              <p className="max-w-sm text-[14px] text-nham-text-soft">
+              <p className="max-w-sm text-[14px] text-kallo-text-soft">
                 {tProfile('emptyDescription')}
               </p>
               <Link
                 href="/onboarding"
-                className="rounded-lg bg-nham-btn px-4 py-2 font-medium text-sm text-white"
+                className="rounded-lg bg-kallo-btn px-4 py-2 font-medium text-sm text-white"
               >
                 {tProfile('startSetup')}
               </Link>
@@ -102,7 +102,7 @@ export default async function SettingsPage({
             className="mt-8 scroll-mt-20"
           >
             <div className="mb-4">
-              <h2 className="font-normal font-serif text-nham-text text-xl tracking-tight">
+              <h2 className="font-normal font-serif text-kallo-text text-xl tracking-tight">
                 {tBilling('title')}
               </h2>
               <p className="mt-1 text-[#7B6F62] text-[14px]">

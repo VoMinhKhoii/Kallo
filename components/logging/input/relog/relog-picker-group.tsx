@@ -33,7 +33,7 @@ export function RelogPickerGroup({
     <>
       <div
         aria-hidden
-        className="px-3 pt-1.5 pb-1 font-sans-display text-[11px] text-nham-text-muted/60 uppercase tracking-wide"
+        className="px-3 pt-1.5 pb-1 font-sans-display text-[11px] text-kallo-text-muted/60 uppercase tracking-wide"
       >
         {label}
       </div>

@@ -112,13 +112,13 @@ export function OcrReviewStep({
               !review.productIsValid ? 'ocr-product-name-error' : undefined
             }
             onChange={(event) => review.setProductName(event.target.value)}
-            className="rounded-xl border-[#EAE7E0] bg-white text-[14px] text-nham-text focus-visible:border-nham-accent"
+            className="rounded-xl border-[#EAE7E0] bg-white text-[14px] text-kallo-text focus-visible:border-kallo-accent"
           />
           {!review.productIsValid && (
             <p
               id="ocr-product-name-error"
               role="alert"
-              className="text-nham-danger text-xs"
+              className="text-kallo-danger text-xs"
             >
               {t('ocrInvalidProductName')}
             </p>
@@ -160,7 +160,7 @@ export function OcrReviewStep({
 
         <OcrNutrientGrid items={macroItems} />
         {hasInteracted && !review.canConfirm && (
-          <p role="alert" className="text-[12px] text-nham-danger">
+          <p role="alert" className="text-[12px] text-kallo-danger">
             {t('ocrRequiredValues')}
           </p>
         )}
@@ -169,12 +169,12 @@ export function OcrReviewStep({
         )}
       </div>
 
-      <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/70 border-t bg-nham-track/50 px-6 py-4">
+      <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/70 border-t bg-kallo-track/50 px-6 py-4">
         <button
           type="button"
           onClick={onBack}
           disabled={isStaging}
-          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 font-medium text-[#8B8682] text-[13px] hover:text-nham-text"
+          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 font-medium text-[#8B8682] text-[13px] hover:text-kallo-text"
         >
           <ArrowLeft className="h-4 w-4" />
           {t('barcodeBack')}
@@ -182,7 +182,7 @@ export function OcrReviewStep({
         <button
           type="submit"
           disabled={isStaging || !review.canConfirm}
-          className="inline-flex touch-manipulation items-center gap-2 rounded-xl bg-nham-ink px-5 py-2.5 font-medium text-[14px] text-white shadow-sm hover:bg-[#1C1917] disabled:opacity-50"
+          className="inline-flex touch-manipulation items-center gap-2 rounded-xl bg-kallo-ink px-5 py-2.5 font-medium text-[14px] text-white shadow-sm hover:bg-[#1C1917] disabled:opacity-50"
         >
           {isStaging ? (
             <Loader2 className="h-4 w-4 animate-spin" />

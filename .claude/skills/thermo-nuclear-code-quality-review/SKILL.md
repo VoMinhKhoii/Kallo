@@ -22,7 +22,7 @@ metadata:
   version: "1.0.0"
 ---
 
-# Thermo-Nuclear Code Quality Review (Nhẩm/Kallo local)
+# Thermo-Nuclear Code Quality Review (Kallo/Kallo local)
 
 Use this skill for an unusually strict review focused on implementation quality,
 maintainability, abstraction quality, and codebase health.

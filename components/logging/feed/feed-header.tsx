@@ -31,14 +31,14 @@ export function FeedHeader({
   return (
     <>
       <div
-        className="shrink-0 bg-nham-surface px-3 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-3"
+        className="shrink-0 bg-kallo-surface px-3 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-3"
         data-testid="macro-summary-region"
       >
         <div className="mx-auto max-w-4xl">
           {isDayLoading ? (
             <MacroSummarySkeleton />
           ) : isDayError ? null : hasUnknownDailyMacros ? (
-            <div className="font-medium font-sans-display text-[11px] text-nham-text-muted/80">
+            <div className="font-medium font-sans-display text-[11px] text-kallo-text-muted/80">
               {t('legacyMacroWarning')}
             </div>
           ) : (

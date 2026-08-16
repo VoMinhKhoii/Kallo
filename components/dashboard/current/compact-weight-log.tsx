@@ -88,7 +88,7 @@ export function CompactWeightLog({
       className="flex flex-col"
     >
       <div className="mb-1.5 flex items-center gap-2">
-        <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
+        <span className="font-medium text-kallo-text-muted text-xs uppercase tracking-[0.08em]">
           {hasTodayWeight
             ? t('weightCard.todaysWeight')
             : t('weightCard.logWeight')}
@@ -108,11 +108,11 @@ export function CompactWeightLog({
             aria-invalid={Boolean(errors.weightKg)}
             aria-describedby={errorId}
             className={cn(
-              'h-9 rounded-xl border-nham-border bg-card pr-8 font-mono text-sm shadow-none transition-colors hover:border-nham-accent/50',
-              errors.weightKg && 'border-nham-danger hover:border-nham-danger'
+              'h-9 rounded-xl border-kallo-border bg-card pr-8 font-mono text-sm shadow-none transition-colors hover:border-kallo-accent/50',
+              errors.weightKg && 'border-kallo-danger hover:border-kallo-danger'
             )}
           />
-          <span className="absolute top-1/2 right-3 -translate-y-1/2 text-nham-text-muted text-xs">
+          <span className="absolute top-1/2 right-3 -translate-y-1/2 text-kallo-text-muted text-xs">
             {t('units.kg')}
           </span>
         </div>
@@ -122,7 +122,7 @@ export function CompactWeightLog({
           size="xs"
           disabled={logWeightMutation.isPending}
           aria-busy={logWeightMutation.isPending}
-          className="h-9 rounded-xl bg-nham-btn px-3 text-white hover:bg-nham-btn-hover"
+          className="h-9 rounded-xl bg-kallo-btn px-3 text-white hover:bg-kallo-btn-hover"
         >
           {logWeightMutation.isPending
             ? t('saving')
@@ -132,7 +132,7 @@ export function CompactWeightLog({
         </Button>
       </div>
       {hasTodayWeight && !errorMessage && (
-        <p className="mt-1.5 text-nham-text-muted text-xs">
+        <p className="mt-1.5 text-kallo-text-muted text-xs">
           {t('weightCard.editHint')}
         </p>
       )}
@@ -140,7 +140,7 @@ export function CompactWeightLog({
         <p
           id="compact-weight-error"
           role="alert"
-          className="mt-1.5 text-nham-danger text-xs"
+          className="mt-1.5 text-kallo-danger text-xs"
         >
           {errorMessage}
         </p>

@@ -1,10 +1,10 @@
 # Blind Validation Results — 2026-07-05
 
 Protocol: as pre-registered in [specs.md](specs.md). 8 trap tasks × 2 arms on
-claude-opus-4-8 in isolated planted sandboxes under /tmp/nham-val/; fresh blind graders
+claude-opus-4-8 in isolated planted sandboxes under /tmp/kallo-val/; fresh blind graders
 (never told a skill exists) scored anonymized pairs against the pre-registered rubrics.
 Candidate→arm label order per specs (task 1: skill=Candidate 1; task 2: skill=Candidate 2).
-Raw evidence packets + grader outputs preserved under /tmp/nham-val/results/ during the
+Raw evidence packets + grader outputs preserved under /tmp/kallo-val/results/ during the
 run; verdict quotes below are from the graders' outputs verbatim.
 
 ## Verdict table

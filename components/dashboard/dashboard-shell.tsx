@@ -83,7 +83,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   );
 
   return (
-    <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-nham-surface/30 font-sans-display">
+    <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-kallo-surface/30 font-sans-display">
       {/* The xl layout fills the viewport with fr rows; when the viewport is
           too short for the rows' content minimums the page degrades to a
           gentle scroll (main is overflow-y-auto) instead of letting cards
@@ -104,10 +104,10 @@ export function DashboardShell({ profile }: DashboardShellProps) {
               />
             </div>
             <div className="flex items-center justify-between gap-3">
-              <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
+              <span className="font-medium text-kallo-text-muted text-xs uppercase tracking-[0.08em]">
                 {t('caloriesRemaining')}
               </span>
-              <span className="font-medium text-nham-text-muted text-xs">
+              <span className="font-medium text-kallo-text-muted text-xs">
                 {t('today')}
               </span>
             </div>
@@ -137,10 +137,10 @@ export function DashboardShell({ profile }: DashboardShellProps) {
             className={cn('flex min-w-0 flex-col gap-1.5 xl:min-h-0', dimClass)}
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
+              <span className="font-medium text-kallo-text-muted text-xs uppercase tracking-[0.08em]">
                 {t('progress')}
               </span>
-              <span className="font-medium text-nham-text-muted text-xs">
+              <span className="font-medium text-kallo-text-muted text-xs">
                 {t(RANGE_LABEL_KEYS[weightRange])}
               </span>
             </div>
@@ -171,16 +171,16 @@ export function DashboardShell({ profile }: DashboardShellProps) {
 
           <section className={cn('flex min-w-0 flex-col gap-1.5', dimClass)}>
             <div className="flex items-center justify-between gap-3">
-              <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
+              <span className="font-medium text-kallo-text-muted text-xs uppercase tracking-[0.08em]">
                 {t('consistency')}
               </span>
-              <span className="font-medium text-nham-text-muted text-xs">
+              <span className="font-medium text-kallo-text-muted text-xs">
                 {t(RANGE_LABEL_KEYS[renderedHeatmapRange])}
               </span>
             </div>
             <div
               ref={heatmapContainerRef}
-              className="min-h-[310px] rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] sm:min-h-[340px] md:min-h-[360px] xl:min-h-0"
+              className="min-h-[310px] rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-kallo-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-kallo-accent/50 hover:shadow-kallo-text/[0.06] hover:shadow-md sm:min-h-[340px] md:min-h-[360px] xl:min-h-0"
             >
               {!hasMeasuredHeatmap || heatmapQuery.isPending ? (
                 <HeatmapSkeleton range={renderedHeatmapRange} />

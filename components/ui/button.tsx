@@ -20,25 +20,25 @@ const buttonVariants = cva(
           'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         link: 'text-primary underline-offset-4 hover:underline',
         // Landing page variants — token-only; colors resolve to the same
-        // hexes the previous raw values hardcoded (see --nham-* in globals.css)
+        // hexes the previous raw values hardcoded (see --kallo-* in globals.css)
         'landing-primary':
-          'rounded-xl bg-nham-accent text-white shadow-sm hover:bg-nham-accent-hover !font-medium text-base',
+          'rounded-xl bg-kallo-accent text-white shadow-sm hover:bg-kallo-accent-hover !font-medium text-base',
         'landing-secondary':
-          'rounded-xl border border-nham-border text-nham-text-soft hover:bg-nham-surface !font-medium text-base',
+          'rounded-xl border border-kallo-border text-kallo-text-soft hover:bg-kallo-surface !font-medium text-base',
         'landing-ghost':
-          'text-nham-text-soft text-sm hover:text-nham-text h-auto p-0 !font-normal',
+          'text-kallo-text-soft text-sm hover:text-kallo-text h-auto p-0 !font-normal',
         // The black landing CTA. `hero-dark` is the same ink but dressed for a
         // button standing on the page — heavy shadow, hover lift, wide
         // tracking. Sitting inside a card or a header bar it needs none of
         // that, and borrowing it meant cancelling three utilities per call.
         'landing-ink':
-          'rounded-xl bg-nham-ink text-nham-surface hover:bg-nham-ink-hover !font-medium text-base',
+          'rounded-xl bg-kallo-ink text-kallo-surface hover:bg-kallo-ink-hover !font-medium text-base',
         'hero-dark':
-          'rounded-xl bg-nham-ink text-nham-surface shadow-lg hover:-translate-y-0.5 hover:bg-nham-ink-hover hover:shadow-xl !font-medium tracking-wide text-base',
+          'rounded-xl bg-kallo-ink text-kallo-surface shadow-lg hover:-translate-y-0.5 hover:bg-kallo-ink-hover hover:shadow-xl !font-medium tracking-wide text-base',
         'hero-outline':
-          'rounded-xl border border-nham-border text-nham-text-soft hover:-translate-y-0.5 hover:bg-nham-border/20 !font-medium tracking-wide text-base',
+          'rounded-xl border border-kallo-border text-kallo-text-soft hover:-translate-y-0.5 hover:bg-kallo-border/20 !font-medium tracking-wide text-base',
         'header-cta':
-          'rounded-lg bg-nham-accent text-white hover:bg-nham-accent-hover !font-medium text-sm',
+          'rounded-lg bg-kallo-accent text-white hover:bg-kallo-accent-hover !font-medium text-sm',
       },
       size: {
         default: 'h-9 px-4 py-2 has-[>svg]:px-3',

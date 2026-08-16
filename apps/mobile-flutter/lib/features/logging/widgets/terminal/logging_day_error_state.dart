@@ -7,7 +7,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 
-/// Day fetch error: a warm alert card — terracotta `nham-danger` accents on
+/// Day fetch error: a warm alert card — terracotta `kallo-danger` accents on
 /// the cream surface (never literal reds, which break the palette on sight) —
 /// with a CircleAlert, title/desc, and a retry pill (LoggingDayErrorState).
 class LoggingDayErrorState extends StatelessWidget {

@@ -33,7 +33,7 @@ export function SidebarTooltip({
         <TooltipContent
           side="right"
           sideOffset={10}
-          className="border border-nham-border/60 bg-nham-text font-medium font-sans-display text-[11px] text-nham-surface tracking-tight"
+          className="border border-kallo-border/60 bg-kallo-text font-medium font-sans-display text-[11px] text-kallo-surface tracking-tight"
         >
           {label}
         </TooltipContent>

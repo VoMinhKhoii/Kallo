@@ -4,7 +4,7 @@ import '../../../theme/nham_theme.dart';
 
 /// Settings' ONE vertical rhythm. Settings is a presentational surface, so it
 /// keeps the design system's 12px default between stacked components
-/// (`.agents/skills/nham-design/mobile.md`, "Spacing — one 12px rhythm").
+/// (`.agents/skills/kallo-design/mobile.md`, "Spacing — one 12px rhythm").
 ///
 /// Rows are flat and unbordered, so **whitespace is the only grouping device**
 /// on the screen: a group's label sits [label] above its first row, and one

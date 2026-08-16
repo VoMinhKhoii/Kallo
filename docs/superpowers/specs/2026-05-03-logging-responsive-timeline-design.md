@@ -308,7 +308,7 @@ meal-day indicators, and active timeline structure.
 
 Desktop sidebar:
 
-- Warmer bounded surface against `bg-nham-surface`.
+- Warmer bounded surface against `bg-kallo-surface`.
 - Selected date uses a confident filled/tinted pill.
 - Month labels are small, uppercase or near-uppercase, and subdued.
 - Week rows are medium-weight controls with clear expanded state.

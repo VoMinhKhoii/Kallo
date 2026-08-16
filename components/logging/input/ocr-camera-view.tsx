@@ -77,7 +77,7 @@ export function OcrCameraView(props: OcrCameraViewProps) {
           aria-label={props.text.camera}
           className="h-full w-full object-cover"
         />
-        <div className="pointer-events-none absolute inset-0 m-6 rounded-xl border-2 border-nham-accent/70 border-dashed" />
+        <div className="pointer-events-none absolute inset-0 m-6 rounded-xl border-2 border-kallo-accent/70 border-dashed" />
         {props.isCameraActive && (
           <>
             <div className="absolute top-2 right-2 left-2">
@@ -104,7 +104,7 @@ export function OcrCameraView(props: OcrCameraViewProps) {
               <button
                 type="button"
                 onClick={props.onCapture}
-                className="flex items-center gap-2 rounded-full bg-nham-accent px-4 py-2 font-medium text-white text-xs shadow-lg active:scale-95"
+                className="flex items-center gap-2 rounded-full bg-kallo-accent px-4 py-2 font-medium text-white text-xs shadow-lg active:scale-95"
               >
                 <Camera className="h-4 w-4" />
                 {props.text.snap}

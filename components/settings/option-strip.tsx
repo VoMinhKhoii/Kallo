@@ -18,7 +18,7 @@ interface OptionStripProps {
 
 export function OptionStrip({ options, value, onChange }: OptionStripProps) {
   return (
-    <div className="flex rounded-xl bg-nham-track p-1">
+    <div className="flex rounded-xl bg-kallo-track p-1">
       {options.map((opt) => (
         <button
           key={opt.value}
@@ -26,10 +26,10 @@ export function OptionStrip({ options, value, onChange }: OptionStripProps) {
           aria-pressed={value === opt.value}
           onClick={() => onChange(opt.value)}
           className={cn(
-            'flex flex-1 flex-col items-center rounded-lg py-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40',
+            'flex flex-1 flex-col items-center rounded-lg py-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40',
             value === opt.value
-              ? 'bg-white text-nham-text shadow-sm'
-              : 'text-nham-text-muted hover:text-nham-text'
+              ? 'bg-white text-kallo-text shadow-sm'
+              : 'text-kallo-text-muted hover:text-kallo-text'
           )}
         >
           <span className="flex items-center gap-1.5 font-medium text-[13px]">

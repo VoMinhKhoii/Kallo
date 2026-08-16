@@ -177,7 +177,7 @@ export function OcrScannerTab({
             onClick={handleScan}
             disabled={isProcessing}
             aria-busy={isProcessing}
-            className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-nham-ink px-5 py-2.5 font-medium font-sans-display text-[#FDFCF8] text-[14px] shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
+            className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-kallo-ink px-5 py-2.5 font-medium font-sans-display text-[#FDFCF8] text-[14px] shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
           >
             {isProcessing ? (
               <>

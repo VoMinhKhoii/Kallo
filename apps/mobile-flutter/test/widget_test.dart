@@ -72,7 +72,7 @@ void main() {
   });
 
   test('localized user-facing copy uses the Kallo brand', () {
-    final legacyBrand = RegExp(r'\b(?:Nhẩm|Nham)\b');
+    final legacyBrand = RegExp(r'\b(?:Kallo|Nham)\b');
 
     Iterable<String> strings(Object? value) sync* {
       if (value is String) {

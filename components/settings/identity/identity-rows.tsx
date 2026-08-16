@@ -28,10 +28,10 @@ export function IdentityRows() {
     return (
       <>
         <div className="p-card-sm">
-          <div className="h-4 w-40 rounded-full bg-nham-track motion-safe:animate-pulse" />
+          <div className="h-4 w-40 rounded-full bg-kallo-track motion-safe:animate-pulse" />
         </div>
         <div className="p-card-sm">
-          <div className="h-4 w-48 rounded-full bg-nham-track motion-safe:animate-pulse" />
+          <div className="h-4 w-48 rounded-full bg-kallo-track motion-safe:animate-pulse" />
         </div>
       </>
     );
@@ -70,7 +70,7 @@ export function IdentityRows() {
         description={
           <>
             {t('linkPreview')}{' '}
-            <span className="break-all text-nham-text">{inviteLink}</span>
+            <span className="break-all text-kallo-text">{inviteLink}</span>
             <span className="mt-1 block">{t('linkWarning')}</span>
           </>
         }
@@ -90,7 +90,7 @@ export function IdentityRows() {
             placeholder={t('namePlaceholder')}
             autoComplete="off"
             maxLength={DISPLAY_NAME_MAX}
-            className="w-full rounded-xl border border-nham-border bg-white px-3.5 py-2.5 text-[15px] text-nham-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-nham-accent/40 sm:w-64"
+            className="w-full rounded-xl border border-kallo-border bg-white px-3.5 py-2.5 text-[15px] text-kallo-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-kallo-accent/40 sm:w-64"
           />
           <button
             type="button"
@@ -98,7 +98,7 @@ export function IdentityRows() {
             disabled={!dirty || rename.isPending}
             aria-busy={rename.isPending}
             aria-label={t('nameSave')}
-            className="inline-flex shrink-0 items-center rounded-xl bg-nham-btn px-3.5 font-medium text-white transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex shrink-0 items-center rounded-xl bg-kallo-btn px-3.5 font-medium text-white transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {rename.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />

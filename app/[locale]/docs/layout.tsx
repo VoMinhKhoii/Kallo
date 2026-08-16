@@ -36,7 +36,7 @@ export default async function DocsLayout({
   const searchEntries = await getSearchIndex(locale as Locale);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-nham-surface">
+    <div className="flex min-h-dvh flex-col bg-kallo-surface">
       <DocsHeader searchEntries={searchEntries} />
 
       <div className="mx-auto w-full max-w-[90rem] flex-1 px-4 sm:px-6">

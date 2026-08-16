@@ -11,7 +11,7 @@ interface SettingsGroupProps {
 /**
  * Grouped list container in the Apple-Settings idiom: one white card whose rows
  * are separated by hairlines (`divide-y`), never nested cards. Danger groups
- * swap the border to the terracotta `nham-danger` concern register.
+ * swap the border to the terracotta `kallo-danger` concern register.
  */
 export function SettingsGroup({
   id,
@@ -23,8 +23,8 @@ export function SettingsGroup({
     <section
       id={id}
       className={cn(
-        'divide-y divide-nham-border rounded-2xl border bg-white shadow-xs',
-        variant === 'danger' ? 'border-nham-danger/40' : 'border-nham-border',
+        'divide-y divide-kallo-border rounded-2xl border bg-white shadow-xs',
+        variant === 'danger' ? 'border-kallo-danger/40' : 'border-kallo-border',
         id && 'scroll-mt-20',
         className
       )}
@@ -59,14 +59,16 @@ export function SettingsRow({
   const labelBlock = (
     <div className="min-w-0">
       {htmlFor ? (
-        <label className="text-[15px] text-nham-text" htmlFor={htmlFor}>
+        <label className="text-[15px] text-kallo-text" htmlFor={htmlFor}>
           {label}
         </label>
       ) : (
-        <p className="text-[15px] text-nham-text">{label}</p>
+        <p className="text-[15px] text-kallo-text">{label}</p>
       )}
       {description && (
-        <p className="mt-0.5 text-[13px] text-nham-text-muted">{description}</p>
+        <p className="mt-0.5 text-[13px] text-kallo-text-muted">
+          {description}
+        </p>
       )}
     </div>
   );

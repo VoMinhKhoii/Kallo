@@ -102,7 +102,7 @@ Unit gates (tsc/biome/vitest/analyze) are run faithfully — and treated as proo
   `80a56ca1`, `ca3ab2c1` (late deprecated-API discovery L666), `8a61a242`.
 - Skill preflight skipped at coding-start in `80a56ca1` (one `browse` call all session),
   `ca3ab2c1` (Zod mandate initially violated, fixed at review cost L908), `8013b7ec`
-  (nham-design invoked only after the user complained), `97979119` (mitigated).
+  (kallo-design invoked only after the user complained), `97979119` (mitigated).
 - `8013b7ec`: `npx` in a bun repo (later self-corrected); hand-written schema migration
   outside the drizzle-kit workflow rationalized by a mismatched precedent (L146).
 

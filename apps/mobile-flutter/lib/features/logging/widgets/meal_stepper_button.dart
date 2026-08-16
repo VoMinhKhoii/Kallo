@@ -6,7 +6,7 @@ import '../logic/logging_spacing.dart';
 
 /// A 28x28 (w-7 h-7) stepper button inside the shared logging tap target:
 /// rounded-md,
-/// border/60, white fill. Pressed → bg-nham-hover (the web hover:bg-nham-hover
+/// border/60, white fill. Pressed → bg-kallo-hover (the web hover:bg-kallo-hover
 /// touch affordance). Shared by the pending-meal entry and the saved-meal amount
 /// editor so the ±10g stepper looks and feels identical in both.
 class MealStepperButton extends StatefulWidget {

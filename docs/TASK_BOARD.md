@@ -4,7 +4,7 @@ The team's planning/task board is **Tuturuuu**, driven by the `ttr` CLI. Referre
 
 ## Setup
 
-- **Workspace**: **Nhẩm** (Kallo's internal name) — `86f5dd41-8305-42ba-a93d-820afaa81c41`
+- **Workspace**: **Kallo** (Kallo's internal name) — `86f5dd41-8305-42ba-a93d-820afaa81c41`
 - **Auth check**: `ttr whoami`
 - Task markdown lives in `.tuturuuu/tasks/`; reusable templates in `.tuturuuu/task-templates/`.
 - Upgrade the CLI with `ttr upgrade` when it flags a new version.

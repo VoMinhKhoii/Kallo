@@ -1,9 +1,9 @@
 export const HEATMAP_COLORS = {
-  onTarget: 'var(--nham-heatmap-on-target)',
-  close: 'var(--nham-heatmap-close)',
-  slight: 'var(--nham-heatmap-slight)',
-  moderate: 'var(--nham-heatmap-moderate)',
-  far: 'var(--nham-heatmap-far)',
+  onTarget: 'var(--kallo-heatmap-on-target)',
+  close: 'var(--kallo-heatmap-close)',
+  slight: 'var(--kallo-heatmap-slight)',
+  moderate: 'var(--kallo-heatmap-moderate)',
+  far: 'var(--kallo-heatmap-far)',
 } as const;
 
 /**

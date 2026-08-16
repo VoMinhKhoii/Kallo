@@ -24,17 +24,17 @@ export function DocsPager({ previous, next }: DocsPagerProps) {
   return (
     <nav
       aria-label={t('label')}
-      className="mt-16 grid gap-3 border-nham-border border-t pt-8 sm:grid-cols-2"
+      className="mt-16 grid gap-3 border-kallo-border border-t pt-8 sm:grid-cols-2"
     >
       {previous ? (
         <Link
-          className="group rounded-xl border border-nham-border p-card-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+          className="group rounded-xl border border-kallo-border p-card-sm transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
           href={`/docs/${previous.slug}`}
         >
-          <span className="block font-sans-display text-caption text-nham-text-muted">
+          <span className="block font-sans-display text-caption text-kallo-text-muted">
             {t('previous')}
           </span>
-          <span className="mt-1 block font-medium font-sans-display text-base text-nham-text">
+          <span className="mt-1 block font-medium font-sans-display text-base text-kallo-text">
             {previous.title}
           </span>
         </Link>
@@ -46,13 +46,13 @@ export function DocsPager({ previous, next }: DocsPagerProps) {
 
       {next && (
         <Link
-          className="group rounded-xl border border-nham-border p-card-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent sm:col-start-2 sm:text-right"
+          className="group rounded-xl border border-kallo-border p-card-sm transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent sm:col-start-2 sm:text-right"
           href={`/docs/${next.slug}`}
         >
-          <span className="block font-sans-display text-caption text-nham-text-muted">
+          <span className="block font-sans-display text-caption text-kallo-text-muted">
             {t('next')}
           </span>
-          <span className="mt-1 block font-medium font-sans-display text-base text-nham-text">
+          <span className="mt-1 block font-medium font-sans-display text-base text-kallo-text">
             {next.title}
           </span>
         </Link>

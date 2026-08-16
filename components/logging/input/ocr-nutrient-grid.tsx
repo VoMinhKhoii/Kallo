@@ -29,7 +29,7 @@ export function OcrNutrientGrid({ items }: { items: MacroItem[] }) {
               htmlFor={item.id}
               className="flex items-center gap-1.5 text-[#8B8682] text-[12px]"
             >
-              {item.icon && <Flame className="h-3.5 w-3.5 text-nham-accent" />}
+              {item.icon && <Flame className="h-3.5 w-3.5 text-kallo-accent" />}
               <span>{item.label}</span>
             </label>
             <div className="flex items-baseline gap-1">
@@ -43,12 +43,16 @@ export function OcrNutrientGrid({ items }: { items: MacroItem[] }) {
                 required={item.required}
                 value={item.val}
                 onChange={(event) => item.setter(event.target.value)}
-                className="h-8 w-16 border-none p-0 font-bold text-[18px] text-nham-ink focus-visible:ring-0"
+                className="h-8 w-16 border-none p-0 font-bold text-[18px] text-kallo-ink focus-visible:ring-0"
               />
               <span className="text-[#8B8682] text-[12px]">{item.unit}</span>
             </div>
             {item.hasError && (
-              <p id={errorId} role="alert" className="text-nham-danger text-xs">
+              <p
+                id={errorId}
+                role="alert"
+                className="text-kallo-danger text-xs"
+              >
                 {item.errorText}
               </p>
             )}

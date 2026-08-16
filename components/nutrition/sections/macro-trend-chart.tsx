@@ -79,7 +79,7 @@ export function MacroTrendChart({
         // 500 is this palette's weight ceiling — today reads heavier than its
         // neighbours without turning into a second heading.
         fontWeight={emphasised ? 500 : 400}
-        fill={emphasised ? 'var(--nham-text)' : 'var(--nham-text-muted)'}
+        fill={emphasised ? 'var(--kallo-text)' : 'var(--kallo-text-muted)'}
       >
         {tickLabels[i] ?? ''}
       </text>
@@ -92,7 +92,7 @@ export function MacroTrendChart({
   // read as a single quiet block.
   const fillFor = (key: CompositionKey, point: MacroTrendPoint) =>
     isColumnDimmed(point, selectedIndex)
-      ? 'var(--nham-chart-muted)'
+      ? 'var(--kallo-chart-muted)'
       : COMPOSITION_COLORS[key];
 
   return (
@@ -114,7 +114,7 @@ export function MacroTrendChart({
           <CartesianGrid
             vertical={false}
             strokeDasharray="4 4"
-            stroke="var(--nham-border)"
+            stroke="var(--kallo-border)"
           />
 
           <XAxis
@@ -129,7 +129,7 @@ export function MacroTrendChart({
             ticks={ticks}
             tickLine={false}
             axisLine={false}
-            tick={{ fontSize: 10, fill: 'var(--nham-text-muted)' }}
+            tick={{ fontSize: 10, fill: 'var(--kallo-text-muted)' }}
             tickFormatter={(v: number) => String(Math.round(v))}
             // Four digits at 10px plus the tick gap, sized generously — too
             // tight and a "3000" tick wraps.

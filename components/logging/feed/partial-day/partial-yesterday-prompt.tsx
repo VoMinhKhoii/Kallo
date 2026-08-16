@@ -48,19 +48,19 @@ export function PartialYesterdayPrompt({
       <div className="mx-auto max-w-4xl">
         <div
           role="status"
-          className="flex items-start gap-3 rounded-2xl border border-nham-border/60 bg-white p-3 sm:p-4"
+          className="flex items-start gap-3 rounded-2xl border border-kallo-border/60 bg-white p-3 sm:p-4"
         >
           <div className="min-w-0 flex-1">
-            <p className="font-sans-display text-base text-nham-danger italic">
+            <p className="font-sans-display text-base text-kallo-danger italic">
               {t('title')}
             </p>
-            <p className="mt-1 font-sans-display text-[13px] text-nham-text-muted">
+            <p className="mt-1 font-sans-display text-[13px] text-kallo-text-muted">
               {t('body', { calories, target: calorieTarget })}
             </p>
             <button
               type="button"
               onClick={() => onOpenDay(yesterday)}
-              className="mt-3 inline-flex min-h-8 touch-manipulation items-center gap-2 rounded-full border border-nham-border/60 px-3 py-1.5 font-medium font-sans-display text-nham-text text-sm transition-colors hover:border-nham-accent/50 hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
+              className="mt-3 inline-flex min-h-8 touch-manipulation items-center gap-2 rounded-full border border-kallo-border/60 px-3 py-1.5 font-medium font-sans-display text-kallo-text text-sm transition-colors hover:border-kallo-accent/50 hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface"
             >
               <ArrowLeft className="size-4" aria-hidden="true" />
               {t('open')}
@@ -70,7 +70,7 @@ export function PartialYesterdayPrompt({
             type="button"
             onClick={onDismiss}
             aria-label={t('dismiss')}
-            className="-m-1 flex size-8 shrink-0 items-center justify-center rounded-full p-1 text-nham-text-muted transition-colors hover:bg-nham-hover hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
+            className="-m-1 flex size-8 shrink-0 items-center justify-center rounded-full p-1 text-kallo-text-muted transition-colors hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface"
           >
             <X className="size-4" aria-hidden="true" />
           </button>

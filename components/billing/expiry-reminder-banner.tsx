@@ -16,14 +16,14 @@ export function ExpiryReminderBanner({
   const t = useTranslations('billing.settings');
 
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-nham-danger/30 bg-nham-danger/5 px-4 py-3.5">
+    <div className="flex items-start gap-3 rounded-2xl border border-kallo-danger/30 bg-kallo-danger/5 px-4 py-3.5">
       <CalendarClock
         aria-hidden="true"
-        className="mt-0.5 h-4 w-4 shrink-0 text-nham-danger"
+        className="mt-0.5 h-4 w-4 shrink-0 text-kallo-danger"
       />
       <div className="min-w-0">
-        <p className="text-[14px] text-nham-text">{t('expiryTitle')}</p>
-        <p className="mt-0.5 text-[13px] text-nham-text-soft">
+        <p className="text-[14px] text-kallo-text">{t('expiryTitle')}</p>
+        <p className="mt-0.5 text-[13px] text-kallo-text-soft">
           {t('expiryBody', { days: daysRemaining })}
         </p>
       </div>

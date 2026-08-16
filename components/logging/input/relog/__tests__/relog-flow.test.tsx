@@ -222,7 +222,7 @@ const stagedRow = (name: string) =>
   screen.queryByRole('button', { name: `Bỏ ${name}` });
 /** The blue runs the mirror paints behind the textarea. */
 const mentionText = () =>
-  Array.from(document.querySelectorAll('.text-nham-mention')).map(
+  Array.from(document.querySelectorAll('.text-kallo-mention')).map(
     (el) => el.textContent
   );
 
@@ -298,7 +298,7 @@ describe('relog `/` flow', () => {
     const { textarea } = renderHarness();
     // Plain typing keeps the textarea's own ink.
     type(textarea, 'phở bò');
-    expect(textarea.className).toContain('text-nham-text');
+    expect(textarea.className).toContain('text-kallo-text');
     expect(textarea.className).not.toContain('text-transparent');
 
     type(textarea, '/');

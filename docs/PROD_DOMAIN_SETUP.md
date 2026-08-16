@@ -289,10 +289,10 @@ on `/dashboard`, and send a test email to `support@kallo.fit`.
 ## Launch prerequisites / follow-ups
 
 - **Non-prod DB split — SECURITY-REQUIRED before onboarding real users.** Until it
-  lands, `nham-internal`/`nham-staging` run `--allow-unauthenticated` with **no
+  lands, `kallo-internal`/`kallo-staging` run `--allow-unauthenticated` with **no
   origin-lock** on the **same database** prod uses — the identical prod data is
   reachable through those unprotected front doors. Fix: create a fresh non-prod
-  Supabase project and repoint `nham-nonprod-database-url` + `SUPABASE_PROJECT_ID`
+  Supabase project and repoint `kallo-nonprod-database-url` + `SUPABASE_PROJECT_ID`
   for internal/staging. The `reset-staging-db.yml` guard then self-heals. See
   `docs/SHARED_STAGING_CICD.md`.
 - **GitHub `production` environment reviewers.** Repo Settings → Environments →
@@ -301,7 +301,7 @@ on `/dashboard`, and send a test email to `support@kallo.fit`.
 - **Legal copy.** `/privacy` and `/terms` ship minimal placeholders — replace with
   reviewed text before a public launch.
 - **Full brand rename.** UI copy, PWA manifest name, `/api/healthz` `service` field,
-  App Store / TestFlight listing are still `nham`/`Nhẩm`.
+  App Store / TestFlight listing are still `nham`/`Kallo`.
 - **Rotating the origin secret** means updating BOTH
   `kallo-prod-origin-shared-secret` (Secret Manager, then redeploy) and the
   Cloudflare Transform Rule value.

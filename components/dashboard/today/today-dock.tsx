@@ -31,21 +31,21 @@ export function TodayDock({
       label: t('protein'),
       current: nutrition.protein.current,
       target: nutrition.protein.target,
-      color: 'var(--nham-macro-protein)',
+      color: 'var(--kallo-macro-protein)',
       unit: 'g' as const,
     },
     {
       label: t('carbs'),
       current: nutrition.carbs.current,
       target: nutrition.carbs.target,
-      color: 'var(--nham-macro-carbs)',
+      color: 'var(--kallo-macro-carbs)',
       unit: 'g' as const,
     },
     {
       label: t('fat'),
       current: nutrition.fat.current,
       target: nutrition.fat.target,
-      color: 'var(--nham-macro-fat)',
+      color: 'var(--kallo-macro-fat)',
       unit: 'g' as const,
     },
   ];
@@ -61,8 +61,8 @@ export function TodayDock({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
       className={cn(
-        'flex min-h-0 flex-col gap-4 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] xl:grid xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(240px,0.44fr)] xl:gap-5',
-        isStreaming && 'border-nham-accent/60'
+        'flex min-h-0 flex-col gap-4 rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-kallo-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-kallo-accent/50 hover:shadow-kallo-text/[0.06] hover:shadow-md xl:grid xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(240px,0.44fr)] xl:gap-5',
+        isStreaming && 'border-kallo-accent/60'
       )}
       aria-label={t('today')}
     >
@@ -73,14 +73,14 @@ export function TodayDock({
         <div className="flex items-center gap-4 md:gap-6">
           <div className="min-w-0 shrink-0">
             <div className="flex items-baseline gap-1.5">
-              <span className="font-sans-display text-hero text-nham-text tabular-nums">
+              <span className="font-sans-display text-hero text-kallo-text tabular-nums">
                 {remaining.toLocaleString()}
               </span>
-              <span className="font-sans-display text-nham-text-muted text-sm">
+              <span className="font-sans-display text-kallo-text-muted text-sm">
                 / {nutrition.calories.target.toLocaleString()}
               </span>
             </div>
-            <p className="mt-1.5 text-nham-text-muted text-xs">
+            <p className="mt-1.5 text-kallo-text-muted text-xs">
               {nutrition.calories.current.toLocaleString()}{' '}
               {t('caloriesLogged')}
             </p>
@@ -99,7 +99,7 @@ export function TodayDock({
               center={
                 <Flame
                   className={cn(
-                    'h-6 w-6 text-nham-accent',
+                    'h-6 w-6 text-kallo-accent',
                     isStreaming && 'animate-pulse'
                   )}
                 />
@@ -117,7 +117,7 @@ export function TodayDock({
       {/* (c) Meal list — plain, on the card surface (no nested fill). A hairline
           separates it from the summary: horizontal when stacked, vertical when
           the list sits beside the summary on wide screens. */}
-      <div className="min-h-0 border-nham-border/50 border-t pt-4 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-5">
+      <div className="min-h-0 border-kallo-border/50 border-t pt-4 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-5">
         <MealList meals={meals} />
       </div>
     </motion.section>
