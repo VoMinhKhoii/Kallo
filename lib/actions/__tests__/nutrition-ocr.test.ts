@@ -1,5 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { createElement } from 'react';
 import sharp from 'sharp';
 import {
@@ -254,10 +253,8 @@ describe('OCR review to staging seam', () => {
         onConfirm,
       })
     );
-    await userEvent
-      .setup()
-      .click(screen.getByRole('button', { name: 'confirm' }));
-    await waitFor(() => expect(onConfirm).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+    expect(onConfirm).toHaveBeenCalledOnce();
     expect(await staging).toEqual({
       success: true,
       analysisId: 'analysis-123',
