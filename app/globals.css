@@ -226,6 +226,23 @@
   --nham-stone: #a8a29e;
   --nham-btn: #695e4e;
   --nham-btn-hover: #5a5043;
+  /* The warm halo behind the meal composer — the page's one lit surface, so
+     the input does not float on flat canvas. Two ellipses, a gold core inside
+     a tan wash. Both fade to zero WELL inside their box: a stop that is still
+     visible at the edge shows the halo's bounding rectangle as a hard line.
+     Fades end on the same colour at zero alpha rather than `transparent`,
+     which some engines interpolate through transparent-black and fringe grey. */
+  --nham-composer-glow:
+    radial-gradient(
+      52% 104% at 46% 70%,
+      rgba(240, 205, 120, 0.2),
+      rgba(240, 205, 120, 0) 62%
+    ),
+    radial-gradient(
+      60% 122% at 54% 74%,
+      rgba(201, 168, 124, 0.32),
+      rgba(201, 168, 124, 0) 68%
+    );
   /* The one deliberate exception to "no default blue": relog mentions in the
      composer. A picked dish is a REFERENCE to stored data, not typed prose, and
      the warm palette has no hue that reads as "this token is not free text"
@@ -318,6 +335,19 @@
   --nham-stone: #8a8580;
   --nham-mention: #7ab3ea;
   --nham-btn: #c9a87c;
+  /* Dimmer in dark: the same warmth reads as lit at roughly half the alpha,
+     and the light values wash the espresso canvas out to mud. */
+  --nham-composer-glow:
+    radial-gradient(
+      52% 104% at 46% 70%,
+      rgba(240, 205, 120, 0.1),
+      rgba(240, 205, 120, 0) 62%
+    ),
+    radial-gradient(
+      60% 122% at 54% 74%,
+      rgba(201, 168, 124, 0.18),
+      rgba(201, 168, 124, 0) 68%
+    );
   --nham-btn-hover: #d4b88c;
   --nham-macro-protein: #c9a87c;
   --nham-macro-carbs: #b8a88e;

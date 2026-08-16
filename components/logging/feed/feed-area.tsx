@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyPrompt } from '@/components/logging/feed/empty-prompt';
 import { FeedCards } from '@/components/logging/feed/feed-cards';
 import { FeedComposer } from '@/components/logging/feed/feed-composer';
 import {
@@ -122,6 +123,10 @@ export function FeedArea({
             />
           )}
         </div>
+
+        {/* The one editorial line on an empty day — the app asking, rather
+            than a bare input bar standing in for a question. */}
+        {feed.isEmptyComposer && <EmptyPrompt />}
 
         <FeedComposer
           inputRef={feed.inputRef}

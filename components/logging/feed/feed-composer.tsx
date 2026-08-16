@@ -3,6 +3,7 @@
 import { motion } from 'motion/react';
 import type { RefObject } from 'react';
 import { CheatOccasionChips } from '@/components/logging/feed/cheat/cheat-occasion-chips';
+import { ComposerGlow } from '@/components/logging/feed/composer-glow';
 import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
 import {
   MealInput,
@@ -66,8 +67,9 @@ export function FeedComposer({
     <motion.div
       layout
       transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-      className="shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4"
+      className="relative shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4"
     >
+      <ComposerGlow />
       {isCheat && (
         <CheatOccasionChips
           occasions={cheatOccasions}
@@ -75,7 +77,7 @@ export function FeedComposer({
           onSelect={onSelectCheatOccasion}
         />
       )}
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="relative z-10 mx-auto w-full max-w-3xl">
         <MealInput
           ref={inputRef}
           onSubmit={onSubmit}

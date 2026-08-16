@@ -67,6 +67,10 @@ const {
 
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
+  // The empty-day prompt reads the signed-in profile to greet by name; with no
+  // provider in this tree the query just never resolves, which is the same
+  // thing a cold load does and lands the name-less phrasing.
+  useQuery: () => ({ data: undefined, isPending: true }),
 }));
 
 vi.mock('@/hooks/meals/use-logging-day', () => ({
