@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/logic/relog/relog_label.dart';
-import 'package:nham_mobile/models/relog.dart';
+import 'package:kallo_mobile/features/logging/logic/relog/relog_label.dart';
+import 'package:kallo_mobile/models/relog.dart';
 
 RelogStagedEntry _pick(String label) => RelogStagedEntry(
   stageId: 's-$label',

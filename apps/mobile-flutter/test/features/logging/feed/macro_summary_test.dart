@@ -8,11 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/data/logging_models.dart';
-import 'package:nham_mobile/features/logging/logic/feed/view_state.dart';
-import 'package:nham_mobile/features/logging/widgets/feed/macro_bar.dart';
-import 'package:nham_mobile/features/logging/widgets/feed/macro_summary.dart';
-import 'package:nham_mobile/theme/calm_tokens.dart';
+import 'package:kallo_mobile/features/logging/data/logging_models.dart';
+import 'package:kallo_mobile/features/logging/logic/feed/view_state.dart';
+import 'package:kallo_mobile/features/logging/widgets/feed/macro_bar.dart';
+import 'package:kallo_mobile/features/logging/widgets/feed/macro_summary.dart';
+import 'package:kallo_mobile/theme/calm_tokens.dart';
 
 import '../../../l10n_test_loader.dart';
 

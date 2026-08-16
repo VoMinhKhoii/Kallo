@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/models/ingredient.dart';
+import 'package:kallo_mobile/models/ingredient.dart';
 
 void main() {
   group('IngredientSearchResult.fromJson', () {

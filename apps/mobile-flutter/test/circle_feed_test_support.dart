@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/data/api_client.dart';
-import 'package:nham_mobile/features/circle/data/feed_providers.dart';
+import 'package:kallo_mobile/data/api_client.dart';
+import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 
 typedef Request = ({String method, String path, Object? body});
 typedef RequestHandler = FutureOr<Object?> Function(Request request);

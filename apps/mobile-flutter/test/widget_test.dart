@@ -8,9 +8,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:nham_mobile/app.dart';
-import 'package:nham_mobile/services/supabase_service.dart';
-import 'package:nham_mobile/shared/widgets/kallo_wordmark.dart';
+import 'package:kallo_mobile/app.dart';
+import 'package:kallo_mobile/services/supabase_service.dart';
+import 'package:kallo_mobile/shared/widgets/kallo_wordmark.dart';
 
 /// Serves the l10n JSON from memory. `AssetBundle.loadString` decodes assets
 /// larger than 50KB on a background isolate (`compute`), which never completes

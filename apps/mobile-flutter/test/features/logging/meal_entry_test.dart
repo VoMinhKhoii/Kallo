@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/widgets/meal_entry.dart';
-import 'package:nham_mobile/models/meal.dart';
-import 'package:nham_mobile/theme/kallo_colors.dart';
-import 'package:nham_mobile/theme/kallo_theme.dart';
+import 'package:kallo_mobile/features/logging/widgets/meal_entry.dart';
+import 'package:kallo_mobile/models/meal.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 import '../../l10n_test_loader.dart';
 

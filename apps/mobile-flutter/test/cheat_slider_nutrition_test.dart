@@ -5,8 +5,8 @@
 // confirm. (canonicalizeAnchors/withLevelsAsDefaults are server-only and have
 // no Dart port.)
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/logic/slider_nutrition.dart';
-import 'package:nham_mobile/models/cheat.dart';
+import 'package:kallo_mobile/features/logging/logic/slider_nutrition.dart';
+import 'package:kallo_mobile/models/cheat.dart';
 
 CheatSliderSpec makeSpec() => const CheatSliderSpec(
   mealSlot: 'dinner',

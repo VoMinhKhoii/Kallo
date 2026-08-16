@@ -3,8 +3,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/widgets/loaders/loader_math.dart';
-import 'package:nham_mobile/features/logging/widgets/loaders/loader_registry.dart';
+import 'package:kallo_mobile/features/logging/widgets/loaders/loader_math.dart';
+import 'package:kallo_mobile/features/logging/widgets/loaders/loader_registry.dart';
 
 void main() {
   group('loader math', () {

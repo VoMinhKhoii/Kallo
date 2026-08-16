@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/logic/portion/portion_anchors.dart';
-import 'package:nham_mobile/features/logging/logic/portion/ruler_scale.dart';
-import 'package:nham_mobile/models/meal.dart';
-import 'package:nham_mobile/models/vessel.dart';
+import 'package:kallo_mobile/features/logging/logic/portion/portion_anchors.dart';
+import 'package:kallo_mobile/features/logging/logic/portion/ruler_scale.dart';
+import 'package:kallo_mobile/models/meal.dart';
+import 'package:kallo_mobile/models/vessel.dart';
 
 /// Hostile and malformed vessel payloads.
 ///

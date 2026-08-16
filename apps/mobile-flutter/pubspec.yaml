@@ -1,5 +1,5 @@
-name: nham_mobile
-description: "Nham - AI-powered Vietnamese meal tracker"
+name: kallo_mobile
+description: "Kallo - AI-powered Vietnamese meal tracker"
 publish_to: "none"
 # Marketing version (CFBundleShortVersionString). The build number (+N) is
 # overridden at release time by fastlane (`--build-number`) to the next

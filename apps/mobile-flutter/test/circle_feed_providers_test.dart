@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:nham_mobile/data/api_client.dart';
-import 'package:nham_mobile/features/circle/data/chat_group_providers.dart';
-import 'package:nham_mobile/features/circle/data/feed_mutations.dart';
-import 'package:nham_mobile/features/circle/data/feed_providers.dart';
-import 'package:nham_mobile/features/circle/data/feed_time.dart';
+import 'package:kallo_mobile/data/api_client.dart';
+import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
+import 'package:kallo_mobile/features/circle/data/feed_mutations.dart';
+import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+import 'package:kallo_mobile/features/circle/data/feed_time.dart';
 import 'circle_feed_test_support.dart';
 
 void main() {

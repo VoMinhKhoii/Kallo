@@ -213,7 +213,7 @@ export GITHUB_REPOSITORY="VoMinhKhoii/Nham"
 gcloud artifacts repositories create "$GCP_ARTIFACT_REPO" \
   --repository-format=docker \
   --location="$GCP_REGION" \
-  --description="Nham Cloud Run images"
+  --description="Kallo Cloud Run images"
 ```
 
 ## 2. Create service accounts

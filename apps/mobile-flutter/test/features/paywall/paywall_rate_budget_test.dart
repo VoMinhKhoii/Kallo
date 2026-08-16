@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/data/api_client.dart';
-import 'package:nham_mobile/data/billing/purchases_service.dart';
-import 'package:nham_mobile/data/session_provider.dart';
-import 'package:nham_mobile/features/paywall/paywall_controller.dart';
+import 'package:kallo_mobile/data/api_client.dart';
+import 'package:kallo_mobile/data/billing/purchases_service.dart';
+import 'package:kallo_mobile/data/session_provider.dart';
+import 'package:kallo_mobile/features/paywall/paywall_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'paywall_test_support.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/shared/widgets/top_toast.dart';
+import 'package:kallo_mobile/shared/widgets/top_toast.dart';
 
 /// The toast is inserted into the ROOT overlay, above every Material in the
 /// app. Text with no Material ancestor inherits Flutter's fallback style, which

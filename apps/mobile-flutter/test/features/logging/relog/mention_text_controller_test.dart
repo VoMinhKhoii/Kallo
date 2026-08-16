@@ -3,10 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/logic/relog/mentions.dart';
-import 'package:nham_mobile/features/logging/widgets/relog/mention_text_controller.dart';
-import 'package:nham_mobile/models/relog.dart';
-import 'package:nham_mobile/theme/kallo_colors.dart';
+import 'package:kallo_mobile/features/logging/logic/relog/mentions.dart';
+import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
+import 'package:kallo_mobile/models/relog.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 RelogDishCandidate _dish(String name, {int order = 0}) => RelogDishCandidate(
   sourceMealId: 'meal-1',

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/models/meal.dart';
-import 'package:nham_mobile/models/vessel.dart';
+import 'package:kallo_mobile/models/meal.dart';
+import 'package:kallo_mobile/models/vessel.dart';
 
 /// The vessel arrives from the server on the SSE `result` frame and on restored
 /// `/api/v1/meals/pending` rows. It is a display affordance, so an unknown or

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/widgets/cheat_slider_card.dart';
-import 'package:nham_mobile/models/cheat.dart';
+import 'package:kallo_mobile/features/logging/widgets/cheat_slider_card.dart';
+import 'package:kallo_mobile/models/cheat.dart';
 
 import 'l10n_test_loader.dart';
 

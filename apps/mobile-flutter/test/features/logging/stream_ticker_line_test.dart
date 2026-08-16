@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/logic/feed/stream_ticker.dart';
-import 'package:nham_mobile/features/logging/widgets/streaming/stream_ticker_line.dart';
-import 'package:nham_mobile/models/streaming.dart';
-import 'package:nham_mobile/theme/kallo_colors.dart';
+import 'package:kallo_mobile/features/logging/logic/feed/stream_ticker.dart';
+import 'package:kallo_mobile/features/logging/widgets/streaming/stream_ticker_line.dart';
+import 'package:kallo_mobile/models/streaming.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 import '../../l10n_test_loader.dart';
 

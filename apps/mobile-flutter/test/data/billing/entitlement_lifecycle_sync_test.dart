@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/data/api_client.dart';
-import 'package:nham_mobile/data/billing/activation_pending.dart';
-import 'package:nham_mobile/data/billing/entitlement_lifecycle_sync.dart';
-import 'package:nham_mobile/data/billing/entitlements_provider.dart';
+import 'package:kallo_mobile/data/api_client.dart';
+import 'package:kallo_mobile/data/billing/activation_pending.dart';
+import 'package:kallo_mobile/data/billing/entitlement_lifecycle_sync.dart';
+import 'package:kallo_mobile/data/billing/entitlements_provider.dart';
 
 void main() {
   const userA = '11111111-1111-1111-1111-111111111111';

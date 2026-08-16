@@ -1,4 +1,4 @@
-# nham_mobile
+# kallo_mobile
 
 Flutter client for **Kallo** — the AI-powered Vietnamese meal tracker. A 1:1 port of the web app's
 mobile view, sharing the same `/api/v1` backend and Supabase project.

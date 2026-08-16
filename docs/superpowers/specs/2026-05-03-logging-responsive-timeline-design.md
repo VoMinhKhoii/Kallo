@@ -13,7 +13,7 @@ timeline. The weak point is responsiveness. The date timeline sidebar is a
 fixed-width desktop navigation rail with no mobile adaptation, while the app
 shell already has a mobile bottom tab bar.
 
-This design keeps the current Nham feel and makes the timeline feel deliberate,
+This design keeps the current Kallo feel and makes the timeline feel deliberate,
 not replaced. Register: product UI. The physical scene is a user logging meals
 on a phone throughout the day, often one-handed, while needing fast date changes
 without losing the meal input or colliding with the bottom navigation.

@@ -6,11 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/circle/data/circle_providers.dart';
-import 'package:nham_mobile/features/logging/logic/feed/view_state.dart';
-import 'package:nham_mobile/models/circle.dart';
-import 'package:nham_mobile/features/logging/widgets/feed/feed_no_meals_view.dart';
-import 'package:nham_mobile/shared/widgets/kallo_mark.dart';
+import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
+import 'package:kallo_mobile/features/logging/logic/feed/view_state.dart';
+import 'package:kallo_mobile/models/circle.dart';
+import 'package:kallo_mobile/features/logging/widgets/feed/feed_no_meals_view.dart';
+import 'package:kallo_mobile/shared/widgets/kallo_mark.dart';
 
 import '../../../l10n_test_loader.dart';
 

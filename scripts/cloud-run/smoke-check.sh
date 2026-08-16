@@ -57,7 +57,7 @@ for _ in 1 2 3 4 5; do
     health_json="$(cat "$healthz_body_file")"
     # Explicit validation: check for required JSON fields
     if echo "$health_json" | grep -q '"ok":true' && \
-       echo "$health_json" | grep -q '"service":"nham"'; then
+       echo "$health_json" | grep -q '"service":"kallo"'; then
       if check_landing_page; then
         exit 0
       fi

@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/widgets/macro_trio.dart';
-import 'package:nham_mobile/theme/calm_tokens.dart';
-import 'package:nham_mobile/theme/kallo_theme.dart';
+import 'package:kallo_mobile/features/logging/widgets/macro_trio.dart';
+import 'package:kallo_mobile/theme/calm_tokens.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 /// The width a meal row actually gets inside the card on a 390pt phone: the
 /// feed's gutter plus the card's own padding. Every claim below is about that

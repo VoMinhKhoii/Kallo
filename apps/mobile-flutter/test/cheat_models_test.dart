@@ -3,10 +3,10 @@
 // day decode), a persisted cheat meal carries entryMode/alcoholG/cheatSliders,
 // and the `cheat_estimate` SSE frame parses (incl. the clarify variant).
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/data/logging_models.dart';
-import 'package:nham_mobile/models/cheat.dart';
-import 'package:nham_mobile/models/dashboard.dart';
-import 'package:nham_mobile/models/streaming.dart';
+import 'package:kallo_mobile/features/logging/data/logging_models.dart';
+import 'package:kallo_mobile/models/cheat.dart';
+import 'package:kallo_mobile/models/dashboard.dart';
+import 'package:kallo_mobile/models/streaming.dart';
 
 Map<String, dynamic> specJson({bool clarify = false}) => {
   'sliders': [

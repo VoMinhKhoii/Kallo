@@ -4,8 +4,8 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/widgets/portion/portion_picker_sheet.dart';
-import 'package:nham_mobile/models/vessel.dart';
+import 'package:kallo_mobile/features/logging/widgets/portion/portion_picker_sheet.dart';
+import 'package:kallo_mobile/models/vessel.dart';
 
 import 'l10n_test_loader.dart';
 

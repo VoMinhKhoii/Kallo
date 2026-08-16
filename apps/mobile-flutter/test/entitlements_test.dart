@@ -8,9 +8,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/data/api_client.dart';
-import 'package:nham_mobile/data/billing/entitlement_state.dart';
-import 'package:nham_mobile/data/billing/entitlements_provider.dart';
+import 'package:kallo_mobile/data/api_client.dart';
+import 'package:kallo_mobile/data/billing/entitlement_state.dart';
+import 'package:kallo_mobile/data/billing/entitlements_provider.dart';
 
 /// ApiClient stand-in: replays a canned entitlements body per GET, counting
 /// calls so the polling test can advance the response over time.

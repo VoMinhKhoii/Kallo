@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/dashboard/logic/dashboard_spacing.dart';
-import 'package:nham_mobile/features/dashboard/widgets/today_macro_rows.dart';
-import 'package:nham_mobile/theme/calm_tokens.dart';
-import 'package:nham_mobile/theme/kallo_colors.dart';
+import 'package:kallo_mobile/features/dashboard/logic/dashboard_spacing.dart';
+import 'package:kallo_mobile/features/dashboard/widgets/today_macro_rows.dart';
+import 'package:kallo_mobile/theme/calm_tokens.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 Widget _wrap(Widget child, {double textScale = 1.0}) => MaterialApp(
   home: MediaQuery(

@@ -71,7 +71,7 @@ describeSmokeCheck('smoke-check.sh', () => {
       (request, response) => {
         if (request.url === '/api/healthz') {
           response.writeHead(200, { 'content-type': 'application/json' });
-          response.end('{"ok":true,"service":"nham"}');
+          response.end('{"ok":true,"service":"kallo"}');
           return;
         }
 
@@ -119,7 +119,7 @@ describeSmokeCheck('smoke-check.sh', () => {
       (request, response) => {
         if (request.url === '/api/healthz') {
           response.writeHead(503, { 'content-type': 'application/json' });
-          response.end('{"ok":false,"service":"nham"}');
+          response.end('{"ok":false,"service":"kallo"}');
           return;
         }
 

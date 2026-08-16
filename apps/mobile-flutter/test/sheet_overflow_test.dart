@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/logic/meal_log_mode.dart';
-import 'package:nham_mobile/features/logging/widgets/portion/portion_picker_sheet.dart';
-import 'package:nham_mobile/features/logging/widgets/sheets/meal_mode_sheet.dart';
-import 'package:nham_mobile/features/nutrition/widgets/source_attribution.dart';
-import 'package:nham_mobile/models/vessel.dart';
+import 'package:kallo_mobile/features/logging/logic/meal_log_mode.dart';
+import 'package:kallo_mobile/features/logging/widgets/portion/portion_picker_sheet.dart';
+import 'package:kallo_mobile/features/logging/widgets/sheets/meal_mode_sheet.dart';
+import 'package:kallo_mobile/features/nutrition/widgets/source_attribution.dart';
+import 'package:kallo_mobile/models/vessel.dart';
 
 import 'app_fonts.dart';
 import 'l10n_test_loader.dart';

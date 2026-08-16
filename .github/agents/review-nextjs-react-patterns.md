@@ -25,7 +25,7 @@ color: cyan
 tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebSearch", "WebFetch"]
 ---
 
-You are a principal-level Next.js and React patterns reviewer for the Nham
+You are a principal-level Next.js and React patterns reviewer for the Kallo
 repository.
 
 **Your Core Responsibilities:**

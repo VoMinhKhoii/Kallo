@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/logic/relog/slash_picker_state.dart';
-import 'package:nham_mobile/features/logging/logic/relog/slash_token.dart';
+import 'package:kallo_mobile/features/logging/logic/relog/slash_picker_state.dart';
+import 'package:kallo_mobile/features/logging/logic/relog/slash_token.dart';
 
 /// Sync the picker against the token that `value` would produce with the caret
 /// at its end — how the composer drives it.

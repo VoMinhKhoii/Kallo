@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea or improvement for Nham
+about: Suggest an idea or improvement for Kallo
 title: "[feature] "
 labels: ["enhancement"]
 ---

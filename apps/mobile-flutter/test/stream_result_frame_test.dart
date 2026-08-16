@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/models/meal.dart';
-import 'package:nham_mobile/models/vessel.dart';
-import 'package:nham_mobile/models/streaming.dart';
+import 'package:kallo_mobile/models/meal.dart';
+import 'package:kallo_mobile/models/vessel.dart';
+import 'package:kallo_mobile/models/streaming.dart';
 
 /// The SSE `result` frame must survive whatever the server puts in `vessel`.
 ///

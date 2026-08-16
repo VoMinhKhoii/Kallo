@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/models/chat_group.dart';
-import 'package:nham_mobile/models/circle.dart';
+import 'package:kallo_mobile/models/chat_group.dart';
+import 'package:kallo_mobile/models/circle.dart';
 
 Map<String, dynamic> _feedEntryJson({
   Object? portionFactor = 1,

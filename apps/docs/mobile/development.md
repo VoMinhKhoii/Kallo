@@ -94,7 +94,7 @@ dev build without RevenueCat config still boots).
 > projects). `GOOGLE_IOS_CLIENT_ID` is the **iOS** client ID; its reversed form
 > (`com.googleusercontent.apps.…`) must be set as a URL scheme in
 > [`ios/Runner/Info.plist`](../../mobile-flutter/ios/Runner/Info.plist). Android needs the
-> debug **SHA-1** registered on an Android OAuth client (package `com.nham.nham_mobile`);
+> debug **SHA-1** registered on an Android OAuth client (package `com.nham.kallo_mobile`);
 > no Firebase / `google-services.json`.
 
 | Environment | API_BASE_URL | Supabase |

@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/data/logging_models.dart';
-import 'package:nham_mobile/features/logging/data/stream_analysis_controller.dart';
-import 'package:nham_mobile/features/logging/logic/feed/feed_entries.dart';
-import 'package:nham_mobile/features/logging/logic/feed/view_state.dart';
-import 'package:nham_mobile/models/meal.dart';
-import 'package:nham_mobile/models/streaming.dart';
+import 'package:kallo_mobile/features/logging/data/logging_models.dart';
+import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
+import 'package:kallo_mobile/features/logging/logic/feed/feed_entries.dart';
+import 'package:kallo_mobile/features/logging/logic/feed/view_state.dart';
+import 'package:kallo_mobile/models/meal.dart';
+import 'package:kallo_mobile/models/streaming.dart';
 
 const _date = '2026-08-11';
 

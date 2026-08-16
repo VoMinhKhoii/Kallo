@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/widgets/turn/user_message_bubble.dart';
-import 'package:nham_mobile/theme/kallo_colors.dart';
+import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 Widget _wrap(String text, {double width = 390}) => MaterialApp(
   home: Scaffold(

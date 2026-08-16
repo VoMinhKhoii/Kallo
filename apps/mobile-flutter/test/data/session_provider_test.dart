@@ -16,7 +16,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/data/session_provider.dart';
+import 'package:kallo_mobile/data/session_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Session _session(String id) => Session(

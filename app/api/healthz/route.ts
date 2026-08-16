@@ -107,7 +107,7 @@ export async function GET() {
       checks.orphanedAuthUsers === 0;
 
     return NextResponse.json(
-      { ok, service: 'nham', checks },
+      { ok, service: 'kallo', checks },
       { status: ok ? 200 : 503 }
     );
   } catch (error) {
@@ -116,7 +116,7 @@ export async function GET() {
     return NextResponse.json(
       {
         ok: false,
-        service: 'nham',
+        service: 'kallo',
         error: 'Shared database health check failed.',
       },
       { status: 503 }

@@ -1,8 +1,8 @@
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/dashboard/logic/heatmap_month_labels.dart';
-import 'package:nham_mobile/features/dashboard/logic/weight_chart_axis.dart';
-import 'package:nham_mobile/models/dashboard.dart';
+import 'package:kallo_mobile/features/dashboard/logic/heatmap_month_labels.dart';
+import 'package:kallo_mobile/features/dashboard/logic/weight_chart_axis.dart';
+import 'package:kallo_mobile/models/dashboard.dart';
 
 const _style = TextStyle(fontSize: 10);
 

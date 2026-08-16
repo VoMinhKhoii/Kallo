@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/logic/barcode_amount.dart';
-import 'package:nham_mobile/models/barcode_product.dart';
+import 'package:kallo_mobile/features/logging/logic/barcode_amount.dart';
+import 'package:kallo_mobile/models/barcode_product.dart';
 
 const fullProduct = BarcodeProduct(
   barcode: '8934563138162',

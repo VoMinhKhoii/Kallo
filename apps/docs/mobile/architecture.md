@@ -1,6 +1,6 @@
 # Mobile — Architecture (Flutter)
 
-A map of the **Flutter** app (`apps/mobile-flutter`, package `nham_mobile`). It's a 1:1 port of
+A map of the **Flutter** app (`apps/mobile-flutter`, package `kallo_mobile`). It's a 1:1 port of
 the web app's mobile-responsive view, sharing the same backend and Supabase project.
 
 ## Stack

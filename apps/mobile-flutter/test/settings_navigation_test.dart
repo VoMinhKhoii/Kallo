@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/settings/widgets/settings_navigator.dart';
-import 'package:nham_mobile/shared/widgets/scroll_separator.dart';
+import 'package:kallo_mobile/features/settings/widgets/settings_navigator.dart';
+import 'package:kallo_mobile/shared/widgets/scroll_separator.dart';
 
 /// An iOS edge-swipe: a long, fast drag from the left gutter.
 Future<void> edgeSwipe(WidgetTester tester) async {

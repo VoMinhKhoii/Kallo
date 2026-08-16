@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/auth/providers/auth_form_controller.dart';
+import 'package:kallo_mobile/features/auth/providers/auth_form_controller.dart';
 
 void main() {
   group('kDuplicateEmailMarker', () {

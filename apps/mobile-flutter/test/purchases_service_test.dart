@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:nham_mobile/data/billing/purchases_service.dart';
+import 'package:kallo_mobile/data/billing/purchases_service.dart';
 
 class FakePurchasesGateway implements PurchasesGateway {
   int configureCalls = 0;

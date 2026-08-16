@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/widgets/composer_dock.dart';
-import 'package:nham_mobile/features/logging/widgets/composer_glow.dart';
+import 'package:kallo_mobile/features/logging/widgets/composer_dock.dart';
+import 'package:kallo_mobile/features/logging/widgets/composer_glow.dart';
 
 Widget _wrap() => MediaQuery(
   data: const MediaQueryData(disableAnimations: true),

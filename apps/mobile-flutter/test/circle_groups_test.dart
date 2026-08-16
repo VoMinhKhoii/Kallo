@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/circle/data/chat_group_providers.dart';
-import 'package:nham_mobile/features/circle/data/circle_providers.dart';
-import 'package:nham_mobile/features/circle/data/feed_providers.dart';
-import 'package:nham_mobile/features/circle/widgets/view_switcher.dart';
-import 'package:nham_mobile/models/chat_group.dart';
-import 'package:nham_mobile/models/circle.dart';
+import 'package:kallo_mobile/features/circle/data/chat_group_providers.dart';
+import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
+import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+import 'package:kallo_mobile/features/circle/widgets/view_switcher.dart';
+import 'package:kallo_mobile/models/chat_group.dart';
+import 'package:kallo_mobile/models/circle.dart';
 
 import 'l10n_test_loader.dart';
 
