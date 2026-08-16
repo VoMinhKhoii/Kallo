@@ -20,9 +20,6 @@ interface UseBarcodeCameraScannerOptions {
   /** Called with the raw decoded text once a barcode is read. The scanner is
    *  stopped before this fires, so the caller may safely start network work. */
   onDecode: (decodedText: string) => void;
-  /** Called ~3s after the camera fails to start (permission denied or
-   *  error), so the caller can fall back to manual entry. */
-  onCameraFailure: () => void;
 }
 
 function playBeep() {
@@ -68,12 +65,14 @@ function vibrate() {
 export function useBarcodeCameraScanner({
   isActive,
   onDecode,
-  onCameraFailure,
 }: UseBarcodeCameraScannerOptions) {
   const [cameraStatus, setCameraStatus] =
     useState<CameraStatus>('initializing');
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
+  const [effectiveCameraId, setEffectiveCameraId] = useState<string | null>(
+    null
+  );
   const qrCodeScannerRef = useRef<Html5Qrcode | null>(null);
   // Guards a concurrent stop() — two callers (decode success + effect cleanup)
   // can both observe isScanning === true before either stop() resolves.
@@ -111,7 +110,9 @@ export function useBarcodeCameraScanner({
         // Kept inside the async start path (not the effect body) to avoid the
         // react-hooks/set-state-in-effect lint on a synchronous effect setState.
         setCameraStatus('initializing');
-        const { Html5Qrcode } = await import('html5-qrcode');
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import(
+          'html5-qrcode'
+        );
         if (!isMounted) return;
 
         // Query available cameras
@@ -129,29 +130,41 @@ export function useBarcodeCameraScanner({
         await new Promise((resolve) => setTimeout(resolve, 150));
         if (!isMounted) return;
 
-        const scanner = new Html5Qrcode('nham-barcode-scanner');
+        const scanner = new Html5Qrcode('nham-barcode-scanner', {
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128,
+          ],
+          verbose: false,
+        });
         qrCodeScannerRef.current = scanner;
         scannerInstance = scanner;
 
-        // Select camera config:
-        // 1. User selected camera ID
-        // 2. First camera from queried list
-        // 3. Fallback standard facingMode environment configuration
+        const environmentCamera = devices.find((device) =>
+          /back|rear|environment|traseira|rück|arrière|sau/i.test(device.label)
+        );
+        // Prefer the user's explicit choice, then a labeled rear camera. When
+        // labels are unavailable, let facingMode choose instead of assuming
+        // devices[0] is the rear lens (it is commonly the selfie camera).
         const cameraConfig =
           selectedCameraId ||
-          (devices.length > 0 ? devices[0].id : { facingMode: 'environment' });
+          environmentCamera?.id ||
+          ({ facingMode: { ideal: 'environment' } } as const);
 
         await scanner.start(
           cameraConfig,
           {
-            fps: 10,
+            fps: 25,
             qrbox: (width: number, height: number) => {
-              // Ensure qrbox dimensions are always at least 50px to prevent library errors
-              const w = Math.max(50, Math.round(width * 0.75));
-              const h = Math.max(50, Math.round(height * 0.4));
+              // Expand decodable bounds (90% width, 70% height) for reliable scan hits
+              const w = Math.max(50, Math.round(width * 0.9));
+              const h = Math.max(50, Math.round(height * 0.7));
               return { width: w, height: h };
             },
-            aspectRatio: 1.777778,
+            aspectRatio: 1.333333,
           },
           (decodedText: string) => {
             // Suppress repeat firings while the first decode is in flight.
@@ -171,9 +184,19 @@ export function useBarcodeCameraScanner({
           }
         );
 
-        if (isMounted) {
-          setCameraStatus('scanning');
+        if (!isMounted) {
+          if (scanner.isScanning) await scanner.stop();
+          if (qrCodeScannerRef.current === scanner) {
+            qrCodeScannerRef.current = null;
+          }
+          return;
         }
+        const runningCameraId = scanner.getRunningTrackSettings().deviceId;
+        setEffectiveCameraId(
+          runningCameraId ??
+            (typeof cameraConfig === 'string' ? cameraConfig : null)
+        );
+        setCameraStatus('scanning');
       } catch (err) {
         console.error('Failed to start scanner:', err);
         if (isMounted) {
@@ -201,22 +224,11 @@ export function useBarcodeCameraScanner({
     };
   }, [isActive, onDecode, selectedCameraId, stopScanner]);
 
-  // Auto switch away from camera mode a few seconds after a failure — gives
-  // the "starting camera" message a moment to display before bailing out.
-  useEffect(() => {
-    if (cameraStatus !== 'permission-denied' && cameraStatus !== 'error') {
-      return;
-    }
-    const timeout = setTimeout(() => {
-      onCameraFailure();
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, [cameraStatus, onCameraFailure]);
-
   return {
     cameraStatus,
     cameras,
     selectedCameraId,
+    effectiveCameraId,
     setSelectedCameraId,
     stopScanner,
   };

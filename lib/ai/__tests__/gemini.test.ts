@@ -427,6 +427,35 @@ describe('GeminiClient', () => {
       ).rejects.toThrow('429');
     });
 
+    it('aborts a pending retry sleep instead of starting another attempt', async () => {
+      mockGenerateContent.mockRejectedValue(
+        new Error('429 Too Many Requests: retry in 30s')
+      );
+      const controller = new AbortController();
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        { maxRetries: 3, baseDelayMs: 10 }
+      );
+
+      const call = client.generateStructuredOutput({
+        schema: z.object({ name: z.string() }),
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+        abortSignal: controller.signal,
+      });
+      const rejection = expect(call).rejects.toMatchObject({
+        name: 'AbortError',
+      });
+      await vi.waitFor(() =>
+        expect(mockGenerateContent).toHaveBeenCalledOnce()
+      );
+      controller.abort();
+
+      await rejection;
+      expect(mockGenerateContent).toHaveBeenCalledOnce();
+    });
+
     it('RETRIES a schema-validation (ZodError) failure — the model is nondeterministic', async () => {
       // Load-bearing for the required macro triples: one malformed emission
       // must trigger a re-ask, not fail the whole call on attempt 1. The
