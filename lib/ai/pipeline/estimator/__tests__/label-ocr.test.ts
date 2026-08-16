@@ -78,6 +78,30 @@ describe('normalizeNutritionLabelOcr', () => {
     expect(parsed.confidence).toBe('high');
   });
 
+  it('reads thousands groups as thousands, not as decimals', () => {
+    // "1,000 mg" on a US label and "1.450 kJ" on a Vietnamese one both mean a
+    // thousand-ish number. Treating the separator as a decimal point silently
+    // under-reads them by 1000x.
+    const parsed = normalizeNutritionLabelOcr(
+      servingLabel({
+        perServing: rawNutrition({
+          calories: { value: '1.450', unit: 'kJ' },
+          proteinGrams: { value: '10', unit: 'g' },
+          carbsGrams: { value: '1,5', unit: 'g' },
+          fatGrams: { value: '7', unit: 'g' },
+          sodiumMg: { value: '1,000', unit: 'mg' },
+          potassiumMg: { value: '1.200', unit: 'mg' },
+        }),
+      })
+    );
+    if (!('perServing' in parsed)) throw new Error('expected serving data');
+
+    expect(parsed.perServing.calories).toBeCloseTo(346.56, 1);
+    expect(parsed.perServing.carbsGrams).toBe(1.5);
+    expect(parsed.perServing.sodiumMg).toBe(1000);
+    expect(parsed.perServing.potassiumMg).toBe(1200);
+  });
+
   it('downgrades materially inconsistent 4/4/9 nutrition to low confidence', () => {
     const parsed = normalizeNutritionLabelOcr(
       servingLabel({

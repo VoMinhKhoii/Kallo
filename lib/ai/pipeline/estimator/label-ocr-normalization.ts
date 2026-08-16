@@ -163,12 +163,23 @@ function parsePrintedNumber(token: string): number | null {
   const lastDot = compact.lastIndexOf('.');
   let normalized = compact;
   if (lastComma >= 0 && lastDot >= 0) {
+    // Both present: the rightmost one is the decimal separator, the other
+    // groups thousands. "1.234,5" (vi/EU) and "1,234.5" (US) both work.
     const decimalSeparator = lastComma > lastDot ? ',' : '.';
     const groupingSeparator = decimalSeparator === ',' ? /\./g : /,/g;
     normalized = compact.replace(groupingSeparator, '');
     normalized = normalized.replace(decimalSeparator, '.');
-  } else if (lastComma >= 0) {
-    normalized = compact.replace(/,/g, '.');
+  } else if (lastComma >= 0 || lastDot >= 0) {
+    // Only one separator kind: it is ambiguous on its own, because "1,5" is
+    // one and a half on a Vietnamese label while "1,000" is a thousand on a
+    // US one. Groups of exactly three digits mean thousands; nutrition
+    // labels never print three decimal places.
+    const separator = lastComma >= 0 ? ',' : '.';
+    const escaped = separator === ',' ? ',' : '\\.';
+    const grouped = new RegExp(`^[+-]?\\d{1,3}(?:${escaped}\\d{3})+$`);
+    normalized = grouped.test(compact)
+      ? compact.replaceAll(separator, '')
+      : compact.replace(separator, '.');
   }
 
   if (!/^[+-]?\d+(?:\.\d+)?$/.test(normalized)) return null;
