@@ -1,88 +1,169 @@
 import { describe, expect, it } from 'vitest';
-import { nutritionLabelScanSchema } from '../ocr-schema';
+import {
+  type NutritionValues,
+  nutritionLabelScanSchema,
+  nutritionValuesSchema,
+} from '../ocr-schema';
+
+function nutrition(overrides: Partial<NutritionValues> = {}): NutritionValues {
+  return {
+    calories: null,
+    proteinGrams: null,
+    carbsGrams: null,
+    fatGrams: null,
+    fiberGrams: null,
+    sodiumMg: null,
+    calciumMg: null,
+    ironMg: null,
+    magnesiumMg: null,
+    phosphorusMg: null,
+    potassiumMg: null,
+    zincMg: null,
+    copperMcg: null,
+    manganeseMg: null,
+    betaCaroteneMcg: null,
+    vitaminAMcg: null,
+    vitaminCMg: null,
+    vitaminDMcg: null,
+    vitaminEMg: null,
+    vitaminKMcg: null,
+    vitaminB1Mg: null,
+    vitaminB2Mg: null,
+    vitaminPpMg: null,
+    vitaminB5Mg: null,
+    vitaminB6Mg: null,
+    vitaminB9Mcg: null,
+    vitaminB12Mcg: null,
+    vitaminHMcg: null,
+    ...overrides,
+  };
+}
+
+const metadata = {
+  productName: 'Hảo Hảo Tôm Chua Cay',
+  labelEvidence: 'Bảng giá trị dinh dưỡng — Năng lượng, Chất đạm',
+  servingSize: { value: 75, unit: 'g' as const },
+  servingSizeDescription: '1 gói (75g)',
+  servingsPerContainer: 1,
+  confidence: 'high' as const,
+};
 
 describe('nutritionLabelScanSchema', () => {
-  it('parses valid per-serving OCR extraction result', () => {
-    const raw = {
-      productName: 'Hảo Hảo Tôm Chua Cay',
-      servingSizeGrams: 75,
-      servingSizeDescription: '1 gói (75g)',
-      servingsPerContainer: 1,
-      basis: 'per_serving',
-      perServing: {
-        calories: 350,
-        proteinGrams: 6.8,
-        carbsGrams: 51.2,
-        fatGrams: 13.5,
-        fiberGrams: 2.1,
-        sodiumMg: 1100,
-      },
-      confidence: 'high',
-    };
-
-    const parsed = nutritionLabelScanSchema.parse(raw);
-    expect(parsed.productName).toBe('Hảo Hảo Tôm Chua Cay');
-    expect(parsed.servingSizeGrams).toBe(75);
-    expect(parsed.basis).toBe('per_serving');
-    expect(parsed.perServing?.calories).toBe(350);
+  it('preserves null separately from a printed zero', () => {
+    const parsed = nutritionValuesSchema.parse(
+      nutrition({ calories: 0, proteinGrams: 0 })
+    );
+    expect(parsed.calories).toBe(0);
+    expect(parsed.proteinGrams).toBe(0);
+    expect(parsed.carbsGrams).toBeNull();
   });
 
-  it('parses all DB-backed micronutrients when present on label', () => {
-    const raw = {
-      productName: 'Protein Bar',
-      servingSizeGrams: 60,
-      basis: 'per_serving',
-      perServing: {
-        calories: 220,
-        proteinGrams: 20,
-        carbsGrams: 24,
-        fatGrams: 7,
-        fiberGrams: 10,
-        sodiumMg: 200,
-        calciumMg: 150,
-        ironMg: 3,
-        potassiumMg: 300,
-        vitaminAMcg: 100,
-        vitaminCMg: 15,
-        vitaminDMcg: 2.5,
-      },
-      confidence: 'high',
-    };
-
-    const parsed = nutritionLabelScanSchema.parse(raw);
-    expect(parsed.perServing?.fiberGrams).toBe(10);
-    expect(parsed.perServing?.sodiumMg).toBe(200);
-    expect(parsed.perServing?.potassiumMg).toBe(300);
-    expect(parsed.perServing?.vitaminCMg).toBe(15);
-  });
-
-  it('parses per-100g OCR result with missing non-essential fields', () => {
-    const raw = {
-      productName: null,
-      servingSizeGrams: null,
+  it('keeps per-100g and per-100ml as distinct strict variants', () => {
+    const per100g = nutritionLabelScanSchema.parse({
+      ...metadata,
       basis: 'per_100g',
-      per100g: {
-        calories: 450,
-        proteinGrams: 12,
-        carbsGrams: 60,
-        fatGrams: 18,
-      },
-      confidence: 'medium',
-    };
+      per100g: nutrition({ calories: 450, proteinGrams: 12 }),
+    });
+    const per100ml = nutritionLabelScanSchema.parse({
+      ...metadata,
+      servingSize: { value: 330, unit: 'ml' },
+      basis: 'per_100ml',
+      per100ml: nutrition({ calories: 42, carbsGrams: 10.5 }),
+    });
 
-    const parsed = nutritionLabelScanSchema.parse(raw);
-    expect(parsed.basis).toBe('per_100g');
-    expect(parsed.per100g?.calories).toBe(450);
-    expect(parsed.per100g?.proteinGrams).toBe(12);
+    expect(per100g.basis).toBe('per_100g');
+    expect(per100ml.basis).toBe('per_100ml');
+    expect(
+      nutritionLabelScanSchema.safeParse({
+        ...metadata,
+        basis: 'per_100g',
+        per100g: nutrition({ calories: 100, carbsGrams: 20 }),
+        perServing: nutrition({ calories: 50, carbsGrams: 10 }),
+      }).success
+    ).toBe(false);
   });
 
-  it('rejects invalid confidence level or basis', () => {
-    const invalid = {
-      servingSizeGrams: 50,
-      basis: 'unknown_basis',
-      confidence: 'super_high',
-    };
+  it('requires net content and uses a positive serving count for containers', () => {
+    const parsed = nutritionLabelScanSchema.parse({
+      ...metadata,
+      basis: 'per_container',
+      netContent: { value: 330, unit: 'ml' },
+      servingsPerContainer: 1.5,
+      perContainer: nutrition({ calories: 150, carbsGrams: 35 }),
+    });
 
-    expect(() => nutritionLabelScanSchema.parse(invalid)).toThrow();
+    expect(parsed.basis).toBe('per_container');
+    if (parsed.basis !== 'per_container') throw new Error('wrong basis');
+    expect(parsed.netContent).toEqual({ value: 330, unit: 'ml' });
+    expect(parsed.servingsPerContainer).toBe(1.5);
+  });
+
+  it('rejects missing evidence or fewer than two absolute core values', () => {
+    const base = {
+      ...metadata,
+      basis: 'per_serving',
+      perServing: nutrition({ calories: 220 }),
+    };
+    expect(nutritionLabelScanSchema.safeParse(base).success).toBe(false);
+    expect(
+      nutritionLabelScanSchema.safeParse({
+        ...base,
+        labelEvidence: '',
+        perServing: nutrition({ calories: 220, proteinGrams: 20 }),
+      }).success
+    ).toBe(false);
+  });
+
+  it.each([
+    ['missing selected column', { basis: 'per_serving' }],
+    [
+      'column inconsistent with basis',
+      {
+        basis: 'per_serving',
+        per100g: nutrition({ calories: 200, proteinGrams: 10 }),
+      },
+    ],
+    [
+      'extra unselected column',
+      {
+        basis: 'per_serving',
+        perServing: nutrition({ calories: 200, proteinGrams: 10 }),
+        per100g: nutrition({ calories: 400, proteinGrams: 20 }),
+      },
+    ],
+  ])('rejects %s', (_name, columns) => {
+    expect(
+      nutritionLabelScanSchema.safeParse({ ...metadata, ...columns }).success
+    ).toBe(false);
+  });
+
+  it('rejects a column whose core macros are all null', () => {
+    expect(
+      nutritionLabelScanSchema.safeParse({
+        ...metadata,
+        basis: 'per_serving',
+        perServing: nutrition({ sodiumMg: 200, calciumMg: 100 }),
+      }).success
+    ).toBe(false);
+  });
+
+  it.each([
+    ['negative', { proteinGrams: -1 }],
+    ['NaN', { calories: Number.NaN }],
+    ['Infinity', { sodiumMg: Number.POSITIVE_INFINITY }],
+    ['nutrient maximum', { vitaminDMcg: 10_001 }],
+  ])('rejects %s nutrient values', (_name, override) => {
+    const values = nutrition({ calories: 200, carbsGrams: 20, ...override });
+    expect(nutritionValuesSchema.safeParse(values).success).toBe(false);
+  });
+
+  it('rejects impossible per-100-unit macro density', () => {
+    expect(
+      nutritionLabelScanSchema.safeParse({
+        ...metadata,
+        basis: 'per_100g',
+        per100g: nutrition({ calories: 500, fatGrams: 101 }),
+      }).success
+    ).toBe(false);
   });
 });

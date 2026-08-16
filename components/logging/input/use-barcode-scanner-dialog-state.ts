@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useBarcodeCameraScanner } from '@/hooks/meals/use-barcode-camera-scanner';
 import {
@@ -40,9 +40,15 @@ export function useBarcodeScannerDialogState({
   const [product, setProduct] = useState<ParsedBarcodeProduct | null>(null);
   const [ocrData, setOcrData] = useState<ParsedNutritionLabel | null>(null);
   const [isStaging, setIsStaging] = useState(false);
+  const scanGenerationRef = useRef(0);
+  const isOpenRef = useRef(isOpen);
+  const isStagingRef = useRef(false);
+  isOpenRef.current = isOpen;
 
   const runSearch = useCallback(
     async (rawBarcode: string) => {
+      if (!isOpenRef.current) return null;
+      const scanGeneration = ++scanGenerationRef.current;
       const sanitized = tryDecodeFontEncodedBarcode(rawBarcode);
       setBarcode(sanitized);
       setIsSearching(true);
@@ -50,6 +56,7 @@ export function useBarcodeScannerDialogState({
 
       try {
         const res = await searchBarcodeAction({ barcode: sanitized });
+        if (scanGeneration !== scanGenerationRef.current) return null;
         if (res.success) {
           setProduct(res.data);
           setStep('quantity');
@@ -58,10 +65,13 @@ export function useBarcodeScannerDialogState({
         setSearchError(t(`barcodeError.${res.code}`));
         return false;
       } catch {
+        if (scanGeneration !== scanGenerationRef.current) return null;
         setSearchError(t('barcodeError.server_error'));
         return false;
       } finally {
-        setIsSearching(false);
+        if (scanGeneration === scanGenerationRef.current) {
+          setIsSearching(false);
+        }
       }
     },
     [t]
@@ -70,20 +80,17 @@ export function useBarcodeScannerDialogState({
   const handleDecode = useCallback(
     (decodedText: string) => {
       runSearch(decodedText).then((success) => {
-        if (!success) setScanMode('manual');
+        if (success === false) setScanMode('manual');
       });
     },
     [runSearch]
   );
 
-  const handleCameraFailure = useCallback(() => {
-    setScanMode('manual');
-  }, []);
-
   const {
     cameraStatus,
     cameras,
     selectedCameraId,
+    effectiveCameraId,
     setSelectedCameraId,
     stopScanner,
   } = useBarcodeCameraScanner({
@@ -93,7 +100,6 @@ export function useBarcodeScannerDialogState({
       scanType === 'barcode' &&
       scanMode === 'camera',
     onDecode: handleDecode,
-    onCameraFailure: handleCameraFailure,
   });
 
   const handleSearch = async (e?: React.FormEvent) => {
@@ -103,19 +109,37 @@ export function useBarcodeScannerDialogState({
     await runSearch(trimmed);
   };
 
-  const handleClose = useCallback(() => {
+  const closeDialog = useCallback(() => {
+    scanGenerationRef.current += 1;
+    isOpenRef.current = false;
     onOpenChange(false);
     stopScanner();
-    setTimeout(() => {
-      setScanType('barcode');
-      setStep('input');
-      setScanMode('camera');
-      setBarcode('');
-      setSearchError(null);
-      setProduct(null);
-      setOcrData(null);
-    }, 200);
+    setScanType('barcode');
+    setStep('input');
+    setScanMode('camera');
+    setBarcode('');
+    setSearchError(null);
+    setIsSearching(false);
+    setProduct(null);
+    setOcrData(null);
+    isStagingRef.current = false;
+    setIsStaging(false);
   }, [onOpenChange, stopScanner]);
+
+  const handleClose = useCallback(() => {
+    if (isStagingRef.current) return;
+    closeDialog();
+  }, [closeDialog]);
+
+  const handleScanTypeChange = useCallback((next: 'barcode' | 'ocr') => {
+    scanGenerationRef.current += 1;
+    setScanType(next);
+    setSearchError(null);
+    setIsSearching(false);
+    setProduct(null);
+    setOcrData(null);
+    setStep('input');
+  }, []);
 
   const executeStageAndSave = async <
     T extends { success: boolean; code?: string; analysisId?: string },
@@ -123,6 +147,8 @@ export function useBarcodeScannerDialogState({
     stageFn: () => Promise<T>,
     errorPrefix: 'barcodeError' | 'ocrError'
   ) => {
+    if (isStagingRef.current) return;
+    isStagingRef.current = true;
     setIsStaging(true);
     try {
       const res = await stageFn();
@@ -134,10 +160,11 @@ export function useBarcodeScannerDialogState({
       await confirmAndSaveMealAction({ analysisId: res.analysisId });
       toast.success(t('feedArea.savedMeal'));
       onSuccess();
-      handleClose();
+      closeDialog();
     } catch {
       toast.error(t(`${errorPrefix}.server_error`));
     } finally {
+      isStagingRef.current = false;
       setIsStaging(false);
     }
   };
@@ -175,7 +202,7 @@ export function useBarcodeScannerDialogState({
   return {
     t,
     scanType,
-    setScanType,
+    handleScanTypeChange,
     step,
     setStep,
     scanMode,
@@ -192,6 +219,7 @@ export function useBarcodeScannerDialogState({
     cameraStatus,
     cameras,
     selectedCameraId,
+    effectiveCameraId,
     setSelectedCameraId,
     handleSearch,
     handleStageMeal,

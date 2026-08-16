@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1100" viewBox="0 0 900 1100">
+  <rect width="900" height="1100" fill="white"/>
+  <rect x="35" y="35" width="830" height="1030" fill="none" stroke="black" stroke-width="10"/>
+  <g fill="black" font-family="Arial, sans-serif">
+    <text x="70" y="130" font-size="72" font-weight="700">NUTRITION FACTS</text>
+    <text x="70" y="195" font-size="34">Test Oat Bar</text>
+    <line x1="70" y1="230" x2="830" y2="230" stroke="black" stroke-width="12"/>
+    <text x="70" y="290" font-size="32">Serving size 1 bar (50 g)</text>
+    <line x1="70" y1="325" x2="830" y2="325" stroke="black" stroke-width="5"/>
+    <text x="70" y="405" font-size="52" font-weight="700">Calories</text>
+    <text x="700" y="405" font-size="52" font-weight="700">210 kcal</text>
+    <line x1="70" y1="445" x2="830" y2="445" stroke="black" stroke-width="8"/>
+    <text x="70" y="525" font-size="40">Total Fat</text>
+    <text x="700" y="525" font-size="40">8 g</text>
+    <line x1="70" y1="555" x2="830" y2="555" stroke="black" stroke-width="3"/>
+    <text x="70" y="635" font-size="40">Total Carbohydrate</text>
+    <text x="700" y="635" font-size="40">30 g</text>
+    <line x1="70" y1="665" x2="830" y2="665" stroke="black" stroke-width="3"/>
+    <text x="70" y="745" font-size="40">Protein</text>
+    <text x="700" y="745" font-size="40">5 g</text>
+    <line x1="70" y1="775" x2="830" y2="775" stroke="black" stroke-width="3"/>
+    <text x="70" y="855" font-size="40">Sodium</text>
+    <text x="660" y="855" font-size="40">180 mg</text>
+  </g>
+</svg>

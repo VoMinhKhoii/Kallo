@@ -30,6 +30,7 @@ export default defineConfig({
       // for them, and every render fails on `useContext` of null — 166
       // phantom failures, and a run slow enough to look hung.
       '.claude/worktrees/**',
+      ...(process.env.RUN_LIVE_OCR_TESTS ? [] : ['**/label-ocr-live.test.ts']),
     ],
   },
 });

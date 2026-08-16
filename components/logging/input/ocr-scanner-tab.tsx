@@ -1,39 +1,56 @@
 'use client';
 
-import { Image as ImageIcon, Loader2, RefreshCw, Upload } from 'lucide-react';
-import NextImage from 'next/image';
+import { Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNutritionOcr } from '@/hooks/meals/use-nutrition-ocr';
 import { useOcrCamera } from '@/hooks/meals/use-ocr-camera';
 import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';
 import { OcrCameraView } from './ocr-camera-view';
+import { OcrFailureActions } from './ocr-failure-actions';
+import { OcrImagePreview } from './ocr-image-preview';
 import { OcrModeToggle } from './ocr-mode-toggle';
+import { OcrUploadPanel } from './ocr-upload-panel';
 
 export function OcrScannerTab({
   onSuccess,
+  onManualEntry,
 }: {
   onSuccess: (data: ParsedNutritionLabel) => void;
+  onManualEntry: () => void;
 }) {
   const t = useTranslations('logging');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string | null>(null);
+  const scanGenerationRef = useRef(0);
   const [mode, setMode] = useState<'camera' | 'upload'>('camera');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const { videoRef, isCameraActive, cameraError, capturePhoto, stopCamera } =
-    useOcrCamera(mode === 'camera' && !previewUrl);
+  const camera = useOcrCamera(mode === 'camera' && !previewUrl);
   const { scanLabel, isCompressing, isScanning, error, resetError } =
     useNutritionOcr();
 
+  useEffect(
+    () => () => {
+      scanGenerationRef.current += 1;
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    },
+    []
+  );
+
   const selectImage = (file: File) => {
+    scanGenerationRef.current += 1;
     resetError();
     setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    const nextPreviewUrl = URL.createObjectURL(file);
+    previewUrlRef.current = nextPreviewUrl;
+    setPreviewUrl(nextPreviewUrl);
   };
 
   const handleCapturePhoto = async () => {
-    const file = await capturePhoto();
+    const file = await camera.capturePhoto();
     if (file) selectImage(file);
   };
 
@@ -43,17 +60,24 @@ export function OcrScannerTab({
   };
 
   const handleClearImage = () => {
+    scanGenerationRef.current += 1;
     setSelectedFile(null);
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = null;
     setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     resetError();
   };
 
   const handleScan = async () => {
     if (!selectedFile) return;
+    const scanGeneration = ++scanGenerationRef.current;
     try {
       const result = await scanLabel(selectedFile);
-      if (result) onSuccess(result);
-    } catch {}
+      if (scanGeneration === scanGenerationRef.current) onSuccess(result);
+    } catch (error) {
+      console.warn('Nutrition label scan failed:', error);
+    }
   };
 
   const isProcessing = isCompressing || isScanning;
@@ -69,7 +93,7 @@ export function OcrScannerTab({
       <input
         type="file"
         ref={fileInputRef}
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
         onChange={handleFileSelect}
         className="hidden"
       />
@@ -78,76 +102,75 @@ export function OcrScannerTab({
         <OcrModeToggle
           mode={mode}
           setMode={setMode}
-          stopCamera={stopCamera}
+          stopCamera={camera.stopCamera}
           scanTabLabel={t('barcodeScanTab')}
           uploadTabLabel={t('ocrUploadTab')}
         />
       )}
 
       {safePreviewUrl ? (
-        <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black/5">
-          <NextImage
-            src={safePreviewUrl}
-            alt="Nutrition label preview"
-            fill
-            unoptimized
-            className="object-contain"
-          />
-          {!isProcessing && (
-            <button
-              type="button"
-              onClick={handleClearImage}
-              className="absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 font-medium text-[12px] text-white backdrop-blur-sm transition-colors hover:bg-black/80"
-            >
-              <RefreshCw className="h-3 w-3" />
-              {t('edit')}
-            </button>
-          )}
-        </div>
+        <OcrImagePreview
+          src={safePreviewUrl}
+          alt={t('ocrPreviewAlt')}
+          editText={t('edit')}
+          isProcessing={isProcessing}
+          onClear={handleClearImage}
+        />
       ) : mode === 'camera' ? (
         <OcrCameraView
-          videoRef={videoRef}
-          isCameraActive={isCameraActive}
-          cameraError={cameraError}
+          videoRef={camera.videoRef}
+          isCameraActive={camera.isCameraActive}
+          cameraError={camera.cameraError}
+          cameras={camera.cameras}
+          selectedCameraId={camera.selectedCameraId}
+          capabilities={camera.capabilities}
+          torchEnabled={camera.torchEnabled}
+          focusMode={camera.focusMode}
+          resolution={camera.resolution}
+          text={{
+            snap: t('ocrSnapPhoto'),
+            guide: t('ocrCaptureGuide'),
+            upload: t('ocrCameraFallback'),
+            permissionDenied: t('ocrCameraPermissionDenied'),
+            unavailable: t('ocrCameraUnavailable'),
+            camera: t('ocrCameraLabel'),
+            cameraFallback: t('ocrCameraFallbackLabel'),
+            torch: t('ocrTorchLabel'),
+            focus: t('ocrFocusLabel'),
+            resolution: t('ocrResolutionLabel'),
+            focusLabels: {
+              continuous: t('ocrFocusContinuous'),
+              'single-shot': t('ocrFocusSingle'),
+              manual: t('ocrFocusManual'),
+            },
+          }}
           onCapture={handleCapturePhoto}
           onUploadClick={() => fileInputRef.current?.click()}
-          uploadHintText={t('ocrUploadHint')}
+          onCameraChange={camera.setSelectedCameraId}
+          onTorchChange={camera.setTorch}
+          onFocusChange={camera.setFocusMode}
+          onResolutionChange={camera.setResolution}
         />
       ) : (
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ')
-              fileInputRef.current?.click();
-          }}
-          tabIndex={0}
-          role="button"
-          className="flex aspect-video cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-[#EAE7E0] border-dashed bg-nham-track/20 p-6 text-center transition-colors hover:border-nham-accent/50 hover:bg-nham-track/40"
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-nham-accent shadow-sm">
-            <Upload className="h-6 w-6" />
-          </div>
-          <div className="space-y-1">
-            <p className="font-medium font-sans-display text-[14px] text-nham-text">
-              {t('ocrUploadHint')}
-            </p>
-            <p className="font-sans-display text-[#8B8682] text-[12px]">
-              PNG, JPG or WebP
-            </p>
-          </div>
-        </div>
+        <OcrUploadPanel
+          hint={t('ocrUploadHint')}
+          formats={t('ocrFormatHint')}
+          onChoose={() => fileInputRef.current?.click()}
+        />
       )}
 
       {error && (
-        <div
-          role="alert"
-          className="rounded-xl bg-nham-danger/10 p-3 font-sans-display text-[13px] text-nham-danger leading-snug"
-        >
-          {t(`ocrError.${error}`)}
-        </div>
+        <OcrFailureActions
+          message={t(`ocrError.${error}`)}
+          retryText={t('ocrRetryPhoto')}
+          manualText={t('ocrManualEntry')}
+          isProcessing={isProcessing}
+          onRetry={handleScan}
+          onManualEntry={onManualEntry}
+        />
       )}
 
-      {selectedFile && (
+      {selectedFile && !error && (
         <div className="flex justify-end pt-2">
           <button
             type="button"

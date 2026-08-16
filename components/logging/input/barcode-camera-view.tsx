@@ -1,6 +1,8 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import type { CameraStatus } from '@/hooks/meals/use-barcode-camera-scanner';
 
 interface BarcodeCameraViewProps {
@@ -10,7 +12,12 @@ interface BarcodeCameraViewProps {
   onCameraChange: (id: string) => void;
   initializingText: string;
   scanningText: string;
-  selectCameraLabel?: string;
+  permissionDeniedText: string;
+  cameraErrorText: string;
+  fallbackText: string;
+  selectCameraLabel: string;
+  cameraFallbackLabel: string;
+  onFallback: () => void;
 }
 
 export function BarcodeCameraView({
@@ -20,8 +27,28 @@ export function BarcodeCameraView({
   onCameraChange,
   initializingText,
   scanningText,
+  permissionDeniedText,
+  cameraErrorText,
+  fallbackText,
   selectCameraLabel,
+  cameraFallbackLabel,
+  onFallback,
 }: BarcodeCameraViewProps) {
+  const hasError =
+    cameraStatus === 'permission-denied' || cameraStatus === 'error';
+  const previousStatusRef = useRef<CameraStatus | null>(null);
+
+  useEffect(() => {
+    if (hasError && previousStatusRef.current !== cameraStatus) {
+      toast.error(
+        cameraStatus === 'permission-denied'
+          ? permissionDeniedText
+          : cameraErrorText
+      );
+    }
+    previousStatusRef.current = cameraStatus;
+  }, [cameraErrorText, cameraStatus, hasError, permissionDeniedText]);
+
   return (
     <div className="space-y-3">
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black shadow-sm sm:aspect-video">
@@ -42,6 +69,25 @@ export function BarcodeCameraView({
         </div>
       </div>
       <div className="text-center font-sans-display text-[#8B8682] text-[12px]">
+        {hasError && (
+          <div
+            role="alert"
+            className="space-y-2 rounded-xl bg-nham-danger/10 p-3 text-nham-danger"
+          >
+            <p>
+              {cameraStatus === 'permission-denied'
+                ? permissionDeniedText
+                : cameraErrorText}
+            </p>
+            <button
+              type="button"
+              onClick={onFallback}
+              className="rounded-lg bg-nham-ink px-3 py-1.5 font-medium text-white text-xs"
+            >
+              {fallbackText}
+            </button>
+          </div>
+        )}
         {cameraStatus === 'initializing' && (
           <div className="flex items-center justify-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -53,14 +99,14 @@ export function BarcodeCameraView({
             <span>{scanningText}</span>
             {cameras.length > 1 && (
               <select
-                aria-label={selectCameraLabel || 'Select camera'}
-                value={selectedCameraId || cameras[0]?.id}
+                aria-label={selectCameraLabel}
+                value={selectedCameraId ?? ''}
                 onChange={(e) => onCameraChange(e.target.value)}
                 className="mx-auto block rounded-lg border border-[#EAE7E0] bg-white px-2.5 py-1 text-xs"
               >
-                {cameras.map((d) => (
+                {cameras.map((d, index) => (
                   <option key={d.id} value={d.id}>
-                    {d.label || `Camera ${d.id.substring(0, 5)}`}
+                    {d.label || `${cameraFallbackLabel} ${index + 1}`}
                   </option>
                 ))}
               </select>

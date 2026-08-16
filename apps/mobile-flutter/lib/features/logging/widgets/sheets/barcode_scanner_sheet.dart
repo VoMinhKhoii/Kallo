@@ -271,7 +271,8 @@ class _ScannerView extends StatelessWidget {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final size = constraints.biggest;
-                  // Visual scan frame target overlay (wider 88% width x 65% height for easier alignment)
+                  // Use one rectangle for both decoding and the visible target
+                  // so neighboring shelf packages cannot win the scan.
                   final frameWidth = size.width * 0.88;
                   final frameHeight = frameWidth * 0.65;
                   final scanWindow = Rect.fromCenter(
@@ -285,6 +286,7 @@ class _ScannerView extends StatelessWidget {
                       MobileScanner(
                         controller: controller,
                         fit: BoxFit.cover,
+                        scanWindow: scanWindow,
                         onDetect: onDetect,
                         errorBuilder:
                             (context, error) => _CameraErrorState(
