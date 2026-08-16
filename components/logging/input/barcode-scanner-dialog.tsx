@@ -24,7 +24,7 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
   const {
     t,
     scanType,
-    setScanType,
+    handleScanTypeChange,
     step,
     setStep,
     scanMode,
@@ -49,21 +49,37 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
   } = useBarcodeScannerDialogState(props);
 
   return (
-    <Dialog open={props.isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={(open) => !open && !isStaging && handleClose()}
+    >
       <DialogContent
         showCloseButton={false}
+        onEscapeKeyDown={(event) => {
+          if (isStaging) event.preventDefault();
+        }}
+        onPointerDownOutside={(event) => {
+          if (isStaging) event.preventDefault();
+        }}
         className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-[24px] border border-[#EAE7E0] bg-[#FDFCF8] p-0 font-sans-display text-nham-text sm:max-w-md"
       >
         <BarcodeDialogHeader
           title={
-            scanType === 'barcode'
-              ? t('barcodeDialogTitle')
-              : t('ocrDialogTitle')
+            step === 'ocr-review'
+              ? t('ocrReviewTitle')
+              : scanType === 'barcode'
+                ? t('barcodeDialogTitle')
+                : t('ocrDialogTitle')
           }
           description={
-            scanType === 'barcode' ? t('barcodeDialogDesc') : t('ocrDialogDesc')
+            step === 'ocr-review'
+              ? t('ocrReviewDesc')
+              : scanType === 'barcode'
+                ? t('barcodeDialogDesc')
+                : t('ocrDialogDesc')
           }
           cancelText={t('barcodeCancel')}
+          isCloseDisabled={isStaging}
         />
 
         {step === 'input' ? (
@@ -76,8 +92,7 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
                     type="button"
                     aria-pressed={scanType === st}
                     onClick={() => {
-                      setScanType(st);
-                      setSearchError(null);
+                      handleScanTypeChange(st);
                     }}
                     className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-medium text-[13px] transition-all ${
                       scanType === st
@@ -105,6 +120,10 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
               <OcrScannerTab
                 onSuccess={(data) => {
                   setOcrData(data);
+                  setStep('ocr-review');
+                }}
+                onManualEntry={() => {
+                  setOcrData(null);
                   setStep('ocr-review');
                 }}
               />
@@ -142,6 +161,12 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
                       onCameraChange={setSelectedCameraId}
                       initializingText={t('barcodeCameraInitializing')}
                       scanningText={t('barcodeCameraScanning')}
+                      permissionDeniedText={t('barcodeCameraPermissionDenied')}
+                      cameraErrorText={t('barcodeCameraError')}
+                      fallbackText={t('barcodeManualFallback')}
+                      selectCameraLabel={t('barcodeSelectCamera')}
+                      cameraFallbackLabel={t('barcodeCameraFallbackLabel')}
+                      onFallback={() => setScanMode('manual')}
                     />
                   ) : (
                     <BarcodeManualInput
@@ -155,8 +180,7 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
                       placeholderText={t('barcodePlaceholder')}
                       fallbackPromptText={t('ocrFallbackPrompt')}
                       onFallbackClick={() => {
-                        setScanType('ocr');
-                        setSearchError(null);
+                        handleScanTypeChange('ocr');
                       }}
                     />
                   )}
@@ -194,7 +218,7 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
             onBack={() => setStep('input')}
             onConfirm={handleStageMeal}
           />
-        ) : step === 'ocr-review' && ocrData ? (
+        ) : step === 'ocr-review' ? (
           <OcrReviewStep
             data={ocrData}
             isStaging={isStaging}

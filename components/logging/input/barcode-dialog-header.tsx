@@ -11,12 +11,14 @@ interface BarcodeDialogHeaderProps {
   title: string;
   description: string;
   cancelText: string;
+  isCloseDisabled: boolean;
 }
 
 export function BarcodeDialogHeader({
   title,
   description,
   cancelText,
+  isCloseDisabled,
 }: BarcodeDialogHeaderProps) {
   return (
     <div className="flex shrink-0 items-start justify-between gap-4 border-[#EAE7E0]/70 border-b px-6 py-4">
@@ -30,6 +32,7 @@ export function BarcodeDialogHeader({
       </div>
       <DialogClose
         aria-label={cancelText}
+        disabled={isCloseDisabled}
         className="-mr-1 shrink-0 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-[#EAE7E0]/50 hover:text-nham-text"
       >
         <X className="h-5 w-5" />

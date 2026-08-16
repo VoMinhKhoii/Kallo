@@ -5,6 +5,10 @@ import pkg from './package.json';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  experimental: {
+    // OCR sends at most 4 MiB of decoded image bytes as base64 (~5.34 MiB).
+    serverActions: { bodySizeLimit: '6mb' },
+  },
   // Surfaced to the client so in-app feedback can record which app version a
   // report came from.
   env: {

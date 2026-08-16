@@ -26,7 +26,15 @@ describe('Live Nutrition Label OCR extraction', () => {
 
       console.log('Live OCR Result:', JSON.stringify(result, null, 2));
 
-      expect(result.perServing?.calories).toBeGreaterThan(0);
+      const calories =
+        'perServing' in result
+          ? result.perServing.calories
+          : 'per100g' in result
+            ? result.per100g.calories
+            : 'per100ml' in result
+              ? result.per100ml.calories
+              : result.perContainer.calories;
+      expect(calories).toBeGreaterThan(0);
       expect(result.confidence).toBe('high');
     },
     30000

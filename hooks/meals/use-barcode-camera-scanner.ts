@@ -20,9 +20,6 @@ interface UseBarcodeCameraScannerOptions {
   /** Called with the raw decoded text once a barcode is read. The scanner is
    *  stopped before this fires, so the caller may safely start network work. */
   onDecode: (decodedText: string) => void;
-  /** Called ~3s after the camera fails to start (permission denied or
-   *  error), so the caller can fall back to manual entry. */
-  onCameraFailure: () => void;
 }
 
 function playBeep() {
@@ -68,7 +65,6 @@ function vibrate() {
 export function useBarcodeCameraScanner({
   isActive,
   onDecode,
-  onCameraFailure,
 }: UseBarcodeCameraScannerOptions) {
   const [cameraStatus, setCameraStatus] =
     useState<CameraStatus>('initializing');
@@ -144,13 +140,16 @@ export function useBarcodeCameraScanner({
         qrCodeScannerRef.current = scanner;
         scannerInstance = scanner;
 
-        // Select camera config:
-        // 1. User selected camera ID
-        // 2. First camera from queried list
-        // 3. Fallback standard facingMode environment configuration
+        const environmentCamera = devices.find((device) =>
+          /back|rear|environment|traseira|rück|arrière|sau/i.test(device.label)
+        );
+        // Prefer the user's explicit choice, then a labeled rear camera. When
+        // labels are unavailable, let facingMode choose instead of assuming
+        // devices[0] is the rear lens (it is commonly the selfie camera).
         const cameraConfig =
           selectedCameraId ||
-          (devices.length > 0 ? devices[0].id : { facingMode: 'environment' });
+          environmentCamera?.id ||
+          ({ facingMode: { ideal: 'environment' } } as const);
 
         await scanner.start(
           cameraConfig,
@@ -182,9 +181,14 @@ export function useBarcodeCameraScanner({
           }
         );
 
-        if (isMounted) {
-          setCameraStatus('scanning');
+        if (!isMounted) {
+          if (scanner.isScanning) await scanner.stop();
+          if (qrCodeScannerRef.current === scanner) {
+            qrCodeScannerRef.current = null;
+          }
+          return;
         }
+        setCameraStatus('scanning');
       } catch (err) {
         console.error('Failed to start scanner:', err);
         if (isMounted) {
@@ -211,18 +215,6 @@ export function useBarcodeCameraScanner({
       }
     };
   }, [isActive, onDecode, selectedCameraId, stopScanner]);
-
-  // Auto switch away from camera mode a few seconds after a failure — gives
-  // the "starting camera" message a moment to display before bailing out.
-  useEffect(() => {
-    if (cameraStatus !== 'permission-denied' && cameraStatus !== 'error') {
-      return;
-    }
-    const timeout = setTimeout(() => {
-      onCameraFailure();
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, [cameraStatus, onCameraFailure]);
 
   return {
     cameraStatus,

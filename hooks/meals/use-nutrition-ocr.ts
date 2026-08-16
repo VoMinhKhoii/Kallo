@@ -3,57 +3,113 @@
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { scanNutritionLabelAction } from '@/lib/actions/nutrition-ocr';
+import {
+  isOcrImageMimeType,
+  OCR_CLIENT_RESIZE_WIDTH,
+  OCR_MAX_IMAGE_BYTES,
+  OCR_MAX_SOURCE_FILE_BYTES,
+} from '@/lib/nutrition/ocr-image-constants';
 import type {
   OcrErrorCode,
   ParsedNutritionLabel,
 } from '@/lib/nutrition/ocr-schema';
 
+const ENCODE_ATTEMPTS = [
+  { quality: 0.85, scale: 1 },
+  { quality: 0.7, scale: 1 },
+  { quality: 0.6, scale: 0.8 },
+  { quality: 0.5, scale: 0.65 },
+] as const;
+
+function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) =>
+        blob
+          ? resolve(blob)
+          : reject(new Error('Image compression produced no data')),
+      'image/jpeg',
+      quality
+    );
+  });
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Failed to read compressed image'));
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== 'string' || !result.includes(',')) {
+        reject(new Error('Invalid compressed image data'));
+        return;
+      }
+      resolve(result.slice(result.indexOf(',') + 1));
+    };
+    reader.readAsDataURL(blob);
+  });
+}
+
 export async function compressNutritionLabelImage(file: File): Promise<{
   base64Data: string;
   mimeType: string;
 }> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Failed to read image file'));
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onerror = () => reject(new Error('Failed to load image element'));
-      img.onload = () => {
-        const MAX_DIM = 1024;
-        let width = img.width;
-        let height = img.height;
+  if (
+    file.size === 0 ||
+    file.size > OCR_MAX_SOURCE_FILE_BYTES ||
+    !isOcrImageMimeType(file.type)
+  ) {
+    throw new Error('Image file is too large, empty, or unsupported');
+  }
+  if (typeof createImageBitmap !== 'function') {
+    throw new Error('This browser cannot safely resize images');
+  }
 
-        if (width > MAX_DIM || height > MAX_DIM) {
-          if (width > height) {
-            height = Math.round((height * MAX_DIM) / width);
-            width = MAX_DIM;
-          } else {
-            width = Math.round((width * MAX_DIM) / height);
-            height = MAX_DIM;
-          }
-        }
+  let bitmap: ImageBitmap;
+  try {
+    // Resize during decode so a high-resolution phone photo is never expanded
+    // into a full-size RGBA bitmap in page memory.
+    bitmap = await createImageBitmap(file, {
+      resizeWidth: OCR_CLIENT_RESIZE_WIDTH,
+      resizeQuality: 'high',
+    });
+  } catch (error) {
+    throw new Error('Failed to decode image', { cause: error });
+  }
 
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Canvas context unavailable'));
-          return;
-        }
+  try {
+    if (bitmap.width < 32 || bitmap.height < 32 || bitmap.height > 4096) {
+      throw new Error('Image dimensions are outside the accepted range');
+    }
 
-        ctx.drawImage(img, 0, 0, width, height);
-        // Always re-encode lossily; PNG ignores quality argument and inflates payload.
-        const targetMime =
-          file.type === 'image/webp' ? 'image/webp' : 'image/jpeg';
-        const dataUrl = canvas.toDataURL(targetMime, 0.85);
-        const base64Data = dataUrl.split(',')[1];
-        resolve({ base64Data, mimeType: targetMime });
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  });
+    const source = document.createElement('canvas');
+    source.width = bitmap.width;
+    source.height = bitmap.height;
+    const context = source.getContext('2d');
+    if (!context) throw new Error('Canvas context unavailable');
+    context.drawImage(bitmap, 0, 0);
+
+    for (const attempt of ENCODE_ATTEMPTS) {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(source.width * attempt.scale);
+      canvas.height = Math.round(source.height * attempt.scale);
+      const outputContext = canvas.getContext('2d');
+      if (!outputContext) throw new Error('Canvas context unavailable');
+      outputContext.drawImage(source, 0, 0, canvas.width, canvas.height);
+
+      const blob = await canvasToBlob(canvas, attempt.quality);
+      if (blob.size <= OCR_MAX_IMAGE_BYTES) {
+        return {
+          base64Data: await blobToBase64(blob),
+          mimeType: 'image/jpeg',
+        };
+      }
+    }
+  } finally {
+    bitmap.close();
+  }
+
+  throw new Error('Compressed image exceeds the upload budget');
 }
 
 export function useNutritionOcr() {
@@ -64,26 +120,34 @@ export function useNutritionOcr() {
     mutationFn: async (file: File) => {
       setErrorCode(null);
       setIsCompressing(true);
+
+      let compressed: Awaited<ReturnType<typeof compressNutritionLabelImage>>;
       try {
-        const { base64Data, mimeType } =
-          await compressNutritionLabelImage(file);
+        compressed = await compressNutritionLabelImage(file);
+      } catch (error) {
+        setErrorCode('invalid_image');
+        throw error;
+      } finally {
         setIsCompressing(false);
-
-        const result = await scanNutritionLabelAction({
-          imageBase64: base64Data,
-          mimeType,
-        });
-
-        if (!result.success) {
-          setErrorCode(result.code);
-          throw new Error(result.code);
-        }
-
-        return result.data;
-      } catch (err) {
-        setIsCompressing(false);
-        throw err;
       }
+
+      let result: Awaited<ReturnType<typeof scanNutritionLabelAction>>;
+      try {
+        result = await scanNutritionLabelAction({
+          imageBase64: compressed.base64Data,
+          mimeType: compressed.mimeType,
+        });
+      } catch (error) {
+        setErrorCode('server_error');
+        throw error;
+      }
+
+      if (!result.success) {
+        setErrorCode(result.code);
+        throw new Error(result.code);
+      }
+
+      return result.data;
     },
   });
 

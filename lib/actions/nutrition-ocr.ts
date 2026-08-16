@@ -12,49 +12,62 @@ import { requireAuthAndProfile } from '@/lib/auth';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { pendingAnalyses } from '@/lib/db/schema';
+import { validateNutritionLabelImage } from '@/lib/nutrition/ocr-image';
+import {
+  OCR_ACCEPTED_MIME_TYPES,
+  OCR_MAX_IMAGE_BYTES,
+} from '@/lib/nutrition/ocr-image-constants';
 import type {
   OcrErrorCode,
+  OcrReviewPayload,
   ParsedNutritionLabel,
+} from '@/lib/nutrition/ocr-schema';
+import {
+  nutritionValuesSchema,
+  ocrConfidenceSchema,
 } from '@/lib/nutrition/ocr-schema';
 import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 
 const scanLabelSchema = z.object({
-  imageBase64: z.string().min(1, 'Image data is required'),
-  mimeType: z
+  imageBase64: z
     .string()
+    .min(1, 'Image data is required')
     .refine(
-      (val) =>
-        [
-          'image/jpeg',
-          'image/png',
-          'image/webp',
-          'image/heic',
-          'image/heif',
-          'image/gif',
-          'image/bmp',
-        ].includes(val),
-      'Unsupported image format'
-    ),
+      (value) => value.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(value),
+      'Malformed base64 image data'
+    )
+    .refine((value) => {
+      const padding = value.endsWith('==') ? 2 : value.endsWith('=') ? 1 : 0;
+      return (value.length * 3) / 4 - padding <= OCR_MAX_IMAGE_BYTES;
+    }, 'Image payload is too large'),
+  mimeType: z.enum(OCR_ACCEPTED_MIME_TYPES),
 });
 
 const stageOcrMealSchema = z.object({
   productName: z.string().min(1).max(200),
-  grams: z.number().positive().max(10_000),
-  calories: z.number().nonnegative(),
-  proteinGrams: z.number().nonnegative(),
-  carbsGrams: z.number().nonnegative(),
-  fatGrams: z.number().nonnegative(),
-  fiberGrams: z.number().nullable().optional(),
-  sodiumMg: z.number().nullable().optional(),
-  calciumMg: z.number().nullable().optional(),
-  ironMg: z.number().nullable().optional(),
-  potassiumMg: z.number().nullable().optional(),
-  vitaminAMcg: z.number().nullable().optional(),
-  vitaminCMg: z.number().nullable().optional(),
-  vitaminDMcg: z.number().nullable().optional(),
+  amount: z.number().finite().positive().max(100_000),
+  unit: z.enum(['g', 'ml', 'serving']),
+  confidence: ocrConfidenceSchema,
+  ...nutritionValuesSchema.shape,
+  calories: nutritionValuesSchema.shape.calories.unwrap(),
+  proteinGrams: nutritionValuesSchema.shape.proteinGrams.unwrap(),
+  carbsGrams: nutritionValuesSchema.shape.carbsGrams.unwrap(),
+  fatGrams: nutritionValuesSchema.shape.fatGrams.unwrap(),
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,
 });
+
+function scanErrorCode(error: unknown): OcrErrorCode {
+  const code = (error as { code?: unknown } | null)?.code;
+  if (
+    code === 'invalid_image' ||
+    code === 'no_label_detected' ||
+    code === 'rate_limited'
+  ) {
+    return code;
+  }
+  return 'server_error';
+}
 
 export async function scanNutritionLabelAction(input: {
   imageBase64: string;
@@ -63,43 +76,32 @@ export async function scanNutritionLabelAction(input: {
   | { success: true; data: ParsedNutritionLabel }
   | { success: false; code: OcrErrorCode }
 > {
+  const parsed = scanLabelSchema.safeParse(input);
+  if (!parsed.success) return { success: false, code: 'invalid_image' };
+
   try {
-    const parsed = scanLabelSchema.parse(input);
     await requireAuthAndProfile();
+    // TODO(rate-limit): Enforce the per-user OCR limit here and throw an error with code "rate_limited".
+    await validateNutritionLabelImage(parsed.data);
 
     const data = await scanNutritionLabelWithGemini({
-      imageBase64: parsed.imageBase64,
-      mimeType: parsed.mimeType,
+      imageBase64: parsed.data.imageBase64,
+      mimeType: parsed.data.mimeType,
     });
 
     return { success: true, data };
   } catch (error) {
     console.error('Error in scanNutritionLabelAction:', error);
-    if (error instanceof z.ZodError) {
-      return { success: false, code: 'invalid_image' };
-    }
-    return { success: false, code: 'server_error' };
+    return { success: false, code: scanErrorCode(error) };
   }
 }
 
-export async function stageOcrMealAction(input: {
-  productName: string;
-  grams: number;
-  calories: number;
-  proteinGrams: number;
-  carbsGrams: number;
-  fatGrams: number;
-  fiberGrams?: number | null;
-  sodiumMg?: number | null;
-  calciumMg?: number | null;
-  ironMg?: number | null;
-  potassiumMg?: number | null;
-  vitaminAMcg?: number | null;
-  vitaminCMg?: number | null;
-  vitaminDMcg?: number | null;
-  loggedDate: string;
-  timezoneOffset: number;
-}): Promise<
+export async function stageOcrMealAction(
+  input: OcrReviewPayload & {
+    loggedDate: string;
+    timezoneOffset: number;
+  }
+): Promise<
   { success: true; analysisId: string } | { success: false; code: OcrErrorCode }
 > {
   try {
@@ -115,26 +117,26 @@ export async function stageOcrMealAction(input: {
       sodiumMg: parsed.sodiumMg ?? null,
       calciumMg: parsed.calciumMg ?? null,
       ironMg: parsed.ironMg ?? null,
+      magnesiumMg: parsed.magnesiumMg ?? null,
+      phosphorusMg: parsed.phosphorusMg ?? null,
       potassiumMg: parsed.potassiumMg ?? null,
+      zincMg: parsed.zincMg ?? null,
+      copperMcg: parsed.copperMcg ?? null,
+      manganeseMg: parsed.manganeseMg ?? null,
+      betaCaroteneMcg: parsed.betaCaroteneMcg ?? null,
       vitaminAMcg: parsed.vitaminAMcg ?? null,
       vitaminCMg: parsed.vitaminCMg ?? null,
       vitaminDMcg: parsed.vitaminDMcg ?? null,
-      magnesiumMg: null,
-      phosphorusMg: null,
-      zincMg: null,
-      copperMcg: null,
-      manganeseMg: null,
-      betaCaroteneMcg: null,
-      vitaminEMg: null,
-      vitaminKMcg: null,
-      vitaminB1Mg: null,
-      vitaminB2Mg: null,
-      vitaminPpMg: null,
-      vitaminB5Mg: null,
-      vitaminB6Mg: null,
-      vitaminB9Mcg: null,
-      vitaminB12Mcg: null,
-      vitaminHMcg: null,
+      vitaminEMg: parsed.vitaminEMg ?? null,
+      vitaminKMcg: parsed.vitaminKMcg ?? null,
+      vitaminB1Mg: parsed.vitaminB1Mg ?? null,
+      vitaminB2Mg: parsed.vitaminB2Mg ?? null,
+      vitaminPpMg: parsed.vitaminPpMg ?? null,
+      vitaminB5Mg: parsed.vitaminB5Mg ?? null,
+      vitaminB6Mg: parsed.vitaminB6Mg ?? null,
+      vitaminB9Mcg: parsed.vitaminB9Mcg ?? null,
+      vitaminB12Mcg: parsed.vitaminB12Mcg ?? null,
+      vitaminHMcg: parsed.vitaminHMcg ?? null,
     };
 
     const bounded: BoundedNutrition = {} as BoundedNutrition;
@@ -150,7 +152,7 @@ export async function stageOcrMealAction(input: {
 
     const pipelineResult: PipelineResult = {
       mealSlot: null,
-      confidenceOverall: 'high',
+      confidenceOverall: parsed.confidence,
       unmatchedIngredients: [],
       displayedNutrition: nutrition,
       boundedNutrition: bounded,
@@ -163,10 +165,10 @@ export async function stageOcrMealAction(input: {
             {
               ingredientName: parsed.productName,
               foodCompositionId: null,
-              estimatedGrams: parsed.grams,
-              rawEquivalentGrams: parsed.grams,
+              estimatedGrams: parsed.amount,
+              rawEquivalentGrams: parsed.amount,
               cookingMethod: null,
-              userFacingUnit: 'g',
+              userFacingUnit: parsed.unit,
               matchConfidence: 1,
               boundedNutrition: bounded,
               displayedNutrition: nutrition,
@@ -181,7 +183,7 @@ export async function stageOcrMealAction(input: {
       .values({
         userId: user.id,
         pipelineResult,
-        rawInput: `${parsed.productName} (${parsed.grams}g)`,
+        rawInput: `${parsed.productName} (${parsed.amount}${parsed.unit})`,
         entryMode: 'precise',
         loggedAt,
       })

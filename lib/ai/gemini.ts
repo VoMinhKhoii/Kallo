@@ -158,7 +158,7 @@ export function createGeminiClient(
 
           return params.schema.parse(JSON.parse(text));
         },
-        { label: params.model }
+        { label: params.model, abortSignal: params.abortSignal }
       );
     },
 

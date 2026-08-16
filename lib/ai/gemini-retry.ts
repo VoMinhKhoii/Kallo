@@ -110,8 +110,27 @@ function parseRetryDelay(
   return baseDelayMs * 2 ** (attempt - 1);
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function abortError(signal: AbortSignal): Error {
+  return signal.reason instanceof Error
+    ? signal.reason
+    : new DOMException('The operation was aborted', 'AbortError');
+}
+
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  if (!signal) return new Promise((resolve) => setTimeout(resolve, ms));
+  if (signal.aborted) return Promise.reject(abortError(signal));
+
+  return new Promise((resolve, reject) => {
+    const onAbort = () => {
+      clearTimeout(timeout);
+      reject(abortError(signal));
+    };
+    const timeout = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
 }
 
 export type WithRetry = ReturnType<typeof createWithRetry>;
@@ -122,6 +141,7 @@ export function createWithRetry(retry: RetryOptions) {
     fn: (attempt: number) => Promise<T>,
     opts?: {
       label?: string;
+      abortSignal?: AbortSignal;
       onAttempt?: (
         attempt: number,
         t0: number,
@@ -134,6 +154,9 @@ export function createWithRetry(retry: RetryOptions) {
     let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= retry.maxRetries; attempt++) {
+      if (opts?.abortSignal?.aborted) {
+        throw abortError(opts.abortSignal);
+      }
       const t0 = Date.now();
       try {
         const result = await fn(attempt);
@@ -144,6 +167,9 @@ export function createWithRetry(retry: RetryOptions) {
         return result;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
+        if (opts?.abortSignal?.aborted) {
+          throw abortError(opts.abortSignal);
+        }
         const elapsed = Date.now() - t0;
         const status = getErrorStatus(lastError);
         opts?.onAttempt?.(attempt, t0, null, err);
@@ -168,7 +194,7 @@ export function createWithRetry(retry: RetryOptions) {
         console.warn(
           `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries} got retryable ${status ?? 'error'} (${elapsed}ms), retrying in ${delay}ms`
         );
-        await sleep(delay);
+        await sleep(delay, opts?.abortSignal);
       }
     }
 
