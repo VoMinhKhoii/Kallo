@@ -7,8 +7,18 @@ import '../../../theme/nham_theme.dart';
 /// blocks each with its own margin.
 abstract final class LoggingSpacing {
   /// Between the feed's big blocks: date strip ↔ macro summary ↔ card list ↔
-  /// composer, and between one meal card and the next.
+  /// composer.
   static const double block = NhamSpacing.sp2; // 8
+
+  /// The conversational rhythm: one turn to the next, and the parts WITHIN a
+  /// turn — divider ↔ message ↔ card. One value for all of them, because the
+  /// eye reads them as the same beat and any difference registers as a mistake
+  /// rather than as hierarchy.
+  ///
+  /// Wider than [block]: at 8 the turns ran together, with a card's CTA nearly
+  /// touching the next turn's timestamp. 12 is the app-wide rhythm
+  /// (`nham-design/mobile.md`), so this is the house step rather than a new one.
+  static const double turn = NhamSpacing.sp3; // 12
 
   /// Inside a card: the space above/below every hairline and between the
   /// card's sections.

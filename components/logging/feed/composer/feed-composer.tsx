@@ -1,8 +1,9 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import type { RefObject } from 'react';
 import { CheatOccasionChips } from '@/components/logging/feed/cheat/cheat-occasion-chips';
+import { ComposerGlow } from '@/components/logging/feed/composer/composer-glow';
 import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
 import {
   MealInput,
@@ -12,6 +13,7 @@ import { RelogPickerPopup } from '@/components/logging/input/relog/relog-picker-
 import { StagedList } from '@/components/logging/input/relog/staged-list';
 import type { useRelogComposer } from '@/hooks/meals/relog/use-relog-composer';
 import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
+import { EMPTY_ENTRANCE, ENTRANCE_EASE } from '@/lib/logging/empty-entrance';
 import type { CheatIntensity } from '@/lib/types/cheat';
 
 const RELOG_LISTBOX_ID = 'relog-picker-listbox';
@@ -32,6 +34,11 @@ interface FeedComposerProps {
   onChangeIntensity: (intensity: CheatIntensity) => void;
   selectedDate: string;
   onBarcodeSuccess: () => void;
+  /**
+   * Whether a change of position should be sprung. False until the day query
+   * has answered once — see `animateComposerLayout`.
+   */
+  animateLayout: boolean;
 }
 
 /**
@@ -54,6 +61,7 @@ export function FeedComposer({
   onChangeIntensity,
   selectedDate,
   onBarcodeSuccess,
+  animateLayout,
 }: FeedComposerProps) {
   const {
     relogPicker,
@@ -62,12 +70,14 @@ export function FeedComposer({
     hasStagedRelog,
     isRelogEnabled,
   } = relog;
+  const reduceMotion = useReducedMotion();
   return (
     <motion.div
-      layout
+      layout={animateLayout}
       transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-      className="shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4"
+      className="relative shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4"
     >
+      <ComposerGlow />
       {isCheat && (
         <CheatOccasionChips
           occasions={cheatOccasions}
@@ -75,7 +85,20 @@ export function FeedComposer({
           onSelect={onSelectCheatOccasion}
         />
       )}
-      <div className="mx-auto w-full max-w-3xl">
+      {/* The first beat: the input is what you came for, so it arrives before
+          the light behind it and the question above it. A fade, NOT a rise —
+          the bar has to be where it belongs from the first frame, and anything
+          that moves it reads as the page still settling. */}
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{
+          duration: 0.45,
+          delay: EMPTY_ENTRANCE.input,
+          ease: ENTRANCE_EASE,
+        }}
+        className="relative z-10 mx-auto w-full max-w-3xl"
+      >
         <MealInput
           ref={inputRef}
           onSubmit={onSubmit}
@@ -119,7 +142,7 @@ export function FeedComposer({
             ) : null
           }
         />
-      </div>
+      </motion.div>
     </motion.div>
   );
 }

@@ -5,19 +5,17 @@ import '../../logic/feed/view_state.dart';
 import '../empty_state.dart';
 import 'loading_skeletons.dart';
 
-/// What the feed shows on a day with no saved meals yet: the empty state, the
-/// first-load skeleton, or — when something is staged/streaming/failed — the
-/// footer on its own.
+/// What the feed shows on a day with nothing in it at all: the empty state or
+/// the first-load skeleton. The moment there is a card — saved, staged, or the
+/// live turn — [FeedList]'s own scroll view takes over.
 ///
-/// Empty → centered with vertical padding; populated → symmetric 12 padding,
-/// full-width cards (the old left timeline gutter is gone, matching web).
+/// Empty → centered with vertical padding; loading → symmetric 12 padding,
+/// full-width ghost cards (the old left timeline gutter is gone, matching web).
 class FeedNoMealsView extends StatelessWidget {
   const FeedNoMealsView({
     super.key,
     required this.view,
     required this.dockHeight,
-    required this.scrollController,
-    required this.footer,
   });
 
   final FeedViewState view;
@@ -25,8 +23,6 @@ class FeedNoMealsView extends StatelessWidget {
   /// The floating composer dock's measured height, reserved as bottom padding
   /// so the last card can always clear it.
   final double dockHeight;
-  final ScrollController scrollController;
-  final Widget footer;
 
   @override
   Widget build(BuildContext context) {
@@ -38,29 +34,6 @@ class FeedNoMealsView extends StatelessWidget {
       body = const LoggingDaySkeleton();
     } else {
       body = const SizedBox.shrink();
-    }
-
-    // When there ARE footer items (pending/streaming) but no persisted meals,
-    // the footer still renders with the gutter padding.
-    if (view.hasFooterItems) {
-      return SingleChildScrollView(
-        controller: scrollController,
-        // Without this the default physics refuse the drag outright whenever
-        // the content is shorter than the viewport (setCanDrag(false)), so no
-        // scroll notification ever fires and the keyboard cannot be dragged
-        // away on a near-empty day.
-        physics: const AlwaysScrollableScrollPhysics(),
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        // The macro block above owns the top gap; the bottom reserves the
-        // floating dock's height so the last card can clear it.
-        padding: EdgeInsets.fromLTRB(
-          NhamSpacing.sp3,
-          0,
-          NhamSpacing.sp3,
-          dockHeight,
-        ),
-        child: footer,
-      );
     }
 
     // The loading skeleton uses the same symmetric padding as the real cards;

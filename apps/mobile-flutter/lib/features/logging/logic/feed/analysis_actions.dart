@@ -77,10 +77,23 @@ void onStreamTransition(
   }
 }
 
-/// A second submit while an unconfirmed reveal is showing must not vaporize the
-/// first answer: that analysis is already stored server-side as pending, so
-/// refresh its origin day — it resurfaces as a pending-confirmation card.
-void refreshRevealedAnalysisDay(
+/// Pull the staged row for a revealed analysis into the day cache.
+///
+/// A revealed answer is drawn from CLIENT state (`streamAnalysisProvider`),
+/// but the server has already staged it as a pending analysis. Until the day is
+/// refreshed, that row exists only on the server, and anything that clears the
+/// stream — a hot reload, which makes Riverpod re-run `Notifier.build()`, or a
+/// relaunch — leaves nothing on screen: the reveal is gone and the cached day
+/// predates the staging. The unsaved meal simply vanished.
+///
+/// Refreshing here means the card is backed by server state from the moment it
+/// appears, so it survives all of that. [FeedViewState] hides the pending row
+/// while the reveal is still up, so the two never render as one meal twice.
+///
+/// Also covers a second submit while a reveal is showing: that answer is
+/// already staged, so it resurfaces as a pending-confirmation card rather than
+/// being vaporized by the new run.
+void refreshStagedAnalysisDay(
   WidgetRef ref, {
   required String userId,
   required String fallbackDate,

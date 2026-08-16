@@ -5,16 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../models/meal.dart';
-import '../../../theme/nham_colors.dart';
 import '../logic/logging_spacing.dart';
 import '../logic/meal_utils.dart';
 import 'entrances.dart';
-import 'macro_trio.dart';
 import 'meal_entry_card.dart';
 import 'meal_entry_confirm_button.dart';
-import 'meal_entry_header.dart';
-import 'meal_entry_item_row.dart';
-import 'meal_time_divider.dart';
+import 'meal_entry_body.dart';
+import 'turn/meal_time_divider.dart';
 import 'portion/portion_pick_flow.dart';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a stepper
@@ -30,15 +27,25 @@ class MealEntry extends StatefulWidget {
     required this.rawInput,
     required this.onConfirm,
     this.busy = false,
-    this.isLast = false,
     this.revealing = false,
+    this.showTimeDivider = true,
+    this.loggedAt,
   });
+
+  /// When the analysis was staged, for a card restored from the server. Null
+  /// for the live reveal, which has not been staged with a time yet.
+  final DateTime? loggedAt;
+
+  /// Whether to draw the time divider above the card.
+  ///
+  /// False for the streaming reveal only: the footer already drew one above the
+  /// chat bubble, and a second here would break the timeline's rhythm.
+  final bool showTimeDivider;
 
   final ParsedMeal parsedMeal;
   final String rawInput;
   final ValueChanged<List<MealQuantityEdit>> onConfirm;
   final bool busy;
-  final bool isLast;
 
   /// True for the streaming-reveal morph's first mount: the totals row counts
   /// up and the confirm CTA slides in as the spinner row slides out — the
@@ -53,10 +60,17 @@ class _MealEntryState extends State<MealEntry> {
   late List<MealItem> _items = widget.parsedMeal.items;
   late final List<MealItem> _original = widget.parsedMeal.items;
 
-  /// An unconfirmed meal has no `loggedAt` yet, so the divider shows when the
-  /// analysis landed. Captured once at mount rather than read in `build`, so
-  /// the time doesn't creep forward every time a stepper rebuilds the card.
-  final DateTime _enteredAt = DateTime.now();
+  /// What the divider shows.
+  ///
+  /// A card staged server-side carries a real [MealEntry.loggedAt] and must use
+  /// it: reading the clock instead stamped a meal analysed at 12:15 with the
+  /// time the app happened to be REOPENED, which is how a pending meal from an
+  /// hour ago showed up as "just now".
+  ///
+  /// Only the live reveal has no `loggedAt` yet, and there "now" is right.
+  /// Captured once at mount rather than read in `build`, so the time doesn't
+  /// creep forward every time a stepper rebuilds the card.
+  late final DateTime _enteredAt = widget.loggedAt ?? DateTime.now();
   bool _editing = false;
   bool _confirmCoolingDown = false;
   Timer? _confirmTimer;
@@ -119,64 +133,26 @@ class _MealEntryState extends State<MealEntry> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Same divider a saved card carries, so the timeline doesn't break at
-        // the one card still awaiting confirmation.
-        MealTimeDivider(
-          time: DateFormat.jm(context.locale.toString()).format(_enteredAt),
-        ),
-        const SizedBox(height: LoggingSpacing.block),
+        // the one card still awaiting confirmation. Skipped for the streaming
+        // reveal, where the footer already drew one above the chat bubble.
+        if (widget.showTimeDivider) ...[
+          MealTimeDivider(
+            time: DateFormat.jm(context.locale.toString()).format(_enteredAt),
+          ),
+          const SizedBox(height: LoggingSpacing.block),
+        ],
         MealEntryCard(
           editing: _editing,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              MealEntryHeader(
-                rawInput: widget.rawInput,
-                editing: _editing,
-                onToggleEditing: () => setState(() => _editing = !_editing),
-              ),
-              const SizedBox(height: LoggingSpacing.section),
-              const Divider(
-                height: 1,
-                thickness: 1,
-                color: NhamColors.borderFaint,
-              ),
-              const SizedBox(height: LoggingSpacing.section),
-              Padding(
-                padding: const EdgeInsets.only(bottom: LoggingSpacing.section),
-                child: Column(
-                  children: [
-                    // The stagger lives inside the row — see MealEntryItemRow.
-                    for (final (index, item) in _items.indexed)
-                      MealEntryItemRow(
-                        key: ValueKey(item.id),
-                        item: item,
-                        index: index,
-                        editing: _editing,
-                        revealing: widget.revealing,
-                        onChange: _change,
-                        onAdjustPortion: _adjustPortion,
-                      ),
-                  ],
-                ),
-              ),
-              const Divider(
-                height: 1,
-                thickness: 1,
-                color: NhamColors.borderFaint,
-              ),
-              const SizedBox(height: LoggingSpacing.section),
-              // The SHARED totals row, not an interpolated `P: … C: … F: …`
-              // run. A single run sits wherever its own width puts it, so this
-              // line never lined up with the item rows it sums.
-              MealTotalsRow(
-                label: 'logging.mealEntry.total'.tr(),
-                protein: totals.protein,
-                carbs: totals.carbs,
-                fat: totals.fat,
-                calories: totals.calories,
-                countUp: _countUp,
-              ),
-            ],
+          child: MealEntryBody(
+            rawInput: widget.rawInput,
+            items: _items,
+            totals: totals,
+            editing: _editing,
+            revealing: widget.revealing,
+            countUp: _countUp,
+            onToggleEditing: () => setState(() => _editing = !_editing),
+            onChange: _change,
+            onAdjustPortion: _adjustPortion,
           ),
         ),
         const SizedBox(height: LoggingSpacing.block),

@@ -9,7 +9,7 @@ import {
   formatCaloriesOrNA,
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
-import { TimeDivider } from '@/components/logging/feed/time-divider';
+import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { Badge } from '@/components/ui/badge';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import {
@@ -71,7 +71,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
       exit={{ opacity: 0, height: 0 }}
       className="relative"
     >
-      <TimeDivider timeLabel={timeLabel} />
+      <TurnHeader timeLabel={timeLabel} message={meal.rawInput} />
 
       <div className="rounded-2xl border border-nham-accent/30 bg-nham-accent/[0.04] p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
         {/* Header */}

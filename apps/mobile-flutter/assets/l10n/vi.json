@@ -1197,7 +1197,25 @@
       "estimating": "Đang ước tính dinh dưỡng…",
       "assembling": "Đang tổng hợp kết quả…",
       "analyzing": "Đang phân tích…",
-      "stillWorking": "Vẫn đang xử lý — sắp xong rồi."
+      "stillWorking": "Vẫn đang xử lý — sắp xong rồi.",
+      "verbs": {
+        "prefix": "Đang",
+        "connecting1": "kết nối…",
+        "connecting2": "bắc bếp…",
+        "decomposing1": "sơ chế…",
+        "decomposing2": "bóc tách…",
+        "decomposing3": "chuẩn bị…",
+        "matching1": "tra cứu…",
+        "matching2": "lựa nguyên liệu…",
+        "estimating1": "tính toán…",
+        "estimating2": "cân đo…",
+        "estimating3": "nhẩm…",
+        "assembling1": "bày biện…",
+        "assembling2": "trình bày…",
+        "assembling3": "dọn mâm…",
+        "analyzing1": "phân tích…",
+        "analyzing2": "ngẫm…"
+      }
     },
     "failedAttempt": {
       "message": "Chưa đọc được món này. Ghi chú của bạn vẫn còn — thử lại nhé.",

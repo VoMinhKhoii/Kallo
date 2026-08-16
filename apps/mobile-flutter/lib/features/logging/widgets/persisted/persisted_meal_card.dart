@@ -8,7 +8,7 @@ import '../../../../theme/nham_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
 import '../confirm_meal_removal.dart';
-import '../meal_time_divider.dart';
+import '../turn/turn_header.dart';
 import 'persisted_meal_actions.dart';
 import 'persisted_meal_amount_editor.dart';
 import 'persisted_meal_card_content.dart';
@@ -23,14 +23,12 @@ class PersistedMealCard extends StatefulWidget {
   const PersistedMealCard({
     super.key,
     required this.meal,
-    this.isLast = false,
     this.onRemove,
     this.onUpdate,
     this.onLogAgain,
   });
 
   final PersistedMeal meal;
-  final bool isLast;
 
   /// iOS trailing-swipe removal (destructive red) — fired when the card is
   /// dismissed. Null disables the swipe.
@@ -156,8 +154,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
       children: [
         // Time as a centered divider on top of the card (── 1:04 AM ──) —
         // no left timeline gutter, so the card gets the full row width.
-        MealTimeDivider(time: time),
-        const SizedBox(height: LoggingSpacing.block),
+        TurnHeader(time: time, message: meal.rawInput),
         // Editing swaps the body in place AND hides the action row (the web
         // hides the action bar while editing). While editing the card is not
         // swipe-dismissible — a stray swipe must not delete the meal mid-edit.

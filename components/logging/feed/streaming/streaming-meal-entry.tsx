@@ -1,17 +1,16 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import {
   formatCaloriesValue,
   formatMacroValue,
 } from '@/components/logging/feed/format-inline-nutrition';
-import {
-  MealEntryItemSkeleton,
-  MealEntryTotalSkeleton,
-} from '@/components/logging/feed/skeletons';
-import { getStreamingPhaseLabel } from '@/components/logging/feed/streaming/streaming-phase-label';
-import { TimeDivider } from '@/components/logging/feed/time-divider';
+import { MealEntryItemSkeleton } from '@/components/logging/feed/skeletons';
+import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
+import { loaderIndexForKey } from '@/components/shared/loaders/registry';
+import { StreamTicker } from '@/components/shared/stream-ticker/stream-ticker';
+import { deriveStreamTicker } from '@/components/shared/stream-ticker/stream-ticker-frame';
 import type { ChatMessage, MealItem } from '@/lib/types/meal';
 
 const DEFAULT_SKELETON_COUNT = 3;
@@ -52,8 +51,18 @@ function CompletedItemRow({ item, index }: { item: MealItem; index: number }) {
   );
 }
 
+/**
+ * A meal mid-analysis: the user's sent message, the ticker holding the loading
+ * state, and the dishes landing underneath it.
+ *
+ * Deliberately CARDLESS. A card is what a finished answer looks like, so
+ * drawing one around a half-filled skeleton promised a result that wasn't there
+ * yet; the rows sit on the page until the analysis completes and `MealEntry`
+ * closes a card around them. The ticker leads rather than trails, so the
+ * loading state holds one position for the whole run instead of being pushed
+ * down every time a dish lands.
+ */
 export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
-  const t = useTranslations('logging.streaming');
   const locale = useLocale();
   const phase = message.streamingPhase ?? 'waiting';
   const namedItems = message.streamingItems ?? [];
@@ -80,6 +89,13 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
     minute: '2-digit',
   });
 
+  const ticker = deriveStreamTicker({
+    isAnalyzing: true,
+    status: phase,
+    items: namedItems,
+    completedItems,
+  });
+
   return (
     <motion.article
       layout
@@ -89,65 +105,45 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
       transition={{ duration: 0.2 }}
       className="relative"
     >
-      <TimeDivider timeLabel={timeLabel} />
+      {/* Stamped from the moment of sending, not from when the answer lands —
+          the timeline must not wait for the result. */}
+      <TurnHeader timeLabel={timeLabel} message={message.userInput} />
 
-      {/* Card */}
-      <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
-        {/* Header: quoted input */}
-        {message.userInput && (
-          <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
-            {message.userInput}
-          </p>
-        )}
+      {/* The same horizontal inset the card's content box uses (p-4 sm:p-5), so
+          the rows do not slide sideways when `MealEntry` closes a card around
+          them at the reveal. */}
+      <div className="px-4 sm:px-5">
+        {/* One loader for the whole run — hashed off the message id rather than
+            held in state, since a loader that changes mid-run reads as a
+            restart and the id is already stable for exactly this long. */}
+        <StreamTicker
+          frame={ticker}
+          loaderIndex={loaderIndexForKey(message.id)}
+        />
 
-        {/* Streaming content */}
-        <div className="mt-5 border-nham-border border-t pt-4">
-          <div className="mb-4 space-y-1">
-            {/* 1. Completed items with real macros (waterfall, top) */}
-            {completedItems.map((item, idx) => (
-              <CompletedItemRow key={item.id} item={item} index={idx} />
-            ))}
+        <div className="mt-2 space-y-1">
+          {/* 1. Completed items with real macros (waterfall, top) */}
+          {completedItems.map((item, idx) => (
+            <CompletedItemRow key={item.id} item={item} index={idx} />
+          ))}
 
-            {/* 2. Named but pending items (skeleton with name) */}
-            {pendingNames.map((name, idx) => (
+          {/* 2. Named but pending items (skeleton with name) */}
+          {pendingNames.map((name, idx) => (
+            <MealEntryItemSkeleton
+              key={name}
+              index={completedItems.length + idx}
+              name={name}
+            />
+          ))}
+
+          {/* 3. Anonymous skeletons (for items not yet named) */}
+          {showAnonymous &&
+            Array.from({ length: anonymousCount }, (_, idx) => (
               <MealEntryItemSkeleton
-                key={name}
-                index={completedItems.length + idx}
-                name={name}
+                key={`skel-${idx}`}
+                index={totalKnown + idx}
               />
             ))}
-
-            {/* 3. Anonymous skeletons (for items not yet named) */}
-            {showAnonymous &&
-              Array.from({ length: anonymousCount }, (_, idx) => (
-                <MealEntryItemSkeleton
-                  key={`skel-${idx}`}
-                  index={totalKnown + idx}
-                />
-              ))}
-          </div>
-
-          {/* Totals skeleton */}
-          <MealEntryTotalSkeleton />
-        </div>
-
-        {/* Stage indicator. aria-live=polite so screen readers announce
-            phase transitions (decompose → match → nutrition → finalize)
-            without interrupting whatever is being read. The visible spinner
-            is decorative — aria-hidden it so the live region only announces
-            the phase text once per change. */}
-        <div className="mt-3 flex items-center gap-2">
-          <div
-            aria-hidden="true"
-            className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-nham-accent border-t-transparent"
-          />
-          <span
-            aria-live="polite"
-            aria-atomic="true"
-            className="font-sans-display text-[11px] text-nham-text-muted"
-          >
-            {getStreamingPhaseLabel(t, phase)}
-          </span>
         </div>
       </div>
     </motion.article>

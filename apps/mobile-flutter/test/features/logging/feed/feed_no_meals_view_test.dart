@@ -17,6 +17,7 @@ import '../../../l10n_test_loader.dart';
 const _empty = FeedViewState(
   persistedMeals: [],
   pendingConfirmations: [],
+  entries: [],
   isLoading: false,
   hasError: false,
   hasUnknownDailyMacros: false,
@@ -29,7 +30,7 @@ const _empty = FeedViewState(
   dailyFat: 0,
   hasFailedAttempt: false,
   isEmpty: true,
-  hasFooterItems: false,
+  hasLiveTail: false,
   showPartialDayNotice: false,
 );
 
@@ -66,8 +67,6 @@ Widget _view({
                   child: FeedNoMealsView(
                     view: _empty,
                     dockHeight: dockHeight,
-                    scrollController: ScrollController(),
-                    footer: const SizedBox.shrink(),
                   ),
                 ),
               ),

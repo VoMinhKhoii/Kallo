@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/logging_spacing.dart';
+import 'composer_glow.dart';
 
 /// The composer's floating dock: the feed FLOWS UNDER it. The list runs the
 /// full height of the tab and its cards pass behind the dock as you scroll,
@@ -117,7 +118,23 @@ class _ComposerDockState extends State<ComposerDock> {
                 NhamSpacing.sp3,
                 bottomInset + LoggingSpacing.block,
               ),
-              child: widget.child,
+              // The halo sits under the composer card and over the base. Not
+              // clipped: it bleeds up across the scrim band so the warmth
+              // reaches into the feed rather than stopping at a horizontal
+              // line where the dock begins.
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Positioned(
+                    top: -ComposerGlow.bleedTop,
+                    left: -ComposerGlow.bleedEdge,
+                    right: -ComposerGlow.bleedEdge,
+                    bottom: -ComposerGlow.bleedEdge,
+                    child: ComposerGlow(),
+                  ),
+                  widget.child,
+                ],
+              ),
             ),
           ],
         ),

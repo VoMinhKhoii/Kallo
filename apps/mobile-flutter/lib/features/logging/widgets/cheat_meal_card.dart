@@ -12,7 +12,7 @@ import '../logic/logging_spacing.dart';
 import 'cheat_meal_expanded_details.dart';
 import 'cheat_slider_card.dart' show CheatBadge;
 import 'confirm_meal_removal.dart';
-import 'meal_time_divider.dart';
+import 'turn/turn_header.dart';
 import 'meal_action_icon_button.dart';
 
 /// A saved cheat meal in the day's feed — accent-tinted (never red), the
@@ -134,8 +134,7 @@ class _CheatMealCardState extends State<CheatMealCard>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        MealTimeDivider(time: time),
-        const SizedBox(height: LoggingSpacing.block),
+        TurnHeader(time: time, message: meal.rawInput),
         _maybeDismissible(
           Container(
             padding: LoggingSpacing.card,

@@ -776,6 +776,29 @@ describe('loadPendingAnalysesByDate', () => {
     expect(pending[0]?.parsedMeal?.items[0]?.vessel).toBeUndefined();
   });
 
+  it('does not hide a staged meal once its expiry has passed', async () => {
+    // The 30-minute window used to take an unconfirmed card off screen while
+    // the user still meant to save it. It never gated confirmability —
+    // confirmAndSaveMealAction deletes by (id, userId) and never reads
+    // expiresAt — and it is not what dedupes re-analysis either: that is the
+    // (user_id, attempt_id) upsert. So the day query must not mention it.
+    const where = vi.fn().mockReturnValue({
+      orderBy: vi.fn().mockResolvedValue([]),
+    });
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({ where }),
+    });
+
+    await loadPendingAnalysesByDate({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    const predicate = JSON.stringify(where.mock.calls[0]?.[0]);
+    expect(predicate).toContain('pendingAnalyses.loggedAt');
+    expect(predicate).not.toContain('expiresAt');
+  });
+
   it('returns a cheat pending row as cheatSpec without crashing on missing mealItems', async () => {
     const spec = {
       sliders: [

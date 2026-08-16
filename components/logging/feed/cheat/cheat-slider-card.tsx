@@ -11,7 +11,7 @@ import {
 import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { TimeDivider } from '@/components/logging/feed/time-divider';
+import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -79,7 +79,7 @@ export function CheatSliderCard({
         animate={{ opacity: 1 }}
         className="relative"
       >
-        <TimeDivider timeLabel={timeLabel} />
+        <TurnHeader timeLabel={timeLabel} message={userInput} />
         <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
           {userInput && (
             <p className="mb-3 font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
@@ -116,7 +116,7 @@ export function CheatSliderCard({
       animate={{ opacity: 1 }}
       className="relative"
     >
-      <TimeDivider timeLabel={timeLabel} />
+      <TurnHeader timeLabel={timeLabel} message={userInput} />
 
       <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-start justify-between gap-3">

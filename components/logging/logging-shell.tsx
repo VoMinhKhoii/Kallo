@@ -40,6 +40,12 @@ interface LoggingShellProps {
   initialDate?: string;
   // Signed-in user's email — pre-fills the web checkout in the paywall.
   email?: string | null;
+  /**
+   * The server's answer to "does the opening day hold anything?", so the
+   * composer paints where it belongs instead of docking and then correcting.
+   * Undefined when the server could not answer honestly.
+   */
+  initiallyHasEntries?: boolean;
 }
 
 export function LoggingShell({
@@ -47,6 +53,7 @@ export function LoggingShell({
   initialMeal,
   initialDate,
   email,
+  initiallyHasEntries,
 }: LoggingShellProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -54,6 +61,10 @@ export function LoggingShell({
 
   const today = useMemo(() => todayDateString(), []);
   const [selectedDate, setSelectedDate] = useState(() => initialDate ?? today);
+  // The server answered for the day the page OPENED on. Navigating the timeline
+  // is a different question, and answering it with a stale hint would put the
+  // composer in the middle of a day that has meals in it.
+  const openingDate = useRef(selectedDate).current;
   // Paywall opened by a pre-stream 402 from the analyze endpoint. The
   // TrialBanner owns its OWN paywall for the upgrade CTA; this one covers the
   // hard-locked (trial-expired / not-entitled) case where the banner is hidden.
@@ -155,6 +166,9 @@ export function LoggingShell({
           }
           onSelectDate={handleSelectDate}
           onPaymentRequired={() => setPaywallOpen(true)}
+          initiallyHasEntries={
+            selectedDate === openingDate ? initiallyHasEntries : undefined
+          }
         />
       </div>
 

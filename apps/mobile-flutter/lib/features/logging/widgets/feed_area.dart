@@ -29,6 +29,7 @@ import 'feed/feed_composer.dart';
 import 'feed/feed_footer.dart';
 import 'feed/feed_list.dart';
 import 'feed/macro_summary.dart';
+import 'loaders/loader_registry.dart';
 import 'meal_input.dart';
 import 'relog/mention_text_controller.dart';
 import 'sheets/manual_log_sheet.dart';
@@ -137,6 +138,17 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   String? _inFlightLabelText;
 
   String? get _inFlightLabel => _inFlightLabelText ?? _inFlightText;
+
+  /// Which of the twelve loaders this run draws. Rolled once per submit and
+  /// held for the whole run — a loader that changed mid-analysis would read as
+  /// a restart. Lives HERE, not in the streaming widget, so a rebuild of the
+  /// footer (a pending card arriving, say) cannot re-roll it.
+  int _loaderIndex = 0;
+
+  /// When the current turn was sent. Drives the divider above the chat bubble,
+  /// so the timeline is stamped the moment the user hits send rather than when
+  /// the answer lands.
+  DateTime? _sentAt;
 
   /// A failed attempt, rendered as a feed card with "Try again" (terracotta).
   String? _failedText;
@@ -399,7 +411,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     bool? isCheat,
     String? label,
   }) {
-    refreshRevealedAnalysisDay(
+    refreshStagedAnalysisDay(
       ref,
       userId: widget.profile.userId,
       fallbackDate: widget.date,
@@ -420,6 +432,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       // normal analysis.
       _inFlightCheat =
           isCheat ?? ref.read(mealLogModeProvider) == MealLogMode.cheat;
+      _loaderIndex = pickLoaderIndex();
+      _sentAt = DateTime.now();
     });
     _inputController.clear();
     _scrollToAnswer();
@@ -526,6 +540,15 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     _relogSnapshot = null;
     HapticFeedback.lightImpact();
     _scrollToAnswer();
+    // Pull the staged row into the day cache NOW, not at confirm. Until this
+    // lands the card exists only in stream state, and a hot reload (which makes
+    // Riverpod re-run Notifier.build) or a relaunch wiped it off the screen
+    // even though the server still had it staged.
+    refreshStagedAnalysisDay(
+      ref,
+      userId: widget.profile.userId,
+      fallbackDate: widget.date,
+    );
   }
 
   void _failAttempt(bool retryable, {bool paymentRequired = false}) {
@@ -656,10 +679,10 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       view: view,
       stream: stream,
       streamingRawInput: _inFlightLabel,
+      loaderIndex: _loaderIndex,
+      sentAt: _sentAt,
       confirmPending: confirmPending,
-      onConfirm: confirmActions.confirmPending,
       onConfirmReveal: confirmActions.confirmReveal,
-      onConfirmCheat: confirmActions.confirmCheatPending,
       onConfirmCheatReveal: confirmActions.confirmCheatReveal,
       onClarifyCheat: _clarifyCheat,
       revealRawInput: _revealRawInput,
@@ -715,11 +738,14 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         dockHeight: _dockHeight,
         scrollController: _scrollController,
         footer: footer,
+        confirmPending: confirmPending,
         onRefresh: mealActions.refreshDay,
         onRetryDay: () => ref.invalidate(loggingDayProvider(_dayArgs)),
         onRemoveMeal: mealActions.remove,
         onUpdateMeal: mealActions.update,
         onLogAgain: mealActions.logAgain,
+        onConfirm: confirmActions.confirmPending,
+        onConfirmCheat: confirmActions.confirmCheatPending,
       ),
     );
   }
@@ -737,6 +763,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     setState(() {
       _revealRawInput = null;
       _inFlightText = text;
+      // A clarify is a fresh analysis, so it gets a fresh loader and a fresh
+      // timestamp — this path bypasses _runAnalyze and would otherwise reuse
+      // the previous run's.
+      _loaderIndex = pickLoaderIndex();
+      _sentAt = DateTime.now();
     });
     _scrollToAnswer();
     startMealAnalysis(

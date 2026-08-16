@@ -19,6 +19,7 @@ import {
 } from '@/hooks/meals/use-meal-mutations';
 import { useMealPrefill } from '@/hooks/meals/use-meal-prefill';
 import { useRecentCheatOccasions } from '@/hooks/meals/use-recent-cheat-occasions';
+import { useSettledOnce } from '@/hooks/meals/use-settled-once';
 import { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
 import { useStreamingScroll } from '@/hooks/meals/use-streaming-scroll';
 import { useStreamingTerminalEffects } from '@/hooks/meals/use-streaming-terminal-effects';
@@ -40,6 +41,12 @@ export function useFeedController(args: {
   isDateNavigationPending: boolean;
   onInitialMealApplied: (() => void) | undefined;
   onPaymentRequired: (() => void) | undefined;
+  /**
+   * The SERVER's answer to "does this day hold anything?", read before the page
+   * was sent. Undefined when it could not answer — no timezone cookie yet, or
+   * the lookup failed.
+   */
+  initiallyHasEntries: boolean | undefined;
 }) {
   const {
     selectedDate,
@@ -49,6 +56,7 @@ export function useFeedController(args: {
     isDateNavigationPending,
     onInitialMealApplied,
     onPaymentRequired,
+    initiallyHasEntries,
   } = args;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -209,8 +217,29 @@ export function useFeedController(args: {
   // ChatGPT-style: before anything is logged the composer sits centered with
   // the prompt; once there's content it animates down to the bottom while the
   // cards animate in. Not mode-based — purely content-driven.
+  // What we currently believe this day holds. While the query is in flight that
+  // is whatever the server worked out before the page was sent; once it answers,
+  // the answer itself. Undefined means the server had nothing to offer — no
+  // timezone cookie on a first visit — and the old assumption stands.
+  //
+  // ONE belief, read by everything that depends on it. Expressed twice it was
+  // two ternaries in opposite polarity (`!== false` against `=== false`) that a
+  // reader had to reconcile to see they were the same question.
+  const expectEntries = day.isDayLoading
+    ? (initiallyHasEntries ?? true)
+    : hasContent;
   const isEmptyComposer =
-    !hasContent && !stream.isAnalyzing && !day.isDayLoading && !day.isDayError;
+    !expectEntries && !stream.isAnalyzing && !day.isDayError;
+
+  // The composer's layout spring is for the user LOGGING something — the bar
+  // gliding down to the bottom as their first meal card takes the space. It is
+  // NOT for data arriving: while the day query is in flight the composer is
+  // docked at the bottom, and an empty day resolving moves it to the centre, so
+  // every cold load of an empty day ended with the bar visibly flying up the
+  // screen. Held off until the query has answered once; the reposition that
+  // answer causes then happens in the same frame as the skeleton clearing,
+  // which reads as the page loading rather than as the bar travelling.
+  const animateComposerLayout = useSettledOnce(day.isDayLoading);
 
   const isToday = selectedDate === today;
   const isPastDay = selectedDate < today;
@@ -250,7 +279,9 @@ export function useFeedController(args: {
     yesterdayPromptDismissed,
     setYesterdayPromptDismissed,
     hasContent,
+    expectEntries,
     isEmptyComposer,
+    animateComposerLayout,
     isToday,
     showPartialDayNotice,
   };

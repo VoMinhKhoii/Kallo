@@ -56,25 +56,6 @@ class LoggingDayNotifier
     return LoggingDayData.fromJson(json);
   }
 
-  /// Optimistically remove a pending confirmation (on confirm).
-  void removePending(String analysisId) {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    state = AsyncData(
-      current.copyWith(
-        pendingConfirmations:
-            current.pendingConfirmations
-                .where((p) => p.id != analysisId)
-                .toList(),
-      ),
-    );
-  }
-
-  /// Roll back to a snapshot (on mutation error).
-  void restore(LoggingDayData snapshot) {
-    state = AsyncData(snapshot);
-  }
-
   /// Replace a persisted meal in place by id from an authoritative server
   /// response (the amount-edit reconcile). Same id, so the card updates without
   /// a remount — mirrors the web `upsertById` in `use-meal-mutations`. A no-op
@@ -278,10 +259,16 @@ void invalidateMealSurfaces(
   invalidate(nutritionOverviewProvider);
 }
 
-/// Confirm a pending analysis into a saved meal, with the RN hook's optimistic
-/// removal + rollback + settle-invalidation behavior.
+/// Confirm a pending analysis into a saved meal, then refetch the day.
 ///
-/// State `== true` while a confirm request is in flight (the RN
+/// Deliberately NOT optimistic. Dropping the staged row the instant confirm was
+/// tapped collapsed the feed around it and re-expanded it a round-trip later
+/// when the saved meal arrived — most visible when the confirmed meal had
+/// unconfirmed neighbours, which all slid up and back down. The card now holds
+/// its slot, inert, until the refetch swaps it for the saved one in place.
+/// There is no rollback for the same reason: nothing was removed to restore.
+///
+/// State `== true` while the confirm and its refetch are in flight (the RN
 /// `confirmMeal.isPending` the feed disables steppers on). Exposed as a
 /// per-user [Notifier] so the UI rebuilds when it flips.
 class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
@@ -300,10 +287,8 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
     final api = ref.read(apiClientProvider);
     final dayArgs = LoggingDayArgs(arg, originDate);
     final notifier = ref.read(loggingDayProvider(dayArgs).notifier);
-    final snapshot = ref.read(loggingDayProvider(dayArgs)).valueOrNull;
 
     state = true;
-    notifier.removePending(analysisId);
     try {
       await api.post<void>('/api/v1/meals/confirm', {
         'analysisId': analysisId,
@@ -311,18 +296,17 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
         if (edits != null && edits.isNotEmpty) 'edits': edits,
         if (levels != null) 'levels': levels,
       });
-    } catch (error) {
-      if (snapshot != null) notifier.restore(snapshot);
-      rethrow;
     } finally {
-      state = false;
       // onSettled: refetch the day (awaited — the feed swaps the pending card
-      // for the saved one) + invalidate the other meal-keyed surfaces.
+      // for the saved one) + invalidate the other meal-keyed surfaces. The busy
+      // flag is only released afterwards: it is what keeps the still-showing
+      // staged card from being confirmed a second time in the gap.
       try {
         await notifier.refresh();
       } catch (_) {
         ref.invalidate(loggingDayProvider(dayArgs));
       }
+      state = false;
       invalidateMealSurfaces(
         ref.invalidate,
         arg,

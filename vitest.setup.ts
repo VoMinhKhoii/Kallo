@@ -27,6 +27,9 @@ vi.mock('next-intl', () => ({
     };
     t.rich = t;
     t.raw = t;
+    // The mock carries no messages, so every optional key is genuinely absent.
+    // Code that probes with `t.has` must take its fallback branch here.
+    t.has = () => false;
     return t;
   },
   useLocale: () => 'en',
@@ -42,6 +45,7 @@ vi.mock('next-intl/server', () => ({
     const t = (key: string) => key;
     t.rich = t;
     t.raw = t;
+    t.has = () => false;
     return t;
   },
   getMessages: async () => ({}),

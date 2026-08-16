@@ -11,7 +11,7 @@ import {
   useState,
 } from 'react';
 import { MealTriggerNotice } from '@/components/dashboard/today/meal-trigger-notice';
-import { DASH_LOADERS } from '@/components/shared/svg-loaders';
+import { StreamTicker } from '@/components/shared/stream-ticker/stream-ticker';
 import type { DashboardMealStream } from '@/hooks/dashboard/use-dashboard-meal-log';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +46,6 @@ function MealInputForm({
   const wasActiveRef = useRef(false);
 
   const isStreaming = streaming.isActive;
-  const Loader = DASH_LOADERS[streaming.loaderIndex % DASH_LOADERS.length];
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -93,37 +92,13 @@ function MealInputForm({
       {streaming.error ? (
         <MealTriggerNotice streaming={streaming} />
       ) : isStreaming ? (
-        /* The bar becomes the stream: a loader + text flipping through stages. */
-        <div
-          aria-live="polite"
-          className="flex min-w-0 flex-1 items-center gap-3"
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center text-nham-text-muted">
-            <Loader size={20} />
-          </span>
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.span
-              key={streaming.ticker?.key ?? 'connecting'}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-              className={cn(
-                'min-w-0 truncate text-sm',
-                streaming.ticker && streaming.ticker.kind !== 'phase'
-                  ? 'font-serif text-nham-text italic'
-                  : 'text-nham-text-muted'
-              )}
-            >
-              {streaming.ticker?.text ?? tm('analyzing')}
-              {streaming.ticker?.detail && (
-                <span className="ml-1.5 font-sans text-nham-text-muted not-italic tabular-nums">
-                  · {streaming.ticker.detail}
-                </span>
-              )}
-            </motion.span>
-          </AnimatePresence>
-        </div>
+        /* The bar becomes the stream: a loader + a line flipping through the
+           stage's action verbs, then through dishes as they resolve. */
+        <StreamTicker
+          frame={streaming.ticker}
+          loaderIndex={streaming.loaderIndex}
+          className="flex-1"
+        />
       ) : (
         <>
           <label htmlFor={id} className="sr-only">

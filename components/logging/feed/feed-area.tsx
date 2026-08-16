@@ -1,7 +1,8 @@
 'use client';
 
+import { EmptyPrompt } from '@/components/logging/feed/composer/empty-prompt';
+import { FeedComposer } from '@/components/logging/feed/composer/feed-composer';
 import { FeedCards } from '@/components/logging/feed/feed-cards';
-import { FeedComposer } from '@/components/logging/feed/feed-composer';
 import {
   LoggingDayErrorState,
   LoggingDaySkeleton,
@@ -22,6 +23,8 @@ interface FeedAreaProps {
   onInitialMealApplied?: () => void;
   onSelectDate: (date: string) => void;
   onPaymentRequired?: () => void;
+  /** The server's answer for this day, when it had one. See `useFeedController`. */
+  initiallyHasEntries?: boolean;
 }
 
 // "Fix with words" (natural-language refine) is hidden for now. It currently
@@ -42,6 +45,7 @@ export function FeedArea({
   onInitialMealApplied,
   onSelectDate,
   onPaymentRequired,
+  initiallyHasEntries,
 }: FeedAreaProps) {
   const feed = useFeedController({
     selectedDate,
@@ -51,6 +55,7 @@ export function FeedArea({
     isDateNavigationPending,
     onInitialMealApplied,
     onPaymentRequired,
+    initiallyHasEntries,
   });
   const { day } = feed;
 
@@ -96,7 +101,9 @@ export function FeedArea({
           )}
           data-testid="meal-card-scroll"
         >
-          {day.isDayLoading && <LoggingDaySkeleton />}
+          {/* No ghost cards for a day the server already told us is empty —
+              they would flash in and out for no reason. */}
+          {day.isDayLoading && feed.expectEntries && <LoggingDaySkeleton />}
 
           {!day.isDayLoading && day.isDayError && (
             <LoggingDayErrorState
@@ -122,6 +129,10 @@ export function FeedArea({
             />
           )}
         </div>
+
+        {/* The one editorial line on an empty day — the app asking, rather
+            than a bare input bar standing in for a question. */}
+        {feed.isEmptyComposer && <EmptyPrompt />}
 
         <FeedComposer
           inputRef={feed.inputRef}
@@ -149,6 +160,7 @@ export function FeedArea({
           onChangeIntensity={feed.setCheatIntensity}
           selectedDate={selectedDate}
           onBarcodeSuccess={feed.handleBarcodeSuccess}
+          animateLayout={feed.animateComposerLayout}
         />
       </div>
     </main>
