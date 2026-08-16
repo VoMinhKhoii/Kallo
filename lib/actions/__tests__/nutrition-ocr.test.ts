@@ -25,15 +25,13 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
-const { mockUser } = vi.hoisted(() => ({
+const { mockRequireAuthAndProfile, mockUser } = vi.hoisted(() => ({
+  mockRequireAuthAndProfile: vi.fn(),
   mockUser: { id: 'user-123', email: 'test@example.com' },
 }));
 
 vi.mock('@/lib/auth', () => ({
-  requireAuthAndProfile: vi.fn().mockResolvedValue({
-    user: mockUser,
-    profile: { goal: 'cutting', aggression: '0.5' },
-  }),
+  requireAuthAndProfile: mockRequireAuthAndProfile,
 }));
 
 vi.mock('@/lib/ai/pipeline/estimator/label-ocr', () => ({
@@ -45,6 +43,7 @@ import {
   stageOcrMealAction,
 } from '@/lib/actions/nutrition-ocr';
 import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr';
+import { OCR_MAX_IMAGE_BYTES } from '@/lib/nutrition/ocr-image-constants';
 
 let validPngBase64: string;
 
@@ -121,6 +120,10 @@ afterEach(cleanup);
 describe('scanNutritionLabelAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockRequireAuthAndProfile.mockResolvedValue({
+      user: mockUser,
+      profile: { goal: 'cutting', aggression: '0.5' },
+    });
   });
 
   it('validates input and returns normalized label data', async () => {
@@ -152,6 +155,35 @@ describe('scanNutritionLabelAction', () => {
         code: 'invalid_image',
       });
     }
+    expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
+  });
+
+  it('rejects oversized input before auth or Gemini', async () => {
+    const oversizedBase64 = 'A'.repeat(
+      Math.ceil(((OCR_MAX_IMAGE_BYTES + 1) * 4) / 3 / 4) * 4
+    );
+
+    expect(
+      await scanNutritionLabelAction({
+        imageBase64: oversizedBase64,
+        mimeType: 'image/png',
+      })
+    ).toEqual({ success: false, code: 'invalid_image' });
+    expect(mockRequireAuthAndProfile).not.toHaveBeenCalled();
+    expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
+  });
+
+  it('does not call Gemini when authentication fails', async () => {
+    mockRequireAuthAndProfile.mockRejectedValueOnce(
+      new Error('authentication required')
+    );
+
+    expect(
+      await scanNutritionLabelAction({
+        imageBase64: validPngBase64,
+        mimeType: 'image/png',
+      })
+    ).toEqual({ success: false, code: 'server_error' });
     expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
   });
 
@@ -190,9 +222,66 @@ describe('scanNutritionLabelAction', () => {
       })
     ).toEqual({ success: false, code: 'server_error' });
   });
+
+  it.each([
+    ['provider 429', { status: 429, code: 'rate_limited' }, 'rate_limited'],
+    [
+      'provider timeout',
+      new DOMException('Nutrition label OCR timed out', 'AbortError'),
+      'server_error',
+    ],
+    ['unknown provider code', { code: 'made_up' }, 'server_error'],
+  ] as const)('maps %s to its stable public code', async (_name, error, code) => {
+    vi.mocked(scanNutritionLabelWithGemini).mockRejectedValueOnce(error);
+
+    expect(
+      await scanNutritionLabelAction({
+        imageBase64: validPngBase64,
+        mimeType: 'image/png',
+      })
+    ).toEqual({ success: false, code });
+  });
 });
 
 describe('OCR review to staging seam', () => {
+  it('keeps a partial extraction editable and accepts comma decimals', () => {
+    const onConfirm = vi.fn();
+    render(
+      createElement(OcrReviewStep, {
+        data: servingLabel(
+          nutrition({ calories: 120, proteinGrams: 4, carbsGrams: null })
+        ),
+        isStaging: false,
+        onBack: vi.fn(),
+        onConfirm,
+      })
+    );
+
+    const confirm = screen.getByRole('button', { name: 'confirm' });
+    expect(confirm).toBeDisabled();
+    expect(screen.getByRole('alert')).toHaveTextContent('ocrRequiredValues');
+
+    fireEvent.change(screen.getByLabelText('ocrNutrients.protein (g)'), {
+      target: { value: '3,5' },
+    });
+    fireEvent.change(screen.getByLabelText('ocrNutrients.carbohydrates (g)'), {
+      target: { value: '20' },
+    });
+    fireEvent.change(screen.getByLabelText('ocrNutrients.fat (g)'), {
+      target: { value: '4' },
+    });
+    expect(confirm).toBeEnabled();
+
+    fireEvent.click(confirm);
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        proteinGrams: 3.5,
+        carbsGrams: 20,
+        fatGrams: 4,
+      })
+    );
+  });
+
   it('passes every extracted nutrient, confidence, and ml unit into persistence', async () => {
     const { db } = await import('@/lib/db');
     const mockValues = vi.fn().mockReturnValue({

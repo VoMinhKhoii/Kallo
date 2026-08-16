@@ -7,6 +7,7 @@ import {
   NUTRITION_LABEL_OCR_SYSTEM_PROMPT,
   NutritionLabelOcrError,
   normalizeNutritionLabelOcr,
+  rawNutritionLabelOcrSchema,
 } from '../label-ocr';
 import type { RawNutritionLabelOcr } from '../label-ocr-normalization';
 
@@ -89,6 +90,72 @@ describe('normalizeNutritionLabelOcr', () => {
       })
     );
     expect(parsed.confidence).toBe('low');
+  });
+
+  it('keeps plausible 4/4/9 nutrition at the extracted confidence', () => {
+    const parsed = normalizeNutritionLabelOcr(
+      servingLabel({
+        perServing: rawNutrition({
+          calories: { value: '205', unit: 'kcal' },
+          proteinGrams: { value: '10', unit: 'g' },
+          carbsGrams: { value: '30', unit: 'g' },
+          fatGrams: { value: '5', unit: 'g' },
+        }),
+      })
+    );
+    expect(parsed.confidence).toBe('high');
+  });
+
+  it('normalizes a whole-container label without changing its basis', () => {
+    const parsed = normalizeNutritionLabelOcr(
+      servingLabel({
+        basis: 'per_container',
+        netContent: { value: '1500', unit: 'ml' },
+        servingsPerContainer: '3',
+        perContainer: rawNutrition({
+          calories: { value: '600', unit: 'kcal' },
+          carbsGrams: { value: '150', unit: 'g' },
+        }),
+        perServing: undefined,
+      } as unknown as RawNutritionLabelOcr)
+    );
+
+    expect(parsed.basis).toBe('per_container');
+  });
+
+  it.each([
+    ['negative core amount', { value: '-5', unit: 'g' }],
+    ['non-finite token', { value: 'Infinity', unit: 'g' }],
+    ['extreme magnitude', { value: '999999999', unit: 'g' }],
+  ])('rejects an adversarial %s', (_name, proteinGrams) => {
+    expect(() =>
+      normalizeNutritionLabelOcr(
+        servingLabel({
+          perServing: rawNutrition({
+            calories: { value: '100', unit: 'kcal' },
+            proteinGrams,
+          }),
+        })
+      )
+    ).toThrowError(
+      expect.objectContaining<Partial<NutritionLabelOcrError>>({
+        code: 'no_label_detected',
+      })
+    );
+  });
+
+  it.each([
+    ['omits its selected column', { ...servingLabel(), perServing: undefined }],
+    [
+      'populates a column inconsistent with its basis',
+      {
+        ...servingLabel(),
+        basis: 'per_100g',
+        perServing: rawNutrition({ calories: { value: '100', unit: 'kcal' } }),
+      },
+    ],
+  ])('raw schema rejects a label that %s', (_name, raw) => {
+    expect(rawNutritionLabelOcrSchema.safeParse(raw).success).toBe(false);
   });
 
   it.each([

@@ -115,6 +115,39 @@ describe('nutritionLabelScanSchema', () => {
   });
 
   it.each([
+    ['missing selected column', { basis: 'per_serving' }],
+    [
+      'column inconsistent with basis',
+      {
+        basis: 'per_serving',
+        per100g: nutrition({ calories: 200, proteinGrams: 10 }),
+      },
+    ],
+    [
+      'extra unselected column',
+      {
+        basis: 'per_serving',
+        perServing: nutrition({ calories: 200, proteinGrams: 10 }),
+        per100g: nutrition({ calories: 400, proteinGrams: 20 }),
+      },
+    ],
+  ])('rejects %s', (_name, columns) => {
+    expect(
+      nutritionLabelScanSchema.safeParse({ ...metadata, ...columns }).success
+    ).toBe(false);
+  });
+
+  it('rejects a column whose core macros are all null', () => {
+    expect(
+      nutritionLabelScanSchema.safeParse({
+        ...metadata,
+        basis: 'per_serving',
+        perServing: nutrition({ sodiumMg: 200, calciumMg: 100 }),
+      }).success
+    ).toBe(false);
+  });
+
+  it.each([
     ['negative', { proteinGrams: -1 }],
     ['NaN', { calories: Number.NaN }],
     ['Infinity', { sodiumMg: Number.POSITIVE_INFINITY }],

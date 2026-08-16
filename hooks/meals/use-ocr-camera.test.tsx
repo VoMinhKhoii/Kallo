@@ -32,4 +32,27 @@ describe('useOcrCamera', () => {
 
     expect(stop).toHaveBeenCalledOnce();
   });
+
+  it('stops a permission result that arrives after unmount', async () => {
+    let resolveStream: ((stream: MediaStream) => void) | undefined;
+    const getUserMedia = vi.fn(
+      () =>
+        new Promise<MediaStream>((resolve) => {
+          resolveStream = resolve;
+        })
+    );
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia },
+    });
+    const stop = vi.fn();
+    const stream = { getTracks: () => [{ stop }] } as unknown as MediaStream;
+
+    const { unmount } = renderHook(() => useOcrCamera(true));
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalledOnce());
+    unmount();
+    await act(async () => resolveStream?.(stream));
+
+    expect(stop).toHaveBeenCalledOnce();
+  });
 });
