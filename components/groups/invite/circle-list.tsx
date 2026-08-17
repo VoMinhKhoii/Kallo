@@ -7,7 +7,7 @@ import {
   useBlockFriend,
   useFriends,
   useRemoveFriend,
-} from '@/hooks/social/use-friends';
+} from '@/hooks/social/circle/use-friends';
 import type { CircleMember } from '@/lib/actions/groups/types';
 import { ProfileIdentity } from './profile-identity';
 

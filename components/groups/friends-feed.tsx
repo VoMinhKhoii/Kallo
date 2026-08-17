@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AddFriendDialog } from '@/components/groups/add-friend-dialog';
 import { FeedEntry } from '@/components/groups/feed-entry';
 import { ThreadFeed } from '@/components/groups/thread-feed';
-import { useFriendsThreadFeed } from '@/hooks/social/use-friend-thread-feed';
+import { useFriendsThreadFeed } from '@/hooks/social/circle/use-friend-thread-feed';
 
 /** Right-pane detail for the combined Friends feed: every accepted friend's
  * shared meal plus the actor's own, merged into one feed, infinite-scrolled —

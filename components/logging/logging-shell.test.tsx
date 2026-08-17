@@ -2,7 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { type LoggingProfile, LoggingShell } from './logging-shell';
+import type { LoggingProfile } from '@/lib/domain/logging/types';
+import { LoggingShell } from './logging-shell';
 
 // Mock child components
 vi.mock('@/components/logging/feed/feed-area', () => ({
@@ -30,11 +31,11 @@ vi.mock('@/components/logging/feed/feed-area', () => ({
 
 // The billing surfaces pull next-intl + entitlements; the shell only mounts
 // them, so stub them out to keep this test focused on date/timeline behavior.
-vi.mock('@/components/billing/trial-banner', () => ({
+vi.mock('@/components/billing/subscription/trial-banner', () => ({
   TrialBanner: () => <div data-testid="trial-banner" />,
 }));
 
-vi.mock('@/components/billing/paywall-dialog', () => ({
+vi.mock('@/components/billing/paywall/paywall-dialog', () => ({
   PaywallDialog: ({ open }: { open: boolean }) =>
     open ? <div data-testid="paywall-dialog" /> : null,
 }));
@@ -93,7 +94,7 @@ vi.mock('@/lib/actions/meals/load-meals', () => ({
 }));
 
 // Mock hooks
-vi.mock('@/hooks/meals/use-prefetch-dates', () => ({
+vi.mock('@/hooks/meals/queries/use-prefetch-dates', () => ({
   usePrefetchDates: vi.fn(),
 }));
 
@@ -120,7 +121,9 @@ vi.mock('@/i18n/navigation', () => ({
 }));
 
 const { loadMealDates } = await import('@/lib/actions/meals/load-meals');
-const { usePrefetchDates } = await import('@/hooks/meals/use-prefetch-dates');
+const { usePrefetchDates } = await import(
+  '@/hooks/meals/queries/use-prefetch-dates'
+);
 
 const mockLoadMealDates = loadMealDates as Mock;
 const mockUsePrefetchDates = usePrefetchDates as Mock;

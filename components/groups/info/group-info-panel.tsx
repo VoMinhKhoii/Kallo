@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { GroupAddPeople } from '@/components/groups/info/group-add-people';
 import { GroupLeaveButton } from '@/components/groups/info/group-leave-button';
 import { GroupMembersList } from '@/components/groups/info/group-members-list';
-import { useRenameGroup } from '@/hooks/social/use-chat-groups';
+import { useRenameGroup } from '@/hooks/social/circle/use-chat-groups';
 import type { ChatGroupDetail } from '@/lib/actions/chat-groups/types';
 import { cn } from '@/lib/core/ui/cn';
 

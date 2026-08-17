@@ -3,7 +3,7 @@
 import { ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { SettingsGroup, SettingsRow } from '@/components/settings/group';
+import { SettingsGroup, SettingsRow } from '@/components/settings/chrome/group';
 
 interface DangerZoneProps {
   onDelete: () => void;

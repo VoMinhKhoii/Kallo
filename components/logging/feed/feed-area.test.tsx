@@ -37,7 +37,7 @@ vi.mock('@/components/logging/feed/streaming/streaming-meal-entry', () => ({
   StreamingMealEntry: () => <div data-testid="streaming-meal-entry" />,
 }));
 
-vi.mock('@/components/logging/input/meal-input', () => ({
+vi.mock('@/components/logging/input/composer/meal-input', () => ({
   MealInput: forwardRef(function MockMealInput(_props, ref) {
     useImperativeHandle(ref, () => ({
       getText: () => '',
@@ -73,25 +73,31 @@ vi.mock('@tanstack/react-query', () => ({
   useQuery: () => ({ data: undefined, isPending: true }),
 }));
 
-vi.mock('@/hooks/meals/use-logging-day', () => ({
-  loggingDayKeys: {
-    byUserDate: (userId: string, date: string) => ['logging-day', userId, date],
-  },
+vi.mock('@/hooks/meals/queries/use-logging-day', () => ({
   useLoggingDay: mockUseLoggingDay,
 }));
 
-vi.mock('@/hooks/meals/use-feed-submit', () => ({
+vi.mock('@/hooks/meals/feed/use-feed-submit', () => ({
   useFeedSubmit: () => ({ handleSubmit: vi.fn() }),
 }));
 
-vi.mock('@/hooks/meals/use-meal-mutations', () => ({
+vi.mock('@/hooks/meals/mutations/use-confirm-meal', () => ({
   useConfirmMeal: () => ({ mutate: mockMutate, isPending: false }),
+}));
+
+vi.mock('@/hooks/meals/mutations/use-update-meal', () => ({
   useUpdateMeal: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock('@/hooks/meals/mutations/use-save-manual-meal', () => ({
   useSaveManualMeal: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock('@/hooks/meals/mutations/use-duplicate-meal', () => ({
   useDuplicateMeal: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
-vi.mock('@/hooks/meals/use-recent-cheat-occasions', () => ({
+vi.mock('@/hooks/meals/queries/use-recent-cheat-occasions', () => ({
   useRecentCheatOccasions: () => ({ data: [] }),
 }));
 
@@ -139,15 +145,15 @@ vi.mock('@/lib/actions/meals/cheat', () => ({
   stageCheatRepeatAction: vi.fn(),
 }));
 
-vi.mock('@/hooks/meals/use-stream-analysis', () => ({
+vi.mock('@/hooks/meals/analysis/use-stream-analysis', () => ({
   useStreamAnalysis: mockUseStreamAnalysis,
 }));
 
-vi.mock('@/hooks/meals/use-streaming-terminal-effects', () => ({
+vi.mock('@/hooks/meals/analysis/use-streaming-terminal-effects', () => ({
   useStreamingTerminalEffects: mockUseStreamingTerminalEffects,
 }));
 
-vi.mock('@/hooks/meals/use-submit-guard', () => ({
+vi.mock('@/hooks/ui/use-submit-guard', () => ({
   useSubmitGuard: () => ({ guard: (fn: () => Promise<void>) => fn() }),
 }));
 

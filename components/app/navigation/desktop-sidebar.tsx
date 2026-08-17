@@ -4,7 +4,7 @@ import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
-import { useMealShareInviteCount } from '@/hooks/social/use-meal-share-invites';
+import { useMealShareInviteCount } from '@/hooks/social/sharing/use-meal-share-invites';
 import { useSidebarState } from '@/hooks/ui/use-sidebar-state';
 import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';

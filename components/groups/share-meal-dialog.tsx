@@ -13,8 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useFriends } from '@/hooks/social/use-friends';
-import { useShareMealWithFriends } from '@/hooks/social/use-share-meal-with-friends';
+import { useFriends } from '@/hooks/social/circle/use-friends';
+import { useShareMealWithFriends } from '@/hooks/social/sharing/use-share-meal-with-friends';
 import { cn } from '@/lib/core/ui/cn';
 
 type Mode = 'copy' | 'split';

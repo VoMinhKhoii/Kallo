@@ -10,7 +10,7 @@ import {
   it,
   vi,
 } from 'vitest';
-import { OcrReviewStep } from '@/components/logging/input/ocr-review-step';
+import { OcrReviewStep } from '@/components/logging/input/ocr/review/ocr-review-step';
 import type {
   NutritionValues as OcrNutritionValues,
   OcrReviewPayload,

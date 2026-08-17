@@ -2,12 +2,12 @@
 
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { pickLoaderIndex } from '@/components/shared/loaders/registry';
+import { useStreamAnalysis } from '@/hooks/meals/analysis/use-stream-analysis';
+import { pickLoaderIndex } from '@/lib/core/ui/loaders/registry';
 import {
   deriveStreamTicker,
   type StreamTickerFrame,
-} from '@/components/shared/stream-ticker/stream-ticker-frame';
-import { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
+} from '@/lib/domain/logging/stream-ticker';
 import { useDashboardAutoSave } from './use-dashboard-autosave';
 
 export interface DashboardMealStream {

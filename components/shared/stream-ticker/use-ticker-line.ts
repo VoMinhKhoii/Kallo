@@ -4,7 +4,7 @@ import { useReducedMotion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { getStreamingPhaseLabel } from '@/components/logging/feed/streaming/streaming-phase-label';
-import type { StreamTickerFrame } from '@/components/shared/stream-ticker/stream-ticker-frame';
+import type { StreamTickerFrame } from '@/lib/domain/logging/stream-ticker';
 
 /**
  * How long one action verb holds before the line flips to the next.

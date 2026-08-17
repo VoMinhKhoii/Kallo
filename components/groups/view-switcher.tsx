@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useMyChatGroups } from '@/hooks/social/use-chat-groups';
-import { useCircleFeed } from '@/hooks/social/use-circle-feed';
-import { useFriendsFeedReadMarker } from '@/hooks/social/use-friend-thread-feed';
+import { useMyChatGroups } from '@/hooks/social/circle/use-chat-groups';
+import { useCircleFeed } from '@/hooks/social/circle/use-circle-feed';
+import { useFriendsFeedReadMarker } from '@/hooks/social/circle/use-friend-thread-feed';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 

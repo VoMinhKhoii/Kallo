@@ -14,7 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { useMealShareInviteCount } from '@/hooks/social/use-meal-share-invites';
+import { useMealShareInviteCount } from '@/hooks/social/sharing/use-meal-share-invites';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 import { createClient } from '@/lib/infra/supabase/client';

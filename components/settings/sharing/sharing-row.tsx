@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { SettingsRow } from '@/components/settings/group';
+import { SettingsRow } from '@/components/settings/chrome/group';
 import { Switch } from '@/components/ui/switch';
 import { setAutoShareToCircle } from '@/lib/actions/visibility/sharing-preferences';
 

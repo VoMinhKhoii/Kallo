@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
-import { CustomSelect } from '@/components/settings/custom-select';
-import { SettingsRow } from '@/components/settings/group';
+import { CustomSelect } from '@/components/settings/chrome/custom-select';
+import { SettingsRow } from '@/components/settings/chrome/group';
 import { DecimalInput } from '@/components/shared/decimal-input';
 import {
   FormControl,
@@ -11,7 +11,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form';
-import type { ProfileFormValues } from './form-schema';
+import type { ProfileFormValues } from '@/lib/domain/settings/profile-form';
 
 const inputClass =
   'w-full rounded-lg border border-kallo-border bg-white px-3 py-2 text-[14px] text-kallo-text transition-colors hover:border-kallo-accent/50 focus:border-kallo-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40';

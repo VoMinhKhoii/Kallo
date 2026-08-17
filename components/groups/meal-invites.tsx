@@ -9,7 +9,7 @@ import {
   useAcceptMealShareInvite,
   useDismissMealShareInvite,
   useMealShareInvites,
-} from '@/hooks/social/use-meal-share-invites';
+} from '@/hooks/social/sharing/use-meal-share-invites';
 import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
 
 function formatKcal(value: number | null, na: string): string {

@@ -2,7 +2,7 @@
 
 import { Download, LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { SettingsGroup, SettingsRow } from '@/components/settings/group';
+import { SettingsGroup, SettingsRow } from '@/components/settings/chrome/group';
 import { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { DangerZone } from './danger-zone';
 import { LinkedAccounts } from './linked-accounts';

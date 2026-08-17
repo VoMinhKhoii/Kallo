@@ -2,7 +2,7 @@
 
 import { Bug, ImageIcon, ImagePlus, Lightbulb, Sprout, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { OptionStrip } from '@/components/settings/option-strip';
+import { OptionStrip } from '@/components/settings/chrome/option-strip';
 import { FEEDBACK_TYPES } from '@/lib/api/contracts/feedback';
 import {
   ACCEPTED,

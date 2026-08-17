@@ -4,11 +4,9 @@ import { Undo2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import {
-  useConfirmMeal,
-  useDeleteMeal,
-} from '@/hooks/meals/use-meal-mutations';
-import type { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
+import type { useStreamAnalysis } from '@/hooks/meals/analysis/use-stream-analysis';
+import { useConfirmMeal } from '@/hooks/meals/mutations/use-confirm-meal';
+import { useDeleteMeal } from '@/hooks/meals/mutations/use-delete-meal';
 
 /**
  * Dashboard quick-capture has no confirm step: when the stream resolves, save

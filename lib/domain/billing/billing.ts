@@ -11,11 +11,12 @@
  * Import from here, not from the internals.
  *
  * BROWSER EXCEPTION: this entry reaches `server-only` modules, so client
- * components cannot use it. The three client-safe files are imported directly
- * instead — `@/lib/domain/billing/products`, `@/lib/domain/billing/identity`, and
- * `@/lib/domain/billing/web-purchases` (a `'use client'` module wrapping the
- * RevenueCat Web SDK, deliberately absent below so no server graph pulls a
- * browser SDK in).
+ * components cannot use it. The client-safe files are imported directly
+ * instead — `products`, `identity`, `entitlements-client` (the browser's read
+ * of the entitlement contract), everything under `activation/` (the bounded
+ * recovery loops that heal a purchase the server has not projected), and
+ * `web-purchases` (a `'use client'` module wrapping the RevenueCat Web SDK,
+ * deliberately absent below so no server graph pulls a browser SDK in).
  */
 
 export type { BillingConfig } from '@/lib/domain/billing/entitlement/config';

@@ -23,8 +23,11 @@ hooks/        client state and queries — never imports from components/
 lib/          domain, data, and infrastructure — imports from neither of the above
 ```
 
-`lib/` currently honours this: it imports nothing from `components/` or `hooks/`. `hooks/` does
-not yet — see the `logging` row below.
+`lib/` honours this: it imports nothing from `components/` or `hooks/`. `hooks/` now honours it
+too, with one deliberate exception: `hooks/auth/use-google-identity.ts` reads `useAuthDialog`
+from `components/auth/auth-provider`. That import is a hook consuming the React context whose
+provider owns it — state depending on state, not on presentation — and the context cannot move
+to `hooks/` without `hooks/` exporting a non-hook value.
 
 ---
 
@@ -43,7 +46,7 @@ another domain module is a smell worth a second look.
 | `errors/` | the error taxonomy and its two edges: HTTP response, browser parse |
 | `text/` | string shaping for display and input parsing |
 | `types/` | cross-cutting DTOs |
-| `ui/` | the Tailwind class-merge helper — the only `lib/` folder that knows about styling |
+| `ui/` | the Tailwind class-merge helper plus `loaders/` (the loader pool's SMIL sampling math, painters and registry) — the only `lib/` folder that knows about drawing |
 | `validation/` | Zod request schemas: primitives plus one file per domain |
 
 ### `lib/infra/` — edges to the outside world
@@ -64,17 +67,18 @@ another domain module is a smell worth a second look.
 | Folder | Concern |
 |---|---|
 | `account-deletion/` | queued deletion jobs and their retry |
-| `barcode/` | Open Food Facts lookup and decode |
-| `billing/` | `revenuecat/` (the purchase side, incl. its `webhook/` intake) and `entitlement/` (the grant side) |
+| `barcode/` | Open Food Facts lookup and decode, plus `amount.ts` — the gram clamp, per-100g scaling and mode→grams resolution the quantity picker runs on |
+| `billing/` | `revenuecat/` (the purchase side, incl. its `webhook/` intake), `entitlement/` (the grant side) and `activation/` (the browser's bounded recovery loops for a purchase the server has not projected); `entitlements-client.ts` is the browser's read of the contract |
 | `cheat/` | cheat-meal slider math |
 | `dashboard/` | dashboard aggregations |
 | `docs/` | in-app docs loader, toc, nav, search |
 | `ingredients/` | `search/` — the food-composition picker: recents, lexical + semantic arms, rank fusion |
-| `logging/` | meal logging and relog |
-| `meals/` | dish quantity edits and the macro rescaling they imply |
-| `nutrition/` | nutrition overview, catalog, pattern analysis |
+| `logging/` | meal logging and relog, plus the contracts its UI and hooks share: `types.ts`, `meal-input-handle.ts`, `stream-ticker.ts` |
+| `meals/` | dish quantity edits and the macro rescaling they imply, plus `save/` (the optimistic-meal builders and the cache choreography a save runs through) and `query-keys.ts`, the cache addresses that write side shares with `hooks/meals/` |
+| `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data |
-| `social/` | `identity/` `feed/` `shares/` `chat/` — the circle and its group chats |
+| `settings/` | the contracts the settings page's route, panels and hooks share: `anchors.ts` (scroll-target ids), `profile-form.ts` (the profile form's data model) |
+| `social/` | `identity/` `feed/` `shares/` `chat/` — the circle and its group chats, plus `query-keys.ts`, the cache addresses its write side shares with `hooks/social/` |
 | `waitlist/` | signup, confirm, token |
 
 ### `lib/` root
@@ -85,7 +89,8 @@ another domain module is a smell worth a second look.
 | `actions/` | Server Actions, grouped by the surface they serve |
 | `api/` | route-handler plumbing: auth guard, respond, query parse, client fetch |
 | `admin/` | the admin plane's logic — see its own section below |
-| `brand/` · `i18n/` · `sidebar/` | small single-concern modules |
+| `brand/` · `i18n/` | small single-concern modules |
+| `sidebar/` | the rail's cookie persistence, its vocabulary, and `state-machine.ts` — the pure 3-state FSM `useSidebarState` binds to |
 | `seo/` | metadata and structured data, plus `og/` (the Satori share card's palette, geometry and fonts) |
 
 ### `lib/ai/`
@@ -123,17 +128,18 @@ another domain module is a smell worth a second look.
 | `brand/` | logo marks | ok |
 | `app/` | application chrome present on every page | split |
 | `auth/` | auth dialog, forms, OAuth edge cases | split |
-| `billing/` | paywall and subscription UI | split |
+| `billing/` | `paywall/` (the offer surface), `subscription/` (manage the plan) and `activation/` (what shows while a purchase lands) | ok |
 | `dashboard/` | dashboard sections and charts | split |
 | `design-system/` | style-guide showcase — a dev tool, not product UI | split |
 | `docs/` | MDX docs chrome | ok |
 | `groups/` | circle shell, feeds, sharing, friends | split |
 | `landing-page/` | marketing page | split |
 | `logging/` | meal logging surface | split |
+| `logging/input/` | every way to start a meal — `composer/` (the text composer, its mode switcher and send button), `manual/` (DB-backed ingredient rows), `barcode/` (the scanner dialog: camera, lookup, quantity), `ocr/` (`scan/` the label, `review/` what was read), `relog/` | ok |
 | `nutrition/` | nutrition page — primitives/rows/sections/states | **reference shape** |
 | `onboarding/` | onboarding wizard and screens | split |
 | `providers/` | TanStack provider (single file) | split |
-| `settings/` | settings page chrome and panels | split |
+| `settings/` | `chrome/` (the page shell every panel renders into) plus one folder per panel — `account/` `feedback/` `identity/` `profile/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |
 
 ## `hooks/` — client state
@@ -141,11 +147,20 @@ another domain module is a smell worth a second look.
 | Folder | Concern | Status |
 |---|---|---|
 | `auth/` · `billing/` · `dashboard/` · `profile/` · `weight/` | one feature's client state each | ok |
-| `landing/` | one hook | split |
-| `meals/` | meal lifecycle — six concerns, two non-hooks | split |
+| `meals/` | meal lifecycle, one folder per stage — a directory index, no direct files | ok |
+| `meals/queries/` | the read-only TanStack wrappers: a day's meals, ingredient search, cheat chips, adjacent-date prefetch | ok |
+| `meals/mutations/` | one file per write: confirm, manual save, update, duplicate, delete | ok |
+| `meals/analysis/` | the SSE stream lifecycle and the two effects that ride it | ok |
+| `meals/feed/` | the day-feed controller and its handler hooks | ok |
+| `meals/entry/` | the non-streaming ways into the composer: manual rows, label OCR, dashboard prefill | ok |
 | `meals/relog/` | relog composer state | **reference shape** |
-| `social/` | circle **and** meal sharing | split |
+| `social/circle/` | friends, thread feed, circle wall, invites, group chats | ok |
+| `social/sharing/` | sharing a meal, logging a shared one, invites, replies, reactions | ok |
 | `ui/` | device and browser-surface hooks, zero domain knowledge | ok |
+
+`hooks/auth/` also owns the landing page's waitlist signup — the pre-account end
+of the same "getting into the product" concern, folded in when `hooks/landing/`
+proved to be one hook.
 
 ## `app/` — routes
 

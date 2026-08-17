@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useRemoveGroupMember } from '@/hooks/social/use-chat-groups';
+import { useRemoveGroupMember } from '@/hooks/social/circle/use-chat-groups';
 import type { ChatGroupDetail } from '@/lib/actions/chat-groups/types';
 
 /** Member rows with avatars; the owner additionally gets a confirm-gated

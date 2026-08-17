@@ -2,14 +2,14 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
-import { SUBSECTION_ANCHOR } from '@/components/settings/anchors';
-import { CustomSelect } from '@/components/settings/custom-select';
-import { SettingsRow } from '@/components/settings/group';
+import { CustomSelect } from '@/components/settings/chrome/custom-select';
+import { SettingsRow } from '@/components/settings/chrome/group';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
 import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
+import { SUBSECTION_ANCHOR } from '@/lib/domain/settings/anchors';
+import type { ProfileFormValues } from '@/lib/domain/settings/profile-form';
 import { CountrySelect } from './country-select';
-import type { ProfileFormValues } from './form-schema';
 
 export function RegionalRows() {
   const tOrigin = useTranslations('onboarding.origin');

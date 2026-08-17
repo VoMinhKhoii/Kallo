@@ -35,6 +35,22 @@ export function parseSidebarExpandMode(
   return null;
 }
 
+/**
+ * Read a cookie value by name from the client. `undefined` on the server, and
+ * for a value that is not decodable — a malformed cookie falls back to the
+ * SSR-provided default rather than throwing through the hook's initializer.
+ */
+export function readSidebarCookie(name: string): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  if (!match) return undefined;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return undefined;
+  }
+}
+
 /** Write a cookie from the client. No-op on the server. */
 export function writeSidebarCookie(name: string, value: string): void {
   if (typeof document === 'undefined') return;

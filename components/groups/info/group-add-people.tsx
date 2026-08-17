@@ -7,8 +7,8 @@ import { toast } from 'sonner';
 import { GroupMemberRow } from '@/components/groups/invite/group-member-row';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { Input } from '@/components/ui/input';
-import { useAddGroupMembers } from '@/hooks/social/use-chat-groups';
-import { useFriends } from '@/hooks/social/use-friends';
+import { useAddGroupMembers } from '@/hooks/social/circle/use-chat-groups';
+import { useFriends } from '@/hooks/social/circle/use-friends';
 import type { ChatGroupDetail } from '@/lib/actions/chat-groups/types';
 
 /** Grow the group from the actor's accepted friends — same Messenger-style

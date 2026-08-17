@@ -8,6 +8,11 @@
 // transform.
 
 import type { QueryClient } from '@tanstack/react-query';
+import {
+  chatGroupsKeys,
+  circleFeedKeys,
+  friendsThreadFeedKeys,
+} from '@/lib/domain/social/query-keys';
 
 /** Invalidate every mounted Circle feed. A saved meal is shared to the circle
  * by default, so logging must refresh the feeds or the new meal only appears
@@ -18,12 +23,14 @@ export function invalidateFeedQueries(queryClient: QueryClient): void {
   });
 }
 
-/** True for any query whose data is a feed of share entries. */
+/** True for any query whose data is a feed of share entries. Matched against
+ * the key registry rather than bare literals, so renaming a root segment
+ * cannot silently drop a feed out of the optimistic-update net. */
 export function isFeedQuery(queryKey: readonly unknown[]): boolean {
   return (
-    queryKey[0] === 'circle-feed' ||
-    queryKey[0] === 'friends-thread-feed' ||
-    (queryKey[0] === 'chat-groups' && queryKey[2] === 'feed')
+    queryKey[0] === circleFeedKeys.all[0] ||
+    queryKey[0] === friendsThreadFeedKeys.all[0] ||
+    (queryKey[0] === chatGroupsKeys.all[0] && queryKey[2] === 'feed')
   );
 }
 

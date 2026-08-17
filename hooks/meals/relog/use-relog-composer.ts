@@ -6,19 +6,19 @@ import {
   type SetStateAction,
   useCallback,
 } from 'react';
-import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
-import type { MealInputHandle } from '@/components/logging/input/meal-input';
 import { useRelogCandidates } from '@/hooks/meals/relog/use-relog-candidates';
 import { useRelogSubmit } from '@/hooks/meals/relog/use-relog-submit';
 import { useSlashPicker } from '@/hooks/meals/relog/use-slash-picker';
 import { useStagedEntries } from '@/hooks/meals/relog/use-staged-entries';
 import type { ChatMessage } from '@/lib/core/types/meal';
+import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
 import type { MentionSegment } from '@/lib/domain/logging/relog/mentions';
 import type {
   RelogCandidate,
   RelogRef,
   SlashToken,
 } from '@/lib/domain/logging/relog/relog';
+import type { InputMode } from '@/lib/domain/logging/types';
 
 const NO_SEGMENTS: MentionSegment[] = [];
 

@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { useWaitlistSignup } from '@/hooks/landing/use-waitlist-signup';
+import { useWaitlistSignup } from '@/hooks/auth/use-waitlist-signup';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
 import { ApiError } from '@/lib/core/errors/client';
 import { cn } from '@/lib/core/ui/cn';

@@ -4,11 +4,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import type { RefObject } from 'react';
 import { CheatOccasionChips } from '@/components/logging/feed/cheat/cheat-occasion-chips';
 import { ComposerGlow } from '@/components/logging/feed/composer/composer-glow';
-import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
-import {
-  MealInput,
-  type MealInputHandle,
-} from '@/components/logging/input/meal-input';
+import { MealInput } from '@/components/logging/input/composer/meal-input';
 import { RelogPickerPopup } from '@/components/logging/input/relog/relog-picker-popup';
 import { StagedList } from '@/components/logging/input/relog/staged-list';
 import type { useRelogComposer } from '@/hooks/meals/relog/use-relog-composer';
@@ -18,6 +14,8 @@ import {
   EMPTY_ENTRANCE,
   ENTRANCE_EASE,
 } from '@/lib/domain/logging/empty-entrance';
+import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
+import type { InputMode } from '@/lib/domain/logging/types';
 
 const RELOG_LISTBOX_ID = 'relog-picker-listbox';
 

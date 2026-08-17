@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
-import { useCreateReply } from '@/hooks/social/use-create-reply';
+import { useCreateReply } from '@/hooks/social/sharing/use-create-reply';
 import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import type { ShareReply } from '@/lib/domain/social/shares/replies';
 

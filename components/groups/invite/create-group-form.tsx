@@ -7,8 +7,8 @@ import { toast } from 'sonner';
 import { CircleError } from '@/components/groups/circle-error';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
-import { useCreateChatGroup } from '@/hooks/social/use-chat-groups';
-import { useFriends } from '@/hooks/social/use-friends';
+import { useCreateChatGroup } from '@/hooks/social/circle/use-chat-groups';
+import { useFriends } from '@/hooks/social/circle/use-friends';
 import { GroupMemberRow } from './group-member-row';
 import { labelFor } from './profile-identity';
 

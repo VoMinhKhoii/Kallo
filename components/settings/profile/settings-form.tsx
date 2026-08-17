@@ -2,25 +2,28 @@
 
 import { useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
+import { SettingsGroup } from '@/components/settings/chrome/group';
+import { SectionHeader } from '@/components/settings/chrome/section-header';
+import { IdentityRows } from '@/components/settings/identity/identity-rows';
+import { SharingRow } from '@/components/settings/sharing/sharing-row';
+import { Form } from '@/components/ui/form';
+import { useLiveTargets } from '@/hooks/profile/use-live-targets';
+import { useProfileForm } from '@/hooks/profile/use-profile-form';
 import {
   PREFERENCES_ANCHOR,
   PROFILE_ANCHOR,
   SUBSECTION_ANCHOR,
-} from '@/components/settings/anchors';
-import { SettingsGroup } from '@/components/settings/group';
-import { IdentityRows } from '@/components/settings/identity/identity-rows';
-import { SectionHeader } from '@/components/settings/section-header';
-import { SharingRow } from '@/components/settings/sharing/sharing-row';
-import { Form } from '@/components/ui/form';
+} from '@/lib/domain/settings/anchors';
+import type {
+  ProfileFormValues,
+  ProfileInput,
+} from '@/lib/domain/settings/profile-form';
 import { CookingRows } from './cooking-rows';
-import type { ProfileFormValues, ProfileInput } from './form-schema';
 import { GoalFields } from './goal-fields';
 import { MetricsFields } from './metrics-fields';
 import { RegionalRows } from './regional-rows';
 import { SaveBar } from './save-bar';
 import { TargetHero } from './target-hero';
-import { useLiveTargets } from './use-live-targets';
-import { useProfileForm } from './use-profile-form';
 
 /**
  * Owns the single RHF form spanning both the Profile and Preferences sections

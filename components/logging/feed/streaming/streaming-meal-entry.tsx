@@ -8,11 +8,11 @@ import {
 } from '@/components/logging/feed/format-inline-nutrition';
 import { MealEntryItemSkeleton } from '@/components/logging/feed/skeletons/meal-entry-item-skeleton';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
-import { loaderIndexForKey } from '@/components/shared/loaders/registry';
 import { StreamTicker } from '@/components/shared/stream-ticker/stream-ticker';
-import { deriveStreamTicker } from '@/components/shared/stream-ticker/stream-ticker-frame';
 import { formatTime } from '@/lib/core/date/format-time';
 import type { ChatMessage, MealItem } from '@/lib/core/types/meal';
+import { loaderIndexForKey } from '@/lib/core/ui/loaders/registry';
+import { deriveStreamTicker } from '@/lib/domain/logging/stream-ticker';
 
 const DEFAULT_SKELETON_COUNT = 3;
 

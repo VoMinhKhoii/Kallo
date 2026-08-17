@@ -17,19 +17,17 @@ import {
 } from '@testing-library/react';
 import { useRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
-import {
-  MealInput,
-  type MealInputHandle,
-} from '@/components/logging/input/meal-input';
+import { MealInput } from '@/components/logging/input/composer/meal-input';
 import { RelogPickerPopup } from '@/components/logging/input/relog/relog-picker-popup';
 import { StagedList } from '@/components/logging/input/relog/staged-list';
 import { useRelogComposer } from '@/hooks/meals/relog/use-relog-composer';
+import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
 import type {
   RelogCandidatesResponse,
   RelogDishCandidate,
   RelogMealCandidate,
 } from '@/lib/domain/logging/relog/relog';
+import type { InputMode } from '@/lib/domain/logging/types';
 
 // The global next-intl stub echoes keys, so "{kcal} kcal" would never render a
 // number. Use the REAL Vietnamese messages here — the totals are the point of

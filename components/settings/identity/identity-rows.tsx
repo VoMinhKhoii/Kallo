@@ -4,7 +4,7 @@ import { Check, Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { SettingsRow } from '@/components/settings/group';
+import { SettingsRow } from '@/components/settings/chrome/group';
 import { useMyProfile, useRenameProfile } from '@/hooks/profile/use-profile';
 import { AvatarField } from './avatar-field';
 

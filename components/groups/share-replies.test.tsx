@@ -9,7 +9,7 @@ vi.mock('next-intl', () => ({
 vi.mock('@/components/shared/profile-avatar', () => ({
   ProfileAvatar: () => null,
 }));
-vi.mock('@/hooks/social/use-create-reply', () => ({
+vi.mock('@/hooks/social/sharing/use-create-reply', () => ({
   useCreateReply: () => ({ isPending: false, mutate: vi.fn() }),
 }));
 

@@ -12,7 +12,7 @@ vi.mock('@/lib/infra/supabase/client', () => ({
 
 // The nav's invite-count badge is out of scope here; stub it so the component
 // doesn't require a QueryClientProvider.
-vi.mock('@/hooks/social/use-meal-share-invites', () => ({
+vi.mock('@/hooks/social/sharing/use-meal-share-invites', () => ({
   useMealShareInviteCount: () => 0,
 }));
 

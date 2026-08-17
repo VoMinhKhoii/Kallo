@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useLeaveChatGroup } from '@/hooks/social/use-chat-groups';
+import { useLeaveChatGroup } from '@/hooks/social/circle/use-chat-groups';
 import { useRouter } from '@/i18n/navigation';
 
 /** The quiet leave action at the bottom of the group-info panel; confirmation

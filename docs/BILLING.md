@@ -29,7 +29,7 @@ the same server-owned grant tables.
 Both clients refresh the server snapshot once on authenticated launch/account
 switch and at most once every fifteen minutes on resume — app resume on Flutter
 (`entitlement_lifecycle_sync.dart`), tab visibility on web
-(`components/billing/entitlement-lifecycle.ts`). The server marks a snapshot for
+(`lib/domain/billing/activation/entitlement-lifecycle.ts`). The server marks a snapshot for
 reconciliation when an expired RevenueCat grant still says it will renew or when
 an active RevenueCat projection has not been provider-confirmed for 24 hours.
 Only then does a client invoke the provider recovery path. This heals delayed

@@ -2,7 +2,7 @@
 
 import { CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { SettingsGroup } from '../group';
+import { SettingsGroup } from '@/components/settings/chrome/group';
 import { FeedbackForm } from './feedback-form';
 import { useFeedbackForm } from './use-feedback-form';
 

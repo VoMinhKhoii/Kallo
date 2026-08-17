@@ -1,21 +1,21 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { SubscriptionSettings } from '@/components/billing/subscription-settings';
+import { SubscriptionSettings } from '@/components/billing/subscription/subscription-settings';
 import { AccountPanel } from '@/components/settings/account/account-panel';
-import { SettingsAnchorNav } from '@/components/settings/anchor-nav';
+import { SettingsAnchorNav } from '@/components/settings/chrome/anchor-nav';
+import { SettingsGroup } from '@/components/settings/chrome/group';
+import { SectionHeader } from '@/components/settings/chrome/section-header';
+import { FeedbackPanel } from '@/components/settings/feedback/feedback-panel';
+import { IdentityRows } from '@/components/settings/identity/identity-rows';
+import { SettingsForm } from '@/components/settings/profile/settings-form';
+import { Link } from '@/i18n/navigation';
+import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 import {
   ACCOUNT_ANCHOR,
   FEEDBACK_ANCHOR,
   PROFILE_ANCHOR,
   SUBSCRIPTION_ANCHOR,
-} from '@/components/settings/anchors';
-import { FeedbackPanel } from '@/components/settings/feedback/feedback-panel';
-import { SettingsGroup } from '@/components/settings/group';
-import { IdentityRows } from '@/components/settings/identity/identity-rows';
-import { SettingsForm } from '@/components/settings/profile/settings-form';
-import { SectionHeader } from '@/components/settings/section-header';
-import { Link } from '@/i18n/navigation';
-import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
+} from '@/lib/domain/settings/anchors';
 import { createClient } from '@/lib/infra/supabase/server';
 
 export async function generateMetadata({
