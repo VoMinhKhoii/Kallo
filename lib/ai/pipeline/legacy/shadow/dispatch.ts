@@ -6,8 +6,8 @@ import {
   ANALYSIS_MODEL_PROVIDER,
 } from '@/lib/ai/pipeline/telemetry/budget';
 import type { PipelineResponse } from '@/lib/ai/types/result';
-import type { AppDb } from '@/lib/db';
-import { checkNonessentialAnalysisGuards } from '@/lib/rate-limit/analysis-guards';
+import type { AppDb } from '@/lib/infra/db';
+import { checkNonessentialAnalysisGuards } from '@/lib/infra/rate-limit/analysis-guards';
 import {
   createShadowGuard,
   getPrimaryP95Ms,
@@ -143,7 +143,7 @@ function persistShadowRunDefault(
   db: AppDb
 ): ShadowRunnerDeps['persistShadowRun'] {
   return async (row: ShadowRunPersistRow) => {
-    const { pipelineShadowRuns } = await import('@/lib/db/schema');
+    const { pipelineShadowRuns } = await import('@/lib/infra/db/schema');
     await db.insert(pipelineShadowRuns).values({
       requestId: row.requestId,
       primaryRunId: row.primaryRunId,

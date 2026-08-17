@@ -22,25 +22,25 @@ const { mockUser, mockCanViewShare, mockTxSelect, mockTxInsert, mockTx } =
     };
   });
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: mockUser,
     profile: {},
   }),
 }));
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     transaction: vi.fn((run: (tx: typeof mockTx) => Promise<unknown>) =>
       run(mockTx)
     ),
   },
 }));
-vi.mock('@/lib/social/shares/share-visibility', () => ({
+vi.mock('@/lib/domain/social/shares/share-visibility', () => ({
   canViewShare: mockCanViewShare,
 }));
 
 import { logSharedMealAction } from '@/lib/actions/meal-sharing/log-shared';
-import { mealItems, mealShares, meals } from '@/lib/db/schema';
+import { mealItems, mealShares, meals } from '@/lib/infra/db/schema';
 
 const SHARE_ID = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
 const SOURCE_MEAL_ID = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';

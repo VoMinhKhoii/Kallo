@@ -4,7 +4,7 @@ import { useLocale } from 'next-intl';
 import { useTransition } from 'react';
 import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 const LOCALES: { code: Locale; short: string; label: string }[] = [
   { code: 'vi', short: 'VI', label: 'Tiếng Việt' },

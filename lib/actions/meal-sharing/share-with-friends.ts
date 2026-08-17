@@ -15,16 +15,16 @@
 
 import { and, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { db } from '@/lib/db';
+import { Errors } from '@/lib/core/errors/catalog';
+import { shareMealWithFriendsSchema } from '@/lib/core/validation/social';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
 import {
   friendships,
   mealItems,
   mealShareInvites,
   meals,
-} from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import { shareMealWithFriendsSchema } from '@/lib/validation/social';
+} from '@/lib/infra/db/schema';
 import { scaleOwnMealInPlace } from './scale';
 
 export async function shareMealWithFriendsAction(input: {

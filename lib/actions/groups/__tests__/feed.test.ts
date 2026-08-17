@@ -12,7 +12,7 @@ const { mockDbSelect, mockDbSelectDistinctOn, mockDbInsert } = vi.hoisted(
   })
 );
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     select: mockDbSelect,
     selectDistinctOn: mockDbSelectDistinctOn,
@@ -21,17 +21,17 @@ vi.mock('@/lib/db', () => ({
 }));
 
 vi.mock(
-  '@/lib/db/schema',
+  '@/lib/infra/db/schema',
   async () => (await import('./circle-doubles')).schema
 );
 
-vi.mock('@/lib/social/shares/reactions', () => ({
+vi.mock('@/lib/domain/social/shares/reactions', () => ({
   reactionsForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
       new Map(shareIds.map((id) => [id, { count: 0, mine: false }]))
   ),
 }));
-vi.mock('@/lib/social/shares/replies', () => ({
+vi.mock('@/lib/domain/social/shares/replies', () => ({
   repliesForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
       new Map(shareIds.map((id) => [id, { replies: [], total: 0 }]))
@@ -47,7 +47,7 @@ import {
   listCircleFeed,
   listFriendsThreadFeed,
 } from '@/lib/actions/groups/feed';
-import { repliesForShares } from '@/lib/social/shares/replies';
+import { repliesForShares } from '@/lib/domain/social/shares/replies';
 import { ACTOR, INVITER, selectRows } from './circle-doubles';
 
 // ---------------------------------------------------------------------------

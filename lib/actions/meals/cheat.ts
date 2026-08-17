@@ -2,18 +2,21 @@
 
 import { and, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { groupOccasions } from '@/lib/cheat/occasion-grouping';
-import { withLevelsAsDefaults } from '@/lib/cheat/slider-nutrition';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
-import { db } from '@/lib/db';
-import { meals, pendingAnalyses } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import type { CheatSliderSpec, CheatSlidersPersisted } from '@/lib/types/cheat';
+import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
+import { Errors } from '@/lib/core/errors/catalog';
+import type {
+  CheatSliderSpec,
+  CheatSlidersPersisted,
+} from '@/lib/core/types/cheat';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
-} from '@/lib/validation/primitives';
+} from '@/lib/core/validation/primitives';
+import { groupOccasions } from '@/lib/domain/cheat/occasion-grouping';
+import { withLevelsAsDefaults } from '@/lib/domain/cheat/slider-nutrition';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
+import { meals, pendingAnalyses } from '@/lib/infra/db/schema';
 import type { RecentCheatOccasion } from './types';
 
 // ---------------------------------------------------------------------------

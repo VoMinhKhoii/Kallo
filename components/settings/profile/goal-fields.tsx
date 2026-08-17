@@ -5,9 +5,9 @@ import { useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { SettingsRow } from '@/components/settings/group';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
-import { AGGRESSION_KCAL_PER_KG } from '@/lib/onboarding/constants';
-import { calcMacroGrams } from '@/lib/onboarding/tdee';
-import type { CarbSplit, Goal } from '@/lib/onboarding/types';
+import { AGGRESSION_KCAL_PER_KG } from '@/lib/domain/onboarding/constants';
+import { calcMacroGrams } from '@/lib/domain/onboarding/tdee';
+import type { CarbSplit, Goal } from '@/lib/domain/onboarding/types';
 import type { ProfileFormValues } from './form-schema';
 
 const GOALS: Goal[] = ['cutting', 'maintaining', 'bulking'];

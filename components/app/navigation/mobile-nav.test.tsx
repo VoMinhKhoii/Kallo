@@ -8,7 +8,7 @@ const { createClientMock, toastErrorMock } = vi.hoisted(() => ({
   toastErrorMock: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/client', () => ({
+vi.mock('@/lib/infra/supabase/client', () => ({
   createClient: createClientMock,
 }));
 

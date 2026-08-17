@@ -2,10 +2,10 @@
 
 import { eq } from 'drizzle-orm';
 import { sharingPreferencesSchema } from '@/lib/api/contracts/onboarding';
-import { db } from '@/lib/db';
-import { userProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import { createClient } from '@/lib/supabase/server';
+import { Errors } from '@/lib/core/errors/catalog';
+import { db } from '@/lib/infra/db';
+import { userProfiles } from '@/lib/infra/db/schema';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export async function setAutoShareToCircle(enabled: boolean) {
   // Server Actions are network entry points — the TypeScript signature doesn't

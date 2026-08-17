@@ -7,8 +7,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useWaitlistSignup } from '@/hooks/landing/use-waitlist-signup';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
-import { ApiError } from '@/lib/errors/client';
-import { cn } from '@/lib/ui/cn';
+import { ApiError } from '@/lib/core/errors/client';
+import { cn } from '@/lib/core/ui/cn';
 
 /**
  * The waitlist, wearing the meal-input pill.

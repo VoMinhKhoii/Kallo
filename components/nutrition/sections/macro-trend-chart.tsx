@@ -10,8 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { formatDateSpan } from '@/lib/nutrition/bucket-detail';
-import type { DaySeriesBucketUnit } from '@/lib/nutrition/types';
+import { formatDateSpan } from '@/lib/domain/nutrition/bucket-detail';
+import type { DaySeriesBucketUnit } from '@/lib/domain/nutrition/types';
 import {
   buildBucketTickLabels,
   buildMacroTrendAxis,

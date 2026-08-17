@@ -13,7 +13,7 @@ import {
   updateMealAction,
 } from '@/lib/actions/meals/mutate-meal';
 import type { LoggingDayData, PersistedMeal } from '@/lib/actions/meals/types';
-import { parseGrams, rowLabel } from '@/lib/logging/manual-logging';
+import { parseGrams, rowLabel } from '@/lib/domain/logging/manual-logging';
 import {
   buildOptimisticManualMeal,
   buildOptimisticMeal,

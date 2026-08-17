@@ -4,9 +4,9 @@ import {
   type RevenueCatEvent,
   type RevenueCatWebhookBody,
 } from '@/app/api/webhooks/revenuecat/_lib/request';
-import type { BillingEnvironment } from '@/lib/billing/billing';
-import type { AppDb } from '@/lib/db';
-import { billingWebhookEvents } from '@/lib/db/schema';
+import type { BillingEnvironment } from '@/lib/domain/billing/billing';
+import type { AppDb } from '@/lib/infra/db';
+import { billingWebhookEvents } from '@/lib/infra/db/schema';
 
 const SOURCE = 'revenuecat';
 const MAX_ATTEMPTS = 12;

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { RelogPickerGroup } from '@/components/logging/input/relog/relog-picker-group';
 import type { RelogCandidateList } from '@/hooks/meals/relog/use-relog-candidates';
-import type { RelogCandidate } from '@/lib/logging/relog/relog';
+import type { RelogCandidate } from '@/lib/domain/logging/relog/relog';
 
 interface RelogPickerPopupProps {
   listboxId: string;

@@ -8,8 +8,8 @@ import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { useLogSharedMeal } from '@/hooks/social/use-log-shared-meal';
 import { useToggleReaction } from '@/hooks/social/use-toggle-reaction';
 import type { CircleFeedEntry } from '@/lib/actions/groups/types';
-import { formatElapsed } from '@/lib/date/format-elapsed';
-import { cn } from '@/lib/ui/cn';
+import { formatElapsed } from '@/lib/core/date/format-elapsed';
+import { cn } from '@/lib/core/ui/cn';
 
 function formatMacro(value: number | null, na: string): string {
   return value == null ? na : `${Math.round(value)}g`;

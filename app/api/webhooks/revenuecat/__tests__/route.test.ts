@@ -1,13 +1,13 @@
 import { createHmac } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RevenueCatSnapshot } from '@/lib/billing/billing';
-import type { AppDb } from '@/lib/db';
+import type { RevenueCatSnapshot } from '@/lib/domain/billing/billing';
+import type { AppDb } from '@/lib/infra/db';
 import {
   billingProviderSyncs,
   billingWebhookEvents,
   entitlementGrants,
   userProfiles,
-} from '@/lib/db/schema';
+} from '@/lib/infra/db/schema';
 import { handleRevenueCatWebhook } from '../route';
 
 const SECRET = 'test-webhook-secret';

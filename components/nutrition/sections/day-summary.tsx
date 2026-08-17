@@ -8,7 +8,7 @@ import type {
   NutritionDayScope,
   NutritionDaySeries,
   NutritionRange,
-} from '@/lib/nutrition/types';
+} from '@/lib/domain/nutrition/types';
 import { formatLocalizedNumber } from '../primitives/helpers';
 import { CalorieScopeStats } from './calorie-scope-stats';
 import { MacroTrendChart } from './macro-trend-chart';

@@ -20,9 +20,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Link } from '@/i18n/navigation';
+import { cn } from '@/lib/core/ui/cn';
+import { createClient } from '@/lib/infra/supabase/client';
 import type { SidebarExpandMode } from '@/lib/sidebar/types';
-import { createClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/ui/cn';
 
 export interface UserMenuUser {
   email: string | null;

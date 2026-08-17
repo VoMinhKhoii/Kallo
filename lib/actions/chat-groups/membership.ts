@@ -1,14 +1,18 @@
 import { and, eq, inArray, or, sql } from 'drizzle-orm';
-import type { AppTransaction } from '@/lib/db';
-import { db as defaultDb } from '@/lib/db';
-import { chatGroupMembers, chatGroups, friendships } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import { orderedPair } from '@/lib/social/friendship';
+import { Errors } from '@/lib/core/errors/catalog';
 import {
   addChatGroupMembersSchema,
   leaveChatGroupSchema,
   removeChatGroupMemberSchema,
-} from '@/lib/validation/chat';
+} from '@/lib/core/validation/chat';
+import { orderedPair } from '@/lib/domain/social/friendship';
+import type { AppTransaction } from '@/lib/infra/db';
+import { db as defaultDb } from '@/lib/infra/db';
+import {
+  chatGroupMembers,
+  chatGroups,
+  friendships,
+} from '@/lib/infra/db/schema';
 
 // Also accepts a transaction so invite acceptance remains atomic.
 export type ChatGroupDb = typeof defaultDb | AppTransaction;

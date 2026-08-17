@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
-import type { RelogRef } from '@/lib/logging/relog/relog';
-import type { CheatSliderSpec } from '@/lib/types/cheat';
-import type { MealItem, ParsedMeal } from '@/lib/types/meal';
+import type { CheatSliderSpec } from '@/lib/core/types/cheat';
+import type { MealItem, ParsedMeal } from '@/lib/core/types/meal';
+import type { RelogRef } from '@/lib/domain/logging/relog/relog';
 
 export interface StreamAnalysisState {
   status: StreamStatus;

@@ -9,15 +9,23 @@ import {
 } from '@/lib/actions/logging/persisted-meal';
 import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import type { PipelineResult } from '@/lib/ai/types/result';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
-import { db } from '@/lib/db';
-import { mealItems, mealShares, meals, pendingAnalyses } from '@/lib/db/schema';
-import type { CheatSliderSpec, CheatSlidersPersisted } from '@/lib/types/cheat';
+import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
+import type {
+  CheatSliderSpec,
+  CheatSlidersPersisted,
+} from '@/lib/core/types/cheat';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
-} from '@/lib/validation/primitives';
+} from '@/lib/core/validation/primitives';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
+import {
+  mealItems,
+  mealShares,
+  meals,
+  pendingAnalyses,
+} from '@/lib/infra/db/schema';
 import type {
   LoggingDayData,
   PendingMealConfirmation,

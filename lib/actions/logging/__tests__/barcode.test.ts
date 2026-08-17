@@ -11,7 +11,7 @@ const { mockDbSelect, mockDbInsert, mockUser } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: mockUser,
     profile: {
@@ -21,14 +21,14 @@ vi.mock('@/lib/auth/session', () => ({
   }),
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     select: mockDbSelect,
     insert: mockDbInsert,
   },
 }));
 
-vi.mock('@/lib/db/schema', () => ({
+vi.mock('@/lib/infra/db/schema', () => ({
   vietnameseFoodComposition: { id: 'vietnameseFoodComposition.id' },
   ingredientSources: {
     id: 'ingredientSources.id',
@@ -37,11 +37,11 @@ vi.mock('@/lib/db/schema', () => ({
   pendingAnalyses: { id: 'pendingAnalyses.id' },
 }));
 
-vi.mock('@/lib/barcode/openfoodfacts', async (importActual) => {
+vi.mock('@/lib/domain/barcode/openfoodfacts', async (importActual) => {
   // Keep the real parseSizeGrams (used by the cache-read path); only the
   // network fetch is stubbed.
   const actual =
-    await importActual<typeof import('@/lib/barcode/openfoodfacts')>();
+    await importActual<typeof import('@/lib/domain/barcode/openfoodfacts')>();
   return {
     ...actual,
     fetchProductFromOpenFoodFacts: vi.fn(),
@@ -54,7 +54,7 @@ import {
   stageBarcodeMealAction,
 } from '@/lib/actions/logging/barcode';
 import type { PipelineResult } from '@/lib/ai/types/result';
-import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
+import { fetchProductFromOpenFoodFacts } from '@/lib/domain/barcode/openfoodfacts';
 
 describe('searchBarcodeAction', () => {
   beforeEach(() => {

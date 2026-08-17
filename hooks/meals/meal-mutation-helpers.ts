@@ -9,18 +9,25 @@ import type {
 import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { SaveManualMealInput } from '@/lib/api/contracts/meals';
-import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
+import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
+import type {
+  CheatSliderLevels,
+  CheatSliderSpec,
+} from '@/lib/core/types/cheat';
+import type {
+  MacroBreakdown,
+  MealItem,
+  ParsedMeal,
+} from '@/lib/core/types/meal';
+import { resolveSliderNutrition } from '@/lib/domain/cheat/slider-nutrition';
 import {
   type CompleteManualMealRow,
   parseGrams,
   rowLabel,
   rowMacros,
   totalsForRows,
-} from '@/lib/logging/manual-logging';
-import { recalculateTotals } from '@/lib/meals/quantity-recalculation';
-import type { CheatSliderLevels, CheatSliderSpec } from '@/lib/types/cheat';
-import type { MacroBreakdown, MealItem, ParsedMeal } from '@/lib/types/meal';
+} from '@/lib/domain/logging/manual-logging';
+import { recalculateTotals } from '@/lib/domain/meals/quantity-recalculation';
 
 export interface OptimisticCheatInput {
   spec: CheatSliderSpec;

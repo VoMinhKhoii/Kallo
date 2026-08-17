@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useMealShareInviteCount } from '@/hooks/social/use-meal-share-invites';
 import { useSidebarState } from '@/hooks/ui/use-sidebar-state';
 import { usePathname } from '@/i18n/navigation';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
 import {

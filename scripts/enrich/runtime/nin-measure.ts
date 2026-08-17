@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { retrieveHybridTopK } from '@/lib/ai/matching/retrieve/top-k-retrieval';
-import { type AppDb, encodeDbUrl } from '@/lib/db';
+import { type AppDb, encodeDbUrl } from '@/lib/infra/db';
 import { foldText } from '../nin-text';
 
 const STABLE_QUERIES = ['ức gà', 'thịt heo', 'nước mắm', 'cơm', 'tôm', 'xôi'];

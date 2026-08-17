@@ -9,9 +9,11 @@ vi.mock('@/lib/actions/meals/relog/stage-relog-analysis', () => ({
   stageRelogAnalysisAction,
 }));
 
-vi.mock('@/lib/auth/session', () => ({ requireAuthAndProfile }));
+vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
 
-vi.mock('@/lib/rate-limit/analysis-guards', () => ({ checkAnalysisGuards }));
+vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
+  checkAnalysisGuards,
+}));
 
 const { POST } = await import('@/app/api/v1/meals/relog/stage/route');
 
@@ -161,7 +163,7 @@ describe('POST /api/v1/meals/relog/stage', () => {
   });
 
   it('rejects an unauthenticated request with 401, before staging', async () => {
-    const { Errors } = await import('@/lib/errors/catalog');
+    const { Errors } = await import('@/lib/core/errors/catalog');
     requireAuthAndProfile.mockRejectedValueOnce(Errors.notAuthenticated());
 
     const res = await POST(makeRequest(validBody));
@@ -170,7 +172,7 @@ describe('POST /api/v1/meals/relog/stage', () => {
     expect(stageRelogAnalysisAction).not.toHaveBeenCalled();
   });
   it('propagates a dead-reference validation error as 400', async () => {
-    const { Errors } = await import('@/lib/errors/catalog');
+    const { Errors } = await import('@/lib/core/errors/catalog');
     stageRelogAnalysisAction.mockRejectedValueOnce(
       Errors.validationFailed('Món không còn tồn tại.')
     );

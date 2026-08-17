@@ -5,7 +5,7 @@ import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import type {
   IngredientSearchResponse,
   IngredientSearchResult,
-} from '@/lib/logging/manual-logging';
+} from '@/lib/domain/logging/manual-logging';
 
 const DEBOUNCE_MS = 300;
 const SEARCH_LIMIT = 10;

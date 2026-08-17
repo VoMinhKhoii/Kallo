@@ -27,9 +27,9 @@ import {
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { NutritionAdjustment } from '@/lib/ai/types/nutrition-adjustment';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
-import type { AppDb } from '@/lib/db';
-import { capitalizeFirst } from '@/lib/text/capitalize';
+import { fetchWithTimeout } from '@/lib/core/async/fetch-with-timeout';
+import { capitalizeFirst } from '@/lib/core/text/capitalize';
+import type { AppDb } from '@/lib/infra/db';
 import {
   assertMealFactsShape,
   type MealFactsForComputePolicy,

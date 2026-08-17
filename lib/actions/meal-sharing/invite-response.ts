@@ -13,20 +13,20 @@
 import { and, eq, or } from 'drizzle-orm';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
-import { db } from '@/lib/db';
+import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
+import { Errors } from '@/lib/core/errors/catalog';
+import {
+  acceptMealShareInviteSchema,
+  dismissMealShareInviteSchema,
+} from '@/lib/core/validation/social';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
 import {
   friendships,
   mealItems,
   mealShareInvites,
   meals,
-} from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import {
-  acceptMealShareInviteSchema,
-  dismissMealShareInviteSchema,
-} from '@/lib/validation/social';
+} from '@/lib/infra/db/schema';
 
 // ---------------------------------------------------------------------------
 // S3: Accept an invite — materialize the meal in my own diary

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/supabase/server', () => ({
+vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: vi.fn(),
 }));
 
@@ -15,7 +15,7 @@ function mockSupabase(error?: { message: string } | null) {
         .mockResolvedValue({ data: { session: null }, error: error ?? null }),
     },
   } as unknown as Awaited<
-    ReturnType<typeof import('@/lib/supabase/server').createClient>
+    ReturnType<typeof import('@/lib/infra/supabase/server').createClient>
   >;
 }
 

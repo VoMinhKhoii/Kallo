@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { stageRelogAnalysisAction } from '@/lib/actions/meals/relog/stage-relog-analysis';
 import { stageRelogAnalysisSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth/session';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
 export const runtime = 'nodejs';
 

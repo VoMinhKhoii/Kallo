@@ -6,11 +6,11 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { useMyProfile, useSaveProfile } from '@/hooks/profile/use-profile';
-import { ApiError } from '@/lib/errors/client';
+import { ApiError } from '@/lib/core/errors/client';
 import {
   HANDLE_MIN_LENGTH,
   validateHandle,
-} from '@/lib/social/identity/handles';
+} from '@/lib/domain/social/identity/handles';
 
 /**
  * The signed-in user's shareable invite link. The profile (and its slug) is

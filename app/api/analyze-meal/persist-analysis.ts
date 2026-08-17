@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
-import { db } from '@/lib/db';
-import { pendingAnalyses } from '@/lib/db/schema';
+import { db } from '@/lib/infra/db';
+import { pendingAnalyses } from '@/lib/infra/db/schema';
 
 interface StagePendingAnalysis {
   userId: string;

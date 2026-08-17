@@ -13,12 +13,12 @@ const {
   wizardShellPropsSpy: vi.fn(),
 }));
 
-vi.mock('@/lib/onboarding/actions', () => ({
+vi.mock('@/lib/domain/onboarding/actions', () => ({
   minimizeOnboardingNudge: vi.fn(),
   restoreOnboardingNudge: restoreOnboardingNudgeMock,
 }));
 
-vi.mock('@/lib/onboarding/steps/step-one-locale-draft', () => ({
+vi.mock('@/lib/domain/onboarding/steps/step-one-locale-draft', () => ({
   readStepOneLocaleDraft: readStepOneLocaleDraftMock,
 }));
 

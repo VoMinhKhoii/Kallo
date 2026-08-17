@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
 import { circleFeedKeys } from '@/hooks/social/use-circle-feed';
-import { setMealShareVisibility } from '@/lib/social/circle-client';
+import { setMealShareVisibility } from '@/lib/domain/social/circle-client';
 
 interface ShareMealInput {
   mealId: string;

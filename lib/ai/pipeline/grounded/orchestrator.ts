@@ -34,7 +34,7 @@ import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { PipelineResponse } from '@/lib/ai/types/result';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 import { runAssemblyStage } from './assembly';
 import { runCallTwoStage } from './call-two/call-two';
 import { flushUnstreamedItemMacros } from './call-two/item-macros';

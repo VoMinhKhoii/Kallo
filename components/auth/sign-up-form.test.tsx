@@ -16,7 +16,7 @@ vi.mock('@/components/auth/auth-provider', () => ({
   }),
 }));
 
-vi.mock('@/lib/supabase/client', () => ({
+vi.mock('@/lib/infra/supabase/client', () => ({
   createClient: () => ({
     auth: {
       signUp: signUpMock,

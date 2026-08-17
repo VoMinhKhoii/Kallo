@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { NutrientCardData } from '@/lib/nutrition/types';
+import type { NutrientCardData } from '@/lib/domain/nutrition/types';
 import { NutrientGridCard } from '../rows/nutrient-grid-card';
 
 interface NutrientGridProps {

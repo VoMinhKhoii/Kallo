@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
-import { logSharedMeal } from '@/lib/social/circle-client';
+import { logSharedMeal } from '@/lib/domain/social/circle-client';
 
 function localDateString(): string {
   const now = new Date();

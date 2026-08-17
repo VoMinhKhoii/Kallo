@@ -16,20 +16,20 @@ const { mockUser, mockCanViewShare, mockTxInsert, mockTxSelect, mockTx } =
     };
   });
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: mockUser,
     profile: {},
   }),
 }));
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     transaction: vi.fn((run: (tx: typeof mockTx) => Promise<unknown>) =>
       run(mockTx)
     ),
   },
 }));
-vi.mock('@/lib/social/shares/share-visibility', () => ({
+vi.mock('@/lib/domain/social/shares/share-visibility', () => ({
   canViewShareOwnedBy: mockCanViewShare,
 }));
 

@@ -45,14 +45,14 @@ const {
   };
 });
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: mockUser,
     profile: mockProfile,
   }),
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) =>
       fn(mockTx)
@@ -63,7 +63,7 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
-vi.mock('@/lib/db/schema', () => ({
+vi.mock('@/lib/infra/db/schema', () => ({
   bodyWeightLog: {
     userId: 'bodyWeightLog.userId',
     loggedDate: 'bodyWeightLog.loggedDate',

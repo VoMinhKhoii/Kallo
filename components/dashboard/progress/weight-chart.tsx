@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { TimeRange } from '@/lib/types/dashboard';
+import type { TimeRange } from '@/lib/core/types/dashboard';
 import { WeightChartTooltip } from './weight-chart-tooltip';
 import { buildXTicks } from './weight-chart-utils';
 

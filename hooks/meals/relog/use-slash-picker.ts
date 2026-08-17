@@ -5,7 +5,7 @@ import {
   parseSlashToken,
   type RelogCandidate,
   type SlashToken,
-} from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/relog';
 
 export interface SlashPickerApi {
   isOpen: boolean;

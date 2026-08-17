@@ -5,7 +5,7 @@ import { type RefObject, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { MealInputHandle } from '@/components/logging/input/meal-input';
 import type { useSaveManualMeal } from '@/hooks/meals/use-meal-mutations';
-import { rowIsComplete } from '@/lib/logging/manual-logging';
+import { rowIsComplete } from '@/lib/domain/logging/manual-logging';
 
 /**
  * Manual (Cronometer-style) submit: ingredient ids + grams straight to the

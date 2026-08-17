@@ -18,11 +18,11 @@ vi.mock('next/navigation', () => ({
   redirect: mockRedirect,
 }));
 
-vi.mock('@/lib/onboarding/actions', () => ({
+vi.mock('@/lib/domain/onboarding/actions', () => ({
   getOnboardingProfile: mockGetOnboardingProfile,
 }));
 
-vi.mock('@/lib/supabase/server', () => ({
+vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: vi.fn(async () => ({
     auth: {
       getUser: mockGetUser,

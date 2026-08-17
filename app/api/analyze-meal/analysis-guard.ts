@@ -1,14 +1,14 @@
 import type { NextRequest } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
-import { db } from '@/lib/db';
-import { analysisGuardEvents } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import type { AnalysisGuardAllowedResult } from '@/lib/rate-limit/analysis-guard-types';
+import { Errors } from '@/lib/core/errors/catalog';
+import { db } from '@/lib/infra/db';
+import { analysisGuardEvents } from '@/lib/infra/db/schema';
+import type { AnalysisGuardAllowedResult } from '@/lib/infra/rate-limit/analysis-guard-types';
 import {
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
-} from '@/lib/rate-limit/analysis-guards';
+} from '@/lib/infra/rate-limit/analysis-guards';
 import { getRequestIp } from './request-validation';
 
 const analyzeMealRoute = '/api/analyze-meal';

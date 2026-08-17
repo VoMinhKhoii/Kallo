@@ -10,7 +10,7 @@ import {
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
-import { formatTime } from '@/lib/date/format-time';
+import { formatTime } from '@/lib/core/date/format-time';
 import { MealAmountEditor } from './meal-amount-editor';
 import { MealDetails } from './meal-details';
 // The NL-refine is submitted as `${rawInput} (${correction})` — the joining

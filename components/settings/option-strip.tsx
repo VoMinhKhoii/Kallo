@@ -1,7 +1,7 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 interface OptionStripItem {
   value: string;

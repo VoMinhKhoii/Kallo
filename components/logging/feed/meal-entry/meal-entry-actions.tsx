@@ -2,7 +2,7 @@
 
 import { Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 interface MealEntryActionsProps {
   isEditing: boolean;

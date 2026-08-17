@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
@@ -62,7 +62,7 @@ vi.mock('@/lib/ai/pipeline/telemetry/trace', () => ({
   _resetPromptVersionCacheForTests: vi.fn(),
 }));
 
-vi.mock('@/lib/async/fetch-with-timeout', () => ({
+vi.mock('@/lib/core/async/fetch-with-timeout', () => ({
   fetchWithTimeout: (fn: (signal: AbortSignal) => unknown) =>
     fn(new AbortController().signal),
 }));
@@ -121,7 +121,7 @@ import {
   analyzeMeal,
 } from '@/lib/ai/pipeline/analyze-meal';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import { analysisModelBudgetEvents, pipelineRuns } from '@/lib/db/schema';
+import { analysisModelBudgetEvents, pipelineRuns } from '@/lib/infra/db/schema';
 
 // ---------------------------------------------------------------------------
 // Test data

@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import type { TocEntry } from '@/lib/docs/toc';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
+import type { TocEntry } from '@/lib/domain/docs/toc';
 
 /**
  * The "on this page" rail, with scroll-spy.

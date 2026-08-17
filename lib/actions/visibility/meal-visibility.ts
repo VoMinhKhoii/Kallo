@@ -10,10 +10,10 @@
 // too).
 
 import { and, eq } from 'drizzle-orm';
-import { db as defaultDb } from '@/lib/db';
-import { mealShares, meals } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import { setMealShareVisibilitySchema } from '@/lib/validation/social';
+import { Errors } from '@/lib/core/errors/catalog';
+import { setMealShareVisibilitySchema } from '@/lib/core/validation/social';
+import { db as defaultDb } from '@/lib/infra/db';
+import { mealShares, meals } from '@/lib/infra/db/schema';
 
 type Db = typeof defaultDb;
 

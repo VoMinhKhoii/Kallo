@@ -3,8 +3,8 @@
 import { useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
-import { AGGRESSION_KCAL_PER_KG } from '@/lib/onboarding/constants';
-import type { Goal } from '@/lib/onboarding/types';
+import { AGGRESSION_KCAL_PER_KG } from '@/lib/domain/onboarding/constants';
+import type { Goal } from '@/lib/domain/onboarding/types';
 import type { Screen1FormData } from './constants';
 
 /** kg/week pace slider with the kcal/day translation footer. */

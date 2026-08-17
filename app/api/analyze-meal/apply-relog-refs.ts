@@ -1,11 +1,14 @@
 import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
 import type { PipelineResult } from '@/lib/ai/types/result';
-import { db } from '@/lib/db';
 import {
   buildFrozenMealItem,
   mergeRelogIntoPipelineResult,
-} from '@/lib/logging/relog/build-relog-pipeline-result';
-import { type RelogRef, weakestConfidence } from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/build-relog-pipeline-result';
+import {
+  type RelogRef,
+  weakestConfidence,
+} from '@/lib/domain/logging/relog/relog';
+import { db } from '@/lib/infra/db';
 
 /**
  * Combined-relog merge for `/api/analyze-meal`: fold the user's picks into the

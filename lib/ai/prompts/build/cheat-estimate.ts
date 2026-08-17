@@ -1,7 +1,7 @@
 import { buildPromptContextLine } from '@/lib/ai/prompts/sanitize';
 import { cheatEstimatePromptText } from '@/lib/ai/prompts/text/cheat-estimate';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
-import type { CheatIntensity } from '@/lib/types/cheat';
+import type { CheatIntensity } from '@/lib/core/types/cheat';
 
 /**
  * Cheat-meal slider estimator prompt.

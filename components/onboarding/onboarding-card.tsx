@@ -3,7 +3,7 @@
 import { ArrowRight, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/domain/onboarding/constants';
 
 interface OnboardingCardProps {
   onboardingStep: number;

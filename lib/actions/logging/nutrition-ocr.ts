@@ -8,28 +8,28 @@ import type {
 } from '@/lib/ai/types/nutrition-values';
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { PipelineResult } from '@/lib/ai/types/result';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
-import { db } from '@/lib/db';
-import { pendingAnalyses } from '@/lib/db/schema';
-import { validateNutritionLabelImage } from '@/lib/nutrition/ocr-image';
+import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/core/validation/primitives';
+import { validateNutritionLabelImage } from '@/lib/domain/nutrition/ocr-image';
 import {
   OCR_MAX_IMAGE_BYTES,
   OCR_UPLOAD_MIME_TYPES,
-} from '@/lib/nutrition/ocr-image-constants';
+} from '@/lib/domain/nutrition/ocr-image-constants';
 import type {
   OcrErrorCode,
   OcrReviewPayload,
   ParsedNutritionLabel,
-} from '@/lib/nutrition/ocr-schema';
+} from '@/lib/domain/nutrition/ocr-schema';
 import {
   nutritionValuesSchema,
   ocrConfidenceSchema,
-} from '@/lib/nutrition/ocr-schema';
-import {
-  dateStringSchema,
-  timezoneOffsetSchema,
-} from '@/lib/validation/primitives';
+} from '@/lib/domain/nutrition/ocr-schema';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
+import { pendingAnalyses } from '@/lib/infra/db/schema';
 
 const scanLabelSchema = z.object({
   imageBase64: z

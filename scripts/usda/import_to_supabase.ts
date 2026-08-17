@@ -16,8 +16,8 @@ import { readFileSync } from 'node:fs';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { encodeDbUrl } from '@/lib/db';
-import { vietnameseFoodComposition } from '@/lib/db/schema';
+import { encodeDbUrl } from '@/lib/infra/db';
+import { vietnameseFoodComposition } from '@/lib/infra/db/schema';
 
 const BATCH_SIZE = 100;
 

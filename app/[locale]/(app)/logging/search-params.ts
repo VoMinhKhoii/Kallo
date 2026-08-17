@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { dateStringSchema } from '@/lib/validation/primitives';
+import { dateStringSchema } from '@/lib/core/validation/primitives';
 
 const mealSchema = z.string().trim().min(1).max(300);
 

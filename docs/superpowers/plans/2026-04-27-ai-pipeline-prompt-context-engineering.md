@@ -165,7 +165,7 @@ Create `lib/ai/pipeline/__tests__/run-telemetry-schema.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
-import { pipelineRuns } from '@/lib/db/schema';
+import { pipelineRuns } from '@/lib/infra/db/schema';
 
 describe('pipelineRuns Drizzle schema', () => {
   it('exports a Drizzle table with the spec §0.4 columns', () => {
@@ -1746,10 +1746,10 @@ export function buildPipelineRunRow(input: BuildPipelineRunRowInput) {
 }
 
 export async function writePipelineRun(
-  db: import('@/lib/db').AppDb,
+  db: import('@/lib/infra/db').AppDb,
   row: ReturnType<typeof buildPipelineRunRow>
 ): Promise<void> {
-  const { pipelineRuns } = await import('@/lib/db/schema');
+  const { pipelineRuns } = await import('@/lib/infra/db/schema');
   await db.insert(pipelineRuns).values(row);
 }
 ```
@@ -3292,7 +3292,7 @@ COMMIT;
 
 ```ts
 import { describe, expect, it } from 'vitest';
-import { pipelineShadowRuns } from '@/lib/db/schema';
+import { pipelineShadowRuns } from '@/lib/infra/db/schema';
 
 describe('pipelineShadowRuns Drizzle schema', () => {
   it('has the expected columns', () => {

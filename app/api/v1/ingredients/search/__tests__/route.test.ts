@@ -7,11 +7,11 @@ const resolveQueryEmbedding = vi.fn();
 const cacheQueryEmbedding = vi.fn();
 const generateEmbeddingBatch = vi.fn();
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: { execute },
 }));
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile,
 }));
 
@@ -278,7 +278,7 @@ describe('GET /api/v1/ingredients/search', () => {
   });
 
   it('rejects an unauthenticated request', async () => {
-    const { Errors } = await import('@/lib/errors/catalog');
+    const { Errors } = await import('@/lib/core/errors/catalog');
     requireAuthAndProfile.mockRejectedValueOnce(Errors.notAuthenticated());
 
     const res = await GET(makeRequest({ q: 'com' }));

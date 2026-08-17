@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { clearMemoryCache } from '@/lib/ai/cache/embedding-cache';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 import {
   createV2SpeculativeMatcher,
   extractIngredientNames,

@@ -3,7 +3,7 @@ import type {
   pipelineLlmCalls,
   pipelineRequests,
   pipelineStageLogs,
-} from '@/lib/db/schema';
+} from '@/lib/infra/db/schema';
 
 export type StageLog = InferSelectModel<typeof pipelineStageLogs>;
 export type LlmCall = InferSelectModel<typeof pipelineLlmCalls>;

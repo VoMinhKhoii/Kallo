@@ -1,6 +1,6 @@
 /**
  * Contract for `GET /api/v1/ingredients/search`. Zod schemas only — response
- * types live in `@/lib/logging/manual-logging` (the single import path).
+ * types live in `@/lib/domain/logging/manual-logging` (the single import path).
  */
 import { z } from 'zod';
 

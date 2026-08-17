@@ -30,92 +30,76 @@ not yet — see the `logging` row below.
 
 ## `lib/` — domain, data, infrastructure
 
+Twelve top-level entries, grouped by what a thing *is* rather than what feature it serves.
+Dependencies run `core` <- `infra` <- `domain` <- `actions`/`api`; a domain module importing
+another domain module is a smell worth a second look.
+
+### `lib/core/` — primitives with zero domain knowledge
+
+| Folder | Concern |
+|---|---|
+| `async/` | bounding a slow operation: deadline, timeout, bounded concurrency |
+| `date/` | local-day and timezone math — the only place it may live |
+| `errors/` | the error taxonomy and its two edges: HTTP response, browser parse |
+| `text/` | string shaping for display and input parsing |
+| `types/` | cross-cutting DTOs |
+| `ui/` | the Tailwind class-merge helper — the only `lib/` folder that knows about styling |
+| `validation/` | Zod request schemas: primitives plus one file per domain |
+
+### `lib/infra/` — edges to the outside world
+
+| Folder | Concern |
+|---|---|
+| `auth/` | session/profile guard, redirect and next-param safety |
+| `db/` | Drizzle schema and client |
+| `email/` | transactional send + templates |
+| `platform/` | runtime environment detection from the user agent |
+| `rate-limit/` | analysis abuse guards |
+| `security/` | webhook signatures, CSP, request IP |
+| `supabase/` | client factories (browser, server, admin, middleware) |
+| `uploads/` | image and avatar file handling |
+
+### `lib/domain/` — the product's nouns
+
+| Folder | Concern |
+|---|---|
+| `account-deletion/` | queued deletion jobs and their retry |
+| `barcode/` | Open Food Facts lookup and decode |
+| `billing/` | `revenuecat/` (the purchase side) and `entitlement/` (the grant side) |
+| `cheat/` | cheat-meal slider math |
+| `dashboard/` | dashboard aggregations |
+| `docs/` | in-app docs loader, toc, nav, search |
+| `logging/` | meal logging and relog |
+| `meals/` | dish quantity edits and the macro rescaling they imply |
+| `nutrition/` | nutrition overview, catalog, pattern analysis |
+| `onboarding/` | onboarding steps, schemas, TDEE, country data |
+| `social/` | `identity/` `feed/` `shares/` `chat/` — the circle and its group chats |
+| `waitlist/` | signup, confirm, token |
+
+### `lib/` root
+
+| Folder | Concern |
+|---|---|
+| `ai/` | everything that talks to an LLM — see its own section below |
+| `actions/` | Server Actions, grouped by the surface they serve |
+| `api/` | route-handler plumbing: auth guard, respond, query parse, client fetch |
+| `admin/` | `authz/` and `queries/` |
+| `brand/` · `i18n/` · `seo/` · `sidebar/` | small single-concern modules |
+
+### `lib/ai/`
+
 | Folder | Concern | Status |
 |---|---|---|
-| `account-deletion/` | queued account-deletion jobs and their retry | ok |
-| `actions/` | Server Actions — orchestration over domain modules, one subfolder per surface, no loose files | ok |
-| `actions/chat-groups/` | unified 1:1 + group messaging — create, membership, messages, the group meal feed | ok |
-| `actions/groups/` | the Circle friend graph — invite links, public profiles, avatars, ambient feed | ok |
-| `actions/identity/` | account-level actions: export my data, delete my account | ok |
-| `actions/logging/` | diary writes that bypass the photo pipeline — manual entry, barcode, label OCR — **and** the shared PersistedMeal row builders every write path returns through | split |
-| `actions/meal-sharing/` | directed meal offers between friends — send, accept/dismiss, log a broadcast share, react, reply | ok |
-| `actions/meals/` | the pipeline meal lifecycle — confirm, load, edit, duplicate, cheat, relog — six concerns at the folder cap | split |
-| `actions/meals/relog/` | stage a past meal for re-logging: expand refs, load candidates, resolve sources | ok |
-| `actions/support/` | user feedback submission and its screenshot upload | ok |
-| `actions/tracking/` | the progress surfaces' reads and writes — calorie-adherence heatmap and the weight log | ok |
-| `actions/visibility/` | who can see a logged meal — the per-meal share toggle and the account-wide default | ok |
-| `admin/` | admin authorization and admin read queries — now two sub-concerns, plus a stray UI formatter (`format.ts`, belongs in `lib/date/`) | split |
-| `admin/authz/` | who counts as an admin — the `ADMIN_EMAILS` allowlist, its non-throwing check and its route guard | ok |
-| `admin/queries/` | the admin console's read side — pipeline requests, feedback, health, prompts | ok |
-| `ai/` | everything that talks to an LLM provider | split |
-| `ai/__fixtures__/` | test doubles shared across `lib/ai` suites — never imported by product code | ok |
-| `ai/adapters/` | the pipeline's two app-facing edges — profile row → `UserContext` in, `PipelineResult` → `ParsedMeal` out | ok |
-| `ai/cache/` | every in-memory cache the pipeline keeps — one file per cache, plus the generic bounded/TTL `l4-cache` primitive | ok |
-| `ai/matching/` | anchor an ingredient name to food-composition rows — shared vocabulary plus three sub-concerns | ok |
-| `ai/matching/alias/` | the curated name-rewrite tables and the unmatched-name rescue that uses them | ok |
-| `ai/matching/rank/` | score, gate and fuse candidate rows — pure functions, no DB | ok |
-| `ai/matching/retrieve/` | the v2 top-K cascade: exact hit → embeddings → hybrid vector+fuzzy → nutrition | ok |
-| `ai/matching/retrieve/legacy/` | the v1 single-best cascade — delete whole with `PIPELINE_V2_ENABLED` | ok |
-| `ai/pipeline/` | the meal-analysis pipeline — entry `analyze-meal.ts` picks the path | split |
-| `ai/pipeline/assemble/` | build the final `PipelineResult` and its displayed totals | ok |
-| `ai/pipeline/config/` | every knob the pipeline reads from the environment | ok |
-| `ai/pipeline/contracts/` | the shapes both paths agree on — ids, vocabulary, failure taxonomy | ok |
-| `ai/pipeline/contracts/schemas/` | the Zod wire shapes the LLM reads and writes, one file per call | ok |
-| `ai/pipeline/estimator/` | provider-agnostic grounded-estimation seam | **reference shape** |
-| `ai/pipeline/estimator/label-ocr/` | read a packaged nutrition-facts label from a photo — belongs in `lib/nutrition/`, parked here | ok |
-| `ai/pipeline/grounded/` | the default run: Call 1 decompose → ground → Call 2 estimate | ok |
-| `ai/pipeline/grounded/call-two/` | stage 3 — run Call 2 in its three modes and emit per-item macros | ok |
-| `ai/pipeline/legacy/` | the `PIPELINE_V2_ENABLED=false` fallback — delete whole with the flag | split |
-| `ai/pipeline/resolve/` | turn Call-2 verdicts into grams and bounded macros | ok |
-| `ai/pipeline/telemetry/` | every observability row the pipeline writes | ok |
-| `ai/portion/` | gram anchors from portion evidence | ok |
-| `ai/portion/data/` | the module's reference tables — portion priors and vessel dimensions, citations only | ok |
-| `ai/portion/lexicon/` | surface tokens → units and food concepts | ok |
-| `ai/portion/vessel/` | a vessel word → a grams envelope, and the geometry both pickers render | ok |
-| `ai/prompts/` | prompt text and its builders | ok |
-| `ai/prompts/build/` | assemble a prompt: pick the variant, sanitize context, render the runtime XML | ok |
-| `ai/prompts/text/` | the verbatim prompt strings — data, and the bytes are load-bearing | ok |
-| `ai/provider/` | the LLM SDK edge — the only folder that may import a provider SDK | ok |
-| `ai/streaming/` | SSE event encoding and parsing | ok |
-| `ai/types/` | the pipeline's shared vocabulary — one file per stage, no logic | ok |
-| `api/` | the `/api/v1` wire edge: auth guard, respond, query parse, client fetch | ok |
-| `api/contracts/` | Zod wire contracts shared by web and mobile — each schema defined once here and imported back by its action | ok |
-| `async/` | concurrency primitives — bounding a slow operation, zero domain knowledge | ok |
-| `auth/` | session/profile guard, redirect and next-param safety | split |
-| `barcode/` | Open Food Facts lookup and decode | ok |
-| `billing/` | the money path, entry `billing.ts` — the purchase side and the grant side under one module | ok |
-| `billing/entitlement/` | `entitlement_grants` — the server's only source of truth for access, plus the feature gates that read it | ok |
-| `billing/revenuecat/` | the provider edge: what RevenueCat says a customer owns, and the one transaction that projects it onto grants | ok |
-| `brand/` | brand constants | ok |
-| `chat-groups/` | chat-group client transport | split |
-| `cheat/` | cheat-meal domain: slider math, occasion grouping, and its one-shot LLM estimate | ok |
-| `dashboard/` | dashboard aggregations | ok |
-| `date/` | local-day and timezone math — the only place it may live | ok |
-| `db/` | Drizzle schema and client | ok |
-| `db/__fixtures__/` | the shared Drizzle test double — never imported by product code | ok |
-| `docs/` | in-app docs loader, toc, nav, search | ok |
-| `email/` | transactional send + templates | ok |
-| `errors/` | the error taxonomy and its two edges — HTTP response, browser parse | ok |
-| `groups/` | social circle: feed, identity, visibility, transport | split |
-| `i18n/` | root-locale resolution | ok |
-| `logging/` | meal logging domain + relog | ok |
-| `meals/` | dish quantity edits and the macro rescaling they imply | ok |
-| `nutrition/` | nutrition overview, catalog, pattern analysis, cooking-fat absorption | split |
-| `onboarding/` | the onboarding domain — schemas, derived types, TDEE targets, saved-progress rules | ok |
-| `onboarding/data/` | the country reference table — a sorted list with Vietnamese hints, no logic | ok |
-| `onboarding/steps/` | per-step client state — the step-1 locale draft and the defaults resolved from it | ok |
-| `platform/` | runtime environment detection (webview, OS) from the user agent | ok |
-| `rate-limit/` | analysis abuse guards | split |
-| `security/` | webhook signatures **and** CSP **and** request IP | split |
-| `seo/` | canonical origin, structured data, open-graph | ok |
-| `sidebar/` | sidebar cookie state | ok |
-| `supabase/` | client factories (browser, server, admin, middleware) | **reference shape** |
-| `text/` | string shaping for display and input parsing — no domain knowledge | ok |
-| `types/` | cross-cutting DTOs | split |
-| `ui/` | the Tailwind class-merge helper — the only `lib/` folder that knows about styling | ok |
-| `uploads/` | image and avatar file handling | ok |
-| `validation/` | Zod request schemas — primitives plus one file per domain | ok |
-| `waitlist/` | waitlist signup, confirm, token | ok |
+| `provider/` | the only folder allowed to touch an LLM SDK | ok |
+| `types/` | the shared vocabulary, split by stage | ok |
+| `cache/` | every pipeline cache in one place | ok |
+| `prompts/` | `text/` (the strings) vs `build/` (the builders) | ok |
+| `portion/` | `data/` (the tables) vs the resolver logic | ok |
+| `matching/` | `retrieve/` `rank/` `alias/` | ok |
+| `streaming/` | SSE event encoding and parsing | ok |
+| `language/` | language detect + guard | ok |
+| `pipeline/` | `contracts/ config/ grounded/ estimator/ resolve/ assemble/ telemetry/ legacy/` | ok |
+| `pipeline/estimator/` | provider-agnostic Call-2 seam | **reference shape** |
 
 ## `components/` — presentation
 

@@ -32,7 +32,7 @@ const {
   };
 });
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     select: mockDbSelect,
     insert: mockDbInsert,
@@ -46,15 +46,15 @@ vi.mock('drizzle-orm/pg-core', async (importOriginal) => {
   return { ...actual, alias: (table: unknown) => table };
 });
 
-vi.mock('@/lib/db/schema', async () => await import('./schema-doubles'));
+vi.mock('@/lib/infra/db/schema', async () => await import('./schema-doubles'));
 
-vi.mock('@/lib/social/shares/reactions', () => ({
+vi.mock('@/lib/domain/social/shares/reactions', () => ({
   reactionsForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
       new Map(shareIds.map((id) => [id, { count: 0, mine: false }]))
   ),
 }));
-vi.mock('@/lib/social/shares/replies', () => ({
+vi.mock('@/lib/domain/social/shares/replies', () => ({
   repliesForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
       new Map(shareIds.map((id) => [id, { replies: [], total: 0 }]))

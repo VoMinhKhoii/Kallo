@@ -2,9 +2,9 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
-import { formatKcal, formatMacro } from '@/lib/logging/manual-logging';
-import type { RelogCandidate } from '@/lib/logging/relog/relog';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
+import { formatKcal, formatMacro } from '@/lib/domain/logging/manual-logging';
+import type { RelogCandidate } from '@/lib/domain/logging/relog/relog';
 
 interface RelogPickerOptionProps {
   candidate: RelogCandidate;

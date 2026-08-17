@@ -1,6 +1,6 @@
 import type { ThinkingLevel } from '@google/genai';
 import type { ZodType } from 'zod';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 
 export interface StructuredOutputParams<T> {
   schema: ZodType<T>;

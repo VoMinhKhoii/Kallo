@@ -12,8 +12,8 @@ import {
 import {
   canonicalProductId,
   isAllowedWebProduct,
-} from '@/lib/billing/products';
-import { getOfferings } from '@/lib/billing/web-purchases';
+} from '@/lib/domain/billing/products';
+import { getOfferings } from '@/lib/domain/billing/web-purchases';
 import { hasActivationPending } from './activation-pending';
 import { PaywallOffer } from './paywall-offer';
 import { PaywallStatus } from './paywall-status';

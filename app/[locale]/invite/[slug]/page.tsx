@@ -9,8 +9,8 @@ import {
   getProfileBySlug,
 } from '@/lib/actions/groups/profile';
 import type { PublicProfile } from '@/lib/actions/groups/types';
-import { googleWebClientId } from '@/lib/auth/google-client-id';
-import { createClient } from '@/lib/supabase/server';
+import { googleWebClientId } from '@/lib/infra/auth/google-client-id';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export const runtime = 'nodejs';
 

@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { COUNTRIES } from '@/lib/onboarding/data/countries';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
+import { COUNTRIES } from '@/lib/domain/onboarding/data/countries';
 
 export function CountrySelect({
   value,

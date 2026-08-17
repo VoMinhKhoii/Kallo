@@ -7,14 +7,14 @@ import { DocsPager } from '@/components/docs/docs-pager';
 import { DocsToc } from '@/components/docs/docs-toc';
 import { LastUpdated } from '@/components/docs/last-updated';
 import { routing } from '@/i18n/navigation';
-import { loadDoc } from '@/lib/docs/loader';
+import { loadDoc } from '@/lib/domain/docs/loader';
 import {
   DOCS_SLUGS,
   findSectionForSlug,
   getNeighbours,
-} from '@/lib/docs/navigation';
-import { getToc } from '@/lib/docs/toc';
-import { getDocsLinks } from '@/lib/docs/tree';
+} from '@/lib/domain/docs/navigation';
+import { getToc } from '@/lib/domain/docs/toc';
+import { getDocsLinks } from '@/lib/domain/docs/tree';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 

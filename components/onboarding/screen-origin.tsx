@@ -6,12 +6,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
-import { COUNTRIES } from '@/lib/onboarding/data/countries';
+import { cn } from '@/lib/core/ui/cn';
+import { COUNTRIES } from '@/lib/domain/onboarding/data/countries';
 import {
   type StepOneLocaleDraft,
   writeStepOneLocaleDraft,
-} from '@/lib/onboarding/steps/step-one-locale-draft';
-import { cn } from '@/lib/ui/cn';
+} from '@/lib/domain/onboarding/steps/step-one-locale-draft';
 import { LanguageToggle } from './language-toggle';
 
 interface ScreenOriginProps {

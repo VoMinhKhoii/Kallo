@@ -4,8 +4,8 @@ import { Sparkles, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useTransition } from 'react';
-import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/domain/onboarding/constants';
 
 /**
  * Warm, on-brand onboarding-incomplete nudge.

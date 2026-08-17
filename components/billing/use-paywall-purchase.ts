@@ -4,8 +4,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { BillingIdentityMismatchError } from '@/lib/billing/identity';
-import { type Package, purchasePackage } from '@/lib/billing/web-purchases';
+import { BillingIdentityMismatchError } from '@/lib/domain/billing/identity';
+import {
+  type Package,
+  purchasePackage,
+} from '@/lib/domain/billing/web-purchases';
 import {
   clearActivationPending,
   markActivationPending,

@@ -3,7 +3,7 @@ import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { DocsLocaleToggle } from '@/components/docs/docs-locale-toggle';
 import { DocsSearch } from '@/components/docs/docs-search';
 import { Link } from '@/i18n/navigation';
-import type { DocsSearchEntry } from '@/lib/docs/search-index';
+import type { DocsSearchEntry } from '@/lib/domain/docs/search-index';
 
 /**
  * The docs bar — the thing that makes /docs read as a separate surface from

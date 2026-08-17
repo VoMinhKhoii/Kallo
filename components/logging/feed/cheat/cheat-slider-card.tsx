@@ -14,18 +14,18 @@ import { useMemo, useState } from 'react';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
-import {
-  CHEAT_SLIDER_COLORS,
-  defaultLevels,
-  resolveSliderNutrition,
-} from '@/lib/cheat/slider-nutrition';
-import { formatTime } from '@/lib/date/format-time';
+import { formatTime } from '@/lib/core/date/format-time';
 import type {
   CheatSlider,
   CheatSliderLevels,
   CheatSliderSpec,
-} from '@/lib/types/cheat';
-import { cn } from '@/lib/ui/cn';
+} from '@/lib/core/types/cheat';
+import { cn } from '@/lib/core/ui/cn';
+import {
+  CHEAT_SLIDER_COLORS,
+  defaultLevels,
+  resolveSliderNutrition,
+} from '@/lib/domain/cheat/slider-nutrition';
 
 // One food-domain icon per macro axis — encodes the slider's identity (and
 // shares its accent color), replacing the decorative status dot.

@@ -7,9 +7,9 @@ import {
   FEEDBACK_TYPE_LABELS,
   getFeedbackDetail,
 } from '@/lib/admin/queries/feedback';
-import { db } from '@/lib/db';
-import { createAdminClient } from '@/lib/supabase/admin';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
+import { db } from '@/lib/infra/db';
+import { createAdminClient } from '@/lib/infra/supabase/admin';
 import { StatusForm } from './_components/status-form';
 
 export const dynamic = 'force-dynamic';

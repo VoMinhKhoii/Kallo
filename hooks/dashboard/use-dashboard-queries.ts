@@ -6,16 +6,16 @@ import { toast } from 'sonner';
 import { useDailyMeals } from '@/hooks/meals/use-daily-meals';
 import { useWeightSummary } from '@/hooks/weight/use-weight-summary';
 import { loadCalorieAdherenceHeatmap } from '@/lib/actions/tracking/dashboard';
-import { buildCalorieAdherenceHeatmapData } from '@/lib/dashboard/adherence';
-import {
-  buildTodayNutritionData,
-  mapPersistedMealsToMealEntries,
-} from '@/lib/dashboard/today';
 import type {
   DashboardProfile,
   HeatmapRange,
   TimeRange,
-} from '@/lib/types/dashboard';
+} from '@/lib/core/types/dashboard';
+import { buildCalorieAdherenceHeatmapData } from '@/lib/domain/dashboard/adherence';
+import {
+  buildTodayNutritionData,
+  mapPersistedMealsToMealEntries,
+} from '@/lib/domain/dashboard/today';
 
 interface UseDashboardQueriesInput {
   todayDate: string;

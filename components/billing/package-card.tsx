@@ -1,9 +1,9 @@
 'use client';
 import { Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { canonicalProductId } from '@/lib/billing/products';
-import type { Package } from '@/lib/billing/web-purchases';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
+import { canonicalProductId } from '@/lib/domain/billing/products';
+import type { Package } from '@/lib/domain/billing/web-purchases';
 
 interface PackageCardProps {
   rcPackage: Package;

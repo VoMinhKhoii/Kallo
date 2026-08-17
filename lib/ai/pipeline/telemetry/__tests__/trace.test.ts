@@ -7,7 +7,7 @@ import {
   type MockInstance,
   vi,
 } from 'vitest';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 
 vi.mock('server-only', () => ({}));
 

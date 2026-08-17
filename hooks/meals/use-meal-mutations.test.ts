@@ -13,8 +13,8 @@ import {
 import { deleteMealAction } from '@/lib/actions/meals/mutate-meal';
 import type { LoggingDayData, PersistedMeal } from '@/lib/actions/meals/types';
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
-import type { CompleteManualMealRow } from '@/lib/logging/manual-logging';
-import type { ParsedMeal } from '@/lib/types/meal';
+import type { ParsedMeal } from '@/lib/core/types/meal';
+import type { CompleteManualMealRow } from '@/lib/domain/logging/manual-logging';
 
 const { mockConfirm, mockSaveManual } = vi.hoisted(() => ({
   mockConfirm: vi.fn(),

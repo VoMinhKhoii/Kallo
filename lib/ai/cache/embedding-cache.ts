@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
-import type * as schema from '@/lib/db/schema';
+import type * as schema from '@/lib/infra/db/schema';
 
 /**
  * Normalize an ingredient name for consistent cache keys.

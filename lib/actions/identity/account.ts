@@ -3,13 +3,14 @@
 import { eq, inArray, sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { z } from 'zod';
+import { Errors } from '@/lib/core/errors/catalog';
 import {
   authUserIsConfirmedAbsent,
   claimAccountDeletionJob,
   prepareAccountDeletion,
   processAccountDeletionJob,
-} from '@/lib/account-deletion/jobs';
-import { db } from '@/lib/db';
+} from '@/lib/domain/account-deletion/jobs';
+import { db } from '@/lib/infra/db';
 import {
   billingWebhookEvents,
   bodyWeightLog,
@@ -17,10 +18,9 @@ import {
   mealItems,
   meals,
   userProfiles,
-} from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import { createAdminClient } from '@/lib/supabase/admin';
-import { createClient } from '@/lib/supabase/server';
+} from '@/lib/infra/db/schema';
+import { createAdminClient } from '@/lib/infra/supabase/admin';
+import { createClient } from '@/lib/infra/supabase/server';
 
 const accountActionInputSchema = z
   .object({ expectedUserId: z.string().uuid() })

@@ -17,7 +17,7 @@
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { encodeDbUrl } from '@/lib/db';
+import { encodeDbUrl } from '@/lib/infra/db';
 
 const BATCH_SIZE = 50;
 const BATCH_DELAY_MS = 1_000;

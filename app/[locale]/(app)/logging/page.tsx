@@ -9,8 +9,8 @@ import {
   LoggingShell,
 } from '@/components/logging/logging-shell';
 import { dayHasEntries } from '@/lib/actions/meals/day-has-entries';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { toLocalDayKey } from '@/lib/date/day-key';
+import { toLocalDayKey } from '@/lib/core/date/day-key';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { parseLoggingSearchParams } from './search-params';
 
 const DEFAULT_PROFILE: LoggingProfile = {

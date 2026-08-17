@@ -13,10 +13,10 @@ import {
 import { createGeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
-import { withDeadline } from '@/lib/async/with-deadline';
-import { estimateCheatMeal } from '@/lib/cheat/estimate';
-import { db } from '@/lib/db';
-import { buildRelogRawInput } from '@/lib/logging/relog/relog';
+import { withDeadline } from '@/lib/core/async/with-deadline';
+import { estimateCheatMeal } from '@/lib/domain/cheat/estimate';
+import { buildRelogRawInput } from '@/lib/domain/logging/relog/relog';
+import { db } from '@/lib/infra/db';
 import { acquireAnalysisGuard } from './analysis-guard';
 import { applyRelogRefs } from './apply-relog-refs';
 import { getBillingAccessError } from './billing-access';

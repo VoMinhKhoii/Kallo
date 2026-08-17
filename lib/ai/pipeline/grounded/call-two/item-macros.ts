@@ -31,7 +31,7 @@ import {
 import { computeStreamingMealItem } from '@/lib/ai/streaming/parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import { capitalizeFirst } from '@/lib/text/capitalize';
+import { capitalizeFirst } from '@/lib/core/text/capitalize';
 
 // ---------------------------------------------------------------------------
 // Single-call streaming.

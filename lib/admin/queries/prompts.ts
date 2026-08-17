@@ -1,12 +1,11 @@
 import { count, desc, eq, sql } from 'drizzle-orm';
-
-import type { AppDb } from '@/lib/db';
+import { uuidSchema } from '@/lib/core/validation/primitives';
+import type { AppDb } from '@/lib/infra/db';
 import {
   pipelineLlmCalls,
   pipelineRequests,
   promptVersions,
-} from '@/lib/db/schema';
-import { uuidSchema } from '@/lib/validation/primitives';
+} from '@/lib/infra/db/schema';
 
 export async function listPrompts(db: AppDb) {
   const rows = await db

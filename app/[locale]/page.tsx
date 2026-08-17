@@ -15,13 +15,13 @@ import { UnderstandingSection } from '@/components/landing-page/understanding/un
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
 import type { Locale } from '@/i18n/config';
 import { routing } from '@/i18n/navigation';
-import { googleWebClientId } from '@/lib/auth/google-client-id';
-import { safeNextPath } from '@/lib/auth/safe-next';
-import { getDocsTree } from '@/lib/docs/tree';
+import { getDocsTree } from '@/lib/domain/docs/tree';
+import { googleWebClientId } from '@/lib/infra/auth/google-client-id';
+import { safeNextPath } from '@/lib/infra/auth/safe-next';
+import { createClient } from '@/lib/infra/supabase/server';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 import { landingStructuredData } from '@/lib/seo/structured-data';
-import { createClient } from '@/lib/supabase/server';
 
 /**
  * The locale layout sets title/description/OG but deliberately no shared

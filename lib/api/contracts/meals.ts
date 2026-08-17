@@ -9,16 +9,16 @@
  *   - `export type` re-exports of the actions' return types (erased at runtime).
  */
 import { z } from 'zod';
-import { relogRefSchema } from '@/lib/validation/meal';
+import { relogRefSchema } from '@/lib/core/validation/meal';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
-} from '@/lib/validation/primitives';
+} from '@/lib/core/validation/primitives';
 
 export {
   dateStringSchema,
   timezoneOffsetSchema,
-} from '@/lib/validation/primitives';
+} from '@/lib/core/validation/primitives';
 
 /**
  * Full input for `confirmAndSaveMealAction`, and the request body for
@@ -260,4 +260,4 @@ export type {
   RelogDishCandidate,
   RelogMealCandidate,
   RelogRef,
-} from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/relog';

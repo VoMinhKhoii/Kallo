@@ -4,6 +4,7 @@ import { Plus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useIngredientSearch } from '@/hooks/meals/use-ingredient-search';
+import { cn } from '@/lib/core/ui/cn';
 import {
   formatKcal,
   formatMacro,
@@ -11,8 +12,7 @@ import {
   type ManualMealRow,
   rowMacros,
   totalsForRows,
-} from '@/lib/logging/manual-logging';
-import { cn } from '@/lib/ui/cn';
+} from '@/lib/domain/logging/manual-logging';
 
 const EMPTY_RESULTS: IngredientSearchResult[] = [];
 

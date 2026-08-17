@@ -16,8 +16,8 @@ import {
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { DecomposedIngredient } from '@/lib/ai/types/decomposition';
 import type { UnmatchedIngredient } from '@/lib/ai/types/matching';
-import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
-import type { AppDb } from '@/lib/db';
+import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
+import type { AppDb } from '@/lib/infra/db';
 
 /**
  * Phase 3b: alias fallback — retry unmatched ingredients with alias-expanded

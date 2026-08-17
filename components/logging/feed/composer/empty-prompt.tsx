@@ -4,8 +4,11 @@ import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMyProfile } from '@/hooks/profile/use-profile';
-import { EMPTY_ENTRANCE, ENTRANCE_EASE } from '@/lib/logging/empty-entrance';
-import { drawEmptyPromptKey } from '@/lib/logging/empty-prompt';
+import {
+  EMPTY_ENTRANCE,
+  ENTRANCE_EASE,
+} from '@/lib/domain/logging/empty-entrance';
+import { drawEmptyPromptKey } from '@/lib/domain/logging/empty-prompt';
 
 /**
  * The first word to greet by, or null when we should stay impersonal.

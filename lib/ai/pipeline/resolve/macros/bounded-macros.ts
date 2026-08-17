@@ -13,7 +13,7 @@ import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
 import {
   absorbedOil,
   isDiscreteOilIngredient,
-} from '@/lib/nutrition/absorbed-oil';
+} from '@/lib/domain/nutrition/absorbed-oil';
 import type { RawNutritionAdjustment } from '../macro-resolution';
 import { scalePer100g } from './macro-base';
 import {

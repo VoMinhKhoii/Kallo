@@ -13,7 +13,7 @@ import {
 import { MealTriggerNotice } from '@/components/dashboard/today/meal-trigger-notice';
 import { StreamTicker } from '@/components/shared/stream-ticker/stream-ticker';
 import type { DashboardMealStream } from '@/hooks/dashboard/use-dashboard-meal-log';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 interface MealTriggerProps {
   /** In-place submit — the bar itself streams the analysis. */

@@ -4,7 +4,7 @@ import type { RefObject } from 'react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import type { StreamAnalysisState } from '@/hooks/meals/use-stream-analysis';
-import type { ChatMessage } from '@/lib/types/meal';
+import type { ChatMessage } from '@/lib/core/types/meal';
 
 interface UseStreamingTerminalEffectsParams {
   stream: StreamAnalysisState & { reset: () => void };

@@ -3,7 +3,10 @@
 // from anywhere without dragging in the server-action runtime.
 import type { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
-import type { CheatSliderSpec, CheatSlidersPersisted } from '@/lib/types/cheat';
+import type {
+  CheatSliderSpec,
+  CheatSlidersPersisted,
+} from '@/lib/core/types/cheat';
 
 /** Persisted meal returned to client */
 export interface PersistedMeal {

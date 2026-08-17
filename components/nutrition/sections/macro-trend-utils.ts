@@ -3,7 +3,7 @@ import type {
   DaySeriesBucketUnit,
   MacroKey,
   NutritionDaySeries,
-} from '@/lib/nutrition/types';
+} from '@/lib/domain/nutrition/types';
 
 export const KCAL_PER_GRAM = { protein: 4, carbohydrate: 4, fat: 9 } as const;
 

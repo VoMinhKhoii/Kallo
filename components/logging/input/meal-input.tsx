@@ -16,11 +16,12 @@ import {
 } from '@/components/logging/input/cheat-mode-picker';
 import { ComposerTextField } from '@/components/logging/input/composer-text-field';
 import { ManualLoggingControls } from '@/components/logging/input/manual-logging-controls';
+import type { CheatIntensity } from '@/lib/core/types/cheat';
 import {
   createEmptyRow,
   hasCompleteRow,
   type ManualMealRow,
-} from '@/lib/logging/manual-logging';
+} from '@/lib/domain/logging/manual-logging';
 import {
   autoResize,
   DRAFT_DEBOUNCE_MS,
@@ -29,9 +30,8 @@ import {
   readManualRowsDraft,
   writeDraft,
   writeManualRowsDraft,
-} from '@/lib/logging/meal-input-draft';
-import type { MentionSegment } from '@/lib/logging/relog/mentions';
-import type { CheatIntensity } from '@/lib/types/cheat';
+} from '@/lib/domain/logging/meal-input-draft';
+import type { MentionSegment } from '@/lib/domain/logging/relog/mentions';
 import { BarcodeScannerDialog } from './barcode-scanner-dialog';
 
 export interface MealInputHandle {

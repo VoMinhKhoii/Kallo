@@ -1,7 +1,7 @@
 'use client';
 
 import type { RefObject } from 'react';
-import type { MentionSegment } from '@/lib/logging/relog/mentions';
+import type { MentionSegment } from '@/lib/domain/logging/relog/mentions';
 
 interface MentionOverlayProps {
   segments: MentionSegment[];

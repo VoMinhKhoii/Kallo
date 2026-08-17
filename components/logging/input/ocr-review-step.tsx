@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import type {
   OcrReviewPayload,
   ParsedNutritionLabel,
-} from '@/lib/nutrition/ocr-schema';
+} from '@/lib/domain/nutrition/ocr-schema';
 import { type MacroItem, OcrNutrientGrid } from './ocr-nutrient-grid';
 import { OcrReviewMetadata } from './ocr-review-metadata';
 import {

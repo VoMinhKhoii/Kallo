@@ -2,7 +2,7 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IngredientSearchResult } from '@/lib/logging/manual-logging';
+import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
 import { MealInput, type MealInputHandle } from './meal-input';
 
 const STORAGE_KEY = 'nham:meal-input-draft';

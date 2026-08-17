@@ -2,13 +2,13 @@ import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 import {
   pipelineLlmCallMetadata,
   pipelineLlmCalls,
   pipelineStageLogs,
   promptVersions,
-} from '@/lib/db/schema';
+} from '@/lib/infra/db/schema';
 
 const enabled = () => readBooleanEnv('PIPELINE_TRACE_ENABLED', false);
 const cache = new Map<string, string>(); // `${name}:${hash}` -> id

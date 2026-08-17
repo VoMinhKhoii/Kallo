@@ -4,7 +4,7 @@ import { ArrowLeft, MailCheck } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/infra/supabase/client';
 
 const RESEND_COOLDOWN_SECONDS = 30;
 

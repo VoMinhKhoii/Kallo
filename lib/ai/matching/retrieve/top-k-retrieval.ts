@@ -16,7 +16,7 @@ import {
 } from '@/lib/ai/matching/rank/candidate-ranking';
 import { rrfFuseCandidates } from '@/lib/ai/matching/rank/rrf-fusion';
 import type { MatchType } from '@/lib/ai/types/matching';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 
 /**
  * Per-source top-K extraction from an *_all_sources result set: applies the

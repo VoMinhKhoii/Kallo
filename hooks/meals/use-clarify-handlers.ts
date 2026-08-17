@@ -2,8 +2,8 @@
 
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
-import type { CheatIntensity } from '@/lib/types/cheat';
-import type { ChatMessage } from '@/lib/types/meal';
+import type { CheatIntensity } from '@/lib/core/types/cheat';
+import type { ChatMessage } from '@/lib/core/types/meal';
 
 /**
  * Cheat-mode clarify handler for the feed: the vague-input resubmit. Kept out of

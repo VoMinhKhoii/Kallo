@@ -6,19 +6,19 @@ import { useMemo, useTransition } from 'react';
 import { type FieldErrors, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { SUBSECTION_ANCHOR } from '@/components/settings/anchors';
-import { saveProfileSettings } from '@/lib/onboarding/actions';
+import { saveProfileSettings } from '@/lib/domain/onboarding/actions';
 import {
   bodyMetricsMessages,
   cookingHabitsSchema,
   countrySchema,
   createBodyMetricsSchema,
-} from '@/lib/onboarding/schemas';
+} from '@/lib/domain/onboarding/schemas';
 import {
   calcBMR,
   calcDailyTargets,
   calcMacroGrams,
   calcTDEE,
-} from '@/lib/onboarding/tdee';
+} from '@/lib/domain/onboarding/tdee';
 import {
   buildDefaultValues,
   type ProfileFormValues,

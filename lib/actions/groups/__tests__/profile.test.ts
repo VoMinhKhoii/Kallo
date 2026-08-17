@@ -10,7 +10,7 @@ const { mockDbSelect, mockDbInsert, mockDbUpdate } = vi.hoisted(() => ({
   mockDbUpdate: vi.fn(),
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     select: mockDbSelect,
     insert: mockDbInsert,
@@ -19,7 +19,7 @@ vi.mock('@/lib/db', () => ({
 }));
 
 vi.mock(
-  '@/lib/db/schema',
+  '@/lib/infra/db/schema',
   async () => (await import('./circle-doubles')).schema
 );
 

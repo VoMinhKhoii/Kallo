@@ -40,7 +40,7 @@ vi.mock('next/headers', () => ({
   headers: mockHeaders,
 }));
 
-vi.mock('@/lib/supabase/server', () => ({
+vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({
     auth: {
       getUser: mockGetUser,
@@ -50,18 +50,18 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }));
 
-vi.mock('@/lib/supabase/admin', () => ({
+vi.mock('@/lib/infra/supabase/admin', () => ({
   createAdminClient: mockCreateAdminClient,
 }));
 
-vi.mock('@/lib/account-deletion/jobs', () => ({
+vi.mock('@/lib/domain/account-deletion/jobs', () => ({
   authUserIsConfirmedAbsent: mockAuthUserIsConfirmedAbsent,
   claimAccountDeletionJob: mockClaimDeletionJob,
   prepareAccountDeletion: mockPrepareDeletion,
   processAccountDeletionJob: mockProcessDeletion,
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: { delete: mockDbDelete, select: mockDbSelect },
 }));
 

@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { StreamAnalysisState } from '@/hooks/meals/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/meals/use-streaming-terminal-effects';
-import type { ChatMessage } from '@/lib/types/meal';
+import type { ChatMessage } from '@/lib/core/types/meal';
 
 const toastError = vi.fn();
 vi.mock('sonner', () => ({

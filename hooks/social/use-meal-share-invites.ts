@@ -8,7 +8,7 @@ import {
   acceptMealShareInvite,
   dismissMealShareInvite,
   fetchMealShareInvites,
-} from '@/lib/social/circle-client';
+} from '@/lib/domain/social/circle-client';
 
 export const mealShareInvitesKeys = {
   all: ['meal-share-invites'] as const,

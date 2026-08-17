@@ -4,17 +4,17 @@ import {
   type GeminiProviderConfig,
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
-import { db } from '@/lib/db';
-import { userProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import { serializeError } from '@/lib/errors/serialize';
-import type { AnalysisGuardAllowedResult } from '@/lib/rate-limit/analysis-guard-types';
-import { createClient } from '@/lib/supabase/server';
-import { mealMessageSchema } from '@/lib/validation/meal';
+import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
+import { Errors } from '@/lib/core/errors/catalog';
+import { serializeError } from '@/lib/core/errors/serialize';
+import { mealMessageSchema } from '@/lib/core/validation/meal';
+import { db } from '@/lib/infra/db';
+import { userProfiles } from '@/lib/infra/db/schema';
+import type { AnalysisGuardAllowedResult } from '@/lib/infra/rate-limit/analysis-guard-types';
+import { createClient } from '@/lib/infra/supabase/server';
 
 // Shared with the waitlist route; the implementation lives in lib/security.
-export { getRequestIp } from '@/lib/security/request-ip';
+export { getRequestIp } from '@/lib/infra/security/request-ip';
 
 export function createGuardRelease(
   release: AnalysisGuardAllowedResult['release']

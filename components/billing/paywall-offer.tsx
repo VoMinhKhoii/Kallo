@@ -2,8 +2,8 @@ import { Check, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Package } from '@/lib/billing/web-purchases';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
+import type { Package } from '@/lib/domain/billing/web-purchases';
 import { PackageCard } from './package-card';
 
 interface PaywallOfferProps {

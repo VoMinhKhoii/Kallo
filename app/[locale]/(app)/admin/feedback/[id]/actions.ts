@@ -5,9 +5,9 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { FEEDBACK_STATUSES } from '@/lib/admin/queries/feedback';
-import { db } from '@/lib/db';
-import { userFeedback } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
+import { Errors } from '@/lib/core/errors/catalog';
+import { db } from '@/lib/infra/db';
+import { userFeedback } from '@/lib/infra/db/schema';
 
 const updateSchema = z.object({
   id: z.string().uuid(),

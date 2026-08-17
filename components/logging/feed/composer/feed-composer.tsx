@@ -13,8 +13,11 @@ import { RelogPickerPopup } from '@/components/logging/input/relog/relog-picker-
 import { StagedList } from '@/components/logging/input/relog/staged-list';
 import type { useRelogComposer } from '@/hooks/meals/relog/use-relog-composer';
 import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
-import { EMPTY_ENTRANCE, ENTRANCE_EASE } from '@/lib/logging/empty-entrance';
-import type { CheatIntensity } from '@/lib/types/cheat';
+import type { CheatIntensity } from '@/lib/core/types/cheat';
+import {
+  EMPTY_ENTRANCE,
+  ENTRANCE_EASE,
+} from '@/lib/domain/logging/empty-entrance';
 
 const RELOG_LISTBOX_ID = 'relog-picker-listbox';
 

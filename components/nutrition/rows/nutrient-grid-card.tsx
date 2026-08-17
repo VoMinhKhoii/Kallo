@@ -1,8 +1,8 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import type { NutrientCardData } from '@/lib/nutrition/types';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
+import type { NutrientCardData } from '@/lib/domain/nutrition/types';
 import {
   formatLocalizedNumber,
   isLowConfidence,

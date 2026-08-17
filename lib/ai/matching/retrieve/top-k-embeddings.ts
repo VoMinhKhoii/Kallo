@@ -4,8 +4,8 @@ import {
 } from '@/lib/ai/cache/embedding-cache';
 import type { IngredientWithContext } from '@/lib/ai/matching/retrieve/top-k-context';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
-import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
-import type { AppDb } from '@/lib/db';
+import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
+import type { AppDb } from '@/lib/infra/db';
 
 export interface TopKEmbeddingResult {
   /** One slot per pending ingredient; `null` means "run the lexical arm". */

@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { loadRelogCandidatesAction } from '@/lib/actions/meals/relog/load-candidates';
 import { relogCandidatesQuerySchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth/session';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
 export const runtime = 'nodejs';
 

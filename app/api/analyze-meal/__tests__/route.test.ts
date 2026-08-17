@@ -47,14 +47,14 @@ const mockBuildAnalysisGuardEvent = vi.fn(
   })
 );
 
-vi.mock('@/lib/supabase/server', () => ({
+vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: () =>
     Promise.resolve({
       auth: { getUser: mockGetUser },
     }),
 }));
 
-vi.mock('@/lib/db', () => {
+vi.mock('@/lib/infra/db', () => {
   const selectChain = {
     select: () => selectChain,
     from: () => selectChain,
@@ -96,7 +96,7 @@ vi.mock('@/lib/db', () => {
   };
 });
 
-vi.mock('@/lib/db/schema', () => ({
+vi.mock('@/lib/infra/db/schema', () => ({
   userProfiles: { userId: 'userId' },
   analysisGuardEvents: mockAnalysisGuardEvents,
   pendingAnalyses: mockPendingAnalyses,
@@ -112,15 +112,15 @@ vi.mock('@/lib/ai/provider/provider', () => ({
   },
 }));
 
-vi.mock('@/lib/billing/entitlement/config', () => ({
+vi.mock('@/lib/domain/billing/entitlement/config', () => ({
   getBillingConfig: () => mockGetBillingConfig(),
 }));
 
-vi.mock('@/lib/billing/entitlement/service', () => ({
+vi.mock('@/lib/domain/billing/entitlement/service', () => ({
   checkFeatureAccess: (...args: unknown[]) => mockCheckFeatureAccess(...args),
 }));
 
-vi.mock('@/lib/rate-limit/analysis-guards', () => ({
+vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
   buildAnalysisGuardEvent: (input: MockBuildAnalysisGuardEventInput) =>
     mockBuildAnalysisGuardEvent(input),
   checkAnalysisGuards: (...args: unknown[]) => mockCheckAnalysisGuards(...args),

@@ -1,14 +1,13 @@
 import { and, count, desc, eq, gte, isNull, lt } from 'drizzle-orm';
 import { z } from 'zod';
-
-import type { AppDb } from '@/lib/db';
+import { uuidSchema } from '@/lib/core/validation/primitives';
+import type { AppDb } from '@/lib/infra/db';
 import {
   pipelineLlmCallMetadata,
   pipelineLlmCalls,
   pipelineRequests,
   pipelineStageLogs,
-} from '@/lib/db/schema';
-import { uuidSchema } from '@/lib/validation/primitives';
+} from '@/lib/infra/db/schema';
 
 // ─── Filters schema ───────────────────────────────────────────────────────────
 

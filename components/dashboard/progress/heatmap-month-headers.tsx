@@ -1,4 +1,4 @@
-import type { HeatmapMonthHeader } from '@/lib/types/dashboard';
+import type { HeatmapMonthHeader } from '@/lib/core/types/dashboard';
 
 /** A month must own at least this many week columns to be worth labelling. */
 const MIN_LABEL_COLUMNS = 2;

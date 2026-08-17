@@ -1,14 +1,14 @@
 import { and, desc, eq } from 'drizzle-orm';
-import { db as defaultDb } from '@/lib/db';
+import {
+  getChatGroupSchema,
+  sendChatGroupMessageSchema,
+} from '@/lib/core/validation/chat';
+import { db as defaultDb } from '@/lib/infra/db';
 import {
   chatGroupMembers,
   chatGroupMessages,
   chatGroups,
-} from '@/lib/db/schema';
-import {
-  getChatGroupSchema,
-  sendChatGroupMessageSchema,
-} from '@/lib/validation/chat';
+} from '@/lib/infra/db/schema';
 import { type ChatGroupDb, requireGroupAccess } from './membership';
 import type { ChatGroupMessage } from './types';
 

@@ -12,7 +12,7 @@ import {
 } from '@/lib/ai/pipeline/config/prompt-ablation-flags';
 import { PORTION_PRIORS } from '@/lib/ai/portion/data/priors';
 import { RICE_PORTION_DESCRIPTION } from '@/lib/ai/prompts/text/portion-descriptions';
-import { renderAbsorbedOilPromptRule } from '@/lib/nutrition/absorbed-oil';
+import { renderAbsorbedOilPromptRule } from '@/lib/domain/nutrition/absorbed-oil';
 
 const PRIOR_LABELS: Record<string, string> = {
   'banh-bao': 'bánh bao',

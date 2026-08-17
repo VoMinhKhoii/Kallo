@@ -7,7 +7,7 @@ import {
   parseNutritionRow,
 } from '@/lib/ai/cache/nutrition-rows';
 import type { NutritionPer100g } from '@/lib/ai/types/matching';
-import type * as schema from '@/lib/db/schema';
+import type * as schema from '@/lib/infra/db/schema';
 
 /**
  * Module-level singleton nutrition cache.

@@ -2,22 +2,22 @@
 
 import { and, asc, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import {
-  buildCalorieAdherenceHeatmapData,
-  getLocalDateKey,
-} from '@/lib/dashboard/adherence';
-import { dayKeyToUtcDate, toUtcDayKey } from '@/lib/date/day-key';
-import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
-import { MS_PER_DAY } from '@/lib/date/ms';
-import { db } from '@/lib/db';
-import { bodyWeightLog, meals } from '@/lib/db/schema';
+import { dayKeyToUtcDate, toUtcDayKey } from '@/lib/core/date/day-key';
+import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
+import { MS_PER_DAY } from '@/lib/core/date/ms';
 import type {
   HeatmapData,
   HeatmapRange,
   VerdictData,
-} from '@/lib/types/dashboard';
-import { timezoneOffsetSchema } from '@/lib/validation/primitives';
+} from '@/lib/core/types/dashboard';
+import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
+import {
+  buildCalorieAdherenceHeatmapData,
+  getLocalDateKey,
+} from '@/lib/domain/dashboard/adherence';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
+import { bodyWeightLog, meals } from '@/lib/infra/db/schema';
 import { loadWeightSummaryAction } from './weight';
 
 const loadCalorieAdherenceHeatmapSchema = z.object({

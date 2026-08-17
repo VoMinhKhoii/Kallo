@@ -1,15 +1,15 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { db as defaultDb } from '@/lib/db';
-import { chatGroupMembers } from '@/lib/db/schema';
+import { groupMealFeedSchema } from '@/lib/core/validation/chat';
 import {
   decodeSharedMealCursor,
   encodeSharedMealCursor,
-} from '@/lib/social/feed/cursor';
-import { sharedGroupMealsBefore } from '@/lib/social/feed/group-meals';
-import { toSharedMealEntry } from '@/lib/social/feed/meal-feed';
-import { reactionsForShares } from '@/lib/social/shares/reactions';
-import { repliesForShares } from '@/lib/social/shares/replies';
-import { groupMealFeedSchema } from '@/lib/validation/chat';
+} from '@/lib/domain/social/feed/cursor';
+import { sharedGroupMealsBefore } from '@/lib/domain/social/feed/group-meals';
+import { toSharedMealEntry } from '@/lib/domain/social/feed/meal-feed';
+import { reactionsForShares } from '@/lib/domain/social/shares/reactions';
+import { repliesForShares } from '@/lib/domain/social/shares/replies';
+import { db as defaultDb } from '@/lib/infra/db';
+import { chatGroupMembers } from '@/lib/infra/db/schema';
 import { type ChatGroupDb, requireGroupAccess } from './membership';
 import type { GroupMealFeedPage } from './types';
 

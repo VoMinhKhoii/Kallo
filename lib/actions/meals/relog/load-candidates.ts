@@ -1,12 +1,12 @@
 'use server';
 
 import { relogCandidatesQuerySchema } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { db } from '@/lib/db';
-import { loadRelogDishCandidates } from '@/lib/logging/relog/dish-query';
-import { loadRelogMealCandidates } from '@/lib/logging/relog/meal-query';
-import type { RelogCandidatesResponse } from '@/lib/logging/relog/relog';
-import { withRelogGuard } from '@/lib/rate-limit/relog-guard';
+import { loadRelogDishCandidates } from '@/lib/domain/logging/relog/dish-query';
+import { loadRelogMealCandidates } from '@/lib/domain/logging/relog/meal-query';
+import type { RelogCandidatesResponse } from '@/lib/domain/logging/relog/relog';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
+import { withRelogGuard } from '@/lib/infra/rate-limit/relog-guard';
 
 // `relogCandidatesQuerySchema` lives in the meals contract so the route can
 // reuse it; imported here since this 'use server' module may only export async

@@ -5,7 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { formatUtcTimestamp } from '@/lib/admin/format';
 import { getPromptVersions } from '@/lib/admin/queries/prompts';
-import { db } from '@/lib/db';
+import { db } from '@/lib/infra/db';
 import { VersionDiff } from './_components/version-diff';
 
 export const dynamic = 'force-dynamic';

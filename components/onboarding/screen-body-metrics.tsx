@@ -9,8 +9,12 @@ import {
   bodyMetricsMessages,
   createBodyMetricsSchema,
   goalSchema,
-} from '@/lib/onboarding/schemas';
-import { calcBMR, calcDailyTargets, calcTDEE } from '@/lib/onboarding/tdee';
+} from '@/lib/domain/onboarding/schemas';
+import {
+  calcBMR,
+  calcDailyTargets,
+  calcTDEE,
+} from '@/lib/domain/onboarding/tdee';
 import { AboutYouFields } from './body-metrics/about-you-fields';
 import { type Screen1FormData, screen1Schema } from './body-metrics/constants';
 import { GoalTuning } from './body-metrics/goal-tuning';

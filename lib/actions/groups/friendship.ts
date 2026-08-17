@@ -3,15 +3,15 @@
 
 import { and, eq, sql } from 'drizzle-orm';
 import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups/direct-chats';
-import { db as defaultDb } from '@/lib/db';
-import { circleEvents, friendships } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import { orderedPair } from '@/lib/social/friendship';
+import { Errors } from '@/lib/core/errors/catalog';
 import {
   acceptInviteSchema,
   blockFriendSchema,
   removeFriendSchema,
-} from '@/lib/validation/social';
+} from '@/lib/core/validation/social';
+import { orderedPair } from '@/lib/domain/social/friendship';
+import { db as defaultDb } from '@/lib/infra/db';
+import { circleEvents, friendships } from '@/lib/infra/db/schema';
 
 import { getOrCreateMyProfile, getProfileBySlug } from './profile';
 import type { Db, PublicProfile } from './types';

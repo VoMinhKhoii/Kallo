@@ -1,8 +1,8 @@
 import { and, eq, isNotNull, lt, or } from 'drizzle-orm';
 import { z } from 'zod';
-import { getBillingEnvironment } from '@/lib/billing/billing';
-import { db } from '@/lib/db';
-import { billingWebhookEvents } from '@/lib/db/schema';
+import { getBillingEnvironment } from '@/lib/domain/billing/billing';
+import { db } from '@/lib/infra/db';
+import { billingWebhookEvents } from '@/lib/infra/db/schema';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

@@ -32,7 +32,7 @@ const { mockDbDelete, mockTxDelete, mockTxUpdate, mockTxSelect, mockTx } =
     };
   });
 
-vi.mock('@/lib/auth/session', async () => {
+vi.mock('@/lib/infra/auth/session', async () => {
   const { MOCK_USER, MOCK_PROFILE } = await import('./meal-doubles');
   return {
     requireAuthAndProfile: vi
@@ -41,7 +41,7 @@ vi.mock('@/lib/auth/session', async () => {
   };
 });
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) =>
       fn(mockTx)
@@ -52,7 +52,10 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
-vi.mock('@/lib/db/schema', async () => (await import('./meal-doubles')).schema);
+vi.mock(
+  '@/lib/infra/db/schema',
+  async () => (await import('./meal-doubles')).schema
+);
 
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks

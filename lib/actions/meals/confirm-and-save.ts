@@ -17,18 +17,18 @@ import {
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { PipelineResult } from '@/lib/ai/types/result';
 import { confirmMealSchema } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { db } from '@/lib/db';
+import { Errors } from '@/lib/core/errors/catalog';
+import type { CheatSliderLevels } from '@/lib/core/types/cheat';
+import { goalEnumSchema } from '@/lib/domain/onboarding/schemas';
+import type { Goal } from '@/lib/domain/onboarding/types';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
 import {
   mealItems,
   meals,
   pendingAnalyses,
   unmatchedIngredients,
-} from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import { goalEnumSchema } from '@/lib/onboarding/schemas';
-import type { Goal } from '@/lib/onboarding/types';
-import type { CheatSliderLevels } from '@/lib/types/cheat';
+} from '@/lib/infra/db/schema';
 import { confirmCheatMeal } from './confirm-cheat';
 import { insertDefaultCircleShare } from './insert-default-share';
 import type { ConfirmMealResponse, PersistedMealItemGroup } from './types';

@@ -15,8 +15,8 @@ import { IdentityRows } from '@/components/settings/identity/identity-rows';
 import { SettingsForm } from '@/components/settings/profile/settings-form';
 import { SectionHeader } from '@/components/settings/section-header';
 import { Link } from '@/i18n/navigation';
-import { getOnboardingProfile } from '@/lib/onboarding/actions';
-import { createClient } from '@/lib/supabase/server';
+import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export async function generateMetadata({
   params,

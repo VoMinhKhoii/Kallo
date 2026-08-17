@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/command';
 import { Kbd } from '@/components/ui/kbd';
 import { useRouter } from '@/i18n/navigation';
-import { DOCS_SECTIONS } from '@/lib/docs/navigation';
-import type { DocsSearchEntry } from '@/lib/docs/search-index';
+import { DOCS_SECTIONS } from '@/lib/domain/docs/navigation';
+import type { DocsSearchEntry } from '@/lib/domain/docs/search-index';
 
 /**
  * Strips Vietnamese diacritics so `dinh duong` finds `Dinh dưỡng`.

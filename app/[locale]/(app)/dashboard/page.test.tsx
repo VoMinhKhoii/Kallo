@@ -9,7 +9,7 @@ vi.mock('next-intl/server', () => ({
   getTranslations: getTranslationsMock,
 }));
 
-vi.mock('@/lib/onboarding/actions', () => ({
+vi.mock('@/lib/domain/onboarding/actions', () => ({
   getOnboardingProfile: getOnboardingProfileMock,
 }));
 

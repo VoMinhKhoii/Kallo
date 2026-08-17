@@ -16,8 +16,8 @@ import {
 } from '@/components/ui/sheet';
 import { useMealShareInviteCount } from '@/hooks/social/use-meal-share-invites';
 import { Link, usePathname } from '@/i18n/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
+import { createClient } from '@/lib/infra/supabase/client';
 import { MobileMenuButton } from './mobile/mobile-menu-button';
 import { MobileNavList } from './mobile/mobile-nav-list';
 import { deriveLabel } from './mobile/mobile-user-label';

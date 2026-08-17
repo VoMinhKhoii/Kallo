@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { loadWeightSummaryAction } from '@/lib/actions/tracking/weight';
-import type { WeightRange, WeightSummaryData } from '@/lib/types/weight';
+import type { WeightRange, WeightSummaryData } from '@/lib/core/types/weight';
 
 export const weightSummaryKeys = {
   all: ['weight-summary'] as const,

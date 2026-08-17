@@ -5,9 +5,9 @@ import {
   FEEDBACK_PLATFORMS,
   FEEDBACK_TYPES,
 } from '@/lib/api/contracts/feedback';
-import type { AppDb } from '@/lib/db';
-import { userFeedback } from '@/lib/db/schema';
-import { uuidSchema } from '@/lib/validation/primitives';
+import { uuidSchema } from '@/lib/core/validation/primitives';
+import type { AppDb } from '@/lib/infra/db';
+import { userFeedback } from '@/lib/infra/db/schema';
 
 export const FEEDBACK_STATUSES = [
   'open',

@@ -8,9 +8,12 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLogWeight } from '@/hooks/weight/use-weight-mutations';
-import { parseDecimalInput } from '@/lib/text/parse-decimal';
-import { cn } from '@/lib/ui/cn';
-import { type WeightLogInput, weightLogSchema } from '@/lib/validation/weight';
+import { parseDecimalInput } from '@/lib/core/text/parse-decimal';
+import { cn } from '@/lib/core/ui/cn';
+import {
+  type WeightLogInput,
+  weightLogSchema,
+} from '@/lib/core/validation/weight';
 
 interface CompactWeightLogProps {
   currentWeight: number;

@@ -2,8 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { getFriendshipStatus } from '@/lib/actions/groups/friendship';
 import { getProfileBySlug } from '@/lib/actions/groups/profile';
 import { handleRouteError } from '@/lib/api/respond';
-import { Errors } from '@/lib/errors/catalog';
-import { createClient } from '@/lib/supabase/server';
+import { Errors } from '@/lib/core/errors/catalog';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export const runtime = 'nodejs';
 

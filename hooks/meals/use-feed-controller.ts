@@ -24,9 +24,9 @@ import { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
 import { useStreamingScroll } from '@/hooks/meals/use-streaming-scroll';
 import { useStreamingTerminalEffects } from '@/hooks/meals/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/meals/use-submit-guard';
-import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
-import type { CheatIntensity } from '@/lib/types/cheat';
-import type { ChatMessage } from '@/lib/types/meal';
+import type { CheatIntensity } from '@/lib/core/types/cheat';
+import type { ChatMessage } from '@/lib/core/types/meal';
+import { isLikelyPartialDay } from '@/lib/domain/nutrition/pattern/completeness';
 
 /**
  * Controller for the logging feed: owns the message list, streaming refs,

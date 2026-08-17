@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { defaultLocale } from '@/i18n/config';
-import { loadFrontmatter } from '@/lib/docs/loader';
-import { DOCS_SECTIONS } from '@/lib/docs/navigation';
+import { loadFrontmatter } from '@/lib/domain/docs/loader';
+import { DOCS_SECTIONS } from '@/lib/domain/docs/navigation';
 import { SITE_URL } from '@/lib/seo/site';
 
 /**

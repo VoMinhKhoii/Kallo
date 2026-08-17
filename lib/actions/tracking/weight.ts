@@ -2,23 +2,23 @@
 
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { buildWeightTrendSummary } from '@/lib/dashboard/weight-trend';
 import {
   dayKeyToUtcDate,
   toLocalDayKey,
   toUtcDayKey,
-} from '@/lib/date/day-key';
-import { MS_PER_DAY } from '@/lib/date/ms';
-import { db } from '@/lib/db';
-import { bodyWeightLog, userProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import type { WeightRange, WeightSummaryData } from '@/lib/types/weight';
+} from '@/lib/core/date/day-key';
+import { MS_PER_DAY } from '@/lib/core/date/ms';
+import { Errors } from '@/lib/core/errors/catalog';
+import type { WeightRange, WeightSummaryData } from '@/lib/core/types/weight';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
-} from '@/lib/validation/primitives';
-import { weightLogSchema } from '@/lib/validation/weight';
+} from '@/lib/core/validation/primitives';
+import { weightLogSchema } from '@/lib/core/validation/weight';
+import { buildWeightTrendSummary } from '@/lib/domain/dashboard/weight-trend';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
+import { bodyWeightLog, userProfiles } from '@/lib/infra/db/schema';
 
 const weightRangeSchema = z.object({
   range: z.enum(['30d', '90d']),

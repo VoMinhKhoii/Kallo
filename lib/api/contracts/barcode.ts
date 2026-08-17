@@ -7,11 +7,11 @@
  *   - `export type` re-exports (erased at runtime).
  */
 import { z } from 'zod';
-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
-} from '@/lib/validation/primitives';
+} from '@/lib/core/validation/primitives';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
 
 /**
  * The one source of truth for what a barcode string looks like — shared by
@@ -53,5 +53,5 @@ export const logBarcodeMealSchema = z.object({
 
 export type LogBarcodeMealInput = z.infer<typeof logBarcodeMealSchema>;
 
-export type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
-export type { BarcodeErrorCode } from '@/lib/barcode/types';
+export type { ParsedBarcodeProduct } from '@/lib/domain/barcode/openfoodfacts';
+export type { BarcodeErrorCode } from '@/lib/domain/barcode/types';

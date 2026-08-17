@@ -10,8 +10,8 @@ import * as z from 'zod';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
 import { useRouter } from '@/i18n/navigation';
-import { safeNextPath } from '@/lib/auth/safe-next';
-import { createClient } from '@/lib/supabase/client';
+import { safeNextPath } from '@/lib/infra/auth/safe-next';
+import { createClient } from '@/lib/infra/supabase/client';
 
 export function SignUpForm() {
   const t = useTranslations('auth.signUp');

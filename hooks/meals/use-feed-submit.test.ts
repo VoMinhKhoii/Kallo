@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ChatMessage } from '@/lib/types/meal';
+import type { ChatMessage } from '@/lib/core/types/meal';
 import { useFeedSubmit } from './use-feed-submit';
 
 describe('useFeedSubmit', () => {

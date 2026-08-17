@@ -3,8 +3,8 @@ import {
   resolveQueryEmbedding,
 } from '@/lib/ai/cache/embedding-cache';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
-import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
-import type { AppDb } from '@/lib/db';
+import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
+import type { AppDb } from '@/lib/infra/db';
 
 /**
  * Max concurrent DB calls during matching cascade (Phase 1 cache resolve,

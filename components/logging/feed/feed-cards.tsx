@@ -10,8 +10,8 @@ import {
 } from '@/components/logging/feed/persisted/persisted-meal-card';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming/streaming-meal-entry';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-import type { CheatSliderLevels } from '@/lib/types/cheat';
-import type { ChatMessage, MealQuantityEdit } from '@/lib/types/meal';
+import type { CheatSliderLevels } from '@/lib/core/types/cheat';
+import type { ChatMessage, MealQuantityEdit } from '@/lib/core/types/meal';
 
 interface FeedCardsProps {
   orderedPersistedMeals: PersistedMeal[];

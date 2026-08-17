@@ -8,7 +8,7 @@ import {
   resolveQueryEmbedding,
   warmEmbeddingCache,
 } from '@/lib/ai/cache/embedding-cache';
-import type * as schema from '@/lib/db/schema';
+import type * as schema from '@/lib/infra/db/schema';
 
 // ---------------------------------------------------------------------------
 // Mock DB

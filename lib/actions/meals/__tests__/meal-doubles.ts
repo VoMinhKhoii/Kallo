@@ -26,7 +26,7 @@ export const UUID_2 = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
 export const UUID_MEAL = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';
 export const LOGGED_AT = new Date('2026-04-05T17:30:00.000Z');
 
-/** Column-name stand-in for `@/lib/db/schema` — the insert router keys off it. */
+/** Column-name stand-in for `@/lib/infra/db/schema` — the insert router keys off it. */
 export const schema = {
   meals: { id: 'meals.id', userId: 'meals.userId', loggedAt: 'meals.loggedAt' },
   mealItems: {

@@ -18,12 +18,16 @@ import {
   type SaveManualMealInput,
   saveManualMealSchema,
 } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
-import { db } from '@/lib/db';
-import { mealItems, meals, vietnameseFoodComposition } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import { scaleNutritionValues } from '@/lib/logging/manual-logging';
+import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
+import { Errors } from '@/lib/core/errors/catalog';
+import { scaleNutritionValues } from '@/lib/domain/logging/manual-logging';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
+import {
+  mealItems,
+  meals,
+  vietnameseFoodComposition,
+} from '@/lib/infra/db/schema';
 
 // Only the columns the save needs — the composition table also carries the
 // 768-dim embedding (~15-20KB serialized) and search-text blobs, which

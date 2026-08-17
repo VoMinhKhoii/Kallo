@@ -1,15 +1,15 @@
 'use server';
 
 import { and, desc, eq, or } from 'drizzle-orm';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { db } from '@/lib/db';
+import { avatarUrlFor } from '@/lib/domain/social/identity/avatar-url';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
 import {
   friendships,
   mealShareInvites,
   meals,
   publicProfiles,
-} from '@/lib/db/schema';
-import { avatarUrlFor } from '@/lib/social/identity/avatar-url';
+} from '@/lib/infra/db/schema';
 import type { MealShareInvite } from './types';
 
 export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {

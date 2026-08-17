@@ -2,8 +2,8 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { getMsUntilNextLocalMidnight } from '@/lib/dashboard/heatmap-rollover';
-import { getTodayDateString } from '@/lib/dashboard/today';
+import { getMsUntilNextLocalMidnight } from '@/lib/domain/dashboard/heatmap-rollover';
+import { getTodayDateString } from '@/lib/domain/dashboard/today';
 
 export function useDashboardDateRefresh(queryClient: QueryClient) {
   const [todayDate, setTodayDate] = useState(() => getTodayDateString());

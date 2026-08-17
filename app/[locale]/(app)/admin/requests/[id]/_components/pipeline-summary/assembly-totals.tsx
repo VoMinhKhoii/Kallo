@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 import type { assemblyMealItemSchema, assemblySchema } from './schemas';
 
 // ---------------------------------------------------------------------------

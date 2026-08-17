@@ -6,15 +6,15 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { defaultLocale, type Locale } from '@/i18n/config';
 import { useRouter } from '@/i18n/navigation';
-import type { getOnboardingProfile } from '@/lib/onboarding/actions';
-import { saveOnboardingScreen } from '@/lib/onboarding/actions';
-import { WIZARD_DEFAULTS } from '@/lib/onboarding/constants';
-import { buildStepOneDefaults } from '@/lib/onboarding/steps/step-one-defaults';
+import type { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
+import { saveOnboardingScreen } from '@/lib/domain/onboarding/actions';
+import { WIZARD_DEFAULTS } from '@/lib/domain/onboarding/constants';
+import { buildStepOneDefaults } from '@/lib/domain/onboarding/steps/step-one-defaults';
 import {
   clearStepOneLocaleDraft,
   readStepOneLocaleDraft,
   type StepOneLocaleDraft,
-} from '@/lib/onboarding/steps/step-one-locale-draft';
+} from '@/lib/domain/onboarding/steps/step-one-locale-draft';
 import { ScreenBodyMetrics, type ScreenOneData } from './screen-body-metrics';
 import { ScreenCooking } from './screen-cooking';
 import { ScreenOrigin } from './screen-origin';

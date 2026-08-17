@@ -3,7 +3,7 @@ import { clearMemoryCache } from '@/lib/ai/cache/embedding-cache';
 import { clearNutritionCache } from '@/lib/ai/cache/nutrition-cache';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 import { matchTopKPerIngredient } from '../top-k-cascade';
 
 function sqlText(query: unknown): string {

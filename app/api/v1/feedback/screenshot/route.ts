@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { uploadFeedbackScreenshotAction } from '@/lib/actions/support/feedback';
 import { handleRouteError } from '@/lib/api/respond';
-import { Errors } from '@/lib/errors/catalog';
+import { Errors } from '@/lib/core/errors/catalog';
 
 export const runtime = 'nodejs';
 

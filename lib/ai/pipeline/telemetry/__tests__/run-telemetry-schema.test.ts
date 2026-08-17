@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pipelineRuns } from '@/lib/db/schema';
+import { pipelineRuns } from '@/lib/infra/db/schema';
 
 describe('pipelineRuns Drizzle schema', () => {
   it('exports a Drizzle table with the spec §0.4 columns', () => {

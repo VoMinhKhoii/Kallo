@@ -2,14 +2,14 @@ import {
   buildPersistedMeal,
   inferMealSlot,
 } from '@/lib/actions/logging/persisted-meal';
-import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
-import type { AppDb } from '@/lib/db';
-import { meals, type pendingAnalyses } from '@/lib/db/schema';
 import type {
   CheatSliderLevels,
   CheatSliderSpec,
   CheatSlidersPersisted,
-} from '@/lib/types/cheat';
+} from '@/lib/core/types/cheat';
+import { resolveSliderNutrition } from '@/lib/domain/cheat/slider-nutrition';
+import type { AppDb } from '@/lib/infra/db';
+import { meals, type pendingAnalyses } from '@/lib/infra/db/schema';
 import { insertDefaultCircleShare } from './insert-default-share';
 import { EMPTY_NUTRITION } from './shared';
 import type { ConfirmMealResponse } from './types';

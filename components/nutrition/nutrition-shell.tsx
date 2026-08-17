@@ -5,13 +5,13 @@ import { MotionConfig } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { getNutritionOverview } from '@/lib/nutrition/actions';
-import { buildNutritionView } from '@/lib/nutrition/bucket-detail';
-import { nutritionKeys } from '@/lib/nutrition/query-keys';
+import { getNutritionOverview } from '@/lib/domain/nutrition/actions';
+import { buildNutritionView } from '@/lib/domain/nutrition/bucket-detail';
+import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
 import type {
   NutritionDayScope,
   NutritionRangeInput,
-} from '@/lib/nutrition/types';
+} from '@/lib/domain/nutrition/types';
 import { NutritionSkeleton } from './nutrition-skeleton';
 import { DaySummary } from './sections/day-summary';
 import { findTodayIndex, localIsoDate } from './sections/macro-trend-utils';

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 
 export interface CanonicalNameValidationHit {
   hit: true;

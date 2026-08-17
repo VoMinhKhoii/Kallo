@@ -15,18 +15,18 @@ import {
   type RelogItemsInput,
   relogItemsSchema,
 } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
-import { db } from '@/lib/db';
-import { mealItems, meals } from '@/lib/db/schema';
+import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import {
   buildRelogRawInput,
   weakestConfidence,
-} from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/relog';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
+import { mealItems, meals } from '@/lib/infra/db/schema';
 import {
   RELOG_WRITE_ROUTE,
   withRelogGuard,
-} from '@/lib/rate-limit/relog-guard';
+} from '@/lib/infra/rate-limit/relog-guard';
 import { insertDefaultCircleShare } from '../insert-default-share';
 
 // `relogItemsSchema` lives in the meals contract so the route can reuse it;

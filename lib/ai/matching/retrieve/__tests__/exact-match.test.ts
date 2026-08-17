@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createFakeDb } from '@/lib/db/__fixtures__/fake-db';
+import { createFakeDb } from '@/lib/infra/db/__fixtures__/fake-db';
 import { resolveExactMatch } from '../exact-match';
 
 /** A double whose single `execute` resolves to `rows`. */

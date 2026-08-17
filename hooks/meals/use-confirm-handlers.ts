@@ -14,13 +14,13 @@ import type { useConfirmMeal } from '@/hooks/meals/use-meal-mutations';
 import type { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
 import { stageCheatRepeatAction } from '@/lib/actions/meals/cheat';
 import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
-import type { CheatSliderLevels } from '@/lib/types/cheat';
+import type { CheatSliderLevels } from '@/lib/core/types/cheat';
 import type {
   ChatMessage,
   MacroBreakdown,
   MealQuantityEdit,
-} from '@/lib/types/meal';
-import { MEAL_TEXT_MAX_LENGTH } from '@/lib/validation/meal';
+} from '@/lib/core/types/meal';
+import { MEAL_TEXT_MAX_LENGTH } from '@/lib/core/validation/meal';
 
 const emptyMacros: MacroBreakdown = {
   calories: 0,

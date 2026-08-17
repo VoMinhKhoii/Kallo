@@ -1,5 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
-import type { HeatmapRange } from '@/lib/types/dashboard';
+import type { HeatmapRange } from '@/lib/core/types/dashboard';
 
 export function HeatmapSkeleton({ range }: { range: HeatmapRange }) {
   const cols = range === '30d' ? 5 : range === '90d' ? 14 : 53;

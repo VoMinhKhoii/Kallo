@@ -5,7 +5,7 @@ import type {
   cookingHabitsSchema,
   countrySchema,
   createBodyMetricsSchema,
-} from '@/lib/onboarding/schemas';
+} from '@/lib/domain/onboarding/schemas';
 import type {
   ActivityLevel,
   BrothConsumption,
@@ -15,7 +15,7 @@ import type {
   ProteinPortion,
   RicePortion,
   SugarBraised,
-} from '@/lib/onboarding/types';
+} from '@/lib/domain/onboarding/types';
 
 export const profileGoalSchema = z.object({
   goal: z.enum(['cutting', 'bulking', 'maintaining']),

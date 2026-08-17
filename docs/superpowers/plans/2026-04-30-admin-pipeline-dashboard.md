@@ -220,7 +220,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 // Mock the supabase server client BEFORE importing the SUT
 const getUser = vi.fn();
-vi.mock('@/lib/supabase/server', () => ({
+vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: () => ({ auth: { getUser } }),
 }));
 
@@ -294,7 +294,7 @@ Expected: FAIL — module `../require-admin` not found.
 ```ts
 import 'server-only';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export interface AdminUser {
   id: string;
@@ -497,8 +497,8 @@ import {
   promptVersions,
   pipelineStageLogs,
   pipelineLlmCalls,
-} from '@/lib/db/schema';
-import type { AppDb } from '@/lib/db';
+} from '@/lib/infra/db/schema';
+import type { AppDb } from '@/lib/infra/db';
 
 const enabled = () => process.env.PIPELINE_TRACE_ENABLED !== 'false';
 const cache = new Map<string, string>(); // `${name}:${hash}` -> id
@@ -678,7 +678,7 @@ Run: `bun run test lib/ai/__tests__/gemini.test.ts` — expect FAIL (interface n
 - [ ] **Step 3: Define and export the interface**
 
 ```ts
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 
 export interface GeminiCallTrace {
   db: AppDb;
@@ -1110,7 +1110,7 @@ const updateSpy = vi.fn();
 const selectSpy = vi.fn();
 const pendingInsertSpy = vi.fn();
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     insert: (t: unknown) => {
       if ((t as { __spy?: unknown }).__spy === pendingInsertSpy) {
@@ -1122,9 +1122,9 @@ vi.mock('@/lib/db', () => ({
     update: () => ({ set: () => ({ where: updateSpy }) }),
   },
 }));
-vi.mock('@/lib/db/schema', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/db/schema')>(
-    '@/lib/db/schema',
+vi.mock('@/lib/infra/db/schema', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/infra/db/schema')>(
+    '@/lib/infra/db/schema',
   );
   return { ...actual, pendingAnalyses: { __spy: pendingInsertSpy } };
 });
@@ -1173,8 +1173,8 @@ describe('replayRequest', () => {
 import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { db } from '@/lib/db';
-import { pipelineRequests } from '@/lib/db/schema';
+import { db } from '@/lib/infra/db';
+import { pipelineRequests } from '@/lib/infra/db/schema';
 import { analyzeMeal } from '@/lib/ai/pipeline/orchestrator';
 import { logPipelineStart, setPipelineFinalState } from '@/lib/ai/pipeline/logging';
 import { createGeminiClient } from '@/lib/ai/gemini';

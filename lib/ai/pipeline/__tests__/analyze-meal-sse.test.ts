@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks — only mock the heavy I/O surfaces (matching, assembly,
@@ -21,7 +21,7 @@ vi.mock('@/lib/ai/pipeline/telemetry/trace', () => ({
   _resetPromptVersionCacheForTests: vi.fn(),
 }));
 
-vi.mock('@/lib/async/fetch-with-timeout', () => ({
+vi.mock('@/lib/core/async/fetch-with-timeout', () => ({
   fetchWithTimeout: (fn: (signal: AbortSignal) => unknown) =>
     fn(new AbortController().signal),
 }));

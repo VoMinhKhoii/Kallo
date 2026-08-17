@@ -1,12 +1,12 @@
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type { StreamOptions } from '@/lib/ai/provider/provider';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 import type {
   AnalysisModelBudgetWorkKind,
   AnalysisModelProviderErrorCategory,
   RecordAnalysisModelBudgetEventInput,
-} from '@/lib/rate-limit/analysis-guard-types';
-import { recordAnalysisModelBudgetEvent } from '@/lib/rate-limit/analysis-model-budget';
+} from '@/lib/infra/rate-limit/analysis-guard-types';
+import { recordAnalysisModelBudgetEvent } from '@/lib/infra/rate-limit/analysis-model-budget';
 
 export const ANALYSIS_MODEL_BUDGET_ROUTE = '/api/analyze-meal';
 export const ANALYSIS_MODEL_PROVIDER = 'gemini';

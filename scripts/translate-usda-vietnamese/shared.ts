@@ -6,8 +6,8 @@
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { encodeDbUrl } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { encodeDbUrl } from '@/lib/infra/db';
+import * as schema from '@/lib/infra/db/schema';
 
 // ---------------------------------------------------------------------------
 // In-scope USDA categories — derived from the DB, not hardcoded

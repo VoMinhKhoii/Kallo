@@ -5,7 +5,7 @@ import {
   OCR_NUTRIENT_KEYS,
   type OcrQuantityUnit,
   type ParsedNutritionLabel,
-} from '@/lib/nutrition/ocr-schema';
+} from '@/lib/domain/nutrition/ocr-schema';
 
 function emptyNutrition(): NutritionValues {
   return Object.fromEntries(

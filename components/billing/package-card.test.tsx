@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { Package } from '@/lib/billing/web-purchases';
+import type { Package } from '@/lib/domain/billing/web-purchases';
 import { PackageCard } from './package-card';
 
 // next-intl is stubbed globally to echo keys, so assertions read as the copy

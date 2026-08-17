@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   NutritionValues,
   ParsedNutritionLabel,
-} from '@/lib/nutrition/ocr-schema';
+} from '@/lib/domain/nutrition/ocr-schema';
 import { parseLocaleDecimal, useOcrReviewState } from './use-ocr-review-state';
 
 function nutrition(overrides: Partial<NutritionValues> = {}): NutritionValues {

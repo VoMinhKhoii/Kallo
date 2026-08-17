@@ -29,7 +29,7 @@ import type {
   RelogCandidatesResponse,
   RelogDishCandidate,
   RelogMealCandidate,
-} from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/relog';
 
 // The global next-intl stub echoes keys, so "{kcal} kcal" would never render a
 // number. Use the REAL Vietnamese messages here — the totals are the point of

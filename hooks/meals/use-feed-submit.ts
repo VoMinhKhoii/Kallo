@@ -7,10 +7,10 @@ import type {
   StreamAnalysisState,
   StreamAnalyzeInput,
 } from '@/hooks/meals/use-stream-analysis';
-import type { RelogRef } from '@/lib/logging/relog/relog';
-import type { CheatIntensity } from '@/lib/types/cheat';
-import type { ChatMessage } from '@/lib/types/meal';
-import { mealTextSchema } from '@/lib/validation/meal';
+import type { CheatIntensity } from '@/lib/core/types/cheat';
+import type { ChatMessage } from '@/lib/core/types/meal';
+import { mealTextSchema } from '@/lib/core/validation/meal';
+import type { RelogRef } from '@/lib/domain/logging/relog/relog';
 
 interface UseFeedSubmitParams {
   stream: StreamAnalysisState & {

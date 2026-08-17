@@ -1,4 +1,4 @@
-import type { NutritionValues } from '@/lib/nutrition/ocr-schema';
+import type { NutritionValues } from '@/lib/domain/nutrition/ocr-schema';
 
 export interface OcrNutrientDefinition {
   key: keyof NutritionValues;

@@ -1,7 +1,7 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { GeminiAttemptMetadata } from '@/lib/ai/provider/provider';
-import { db } from '@/lib/db';
-import type * as schema from '@/lib/db/schema';
+import { db } from '@/lib/infra/db';
+import type * as schema from '@/lib/infra/db/schema';
 
 const _untypedDb = db as unknown as PostgresJsDatabase<typeof schema>;
 export const DEBUG_LLM_TIMEOUT_MS = 25_000;

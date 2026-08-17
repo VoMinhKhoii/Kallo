@@ -2,30 +2,30 @@
 // every query must carry an explicit actor predicate (see ./types.ts).
 
 import { and, desc, eq, or, sql } from 'drizzle-orm';
-import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
-import { db as defaultDb } from '@/lib/db';
+import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
 import {
-  friendsFeedReadMarkers,
-  friendships,
-  publicProfiles,
-} from '@/lib/db/schema';
-import { decodeSharedMealCursor } from '@/lib/social/feed/cursor';
+  circleFeedSchema,
+  friendsThreadFeedSchema,
+} from '@/lib/core/validation/social';
+import { decodeSharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import {
   mostRecentSharedMealsToday,
   sharedMealsBefore,
   todayLocalDate,
   toSharedMealEntry,
-} from '@/lib/social/feed/meal-feed';
+} from '@/lib/domain/social/feed/meal-feed';
 import {
   publicProfileColumns,
   toPublicIdentity,
-} from '@/lib/social/identity/public-identity';
-import { reactionsForShares } from '@/lib/social/shares/reactions';
-import { repliesForShares } from '@/lib/social/shares/replies';
+} from '@/lib/domain/social/identity/public-identity';
+import { reactionsForShares } from '@/lib/domain/social/shares/reactions';
+import { repliesForShares } from '@/lib/domain/social/shares/replies';
+import { db as defaultDb } from '@/lib/infra/db';
 import {
-  circleFeedSchema,
-  friendsThreadFeedSchema,
-} from '@/lib/validation/social';
+  friendsFeedReadMarkers,
+  friendships,
+  publicProfiles,
+} from '@/lib/infra/db/schema';
 
 import {
   CIRCLE_FEED_FRIEND_CAP,

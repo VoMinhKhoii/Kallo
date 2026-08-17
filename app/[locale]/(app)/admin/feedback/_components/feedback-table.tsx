@@ -6,7 +6,7 @@ import {
   FEEDBACK_TYPE_LABELS,
   type FeedbackListRow,
 } from '@/lib/admin/queries/feedback';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 const TYPE_STYLES: Record<string, string> = {
   bug: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',

@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockDbSelect } = vi.hoisted(() => ({ mockDbSelect: vi.fn() }));
 
-vi.mock('@/lib/auth/session', async () => {
+vi.mock('@/lib/infra/auth/session', async () => {
   const { MOCK_USER, MOCK_PROFILE } = await import('./meal-doubles');
   return {
     requireAuthAndProfile: vi
@@ -15,7 +15,7 @@ vi.mock('@/lib/auth/session', async () => {
   };
 });
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     transaction: vi.fn(),
     select: mockDbSelect,
@@ -24,7 +24,10 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
-vi.mock('@/lib/db/schema', async () => (await import('./meal-doubles')).schema);
+vi.mock(
+  '@/lib/infra/db/schema',
+  async () => (await import('./meal-doubles')).schema
+);
 
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks
@@ -283,7 +286,7 @@ describe('loadPendingAnalysesByDate', () => {
 
 describe('loadMealDates', () => {
   it('returns merged confirmed and pending dates', async () => {
-    const { db } = await import('@/lib/db');
+    const { db } = await import('@/lib/infra/db');
     (db.selectDistinctOn as ReturnType<typeof vi.fn>)
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({

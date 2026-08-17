@@ -2,7 +2,7 @@ import type {
   MealInputLanguage,
   SupportedOutputLanguage,
 } from '@/lib/ai/language/detect';
-import type { CookingHabits, Goal } from '@/lib/onboarding/types';
+import type { CookingHabits, Goal } from '@/lib/domain/onboarding/types';
 
 // User context (gathered from user_profiles for pipeline)
 

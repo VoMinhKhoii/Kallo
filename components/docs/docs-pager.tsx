@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import type { DocsNavLink } from '@/lib/docs/tree';
+import type { DocsNavLink } from '@/lib/domain/docs/tree';
 
 /**
  * Previous / next in flat reading order, crossing section boundaries so the

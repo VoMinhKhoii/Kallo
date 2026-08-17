@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { Errors } from '@/lib/errors/catalog';
-import { serializeError } from '@/lib/errors/serialize';
+import { Errors } from '@/lib/core/errors/catalog';
+import { serializeError } from '@/lib/core/errors/serialize';
 
 /**
  * Convert a thrown value into an API error response for `/api/v1/*` route

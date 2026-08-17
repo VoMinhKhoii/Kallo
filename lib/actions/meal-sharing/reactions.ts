@@ -6,11 +6,11 @@
 
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { db } from '@/lib/db';
-import { mealShareReactions, mealShares } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import { canViewShareOwnedBy } from '@/lib/social/shares/share-visibility';
+import { Errors } from '@/lib/core/errors/catalog';
+import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
+import { mealShareReactions, mealShares } from '@/lib/infra/db/schema';
 
 const toggleShareReactionSchema = z.object({
   shareId: z.string().uuid('shareId phải là UUID hợp lệ.').toLowerCase(),

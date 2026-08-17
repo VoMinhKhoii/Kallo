@@ -4,8 +4,8 @@ import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
-import { calcMacroGrams } from '@/lib/onboarding/tdee';
-import type { Goal } from '@/lib/onboarding/types';
+import { calcMacroGrams } from '@/lib/domain/onboarding/tdee';
+import type { Goal } from '@/lib/domain/onboarding/types';
 import { AggressionSlider } from './aggression-slider';
 import { CarbSplitPicker } from './carb-split-picker';
 import {

@@ -12,13 +12,13 @@ import { useRelogCandidates } from '@/hooks/meals/relog/use-relog-candidates';
 import { useRelogSubmit } from '@/hooks/meals/relog/use-relog-submit';
 import { useSlashPicker } from '@/hooks/meals/relog/use-slash-picker';
 import { useStagedEntries } from '@/hooks/meals/relog/use-staged-entries';
-import type { MentionSegment } from '@/lib/logging/relog/mentions';
+import type { ChatMessage } from '@/lib/core/types/meal';
+import type { MentionSegment } from '@/lib/domain/logging/relog/mentions';
 import type {
   RelogCandidate,
   RelogRef,
   SlashToken,
-} from '@/lib/logging/relog/relog';
-import type { ChatMessage } from '@/lib/types/meal';
+} from '@/lib/domain/logging/relog/relog';
 
 const NO_SEGMENTS: MentionSegment[] = [];
 

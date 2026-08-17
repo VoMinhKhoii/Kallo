@@ -1,7 +1,7 @@
 'use client';
 
 import { RelogPickerOption } from '@/components/logging/input/relog/relog-picker-option';
-import type { RelogCandidate } from '@/lib/logging/relog/relog';
+import type { RelogCandidate } from '@/lib/domain/logging/relog/relog';
 
 interface RelogPickerGroupProps {
   label: string;

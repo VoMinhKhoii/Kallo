@@ -3,7 +3,7 @@ import type {
   DaySeriesBucket,
   NutrientDaySeries,
   NutritionDaySeries,
-} from '@/lib/nutrition/types';
+} from '@/lib/domain/nutrition/types';
 import {
   buildBucketTickLabels,
   buildMacroTrendAxis,

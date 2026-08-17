@@ -8,13 +8,17 @@ import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entr
 import { MealEntryItem } from '@/components/logging/feed/meal-entry/meal-entry-item';
 import { PortionPicker } from '@/components/logging/feed/meal-entry/portion/portion-picker';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
-import { formatTime } from '@/lib/date/format-time';
+import { formatTime } from '@/lib/core/date/format-time';
+import type {
+  ChatMessage,
+  MealItem,
+  MealQuantityEdit,
+} from '@/lib/core/types/meal';
 import {
   applyQuantityChange,
   deriveQuantityEdits,
   recalculateTotals,
-} from '@/lib/meals/quantity-recalculation';
-import type { ChatMessage, MealItem, MealQuantityEdit } from '@/lib/types/meal';
+} from '@/lib/domain/meals/quantity-recalculation';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a
 // stepper can't slip through and save before the user is done adjusting.

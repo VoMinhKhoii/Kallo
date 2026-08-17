@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { FeedCards } from '@/components/logging/feed/feed-cards';
-import type { ChatMessage, MealItem } from '@/lib/types/meal';
+import type { ChatMessage, MealItem } from '@/lib/core/types/meal';
 
 // Decorative, and jsdom implements no 2D context.
 vi.mock('@/components/shared/loaders/canvas-loader', () => ({

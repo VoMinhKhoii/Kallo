@@ -28,14 +28,14 @@ const { mockUser, mockTxInsert, mockDbSelect, mockTx } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: mockUser,
     profile: { goal: 'maintaining', aggression: null },
   }),
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) =>
       fn(mockTx)
@@ -44,7 +44,7 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
-vi.mock('@/lib/db/schema', () => ({
+vi.mock('@/lib/infra/db/schema', () => ({
   meals: { id: 'meals.id' },
   mealItems: { mealId: 'mealItems.mealId' },
   mealShares: {

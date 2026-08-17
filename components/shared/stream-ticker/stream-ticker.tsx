@@ -5,7 +5,7 @@ import { CanvasLoader } from '@/components/shared/loaders/canvas-loader';
 import { loaderAt } from '@/components/shared/loaders/registry';
 import type { StreamTickerFrame } from '@/components/shared/stream-ticker/stream-ticker-frame';
 import { useTickerLine } from '@/components/shared/stream-ticker/use-ticker-line';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 interface StreamTickerProps {
   /** Null falls back to the generic analyzing verbs. */

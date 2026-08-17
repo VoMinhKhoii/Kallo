@@ -19,18 +19,18 @@ import {
   type StructuredOutputParams,
 } from '@/lib/ai/provider/provider';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import { db } from '@/lib/db';
+import { db } from '@/lib/infra/db';
 import {
   analysisGuardEvents,
   pipelineLlmCalls,
   pipelineRequestReplayAuditLogs,
   pipelineRequests,
-} from '@/lib/db/schema';
-import { adminReplayGuardRoute } from '@/lib/rate-limit/analysis-guard-limits';
+} from '@/lib/infra/db/schema';
+import { adminReplayGuardRoute } from '@/lib/infra/rate-limit/analysis-guard-limits';
 import {
   buildAnalysisGuardEvent,
   checkAdminReplayGuard,
-} from '@/lib/rate-limit/analysis-guards';
+} from '@/lib/infra/rate-limit/analysis-guards';
 
 type ReplayRequestResult =
   | {

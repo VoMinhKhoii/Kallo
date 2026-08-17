@@ -18,11 +18,11 @@
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { encodeDbUrl } from '@/lib/db';
+import { encodeDbUrl } from '@/lib/infra/db';
 import {
   analysisInFlightLimits,
   analysisRateLimitWindows,
-} from '@/lib/db/schema';
+} from '@/lib/infra/db/schema';
 
 if (!process.env.DATABASE_URL) {
   console.error(

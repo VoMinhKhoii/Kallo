@@ -3,7 +3,7 @@
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { CalorieRing } from '@/components/shared/calorie-ring';
-import type { MacroBreakdown } from '@/lib/types/meal';
+import type { MacroBreakdown } from '@/lib/core/types/meal';
 
 interface MacroSummaryProps {
   totals: MacroBreakdown;

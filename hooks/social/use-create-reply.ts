@@ -3,9 +3,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { createShareReply } from '@/lib/social/circle-client';
-import { isFeedQuery, mapFeedEntries } from '@/lib/social/feed/feed-cache';
-import type { ShareReply } from '@/lib/social/shares/replies';
+import { createShareReply } from '@/lib/domain/social/circle-client';
+import {
+  isFeedQuery,
+  mapFeedEntries,
+} from '@/lib/domain/social/feed/feed-cache';
+import type { ShareReply } from '@/lib/domain/social/shares/replies';
 
 function appendReply(
   entry: unknown,

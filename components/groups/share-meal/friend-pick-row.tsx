@@ -2,7 +2,7 @@ import { Check } from 'lucide-react';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import type { CircleMember } from '@/lib/actions/groups/types';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 interface FriendPickRowProps {
   member: CircleMember;

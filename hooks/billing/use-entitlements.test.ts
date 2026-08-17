@@ -7,7 +7,7 @@ import {
   isPremium,
   trialDaysRemaining,
 } from '@/hooks/billing/use-entitlements';
-import { BillingIdentityMismatchError } from '@/lib/billing/identity';
+import { BillingIdentityMismatchError } from '@/lib/domain/billing/identity';
 
 function make(
   overrides: Partial<EntitlementsResponse> = {}

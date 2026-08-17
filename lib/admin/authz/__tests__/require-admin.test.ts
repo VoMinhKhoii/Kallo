@@ -6,7 +6,7 @@ const { getUser } = vi.hoisted(() => ({
   getUser: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/server', () => ({
+vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: () => ({ auth: { getUser } }),
 }));
 

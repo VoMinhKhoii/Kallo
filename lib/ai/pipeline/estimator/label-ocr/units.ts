@@ -7,7 +7,7 @@
  * are `raw-schema.ts` and `normalization.ts`.
  */
 
-import type { NutritionValues } from '@/lib/nutrition/ocr-schema';
+import type { NutritionValues } from '@/lib/domain/nutrition/ocr-schema';
 import type { RawAmount, RawMeasure } from './raw-schema';
 
 const GRAM_NUTRIENTS = new Set<keyof NutritionValues>([

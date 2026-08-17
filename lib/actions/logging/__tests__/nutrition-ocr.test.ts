@@ -15,11 +15,11 @@ import type {
   NutritionValues as OcrNutritionValues,
   OcrReviewPayload,
   ParsedNutritionLabel,
-} from '@/lib/nutrition/ocr-schema';
+} from '@/lib/domain/nutrition/ocr-schema';
 
 vi.mock('server-only', () => ({}));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     insert: vi.fn(),
   },
@@ -30,7 +30,7 @@ const { mockRequireAuthAndProfile, mockUser } = vi.hoisted(() => ({
   mockUser: { id: 'user-123', email: 'test@example.com' },
 }));
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: mockRequireAuthAndProfile,
 }));
 
@@ -43,7 +43,7 @@ import {
   stageOcrMealAction,
 } from '@/lib/actions/logging/nutrition-ocr';
 import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
-import { OCR_MAX_IMAGE_BYTES } from '@/lib/nutrition/ocr-image-constants';
+import { OCR_MAX_IMAGE_BYTES } from '@/lib/domain/nutrition/ocr-image-constants';
 
 let validPngBase64: string;
 
@@ -286,7 +286,7 @@ describe('OCR review to staging seam', () => {
   });
 
   it('passes every extracted nutrient, confidence, and ml unit into persistence', async () => {
-    const { db } = await import('@/lib/db');
+    const { db } = await import('@/lib/infra/db');
     const mockValues = vi.fn().mockReturnValue({
       returning: vi.fn().mockResolvedValue([{ id: 'analysis-123' }]),
     });

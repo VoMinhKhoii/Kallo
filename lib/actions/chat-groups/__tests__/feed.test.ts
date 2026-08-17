@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/db', () => ({ db: {} }));
+vi.mock('@/lib/infra/db', () => ({ db: {} }));
 vi.mock('@/lib/actions/chat-groups/membership', () => ({
   requireGroupAccess: vi.fn().mockResolvedValue({
     kind: 'group',
@@ -10,13 +10,13 @@ vi.mock('@/lib/actions/chat-groups/membership', () => ({
     directUserHigh: null,
   }),
 }));
-vi.mock('@/lib/social/shares/reactions', () => ({
+vi.mock('@/lib/domain/social/shares/reactions', () => ({
   reactionsForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
       new Map(shareIds.map((id) => [id, { count: 0, mine: false }]))
   ),
 }));
-vi.mock('@/lib/social/shares/replies', () => ({
+vi.mock('@/lib/domain/social/shares/replies', () => ({
   repliesForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
       new Map(shareIds.map((id) => [id, { replies: [], total: 0 }]))
@@ -24,7 +24,7 @@ vi.mock('@/lib/social/shares/replies', () => ({
 }));
 
 import { listGroupMealFeed } from '@/lib/actions/chat-groups/feed';
-import { reactionsForShares } from '@/lib/social/shares/reactions';
+import { reactionsForShares } from '@/lib/domain/social/shares/reactions';
 
 const ACTOR_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const OWNER_ID = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';

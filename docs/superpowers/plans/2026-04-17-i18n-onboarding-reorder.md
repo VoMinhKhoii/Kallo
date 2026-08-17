@@ -734,7 +734,7 @@ Replace the entire file with composed middleware:
 import createMiddleware from 'next-intl/middleware';
 import { type NextRequest, NextResponse } from 'next/server';
 import { routing } from '@/i18n/navigation';
-import { updateSession } from '@/lib/supabase/middleware';
+import { updateSession } from '@/lib/infra/supabase/middleware';
 
 const intlMiddleware = createMiddleware(routing);
 

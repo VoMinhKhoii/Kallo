@@ -9,7 +9,7 @@ import type {
   NutritionValues,
 } from '@/lib/ai/types/nutrition-values';
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
-import type { Goal } from '@/lib/onboarding/types';
+import type { Goal } from '@/lib/domain/onboarding/types';
 
 /**
  * Apply goal adjustment to a single bounded estimate for one nutrient.

@@ -1,11 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/core/ui/cn';
 import type {
   NutritionRange,
   NutritionRangeInput,
-} from '@/lib/nutrition/types';
-import { cn } from '@/lib/ui/cn';
+} from '@/lib/domain/nutrition/types';
 
 const RANGES = [
   '7d',

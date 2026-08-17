@@ -9,7 +9,7 @@ import type {
   NutritionAdjustment,
 } from '@/lib/ai/types/nutrition-adjustment';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import { Errors } from '@/lib/errors/catalog';
+import { Errors } from '@/lib/core/errors/catalog';
 
 // ---------------------------------------------------------------------------
 // Mocks

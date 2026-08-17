@@ -10,9 +10,9 @@ import {
 } from '@/lib/ai/provider/provider';
 import { ingredientSearchQuerySchema } from '@/lib/api/contracts/ingredients';
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { db } from '@/lib/db';
-import type { IngredientSearchResult } from '@/lib/logging/manual-logging';
+import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db';
 
 export const runtime = 'nodejs';
 

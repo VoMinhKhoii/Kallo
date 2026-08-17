@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import type { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
 import type { PendingMealConfirmation } from '@/lib/actions/meals/types';
-import type { ChatMessage, StreamingPhase } from '@/lib/types/meal';
+import type { ChatMessage, StreamingPhase } from '@/lib/core/types/meal';
 
 function toStreamingPhase(status: string): StreamingPhase {
   switch (status) {

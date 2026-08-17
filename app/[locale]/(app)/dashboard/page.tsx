@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { getOnboardingProfile } from '@/lib/onboarding/actions';
-import type { DashboardProfile } from '@/lib/types/dashboard';
+import type { DashboardProfile } from '@/lib/core/types/dashboard';
+import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 
 const DEFAULT_PROFILE: DashboardProfile = {
   userId: '',

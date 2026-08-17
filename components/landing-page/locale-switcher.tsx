@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 /**
  * Two locales, so the switch is two words rather than a control.

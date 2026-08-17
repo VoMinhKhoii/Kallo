@@ -5,7 +5,7 @@ import {
 } from '@/lib/actions/chat-groups/create-and-list';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
-import { timezoneOffsetSchema } from '@/lib/validation/primitives';
+import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 
 export const runtime = 'nodejs';
 

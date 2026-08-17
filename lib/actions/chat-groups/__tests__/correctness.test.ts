@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/db', () => ({ db: {} }));
+vi.mock('@/lib/infra/db', () => ({ db: {} }));
 
 import { getChatGroup } from '@/lib/actions/chat-groups/details';
-import { createChatGroupSchema } from '@/lib/validation/chat';
+import { createChatGroupSchema } from '@/lib/core/validation/chat';
 
 const OWNER_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const MEMBER_ID = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';

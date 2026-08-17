@@ -1,4 +1,4 @@
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 /**
  * A circular profile avatar: the person's Google/Gmail picture when we have one

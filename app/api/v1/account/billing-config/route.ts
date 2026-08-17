@@ -1,12 +1,12 @@
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth/session';
 import {
   type BillingEnvironment,
   getBillingConfig,
   getBillingEnvironment,
   getBillingEnvironmentForUser,
   isBillingSandboxUser,
-} from '@/lib/billing/billing';
+} from '@/lib/domain/billing/billing';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
 // RevenueCat prefixes the public Web SDK key per billing engine: `rcb_` for
 // RevenueCat Billing, `pdl_` for a Paddle-backed config (the same prefix in

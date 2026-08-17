@@ -2,7 +2,7 @@
 
 import { GB, VN } from 'country-flag-icons/react/3x2';
 import { Check } from 'lucide-react';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 interface LanguageToggleProps {
   value: string;

@@ -1,7 +1,7 @@
 import { inArray } from 'drizzle-orm';
 import type { RevenueCatEvent } from '@/app/api/webhooks/revenuecat/_lib/request';
-import type { AppDb } from '@/lib/db';
-import { userProfiles } from '@/lib/db/schema';
+import type { AppDb } from '@/lib/infra/db';
+import { userProfiles } from '@/lib/infra/db/schema';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

@@ -1,15 +1,19 @@
 import { and, eq } from 'drizzle-orm';
-import { db as defaultDb } from '@/lib/db';
-import { chatGroupMembers, chatGroups, publicProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import {
-  publicProfileColumns,
-  toPublicIdentity,
-} from '@/lib/social/identity/public-identity';
+import { Errors } from '@/lib/core/errors/catalog';
 import {
   getChatGroupSchema,
   renameChatGroupSchema,
-} from '@/lib/validation/chat';
+} from '@/lib/core/validation/chat';
+import {
+  publicProfileColumns,
+  toPublicIdentity,
+} from '@/lib/domain/social/identity/public-identity';
+import { db as defaultDb } from '@/lib/infra/db';
+import {
+  chatGroupMembers,
+  chatGroups,
+  publicProfiles,
+} from '@/lib/infra/db/schema';
 import {
   type ChatGroupDb,
   lockChatGroup,

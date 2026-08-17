@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { postJson, request } from '@/lib/api/client-fetch';
-import { ApiError } from '@/lib/errors/client';
+import { ApiError } from '@/lib/core/errors/client';
 
 function jsonResponse(body: unknown, ok = true) {
   return { ok, json: () => Promise.resolve(body) } as Response;

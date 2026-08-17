@@ -5,7 +5,7 @@ var mockDbSelect: ReturnType<typeof vi.fn>;
 var mockBuildCalorieAdherenceHeatmapData: ReturnType<typeof vi.fn>;
 var mockLoadWeightSummaryAction: ReturnType<typeof vi.fn>;
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: { id: 'user-123', email: 'test@example.com' },
     profile: {
@@ -19,7 +19,7 @@ vi.mock('@/lib/auth/session', () => ({
   }),
 }));
 
-vi.mock('@/lib/db', () => {
+vi.mock('@/lib/infra/db', () => {
   mockDbSelect = vi.fn();
 
   return {
@@ -29,7 +29,7 @@ vi.mock('@/lib/db', () => {
   };
 });
 
-vi.mock('@/lib/dashboard/adherence', () => {
+vi.mock('@/lib/domain/dashboard/adherence', () => {
   mockBuildCalorieAdherenceHeatmapData = vi.fn();
 
   return {

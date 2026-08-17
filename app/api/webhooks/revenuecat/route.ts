@@ -23,12 +23,12 @@ import {
   getBillingEnvironment,
   type RevenueCatSnapshot,
   reconcileRevenueCatGrantSnapshots,
-} from '@/lib/billing/billing';
-import { type AppDb, db as appDb } from '@/lib/db';
+} from '@/lib/domain/billing/billing';
+import { type AppDb, db as appDb } from '@/lib/infra/db';
 import {
   timingSafeMatch,
   WebhookPayloadTooLargeError,
-} from '@/lib/security/webhook-request';
+} from '@/lib/infra/security/webhook-request';
 
 export const runtime = 'nodejs';
 

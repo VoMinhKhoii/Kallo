@@ -1,6 +1,6 @@
 import type { ComponentPropsWithoutRef } from 'react';
 import { Link } from '@/i18n/navigation';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 /**
  * Long-form prose primitives for docs MDX.

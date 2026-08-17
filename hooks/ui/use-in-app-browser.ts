@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { isInAppBrowser } from '@/lib/platform/in-app-browser';
+import { isInAppBrowser } from '@/lib/infra/platform/in-app-browser';
 
 /**
  * Client-only in-app-browser detection. Starts `false` so the first client

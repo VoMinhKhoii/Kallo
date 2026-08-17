@@ -404,7 +404,7 @@ async function runBenchmarkMeal(
   const [{ analyzeMeal }, { createGeminiClient }, { db }] = await Promise.all([
     import('@/lib/ai/pipeline/analyze-meal'),
     import('@/lib/ai/provider/provider'),
-    import('@/lib/db'),
+    import('@/lib/infra/db'),
   ]);
 
   const apiKey = nextApiKey();

@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import postgres from 'postgres';
-import { encodeDbUrl } from '@/lib/db';
+import { encodeDbUrl } from '@/lib/infra/db';
 import {
   type ConstructedRow,
   NIN_SNAPSHOT_DATE,

@@ -1,7 +1,7 @@
 import 'server-only';
 import { notFound } from 'next/navigation';
 import { getAdminEmailSet } from '@/lib/admin/authz/admin-emails';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export interface AdminUser {
   id: string;

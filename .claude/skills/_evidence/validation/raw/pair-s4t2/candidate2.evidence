@@ -18,7 +18,7 @@ index 598b9bd..0000000
 --- a/lib/nutrition/alias-lookup.ts
 +++ /dev/null
 @@ -1,9 +0,0 @@
--import { resolveLegacyAlias } from '@/lib/nutrition/legacy-aliases';
+-import { resolveLegacyAlias } from '@/lib/domain/nutrition/legacy-aliases';
 -
 -/**
 - * Expand a raw ingredient query with its legacy aliases so old client
@@ -98,7 +98,7 @@ index 598b9bd..0000000
 --- a/lib/nutrition/alias-lookup.ts
 +++ /dev/null
 @@ -1,9 +0,0 @@
--import { resolveLegacyAlias } from '@/lib/nutrition/legacy-aliases';
+-import { resolveLegacyAlias } from '@/lib/domain/nutrition/legacy-aliases';
 -
 -/**
 - * Expand a raw ingredient query with its legacy aliases so old client

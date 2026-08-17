@@ -8,7 +8,7 @@ import {
   RELOG_SEARCH_LIMIT,
   type RelogCandidate,
   type RelogCandidatesResponse,
-} from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/relog';
 
 const DEBOUNCE_MS = 300;
 

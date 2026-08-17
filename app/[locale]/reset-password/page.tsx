@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { FormInput } from '@/components/auth/form-input';
 import { Link } from '@/i18n/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/infra/supabase/client';
 
 /**
  * Step two of password recovery. The recovery link routes through

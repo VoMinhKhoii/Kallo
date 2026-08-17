@@ -9,12 +9,12 @@ import {
   type getOnboardingProfile,
   minimizeOnboardingNudge,
   restoreOnboardingNudge,
-} from '@/lib/onboarding/actions';
+} from '@/lib/domain/onboarding/actions';
 import {
   getOnboardingResumeStep,
   shouldShowOnboardingResume,
-} from '@/lib/onboarding/progress';
-import { readStepOneLocaleDraft } from '@/lib/onboarding/steps/step-one-locale-draft';
+} from '@/lib/domain/onboarding/progress';
+import { readStepOneLocaleDraft } from '@/lib/domain/onboarding/steps/step-one-locale-draft';
 import { DesktopSidebar } from '../navigation/desktop-sidebar';
 import { MobileNav } from '../navigation/mobile-nav';
 import type { UserMenuUser } from '../navigation/user-menu';

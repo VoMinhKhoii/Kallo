@@ -3,9 +3,9 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { StagedRow } from '@/components/logging/input/relog/staged-row';
-import type { IngredientMacrosPer100g } from '@/lib/logging/manual-logging';
-import { formatKcal, formatMacro } from '@/lib/logging/manual-logging';
-import type { RelogStagedEntry } from '@/lib/logging/relog/relog';
+import type { IngredientMacrosPer100g } from '@/lib/domain/logging/manual-logging';
+import { formatKcal, formatMacro } from '@/lib/domain/logging/manual-logging';
+import type { RelogStagedEntry } from '@/lib/domain/logging/relog/relog';
 
 interface StagedListProps {
   entries: RelogStagedEntry[];

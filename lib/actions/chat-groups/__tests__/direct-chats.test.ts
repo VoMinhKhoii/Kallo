@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/db', () => ({ db: {} }));
+vi.mock('@/lib/infra/db', () => ({ db: {} }));
 
 import {
   ensureDirectChatsForAcceptedFriends,

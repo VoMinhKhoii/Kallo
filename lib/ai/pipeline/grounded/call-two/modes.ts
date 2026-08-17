@@ -23,7 +23,7 @@ import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
 import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import type { GeminiCallTrace } from '@/lib/ai/provider/provider';
-import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
+import { fetchWithTimeout } from '@/lib/core/async/fetch-with-timeout';
 import { type ChunkEmitContext, emitChunkItemMacros } from './item-macros';
 
 /**

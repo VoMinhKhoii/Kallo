@@ -25,13 +25,13 @@ const {
   };
 });
 
-vi.mock('@/lib/supabase/server', () => ({
+vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({ auth: { getUser: mockGetUser } }),
 }));
 
-vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn() }));
+vi.mock('@/lib/infra/supabase/admin', () => ({ createAdminClient: vi.fn() }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) =>
       fn(mockTx)
@@ -39,7 +39,7 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
-vi.mock('@/lib/db/schema', () => ({
+vi.mock('@/lib/infra/db/schema', () => ({
   userFeedback: {
     id: 'userFeedback.id',
     userId: 'userFeedback.userId',

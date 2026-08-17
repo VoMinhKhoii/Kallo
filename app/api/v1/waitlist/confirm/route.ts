@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { publicUrl } from '@/lib/auth/redirects';
-import { confirmWaitlistSignup } from '@/lib/waitlist/confirm';
+import { confirmWaitlistSignup } from '@/lib/domain/waitlist/confirm';
+import { publicUrl } from '@/lib/infra/auth/redirects';
 
 export const runtime = 'nodejs';
 

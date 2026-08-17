@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { calcMacroGrams } from '@/lib/onboarding/tdee';
+import type { calcMacroGrams } from '@/lib/domain/onboarding/tdee';
 
 const AGGRESSIVE_PACE_KG = 0.6;
 

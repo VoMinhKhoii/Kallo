@@ -4,8 +4,8 @@ import type {
   BoundedEstimate,
   GoalAdjustedNutrient,
 } from '@/lib/ai/types/nutrition-values';
-import type { Goal } from '@/lib/onboarding/types';
-import type { MacroBreakdown, MealItem } from '@/lib/types/meal';
+import type { MacroBreakdown, MealItem } from '@/lib/core/types/meal';
+import type { Goal } from '@/lib/domain/onboarding/types';
 
 // ---------------------------------------------------------------------------
 // Call 1: Extract meal item names from partial decomposition JSON

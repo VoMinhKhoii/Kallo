@@ -16,7 +16,7 @@ import {
 import { PIECE_TIERS } from '@/lib/ai/portion/data/vessel-tables';
 import { pieceAssetFor } from '@/lib/ai/portion/vessel/geometry';
 import type { PieceVessel } from '@/lib/ai/portion/vessel/types';
-import { cn } from '@/lib/ui/cn';
+import { cn } from '@/lib/core/ui/cn';
 
 interface PortionRulerProps {
   anchors: PortionAnchor[];

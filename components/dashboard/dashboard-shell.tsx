@@ -6,13 +6,13 @@ import { useDashboardDateRefresh } from '@/hooks/dashboard/use-dashboard-date-re
 import { useDashboardMealLog } from '@/hooks/dashboard/use-dashboard-meal-log';
 import { useDashboardMeasurements } from '@/hooks/dashboard/use-dashboard-measurements';
 import { useDashboardQueries } from '@/hooks/dashboard/use-dashboard-queries';
-import { chooseRenderedHeatmapRange } from '@/lib/dashboard/heatmap-range';
 import type {
   DashboardProfile,
   HeatmapRange,
   TimeRange,
-} from '@/lib/types/dashboard';
-import { cn } from '@/lib/ui/cn';
+} from '@/lib/core/types/dashboard';
+import { cn } from '@/lib/core/ui/cn';
+import { chooseRenderedHeatmapRange } from '@/lib/domain/dashboard/heatmap-range';
 import { DashboardSectionState } from './dashboard-section-state';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { HeatmapSkeleton } from './progress/progress-section-skeleton';

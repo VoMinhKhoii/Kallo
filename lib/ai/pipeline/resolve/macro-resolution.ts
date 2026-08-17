@@ -7,7 +7,7 @@ import type {
   NutritionAdjustment,
 } from '@/lib/ai/types/nutrition-adjustment';
 import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
-import { mealItemHasDiscreteOil } from '@/lib/nutrition/absorbed-oil';
+import { mealItemHasDiscreteOil } from '@/lib/domain/nutrition/absorbed-oil';
 import { resolveIngredientMacros } from './macros/bounded-macros';
 import { computeMacroBaseMap } from './macros/macro-base';
 

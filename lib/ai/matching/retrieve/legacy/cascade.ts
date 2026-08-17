@@ -22,8 +22,8 @@ import type {
   MatchedIngredient,
   UnmatchedIngredient,
 } from '@/lib/ai/types/matching';
-import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
-import type { AppDb } from '@/lib/db';
+import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
+import type { AppDb } from '@/lib/infra/db';
 
 export interface MatchResult {
   matched: MatchedIngredient[];

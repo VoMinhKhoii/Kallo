@@ -4,8 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
-import { nutritionKeys } from '@/lib/nutrition/query-keys';
-import type { ChatMessage } from '@/lib/types/meal';
+import type { ChatMessage } from '@/lib/core/types/meal';
+import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
 
 /** Cache invalidation for analysis-complete and barcode-save events. */
 export function useFeedInvalidation(args: {

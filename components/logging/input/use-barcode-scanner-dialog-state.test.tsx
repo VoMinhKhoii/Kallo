@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { OcrReviewPayload } from '@/lib/nutrition/ocr-schema';
+import type { OcrReviewPayload } from '@/lib/domain/nutrition/ocr-schema';
 
 const mocks = vi.hoisted(() => ({
   confirmAndSaveMealAction: vi.fn(),

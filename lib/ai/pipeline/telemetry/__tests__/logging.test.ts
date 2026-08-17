@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 
-vi.mock('@/lib/db/schema', () => ({
+vi.mock('@/lib/infra/db/schema', () => ({
   pipelineRequests: { id: 'id' },
 }));
 

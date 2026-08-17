@@ -30,7 +30,7 @@ import type {
   MacroBase,
   MealItemNutrition,
 } from '@/lib/ai/types/nutrition-adjustment';
-import { mealItemHasDiscreteOil } from '@/lib/nutrition/absorbed-oil';
+import { mealItemHasDiscreteOil } from '@/lib/domain/nutrition/absorbed-oil';
 
 /**
  * Same partial-JSON marker as v1's nutrition stream. Each `{"mealItemName":`

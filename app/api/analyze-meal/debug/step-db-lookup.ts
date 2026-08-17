@@ -21,8 +21,8 @@ import type {
   MatchedIngredient,
   UnmatchedIngredient,
 } from '@/lib/ai/types/matching';
-import { db } from '@/lib/db';
-import type * as schema from '@/lib/db/schema';
+import { db } from '@/lib/infra/db';
+import type * as schema from '@/lib/infra/db/schema';
 
 import { type FuzzyMatchRow, pickMacros } from './debug-shared';
 

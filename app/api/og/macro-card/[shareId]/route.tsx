@@ -3,13 +3,13 @@ import { join } from 'node:path';
 import { ImageResponse } from '@vercel/og';
 import type { NextRequest } from 'next/server';
 import { KALLO_WORDMARK_D, KALLO_WORDMARK_VIEWBOX } from '@/lib/brand/kallo';
-import { Errors } from '@/lib/errors/catalog';
-import { serializeError } from '@/lib/errors/serialize';
+import { Errors } from '@/lib/core/errors/catalog';
+import { serializeError } from '@/lib/core/errors/serialize';
 import {
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
-} from '@/lib/rate-limit/analysis-guards';
-import { createClient } from '@/lib/supabase/server';
+} from '@/lib/infra/rate-limit/analysis-guards';
+import { createClient } from '@/lib/infra/supabase/server';
 
 // Node runtime: the route reads the DB (RLS-gated via the user's Supabase
 // session) and the vendored font binaries off disk.
@@ -141,8 +141,8 @@ export async function GET(
     if (!guard.allowed) {
       // Best-effort guard event log (non-fatal).
       try {
-        const { db } = await import('@/lib/db');
-        const { analysisGuardEvents } = await import('@/lib/db/schema');
+        const { db } = await import('@/lib/infra/db');
+        const { analysisGuardEvents } = await import('@/lib/infra/db/schema');
         await db.insert(analysisGuardEvents).values(
           buildAnalysisGuardEvent({
             userId: user.id,

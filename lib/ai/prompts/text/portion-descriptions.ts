@@ -1,5 +1,8 @@
 import { PORTION_PRIORS } from '@/lib/ai/portion/data/priors';
-import type { ProteinPortion, RicePortion } from '@/lib/onboarding/types';
+import type {
+  ProteinPortion,
+  RicePortion,
+} from '@/lib/domain/onboarding/types';
 
 /**
  * User-facing portion descriptions interpolated into LLM prompts.

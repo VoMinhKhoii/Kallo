@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Link } from '@/i18n/navigation';
-import type { DocsNavSection } from '@/lib/docs/tree';
+import type { DocsNavSection } from '@/lib/domain/docs/tree';
 
 /**
  * The docs navigation, as a footer.

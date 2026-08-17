@@ -25,7 +25,7 @@ const {
   };
 });
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     select: mockDbSelect,
     selectDistinctOn: mockDbSelectDistinctOn,
@@ -39,7 +39,7 @@ vi.mock('drizzle-orm/pg-core', async (importOriginal) => {
   return { ...actual, alias: (table: unknown) => table };
 });
 
-vi.mock('@/lib/db/schema', async () => await import('./schema-doubles'));
+vi.mock('@/lib/infra/db/schema', async () => await import('./schema-doubles'));
 
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks

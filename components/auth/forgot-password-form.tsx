@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/infra/supabase/client';
 
 /**
  * Step one of password recovery: request a reset link. The email lands the

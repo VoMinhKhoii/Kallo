@@ -29,8 +29,8 @@ index 8f451d6..1db15e2 100644
 +  deleteBarcodeServingOverrideAction,
 +  saveBarcodeServingOverrideAction,
 +} from '@/lib/actions/barcode';
- import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
- import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
+ import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
+ import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/openfoodfacts';
  
 @@ -43,6 +48,9 @@ interface BarcodeProductStepProps {
    onBack: () => void;

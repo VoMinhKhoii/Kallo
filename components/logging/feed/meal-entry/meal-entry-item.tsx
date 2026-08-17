@@ -7,8 +7,8 @@ import {
   formatCaloriesValue,
   formatMacroValue,
 } from '@/components/logging/feed/format-inline-nutrition';
-import { MIN_DISH_GRAMS } from '@/lib/meals/quantity-recalculation';
-import type { MealItem } from '@/lib/types/meal';
+import type { MealItem } from '@/lib/core/types/meal';
+import { MIN_DISH_GRAMS } from '@/lib/domain/meals/quantity-recalculation';
 
 interface MealEntryItemProps {
   item: MealItem;

@@ -1,5 +1,5 @@
 import type { GoalAdjustedNutrient } from '@/lib/ai/types/nutrition-values';
-import type { Goal } from '@/lib/onboarding/types';
+import type { Goal } from '@/lib/domain/onboarding/types';
 
 /**
  * The 4 macros that the LLM produces bounded estimates for AND that get goal-adjusted.

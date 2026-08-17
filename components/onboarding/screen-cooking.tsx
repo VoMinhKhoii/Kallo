@@ -12,13 +12,13 @@ import {
   FormItem,
   FormLabel,
 } from '@/components/ui/form';
-import { NEUTRAL_COOKING_DEFAULTS } from '@/lib/onboarding/constants';
+import { cn } from '@/lib/core/ui/cn';
+import { NEUTRAL_COOKING_DEFAULTS } from '@/lib/domain/onboarding/constants';
 import {
   type CookingHabitsInput,
   cookingHabitsSchema,
-} from '@/lib/onboarding/schemas';
-import type { CookingHabits } from '@/lib/onboarding/types';
-import { cn } from '@/lib/ui/cn';
+} from '@/lib/domain/onboarding/schemas';
+import type { CookingHabits } from '@/lib/domain/onboarding/types';
 
 interface ScreenCookingProps {
   defaultValues: Partial<CookingHabits>;

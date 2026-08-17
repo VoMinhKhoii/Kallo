@@ -12,12 +12,12 @@ import {
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { Badge } from '@/components/ui/badge';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
+import { formatTime } from '@/lib/core/date/format-time';
+import { cn } from '@/lib/core/ui/cn';
 import {
   activeAnchorLabel,
   CHEAT_SLIDER_COLORS,
-} from '@/lib/cheat/slider-nutrition';
-import { formatTime } from '@/lib/date/format-time';
-import { cn } from '@/lib/ui/cn';
+} from '@/lib/domain/cheat/slider-nutrition';
 
 interface CheatMealCardProps {
   meal: PersistedMeal;

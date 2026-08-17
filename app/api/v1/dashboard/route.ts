@@ -9,7 +9,7 @@ import {
 } from '@/lib/api/contracts/meals';
 import { parseTzParam } from '@/lib/api/query';
 import { handleRouteError } from '@/lib/api/respond';
-import { getOnboardingProfile } from '@/lib/onboarding/actions';
+import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 
 export const runtime = 'nodejs';
 

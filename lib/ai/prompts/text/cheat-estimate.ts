@@ -6,7 +6,7 @@
  * model output.
  */
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
-import type { CheatIntensity } from '@/lib/types/cheat';
+import type { CheatIntensity } from '@/lib/core/types/cheat';
 
 /** Everything the prompt string interpolates. */
 export interface CheatEstimatePromptParts {

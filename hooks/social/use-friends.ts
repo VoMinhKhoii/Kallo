@@ -7,7 +7,7 @@ import {
   blockFriend,
   fetchFriends,
   removeFriend,
-} from '@/lib/social/circle-client';
+} from '@/lib/domain/social/circle-client';
 
 export const friendsKeys = {
   all: ['friends'] as const,

@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
 import { circleFeedKeys } from '@/hooks/social/use-circle-feed';
-import { shareMealWithFriends } from '@/lib/social/circle-client';
+import { shareMealWithFriends } from '@/lib/domain/social/circle-client';
 
 /**
  * Offer a saved meal to specific friends as a full copy or a split. A split

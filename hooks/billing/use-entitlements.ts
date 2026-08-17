@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { assertBillingIdentity } from '@/lib/billing/identity';
+import { assertBillingIdentity } from '@/lib/domain/billing/identity';
 
 /** Feature-gate reasons mirrored from the server entitlement service. */
 export type FeatureAccessReason =

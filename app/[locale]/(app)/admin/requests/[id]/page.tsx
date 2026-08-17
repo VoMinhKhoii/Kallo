@@ -5,7 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { formatUtcTimestamp } from '@/lib/admin/format';
 import { getRequestDetail } from '@/lib/admin/queries/requests';
-import { db } from '@/lib/db';
+import { db } from '@/lib/infra/db';
 import { PipelineSummary } from './_components/pipeline-summary';
 import { PipelineVersionBadge } from './_components/pipeline-version-badge';
 import { ReplayButton } from './_components/replay-button';

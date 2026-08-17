@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StreamTickerFrame } from '@/components/shared/stream-ticker/stream-ticker-frame';
 import { deriveStreamTicker } from '@/components/shared/stream-ticker/stream-ticker-frame';
-import type { MealItem } from '@/lib/types/meal';
+import type { MealItem } from '@/lib/core/types/meal';
 
 // The global setup mock carries no messages, so `t.has` is false everywhere and
 // every stage would fall back to its flat label — which is exactly the branch

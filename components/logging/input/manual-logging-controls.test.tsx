@@ -6,7 +6,7 @@ import {
   createEmptyRow,
   type IngredientSearchResult,
   type ManualMealRow,
-} from '@/lib/logging/manual-logging';
+} from '@/lib/domain/logging/manual-logging';
 import { ManualLoggingControls } from './manual-logging-controls';
 
 const riceResult: IngredientSearchResult = {

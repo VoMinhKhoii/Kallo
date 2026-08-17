@@ -16,7 +16,7 @@ export const UUID_INVITE = 'e4ccff33-d04f-4cc2-af01-affdf0724e55';
 export const UUID_NEW = 'f5dd0044-e150-4dd3-b012-b00e01835f66';
 export const LOGGED_AT = new Date('2026-04-05T17:30:00.000Z');
 
-/** Column-name stand-in for `@/lib/db/schema` — routeInserts dispatches on it. */
+/** Column-name stand-in for `@/lib/infra/db/schema` — routeInserts dispatches on it. */
 export const schema = {
   meals: { id: 'meals.id', userId: 'meals.userId' },
   mealItems: { id: 'mealItems.id', mealId: 'mealItems.mealId' },

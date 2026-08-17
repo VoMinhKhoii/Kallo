@@ -13,9 +13,9 @@ import {
   type GeminiClient,
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
-import { db } from '@/lib/db';
-import { userProfiles } from '@/lib/db/schema';
-import { createClient } from '@/lib/supabase/server';
+import { db } from '@/lib/infra/db';
+import { userProfiles } from '@/lib/infra/db/schema';
+import { createClient } from '@/lib/infra/supabase/server';
 
 import { runDbLookupDebugStep } from './step-db-lookup';
 import { runDecompositionDebugStep } from './step-decomposition';

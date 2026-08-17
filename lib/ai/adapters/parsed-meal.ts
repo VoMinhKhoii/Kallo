@@ -4,7 +4,11 @@ import type {
   PipelineVessel,
 } from '@/lib/ai/portion/vessel/types';
 import type { PipelineResult } from '@/lib/ai/types/result';
-import type { MacroBreakdown, MealItem, ParsedMeal } from '@/lib/types/meal';
+import type {
+  MacroBreakdown,
+  MealItem,
+  ParsedMeal,
+} from '@/lib/core/types/meal';
 
 function toMacros(nutrition: {
   caloriesKcal: number | null;

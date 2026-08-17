@@ -7,8 +7,8 @@ import {
   deleteWeightLogAction,
   logWeightAction,
 } from '@/lib/actions/tracking/weight';
-import type { WeightSummaryData } from '@/lib/types/weight';
-import type { WeightLogInput } from '@/lib/validation/weight';
+import type { WeightSummaryData } from '@/lib/core/types/weight';
+import type { WeightLogInput } from '@/lib/core/validation/weight';
 
 type WeightSummarySnapshot = Array<
   [readonly unknown[], WeightSummaryData | undefined]

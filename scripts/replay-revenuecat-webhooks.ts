@@ -2,8 +2,8 @@ import { createHmac } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { POST } from '@/app/api/webhooks/revenuecat/route';
-import { getBillingEnvironment } from '@/lib/billing/billing';
-import { db } from '@/lib/db';
+import { getBillingEnvironment } from '@/lib/domain/billing/billing';
+import { db } from '@/lib/infra/db';
 
 const configSchema = z.object({
   BILLING_REPLAY_LIMIT: z.coerce

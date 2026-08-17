@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useRouter } from '@/i18n/navigation';
-import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/domain/onboarding/constants';
 
 const NUDGE_DISMISS_KEY = 'onboarding_nudge_dismiss_count';
 

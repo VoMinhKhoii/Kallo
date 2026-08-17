@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   GoogleIdConfiguration,
   GoogleIdentityApi,
-} from '@/lib/auth/google-identity';
+} from '@/lib/infra/auth/google-identity';
 import { GoogleSignInButton } from './google-sign-in-button';
 
 const signInWithIdTokenMock = vi.fn();
@@ -22,7 +22,7 @@ vi.mock('@/components/auth/auth-provider', () => ({
   }),
 }));
 
-vi.mock('@/lib/supabase/client', () => ({
+vi.mock('@/lib/infra/supabase/client', () => ({
   createClient: () => ({
     auth: {
       signInWithIdToken: signInWithIdTokenMock,
@@ -31,9 +31,9 @@ vi.mock('@/lib/supabase/client', () => ({
   }),
 }));
 
-vi.mock('@/lib/auth/google-identity', async (importOriginal) => {
+vi.mock('@/lib/infra/auth/google-identity', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@/lib/auth/google-identity')>();
+    await importOriginal<typeof import('@/lib/infra/auth/google-identity')>();
   // Referenced lazily: vi.mock factories are hoisted above the consts above.
   return { ...actual, loadGoogleIdentity: () => loadGoogleIdentityMock() };
 });
@@ -42,7 +42,7 @@ vi.mock('@/hooks/ui/use-in-app-browser', () => ({
   useIsInAppBrowser: () => false,
 }));
 
-vi.mock('@/lib/platform/in-app-browser', () => ({
+vi.mock('@/lib/infra/platform/in-app-browser', () => ({
   isInAppBrowser: () => false,
   isAndroid: () => false,
   chromeIntentUrl: (url: string) => url,

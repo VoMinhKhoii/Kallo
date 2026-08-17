@@ -27,7 +27,7 @@ import type {
   PersistedMeal,
 } from '@/lib/actions/meals/types';
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
-import type { ParsedMeal } from '@/lib/types/meal';
+import type { ParsedMeal } from '@/lib/core/types/meal';
 
 // ---------------------------------------------------------------------------
 // In-memory server. confirmAndSaveMealAction moves a pending row into a saved

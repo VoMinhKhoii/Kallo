@@ -12,8 +12,8 @@ import type {
   HeatmapCell,
   HeatmapData,
   HeatmapRange,
-} from '@/lib/types/dashboard';
-import { cn } from '@/lib/ui/cn';
+} from '@/lib/core/types/dashboard';
+import { cn } from '@/lib/core/ui/cn';
 import { getHeatmapColor, heatmapLegendGradient } from './heatmap-colors';
 import { HeatmapMonthHeaderRow } from './heatmap-month-headers';
 

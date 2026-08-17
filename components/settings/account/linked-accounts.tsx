@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { AppleLogo, GoogleLogo } from '@/components/shared/brand-logos';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/infra/supabase/client';
 
 /**
  * Linked sign-in methods: connect Google / Apple to the current account, or

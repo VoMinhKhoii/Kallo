@@ -44,9 +44,9 @@ cd /Users/khoivo/Documents/kallo-current-section && bun install
 'use server';
 
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { bodyWeightLog, meals } from '@/lib/db/schema';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db';
+import { bodyWeightLog, meals } from '@/lib/infra/db/schema';
 import type { PaceStatus, StatsData, VerdictData } from '@/components/dashboard/types';
 
 interface CurrentSectionData {
@@ -228,19 +228,19 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { PaceStatus } from '@/components/dashboard/types';
 
 // Mock dependencies before importing the action
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/infra/auth', () => ({
   requireAuthAndProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     select: vi.fn(),
   },
 }));
 
-import { getCurrentSectionData } from '@/lib/dashboard/actions/current';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { getCurrentSectionData } from '@/lib/domain/dashboard/actions/current';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db';
 
 const mockProfile = {
   weightKg: '70.0',
@@ -501,7 +501,7 @@ Key changes:
 // Add: import { useQuery } from '@tanstack/react-query';
 // Add: import { useEffect } from 'react';
 // Add: import { toast } from 'sonner';
-// Add: import { getCurrentSectionData } from '@/lib/dashboard/actions/current';
+// Add: import { getCurrentSectionData } from '@/lib/domain/dashboard/actions/current';
 
 export function CurrentSection() {
   const t = useTranslations('dashboard.current');
@@ -634,9 +634,9 @@ cd /Users/khoivo/Documents/kallo-progress-section && bun install
 'use server';
 
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { bodyWeightLog, meals } from '@/lib/db/schema';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db';
+import { bodyWeightLog, meals } from '@/lib/infra/db/schema';
 import type { TimeRange } from '@/components/dashboard/types';
 
 interface WeightChartMeta {
@@ -770,19 +770,19 @@ git commit -m "feat(dashboard): add getProgressData server action"
 ```ts
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/infra/auth', () => ({
   requireAuthAndProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     select: vi.fn(),
   },
 }));
 
-import { getProgressData } from '@/lib/dashboard/actions/progress';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { getProgressData } from '@/lib/domain/dashboard/actions/progress';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db';
 
 const mockProfile = {
   weightKg: '70.0',
@@ -992,7 +992,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { getProgressData } from '@/lib/dashboard/actions/progress';
+import { getProgressData } from '@/lib/domain/dashboard/actions/progress';
 import type { TimeRange } from '@/components/dashboard/types';
 import { cn } from '@/lib/utils';
 import { AdherenceHeatmap } from './adherence-heatmap';
@@ -1166,9 +1166,9 @@ cd /Users/khoivo/Documents/kallo-today-section && bun install
 'use server';
 
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { meals } from '@/lib/db/schema';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db';
+import { meals } from '@/lib/infra/db/schema';
 import type { MealEntry, NutritionData } from '@/components/dashboard/types';
 
 interface TodayData {
@@ -1255,19 +1255,19 @@ git commit -m "feat(dashboard): add getTodayData server action"
 ```ts
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/infra/auth', () => ({
   requireAuthAndProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     select: vi.fn(),
   },
 }));
 
-import { getTodayData } from '@/lib/dashboard/actions/today';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { getTodayData } from '@/lib/domain/dashboard/actions/today';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db';
 
 const mockProfile = {
   calorieTarget: 2000,
@@ -1437,7 +1437,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { CalorieRing } from '@/components/shared/calorie-ring';
 import { MacroBars } from '@/components/shared/macro-bars';
-import { getTodayData } from '@/lib/dashboard/actions/today';
+import { getTodayData } from '@/lib/domain/dashboard/actions/today';
 import { MealList } from './meal-list';
 
 export function TodaySection() {

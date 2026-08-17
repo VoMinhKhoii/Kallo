@@ -6,7 +6,7 @@
  * parts. Changing a single character here changes model output — treat edits
  * as a prompt change, not a refactor.
  */
-import { COOKING_FAT_ROW_NAMES } from '@/lib/nutrition/absorbed-oil';
+import { COOKING_FAT_ROW_NAMES } from '@/lib/domain/nutrition/absorbed-oil';
 
 /**
  * Named data delimiter for the user's meal text. Everything between the open

@@ -6,9 +6,12 @@ import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { StagedEntriesApi } from '@/hooks/meals/relog/use-staged-entries';
 import { stageRelogAnalysisAction } from '@/lib/actions/meals/relog/stage-relog-analysis';
-import { stripMentions } from '@/lib/logging/relog/mentions';
-import { buildRelogRawInput, type RelogRef } from '@/lib/logging/relog/relog';
-import type { ChatMessage } from '@/lib/types/meal';
+import type { ChatMessage } from '@/lib/core/types/meal';
+import { stripMentions } from '@/lib/domain/logging/relog/mentions';
+import {
+  buildRelogRawInput,
+  type RelogRef,
+} from '@/lib/domain/logging/relog/relog';
 
 /** One key per staged SELECTION, order-independent. */
 const selectionKey = (stageIds: readonly string[]) =>

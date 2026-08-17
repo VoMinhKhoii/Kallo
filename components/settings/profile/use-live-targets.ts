@@ -7,8 +7,8 @@ import {
   calcDailyTargets,
   calcMacroGrams,
   calcTDEE,
-} from '@/lib/onboarding/tdee';
-import type { ActivityLevel } from '@/lib/onboarding/types';
+} from '@/lib/domain/onboarding/tdee';
+import type { ActivityLevel } from '@/lib/domain/onboarding/types';
 
 export interface LiveTargets {
   goal: string;

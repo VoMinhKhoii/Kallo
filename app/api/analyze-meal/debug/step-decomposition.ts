@@ -6,7 +6,7 @@ import { ingredientDisplayName } from '@/lib/ai/pipeline/contracts/ingredient-ac
 import { mealDecompositionSchema } from '@/lib/ai/pipeline/contracts/schemas/decomposition';
 import { getDecompositionPromptBuilder } from '@/lib/ai/prompts/build/decomposition';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
-import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
+import { fetchWithTimeout } from '@/lib/core/async/fetch-with-timeout';
 
 import { DEBUG_LLM_TIMEOUT_MS, serializeAttempt } from './debug-shared';
 

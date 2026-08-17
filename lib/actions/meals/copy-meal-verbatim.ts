@@ -8,8 +8,8 @@ import {
   scaleNutritionRow,
 } from '@/lib/actions/logging/persisted-meal';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-import type { AppTransaction } from '@/lib/db';
-import { mealItems, meals } from '@/lib/db/schema';
+import type { AppTransaction } from '@/lib/infra/db';
+import { mealItems, meals } from '@/lib/infra/db/schema';
 import { insertDefaultCircleShare } from './insert-default-share';
 
 type MealRow = typeof meals.$inferSelect;

@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useNutritionOcr } from '@/hooks/meals/use-nutrition-ocr';
 import { useOcrCamera } from '@/hooks/meals/use-ocr-camera';
-import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';
+import type { ParsedNutritionLabel } from '@/lib/domain/nutrition/ocr-schema';
 import { OcrCameraView } from './ocr-camera-view';
 import { OcrFailureActions } from './ocr-failure-actions';
 import { OcrImagePreview } from './ocr-image-preview';

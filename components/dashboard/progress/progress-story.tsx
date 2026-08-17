@@ -3,8 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { WeightChart } from '@/components/dashboard/progress/weight-chart';
 import { WeightLogPopover } from '@/components/dashboard/progress/weight-log-popover';
-import type { TimeRange } from '@/lib/types/dashboard';
-import type { WeightSummaryData } from '@/lib/types/weight';
+import type { TimeRange } from '@/lib/core/types/dashboard';
+import type { WeightSummaryData } from '@/lib/core/types/weight';
 
 interface ProgressStoryProps {
   weightSummary: WeightSummaryData | undefined;

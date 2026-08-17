@@ -2,8 +2,8 @@
 
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { formatKcal, formatMacro } from '@/lib/logging/manual-logging';
-import type { RelogStagedEntry } from '@/lib/logging/relog/relog';
+import { formatKcal, formatMacro } from '@/lib/domain/logging/manual-logging';
+import type { RelogStagedEntry } from '@/lib/domain/logging/relog/relog';
 
 interface StagedRowProps {
   entry: RelogStagedEntry;

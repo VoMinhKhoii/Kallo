@@ -3,7 +3,7 @@ import type { MealDecompositionWithIds } from '@/lib/ai/pipeline/contracts/decom
 import { extractMealItemNameOccurrences } from '@/lib/ai/streaming/parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { MealDecomposition } from '@/lib/ai/types/decomposition';
-import { capitalizeFirst } from '@/lib/text/capitalize';
+import { capitalizeFirst } from '@/lib/core/text/capitalize';
 
 interface DecompositionStreamControllerInput {
   emit: (event: StreamEvent) => void;

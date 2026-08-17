@@ -30,8 +30,8 @@ export async function deleteUser(userId: string) {
 ```typescript
 'use server'
 
-import { verifySession } from '@/lib/auth'
-import { unauthorized } from '@/lib/errors'
+import { verifySession } from '@/lib/infra/auth'
+import { unauthorized } from '@/lib/core/errors'
 
 export async function deleteUser(userId: string) {
   // Always check auth inside the action
@@ -56,7 +56,7 @@ export async function deleteUser(userId: string) {
 ```typescript
 'use server'
 
-import { verifySession } from '@/lib/auth'
+import { verifySession } from '@/lib/infra/auth'
 import { z } from 'zod'
 
 const updateProfileSchema = z.object({

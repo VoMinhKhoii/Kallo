@@ -2,21 +2,21 @@
 
 import { z } from 'zod';
 import { barcodeSchema } from '@/lib/api/contracts/barcode';
-import { requireAuthAndProfile } from '@/lib/auth/session';
-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
-import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/core/validation/primitives';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
+import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/openfoodfacts';
 import {
   BarcodeServiceError,
   searchBarcodeProduct,
   stageBarcodeMeal,
-} from '@/lib/barcode/service';
-import type { BarcodeErrorCode } from '@/lib/barcode/types';
-import {
-  dateStringSchema,
-  timezoneOffsetSchema,
-} from '@/lib/validation/primitives';
+} from '@/lib/domain/barcode/service';
+import type { BarcodeErrorCode } from '@/lib/domain/barcode/types';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
-export type { BarcodeErrorCode } from '@/lib/barcode/types';
+export type { BarcodeErrorCode } from '@/lib/domain/barcode/types';
 
 const searchBarcodeSchema = z.object({
   barcode: barcodeSchema,

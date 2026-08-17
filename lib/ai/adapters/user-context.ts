@@ -3,8 +3,8 @@ import {
   type SupportedOutputLanguage,
 } from '@/lib/ai/language/detect';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import type { userProfiles } from '@/lib/db/schema';
-import { NEUTRAL_COOKING_DEFAULTS } from '@/lib/onboarding/constants';
+import { NEUTRAL_COOKING_DEFAULTS } from '@/lib/domain/onboarding/constants';
+import type { userProfiles } from '@/lib/infra/db/schema';
 
 type ProfileRow = typeof userProfiles.$inferSelect;
 

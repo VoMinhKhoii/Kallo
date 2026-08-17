@@ -1,6 +1,6 @@
 import type { PipelineErrorType } from '@/lib/ai/types/errors';
 import type { PipelineResponse } from '@/lib/ai/types/result';
-import { isAppError } from '@/lib/errors/app-error';
+import { isAppError } from '@/lib/core/errors/app-error';
 
 const NON_FOOD_MESSAGE =
   "We didn't recognize this as a meal description. Could you try describing what you ate differently?";

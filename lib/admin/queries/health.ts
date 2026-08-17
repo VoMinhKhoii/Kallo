@@ -1,7 +1,7 @@
 import { and, count, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
 import { REPLAY_EXCLUSION } from '@/lib/admin/queries/requests';
-import type { AppDb } from '@/lib/db';
-import { pipelineRequests } from '@/lib/db/schema';
+import type { AppDb } from '@/lib/infra/db';
+import { pipelineRequests } from '@/lib/infra/db/schema';
 
 export interface HealthAggregates {
   successRate24h: number | null;

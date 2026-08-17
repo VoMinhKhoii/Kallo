@@ -22,7 +22,7 @@ import {
 import { usePrefetchDates } from '@/hooks/meals/use-prefetch-dates';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { loadMealDates } from '@/lib/actions/meals/load-meals';
-import type { Goal } from '@/lib/onboarding/types';
+import type { Goal } from '@/lib/domain/onboarding/types';
 
 export interface LoggingProfile {
   userId: string;

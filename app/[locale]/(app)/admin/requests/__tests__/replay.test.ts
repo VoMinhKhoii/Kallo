@@ -55,7 +55,7 @@ const {
 // ---------------------------------------------------------------------------
 // DB mock — track which tables are passed to db.insert()
 // ---------------------------------------------------------------------------
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     insert: vi.fn((table: unknown) => {
       insertedTables.push(table);
@@ -95,9 +95,11 @@ vi.mock('@/lib/ai/provider/provider', () => ({
 vi.mock('@/lib/admin/authz/require-admin', () => ({
   requireAdmin: async () => ({ id: 'admin-1', email: 'a@x.com' }),
 }));
-vi.mock('@/lib/rate-limit/analysis-guards', async (importOriginal) => {
+vi.mock('@/lib/infra/rate-limit/analysis-guards', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@/lib/rate-limit/analysis-guards')>();
+    await importOriginal<
+      typeof import('@/lib/infra/rate-limit/analysis-guards')
+    >();
 
   return {
     ...actual,
@@ -115,8 +117,8 @@ import {
   pendingAnalyses,
   pipelineRequestReplayAuditLogs,
   pipelineRequests,
-} from '@/lib/db/schema';
-import { adminReplayGuardRoute } from '@/lib/rate-limit/analysis-guard-limits';
+} from '@/lib/infra/db/schema';
+import { adminReplayGuardRoute } from '@/lib/infra/rate-limit/analysis-guard-limits';
 
 // ---------------------------------------------------------------------------
 // Tests

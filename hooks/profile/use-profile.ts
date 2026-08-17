@@ -9,7 +9,7 @@ import {
   renameMyProfile,
   saveMyProfile,
   uploadMyAvatar,
-} from '@/lib/social/circle-client';
+} from '@/lib/domain/social/circle-client';
 
 export const profileKeys = {
   mine: ['my-profile'] as const,

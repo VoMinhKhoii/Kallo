@@ -1,20 +1,20 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { isAppError } from '@/lib/core/errors/app-error';
 import {
   type AuthEmailPayload,
   authEmailPayloadSchema,
   resolveAuthEmails,
-} from '@/lib/email/auth-email';
-import { sendEmail as defaultSendEmail } from '@/lib/email/send';
-import { isAppError } from '@/lib/errors/app-error';
+} from '@/lib/infra/email/auth-email';
+import { sendEmail as defaultSendEmail } from '@/lib/infra/email/send';
 import {
   readSignatureHeaders,
   verifyStandardWebhook,
-} from '@/lib/security/standard-webhooks';
+} from '@/lib/infra/security/standard-webhooks';
 import {
   readBoundedWebhookBody,
   WebhookPayloadTooLargeError,
-} from '@/lib/security/webhook-request';
+} from '@/lib/infra/security/webhook-request';
 
 export const runtime = 'nodejs';
 

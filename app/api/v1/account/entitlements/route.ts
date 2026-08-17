@@ -1,10 +1,10 @@
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth/session';
 import {
   getBillingConfig,
   getEntitlementState,
   isBillingSandboxUser,
-} from '@/lib/billing/billing';
+} from '@/lib/domain/billing/billing';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
 export const runtime = 'nodejs';
 

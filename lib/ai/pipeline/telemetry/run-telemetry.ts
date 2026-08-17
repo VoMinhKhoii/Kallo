@@ -1,6 +1,6 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import type { AmbiguityFlag } from '@/lib/ai/types/decomposition';
-import type { AppDb } from '@/lib/db';
+import type { AppDb } from '@/lib/infra/db';
 import type { RrfAggregate } from './rrf-aggregation';
 
 // In-test default pepper so unit tests can run without mutating process.env.
@@ -139,7 +139,7 @@ export async function writePipelineRun(
   db: AppDb,
   row: PipelineRunRow | PipelineRunRowWithV2
 ): Promise<void> {
-  const { pipelineRuns } = await import('@/lib/db/schema');
+  const { pipelineRuns } = await import('@/lib/infra/db/schema');
   try {
     await db.insert(pipelineRuns).values(row as PipelineRunRow);
   } catch (err) {

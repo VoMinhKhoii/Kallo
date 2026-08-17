@@ -51,11 +51,11 @@ export const FOLDER_EXEMPT = new Map([
  */
 export const SIZE_EXEMPT = new Map([
   [
-    'lib/db/schema.ts',
+    'lib/infra/db/schema.ts',
     'Drizzle schema source of truth — Domain A stays one declaration site',
   ],
   [
-    'lib/nutrition/catalog/reference-target-tables.ts',
+    'lib/domain/nutrition/catalog/reference-target-tables.ts',
     'published RDA/RNI/DRI tables with citations — no resolution logic',
   ],
   [

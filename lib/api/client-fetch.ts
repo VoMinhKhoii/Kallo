@@ -6,7 +6,7 @@
 // and this reads that envelope back out as an `ApiError`. Client-side only —
 // deliberately free of `next/server` and of the server AppError hierarchy.
 
-import { parseApiError } from '@/lib/errors/client';
+import { parseApiError } from '@/lib/core/errors/client';
 
 /**
  * Fetch JSON from an API route. Non-ok responses throw the parsed error

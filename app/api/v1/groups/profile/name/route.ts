@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { renameMyProfile } from '@/lib/actions/groups/profile';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
-import { serializeError } from '@/lib/errors/serialize';
+import { serializeError } from '@/lib/core/errors/serialize';
 
 export const runtime = 'nodejs';
 

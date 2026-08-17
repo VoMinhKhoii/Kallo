@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { CheatIntensity } from '@/lib/types/cheat';
+import type { CheatIntensity } from '@/lib/core/types/cheat';
 
 export type InputMode = 'normal' | 'manual' | 'cheat';
 

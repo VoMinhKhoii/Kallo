@@ -4,7 +4,7 @@ import {
   listRequests,
   requestFiltersSchema,
 } from '@/lib/admin/queries/requests';
-import { db } from '@/lib/db';
+import { db } from '@/lib/infra/db';
 import { FiltersForm } from './_components/filters-form';
 import { RequestsTable } from './_components/requests-table';
 

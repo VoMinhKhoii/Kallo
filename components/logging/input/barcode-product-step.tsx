@@ -3,8 +3,8 @@
 import { ArrowLeft, Loader2, Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
-import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
+import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/openfoodfacts';
 
 const GRAM_STEP = 50;
 // Shared cap so a large-but-valid package (OFF allows up to 100kg) is never

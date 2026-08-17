@@ -8,9 +8,9 @@ import {
   type Mock,
   vi,
 } from 'vitest';
-import { Errors } from '@/lib/errors/catalog';
+import { Errors } from '@/lib/core/errors/catalog';
 
-type SendEmailFn = typeof import('@/lib/email/send').sendEmail;
+type SendEmailFn = typeof import('@/lib/infra/email/send').sendEmail;
 
 const { handleSendEmailHook } = await import('@/app/api/auth/send-email/route');
 

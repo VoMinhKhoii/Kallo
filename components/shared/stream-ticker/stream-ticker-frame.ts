@@ -1,4 +1,4 @@
-import type { MealItem } from '@/lib/types/meal';
+import type { MealItem } from '@/lib/core/types/meal';
 
 /**
  * One frame of the ticker; a new `key` flips the text in place.

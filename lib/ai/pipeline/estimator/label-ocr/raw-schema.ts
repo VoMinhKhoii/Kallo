@@ -9,7 +9,7 @@
  */
 
 import { z } from 'zod';
-import type { NutritionValues } from '@/lib/nutrition/ocr-schema';
+import type { NutritionValues } from '@/lib/domain/nutrition/ocr-schema';
 
 const rawAmountSchema = z
   .object({

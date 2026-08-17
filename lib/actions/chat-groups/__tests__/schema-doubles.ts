@@ -1,4 +1,4 @@
-// Column-name doubles for `@/lib/db/schema`, shared by the chat-group suites
+// Column-name doubles for `@/lib/infra/db/schema`, shared by the chat-group suites
 // that drive the default `db` singleton through a mock. Export EVERY table the
 // modules under test import — a missing one makes the module-level import
 // `undefined` and breaks unrelated queries.

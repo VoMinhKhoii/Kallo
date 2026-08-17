@@ -4,15 +4,15 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { SubmitFeedbackInput } from '@/lib/api/contracts/feedback';
 import { submitFeedbackSchema } from '@/lib/api/contracts/feedback';
-import { db } from '@/lib/db';
-import { userFeedback } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import { createClient } from '@/lib/supabase/server';
+import { Errors } from '@/lib/core/errors/catalog';
+import { db } from '@/lib/infra/db';
+import { userFeedback } from '@/lib/infra/db/schema';
+import { createClient } from '@/lib/infra/supabase/server';
 import {
   IMAGE_TYPES,
   MAX_IMAGE_BYTES,
   signatureMatches,
-} from '@/lib/uploads/image-file';
+} from '@/lib/infra/uploads/image-file';
 
 /** The request-scoped Supabase client (user's own session, RLS-enforced). */
 type ScopedClient = Awaited<ReturnType<typeof createClient>>;

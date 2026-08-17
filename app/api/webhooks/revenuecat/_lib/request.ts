@@ -3,7 +3,7 @@ import { z } from 'zod';
 import {
   readBoundedWebhookBody,
   timingSafeMatch,
-} from '@/lib/security/webhook-request';
+} from '@/lib/infra/security/webhook-request';
 
 export const MAX_WEBHOOK_BYTES = 256 * 1024;
 

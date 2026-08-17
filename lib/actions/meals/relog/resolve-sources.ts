@@ -13,10 +13,10 @@ import {
   type ResolvedDish,
   resolveRelogDishes,
 } from '@/lib/actions/meals/relog/expand-refs';
-import type { AppDb, AppTransaction } from '@/lib/db';
-import { mealItems, meals } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors/catalog';
-import type { RelogRef } from '@/lib/logging/relog/relog';
+import { Errors } from '@/lib/core/errors/catalog';
+import type { RelogRef } from '@/lib/domain/logging/relog/relog';
+import type { AppDb, AppTransaction } from '@/lib/infra/db';
+import { mealItems, meals } from '@/lib/infra/db/schema';
 
 type Executor = AppDb | AppTransaction;
 

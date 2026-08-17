@@ -11,7 +11,7 @@ import type {
   UnmatchedIngredient,
 } from '@/lib/ai/types/matching';
 import type { NutritionAdjustment } from '@/lib/ai/types/nutrition-adjustment';
-import { fetchWithTimeout } from '@/lib/async/fetch-with-timeout';
+import { fetchWithTimeout } from '@/lib/core/async/fetch-with-timeout';
 
 import {
   DEBUG_LLM_TIMEOUT_MS,

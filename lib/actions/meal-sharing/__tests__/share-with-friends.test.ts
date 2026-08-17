@@ -30,14 +30,14 @@ const { mockTxSelect, mockTxUpdate, mockTxInsert, mockTx } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/lib/auth/session', async () => ({
+vi.mock('@/lib/infra/auth/session', async () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: (await import('./share-doubles')).MOCK_USER,
     profile: {},
   }),
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db', () => ({
   db: {
     transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) =>
       fn(mockTx)
@@ -46,7 +46,7 @@ vi.mock('@/lib/db', () => ({
 }));
 
 vi.mock(
-  '@/lib/db/schema',
+  '@/lib/infra/db/schema',
   async () => (await import('./share-doubles')).schema
 );
 

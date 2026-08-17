@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { MealEntry } from '@/lib/types/dashboard';
+import type { MealEntry } from '@/lib/core/types/dashboard';
 
 interface MealListProps {
   meals: MealEntry[];
