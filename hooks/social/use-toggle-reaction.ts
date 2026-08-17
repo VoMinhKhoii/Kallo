@@ -3,8 +3,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { toggleShareReaction } from '@/lib/groups/client';
-import { isFeedQuery, mapFeedEntries } from '@/lib/groups/feed-cache';
+import { toggleShareReaction } from '@/lib/social/circle-client';
+import { isFeedQuery, mapFeedEntries } from '@/lib/social/feed/feed-cache';
 
 interface ReactionResult {
   reacted: boolean;

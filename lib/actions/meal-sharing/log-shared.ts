@@ -13,7 +13,7 @@ import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { mealItems, mealShares, meals } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors/catalog';
-import { canViewShare } from '@/lib/groups/share-visibility';
+import { canViewShare } from '@/lib/social/shares/share-visibility';
 import {
   dateStringSchema,
   timezoneOffsetSchema,

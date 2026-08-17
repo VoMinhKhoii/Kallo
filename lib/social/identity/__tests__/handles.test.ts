@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isValidHandle, validateHandle } from './handles';
+import { isValidHandle, validateHandle } from '@/lib/social/identity/handles';
 
 describe('validateHandle', () => {
   it('accepts a well-formed handle and lowercases it', () => {

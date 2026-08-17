@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/db', () => ({ db: {} }));
 
-import { repliesForShares } from '@/lib/groups/shares/replies';
+import { repliesForShares } from '@/lib/social/shares/replies';
 
 const ACTOR_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const SHARE_ID = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';

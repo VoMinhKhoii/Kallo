@@ -111,13 +111,13 @@ vi.mock('@/lib/db/schema', () => ({
   },
 }));
 
-vi.mock('@/lib/groups/shares/reactions', () => ({
+vi.mock('@/lib/social/shares/reactions', () => ({
   reactionsForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
       new Map(shareIds.map((id) => [id, { count: 0, mine: false }]))
   ),
 }));
-vi.mock('@/lib/groups/shares/replies', () => ({
+vi.mock('@/lib/social/shares/replies', () => ({
   repliesForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
       new Map(shareIds.map((id) => [id, { replies: [], total: 0 }]))
@@ -141,7 +141,7 @@ import {
   renameMyProfile,
   upsertPublicProfile,
 } from '@/lib/actions/groups/profile';
-import { repliesForShares } from '@/lib/groups/shares/replies';
+import { repliesForShares } from '@/lib/social/shares/replies';
 
 // Valid v4 UUIDs (the remove/uuid schemas validate version+variant bits).
 const ACTOR = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';

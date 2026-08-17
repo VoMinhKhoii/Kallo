@@ -5,7 +5,7 @@ vi.mock('@/lib/db', () => ({ db: {} }));
 import {
   canViewShare,
   canViewShareOwnedBy,
-} from '@/lib/groups/share-visibility';
+} from '@/lib/social/shares/share-visibility';
 
 const VIEWER_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const OWNER_ID = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';

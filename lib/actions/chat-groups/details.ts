@@ -5,7 +5,7 @@ import { Errors } from '@/lib/errors/catalog';
 import {
   publicProfileColumns,
   toPublicIdentity,
-} from '@/lib/groups/public-identity';
+} from '@/lib/social/identity/public-identity';
 import {
   getChatGroupSchema,
   renameChatGroupSchema,

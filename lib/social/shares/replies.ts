@@ -10,7 +10,7 @@ import {
   type PublicIdentity,
   publicProfileColumns,
   toPublicIdentity,
-} from '@/lib/groups/public-identity';
+} from '@/lib/social/identity/public-identity';
 
 type Db = AppDb | AppTransaction;
 

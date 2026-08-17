@@ -2,11 +2,11 @@
 // every query must carry an explicit actor predicate (see ./types.ts).
 
 import { and, eq, sql } from 'drizzle-orm';
-import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups';
+import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups/direct-chats';
 import { db as defaultDb } from '@/lib/db';
 import { circleEvents, friendships } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors/catalog';
-import { orderedPair } from '@/lib/groups/friendship';
+import { orderedPair } from '@/lib/social/friendship';
 import {
   acceptInviteSchema,
   blockFriendSchema,

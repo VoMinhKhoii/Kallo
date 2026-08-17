@@ -29,17 +29,17 @@ import {
 import {
   encodeSharedMealCursor,
   type SharedMealCursor,
-} from '@/lib/groups/feed/cursor';
+} from '@/lib/social/feed/cursor';
 import {
   type PublicIdentity,
   publicProfileColumns,
   toPublicIdentity,
-} from '@/lib/groups/public-identity';
-import type { ShareReactions } from '@/lib/groups/shares/reactions';
+} from '@/lib/social/identity/public-identity';
+import type { ShareReactions } from '@/lib/social/shares/reactions';
 import type {
   ShareRepliesSummary,
   ShareReply,
-} from '@/lib/groups/shares/replies';
+} from '@/lib/social/shares/replies';
 
 type Db = AppDb | AppTransaction;
 

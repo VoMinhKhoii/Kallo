@@ -1,5 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { createChatGroup, listMyChatGroups } from '@/lib/actions/chat-groups';
+import {
+  createChatGroup,
+  listMyChatGroups,
+} from '@/lib/actions/chat-groups/create-and-list';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 import { timezoneOffsetSchema } from '@/lib/validation/primitives';

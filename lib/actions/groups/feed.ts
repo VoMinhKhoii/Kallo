@@ -9,19 +9,19 @@ import {
   friendships,
   publicProfiles,
 } from '@/lib/db/schema';
-import { decodeSharedMealCursor } from '@/lib/groups/feed/cursor';
+import { decodeSharedMealCursor } from '@/lib/social/feed/cursor';
 import {
   mostRecentSharedMealsToday,
   sharedMealsBefore,
   todayLocalDate,
   toSharedMealEntry,
-} from '@/lib/groups/meal-feed';
+} from '@/lib/social/feed/meal-feed';
 import {
   publicProfileColumns,
   toPublicIdentity,
-} from '@/lib/groups/public-identity';
-import { reactionsForShares } from '@/lib/groups/shares/reactions';
-import { repliesForShares } from '@/lib/groups/shares/replies';
+} from '@/lib/social/identity/public-identity';
+import { reactionsForShares } from '@/lib/social/shares/reactions';
+import { repliesForShares } from '@/lib/social/shares/replies';
 import {
   circleFeedSchema,
   friendsThreadFeedSchema,

@@ -11,7 +11,7 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
-vi.mock('@/lib/groups/client', () => ({
+vi.mock('@/lib/social/circle-client', () => ({
   createShareReply: mockCreateShareReply,
 }));
 

@@ -9,7 +9,7 @@ import {
   meals,
   publicProfiles,
 } from '@/lib/db/schema';
-import { avatarUrlFor } from '@/lib/groups/avatar-url';
+import { avatarUrlFor } from '@/lib/social/identity/avatar-url';
 import type { MealShareInvite } from './types';
 
 export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {

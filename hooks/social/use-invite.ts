@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { circleFeedKeys } from '@/hooks/social/use-circle-feed';
 import { friendsKeys } from '@/hooks/social/use-friends';
-import { acceptInvite } from '@/lib/groups/client';
+import { acceptInvite } from '@/lib/social/circle-client';
 
 /**
  * Accept a link invite (the recipient's tap connects them to the inviter).

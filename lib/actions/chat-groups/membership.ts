@@ -3,7 +3,7 @@ import type { AppTransaction } from '@/lib/db';
 import { db as defaultDb } from '@/lib/db';
 import { chatGroupMembers, chatGroups, friendships } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors/catalog';
-import { orderedPair } from '@/lib/groups/friendship';
+import { orderedPair } from '@/lib/social/friendship';
 import {
   addChatGroupMembersSchema,
   leaveChatGroupSchema,

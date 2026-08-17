@@ -11,8 +11,8 @@
 // path (direct client reads + the OG card route).
 
 import type { db as defaultDb } from '@/lib/db';
-import type { SharedMealEntry } from '@/lib/groups/meal-feed';
-import type { PublicIdentity } from '@/lib/groups/public-identity';
+import type { SharedMealEntry } from '@/lib/social/feed/meal-feed';
+import type { PublicIdentity } from '@/lib/social/identity/public-identity';
 
 export type Db = typeof defaultDb;
 

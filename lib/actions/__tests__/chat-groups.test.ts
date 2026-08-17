@@ -106,13 +106,13 @@ vi.mock('@/lib/db/schema', () => ({
   },
 }));
 
-vi.mock('@/lib/groups/shares/reactions', () => ({
+vi.mock('@/lib/social/shares/reactions', () => ({
   reactionsForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
       new Map(shareIds.map((id) => [id, { count: 0, mine: false }]))
   ),
 }));
-vi.mock('@/lib/groups/shares/replies', () => ({
+vi.mock('@/lib/social/shares/replies', () => ({
   repliesForShares: vi.fn(
     async (_actorId: string, shareIds: string[]) =>
       new Map(shareIds.map((id) => [id, { replies: [], total: 0 }]))
@@ -133,7 +133,7 @@ import {
   listMyChatGroups,
   sendChatGroupMessage,
 } from '@/lib/actions/chat-groups';
-import { reactionsForShares } from '@/lib/groups/shares/reactions';
+import { reactionsForShares } from '@/lib/social/shares/reactions';
 
 const USER_A = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const USER_B = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';

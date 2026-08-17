@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { handleFromName } from './slugify';
+import { handleFromName } from '@/lib/social/identity/handle-from-name';
 
 describe('handleFromName', () => {
   it('strips Vietnamese diacritics including đ', () => {

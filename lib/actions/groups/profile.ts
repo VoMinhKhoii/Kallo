@@ -5,17 +5,17 @@ import { eq } from 'drizzle-orm';
 import { db as defaultDb } from '@/lib/db';
 import { publicProfiles } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors/catalog';
+import { handleFromName } from '@/lib/social/identity/handle-from-name';
 import {
   HANDLE_MAX_LENGTH,
   isValidHandle,
   validateHandle,
-} from '@/lib/groups/handles';
+} from '@/lib/social/identity/handles';
+import { generateInviteSlug } from '@/lib/social/identity/invite-slug';
 import {
   publicProfileColumns,
   toPublicIdentity,
-} from '@/lib/groups/public-identity';
-import { generateInviteSlug } from '@/lib/groups/slug';
-import { handleFromName } from '@/lib/groups/slugify';
+} from '@/lib/social/identity/public-identity';
 import {
   handleSchema,
   renameProfileSchema,

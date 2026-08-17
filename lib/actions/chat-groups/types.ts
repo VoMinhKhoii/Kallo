@@ -1,5 +1,5 @@
-import type { SharedMealEntry } from '@/lib/groups/meal-feed';
-import type { PublicIdentity } from '@/lib/groups/public-identity';
+import type { SharedMealEntry } from '@/lib/social/feed/meal-feed';
+import type { PublicIdentity } from '@/lib/social/identity/public-identity';
 
 export interface ChatGroupIdentity {
   id: string;

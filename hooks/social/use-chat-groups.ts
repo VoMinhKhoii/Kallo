@@ -20,7 +20,7 @@ import {
   leaveGroup,
   removeGroupMember,
   renameGroup,
-} from '@/lib/chat-groups/client';
+} from '@/lib/social/chat/client';
 
 export const chatGroupsKeys = {
   all: ['chat-groups'] as const,

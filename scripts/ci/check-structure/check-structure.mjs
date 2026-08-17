@@ -31,7 +31,14 @@ const strict = process.argv.includes('--strict');
 
 const files = scanFiles();
 const overFiles = oversizeFiles(files);
-const overFolders = oversizeFolders(scanFolders());
+const { folders, subfolderCounts } = scanFolders();
+const overFolders = oversizeFolders(folders);
+// Advisory only: a folder of folders is a directory index, not a dumping
+// ground. Reported so sprawl stays visible without forcing junk-drawer nesting.
+const SUBFOLDER_SPRAWL = 15;
+const sprawling = [...subfolderCounts.entries()]
+  .filter(([, n]) => n > SUBFOLDER_SPRAWL)
+  .sort((a, b) => b[1] - a[1]);
 
 if (process.argv.includes('--write-baseline')) {
   const { fileCount, folderCount } = writeBaseline({
@@ -89,6 +96,12 @@ console.log(
   `check-structure: OK — ${overFiles.length} frozen file(s), ${overFolders.length} frozen folder(s), ` +
     `${softFailures.length} advisory warning(s), ${wide.length} file(s) above the ${IDEAL_LIMIT}-line ideal.`
 );
+
+for (const [dir, n] of sprawling) {
+  console.log(
+    `  NOTE ${dir} — ${n} subfolders; group them by function if it stops scanning cleanly`
+  );
+}
 
 const stale = [...fileDiff.stale, ...folderDiff.stale];
 if (stale.length > 0) {

@@ -9,7 +9,7 @@ import type { FriendsThreadFeedPage } from '@/lib/actions/groups/types';
 import {
   fetchFriendsFeedReadMarker,
   fetchFriendsThreadFeed,
-} from '@/lib/groups/client';
+} from '@/lib/social/circle-client';
 
 export const friendsThreadFeedKeys = {
   all: ['friends-thread-feed'] as const,

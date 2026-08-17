@@ -12,7 +12,9 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('@/lib/groups/client', () => ({ logSharedMeal: mockLogSharedMeal }));
+vi.mock('@/lib/social/circle-client', () => ({
+  logSharedMeal: mockLogSharedMeal,
+}));
 
 import { useLogSharedMeal } from '@/hooks/social/use-log-shared-meal';
 

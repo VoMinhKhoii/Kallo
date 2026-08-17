@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { CircleFeedEntry } from '@/lib/actions/groups/types';
-import { fetchCircleFeed } from '@/lib/groups/client';
+import { fetchCircleFeed } from '@/lib/social/circle-client';
 
 export const circleFeedKeys = {
   all: ['circle-feed'] as const,

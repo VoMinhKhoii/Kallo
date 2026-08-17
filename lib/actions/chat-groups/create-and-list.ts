@@ -11,7 +11,7 @@ import {
   publicProfiles,
 } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors/catalog';
-import { todayLocalDate } from '@/lib/groups/meal-feed';
+import { todayLocalDate } from '@/lib/social/feed/meal-feed';
 import { createChatGroupSchema } from '@/lib/validation/chat';
 import { circleFeedSchema } from '@/lib/validation/social';
 import { ensureDirectChatsForAcceptedFriends } from './direct-chats';

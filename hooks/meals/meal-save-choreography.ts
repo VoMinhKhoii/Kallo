@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
 import type { LoggingDayData, PersistedMeal } from '@/lib/actions/meals/types';
-import { invalidateFeedQueries } from '@/lib/groups/feed-cache';
+import { invalidateFeedQueries } from '@/lib/social/feed/feed-cache';
 import {
   mergeConfirmedMealIntoDay,
   upsertMealIntoList,

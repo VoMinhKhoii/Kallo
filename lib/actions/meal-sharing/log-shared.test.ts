@@ -35,7 +35,7 @@ vi.mock('@/lib/db', () => ({
     ),
   },
 }));
-vi.mock('@/lib/groups/share-visibility', () => ({
+vi.mock('@/lib/social/shares/share-visibility', () => ({
   canViewShare: mockCanViewShare,
 }));
 

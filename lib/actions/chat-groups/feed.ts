@@ -4,11 +4,11 @@ import { chatGroupMembers } from '@/lib/db/schema';
 import {
   decodeSharedMealCursor,
   encodeSharedMealCursor,
-} from '@/lib/groups/feed/cursor';
-import { sharedGroupMealsBefore } from '@/lib/groups/feed/group-meals';
-import { toSharedMealEntry } from '@/lib/groups/meal-feed';
-import { reactionsForShares } from '@/lib/groups/shares/reactions';
-import { repliesForShares } from '@/lib/groups/shares/replies';
+} from '@/lib/social/feed/cursor';
+import { sharedGroupMealsBefore } from '@/lib/social/feed/group-meals';
+import { toSharedMealEntry } from '@/lib/social/feed/meal-feed';
+import { reactionsForShares } from '@/lib/social/shares/reactions';
+import { repliesForShares } from '@/lib/social/shares/replies';
 import { groupMealFeedSchema } from '@/lib/validation/chat';
 import { type ChatGroupDb, requireGroupAccess } from './membership';
 import type { GroupMealFeedPage } from './types';

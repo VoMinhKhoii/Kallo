@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { orderedPair } from './friendship';
+import { orderedPair } from '@/lib/social/friendship';
 
 describe('orderedPair', () => {
   const a = '00000000-0000-0000-0000-000000000001';

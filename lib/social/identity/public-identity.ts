@@ -1,5 +1,5 @@
 import { publicProfiles } from '@/lib/db/schema';
-import { avatarUrlFor } from '@/lib/groups/avatar-url';
+import { avatarUrlFor } from '@/lib/social/identity/avatar-url';
 
 /** Canonical public-profile projection for every server-side identity query. */
 export const publicProfileColumns = {

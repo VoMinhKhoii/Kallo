@@ -10,7 +10,7 @@ import { requireAuthAndProfile } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { mealShareReactions, mealShares } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors/catalog';
-import { canViewShareOwnedBy } from '@/lib/groups/share-visibility';
+import { canViewShareOwnedBy } from '@/lib/social/shares/share-visibility';
 
 const toggleShareReactionSchema = z.object({
   shareId: z.string().uuid('shareId phải là UUID hợp lệ.').toLowerCase(),

@@ -37,8 +37,11 @@ vi.mock('@/lib/db/schema', () => ({
   },
 }));
 
-import { decodeSharedMealCursor } from '@/lib/groups/feed/cursor';
-import { sharedMealsBefore, toSharedMealEntry } from '@/lib/groups/meal-feed';
+import { decodeSharedMealCursor } from '@/lib/social/feed/cursor';
+import {
+  sharedMealsBefore,
+  toSharedMealEntry,
+} from '@/lib/social/feed/meal-feed';
 
 const USER_A = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 

@@ -13,9 +13,9 @@ import { Errors } from '@/lib/errors/catalog';
 import {
   publicProfileColumns,
   toPublicIdentity,
-} from '@/lib/groups/public-identity';
-import { canViewShareOwnedBy } from '@/lib/groups/share-visibility';
-import type { ShareReply } from '@/lib/groups/shares/replies';
+} from '@/lib/social/identity/public-identity';
+import type { ShareReply } from '@/lib/social/shares/replies';
+import { canViewShareOwnedBy } from '@/lib/social/shares/share-visibility';
 
 const createShareReplySchema = z.object({
   shareId: z.string().uuid('shareId phải là UUID hợp lệ.').toLowerCase(),

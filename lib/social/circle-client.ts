@@ -15,7 +15,7 @@ import type {
 import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { postJson, request } from '@/lib/api/client-fetch';
-import type { ShareReply } from '@/lib/groups/shares/replies';
+import type { ShareReply } from '@/lib/social/shares/replies';
 
 export function fetchCircleFeed(
   timezoneOffset: number

@@ -45,14 +45,21 @@ export function scanFiles() {
 
 /**
  * Direct entry count per folder across the whole repo: source files plus
- * subdirectories, where a subdirectory counts as one entry. `.sql` is included
- * so supabase/migrations is measured (and then exempted explicitly, rather
- * than silently invisible).
+ * FILES only — a subfolder does not count. The rule exists to stop 40 modules
+ * being dumped flat in one directory, which is a real cost to read. A folder
+ * holding nothing but well-named subfolders is a directory index, and reads as
+ * one line per concern; capping that would only force junk-drawer grouping.
+ * Subfolder sprawl is still worth watching, so it is reported separately as
+ * `subfolders` rather than folded into the failing count.
+ *
+ * `.sql` is included so supabase/migrations is measured (and then exempted
+ * explicitly, rather than silently invisible).
  */
 export function scanFolders(extraRoots = ['supabase', 'scripts']) {
   const roots = [...new Set([...SCAN.flatMap((s) => s.roots), ...extraRoots])];
   const counted = new Set(['.ts', '.tsx', '.dart', '.sql', '.mjs', '.js']);
   const folders = new Map();
+  const subfolderCounts = new Map();
 
   const visit = (dir) => {
     let entries;
@@ -62,12 +69,13 @@ export function scanFolders(extraRoots = ['supabase', 'scripts']) {
       return;
     }
     let count = 0;
+    let subfolders = 0;
     for (const entry of entries) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         if (entry.name === 'node_modules' || entry.name.startsWith('.'))
           continue;
-        count += 1; // a subfolder is one entry
+        subfolders += 1;
         visit(full);
       } else if (
         entry.isFile() &&
@@ -79,11 +87,12 @@ export function scanFolders(extraRoots = ['supabase', 'scripts']) {
       }
     }
     folders.set(toRel(dir), count);
+    subfolderCounts.set(toRel(dir), subfolders);
   };
 
   for (const root of roots) {
     const abs = path.join(REPO_ROOT, root);
     if (existsSync(abs)) visit(abs);
   }
-  return folders;
+  return { folders, subfolderCounts };
 }

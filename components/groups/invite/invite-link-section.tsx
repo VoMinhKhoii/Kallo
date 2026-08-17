@@ -7,7 +7,10 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { useMyProfile, useSaveProfile } from '@/hooks/profile/use-profile';
 import { ApiError } from '@/lib/errors/client';
-import { HANDLE_MIN_LENGTH, validateHandle } from '@/lib/groups/handles';
+import {
+  HANDLE_MIN_LENGTH,
+  validateHandle,
+} from '@/lib/social/identity/handles';
 
 /**
  * The signed-in user's shareable invite link. The profile (and its slug) is

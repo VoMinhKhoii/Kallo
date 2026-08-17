@@ -8,9 +8,9 @@ import {
   meals,
   publicProfiles,
 } from '@/lib/db/schema';
-import type { SharedMealCursor } from '@/lib/groups/feed/cursor';
-import type { SharedMealRow } from '@/lib/groups/meal-feed';
-import { publicProfileColumns } from '@/lib/groups/public-identity';
+import type { SharedMealCursor } from '@/lib/social/feed/cursor';
+import type { SharedMealRow } from '@/lib/social/feed/meal-feed';
+import { publicProfileColumns } from '@/lib/social/identity/public-identity';
 
 type Db = AppDb | AppTransaction;
 
