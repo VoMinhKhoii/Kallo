@@ -5,7 +5,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// How a meal gets logged. `normal` = describe it in words (AI); `cheat` = the
 /// slider-estimate flow for hard-to-count occasions; `manual` = search foods +
-/// grams; `barcode` = scan a packaged product.
+/// grams; `barcode` = scan a packaged product, by its barcode OR by the
+/// nutrition table printed on it (one sheet, two scanners — see
+/// `scan_sheet.dart`). The enum value keeps its original name because it is
+/// persisted composer state and read by every entry point.
 ///
 /// Lives in `logic/` rather than beside the picker sheet because the persistent
 /// half of it is app state (`mealLogModeProvider`), and the data layer must not
@@ -23,7 +26,8 @@ IconData mealModeIcon(MealLogMode mode) => switch (mode) {
   MealLogMode.normal => LucideIcons.zap300, // lightning
   MealLogMode.cheat => LucideIcons.pizza300,
   MealLogMode.manual => LucideIcons.pencil300,
-  MealLogMode.barcode => LucideIcons.scanBarcode300,
+  // Not `scanBarcode`: the row now covers the nutrition label too.
+  MealLogMode.barcode => LucideIcons.scanLine300,
 };
 
 String mealModeLabel(MealLogMode mode) => switch (mode) {

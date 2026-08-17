@@ -95,11 +95,11 @@ export function OcrReviewStep({
       onChange={() => setHasInteracted(true)}
       className="flex min-h-0 flex-1 flex-col"
     >
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6">
         <div className="space-y-1.5">
           <label
             htmlFor="ocr-product-name"
-            className="font-medium text-[#8B8682] text-[12px]"
+            className="font-medium text-[12px] text-nham-text-muted"
           >
             {t('ocrProductName')}
           </label>
@@ -112,7 +112,7 @@ export function OcrReviewStep({
               !review.productIsValid ? 'ocr-product-name-error' : undefined
             }
             onChange={(event) => review.setProductName(event.target.value)}
-            className="rounded-xl border-[#EAE7E0] bg-white text-[14px] text-nham-text focus-visible:border-nham-accent"
+            className="rounded-xl border-nham-border bg-white text-[14px] text-nham-text focus-visible:border-nham-accent"
           />
           {!review.productIsValid && (
             <p
@@ -169,12 +169,12 @@ export function OcrReviewStep({
         )}
       </div>
 
-      <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/70 border-t bg-nham-track/50 px-6 py-4">
+      <div className="sticky bottom-0 flex shrink-0 items-center justify-between border-nham-border/70 border-t bg-nham-track/50 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
         <button
           type="button"
           onClick={onBack}
           disabled={isStaging}
-          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 font-medium text-[#8B8682] text-[13px] hover:text-nham-text"
+          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 font-medium text-[12px] text-nham-text-muted hover:text-nham-text"
         >
           <ArrowLeft className="h-4 w-4" />
           {t('barcodeBack')}

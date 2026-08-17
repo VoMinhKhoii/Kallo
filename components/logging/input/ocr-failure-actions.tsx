@@ -13,7 +13,7 @@ export function OcrFailureActions(props: OcrFailureActionsProps) {
   return (
     <div
       role="alert"
-      className="space-y-3 rounded-xl bg-nham-danger/10 p-3 text-[13px] text-nham-danger leading-snug"
+      className="space-y-3 rounded-xl bg-nham-danger/10 p-3 text-[12px] text-nham-danger leading-snug"
     >
       <p>{props.message}</p>
       <div className="flex flex-wrap gap-2">

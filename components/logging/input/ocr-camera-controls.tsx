@@ -34,7 +34,7 @@ export function OcrCameraControls(props: OcrCameraControlsProps) {
   if (!hasControls) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-2 rounded-xl bg-black/60 p-2 text-white text-xs backdrop-blur-sm">
+    <div className="grid max-h-full grid-cols-1 gap-2 overflow-y-auto rounded-xl bg-black/60 p-2 text-white text-xs backdrop-blur-sm min-[380px]:grid-cols-2">
       {props.cameras.length > 1 && (
         <label className="space-y-1">
           <span>{props.cameraLabel}</span>

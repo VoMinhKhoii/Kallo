@@ -24,8 +24,8 @@ export function OcrReviewQuantity(props: OcrReviewQuantityProps) {
   const stepAmount = Number.isFinite(parsedAmount) ? parsedAmount : 0;
   const decreasedAmount = stepAmount - 1;
   return (
-    <fieldset className="space-y-3 rounded-xl border border-[#EAE7E0] bg-nham-track/30 p-3.5">
-      <legend className="px-1 font-medium text-[13px] text-nham-text">
+    <fieldset className="space-y-3 rounded-xl border border-nham-border bg-nham-track/30 p-3.5">
+      <legend className="px-1 font-medium text-[12px] text-nham-text">
         {props.amountLabel}
       </legend>
       <div className="flex items-center gap-2">
@@ -37,7 +37,7 @@ export function OcrReviewQuantity(props: OcrReviewQuantityProps) {
               decreasedAmount > 0 ? String(decreasedAmount) : props.amountText
             )
           }
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EAE7E0] bg-white hover:bg-nham-track"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-nham-border bg-white hover:bg-nham-track"
         >
           <Minus className="h-3.5 w-3.5" />
         </button>
@@ -57,7 +57,7 @@ export function OcrReviewQuantity(props: OcrReviewQuantityProps) {
           />
           <label
             htmlFor="ocr-amount"
-            className="shrink-0 text-[#8B8682] text-sm"
+            className="shrink-0 text-nham-text-muted text-sm"
           >
             {props.unit}
           </label>
@@ -66,7 +66,7 @@ export function OcrReviewQuantity(props: OcrReviewQuantityProps) {
           type="button"
           aria-label={props.increaseLabel}
           onClick={() => props.onCommit(String(stepAmount + 1))}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EAE7E0] bg-white hover:bg-nham-track"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-nham-border bg-white hover:bg-nham-track"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
@@ -86,7 +86,7 @@ export function OcrReviewQuantity(props: OcrReviewQuantityProps) {
             <button
               type="button"
               onClick={() => props.onCommit(String(props.servingAmount))}
-              className="rounded-full border border-[#EAE7E0] bg-white px-3 py-1.5 text-[#8B8682] text-xs hover:text-nham-text"
+              className="rounded-full border border-nham-border bg-white px-3 py-1.5 text-nham-text-muted text-xs hover:text-nham-text"
             >
               {props.servingText}
             </button>
@@ -95,7 +95,7 @@ export function OcrReviewQuantity(props: OcrReviewQuantityProps) {
             <button
               type="button"
               onClick={() => props.onCommit(String(props.packageAmount))}
-              className="rounded-full border border-[#EAE7E0] bg-white px-3 py-1.5 text-[#8B8682] text-xs hover:text-nham-text"
+              className="rounded-full border border-nham-border bg-white px-3 py-1.5 text-nham-text-muted text-xs hover:text-nham-text"
             >
               {props.packageText}
             </button>

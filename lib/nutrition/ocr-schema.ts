@@ -177,9 +177,14 @@ export type ParsedNutritionLabel = z.infer<typeof nutritionLabelScanSchema>;
 export type OcrConfidence = z.infer<typeof ocrConfidenceSchema>;
 export type OcrQuantityUnit = 'g' | 'ml' | 'serving';
 
-export type OcrReviewPayload = Omit<
-  NutritionValues,
-  'calories' | 'proteinGrams' | 'carbsGrams' | 'fatGrams'
+/**
+ * What the review step submits. Calories and the three macros are required —
+ * the step will not submit without them. Every other nutrient is optional: a
+ * client may omit the ones the label never printed rather than send explicit
+ * nulls, and staging reads them as `?? null` either way.
+ */
+export type OcrReviewPayload = Partial<
+  Omit<NutritionValues, 'calories' | 'proteinGrams' | 'carbsGrams' | 'fatGrams'>
 > & {
   productName: string;
   amount: number;

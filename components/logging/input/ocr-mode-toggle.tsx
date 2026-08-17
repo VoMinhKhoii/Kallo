@@ -26,7 +26,7 @@ export function OcrModeToggle({
         className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-medium font-sans-display text-[12px] transition-all ${
           mode === 'camera'
             ? 'bg-white text-nham-text shadow-sm'
-            : 'text-[#8B8682] hover:text-nham-text'
+            : 'text-nham-text-muted hover:text-nham-text'
         }`}
       >
         <Camera className="h-3.5 w-3.5" />
@@ -42,7 +42,7 @@ export function OcrModeToggle({
         className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-medium font-sans-display text-[12px] transition-all ${
           mode === 'upload'
             ? 'bg-white text-nham-text shadow-sm'
-            : 'text-[#8B8682] hover:text-nham-text'
+            : 'text-nham-text-muted hover:text-nham-text'
         }`}
       >
         <Upload className="h-3.5 w-3.5" />

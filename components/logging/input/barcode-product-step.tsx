@@ -19,11 +19,11 @@ const clampGrams = (g: number) => Math.min(MAX_GRAMS, Math.max(1, g));
 
 // Shared inner-element classes, matching the onboarding wizard's vocabulary.
 const STEPPER_BTN =
-  'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#EAE7E0] bg-white text-nham-text transition-colors hover:bg-nham-track disabled:opacity-40';
+  'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-nham-border bg-white text-nham-text transition-colors hover:bg-nham-track disabled:opacity-40';
 const NUMBER_INPUT =
-  'h-10 min-w-0 flex-1 rounded-lg border border-[#EAE7E0] bg-white text-center font-semibold font-sans-display text-[15px] text-nham-text tabular-nums focus:border-nham-accent focus:outline-none focus:ring-1 focus:ring-nham-accent/40';
+  'h-10 min-w-0 flex-1 rounded-lg border border-nham-border bg-white text-center font-semibold font-sans-display text-[15px] text-nham-text tabular-nums focus:border-nham-accent focus:outline-none focus:ring-1 focus:ring-nham-accent/40';
 const FIELD_LABEL =
-  'block font-bold font-sans-display text-[13px] text-nham-text';
+  'block font-bold font-sans-display text-[12px] text-nham-text';
 
 /** Scale a per-100g nutrient to `grams`. Calories round to whole numbers,
  *  macros to one decimal, matching the source data's precision. */
@@ -113,7 +113,7 @@ export function BarcodeProductStep({
         {/* Product header */}
         <div>
           {product.brand ? (
-            <span className="font-medium font-sans-display text-[#8B8682] text-[11px] uppercase tracking-[0.12em]">
+            <span className="font-medium font-sans-display text-[11px] text-nham-text-muted uppercase tracking-[0.12em]">
               {product.brand}
             </span>
           ) : null}
@@ -138,10 +138,10 @@ export function BarcodeProductStep({
                 type="button"
                 aria-pressed={mode === m}
                 onClick={() => setMode(m)}
-                className={`rounded-lg px-3 py-2 font-medium font-sans-display text-[13px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
+                className={`rounded-lg px-3 py-2 font-medium font-sans-display text-[12px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
                   mode === m
                     ? 'bg-white text-nham-text shadow-sm'
-                    : 'text-[#8B8682] hover:text-nham-text'
+                    : 'text-nham-text-muted hover:text-nham-text'
                 }`}
               >
                 {modeLabel[m]}
@@ -192,7 +192,7 @@ export function BarcodeProductStep({
                 <Plus className="h-4 w-4" />
               </button>
             </div>
-            <span className="block font-sans-display text-[#8B8682] text-[12px] tabular-nums">
+            <span className="block font-sans-display text-[12px] text-nham-text-muted tabular-nums">
               {t('barcodePerServing', { grams: servingSizeG })} ·{' '}
               {t('barcodeTotalGrams', { grams })}
             </span>
@@ -200,8 +200,8 @@ export function BarcodeProductStep({
         ) : null}
 
         {mode === 'package' && packageSizeG ? (
-          <div className="flex items-center justify-between rounded-[20px] border border-[#EAE7E0] bg-white px-4 py-3">
-            <span className="font-sans-display text-[#8B8682] text-[14px]">
+          <div className="flex items-center justify-between rounded-[20px] border border-nham-border bg-white px-4 py-3">
+            <span className="font-sans-display text-[14px] text-nham-text-muted">
               {t('barcodeWholePackage')}
             </span>
             <span className="font-normal font-sans-display text-[22px] text-nham-text tabular-nums">
@@ -254,10 +254,10 @@ export function BarcodeProductStep({
                   key={val}
                   type="button"
                   onClick={() => setCustomGrams(val)}
-                  className={`rounded-full border px-3 py-1 font-sans-display text-[13px] tabular-nums transition-colors ${
+                  className={`rounded-full border px-3 py-1 font-sans-display text-[12px] tabular-nums transition-colors ${
                     customGrams === val
                       ? 'border-nham-border bg-nham-hover font-semibold text-nham-text'
-                      : 'border-[#EAE7E0] bg-white text-[#8B8682] hover:bg-nham-track'
+                      : 'border-nham-border bg-white text-nham-text-muted hover:bg-nham-track'
                   }`}
                 >
                   {val}g
@@ -269,24 +269,24 @@ export function BarcodeProductStep({
 
         {/* Nutrition for the selected amount — big Lora calorie figure with a
             tabular macro row underneath (per-amount, not per-100g). */}
-        <div className="rounded-[20px] border border-[#EAE7E0] bg-white p-4">
+        <div className="rounded-[20px] border border-nham-border bg-white p-4">
           <div className="flex items-baseline justify-between gap-3">
-            <span className="font-sans-display text-[#8B8682] text-[12px]">
+            <span className="font-sans-display text-[12px] text-nham-text-muted">
               {t('barcodeNutritionForAmount', { grams })}
             </span>
             <div className="flex items-baseline gap-1">
               <span className="font-normal font-sans-display text-[26px] text-nham-text tabular-nums leading-none">
                 {calories !== null ? calories : '--'}
               </span>
-              <span className="font-sans-display text-[#8B8682] text-[12px]">
+              <span className="font-sans-display text-[12px] text-nham-text-muted">
                 kcal
               </span>
             </div>
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-2 border-[#EAE7E0] border-t pt-3">
+          <div className="mt-3 grid grid-cols-3 gap-2 border-nham-border border-t pt-3">
             {macros.map((macro) => (
               <div key={macro.label} className="text-center">
-                <span className="block font-medium font-sans-display text-[#8B8682] text-[10px] uppercase tracking-wide">
+                <span className="block font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-wide">
                   {macro.label}
                 </span>
                 <span className="mt-0.5 block font-sans-display font-semibold text-[15px] text-nham-text tabular-nums">
@@ -299,11 +299,11 @@ export function BarcodeProductStep({
       </div>
 
       {/* Footer */}
-      <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/70 border-t bg-nham-track/50 px-6 py-4">
+      <div className="flex shrink-0 items-center justify-between border-nham-border/70 border-t bg-nham-track/50 px-6 py-4">
         <button
           type="button"
           onClick={onBack}
-          className="flex touch-manipulation items-center gap-2 font-medium font-sans-display text-[#8B8682] text-[14px] transition-colors hover:text-nham-text"
+          className="flex touch-manipulation items-center gap-2 font-medium font-sans-display text-[14px] text-nham-text-muted transition-colors hover:text-nham-text"
         >
           <ArrowLeft className="h-4 w-4" />
           {t('barcodeBack')}
@@ -313,7 +313,7 @@ export function BarcodeProductStep({
           onClick={() => onConfirm(grams)}
           disabled={isStaging || grams <= 0}
           aria-busy={isStaging}
-          className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-nham-ink px-5 py-2.5 font-medium font-sans-display text-[#FDFCF8] text-[14px] shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
+          className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-nham-ink px-5 py-2.5 font-medium font-sans-display text-[14px] text-nham-surface shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
         >
           {isStaging ? (
             <>

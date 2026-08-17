@@ -7,8 +7,8 @@ import '../../../../models/cheat.dart';
 import '../../../../shared/widgets/top_toast.dart';
 import '../../data/logging_providers.dart';
 import '../../logic/meal_log_mode.dart';
-import '../sheets/barcode_scanner_sheet.dart';
 import '../sheets/meal_mode_sheet.dart';
+import '../sheets/scan_sheet.dart';
 
 /// The first step: choose how to log. Normal and Cheat set the persistent
 /// composer mode (via [onPersistentMode]) and focus the field; Manual and
@@ -41,26 +41,27 @@ Future<void> chooseLogMode(
   }
 }
 
-/// One-shot barcode scan → quantity → save. Unlike manual (which saves
-/// silently), barcode persists the meal in one server call with no pending
-/// card, so a success toast is the only confirmation the user gets.
-Future<void> openBarcodeLogSheet(
+/// One-shot scan → amount/review → save, by barcode OR by the nutrition table
+/// printed on the package. Unlike manual (which saves silently), both scan
+/// paths persist the meal in one server call with no pending card, so a
+/// success toast is the only confirmation the user gets.
+Future<void> openScanLogSheet(
   BuildContext context, {
   required String userId,
   required String date,
   required VoidCallback onFallbackToText,
 }) async {
-  final saved = await showBarcodeScannerSheet(
+  final saved = await showScanSheet(
     context,
     userId: userId,
     date: date,
-    // Product not found → the AI composer is the better tool: pop the sheet
-    // and hand the user the keyboard.
+    // Neither the barcode nor the label got us there → the AI composer is the
+    // better tool: pop the sheet and hand the user the keyboard.
     onFallbackToText: onFallbackToText,
   );
   if (saved == true && context.mounted) {
     HapticFeedback.mediumImpact();
-    showTopToast(context, 'logging.barcode.savedMeal'.tr());
+    showTopToast(context, 'logging.scan.savedMeal'.tr());
   }
 }
 

@@ -3,7 +3,7 @@
   "files": {
     "apps/mobile-flutter/lib/features/logging/widgets/feed_area.dart": 1719,
     "apps/mobile-flutter/lib/features/onboarding/screens/screen_body_metrics.dart": 1002,
-    "apps/mobile-flutter/lib/features/logging/widgets/sheets/barcode_scanner_sheet.dart": 906,
+    "apps/mobile-flutter/lib/features/logging/widgets/sheets/barcode_scanner_sheet.dart": 593,
     "apps/mobile-flutter/lib/models/nutrition.dart": 867,
     "apps/mobile-flutter/lib/features/circle/widgets/add_friend_sheet.dart": 743,
     "apps/mobile-flutter/lib/features/logging/widgets/sheets/barcode_product_step.dart": 713,
@@ -31,7 +31,7 @@
     "components/logging/input/meal-input.tsx": 394,
     "components/onboarding/wizard-shell.tsx": 387,
     "apps/mobile-flutter/lib/features/nutrition/widgets/day_summary.dart": 371,
-    "components/logging/input/barcode-scanner-dialog.tsx": 367,
+    "components/logging/input/barcode-scanner-dialog.tsx": 228,
     "components/logging/input/manual-logging-controls.tsx": 362,
     "components/onboarding/screen-origin.tsx": 358,
     "apps/mobile-flutter/lib/features/dashboard/widgets/floating_meal_trigger.dart": 355,

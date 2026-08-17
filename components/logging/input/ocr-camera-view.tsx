@@ -46,7 +46,7 @@ export function OcrCameraView(props: OcrCameraViewProps) {
     return (
       <div
         role="alert"
-        className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl border border-[#EAE7E0] bg-black p-6 text-center text-white"
+        className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-nham-border bg-black p-6 text-center text-white sm:aspect-video"
       >
         <Camera className="h-8 w-8 text-white/50" />
         <p className="text-white/80 text-xs">
@@ -67,8 +67,10 @@ export function OcrCameraView(props: OcrCameraViewProps) {
 
   return (
     <div className="space-y-2">
-      <p className="text-center text-[#8B8682] text-xs">{props.text.guide}</p>
-      <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black shadow-sm">
+      <p className="text-center text-nham-text-muted text-xs">
+        {props.text.guide}
+      </p>
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-nham-border bg-black shadow-sm sm:aspect-video">
         <video
           ref={props.videoRef}
           autoPlay
@@ -77,7 +79,7 @@ export function OcrCameraView(props: OcrCameraViewProps) {
           aria-label={props.text.camera}
           className="h-full w-full object-cover"
         />
-        <div className="pointer-events-none absolute inset-0 m-6 rounded-xl border-2 border-nham-accent/70 border-dashed" />
+        <div className="pointer-events-none absolute inset-0 m-3 rounded-xl border-2 border-nham-accent/70 border-dashed sm:m-6" />
         {props.isCameraActive && (
           <>
             <div className="absolute top-2 right-2 left-2">

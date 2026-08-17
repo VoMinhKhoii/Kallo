@@ -1039,8 +1039,8 @@
       "cheatDesc": "Ghi nhanh bữa xả, không cần phân tích",
       "manual": "Thủ công",
       "manualDesc": "Tìm món, nhập gram chính xác",
-      "barcode": "Mã vạch",
-      "barcodeDesc": "Quét sản phẩm đóng gói"
+      "barcode": "Quét sản phẩm",
+      "barcodeDesc": "Quét mã vạch hoặc bảng dinh dưỡng"
     },
     "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn…",
     "quickLog": {
@@ -1303,6 +1303,101 @@
       "searchFailed": "Không tải được danh sách món",
       "closePicker": "Đóng",
       "stagedFull": "Mỗi lần chỉ ghi lại được tối đa {max} món."
+    },
+    "scan": {
+      "barcodeTab": "Mã vạch",
+      "labelTab": "Bảng dinh dưỡng",
+      "tryLabelInstead": "Quét bảng dinh dưỡng thay vì mã vạch",
+      "tryBarcodeInstead": "Quét mã vạch thay vì bảng dinh dưỡng",
+      "savedMeal": "Đã thêm bữa ăn"
+    },
+    "labelScan": {
+      "title": "Quét Bảng Giá Trị Dinh Dưỡng",
+      "subtitle": "Chụp hoặc tải ảnh bảng dinh dưỡng trên bao bì để tự động trích xuất calo và macro.",
+      "reviewTitle": "Xác nhận Thông tin Dinh dưỡng",
+      "reviewSubtitle": "Kiểm tra và điều chỉnh các chỉ số trước khi lưu.",
+      "captureGuide": "Đưa trọn bảng dinh dưỡng vào khung. Giữ máy thẳng, tránh ánh sáng chói và vuốt phẳng phần bao bì bị cong nếu có thể.",
+      "takePhoto": "Chụp ảnh",
+      "choosePhoto": "Chọn ảnh có sẵn",
+      "scanPhoto": "Đọc bảng dinh dưỡng",
+      "scanning": "AI đang phân tích bảng dinh dưỡng...",
+      "retake": "Chụp ảnh khác",
+      "retryPhoto": "Thử lại với ảnh này",
+      "manualEntry": "Nhập dinh dưỡng bằng tay",
+      "defaultProductName": "Sản phẩm quét từ nhãn",
+      "productName": "Tên sản phẩm",
+      "invalidProductName": "Nhập tên sản phẩm, tối đa 200 ký tự.",
+      "amountLabel": "Lượng bạn đã dùng",
+      "invalidAmount": "Nhập số lớn hơn 0 và không quá 100.000.",
+      "servingShortcut": "1 khẩu phần",
+      "packageShortcut": "Cả gói",
+      "micronutrients": "Khác trên nhãn",
+      "requiredValues": "Nhập đủ calo, đạm, carb và chất béo hợp lệ trước khi lưu.",
+      "addMeal": "Thêm bữa ăn",
+      "back": "Quay lại",
+      "basisLabel": "Số liệu trên nhãn",
+      "confidenceLabel": "Độ tin cậy khi quét",
+      "servingLabel": "Khẩu phần",
+      "servingsPerContainerLabel": "Số khẩu phần mỗi gói",
+      "basis": {
+        "per100g": "Trên 100 g",
+        "per100ml": "Trên 100 ml",
+        "perServing": "Mỗi khẩu phần",
+        "perContainer": "Cả gói",
+        "per100gAndServing": "Trên 100 g và mỗi khẩu phần",
+        "per100mlAndServing": "Trên 100 ml và mỗi khẩu phần"
+      },
+      "confidence": {
+        "high": "Cao",
+        "medium": "Trung bình — nên kiểm tra lại",
+        "low": "Thấp — hãy kiểm tra từng số"
+      },
+      "unit": {
+        "g": "g",
+        "ml": "ml",
+        "serving": {
+          "one": "khẩu phần",
+          "other": "khẩu phần"
+        }
+      },
+      "nutrients": {
+        "calories": "Calo",
+        "protein": "Đạm",
+        "carbohydrates": "Carb",
+        "fat": "Chất béo",
+        "fiber": "Chất xơ",
+        "sodium": "Natri",
+        "calcium": "Canxi",
+        "iron": "Sắt",
+        "magnesium": "Magie",
+        "phosphorus": "Phốt pho",
+        "potassium": "Kali",
+        "zinc": "Kẽm",
+        "copper": "Đồng",
+        "manganese": "Mangan",
+        "betaCarotene": "Beta-caroten",
+        "vitaminA": "Vitamin A",
+        "vitaminC": "Vitamin C",
+        "vitaminD": "Vitamin D",
+        "vitaminE": "Vitamin E",
+        "vitaminK": "Vitamin K",
+        "vitaminB1": "Vitamin B1",
+        "vitaminB2": "Vitamin B2",
+        "vitaminPp": "Vitamin PP",
+        "vitaminB5": "Vitamin B5",
+        "vitaminB6": "Vitamin B6",
+        "vitaminB9": "Vitamin B9",
+        "vitaminB12": "Vitamin B12",
+        "vitaminH": "Vitamin H"
+      },
+      "error": {
+        "invalidImage": "Vui lòng chọn ảnh chụp rõ nét bảng thông tin dinh dưỡng.",
+        "noLabelDetected": "Ảnh này không giống bảng dinh dưỡng in trên bao bì; có thể bạn chụp mặt logo, thực đơn hoặc chữ viết tay. Hãy chọn đúng mặt có bảng dinh dưỡng hoặc nhập tay.",
+        "rateLimited": "Hệ thống đang bận. Vui lòng thử lại sau giây lát.",
+        "serverError": "Không thể quét bảng dinh dưỡng. Vui lòng thử lại sau.",
+        "permissionDenied": "Chưa cấp quyền camera và ảnh. Hãy bật cho Kallo trong Cài đặt > Quyền riêng tư, hoặc nhập số bằng tay.",
+        "imageTooLarge": "Ảnh này quá lớn để gửi. Hãy chụp lại, ảnh mới sẽ được tự động thu nhỏ."
+      }
     }
   },
   "groups": {
@@ -1315,7 +1410,11 @@
       "groupNoActivity": "Chưa có gì được chia sẻ trong {name}."
     },
     "friendsLoadError": "Không tải được danh sách bạn bè.",
-    "switcher": {"all": "Tất cả", "label": "Chế độ xem vòng kết nối", "retry": "Thử lại"},
+    "switcher": {
+      "all": "Tất cả",
+      "label": "Chế độ xem vòng kết nối",
+      "retry": "Thử lại"
+    },
     "feed": {
       "heart": "Thả tim",
       "reactionError": "Không thể cập nhật lượt thả tim. Hãy thử lại.",
@@ -1327,13 +1426,50 @@
       "logCopy": "Ăn theo",
       "logSuccess": "Đã thêm vào nhật ký hôm nay",
       "logError": "Không thể thêm bữa ăn này. Hãy thử lại.",
-      "leave": "Rời nhóm", "leaveTitle": "Rời nhóm này?", "leaveDescription": "Bạn sẽ không còn xem được dòng thời gian của nhóm.", "leaveConfirm": "Rời nhóm", "leaveError": "Không thể rời nhóm. Hãy thử lại.", "cancel": "Huỷ"
+      "leave": "Rời nhóm",
+      "leaveTitle": "Rời nhóm này?",
+      "leaveDescription": "Bạn sẽ không còn xem được dòng thời gian của nhóm.",
+      "leaveConfirm": "Rời nhóm",
+      "leaveError": "Không thể rời nhóm. Hãy thử lại.",
+      "cancel": "Huỷ"
     },
     "createGroup": {
-      "title": "Tạo nhóm", "description": "Đặt tên và thêm thành viên từ vòng kết nối của bạn.", "nameLabel": "Tên nhóm", "namePlaceholder": "VD: Hội leo núi cuối tuần", "membersLabel": "Thêm thành viên", "membersCount": "Đã chọn {count}", "searchPlaceholder": "Tìm kiếm", "emptyTitle": "Chưa có bạn bè", "addFriendCta": "Thêm bạn", "noMatches": "Không tìm thấy", "noFriends": "Hãy kết bạn trước — bạn chỉ có thể thêm người đã có trong vòng kết nối.", "submit": "Tạo nhóm", "creating": "Đang tạo…", "created": "Đã tạo nhóm", "createError": "Không thể tạo nhóm. Hãy thử lại."
+      "title": "Tạo nhóm",
+      "description": "Đặt tên và thêm thành viên từ vòng kết nối của bạn.",
+      "nameLabel": "Tên nhóm",
+      "namePlaceholder": "VD: Hội leo núi cuối tuần",
+      "membersLabel": "Thêm thành viên",
+      "membersCount": "Đã chọn {count}",
+      "searchPlaceholder": "Tìm kiếm",
+      "emptyTitle": "Chưa có bạn bè",
+      "addFriendCta": "Thêm bạn",
+      "noMatches": "Không tìm thấy",
+      "noFriends": "Hãy kết bạn trước — bạn chỉ có thể thêm người đã có trong vòng kết nối.",
+      "submit": "Tạo nhóm",
+      "creating": "Đang tạo…",
+      "created": "Đã tạo nhóm",
+      "createError": "Không thể tạo nhóm. Hãy thử lại."
     },
     "info": {
-      "title": "Thông tin nhóm", "membersHeading": "Thành viên", "memberCount": "{count} thành viên", "owner": "Chủ nhóm", "addPeople": "Thêm người", "searchPlaceholder": "Tìm bạn bè", "noMatches": "Không tìm thấy", "everyoneIn": "Mọi người trong vòng kết nối đều đã ở đây.", "addCta": "Thêm", "added": "Đã thêm vào nhóm", "addError": "Không thể thêm. Hãy thử lại.", "renameLabel": "Đổi tên nhóm", "renameSave": "Lưu", "renameError": "Không thể đổi tên nhóm. Hãy thử lại.", "removeLabel": "Xóa {name}", "removeTitle": "Xóa {name}?", "removeDescription": "Họ sẽ mất quyền xem bữa ăn và trả lời trong nhóm này.", "removeConfirm": "Xóa", "removeError": "Không thể xóa thành viên này. Hãy thử lại."
+      "title": "Thông tin nhóm",
+      "membersHeading": "Thành viên",
+      "memberCount": "{count} thành viên",
+      "owner": "Chủ nhóm",
+      "addPeople": "Thêm người",
+      "searchPlaceholder": "Tìm bạn bè",
+      "noMatches": "Không tìm thấy",
+      "everyoneIn": "Mọi người trong vòng kết nối đều đã ở đây.",
+      "addCta": "Thêm",
+      "added": "Đã thêm vào nhóm",
+      "addError": "Không thể thêm. Hãy thử lại.",
+      "renameLabel": "Đổi tên nhóm",
+      "renameSave": "Lưu",
+      "renameError": "Không thể đổi tên nhóm. Hãy thử lại.",
+      "removeLabel": "Xóa {name}",
+      "removeTitle": "Xóa {name}?",
+      "removeDescription": "Họ sẽ mất quyền xem bữa ăn và trả lời trong nhóm này.",
+      "removeConfirm": "Xóa",
+      "removeError": "Không thể xóa thành viên này. Hãy thử lại."
     },
     "wall": {
       "loading": "Đang tải vòng kết nối của bạn",

@@ -5,49 +5,40 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../../../shared/widgets/nham_sheet.dart';
-import '../../../../shared/widgets/nham_sheet_header.dart';
 import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../../../theme/nham_typography.dart';
 import '../../data/barcode_providers.dart';
 import 'barcode_product_step.dart';
+import 'scan_error_card.dart';
+import 'scan_sheet_controls.dart';
 
-/// Open the barcode sheet: scan (or type) a product barcode, pick an amount,
-/// and log it as a meal in one shot — no pending-confirmation card.
+/// The barcode branch of the scan sheet: scan (or type) a product barcode,
+/// pick an amount, and log it as a meal in one shot — no pending-confirmation
+/// card.
 ///
-/// Resolves to `true` when a meal was logged (the caller toasts), `false`/null
-/// otherwise. [onFallbackToText] is invoked when the user picks "describe it
-/// instead" on a product we couldn't find — the sheet pops itself first.
-Future<bool?> showBarcodeScannerSheet(
-  BuildContext context, {
-  required String userId,
-  required String date,
-  VoidCallback? onFallbackToText,
-}) {
-  return showNhamSheet<bool>(
-    context,
-    isScrollControlled: true,
-    builder:
-        (context) => BarcodeScannerSheet(
-          userId: userId,
-          date: date,
-          onFallbackToText: onFallbackToText,
-        ),
-  );
-}
-
+/// The surrounding chrome (surface, header, saving lock) belongs to
+/// `scan_sheet.dart`, which hosts this alongside the nutrition-label branch;
+/// this widget is only the body. It pops the sheet with `true` once a meal is
+/// saved.
+///
+/// [onFallbackToText] is invoked when the user picks "describe it instead" on
+/// a product we couldn't find — the sheet pops itself first.
+/// [onScanLabelInstead] switches the host to the label branch, which is the
+/// better exit for a product Open Food Facts has never heard of.
 class BarcodeScannerSheet extends ConsumerStatefulWidget {
   const BarcodeScannerSheet({
     super.key,
     required this.userId,
     required this.date,
+    required this.onScanLabelInstead,
     this.onFallbackToText,
   });
 
   final String userId;
   final String date;
+  final VoidCallback onScanLabelInstead;
   final VoidCallback? onFallbackToText;
 
   @override
@@ -148,58 +139,45 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
       }
     });
 
-    final state = ref.watch(barcodeFlowProvider);
-    final saving = state.phase == BarcodeFlowPhase.saving;
-    final maxHeight = MediaQuery.of(context).size.height * 0.9;
-    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
-
-    // While the log request is in flight the sheet must not be dismissable:
-    // the POST would still complete server-side, silently logging a meal the
-    // user never saw confirmed (and a re-scan would then duplicate it).
-    // PopScope covers the scrim tap and system back (both go through
-    // maybePop); IgnorePointer covers drag-to-dismiss, whose route-level
-    // gesture detector defers its hit test to this child.
-    return PopScope(
-      canPop: !saving,
-      child: IgnorePointer(
-        ignoring: saving,
-        child: Padding(
-          padding: EdgeInsets.only(bottom: keyboardInset),
-          child: NhamSheetSurface(
-            constraints: BoxConstraints(maxHeight: maxHeight),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                NhamSheetHeader(
-                  title: 'logging.barcode.title'.tr(),
-                  subtitle: 'logging.barcode.subtitle'.tr(),
-                  closeEnabled: !saving,
-                ),
-                Flexible(child: _buildBody(state)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    return _buildBody(ref.watch(barcodeFlowProvider));
   }
 
   Widget _buildBody(BarcodeFlowState state) {
     if (state.errorKey != null &&
         state.phase != BarcodeFlowPhase.product &&
         state.phase != BarcodeFlowPhase.saving) {
-      return _ErrorCard(
+      return ScanErrorCard(
+        icon: LucideIcons.scanBarcode300,
         message: state.errorKey!.tr(),
-        barcode: state.lastBarcode,
-        showDescribeFallback:
-            state.isNotFound && widget.onFallbackToText != null,
-        onScanAgain: () => ref.read(barcodeFlowProvider.notifier).scanAgain(),
-        onEnterManually:
-            () => ref.read(barcodeFlowProvider.notifier).enterManualMode(),
-        onDescribeInstead: () {
-          Navigator.of(context).pop(false);
-          widget.onFallbackToText?.call();
-        },
+        detail: state.lastBarcode,
+        primary: ScanErrorAction(
+          label: 'logging.barcode.scanAgain'.tr(),
+          onTap: () => ref.read(barcodeFlowProvider.notifier).scanAgain(),
+        ),
+        secondary: [
+          // A product Open Food Facts doesn't know still has its nutrition
+          // table printed on the box — offer to read that instead.
+          if (state.isNotFound)
+            ScanErrorAction(
+              icon: LucideIcons.scanText300,
+              label: 'logging.scan.tryLabelInstead'.tr(),
+              onTap: widget.onScanLabelInstead,
+            ),
+          if (state.isNotFound && widget.onFallbackToText != null)
+            ScanErrorAction(
+              icon: LucideIcons.pencilLine300,
+              label: 'logging.barcode.logByText'.tr(),
+              onTap: () {
+                Navigator.of(context).pop(false);
+                widget.onFallbackToText?.call();
+              },
+            ),
+        ],
+        quiet: ScanErrorAction(
+          icon: LucideIcons.keyboard300,
+          label: 'logging.barcode.manualEntry'.tr(),
+          onTap: () => ref.read(barcodeFlowProvider.notifier).enterManualMode(),
+        ),
       );
     }
 
@@ -318,7 +296,7 @@ class _ScannerView extends StatelessWidget {
             style: const TextStyle(color: NhamColors.textMuted),
           ),
           const SizedBox(height: NhamSpacing.sp2),
-          _QuietButton(
+          ScanQuietButton(
             icon: LucideIcons.keyboard300,
             label: 'logging.barcode.manualEntry'.tr(),
             onTap: onEnterManually,
@@ -489,7 +467,7 @@ class _CameraErrorState extends StatelessWidget {
             style: const TextStyle(color: NhamColors.textMuted),
           ),
           const SizedBox(height: NhamSpacing.sp3),
-          _QuietButton(
+          ScanQuietButton(
             icon: LucideIcons.keyboard300,
             label: 'logging.barcode.manualEntry'.tr(),
             onTap: onEnterManually,
@@ -557,10 +535,10 @@ class _ManualEntryView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: NhamSpacing.sp3),
-          _PrimaryButton(label: 'logging.barcode.search'.tr(), onTap: onSubmit),
+          ScanPrimaryButton(label: 'logging.barcode.search'.tr(), onTap: onSubmit),
           const SizedBox(height: NhamSpacing.sp2),
           Center(
-            child: _QuietButton(
+            child: ScanQuietButton(
               icon: LucideIcons.camera300,
               label: 'logging.barcode.backToCamera'.tr(),
               onTap: onBackToCamera,
@@ -613,244 +591,3 @@ class _SearchingView extends StatelessWidget {
   }
 }
 
-/// Warm terracotta error card with recovery actions — never a bare red toast.
-class _ErrorCard extends StatelessWidget {
-  const _ErrorCard({
-    required this.message,
-    required this.barcode,
-    required this.showDescribeFallback,
-    required this.onScanAgain,
-    required this.onEnterManually,
-    required this.onDescribeInstead,
-  });
-
-  final String message;
-  final String? barcode;
-  final bool showDescribeFallback;
-  final VoidCallback onScanAgain;
-  final VoidCallback onEnterManually;
-  final VoidCallback onDescribeInstead;
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
-        NhamSpacing.sp2,
-        NhamSpacing.sp4,
-        bottomInset + NhamSpacing.sp3,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(NhamSpacing.sp3),
-            decoration: BoxDecoration(
-              color: NhamColors.danger.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-              border: Border.all(
-                color: NhamColors.danger.withValues(alpha: 0.35),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      LucideIcons.scanBarcode300,
-                      size: 18,
-                      color: NhamColors.danger,
-                    ),
-                    const SizedBox(width: NhamSpacing.sp2),
-                    Expanded(
-                      child: NhamText(
-                        message,
-                        variant: NhamTextVariant.body,
-                        style: const TextStyle(color: NhamColors.text),
-                      ),
-                    ),
-                  ],
-                ),
-                if (barcode != null && barcode!.isNotEmpty) ...[
-                  const SizedBox(height: NhamSpacing.sp1),
-                  NhamText(
-                    barcode!,
-                    variant: NhamTextVariant.numCaption,
-                    style: const TextStyle(color: NhamColors.textMuted),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: NhamSpacing.sp3),
-          _PrimaryButton(
-            label: 'logging.barcode.scanAgain'.tr(),
-            onTap: onScanAgain,
-          ),
-          const SizedBox(height: NhamSpacing.sp2),
-          if (showDescribeFallback) ...[
-            _OutlineButton(
-              icon: LucideIcons.pencilLine300,
-              label: 'logging.barcode.logByText'.tr(),
-              onTap: onDescribeInstead,
-            ),
-            const SizedBox(height: NhamSpacing.sp2),
-          ],
-          Center(
-            child: _QuietButton(
-              icon: LucideIcons.keyboard300,
-              label: 'logging.barcode.manualEntry'.tr(),
-              onTap: onEnterManually,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Small shared buttons (sheet-local).
-// ---------------------------------------------------------------------------
-
-class _PrimaryButton extends StatefulWidget {
-  const _PrimaryButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  State<_PrimaryButton> createState() => _PrimaryButtonState();
-}
-
-class _PrimaryButtonState extends State<_PrimaryButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: widget.label,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: () {
-          HapticFeedback.lightImpact();
-          widget.onTap();
-        },
-        child: AnimatedScale(
-          scale: _pressed ? 0.97 : 1,
-          duration: const Duration(milliseconds: 150),
-          child: Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
-            decoration: BoxDecoration(
-              color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-              borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            ),
-            child: Text(
-              widget.label,
-              style: NhamTextStyles.sansSemiBold(
-                fontSize: NhamFontSize.sm,
-              ).copyWith(color: Colors.white),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _OutlineButton extends StatelessWidget {
-  const _OutlineButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        child: Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
-          decoration: BoxDecoration(
-            color: NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            border: Border.all(color: NhamColors.border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: NhamColors.text),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: NhamColors.text),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuietButton extends StatelessWidget {
-  const _QuietButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        child: SizedBox(
-          height: 44,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: NhamColors.textMuted),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: NhamColors.textMuted),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

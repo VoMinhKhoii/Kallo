@@ -11,14 +11,14 @@ interface OcrReviewMetadataProps {
 
 export function OcrReviewMetadata(props: OcrReviewMetadataProps) {
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 rounded-xl border border-[#EAE7E0] bg-white p-3 text-[12px]">
-      <dt className="text-[#8B8682]">{props.basisLabel}</dt>
+    <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 rounded-xl border border-nham-border bg-white p-3 text-[12px]">
+      <dt className="text-nham-text-muted">{props.basisLabel}</dt>
       <dd className="font-medium text-nham-text">{props.basis}</dd>
-      <dt className="text-[#8B8682]">{props.confidenceLabel}</dt>
+      <dt className="text-nham-text-muted">{props.confidenceLabel}</dt>
       <dd className="font-medium text-nham-text">{props.confidence}</dd>
       {props.servingDescription && (
         <>
-          <dt className="text-[#8B8682]">{props.servingLabel}</dt>
+          <dt className="text-nham-text-muted">{props.servingLabel}</dt>
           <dd className="font-medium text-nham-text">
             {props.servingDescription}
           </dd>
@@ -26,7 +26,9 @@ export function OcrReviewMetadata(props: OcrReviewMetadataProps) {
       )}
       {props.servingsPerContainer !== null && (
         <>
-          <dt className="text-[#8B8682]">{props.servingsPerContainerLabel}</dt>
+          <dt className="text-nham-text-muted">
+            {props.servingsPerContainerLabel}
+          </dt>
           <dd className="font-medium text-nham-text">
             {props.servingsPerContainer}
           </dd>

@@ -513,7 +513,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     current: ref.read(mealLogModeProvider),
     onPersistentMode: _setMode,
     onManual: _openManualSheet,
-    onBarcode: _openBarcodeSheet,
+    onBarcode: _openScanSheet,
   );
 
   Future<void> _openManualSheet() => showManualLogSheet(
@@ -522,7 +522,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     date: widget.date,
   );
 
-  Future<void> _openBarcodeSheet() => openBarcodeLogSheet(
+  Future<void> _openScanSheet() => openScanLogSheet(
     context,
     userId: widget.profile.userId,
     date: widget.date,
@@ -722,7 +722,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
           analyzing: stream.isAnalyzing,
           onModePressed: _openModeSheet,
-          onBarcodePressed: _openBarcodeSheet,
+          onBarcodePressed: _openScanSheet,
           noticeDismissed: _noticeDismissedFor == widget.date,
           onDismissNotice:
               () => setState(() => _noticeDismissedFor = widget.date),

@@ -25,7 +25,7 @@ export function BarcodeManualInput({
   return (
     <div className="space-y-2">
       <div className="relative flex items-center">
-        <Barcode className="absolute left-3 h-5 w-5 text-[#8B8682]/60" />
+        <Barcode className="absolute left-3 h-5 w-5 text-nham-text-muted/60" />
         <Input
           type="text"
           placeholder={placeholderText}
@@ -33,13 +33,13 @@ export function BarcodeManualInput({
           onChange={(e) => onBarcodeChange(e.target.value)}
           autoFocus
           disabled={isSearching}
-          className="rounded-lg border-[#EAE7E0] bg-white pl-10 font-sans-display text-[14px] text-nham-text"
+          className="rounded-lg border-nham-border bg-white pl-10 font-sans-display text-[14px] text-nham-text"
         />
       </div>
       {searchError && (
         <div
           role="alert"
-          className="space-y-2 rounded-lg bg-nham-danger/10 p-3 font-sans-display text-[13px] text-nham-danger"
+          className="space-y-2 rounded-lg bg-nham-danger/10 p-3 font-sans-display text-[12px] text-nham-danger"
         >
           <p>{searchError}</p>
           <button
