@@ -1,9 +1,9 @@
-/// Caching / staleness conventions mirroring the RN react-query client.
+/// Caching / staleness conventions mirroring the web TanStack Query client
+/// (`components/providers/query-provider.tsx`).
 ///
-/// Port of `apps/mobile/src/lib/query-client.ts`. Riverpod has no central
-/// `QueryClient`, so these are shared constants + helpers each feature provider
-/// applies, plus a query-key registry so invalidation prefixes match the RN
-/// keys exactly.
+/// Riverpod has no central `QueryClient`, so these are shared constants +
+/// helpers each feature provider applies, plus a query-key registry so
+/// invalidation prefixes match the web keys exactly.
 library;
 
 import 'api_client.dart';

@@ -16,7 +16,36 @@ import type { RelogMealCandidate } from '@/lib/domain/logging/relog/relog';
 
 const RAW_INPUT = sql`m.raw_input`;
 
-function toMealCandidate(row: Record<string, unknown>): RelogMealCandidate {
+/**
+ * The row the SELECT at the bottom of this file produces. Same derivation as
+ * `RelogDishRow` in dish-query.ts — see the column-by-column note there for the
+ * postgres.js type table this depends on (int8 and numeric arrive as strings;
+ * only int2/int4/float4/float8 become numbers).
+ *
+ * - `meal_id` is `m.id`, a NOT NULL uuid → string.
+ * - `raw_input` is NOT NULL and the WHERE clause rejects blank input → string.
+ * - `dish_count` is `count(DISTINCT …)` and `occurrence_count` is a `count(*)`
+ *   window — both **int8**, both non-null → string.
+ * - `total_grams` is `sum(mi.estimated_grams)`, i.e. `sum(real)` → a nullable
+ *   float4, which postgres.js parses to `number`.
+ * - the four macro columns are `sum(numeric)` → nullable strings.
+ * - `last_logged_at` is `max(m.logged_at)` over a partition holding at least
+ *   the current row, and `logged_at` is NOT NULL → a non-null `Date`.
+ */
+type RelogMealRow = {
+  meal_id: string;
+  raw_input: string;
+  dish_count: string;
+  occurrence_count: string;
+  total_grams: number | null;
+  calories_kcal: string | null;
+  protein_g: string | null;
+  carbohydrate_g: string | null;
+  fat_g: string | null;
+  last_logged_at: Date;
+};
+
+function toMealCandidate(row: RelogMealRow): RelogMealCandidate {
   return {
     kind: 'meal',
     sourceMealId: String(row.meal_id),
@@ -55,7 +84,7 @@ function toMealCandidate(row: Record<string, unknown>): RelogMealCandidate {
  * had been edited.
  */
 export async function loadRelogMealCandidates(
-  exec: RelogExecutor,
+  exec: RelogExecutor<RelogMealRow>,
   opts: { userId: string; query: string; limit: number }
 ): Promise<RelogMealCandidate[]> {
   const rows = await exec.execute(sql`

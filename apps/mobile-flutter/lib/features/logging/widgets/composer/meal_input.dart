@@ -24,7 +24,7 @@ class MealInputController {
 
 /// Natural-language meal composer: a growing multiline input + submit/stop.
 ///
-/// Ported 1:1 from `apps/mobile/src/components/logging/input/meal-input.tsx`.
+/// Ported 1:1 from web `components/logging/input/composer/meal-input.tsx`.
 class MealInput extends StatefulWidget {
   const MealInput({
     super.key,

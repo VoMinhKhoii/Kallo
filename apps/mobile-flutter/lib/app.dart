@@ -14,7 +14,7 @@ import 'features/logging/data/logging_providers.dart';
 import 'router.dart';
 import 'theme/kallo_theme.dart';
 
-/// Root app widget — ported from the RN `RootLayout` (`app/_layout.tsx`).
+/// Root app widget — the mobile counterpart of web `app/[locale]/layout.tsx`.
 ///
 /// Wires the Nham [ThemeData], the Riverpod-built [GoRouter], and
 /// easy_localization's delegates/locale (EasyLocalization already wraps this

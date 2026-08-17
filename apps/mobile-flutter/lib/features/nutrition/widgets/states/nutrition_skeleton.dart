@@ -5,7 +5,7 @@ import '../../../../shared/widgets/feedback/skeleton.dart';
 import '../../../../theme/kallo_colors.dart';
 
 /// Single-column loading skeleton mirroring the mobile editorial stack.
-/// RN port of `apps/mobile/src/components/nutrition/states/nutrition-skeleton.tsx`.
+/// Port of web `components/nutrition/nutrition-skeleton.tsx`.
 class NutritionSkeleton extends StatelessWidget {
   const NutritionSkeleton({super.key});
 

@@ -16,10 +16,22 @@ import {
  *  The result is a row array rather than `unknown`: that is what every Drizzle
  *  handle already returns from `execute()` (postgres-js resolves it to a
  *  `RowList`), and declaring it here is what lets the two candidate queries map
- *  their rows without a double cast at each call site. Column *values* stay
- *  `unknown` — the per-query readers name and coerce them. */
-export interface RelogExecutor {
-  execute: (query: SQL) => Promise<Record<string, unknown>[]>;
+ *  their rows without a double cast at each call site.
+ *
+ *  Generic in the row so each query can name the shape its own SELECT list
+ *  produces (see `RelogDishRow` / `RelogMealRow`).
+ *
+ *  The parameter sits on the *interface*, not on the `execute` method, and that
+ *  is load-bearing: Drizzle declares `execute<TRow>(…): …Assume<TRow, Row>[]`,
+ *  and TypeScript cannot prove `Assume<TRow, Row>` collapses to `TRow` while
+ *  `TRow` is still an unresolved parameter — so a generic *method* here is not
+ *  something a real Drizzle handle can satisfy. Pinning the row at the
+ *  interface makes each use site a concrete instantiation, where `Assume`
+ *  resolves and the handle matches. */
+export interface RelogExecutor<
+  TRow extends Record<string, unknown> = Record<string, unknown>,
+> {
+  execute: (query: SQL) => Promise<TRow[]>;
 }
 
 /**

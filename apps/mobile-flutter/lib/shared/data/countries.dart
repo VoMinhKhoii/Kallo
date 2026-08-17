@@ -1,4 +1,5 @@
-/// Vendored verbatim from RN `lib/onboarding/data/countries.ts` (keep in sync).
+/// Vendored verbatim from web `lib/domain/onboarding/data/countries.ts`
+/// (keep in sync).
 /// `value` = ISO English short name (stored in DB); `vi` = display hint.
 library;
 

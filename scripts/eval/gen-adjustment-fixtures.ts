@@ -13,7 +13,7 @@
  * the 2x-class errors that hurt users.
  *
  * The capture it reads is NOT committed — it is ~1.1 MB of raw pipeline output
- * per run. Produce one first with `bun scripts/eval/capture-landing-v2.ts`
+ * per run. Produce one first with `bun scripts/eval/local/capture-landing-v2.ts`
  * (needs a remote `DATABASE_URL` and `GEMINI_API_KEY`). The generated fixture
  * is the committed artefact; the capture behind it is disposable, which is why
  * provenance carries the capture's exact instant.

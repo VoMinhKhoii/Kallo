@@ -103,10 +103,17 @@ export async function fetchNutritionPer100g(
   foodCompositionId: string,
   db: PostgresJsDatabase<any>
 ): Promise<NutritionPer100g | null> {
+  // Deliberately left at `execute`'s default row type. This is the one
+  // nutrition query that is a `SELECT *` over the whole table rather than an
+  // explicit column list, so no honest row type can be written for it — the
+  // shape is "every column of vietnamese_food_composition as of today",
+  // including the ones nothing here reads. `parseNutritionRow` picks the 28 it
+  // needs out of the resulting `Record<string, unknown>` by name and coerces
+  // each one, which is exactly the guarantee the default type already gives.
   const rows = await db.execute(
     sql`SELECT * FROM vietnamese_food_composition WHERE id = ${foodCompositionId} LIMIT 1`
   );
 
   if (rows.length === 0) return null;
-  return parseNutritionRow(rows[0] as Record<string, unknown>);
+  return parseNutritionRow(rows[0]);
 }

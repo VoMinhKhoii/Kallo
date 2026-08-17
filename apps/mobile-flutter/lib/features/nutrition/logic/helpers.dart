@@ -1,7 +1,5 @@
 /// Pure nutrition helpers vendored verbatim from web
 /// `components/nutrition/primitives/helpers.ts` (keep in sync).
-///
-/// Ported from `apps/mobile/src/lib/nutrition/logic/helpers.ts`.
 library;
 
 import 'package:intl/intl.dart';

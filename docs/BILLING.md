@@ -448,7 +448,7 @@ example every five minutes) in each environment, and alert when it exits
 non-zero:
 
 ```bash
-bun --env-file=.env.local scripts/replay-revenuecat-webhooks.ts
+bun --env-file=.env.local scripts/ops/replay-revenuecat-webhooks.ts
 ```
 
 The command re-enters the authenticated/idempotent handler, processes up to
@@ -456,12 +456,12 @@ The command re-enters the authenticated/idempotent handler, processes up to
 
 Webhook rows contain only the explicit replay/identity envelope, not provider
 passthrough fields or subscriber attributes. Run
-`scripts/prune-revenuecat-webhooks.ts` daily: successfully processed envelopes
+`scripts/ops/prune-revenuecat-webhooks.ts` daily: successfully processed envelopes
 default to 30 days of retention and dead letters to 90 days. Pending rows are
 never pruned. Override those windows only after product/privacy review.
 
 ```bash
-bun --env-file=.env.local scripts/prune-revenuecat-webhooks.ts
+bun --env-file=.env.local scripts/ops/prune-revenuecat-webhooks.ts
 ```
 
 Dead letters are terminal by design. After fixing the underlying cause, an

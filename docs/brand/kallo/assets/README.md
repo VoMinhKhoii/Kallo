@@ -39,7 +39,7 @@ The two **splash** rows are the exception to "render the SVG": they are the
 mark alone in umber `#695E4E` on transparency — no tile — because the launch
 page is already cream on both platforms (iOS's `LaunchScreen.storyboard`
 background, Android's `@color/launch_background`), and an espresso tile on it
-read as black. Regenerate them with `node scripts/gen-splash-mark.mjs`, which
+read as black. Regenerate them with `node scripts/assets/gen-splash-mark.mjs`, which
 rasterises `kallo-mark.svg`'s three polygons directly and needs no renderer
 installed. Everything else here still comes from the SVGs above.
 | `apps/mobile-flutter/web/icons/`, `apps/mobile-flutter/web/favicon.png` | Flutter web icons |

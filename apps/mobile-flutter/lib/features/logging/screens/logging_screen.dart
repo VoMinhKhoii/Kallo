@@ -20,7 +20,7 @@ import '../widgets/timeline/timeline_picker.dart';
 /// strip (in the header) and the feed share one source of truth — mirrors the
 /// RN `LoggingScreen` and the web `LoggingShell`'s `selectedDate`.
 ///
-/// Ported 1:1 from `apps/mobile/src/app/(app)/(tabs)/logging.tsx`.
+/// Ported 1:1 from web `components/logging/logging-shell.tsx`.
 class LoggingScreen extends ConsumerStatefulWidget {
   const LoggingScreen({super.key});
 

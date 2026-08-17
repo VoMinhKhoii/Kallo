@@ -29,7 +29,7 @@ import 'summary/macro_summary.dart';
 /// The day's meal feed: macro summary header, the scrollable card list, the
 /// pending/streaming footer, and the natural-language meal input.
 ///
-/// Ported 1:1 from `apps/mobile/src/components/logging/feed/feed-area.tsx`.
+/// Ported 1:1 from web `components/logging/feed/feed-area.tsx`.
 class FeedArea extends ConsumerStatefulWidget {
   const FeedArea({super.key, required this.profile, required this.date});
 

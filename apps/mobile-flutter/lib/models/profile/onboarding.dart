@@ -1,6 +1,7 @@
 /// Onboarding-related data models.
 ///
-/// Ported from `lib/onboarding/types.ts` and `lib/onboarding/schemas.ts`.
+/// Ported from web `lib/domain/onboarding/types.ts` and
+/// `lib/domain/onboarding/schemas.ts`.
 library;
 
 enum BiologicalSex { male, female }

@@ -75,7 +75,7 @@ Below is a comparative matrix benchmarking `gemini-3.1-flash-lite` against leadi
 You can run live extraction benchmark evaluations across sample test targets with:
 
 ```bash
-bun --env-file=.env.local tsx scripts/test-ocr-live.ts
+bun --env-file=.env.local tsx scripts/dev/test-ocr-live.ts
 ```
 
 Or execute unit & schema parsing benchmarks via:

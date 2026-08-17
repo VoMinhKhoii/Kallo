@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/kallo_colors.dart';
 
-/// RN port of `apps/mobile/src/components/shared/target-progress-bar.tsx`.
+/// Port of web `components/nutrition/primitives/target-progress-bar.tsx`.
 ///
 /// A 4px (h-1) track with an animated fill (width 0 → clamp(pct, 0, 100)%) and a
 /// fixed end-tick marking the 100% target. The fill animates with a cubic-out

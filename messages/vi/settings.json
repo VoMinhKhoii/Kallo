@@ -1,0 +1,123 @@
+{
+  "title": "Cài đặt",
+  "profile": "Hồ sơ",
+  "profileDescription": "Cách bạn xuất hiện và cơ thể bạn cần gì.",
+  "preferences": "Tùy chỉnh",
+  "preferencesDescription": "Ngôn ngữ, khu vực, cách nấu ăn và chia sẻ.",
+  "bodyMetrics": "Chỉ số cơ thể",
+  "save": "Lưu thay đổi",
+  "saveWithTarget": "Lưu — mục tiêu mới {target} kcal",
+  "saved": "Đã lưu thay đổi",
+  "targetRitual": {
+    "newLabel": "Mục tiêu mới",
+    "unit": "kcal",
+    "aggressivePace": "{pace} kg/tuần — nhịp khá gắt"
+  },
+  "language": "Ngôn ngữ",
+  "languageHint": "Thay đổi ngôn ngữ ứng dụng",
+  "anchorNav": {
+    "label": "Trong trang này",
+    "profile": "Hồ sơ",
+    "preferences": "Tùy chỉnh",
+    "subscription": "Gói đăng ký",
+    "feedback": "Góp ý",
+    "account": "Tài khoản"
+  },
+  "feedback": {
+    "title": "Gửi góp ý",
+    "description": "Gặp lỗi, thiếu nguyên liệu, hay có ý tưởng? Hãy cho chúng tôi biết — góp ý sẽ đến thẳng đội ngũ.",
+    "typeLabel": "Bạn muốn góp ý về điều gì?",
+    "types": {
+      "bug": "Lỗi",
+      "ingredient": "Nguyên liệu",
+      "idea": "Ý tưởng"
+    },
+    "messageLabel": "Nội dung phản hồi",
+    "placeholder": {
+      "bug": "Điều gì đã xảy ra? Bạn mong đợi điều gì?",
+      "ingredient": "Nguyên liệu hoặc món ăn nào đang thiếu?",
+      "idea": "Điều gì sẽ giúp Kallo tốt hơn cho bạn?"
+    },
+    "addScreenshot": "Thêm ảnh chụp màn hình",
+    "removeScreenshot": "Bỏ ảnh chụp màn hình",
+    "screenshotTooLarge": "Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.",
+    "submit": "Gửi góp ý",
+    "submitting": "Đang gửi…",
+    "successTitle": "Cảm ơn — chúng tôi đã nhận được",
+    "successBody": "Góp ý của bạn đã đến đội ngũ. Chúng tôi đọc từng góp ý một.",
+    "sendAnother": "Gửi thêm góp ý",
+    "error": "Không thể gửi góp ý. Vui lòng thử lại.",
+    "rateLimitError": "Bạn vừa gửi khá nhiều góp ý. Vui lòng đợi một lát rồi thử lại."
+  },
+  "account": {
+    "title": "Tài khoản",
+    "description": "Đăng nhập, dữ liệu, và cách rời đi của bạn.",
+    "emailLabel": "Đang đăng nhập với",
+    "linkedTitle": "Phương thức đăng nhập",
+    "linkedConnect": "Liên kết",
+    "linkedDisconnect": "Hủy liên kết",
+    "linkedConnectError": "Không thể liên kết tài khoản đó. Vui lòng thử lại.",
+    "linkedDisconnectError": "Không thể hủy liên kết tài khoản đó. Vui lòng thử lại.",
+    "linkedLoadError": "Không tải được phương thức đăng nhập của bạn.",
+    "linkedLoading": "Đang tải phương thức đăng nhập…",
+    "linkedRetry": "Thử lại",
+    "exportTitle": "Xuất dữ liệu của tôi",
+    "exportDescription": "Tải về mọi thứ Kallo đang lưu cho bạn, dưới dạng tệp JSON.",
+    "exportAction": "Xuất",
+    "exporting": "Đang chuẩn bị dữ liệu…",
+    "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+    "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
+    "signOutTitle": "Đăng xuất",
+    "signOutAction": "Đăng xuất",
+    "deleteTitle": "Xóa tài khoản",
+    "deleteDescription": "Xóa vĩnh viễn tài khoản và mọi dữ liệu bên trong.",
+    "deleteAction": "Xóa tài khoản",
+    "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
+    "deleteSubscriptionWarning": "Xóa tài khoản Kallo không hủy gói đăng ký đang hoạt động. Hãy hủy trước — trong App Store, Google Play, hoặc cổng thanh toán bạn đã dùng trên web — để tránh phí về sau. Bạn vẫn có thể xóa ngay.",
+    "deleteManageSubscription": "Quản lý hoặc hủy gói",
+    "deleteConfirmLabel": "Nhập {word} để xác nhận",
+    "deleteConfirmWord": "XÓA",
+    "deleteConfirmAction": "Xóa tài khoản của tôi",
+    "deleting": "Đang xóa tài khoản…",
+    "deleteCancel": "Giữ tài khoản",
+    "deleteError": "Không thể xóa tài khoản. Vui lòng thử lại."
+  },
+  "regionalPanel": {
+    "searchCountryLabel": "Tìm quốc gia",
+    "clearLabel": "Xóa lựa chọn"
+  },
+  "profilePage": {
+    "emptyTitle": "Chưa tìm thấy hồ sơ",
+    "emptyDescription": "Bạn cần hoàn tất thiết lập ban đầu trước khi chỉnh sửa cài đặt.",
+    "startSetup": "Bắt đầu thiết lập"
+  },
+  "profilePanel": {
+    "saveError": "Không thể lưu cài đặt. Vui lòng thử lại.",
+    "invalidError": "Một số giá trị không hợp lệ — vui lòng kiểm tra lại chỉ số cơ thể."
+  },
+  "identity": {
+    "title": "Hồ sơ",
+    "description": "Cách bạn xuất hiện trên Kallo và với vòng kết nối.",
+    "avatarLabel": "Ảnh đại diện",
+    "avatarUpload": "Tải ảnh lên",
+    "avatarChange": "Đổi ảnh",
+    "avatarRemove": "Gỡ ảnh",
+    "avatarSaved": "Đã cập nhật ảnh",
+    "avatarRemoved": "Đã gỡ ảnh",
+    "avatarError": "Không thể cập nhật ảnh",
+    "avatarTooLarge": "Ảnh phải nhỏ hơn 5 MB",
+    "avatarType": "Hãy dùng ảnh PNG, JPG hoặc WebP",
+    "nameLabel": "Chúng mình nên gọi bạn là gì?",
+    "namePlaceholder": "Tên của bạn",
+    "nameSave": "Lưu tên",
+    "nameSaved": "Đã cập nhật tên",
+    "nameError": "Không thể cập nhật tên",
+    "linkPreview": "Liên kết mời của bạn:",
+    "linkWarning": "Đổi tên sẽ đổi liên kết mời — liên kết cũ sẽ không dùng được nữa."
+  },
+  "sharing": {
+    "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
+    "autoShareHint": "Khi bật, mỗi bữa ăn mới sẽ tự động được chia sẻ với vòng kết nối của bạn.",
+    "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
+  }
+}

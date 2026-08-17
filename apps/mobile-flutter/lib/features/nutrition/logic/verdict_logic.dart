@@ -1,8 +1,8 @@
-/// Pure verdict helpers extracted from web `components/nutrition/sections/
-/// verdict-hero.tsx` (keep in sync). The headline branch selection stays in the
-/// widget (it needs the translator); these are the locale/data-only pieces.
+/// Pure verdict helpers. The headline branch selection stays in the widget (it
+/// needs the translator); these are the locale/data-only pieces.
 ///
-/// Ported from `apps/mobile/src/lib/nutrition/logic/verdict-logic.ts`.
+/// No live web counterpart: the `verdict-hero.tsx` section these were
+/// extracted from was removed in the web nutrition rewrite (commit cdd7a3fa).
 library;
 
 import '../../../models/nutrition/nutrition.dart';

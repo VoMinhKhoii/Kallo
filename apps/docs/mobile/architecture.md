@@ -22,27 +22,33 @@ lib/
   main.dart            app entry: env assert, Supabase init, runApp
   app.dart             root widget (theme, localization, router wiring)
   router.dart          go_router routes + redirect/auth seam
-  data/
-    env.dart           compile-time config (String.fromEnvironment / --dart-define)
-    api_client.dart    typed client for the /api/v1 REST + SSE surface
-    session_provider.dart  Supabase session as a Riverpod provider
-    query.dart         shared fetch/query helpers
-    analytics.dart     PostHog wrapper (no-op until keys set)
-  services/
-    supabase_service.dart   Supabase initialization
-  models/              DTOs: meal, nutrition, dashboard, weight, onboarding, streaming
+  services/            infrastructure edges, one folder per concern:
+    http/                api_client.dart, api_client_uploads.dart, query.dart
+    auth/                supabase_service.dart, session_provider.dart
+    billing/             RevenueCat purchases + entitlement state
+    analytics/           PostHog wrapper (no-op until keys set)
+    env/                 compile-time config (String.fromEnvironment / --dart-define)
+  models/              DTOs grouped by domain: nutrition/ logging/ social/ profile/
   features/            one folder per surface (see below)
   shared/widgets/      cross-cutting primitives, one folder each: avatar/ brand/
                        calorie_ring/ feedback/ form/ motion/ sheet/ surface/
                        toast/ typography/
-  shell/               app shell: header/, sidebar/ (drawer), tab_scaffold.dart
-  theme/               kallo_colors, kallo_typography, kallo_theme
+  shared/logic/        pure functions >1 feature reads: tdee.dart, display_format.dart
+  shared/data/         static tables >1 feature reads: countries.dart
+  shell/               app shell: header/, sidebar/ (drawer), tab_scaffold.dart,
+                       placeholder_screen.dart
+  theme/               kallo_colors, kallo_typography, kallo_theme, calm_tokens
 ```
+
+There is no `lib/data/`: everything it held was infrastructure and merged into `services/`.
+The tree has no barrels — see `apps/mobile-flutter/AGENTS.md` §3 for the rule and the two
+shapes it covers.
 
 ### Features (one module per surface)
 
-`lib/features/{auth, onboarding, dashboard, logging, nutrition, settings}/` — each typically
-splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
+`lib/features/{auth, circle, dashboard, feedback, logging, nutrition, onboarding, paywall,
+settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `providers/`, and
+`logic/`:
 
 - **auth** — sign in / sign up, Google button, Supabase auth.
 - **onboarding** — 3-step profile (origin, body metrics, cooking) + TDEE calc.

@@ -15,7 +15,7 @@ double parseDecimalInput(String value) {
   return double.tryParse(normalized) ?? double.nan;
 }
 
-/// RN port of `apps/mobile/src/components/shared/decimal-input.tsx`.
+/// Port of web `components/shared/decimal-input.tsx`.
 ///
 /// Keeps the user's raw text locally while reporting a parsed number upstream,
 /// so an in-progress decimal separator ("65,") isn't erased on each keystroke.

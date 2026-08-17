@@ -1,5 +1,5 @@
 /// React-Query-style cache keys for the logging surface — replicated EXACTLY
-/// from `apps/mobile/src/lib/logging/keys.ts` so prefix-matching invalidation
+/// from web `lib/domain/meals/query-keys.ts` so prefix-matching invalidation
 /// behaves the same. The day query uses the 4-element [byUserDateOffset];
 /// invalidations use the 3-element [byUserDate] and rely on prefix matching —
 /// never exact.

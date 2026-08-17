@@ -76,9 +76,9 @@ jobs:
           GITHUB_BASE_REF: ${{ github.base_ref }}
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
           GITHUB_SHA: ${{ github.sha }}
-        run: node scripts/check-append-only-migrations.mjs
+        run: node scripts/ci/check-append-only-migrations.mjs
       - name: Validate migration timestamps
-        run: node scripts/check-migration-timestamps.js
+        run: node scripts/ci/check-migration-timestamps.js
       - uses: supabase/setup-cli@v1
         with:
           version: 2.90.0

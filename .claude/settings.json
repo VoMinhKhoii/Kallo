@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash scripts/link-worktree-env.sh"
+            "command": "bash scripts/dev/link-worktree-env.sh"
           }
         ]
       },

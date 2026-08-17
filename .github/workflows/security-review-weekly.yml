@@ -30,7 +30,7 @@ on:
     paths:
       - .github/workflows/security-review-weekly.yml
       - .github/security-review/**
-      - scripts/security-review-report.mjs
+      - scripts/ci/security-review-report.mjs
 
 permissions:
   contents: read
@@ -185,7 +185,7 @@ jobs:
         env:
           SCAN_SCOPE: ${{ steps.scope.outputs.scope }}
           SCAN_RANGE: ${{ steps.changes.outputs.range }}
-        run: node scripts/security-review-report.mjs security-scan.json security-report.md
+        run: node scripts/ci/security-review-report.mjs security-scan.json security-report.md
 
       - name: Upload scan output
         if: always() && steps.prompt.outputs.ready == 'true'

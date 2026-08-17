@@ -1,6 +1,6 @@
 /// Typed HTTP client for the Nham REST + SSE surface.
 ///
-/// Port of `apps/mobile/src/lib/api-client.ts`. Preserves:
+/// Port of web `lib/api/client-fetch.ts`. Preserves:
 ///   - base URL resolution (`Env.apiBaseUrl`),
 ///   - the auth header derived from the Supabase session access token,
 ///   - the server error envelope `{ error: { code, status, retryable, message } }`,

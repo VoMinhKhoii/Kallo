@@ -32,11 +32,12 @@ import type { InputMode } from '@/lib/domain/logging/types';
 // The global next-intl stub echoes keys, so "{kcal} kcal" would never render a
 // number. Use the REAL Vietnamese messages here — the totals are the point of
 // several assertions below, and this also catches a missing/renamed key.
+// Everything this harness renders reads from `logging`, so that one namespace
+// is the whole message object; any other key echoes, exactly as before.
 vi.mock('next-intl', async () => {
-  const messages = (await import('@/messages/vi.json')).default as Record<
-    string,
-    unknown
-  >;
+  const messages = {
+    logging: (await import('@/messages/vi/logging.json')).default,
+  } as Record<string, unknown>;
   const lookup = (path: string) =>
     path
       .split('.')

@@ -1,5 +1,5 @@
-/// Riverpod port of the RN `useStreamAnalysis` hook
-/// (`apps/mobile/src/lib/logging/hooks/use-stream-analysis.ts`).
+/// Riverpod port of the web `useStreamAnalysis` hook
+/// (`hooks/meals/analysis/use-stream-analysis.ts`).
 ///
 /// Consumes the SSE stream from `ApiClient.analyzeMeal` (named-event frames
 /// already parsed into [StreamEvent]s) and reduces it into a [StreamAnalysisState]

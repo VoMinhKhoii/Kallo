@@ -37,7 +37,7 @@ the same non-prod Supabase database. To keep that survivable:
   an intentional maintenance pass
 
 CI enforces this append-only rule against newly changed migration files via
-`scripts/check-append-only-migrations.mjs`.
+`scripts/ci/check-append-only-migrations.mjs`.
 
 If shared staging gets into a bad state, recover it with the manual
 `Reset Staging Database` GitHub Actions workflow. That reset replays the current
@@ -169,7 +169,7 @@ Both columns are populated by a trigger on INSERT/UPDATE.
 
 - **Model**: `gemini-embedding-001` (768 dimensions)
 - **Embedding text**: `name_primary | name_alt | name_en | type_vn | type_en` (food group categories add semantic context)
-- **Backfill script**: `scripts/backfill_embeddings.ts`
+- **Backfill script**: `scripts/db/backfill_embeddings.ts`
 - All 526 rows have embeddings pre-populated
 
 #### Query Embedding Cache (Tiered Lookup)
@@ -194,7 +194,7 @@ The query-side embedding (for the ingredient name output by the LLM) is resolved
 - **Seed migration**: `20260319034000_seed_query_embeddings_from_fct.sql` copies `(name_primary, name_en, embedding)` from `vietnamese_food_composition`.
 - **Table**: `ingredient_query_embeddings(name_vi TEXT PK, name_en TEXT, embedding VECTOR(768), created_at TIMESTAMPTZ)`
 - **Indexes**: B-tree on `name_en`, GIN trgm on `name_vi` and `name_en` (for background job)
-- **Translation backfill**: `scripts/backfill-translations.ts` fills NULL `name_en` (vi→en) or `name_vi` (en→vi) via Google Cloud Translation API
+- **Translation backfill**: `scripts/db/backfill-translations.ts` fills NULL `name_en` (vi→en) or `name_vi` (en→vi) via Google Cloud Translation API
 
 #### Synonym Candidates
 
@@ -263,8 +263,8 @@ The `db` instance uses `postgres-js` under the hood with `DATABASE_URL` from env
 
 | Command | Description |
 |---------|-------------|
-| `bun --env-file=.env.local scripts/backfill_embeddings.ts` | Backfill embeddings via Gemini API (rate-limited) |
-| `bun --env-file=.env.local scripts/backfill_embeddings.ts --ids=<id,...>` | Force-regenerate embeddings for specific food rows |
+| `bun --env-file=.env.local scripts/db/backfill_embeddings.ts` | Backfill embeddings via Gemini API (rate-limited) |
+| `bun --env-file=.env.local scripts/db/backfill_embeddings.ts --ids=<id,...>` | Force-regenerate embeddings for specific food rows |
 
 ## Seeding Reference Data
 

@@ -1,0 +1,15 @@
+{
+  "bodyMetrics": {
+    "weightRequired": "Please enter your weight.",
+    "weightMin": "Weight must be at least 30 kg.",
+    "weightMax": "Weight must be at most 300 kg.",
+    "heightRequired": "Please enter your height.",
+    "heightInt": "Height must be a whole number.",
+    "heightMin": "Height must be at least 100 cm.",
+    "heightMax": "Height must be at most 250 cm.",
+    "ageRequired": "Please enter your age.",
+    "ageInt": "Age must be a whole number.",
+    "ageMin": "Age must be at least 13.",
+    "ageMax": "Age must be at most 100."
+  }
+}

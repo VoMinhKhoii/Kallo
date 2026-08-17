@@ -4,7 +4,7 @@ import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 
-/// RN port of `apps/mobile/src/components/nutrition/states/inline-error.tsx`.
+/// Port of web `components/nutrition/states/inline-error.tsx`.
 class InlineError extends StatefulWidget {
   const InlineError({
     super.key,

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_typography.dart';
 
-/// RN port of `apps/mobile/src/components/shared/section-eyebrow.tsx`.
+/// No web counterpart file — the web styles its eyebrows inline.
 ///
 /// Bold 11px stone uppercase with wide ~0.22em tracking (2.4px), an optional
 /// `· trailing` middle-dot suffix, and the web's opacity + downward-y entrance

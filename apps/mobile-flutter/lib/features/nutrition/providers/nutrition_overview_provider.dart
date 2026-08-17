@@ -1,8 +1,8 @@
-/// Riverpod port of the RN `useNutritionOverview` hook
-/// (`apps/mobile/src/lib/nutrition/hooks/use-nutrition-overview.ts`).
+/// Riverpod port of the web nutrition-overview query.
 ///
-/// Mirrors the web `NutritionShell` query exactly: 4-element key by range +
-/// timezone bucket (`['nutrition','overview', range, tz ?? 'utc']`),
+/// Mirrors the web `NutritionShell`
+/// (`components/nutrition/nutrition-shell.tsx`) exactly: 4-element key by
+/// range + timezone bucket (`['nutrition','overview', range, tz ?? 'utc']`),
 /// `retry:false`, 5-minute `staleTime`, and `placeholderData: keepPreviousData`
 /// so the editorial layout stays in place while a new range refetches.
 library;

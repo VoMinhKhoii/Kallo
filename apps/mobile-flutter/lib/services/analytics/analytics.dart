@@ -1,8 +1,8 @@
 /// PostHog analytics — thin, no-op-safe stub.
 ///
-/// Port of `apps/mobile/src/lib/analytics.tsx`. The RN provider is env-gated:
-/// with no `EXPO_PUBLIC_POSTHOG_KEY` it constructs nothing and every call is a
-/// complete no-op (no network, no storage). This stub preserves that contract.
+/// No web counterpart — the web app ships no analytics client. This stub is
+/// env-gated: with no PostHog key it constructs nothing and every call is a
+/// complete no-op (no network, no storage).
 ///
 /// NOTE: there is no `posthog_flutter` dependency wired in yet. This is a
 /// deliberate STUB — when [Env.posthogKey] is empty (the default) it does

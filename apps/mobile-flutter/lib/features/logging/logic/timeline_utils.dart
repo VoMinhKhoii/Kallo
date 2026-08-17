@@ -1,5 +1,5 @@
-/// Pure timeline date helpers — vendored 1:1 from the web/RN
-/// (`apps/mobile/src/lib/logging/logic/timeline-utils.ts`). `todayDateString`
+/// Pure timeline date helpers — vendored 1:1 from web
+/// `components/logging/sidebar/timeline-utils.ts`. `todayDateString`
 /// lives in `logging_keys.dart` so the local YYYY-MM-DD format has one source.
 library;
 

@@ -6,7 +6,7 @@ When an ingredient comes back with `candidates: []`, settle first whether the
 row is **absent** or **present but unreachable** — the two have opposite fixes.
 
 ```bash
-bun --env-file=.env.local scripts/probe_food_coverage.ts "mì gói" "mì ăn liền"
+bun --env-file=.env.local scripts/db/probe_food_coverage.ts "mì gói" "mì ăn liền"
 ```
 
 The script lists up to 20 rows carrying the phrase, then re-runs the lexical arm
@@ -32,8 +32,8 @@ matches everywhere.
 - **Source**: FAO/WHO Vietnamese Food Composition Table 2007
 - **Records**: 526 food items
 - **Location**: `data/vtn_fct_2007/`
-- **Extraction script**: `scripts/vtn_fct/extract_vtn_fct_2007.py`
-- **Enrichment script**: `scripts/vtn_fct/enrich_extracted_data.py`
+- **Extraction script**: `scripts/data/vtn_fct/extract_vtn_fct_2007.py`
+- **Enrichment script**: `scripts/data/vtn_fct/enrich_extracted_data.py`
 
 ### Output Files
 
@@ -48,21 +48,21 @@ matches everywhere.
 
 ```bash
 # Full extraction (no OCR)
-python3 scripts/vtn_fct/extract_vtn_fct_2007.py \
+python3 scripts/data/vtn_fct/extract_vtn_fct_2007.py \
   --pdf "data/vtn_fct_2007/source/VTN FCT 2007.pdf" \
   --out data/vtn_fct_2007
 
 # With OCR header fallback for mojibake repair
-python3 scripts/vtn_fct/extract_vtn_fct_2007.py \
+python3 scripts/data/vtn_fct/extract_vtn_fct_2007.py \
   --pdf "data/vtn_fct_2007/source/VTN FCT 2007.pdf" \
   --out data/vtn_fct_2007 \
   --ocr-header-fallback
 
 # Enrich with food group types (type_vn, type_en)
-python3 scripts/vtn_fct/enrich_extracted_data.py
+python3 scripts/data/vtn_fct/enrich_extracted_data.py
 
 # Run quality validation
-python3 scripts/vtn_fct/validate_extraction_quality.py
+python3 scripts/data/vtn_fct/validate_extraction_quality.py
 ```
 
 ### JSON Record Schema

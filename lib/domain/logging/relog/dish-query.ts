@@ -17,7 +17,46 @@ import type { RelogDishCandidate } from '@/lib/domain/logging/relog/relog';
 
 const NAME = sql`mi.meal_item_name`;
 
-function toDishCandidate(row: Record<string, unknown>): RelogDishCandidate {
+/**
+ * The row the SELECT at the bottom of this file produces.
+ *
+ * Read column by column off that projection, the `meal_items` / `meals`
+ * definitions in lib/infra/db/schema.ts, and the postgres.js type table
+ * (node_modules/postgres/src/types.js) that decides the JS runtime type:
+ * only int2/int4/oid/float4/float8 are parsed to `number`, timestamps to
+ * `Date`, and everything else — including int8 and numeric — arrives as a
+ * **string**.
+ *
+ * - `meal_id` is `mi.meal_id`, a NOT NULL uuid → string.
+ * - `meal_item_order` is a NOT NULL `integer` (int4) → number.
+ * - `meal_item_name` is NOT NULL, and the WHERE clause additionally rejects
+ *   blank names → string.
+ * - `ingredient_count` and `occurrence_count` are `count(*)`, which returns
+ *   **int8**, not int4 — so a string, never a number. Both are NOT NULL
+ *   (count never returns null). `toDishCandidate` runs them through `Number`.
+ * - `total_grams` is `sum(mi.estimated_grams)` over a nullable `real`; Postgres
+ *   types `sum(real)` as `real` (float4), which postgres.js *does* parse to a
+ *   number, and SUM over all-null input is null → `number | null`.
+ * - the four macro columns are `sum(numeric)`, which stays `numeric` → a
+ *   nullable **string**, not a number. This is why the readers coerce.
+ * - `last_logged_at` is `max(m.logged_at)` over a partition that always holds
+ *   at least the current row, and `logged_at` is NOT NULL → a non-null `Date`.
+ */
+type RelogDishRow = {
+  meal_id: string;
+  meal_item_order: number;
+  meal_item_name: string;
+  ingredient_count: string;
+  occurrence_count: string;
+  total_grams: number | null;
+  calories_kcal: string | null;
+  protein_g: string | null;
+  carbohydrate_g: string | null;
+  fat_g: string | null;
+  last_logged_at: Date;
+};
+
+function toDishCandidate(row: RelogDishRow): RelogDishCandidate {
   return {
     kind: 'dish',
     sourceMealId: String(row.meal_id),
@@ -62,7 +101,7 @@ function toDishCandidate(row: Record<string, unknown>): RelogDishCandidate {
  * join; one user over the lookback window is a few thousand rows.
  */
 export async function loadRelogDishCandidates(
-  exec: RelogExecutor,
+  exec: RelogExecutor<RelogDishRow>,
   opts: { userId: string; query: string; limit: number }
 ): Promise<RelogDishCandidate[]> {
   const rows = await exec.execute(sql`

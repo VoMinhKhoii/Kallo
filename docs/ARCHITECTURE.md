@@ -224,10 +224,17 @@ re-export another folder's module, which is what `card_skeletons.dart` and
 
 | Folder | Concern | Status |
 |---|---|---|
-| `scripts/ci/check-structure/` | the structure gate itself | ok |
+| `scripts/_lib/` | helpers shared by the scripts themselves | ok |
+| `scripts/assets/` | brand and PWA asset generation | ok |
+| `scripts/bench/` | latency harness plus KPI and baseline SQL rollups | ok |
+| `scripts/ci/` | CI gates, including `check-structure/` — the structure gate itself | ok |
 | `scripts/cloud-run/` | Cloud Run deploy and smoke checks | ok |
-| `scripts/translate-usda-vietnamese/` | phased vi translation pipeline | ok |
-| `scripts/eval/` | pipeline eval harness (+ gitignored `*.local.ts` experiments) | split |
+| `scripts/data/` | one-off data pipelines: `usda/`, `vtn_fct/`, `translate-usda-vietnamese/` | ok |
+| `scripts/db/` | backfills and coverage probes run against a live database | ok |
+| `scripts/dev/` | local developer conveniences | ok |
+| `scripts/enrich/` | NIN food enrichment ingestion | ok |
+| `scripts/eval/` | pipeline eval harness; `eval/local/` holds throwaway probes and the gitignored `*.local.ts` experiments | ok |
+| `scripts/ops/` | scheduled and manual production operations | ok |
 | `supabase/migrations/` | append-only SQL ledger — flat by CLI contract (§7) | exempt |
 | `i18n/` + `messages/` | next-intl config and message catalogues | ok |
 | `content/docs/{en,vi}/` | user-facing MDX documentation | ok |

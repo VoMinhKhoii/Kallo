@@ -1,11 +1,13 @@
-/// Riverpod ports of the RN onboarding hooks + the gate/completion seam.
+/// Riverpod ports of the web onboarding hooks + the gate/completion seam.
 ///
 /// Mirrors:
-///   - `lib/onboarding/hooks/use-profile.ts`     → [profileProvider]
-///   - `lib/onboarding/hooks/use-save-screen.ts` → [SaveScreenController]
-///   - `lib/onboarding/keys.ts`                  → [OnboardingKeys]
-///   - `components/onboarding/onboarding-gate.tsx` resume decision →
-///     [onboardingResumeProvider]
+///   - `hooks/profile/use-profile.ts`            → [profileProvider]
+///   - `saveProfileSettings` in
+///     `lib/domain/onboarding/actions.ts`        → [SaveScreenController]
+///   - `profileKeys` in
+///     `lib/domain/social/query-keys.ts`         → [OnboardingKeys]
+///   - [onboardingResumeProvider] has no web counterpart file: the web
+///     resumes from `user_profiles.onboarding_step` at the route layer.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

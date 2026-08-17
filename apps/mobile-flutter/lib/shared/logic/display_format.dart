@@ -4,8 +4,9 @@
 /// Dashboard, logging and onboarding all read these, which is why they live
 /// here rather than inside any one feature.
 ///
-/// Ported from `apps/mobile/src/lib/dashboard/logic/format.ts` and the
-/// `todayDateString` helper used by the dashboard screen.
+/// Web counterparts: `formatLocalizedNumber` in
+/// `components/nutrition/primitives/helpers.ts` for the grouping, and the
+/// `YYYY-MM-DD` day key in `lib/core/date/day-key.ts` (keep in sync).
 library;
 
 import 'package:intl/intl.dart';

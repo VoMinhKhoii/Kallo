@@ -53,7 +53,7 @@ __pycache__/
 .claude/scheduled_tasks/
 .claude/_runtime/
 
-# USDA download output (large CSV, regenerate with scripts/usda/)
+# USDA download output (large CSV, regenerate with scripts/data/usda/)
 data/usda_sr/
 
 # Translation pipeline checkpoints (generated, resume-safe)
@@ -96,4 +96,5 @@ scripts/eval/reports/
 scripts/eval/*.json
 
 # One-off local eval harnesses — throwaway probes, not a shared entry point.
-scripts/eval/*.local.ts
+# They live in scripts/eval/local/ alongside the tracked one-off captures.
+scripts/eval/local/*.local.ts

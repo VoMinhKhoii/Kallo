@@ -4,9 +4,9 @@ import '../../../theme/kallo_colors.dart';
 
 /// Full-bleed cream screen with safe-area insets.
 ///
-/// RN port of `Screen` from `apps/mobile/src/theme/primitives.tsx`. Defaults to
-/// applying top + bottom safe-area padding; pass [top]/[bottom] to opt out of an
-/// edge (mirrors RN's `edges` prop).
+/// Defaults to applying top + bottom safe-area padding; pass [top]/[bottom] to
+/// opt out of an edge. No web counterpart file — the web screen frame is CSS
+/// layout, not a component.
 class Screen extends StatelessWidget {
   const Screen({
     super.key,

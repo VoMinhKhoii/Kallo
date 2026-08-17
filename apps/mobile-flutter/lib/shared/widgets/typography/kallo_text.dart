@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_typography.dart';
 
-/// The full RN text-variant set, ported 1:1 from
-/// `apps/mobile/src/theme/text.tsx`.
+/// The full mobile text-variant set. Its source of truth is the mobile type
+/// scale in the `kallo-design` skill (`.agents/skills/kallo-design/mobile.md`),
+/// not a web file — the web scale is deliberately different.
 ///
 /// Lora (serif) for display/headings/numbers > 18px and meal quotes — never
 /// bold; DM Sans (sans) for everything else. The signature [italicAccent] is

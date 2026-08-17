@@ -15,8 +15,8 @@ import 'persisted_meal_card_content.dart';
 
 /// A saved meal in the day's feed — collapsed by default, expandable.
 ///
-/// Ported 1:1 from
-/// `apps/mobile/src/components/logging/feed/persisted-meal-card.tsx`: the
+/// Ported 1:1 from web
+/// `components/logging/feed/persisted/persisted-meal-card.tsx`: the
 /// chevron rotates 0°↔180° (200ms), the collapsed summary cross-fades out, and
 /// the detail block animates its height open/closed (200ms).
 class PersistedMealCard extends StatefulWidget {

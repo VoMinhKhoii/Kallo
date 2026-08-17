@@ -1,4 +1,5 @@
-/// Vendored verbatim from RN `lib/onboarding/data/constants.ts` (keep in sync).
+/// Vendored verbatim from web `lib/domain/onboarding/constants.ts`
+/// (keep in sync).
 ///
 /// Pure consts used by the TDEE/progress logic and the wizard defaults.
 library;

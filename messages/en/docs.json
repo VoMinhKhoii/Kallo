@@ -1,0 +1,36 @@
+{
+  "title": "Docs",
+  "openApp": "Open app",
+  "onThisPage": "On this page",
+  "lastUpdated": "Last updated {date}",
+  "menu": {
+    "open": "Open contents",
+    "close": "Close contents",
+    "label": "Docs contents"
+  },
+  "breadcrumb": {
+    "label": "Breadcrumb",
+    "home": "Docs"
+  },
+  "pager": {
+    "previous": "Previous",
+    "next": "Next",
+    "label": "Page navigation"
+  },
+  "search": {
+    "trigger": "Search the docs",
+    "placeholder": "Search pages, sections…",
+    "empty": "No pages found.",
+    "label": "Search documentation",
+    "shortcutHint": "to search"
+  },
+  "sections": {
+    "start": "Getting started",
+    "logging": "Logging",
+    "tracking": "Tracking",
+    "circle": "Circle",
+    "account": "Account",
+    "estimates": "Understanding estimates",
+    "legal": "Legal"
+  }
+}

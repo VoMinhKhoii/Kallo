@@ -83,7 +83,7 @@ export async function runEmbeddingBackfill(ids: string[]): Promise<void> {
     throw new Error('No inserted ids available for embedding');
   const child = spawn(
     'bun',
-    ['scripts/backfill_embeddings.ts', `--ids=${ids.join(',')}`],
+    ['scripts/db/backfill_embeddings.ts', `--ids=${ids.join(',')}`],
     { stdio: 'inherit', env: process.env }
   );
   const [code] = (await once(child, 'exit')) as [number | null];

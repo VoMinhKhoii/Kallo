@@ -1,8 +1,11 @@
-/// Nutrient-row status logic vendored from web `components/nutrition/rows/
-/// nutrient-row.tsx` + `nutrient-detail.tsx` (keep in sync). `kStatusColors`
-/// maps the web's `var(--kallo-heatmap-*)` to the mobile heatmap tokens.
+/// Nutrient-row status logic. `kStatusColors` maps the web
+/// `var(--kallo-heatmap-*)` tokens to the mobile heatmap tokens.
 ///
-/// Ported from `apps/mobile/src/lib/nutrition/logic/status.ts`.
+/// The web `nutrient-row.tsx` / `nutrient-detail.tsx` pair this was vendored
+/// from was replaced by `components/nutrition/rows/nutrient-grid-card.tsx` in
+/// the web nutrition rewrite (commit cdd7a3fa), which reads its buckets from
+/// `getNutrientStatus` in `lib/domain/nutrition/pattern/aggregation.ts`.
+/// Parity has not been re-verified since that rewrite.
 library;
 
 import 'dart:ui';

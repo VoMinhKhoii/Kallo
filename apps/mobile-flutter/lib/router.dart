@@ -40,8 +40,8 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 ///     header avatar with Cupertino swipe-back).
 ///   • `/` redirects based on auth + onboarding state.
 ///
-/// The redirect mirrors the RN gates (`app/index.tsx` +
-/// `app/(app)/_layout.tsx`): signed-out → `/sign-in`; signed-in but onboarding
+/// The redirect is the mobile counterpart of the web auth gate in
+/// `middleware.ts`: signed-out → `/sign-in`; signed-in but onboarding
 /// incomplete → `/onboarding`; otherwise → `/dashboard`. It re-evaluates on
 /// every auth state change via [refreshListenable] (an auth-stream bridge),
 /// matching RN's `onAuthStateChange` re-render.

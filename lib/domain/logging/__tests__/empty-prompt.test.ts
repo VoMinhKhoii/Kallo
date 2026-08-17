@@ -4,8 +4,8 @@ import {
   drawEmptyPromptKey,
   EMPTY_PROMPT_BUCKETS,
 } from '@/lib/domain/logging/empty-prompt';
-import en from '@/messages/en.json';
-import vi from '@/messages/vi.json';
+import en from '@/messages/en/logging.json';
+import vi from '@/messages/vi/logging.json';
 
 describe('the empty-day prompt', () => {
   it('runs the day through its buckets in order', () => {
@@ -46,9 +46,9 @@ describe('the empty-day prompt', () => {
         ] as const) {
           const prompts = (
             messages as unknown as {
-              logging: { emptyState: Record<string, string> };
+              emptyState: Record<string, string>;
             }
-          ).logging.emptyState;
+          ).emptyState;
           expect(
             prompts[`${bucket}${n}`],
             `${locale} ${bucket}${n}`

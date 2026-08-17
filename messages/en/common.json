@@ -1,0 +1,19 @@
+{
+  "back": "Back",
+  "next": "Next step",
+  "skip": "Skip",
+  "finish": "Finish",
+  "save": "Save",
+  "cancel": "Cancel",
+  "loading": "Loading…",
+  "error": "Something went wrong",
+  "retry": "Try again",
+  "search": "Search",
+  "noResults": "No results found",
+  "confirm": "Confirm",
+  "close": "Close",
+  "or": "or",
+  "optional": "Optional",
+  "notFound": "Page not found",
+  "notSignedIn": "Not signed in."
+}

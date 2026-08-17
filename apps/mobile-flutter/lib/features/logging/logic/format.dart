@@ -1,6 +1,6 @@
 /// Inline nutrition formatting — matches the web's display conventions.
 ///
-/// Ported 1:1 from `apps/mobile/src/lib/logging/logic/format.ts`.
+/// Ported 1:1 from web `components/logging/feed/format-inline-nutrition.ts`.
 library;
 
 /// Grams, rounded — `123g`, or `N/A` when null.

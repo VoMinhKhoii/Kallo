@@ -1,6 +1,6 @@
 /// Compile-time environment configuration.
 ///
-/// Mirrors the RN app's `EXPO_PUBLIC_*` env vars (see apps/mobile/.env.example).
+/// The values and where they come from: `apps/docs/mobile/development.md`.
 /// In Flutter these are injected at build time via `--dart-define`, e.g.:
 ///
 /// ```

@@ -37,7 +37,7 @@ Future<void> main() async {
   if (_supabaseUrl.isEmpty || _supabaseAnonKey.isEmpty) {
     throw StateError(
       'Missing SUPABASE_URL / SUPABASE_ANON_KEY — pass them via --dart-define '
-      '(see RN apps/mobile/.env.example for the values).',
+      '(see apps/docs/mobile/development.md for the values).',
     );
   }
 
