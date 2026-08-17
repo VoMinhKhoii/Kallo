@@ -103,7 +103,9 @@ async function seedMeal(
     confidence?: string | null;
   }
 ): Promise<string> {
-  const rows = await tx.execute(sql`
+  // RETURNING id — `meals.id` is the uuid primary key, so exactly one non-null
+  // string comes back per inserted row.
+  const rows = await tx.execute<{ id: string }>(sql`
     INSERT INTO meals (user_id, raw_input, logged_at, entry_mode,
                        portion_factor, confidence_overall, calories_kcal)
     VALUES (
@@ -114,7 +116,7 @@ async function seedMeal(
     )
     RETURNING id
   `);
-  const mealId = String((rows as unknown as { id: string }[])[0].id);
+  const mealId = String(rows[0].id);
 
   for (const [order, dish] of opts.dishes.entries()) {
     for (const ingredient of dish.ingredients) {

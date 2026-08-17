@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RevenueCatSnapshot } from '@/lib/billing/revenuecat';
+import type { RevenueCatSnapshot } from '@/lib/billing/billing';
 import type { AppDb } from '@/lib/db';
 import {
   billingProviderSyncs,

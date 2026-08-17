@@ -21,16 +21,24 @@ export {
 } from '@/lib/validation/primitives';
 
 /**
- * Request body for `POST /api/v1/meals/confirm` → `confirmAndSaveMealAction`.
+ * Full input for `confirmAndSaveMealAction`, and the request body for
+ * `POST /api/v1/meals/confirm`. Defined here rather than in the action module
+ * because that module carries `'use server'` (which may only export async
+ * functions) and this file is imported by the mobile client — so the schema is
+ * defined once here and imported back by the action, exactly like
+ * {@link updateMealSchema}. There is no second copy to keep in step.
  *
- * Mirrors the (un-exported) `confirmAndSaveSchema` in lib/actions/meals.ts
- * exactly: an `analysisId` UUID, an optional client-generated `mealId` UUID,
- * and optional quantity-override `edits`. Omitting `ingredientIndex` scales the
- * whole dish, so `newGrams` is the new total cooked weight.
+ * `analysisId` names the staged pending analysis; `mealId` is the optional
+ * client-generated id. Omitting an edit's `ingredientIndex` scales the whole
+ * dish, so `newGrams` is the new total cooked weight.
  */
 export const confirmMealSchema = z.object({
   analysisId: z.string().uuid('analysisId phải là UUID hợp lệ.'),
+  // Client-generated id so the optimistic card and the persisted row share a
+  // stable React key (avoids a remount/re-fade once the refetch lands).
   mealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
+  // Quantity overrides. Omitting `ingredientIndex` scales the whole dish
+  // (every ingredient) so `newGrams` is the new total cooked weight.
   edits: z
     .array(
       z.object({
@@ -41,9 +49,9 @@ export const confirmMealSchema = z.object({
     )
     .max(50)
     .optional(),
-  // Cheat-meal: chosen slider positions (0–10 per axis). Must mirror
-  // `confirmAndSaveSchema` — Zod strips unknown keys, so omitting this here
-  // would silently save mobile cheat confirms at the spec's default levels.
+  // Cheat-meal: the user's chosen slider positions (0–10 per axis). The server
+  // recomputes nutrition from the staged spec + these levels — it never trusts
+  // client-sent nutrition numbers.
   levels: z
     .partialRecord(
       z.enum(['protein', 'carbs', 'fat', 'drinks']),

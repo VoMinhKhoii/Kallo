@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import { useDailyMeals } from '@/hooks/meals/use-daily-meals';
 import { useWeightSummary } from '@/hooks/weight/use-weight-summary';
-import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
+import { loadCalorieAdherenceHeatmap } from '@/lib/actions/tracking/dashboard';
 import { buildCalorieAdherenceHeatmapData } from '@/lib/dashboard/adherence';
 import {
   buildTodayNutritionData,

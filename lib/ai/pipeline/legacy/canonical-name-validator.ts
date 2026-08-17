@@ -21,6 +21,15 @@ export interface CanonicalNameValidator {
   reset: () => void;
 }
 
+/**
+ * The three columns the vocabulary SELECT below names, from
+ * `vietnamese_food_composition` (lib/db/schema.ts). `name_alt` is a nullable
+ * `text[]`; `name_primary` and `name_en` are declared `notNull()` there, but
+ * this type keeps them nullable on purpose — the reader is deliberately
+ * tolerant of missing names (telemetry must never take the pipeline down) and
+ * `__tests__/canonical-name-validator.test.ts` exercises a `name_en: null` row.
+ * Widening past the schema is safe; narrowing past it would not be.
+ */
 type VocabularyRow = {
   name_primary?: string | null;
   name_en?: string | null;
@@ -58,14 +67,14 @@ export async function loadCanonicalNameVocabulary(
 ): Promise<ReadonlySet<string>> {
   if (!vocabularyPromise) {
     vocabularyPromise = db
-      .execute(
+      .execute<VocabularyRow>(
         sql`SELECT DISTINCT name_primary, name_en, name_alt
             FROM vietnamese_food_composition
             WHERE source_id IN (1, 2)`
       )
       .then((rows) => {
         const vocabulary = new Set<string>();
-        for (const row of rows as unknown as VocabularyRow[]) {
+        for (const row of rows) {
           if (row.name_primary) vocabulary.add(row.name_primary);
           if (row.name_en) vocabulary.add(row.name_en);
           for (const alt of row.name_alt ?? []) {

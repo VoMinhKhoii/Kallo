@@ -12,7 +12,7 @@ vi.mock('@/hooks/profile/use-locale-switch', () => ({
   useLocaleSwitch: () => switchLocaleMock,
 }));
 
-vi.mock('@/lib/onboarding/step-one-locale-draft', () => ({
+vi.mock('@/lib/onboarding/steps/step-one-locale-draft', () => ({
   writeStepOneLocaleDraft: writeDraftMock,
 }));
 

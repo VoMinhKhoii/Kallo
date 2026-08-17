@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { redirect } from '@/i18n/navigation';
-import { requireAdmin } from '@/lib/admin/require-admin';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
 import {
   logPipelineStart,

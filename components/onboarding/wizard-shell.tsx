@@ -9,12 +9,12 @@ import { useRouter } from '@/i18n/navigation';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { saveOnboardingScreen } from '@/lib/onboarding/actions';
 import { WIZARD_DEFAULTS } from '@/lib/onboarding/constants';
-import { buildStepOneDefaults } from '@/lib/onboarding/step-one-defaults';
+import { buildStepOneDefaults } from '@/lib/onboarding/steps/step-one-defaults';
 import {
   clearStepOneLocaleDraft,
   readStepOneLocaleDraft,
   type StepOneLocaleDraft,
-} from '@/lib/onboarding/step-one-locale-draft';
+} from '@/lib/onboarding/steps/step-one-locale-draft';
 import { ScreenBodyMetrics, type ScreenOneData } from './screen-body-metrics';
 import { ScreenCooking } from './screen-cooking';
 import { ScreenOrigin } from './screen-origin';

@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { logWeightAction } from '@/lib/actions/weight';
+import { logWeightAction } from '@/lib/actions/tracking/weight';
 import { weightLogSchema } from '@/lib/api/contracts/weight';
 import { handleRouteError } from '@/lib/api/respond';
 

@@ -1,6 +1,6 @@
 import { and, eq, isNotNull, lt, or } from 'drizzle-orm';
 import { z } from 'zod';
-import { getBillingEnvironment } from '@/lib/billing/revenuecat';
+import { getBillingEnvironment } from '@/lib/billing/billing';
 import { db } from '@/lib/db';
 import { billingWebhookEvents } from '@/lib/db/schema';
 

@@ -4,7 +4,7 @@ import {
   type RevenueCatEvent,
   type RevenueCatWebhookBody,
 } from '@/app/api/webhooks/revenuecat/_lib/request';
-import type { BillingEnvironment } from '@/lib/billing/revenuecat';
+import type { BillingEnvironment } from '@/lib/billing/billing';
 import type { AppDb } from '@/lib/db';
 import { billingWebhookEvents } from '@/lib/db/schema';
 

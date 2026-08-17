@@ -112,11 +112,11 @@ vi.mock('@/lib/ai/provider/provider', () => ({
   },
 }));
 
-vi.mock('@/lib/entitlements/config', () => ({
+vi.mock('@/lib/billing/entitlement/config', () => ({
   getBillingConfig: () => mockGetBillingConfig(),
 }));
 
-vi.mock('@/lib/entitlements/service', () => ({
+vi.mock('@/lib/billing/entitlement/service', () => ({
   checkFeatureAccess: (...args: unknown[]) => mockCheckFeatureAccess(...args),
 }));
 

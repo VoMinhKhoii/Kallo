@@ -1,7 +1,7 @@
 import {
   buildPersistedMeal,
   inferMealSlot,
-} from '@/lib/actions/persisted-meal';
+} from '@/lib/actions/logging/persisted-meal';
 import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
 import type { AppDb } from '@/lib/db';
 import { meals, type pendingAnalyses } from '@/lib/db/schema';

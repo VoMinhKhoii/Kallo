@@ -1,12 +1,12 @@
 import { ArrowLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
+import { formatUtcTimestamp } from '@/lib/admin/format';
 import {
   FEEDBACK_TYPE_LABELS,
   getFeedbackDetail,
-} from '@/lib/admin/feedback-queries';
-import { formatUtcTimestamp } from '@/lib/admin/format';
-import { requireAdmin } from '@/lib/admin/require-admin';
+} from '@/lib/admin/queries/feedback';
 import { db } from '@/lib/db';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { cn } from '@/lib/ui/cn';

@@ -16,6 +16,20 @@ import type { AppDb } from '@/lib/db';
 const EXACT_MATCH_SIMILARITY = 1;
 
 /**
+ * The three columns the SELECT below names, typed from the Drizzle definition
+ * of `vietnamese_food_composition` (lib/db/schema.ts): `id` is the text primary
+ * key, `name_primary` and `state` are both `notNull()`, and `state` additionally
+ * carries the `IN ('raw','cooked')` check constraint. Nothing here is nullable,
+ * so `normalizeState` only ever sees a string — it keeps accepting null because
+ * its other callers read nullable columns.
+ */
+type ExactMatchRow = {
+  id: string;
+  name_primary: string;
+  state: string;
+};
+
+/**
  * Normalized exact-match lookup against the VN-FCT food DB.
  *
  * Matches `name_primary`, any `name_alt` entry, or `name_en` after the same
@@ -38,7 +52,7 @@ export async function resolveExactMatch(
   if (!normalized) return null;
 
   try {
-    const rows = (await db.execute(
+    const rows = await db.execute<ExactMatchRow>(
       sql`SELECT id, name_primary, state
           FROM vietnamese_food_composition
           WHERE source_id = 1
@@ -51,7 +65,7 @@ export async function resolveExactMatch(
               )
             )
           LIMIT 2`
-    )) as unknown as Array<Record<string, unknown>>;
+    );
 
     // Exactly one distinct row → unambiguous. Two+ → ambiguous, defer.
     if (rows.length !== 1) return null;
@@ -59,11 +73,11 @@ export async function resolveExactMatch(
     const row = rows[0];
     return {
       ingredientName: matchingName,
-      foodCompositionId: row.id as string,
-      matchedName: row.name_primary as string,
+      foodCompositionId: row.id,
+      matchedName: row.name_primary,
       similarity: EXACT_MATCH_SIMILARITY,
       confidence: classifyConfidence(EXACT_MATCH_SIMILARITY),
-      state: normalizeState(row.state as string | null),
+      state: normalizeState(row.state),
       source: 'fao',
       matchType: 'fuzzy',
     };

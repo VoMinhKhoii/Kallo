@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
+import { createFakeDb, type FakeDb } from '@/lib/db/__fixtures__/fake-db';
 import {
   confirmationUrl,
   normaliseEmail,
   signUpForWaitlist,
 } from '@/lib/waitlist/signup';
-import { createFakeDb, type FakeDb } from './fake-db';
 
 type SendEmailFn = typeof import('@/lib/email/send').sendEmail;
 

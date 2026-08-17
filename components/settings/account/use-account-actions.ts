@@ -2,7 +2,10 @@
 
 import { useTranslations } from 'next-intl';
 import { useAsyncAction } from '@/hooks/ui/use-async-action';
-import { deleteAccountAction, exportMyDataAction } from '@/lib/actions/account';
+import {
+  deleteAccountAction,
+  exportMyDataAction,
+} from '@/lib/actions/identity/account';
 import { createClient } from '@/lib/supabase/client';
 
 /**

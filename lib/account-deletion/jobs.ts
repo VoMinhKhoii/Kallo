@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
 import { and, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { getBillingEnvironment } from '@/lib/billing/revenuecat';
-import { deleteRevenueCatCustomer } from '@/lib/billing/revenuecat-customer';
+import {
+  deleteRevenueCatCustomer,
+  getBillingEnvironment,
+} from '@/lib/billing/billing';
 import { type AppDb, db as appDb } from '@/lib/db';
 import { billingWebhookEvents } from '@/lib/db/schema';
 import { createAdminClient } from '@/lib/supabase/admin';

@@ -1,15 +1,15 @@
 'use server';
 
 import { randomUUID } from 'node:crypto';
-import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
-import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import {
   buildMealItemGroupsFromRows,
   buildPersistedMeal,
   extractNutritionValues,
   inferMealSlot,
   nutritionValuesToRow,
-} from '@/lib/actions/persisted-meal';
+} from '@/lib/actions/logging/persisted-meal';
+import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
+import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import {
   type RelogItemsInput,

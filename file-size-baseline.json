@@ -73,15 +73,11 @@
     "components/groups": 14,
     "apps/mobile-flutter/lib/features/nutrition/widgets": 14,
     "components/auth": 13,
-    "lib/onboarding": 13,
     "hooks/social": 13,
     "apps/mobile-flutter/lib/features/dashboard/widgets": 13,
     "components/onboarding": 12,
     "lib/actions/meals": 12,
-    "lib/actions": 12,
     "components/settings/profile": 11,
-    "lib/actions/__tests__": 11,
-    "lib/actions/chat-groups": 11,
     "apps/mobile-flutter/lib/features/logging/widgets/feed": 11,
     "apps/mobile-flutter/lib/shell": 11
   }

@@ -18,6 +18,33 @@ export function normalizeIngredientKey(name: string): string {
  */
 const memoryCache = new Map<string, number[]>();
 
+/**
+ * Row shape of the warm-up SELECT (`name_primary, name_en, embedding` from
+ * `vietnamese_food_composition`). Per the Drizzle definition in
+ * lib/db/schema.ts both name columns are `notNull()`; the reader still guards
+ * on truthiness because an empty string is not a usable cache key. `embedding`
+ * is nullable on the table but the query filters `embedding IS NOT NULL` — it
+ * stays `unknown` because pgvector surfaces either the `"[0.1,…]"` text form or
+ * a decoded `number[]` depending on the driver's type parsers, and
+ * `parseEmbeddingValue` is the one place that resolves that.
+ */
+type EmbeddingWarmRow = {
+  name_primary: string;
+  name_en: string;
+  embedding: unknown;
+};
+
+/**
+ * Row shape of the L2 lookup against `ingredient_query_embeddings`
+ * (lib/db/schema.ts): `name_vi` is the text primary key, `name_en` is nullable
+ * (filled later by the translation backfill), `embedding` is `notNull()`.
+ */
+type QueryEmbeddingRow = {
+  name_vi: string;
+  name_en: string | null;
+  embedding: unknown;
+};
+
 /** Visible for testing/diagnostics */
 export function getMemoryCacheStats() {
   return { size: memoryCache.size };
@@ -68,18 +95,18 @@ export async function warmEmbeddingCache(
   warmCacheStarted = true;
 
   try {
-    const rows = await db.execute(
+    const rows = await db.execute<EmbeddingWarmRow>(
       sql`SELECT name_primary, name_en, embedding
           FROM vietnamese_food_composition
           WHERE source_id = 1 AND embedding IS NOT NULL`
     );
 
     let loaded = 0;
-    for (const row of rows as unknown as Record<string, unknown>[]) {
+    for (const row of rows) {
       const embedding = parseEmbeddingValue(row.embedding);
       if (!embedding) continue;
-      const nameVi = row.name_primary as string | null;
-      const nameEn = row.name_en as string | null;
+      const nameVi = row.name_primary;
+      const nameEn = row.name_en;
       if (nameVi) {
         memoryCache.set(normalizeIngredientKey(nameVi), embedding);
         loaded++;
@@ -131,7 +158,7 @@ export async function resolveQueryEmbedding(
   // primes the same L1 entries from the same source rows without contending on
   // the critical matching path.
   try {
-    const exactRows = await db.execute(
+    const exactRows = await db.execute<QueryEmbeddingRow>(
       sql`SELECT name_vi, name_en, embedding
           FROM ingredient_query_embeddings
           WHERE name_vi = ${normalized} OR lower(name_en) = ${normalized}
@@ -140,7 +167,7 @@ export async function resolveQueryEmbedding(
 
     if (exactRows.length > 0) {
       console.info(`[embedding-cache] L2 HIT: "${logName}"`);
-      return promoteToMemoryCache(exactRows[0] as Record<string, unknown>);
+      return promoteToMemoryCache(exactRows[0]);
     }
   } catch (err) {
     const cause = err instanceof Error ? (err.cause ?? err.message) : err;
@@ -197,12 +224,12 @@ export function cacheQueryEmbedding(
  * Caches under BOTH name_vi and name_en keys (when available)
  * so subsequent lookups in either language hit L1.
  */
-function promoteToMemoryCache(row: Record<string, unknown>): number[] | null {
+function promoteToMemoryCache(row: QueryEmbeddingRow): number[] | null {
   const embedding = parseEmbeddingValue(row.embedding);
   if (!embedding) return null;
 
-  const nameVi = row.name_vi as string | null;
-  const nameEn = row.name_en as string | null;
+  const nameVi = row.name_vi;
+  const nameEn = row.name_en;
 
   if (nameVi) memoryCache.set(normalizeIngredientKey(nameVi), embedding);
   if (nameEn) memoryCache.set(normalizeIngredientKey(nameEn), embedding);
@@ -219,7 +246,9 @@ function logSynonymCandidateIfEnMatch(
   normalizedQuery: string,
   db: PostgresJsDatabase<typeof schema>
 ): void {
-  db.execute(
+  // `name_en` is nullable on the table but cannot be null in THIS result set:
+  // the predicate is `lower(name_en) = …`, and NULL never satisfies `=`.
+  db.execute<{ name_vi: string; name_en: string }>(
     sql`SELECT name_vi, name_en
         FROM ingredient_query_embeddings
         WHERE lower(name_en) = ${normalizedQuery}
@@ -227,10 +256,10 @@ function logSynonymCandidateIfEnMatch(
   )
     .then((rows) => {
       if (rows.length > 0) {
-        const row = rows[0] as Record<string, unknown>;
+        const row = rows[0];
         return db.execute(
           sql`INSERT INTO synonym_candidates (queried_vi, matched_en, matched_vi)
-              VALUES (${normalizedQuery}, ${row.name_en as string}, ${row.name_vi as string})`
+              VALUES (${normalizedQuery}, ${row.name_en}, ${row.name_vi})`
         );
       }
     })

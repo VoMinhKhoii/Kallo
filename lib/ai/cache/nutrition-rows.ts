@@ -54,10 +54,41 @@ export const NUTRITION_CACHE_SELECT_COLUMNS = [
   'type_en',
 ] as const;
 
+/**
+ * The row shape `NUTRITION_CACHE_SELECT_COLUMNS` produces — the type-level twin
+ * of that list, so `db.execute<NutritionCacheRow>(…)` needs no cast. Nullability
+ * is read off the Drizzle definition of `vietnamese_food_composition`
+ * (lib/db/schema.ts):
+ *
+ *   id                   text, primary key            → notNull
+ *   type_en              text('type_en').notNull()    → notNull
+ *   inedible_portion_pct numeric(…)                   → nullable
+ *
+ * The 27 nutrient columns stay under the index signature on purpose: they are
+ * read dynamically through `DB_NUTRITION_COLUMNS`, never by literal name, and
+ * `parseNutritionRow` already coerces each one. `numeric` arrives from
+ * postgres-js as a *string* (it will not silently lose precision), which is why
+ * the readers run every value through `Number()`.
+ */
+export type NutritionCacheRow = Record<string, unknown> & {
+  id: string;
+  type_en: string;
+  inedible_portion_pct: string | null;
+};
+
+/** Row shape of the narrower `SELECT id, inedible_portion_pct` variant. */
+export type InediblePctRow = {
+  id: string;
+  inedible_portion_pct: string | null;
+};
+
 export function parseNutritionRow(
   row: Record<string, unknown>
 ): NutritionPer100g {
-  const result = {} as Record<string, number | null>;
+  // Keyed by `keyof NutritionPer100g` rather than by `string`, so the loop below
+  // is checked against the 28 nutrient names and the accumulator IS the result
+  // type once every key is written — no cast back out.
+  const result = {} as Record<keyof NutritionPer100g, number | null>;
 
   for (const key of NUTRITION_KEYS) {
     const dbCol = DB_NUTRITION_COLUMNS[key];
@@ -65,7 +96,7 @@ export function parseNutritionRow(
     result[key] = rawVal != null ? Number(rawVal) : null;
   }
 
-  return result as unknown as NutritionPer100g;
+  return result;
 }
 
 export async function fetchNutritionPer100g(

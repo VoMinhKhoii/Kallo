@@ -14,7 +14,7 @@ import {
   getOnboardingResumeStep,
   shouldShowOnboardingResume,
 } from '@/lib/onboarding/progress';
-import { readStepOneLocaleDraft } from '@/lib/onboarding/step-one-locale-draft';
+import { readStepOneLocaleDraft } from '@/lib/onboarding/steps/step-one-locale-draft';
 import { DesktopSidebar } from '../navigation/desktop-sidebar';
 import { MobileNav } from '../navigation/mobile-nav';
 import type { UserMenuUser } from '../navigation/user-menu';

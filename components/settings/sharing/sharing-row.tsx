@@ -5,7 +5,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { SettingsRow } from '@/components/settings/group';
 import { Switch } from '@/components/ui/switch';
-import { setAutoShareToCircle } from '@/lib/actions/sharing-preferences';
+import { setAutoShareToCircle } from '@/lib/actions/visibility/sharing-preferences';
 
 /**
  * Auto-share-to-circle preference as one row of the Preferences group.

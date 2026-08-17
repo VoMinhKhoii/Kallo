@@ -1,13 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { AppDb } from '@/lib/db';
+import { createFakeDb } from '@/lib/db/__fixtures__/fake-db';
 import { resolveExactMatch } from '../exact-match';
 
-type MockDb = { execute: ReturnType<typeof vi.fn> };
-
-function db(rows: unknown): AppDb {
-  return {
-    execute: vi.fn().mockResolvedValue(rows),
-  } as unknown as AppDb;
+/** A double whose single `execute` resolves to `rows`. */
+function db(rows: unknown[]) {
+  const fake = createFakeDb();
+  fake.queueExecute(rows);
+  return fake;
 }
 
 const ROW = {
@@ -20,7 +19,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('resolveExactMatch', () => {
   it('returns a high-confidence candidate for a single unambiguous hit', async () => {
-    const info = await resolveExactMatch('Tôm biển', db([ROW]), 'unknown');
+    const info = await resolveExactMatch('Tôm biển', db([ROW]).db, 'unknown');
     expect(info).not.toBeNull();
     expect(info?.foodCompositionId).toBe('fao_vn_2007_8051_raw');
     expect(info?.matchedName).toBe('Tôm biển');
@@ -32,45 +31,40 @@ describe('resolveExactMatch', () => {
   it('returns null when the lookup is ambiguous (2+ rows)', async () => {
     const info = await resolveExactMatch(
       'onion',
-      db([ROW, { ...ROW, id: 'other' }]),
+      db([ROW, { ...ROW, id: 'other' }]).db,
       'unknown'
     );
     expect(info).toBeNull();
   });
 
   it('returns null on a miss (0 rows)', async () => {
-    const info = await resolveExactMatch('nonexistent', db([]), 'unknown');
+    const info = await resolveExactMatch('nonexistent', db([]).db, 'unknown');
     expect(info).toBeNull();
   });
 
   it('returns null (deferring to cascade) on DB error', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const failing = {
-      execute: vi.fn().mockRejectedValue(new Error('boom')),
-    } as unknown as AppDb;
-    const info = await resolveExactMatch('Tôm biển', failing, 'unknown');
+    const failing = createFakeDb();
+    failing.execute.mockRejectedValueOnce(new Error('boom'));
+    const info = await resolveExactMatch('Tôm biển', failing.db, 'unknown');
     expect(info).toBeNull();
   });
 
   it('returns null for an empty/whitespace name without querying', async () => {
-    const mock = db([ROW]) as unknown as MockDb;
-    const info = await resolveExactMatch(
-      '   ',
-      mock as unknown as AppDb,
-      'unknown'
-    );
+    const fake = db([ROW]);
+    const info = await resolveExactMatch('   ', fake.db, 'unknown');
     expect(info).toBeNull();
-    expect(mock.execute).not.toHaveBeenCalled();
+    expect(fake.execute).not.toHaveBeenCalled();
   });
 
   it('queries once for a non-empty (NFD) name and still resolves', async () => {
-    const mock = db([ROW]) as unknown as MockDb;
+    const fake = db([ROW]);
     const info = await resolveExactMatch(
       '  Tôm biển  '.normalize('NFD'),
-      mock as unknown as AppDb,
+      fake.db,
       'unknown'
     );
     expect(info?.foodCompositionId).toBe('fao_vn_2007_8051_raw');
-    expect(mock.execute).toHaveBeenCalledOnce();
+    expect(fake.execute).toHaveBeenCalledOnce();
   });
 });

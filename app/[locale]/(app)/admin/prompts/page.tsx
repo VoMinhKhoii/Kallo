@@ -1,6 +1,6 @@
 import { Link } from '@/i18n/navigation';
-import { listPrompts } from '@/lib/admin/prompt-queries';
-import { requireAdmin } from '@/lib/admin/require-admin';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
+import { listPrompts } from '@/lib/admin/queries/prompts';
 import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';

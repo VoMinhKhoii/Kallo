@@ -2,12 +2,12 @@ import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/auth/session';
 import {
   fetchRevenueCatSnapshot,
+  getBillingConfig,
   getBillingEnvironmentForUser,
+  getEntitlementState,
   isBillingSandboxUser,
-} from '@/lib/billing/revenuecat';
-import { getBillingConfig } from '@/lib/entitlements/config';
-import { reconcileRevenueCatGrants } from '@/lib/entitlements/grants';
-import { getEntitlementState } from '@/lib/entitlements/service';
+  reconcileRevenueCatGrants,
+} from '@/lib/billing/billing';
 import { Errors } from '@/lib/errors/catalog';
 import { checkAnalysisGuards } from '@/lib/rate-limit/analysis-guards';
 

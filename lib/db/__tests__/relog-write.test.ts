@@ -109,7 +109,9 @@ async function seedMeal(opts: {
   /** Deliberately wrong meal-level totals, to prove the writer ignores them. */
   mealKcal?: number;
 }): Promise<string> {
-  const rows = await db.execute(sql`
+  // RETURNING id — `meals.id` is the uuid primary key, so exactly one non-null
+  // string comes back per inserted row.
+  const rows = await db.execute<{ id: string }>(sql`
     INSERT INTO meals (user_id, raw_input, logged_at, entry_mode,
                        portion_factor, confidence_overall, calories_kcal)
     VALUES (${opts.userId ?? OWNER}, ${opts.rawInput}, now(),
@@ -118,7 +120,7 @@ async function seedMeal(opts: {
             ${opts.mealKcal ?? 99999})
     RETURNING id
   `);
-  const mealId = String((rows as unknown as { id: string }[])[0].id);
+  const mealId = String(rows[0].id);
   createdMealIds.push(mealId);
 
   for (const [order, dish] of opts.dishes.entries()) {
@@ -152,7 +154,10 @@ async function itemRows(mealId: string) {
     FROM meal_items WHERE meal_id = ${mealId}
     ORDER BY meal_item_order, ingredient_name
   `);
-  return rows as unknown as Record<string, unknown>[];
+  // The ten columns are asserted by name below and each is coerced at its use
+  // site, so the untyped-row default `db.execute()` already returns is exactly
+  // the right shape here.
+  return rows;
 }
 
 if (seedUserId) {
@@ -255,9 +260,11 @@ describe('relogMealItemsAction', () => {
     ]);
     createdMealIds.push(result.mealId);
 
-    const [meal] = (await db.execute(sql`
+    // `meals.calories_kcal` is a nullable `numeric`, which postgres-js hands
+    // back as a string rather than a number (no silent precision loss).
+    const [meal] = await db.execute<{ calories_kcal: string | null }>(sql`
       SELECT calories_kcal FROM meals WHERE id = ${result.mealId}
-    `)) as unknown as Record<string, unknown>[];
+    `);
     expect(Number(meal.calories_kcal)).toBeCloseTo(300, 5);
     expect(result.meal.nutrition.caloriesKcal).toBeCloseTo(300, 5);
     // And the invariant holds: meals.* equals the sum of its own item rows.
@@ -492,19 +499,19 @@ describe('relogMealItemsAction', () => {
         { name: 'A', ingredients: [{ name: 'a', grams: 10, kcal: 10 }] },
       ],
     });
-    const before = await db.execute(
-      sql`SELECT count(*)::int AS n FROM meals WHERE user_id = ${OWNER}`
-    );
+    // `count(*)::int AS n` — never null, and the ::int cast is what makes it
+    // arrive as a JS number instead of a bigint string.
+    const countRows = (): Promise<{ n: number }[]> =>
+      db.execute<{ n: number }>(
+        sql`SELECT count(*)::int AS n FROM meals WHERE user_id = ${OWNER}`
+      );
+    const before = await countRows();
     await expect(
       commit([{ kind: 'dish', sourceMealId: source, mealItemOrder: 7 }])
     ).rejects.toThrow(/không còn trong lịch sử/);
-    const after = await db.execute(
-      sql`SELECT count(*)::int AS n FROM meals WHERE user_id = ${OWNER}`
-    );
+    const after = await countRows();
     // The transaction rolled back — no orphan meal row.
-    expect((after as unknown as { n: number }[])[0].n).toBe(
-      (before as unknown as { n: number }[])[0].n
-    );
+    expect(after[0].n).toBe(before[0].n);
   });
 
   it('refuses a source meal that does not exist at all', async () => {

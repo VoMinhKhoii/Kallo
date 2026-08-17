@@ -7,9 +7,9 @@ import { useBarcodeCameraScanner } from '@/hooks/meals/use-barcode-camera-scanne
 import {
   searchBarcodeAction,
   stageBarcodeMealAction,
-} from '@/lib/actions/barcode';
+} from '@/lib/actions/logging/barcode';
+import { stageOcrMealAction } from '@/lib/actions/logging/nutrition-ocr';
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
-import { stageOcrMealAction } from '@/lib/actions/nutrition-ocr';
 import { tryDecodeFontEncodedBarcode } from '@/lib/barcode/decode';
 import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
 import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';

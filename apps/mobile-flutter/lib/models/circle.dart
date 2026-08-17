@@ -239,7 +239,7 @@ class SharedMealFeedPage {
 }
 
 /// A pending copy/split offer addressed to the viewer — the Circle inbox item.
-/// Contract source: `MealShareInvite` in `lib/actions/meal-sharing.ts`. The
+/// Contract source: `MealShareInvite` in `lib/actions/meal-sharing/types.ts`. The
 /// macros are the portion the recipient will receive (already the sender's share
 /// for a split — the source meal was scaled down when it was shared).
 class MealShareInvite {

@@ -1,9 +1,9 @@
 import { Link } from '@/i18n/navigation';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import {
   feedbackFiltersSchema,
   listFeedback,
-} from '@/lib/admin/feedback-queries';
-import { requireAdmin } from '@/lib/admin/require-admin';
+} from '@/lib/admin/queries/feedback';
 import { db } from '@/lib/db';
 import { FeedbackFilters } from './_components/feedback-filters';
 import { FeedbackTable } from './_components/feedback-table';

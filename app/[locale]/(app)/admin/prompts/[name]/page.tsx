@@ -2,9 +2,9 @@ import { ArrowLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { Link } from '@/i18n/navigation';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { formatUtcTimestamp } from '@/lib/admin/format';
-import { getPromptVersions } from '@/lib/admin/prompt-queries';
-import { requireAdmin } from '@/lib/admin/require-admin';
+import { getPromptVersions } from '@/lib/admin/queries/prompts';
 import { db } from '@/lib/db';
 import { VersionDiff } from './_components/version-diff';
 

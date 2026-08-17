@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import type { PersistedMeal } from '@/lib/actions/meals/types';
 import {
   buildMealItemGroupsFromRows,
   buildPersistedMeal,
@@ -7,7 +6,8 @@ import {
   inferMealSlot,
   nutritionValuesToRow,
   scaleNutritionRow,
-} from '@/lib/actions/persisted-meal';
+} from '@/lib/actions/logging/persisted-meal';
+import type { PersistedMeal } from '@/lib/actions/meals/types';
 import type { AppTransaction } from '@/lib/db';
 import { mealItems, meals } from '@/lib/db/schema';
 import { insertDefaultCircleShare } from './insert-default-share';

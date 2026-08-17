@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { setMealShareVisibility } from '@/lib/actions/group-members';
+import { setMealShareVisibility } from '@/lib/actions/visibility/meal-visibility';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 

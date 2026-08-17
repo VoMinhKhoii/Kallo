@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
-import { isAdminEmail } from '@/lib/admin/is-admin';
+import { isAdminEmail } from '@/lib/admin/authz/is-admin';
 import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import { buildUserContext } from '@/lib/ai/adapters/user-context';
 import { getMemoryCacheStats } from '@/lib/ai/cache/embedding-cache';

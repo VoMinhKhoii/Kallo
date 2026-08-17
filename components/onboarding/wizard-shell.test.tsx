@@ -53,7 +53,7 @@ vi.mock('@/i18n/navigation', () => ({
   }),
 }));
 
-vi.mock('@/lib/onboarding/step-one-locale-draft', () => ({
+vi.mock('@/lib/onboarding/steps/step-one-locale-draft', () => ({
   clearStepOneLocaleDraft: clearStepOneLocaleDraftMock,
   readStepOneLocaleDraft: readStepOneLocaleDraftMock,
 }));

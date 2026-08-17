@@ -2,7 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
-import { scanNutritionLabelAction } from '@/lib/actions/nutrition-ocr';
+import { scanNutritionLabelAction } from '@/lib/actions/logging/nutrition-ocr';
 import {
   isOcrSourceImageMimeType,
   OCR_CLIENT_RESIZE_WIDTH,

@@ -29,7 +29,7 @@ vi.mock('@/lib/actions/meals/mutate-meal', () => ({
   deleteMealAction: vi.fn(),
 }));
 
-vi.mock('@/lib/actions/manual-meals', () => ({
+vi.mock('@/lib/actions/logging/manual-meals', () => ({
   saveManualMealAction: mockSaveManual,
 }));
 

@@ -22,7 +22,7 @@ vi.mock('@/hooks/meals/use-barcode-camera-scanner', () => ({
   }),
 }));
 
-vi.mock('@/lib/actions/barcode', () => ({
+vi.mock('@/lib/actions/logging/barcode', () => ({
   searchBarcodeAction: mocks.searchBarcodeAction,
   stageBarcodeMealAction: mocks.stageBarcodeMealAction,
 }));
@@ -31,7 +31,7 @@ vi.mock('@/lib/actions/meals/confirm-and-save', () => ({
   confirmAndSaveMealAction: mocks.confirmAndSaveMealAction,
 }));
 
-vi.mock('@/lib/actions/nutrition-ocr', () => ({
+vi.mock('@/lib/actions/logging/nutrition-ocr', () => ({
   stageOcrMealAction: mocks.stageOcrMealAction,
 }));
 

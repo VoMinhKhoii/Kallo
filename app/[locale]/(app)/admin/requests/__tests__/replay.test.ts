@@ -92,7 +92,7 @@ vi.mock('@/lib/ai/provider/provider', () => ({
     return { provider: 'ai-studio' as const, apiKey };
   },
 }));
-vi.mock('@/lib/admin/require-admin', () => ({
+vi.mock('@/lib/admin/authz/require-admin', () => ({
   requireAdmin: async () => ({ id: 'admin-1', email: 'a@x.com' }),
 }));
 vi.mock('@/lib/rate-limit/analysis-guards', async (importOriginal) => {

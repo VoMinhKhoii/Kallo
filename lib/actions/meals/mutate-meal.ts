@@ -8,7 +8,7 @@ import {
   extractNutritionValues,
   nutritionValuesToRow,
   scaleNutritionRow,
-} from '@/lib/actions/persisted-meal';
+} from '@/lib/actions/logging/persisted-meal';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
 import { updateMealSchema } from '@/lib/api/contracts/meals';

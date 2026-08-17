@@ -1,11 +1,11 @@
 import { Paperclip } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
+import { formatUtcTimestamp } from '@/lib/admin/format';
 import {
   FEEDBACK_STATUS_LABELS,
   FEEDBACK_TYPE_LABELS,
   type FeedbackListRow,
-} from '@/lib/admin/feedback-queries';
-import { formatUtcTimestamp } from '@/lib/admin/format';
+} from '@/lib/admin/queries/feedback';
 import { cn } from '@/lib/ui/cn';
 
 const TYPE_STYLES: Record<string, string> = {

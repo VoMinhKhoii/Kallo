@@ -6,7 +6,7 @@ import {
   buildMealItemGroupsFromRows,
   buildPersistedMeal,
   extractNutritionValues,
-} from '@/lib/actions/persisted-meal';
+} from '@/lib/actions/logging/persisted-meal';
 import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import type { PipelineResult } from '@/lib/ai/types/result';
 import { requireAuthAndProfile } from '@/lib/auth/session';

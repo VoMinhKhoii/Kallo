@@ -3,8 +3,8 @@
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { FEEDBACK_STATUSES } from '@/lib/admin/feedback-queries';
-import { requireAdmin } from '@/lib/admin/require-admin';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
+import { FEEDBACK_STATUSES } from '@/lib/admin/queries/feedback';
 import { db } from '@/lib/db';
 import { userFeedback } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors/catalog';

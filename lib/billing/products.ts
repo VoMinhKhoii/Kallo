@@ -1,4 +1,4 @@
-import type { EntitlementKey } from '@/lib/entitlements/features';
+import type { EntitlementKey } from '@/lib/billing/entitlement/features';
 
 // Maps RevenueCat store product identifiers to the entitlement they grant.
 // RC reports the underlying store product id (App Store / Play / Paddle) on

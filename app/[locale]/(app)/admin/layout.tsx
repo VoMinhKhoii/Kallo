@@ -1,4 +1,4 @@
-import { requireAdmin } from '@/lib/admin/require-admin';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
 
 export const dynamic = 'force-dynamic';
 

@@ -5,7 +5,7 @@ const { mockDeleteRevenueCatCustomer } = vi.hoisted(() => ({
 }));
 
 vi.mock('server-only', () => ({}));
-vi.mock('@/lib/billing/revenuecat-customer', () => ({
+vi.mock('@/lib/billing/revenuecat/customer', () => ({
   deleteRevenueCatCustomer: mockDeleteRevenueCatCustomer,
 }));
 afterEach(() => {

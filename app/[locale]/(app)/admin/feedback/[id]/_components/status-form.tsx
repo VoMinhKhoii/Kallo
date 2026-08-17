@@ -12,7 +12,7 @@ import {
 import {
   FEEDBACK_STATUS_LABELS,
   FEEDBACK_STATUSES,
-} from '@/lib/admin/feedback-queries';
+} from '@/lib/admin/queries/feedback';
 import { updateFeedbackStatus } from '../actions';
 
 export function StatusForm({ id, current }: { id: string; current: string }) {

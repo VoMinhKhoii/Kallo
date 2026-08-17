@@ -16,7 +16,7 @@
  * still while you read it.
  *
  * Note this describes the plan Kallo is launching with, not what the code
- * enforces: `lib/entitlements/features.ts` gates exactly one feature,
+ * enforces: `lib/billing/entitlement/features.ts` gates exactly one feature,
  * `ai_analysis`. The section carries a beta note saying prices apply when beta
  * ends, so nothing here claims a paywall that is live.
  */

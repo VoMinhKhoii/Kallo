@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { relogCandidatesKeys } from '@/hooks/meals/relog/use-relog-candidates';
 import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
-import { saveManualMealAction } from '@/lib/actions/manual-meals';
+import { saveManualMealAction } from '@/lib/actions/logging/manual-meals';
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { duplicateMealAction } from '@/lib/actions/meals/duplicate-meal';
 import {

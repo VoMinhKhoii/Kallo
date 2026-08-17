@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { POST } from '@/app/api/webhooks/revenuecat/route';
-import { getBillingEnvironment } from '@/lib/billing/revenuecat';
+import { getBillingEnvironment } from '@/lib/billing/billing';
 import { db } from '@/lib/db';
 
 const configSchema = z.object({

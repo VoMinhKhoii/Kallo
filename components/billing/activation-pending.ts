@@ -3,8 +3,8 @@
 // force provider recovery on a later visit.
 //
 // This exists because the server cannot infer the state. `reconciliationRequired`
-// is derived from existing grant rows (see `lib/entitlements/service.ts`), so a
-// user whose FIRST purchase never projected has no rows, no winning grant, and
+// is derived from existing grant rows (see `lib/billing/entitlement/service.ts`),
+// so a user whose FIRST purchase never projected has no rows, no winning grant, and
 // therefore no signal at all — the one failure the automatic recovery path
 // cannot see. Normally the signed webhook writes that grant within seconds; if
 // it is lost or dead-lettered, this marker is what stops a paying customer

@@ -113,5 +113,5 @@ export async function loadRelogDishCandidates(
       r.meal_item_name ASC
     LIMIT ${opts.limit}
   `);
-  return (rows as unknown as Record<string, unknown>[]).map(toDishCandidate);
+  return rows.map(toDishCandidate);
 }

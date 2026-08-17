@@ -1,6 +1,9 @@
 import { Link } from '@/i18n/navigation';
-import { listRequests, requestFiltersSchema } from '@/lib/admin/queries';
-import { requireAdmin } from '@/lib/admin/require-admin';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
+import {
+  listRequests,
+  requestFiltersSchema,
+} from '@/lib/admin/queries/requests';
 import { db } from '@/lib/db';
 import { FiltersForm } from './_components/filters-form';
 import { RequestsTable } from './_components/requests-table';

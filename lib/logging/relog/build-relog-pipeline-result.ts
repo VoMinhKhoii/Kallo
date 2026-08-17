@@ -13,11 +13,12 @@
 // re-adjustment a mathematical no-op. A later gram edit scales low/mid/high by
 // one ratio, so the triple stays degenerate and still adjusts to the scaled
 // value. This module is pure data-shape mapping — no server/browser imports.
+
+import { extractNutritionValues } from '@/lib/actions/logging/persisted-meal';
 import type {
   ResolvedDish,
   SourceItemRow,
 } from '@/lib/actions/meals/relog/expand-refs';
-import { extractNutritionValues } from '@/lib/actions/persisted-meal';
 import {
   sumBoundedNutrition,
   sumDisplayedNutrition,

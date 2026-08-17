@@ -1,4 +1,7 @@
-import { deleteAccountAction, exportMyDataAction } from '@/lib/actions/account';
+import {
+  deleteAccountAction,
+  exportMyDataAction,
+} from '@/lib/actions/identity/account';
 import { requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 

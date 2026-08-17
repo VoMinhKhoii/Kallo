@@ -105,5 +105,5 @@ export async function loadRelogMealCandidates(
       r.raw_input ASC
     LIMIT ${opts.limit}
   `);
-  return (rows as unknown as Record<string, unknown>[]).map(toMealCandidate);
+  return rows.map(toMealCandidate);
 }

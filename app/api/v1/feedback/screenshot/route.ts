@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { uploadFeedbackScreenshotAction } from '@/lib/actions/feedback';
+import { uploadFeedbackScreenshotAction } from '@/lib/actions/support/feedback';
 import { handleRouteError } from '@/lib/api/respond';
 import { Errors } from '@/lib/errors/catalog';
 

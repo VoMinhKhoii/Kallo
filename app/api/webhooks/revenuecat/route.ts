@@ -22,9 +22,9 @@ import {
   fetchRevenueCatSnapshot,
   getBillingEnvironment,
   type RevenueCatSnapshot,
-} from '@/lib/billing/revenuecat';
+  reconcileRevenueCatGrantSnapshots,
+} from '@/lib/billing/billing';
 import { type AppDb, db as appDb } from '@/lib/db';
-import { reconcileRevenueCatGrantSnapshots } from '@/lib/entitlements/grants';
 import {
   timingSafeMatch,
   WebhookPayloadTooLargeError,

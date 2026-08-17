@@ -4,10 +4,10 @@ import {
   buildPersistedMeal,
   nutritionValuesToRow,
   scaleNutritionRow,
-} from '@/lib/actions/persisted-meal';
+} from '@/lib/actions/logging/persisted-meal';
+import type { PersistedMeal } from '@/lib/actions/meals/types';
 import type { db } from '@/lib/db';
 import { mealItems, mealShares, meals } from '@/lib/db/schema';
-import type { PersistedMeal } from '../meals/types';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type MealRow = typeof meals.$inferSelect;

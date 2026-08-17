@@ -18,7 +18,7 @@ vi.mock('@/lib/onboarding/actions', () => ({
   restoreOnboardingNudge: restoreOnboardingNudgeMock,
 }));
 
-vi.mock('@/lib/onboarding/step-one-locale-draft', () => ({
+vi.mock('@/lib/onboarding/steps/step-one-locale-draft', () => ({
   readStepOneLocaleDraft: readStepOneLocaleDraftMock,
 }));
 

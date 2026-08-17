@@ -13,7 +13,7 @@ import { useRouter } from '@/i18n/navigation';
 import {
   FEEDBACK_STATUSES,
   FEEDBACK_TYPES,
-} from '@/lib/admin/feedback-queries';
+} from '@/lib/admin/queries/feedback';
 
 export function FeedbackFilters({
   current,

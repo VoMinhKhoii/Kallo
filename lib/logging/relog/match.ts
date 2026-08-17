@@ -11,9 +11,15 @@ import {
 /** The only capability the candidate queries need. Typed structurally rather
  *  than as `AppDb | AppTransaction` so a pooled handle, a transaction, and a
  *  test-owned client all satisfy it — the queries are raw SQL and never touch
- *  the schema generic. */
+ *  the schema generic.
+ *
+ *  The result is a row array rather than `unknown`: that is what every Drizzle
+ *  handle already returns from `execute()` (postgres-js resolves it to a
+ *  `RowList`), and declaring it here is what lets the two candidate queries map
+ *  their rows without a double cast at each call site. Column *values* stay
+ *  `unknown` — the per-query readers name and coerce them. */
 export interface RelogExecutor {
-  execute: (query: SQL) => Promise<unknown>;
+  execute: (query: SQL) => Promise<Record<string, unknown>[]>;
 }
 
 /**

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { loadWeightSummaryAction } from '@/lib/actions/weight';
+import { loadWeightSummaryAction } from '@/lib/actions/tracking/weight';
 import type { WeightRange, WeightSummaryData } from '@/lib/types/weight';
 
 export const weightSummaryKeys = {

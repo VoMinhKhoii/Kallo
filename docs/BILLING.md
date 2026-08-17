@@ -50,7 +50,7 @@ Apple / Google / Paddle
                           entitlement_grants  (source of truth)
                                      │ read by
                                      ▼
-        lib/entitlements/service.ts  (getEntitlementState / checkFeatureAccess)
+  lib/billing/entitlement/service.ts (getEntitlementState / checkFeatureAccess)
                                      │ served by
                                      ▼
                     GET /api/v1/account/entitlements
@@ -103,7 +103,7 @@ short-circuiting as a duplicate.
 ### Trial (derived, not stored)
 
 There is no trial row. The trial is computed in
-`lib/entitlements/config.ts` + `service.ts` from the profile:
+`lib/billing/entitlement/config.ts` + `service.ts` from the profile:
 
 - trial window = `[max(profile.created_at, SUBSCRIPTION_LAUNCH_DATE), +TRIAL_DAYS]`
 - starting the window at the later of signup and launch gives **existing users
@@ -378,7 +378,7 @@ does, and approval has lead time — start it early.
   carrying its original future expiry. A projection that trusted the
   entitlement object would have left a refunded customer on premium
   indefinitely. `parseRevenueCatSnapshot` requires a non-refunded backing
-  transaction (`lib/billing/revenuecat.ts`), so it emitted zero grants and the
+  transaction (`lib/billing/revenuecat/snapshot.ts`), so it emitted zero grants and
   user dropped to `tier=free`, `hasActiveSubscription=false`. Never relax that
   check to trust `entitlements` alone.
 - **Paddle account deletion — measured 2026-08-02: deletion does NOT cancel

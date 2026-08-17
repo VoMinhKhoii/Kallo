@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { extractNutritionValues } from '@/lib/actions/persisted-meal';
+import { extractNutritionValues } from '@/lib/actions/logging/persisted-meal';
 import type {
   BoundedNutrition,
   NutritionValues,

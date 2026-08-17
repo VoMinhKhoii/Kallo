@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { createFakeDb, type FakeDb } from '@/lib/db/__fixtures__/fake-db';
 import { confirmWaitlistSignup } from '@/lib/waitlist/confirm';
 import { hashConfirmationToken } from '@/lib/waitlist/token';
-import { createFakeDb, type FakeDb } from './fake-db';
 
 type SendEmailFn = typeof import('@/lib/email/send').sendEmail;
 

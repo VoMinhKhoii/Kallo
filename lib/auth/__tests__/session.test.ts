@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createFakeDb } from '@/lib/db/__fixtures__/fake-db';
 
 // Mock Supabase server client and Drizzle DB to avoid real connections
 vi.mock('@/lib/supabase/server', () => ({
@@ -31,14 +32,11 @@ function mockSupabase(
   >;
 }
 
+/** The guard issues exactly one `select(...).from(...).where(...).limit(1)`. */
 function mockDb(rows: Record<string, unknown>[]) {
-  const chain = {
-    select: vi.fn().mockReturnThis(),
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue(rows),
-  };
-  return chain as unknown as typeof import('@/lib/db').db;
+  const fake = createFakeDb();
+  fake.queueSelect(rows);
+  return fake.db;
 }
 
 // ---------------------------------------------------------------------------

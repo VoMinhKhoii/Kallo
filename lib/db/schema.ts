@@ -1457,7 +1457,7 @@ export const userFeedback = pgTable(
 // tooling — never from client input. The source CHECKs deliberately allow
 // values for rails we may bolt on later (e.g. a VietQR gateway) so adding
 // one is a new webhook writer, not a constraint migration.
-// Server-side gating (lib/entitlements/) reads exclusively from these
+// Server-side gating (lib/billing/entitlement/) reads exclusively from these
 // tables; clients get a derived view via GET /api/v1/account/entitlements.
 // ---------------------------------------------------------------------------
 

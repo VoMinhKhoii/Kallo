@@ -3,7 +3,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { weightSummaryKeys } from '@/hooks/weight/use-weight-summary';
-import { deleteWeightLogAction, logWeightAction } from '@/lib/actions/weight';
+import {
+  deleteWeightLogAction,
+  logWeightAction,
+} from '@/lib/actions/tracking/weight';
 import type { WeightSummaryData } from '@/lib/types/weight';
 import type { WeightLogInput } from '@/lib/validation/weight';
 
