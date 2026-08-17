@@ -15,7 +15,7 @@ vi.mock('@/lib/infra/auth/session', async () => {
   };
 });
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     transaction: vi.fn(),
     select: mockDbSelect,
@@ -286,7 +286,7 @@ describe('loadPendingAnalysesByDate', () => {
 
 describe('loadMealDates', () => {
   it('returns merged confirmed and pending dates', async () => {
-    const { db } = await import('@/lib/infra/db');
+    const { db } = await import('@/lib/infra/db/client');
     (db.selectDistinctOn as ReturnType<typeof vi.fn>)
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({

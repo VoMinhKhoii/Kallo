@@ -5,7 +5,7 @@ import type {
   StreamOptions,
   StructuredOutputParams,
 } from '@/lib/ai/provider/provider';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { pipelineLlmCalls } from '@/lib/infra/db/schema';
 
 /**

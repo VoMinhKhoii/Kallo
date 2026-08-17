@@ -67,7 +67,7 @@ export async function GET(
     if (!guard.allowed) {
       // Best-effort guard event log (non-fatal).
       try {
-        const { db } = await import('@/lib/infra/db');
+        const { db } = await import('@/lib/infra/db/client');
         const { analysisGuardEvents } = await import('@/lib/infra/db/schema');
         await db.insert(analysisGuardEvents).values(
           buildAnalysisGuardEvent({

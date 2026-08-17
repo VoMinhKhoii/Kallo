@@ -498,7 +498,7 @@ import {
   pipelineStageLogs,
   pipelineLlmCalls,
 } from '@/lib/infra/db/schema';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 const enabled = () => process.env.PIPELINE_TRACE_ENABLED !== 'false';
 const cache = new Map<string, string>(); // `${name}:${hash}` -> id
@@ -678,7 +678,7 @@ Run: `bun run test lib/ai/__tests__/gemini.test.ts` — expect FAIL (interface n
 - [ ] **Step 3: Define and export the interface**
 
 ```ts
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 export interface GeminiCallTrace {
   db: AppDb;
@@ -1110,7 +1110,7 @@ const updateSpy = vi.fn();
 const selectSpy = vi.fn();
 const pendingInsertSpy = vi.fn();
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     insert: (t: unknown) => {
       if ((t as { __spy?: unknown }).__spy === pendingInsertSpy) {
@@ -1173,7 +1173,7 @@ describe('replayRequest', () => {
 import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { pipelineRequests } from '@/lib/infra/db/schema';
 import { analyzeMeal } from '@/lib/ai/pipeline/orchestrator';
 import { logPipelineStart, setPipelineFinalState } from '@/lib/ai/pipeline/logging';

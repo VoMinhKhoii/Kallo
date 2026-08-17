@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/domain/onboarding/constants';
 import { hasSavedOnboardingProfileData } from '@/lib/domain/onboarding/progress';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
 import { createClient } from '@/lib/infra/supabase/server';
 

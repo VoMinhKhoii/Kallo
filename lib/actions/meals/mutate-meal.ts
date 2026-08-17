@@ -14,7 +14,7 @@ import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
 import { updateMealSchema } from '@/lib/api/contracts/meals';
 import { Errors } from '@/lib/core/errors/catalog';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { mealItems, mealShares, meals } from '@/lib/infra/db/schema';
 import type { ConfirmMealResponse } from './types';
 

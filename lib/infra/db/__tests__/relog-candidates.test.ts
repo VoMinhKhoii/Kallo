@@ -25,7 +25,7 @@ import {
 } from 'vitest';
 import { loadRelogDishCandidates } from '@/lib/domain/logging/relog/dish-query';
 import { loadRelogMealCandidates } from '@/lib/domain/logging/relog/meal-query';
-import { encodeDbUrl } from '@/lib/infra/db';
+import { encodeDbUrl } from '@/lib/infra/db/client';
 
 // ─── Setup ───────────────────────────────────────────────────────────────────
 

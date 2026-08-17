@@ -2095,7 +2095,7 @@ Create `lib/nutrition/actions/overview-query.ts`:
 
 ```ts
 import { and, eq, gt, gte, lte, sql } from 'drizzle-orm';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   ingredientSources,
   mealItems,
@@ -2608,7 +2608,7 @@ Use a client component:
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { getNutritionOverview } from '@/lib/domain/nutrition/actions';
+import { getNutritionOverview } from '@/lib/domain/nutrition/actions/overview/get-overview';
 import type { NutritionRange, NutritionRangeInput } from '@/lib/domain/nutrition/types';
 import { MacroPatternSection } from './macro-pattern-section';
 import { NutritionSkeleton } from './nutrition-skeleton';

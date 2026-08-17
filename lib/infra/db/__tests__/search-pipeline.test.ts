@@ -32,7 +32,7 @@ import {
   expect,
   it,
 } from 'vitest';
-import { encodeDbUrl } from '@/lib/infra/db';
+import { encodeDbUrl } from '@/lib/infra/db/client';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

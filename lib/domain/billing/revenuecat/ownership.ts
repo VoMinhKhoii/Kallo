@@ -1,6 +1,6 @@
 import { lt, sql } from 'drizzle-orm';
 import type { BillingEnvironment } from '@/lib/domain/billing/revenuecat/identity';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { billingProviderSyncs } from '@/lib/infra/db/schema';
 
 // The `billing_provider_syncs` row for one (user, environment): who currently

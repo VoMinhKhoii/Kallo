@@ -2,7 +2,7 @@
 
 import { and, desc, notIlike, notInArray, sql } from 'drizzle-orm';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { vietnameseFoodComposition } from '@/lib/infra/db/schema';
 import { NUTRIENT_META } from '../catalog/nutrients';
 import { foodSourceCandidatesInputSchema } from '../schemas';

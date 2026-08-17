@@ -8,7 +8,7 @@ import {
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
 import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { type IngredientSearchRow, toSearchResult } from './search-rows';
 
 // Vector matches below this cosine similarity are noise for a picker UI.

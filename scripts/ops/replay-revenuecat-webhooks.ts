@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { POST } from '@/app/api/webhooks/revenuecat/route';
 import { getBillingEnvironment } from '@/lib/domain/billing/billing';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 
 const configSchema = z.object({
   BILLING_REPLAY_LIMIT: z.coerce

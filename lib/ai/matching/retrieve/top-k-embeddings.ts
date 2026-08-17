@@ -5,7 +5,7 @@ import {
 import type { IngredientWithContext } from '@/lib/ai/matching/retrieve/top-k-context';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 export interface TopKEmbeddingResult {
   /** One slot per pending ingredient; `null` means "run the lexical arm". */

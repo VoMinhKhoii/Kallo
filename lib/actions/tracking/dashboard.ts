@@ -16,7 +16,7 @@ import {
   getLocalDateKey,
 } from '@/lib/domain/dashboard/adherence';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { bodyWeightLog, meals } from '@/lib/infra/db/schema';
 import { loadWeightSummaryAction } from './weight';
 

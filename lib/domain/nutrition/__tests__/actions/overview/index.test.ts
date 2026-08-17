@@ -24,7 +24,7 @@ vi.mock('@/lib/domain/nutrition/actions/overview/query', () => ({
   fetchOverviewRows: mockFetchOverviewRows,
 }));
 
-import { getNutritionOverview } from '@/lib/domain/nutrition/actions/overview';
+import { getNutritionOverview } from '@/lib/domain/nutrition/actions/overview/get-overview';
 import { fetchOverviewRows } from '@/lib/domain/nutrition/actions/overview/query';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 

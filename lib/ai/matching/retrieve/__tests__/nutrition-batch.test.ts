@@ -4,7 +4,7 @@ import {
   getNutritionCache,
   isNutritionCacheInitialized,
 } from '@/lib/ai/cache/nutrition-cache';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { batchFetchNutrition } from '../nutrition-batch';
 
 /** Extract raw SQL text from a drizzle sql`` object for routing. */

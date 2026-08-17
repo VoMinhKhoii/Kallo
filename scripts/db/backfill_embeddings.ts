@@ -21,7 +21,7 @@ import { GoogleGenAI } from '@google/genai';
 import { and, inArray, isNull, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { encodeDbUrl } from '@/lib/infra/db';
+import { encodeDbUrl } from '@/lib/infra/db/client';
 import { vietnameseFoodComposition } from '@/lib/infra/db/schema';
 
 const EMBEDDING_MODEL = 'gemini-embedding-001';

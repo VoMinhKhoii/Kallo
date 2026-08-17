@@ -7,7 +7,7 @@ import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { getPromptVersions } from '@/lib/admin/queries/prompts';
 import { formatUtcTimestamp } from '@/lib/core/text/utc-timestamp';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 
 export const dynamic = 'force-dynamic';
 

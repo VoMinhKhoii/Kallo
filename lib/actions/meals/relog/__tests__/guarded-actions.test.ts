@@ -27,7 +27,7 @@ vi.mock('@/lib/domain/logging/relog/dish-query', () => ({
 vi.mock('@/lib/domain/logging/relog/meal-query', () => ({
   loadRelogMealCandidates,
 }));
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: { transaction: (fn: (tx: unknown) => unknown) => fn({}) },
 }));
 vi.mock('@/lib/actions/meals/relog/resolve-sources', () => ({

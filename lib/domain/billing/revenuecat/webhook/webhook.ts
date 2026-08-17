@@ -22,7 +22,7 @@ import {
   type RevenueCatSnapshotFetcher,
   reconcileRevenueCatWebhookEvent,
 } from '@/lib/domain/billing/revenuecat/webhook/reconcile';
-import { type AppDb, db as appDb } from '@/lib/infra/db';
+import { type AppDb, db as appDb } from '@/lib/infra/db/client';
 
 /**
  * The public entry of the RevenueCat webhook module: authenticate, parse,

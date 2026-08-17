@@ -6,7 +6,7 @@ import { duplicateMealSchema } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
 import type { ConfirmMealResponse } from './types';
 

@@ -8,8 +8,8 @@ import {
   publicProfileColumns,
   toPublicIdentity,
 } from '@/lib/domain/social/identity/public-identity';
-import type { AppDb, AppTransaction } from '@/lib/infra/db';
-import { db as defaultDb } from '@/lib/infra/db';
+import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import { mealShareReplies, publicProfiles } from '@/lib/infra/db/schema';
 
 type Db = AppDb | AppTransaction;

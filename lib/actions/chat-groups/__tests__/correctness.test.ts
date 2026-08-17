@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/infra/db', () => ({ db: {} }));
+vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
 
 import { getChatGroup } from '@/lib/actions/chat-groups/details';
 import { createChatGroupSchema } from '@/lib/core/validation/chat';

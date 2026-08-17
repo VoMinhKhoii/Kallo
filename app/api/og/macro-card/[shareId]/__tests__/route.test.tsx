@@ -63,7 +63,7 @@ vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
   checkAnalysisGuards: (...args: unknown[]) => mockCheckAnalysisGuards(...args),
 }));
 
-vi.mock('@/lib/infra/db', () => {
+vi.mock('@/lib/infra/db/client', () => {
   const chain = {
     insert: (table?: unknown) => {
       mockDbInsert(table);

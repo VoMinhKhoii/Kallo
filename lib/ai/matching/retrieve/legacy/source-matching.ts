@@ -20,7 +20,7 @@ import {
   type MatchStateInfo,
   pickBestSource,
 } from '@/lib/ai/matching/retrieve/legacy/pick-best-source';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 export interface MatchMeasurementContext {
   requestId?: string;

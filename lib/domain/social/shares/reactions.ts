@@ -6,8 +6,8 @@
 // underlying meals.
 
 import { inArray, sql } from 'drizzle-orm';
-import type { AppDb, AppTransaction } from '@/lib/infra/db';
-import { db as defaultDb } from '@/lib/infra/db';
+import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import { mealShareReactions } from '@/lib/infra/db/schema';
 
 type Db = AppDb | AppTransaction;

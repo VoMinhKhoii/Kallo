@@ -3,7 +3,7 @@
 import { eq } from 'drizzle-orm';
 import { sharingPreferencesSchema } from '@/lib/api/contracts/onboarding';
 import { Errors } from '@/lib/core/errors/catalog';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
 import { createClient } from '@/lib/infra/supabase/server';
 

@@ -5,7 +5,7 @@ import { loadRelogDishCandidates } from '@/lib/domain/logging/relog/dish-query';
 import { loadRelogMealCandidates } from '@/lib/domain/logging/relog/meal-query';
 import type { RelogCandidatesResponse } from '@/lib/domain/logging/relog/relog';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { withRelogGuard } from '@/lib/infra/rate-limit/relog-guard';
 
 // `relogCandidatesQuerySchema` lives in the meals contract so the route can

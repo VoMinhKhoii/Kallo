@@ -12,7 +12,7 @@ const { mockDbSelect, mockDbSelectDistinctOn, mockDbInsert } = vi.hoisted(
   })
 );
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: mockDbSelect,
     selectDistinctOn: mockDbSelectDistinctOn,

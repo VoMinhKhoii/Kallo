@@ -5,7 +5,7 @@ import {
   type RevenueCatEvent,
   type RevenueCatWebhookBody,
 } from '@/lib/domain/billing/revenuecat/webhook/parse';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { billingWebhookEvents } from '@/lib/infra/db/schema';
 
 // The `billing_webhook_events` audit row: claim it, finalize it, or schedule

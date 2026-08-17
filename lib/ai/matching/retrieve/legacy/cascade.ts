@@ -23,7 +23,7 @@ import type {
   UnmatchedIngredient,
 } from '@/lib/ai/types/matching';
 import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 export interface MatchResult {
   matched: MatchedIngredient[];

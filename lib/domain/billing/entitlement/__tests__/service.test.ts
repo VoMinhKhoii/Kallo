@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import type { entitlementGrants } from '@/lib/infra/db/schema';
 import { checkFeatureAccess, getEntitlementState } from '../service';
 

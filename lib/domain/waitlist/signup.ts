@@ -2,7 +2,7 @@ import { and, eq, gte, sql } from 'drizzle-orm';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
 import { Errors } from '@/lib/core/errors/catalog';
 import { hashIp, issueConfirmationToken } from '@/lib/domain/waitlist/token';
-import { type AppDb, db as appDb } from '@/lib/infra/db';
+import { type AppDb, db as appDb } from '@/lib/infra/db/client';
 import { waitlistSignups } from '@/lib/infra/db/schema';
 import { sendEmail as defaultSendEmail } from '@/lib/infra/email/send';
 import { waitlistConfirmEmail } from '@/lib/infra/email/templates/waitlist';

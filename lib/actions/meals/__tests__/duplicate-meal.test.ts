@@ -37,7 +37,7 @@ vi.mock('@/lib/infra/auth/session', async () => {
   };
 });
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) =>
       fn(mockTx)

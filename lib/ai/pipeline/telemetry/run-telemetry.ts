@@ -1,6 +1,6 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import type { AmbiguityFlag } from '@/lib/ai/types/decomposition';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import type { RrfAggregate } from './rrf-aggregation';
 
 // In-test default pepper so unit tests can run without mutating process.env.

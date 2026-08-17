@@ -12,7 +12,7 @@ const { mockDbSelect, mockDbUpdate } = vi.hoisted(() => ({
   mockDbUpdate: vi.fn(),
 }));
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: mockDbSelect,
     update: mockDbUpdate,

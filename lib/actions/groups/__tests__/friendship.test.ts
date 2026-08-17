@@ -34,7 +34,7 @@ const {
   };
 });
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: mockDbSelect,
     insert: mockDbInsert,

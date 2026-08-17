@@ -1,7 +1,7 @@
 import { and, eq, isNotNull } from 'drizzle-orm';
 import type { WaitlistStatus } from '@/lib/api/contracts/waitlist';
 import { hashConfirmationToken } from '@/lib/domain/waitlist/token';
-import { type AppDb, db as appDb } from '@/lib/infra/db';
+import { type AppDb, db as appDb } from '@/lib/infra/db/client';
 import { waitlistSignups } from '@/lib/infra/db/schema';
 import { sendEmail as defaultSendEmail } from '@/lib/infra/email/send';
 import type { EmailLocale } from '@/lib/infra/email/templates/layout';

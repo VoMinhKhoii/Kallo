@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { db as appDb } from '@/lib/infra/db';
+import { db as appDb } from '@/lib/infra/db/client';
 import { analysisModelBudgetEvents } from '@/lib/infra/db/schema';
 import { readNonNegativeInteger } from './analysis-guard-limits';
 import type {

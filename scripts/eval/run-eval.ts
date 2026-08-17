@@ -202,7 +202,7 @@ async function loadPipeline(estimatorName: EvalCliOptions['estimator']) {
     await Promise.all([
       import('@/lib/ai/pipeline/grounded/orchestrator'),
       import('@/lib/ai/provider/provider'),
-      import('@/lib/infra/db'),
+      import('@/lib/infra/db/client'),
       import('@/lib/ai/pipeline/config/model-profile'),
     ]);
   // Local quota spreading: GEMINI_API_KEYS_EXTRA (comma-separated) adds

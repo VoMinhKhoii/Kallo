@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { type IngredientSearchRow, toSearchResult } from './search-rows';
 
 /** Lexical (trigram) arm: fuzzy_match_ingredients_all_sources — the same

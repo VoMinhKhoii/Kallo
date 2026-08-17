@@ -10,7 +10,7 @@ import {
   getBillingEnvironment,
   getBillingEnvironmentForUser,
 } from '@/lib/domain/billing/revenuecat/identity';
-import { type AppDb, db as appDb } from '@/lib/infra/db';
+import { type AppDb, db as appDb } from '@/lib/infra/db/client';
 import { entitlementGrants } from '@/lib/infra/db/schema';
 
 export type Tier = 'free' | 'premium';

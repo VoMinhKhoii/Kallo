@@ -6,7 +6,7 @@ import {
   warmNutritionCacheInBackground,
 } from '@/lib/ai/cache/nutrition-cache';
 import type { NutritionPer100g } from '@/lib/ai/types/matching';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 export interface MatchedFoodData extends NutritionPer100g {
   foodGroupEn?: string;

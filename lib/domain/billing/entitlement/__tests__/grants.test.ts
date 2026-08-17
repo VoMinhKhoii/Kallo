@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import {
   markGrantStatus,
   reassignGrants,

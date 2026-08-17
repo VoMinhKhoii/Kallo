@@ -5,7 +5,7 @@ const resolveQueryEmbedding = vi.fn();
 const cacheQueryEmbedding = vi.fn();
 const generateEmbeddingBatch = vi.fn();
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: { execute },
 }));
 

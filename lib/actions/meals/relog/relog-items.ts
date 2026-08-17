@@ -21,7 +21,7 @@ import {
   weakestConfidence,
 } from '@/lib/domain/logging/relog/relog';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
 import {
   RELOG_WRITE_ROUTE,

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
 
 /**

@@ -1,4 +1,4 @@
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 export const analysisGuardReasons = [
   'per_user_minute',

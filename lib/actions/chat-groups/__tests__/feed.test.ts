@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/infra/db', () => ({ db: {} }));
+vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
 vi.mock('@/lib/actions/chat-groups/membership', () => ({
   requireGroupAccess: vi.fn().mockResolvedValue({
     kind: 'group',

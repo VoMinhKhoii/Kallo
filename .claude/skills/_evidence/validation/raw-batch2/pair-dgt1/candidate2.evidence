@@ -366,7 +366,7 @@ index 9003a49..05d4eb4 100644
  
  vi.mock('@/lib/infra/auth', () => ({
    requireAuthAndProfile: vi.fn().mockResolvedValue({
-@@ -25,6 +40,7 @@ vi.mock('@/lib/infra/db', () => ({
+@@ -25,6 +40,7 @@ vi.mock('@/lib/infra/db/client', () => ({
    db: {
      select: mockDbSelect,
      insert: mockDbInsert,

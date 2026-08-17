@@ -10,7 +10,7 @@ import {
   removeFriendSchema,
 } from '@/lib/core/validation/social';
 import { orderedPair } from '@/lib/domain/social/friendship';
-import { db as defaultDb } from '@/lib/infra/db';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import { circleEvents, friendships } from '@/lib/infra/db/schema';
 
 import { getOrCreateMyProfile, getProfileBySlug } from './profile';

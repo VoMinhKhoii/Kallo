@@ -1,7 +1,7 @@
 import { and, count, desc, eq, gte, isNull, lt } from 'drizzle-orm';
 import { z } from 'zod';
 import { uuidSchema } from '@/lib/core/validation/primitives';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import {
   pipelineLlmCallMetadata,
   pipelineLlmCalls,

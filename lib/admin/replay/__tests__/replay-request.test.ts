@@ -55,7 +55,7 @@ const {
 // ---------------------------------------------------------------------------
 // DB mock — track which tables are passed to db.insert()
 // ---------------------------------------------------------------------------
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     insert: vi.fn((table: unknown) => {
       insertedTables.push(table);

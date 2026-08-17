@@ -5,7 +5,7 @@ import { createFakeDb } from '@/lib/infra/db/__fixtures__/fake-db';
 vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: vi.fn(),
 }));
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {},
 }));
 

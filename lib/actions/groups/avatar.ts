@@ -8,7 +8,7 @@
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
-import { db as defaultDb } from '@/lib/infra/db';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import { publicProfiles } from '@/lib/infra/db/schema';
 import type { createClient } from '@/lib/infra/supabase/server';
 import { processAvatarImage } from '@/lib/infra/uploads/avatar-image';

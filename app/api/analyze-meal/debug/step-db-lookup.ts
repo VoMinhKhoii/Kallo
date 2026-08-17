@@ -20,7 +20,7 @@ import type {
   MatchedIngredient,
   UnmatchedIngredient,
 } from '@/lib/ai/types/matching';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 
 import { type FuzzyMatchRow, pickMacros } from './debug-shared';
 

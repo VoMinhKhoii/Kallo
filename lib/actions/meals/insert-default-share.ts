@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import type { AppTransaction } from '@/lib/infra/db';
+import type { AppTransaction } from '@/lib/infra/db/client';
 import { mealShares, userProfiles } from '@/lib/infra/db/schema';
 
 /**

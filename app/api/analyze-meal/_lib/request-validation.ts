@@ -8,7 +8,7 @@ import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { serializeError } from '@/lib/core/errors/serialize';
 import { mealMessageSchema } from '@/lib/core/validation/meal';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
 import type { AnalysisGuardAllowedResult } from '@/lib/infra/rate-limit/analysis-guard-types';
 import { createClient } from '@/lib/infra/supabase/server';

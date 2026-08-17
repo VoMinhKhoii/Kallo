@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RevenueCatSnapshot } from '@/lib/domain/billing/billing';
 import { handleRevenueCatWebhook } from '@/lib/domain/billing/revenuecat/webhook/webhook';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import {
   billingProviderSyncs,
   billingWebhookEvents,

@@ -19,7 +19,7 @@ import type {
 
 vi.mock('server-only', () => ({}));
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     insert: vi.fn(),
   },
@@ -286,7 +286,7 @@ describe('OCR review to staging seam', () => {
   });
 
   it('passes every extracted nutrient, confidence, and ml unit into persistence', async () => {
-    const { db } = await import('@/lib/infra/db');
+    const { db } = await import('@/lib/infra/db/client');
     const mockValues = vi.fn().mockReturnValue({
       returning: vi.fn().mockResolvedValue([{ id: 'analysis-123' }]),
     });

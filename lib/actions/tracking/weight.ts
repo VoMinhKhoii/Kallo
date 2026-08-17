@@ -17,7 +17,7 @@ import {
 import { weightLogSchema } from '@/lib/core/validation/weight';
 import { buildWeightTrendSummary } from '@/lib/domain/dashboard/weight-trend';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { bodyWeightLog, userProfiles } from '@/lib/infra/db/schema';
 
 const weightRangeSchema = z.object({

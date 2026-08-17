@@ -4,7 +4,7 @@ import {
   logPipelineStart,
 } from '@/lib/ai/pipeline/telemetry/logging';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 // ---------------------------------------------------------------------------
 // Mock DB

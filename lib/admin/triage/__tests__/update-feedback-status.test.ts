@@ -9,7 +9,7 @@ const { requireAdminSpy, returningSpy, setSpy, revalidateSpy } = vi.hoisted(
   })
 );
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     update: () => ({
       set: (values: unknown) => {

@@ -13,9 +13,9 @@
 
 import { logUnmatchedIngredients } from '@/lib/ai/matching/unmatched-log';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
-import type { StreamEvent } from '@/lib/ai/streaming';
+import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { PipelineUnresolved } from '@/lib/ai/types/result';
-import type { db as appDb } from '@/lib/infra/db';
+import type { db as appDb } from '@/lib/infra/db/client';
 
 export async function emitPartialFailure(args: {
   emit: (event: StreamEvent) => void;

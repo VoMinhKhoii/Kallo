@@ -7,8 +7,8 @@
 
 import { eq, type SQL, type SQLWrapper, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import type { AppDb, AppTransaction } from '@/lib/infra/db';
-import { db as defaultDb } from '@/lib/infra/db';
+import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
   chatGroups,

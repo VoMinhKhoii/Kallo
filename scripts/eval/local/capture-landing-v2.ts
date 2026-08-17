@@ -235,7 +235,7 @@ const [{ analyzeMealV2 }, gemini, { db }, { toParsedMeal }] = await Promise.all(
   [
     import('@/lib/ai/pipeline/grounded/orchestrator'),
     import('@/lib/ai/provider/provider'),
-    import('@/lib/infra/db'),
+    import('@/lib/infra/db/client'),
     import('@/lib/ai/adapters/parsed-meal'),
   ]
 );

@@ -22,7 +22,7 @@ import type { CheatSliderLevels } from '@/lib/core/types/cheat';
 import { goalEnumSchema } from '@/lib/domain/onboarding/schemas';
 import type { Goal } from '@/lib/domain/onboarding/types';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   mealItems,
   meals,

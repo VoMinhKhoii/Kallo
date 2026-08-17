@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { db as appDb } from '@/lib/infra/db';
+import { db as appDb } from '@/lib/infra/db/client';
 import {
   AnalysisGuardBlockedError,
   type AnalysisGuardKey,

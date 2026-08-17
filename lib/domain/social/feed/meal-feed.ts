@@ -32,8 +32,8 @@ import type {
   ShareRepliesSummary,
   ShareReply,
 } from '@/lib/domain/social/shares/replies';
-import type { AppDb, AppTransaction } from '@/lib/infra/db';
-import { db as defaultDb } from '@/lib/infra/db';
+import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   friendships,
   mealShares,

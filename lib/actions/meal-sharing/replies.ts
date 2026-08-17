@@ -14,7 +14,7 @@ import {
 import type { ShareReply } from '@/lib/domain/social/shares/replies';
 import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   mealShareReplies,
   mealShares,

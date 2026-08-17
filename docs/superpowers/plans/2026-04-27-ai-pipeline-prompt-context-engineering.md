@@ -1746,7 +1746,7 @@ export function buildPipelineRunRow(input: BuildPipelineRunRowInput) {
 }
 
 export async function writePipelineRun(
-  db: import('@/lib/infra/db').AppDb,
+  db: import('@/lib/infra/db/client').AppDb,
   row: ReturnType<typeof buildPipelineRunRow>
 ): Promise<void> {
   const { pipelineRuns } = await import('@/lib/infra/db/schema');

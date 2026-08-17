@@ -22,7 +22,7 @@ import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { scaleNutritionValues } from '@/lib/domain/logging/manual-logging';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   mealItems,
   meals,

@@ -24,7 +24,7 @@ import {
   vi,
 } from 'vitest';
 import { relogMealItemsAction } from '@/lib/actions/meals/relog/relog-items';
-import { db, encodeDbUrl } from '@/lib/infra/db';
+import { db, encodeDbUrl } from '@/lib/infra/db/client';
 import { meals } from '@/lib/infra/db/schema';
 
 // ─── Prerequisite probe ──────────────────────────────────────────────────────

@@ -3,7 +3,7 @@ import {
   getChatGroupSchema,
   sendChatGroupMessageSchema,
 } from '@/lib/core/validation/chat';
-import { db as defaultDb } from '@/lib/infra/db';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
   chatGroupMessages,

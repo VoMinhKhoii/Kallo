@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import { Errors } from '@/lib/core/errors/catalog';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { analysisGuardEvents } from '@/lib/infra/db/schema';
 import type { AnalysisGuardAllowedResult } from '@/lib/infra/rate-limit/analysis-guard-types';
 import {

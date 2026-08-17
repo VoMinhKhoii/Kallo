@@ -5,7 +5,7 @@ import { MotionConfig } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { getNutritionOverview } from '@/lib/domain/nutrition/actions';
+import { getNutritionOverview } from '@/lib/domain/nutrition/actions/overview/get-overview';
 import { buildNutritionView } from '@/lib/domain/nutrition/bucket-detail';
 import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
 import type {

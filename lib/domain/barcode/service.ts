@@ -13,7 +13,7 @@ import {
   parseSizeGrams,
 } from '@/lib/domain/barcode/openfoodfacts';
 import type { BarcodeErrorCode } from '@/lib/domain/barcode/types';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   ingredientSources,
   pendingAnalyses,

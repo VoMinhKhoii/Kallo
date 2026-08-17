@@ -6,7 +6,7 @@
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { encodeDbUrl } from '@/lib/infra/db';
+import { encodeDbUrl } from '@/lib/infra/db/client';
 import * as schema from '@/lib/infra/db/schema';
 
 // ---------------------------------------------------------------------------

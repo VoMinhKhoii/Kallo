@@ -50,9 +50,8 @@
     "apps/mobile-flutter/lib/features/logging/widgets/composer/entrances.dart": 201
   },
   "folders": {
-    "components/groups": 14,
-    "components/auth": 13,
-    "components/onboarding": 12,
-    "lib/actions/meals": 12
+    "components/groups": 13,
+    "lib/actions/meals": 12,
+    "components/auth": 11
   }
 }

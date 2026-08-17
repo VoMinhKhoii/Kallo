@@ -21,7 +21,7 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
   const [{ db }, { getNutritionCache }] = await Promise.all([
-    import('@/lib/infra/db'),
+    import('@/lib/infra/db/client'),
     import('@/lib/ai/cache/nutrition-cache'),
   ]);
 

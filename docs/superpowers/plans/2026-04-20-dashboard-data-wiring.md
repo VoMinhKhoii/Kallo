@@ -45,7 +45,7 @@ cd /Users/khoivo/Documents/kallo-current-section && bun install
 
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { requireAuthAndProfile } from '@/lib/infra/auth';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { bodyWeightLog, meals } from '@/lib/infra/db/schema';
 import type { PaceStatus, StatsData, VerdictData } from '@/components/dashboard/types';
 
@@ -232,7 +232,7 @@ vi.mock('@/lib/infra/auth', () => ({
   requireAuthAndProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: vi.fn(),
   },
@@ -240,7 +240,7 @@ vi.mock('@/lib/infra/db', () => ({
 
 import { getCurrentSectionData } from '@/lib/domain/dashboard/actions/current';
 import { requireAuthAndProfile } from '@/lib/infra/auth';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 
 const mockProfile = {
   weightKg: '70.0',
@@ -635,7 +635,7 @@ cd /Users/khoivo/Documents/kallo-progress-section && bun install
 
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { requireAuthAndProfile } from '@/lib/infra/auth';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { bodyWeightLog, meals } from '@/lib/infra/db/schema';
 import type { TimeRange } from '@/components/dashboard/types';
 
@@ -774,7 +774,7 @@ vi.mock('@/lib/infra/auth', () => ({
   requireAuthAndProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: vi.fn(),
   },
@@ -782,7 +782,7 @@ vi.mock('@/lib/infra/db', () => ({
 
 import { getProgressData } from '@/lib/domain/dashboard/actions/progress';
 import { requireAuthAndProfile } from '@/lib/infra/auth';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 
 const mockProfile = {
   weightKg: '70.0',
@@ -1167,7 +1167,7 @@ cd /Users/khoivo/Documents/kallo-today-section && bun install
 
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { requireAuthAndProfile } from '@/lib/infra/auth';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { meals } from '@/lib/infra/db/schema';
 import type { MealEntry, NutritionData } from '@/components/dashboard/types';
 
@@ -1259,7 +1259,7 @@ vi.mock('@/lib/infra/auth', () => ({
   requireAuthAndProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: vi.fn(),
   },
@@ -1267,7 +1267,7 @@ vi.mock('@/lib/infra/db', () => ({
 
 import { getTodayData } from '@/lib/domain/dashboard/actions/today';
 import { requireAuthAndProfile } from '@/lib/infra/auth';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 
 const mockProfile = {
   calorieTarget: 2000,

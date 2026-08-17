@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks — only mock the heavy I/O surfaces (matching, assembly,

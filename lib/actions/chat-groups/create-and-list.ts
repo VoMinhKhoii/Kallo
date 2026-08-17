@@ -5,7 +5,7 @@ import { Errors } from '@/lib/core/errors/catalog';
 import { createChatGroupSchema } from '@/lib/core/validation/chat';
 import { circleFeedSchema } from '@/lib/core/validation/social';
 import { todayLocalDate } from '@/lib/domain/social/feed/meal-feed';
-import { db as defaultDb } from '@/lib/infra/db';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
   chatGroupMessages,

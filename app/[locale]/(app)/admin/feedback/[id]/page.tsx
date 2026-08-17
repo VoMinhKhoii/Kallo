@@ -9,7 +9,7 @@ import {
 } from '@/lib/admin/queries/feedback';
 import { formatUtcTimestamp } from '@/lib/core/text/utc-timestamp';
 import { cn } from '@/lib/core/ui/cn';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
 
 export const dynamic = 'force-dynamic';

@@ -15,7 +15,7 @@ import {
 import { groupOccasions } from '@/lib/domain/cheat/occasion-grouping';
 import { withLevelsAsDefaults } from '@/lib/domain/cheat/slider-nutrition';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { meals, pendingAnalyses } from '@/lib/infra/db/schema';
 import type { RecentCheatOccasion } from './types';
 

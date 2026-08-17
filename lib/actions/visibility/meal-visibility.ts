@@ -12,7 +12,7 @@
 import { and, eq } from 'drizzle-orm';
 import { Errors } from '@/lib/core/errors/catalog';
 import { setMealShareVisibilitySchema } from '@/lib/core/validation/social';
-import { db as defaultDb } from '@/lib/infra/db';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import { mealShares, meals } from '@/lib/infra/db/schema';
 
 type Db = typeof defaultDb;

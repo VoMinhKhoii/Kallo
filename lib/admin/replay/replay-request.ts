@@ -17,7 +17,7 @@ import {
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   analysisGuardEvents,
   pipelineRequestReplayAuditLogs,

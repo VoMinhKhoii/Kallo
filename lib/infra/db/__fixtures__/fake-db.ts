@@ -1,5 +1,5 @@
 import { type Mock, vi } from 'vitest';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 /**
  * The shared stand-in for the Drizzle query builder.

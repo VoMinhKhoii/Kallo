@@ -8,7 +8,7 @@ import type {
   CheatSlidersPersisted,
 } from '@/lib/core/types/cheat';
 import { resolveSliderNutrition } from '@/lib/domain/cheat/slider-nutrition';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { meals, type pendingAnalyses } from '@/lib/infra/db/schema';
 import { insertDefaultCircleShare } from './insert-default-share';
 import { EMPTY_NUTRITION } from './shared';

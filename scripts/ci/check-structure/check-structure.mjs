@@ -8,9 +8,9 @@
  *   node scripts/ci/check-structure/check-structure.mjs --strict         # fail on advisory rules
  *
  * Size rules fail on regression (ratcheted via file-size-baseline.json).
- * Folder / test-placement / barrel rules are advisory until the consolidation
- * stack lands, then --strict becomes the CI default. Split guidance lives in
- * AGENTS.md "File & Folder Organization".
+ * Folder / test-placement / barrel rules were advisory during the consolidation
+ * stack; they are now enforced — CI and `bun check:structure` both pass
+ * --strict. Split guidance lives in AGENTS.md "File & Folder Organization".
  */
 import {
   diffAgainstBaseline,

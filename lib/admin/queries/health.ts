@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
 import { REPLAY_EXCLUSION } from '@/lib/admin/queries/requests';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { pipelineRequests } from '@/lib/infra/db/schema';
 
 export interface HealthAggregates {

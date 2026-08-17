@@ -31,7 +31,7 @@ vi.mock('@/lib/infra/supabase/server', () => ({
 
 vi.mock('@/lib/infra/supabase/admin', () => ({ createAdminClient: vi.fn() }));
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) =>
       fn(mockTx)

@@ -7,7 +7,7 @@ import type {
   MatchedIngredient,
   UnmatchedIngredient,
 } from '@/lib/ai/types/matching';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 /**
  * Phases 4–5 of the v1 cascade: one batched nutrition query for every matched

@@ -3,7 +3,7 @@
 import { and, desc, eq, or } from 'drizzle-orm';
 import { avatarUrlFor } from '@/lib/domain/social/identity/avatar-url';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   friendships,
   mealShareInvites,

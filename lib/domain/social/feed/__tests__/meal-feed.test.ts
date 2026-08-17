@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockDbSelect } = vi.hoisted(() => ({ mockDbSelect: vi.fn() }));
 
-vi.mock('@/lib/infra/db', () => ({ db: { select: mockDbSelect } }));
+vi.mock('@/lib/infra/db/client', () => ({ db: { select: mockDbSelect } }));
 
 vi.mock('@/lib/infra/db/schema', () => ({
   mealShares: {

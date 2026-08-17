@@ -6,7 +6,7 @@ import {
   scaleNutritionRow,
 } from '@/lib/actions/logging/persisted-meal';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-import type { db } from '@/lib/infra/db';
+import type { db } from '@/lib/infra/db/client';
 import { mealItems, mealShares, meals } from '@/lib/infra/db/schema';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

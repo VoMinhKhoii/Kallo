@@ -19,7 +19,7 @@ import {
   publicProfileColumns,
   toPublicIdentity,
 } from '@/lib/domain/social/identity/public-identity';
-import { db as defaultDb } from '@/lib/infra/db';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import { publicProfiles } from '@/lib/infra/db/schema';
 
 import type { Db, PublicProfile } from './types';

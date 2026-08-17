@@ -220,7 +220,7 @@ User describes meal → LLM decomposes into ingredients
 ## DB Client Usage
 
 ```ts
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
 
 const profile = await db.query.userProfiles.findFirst({

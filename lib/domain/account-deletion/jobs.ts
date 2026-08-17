@@ -5,7 +5,7 @@ import {
   deleteRevenueCatCustomer,
   getBillingEnvironment,
 } from '@/lib/domain/billing/billing';
-import { type AppDb, db as appDb } from '@/lib/infra/db';
+import { type AppDb, db as appDb } from '@/lib/infra/db/client';
 import { billingWebhookEvents } from '@/lib/infra/db/schema';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
 

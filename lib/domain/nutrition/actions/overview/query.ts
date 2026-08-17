@@ -1,5 +1,5 @@
 import { and, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   ingredientSources,
   mealItems,

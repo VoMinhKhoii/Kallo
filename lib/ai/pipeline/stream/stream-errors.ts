@@ -1,4 +1,4 @@
-import type { StreamErrorEvent } from '@/lib/ai/streaming';
+import type { StreamErrorEvent } from '@/lib/ai/streaming/types';
 import { isAppError } from '@/lib/core/errors/app-error';
 
 /**

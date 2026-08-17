@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 
 export const runtime = 'nodejs';
 

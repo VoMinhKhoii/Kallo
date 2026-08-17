@@ -15,7 +15,7 @@ import {
 } from '@/lib/actions/meals/relog/expand-refs';
 import { Errors } from '@/lib/core/errors/catalog';
 import type { RelogRef } from '@/lib/domain/logging/relog/relog';
-import type { AppDb, AppTransaction } from '@/lib/infra/db';
+import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
 
 type Executor = AppDb | AppTransaction;

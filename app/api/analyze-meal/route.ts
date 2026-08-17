@@ -5,10 +5,10 @@ import {
 } from '@/lib/ai/adapters/user-context';
 import { runAnalysisStream } from '@/lib/ai/pipeline/stream/run-analysis-stream';
 import { logPipelineStart } from '@/lib/ai/pipeline/telemetry/logging';
-import type { StreamEvent } from '@/lib/ai/streaming';
-import { encodeSSE } from '@/lib/ai/streaming';
+import { encodeSSE } from '@/lib/ai/streaming/encoder';
+import type { StreamEvent } from '@/lib/ai/streaming/types';
 import { withDeadline } from '@/lib/core/async/with-deadline';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { acquireAnalysisGuard } from './_lib/analysis-guard';
 import { applyRelogRefs } from './_lib/apply-relog-refs';
 import { getBillingAccessError } from './_lib/billing-access';

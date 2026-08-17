@@ -20,7 +20,7 @@ import {
   dismissMealShareInviteSchema,
 } from '@/lib/core/validation/social';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   friendships,
   mealItems,

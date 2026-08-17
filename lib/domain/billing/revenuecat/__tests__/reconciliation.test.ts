@@ -1,7 +1,7 @@
 import type { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { billingProviderSyncs, entitlementGrants } from '@/lib/infra/db/schema';
 import {
   reconcileRevenueCatGrantSnapshots,

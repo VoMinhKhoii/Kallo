@@ -5,7 +5,7 @@ import { and, eq, gte, sql } from 'drizzle-orm';
 import type { SubmitFeedbackInput } from '@/lib/api/contracts/feedback';
 import { submitFeedbackSchema } from '@/lib/api/contracts/feedback';
 import { Errors } from '@/lib/core/errors/catalog';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { userFeedback } from '@/lib/infra/db/schema';
 import { createClient } from '@/lib/infra/supabase/server';
 import {

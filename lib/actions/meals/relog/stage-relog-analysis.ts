@@ -12,7 +12,7 @@ import type { ParsedMeal } from '@/lib/core/types/meal';
 import { buildRelogPipelineResult } from '@/lib/domain/logging/relog/build-relog-pipeline-result';
 import { buildRelogRawInput } from '@/lib/domain/logging/relog/relog';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   RELOG_WRITE_ROUTE,
   withRelogGuard,

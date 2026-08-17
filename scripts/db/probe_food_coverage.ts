@@ -25,7 +25,7 @@ import {
   SOURCE_FAO,
   USDA_VECTOR_THRESHOLD,
 } from '@/lib/ai/matching/match-constants';
-import { encodeDbUrl } from '@/lib/infra/db';
+import { encodeDbUrl } from '@/lib/infra/db/client';
 import { isMainModule } from '../_lib/runtime';
 
 /** Mirrors `top-k-retrieval.ts`: the SQL arm is deliberately much looser. */

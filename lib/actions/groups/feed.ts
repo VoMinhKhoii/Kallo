@@ -20,7 +20,7 @@ import {
 } from '@/lib/domain/social/identity/public-identity';
 import { reactionsForShares } from '@/lib/domain/social/shares/reactions';
 import { repliesForShares } from '@/lib/domain/social/shares/replies';
-import { db as defaultDb } from '@/lib/infra/db';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   friendsFeedReadMarkers,
   friendships,

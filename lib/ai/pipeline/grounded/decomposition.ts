@@ -24,7 +24,7 @@ import type { MealDecomposition } from '@/lib/ai/types/decomposition';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import { fetchWithTimeout } from '@/lib/core/async/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/core/text/capitalize';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { createDecompositionStreamController } from './decomposition-stream';
 import { withStageLogV2 } from './stage-log';
 

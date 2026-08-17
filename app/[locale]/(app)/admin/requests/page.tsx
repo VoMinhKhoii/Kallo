@@ -6,7 +6,7 @@ import {
   listRequests,
   requestFiltersSchema,
 } from '@/lib/admin/queries/requests';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 
 export const dynamic = 'force-dynamic';
 

@@ -8,7 +8,7 @@ import { clearMemoryCache } from '@/lib/ai/cache/embedding-cache';
 import { clearNutritionCache } from '@/lib/ai/cache/nutrition-cache';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { DecomposedIngredient } from '@/lib/ai/types/decomposition';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { matchIngredients } from '../cascade';
 
 // ---------------------------------------------------------------------------

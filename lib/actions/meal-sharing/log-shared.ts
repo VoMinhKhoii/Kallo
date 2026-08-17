@@ -16,7 +16,7 @@ import {
 } from '@/lib/core/validation/primitives';
 import { canViewShare } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { mealItems, mealShares, meals } from '@/lib/infra/db/schema';
 
 const logSharedMealSchema = z.object({

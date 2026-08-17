@@ -3,8 +3,8 @@ import { alias } from 'drizzle-orm/pg-core';
 import type { SharedMealCursor } from '@/lib/domain/social/feed/cursor';
 import type { SharedMealRow } from '@/lib/domain/social/feed/meal-feed';
 import { publicProfileColumns } from '@/lib/domain/social/identity/public-identity';
-import type { AppDb, AppTransaction } from '@/lib/infra/db';
-import { db as defaultDb } from '@/lib/infra/db';
+import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
   mealShares,

@@ -1,6 +1,6 @@
 import { inArray } from 'drizzle-orm';
 import type { RevenueCatEvent } from '@/lib/domain/billing/revenuecat/webhook/parse';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
 
 // Which Kallo accounts an event could belong to. RevenueCat App User IDs are

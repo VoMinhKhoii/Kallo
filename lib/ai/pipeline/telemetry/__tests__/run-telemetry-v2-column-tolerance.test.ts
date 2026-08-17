@@ -3,7 +3,7 @@ import {
   buildPipelineRunRow,
   writePipelineRun,
 } from '@/lib/ai/pipeline/telemetry/run-telemetry';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 // ---------------------------------------------------------------------------
 // D2: the new `v2_anomaly_causes` column ships with an UNAPPLIED migration.

@@ -28,7 +28,7 @@ vi.mock('@google/genai', () => ({
   }),
 }));
 
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { createGeminiClient } from '../provider';
 
 describe('generateStructuredOutputStream', () => {

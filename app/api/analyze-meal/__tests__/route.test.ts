@@ -60,7 +60,7 @@ vi.mock('@/lib/infra/supabase/server', () => ({
     }),
 }));
 
-vi.mock('@/lib/infra/db', () => {
+vi.mock('@/lib/infra/db/client', () => {
   const selectChain = {
     select: () => selectChain,
     from: () => selectChain,

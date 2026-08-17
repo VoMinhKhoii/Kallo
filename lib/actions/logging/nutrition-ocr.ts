@@ -28,7 +28,7 @@ import {
   ocrConfidenceSchema,
 } from '@/lib/domain/nutrition/ocr-schema';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
 
 const scanLabelSchema = z.object({

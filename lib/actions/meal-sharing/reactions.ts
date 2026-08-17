@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { Errors } from '@/lib/core/errors/catalog';
 import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { mealShareReactions, mealShares } from '@/lib/infra/db/schema';
 
 const toggleShareReactionSchema = z.object({

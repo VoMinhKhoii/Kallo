@@ -2,7 +2,7 @@ import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import {
   pipelineLlmCallMetadata,
   pipelineLlmCalls,

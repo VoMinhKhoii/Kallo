@@ -6,8 +6,8 @@ import {
   removeChatGroupMemberSchema,
 } from '@/lib/core/validation/chat';
 import { orderedPair } from '@/lib/domain/social/friendship';
-import type { AppTransaction } from '@/lib/infra/db';
-import { db as defaultDb } from '@/lib/infra/db';
+import type { AppTransaction } from '@/lib/infra/db/client';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
   chatGroups,

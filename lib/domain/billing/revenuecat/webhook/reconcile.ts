@@ -7,7 +7,7 @@ import {
   uniqueUuidCandidates,
 } from '@/lib/domain/billing/revenuecat/webhook/candidates';
 import type { RevenueCatEvent } from '@/lib/domain/billing/revenuecat/webhook/parse';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 // What one authenticated, recorded event does to the grant side. The webhook
 // never reconstructs lifecycle state from the event's own fields: it decides

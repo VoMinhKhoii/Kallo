@@ -5,7 +5,7 @@ const { mockDbSelect, mockDbInsert } = vi.hoisted(() => ({
   mockDbInsert: vi.fn(),
 }));
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: mockDbSelect,
     insert: mockDbInsert,

@@ -10,7 +10,7 @@ import {
   prepareAccountDeletion,
   processAccountDeletionJob,
 } from '@/lib/domain/account-deletion/jobs';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   billingWebhookEvents,
   bodyWeightLog,

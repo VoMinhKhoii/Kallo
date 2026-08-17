@@ -8,7 +8,7 @@ import {
   scaleNutritionRow,
 } from '@/lib/actions/logging/persisted-meal';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-import type { AppTransaction } from '@/lib/infra/db';
+import type { AppTransaction } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
 import { insertDefaultCircleShare } from './insert-default-share';
 

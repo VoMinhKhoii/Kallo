@@ -12,7 +12,7 @@ import {
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
 import type { PipelineResponse } from '@/lib/ai/types/result';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
 import { createClient } from '@/lib/infra/supabase/server';
 

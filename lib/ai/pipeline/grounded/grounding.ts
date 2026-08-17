@@ -23,7 +23,7 @@ import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import { withDeadline } from '@/lib/core/async/with-deadline';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { withStageLogV2 } from './stage-log';
 
 export interface GroundingPreparation {

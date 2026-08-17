@@ -2,12 +2,12 @@ import type {
   GeminiClient,
   GeminiProviderConfig,
 } from '@/lib/ai/provider/provider';
-import type { StreamEvent } from '@/lib/ai/streaming';
+import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { PipelineResult } from '@/lib/ai/types/result';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import type { CheatIntensity } from '@/lib/core/types/cheat';
 import type { RelogRef } from '@/lib/domain/logging/relog/relog';
-import type { db as appDb } from '@/lib/infra/db';
+import type { db as appDb } from '@/lib/infra/db/client';
 
 /** Everything the stream needs that the pre-stream phase already resolved. */
 export interface AnalysisStreamContext {

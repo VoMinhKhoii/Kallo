@@ -1,7 +1,7 @@
 import { and, eq, isNull, lte, or } from 'drizzle-orm';
 import { advanceRevenueCatWatermark } from '@/lib/domain/billing/revenuecat/ownership';
 import type { RevenueCatSnapshot } from '@/lib/domain/billing/revenuecat/snapshot';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { billingProviderSyncs, entitlementGrants } from '@/lib/infra/db/schema';
 
 // Project ONE customer's CustomerInfo snapshot onto their `entitlement_grants`

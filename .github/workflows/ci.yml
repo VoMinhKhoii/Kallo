@@ -27,7 +27,7 @@ jobs:
           version: 2.4.2
       - run: biome ci .
       - name: Structure gate (size, folders, test placement, barrels)
-        run: node scripts/ci/check-structure/check-structure.mjs
+        run: node scripts/ci/check-structure/check-structure.mjs --strict
 
   typecheck:
     name: Type Check

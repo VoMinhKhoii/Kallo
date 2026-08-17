@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { type RecentIngredientRow, toSearchResult } from './search-rows';
 
 /** The user's most recently logged ingredients — instant suggestions shown

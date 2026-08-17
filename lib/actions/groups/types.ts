@@ -12,7 +12,7 @@
 
 import type { SharedMealEntry } from '@/lib/domain/social/feed/meal-feed';
 import type { PublicIdentity } from '@/lib/domain/social/identity/public-identity';
-import type { db as defaultDb } from '@/lib/infra/db';
+import type { db as defaultDb } from '@/lib/infra/db/client';
 
 export type Db = typeof defaultDb;
 

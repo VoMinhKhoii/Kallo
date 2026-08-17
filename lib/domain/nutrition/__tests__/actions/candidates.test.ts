@@ -9,7 +9,7 @@ vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: mockRequireAuthAndProfile,
 }));
 
-vi.mock('@/lib/infra/db', () => {
+vi.mock('@/lib/infra/db/client', () => {
   const chain = {
     select: vi.fn(() => chain),
     from: vi.fn(() => chain),

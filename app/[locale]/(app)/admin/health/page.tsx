@@ -1,7 +1,7 @@
 import { Sparkline } from '@/components/admin/health/sparkline';
 import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { healthAggregates } from '@/lib/admin/queries/health';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 
 export const dynamic = 'force-dynamic';
 

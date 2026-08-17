@@ -5,7 +5,7 @@ const consoleError = vi
   .spyOn(console, 'error')
   .mockImplementation(() => undefined);
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     execute,
   },

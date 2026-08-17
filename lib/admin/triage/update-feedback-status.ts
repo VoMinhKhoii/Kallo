@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { FEEDBACK_STATUSES } from '@/lib/admin/queries/feedback';
 import { Errors } from '@/lib/core/errors/catalog';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import { userFeedback } from '@/lib/infra/db/schema';
 
 const updateSchema = z.object({

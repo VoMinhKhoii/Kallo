@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/infra/db', () => ({ db: {} }));
+vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
 
 import { repliesForShares } from '@/lib/domain/social/shares/replies';
 

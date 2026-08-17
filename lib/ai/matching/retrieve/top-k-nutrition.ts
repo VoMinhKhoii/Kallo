@@ -6,7 +6,7 @@ import {
 import { batchFetchNutrition } from '@/lib/ai/matching/retrieve/nutrition-batch';
 // Type-only import — erased at compile time, so this is not a runtime cycle.
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 /**
  * Phase 5 of the v2 cascade: batch-fetch nutrition + inedible pct for all

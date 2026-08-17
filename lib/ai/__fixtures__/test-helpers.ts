@@ -4,7 +4,7 @@ import type {
   BoundedNutrition,
   NutritionValues,
 } from '@/lib/ai/types/nutrition-values';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 /**
  * Canonical null-filled NutritionValues matching the VTN FCT 2007 schema.

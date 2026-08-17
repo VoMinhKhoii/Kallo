@@ -16,7 +16,7 @@ import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { NutritionPer100g } from '@/lib/ai/types/matching';
 import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 /**
  * V2 match result per ingredient — up to `k` candidates (sorted by similarity

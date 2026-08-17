@@ -1,6 +1,6 @@
 import { count, desc, eq, sql } from 'drizzle-orm';
 import { uuidSchema } from '@/lib/core/validation/primitives';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import {
   pipelineLlmCalls,
   pipelineRequests,

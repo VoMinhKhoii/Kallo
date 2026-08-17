@@ -1,6 +1,6 @@
 import { and, eq, or } from 'drizzle-orm';
 import { orderedPair } from '@/lib/domain/social/friendship';
-import { db as defaultDb } from '@/lib/infra/db';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
   chatGroups,

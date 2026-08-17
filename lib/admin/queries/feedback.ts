@@ -6,7 +6,7 @@ import {
   FEEDBACK_TYPES,
 } from '@/lib/api/contracts/feedback';
 import { uuidSchema } from '@/lib/core/validation/primitives';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { userFeedback } from '@/lib/infra/db/schema';
 
 export const FEEDBACK_STATUSES = [

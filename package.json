@@ -9,7 +9,7 @@
     "dev:mobile": "bash apps/mobile-flutter/tool/dev_mobile.sh",
     "build": "next build",
     "start": "next start",
-    "check:structure": "node scripts/ci/check-structure/check-structure.mjs",
+    "check:structure": "node scripts/ci/check-structure/check-structure.mjs --strict",
     "eval:pipeline": "bun --conditions=react-server scripts/eval/run-eval.ts",
     "eval:smoke": "bun --conditions=react-server scripts/eval/run-eval.ts --tier smoke --concurrency 1",
     "eval:core": "bun --conditions=react-server scripts/eval/run-eval.ts --tier core --concurrency 2",

@@ -19,7 +19,7 @@ import {
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 import {
   mealItems,
   mealShares,

@@ -1,6 +1,6 @@
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type { StreamOptions } from '@/lib/ai/provider/provider';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import type {
   AnalysisModelBudgetWorkKind,
   AnalysisModelProviderErrorCategory,

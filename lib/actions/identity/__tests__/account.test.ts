@@ -61,7 +61,7 @@ vi.mock('@/lib/domain/account-deletion/jobs', () => ({
   processAccountDeletionJob: mockProcessDeletion,
 }));
 
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: { delete: mockDbDelete, select: mockDbSelect },
 }));
 

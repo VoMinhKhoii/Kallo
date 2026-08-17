@@ -6,7 +6,7 @@ import {
   type MatchInfo,
   normalizeState,
 } from '@/lib/ai/matching/match-constants';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 
 /**
  * Similarity assigned to an exact name hit. 1.0 by definition — an exact,

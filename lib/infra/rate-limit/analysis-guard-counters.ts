@@ -1,5 +1,5 @@
 import { and, eq, gt, lt, sql } from 'drizzle-orm';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import {
   analysisInFlightLimits,
   analysisRateLimitWindows,

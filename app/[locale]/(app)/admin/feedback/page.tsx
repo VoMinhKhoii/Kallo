@@ -6,7 +6,7 @@ import {
   feedbackFiltersSchema,
   listFeedback,
 } from '@/lib/admin/queries/feedback';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 
 export const dynamic = 'force-dynamic';
 

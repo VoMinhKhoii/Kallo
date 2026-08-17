@@ -8,7 +8,7 @@ import { sharedGroupMealsBefore } from '@/lib/domain/social/feed/group-meals';
 import { toSharedMealEntry } from '@/lib/domain/social/feed/meal-feed';
 import { reactionsForShares } from '@/lib/domain/social/shares/reactions';
 import { repliesForShares } from '@/lib/domain/social/shares/replies';
-import { db as defaultDb } from '@/lib/infra/db';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import { chatGroupMembers } from '@/lib/infra/db/schema';
 import { type ChatGroupDb, requireGroupAccess } from './membership';
 import type { GroupMealFeedPage } from './types';

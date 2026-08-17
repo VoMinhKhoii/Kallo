@@ -8,7 +8,7 @@ import {
   type RelogRef,
   weakestConfidence,
 } from '@/lib/domain/logging/relog/relog';
-import { db } from '@/lib/infra/db';
+import { db } from '@/lib/infra/db/client';
 
 /**
  * Combined-relog merge for `/api/analyze-meal`: fold the user's picks into the

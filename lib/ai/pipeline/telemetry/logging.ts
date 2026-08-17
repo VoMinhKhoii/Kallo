@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import type { AppDb } from '@/lib/infra/db';
+import type { AppDb } from '@/lib/infra/db/client';
 import { pipelineRequests } from '@/lib/infra/db/schema';
 
 export interface LogPipelineStartArgs {

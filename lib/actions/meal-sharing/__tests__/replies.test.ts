@@ -22,7 +22,7 @@ vi.mock('@/lib/infra/auth/session', () => ({
     profile: {},
   }),
 }));
-vi.mock('@/lib/infra/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     transaction: vi.fn((run: (tx: typeof mockTx) => Promise<unknown>) =>
       run(mockTx)
