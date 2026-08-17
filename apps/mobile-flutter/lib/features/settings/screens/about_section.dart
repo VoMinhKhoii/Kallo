@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/top_toast.dart';
-import '../widgets/settings_group.dart';
-import '../widgets/settings_row.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
+import '../widgets/list/settings_group.dart';
+import '../widgets/list/settings_row.dart';
 
 /// The marketing version string (no `package_info_plus` dependency in pubspec,
 /// so this is rendered statically — keep in sync with `pubspec.yaml`).

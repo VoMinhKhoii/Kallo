@@ -11,7 +11,7 @@
 /// pins both.
 library;
 
-import '../../../../models/vessel.dart';
+import '../../../../models/nutrition/vessel.dart';
 
 /// Directory the silhouettes are bundled under (mirrors the web's `/portions`).
 const String portionAssetDir = 'assets/portions';

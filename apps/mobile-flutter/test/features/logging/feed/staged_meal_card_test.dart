@@ -6,7 +6,7 @@ import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/staged_meal_card.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/meal_time_divider.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
-import 'package:kallo_mobile/models/meal.dart';
+import 'package:kallo_mobile/models/logging/meal.dart';
 
 import '../../../l10n_test_loader.dart';
 

@@ -1,6 +1,6 @@
+import '../../../shared/logic/tdee.dart';
 import '../data/profile_providers.dart';
-import '../widgets/profile_form_values.dart';
-import 'tdee.dart';
+import '../widgets/profile/profile_form_values.dart';
 
 /// Builds the flat `PUT /api/v1/profile` payload from the current form values,
 /// recomputing TDEE + targets exactly as the web `handleSave` does. Shared by

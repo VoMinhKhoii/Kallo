@@ -5,15 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/circle.dart';
-import '../../../shared/widgets/kallo_primitives.dart';
-import '../../../shared/widgets/top_toast.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/social/circle.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
 import '../data/circle_providers.dart';
-import '../widgets/connect_skeleton.dart';
+import '../widgets/states/connect_skeleton.dart';
 
 /// The invite-accept target (deep link `/circle/invite/:slug`). Previews the
 /// inviter and, depending on the viewer's relationship, shows Accept / already

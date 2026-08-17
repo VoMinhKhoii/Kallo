@@ -8,19 +8,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/circle.dart';
-import '../../../shared/widgets/kallo_primitives.dart';
-import '../../../shared/widgets/profile_avatar.dart';
-import '../../../shared/widgets/scroll_separator.dart';
-import '../../../shared/widgets/skeleton.dart';
-import '../../../shared/widgets/top_toast.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/social/circle.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shared/widgets/avatar/profile_avatar.dart';
+import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../../../shared/widgets/feedback/skeleton.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../circle/data/circle_providers.dart';
 import '../logic/settings_spacing.dart';
-import '../widgets/settings_header.dart';
+import '../widgets/chrome/settings_header.dart';
 
 const int _maxAvatarBytes = 5 * 1024 * 1024;
 const int _displayNameMax = 50;

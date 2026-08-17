@@ -5,7 +5,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
-import '../widgets/option_strip.dart';
+import '../../../shared/widgets/form/option_strip.dart';
 
 /// Partial seed for step 3 (string values keyed by field name).
 class ScreenThreeDefaults {
@@ -214,7 +214,7 @@ class _ScreenCookingState extends State<ScreenCooking> {
             ),
           ),
         const SizedBox(height: KalloSpacing.sp3),
-        OptionStrip(
+        OptionStrip.onboarding(
           options: f.options,
           value: _values[f.name]!,
           onChange: (v) {

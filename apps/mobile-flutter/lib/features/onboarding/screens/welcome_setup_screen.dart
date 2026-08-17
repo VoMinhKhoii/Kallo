@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../data/session_provider.dart';
+import '../../../services/auth/session_provider.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_typography.dart';
 import '../../circle/data/circle_providers.dart';
 import '../../dashboard/data/dashboard_providers.dart';
-import '../../dashboard/logic/dashboard_format.dart';
+import '../../../shared/logic/display_format.dart';
 import '../../logging/data/logging_providers.dart';
 import '../providers/onboarding_providers.dart';
 

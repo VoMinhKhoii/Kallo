@@ -2,12 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../data/billing/entitlement_state.dart';
+import '../../../services/billing/entitlement_state.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
-import '../paywall_controller.dart';
+import '../data/paywall_controller.dart';
 import 'paywall_features.dart';
 import 'paywall_package_section.dart';
 

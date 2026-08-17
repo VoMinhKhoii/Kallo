@@ -17,10 +17,10 @@ import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/cheat.dart';
-import '../../../models/meal.dart';
-import '../../../models/streaming.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/logging/cheat.dart';
+import '../../../models/logging/meal.dart';
+import '../../../models/logging/streaming.dart';
 
 /// Immutable streaming state — the RN `StreamAnalysisState`.
 class StreamAnalysisState {

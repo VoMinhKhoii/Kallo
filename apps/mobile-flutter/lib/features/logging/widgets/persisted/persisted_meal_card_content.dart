@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../logic/logging_spacing.dart';
-import '../../../../shared/widgets/kallo_text.dart';
+import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';

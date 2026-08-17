@@ -1,13 +1,13 @@
 import 'package:flutter/widgets.dart';
 
-import '../../../../models/meal.dart';
+import '../../../../models/logging/meal.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/stream_analysis_controller.dart';
 import '../../logic/feed/stream_ticker.dart';
 import '../../logic/logging_spacing.dart';
-import '../entrances.dart';
-import '../macro_trio.dart';
+import '../composer/entrances.dart';
+import '../macros/macro_trio.dart';
 import 'stream_ticker_line.dart';
 
 /// The in-flight analysis, rendered BARE on the feed canvas — no card, no

@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/quiet_action_button.dart';
+import '../../../../shared/widgets/form/quiet_action_button.dart';
 import '../../../../theme/calm_tokens.dart';
 
 /// The quiet Cancel text button — exits the amount editor without a network

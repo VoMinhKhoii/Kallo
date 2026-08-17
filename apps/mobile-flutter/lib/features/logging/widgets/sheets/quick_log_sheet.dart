@@ -4,18 +4,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../data/session_provider.dart';
-import '../../../../models/cheat.dart';
-import '../../../../shared/widgets/kallo_sheet.dart';
-import '../../../../shared/widgets/kallo_sheet_header.dart';
+import '../../../../services/auth/session_provider.dart';
+import '../../../../models/logging/cheat.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_keys.dart';
 import '../../data/logging_providers.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_log_mode.dart';
-import '../cheat_intensity_row.dart';
-import '../feed/composer_actions.dart';
-import '../meal_input.dart';
+import '../cheat/cheat_intensity_row.dart';
+import '../composer/composer_actions.dart';
+import '../composer/meal_input.dart';
 import 'manual_log_sheet.dart';
 
 /// Opens the quick-log sheet — the dashboard FAB's composer.

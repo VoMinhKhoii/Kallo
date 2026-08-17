@@ -2,13 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../data/billing/entitlement_state.dart';
-import '../../../shared/widgets/kallo_primitives.dart';
+import '../../../services/billing/entitlement_state.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
-import '../store_subscriptions.dart';
+import '../logic/store_subscriptions.dart';
 import 'paywall_features.dart';
 
 /// Confirmation and store-management state for premium and lifetime users.

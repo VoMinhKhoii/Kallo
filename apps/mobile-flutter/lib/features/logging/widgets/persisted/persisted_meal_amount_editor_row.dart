@@ -8,7 +8,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../logic/amount_editor_totals.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_utils.dart';
-import '../meal_stepper_button.dart';
+import '../composer/meal_stepper_button.dart';
 
 /// One ingredient row in the amount editor: name, ±10g steppers with a tabular
 /// grams readout, and an X toggle that flags the row for removal (opacity 0.40 +

@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show Session;
 
-import 'data/analytics.dart';
-import 'data/billing/entitlement_lifecycle_sync.dart';
-import 'data/billing/purchases_service.dart';
-import 'data/session_provider.dart';
-import 'features/circle/circle_deep_links.dart';
+import 'services/analytics/analytics.dart';
+import 'services/billing/entitlement_lifecycle_sync.dart';
+import 'services/billing/purchases_service.dart';
+import 'services/auth/session_provider.dart';
+import 'features/circle/logic/circle_deep_links.dart';
 import 'features/logging/data/logging_providers.dart';
 import 'router.dart';
 import 'theme/kallo_theme.dart';

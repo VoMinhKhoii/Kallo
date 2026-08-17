@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../data/logging_models.dart';
-import '../cheat_meal_card.dart';
-import '../entrances.dart';
+import '../cheat/cheat_meal_card.dart';
+import '../composer/entrances.dart';
 import '../persisted/persisted_meal_amount_editor.dart' show AmountEditSave;
 import '../persisted/persisted_meal_card.dart';
 

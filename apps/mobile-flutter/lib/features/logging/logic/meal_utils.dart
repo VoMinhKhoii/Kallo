@@ -3,7 +3,7 @@
 /// must match the web exactly so confirmed edits agree with the server.
 library;
 
-import '../../../models/meal.dart';
+import '../../../models/logging/meal.dart';
 
 /// Minimum allowed cooked weight for a grams/ml dish.
 const double minDishGrams = 10;

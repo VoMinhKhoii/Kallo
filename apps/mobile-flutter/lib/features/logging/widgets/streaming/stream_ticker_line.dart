@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../models/streaming.dart';
+import '../../../../models/logging/streaming.dart';
 import '../../logic/feed/stage_verbs.dart';
 import '../../logic/feed/stream_ticker.dart';
 import '../loaders/loader_registry.dart';

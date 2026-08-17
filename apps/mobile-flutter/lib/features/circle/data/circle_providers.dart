@@ -12,9 +12,9 @@ import 'dart:typed_data';
 import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../data/query.dart';
-import '../../../models/circle.dart';
+import '../../../services/http/api_client.dart';
+import '../../../services/http/query.dart';
+import '../../../models/social/circle.dart';
 import '../../dashboard/data/dashboard_providers.dart'
     show
         dashboardBundleProvider,

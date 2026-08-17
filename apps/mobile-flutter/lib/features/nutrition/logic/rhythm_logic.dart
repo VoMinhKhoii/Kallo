@@ -7,7 +7,7 @@ library;
 
 import 'dart:ui';
 
-import '../../../models/nutrition.dart';
+import '../../../models/nutrition/nutrition.dart';
 import '../../../theme/kallo_colors.dart';
 
 const Map<String, double> kKcalPerGram = {

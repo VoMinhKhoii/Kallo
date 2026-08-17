@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/dashboard/logic/dashboard_spacing.dart';
-import 'package:kallo_mobile/features/dashboard/widgets/today_macro_rows.dart';
+import 'package:kallo_mobile/features/dashboard/widgets/today/today_macro_rows.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 

@@ -8,8 +8,8 @@ import 'package:kallo_mobile/features/logging/widgets/feed/feed_footer.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/meal_time_divider.dart';
 import 'package:kallo_mobile/features/logging/widgets/streaming/streaming_entry.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
-import 'package:kallo_mobile/models/meal.dart';
-import 'package:kallo_mobile/models/streaming.dart';
+import 'package:kallo_mobile/models/logging/meal.dart';
+import 'package:kallo_mobile/models/logging/streaming.dart';
 
 import '../../../l10n_test_loader.dart';
 

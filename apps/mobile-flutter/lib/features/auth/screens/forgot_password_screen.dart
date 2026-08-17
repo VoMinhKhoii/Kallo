@@ -2,9 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../data/env.dart';
-import '../../../services/supabase_service.dart';
-import '../../../shared/widgets/kallo_primitives.dart';
+import '../../../services/env/env.dart';
+import '../../../services/auth/supabase_service.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_typography.dart';

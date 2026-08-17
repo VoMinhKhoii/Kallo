@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../models/cheat.dart';
-import '../../../../models/meal.dart';
+import '../../../../models/logging/cheat.dart';
+import '../../../../models/logging/meal.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/feed/feed_entries.dart';
@@ -9,9 +9,9 @@ import '../../logic/feed/view_state.dart';
 import '../../logic/logging_spacing.dart';
 import '../terminal/logging_day_error_state.dart';
 import 'feed_meal_card.dart';
-import 'feed_no_meals_view.dart';
+import 'placeholder/feed_no_meals_view.dart';
 import 'staged_meal_card.dart';
-import '../../../../shared/widgets/kallo_refresh.dart';
+import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 
 /// The scrollable day: every meal card — saved and staged alike, in the order
 /// they were logged — with the live [footer] as the last item, plus the day's

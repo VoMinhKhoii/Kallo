@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
-import '../data/constants.dart';
+import '../../../shared/logic/tdee.dart';
 
 /// Mirror of `components/onboarding/screen-body-metrics.tsx` aggression block.
 ///

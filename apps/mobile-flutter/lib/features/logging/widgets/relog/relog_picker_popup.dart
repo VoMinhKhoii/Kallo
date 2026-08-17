@@ -2,11 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../models/relog.dart';
+import '../../../../models/logging/relog.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../shared/widgets/quiet_action_button.dart';
+import '../../../../shared/widgets/form/quiet_action_button.dart';
 import '../../logic/logging_spacing.dart';
 import 'relog_picker_group.dart';
 

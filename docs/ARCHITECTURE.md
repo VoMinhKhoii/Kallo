@@ -179,15 +179,46 @@ proved to be one hook.
 | Folder | Concern | Status |
 |---|---|---|
 | `theme/` | design tokens | **reference shape** |
-| `models/` | DTOs mirrored from the web contracts | split |
-| `data/` | named "static data", actually HTTP, analytics, env, session, billing | split |
-| `services/` | Supabase client (single file) | split |
-| `shared/widgets/` | cross-feature widget primitives | split |
-| `shell/` | app scaffold: header **and** sidebar | split |
+| `models/` | DTOs mirrored from the web contracts, grouped by domain: `nutrition/` `logging/` `social/` `profile/` | ok |
+| `services/` | infrastructure edges: `http/` (API client, uploads, cache policy) · `auth/` (Supabase client, session) · `billing/` · `analytics/` · `env/` | ok |
+| `shared/widgets/` | cross-feature widget primitives, one folder per primitive: `avatar/` `brand/` `calorie_ring/` `feedback/` (skeleton, empty, refresh, progress) `form/` `motion/` `sheet/` `surface/` (the screen frame, the card/button, the scroll hairline) `toast/` `typography/` | ok |
+| `shared/logic/` | pure functions more than one feature reads — `tdee.dart`, `display_format.dart` | ok |
+| `shared/data/` | static tables more than one feature reads — `countries.dart` | ok |
+| `shell/` | app scaffold and navigation: `header/` `sidebar/`, plus the two routed surfaces the shell itself owns (`tab_scaffold.dart`, `placeholder_screen.dart`) | ok |
+| `features/circle/widgets/` | `invite/` `groups/` `feed/` `share/` `states/` | ok |
+| `features/dashboard/widgets/` | `today/` `weight/` `heatmap/` `chrome/` `states/` | ok |
+| `features/nutrition/widgets/` | `summary/` `charts/` `nutrients/` `scope/` `states/` | ok |
+| `features/settings/widgets/` | `profile/` `list/` `account/` `inputs/` `chrome/` | ok |
 | `features/<f>/` | one product surface each — auth, circle, dashboard, feedback, logging, nutrition, onboarding, paywall, settings | split |
 
+There is no `lib/data/`. Everything that folder held was infrastructure, so it merged into
+`services/`; no genuinely static table was left to justify keeping it.
+
+`onboarding/` and `settings/` were a copy-paste fork of six files. The three where the copies
+carried the same **data** — the TDEE maths, the constant tables it reads, and the country list —
+are now single copies in `shared/`, with `test/shared/logic/tdee_test.dart` reading the web
+TypeScript to keep the third copy honest. `option_strip` is one component with two skins. The
+remaining three (`custom_select`, `country_select`, `aggression_slider`) are genuinely different
+controls that happen to share a filename, not duplicates.
+
 Within a feature: `screens/` (routed pages) · `widgets/` (presentation) · `logic/` (pure
-functions) · `data/` (providers and static tables) · `providers/` (Riverpod wiring).
+functions and context helpers) · `data/` (providers and static tables) · `providers/` (Riverpod
+wiring). Widget subfolders group by sub-concern — e.g. `settings/widgets/inputs/` (form
+controls) and `settings/widgets/profile/` (the profile-form module). There is no `controls/` or
+`panels/`: both held widgets, and naming them otherwise hid them from the 200-line widget
+budget.
+
+Two sub-concern names are shared vocabulary rather than per-feature invention. `states/` is a
+surface's loading / error / empty views — circle, dashboard and nutrition all use it, matching
+the web's `components/nutrition/states/`. `chrome/` is a surface's own furniture: the settings
+tab's one top bar and its nested navigator, the dashboard's week strip, section labels and meal
+FAB.
+
+The Flutter tree has no barrels. `shared/widgets/widgets.dart` re-exported seven modules and hid
+who depended on what — three of the seven had no direct importer left anywhere. A module may
+re-export a file **in its own folder** (its public entry speaking for its internals); it may not
+re-export another folder's module, which is what `card_skeletons.dart` and
+`friend_list_skeleton.dart` were doing with `shared/widgets/feedback/skeleton.dart`.
 
 ## Supporting trees
 

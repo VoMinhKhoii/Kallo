@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../models/meal.dart';
+import '../../../../models/logging/meal.dart';
 import '../../logic/meal_utils.dart';
 import 'portion_picker_sheet.dart';
 

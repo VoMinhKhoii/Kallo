@@ -8,8 +8,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
-import 'data/env.dart';
-import 'services/supabase_service.dart';
+import 'services/env/env.dart';
+import 'services/auth/supabase_service.dart';
 
 /// Supabase connection, supplied at build/run time via `--dart-define`
 /// (mirrors RN's `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`):

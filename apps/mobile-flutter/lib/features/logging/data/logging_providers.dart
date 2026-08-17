@@ -13,8 +13,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/cheat.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/logging/cheat.dart';
 // Prefixed: dashboard_providers also exports a `loggingDayProvider`.
 import '../../dashboard/data/dashboard_providers.dart' as dash;
 import '../../nutrition/providers/nutrition_overview_provider.dart';

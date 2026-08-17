@@ -3,18 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../data/api_client.dart';
-import '../../../data/billing/entitlements_provider.dart';
-import '../../../data/session_provider.dart';
-import '../../../shared/widgets/kallo_primitives.dart';
-import '../../../shared/widgets/scroll_separator.dart';
-import '../../../shared/widgets/top_toast.dart';
-import '../../paywall/store_subscriptions.dart';
+import '../../../services/http/api_client.dart';
+import '../../../services/billing/entitlements_provider.dart';
+import '../../../services/auth/session_provider.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
+import '../../paywall/logic/store_subscriptions.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/settings_spacing.dart';
-import '../widgets/settings_header.dart';
+import '../widgets/chrome/settings_header.dart';
 
 /// Pushed delete-account screen: plain-language consequences and a type-to-
 /// confirm gate before the irreversible deletion.

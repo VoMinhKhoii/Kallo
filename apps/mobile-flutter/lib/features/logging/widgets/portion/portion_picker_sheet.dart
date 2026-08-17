@@ -1,10 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../models/vessel.dart';
-import '../../../../shared/widgets/kallo_sheet.dart';
-import '../../../../shared/widgets/kallo_sheet_header.dart';
-import '../../../../shared/widgets/quiet_action_button.dart';
+import '../../../../models/nutrition/vessel.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
+import '../../../../shared/widgets/form/quiet_action_button.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/portion/portion_anchors.dart';

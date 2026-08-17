@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'data/session_provider.dart';
+import 'services/auth/session_provider.dart';
 import 'features/auth/screens/sign_in_screen.dart';
 import 'features/auth/screens/sign_up_screen.dart';
 import 'features/circle/data/circle_providers.dart';
@@ -19,7 +19,7 @@ import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/onboarding/screens/welcome_setup_screen.dart';
 import 'features/paywall/screens/paywall_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
-import 'services/supabase_service.dart';
+import 'services/auth/supabase_service.dart';
 import 'shell/placeholder_screen.dart';
 import 'shell/tab_scaffold.dart';
 import 'theme/kallo_colors.dart';

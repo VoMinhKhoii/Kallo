@@ -21,10 +21,10 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../data/query.dart';
-import '../../../models/dashboard.dart';
-import '../../../models/weight.dart';
+import '../../../services/http/api_client.dart';
+import '../../../services/http/query.dart';
+import '../../../models/profile/dashboard.dart';
+import '../../../models/profile/weight.dart';
 import 'logging_day.dart';
 
 /// The aggregate dashboard payload — `GET /api/v1/dashboard` decoded into its

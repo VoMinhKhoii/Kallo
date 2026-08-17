@@ -3,9 +3,9 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../data/query.dart';
-import '../../../models/chat_group.dart';
+import '../../../services/http/api_client.dart';
+import '../../../services/http/query.dart';
+import '../../../models/social/chat_group.dart';
 import '../../dashboard/data/dashboard_providers.dart'
     show localTimezoneOffsetMinutes;
 

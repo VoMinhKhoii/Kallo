@@ -9,10 +9,10 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../data/query.dart';
-import '../../../data/session_provider.dart';
-import '../../../models/nutrition.dart';
+import '../../../services/http/api_client.dart';
+import '../../../services/http/query.dart';
+import '../../../services/auth/session_provider.dart';
+import '../../../models/nutrition/nutrition.dart';
 
 /// Raw `getTimezoneOffset()` parity: JS returns minutes POSITIVE west of UTC.
 /// Dart's `timeZoneOffset` is positive EAST of UTC, so we negate it.

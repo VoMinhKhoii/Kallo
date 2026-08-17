@@ -4,12 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
-import '../../../data/billing/entitlement_state.dart';
+import '../../../services/billing/entitlement_state.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
-import '../paywall_controller.dart';
-import '../paywall_result.dart';
+import '../data/paywall_controller.dart';
+import '../logic/paywall_result.dart';
 import 'package_card.dart';
 import 'paywall_status.dart';
 

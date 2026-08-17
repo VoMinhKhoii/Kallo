@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../data/billing/entitlements_provider.dart';
-import '../../../shared/widgets/kallo_primitives.dart';
+import '../../../services/billing/entitlements_provider.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
-import '../paywall_controller.dart';
+import '../data/paywall_controller.dart';
 import '../widgets/paywall_premium_body.dart';
 import '../widgets/paywall_purchase_body.dart';
 import '../widgets/paywall_status.dart';

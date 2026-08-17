@@ -6,11 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../models/ingredient.dart';
-import '../../../../shared/widgets/decimal_input.dart';
-import '../../../../shared/widgets/kallo_sheet.dart';
-import '../../../../shared/widgets/kallo_sheet_header.dart';
-import '../../../../shared/widgets/kallo_text.dart';
+import '../../../../models/nutrition/ingredient.dart';
+import '../../../../shared/widgets/form/decimal_input.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
+import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';

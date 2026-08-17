@@ -4,19 +4,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:kallo_mobile/data/api_client.dart';
+import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/logging/logic/feed/view_state.dart';
 import 'package:kallo_mobile/features/logging/logic/meal_log_mode.dart';
 import 'package:kallo_mobile/features/logging/logic/relog/slash_picker_state.dart';
 import 'package:kallo_mobile/features/logging/logic/relog/slash_token.dart';
-import 'package:kallo_mobile/features/logging/widgets/feed/feed_composer.dart';
-import 'package:kallo_mobile/features/logging/widgets/meal_input.dart';
-import 'package:kallo_mobile/features/logging/widgets/meal_input_controls.dart';
+import 'package:kallo_mobile/features/logging/widgets/composer/feed_composer.dart';
+import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
+import 'package:kallo_mobile/features/logging/widgets/composer/meal_input_controls.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/relog_picker_option.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/relog_picker_popup.dart';
-import 'package:kallo_mobile/models/cheat.dart';
-import 'package:kallo_mobile/models/relog.dart';
+import 'package:kallo_mobile/models/logging/cheat.dart';
+import 'package:kallo_mobile/models/logging/relog.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 import '../../../l10n_test_loader.dart';

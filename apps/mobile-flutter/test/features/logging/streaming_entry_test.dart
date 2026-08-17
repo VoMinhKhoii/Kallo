@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
 import 'package:kallo_mobile/features/logging/widgets/streaming/stream_ticker_line.dart';
 import 'package:kallo_mobile/features/logging/widgets/streaming/streaming_entry.dart';
-import 'package:kallo_mobile/models/meal.dart';
-import 'package:kallo_mobile/models/streaming.dart';
+import 'package:kallo_mobile/models/logging/meal.dart';
+import 'package:kallo_mobile/models/logging/streaming.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 import '../../l10n_test_loader.dart';

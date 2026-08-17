@@ -2,9 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/session_provider.dart';
-import '../../../shared/widgets/kallo_primitives.dart';
-import '../../../shared/widgets/skeleton.dart';
+import '../../../services/auth/session_provider.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shared/widgets/feedback/skeleton.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
@@ -12,9 +12,9 @@ import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
 import '../logic/logging_spacing.dart';
-import '../widgets/feed_area.dart';
-import '../widgets/partial_yesterday_prompt.dart';
-import '../widgets/timeline_picker.dart';
+import '../widgets/feed/feed_area.dart';
+import '../widgets/timeline/partial_yesterday_prompt.dart';
+import '../widgets/timeline/timeline_picker.dart';
 
 /// The logging tab. Owns the selected date + picker-expanded state so the date
 /// strip (in the header) and the feed share one source of truth — mirrors the

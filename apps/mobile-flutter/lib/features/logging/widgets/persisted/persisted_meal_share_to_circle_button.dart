@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../../data/env.dart';
-import '../../../../shared/widgets/top_toast.dart';
+import '../../../../services/env/env.dart';
+import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../circle/data/circle_providers.dart';
 import '../../data/logging_models.dart';
-import '../meal_action_icon_button.dart';
+import '../entry/meal_action_icon_button.dart';
 
 /// The per-meal "Share to circle" toggle plus, once shared, the "Share card"
 /// action (the shareable Macro Card link). Optimistically flips its own state,

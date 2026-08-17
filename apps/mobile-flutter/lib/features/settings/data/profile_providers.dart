@@ -8,8 +8,8 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/onboarding.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/profile/onboarding.dart';
 
 /// The raw `userProfiles` row returned by `GET /api/v1/onboarding/profile`.
 ///

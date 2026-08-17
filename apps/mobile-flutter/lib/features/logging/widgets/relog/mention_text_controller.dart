@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../models/relog.dart';
+import '../../../../models/logging/relog.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../logic/relog/mentions.dart';
 import '../../logic/relog/slash_token.dart';

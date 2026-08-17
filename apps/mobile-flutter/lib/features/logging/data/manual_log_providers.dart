@@ -8,8 +8,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/ingredient.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/nutrition/ingredient.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 

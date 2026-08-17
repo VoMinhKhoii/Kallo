@@ -75,13 +75,13 @@ the [release lanes](./releasing.md) all build from a `/tmp` mirror for this reas
 ## Environment config
 
 Runtime config comes from compile-time `--dart-define`s, read in
-[`lib/data/env.dart`](../../mobile-flutter/lib/data/env.dart). Required: `SUPABASE_URL`,
+[`lib/services/env/env.dart`](../../mobile-flutter/lib/services/env/env.dart). Required: `SUPABASE_URL`,
 `SUPABASE_ANON_KEY`, `API_BASE_URL` (defaults to `http://localhost:3000`). Optional:
 `POSTHOG_KEY`, `POSTHOG_HOST`, `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` (native
 Google sign-in — empty disables the Google button without blocking startup), and
 `REVENUECAT_APPLE_API_KEY` / `REVENUECAT_GOOGLE_API_KEY` (RevenueCat public SDK keys for
 in-app subscriptions — the platform key is picked per-OS in
-[`lib/data/billing/purchases_service.dart`](../../mobile-flutter/lib/data/billing/purchases_service.dart);
+[`lib/services/billing/purchases_service.dart`](../../mobile-flutter/lib/services/billing/purchases_service.dart);
 release-capable keys must use the matching `appl_` / `goog_` prefix, while
 `test_` is accepted only in debug builds; secret-looking or wrong-platform keys
 are rejected before SDK configuration. When the current platform's key is empty the purchases service reports

@@ -3,21 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/kallo_sheet.dart';
-import '../../../shared/widgets/widgets.dart';
-import '../../../shell/app_header.dart';
+import '../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../shared/widgets/surface/kallo_screen.dart';
+import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../../../shell/header/app_header.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../data/chat_group_providers.dart';
 import '../data/circle_providers.dart';
 import '../data/feed_providers.dart';
-import '../widgets/add_friend_sheet.dart';
-import '../widgets/circle_add_menu.dart';
-import '../widgets/group_info_sheet.dart';
-import '../widgets/meal_invites.dart';
-import '../widgets/thread_feed.dart';
-import '../widgets/view_switcher.dart';
-import '../../../shared/widgets/kallo_refresh.dart';
+import '../widgets/invite/add_friend_sheet.dart';
+import '../widgets/invite/circle_add_menu.dart';
+import '../widgets/groups/group_info_sheet.dart';
+import '../widgets/invite/meal_invites.dart';
+import '../widgets/feed/thread_feed.dart';
+import '../widgets/feed/view_switcher.dart';
+import '../../../shared/widgets/feedback/kallo_refresh.dart';
 
 Future<void> _showGroupInfoSheet(BuildContext context, String groupId) =>
     showNhamSheet<void>(

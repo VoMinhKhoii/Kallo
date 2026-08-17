@@ -276,7 +276,7 @@ Reach for these before writing a local variant:
 - **`shared/widgets/quiet_action_button.dart`** — the warm-wash pill for
   "commit what I just typed". NOT the umber `KalloButton`, which is reserved for
   the one primary action per surface; a form's own submit is not that one.
-- **`logging/widgets/macro_trio.dart`** — P/C/F + kcal as fixed columns. Packed
+- **`logging/widgets/macros/macro_trio.dart`** — P/C/F + kcal as fixed columns. Packed
   left-to-right, the columns drift with the digits and a card of ingredients
   reads ragged.
 - **`logging/widgets/meal_time_divider.dart`** — the `── 1:04 AM ──` rule.

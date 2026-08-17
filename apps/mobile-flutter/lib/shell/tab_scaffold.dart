@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../theme/kallo_colors.dart';
-import 'sidebar.dart';
+import 'sidebar/sidebar.dart';
 
 /// App shell for the primary surfaces.
 ///

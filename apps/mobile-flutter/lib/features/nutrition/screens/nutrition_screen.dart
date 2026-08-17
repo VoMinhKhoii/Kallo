@@ -3,27 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/scroll_separator.dart';
-import '../../../data/session_provider.dart';
+import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../../../services/auth/session_provider.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../models/nutrition.dart';
-import '../../../shared/widgets/kallo_primitives.dart';
-import '../../../shared/widgets/kallo_refresh.dart';
-import '../../../shared/widgets/kallo_text.dart';
-import '../../../shared/widgets/top_toast.dart';
-import '../../../shell/app_header.dart';
+import '../../../models/nutrition/nutrition.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shared/widgets/feedback/kallo_refresh.dart';
+import '../../../shared/widgets/typography/kallo_text.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
+import '../../../shell/header/app_header.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/bucket_detail.dart';
 import '../providers/nutrition_overview_provider.dart';
-import '../widgets/day_summary.dart';
-import '../widgets/empty_state.dart';
-import '../widgets/inline_error.dart';
-import '../widgets/nutrient_grid_card.dart';
-import '../widgets/nutrition_skeleton.dart';
-import '../widgets/range_selector.dart';
-import '../widgets/source_attribution.dart';
-import '../widgets/suggested_foods_sheet.dart';
+import '../widgets/summary/day_summary.dart';
+import '../widgets/states/empty_state.dart';
+import '../widgets/states/inline_error.dart';
+import '../widgets/nutrients/nutrient_grid_card.dart';
+import '../widgets/states/nutrition_skeleton.dart';
+import '../widgets/scope/range_selector.dart';
+import '../widgets/nutrients/source_attribution.dart';
+import '../widgets/nutrients/suggested_foods_sheet.dart';
 
 /// Whether the suggested-foods CTA is offered.
 ///

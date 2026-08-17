@@ -12,7 +12,7 @@ import 'apple_button.dart';
 import 'auth_brand_hero.dart';
 import 'auth_divider.dart';
 import 'confirm_email_view.dart';
-import '../../../shared/widgets/top_toast.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
 import 'email_auth_form.dart';
 import 'google_button.dart';
 import 'welcome_demo.dart';

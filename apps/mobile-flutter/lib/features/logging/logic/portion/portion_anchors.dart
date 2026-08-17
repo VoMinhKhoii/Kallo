@@ -9,7 +9,7 @@ library;
 
 import 'dart:math' as math;
 
-import '../../../../models/vessel.dart';
+import '../../../../models/nutrition/vessel.dart';
 import 'vessel_data.dart';
 
 class PortionAnchor {

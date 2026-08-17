@@ -20,19 +20,40 @@ Builds run from a `/tmp` mirror (iCloud file-provider breaks codesigning) and sh
 ## 3. Structure Conventions
 
 ```
-lib/features/<feature>/{screens,widgets,...}   — feature code (auth, circle,
-                                                 dashboard, feedback, logging,
-                                                 nutrition, onboarding, settings)
+lib/features/<feature>/          — feature code (auth, circle, dashboard, feedback,
+  screens/                         logging, nutrition, onboarding, paywall, settings)
+  widgets/[<sub-concern>/]       — presentation; sub-concern subfolders when it grows
+  logic/                         — pure functions and BuildContext action helpers
+  data/                          — Riverpod providers and feature-static tables
+  providers/                     — Riverpod wiring
 lib/shared/     — cross-feature widgets/helpers (second consumer required)
-lib/services/   — API/auth/platform services
-lib/models/     — data models (ported from web lib/*/types.ts)
-lib/data/       — static data
-lib/shell/      — app scaffold, navigation shell
-lib/theme/      — colors, typography, spacing tokens
-test/           — mirrors lib/ structure
+  widgets/<m>/                     — one folder per primitive: avatar/ brand/ calorie_ring/
+                                     feedback/ form/ motion/ sheet/ surface/ toast/
+                                     typography/. No loose files at widgets/ root.
+  logic/ data/
+lib/services/   — infrastructure edges, one subfolder per concern:
+                  http/ (api_client, uploads, query cache policy), auth/
+                  (supabase_service, session_provider), billing/, analytics/, env/
+lib/models/     — data models (ported from web lib/*/types.ts), grouped by domain:
+                  nutrition/, logging/, social/, profile/
+lib/shell/      — app scaffold and navigation shell: header/ (the in-flow app bar
+                  and its slots), sidebar/ (the left drawer), plus tab_scaffold.dart
+                  and placeholder_screen.dart — the two routed surfaces the shell
+                  itself hands the router
+lib/theme/      — colors, typography, spacing tokens — the reference shape
+test/           — mirrors lib/; only widget_test.dart, app_fonts.dart and
+                  l10n_test_loader.dart sit at its root
 ```
 
-- Feature-first: new code goes in `lib/features/<feature>/`, promoted to `shared/`/`services/` only when a second feature consumes it. ~8 files per folder before splitting into sub-concern subfolders. One widget per file by default; snake_case filenames. Full rubric: `thermo-nuclear-code-quality-review` skill.
+- No `lib/data/`. It claimed to hold static data and actually held the HTTP client, analytics, env, session and billing; it merged into `lib/services/`. Static tables live with their consumer (`features/<f>/data/`) or in `lib/shared/data/`.
+- No `controls/` or `panels/` folders. Both held widgets, which put them outside the CI gate's `/widgets/` component path and silently raised their budget from 200 to 400 lines. Widgets live under `widgets/`, screens under `screens/` — nothing else.
+- Feature-first: new code goes in `lib/features/<feature>/`, promoted to `shared/`/`services/` only when a second feature consumes it. Aim for one concern and ≤10 files per folder (subfolders don't count) before splitting into sub-concern subfolders. One widget per file by default; snake_case filenames. Full rubric: `thermo-nuclear-code-quality-review` skill.
+- No feature-root loose files: every `.dart` under `lib/features/<feature>/` sits in a sub-concern folder.
+- **No barrels — and a re-export may not cross a folder.** The root `AGENTS.md` bans re-export hubs; Dart is no exception, and the structure gate's barrel rule only scans `.ts`, so this one is on you. Two shapes, one rule:
+  - A file whose whole job is `export '…';` lines is a barrel — delete it and let callers import the file they need. `shared/widgets/widgets.dart` was exactly that (7 re-exports, 5 importers) and is gone. Its cost: `SectionEyebrow`, `Screen` and `TargetProgressBar` had no direct importer anywhere, so nothing could tell you who actually depended on them.
+  - A real module **may** re-export a file in its own folder — that is the folder's public entry speaking for its own internals (`toast/top_toast.dart` → `top_toast_pill.dart`, `surface/kallo_primitives.dart` → `kallo_screen.dart`). It may **not** re-export another folder's module: `dashboard/widgets/states/card_skeletons.dart` and `circle/widgets/states/friend_list_skeleton.dart` both re-exported `shared/widgets/feedback/skeleton.dart`, which let dashboard and circle widgets reach a shared primitive through a feature file. Both re-exports were removed.
+- `test/` mirrors `lib/`, and the mirror collapses the `widgets/`/`logic/` layer: a test lives in the folder its subject lives in — `test/features/<f>/[<sub-concern>/]`, `test/services/<concern>/`, `test/shared/<layer>/`. The block above claimed this mirror while most test files sat flat at the root, so the claim was worth nothing as a gate; they were moved and it is now true. Exactly three files stay at the root: `l10n_test_loader.dart` and `app_fonts.dart` (helpers any test may reach for — §4 quotes the l10n path, so it must not move), and `widget_test.dart`, which boots the whole app and therefore mirrors nothing.
+- Sub-concern folder names are shared vocabulary, not per-feature invention. `states/` is the loading/error/empty states of a surface (circle, dashboard, nutrition all use it); `chrome/` is a surface's own furniture — its header, its navigator, the bar it always shows.
 - Parity work must match the web source 1:1 — interactions, transitions, and exact sizing/spacing, not just static layout.
 
 ## 4. Gotchas

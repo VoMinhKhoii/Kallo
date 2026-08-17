@@ -32,9 +32,10 @@ lib/
     supabase_service.dart   Supabase initialization
   models/              DTOs: meal, nutrition, dashboard, weight, onboarding, streaming
   features/            one folder per surface (see below)
-  shared/widgets/      cross-cutting primitives (kallo_primitives, kallo_text,
-                       decimal_input, target_progress_bar, section_eyebrow)
-  shell/               app shell: header, sidebar/drawer, tab scaffold
+  shared/widgets/      cross-cutting primitives, one folder each: avatar/ brand/
+                       calorie_ring/ feedback/ form/ motion/ sheet/ surface/
+                       toast/ typography/
+  shell/               app shell: header/, sidebar/ (drawer), tab_scaffold.dart
   theme/               kallo_colors, kallo_typography, kallo_theme
 ```
 
@@ -87,7 +88,7 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
   auth-gated routing. Riverpod controllers wrap streaming (`stream_analysis_controller.dart`).
 - **Navigation:** `go_router` with a shell route. The shell is a **left slide-in drawer**
   (hamburger), not a bottom tab bar — matching the web mobile nav.
-- **Sheets:** `showNhamSheet` (`shared/widgets/kallo_sheet.dart`) + `KalloSheetSurface` +
+- **Sheets:** `showNhamSheet` (`shared/widgets/sheet/kallo_sheet.dart`) + `KalloSheetSurface` +
   `KalloSheetHeader` (`kallo_sheet_header.dart`). `isScrollControlled` defaults to **true** —
   Material's default caps a sheet at 9/16 of the screen and clips the rest, which pushed
   action rows off-screen on short phones and in landscape. A sheet whose body is a plain

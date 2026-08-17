@@ -8,8 +8,8 @@ import 'package:kallo_mobile/features/logging/logic/feed/view_state.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_footer.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_list.dart';
 import 'package:kallo_mobile/features/logging/widgets/streaming/streaming_entry.dart';
-import 'package:kallo_mobile/models/meal.dart';
-import 'package:kallo_mobile/models/streaming.dart';
+import 'package:kallo_mobile/models/logging/meal.dart';
+import 'package:kallo_mobile/models/logging/streaming.dart';
 
 import '../../../l10n_test_loader.dart';
 

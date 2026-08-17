@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/kallo_mark.dart';
-import '../../../shared/widgets/kallo_wordmark.dart';
+import '../../../shared/widgets/brand/kallo_mark.dart';
+import '../../../shared/widgets/brand/kallo_wordmark.dart';
 import '../../../theme/kallo_colors.dart';
 
 /// App icon tile + wordmark — the standard mobile auth hero. The tile is

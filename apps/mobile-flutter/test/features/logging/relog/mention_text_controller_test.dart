@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/logic/relog/mentions.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
-import 'package:kallo_mobile/models/relog.dart';
+import 'package:kallo_mobile/models/logging/relog.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 RelogDishCandidate _dish(String name, {int order = 0}) => RelogDishCandidate(

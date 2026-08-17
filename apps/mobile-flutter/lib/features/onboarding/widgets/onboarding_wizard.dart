@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../models/onboarding.dart';
+import '../../../models/profile/onboarding.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
@@ -12,7 +12,7 @@ import '../data/profile_row.dart';
 import '../logic/step_one_defaults.dart';
 import '../providers/onboarding_providers.dart';
 import '../screens/screen_body_metrics.dart';
-import '../../../shared/widgets/top_toast.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
 import '../screens/screen_cooking.dart';
 import '../screens/screen_origin.dart';
 import 'step_indicator.dart';

@@ -6,7 +6,7 @@
 /// is unit-testable and can't drift between the line and the picker.
 library;
 
-import '../../../../models/vessel.dart';
+import '../../../../models/nutrition/vessel.dart';
 import 'portion_anchors.dart';
 import 'vessel_data.dart';
 

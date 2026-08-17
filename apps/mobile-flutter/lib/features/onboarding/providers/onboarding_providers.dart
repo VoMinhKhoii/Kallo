@@ -10,9 +10,9 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../data/query.dart';
-import '../../../data/session_provider.dart';
+import '../../../services/http/api_client.dart';
+import '../../../services/http/query.dart';
+import '../../../services/auth/session_provider.dart';
 import '../data/profile_row.dart';
 import '../logic/progress.dart';
 

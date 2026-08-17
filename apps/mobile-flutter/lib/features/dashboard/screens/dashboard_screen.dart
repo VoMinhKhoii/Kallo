@@ -18,23 +18,25 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../models/dashboard.dart';
-import '../../../shared/widgets/widgets.dart';
-import '../widgets/card_skeletons.dart';
-import '../../../data/session_provider.dart';
-import '../../../shell/app_header.dart';
+import '../../../models/profile/dashboard.dart';
+import '../../../shared/widgets/feedback/skeleton.dart';
+import '../../../shared/widgets/surface/kallo_screen.dart';
+import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../widgets/states/card_skeletons.dart';
+import '../../../services/auth/session_provider.dart';
+import '../../../shell/header/app_header.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../logging/logic/timeline_utils.dart' hide WeekStrip;
 import '../data/dashboard_providers.dart';
-import '../logic/dashboard_format.dart';
+import '../../../shared/logic/display_format.dart';
 import '../logic/dashboard_spacing.dart';
-import '../widgets/adherence_heatmap.dart';
+import '../widgets/heatmap/adherence_heatmap.dart';
 import '../../../theme/calm_tokens.dart';
-import '../widgets/floating_meal_trigger.dart';
-import '../widgets/section_header.dart';
-import '../widgets/today_section.dart';
-import '../widgets/week_strip.dart';
-import '../widgets/weight_chart.dart';
+import '../widgets/chrome/floating_meal_trigger.dart';
+import '../widgets/chrome/section_header.dart';
+import '../widgets/today/today_section.dart';
+import '../widgets/chrome/week_strip.dart';
+import '../widgets/weight/weight_chart.dart';
 
 // EN copy (messages/en.json `dashboard.*`), matching the RN inlined COPY.
 

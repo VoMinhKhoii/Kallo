@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:kallo_mobile/models/relog.dart';
+import 'package:kallo_mobile/models/logging/relog.dart';
 
 RelogDishCandidate _dish({String name = 'Phở bò', int order = 0}) =>
     RelogDishCandidate(

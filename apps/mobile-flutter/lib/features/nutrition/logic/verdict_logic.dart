@@ -5,7 +5,7 @@
 /// Ported from `apps/mobile/src/lib/nutrition/logic/verdict-logic.ts`.
 library;
 
-import '../../../models/nutrition.dart';
+import '../../../models/nutrition/nutrition.dart';
 
 /// `resolvedRange` is a raw '7d' | '30d' | '90d' string in the Dart model.
 const Map<String, String> kPeriodKeys = {
