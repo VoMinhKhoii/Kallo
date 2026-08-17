@@ -1,16 +1,16 @@
 import { ArrowLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import { StatusForm } from '@/components/admin/feedback/status-form';
 import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin/authz/require-admin';
-import { formatUtcTimestamp } from '@/lib/admin/format';
 import {
   FEEDBACK_TYPE_LABELS,
   getFeedbackDetail,
 } from '@/lib/admin/queries/feedback';
+import { formatUtcTimestamp } from '@/lib/core/text/utc-timestamp';
 import { cn } from '@/lib/core/ui/cn';
 import { db } from '@/lib/infra/db';
 import { createAdminClient } from '@/lib/infra/supabase/admin';
-import { StatusForm } from './_components/status-form';
 
 export const dynamic = 'force-dynamic';
 

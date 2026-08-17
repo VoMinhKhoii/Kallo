@@ -33,7 +33,7 @@ export interface RelogExecutor {
  * migration; substring over the already-filtered per-user set needs neither.
  *
  * Trigram is likewise deliberately absent: `word_similarity` saturates (see the
- * long note in app/api/v1/ingredients/search/route.ts) and short Vietnamese
+ * long note in lib/domain/ingredients/search/rrf-fusion.ts) and short Vietnamese
  * words need a 0.15 threshold. Over one user's ~200 dishes it would buy nothing
  * but noisier ordering.
  *

@@ -65,10 +65,11 @@ another domain module is a smell worth a second look.
 |---|---|
 | `account-deletion/` | queued deletion jobs and their retry |
 | `barcode/` | Open Food Facts lookup and decode |
-| `billing/` | `revenuecat/` (the purchase side) and `entitlement/` (the grant side) |
+| `billing/` | `revenuecat/` (the purchase side, incl. its `webhook/` intake) and `entitlement/` (the grant side) |
 | `cheat/` | cheat-meal slider math |
 | `dashboard/` | dashboard aggregations |
 | `docs/` | in-app docs loader, toc, nav, search |
+| `ingredients/` | `search/` — the food-composition picker: recents, lexical + semantic arms, rank fusion |
 | `logging/` | meal logging and relog |
 | `meals/` | dish quantity edits and the macro rescaling they imply |
 | `nutrition/` | nutrition overview, catalog, pattern analysis |
@@ -83,8 +84,9 @@ another domain module is a smell worth a second look.
 | `ai/` | everything that talks to an LLM — see its own section below |
 | `actions/` | Server Actions, grouped by the surface they serve |
 | `api/` | route-handler plumbing: auth guard, respond, query parse, client fetch |
-| `admin/` | `authz/` and `queries/` |
-| `brand/` · `i18n/` · `seo/` · `sidebar/` | small single-concern modules |
+| `admin/` | the admin plane's logic — see its own section below |
+| `brand/` · `i18n/` · `sidebar/` | small single-concern modules |
+| `seo/` | metadata and structured data, plus `og/` (the Satori share card's palette, geometry and fonts) |
 
 ### `lib/ai/`
 
@@ -98,14 +100,26 @@ another domain module is a smell worth a second look.
 | `matching/` | `retrieve/` `rank/` `alias/` | ok |
 | `streaming/` | SSE event encoding and parsing | ok |
 | `language/` | language detect + guard | ok |
-| `pipeline/` | `contracts/ config/ grounded/ estimator/ resolve/ assemble/ telemetry/ legacy/` | ok |
+| `pipeline/` | `contracts/ config/ grounded/ estimator/ resolve/ assemble/ stream/ telemetry/ legacy/` | ok |
 | `pipeline/estimator/` | provider-agnostic Call-2 seam | **reference shape** |
+| `pipeline/stream/` | the analyze-meal SSE state machine: cheat vs precise outcome, gates, staging | ok |
+
+### `lib/admin/`
+
+| Folder | Concern | Status |
+|---|---|---|
+| `authz/` | who counts as an admin, and the guard that enforces it | ok |
+| `queries/` | the admin read side: requests, feedback, prompts, health | ok |
+| `diagnostics/` | reading a pipeline trace — stage schemas, derived diagnostics, compare | ok |
+| `replay/` | re-running a captured request, live or against captured responses | ok |
+| `triage/` | moving a feedback row through its statuses | ok |
 
 ## `components/` — presentation
 
 | Folder | Concern | Status |
 |---|---|---|
 | `ui/` | shadcn primitives — CLI-managed, never hand-edited | exempt |
+| `admin/` | the admin surface — `requests/` `pipeline-summary/` `feedback/` `health/` `prompts/` | ok |
 | `brand/` | logo marks | ok |
 | `app/` | application chrome present on every page | split |
 | `auth/` | auth dialog, forms, OAuth edge cases | split |
@@ -138,11 +152,11 @@ another domain module is a smell worth a second look.
 | Folder | Concern | Status |
 |---|---|---|
 | `[locale]/(app)/` | authenticated pages, thin compositions | ok |
-| `[locale]/(app)/admin/` | admin surface — holds a full feature module in `_components/` | split |
+| `[locale]/(app)/admin/` | admin pages — thin compositions over `components/admin/` and `lib/admin/` | ok |
 | `api/v1/` | public REST surface — thin delegators to `lib/` | ok |
-| `api/analyze-meal/` | SSE meal-analysis stream | split |
-| `api/webhooks/` | inbound provider webhooks | split |
-| `api/og/` | Satori-rendered share cards | split |
+| `api/analyze-meal/` | SSE meal-analysis stream — the machine is `lib/ai/pipeline/stream/`; `_lib/` holds the pre-stream guards | ok |
+| `api/webhooks/` | inbound provider webhooks — thin delegators to `lib/` | ok |
+| `api/og/` | Satori-rendered share cards — card in `_components/`, tokens in `lib/seo/og/` | ok |
 | `auth/` | OAuth callback and verify routes | ok |
 
 ## `apps/mobile-flutter/lib/` — Flutter

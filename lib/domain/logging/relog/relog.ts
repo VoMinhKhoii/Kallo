@@ -203,8 +203,8 @@ export function weakestConfidence(values: (string | null)[]): string | null {
 
 /** Escape the LIKE metacharacters in a user-typed token. Paired with
  *  `ESCAPE '\'` in the query. Without this a lone `%` matches every row —
- *  the un-escaped shape at `app/api/v1/ingredients/search/route.ts` that this
- *  path deliberately does not copy. */
+ *  the un-escaped shape at `lib/domain/ingredients/search/substring-backfill.ts`
+ *  that this path deliberately does not copy. */
 export function escapeLikeToken(token: string): string {
   return token.replace(/[\\%_]/g, (char) => `\\${char}`);
 }

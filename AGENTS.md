@@ -48,7 +48,7 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
 
 ```
 /app                    — Next.js App Router: [locale] pages, /auth, /api routes
-/components/<feature>   — feature UI (auth, dashboard, groups, landing-page,
+/components/<feature>   — feature UI (admin, auth, dashboard, groups, landing-page,
                           logging/{feed,input,sidebar}, nutrition, onboarding,
                           providers, settings, shared, …)
 /components/ui          — shadcn/ui (CLI-managed, do not edit)
@@ -111,7 +111,7 @@ The full module map — one line per folder stating its single concern — is `d
 ## 8. Gotchas
 
 - **Embeddings**: `gemini-embedding-001` (768 dims) — `text-embedding-004` is deprecated. Batch with ~35s delays per 50 requests on the free tier; honor 429 retry-after headers.
-- **OG images** (`app/api/og/macro-card/[shareId]/route.tsx` renders via Satori — not a browser): every element with 2+ children needs explicit `display: 'flex'`; literal hex colors only (no `var(--kallo-*)`); load fonts from `_fonts/*.ttf` via `readFile`.
+- **OG images** (`app/api/og/macro-card/[shareId]/` renders via Satori — not a browser): every element with 2+ children needs explicit `display: 'flex'`; literal hex colors only (no `var(--kallo-*)`) — they live in `lib/seo/og/palette.ts`, geometry in `card-geometry.ts`, `_fonts/*.ttf` loading in `fonts.ts`. The card itself is `_components/macro-card.tsx`; the route only reads the DB and maps rows to its props.
 - **New `/auth/*` routes** must be handled in the `middleware.ts` matcher/origin-lock flow, or next-intl rewrites them to `/{locale}/auth/...` and 404s — tests don't catch this (they call handlers directly).
 - Check `package.json` scripts before assuming a command exists; run tests immediately after editing test files (don't batch edits, then debug multiple failures).
 

@@ -88,3 +88,5 @@ export type {
   RevenueCatSnapshot,
 } from '@/lib/domain/billing/revenuecat/snapshot';
 export { parseRevenueCatSnapshot } from '@/lib/domain/billing/revenuecat/snapshot';
+export type { RevenueCatWebhookDeps } from '@/lib/domain/billing/revenuecat/webhook/webhook';
+export { handleRevenueCatWebhook } from '@/lib/domain/billing/revenuecat/webhook/webhook';
