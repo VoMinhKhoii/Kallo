@@ -96,7 +96,6 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
               children: [
                 NhamSheetHeader(
                   title: _title(reviewing),
-                  subtitle: _subtitle(reviewing),
                   closeEnabled: !saving,
                 ),
                 // Switching scan type once a product or a scanned label is on
@@ -137,11 +136,5 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
     (ScanType.barcode, _) => 'logging.barcode.title'.tr(),
     (ScanType.label, true) => 'logging.labelScan.reviewTitle'.tr(),
     (ScanType.label, false) => 'logging.labelScan.title'.tr(),
-  };
-
-  String _subtitle(bool reviewing) => switch ((_scanType, reviewing)) {
-    (ScanType.barcode, _) => 'logging.barcode.subtitle'.tr(),
-    (ScanType.label, true) => 'logging.labelScan.reviewSubtitle'.tr(),
-    (ScanType.label, false) => 'logging.labelScan.subtitle'.tr(),
   };
 }

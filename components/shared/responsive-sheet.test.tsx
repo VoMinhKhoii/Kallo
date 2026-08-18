@@ -115,7 +115,6 @@ describe('ResponsiveSheetHeader', () => {
       <ResponsiveSheetHeader
         closeLabel="Cancel"
         onClose={vi.fn()}
-        subtitle="Take or upload a photo"
         title="Scan Nutrition Label"
       />
     );
@@ -126,12 +125,22 @@ describe('ResponsiveSheetHeader', () => {
     expect(
       close.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
-    // 17/600 centered title, 12px muted subtitle — the shared type scale.
+    // 17/600 centered title — the shared type scale.
     expect(title.className).toContain('text-[17px]');
     expect(title.className).toContain('font-semibold');
-    expect(screen.getByText('Take or upload a photo').className).toContain(
-      'text-[12px]'
+  });
+
+  it('renders the title alone — there is no subtitle slot', () => {
+    const { container } = render(
+      <ResponsiveSheetHeader
+        closeLabel="Cancel"
+        onClose={vi.fn()}
+        title="Scan Nutrition Label"
+      />
     );
+
+    // One <p>: the title. A second would be the orphan line this change removed.
+    expect(container.querySelectorAll('p')).toHaveLength(1);
   });
 
   it('disables the close button while a save is in flight', async () => {

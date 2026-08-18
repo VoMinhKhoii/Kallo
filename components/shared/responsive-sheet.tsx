@@ -62,6 +62,7 @@ export function ResponsiveSheet({
         dismissible={dismissible}
       >
         <DrawerContent
+          aria-describedby={undefined}
           className={cn(
             surface,
             'max-h-[90dvh] rounded-t-[22px] border-t',
@@ -80,6 +81,7 @@ export function ResponsiveSheet({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
+        aria-describedby={undefined}
         showCloseButton={false}
         onEscapeKeyDown={(event) => {
           if (!dismissible) event.preventDefault();

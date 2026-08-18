@@ -102,7 +102,6 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
           children: [
             NhamSheetHeader(
               title: 'logging.manualLogging.title'.tr(),
-              subtitle: 'logging.manualLogging.subtitle'.tr(),
             ),
             const SizedBox(height: NhamSpacing.sp2),
 

@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
-import '../../../../theme/nham_typography.dart';
 import '../../logic/label_nutrients.dart';
 import '../../logic/label_review.dart';
 import 'label_nutrient_grid.dart';
+import 'label_product_name_field.dart';
 import 'label_review_footer.dart';
 import 'label_review_metadata.dart';
 import 'label_review_quantity.dart';
@@ -42,6 +42,10 @@ class LabelReviewStep extends StatefulWidget {
 }
 
 class _LabelReviewStepState extends State<LabelReviewStep> {
+  /// Flipped by the first save attempt. Until then an untouched form shows no
+  /// errors; after it, every required field that is still empty says so.
+  bool _submitAttempted = false;
+
   late final TextEditingController _name = TextEditingController(
     text: widget.review.productName,
   );
@@ -60,6 +64,14 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
     widget.review.commitAmount(value);
     _amount.text = widget.review.amountText;
     setState(() {});
+  }
+
+  void _confirm() {
+    if (!widget.review.canConfirm) {
+      setState(() => _submitAttempted = true);
+      return;
+    }
+    widget.onConfirm();
   }
 
   String get _unitLabel => widget.review.unit == 'serving'
@@ -87,34 +99,13 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _label('logging.labelScan.productName'.tr()),
-                const SizedBox(height: 4),
-                TextField(
+                LabelProductNameField(
                   controller: _name,
+                  isValid: review.productIsValid,
                   enabled: !widget.saving,
                   onChanged: (value) =>
                       setState(() => review.productName = value),
-                  style: NhamTextStyles.sansMedium(
-                    fontSize: NhamFontSize.sm,
-                  ).copyWith(color: NhamColors.text),
-                  cursorColor: NhamColors.accent,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    filled: true,
-                    fillColor: NhamColors.elev,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: NhamSpacing.sp3,
-                      vertical: NhamSpacing.sp2,
-                    ),
-                    border: _fieldBorder(review.productIsValid),
-                    enabledBorder: _fieldBorder(review.productIsValid),
-                    focusedBorder: _fieldBorder(review.productIsValid),
-                  ),
                 ),
-                if (!review.productIsValid) ...[
-                  const SizedBox(height: 4),
-                  _danger('logging.labelScan.invalidProductName'.tr()),
-                ],
                 const SizedBox(height: NhamSpacing.sp3),
                 if (review.label != null) ...[
                   LabelReviewMetadata(label: review.label!),
@@ -133,7 +124,8 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
                 const SizedBox(height: NhamSpacing.sp3),
                 LabelNutrientGrid(
                   definitions: labelMacroDefinitions,
-                  required_: true,
+                  layout: LabelGridLayout.macros,
+                  showMissing: _submitAttempted,
                   enabled: !widget.saving,
                   textFor: review.nutrientText,
                   hasError: review.nutrientHasError,
@@ -146,7 +138,7 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
                   const SizedBox(height: NhamSpacing.sp2),
                   LabelNutrientGrid(
                     definitions: micronutrients,
-                    required_: false,
+                    layout: LabelGridLayout.micronutrients,
                     enabled: !widget.saving,
                     textFor: review.nutrientText,
                     hasError: review.nutrientHasError,
@@ -163,10 +155,9 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
           ),
         ),
         LabelReviewFooter(
-          canConfirm: review.canConfirm,
           saving: widget.saving,
           onBack: widget.onBack,
-          onConfirm: widget.onConfirm,
+          onConfirm: _confirm,
         ),
       ],
     );
@@ -182,12 +173,5 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
     text,
     variant: NhamTextVariant.small,
     style: const TextStyle(color: NhamColors.danger),
-  );
-
-  OutlineInputBorder _fieldBorder(bool valid) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(NhamRadii.lg),
-    borderSide: BorderSide(
-      color: valid ? NhamColors.inputBorder : NhamColors.danger,
-    ),
   );
 }

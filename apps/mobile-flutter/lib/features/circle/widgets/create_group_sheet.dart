@@ -74,7 +74,6 @@ class _CreateGroupSheetState extends ConsumerState<CreateGroupSheet> {
         children: [
           NhamSheetHeader(
             title: tr('groups.createGroup.title'),
-            subtitle: tr('groups.createGroup.description'),
           ),
           Flexible(
             child: Padding(

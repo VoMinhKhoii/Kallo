@@ -147,7 +147,6 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
           children: [
             NhamSheetHeader(
               title: 'logging.quickLog.title'.tr(),
-              subtitle: 'logging.quickLog.subtitle'.tr(),
             ),
             Padding(
               // The keyboard's inset already clears the home indicator when it

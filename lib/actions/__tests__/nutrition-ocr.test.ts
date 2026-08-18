@@ -259,21 +259,29 @@ describe('OCR review to staging seam', () => {
       })
     );
 
+    // Confirm is always live; an untouched form is not scolded before the
+    // user has asked for anything.
     const confirm = screen.getByRole('button', { name: 'confirm' });
-    expect(confirm).toBeDisabled();
+    expect(confirm).toBeEnabled();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    // Asking to save with carbohydrates missing reports it on that field and
+    // submits nothing.
+    fireEvent.click(confirm);
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(
+      screen.getByLabelText('ocrNutrients.carbohydrates (g)')
+    ).toHaveAttribute('aria-invalid', 'true');
 
     fireEvent.change(screen.getByLabelText('ocrNutrients.protein (g)'), {
       target: { value: '3,5' },
     });
-    expect(screen.getByRole('alert')).toHaveTextContent('ocrRequiredValues');
     fireEvent.change(screen.getByLabelText('ocrNutrients.carbohydrates (g)'), {
       target: { value: '20' },
     });
     fireEvent.change(screen.getByLabelText('ocrNutrients.fat (g)'), {
       target: { value: '4' },
     });
-    expect(confirm).toBeEnabled();
 
     fireEvent.click(confirm);
     expect(onConfirm).toHaveBeenCalledWith(

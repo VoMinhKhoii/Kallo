@@ -1,48 +1,96 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
-import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
-import '../../../../theme/nham_typography.dart';
 import '../../logic/label_nutrients.dart';
+import 'label_macro_identity.dart';
+import 'label_nutrient_field.dart';
 
-/// Two-column grid of editable nutrient fields.
+/// How a group of nutrient fields is laid out.
+enum LabelGridLayout {
+  /// Calories on their own full-width row, then protein/carbs/fat sharing one.
+  /// Reserved for the four required macros — the only ones that carry an icon
+  /// and a colour.
+  macros,
+
+  /// Two columns that wrap, for the two dozen optional micronutrients.
+  micronutrients,
+}
+
+/// Editable nutrient fields for the label review step.
 ///
-/// Port of `components/logging/input/ocr-nutrient-grid.tsx`. The macros are
-/// rendered as required; micronutrients only appear for values the scan
-/// actually returned, matching the web's filter.
+/// Port of `components/logging/input/ocr-nutrient-grid.tsx`. Micronutrients
+/// appear only for values the scan actually returned, matching the web's
+/// filter; the macros are always shown and always required.
 class LabelNutrientGrid extends StatelessWidget {
   const LabelNutrientGrid({
     super.key,
     required this.definitions,
-    required this.required_,
+    required this.layout,
     required this.textFor,
     required this.hasError,
     required this.onChanged,
     this.enabled = true,
+    this.showMissing = false,
   });
 
   final List<LabelNutrientDefinition> definitions;
-
-  /// Marks every field in this grid as required (the macro grid).
-  final bool required_;
+  final LabelGridLayout layout;
 
   final String Function(String key) textFor;
   final bool Function(String key) hasError;
   final void Function(String key, String value) onChanged;
   final bool enabled;
 
+  /// Set once the user has tried to save: a required field left empty then
+  /// shows its error instead of waiting silently. Before that first attempt an
+  /// untouched form is not scolded.
+  final bool showMissing;
+
+  bool get _required => layout == LabelGridLayout.macros;
+
+  bool _isMissing(String key) =>
+      _required && showMissing && textFor(key).trim().isEmpty;
+
+  Widget _field(LabelNutrientDefinition definition, {required bool stacked}) =>
+      LabelNutrientField(
+        definition: definition,
+        identity: labelMacroIdentities[definition.key],
+        isRequired: _required,
+        stackedUnit: stacked,
+        value: textFor(definition.key),
+        hasError: hasError(definition.key) || _isMissing(definition.key),
+        enabled: enabled,
+        onChanged: (value) => onChanged(definition.key, value),
+      );
+
   @override
   Widget build(BuildContext context) {
+    if (layout == LabelGridLayout.macros) {
+      final calories = definitions.firstWhere((d) => d.key == 'calories');
+      final rest = definitions.where((d) => d.key != 'calories').toList();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _field(calories, stacked: false),
+          const SizedBox(height: NhamSpacing.sp2),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < rest.length; i++) ...[
+                if (i > 0) const SizedBox(width: NhamSpacing.sp2),
+                // Three across a 375pt screen leaves ~105pt per field, so the
+                // unit sits under the input rather than inside it.
+                Expanded(child: _field(rest[i], stacked: true)),
+              ],
+            ],
+          ),
+        ],
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        // One column on a narrow phone, two everywhere else: a field plus its
-        // unit suffix is unreadable much below 160pt of column.
-        final columns = constraints.maxWidth < 320 ? 1 : 2;
-        final itemWidth =
-            (constraints.maxWidth - NhamSpacing.sp2 * (columns - 1)) / columns;
+        final itemWidth = (constraints.maxWidth - NhamSpacing.sp2) / 2;
         return Wrap(
           spacing: NhamSpacing.sp2,
           runSpacing: NhamSpacing.sp2,
@@ -50,124 +98,11 @@ class LabelNutrientGrid extends StatelessWidget {
             for (final definition in definitions)
               SizedBox(
                 width: itemWidth,
-                child: _NutrientField(
-                  definition: definition,
-                  isRequired: required_,
-                  value: textFor(definition.key),
-                  hasError: hasError(definition.key),
-                  enabled: enabled,
-                  onChanged: (value) => onChanged(definition.key, value),
-                ),
+                child: _field(definition, stacked: false),
               ),
           ],
         );
       },
     );
   }
-}
-
-class _NutrientField extends StatefulWidget {
-  const _NutrientField({
-    required this.definition,
-    required this.isRequired,
-    required this.value,
-    required this.hasError,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final LabelNutrientDefinition definition;
-  final bool isRequired;
-  final String value;
-  final bool hasError;
-  final bool enabled;
-  final ValueChanged<String> onChanged;
-
-  @override
-  State<_NutrientField> createState() => _NutrientFieldState();
-}
-
-class _NutrientFieldState extends State<_NutrientField> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.value,
-  );
-
-  @override
-  void didUpdateWidget(_NutrientField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // The amount picker rewrites every field when an amount is committed.
-    // Only adopt the new text when it really differs, so the caret doesn't
-    // jump while the user is typing.
-    if (widget.value != _controller.text) {
-      _controller.value = TextEditingValue(
-        text: widget.value,
-        selection: TextSelection.collapsed(offset: widget.value.length),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final borderColor = widget.hasError
-        ? NhamColors.danger
-        : NhamColors.inputBorder;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        NhamText(
-          'logging.labelScan.nutrients.${widget.definition.labelKey}'.tr(),
-          variant: NhamTextVariant.small,
-          maxLines: 1,
-          style: const TextStyle(color: NhamColors.textMuted),
-        ),
-        const SizedBox(height: 4),
-        TextField(
-          controller: _controller,
-          enabled: widget.enabled,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-          ],
-          onChanged: widget.onChanged,
-          style: NhamTextStyles.sansMedium(
-            fontSize: NhamFontSize.sm,
-          ).copyWith(color: NhamColors.text),
-          cursorColor: NhamColors.accent,
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: NhamColors.elev,
-            hintText: widget.isRequired ? '0' : null,
-            hintStyle: NhamTextStyles.sansRegular(
-              fontSize: NhamFontSize.sm,
-            ).copyWith(color: NhamColors.placeholderMuted40),
-            suffixText: widget.definition.unit,
-            suffixStyle: NhamTextStyles.sansRegular(
-              fontSize: NhamFontSize.xs,
-            ).copyWith(color: NhamColors.textMuted),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp2,
-              vertical: NhamSpacing.sp2,
-            ),
-            border: _border(borderColor),
-            enabledBorder: _border(borderColor),
-            focusedBorder: _border(
-              widget.hasError ? NhamColors.danger : NhamColors.borderAccent40,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  OutlineInputBorder _border(Color color) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(NhamRadii.lg),
-    borderSide: BorderSide(color: color),
-  );
 }

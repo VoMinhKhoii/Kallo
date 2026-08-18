@@ -3,12 +3,16 @@
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
 import type {
   OcrReviewPayload,
   ParsedNutritionLabel,
 } from '@/lib/nutrition/ocr-schema';
-import { type MacroItem, OcrNutrientGrid } from './ocr-nutrient-grid';
+import {
+  type MacroItem,
+  OcrMacroGrid,
+  OcrNutrientGrid,
+} from './ocr-nutrient-grid';
+import { OcrProductNameField } from './ocr-product-name-field';
 import { OcrReviewMetadata } from './ocr-review-metadata';
 import {
   OCR_MACRO_DEFINITIONS,
@@ -40,19 +44,25 @@ export function OcrReviewStep({
   onConfirm,
 }: OcrReviewStepProps) {
   const t = useTranslations('logging');
-  const [hasInteracted, setHasInteracted] = useState(false);
+  // Flipped by the first save attempt. Until then an untouched form shows no
+  // errors; after it, every required field still empty says so itself.
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const review = useOcrReviewState(data, t('ocrDefaultProductName'));
   const toItem = (
     definition: (typeof OCR_MACRO_DEFINITIONS)[number],
     required = false
   ): MacroItem => ({
     id: `ocr-nutrient-${definition.key}`,
+    key: definition.key,
     label: t(`ocrNutrients.${definition.labelKey}`),
     val: review.getNutrientText(definition.key),
     unit: definition.unit,
-    icon: definition.key === 'calories',
     required,
-    hasError: review.nutrientHasError(definition.key),
+    hasError:
+      review.nutrientHasError(definition.key) ||
+      (required &&
+        submitAttempted &&
+        review.getNutrientText(definition.key).trim() === ''),
     errorText: t('ocrInvalidNutrient'),
     setter: (value) => review.setNutrientText(definition.key, value),
   });
@@ -66,8 +76,13 @@ export function OcrReviewStep({
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     const { calories, proteinGrams, carbsGrams, fatGrams } = review.nutrition;
+    if (!review.canConfirm) {
+      // Submit is always live; a gap is reported by the fields that have it
+      // rather than by a dead button the user has to figure out.
+      setSubmitAttempted(true);
+      return;
+    }
     if (
-      !review.canConfirm ||
       review.parsedAmount === null ||
       calories === null ||
       proteinGrams === null ||
@@ -90,40 +105,15 @@ export function OcrReviewStep({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      onChange={() => setHasInteracted(true)}
-      className="flex min-h-0 flex-1 flex-col"
-    >
+    <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6">
-        <div className="space-y-1.5">
-          <label
-            htmlFor="ocr-product-name"
-            className="font-medium text-[12px] text-nham-text-muted"
-          >
-            {t('ocrProductName')}
-          </label>
-          <Input
-            id="ocr-product-name"
-            type="text"
-            value={review.productName}
-            aria-invalid={!review.productIsValid}
-            aria-describedby={
-              !review.productIsValid ? 'ocr-product-name-error' : undefined
-            }
-            onChange={(event) => review.setProductName(event.target.value)}
-            className="rounded-xl border-nham-border bg-white text-[14px] text-nham-text focus-visible:border-nham-accent"
-          />
-          {!review.productIsValid && (
-            <p
-              id="ocr-product-name-error"
-              role="alert"
-              className="text-nham-danger text-xs"
-            >
-              {t('ocrInvalidProductName')}
-            </p>
-          )}
-        </div>
+        <OcrProductNameField
+          value={review.productName}
+          isValid={review.productIsValid}
+          label={t('ocrProductName')}
+          errorText={t('ocrInvalidProductName')}
+          onChange={review.setProductName}
+        />
 
         {data && (
           <OcrReviewMetadata
@@ -158,12 +148,7 @@ export function OcrReviewStep({
           onCommit={review.commitAmount}
         />
 
-        <OcrNutrientGrid items={macroItems} />
-        {hasInteracted && !review.canConfirm && (
-          <p role="alert" className="text-[12px] text-nham-danger">
-            {t('ocrRequiredValues')}
-          </p>
-        )}
+        <OcrMacroGrid items={macroItems} />
         {micronutrientItems.length > 0 && (
           <OcrNutrientGrid items={micronutrientItems} />
         )}
@@ -181,7 +166,7 @@ export function OcrReviewStep({
         </button>
         <button
           type="submit"
-          disabled={isStaging || !review.canConfirm}
+          disabled={isStaging}
           className="inline-flex touch-manipulation items-center gap-2 rounded-xl bg-nham-ink px-5 py-2.5 font-medium text-[14px] text-white shadow-sm hover:bg-[#1C1917] disabled:opacity-50"
         >
           {isStaging ? (

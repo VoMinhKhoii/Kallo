@@ -143,6 +143,12 @@
   --color-nham-macro-protein: var(--nham-macro-protein);
   --color-nham-macro-carbs: var(--nham-macro-carbs);
   --color-nham-macro-fat: var(--nham-macro-fat);
+  /* The brighter, hue-split trio — for anywhere the three macros sit side by
+     side (nutrition charts, the label review row). Not interchangeable with
+     the quiet --nham-macro-* set above. */
+  --color-nham-chart-protein: var(--nham-chart-protein);
+  --color-nham-chart-carbs: var(--nham-chart-carbs);
+  --color-nham-chart-fat: var(--nham-chart-fat);
   /* Semantic status tokens */
   --color-nham-success: var(--nham-success);
   --color-nham-success-faint: var(--nham-success-faint);

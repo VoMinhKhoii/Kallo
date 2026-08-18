@@ -290,12 +290,6 @@ class _ScannerView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: NhamSpacing.sp3),
-          NhamText(
-            'logging.barcode.scanning'.tr(),
-            variant: NhamTextVariant.small,
-            style: const TextStyle(color: NhamColors.textMuted),
-          ),
-          const SizedBox(height: NhamSpacing.sp2),
           ScanQuietButton(
             icon: LucideIcons.keyboard300,
             label: 'logging.barcode.manualEntry'.tr(),

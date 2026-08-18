@@ -1046,7 +1046,6 @@
     "barcodeGramsLabel": "Khối lượng ăn (g)",
     "barcodeAddMeal": "Thêm bữa ăn",
     "barcodeDialogTitle": "Tra cứu mã vạch",
-    "barcodeDialogDesc": "Nhập mã vạch để tra cứu nhanh giá trị dinh dưỡng của sản phẩm đóng gói từ Open Food Facts.",
     "barcodeBack": "Quay lại",
     "barcodeScanTab": "Quét camera",
     "barcodeManualTab": "Nhập tay",
@@ -1083,13 +1082,11 @@
     },
     "ocrTab": "Quét bảng dinh dưỡng",
     "ocrDialogTitle": "Quét Bảng Giá Trị Dinh Dưỡng",
-    "ocrDialogDesc": "Chụp hoặc tải ảnh bảng dinh dưỡng trên bao bì để tự động trích xuất calo và macro.",
     "ocrUploadTab": "Tải ảnh lên",
     "ocrUploadHint": "Tải ảnh hoặc chụp bảng Thông tin dinh dưỡng",
     "ocrCompressing": "Đang tối ưu ảnh...",
     "ocrScanning": "AI đang phân tích bảng dinh dưỡng...",
     "ocrReviewTitle": "Xác nhận Thông tin Dinh dưỡng",
-    "ocrReviewDesc": "Kiểm tra và điều chỉnh các chỉ số trước khi lưu.",
     "ocrFallbackPrompt": "Không tìm thấy mã vạch? Quét bảng dinh dưỡng",
     "ocrDefaultProductName": "Sản phẩm quét từ nhãn",
     "ocrProductName": "Tên sản phẩm",
@@ -1122,7 +1119,6 @@
     "ocrIncreaseAmount": "Tăng lượng dùng",
     "ocrInvalidNutrient": "Nhập một giá trị hợp lệ trong phạm vi cho phép.",
     "ocrInvalidProductName": "Nhập tên sản phẩm, tối đa 200 ký tự.",
-    "ocrRequiredValues": "Nhập đủ calo, đạm, carb và chất béo hợp lệ trước khi lưu.",
     "ocrBasis": {
       "per100g": "Trên 100 g",
       "per100ml": "Trên 100 ml",
@@ -1480,7 +1476,6 @@
     },
     "shareMeal": {
       "title": "Chia sẻ bữa ăn này",
-      "description": "Chọn những người bạn đã ăn cùng. Họ sẽ nhận được lời mời để thêm vào nhật ký của mình.",
       "mode": {
         "copy": {
           "label": "Cùng một món",
@@ -1514,7 +1509,6 @@
     },
     "invite": {
       "title": "Mời vào vòng kết nối",
-      "description": "Chia sẻ liên kết của bạn. Bất kỳ ai mở liên kết đều có thể kết nối với bạn.",
       "tabAddFriend": "Thêm bạn",
       "tabCreateGroup": "Tạo nhóm",
       "yourLink": "Liên kết mời của bạn",
@@ -1543,7 +1537,6 @@
     },
     "createGroup": {
       "title": "Tạo nhóm",
-      "description": "Đặt tên và thêm thành viên từ vòng kết nối của bạn.",
       "nameLabel": "Tên nhóm",
       "namePlaceholder": "VD: Hội leo núi cuối tuần",
       "membersLabel": "Thêm thành viên",

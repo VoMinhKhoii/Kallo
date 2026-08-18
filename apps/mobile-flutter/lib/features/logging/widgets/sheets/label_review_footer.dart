@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import 'scan_sheet_controls.dart';
@@ -15,13 +14,11 @@ import 'scan_sheet_controls.dart';
 class LabelReviewFooter extends StatelessWidget {
   const LabelReviewFooter({
     super.key,
-    required this.canConfirm,
     required this.saving,
     required this.onBack,
     required this.onConfirm,
   });
 
-  final bool canConfirm;
   final bool saving;
   final VoidCallback onBack;
   final VoidCallback onConfirm;
@@ -42,17 +39,11 @@ class LabelReviewFooter extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!canConfirm && !saving) ...[
-            NhamText(
-              'logging.labelScan.requiredValues'.tr(),
-              variant: NhamTextVariant.small,
-              style: const TextStyle(color: NhamColors.textMuted),
-            ),
-            const SizedBox(height: NhamSpacing.sp2),
-          ],
+          // Always tappable. A gap is reported by the fields that have it,
+          // when the user asks to save — not by a sentence under a dead
+          // button explaining why nothing happens.
           ScanPrimaryButton(
             label: 'logging.labelScan.addMeal'.tr(),
-            enabled: canConfirm,
             busy: saving,
             onTap: onConfirm,
           ),

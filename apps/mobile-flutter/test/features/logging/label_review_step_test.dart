@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/features/logging/logic/label_review.dart';
 import 'package:nham_mobile/features/logging/widgets/sheets/label_review_step.dart';
 import 'package:nham_mobile/models/nutrition_label.dart';
+import 'package:nham_mobile/theme/nham_colors.dart';
 
 import '../../l10n_test_loader.dart';
 
@@ -121,7 +122,16 @@ void main() {
     expect(review.nutrientValue('sodiumMg'), 96);
   });
 
-  testWidgets('confirm is blocked until the required macros are filled', (
+  testWidgets('marks the four macros required, and nothing else', (
+    tester,
+  ) async {
+    await pumpStep(tester);
+
+    // Calories, protein, carbs, fat — sodium is optional, so no mark.
+    expect(find.text(' *'), findsNWidgets(4));
+  });
+
+  testWidgets('confirm stays tappable and reports the gap on the attempt', (
     tester,
   ) async {
     var confirmed = 0;
@@ -130,17 +140,22 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, '6'), '');
     await tester.pumpAndSettle();
     expect(review.canConfirm, isFalse);
-    expect(find.text('Add meal'), findsOneWidget);
 
+    // The button is live — tapping it is how the user learns what is missing.
     await tester.tap(find.text('Add meal'));
     await tester.pumpAndSettle();
     expect(confirmed, 0);
 
-    await tester.enterText(find.widgetWithText(TextField, '62'), '62');
+    final protein = tester.widget<TextField>(
+      find.byWidgetPredicate((w) => w is TextField && w.controller?.text == ''),
+    );
+    expect(
+      protein.decoration?.enabledBorder?.borderSide.color,
+      NhamColors.danger,
+    );
+
     await tester.enterText(
-      find.byWidgetPredicate(
-        (w) => w is TextField && w.controller?.text == '',
-      ),
+      find.byWidgetPredicate((w) => w is TextField && w.controller?.text == ''),
       '6',
     );
     await tester.pumpAndSettle();
@@ -149,6 +164,26 @@ void main() {
     await tester.tap(find.text('Add meal'));
     await tester.pumpAndSettle();
     expect(confirmed, 1);
+  });
+
+  testWidgets('gives calories its own row and the macros a shared one', (
+    tester,
+  ) async {
+    await pumpStep(tester);
+
+    final calories = tester.getRect(find.widgetWithText(TextField, '480'));
+    final protein = tester.getRect(find.widgetWithText(TextField, '6'));
+    final carbs = tester.getRect(find.widgetWithText(TextField, '62'));
+    final fat = tester.getRect(find.widgetWithText(TextField, '22'));
+
+    // Calories spans the full width, above the trio.
+    expect(calories.width, greaterThan(protein.width * 2));
+    expect(calories.bottom, lessThanOrEqualTo(protein.top));
+    // Protein / carbs / fat share one line.
+    expect(protein.top, carbs.top);
+    expect(carbs.top, fat.top);
+    expect(protein.left, lessThan(carbs.left));
+    expect(carbs.left, lessThan(fat.left));
   });
 
   testWidgets('an empty manual form asks for an amount in servings', (

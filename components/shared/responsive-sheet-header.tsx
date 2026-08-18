@@ -4,26 +4,27 @@ import { X } from 'lucide-react';
 
 /**
  * The sheet header, structurally identical to the Flutter app's
- * `NhamSheetHeader`: close button on the LEFT, centered semibold title with an
- * optional centered subtitle, and a 48x48 spacer on the right so the title
- * stays optically centered against the close button.
+ * `NhamSheetHeader`: close button on the LEFT, a centered semibold title, and
+ * a 48x48 spacer on the right so the title stays optically centered against
+ * the close button.
  *
  * Type scale is the mobile one, so the two platforms read as one component:
- * title 17/600 (`dashValue` + w600), subtitle 12/400 muted (`dashMeta`).
- * Everything below this header follows the same 14px body / 12px meta rhythm.
+ * title 17/600 (`dashValue` + w600). Everything below follows the same 14px
+ * body / 12px meta rhythm.
+ *
+ * There is no subtitle slot. A line under the title was, in every sheet that
+ * had one, a restatement of the title or of the controls below it.
  *
  * The grab handle is not drawn here — on the drawer it comes from vaul, and on
  * the desktop dialog there is nothing to drag.
  */
 export function ResponsiveSheetHeader({
   title,
-  subtitle,
   closeLabel,
   closeDisabled = false,
   onClose,
 }: {
   title: string;
-  subtitle?: string;
   closeLabel: string;
   closeDisabled?: boolean;
   onClose: () => void;
@@ -44,11 +45,6 @@ export function ResponsiveSheetHeader({
         <p className="truncate font-semibold text-[17px] text-nham-text leading-tight">
           {title}
         </p>
-        {subtitle && (
-          <p className="mt-0.5 text-[12px] text-nham-text-muted leading-snug">
-            {subtitle}
-          </p>
-        )}
       </div>
 
       {/* Mirrors the close button so the title is centered on the sheet, not

@@ -58,7 +58,12 @@ class LabelCaptureStep extends StatelessWidget {
   }
 
   List<Widget> _chooseChildren(BuildContext context) => [
-    const _CaptureGuide(),
+    NhamText(
+      'logging.labelScan.captureGuide'.tr(),
+      variant: NhamTextVariant.small,
+      textAlign: TextAlign.center,
+      style: const TextStyle(color: NhamColors.textMuted),
+    ),
     const SizedBox(height: NhamSpacing.sp3),
     ScanPrimaryButton(
       label: 'logging.labelScan.takePhoto'.tr(),
@@ -104,9 +109,7 @@ class LabelCaptureStep extends StatelessWidget {
     ),
     const SizedBox(height: NhamSpacing.sp3),
     ScanPrimaryButton(
-      label: scanning
-          ? 'logging.labelScan.scanning'.tr()
-          : 'logging.labelScan.scanPhoto'.tr(),
+      label: 'logging.labelScan.scanPhoto'.tr(),
       busy: scanning,
       onTap: onScan,
     ),
@@ -121,37 +124,3 @@ class LabelCaptureStep extends StatelessWidget {
       ),
   ];
 }
-
-class _CaptureGuide extends StatelessWidget {
-  const _CaptureGuide();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp3),
-      decoration: BoxDecoration(
-        color: NhamColors.track,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            LucideIcons.scanText300,
-            size: 18,
-            color: NhamColors.textMuted,
-          ),
-          const SizedBox(width: NhamSpacing.sp2),
-          Expanded(
-            child: NhamText(
-              'logging.labelScan.captureGuide'.tr(),
-              variant: NhamTextVariant.small,
-              style: const TextStyle(color: NhamColors.textMuted),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-

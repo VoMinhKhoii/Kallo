@@ -54,13 +54,6 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
       : scanType === 'barcode'
         ? t('barcodeDialogTitle')
         : t('ocrDialogTitle');
-  const description =
-    step === 'ocr-review'
-      ? t('ocrReviewDesc')
-      : scanType === 'barcode'
-        ? t('barcodeDialogDesc')
-        : t('ocrDialogDesc');
-
   return (
     <ResponsiveSheet
       open={props.isOpen}
@@ -73,7 +66,6 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
     >
       <ResponsiveSheetHeader
         title={title}
-        subtitle={description}
         closeLabel={t('barcodeCancel')}
         closeDisabled={isStaging}
         onClose={handleClose}

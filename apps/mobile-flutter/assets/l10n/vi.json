@@ -1044,8 +1044,7 @@
     },
     "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn…",
     "quickLog": {
-      "title": "Ghi nhận bữa ăn",
-      "subtitle": "Món sẽ được phân tích ngay trong nhật ký"
+      "title": "Ghi nhận bữa ăn"
     },
     "cheatIntensity": {
       "label": "Bạn đã ăn nhiều cỡ nào?",
@@ -1075,8 +1074,6 @@
     },
     "barcode": {
       "title": "Quét mã vạch",
-      "subtitle": "Dinh dưỡng sản phẩm đóng gói, từ Open Food Facts",
-      "scanning": "Căn chỉnh mã vạch vào khung",
       "torch": "Đèn pin",
       "cameraDenied": "Chưa cấp quyền camera. Hãy bật camera cho Kallo trong Cài đặt > Quyền riêng tư > Camera, hoặc nhập mã vạch bên dưới.",
       "cameraError": "Camera không khả dụng trên thiết bị này.",
@@ -1276,7 +1273,6 @@
     "manualLogging": {
       "openSheet": "Ghi thủ công",
       "title": "Ghi thủ công",
-      "subtitle": "Tìm món, nhập chính xác số gam — không dùng AI",
       "searchPlaceholder": "Tìm món ăn...",
       "recentFoods": "Món gần đây",
       "recentsHint": "Tìm món để thêm",
@@ -1313,14 +1309,11 @@
     },
     "labelScan": {
       "title": "Quét Bảng Giá Trị Dinh Dưỡng",
-      "subtitle": "Chụp hoặc tải ảnh bảng dinh dưỡng trên bao bì để tự động trích xuất calo và macro.",
       "reviewTitle": "Xác nhận Thông tin Dinh dưỡng",
-      "reviewSubtitle": "Kiểm tra và điều chỉnh các chỉ số trước khi lưu.",
-      "captureGuide": "Đưa trọn bảng dinh dưỡng vào khung. Giữ máy thẳng, tránh ánh sáng chói và vuốt phẳng phần bao bì bị cong nếu có thể.",
+      "captureGuide": "Tránh ánh sáng chói và vuốt phẳng bao bì bị cong.",
       "takePhoto": "Chụp ảnh",
       "choosePhoto": "Chọn ảnh có sẵn",
       "scanPhoto": "Đọc bảng dinh dưỡng",
-      "scanning": "AI đang phân tích bảng dinh dưỡng...",
       "retake": "Chụp ảnh khác",
       "retryPhoto": "Thử lại với ảnh này",
       "manualEntry": "Nhập dinh dưỡng bằng tay",
@@ -1332,7 +1325,6 @@
       "servingShortcut": "1 khẩu phần",
       "packageShortcut": "Cả gói",
       "micronutrients": "Khác trên nhãn",
-      "requiredValues": "Nhập đủ calo, đạm, carb và chất béo hợp lệ trước khi lưu.",
       "addMeal": "Thêm bữa ăn",
       "back": "Quay lại",
       "basisLabel": "Số liệu trên nhãn",
@@ -1435,7 +1427,6 @@
     },
     "createGroup": {
       "title": "Tạo nhóm",
-      "description": "Đặt tên và thêm thành viên từ vòng kết nối của bạn.",
       "nameLabel": "Tên nhóm",
       "namePlaceholder": "VD: Hội leo núi cuối tuần",
       "membersLabel": "Thêm thành viên",

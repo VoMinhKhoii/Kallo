@@ -1044,8 +1044,7 @@
     },
     "cheatPlaceholder": "Korean BBQ buffet, went all out…",
     "quickLog": {
-      "title": "Log a meal",
-      "subtitle": "We'll analyze it on your feed"
+      "title": "Log a meal"
     },
     "cheatIntensity": {
       "label": "How much did you eat?",
@@ -1075,8 +1074,6 @@
     },
     "barcode": {
       "title": "Scan barcode",
-      "subtitle": "Nutrition for packaged products, via Open Food Facts",
-      "scanning": "Center the barcode inside the frame",
       "torch": "Flashlight",
       "cameraDenied": "Camera access is off. Enable it for Kallo in Settings > Privacy > Camera, or enter the barcode below.",
       "cameraError": "The camera isn't available on this device.",
@@ -1279,7 +1276,6 @@
     "manualLogging": {
       "openSheet": "Log manually",
       "title": "Log manually",
-      "subtitle": "Search foods, enter exact grams — no AI",
       "searchPlaceholder": "Search foods...",
       "recentFoods": "Recent foods",
       "recentsHint": "Search to add foods",
@@ -1316,14 +1312,11 @@
     },
     "labelScan": {
       "title": "Scan Nutrition Label",
-      "subtitle": "Take or upload a photo of the product's nutrition table to extract calories and macros automatically.",
       "reviewTitle": "Verify Extracted Nutrition",
-      "reviewSubtitle": "Review and tweak values before adding to your log.",
-      "captureGuide": "Fill the frame with the nutrition table. Hold the camera straight, avoid glare, and flatten curved packaging when possible.",
+      "captureGuide": "Avoid glare, and flatten curved packaging.",
       "takePhoto": "Take photo",
       "choosePhoto": "Choose a photo instead",
       "scanPhoto": "Read this label",
-      "scanning": "Analyzing nutrition table with AI...",
       "retake": "Take another photo",
       "retryPhoto": "Try this photo again",
       "manualEntry": "Enter nutrition manually",
@@ -1335,7 +1328,6 @@
       "servingShortcut": "1 serving",
       "packageShortcut": "Whole package",
       "micronutrients": "Also on the label",
-      "requiredValues": "Enter valid calories, protein, carbohydrates, and fat before saving.",
       "addMeal": "Add meal",
       "back": "Back",
       "basisLabel": "Values shown",
@@ -1438,7 +1430,6 @@
     },
     "createGroup": {
       "title": "Create a group",
-      "description": "Name it and add members from your circle.",
       "nameLabel": "Group name",
       "namePlaceholder": "e.g. Weekend hikers",
       "membersLabel": "Add members",
