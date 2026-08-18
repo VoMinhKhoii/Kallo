@@ -7,11 +7,8 @@ import type {
   OcrReviewPayload,
   ParsedNutritionLabel,
 } from '@/lib/nutrition/ocr-schema';
-import {
-  type MacroItem,
-  OcrMacroGrid,
-  OcrNutrientGrid,
-} from './ocr-nutrient-grid';
+import { OcrMicronutrients } from './ocr-micronutrients';
+import { type MacroItem, OcrMacroGrid } from './ocr-nutrient-grid';
 import { OcrProductNameField } from './ocr-product-name-field';
 import { OcrReviewMetadata } from './ocr-review-metadata';
 import {
@@ -107,6 +104,10 @@ export function OcrReviewStep({
   return (
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6">
+        <OcrMacroGrid items={macroItems} />
+
+        <div className="h-px bg-nham-border" />
+
         <OcrProductNameField
           value={review.productName}
           isValid={review.productIsValid}
@@ -114,19 +115,6 @@ export function OcrReviewStep({
           errorText={t('ocrInvalidProductName')}
           onChange={review.setProductName}
         />
-
-        {data && (
-          <OcrReviewMetadata
-            basis={t(`ocrBasis.${BASIS_KEYS[data.basis]}`)}
-            confidence={t(`ocrConfidence.${data.confidence}`)}
-            servingDescription={review.servingDescription}
-            servingsPerContainer={review.servingsPerContainer}
-            basisLabel={t('ocrBasisLabel')}
-            confidenceLabel={t('ocrConfidenceLabel')}
-            servingLabel={t('ocrServingDescriptionLabel')}
-            servingsPerContainerLabel={t('ocrServingsPerContainerLabel')}
-          />
-        )}
 
         <OcrReviewQuantity
           amountText={review.amountText}
@@ -148,10 +136,22 @@ export function OcrReviewStep({
           onCommit={review.commitAmount}
         />
 
-        <OcrMacroGrid items={macroItems} />
-        {micronutrientItems.length > 0 && (
-          <OcrNutrientGrid items={micronutrientItems} />
+        {data && (
+          <OcrReviewMetadata
+            basis={t(`ocrBasis.${BASIS_KEYS[data.basis]}`)}
+            confidence={
+              data.confidence === 'high'
+                ? null
+                : t(`ocrConfidence.${data.confidence}`)
+            }
+            servingDescription={review.servingDescription}
+          />
         )}
+
+        <OcrMicronutrients
+          items={micronutrientItems}
+          label={t('ocrMicronutrients', { count: micronutrientItems.length })}
+        />
       </div>
 
       <div className="sticky bottom-0 flex shrink-0 items-center justify-between border-nham-border/70 border-t bg-nham-track/50 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">

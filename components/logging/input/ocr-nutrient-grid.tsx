@@ -1,7 +1,6 @@
 'use client';
 
 import { Beef, Droplet, Flame, type LucideIcon, Wheat } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 
 export interface MacroItem {
   id: string;
@@ -29,42 +28,69 @@ const MACRO_IDENTITY: Record<string, { Icon: LucideIcon; className: string }> =
     fatGrams: { Icon: Droplet, className: 'text-nham-chart-fat' },
   };
 
-function NutrientField({ item }: { item: MacroItem }) {
+/**
+ * A figure on a rule, not a boxed input. Hierarchy comes from the size of the
+ * number — hero for calories, 17px for a macro — so the fields stop reading as
+ * four identical form rows.
+ */
+function NutrientField({
+  item,
+  size,
+}: {
+  item: MacroItem;
+  size: 'hero' | 'macro' | 'micro';
+}) {
   const errorId = `${item.id}-error`;
   const identity = MACRO_IDENTITY[item.key];
+  const inputSize =
+    size === 'hero'
+      ? 'text-[40px] leading-none tracking-[-1px]'
+      : size === 'macro'
+        ? 'text-[17px] leading-tight'
+        : 'text-[14px] leading-tight';
+
   return (
-    <div className="space-y-1 rounded-xl border border-nham-border bg-white p-3">
+    <div className="min-w-0">
       <label
         htmlFor={item.id}
         className="flex items-center gap-1.5 text-[12px] text-nham-text-muted"
       >
         {identity && (
-          <identity.Icon className={`h-3.5 w-3.5 ${identity.className}`} />
+          <identity.Icon
+            className={`size-3.5 shrink-0 ${identity.className}`}
+          />
         )}
         <span className="truncate">{item.label}</span>
-        {/* The asterisk is what says "required" — there is no sentence under
-            the button explaining it any more. */}
         {item.required && <span className="text-nham-danger">*</span>}
       </label>
-      <div className="flex items-baseline gap-1">
-        <Input
+      <div className="mt-1 flex items-baseline gap-1.5">
+        <input
           id={item.id}
           type="text"
           inputMode="decimal"
+          placeholder={size === 'micro' ? '—' : '0'}
           aria-label={`${item.label} (${item.unit})`}
           aria-invalid={item.hasError}
           aria-required={item.required}
           aria-describedby={item.hasError ? errorId : undefined}
           value={item.val}
           onChange={(event) => item.setter(event.target.value)}
-          className="h-8 w-full min-w-0 border-none p-0 font-semibold text-[17px] text-nham-ink focus-visible:ring-0"
+          className={`w-full min-w-0 border-none bg-transparent p-0 font-medium tabular-nums placeholder:text-nham-text-muted/40 focus:outline-none ${inputSize} ${
+            item.hasError ? 'text-nham-danger' : 'text-nham-ink'
+          }`}
         />
         <span className="shrink-0 text-[12px] text-nham-text-muted">
           {item.unit}
         </span>
       </div>
+      {/* The rule carries the field's state, so the field needs no box. */}
+      <div
+        className={`mt-1 transition-colors ${
+          item.hasError ? 'h-[1.5px] bg-nham-danger' : 'h-px bg-nham-border'
+        }`}
+      />
       {item.hasError && (
-        <p id={errorId} role="alert" className="text-nham-danger text-xs">
+        <p id={errorId} role="alert" className="mt-1 text-nham-danger text-xs">
           {item.errorText}
         </p>
       )}
@@ -73,18 +99,18 @@ function NutrientField({ item }: { item: MacroItem }) {
 }
 
 /**
- * The four required macros: calories on their own full-width row, then
- * protein / carbs / fat sharing one. Mirrors the Flutter grid exactly.
+ * The calorie figure the meal is worth, then protein / carbs / fat as three
+ * equal columns under it. Mirrors the Flutter review step exactly.
  */
 export function OcrMacroGrid({ items }: { items: MacroItem[] }) {
   const calories = items.find((item) => item.key === 'calories');
   const rest = items.filter((item) => item.key !== 'calories');
   return (
-    <div className="space-y-2.5">
-      {calories && <NutrientField item={calories} />}
-      <div className="grid grid-cols-3 gap-2">
+    <div className="space-y-5">
+      {calories && <NutrientField item={calories} size="hero" />}
+      <div className="grid grid-cols-3 gap-3">
         {rest.map((item) => (
-          <NutrientField key={item.id} item={item} />
+          <NutrientField key={item.id} item={item} size="macro" />
         ))}
       </div>
     </div>
@@ -94,9 +120,9 @@ export function OcrMacroGrid({ items }: { items: MacroItem[] }) {
 /** The optional micronutrients — two columns that collapse on a narrow phone. */
 export function OcrNutrientGrid({ items }: { items: MacroItem[] }) {
   return (
-    <div className="grid grid-cols-1 gap-2.5 min-[380px]:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
       {items.map((item) => (
-        <NutrientField key={item.id} item={item} />
+        <NutrientField key={item.id} item={item} size="micro" />
       ))}
     </div>
   );

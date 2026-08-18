@@ -1324,7 +1324,7 @@
       "invalidAmount": "Nhập số lớn hơn 0 và không quá 100.000.",
       "servingShortcut": "1 khẩu phần",
       "packageShortcut": "Cả gói",
-      "micronutrients": "Khác trên nhãn",
+      "micronutrients": "Vi chất khác trên nhãn ({count})",
       "addMeal": "Thêm bữa ăn",
       "back": "Quay lại",
       "basisLabel": "Số liệu trên nhãn",

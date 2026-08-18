@@ -1,12 +1,14 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
 import '../../logic/label_nutrients.dart';
 import '../../logic/label_review.dart';
-import 'label_nutrient_grid.dart';
+import 'label_calorie_hero.dart';
+import 'label_review_fields.dart';
+import 'label_macro_row.dart';
+import 'label_micronutrients.dart';
 import 'label_product_name_field.dart';
 import 'label_review_footer.dart';
 import 'label_review_metadata.dart';
@@ -14,10 +16,11 @@ import 'label_review_quantity.dart';
 
 /// Check and correct what the scan read off the label, then log it.
 ///
-/// Port of `components/logging/input/ocr-review-step.tsx`. Owns no nutrition
-/// logic itself — [review] is the ported `useOcrReviewState`, so the amount
-/// rescaling and validation are the web's, unit-tested in
-/// `test/label_review_test.dart`.
+/// Reads top-down as an answer, not a form: the calorie figure the meal is
+/// worth, the three macros under it, then what it was and how much of it —
+/// context, which is why it sits below the numbers rather than above them.
+/// Owns no nutrition logic; [review] is the ported `useOcrReviewState`, so the
+/// rescaling and validation are unit-tested in `test/label_review_test.dart`.
 class LabelReviewStep extends StatefulWidget {
   const LabelReviewStep({
     super.key,
@@ -46,25 +49,17 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
   /// errors; after it, every required field that is still empty says so.
   bool _submitAttempted = false;
 
-  late final TextEditingController _name = TextEditingController(
-    text: widget.review.productName,
-  );
-  late final TextEditingController _amount = TextEditingController(
-    text: widget.review.amountText,
-  );
+  late final LabelReviewFields _fields = LabelReviewFields(widget.review);
 
   @override
   void dispose() {
-    _name.dispose();
-    _amount.dispose();
+    _fields.dispose();
     super.dispose();
   }
 
-  void _commitAmount(String value) {
-    widget.review.commitAmount(value);
-    _amount.text = widget.review.amountText;
-    setState(() {});
-  }
+  void _commitAmount(String value) => setState(
+    () => _fields.commitAmount(value),
+  );
 
   void _confirm() {
     if (!widget.review.canConfirm) {
@@ -74,15 +69,17 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
     widget.onConfirm();
   }
 
-  String get _unitLabel => widget.review.unit == 'serving'
-      ? plural('logging.labelScan.unit.serving', widget.review.parsedAmount ?? 0)
-      : 'logging.labelScan.unit.${widget.review.unit}'.tr();
+  bool _hasError(String key) =>
+      _fields.hasError(key, submitAttempted: _submitAttempted);
 
   @override
   Widget build(BuildContext context) {
     final review = widget.review;
     final micronutrients = labelMicronutrientDefinitions
         .where((d) => review.initialNutrition[d.key] != null)
+        .toList();
+    final macros = labelMacroDefinitions
+        .where((d) => d.key != 'calories')
         .toList();
 
     return Column(
@@ -92,63 +89,72 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
               NhamSpacing.sp4,
-              NhamSpacing.sp2,
-              NhamSpacing.sp4,
               NhamSpacing.sp3,
+              NhamSpacing.sp4,
+              NhamSpacing.sp4,
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                LabelCalorieHero(
+                  controller: _fields.nutrient('calories'),
+                  hasError: _hasError('calories'),
+                  enabled: !widget.saving,
+                  onChanged: (value) =>
+                      setState(() => review.setNutrientText('calories', value)),
+                ),
+                const SizedBox(height: NhamSpacing.sp4),
+                LabelMacroRow(
+                  definitions: macros,
+                  controllerFor: _fields.nutrient,
+                  hasError: _hasError,
+                  enabled: !widget.saving,
+                  onChanged: (key, value) =>
+                      setState(() => review.setNutrientText(key, value)),
+                ),
+                const SizedBox(height: NhamSpacing.sp5),
+                const Divider(height: 1, color: NhamColors.border),
+                const SizedBox(height: NhamSpacing.sp3),
                 LabelProductNameField(
-                  controller: _name,
+                  controller: _fields.name,
                   isValid: review.productIsValid,
                   enabled: !widget.saving,
                   onChanged: (value) =>
                       setState(() => review.productName = value),
                 ),
                 const SizedBox(height: NhamSpacing.sp3),
-                if (review.label != null) ...[
-                  LabelReviewMetadata(label: review.label!),
-                  const SizedBox(height: NhamSpacing.sp3),
-                ],
                 LabelReviewQuantity(
-                  controller: _amount,
-                  unitLabel: _unitLabel,
+                  controller: _fields.amount,
+                  unitLabel: _fields.unitLabel,
                   isValid: review.amountIsValid,
                   shortcuts: review.shortcuts,
+                  currentAmount: review.parsedAmount,
                   enabled: !widget.saving,
                   onChanged: (value) =>
                       setState(() => review.amountText = value),
                   onCommit: _commitAmount,
                 ),
-                const SizedBox(height: NhamSpacing.sp3),
-                LabelNutrientGrid(
-                  definitions: labelMacroDefinitions,
-                  layout: LabelGridLayout.macros,
-                  showMissing: _submitAttempted,
-                  enabled: !widget.saving,
-                  textFor: review.nutrientText,
-                  hasError: review.nutrientHasError,
-                  onChanged: (key, value) =>
-                      setState(() => review.setNutrientText(key, value)),
-                ),
-                if (micronutrients.isNotEmpty) ...[
-                  const SizedBox(height: NhamSpacing.sp3),
-                  _label('logging.labelScan.micronutrients'.tr()),
+                if (review.label != null) ...[
                   const SizedBox(height: NhamSpacing.sp2),
-                  LabelNutrientGrid(
+                  LabelReviewMetadata(label: review.label!),
+                ],
+                if (micronutrients.isNotEmpty) ...[
+                  const SizedBox(height: NhamSpacing.sp2),
+                  LabelMicronutrients(
                     definitions: micronutrients,
-                    layout: LabelGridLayout.micronutrients,
+                    controllerFor: _fields.nutrient,
+                    hasError: _hasError,
                     enabled: !widget.saving,
-                    textFor: review.nutrientText,
-                    hasError: review.nutrientHasError,
                     onChanged: (key, value) =>
                         setState(() => review.setNutrientText(key, value)),
                   ),
                 ],
                 if (widget.errorText != null) ...[
                   const SizedBox(height: NhamSpacing.sp3),
-                  _danger(widget.errorText!),
+                  Text(
+                    widget.errorText!,
+                    style: dashMeta(color: NhamColors.danger),
+                  ),
                 ],
               ],
             ),
@@ -162,16 +168,4 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
       ],
     );
   }
-
-  Widget _label(String text) => NhamText(
-    text,
-    variant: NhamTextVariant.small,
-    style: const TextStyle(color: NhamColors.textMuted),
-  );
-
-  Widget _danger(String text) => NhamText(
-    text,
-    variant: NhamTextVariant.small,
-    style: const TextStyle(color: NhamColors.danger),
-  );
 }

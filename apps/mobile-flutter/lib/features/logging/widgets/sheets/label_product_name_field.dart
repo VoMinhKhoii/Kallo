@@ -1,17 +1,17 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
-import '../../../../theme/nham_typography.dart';
+import 'label_field_chrome.dart';
 
-/// What the meal will be called once it is logged — seeded from the label, or
-/// from a fallback when the scan couldn't read a product name.
+/// What the meal will be called once it is logged.
 ///
-/// Split from `label_review_step.dart` to keep that file under the 200-line
-/// widget limit.
-class LabelProductNameField extends StatelessWidget {
+/// A line of type on a hairline, not a boxed input: on a sheet whose job is
+/// "check these numbers", the name is context, and boxing it gave it the same
+/// weight as the figures.
+class LabelProductNameField extends StatefulWidget {
   const LabelProductNameField({
     super.key,
     required this.controller,
@@ -26,53 +26,50 @@ class LabelProductNameField extends StatelessWidget {
   final ValueChanged<String> onChanged;
 
   @override
+  State<LabelProductNameField> createState() => _LabelProductNameFieldState();
+}
+
+class _LabelProductNameFieldState extends State<LabelProductNameField> {
+  final FocusNode _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        NhamText(
-          'logging.labelScan.productName'.tr(),
-          variant: NhamTextVariant.small,
-          style: const TextStyle(color: NhamColors.textMuted),
-        ),
-        const SizedBox(height: 4),
+        Text('logging.labelScan.productName'.tr(), style: dashMeta()),
+        const SizedBox(height: NhamSpacing.sp1),
         TextField(
-          controller: controller,
-          enabled: enabled,
-          onChanged: onChanged,
-          style: NhamTextStyles.sansMedium(
-            fontSize: NhamFontSize.sm,
-          ).copyWith(color: NhamColors.text),
+          controller: widget.controller,
+          focusNode: _focus,
+          enabled: widget.enabled,
+          onChanged: widget.onChanged,
           cursorColor: NhamColors.accent,
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: NhamColors.elev,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp3,
-              vertical: NhamSpacing.sp2,
-            ),
-            border: _border,
-            enabledBorder: _border,
-            focusedBorder: _border,
-          ),
+          style: dashBody(weight: FontWeight.w500),
+          decoration: labelFieldDecoration(),
         ),
-        if (!isValid) ...[
-          const SizedBox(height: 4),
-          NhamText(
+        const SizedBox(height: NhamSpacing.sp1),
+        LabelFieldRule(hasError: !widget.isValid, focused: _focus.hasFocus),
+        if (!widget.isValid) ...[
+          const SizedBox(height: NhamSpacing.sp1),
+          Text(
             'logging.labelScan.invalidProductName'.tr(),
-            variant: NhamTextVariant.small,
-            style: const TextStyle(color: NhamColors.danger),
+            style: dashMeta(color: NhamColors.danger),
           ),
         ],
       ],
     );
   }
-
-  OutlineInputBorder get _border => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(NhamRadii.lg),
-    borderSide: BorderSide(
-      color: isValid ? NhamColors.inputBorder : NhamColors.danger,
-    ),
-  );
 }

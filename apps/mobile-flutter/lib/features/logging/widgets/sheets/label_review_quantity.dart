@@ -1,26 +1,27 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/nham_colors.dart';
 import '../../../../theme/nham_theme.dart';
-import '../../../../theme/nham_typography.dart';
 import '../../logic/label_review.dart';
+import 'label_field_chrome.dart';
 
-/// How much of it the user actually ate, with one-tap shortcuts for the
-/// stated serving and the whole package.
+/// How much of it the user actually ate — the figure every nutrient above
+/// rescales against.
 ///
-/// Port of `components/logging/input/ocr-review-quantity.tsx`. Editing this
-/// rescales every nutrient below it.
-class LabelReviewQuantity extends StatelessWidget {
+/// Shortcuts appear only when they would actually change the amount: offering
+/// "1 serving" while the field already reads one serving is a button that does
+/// nothing, which is most of what made this sheet feel like a form.
+class LabelReviewQuantity extends StatefulWidget {
   const LabelReviewQuantity({
     super.key,
     required this.controller,
     required this.unitLabel,
     required this.isValid,
     required this.shortcuts,
+    required this.currentAmount,
     required this.onChanged,
     required this.onCommit,
     this.enabled = true,
@@ -30,70 +31,91 @@ class LabelReviewQuantity extends StatelessWidget {
   final String unitLabel;
   final bool isValid;
   final LabelAmountShortcuts shortcuts;
+
+  /// The amount currently in the field, so a shortcut equal to it is dropped.
+  final double? currentAmount;
   final ValueChanged<String> onChanged;
   final ValueChanged<String> onCommit;
   final bool enabled;
 
   @override
+  State<LabelReviewQuantity> createState() => _LabelReviewQuantityState();
+}
+
+class _LabelReviewQuantityState extends State<LabelReviewQuantity> {
+  final FocusNode _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  bool _differs(double amount) {
+    final current = widget.currentAmount;
+    return current == null || (current - amount).abs() > 0.001;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final serving = widget.shortcuts.servingAmount;
+    final package = widget.shortcuts.packageAmount;
     final chips = <(String, double)>[
-      if (shortcuts.servingAmount != null)
-        ('logging.labelScan.servingShortcut'.tr(), shortcuts.servingAmount!),
-      if (shortcuts.packageAmount != null)
-        ('logging.labelScan.packageShortcut'.tr(), shortcuts.packageAmount!),
+      if (serving != null && _differs(serving))
+        ('logging.labelScan.servingShortcut'.tr(), serving),
+      if (package != null && _differs(package))
+        ('logging.labelScan.packageShortcut'.tr(), package),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        NhamText(
-          'logging.labelScan.amountLabel'.tr(),
-          variant: NhamTextVariant.small,
-          style: const TextStyle(color: NhamColors.textMuted),
-        ),
-        const SizedBox(height: 4),
-        TextField(
-          controller: controller,
-          enabled: enabled,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-          ],
-          onChanged: onChanged,
-          onEditingComplete: () => onCommit(controller.text),
-          onTapOutside: (_) => onCommit(controller.text),
-          style: NhamTextStyles.sansMedium(
-            fontSize: NhamFontSize.md,
-          ).copyWith(color: NhamColors.text),
-          cursorColor: NhamColors.accent,
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: NhamColors.elev,
-            suffixText: unitLabel,
-            suffixStyle: NhamTextStyles.sansRegular(
-              fontSize: NhamFontSize.sm,
-            ).copyWith(color: NhamColors.textMuted),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp3,
-              vertical: NhamSpacing.sp2,
-            ),
-            border: _border(isValid),
-            enabledBorder: _border(isValid),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(NhamRadii.lg),
-              borderSide: BorderSide(
-                color: isValid ? NhamColors.borderAccent40 : NhamColors.danger,
+        Text('logging.labelScan.amountLabel'.tr(), style: dashMeta()),
+        const SizedBox(height: NhamSpacing.sp1),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Flexible(
+              child: TextField(
+                controller: widget.controller,
+                focusNode: _focus,
+                enabled: widget.enabled,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                ],
+                onChanged: widget.onChanged,
+                onEditingComplete: () => widget.onCommit(
+                  widget.controller.text,
+                ),
+                onTapOutside: (_) => widget.onCommit(widget.controller.text),
+                cursorColor: NhamColors.accent,
+                style: dashValue(
+                  color: widget.isValid ? kInk : NhamColors.danger,
+                ),
+                decoration: labelFieldDecoration(),
               ),
             ),
-          ),
+            const SizedBox(width: 4),
+            Text(widget.unitLabel, style: dashMeta()),
+          ],
         ),
-        if (!isValid) ...[
-          const SizedBox(height: 4),
-          NhamText(
+        const SizedBox(height: NhamSpacing.sp1),
+        LabelFieldRule(hasError: !widget.isValid, focused: _focus.hasFocus),
+        if (!widget.isValid) ...[
+          const SizedBox(height: NhamSpacing.sp1),
+          Text(
             'logging.labelScan.invalidAmount'.tr(),
-            variant: NhamTextVariant.small,
-            style: const TextStyle(color: NhamColors.danger),
+            style: dashMeta(color: NhamColors.danger),
           ),
         ],
         if (chips.isNotEmpty) ...[
@@ -104,10 +126,10 @@ class LabelReviewQuantity extends StatelessWidget {
               for (final (label, amount) in chips)
                 _AmountChip(
                   label: label,
-                  onTap: enabled
+                  onTap: widget.enabled
                       ? () {
                           HapticFeedback.selectionClick();
-                          onCommit(formatLabelNumber(amount));
+                          widget.onCommit(formatLabelNumber(amount));
                         }
                       : null,
                 ),
@@ -117,13 +139,6 @@ class LabelReviewQuantity extends StatelessWidget {
       ],
     );
   }
-
-  OutlineInputBorder _border(bool valid) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(NhamRadii.lg),
-    borderSide: BorderSide(
-      color: valid ? NhamColors.inputBorder : NhamColors.danger,
-    ),
-  );
 }
 
 class _AmountChip extends StatelessWidget {
@@ -142,27 +157,10 @@ class _AmountChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: NhamColors.elev,
+            color: NhamColors.hover,
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: NhamColors.border),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                LucideIcons.zap300,
-                size: 13,
-                color: NhamColors.textMuted,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.xs,
-                ).copyWith(color: NhamColors.text),
-              ),
-            ],
-          ),
+          child: Text(label, style: dashMeta(color: kInk)),
         ),
       ),
     );

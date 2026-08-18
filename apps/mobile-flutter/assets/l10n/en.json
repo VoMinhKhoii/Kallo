@@ -1327,7 +1327,7 @@
       "invalidAmount": "Enter an amount greater than 0 and no more than 100,000.",
       "servingShortcut": "1 serving",
       "packageShortcut": "Whole package",
-      "micronutrients": "Also on the label",
+      "micronutrients": "Other nutrients on the label ({count})",
       "addMeal": "Add meal",
       "back": "Back",
       "basisLabel": "Values shown",

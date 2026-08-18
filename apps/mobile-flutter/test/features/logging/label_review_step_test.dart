@@ -85,27 +85,53 @@ void main() {
     return review;
   }
 
-  testWidgets('shows the scanned values, basis, and confidence', (
+  testWidgets('leads with the calorie figure, then the macros', (
     tester,
   ) async {
     await pumpStep(tester);
 
     expect(find.text('Bánh quy Cosy'), findsOneWidget);
-    expect(find.text('Per 100 g'), findsOneWidget);
-    expect(find.text('Medium — please review'), findsOneWidget);
-    expect(find.text('1 gói (30 g)'), findsOneWidget);
     // The amount seeds from the label's basis, not from the serving size.
     expect(find.text('100'), findsOneWidget);
     expect(find.text('480'), findsOneWidget);
+    // Calories are THE figure: 40pt hero, not one boxed field among four.
+    final calories = tester.widget<TextField>(
+      find.widgetWithText(TextField, '480'),
+    );
+    expect(calories.style?.fontSize, 40);
+    for (final macro in ['6', '62', '22']) {
+      final field = tester.widget<TextField>(
+        find.widgetWithText(TextField, macro),
+      );
+      expect(field.style?.fontSize, 17);
+    }
   });
 
-  testWidgets('renders only the micronutrients the label printed', (
+  testWidgets('states provenance as one line, not a table', (tester) async {
+    await pumpStep(tester);
+
+    // Basis · serving · confidence, joined — and confidence is named only
+    // because this label scanned as medium.
+    expect(
+      find.text('Per 100 g · 1 gói (30 g) · Medium — please review'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('keeps the micronutrients folded away until asked for', (
     tester,
   ) async {
     await pumpStep(tester);
 
+    // One printed micronutrient on this label, named in the toggle's count.
+    expect(find.text('Other nutrients on the label (1)'), findsOneWidget);
+    expect(find.text('Sodium'), findsNothing);
+
+    await tester.tap(find.text('Other nutrients on the label (1)'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Sodium'), findsOneWidget);
-    // Never printed on this label — the row must not appear at all.
+    // Never printed on this label — no row for it even when expanded.
     expect(find.text('Iron'), findsNothing);
     expect(find.text('Vitamin B12'), findsNothing);
   });
@@ -127,7 +153,8 @@ void main() {
   ) async {
     await pumpStep(tester);
 
-    // Calories, protein, carbs, fat — sodium is optional, so no mark.
+    // Calories, protein, carbs, fat. Sodium is optional and unmarked — and
+    // folded away besides.
     expect(find.text(' *'), findsNWidgets(4));
   });
 
@@ -146,13 +173,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(confirmed, 0);
 
+    // The field carries its own error now — red figure over a red rule, no
+    // box and no sentence under the button.
     final protein = tester.widget<TextField>(
       find.byWidgetPredicate((w) => w is TextField && w.controller?.text == ''),
     );
-    expect(
-      protein.decoration?.enabledBorder?.borderSide.color,
-      NhamColors.danger,
-    );
+    expect(protein.style?.color, NhamColors.danger);
 
     await tester.enterText(
       find.byWidgetPredicate((w) => w is TextField && w.controller?.text == ''),
@@ -193,8 +219,8 @@ void main() {
 
     expect(review.unit, 'serving');
     expect(find.text('Scanned packaged food'), findsOneWidget);
-    // No scan means no basis/confidence block to show.
-    expect(find.text('Values shown'), findsNothing);
+    // No scan means no provenance line to show.
+    expect(find.textContaining('Per 100 g'), findsNothing);
     expect(review.canConfirm, isFalse);
   });
 
