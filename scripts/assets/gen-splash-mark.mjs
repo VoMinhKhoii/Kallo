@@ -21,6 +21,7 @@ import { deflateSync } from 'node:zlib';
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
+  '..',
   '..'
 );
 const MOBILE = path.join(REPO_ROOT, 'apps/mobile-flutter');

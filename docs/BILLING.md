@@ -50,7 +50,7 @@ Apple / Google / Paddle
                           entitlement_grants  (source of truth)
                                      │ read by
                                      ▼
-  lib/billing/entitlement/service.ts (getEntitlementState / checkFeatureAccess)
+  lib/domain/billing/entitlement/service.ts (getEntitlementState / checkFeatureAccess)
                                      │ served by
                                      ▼
                     GET /api/v1/account/entitlements
@@ -60,7 +60,7 @@ Apple / Google / Paddle
 
 ### Source of truth: `entitlement_grants`
 
-Each grant row (see `lib/db/schema.ts`) records `entitlement_key` (`premium`),
+Each grant row (see `lib/infra/db/schema.ts`) records `entitlement_key` (`premium`),
 `status`, `expires_at` (NULL = lifetime), `will_renew`, an environment-scoped
 RC customer/product `external_ref`, and `store` (lowercased: `app_store`,
 `play_store`, `paddle`, ...). `source`
@@ -103,7 +103,7 @@ short-circuiting as a duplicate.
 ### Trial (derived, not stored)
 
 There is no trial row. The trial is computed in
-`lib/billing/entitlement/config.ts` + `service.ts` from the profile:
+`lib/domain/billing/entitlement/config.ts` + `service.ts` from the profile:
 
 - trial window = `[max(profile.created_at, SUBSCRIPTION_LAUNCH_DATE), +TRIAL_DAYS]`
 - starting the window at the later of signup and launch gives **existing users
@@ -212,7 +212,7 @@ be assumed to cancel the Paddle subscription either — see the note above.
    app (its billing engine is Paddle — see the Paddle section below).
 2. Create one entitlement: **`premium`**.
 3. Create products and attach them to `premium`. Apple and Google use the
-   canonical ids from `lib/billing/products.ts`: `kallo_premium_monthly`,
+   canonical ids from `lib/domain/billing/products.ts`: `kallo_premium_monthly`,
    `kallo_premium_annual`, and `kallo_premium_lifetime`. Google reports the
    subscription products with their exact `:monthly` and `:annual` base plans.
    Web products are imported from Paddle and may carry Paddle price ids
@@ -319,9 +319,9 @@ does, and approval has lead time — start it early.
 6. **Product catalog → Products → Import**, pick the Paddle config, and import
    the three prices.
 7. **Record the RevenueCat product identifiers the import produces.** If RC lets
-   you set them, use the canonical ids from `lib/billing/products.ts`. If RC
+   you set them, use the canonical ids from `lib/domain/billing/products.ts`. If RC
    assigns the Paddle price id (`pri_…`), those ids must be added to the catalog
-   in `lib/billing/products.ts` — `canonicalProductId()` matches exactly and
+   in `lib/domain/billing/products.ts` — `canonicalProductId()` matches exactly and
    refuses anything unknown, so an unmapped id means a paying customer gets no
    grant.
 8. Attach the products to the existing `premium` entitlement and to the packages
@@ -378,7 +378,7 @@ does, and approval has lead time — start it early.
   carrying its original future expiry. A projection that trusted the
   entitlement object would have left a refunded customer on premium
   indefinitely. `parseRevenueCatSnapshot` requires a non-refunded backing
-  transaction (`lib/billing/revenuecat/snapshot.ts`), so it emitted zero grants and
+  transaction (`lib/domain/billing/revenuecat/snapshot.ts`), so it emitted zero grants and
   user dropped to `tier=free`, `hasActiveSubscription=false`. Never relax that
   check to trust `entitlements` alone.
 - **Paddle account deletion — measured 2026-08-02: deletion does NOT cancel
@@ -391,7 +391,7 @@ does, and approval has lead time — start it early.
   from. Re-measure before changing that copy.
 - **CSP**: with `Content-Security-Policy-Report-Only` active, run a checkout and
   read the violation reports. Narrow `BILLING_FRAME_ORIGINS` /
-  `BILLING_CONNECT_ORIGINS` in `lib/security/csp.ts` to the hosts they name.
+  `BILLING_CONNECT_ORIGINS` in `lib/infra/security/csp.ts` to the hosts they name.
 - **Account isolation**: on one device/store account, buy as app account A,
   sign out, sign in as B, and restore. With **Keep with original App User ID**,
   B must not acquire A's entitlement or management URL.

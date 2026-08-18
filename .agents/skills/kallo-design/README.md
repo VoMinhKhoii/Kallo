@@ -24,11 +24,11 @@ This design system was reverse-engineered from a single source of truth:
 - **GitHub** — `VoMinhKhoii/Nham` — https://github.com/VoMinhKhoii/Nham
   - `app/globals.css` — full color token table (the `--kallo-*` namespace)
   - `components/landing-page/*` — hero, problem, solution, CTA, footer
-  - `components/app/desktop-sidebar.tsx` — sidebar pattern, expand/collapse rail
+  - `components/app/navigation/desktop-sidebar.tsx` — sidebar pattern, expand/collapse rail
   - `components/dashboard/*` — today dock, progress story, adherence heatmap
   - `components/logging/*` — meal input, persisted meal cards, timeline
   - `components/ui/button.tsx` — `landing-primary`, `hero-dark`, `header-cta` variants
-  - `messages/en.json` and `messages/vi.json` — every line of UI copy, in both languages
+  - `messages/en/` and `messages/vi/` — every line of UI copy, in both languages
 
 If you have read access to the repo, **go read it directly** — there is far more nuance in the real components (the spring animations on macro bars, the heatmap color logic, the streaming meal-analysis phases) than this kit captures. This system is a workbench, not a replacement.
 
@@ -205,7 +205,7 @@ When in doubt, **mimic these specific files from the source repo** — they are 
 | Surface | Source file | Why it's canonical |
 |---|---|---|
 | **Landing** | `components/landing-page/{header,hero,cta-section,footer}.tsx` | The hero's Lora-italic-tan headline split, the cream-blob ambient backgrounds, the AI-badge pill pattern, the phone-in-CSS demo, the "no photography" discipline. |
-| **Sidebar** | `components/app/desktop-sidebar.tsx` | Width animates only on `width`, not children. 220ms ease-out. Hairline border + faint shadow + warm umber active state (NOT black, NOT accent). Section labels are 10px medium, 0.06em tracked. |
+| **Sidebar** | `components/app/navigation/desktop-sidebar.tsx` | Width animates only on `width`, not children. 220ms ease-out. Hairline border + faint shadow + warm umber active state (NOT black, NOT accent). Section labels are 10px medium, 0.06em tracked. |
 | **Onboarding** | `components/onboarding/wizard-shell.tsx` + `onboarding-card.tsx` | The `rounded-[28px]` modal on `bg-[#2C2416]/20 backdrop-blur-sm` overlay. Footer pinned with skip+next, `bg-[#2C2416]` dark CTA (NOT umber, this is the one place the espresso-as-CTA shows up). Step indicator at the top, gradient scroll fade at the bottom. |
 | **Logging feed** | `components/logging/feed/{persisted-meal-card,feed-area,empty-state}.tsx` + `input/meal-input.tsx` | The 40px-deep left indent for the timeline. The `top:2 -left-[43px]` dot + `-left-10 w-px` rail. Curly-quoted meal text in Lora 17. Empty state's three-suggestion-chip pattern. The meal-input bar's focus-within tan-tinted shadow. |
 | **Adherence heatmap** | `components/dashboard/progress/adherence-heatmap.tsx` + `heatmap-colors.ts` | The 5-step diverging warm scale, the ResizeObserver-driven cell sizing, the `font-mono` "85% on track" stat, the gradient-bar legend at the bottom, the staggered fade-in (0.16s with reduced-motion fallback). |

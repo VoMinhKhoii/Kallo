@@ -35,8 +35,8 @@ Report only vulnerabilities a real attacker could exploit:
 
 ## Where to look
 
-`lib/security/csp.ts` · `middleware.ts` (auth/session + origin lock) ·
-`lib/auth/session.ts`, `lib/auth/safe-next.ts`, `lib/auth/redirects.ts` ·
+`lib/infra/security/csp.ts` · `middleware.ts` (auth/session + origin lock) ·
+`lib/infra/auth/session.ts`, `lib/infra/auth/safe-next.ts`, `lib/infra/auth/redirects.ts` ·
 `app/api/**` route handlers · `app/auth/**` ·
 `'use server'` actions in `lib/actions/**` and
 `app/[locale]/(app)/admin/**/actions.ts` ·

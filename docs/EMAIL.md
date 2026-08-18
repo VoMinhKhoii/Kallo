@@ -6,10 +6,10 @@ repo. Nothing is templated in a third-party dashboard.
 ## Layout
 
 ```text
-lib/email/config.ts          — sender identity, send timeout, "is it configured?"
-lib/email/client.ts          — lazy Resend client (importable with no API key)
-lib/email/send.ts            — the only send seam: sendEmail({ to, message, … })
-lib/email/auth-email.ts      — Supabase hook payload → the emails to send
+lib/infra/email/config.ts          — sender identity, send timeout, "is it configured?"
+lib/infra/email/client.ts          — lazy Resend client (importable with no API key)
+lib/infra/email/send.ts            — the only send seam: sendEmail({ to, message, … })
+lib/infra/email/auth-email.ts      — Supabase hook payload → the emails to send
 lib/email/templates/         — plain HTML builders returning { subject, html, text }
 app/api/auth/send-email/     — the Supabase "Send Email" auth hook endpoint
 ```
@@ -32,8 +32,8 @@ Three constraints the handler exists to satisfy:
    at `…supabase.co/auth/v1/verify`, which is blackholed on many Vietnamese
    networks (see the header comment in `app/auth/verify/route.ts`). That route
    accepts only `type ∈ {email, recovery, email_change}`, so
-   `lib/email/auth-email.ts` maps GoTrue's wider `email_action_type` vocabulary
-   onto those three. `app/api/auth/send-email/route.test.ts` locks the mapping.
+   `lib/infra/email/auth-email.ts` maps GoTrue's wider `email_action_type` vocabulary
+   onto those three. `app/api/auth/send-email/__tests__/route.test.ts` locks the mapping.
 2. **Status codes are an API.** Supabase retries a hook that answers 429 or 503
    and converts 400/403 into a non-retried 500. A transient Resend failure must
    therefore surface as 503 — never as a 4xx.

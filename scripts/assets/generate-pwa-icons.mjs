@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 const publicDir = join(root, 'public');
 
 // Brand palette.

@@ -12,13 +12,13 @@ This project enforces a two-domain model. Do not mix responsibilities.
 
 ### Domain A — Application Data Shape (Drizzle owns this)
 
-`lib/db/schema.ts` is the single source of truth for:
+`lib/infra/db/schema.ts` is the single source of truth for:
 - Tables, columns, types, defaults
 - Foreign keys, indexes
 - CHECK constraints (via Drizzle's `check()` API)
 
 **Workflow when schema changes:**
-1. Edit `lib/db/schema.ts`
+1. Edit `lib/infra/db/schema.ts`
 2. Run `bunx drizzle-kit generate` → outputs a new timestamped SQL file to `supabase/migrations/`
 3. Rename the generated file to match a real Supabase timestamp if needed (see Naming Convention below)
 4. Apply via `supabase db push`
@@ -63,8 +63,8 @@ in a separate Domain B migration. Document the exception in the migration.
 
 | Path | Purpose |
 |------|---------|
-| `lib/db/schema.ts` | Drizzle schema — Domain A source of truth |
-| `lib/db/index.ts` | Drizzle client (`db` export) |
+| `lib/infra/db/schema.ts` | Drizzle schema — Domain A source of truth |
+| `lib/infra/db/client.ts` | Drizzle client (`db` export) |
 | `drizzle.config.ts` | Drizzle config — `out` points to `supabase/migrations/` |
 | `supabase/migrations/` | All migration SQL files (Drizzle-generated + manual) |
 | `supabase/migrations/meta/` | Drizzle internal state — do not edit manually |
@@ -333,6 +333,6 @@ be invoked from a daily worker.
 `match_ingredients_by_source` and `fuzzy_match_ingredients_by_source`
 (introduced in `20260412143500_add_source_aware_match_functions.sql`)
 already project the `state` column in their `RETURNS TABLE` signature.
-The cascade in `lib/ai/matching/source-matching.ts` exclusively calls
+The cascade in `lib/ai/matching/retrieve/legacy/source-matching.ts` exclusively calls
 these `_by_source` variants, so no additional migration is required for
 DB-state propagation.

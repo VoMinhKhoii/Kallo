@@ -46,7 +46,7 @@ If the user invokes this skill **with no other guidance**: ask them what they wa
 When in doubt, pattern-match against these specific files (read them via the GitHub link above). They are the hand-designed surfaces. New work should look like them, not like "a Tailwind dashboard".
 
 - `components/landing-page/{header,hero,cta-section,footer}.tsx` — the landing page
-- `components/app/desktop-sidebar.tsx` — the rail
+- `components/app/navigation/desktop-sidebar.tsx` — the rail
 - `components/onboarding/wizard-shell.tsx` + `onboarding-card.tsx` — the onboarding modal pattern
 - `components/logging/feed/{persisted-meal-card,feed-area,empty-state}.tsx` + `input/meal-input.tsx` — the full logging surface
 - `components/dashboard/progress/adherence-heatmap.tsx` + `heatmap-colors.ts` — the consistency map

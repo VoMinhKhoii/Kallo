@@ -43,11 +43,11 @@ vi.mock('@/hooks/meals/entry/use-ocr-camera', () => ({
   }),
 }));
 
-vi.mock('./ocr-camera-view', () => ({
+vi.mock('../ocr-camera-view', () => ({
   OcrCameraView: () => <div>camera-view</div>,
 }));
 
-vi.mock('./ocr-upload-panel', () => ({
+vi.mock('../ocr-upload-panel', () => ({
   OcrUploadPanel: () => <div>upload-panel</div>,
 }));
 

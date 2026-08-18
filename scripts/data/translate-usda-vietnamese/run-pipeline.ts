@@ -10,11 +10,11 @@
  *   Phase 4: Re-embed → regenerate embeddings from updated search_text
  *
  * Usage:
- *   bun --env-file=.env.local scripts/data/translate-usda-vietnamese/index.ts
- *   bun --env-file=.env.local scripts/data/translate-usda-vietnamese/index.ts --phase=1
- *   bun --env-file=.env.local scripts/data/translate-usda-vietnamese/index.ts --phase=2 --category="Beef Products"
- *   bun --env-file=.env.local scripts/data/translate-usda-vietnamese/index.ts --dry-run
- *   bun --env-file=.env.local scripts/data/translate-usda-vietnamese/index.ts --resume
+ *   bun --env-file=.env.local scripts/data/translate-usda-vietnamese/run-pipeline.ts
+ *   bun --env-file=.env.local scripts/data/translate-usda-vietnamese/run-pipeline.ts --phase=1
+ *   bun --env-file=.env.local scripts/data/translate-usda-vietnamese/run-pipeline.ts --phase=2 --category="Beef Products"
+ *   bun --env-file=.env.local scripts/data/translate-usda-vietnamese/run-pipeline.ts --dry-run
+ *   bun --env-file=.env.local scripts/data/translate-usda-vietnamese/run-pipeline.ts --resume
  *
  * Environment variables:
  *   GOOGLE_TRANSLATE_API_KEY — Google Cloud Translation API key (Phase 1 only;
@@ -68,7 +68,7 @@ const resume = args.includes('--resume');
 
 if (!process.env.DATABASE_URL) {
   console.error(
-    'Missing DATABASE_URL. Run with:\n  bun --env-file=.env.local scripts/data/translate-usda-vietnamese/index.ts'
+    'Missing DATABASE_URL. Run with:\n  bun --env-file=.env.local scripts/data/translate-usda-vietnamese/run-pipeline.ts'
   );
   process.exit(1);
 }
