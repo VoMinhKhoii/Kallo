@@ -1,37 +1,22 @@
-interface OcrReviewMetadataProps {
+/**
+ * What the scan says the numbers mean — one quiet line, not a table.
+ *
+ * It was four label/value rows in a filled card, which gave provenance more
+ * weight than the figures it describes. Confidence is named only when it is
+ * not high: "please check these" is worth a line; "we're confident" is the
+ * state the user already assumes.
+ */
+export function OcrReviewMetadata({
+  basis,
+  confidence,
+  servingDescription,
+}: {
   basis: string;
-  confidence: string;
+  confidence: string | null;
   servingDescription: string | null;
-  servingsPerContainer: number | null;
-  basisLabel: string;
-  confidenceLabel: string;
-  servingLabel: string;
-  servingsPerContainerLabel: string;
-}
-
-export function OcrReviewMetadata(props: OcrReviewMetadataProps) {
+}) {
+  const parts = [basis, servingDescription, confidence].filter(Boolean);
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 rounded-xl border border-[#EAE7E0] bg-white p-3 text-[12px]">
-      <dt className="text-[#8B8682]">{props.basisLabel}</dt>
-      <dd className="font-medium text-kallo-text">{props.basis}</dd>
-      <dt className="text-[#8B8682]">{props.confidenceLabel}</dt>
-      <dd className="font-medium text-kallo-text">{props.confidence}</dd>
-      {props.servingDescription && (
-        <>
-          <dt className="text-[#8B8682]">{props.servingLabel}</dt>
-          <dd className="font-medium text-kallo-text">
-            {props.servingDescription}
-          </dd>
-        </>
-      )}
-      {props.servingsPerContainer !== null && (
-        <>
-          <dt className="text-[#8B8682]">{props.servingsPerContainerLabel}</dt>
-          <dd className="font-medium text-kallo-text">
-            {props.servingsPerContainer}
-          </dd>
-        </>
-      )}
-    </dl>
+    <p className="text-[12px] text-kallo-text-muted">{parts.join(' · ')}</p>
   );
 }

@@ -4,7 +4,7 @@ import {
   detectOcrImageMime,
   NutritionOcrImageError,
   validateNutritionLabelImage,
-} from '@/lib/domain/nutrition/ocr-image';
+} from '@/lib/domain/nutrition/ocr/image';
 
 async function image(format: 'jpeg' | 'png' | 'webp', size = 64) {
   return sharp({

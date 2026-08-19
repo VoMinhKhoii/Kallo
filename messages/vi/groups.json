@@ -67,7 +67,6 @@
   },
   "shareMeal": {
     "title": "Chia sẻ bữa ăn này",
-    "description": "Chọn những người bạn đã ăn cùng. Họ sẽ nhận được lời mời để thêm vào nhật ký của mình.",
     "mode": {
       "copy": {
         "label": "Cùng một món",
@@ -101,7 +100,6 @@
   },
   "invite": {
     "title": "Mời vào vòng kết nối",
-    "description": "Chia sẻ liên kết của bạn. Bất kỳ ai mở liên kết đều có thể kết nối với bạn.",
     "tabAddFriend": "Thêm bạn",
     "tabCreateGroup": "Tạo nhóm",
     "yourLink": "Liên kết mời của bạn",
@@ -130,7 +128,6 @@
   },
   "createGroup": {
     "title": "Tạo nhóm",
-    "description": "Đặt tên và thêm thành viên từ vòng kết nối của bạn.",
     "nameLabel": "Tên nhóm",
     "namePlaceholder": "VD: Hội leo núi cuối tuần",
     "membersLabel": "Thêm thành viên",

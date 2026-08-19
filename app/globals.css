@@ -143,6 +143,12 @@
   --color-kallo-macro-protein: var(--kallo-macro-protein);
   --color-kallo-macro-carbs: var(--kallo-macro-carbs);
   --color-kallo-macro-fat: var(--kallo-macro-fat);
+  /* The brighter, hue-split trio — for anywhere the three macros sit side by
+     side (nutrition charts, the label review row). Not interchangeable with
+     the quiet --kallo-macro-* set above. */
+  --color-kallo-chart-protein: var(--kallo-chart-protein);
+  --color-kallo-chart-carbs: var(--kallo-chart-carbs);
+  --color-kallo-chart-fat: var(--kallo-chart-fat);
   /* Semantic status tokens */
   --color-kallo-success: var(--kallo-success);
   --color-kallo-success-faint: var(--kallo-success-faint);
@@ -226,36 +232,6 @@
   --kallo-stone: #a8a29e;
   --kallo-btn: #695e4e;
   --kallo-btn-hover: #5a5043;
-  /* The warm halo behind the meal composer — the page's one lit surface, so
-     the input does not float on flat canvas. Two ellipses, a gold core inside
-     a tan wash.
-
-     Every radius is a percentage PER AXIS, and each one plus its offset from
-     centre has to stay under 100%, or the ellipse is cut off by its own box
-     and you see the rectangle instead of the light. The first pass used a 122%
-     vertical radius centred 74% down: it overshot the top by 9% of the box and
-     the bottom by half of one, which is exactly the pair of hard horizontal
-     edges that showed up on screen. `composer-glow.test.ts` checks the four
-     edges so it cannot come back.
-
-     Three stops each, not two. A two-stop ramp is linear in radius, and the
-     kink where it reaches zero reads as a faint ring even though the alpha
-     there is 0; the middle stop bends it into something that lands softly.
-     Fades end on the same colour at zero alpha rather than `transparent`,
-     which some engines interpolate through transparent-black and fringe grey. */
-  --kallo-composer-glow:
-    radial-gradient(
-      34% 34% at 47% 47%,
-      rgba(240, 205, 120, 0.22),
-      rgba(240, 205, 120, 0.08) 52%,
-      rgba(240, 205, 120, 0) 100%
-    ),
-    radial-gradient(
-      48% 48% at 50% 50%,
-      rgba(201, 168, 124, 0.34),
-      rgba(201, 168, 124, 0.13) 55%,
-      rgba(201, 168, 124, 0) 100%
-    );
   /* The one deliberate exception to "no default blue": relog mentions in the
      composer. A picked dish is a REFERENCE to stored data, not typed prose, and
      the warm palette has no hue that reads as "this token is not free text"
@@ -348,21 +324,6 @@
   --kallo-stone: #8a8580;
   --kallo-mention: #7ab3ea;
   --kallo-btn: #c9a87c;
-  /* Dimmer in dark: the same warmth reads as lit at roughly half the alpha,
-     and the light values wash the espresso canvas out to mud. */
-  --kallo-composer-glow:
-    radial-gradient(
-      34% 34% at 47% 47%,
-      rgba(240, 205, 120, 0.12),
-      rgba(240, 205, 120, 0.04) 52%,
-      rgba(240, 205, 120, 0) 100%
-    ),
-    radial-gradient(
-      48% 48% at 50% 50%,
-      rgba(201, 168, 124, 0.2),
-      rgba(201, 168, 124, 0.08) 55%,
-      rgba(201, 168, 124, 0) 100%
-    );
   --kallo-btn-hover: #d4b88c;
   --kallo-macro-protein: #c9a87c;
   --kallo-macro-carbs: #b8a88e;

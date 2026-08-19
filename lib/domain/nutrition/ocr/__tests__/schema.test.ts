@@ -3,7 +3,7 @@ import {
   type NutritionValues,
   nutritionLabelScanSchema,
   nutritionValuesSchema,
-} from '../ocr-schema';
+} from '../schema';
 
 function nutrition(overrides: Partial<NutritionValues> = {}): NutritionValues {
   return {

@@ -102,7 +102,6 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
           children: [
             KalloSheetHeader(
               title: 'logging.manualLogging.title'.tr(),
-              subtitle: 'logging.manualLogging.subtitle'.tr(),
             ),
             const SizedBox(height: KalloSpacing.sp2),
 

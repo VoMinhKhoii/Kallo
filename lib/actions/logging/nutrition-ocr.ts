@@ -1,81 +1,19 @@
 'use server';
 
-import { z } from 'zod';
 import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
-import type {
-  BoundedNutrition,
-  NutritionValues,
-} from '@/lib/ai/types/nutrition-values';
-import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
-import type { PipelineResult } from '@/lib/ai/types/result';
-import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import {
-  dateStringSchema,
-  timezoneOffsetSchema,
-} from '@/lib/core/validation/primitives';
-import { validateNutritionLabelImage } from '@/lib/domain/nutrition/ocr-image';
-import {
-  OCR_MAX_IMAGE_BYTES,
-  OCR_UPLOAD_MIME_TYPES,
-} from '@/lib/domain/nutrition/ocr-image-constants';
+  logNutritionLabelMealSchema,
+  scanNutritionLabelSchema,
+} from '@/lib/api/contracts/nutrition-label';
+import { scanErrorCode } from '@/lib/domain/nutrition/ocr/error';
+import { validateNutritionLabelImage } from '@/lib/domain/nutrition/ocr/image';
 import type {
   OcrErrorCode,
   OcrReviewPayload,
   ParsedNutritionLabel,
-} from '@/lib/domain/nutrition/ocr-schema';
-import {
-  nutritionValuesSchema,
-  ocrConfidenceSchema,
-} from '@/lib/domain/nutrition/ocr-schema';
+} from '@/lib/domain/nutrition/ocr/schema';
+import { stageOcrMeal } from '@/lib/domain/nutrition/ocr/stage';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { db } from '@/lib/infra/db/client';
-import { pendingAnalyses } from '@/lib/infra/db/schema';
-
-const scanLabelSchema = z.object({
-  imageBase64: z
-    .string()
-    .min(1, 'Image data is required')
-    .refine(
-      (value) => value.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(value),
-      'Malformed base64 image data'
-    )
-    .refine((value) => {
-      const padding = value.endsWith('==') ? 2 : value.endsWith('=') ? 1 : 0;
-      return (value.length * 3) / 4 - padding <= OCR_MAX_IMAGE_BYTES;
-    }, 'Image payload is too large'),
-  mimeType: z.enum(OCR_UPLOAD_MIME_TYPES),
-});
-
-const stageOcrMealSchema = z.object({
-  productName: z.string().min(1).max(200),
-  amount: z.number().finite().positive().max(100_000),
-  unit: z.enum(['g', 'ml', 'serving']),
-  confidence: ocrConfidenceSchema,
-  ...nutritionValuesSchema.shape,
-  calories: nutritionValuesSchema.shape.calories.unwrap(),
-  proteinGrams: nutritionValuesSchema.shape.proteinGrams.unwrap(),
-  carbsGrams: nutritionValuesSchema.shape.carbsGrams.unwrap(),
-  fatGrams: nutritionValuesSchema.shape.fatGrams.unwrap(),
-  loggedDate: dateStringSchema,
-  timezoneOffset: timezoneOffsetSchema,
-});
-
-function scanErrorCode(error: unknown): OcrErrorCode {
-  const providerError = error as {
-    code?: unknown;
-    status?: unknown;
-  } | null;
-  const code = providerError?.code;
-  if (providerError?.status === 429) return 'rate_limited';
-  if (
-    code === 'invalid_image' ||
-    code === 'no_label_detected' ||
-    code === 'rate_limited'
-  ) {
-    return code;
-  }
-  return 'server_error';
-}
 
 export async function scanNutritionLabelAction(input: {
   imageBase64: string;
@@ -84,7 +22,7 @@ export async function scanNutritionLabelAction(input: {
   | { success: true; data: ParsedNutritionLabel }
   | { success: false; code: OcrErrorCode }
 > {
-  const parsed = scanLabelSchema.safeParse(input);
+  const parsed = scanNutritionLabelSchema.safeParse(input);
   if (!parsed.success) return { success: false, code: 'invalid_image' };
 
   try {
@@ -113,95 +51,10 @@ export async function stageOcrMealAction(
   { success: true; analysisId: string } | { success: false; code: OcrErrorCode }
 > {
   try {
-    const parsed = stageOcrMealSchema.parse(input);
+    const parsed = logNutritionLabelMealSchema.parse(input);
     const { user } = await requireAuthAndProfile();
 
-    const nutrition: NutritionValues = {
-      caloriesKcal: parsed.calories,
-      proteinG: parsed.proteinGrams,
-      carbohydrateG: parsed.carbsGrams,
-      fatG: parsed.fatGrams,
-      fiberG: parsed.fiberGrams ?? null,
-      sodiumMg: parsed.sodiumMg ?? null,
-      calciumMg: parsed.calciumMg ?? null,
-      ironMg: parsed.ironMg ?? null,
-      magnesiumMg: parsed.magnesiumMg ?? null,
-      phosphorusMg: parsed.phosphorusMg ?? null,
-      potassiumMg: parsed.potassiumMg ?? null,
-      zincMg: parsed.zincMg ?? null,
-      copperMcg: parsed.copperMcg ?? null,
-      manganeseMg: parsed.manganeseMg ?? null,
-      betaCaroteneMcg: parsed.betaCaroteneMcg ?? null,
-      vitaminAMcg: parsed.vitaminAMcg ?? null,
-      vitaminCMg: parsed.vitaminCMg ?? null,
-      vitaminDMcg: parsed.vitaminDMcg ?? null,
-      vitaminEMg: parsed.vitaminEMg ?? null,
-      vitaminKMcg: parsed.vitaminKMcg ?? null,
-      vitaminB1Mg: parsed.vitaminB1Mg ?? null,
-      vitaminB2Mg: parsed.vitaminB2Mg ?? null,
-      vitaminPpMg: parsed.vitaminPpMg ?? null,
-      vitaminB5Mg: parsed.vitaminB5Mg ?? null,
-      vitaminB6Mg: parsed.vitaminB6Mg ?? null,
-      vitaminB9Mcg: parsed.vitaminB9Mcg ?? null,
-      vitaminB12Mcg: parsed.vitaminB12Mcg ?? null,
-      vitaminHMcg: parsed.vitaminHMcg ?? null,
-    };
-
-    const bounded: BoundedNutrition = {} as BoundedNutrition;
-    for (const key of NUTRITION_KEYS) {
-      const val = nutrition[key];
-      bounded[key] = val !== null ? { low: val, mid: val, high: val } : null;
-    }
-
-    const loggedAt = getUtcInstantForLocalDate(
-      parsed.loggedDate,
-      parsed.timezoneOffset
-    );
-
-    const pipelineResult: PipelineResult = {
-      mealSlot: null,
-      confidenceOverall: parsed.confidence,
-      unmatchedIngredients: [],
-      displayedNutrition: nutrition,
-      boundedNutrition: bounded,
-      mealItems: [
-        {
-          name: parsed.productName,
-          displayedNutrition: nutrition,
-          boundedNutrition: bounded,
-          ingredients: [
-            {
-              ingredientName: parsed.productName,
-              foodCompositionId: null,
-              estimatedGrams: parsed.amount,
-              rawEquivalentGrams: parsed.amount,
-              cookingMethod: null,
-              userFacingUnit: parsed.unit,
-              matchConfidence: 1,
-              boundedNutrition: bounded,
-              displayedNutrition: nutrition,
-            },
-          ],
-        },
-      ],
-    };
-
-    const [inserted] = await db
-      .insert(pendingAnalyses)
-      .values({
-        userId: user.id,
-        pipelineResult,
-        rawInput: `${parsed.productName} (${parsed.amount}${parsed.unit})`,
-        entryMode: 'precise',
-        loggedAt,
-      })
-      .returning({ id: pendingAnalyses.id });
-
-    if (!inserted) {
-      return { success: false, code: 'server_error' };
-    }
-
-    return { success: true, analysisId: inserted.id };
+    return { success: true, ...(await stageOcrMeal(user.id, parsed)) };
   } catch (error) {
     console.error('Error in stageOcrMealAction:', error);
     return { success: false, code: 'server_error' };

@@ -51,7 +51,7 @@ export function BarcodeCameraView({
 
   return (
     <div className="space-y-3">
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black shadow-sm sm:aspect-video">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-kallo-border bg-black shadow-sm sm:aspect-video">
         <div
           id="kallo-barcode-scanner"
           className="[&_#qr-shaded-region]:hidden! h-full w-full [&>video]:h-full [&>video]:w-full [&>video]:object-cover"
@@ -68,7 +68,7 @@ export function BarcodeCameraView({
           </div>
         </div>
       </div>
-      <div className="text-center font-sans-display text-[#8B8682] text-[12px]">
+      <div className="text-center font-sans-display text-[12px] text-kallo-text-muted">
         {hasError && (
           <div
             role="alert"
@@ -102,7 +102,7 @@ export function BarcodeCameraView({
                 aria-label={selectCameraLabel}
                 value={selectedCameraId ?? ''}
                 onChange={(e) => onCameraChange(e.target.value)}
-                className="mx-auto block rounded-lg border border-[#EAE7E0] bg-white px-2.5 py-1 text-xs"
+                className="mx-auto block rounded-lg border border-kallo-border bg-white px-2.5 py-1 text-xs"
               >
                 {cameras.map((d, index) => (
                   <option key={d.id} value={d.id}>

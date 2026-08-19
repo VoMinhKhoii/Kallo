@@ -5,7 +5,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../../shared/widgets/form/sheet_action_buttons.dart';
-import '../../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 import 'barcode_scan_frame_painter.dart';
@@ -135,12 +134,6 @@ class BarcodeCameraView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: KalloSpacing.sp3),
-          KalloText(
-            'logging.barcode.scanning'.tr(),
-            variant: KalloTextVariant.small,
-            style: const TextStyle(color: KalloColors.textMuted),
-          ),
-          const SizedBox(height: KalloSpacing.sp2),
           QuietIconButton(
             icon: LucideIcons.keyboard300,
             label: 'logging.barcode.manualEntry'.tr(),

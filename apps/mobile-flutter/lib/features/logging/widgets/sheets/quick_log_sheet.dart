@@ -47,12 +47,12 @@ Future<void> showQuickLogSheet(BuildContext context, WidgetRef ref) async {
     case MealLogMode.manual:
       await showManualLogSheet(context, userId: userId, date: date);
     case MealLogMode.barcode:
-      await openBarcodeLogSheet(
+      await openScanLogSheet(
         context,
         userId: userId,
         date: date,
-        // Product not found → the AI composer is the better tool. From here
-        // that means re-opening the sheet the user came from, caret in field.
+        // Neither scan got us there → the AI composer is the better tool. From
+        // here that means re-opening the sheet the user came from, caret in field.
         onFallbackToText: () {
           if (context.mounted) showQuickLogSheet(context, ref);
         },
@@ -147,7 +147,6 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
           children: [
             KalloSheetHeader(
               title: 'logging.quickLog.title'.tr(),
-              subtitle: 'logging.quickLog.subtitle'.tr(),
             ),
             Padding(
               // The keyboard's inset already clears the home indicator when it

@@ -15,7 +15,7 @@ import {
   type OcrConfidence,
   type OcrErrorCode,
   type ParsedNutritionLabel,
-} from '@/lib/domain/nutrition/ocr-schema';
+} from '@/lib/domain/nutrition/ocr/schema';
 import {
   NUTRIENT_KEYS,
   type RawNutritionLabelOcr,

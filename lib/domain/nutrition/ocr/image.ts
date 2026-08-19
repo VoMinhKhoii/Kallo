@@ -4,7 +4,7 @@ import {
   OCR_MAX_IMAGE_DIMENSION,
   OCR_MAX_IMAGE_PIXELS,
   type OcrImageMimeType,
-} from '@/lib/domain/nutrition/ocr-image-constants';
+} from '@/lib/domain/nutrition/ocr/image-constants';
 
 export class NutritionOcrImageError extends Error {
   readonly code = 'invalid_image';

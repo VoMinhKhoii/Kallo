@@ -1039,13 +1039,12 @@
       "cheatDesc": "Log a treat without the breakdown",
       "manual": "Manual",
       "manualDesc": "Search foods, enter exact grams",
-      "barcode": "Barcode",
-      "barcodeDesc": "Scan a packaged product"
+      "barcode": "Scan product",
+      "barcodeDesc": "Scan a barcode or a nutrition label"
     },
     "cheatPlaceholder": "Korean BBQ buffet, went all out…",
     "quickLog": {
-      "title": "Log a meal",
-      "subtitle": "We'll analyze it on your feed"
+      "title": "Log a meal"
     },
     "cheatIntensity": {
       "label": "How much did you eat?",
@@ -1075,8 +1074,6 @@
     },
     "barcode": {
       "title": "Scan barcode",
-      "subtitle": "Nutrition for packaged products, via Open Food Facts",
-      "scanning": "Center the barcode inside the frame",
       "torch": "Flashlight",
       "cameraDenied": "Camera access is off. Enable it for Kallo in Settings > Privacy > Camera, or enter the barcode below.",
       "cameraError": "The camera isn't available on this device.",
@@ -1279,7 +1276,6 @@
     "manualLogging": {
       "openSheet": "Log manually",
       "title": "Log manually",
-      "subtitle": "Search foods, enter exact grams — no AI",
       "searchPlaceholder": "Search foods...",
       "recentFoods": "Recent foods",
       "recentsHint": "Search to add foods",
@@ -1306,6 +1302,97 @@
       "searchFailed": "Couldn't load your dishes",
       "closePicker": "Close",
       "stagedFull": "You can stage up to {max} at a time."
+    },
+    "scan": {
+      "barcodeTab": "Barcode",
+      "labelTab": "Nutrition label",
+      "tryLabelInstead": "Scan the nutrition label instead",
+      "tryBarcodeInstead": "Scan the barcode instead",
+      "savedMeal": "Meal added"
+    },
+    "labelScan": {
+      "title": "Scan Nutrition Label",
+      "reviewTitle": "Verify Extracted Nutrition",
+      "captureGuide": "Avoid glare, and flatten curved packaging.",
+      "takePhoto": "Take photo",
+      "choosePhoto": "Choose a photo instead",
+      "scanPhoto": "Read this label",
+      "retake": "Take another photo",
+      "retryPhoto": "Try this photo again",
+      "manualEntry": "Enter nutrition manually",
+      "defaultProductName": "Scanned packaged food",
+      "productName": "Product name",
+      "invalidProductName": "Enter a product name up to 200 characters.",
+      "amountLabel": "Amount consumed",
+      "invalidAmount": "Enter an amount greater than 0 and no more than 100,000.",
+      "servingShortcut": "1 serving",
+      "packageShortcut": "Whole package",
+      "micronutrients": "Other nutrients on the label ({count})",
+      "addMeal": "Add meal",
+      "back": "Back",
+      "basisLabel": "Values shown",
+      "confidenceLabel": "Scan confidence",
+      "servingLabel": "Serving",
+      "servingsPerContainerLabel": "Servings per package",
+      "basis": {
+        "per100g": "Per 100 g",
+        "per100ml": "Per 100 ml",
+        "perServing": "Per serving",
+        "perContainer": "Per package",
+        "per100gAndServing": "Per 100 g and per serving",
+        "per100mlAndServing": "Per 100 ml and per serving"
+      },
+      "confidence": {
+        "high": "High",
+        "medium": "Medium — please review",
+        "low": "Low — check every value"
+      },
+      "unit": {
+        "g": "g",
+        "ml": "ml",
+        "serving": {
+          "one": "serving",
+          "other": "servings"
+        }
+      },
+      "nutrients": {
+        "calories": "Calories",
+        "protein": "Protein",
+        "carbohydrates": "Carbohydrates",
+        "fat": "Fat",
+        "fiber": "Fiber",
+        "sodium": "Sodium",
+        "calcium": "Calcium",
+        "iron": "Iron",
+        "magnesium": "Magnesium",
+        "phosphorus": "Phosphorus",
+        "potassium": "Potassium",
+        "zinc": "Zinc",
+        "copper": "Copper",
+        "manganese": "Manganese",
+        "betaCarotene": "Beta carotene",
+        "vitaminA": "Vitamin A",
+        "vitaminC": "Vitamin C",
+        "vitaminD": "Vitamin D",
+        "vitaminE": "Vitamin E",
+        "vitaminK": "Vitamin K",
+        "vitaminB1": "Vitamin B1",
+        "vitaminB2": "Vitamin B2",
+        "vitaminPp": "Vitamin PP",
+        "vitaminB5": "Vitamin B5",
+        "vitaminB6": "Vitamin B6",
+        "vitaminB9": "Vitamin B9",
+        "vitaminB12": "Vitamin B12",
+        "vitaminH": "Vitamin H"
+      },
+      "error": {
+        "invalidImage": "Please upload a clear image of a nutrition facts table.",
+        "noLabelDetected": "This does not look like a printed nutrition table. It may be the logo side, a menu, or handwritten notes. Choose the label photo or enter nutrition manually.",
+        "rateLimited": "The OCR service is busy. Please try again in a moment.",
+        "serverError": "Could not scan label. Please try again.",
+        "permissionDenied": "Camera and photo access are off. Enable them for Kallo in Settings > Privacy, or enter the values by hand.",
+        "imageTooLarge": "That photo is too large to send. Take another one and it will be resized automatically."
+      }
     }
   },
   "groups": {
@@ -1343,7 +1430,6 @@
     },
     "createGroup": {
       "title": "Create a group",
-      "description": "Name it and add members from your circle.",
       "nameLabel": "Group name",
       "namePlaceholder": "e.g. Weekend hikers",
       "membersLabel": "Add members",

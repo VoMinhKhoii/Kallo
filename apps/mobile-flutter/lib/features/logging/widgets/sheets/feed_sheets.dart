@@ -44,7 +44,7 @@ class FeedSheets {
   Future<void> openManual() =>
       showManualLogSheet(context, userId: userId, date: date);
 
-  Future<void> openBarcode() => openBarcodeLogSheet(
+  Future<void> openBarcode() => openScanLogSheet(
     context,
     userId: userId,
     date: date,

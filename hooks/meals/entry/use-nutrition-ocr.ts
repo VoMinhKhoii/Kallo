@@ -8,11 +8,11 @@ import {
   OCR_CLIENT_RESIZE_WIDTH,
   OCR_MAX_IMAGE_BYTES,
   OCR_MAX_SOURCE_FILE_BYTES,
-} from '@/lib/domain/nutrition/ocr-image-constants';
+} from '@/lib/domain/nutrition/ocr/image-constants';
 import type {
   OcrErrorCode,
   ParsedNutritionLabel,
-} from '@/lib/domain/nutrition/ocr-schema';
+} from '@/lib/domain/nutrition/ocr/schema';
 
 const ENCODE_ATTEMPTS = [
   { quality: 0.85, scale: 1 },

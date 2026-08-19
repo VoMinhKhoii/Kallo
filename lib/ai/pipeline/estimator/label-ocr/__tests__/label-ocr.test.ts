@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type NutritionValues,
   OCR_NUTRIENT_KEYS,
-} from '@/lib/domain/nutrition/ocr-schema';
+} from '@/lib/domain/nutrition/ocr/schema';
 import {
   NUTRITION_LABEL_OCR_SYSTEM_PROMPT,
   NutritionLabelOcrError,

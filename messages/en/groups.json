@@ -67,7 +67,6 @@
   },
   "shareMeal": {
     "title": "Share this meal",
-    "description": "Pick friends who ate with you. They'll get it in their inbox to add to their own diary.",
     "mode": {
       "copy": {
         "label": "Same meal",
@@ -101,7 +100,6 @@
   },
   "invite": {
     "title": "Invite to your circle",
-    "description": "Share your link. Anyone who opens it can connect with you.",
     "tabAddFriend": "Add friend",
     "tabCreateGroup": "Create group",
     "yourLink": "Your invite link",
@@ -130,7 +128,6 @@
   },
   "createGroup": {
     "title": "Create a group",
-    "description": "Name it and add members from your circle.",
     "nameLabel": "Group name",
     "namePlaceholder": "e.g. Weekend hikers",
     "membersLabel": "Add members",

@@ -13,7 +13,7 @@ interface OcrImagePreviewProps {
 
 export function OcrImagePreview(props: OcrImagePreviewProps) {
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black/5">
+    <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-kallo-border bg-black/5">
       <Image
         src={props.src}
         alt={props.alt}

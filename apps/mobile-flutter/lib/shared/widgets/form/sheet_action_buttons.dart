@@ -20,10 +20,15 @@ class SheetPrimaryButton extends StatefulWidget {
     super.key,
     required this.label,
     required this.onTap,
+    this.busy = false,
   });
 
   final String label;
   final VoidCallback onTap;
+
+  /// While true the label is swapped for a spinner and taps are refused — the
+  /// full-width counterpart to [SheetConfirmButton.saving].
+  final bool busy;
 
   @override
   State<SheetPrimaryButton> createState() => _SheetPrimaryButtonState();
@@ -34,17 +39,21 @@ class _SheetPrimaryButtonState extends State<SheetPrimaryButton> {
 
   @override
   Widget build(BuildContext context) {
+    final enabled = !widget.busy;
     return Semantics(
       button: true,
+      enabled: enabled,
       label: widget.label,
       child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: () {
-          HapticFeedback.lightImpact();
-          widget.onTap();
-        },
+        onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
+        onTapUp: enabled ? (_) => setState(() => _pressed = false) : null,
+        onTapCancel: enabled ? () => setState(() => _pressed = false) : null,
+        onTap: enabled
+            ? () {
+              HapticFeedback.lightImpact();
+              widget.onTap();
+            }
+            : null,
         child: AnimatedScale(
           scale: _pressed ? 0.97 : 1,
           duration: const Duration(milliseconds: 150),
@@ -55,12 +64,22 @@ class _SheetPrimaryButtonState extends State<SheetPrimaryButton> {
               color: _pressed ? KalloColors.btnHover : KalloColors.btn,
               borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
             ),
-            child: Text(
-              widget.label,
-              style: KalloTextStyles.sansSemiBold(
-                fontSize: KalloFontSize.sm,
-              ).copyWith(color: Colors.white),
-            ),
+            child:
+                widget.busy
+                    ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : Text(
+                      widget.label,
+                      style: KalloTextStyles.sansSemiBold(
+                        fontSize: KalloFontSize.sm,
+                      ).copyWith(color: Colors.white),
+                    ),
           ),
         ),
       ),

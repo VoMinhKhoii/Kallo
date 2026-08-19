@@ -3,7 +3,7 @@
   "files": {
     "apps/mobile-flutter/lib/features/onboarding/widgets/onboarding_wizard.dart": 691,
     "apps/mobile-flutter/lib/features/settings/screens/body_metrics.dart": 646,
-    "apps/mobile-flutter/lib/features/logging/widgets/sheets/manual_log_sheet.dart": 640,
+    "apps/mobile-flutter/lib/features/logging/widgets/sheets/manual_log_sheet.dart": 639,
     "apps/mobile-flutter/lib/features/logging/widgets/cheat/cheat_slider_card.dart": 579,
     "apps/mobile-flutter/lib/features/logging/widgets/timeline/timeline_picker.dart": 540,
     "apps/mobile-flutter/lib/features/settings/widgets/profile/profile_form.dart": 518,

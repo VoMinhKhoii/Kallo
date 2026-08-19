@@ -6,7 +6,7 @@ import type {
   OcrCameraDevice,
   OcrCameraError,
   OcrCameraResolution,
-} from '@/lib/domain/nutrition/ocr-camera-types';
+} from '@/lib/domain/nutrition/ocr/camera-types';
 
 type ExtendedCapabilities = MediaTrackCapabilities & {
   torch?: boolean;

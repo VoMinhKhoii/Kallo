@@ -13,7 +13,7 @@ import { stageOcrMealAction } from '@/lib/actions/logging/nutrition-ocr';
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { tryDecodeFontEncodedBarcode } from '@/lib/domain/barcode/decode';
 import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/openfoodfacts';
-import type { ParsedNutritionLabel } from '@/lib/domain/nutrition/ocr-schema';
+import type { ParsedNutritionLabel } from '@/lib/domain/nutrition/ocr/schema';
 
 interface UseBarcodeScannerDialogStateProps {
   isOpen: boolean;
