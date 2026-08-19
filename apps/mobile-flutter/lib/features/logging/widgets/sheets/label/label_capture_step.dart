@@ -5,11 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
-import '../../logic/label_image.dart';
-import 'scan_sheet_controls.dart';
+import '../../../../../shared/widgets/nham_text.dart';
+import '../../../../../theme/nham_colors.dart';
+import '../../../../../theme/nham_theme.dart';
+import '../../../logic/label_image.dart';
+import '../../../logic/meal_log_mode.dart';
+import '../scan_sheet_controls.dart';
 
 /// Take (or choose) a photo of the nutrition table, then send it to be read.
 ///
@@ -50,9 +51,8 @@ class LabelCaptureStep extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: held == null
-            ? _chooseChildren(context)
-            : _previewChildren(held),
+        children:
+            held == null ? _chooseChildren(context) : _previewChildren(held),
       ),
     );
   }
@@ -75,14 +75,16 @@ class LabelCaptureStep extends StatelessWidget {
       label: 'logging.labelScan.choosePhoto'.tr(),
       onTap: () => onPick(ImageSource.gallery),
     ),
-    const SizedBox(height: NhamSpacing.sp2),
-    Center(
-      child: ScanQuietButton(
-        icon: LucideIcons.keyboard300,
-        label: 'logging.labelScan.manualEntry'.tr(),
-        onTap: onManualEntry,
+    if (isManualNutritionEntryOffered) ...[
+      const SizedBox(height: NhamSpacing.sp2),
+      Center(
+        child: ScanQuietButton(
+          icon: LucideIcons.keyboard300,
+          label: 'logging.labelScan.manualEntry'.tr(),
+          onTap: onManualEntry,
+        ),
       ),
-    ),
+    ],
   ];
 
   List<Widget> _previewChildren(LabelImage held) => [
@@ -95,15 +97,16 @@ class LabelCaptureStep extends StatelessWidget {
           fit: BoxFit.cover,
           // The picker wrote this file moments ago; if it has vanished the
           // useful move is to shoot another, not to crash the sheet.
-          errorBuilder: (context, _, __) => Container(
-            color: NhamColors.track,
-            alignment: Alignment.center,
-            child: const Icon(
-              LucideIcons.imageOff300,
-              size: 24,
-              color: NhamColors.textMuted,
-            ),
-          ),
+          errorBuilder:
+              (context, _, __) => Container(
+                color: NhamColors.track,
+                alignment: Alignment.center,
+                child: const Icon(
+                  LucideIcons.imageOff300,
+                  size: 24,
+                  color: NhamColors.textMuted,
+                ),
+              ),
         ),
       ),
     ),

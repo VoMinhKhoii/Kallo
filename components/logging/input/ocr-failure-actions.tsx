@@ -6,7 +6,9 @@ interface OcrFailureActionsProps {
   manualText: string;
   isProcessing: boolean;
   onRetry: () => void;
-  onManualEntry: () => void;
+  /** Omitted while manual nutrition entry is not offered — then the card
+   *  shows retry alone rather than a button that goes nowhere. */
+  onManualEntry?: () => void;
 }
 
 export function OcrFailureActions(props: OcrFailureActionsProps) {
@@ -25,13 +27,15 @@ export function OcrFailureActions(props: OcrFailureActionsProps) {
         >
           {props.retryText}
         </button>
-        <button
-          type="button"
-          onClick={props.onManualEntry}
-          className="rounded-lg bg-nham-ink px-3 py-1.5 font-medium text-white text-xs"
-        >
-          {props.manualText}
-        </button>
+        {props.onManualEntry && (
+          <button
+            type="button"
+            onClick={props.onManualEntry}
+            className="rounded-lg bg-nham-ink px-3 py-1.5 font-medium text-white text-xs"
+          >
+            {props.manualText}
+          </button>
+        )}
       </div>
     </div>
   );

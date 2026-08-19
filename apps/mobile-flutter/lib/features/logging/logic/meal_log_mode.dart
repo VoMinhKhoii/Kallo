@@ -22,6 +22,18 @@ enum MealLogMode { normal, cheat, manual, barcode }
 bool get isBarcodeLoggingSupported =>
     defaultTargetPlatform == TargetPlatform.iOS;
 
+/// Whether the label sheet offers "enter nutrition by hand" as an escape
+/// hatch. Off for now — typing 28 nutrients off a package is a worse job than
+/// [MealLogMode.manual] already does with a food search, and offering it
+/// beside the camera invited it before the scan had been tried.
+///
+/// Lives beside [isBarcodeLoggingSupported] because it is the same kind of
+/// thing: one place deciding whether a logging affordance is offered, so the
+/// capture step's link and the failure card's action cannot drift apart. The
+/// controller's `enterManualReview()` stays wired and tested — flipping this
+/// back on is the whole change.
+const bool isManualNutritionEntryOffered = false;
+
 IconData mealModeIcon(MealLogMode mode) => switch (mode) {
   MealLogMode.normal => LucideIcons.zap300, // lightning
   MealLogMode.cheat => LucideIcons.pizza300,

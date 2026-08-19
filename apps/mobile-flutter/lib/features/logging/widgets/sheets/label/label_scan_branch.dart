@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../data/label_scan_providers.dart';
-import '../../logic/label_review.dart';
-import '../../../../models/nutrition_label.dart';
+import '../../../data/label_scan_providers.dart';
+import '../../../logic/label_review.dart';
+import '../../../logic/meal_log_mode.dart';
+import '../../../../../models/nutrition_label.dart';
 import 'label_capture_step.dart';
-import 'label_review_step.dart';
-import 'scan_error_card.dart';
+import 'review/label_review_step.dart';
+import '../scan_error_card.dart';
 
 /// The nutrition-label branch of the scan sheet: photograph the printed table,
 /// have it read, check the values, log the meal.
@@ -128,9 +129,10 @@ class _LabelScanBranchState extends ConsumerState<LabelScanBranch> {
       icon: LucideIcons.scanText300,
       message: state.errorKey!.tr(),
       primary: ScanErrorAction(
-        label: hasPhoto
-            ? 'logging.labelScan.retryPhoto'.tr()
-            : 'logging.labelScan.takePhoto'.tr(),
+        label:
+            hasPhoto
+                ? 'logging.labelScan.retryPhoto'.tr()
+                : 'logging.labelScan.takePhoto'.tr(),
         onTap: hasPhoto ? notifier.scan : notifier.retake,
       ),
       secondary: [
@@ -147,11 +149,14 @@ class _LabelScanBranchState extends ConsumerState<LabelScanBranch> {
             onTap: notifier.retake,
           ),
       ],
-      quiet: ScanErrorAction(
-        icon: LucideIcons.keyboard300,
-        label: 'logging.labelScan.manualEntry'.tr(),
-        onTap: _enterManualReview,
-      ),
+      quiet:
+          isManualNutritionEntryOffered
+              ? ScanErrorAction(
+                icon: LucideIcons.keyboard300,
+                label: 'logging.labelScan.manualEntry'.tr(),
+                onTap: _enterManualReview,
+              )
+              : null,
     );
   }
 }

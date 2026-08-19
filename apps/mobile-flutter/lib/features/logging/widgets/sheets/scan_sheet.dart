@@ -7,7 +7,7 @@ import '../../../../shared/widgets/nham_sheet_header.dart';
 import '../../data/barcode_providers.dart';
 import '../../data/label_scan_providers.dart';
 import 'barcode_scanner_sheet.dart';
-import 'label_scan_branch.dart';
+import 'label/label_scan_branch.dart';
 import 'scan_type_toggle.dart';
 
 /// Open the scan sheet: read a packaged product either by its barcode or by

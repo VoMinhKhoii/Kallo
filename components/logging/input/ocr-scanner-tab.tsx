@@ -2,15 +2,26 @@
 
 import { Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
-import { useNutritionOcr } from '@/hooks/meals/use-nutrition-ocr';
+import { useState } from 'react';
 import { useOcrCamera } from '@/hooks/meals/use-ocr-camera';
+import { useOcrImageSelection } from '@/hooks/meals/use-ocr-image-selection';
 import type { ParsedNutritionLabel } from '@/lib/nutrition/ocr-schema';
 import { OcrCameraView } from './ocr-camera-view';
 import { OcrFailureActions } from './ocr-failure-actions';
 import { OcrImagePreview } from './ocr-image-preview';
 import { OcrModeToggle } from './ocr-mode-toggle';
 import { OcrUploadPanel } from './ocr-upload-panel';
+
+/**
+ * Whether the scanner offers "enter nutrition manually" as an escape hatch.
+ * Off for now — typing 28 nutrients off a package is a worse job than the
+ * manual log mode already does with a food search, and offering it beside the
+ * camera invited it before the scan had been tried.
+ *
+ * Mirrors `isManualNutritionEntryOffered` in the Flutter app
+ * (`features/logging/logic/meal_log_mode.dart`). Flip both together.
+ */
+const IS_MANUAL_NUTRITION_ENTRY_OFFERED = false;
 
 export function OcrScannerTab({
   onSuccess,
@@ -20,85 +31,26 @@ export function OcrScannerTab({
   onManualEntry: () => void;
 }) {
   const t = useTranslations('logging');
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const previewUrlRef = useRef<string | null>(null);
-  const scanGenerationRef = useRef(0);
   const [mode, setMode] = useState<'camera' | 'upload'>('camera');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  const camera = useOcrCamera(mode === 'camera' && !previewUrl);
-  const { scanLabel, isCompressing, isScanning, error, resetError } =
-    useNutritionOcr();
-
-  useEffect(
-    () => () => {
-      scanGenerationRef.current += 1;
-      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    },
-    []
-  );
-
-  const selectImage = (file: File) => {
-    scanGenerationRef.current += 1;
-    resetError();
-    setSelectedFile(file);
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    const nextPreviewUrl = URL.createObjectURL(file);
-    previewUrlRef.current = nextPreviewUrl;
-    setPreviewUrl(nextPreviewUrl);
-  };
+  const image = useOcrImageSelection(onSuccess);
+  const camera = useOcrCamera(mode === 'camera' && !image.hasImage);
 
   const handleCapturePhoto = async () => {
     const file = await camera.capturePhoto();
-    if (file) selectImage(file);
+    if (file) image.selectImage(file);
   };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) selectImage(file);
-  };
-
-  const handleClearImage = () => {
-    scanGenerationRef.current += 1;
-    setSelectedFile(null);
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    previewUrlRef.current = null;
-    setPreviewUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    resetError();
-  };
-
-  const handleScan = async () => {
-    if (!selectedFile) return;
-    const scanGeneration = ++scanGenerationRef.current;
-    try {
-      const result = await scanLabel(selectedFile);
-      if (scanGeneration === scanGenerationRef.current) onSuccess(result);
-    } catch (error) {
-      console.warn('Nutrition label scan failed:', error);
-    }
-  };
-
-  const isProcessing = isCompressing || isScanning;
-
-  const safePreviewUrl =
-    previewUrl &&
-    (previewUrl.startsWith('blob:') || previewUrl.startsWith('data:image/'))
-      ? previewUrl
-      : undefined;
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <input
         type="file"
-        ref={fileInputRef}
+        ref={image.fileInputRef}
         accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-        onChange={handleFileSelect}
+        onChange={image.handleFileSelect}
         className="hidden"
       />
 
-      {!previewUrl && (
+      {!image.hasImage && (
         <OcrModeToggle
           mode={mode}
           setMode={setMode}
@@ -108,13 +60,13 @@ export function OcrScannerTab({
         />
       )}
 
-      {safePreviewUrl ? (
+      {image.previewUrl ? (
         <OcrImagePreview
-          src={safePreviewUrl}
+          src={image.previewUrl}
           alt={t('ocrPreviewAlt')}
           editText={t('edit')}
-          isProcessing={isProcessing}
-          onClear={handleClearImage}
+          isProcessing={image.isProcessing}
+          onClear={image.clearImage}
         />
       ) : mode === 'camera' ? (
         <OcrCameraView
@@ -145,7 +97,7 @@ export function OcrScannerTab({
             },
           }}
           onCapture={handleCapturePhoto}
-          onUploadClick={() => fileInputRef.current?.click()}
+          onUploadClick={() => image.fileInputRef.current?.click()}
           onCameraChange={camera.setSelectedCameraId}
           onTorchChange={camera.setTorch}
           onFocusChange={camera.setFocusMode}
@@ -155,34 +107,36 @@ export function OcrScannerTab({
         <OcrUploadPanel
           hint={t('ocrUploadHint')}
           formats={t('ocrFormatHint')}
-          onChoose={() => fileInputRef.current?.click()}
+          onChoose={() => image.fileInputRef.current?.click()}
         />
       )}
 
-      {error && (
+      {image.error && (
         <OcrFailureActions
-          message={t(`ocrError.${error}`)}
+          message={t(`ocrError.${image.error}`)}
           retryText={t('ocrRetryPhoto')}
           manualText={t('ocrManualEntry')}
-          isProcessing={isProcessing}
-          onRetry={handleScan}
-          onManualEntry={onManualEntry}
+          isProcessing={image.isProcessing}
+          onRetry={image.scan}
+          onManualEntry={
+            IS_MANUAL_NUTRITION_ENTRY_OFFERED ? onManualEntry : undefined
+          }
         />
       )}
 
-      {selectedFile && !error && (
+      {image.selectedFile && !image.error && (
         <div className="flex justify-end pt-2">
           <button
             type="button"
-            onClick={handleScan}
-            disabled={isProcessing}
-            aria-busy={isProcessing}
+            onClick={image.scan}
+            disabled={image.isProcessing}
+            aria-busy={image.isProcessing}
             className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-nham-ink px-5 py-2.5 font-medium font-sans-display text-[14px] text-nham-surface shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
           >
-            {isProcessing ? (
+            {image.isProcessing ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {isCompressing ? t('ocrCompressing') : t('ocrScanning')}
+                {image.isCompressing ? t('ocrCompressing') : t('ocrScanning')}
               </>
             ) : (
               <>

@@ -1,8 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../models/nutrition_label.dart';
-import '../../../../theme/calm_tokens.dart';
+import '../../../../../../models/nutrition_label.dart';
+import '../../../../../../theme/calm_tokens.dart';
 
 const _basisKeys = {
   LabelBasis.per100g: 'per100g',

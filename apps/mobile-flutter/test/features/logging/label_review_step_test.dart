@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nham_mobile/features/logging/logic/label_review.dart';
-import 'package:nham_mobile/features/logging/widgets/sheets/label_review_step.dart';
+import 'package:nham_mobile/features/logging/widgets/sheets/label/review/label_review_step.dart';
 import 'package:nham_mobile/models/nutrition_label.dart';
 import 'package:nham_mobile/theme/nham_colors.dart';
 

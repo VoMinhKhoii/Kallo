@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../theme/nham_colors.dart';
+import '../../../../../../theme/nham_colors.dart';
 
 /// Icon + colour per macro, borrowed wholesale from the nutrition page's legend
 /// (`features/nutrition/widgets/day_summary.dart`): beef, wheat, and a drop of
@@ -26,9 +26,6 @@ const Map<String, LabelMacroIdentity> labelMacroIdentities = {
     LucideIcons.beef300,
     NhamColors.chartProtein,
   ),
-  'carbsGrams': LabelMacroIdentity(
-    LucideIcons.wheat300,
-    NhamColors.chartCarbs,
-  ),
+  'carbsGrams': LabelMacroIdentity(LucideIcons.wheat300, NhamColors.chartCarbs),
   'fatGrams': LabelMacroIdentity(LucideIcons.droplet300, NhamColors.chartFat),
 };

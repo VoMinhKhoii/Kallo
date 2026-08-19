@@ -1,8 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../../../models/nutrition_label.dart';
-import '../../logic/label_review.dart';
+import '../../../../../../models/nutrition_label.dart';
+import '../../../../logic/label_review.dart';
 
 /// The text controllers behind the review step's nutrient fields, and the
 /// small rules that decide what each field shows.
@@ -47,9 +47,10 @@ class LabelReviewFields {
           review.nutrientText(key).trim().isEmpty);
 
   /// 'g' / 'ml' verbatim; servings pluralize against the current amount.
-  String get unitLabel => review.unit == 'serving'
-      ? plural('logging.labelScan.unit.serving', review.parsedAmount ?? 0)
-      : 'logging.labelScan.unit.${review.unit}'.tr();
+  String get unitLabel =>
+      review.unit == 'serving'
+          ? plural('logging.labelScan.unit.serving', review.parsedAmount ?? 0)
+          : 'logging.labelScan.unit.${review.unit}'.tr();
 
   void dispose() {
     name.dispose();
