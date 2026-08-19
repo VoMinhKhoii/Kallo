@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../logic/logging_spacing.dart';
-import '../../../../shared/widgets/nham_text.dart';
+import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/format.dart';
 import 'persisted_meal_chevron_toggle.dart';
@@ -37,10 +37,10 @@ class PersistedMealCardContent extends StatelessWidget {
     return Container(
       padding: LoggingSpacing.card,
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.borderSoft),
-        boxShadow: const [NhamShadows.sm],
+        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        border: Border.all(color: KalloColors.borderSoft),
+        boxShadow: const [KalloShadows.sm],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,16 +54,16 @@ class PersistedMealCardContent extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: NhamText(
+                  child: KalloText(
                     meal.rawInput,
-                    variant: NhamTextVariant.mealQuote,
+                    variant: KalloTextVariant.mealQuote,
                     style: const TextStyle(
                       fontSize: 17,
                       height: 28 / 17, // leading-7 (28px)
                     ),
                   ),
                 ),
-                const SizedBox(width: NhamSpacing.sp3), // gap-3
+                const SizedBox(width: KalloSpacing.sp3), // gap-3
                 PersistedMealChevronToggle(expand: expand, onTap: onToggle),
               ],
             ),
@@ -90,7 +90,7 @@ class PersistedMealCardContent extends StatelessWidget {
               );
             },
             child: Padding(
-              padding: const EdgeInsets.only(top: NhamSpacing.sp2), // mt-2
+              padding: const EdgeInsets.only(top: KalloSpacing.sp2), // mt-2
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

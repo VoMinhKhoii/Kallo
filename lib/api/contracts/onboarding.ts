@@ -6,21 +6,21 @@
  * value-import a server action or any 'server-only'/db/supabase module. It
  * contains only:
  *   - Zod request schemas depending solely on 'zod' and the PURE onboarding
- *     schema/constant modules (`@/lib/onboarding/schemas`,
- *     `@/lib/onboarding/constants` — verified to import neither 'server-only'
+ *     schema/constant modules (`@/lib/domain/onboarding/schemas`,
+ *     `@/lib/domain/onboarding/constants` — verified to import neither 'server-only'
  *     nor db/supabase).
  *   - A `export type` re-export of `getOnboardingProfile` (the binding is
  *     erased at runtime, so this pulls no server code into the mobile bundle).
  */
 import { z } from 'zod';
-import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/domain/onboarding/constants';
 import {
   bodyMetricsSchema,
   carbSplitSchema,
   cookingHabitsSchema,
   countrySchema,
   goalEnumSchema,
-} from '@/lib/onboarding/schemas';
+} from '@/lib/domain/onboarding/schemas';
 
 /**
  * Request body for `POST /api/v1/onboarding/screen` → `saveOnboardingScreen`.
@@ -104,4 +104,4 @@ export const sharingPreferencesSchema = z.object({
  * the existing web components. `export type` erases the binding at runtime, so
  * no server/db code is bundled.
  */
-export type { getOnboardingProfile } from '@/lib/onboarding/actions';
+export type { getOnboardingProfile } from '@/lib/domain/onboarding/actions';

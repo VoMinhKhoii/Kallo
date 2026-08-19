@@ -13,14 +13,17 @@
  */
 import { z } from 'zod';
 import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/core/validation/primitives';
+import {
   OCR_MAX_IMAGE_BYTES,
   OCR_UPLOAD_MIME_TYPES,
-} from '@/lib/nutrition/ocr-image-constants';
+} from '@/lib/domain/nutrition/ocr/image-constants';
 import {
   nutritionValuesSchema,
   ocrConfidenceSchema,
-} from '@/lib/nutrition/ocr-schema';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+} from '@/lib/domain/nutrition/ocr/schema';
 
 /**
  * Body for `POST /api/v1/nutrition-label/scan` — a base64 label photo the
@@ -87,4 +90,4 @@ export type {
   OcrErrorCode,
   OcrReviewPayload,
   ParsedNutritionLabel,
-} from '@/lib/nutrition/ocr-schema';
+} from '@/lib/domain/nutrition/ocr/schema';

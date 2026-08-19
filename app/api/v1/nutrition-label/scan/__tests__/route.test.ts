@@ -5,13 +5,13 @@ const requireAuthAndProfile = vi.fn();
 const validateNutritionLabelImage = vi.fn();
 const scanNutritionLabelWithGemini = vi.fn();
 
-vi.mock('@/lib/auth', () => ({ requireAuthAndProfile }));
+vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
 
-vi.mock('@/lib/nutrition/ocr-image', async (importActual) => {
+vi.mock('@/lib/domain/nutrition/ocr/image', async (importActual) => {
   // Keep the real NutritionOcrImageError so the route's mapper sees the same
   // `code` the mock throws.
   const actual =
-    await importActual<typeof import('@/lib/nutrition/ocr-image')>();
+    await importActual<typeof import('@/lib/domain/nutrition/ocr/image')>();
   return {
     NutritionOcrImageError: actual.NutritionOcrImageError,
     detectOcrImageMime: actual.detectOcrImageMime,
@@ -19,11 +19,13 @@ vi.mock('@/lib/nutrition/ocr-image', async (importActual) => {
   };
 });
 
-vi.mock('@/lib/ai/pipeline/estimator/label-ocr', () => ({
+vi.mock('@/lib/ai/pipeline/estimator/label-ocr/label-ocr', () => ({
   scanNutritionLabelWithGemini,
 }));
 
-const { NutritionOcrImageError } = await import('@/lib/nutrition/ocr-image');
+const { NutritionOcrImageError } = await import(
+  '@/lib/domain/nutrition/ocr/image'
+);
 const { POST } = await import('@/app/api/v1/nutrition-label/scan/route');
 
 function makeRequest(body: unknown): NextRequest {
@@ -73,7 +75,7 @@ describe('POST /api/v1/nutrition-label/scan', () => {
   });
 
   it('rejects an unauthenticated request with 401 before touching the image', async () => {
-    const { Errors } = await import('@/lib/errors');
+    const { Errors } = await import('@/lib/core/errors/catalog');
     requireAuthAndProfile.mockRejectedValueOnce(Errors.notAuthenticated());
 
     const res = await POST(makeRequest(validBody));

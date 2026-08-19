@@ -3,10 +3,10 @@ import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../data/api_client.dart';
-import '../../../../models/cheat.dart';
-import '../../../../models/relog.dart';
-import '../../../../models/streaming.dart';
+import '../../../../services/http/api_client.dart';
+import '../../../../models/logging/cheat.dart';
+import '../../../../models/logging/relog.dart';
+import '../../../../models/logging/streaming.dart';
 import '../../data/logging_keys.dart';
 import '../../data/logging_providers.dart';
 import '../../data/stream_analysis_controller.dart';
@@ -61,6 +61,25 @@ void startMealAnalysis(
 ///
 /// On error: never destroy the typed meal. [onFailed] restores the raw text
 /// into the composer AND renders the failed attempt as a feed card (Try again).
+/// Subscribe the feed to those two moments. Called from `build`, where
+/// `ref.listen` belongs; [onFailed] also carries whether the error was a
+/// paywall, which only the raw state knows.
+void listenToAnalysisStream(
+  WidgetRef ref, {
+  required VoidCallback onRevealed,
+  required void Function(bool retryable, bool paymentRequired) onFailed,
+}) {
+  ref.listen<StreamAnalysisState>(
+    streamAnalysisProvider,
+    (prev, next) => onStreamTransition(
+      prev,
+      next,
+      onRevealed: onRevealed,
+      onFailed: (retryable) => onFailed(retryable, next.paymentRequired),
+    ),
+  );
+}
+
 void onStreamTransition(
   StreamAnalysisState? prev,
   StreamAnalysisState next, {

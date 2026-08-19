@@ -2,9 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../../../theme/nham_colors.dart';
-import '../../../../../../theme/nham_theme.dart';
-import '../../scan_sheet_controls.dart';
+import '../../../../../../shared/widgets/form/sheet_action_buttons.dart';
+import '../../../../../../theme/kallo_colors.dart';
+import '../../../../../../theme/kallo_theme.dart';
 
 /// Action row under the label review step: the reason confirm is disabled
 /// (when it is), the confirm button itself, and the way back to the photo.
@@ -28,13 +28,13 @@ class LabelReviewFooter extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     return Container(
       padding: EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
-        NhamSpacing.sp2,
-        NhamSpacing.sp4,
-        bottomInset + NhamSpacing.sp3,
+        KalloSpacing.sp4,
+        KalloSpacing.sp2,
+        KalloSpacing.sp4,
+        bottomInset + KalloSpacing.sp3,
       ),
       decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: NhamColors.border)),
+        border: Border(top: BorderSide(color: KalloColors.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -42,15 +42,15 @@ class LabelReviewFooter extends StatelessWidget {
           // Always tappable. A gap is reported by the fields that have it,
           // when the user asks to save — not by a sentence under a dead
           // button explaining why nothing happens.
-          ScanPrimaryButton(
+          SheetPrimaryButton(
             label: 'logging.labelScan.addMeal'.tr(),
             busy: saving,
             onTap: onConfirm,
           ),
           if (!saving) ...[
-            const SizedBox(height: NhamSpacing.sp1),
+            const SizedBox(height: KalloSpacing.sp1),
             Center(
-              child: ScanQuietButton(
+              child: QuietIconButton(
                 icon: LucideIcons.arrowLeft300,
                 label: 'logging.labelScan.back'.tr(),
                 onTap: onBack,

@@ -6,16 +6,20 @@
 
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { mealShareReplies, mealShares, publicProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
+import { Errors } from '@/lib/core/errors/catalog';
 import {
   publicProfileColumns,
   toPublicIdentity,
-} from '@/lib/groups/public-identity';
-import { canViewShareOwnedBy } from '@/lib/groups/share-visibility';
-import type { ShareReply } from '@/lib/groups/shares/replies';
+} from '@/lib/domain/social/identity/public-identity';
+import type { ShareReply } from '@/lib/domain/social/shares/replies';
+import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db/client';
+import {
+  mealShareReplies,
+  mealShares,
+  publicProfiles,
+} from '@/lib/infra/db/schema';
 
 const createShareReplySchema = z.object({
   shareId: z.string().uuid('shareId phải là UUID hợp lệ.').toLowerCase(),

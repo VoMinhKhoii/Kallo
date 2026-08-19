@@ -2,8 +2,8 @@ import type { NextRequest } from 'next/server';
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { logNutritionLabelMealSchema } from '@/lib/api/contracts/nutrition-label';
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { stageOcrMeal } from '@/lib/nutrition/ocr-stage';
+import { stageOcrMeal } from '@/lib/domain/nutrition/ocr/stage';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { mapNutritionLabelError } from '../_errors';
 
 export const runtime = 'nodejs';

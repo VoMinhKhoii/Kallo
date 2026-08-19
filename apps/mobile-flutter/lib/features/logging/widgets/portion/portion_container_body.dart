@@ -3,9 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../models/vessel.dart';
+import '../../../../models/nutrition/vessel.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../logic/portion/portion_anchors.dart';
 import '../../logic/portion/vessel_data.dart';
 import 'portion_glyphs.dart';
@@ -78,7 +78,7 @@ class PortionContainerBody extends StatelessWidget {
     return Column(
       children: [
         PortionReadout(grams: grams, kcal: kcal),
-        const SizedBox(height: NhamSpacing.sp3),
+        const SizedBox(height: KalloSpacing.sp3),
         PortionRulerControl(
           anchors: anchors,
           grams: grams,
@@ -109,7 +109,7 @@ class PortionContainerBody extends StatelessWidget {
           labelFor: (index) => tiers[index].sizeLabel,
           onChanged: onChanged,
         ),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         Text(
           '${nearest.label} · ${nearestTier.sizeLabel}',
           textAlign: TextAlign.center,

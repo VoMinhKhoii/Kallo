@@ -4,16 +4,16 @@ import type * as React from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/ui/use-mobile';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 
 /**
  * One modal that is a bottom drawer on phones and a centered dialog on wider
  * screens, styled to match the Flutter app's sheets so the same surface reads
  * as the same component on both platforms.
  *
- * Surface tokens are the mobile ones (`NhamSheetSurface` in
- * `apps/mobile-flutter/lib/shared/widgets/nham_sheet.dart`): solid
- * `nham-surface`, 22px corners (`kCardRadius`), `nham-border` hairlines, and a
+ * Surface tokens are the mobile ones (`KalloSheetSurface` in
+ * `apps/mobile-flutter/lib/shared/widgets/sheet/kallo_sheet.dart`): solid
+ * `kallo-surface`, 22px corners (`kCardRadius`), `kallo-border` hairlines, and a
  * 90dvh ceiling (`maxHeightFraction` 0.9) so the scrim stays tappable and the
  * modal never reads as a full-screen page.
  *
@@ -46,7 +46,7 @@ export function ResponsiveSheet({
 }) {
   const isMobile = useIsMobile();
   const surface = cn(
-    'flex flex-col overflow-hidden border-nham-border bg-nham-surface font-sans-display text-nham-text',
+    'flex flex-col overflow-hidden border-kallo-border bg-kallo-surface font-sans-display text-kallo-text',
     className
   );
   const handleOpenChange = (next: boolean) => {
@@ -68,7 +68,7 @@ export function ResponsiveSheet({
             'max-h-[90dvh] rounded-t-[22px] border-t',
             // vaul's own grab handle: the mobile sheet's 36x4 bar, in the
             // same hairline colour.
-            '[&>div:first-child]:my-2 [&>div:first-child]:h-1 [&>div:first-child]:w-9 [&>div:first-child]:bg-nham-border'
+            '[&>div:first-child]:my-2 [&>div:first-child]:h-1 [&>div:first-child]:w-9 [&>div:first-child]:bg-kallo-border'
           )}
         >
           <DrawerTitle className="sr-only">{title}</DrawerTitle>

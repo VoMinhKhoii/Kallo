@@ -2,11 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/widgets/nham_sheet.dart';
-import '../../../../shared/widgets/nham_sheet_header.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../data/barcode_providers.dart';
 import '../../data/label_scan_providers.dart';
-import 'barcode_scanner_sheet.dart';
+import 'barcode/barcode_scanner_sheet.dart';
 import 'label/label_scan_branch.dart';
 import 'scan_type_toggle.dart';
 
@@ -89,12 +89,12 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
         ignoring: saving,
         child: Padding(
           padding: EdgeInsets.only(bottom: keyboardInset),
-          child: NhamSheetSurface(
+          child: KalloSheetSurface(
             constraints: BoxConstraints(maxHeight: maxHeight),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                NhamSheetHeader(
+                KalloSheetHeader(
                   title: _title(reviewing),
                   closeEnabled: !saving,
                 ),

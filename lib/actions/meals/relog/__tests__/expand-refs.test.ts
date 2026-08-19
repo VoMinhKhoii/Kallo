@@ -8,7 +8,7 @@ import {
   RELOG_MAX_DISHES,
   RELOG_MAX_ROWS,
   type RelogRef,
-} from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/relog';
 
 const MEAL_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const MEAL_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';

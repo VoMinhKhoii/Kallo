@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/nham_text.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
-import 'scan_sheet_controls.dart';
+import '../../../../shared/widgets/form/sheet_action_buttons.dart';
+import '../../../../shared/widgets/typography/kallo_text.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 
 /// One recovery action offered under a scan error.
 class ScanErrorAction {
@@ -51,21 +51,21 @@ class ScanErrorCard extends StatelessWidget {
     final quietAction = quiet;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
-        NhamSpacing.sp2,
-        NhamSpacing.sp4,
-        bottomInset + NhamSpacing.sp3,
+        KalloSpacing.sp4,
+        KalloSpacing.sp2,
+        KalloSpacing.sp4,
+        bottomInset + KalloSpacing.sp3,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.all(NhamSpacing.sp3),
+            padding: const EdgeInsets.all(KalloSpacing.sp3),
             decoration: BoxDecoration(
-              color: NhamColors.danger.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+              color: KalloColors.danger.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(KalloRadii.containerLg),
               border: Border.all(
-                color: NhamColors.danger.withValues(alpha: 0.35),
+                color: KalloColors.danger.withValues(alpha: 0.35),
               ),
             ),
             child: Column(
@@ -73,42 +73,42 @@ class ScanErrorCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(icon, size: 18, color: NhamColors.danger),
-                    const SizedBox(width: NhamSpacing.sp2),
+                    Icon(icon, size: 18, color: KalloColors.danger),
+                    const SizedBox(width: KalloSpacing.sp2),
                     Expanded(
-                      child: NhamText(
+                      child: KalloText(
                         message,
-                        variant: NhamTextVariant.body,
-                        style: const TextStyle(color: NhamColors.text),
+                        variant: KalloTextVariant.body,
+                        style: const TextStyle(color: KalloColors.text),
                       ),
                     ),
                   ],
                 ),
                 if (detail != null && detail!.isNotEmpty) ...[
-                  const SizedBox(height: NhamSpacing.sp1),
-                  NhamText(
+                  const SizedBox(height: KalloSpacing.sp1),
+                  KalloText(
                     detail!,
-                    variant: NhamTextVariant.numCaption,
-                    style: const TextStyle(color: NhamColors.textMuted),
+                    variant: KalloTextVariant.numCaption,
+                    style: const TextStyle(color: KalloColors.textMuted),
                   ),
                 ],
               ],
             ),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
-          ScanPrimaryButton(label: primary.label, onTap: primary.onTap),
+          const SizedBox(height: KalloSpacing.sp3),
+          SheetPrimaryButton(label: primary.label, onTap: primary.onTap),
           for (final action in secondary) ...[
-            const SizedBox(height: NhamSpacing.sp2),
-            ScanOutlineButton(
+            const SizedBox(height: KalloSpacing.sp2),
+            SheetOutlineButton(
               icon: action.icon ?? LucideIcons.arrowRight300,
               label: action.label,
               onTap: action.onTap,
             ),
           ],
           if (quietAction != null) ...[
-            const SizedBox(height: NhamSpacing.sp2),
+            const SizedBox(height: KalloSpacing.sp2),
             Center(
-              child: ScanQuietButton(
+              child: QuietIconButton(
                 icon: quietAction.icon ?? LucideIcons.keyboard300,
                 label: quietAction.label,
                 onTap: quietAction.onTap,

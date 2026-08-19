@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/logic/label_review.dart';
-import 'package:nham_mobile/features/logging/widgets/sheets/label/review/label_review_step.dart';
-import 'package:nham_mobile/models/nutrition_label.dart';
-import 'package:nham_mobile/theme/nham_colors.dart';
+import 'package:kallo_mobile/features/logging/logic/label/review.dart';
+import 'package:kallo_mobile/features/logging/widgets/sheets/label/review/label_review_step.dart';
+import 'package:kallo_mobile/models/nutrition_label.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 import '../../l10n_test_loader.dart';
 
@@ -178,7 +178,7 @@ void main() {
     final protein = tester.widget<TextField>(
       find.byWidgetPredicate((w) => w is TextField && w.controller?.text == ''),
     );
-    expect(protein.style?.color, NhamColors.danger);
+    expect(protein.style?.color, KalloColors.danger);
 
     await tester.enterText(
       find.byWidgetPredicate((w) => w is TextField && w.controller?.text == ''),

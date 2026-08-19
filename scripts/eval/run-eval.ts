@@ -7,7 +7,8 @@ import {
   selectEstimator,
 } from '@/lib/ai/pipeline/estimator/select';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { PipelineResponse, UserContext } from '@/lib/ai/types';
+import type { PipelineResponse } from '@/lib/ai/types/result';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { buildIngredientResults, findSilentZeros } from './eval-diagnostics';
 import { applyEvalRelations } from './eval-relations';
 import { renderMarkdownReport } from './eval-report';
@@ -103,7 +104,7 @@ async function runCase(
   const tracker = createStageTracker();
   const startedAt = Date.now();
   let diagnostics:
-    | import('@/lib/ai/pipeline/grounded-orchestrator').V2PipelineDiagnostics
+    | import('@/lib/ai/pipeline/grounded/orchestrator').V2PipelineDiagnostics
     | undefined;
   let response: PipelineResponse | undefined;
   let thrownError: string | null = null;
@@ -199,9 +200,9 @@ async function runCase(
 async function loadPipeline(estimatorName: EvalCliOptions['estimator']) {
   const [{ analyzeMealV2 }, geminiModule, { db }, { resolveModelProfile }] =
     await Promise.all([
-      import('@/lib/ai/pipeline/grounded-orchestrator'),
-      import('@/lib/ai/gemini'),
-      import('@/lib/db'),
+      import('@/lib/ai/pipeline/grounded/orchestrator'),
+      import('@/lib/ai/provider/provider'),
+      import('@/lib/infra/db/client'),
       import('@/lib/ai/pipeline/config/model-profile'),
     ]);
   // Local quota spreading: GEMINI_API_KEYS_EXTRA (comma-separated) adds

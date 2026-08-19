@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/kallo_mark.dart';
-import '../../../shared/widgets/kallo_wordmark.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../shared/widgets/brand/kallo_mark.dart';
+import '../../../shared/widgets/brand/kallo_wordmark.dart';
+import '../../../theme/kallo_colors.dart';
 
 /// App icon tile + wordmark — the standard mobile auth hero. The tile is
 /// decorative next to the wordmark, so it's excluded from semantics to avoid
@@ -21,10 +21,10 @@ class AuthBrandHero extends StatelessWidget {
             height: 64,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: NhamColors.text,
+              color: KalloColors.text,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const KalloMark(height: 32, color: NhamColors.surface),
+            child: const KalloMark(height: 32, color: KalloColors.surface),
           ),
         ),
         const SizedBox(height: 16),

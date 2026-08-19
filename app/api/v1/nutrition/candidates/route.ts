@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { candidatesSchema } from '@/lib/api/contracts/nutrition';
 import { handleRouteError } from '@/lib/api/respond';
-import { getFoodSourceCandidates } from '@/lib/nutrition/actions/candidates';
+import { getFoodSourceCandidates } from '@/lib/domain/nutrition/actions/candidates';
 
 export const runtime = 'nodejs';
 

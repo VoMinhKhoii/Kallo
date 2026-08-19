@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/data/api_client.dart';
-import 'package:nham_mobile/features/logging/data/relog_providers.dart';
-import 'package:nham_mobile/models/relog.dart';
+import 'package:kallo_mobile/services/http/api_client.dart';
+import 'package:kallo_mobile/features/logging/data/relog_providers.dart';
+import 'package:kallo_mobile/models/logging/relog.dart';
 
 /// ApiClient stand-in that records requests and replays canned responses —
 /// never touches HTTP or the Supabase session.

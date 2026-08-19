@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/widgets/turn/user_message_bubble.dart';
-import 'package:nham_mobile/theme/nham_colors.dart';
+import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 Widget _wrap(String text, {double width = 390}) => MaterialApp(
   home: Scaffold(
@@ -30,10 +30,10 @@ void main() {
     await tester.pumpWidget(_wrap('phở bò'));
     // Tan behind running text would break the palette rule AND fail contrast
     // against white at 2.1:1; umber clears AA at 5.9:1.
-    expect(_decoration(tester).color, NhamColors.btn);
+    expect(_decoration(tester).color, KalloColors.btn);
     expect(
       tester.widget<Text>(find.text('phở bò')).style?.color,
-      NhamColors.bandForeground,
+      KalloColors.bandForeground,
     );
   });
 

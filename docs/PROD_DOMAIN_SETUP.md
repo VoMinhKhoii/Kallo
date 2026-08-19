@@ -220,7 +220,7 @@ Google & Apple sign-in are already wired on this project — nothing to recreate
 
 Emailed links keep pointing at `https://kallo.fit/auth/verify?token_hash=…&type=…`
 (never `…supabase.co/auth/v1/verify`, which is unreachable on many VN networks).
-That link is now built by `lib/email/auth-email.ts` rather than a dashboard
+That link is now built by `lib/infra/email/auth-email.ts` rather than a dashboard
 template, so the templates in the dashboard no longer need hand-editing.
 
 ---
@@ -300,8 +300,15 @@ on `/dashboard`, and send a test email to `support@kallo.fit`.
   pause for a click.
 - **Legal copy.** `/privacy` and `/terms` ship minimal placeholders — replace with
   reviewed text before a public launch.
-- **Full brand rename.** UI copy, PWA manifest name, `/api/healthz` `service` field,
-  App Store / TestFlight listing are still `nham`/`Nhẩm`.
+- **Brand rename — what is left.** UI copy, the PWA manifest name and the
+  `/api/healthz` `service` field now all say Kallo. Still outstanding, and
+  deliberately so: the App Store / TestFlight listing, the iOS bundle id
+  `com.khoivo.nham`, the Android `applicationId`, the `nham://` URL scheme, the
+  `nham.app` domain, the `VoMinhKhoii/Nham` GitHub repo, the `nham` Artifact
+  Registry image, and the non-prod Cloud Run services and Secret Manager entries
+  (`nham-internal`, `nham-staging`, `nham-pr-<n>`, `nham-nonprod-*`). Each of
+  those names a resource that lives outside this repo — renaming the string here
+  would only make the docs lie. Prod was already migrated (`kallo-prod*`).
 - **Rotating the origin secret** means updating BOTH
   `kallo-prod-origin-shared-secret` (Secret Manager, then redeploy) and the
   Cloudflare Transform Rule value.

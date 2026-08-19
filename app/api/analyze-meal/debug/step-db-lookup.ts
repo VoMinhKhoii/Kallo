@@ -1,29 +1,28 @@
 import { sql } from 'drizzle-orm';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import type { GeminiClient } from '@/lib/ai/gemini';
-import {
-  classifyConfidence,
-  FUZZY_SIMILARITY_THRESHOLD,
-  VECTOR_SIMILARITY_THRESHOLD,
-} from '@/lib/ai/matching';
 import {
   cacheQueryEmbedding,
   normalizeIngredientKey,
   resolveQueryEmbedding,
-} from '@/lib/ai/matching/embedding-cache';
-import { fetchNutritionPer100g } from '@/lib/ai/matching/nutrition-db';
-import type { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/ids';
+} from '@/lib/ai/cache/embedding-cache';
+import { fetchNutritionPer100g } from '@/lib/ai/cache/nutrition-rows';
+import {
+  classifyConfidence,
+  FUZZY_SIMILARITY_THRESHOLD,
+  VECTOR_SIMILARITY_THRESHOLD,
+} from '@/lib/ai/matching/match-constants';
+import type { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/contracts/decomposition-ids';
 import {
   ingredientDisplayName,
   ingredientCanonicalName as ingredientSearchName,
-} from '@/lib/ai/pipeline/ingredient-accessors';
-import type { MatchedIngredient, UnmatchedIngredient } from '@/lib/ai/types';
-import { db } from '@/lib/db';
-import type * as schema from '@/lib/db/schema';
+} from '@/lib/ai/pipeline/contracts/ingredient-accessors';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
+import type {
+  MatchedIngredient,
+  UnmatchedIngredient,
+} from '@/lib/ai/types/matching';
+import { db } from '@/lib/infra/db/client';
 
 import { type FuzzyMatchRow, pickMacros } from './debug-shared';
-
-const untypedDb = db as unknown as PostgresJsDatabase<typeof schema>;
 
 /** Step 2: fuzzy→vector DB lookup per ingredient, with per-query traces. */
 export async function runDbLookupDebugStep({
@@ -66,11 +65,11 @@ export async function runDbLookupDebugStep({
 
           try {
             // Fuzzy search
-            const fuzzyRows = (await db.execute(
+            const fuzzyRows = await db.execute<FuzzyMatchRow>(
               sql`SELECT * FROM fuzzy_match_ingredients(
                 ${searchName}, 3, 0.15
               )`
-            )) as unknown as FuzzyMatchRow[];
+            );
 
             const fuzzyMatches = fuzzyRows.map((r) => ({
               id: r.id,
@@ -87,7 +86,7 @@ export async function runDbLookupDebugStep({
               q.searchMethod = 'fuzzy';
               const top = fuzzyTop;
               const confidence = classifyConfidence(top.similarity);
-              const nutrition = await fetchNutritionPer100g(top.id, untypedDb);
+              const nutrition = await fetchNutritionPer100g(top.id, db);
 
               q.selectedMatch = {
                 id: top.id,
@@ -120,15 +119,12 @@ export async function runDbLookupDebugStep({
               // Vector fallback — fuzzy match absent or below threshold
               try {
                 // Use embedding cache (same as production pipeline)
-                let embedding = await resolveQueryEmbedding(
-                  searchName,
-                  untypedDb
-                );
+                let embedding = await resolveQueryEmbedding(searchName, db);
                 let embeddingSource: 'cache' | 'gemini_api' = 'cache';
 
                 if (!embedding) {
                   embedding = await gemini.generateEmbedding(searchName);
-                  cacheQueryEmbedding(searchName, embedding, untypedDb);
+                  cacheQueryEmbedding(searchName, embedding, db);
                   embeddingSource = 'gemini_api';
                 }
 
@@ -136,12 +132,12 @@ export async function runDbLookupDebugStep({
                   normalizedKey: normalizeIngredientKey(searchName),
                   source: embeddingSource,
                 };
-                const vectorRows = (await db.execute(
+                const vectorRows = await db.execute<FuzzyMatchRow>(
                   sql`SELECT * FROM match_ingredients(
                     ${JSON.stringify(embedding)}::vector,
                     3, 0.5
                   )`
-                )) as unknown as FuzzyMatchRow[];
+                );
 
                 const vectorMatches = vectorRows.map((r) => ({
                   id: r.id,
@@ -159,10 +155,7 @@ export async function runDbLookupDebugStep({
                   q.searchMethod = 'vector';
                   const top = vectorTop;
                   const confidence = classifyConfidence(top.similarity);
-                  const nutrition = await fetchNutritionPer100g(
-                    top.id,
-                    untypedDb
-                  );
+                  const nutrition = await fetchNutritionPer100g(top.id, db);
 
                   q.selectedMatch = {
                     id: top.id,

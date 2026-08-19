@@ -1,0 +1,97 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <style>
+    .lane { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .col { padding: 14px; border-radius: var(--radius-xl); border: 1px solid var(--border-soft); background: #fff; min-height: 0; display: flex; flex-direction: column; gap: 8px;}
+    .col.bad { border-color: rgba(211, 123, 105, 0.35); background: color-mix(in srgb, var(--kallo-danger) 4%, #fff); }
+    .col.good { border-color: rgba(124, 163, 104, 0.35); background: color-mix(in srgb, var(--kallo-success) 4%, #fff); }
+    .col .head { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-weight: 700; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; }
+    .col.bad .head { color: var(--kallo-danger); }
+    .col.good .head { color: var(--kallo-success); }
+    .col .head::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+    .demo { padding: 10px 14px; border-radius: 12px; background: #fff; font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
+    .caption { font-family: var(--font-mono); font-size: 10px; color: var(--fg-stone); line-height: 1.4; margin-top: auto; }
+  </style>
+
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — fake precision</div>
+      <div class="demo">
+        <span style="font-family: var(--font-display); font-size: 28px; color: var(--fg);">585.4</span>
+        <span style="color: var(--fg-muted); font-size: 13px;">kcal</span>
+        <div style="font-size: 11px; color: var(--fg-muted); margin-top: 4px;">68.2735 kg · 12,847 steps · 1.2847 km</div>
+      </div>
+      <div class="caption">Decimals where they don't exist. Estimated kcal isn't a real to-tenths number.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — bounded &amp; rounded</div>
+      <div class="demo">
+        <span style="font-family: var(--font-display); font-size: 28px; color: var(--fg);">585</span>
+        <span style="color: var(--fg-muted); font-size: 13px; margin-left: 4px;">kcal</span>
+        <span style="color: var(--fg-stone); font-size: 11px; font-style: italic; font-family: var(--font-display); margin-left: 8px;">(range 560–610)</span>
+        <div style="font-size: 11px; color: var(--fg-muted); margin-top: 4px;">68.5 kg · 12,800 steps · 1.3 km</div>
+      </div>
+      <div class="caption">Integer for estimated kcal, one decimal for weight, round step counts. Bounded ranges when shown.</div>
+    </div>
+  </div>
+
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — ambiguous units</div>
+      <div class="demo" style="font-size: 13px;">
+        <div>P <span style="color:var(--fg)">22</span></div>
+        <div>C <span style="color:var(--fg)">50</span></div>
+        <div>F <span style="color:var(--fg)">28</span></div>
+        <div style="margin-top: 6px; color: var(--fg-muted); font-size: 11px;">grams? percent? of what?</div>
+      </div>
+      <div class="caption">Letter-then-number without unit reads as code, not content.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — spell the unit</div>
+      <div class="demo" style="font-size: 13px;">
+        <div style="display: flex; justify-content: space-between;"><span style="color: var(--fg-muted)">Protein</span><span style="color: var(--fg); font-weight: 600;">38<span style="color: var(--fg-muted); font-weight: 400;"> / 140 g</span></span></div>
+        <div style="display: flex; justify-content: space-between;"><span style="color: var(--fg-muted)">Carbs</span><span style="color: var(--fg); font-weight: 600;">125<span style="color: var(--fg-muted); font-weight: 400;"> / 250 g</span></span></div>
+        <div style="display: flex; justify-content: space-between;"><span style="color: var(--fg-muted)">Fat</span><span style="color: var(--fg); font-weight: 600;">22<span style="color: var(--fg-muted); font-weight: 400;"> / 70 g</span></span></div>
+      </div>
+      <div class="caption">`current / target g` — current bold, target light, unit lowercase. Always.</div>
+    </div>
+  </div>
+
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — robot dates</div>
+      <div class="demo" style="font-size: 13px;">
+        <div style="color: var(--fg); font-family: var(--font-mono);">2026-05-15 / 12:47:00</div>
+        <div style="color: var(--fg-stone); font-size: 11px; margin-top: 4px;">Last logged: 2026-05-14T20:10:00Z</div>
+      </div>
+      <div class="caption">ISO format leaks the implementation. Reads as a log line.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — written dates</div>
+      <div class="demo" style="font-size: 13px;">
+        <span style="font-family: var(--font-display); color: var(--fg);">Today</span>
+        <span style="color: var(--fg-muted); font-style: italic; font-family: var(--font-display); margin-left: 4px;">— May 15, 2026</span>
+        <div style="color: var(--fg-stone); font-size: 11px; margin-top: 4px;">Last meal: yesterday at 8:10 pm</div>
+      </div>
+      <div class="caption">Relative on the dashboard, absolute beside it. Lowercase am/pm. The em-dash is the Kallo divider.</div>
+    </div>
+  </div>
+
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — punctuation soup</div>
+      <div class="demo" style="font-size: 12px; color: var(--fg-muted);">
+        3 days, 84% confidence | 30 days view
+      </div>
+      <div class="caption">Comma + pipe = email-signature aesthetic.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — middle-dot separators</div>
+      <div class="demo" style="font-size: 12px; color: var(--fg-muted);">
+        3 logged days · 84% avg confidence · 30 days view
+      </div>
+      <div class="caption">U+00B7 middle dot (·) with one space each side. The "trust line" pattern.</div>
+    </div>
+  </div>
+</div></body></html>

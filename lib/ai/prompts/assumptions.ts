@@ -1,4 +1,4 @@
-import type { Goal } from '@/lib/onboarding/types';
+import type { Goal } from '@/lib/domain/onboarding/types';
 
 export interface AssumptionContent {
   heading: string;

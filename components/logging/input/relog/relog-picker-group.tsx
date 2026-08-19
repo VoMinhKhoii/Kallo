@@ -1,7 +1,7 @@
 'use client';
 
 import { RelogPickerOption } from '@/components/logging/input/relog/relog-picker-option';
-import type { RelogCandidate } from '@/lib/logging/relog/relog';
+import type { RelogCandidate } from '@/lib/domain/logging/relog/relog';
 
 interface RelogPickerGroupProps {
   label: string;
@@ -33,7 +33,7 @@ export function RelogPickerGroup({
     <>
       <div
         aria-hidden
-        className="px-3 pt-1.5 pb-1 font-sans-display text-[11px] text-nham-text-muted/60 uppercase tracking-wide"
+        className="px-3 pt-1.5 pb-1 font-sans-display text-[11px] text-kallo-text-muted/60 uppercase tracking-wide"
       >
         {label}
       </div>

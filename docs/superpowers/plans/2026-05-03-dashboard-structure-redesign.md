@@ -218,7 +218,7 @@ git commit -m "feat: add date-aware dashboard heatmap data"
 Add to `lib/dashboard/__tests__/adherence.test.ts`:
 
 ```ts
-import { chooseRenderedHeatmapRange } from '@/lib/dashboard/heatmap-range';
+import { chooseRenderedHeatmapRange } from '@/lib/domain/dashboard/heatmap-range';
 
 describe('chooseRenderedHeatmapRange', () => {
   it('keeps year when cells and month labels fit', () => {
@@ -282,7 +282,7 @@ Expected: FAIL because helper file does not exist.
 - [ ] **Step 3: Implement helper**
 
 ```ts
-import type { HeatmapRange } from '@/lib/types/dashboard';
+import type { HeatmapRange } from '@/lib/core/types/dashboard';
 
 interface ChooseRenderedHeatmapRangeInput {
   preferredRange: HeatmapRange;
@@ -348,7 +348,7 @@ git commit -m "feat: add adaptive heatmap range helper"
 
 ```ts
 import { describe, expect, it } from 'vitest';
-import { buildWeightTrendSummary } from '@/lib/dashboard/weight-trend';
+import { buildWeightTrendSummary } from '@/lib/domain/dashboard/weight-trend';
 
 describe('buildWeightTrendSummary', () => {
   it('returns insufficient data below two weigh-ins', () => {
@@ -390,8 +390,8 @@ Expected: FAIL because helper file does not exist.
 Use this public shape:
 
 ```ts
-import type { WeightRange } from '@/lib/types/dashboard';
-import type { WeightGoalDirection } from '@/lib/types/weight';
+import type { WeightRange } from '@/lib/core/types/dashboard';
+import type { WeightGoalDirection } from '@/lib/core/types/weight';
 
 export type WeightTrendStatus =
   | 'insufficient'

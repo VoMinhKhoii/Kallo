@@ -37,7 +37,7 @@ export function WeightLogPopover({
       <PopoverTrigger asChild>
         <Button
           size="xs"
-          className="h-9 shrink-0 gap-1.5 rounded-xl bg-nham-btn px-3 text-white hover:bg-nham-btn-hover"
+          className="h-9 shrink-0 gap-1.5 rounded-xl bg-kallo-btn px-3 text-white hover:bg-kallo-btn-hover"
         >
           <Plus aria-hidden className="h-4 w-4" />
           {hasTodayWeight ? t('weightCard.update') : t('weightCard.logWeight')}
@@ -46,7 +46,7 @@ export function WeightLogPopover({
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="w-72 rounded-xl border-nham-border/60 bg-card p-3 text-nham-text shadow-lg shadow-nham-text/[0.06]"
+        className="w-72 rounded-xl border-kallo-border/60 bg-card p-3 text-kallo-text shadow-kallo-text/[0.06] shadow-lg"
       >
         <CompactWeightLog
           currentWeight={currentWeight}

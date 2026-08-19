@@ -13,7 +13,7 @@ import {
   nutritionDayScopeSchema,
   nutritionRangeInputSchema,
   timezoneOffsetSchema,
-} from '@/lib/nutrition/schemas';
+} from '@/lib/domain/nutrition/schemas';
 
 // Re-export the canonical pure building blocks so clients share one source of
 // truth for the nutrition range, nullable timezone offset, and nutrient enum.
@@ -22,7 +22,7 @@ export {
   nutritionDayScopeSchema,
   nutritionRangeInputSchema,
   timezoneOffsetSchema,
-} from '@/lib/nutrition/schemas';
+} from '@/lib/domain/nutrition/schemas';
 
 /**
  * Query schema for the overview endpoint. `range` accepts the input enum
@@ -56,8 +56,8 @@ export type FoodSourceCandidate = {
 };
 
 // Overview response type (exported interface from the action's type module).
-export type { NutritionOverview } from '@/lib/nutrition/types';
+export type { NutritionOverview } from '@/lib/domain/nutrition/types';
 export type CandidatesResponse = {
-  nutrient: import('@/lib/nutrition/types').NutritionNutrientKey;
+  nutrient: import('@/lib/domain/nutrition/types').NutritionNutrientKey;
   foods: FoodSourceCandidate[];
 };

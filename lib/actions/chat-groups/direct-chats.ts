@@ -1,7 +1,11 @@
 import { and, eq, or } from 'drizzle-orm';
-import { db as defaultDb } from '@/lib/db';
-import { chatGroupMembers, chatGroups, friendships } from '@/lib/db/schema';
-import { orderedPair } from '@/lib/groups/friendship';
+import { orderedPair } from '@/lib/domain/social/friendship';
+import { db as defaultDb } from '@/lib/infra/db/client';
+import {
+  chatGroupMembers,
+  chatGroups,
+  friendships,
+} from '@/lib/infra/db/schema';
 import type { ChatGroupDb } from './membership';
 
 export async function getOrCreateDirectChatGroup(

@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import postgres from 'postgres';
-import { encodeDbUrl } from '@/lib/db';
+import { encodeDbUrl } from '@/lib/infra/db/client';
 import {
   type ConstructedRow,
   NIN_SNAPSHOT_DATE,
@@ -83,7 +83,7 @@ export async function runEmbeddingBackfill(ids: string[]): Promise<void> {
     throw new Error('No inserted ids available for embedding');
   const child = spawn(
     'bun',
-    ['scripts/backfill_embeddings.ts', `--ids=${ids.join(',')}`],
+    ['scripts/db/backfill_embeddings.ts', `--ids=${ids.join(',')}`],
     { stdio: 'inherit', env: process.env }
   );
   const [code] = (await once(child, 'exit')) as [number | null];

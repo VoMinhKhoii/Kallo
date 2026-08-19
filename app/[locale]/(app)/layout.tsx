@@ -1,17 +1,17 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/app/shell/app-shell';
-import { EntitlementLifecycleSync } from '@/components/billing/entitlement-lifecycle-sync';
+import { EntitlementLifecycleSync } from '@/components/billing/activation/entitlement-lifecycle-sync';
 import { getMyPublicProfile } from '@/lib/actions/groups/profile';
-import { isAdminEmail } from '@/lib/admin/is-admin';
-import { getOnboardingProfile } from '@/lib/onboarding/actions';
+import { isAdminEmail } from '@/lib/admin/authz/is-admin';
+import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
+import { createClient } from '@/lib/infra/supabase/server';
 import {
   parseSidebarExpandMode,
   parseSidebarState,
   SIDEBAR_EXPAND_MODE_COOKIE,
   SIDEBAR_STATE_COOKIE,
 } from '@/lib/sidebar/cookies';
-import { createClient } from '@/lib/supabase/server';
 
 export default async function AppLayout({
   children,

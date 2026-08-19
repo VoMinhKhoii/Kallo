@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 class CustomSelectOption {
   final String value;
@@ -104,8 +104,8 @@ class _CustomSelectState extends State<CustomSelect>
   Widget build(BuildContext context) {
     // open: border accent + shadow-sm + ring; idle: #EAE7E0 + hover accent/50.
     final Color borderColor = _open
-        ? NhamColors.accent
-        : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
+        ? KalloColors.accent
+        : (_pressed ? KalloColors.accent50 : KalloColors.inputBorder);
 
     return CompositedTransformTarget(
       link: _link,
@@ -121,24 +121,24 @@ class _CustomSelectState extends State<CustomSelect>
           onTap: _toggle,
           child: Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp3, // px-3
-              vertical: NhamSpacing.sp2, // py-2
+              horizontal: KalloSpacing.sp3, // px-3
+              vertical: KalloSpacing.sp2, // py-2
             ),
             decoration: BoxDecoration(
               color: const Color(0xFFFFFFFF),
-              borderRadius: BorderRadius.circular(NhamRadii.md), // rounded-lg
+              borderRadius: BorderRadius.circular(KalloRadii.md), // rounded-lg
               border: Border.all(
                 color: borderColor,
                 // open ≈ 1px border + ring/20; approximate with 1.5px.
                 width: _open ? 1.5 : 1,
               ),
-              boxShadow: _open ? const [NhamShadows.sm] : null,
+              boxShadow: _open ? const [KalloShadows.sm] : null,
             ),
             child: Row(
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(right: NhamSpacing.sp2),
+                    padding: const EdgeInsets.only(right: KalloSpacing.sp2),
                     child: Text(
                       _selected?.label ?? '',
                       maxLines: 1,
@@ -152,7 +152,7 @@ class _CustomSelectState extends State<CustomSelect>
                   child: const Icon(
                     LucideIcons.chevronDown300,
                     size: 16,
-                    color: NhamColors.textHelp,
+                    color: KalloColors.textHelp,
                   ),
                 ),
               ],
@@ -234,8 +234,8 @@ class _OptionsPanel extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFFFFFFF),
-          borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // rounded-xl
-          border: Border.all(color: NhamColors.inputBorder),
+          borderRadius: BorderRadius.circular(KalloRadii.buttonXl), // rounded-xl
+          border: Border.all(color: KalloColors.inputBorder),
           boxShadow: const [
             // shadow-[0_8px_30px_rgb(0,0,0,0.08)]
             BoxShadow(
@@ -293,10 +293,10 @@ class _OptionRowState extends State<_OptionRow> {
       onTapCancel: () => setState(() => _pressed = false),
       onTap: widget.onTap,
       child: Container(
-        color: _pressed ? NhamColors.track : Colors.transparent, // hover #F5F4F0
+        color: _pressed ? KalloColors.track : Colors.transparent, // hover #F5F4F0
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3, // px-3
-          vertical: NhamSpacing.sp2_5, // py-2.5
+          horizontal: KalloSpacing.sp3, // px-3
+          vertical: KalloSpacing.sp2_5, // py-2.5
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -310,7 +310,7 @@ class _OptionRowState extends State<_OptionRow> {
               ),
             ),
             if (widget.selected)
-              const Icon(LucideIcons.check300, size: 16, color: NhamColors.text)
+              const Icon(LucideIcons.check300, size: 16, color: KalloColors.text)
             else
               const SizedBox(width: 16, height: 16),
           ],

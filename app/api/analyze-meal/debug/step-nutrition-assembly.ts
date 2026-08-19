@@ -1,17 +1,17 @@
-import type { GeminiClient } from '@/lib/ai/gemini';
-import type { buildUserContext } from '@/lib/ai/mappers';
-import { assembleResult } from '@/lib/ai/pipeline/assembly';
+import type { buildUserContext } from '@/lib/ai/adapters/user-context';
+import { assembleResult } from '@/lib/ai/pipeline/assemble/assemble';
 import type { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
-import type { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/ids';
-import { reconcileNutritionIds } from '@/lib/ai/pipeline/nutrition';
-import { nutritionAdjustmentSchema } from '@/lib/ai/pipeline/schemas';
-import { getNutritionPromptBuilder } from '@/lib/ai/prompts';
+import type { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/contracts/decomposition-ids';
+import { nutritionAdjustmentSchema } from '@/lib/ai/pipeline/contracts/schemas/nutrition-adjustment';
+import { reconcileNutritionIds } from '@/lib/ai/pipeline/resolve/macro-resolution';
+import { getNutritionPromptBuilder } from '@/lib/ai/prompts/build/nutrition';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type {
   MatchedIngredient,
-  NutritionAdjustment,
   UnmatchedIngredient,
-} from '@/lib/ai/types';
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+} from '@/lib/ai/types/matching';
+import type { NutritionAdjustment } from '@/lib/ai/types/nutrition-adjustment';
+import { fetchWithTimeout } from '@/lib/core/async/fetch-with-timeout';
 
 import {
   DEBUG_LLM_TIMEOUT_MS,

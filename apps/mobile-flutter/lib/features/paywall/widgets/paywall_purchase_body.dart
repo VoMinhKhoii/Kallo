@@ -2,12 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../data/billing/entitlement_state.dart';
+import '../../../services/billing/entitlement_state.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
-import '../paywall_controller.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
+import '../data/paywall_controller.dart';
 import 'paywall_features.dart';
 import 'paywall_package_section.dart';
 
@@ -45,30 +45,30 @@ class PaywallPurchaseBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(eyebrow.toUpperCase(), style: dashEyebrow()),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         Text(
           title,
-          style: NhamTextStyles.serifRegular(
-            fontSize: NhamFontSize.h2,
-          ).copyWith(letterSpacing: -0.3, color: NhamColors.text),
+          style: KalloTextStyles.serifRegular(
+            fontSize: KalloFontSize.h2,
+          ).copyWith(letterSpacing: -0.3, color: KalloColors.text),
         ),
-        const SizedBox(height: NhamSpacing.sp3),
+        const SizedBox(height: KalloSpacing.sp3),
         Text(body, style: dashBody(color: kInkMuted)),
         if (entitlement.trial.active) ...[
-          const SizedBox(height: NhamSpacing.sp4),
+          const SizedBox(height: KalloSpacing.sp4),
           PaywallTrialCountdown(trial: entitlement.trial),
         ],
-        const SizedBox(height: NhamSpacing.sp5),
+        const SizedBox(height: KalloSpacing.sp5),
         const PaywallFeatureList(),
-        const SizedBox(height: NhamSpacing.sp5),
+        const SizedBox(height: KalloSpacing.sp5),
         PaywallPackageSection(entitlement: entitlement, state: state),
-        const SizedBox(height: NhamSpacing.sp4),
+        const SizedBox(height: KalloSpacing.sp4),
         Text(
           tr('paywall.legal'),
           style: dashMeta().copyWith(height: 1.4),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

@@ -9,12 +9,12 @@ import {
   type getOnboardingProfile,
   minimizeOnboardingNudge,
   restoreOnboardingNudge,
-} from '@/lib/onboarding/actions';
+} from '@/lib/domain/onboarding/actions';
 import {
   getOnboardingResumeStep,
   shouldShowOnboardingResume,
-} from '@/lib/onboarding/progress';
-import { readStepOneLocaleDraft } from '@/lib/onboarding/step-one-locale-draft';
+} from '@/lib/domain/onboarding/progress';
+import { readStepOneLocaleDraft } from '@/lib/domain/onboarding/steps/step-one-locale-draft';
 import { DesktopSidebar } from '../navigation/desktop-sidebar';
 import { MobileNav } from '../navigation/mobile-nav';
 import type { UserMenuUser } from '../navigation/user-menu';
@@ -130,7 +130,7 @@ export function AppShell({
   // axis to `auto`. Everything in the row must also size off this box (the
   // sidebar uses h-full, not a vh literal) so it can never overflow it.
   return (
-    <div className="flex h-dvh min-w-0 overflow-clip bg-nham-surface">
+    <div className="flex h-dvh min-w-0 overflow-clip bg-kallo-surface">
       <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-clip p-3">
         {/* Desktop sidebar — hidden on mobile */}
         <div className="hidden md:block">

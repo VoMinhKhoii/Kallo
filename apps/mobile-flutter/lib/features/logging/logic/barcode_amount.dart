@@ -7,7 +7,7 @@ library;
 
 import 'dart:math' as math;
 
-import '../../../models/barcode_product.dart';
+import '../../../models/nutrition/barcode_product.dart';
 
 /// Shared cap so a large-but-valid package (OFF allows up to 100kg) is never
 /// silently clipped when resolved in serving/package mode. Mirrors

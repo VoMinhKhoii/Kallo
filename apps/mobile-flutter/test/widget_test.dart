@@ -8,9 +8,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:nham_mobile/app.dart';
-import 'package:nham_mobile/services/supabase_service.dart';
-import 'package:nham_mobile/shared/widgets/kallo_wordmark.dart';
+import 'package:kallo_mobile/app.dart';
+import 'package:kallo_mobile/services/auth/supabase_service.dart';
+import 'package:kallo_mobile/shared/widgets/brand/kallo_wordmark.dart';
 
 /// Serves the l10n JSON from memory. `AssetBundle.loadString` decodes assets
 /// larger than 50KB on a background isolate (`compute`), which never completes
@@ -58,7 +58,7 @@ void main() {
         path: 'assets/l10n',
         fallbackLocale: const Locale('en'),
         assetLoader: assetLoader,
-        child: const ProviderScope(child: NhamApp()),
+        child: const ProviderScope(child: KalloApp()),
       ),
     );
     await tester.pumpAndSettle();
@@ -72,6 +72,7 @@ void main() {
   });
 
   test('localized user-facing copy uses the Kallo brand', () {
+    // Names the retired brand on purpose — do not "modernise" this literal.
     final legacyBrand = RegExp(r'\b(?:Nhẩm|Nham)\b');
 
     Iterable<String> strings(Object? value) sync* {

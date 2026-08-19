@@ -1,4 +1,5 @@
-/// Vendored verbatim from RN `lib/onboarding/logic/progress.ts` (keep in sync).
+/// Vendored verbatim from web `lib/domain/onboarding/progress.ts`
+/// (keep in sync).
 /// Pure resume-logic helpers; depend only on the vendored constants + the loose
 /// profile row.
 library;

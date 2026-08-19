@@ -1,7 +1,7 @@
 import type {
   ConfidenceDisplayState,
   NutrientType,
-} from '@/lib/nutrition/types';
+} from '@/lib/domain/nutrition/types';
 
 /**
  * Whether a card's coverage is too thin to state a verdict — it mutes the

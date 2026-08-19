@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../theme/nham_colors.dart';
-import '../../../../../theme/nham_theme.dart';
+import '../../../../../theme/kallo_colors.dart';
+import '../../../../../theme/kallo_theme.dart';
 import 'portion_ruler_face.dart';
 
 /// Lays children at their anchor fractions across [width], each centred on its
@@ -67,13 +67,13 @@ class PortionRulerNeedle extends StatelessWidget {
         ),
         Container(
           width: 2,
-          height: portionRulerHeight + NhamSpacing.sp1,
+          height: portionRulerHeight + KalloSpacing.sp1,
           decoration: BoxDecoration(
             // The umber CTA colour, NOT `accentDark`. The needle is the one
             // mark that states the reading, and tan-on-cream measures 2.7:1 —
             // under the 3:1 floor for a non-text indicator. Umber is 6.3:1 and
             // is already the app's "this is the actionable thing" colour.
-            color: NhamColors.btn,
+            color: KalloColors.btn,
             borderRadius: BorderRadius.circular(1),
           ),
         ),
@@ -91,7 +91,7 @@ class _CapPainter extends CustomPainter {
         ..lineTo(size.width, 0)
         ..lineTo(size.width / 2, size.height)
         ..close(),
-      Paint()..color = NhamColors.btn,
+      Paint()..color = KalloColors.btn,
     );
   }
 

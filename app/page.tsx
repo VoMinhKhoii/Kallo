@@ -1,9 +1,9 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { defaultLocale } from '@/i18n/config';
+import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 import { resolveRootLocale } from '@/lib/i18n/root-locale';
-import { getOnboardingProfile } from '@/lib/onboarding/actions';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export const dynamic = 'force-dynamic';
 

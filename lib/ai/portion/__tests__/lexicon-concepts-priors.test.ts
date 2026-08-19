@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { INSTANT_NOODLE_ROW, PRE_MATCH_ALIASES } from '../../matching/aliases';
+import {
+  INSTANT_NOODLE_ROW,
+  PRE_MATCH_ALIASES,
+} from '@/lib/ai/matching/alias/aliases';
+import { PORTION_PRIORS } from '@/lib/ai/portion/data/priors';
+import { PIECE_UNIT_TOKENS } from '@/lib/ai/portion/vessel/piece';
 import { AMBIGUOUS } from '../lexicon/concept-aliases';
 import {
   conceptFoldCollisions,
@@ -14,8 +19,7 @@ import {
   unitsForLocale,
   unitsForType,
 } from '../lexicon/unit-lexicon';
-import { PIECE_UNIT_TOKENS } from '../piece-vessel';
-import { applySizeModifier, findPrior, PORTION_PRIORS } from '../priors';
+import { applySizeModifier, findPrior } from '../priors';
 import { MAX_RELATIVE_BAND_WIDTH } from '../resolver';
 
 describe('unit lexicon', () => {

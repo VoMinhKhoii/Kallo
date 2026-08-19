@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../../theme/calm_tokens.dart';
-import '../../../../../theme/nham_theme.dart';
+import '../../../../../theme/kallo_theme.dart';
 import 'portion_ruler_face.dart';
 import 'portion_ruler_marks.dart';
 import 'portion_ruler_painter.dart';
@@ -163,7 +163,7 @@ class _PortionRulerStripState extends State<PortionRulerStrip> {
                         graduations: widget.graduations,
                       ),
                     ),
-                    const SizedBox(height: NhamSpacing.sp1),
+                    const SizedBox(height: KalloSpacing.sp1),
                     // Scaled, not fixed. Every child of PortionRulerBand is
                     // `Positioned`, so the Stack cannot size itself to them and
                     // the band needs a height — but a flat 18 clipped the gram

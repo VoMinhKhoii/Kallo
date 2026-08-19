@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSlashPicker } from '@/hooks/meals/relog/use-slash-picker';
-import type { RelogCandidate } from '@/lib/logging/relog/relog';
+import type { RelogCandidate } from '@/lib/domain/logging/relog/relog';
 
 const candidate = (name: string): RelogCandidate => ({
   kind: 'dish',

@@ -1,5 +1,5 @@
-import 'package:nham_mobile/data/api_client.dart';
-import 'package:nham_mobile/data/billing/purchases_service.dart';
+import 'package:kallo_mobile/services/http/api_client.dart';
+import 'package:kallo_mobile/services/billing/purchases_service.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 class PaywallEntitlementsApi extends ApiClient {

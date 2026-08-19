@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const requireAuthAndProfile = vi.fn();
 
-vi.mock('@/lib/auth', () => ({ requireAuthAndProfile }));
+vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
 
 const { GET } = await import('@/app/api/v1/account/billing-config/route');
 

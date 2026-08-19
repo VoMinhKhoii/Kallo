@@ -3,7 +3,7 @@
 /// `components/nutrition/sections/macro-trend-utils.ts` (keep in sync).
 library;
 
-import '../../../models/nutrition.dart';
+import '../../../models/nutrition/nutrition.dart';
 import 'rhythm_logic.dart';
 
 class MacroBar {

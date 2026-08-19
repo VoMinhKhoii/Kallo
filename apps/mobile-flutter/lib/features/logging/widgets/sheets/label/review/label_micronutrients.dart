@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../../theme/calm_tokens.dart';
-import '../../../../../../theme/nham_colors.dart';
-import '../../../../../../theme/nham_theme.dart';
-import '../../../../logic/label_nutrients.dart';
+import '../../../../../../theme/kallo_colors.dart';
+import '../../../../../../theme/kallo_theme.dart';
+import '../../../../logic/label/nutrients.dart';
 import 'label_field.dart';
 import 'label_field_label.dart';
 
@@ -72,7 +72,7 @@ class _LabelMicronutrientsState extends State<LabelMicronutrients> {
                     child: const Icon(
                       LucideIcons.chevronDown300,
                       size: 18,
-                      color: NhamColors.textMuted,
+                      color: KalloColors.textMuted,
                     ),
                   ),
                 ],
@@ -83,10 +83,10 @@ class _LabelMicronutrientsState extends State<LabelMicronutrients> {
         if (_open)
           LayoutBuilder(
             builder: (context, constraints) {
-              final itemWidth = (constraints.maxWidth - NhamSpacing.sp3) / 2;
+              final itemWidth = (constraints.maxWidth - KalloSpacing.sp3) / 2;
               return Wrap(
-                spacing: NhamSpacing.sp3,
-                runSpacing: NhamSpacing.sp3,
+                spacing: KalloSpacing.sp3,
+                runSpacing: KalloSpacing.sp3,
                 children: [
                   for (final definition in widget.definitions)
                     SizedBox(width: itemWidth, child: _field(definition)),

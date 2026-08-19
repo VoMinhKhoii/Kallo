@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../logic/logging_spacing.dart';
-import '../../../../shared/widgets/nham_text.dart';
+import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import 'terminal_card_buttons.dart';
 
 /// A failed analysis, rendered as a feed card so the attempt is never lost: the
@@ -36,27 +36,27 @@ class FailedAttemptCard extends StatelessWidget {
     return Container(
       padding: LoggingSpacing.card,
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.borderSoft),
-        boxShadow: const [NhamShadows.sm],
+        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        border: Border.all(color: KalloColors.borderSoft),
+        boxShadow: const [KalloShadows.sm],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          NhamText(
+          KalloText(
             rawInput,
-            variant: NhamTextVariant.mealQuote,
+            variant: KalloTextVariant.mealQuote,
             style: const TextStyle(fontSize: 17, height: 28 / 17),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
           Text(
             'logging.failedAttempt.message'.tr(),
             // Grey, not terracotta: the alert icon and the terracotta
             // "Try again" button carry the signal — the copy stays calm.
             style: dashMeta(),
           ),
-          const SizedBox(height: NhamSpacing.sp4),
+          const SizedBox(height: KalloSpacing.sp4),
           Row(
             children: [
               if (retryable) ...[
@@ -67,7 +67,7 @@ class FailedAttemptCard extends StatelessWidget {
                     onTap: onRetry,
                   ),
                 ),
-                const SizedBox(width: NhamSpacing.sp2),
+                const SizedBox(width: KalloSpacing.sp2),
                 TerminalDiscardButton(onTap: onDiscard),
               ] else
                 // Non-retryable: only Discard, stretched to fill the row.

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../models/relog.dart';
+import '../../../../models/logging/relog.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import 'relog_picker_option.dart';
 
 /// One labelled group of the `/` picker — the dishes or the meals. Renders
@@ -32,20 +32,20 @@ class RelogPickerGroup extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            NhamSpacing.sp2,
-            NhamSpacing.sp2,
-            NhamSpacing.sp2,
-            NhamSpacing.sp1,
+            KalloSpacing.sp2,
+            KalloSpacing.sp2,
+            KalloSpacing.sp2,
+            KalloSpacing.sp1,
           ),
           // dashEyebrow does NOT upper-case — the transform lives at the call
-          // site (the NhamText casing trap in the mobile design doc).
+          // site (the KalloText casing trap in the mobile design doc).
           //
           // Full white, not a translucent one: at 11px this is small text, and
           // white@70% on the band falls under 4.5:1. It still recedes from the
           // dish names, by size and letter-spacing rather than by opacity.
           child: Text(
             label.toUpperCase(),
-            style: dashEyebrow(color: NhamColors.bandForeground),
+            style: dashEyebrow(color: KalloColors.bandForeground),
           ),
         ),
         for (final candidate in candidates)

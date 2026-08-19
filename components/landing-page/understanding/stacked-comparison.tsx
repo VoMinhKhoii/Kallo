@@ -107,7 +107,7 @@ export function StackedComparison({
           hide it, and the biggest drop between neighbours here is 4.81rem
           against a 5rem band, with 0.19rem to spare. Reorder the comparisons, or add a
           dish row, and that has to be re-checked. */}
-      <div className="overflow-hidden rounded-[2rem] border border-nham-border/60 bg-nham-hover shadow-[inset_0_2px_0_rgba(255,255,255,0.85),0_-6px_16px_-4px_rgba(20,20,19,0.16),0_-1px_0_rgba(20,20,19,0.06),0_8px_16px_-8px_rgba(20,20,19,0.10),0_24px_48px_-16px_rgba(20,20,19,0.16),0_48px_96px_-32px_rgba(20,20,19,0.20)]">
+      <div className="overflow-hidden rounded-[2rem] border border-kallo-border/60 bg-kallo-hover shadow-[inset_0_2px_0_rgba(255,255,255,0.85),0_-6px_16px_-4px_rgba(20,20,19,0.16),0_-1px_0_rgba(20,20,19,0.06),0_8px_16px_-8px_rgba(20,20,19,0.10),0_24px_48px_-16px_rgba(20,20,19,0.16),0_48px_96px_-32px_rgba(20,20,19,0.20)]">
         {/* The title band. Its height is exactly the stack's step, so the strip
             each buried card still shows is precisely this band — you can read
             "Skin on, or skin off" off a card three deep in the pile. Everything
@@ -133,13 +133,13 @@ export function StackedComparison({
               use: Vietnamese is full of descenders — the y of "hay", the g of
               "sống" — which a serif hangs below a 1.15 line box, and they were
               being sliced off mid-stroke by the old overflow. */}
-          <h3 className="text-balance font-normal font-serif text-2xl text-nham-text leading-[1.4] tracking-[-0.02em] md:text-3xl">
+          <h3 className="text-balance font-normal font-serif text-2xl text-kallo-text leading-[1.4] tracking-[-0.02em] md:text-3xl">
             {t(`categories.${comparison.id}.title`)}
           </h3>
         </div>
 
         <div className="px-6 pb-7 sm:px-8 sm:pb-8 lg:px-10">
-          <p className="max-w-2xl font-sans-display text-base text-nham-text leading-relaxed">
+          <p className="max-w-2xl font-sans-display text-base text-kallo-text leading-relaxed">
             {t(`categories.${comparison.id}.note`)}
           </p>
 

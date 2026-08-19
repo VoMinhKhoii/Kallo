@@ -3,12 +3,12 @@
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { SettingsRow } from '@/components/settings/group';
+import { SettingsRow } from '@/components/settings/chrome/group';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
-import { AGGRESSION_KCAL_PER_KG } from '@/lib/onboarding/constants';
-import { calcMacroGrams } from '@/lib/onboarding/tdee';
-import type { CarbSplit, Goal } from '@/lib/onboarding/types';
-import type { ProfileFormValues } from './form-schema';
+import { AGGRESSION_KCAL_PER_KG } from '@/lib/domain/onboarding/constants';
+import { calcMacroGrams } from '@/lib/domain/onboarding/tdee';
+import type { CarbSplit, Goal } from '@/lib/domain/onboarding/types';
+import type { ProfileFormValues } from '@/lib/domain/settings/profile-form';
 
 const GOALS: Goal[] = ['cutting', 'maintaining', 'bulking'];
 const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];
@@ -64,7 +64,7 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
           <FormItem>
             <SettingsRow label={t('goal')} layout="stacked">
               <FormControl>
-                <div className="flex w-full gap-1 rounded-xl bg-nham-track p-1">
+                <div className="flex w-full gap-1 rounded-xl bg-kallo-track p-1">
                   {GOALS.map((g) => (
                     <button
                       key={g}
@@ -81,10 +81,10 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
                           });
                         }
                       }}
-                      className={`flex-1 rounded-lg px-2 py-2 text-center font-medium text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40 ${
+                      className={`flex-1 rounded-lg px-2 py-2 text-center font-medium text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 ${
                         field.value === g
-                          ? 'bg-white text-nham-text shadow-sm'
-                          : 'text-nham-text-muted hover:text-nham-text'
+                          ? 'bg-white text-kallo-text shadow-sm'
+                          : 'text-kallo-text-muted hover:text-kallo-text'
                       }`}
                     >
                       {goalLabels[g]}
@@ -114,9 +114,9 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
               <FormItem>
                 <SettingsRow label={label} layout="stacked">
                   <div className="space-y-3">
-                    <div className="text-center font-medium text-[15px] text-nham-text">
+                    <div className="text-center font-medium text-[15px] text-kallo-text">
                       {aggressionKg.toFixed(2)} {t('weightUnit')}/wk
-                      <span className="text-nham-text-muted"> · </span>
+                      <span className="text-kallo-text-muted"> · </span>
                       {goal === 'cutting' ? '−' : '+'}
                       {kcalDelta} {t('perDay')}
                     </div>
@@ -132,10 +132,10 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
                         aria-valuetext={`${aggressionKg.toFixed(2)} ${t('weightUnit')}/wk, ${
                           goal === 'cutting' ? '−' : '+'
                         }${kcalDelta} ${t('perDay')}`}
-                        className="w-full accent-nham-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40"
+                        className="w-full accent-kallo-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40"
                       />
                     </FormControl>
-                    <div className="flex items-center justify-between text-[12px] text-nham-text-muted">
+                    <div className="flex items-center justify-between text-[12px] text-kallo-text-muted">
                       <span>{t('aggressionLow')}</span>
                       <span>{t('aggressionHigh')}</span>
                     </div>
@@ -162,26 +162,26 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
                       type="button"
                       aria-pressed={field.value === opt.id}
                       onClick={() => field.onChange(opt.id)}
-                      className={`flex flex-col gap-1 rounded-xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40 ${
+                      className={`flex flex-col gap-1 rounded-xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 ${
                         field.value === opt.id
-                          ? 'border-nham-text/30 bg-nham-hover shadow-sm'
-                          : 'border-nham-border bg-white hover:border-nham-accent/50'
+                          ? 'border-kallo-text/30 bg-kallo-hover shadow-sm'
+                          : 'border-kallo-border bg-white hover:border-kallo-accent/50'
                       }`}
                     >
-                      <span className="font-medium text-[14px] text-nham-text">
+                      <span className="font-medium text-[14px] text-kallo-text">
                         {opt.label}
                       </span>
-                      <span className="text-[11px] text-nham-text-muted">
+                      <span className="text-[11px] text-kallo-text-muted">
                         {opt.desc}
                       </span>
                       <div className="mt-1 flex gap-3 text-[11px]">
-                        <span className="text-nham-text-muted">
+                        <span className="text-kallo-text-muted">
                           P {opt.macros.proteinG}g
                         </span>
-                        <span className="text-nham-text-muted">
+                        <span className="text-kallo-text-muted">
                           C {opt.macros.carbsG}g
                         </span>
-                        <span className="text-nham-text-muted">
+                        <span className="text-kallo-text-muted">
                           F {opt.macros.fatG}g
                         </span>
                       </div>

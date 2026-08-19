@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../../theme/calm_tokens.dart';
-import '../../../../../../theme/nham_colors.dart';
-import '../../../../../../theme/nham_theme.dart';
-import '../../../../logic/label_nutrients.dart';
-import '../../../../logic/label_review.dart';
+import '../../../../../../theme/kallo_colors.dart';
+import '../../../../../../theme/kallo_theme.dart';
+import '../../../../logic/label/nutrients.dart';
+import '../../../../logic/label/review.dart';
 import 'label_field.dart';
 import 'label_field_label.dart';
 import 'label_macro_identity.dart';
@@ -122,16 +122,16 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
         Flexible(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp4,
-              NhamSpacing.sp3,
-              NhamSpacing.sp4,
-              NhamSpacing.sp4,
+              KalloSpacing.sp4,
+              KalloSpacing.sp3,
+              KalloSpacing.sp4,
+              KalloSpacing.sp4,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _calories(review),
-                const SizedBox(height: NhamSpacing.sp4),
+                const SizedBox(height: KalloSpacing.sp4),
                 LabelMacroRow(
                   definitions: macros,
                   controllerFor: _fields.nutrient,
@@ -141,11 +141,11 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
                       (key, value) =>
                           setState(() => review.setNutrientText(key, value)),
                 ),
-                const SizedBox(height: NhamSpacing.sp5),
-                const Divider(height: 1, color: NhamColors.border),
-                const SizedBox(height: NhamSpacing.sp3),
+                const SizedBox(height: KalloSpacing.sp5),
+                const Divider(height: 1, color: KalloColors.border),
+                const SizedBox(height: KalloSpacing.sp3),
                 _productName(review),
-                const SizedBox(height: NhamSpacing.sp3),
+                const SizedBox(height: KalloSpacing.sp3),
                 LabelReviewQuantity(
                   controller: _fields.amount,
                   unitLabel: _fields.unitLabel,
@@ -158,11 +158,11 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
                   onCommit: _commitAmount,
                 ),
                 if (review.label != null) ...[
-                  const SizedBox(height: NhamSpacing.sp2),
+                  const SizedBox(height: KalloSpacing.sp2),
                   LabelReviewMetadata(label: review.label!),
                 ],
                 if (micronutrients.isNotEmpty) ...[
-                  const SizedBox(height: NhamSpacing.sp2),
+                  const SizedBox(height: KalloSpacing.sp2),
                   LabelMicronutrients(
                     definitions: micronutrients,
                     controllerFor: _fields.nutrient,
@@ -174,10 +174,10 @@ class _LabelReviewStepState extends State<LabelReviewStep> {
                   ),
                 ],
                 if (widget.errorText != null) ...[
-                  const SizedBox(height: NhamSpacing.sp3),
+                  const SizedBox(height: KalloSpacing.sp3),
                   Text(
                     widget.errorText!,
-                    style: dashMeta(color: NhamColors.danger),
+                    style: dashMeta(color: KalloColors.danger),
                   ),
                 ],
               ],

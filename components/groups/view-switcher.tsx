@@ -1,17 +1,17 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useMyChatGroups } from '@/hooks/social/use-chat-groups';
-import { useCircleFeed } from '@/hooks/social/use-circle-feed';
-import { useFriendsFeedReadMarker } from '@/hooks/social/use-friend-thread-feed';
+import { useMyChatGroups } from '@/hooks/social/circle/use-chat-groups';
+import { useCircleFeed } from '@/hooks/social/circle/use-circle-feed';
+import { useFriendsFeedReadMarker } from '@/hooks/social/circle/use-friend-thread-feed';
 import { Link, usePathname } from '@/i18n/navigation';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 
 const PILL_BASE =
   'inline-flex items-center gap-[7px] whitespace-nowrap rounded-full ' +
   'px-4 py-2 font-sans-display text-[12.5px] transition-colors';
 // Selected chip fills the whole pill with the sidebar's selected-item wash.
-const PILL_ACTIVE = 'bg-nham-hover font-semibold text-[#141413]';
+const PILL_ACTIVE = 'bg-kallo-hover font-semibold text-[#141413]';
 const PILL_INACTIVE = 'border border-[#E8E6DC] bg-white text-[#6E6D66]';
 
 function UnreadDot() {

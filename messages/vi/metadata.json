@@ -1,0 +1,15 @@
+{
+  "root": {
+    "title": "Kallo — Trình theo dõi dinh dưỡng món Việt",
+    "description": "Theo dõi bữa ăn Việt với phân tích dinh dưỡng bằng AI"
+  },
+  "dashboard": {
+    "title": "Tổng quan — Kallo"
+  },
+  "nutrition": {
+    "title": "Dinh dưỡng — Kallo"
+  },
+  "groups": {
+    "title": "Nhóm — Kallo"
+  }
+}

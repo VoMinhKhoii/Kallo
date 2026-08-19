@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/nham_sheet.dart';
-import '../../../../shared/widgets/nham_sheet_header.dart';
-import '../../../../shared/widgets/nham_text.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
+import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_log_mode.dart';
 
@@ -33,26 +33,26 @@ class _MealModeSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    return NhamSheetSurface(
+    return KalloSheetSurface(
       // Four description rows overflowed a short phone at large Dynamic Type
       // (104px past the old 9/16 cap) — the last mode was unreachable.
       scrollable: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          NhamSheetHeader(title: 'logging.modeSelector.title'.tr()),
+          KalloSheetHeader(title: 'logging.modeSelector.title'.tr()),
           Padding(
             padding: EdgeInsets.fromLTRB(
-              NhamSpacing.sp3,
-              NhamSpacing.sp2,
-              NhamSpacing.sp3,
-              bottomInset + NhamSpacing.sp4,
+              KalloSpacing.sp3,
+              KalloSpacing.sp2,
+              KalloSpacing.sp3,
+              bottomInset + KalloSpacing.sp4,
             ),
             child: Column(
               children: [
                 _ModeRow(
                   icon: mealModeIcon(MealLogMode.normal),
-                  iconColor: NhamColors.btn, // umber — 6.3:1
+                  iconColor: KalloColors.btn, // umber — 6.3:1
                   title: 'logging.modeSelector.normal'.tr(),
                   desc: 'logging.modeSelector.normalDesc'.tr(),
                   selected: current == MealLogMode.normal,
@@ -63,7 +63,7 @@ class _MealModeSheet extends StatelessWidget {
                   // Warm, not red: a cheat meal is a logging category, not a
                   // destructive act. It only looked acceptable while `danger`
                   // was terracotta.
-                  iconColor: NhamColors.cheatMark, // deep tan — 4.5:1
+                  iconColor: KalloColors.cheatMark, // deep tan — 4.5:1
                   title: 'logging.modeSelector.cheat'.tr(),
                   desc: 'logging.modeSelector.cheatDesc'.tr(),
                   selected: current == MealLogMode.cheat,
@@ -71,7 +71,7 @@ class _MealModeSheet extends StatelessWidget {
                 ),
                 _ModeRow(
                   icon: mealModeIcon(MealLogMode.manual),
-                  iconColor: NhamColors.successDark, // emerald — 4.6:1
+                  iconColor: KalloColors.successDark, // emerald — 4.6:1
                   title: 'logging.modeSelector.manual'.tr(),
                   desc: 'logging.modeSelector.manualDesc'.tr(),
                   selected: current == MealLogMode.manual,
@@ -80,7 +80,7 @@ class _MealModeSheet extends StatelessWidget {
                 if (isBarcodeLoggingSupported)
                   _ModeRow(
                     icon: mealModeIcon(MealLogMode.barcode),
-                    iconColor: NhamColors.textMuted, // neutral — 5.2:1
+                    iconColor: KalloColors.textMuted, // neutral — 5.2:1
                     title: 'logging.modeSelector.barcode'.tr(),
                     desc: 'logging.modeSelector.barcodeDesc'.tr(),
                     selected: current == MealLogMode.barcode,
@@ -133,30 +133,30 @@ class _ModeRowState extends State<_ModeRow> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp2,
-          vertical: NhamSpacing.sp3,
+          horizontal: KalloSpacing.sp2,
+          vertical: KalloSpacing.sp3,
         ),
         decoration: BoxDecoration(
-          color: _pressed ? NhamColors.hover40 : Colors.transparent,
-          borderRadius: BorderRadius.circular(NhamRadii.container20),
+          color: _pressed ? KalloColors.hover40 : Colors.transparent,
+          borderRadius: BorderRadius.circular(KalloRadii.container20),
         ),
         child: Row(
           children: [
             Icon(widget.icon, size: LoggingIcons.size, color: widget.iconColor),
-            const SizedBox(width: NhamSpacing.sp3),
+            const SizedBox(width: KalloSpacing.sp3),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  NhamText(
+                  KalloText(
                     widget.title,
-                    variant: NhamTextVariant.body,
+                    variant: KalloTextVariant.body,
                     style: dashBody(weight: FontWeight.w500),
                   ),
                   const SizedBox(height: 1),
-                  NhamText(
+                  KalloText(
                     widget.desc,
-                    variant: NhamTextVariant.small,
+                    variant: KalloTextVariant.small,
                     style: dashMeta(),
                   ),
                 ],
@@ -166,7 +166,7 @@ class _ModeRowState extends State<_ModeRow> {
               const Icon(
                 LucideIcons.check300,
                 size: LoggingIcons.size,
-                color: NhamColors.text,
+                color: KalloColors.text,
               ),
           ],
         ),

@@ -19,8 +19,8 @@
  * is the same reason the cards separate by hairline rather than by opacity.
  */
 export const HERO_GROUND = {
-  ink: 'text-nham-text',
-  body: 'text-nham-text-soft',
+  ink: 'text-kallo-text',
+  body: 'text-kallo-text-soft',
 } as const;
 
 /** The one easing curve every hero motion uses — heavy, decelerating. */

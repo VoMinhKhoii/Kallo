@@ -8,8 +8,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
-import 'data/env.dart';
-import 'services/supabase_service.dart';
+import 'services/env/env.dart';
+import 'services/auth/supabase_service.dart';
 
 /// Supabase connection, supplied at build/run time via `--dart-define`
 /// (mirrors RN's `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`):
@@ -37,7 +37,7 @@ Future<void> main() async {
   if (_supabaseUrl.isEmpty || _supabaseAnonKey.isEmpty) {
     throw StateError(
       'Missing SUPABASE_URL / SUPABASE_ANON_KEY — pass them via --dart-define '
-      '(see RN apps/mobile/.env.example for the values).',
+      '(see apps/docs/mobile/development.md for the values).',
     );
   }
 
@@ -79,7 +79,7 @@ Future<void> main() async {
       supportedLocales: const [Locale('en'), Locale('vi')],
       path: 'assets/l10n',
       fallbackLocale: const Locale('en'),
-      child: const ProviderScope(child: NhamApp()),
+      child: const ProviderScope(child: KalloApp()),
     ),
   );
 }

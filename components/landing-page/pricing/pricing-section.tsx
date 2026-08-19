@@ -36,7 +36,7 @@ export function PricingSection() {
       };
 
   return (
-    // Beige ground, the same `--nham-hover` the comparison panels above use.
+    // Beige ground, the same `--kallo-hover` the comparison panels above use.
     // The white plan cards then sit on it exactly as the white meal cards sit
     // on their panels, so the page has one card-on-beige relationship rather
     // than two grounds doing the same job. It is opaque, so the drifting wash
@@ -44,12 +44,12 @@ export function PricingSection() {
     // instead of fading out under the footer.
     <section
       id="pricing"
-      className="relative scroll-mt-20 border-nham-border/40 border-t bg-nham-hover pt-8 pb-8 md:pt-10 md:pb-10"
+      className="relative scroll-mt-20 border-kallo-border/40 border-t bg-kallo-hover pt-8 pb-8 md:pt-10 md:pb-10"
     >
       <div className="mx-auto max-w-[92rem] px-6 sm:px-12 lg:px-20">
         <motion.h2
           {...reveal}
-          className="text-center font-normal font-serif text-4xl text-nham-text tracking-[-0.02em] sm:text-5xl md:text-6xl"
+          className="text-center font-normal font-serif text-4xl text-kallo-text tracking-[-0.02em] sm:text-5xl md:text-6xl"
         >
           {t('title')}
         </motion.h2>
@@ -79,7 +79,7 @@ export function PricingSection() {
 
         <motion.p
           {...reveal}
-          className="mt-8 text-center font-sans-display text-nham-text-soft text-xs leading-relaxed"
+          className="mt-8 text-center font-sans-display text-kallo-text-soft text-xs leading-relaxed"
         >
           {t('betaNote')}
         </motion.p>

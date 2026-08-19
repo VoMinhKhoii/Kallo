@@ -9,10 +9,10 @@ import {
 } from '@/components/logging/feed/feed-day-states';
 import { FeedHeader } from '@/components/logging/feed/feed-header';
 import { PartialYesterdayPrompt } from '@/components/logging/feed/partial-day/partial-yesterday-prompt';
-import type { LoggingProfile } from '@/components/logging/logging-shell';
 import { addDays } from '@/components/logging/sidebar/timeline-utils';
-import { useFeedController } from '@/hooks/meals/use-feed-controller';
-import { cn } from '@/lib/utils';
+import { useFeedController } from '@/hooks/meals/feed/use-feed-controller';
+import { cn } from '@/lib/core/ui/cn';
+import type { LoggingProfile } from '@/lib/domain/logging/types';
 
 interface FeedAreaProps {
   selectedDate: string;

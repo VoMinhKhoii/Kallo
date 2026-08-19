@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/logic/relog/composer_submit_plan.dart';
-import 'package:nham_mobile/models/relog.dart';
+import 'package:kallo_mobile/features/logging/logic/relog/composer_submit_plan.dart';
+import 'package:kallo_mobile/models/logging/relog.dart';
 
 /// A committed pick, labelled the way the composer labels one: `/Name`.
 RelogStagedEntry _entry(String name, {int order = 0}) => RelogStagedEntry(

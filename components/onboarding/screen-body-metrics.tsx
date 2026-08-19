@@ -9,8 +9,12 @@ import {
   bodyMetricsMessages,
   createBodyMetricsSchema,
   goalSchema,
-} from '@/lib/onboarding/schemas';
-import { calcBMR, calcDailyTargets, calcTDEE } from '@/lib/onboarding/tdee';
+} from '@/lib/domain/onboarding/schemas';
+import {
+  calcBMR,
+  calcDailyTargets,
+  calcTDEE,
+} from '@/lib/domain/onboarding/tdee';
 import { AboutYouFields } from './body-metrics/about-you-fields';
 import { type Screen1FormData, screen1Schema } from './body-metrics/constants';
 import { GoalTuning } from './body-metrics/goal-tuning';
@@ -135,7 +139,7 @@ export function ScreenBodyMetrics({
     <Form {...form}>
       <form className="space-y-5 lg:space-y-6">
         <div className="max-w-xl">
-          <h2 className="mb-1.5 font-normal font-serif text-2xl text-nham-text tracking-tight">
+          <h2 className="mb-1.5 font-normal font-serif text-2xl text-kallo-text tracking-tight">
             {t('bodyMetrics.title')}
           </h2>
           <p className="text-[#8B8682] text-[14px] leading-relaxed">
@@ -162,7 +166,7 @@ export function ScreenBodyMetrics({
             />
           ) : (
             <div className="rounded-[28px] border border-[#EAE7E0] border-dashed bg-[#FFFCF8] p-5">
-              <p className="font-medium text-[14px] text-nham-text">
+              <p className="font-medium text-[14px] text-kallo-text">
                 Fill the basics to unlock targets.
               </p>
               <p className="mt-1 text-[#8B8682] text-[13px] leading-relaxed">

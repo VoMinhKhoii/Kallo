@@ -5,7 +5,7 @@
 /// without standing up a feed.
 library;
 
-import '../../../../models/relog.dart';
+import '../../../../models/logging/relog.dart';
 import 'relog_label.dart';
 
 sealed class ComposerSubmitPlan {

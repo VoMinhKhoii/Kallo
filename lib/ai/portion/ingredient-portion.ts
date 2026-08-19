@@ -9,7 +9,7 @@
  * global when no locale-specific prior exists).
  */
 
-import type { DecomposedIngredientV2 } from '../pipeline/schemas-v2';
+import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import { AMBIGUOUS } from './lexicon/concept-aliases';
 import { resolveConcept } from './lexicon/concepts';
 import { resolvePortion } from './resolver';

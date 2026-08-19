@@ -10,7 +10,7 @@ import { useTranslations } from 'next-intl';
 export function SourceAttribution() {
   const t = useTranslations('nutrition');
   return (
-    <p className="text-center text-[12px] text-nham-text-muted leading-relaxed">
+    <p className="text-center text-[12px] text-kallo-text-muted leading-relaxed">
       {t('grid.sourceNote')}
     </p>
   );

@@ -1,14 +1,17 @@
-/// Pure daily-rhythm helpers vendored from web `components/nutrition/sections/
-/// daily-rhythm.tsx` (keep in sync). `kCompositionColors` swaps the web's
-/// `var(--nham-chart-*)` for resolved mobile tokens.
+/// Pure daily-rhythm helpers. `kCompositionColors` swaps the web
+/// `var(--kallo-chart-*)` values for resolved mobile tokens; the web side is
+/// `COMPOSITION_COLORS` in
+/// `components/nutrition/sections/macro-trend-utils.ts` (keep in sync).
 ///
-/// Ported from `apps/mobile/src/lib/nutrition/logic/rhythm-logic.ts`.
+/// The `daily-rhythm.tsx` section the rest of this was vendored from was
+/// removed in the web nutrition rewrite (commit cdd7a3fa); parity of the
+/// remaining helpers has not been re-verified since.
 library;
 
 import 'dart:ui';
 
-import '../../../models/nutrition.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../models/nutrition/nutrition.dart';
+import '../../../theme/kallo_colors.dart';
 
 const Map<String, double> kKcalPerGram = {
   'protein': 4,
@@ -21,9 +24,9 @@ const List<String> kCompositionKeys = ['protein', 'carbohydrate', 'fat'];
 // The nutrition page's own, brighter pigments — NOT the quieter `macro*` trio
 // the dashboard dock, logging feed and cheat sliders use.
 const Map<String, Color> kCompositionColors = {
-  'protein': NhamColors.chartProtein,
-  'carbohydrate': NhamColors.chartCarbs,
-  'fat': NhamColors.chartFat,
+  'protein': KalloColors.chartProtein,
+  'carbohydrate': KalloColors.chartCarbs,
+  'fat': KalloColors.chartFat,
 };
 
 

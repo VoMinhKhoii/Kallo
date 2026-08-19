@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 import '../providers/auth_form_controller.dart';
 import 'apple_button.dart';
 import 'auth_brand_hero.dart';
 import 'auth_divider.dart';
 import 'confirm_email_view.dart';
-import '../../../shared/widgets/top_toast.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
 import 'email_auth_form.dart';
 import 'google_button.dart';
 import 'welcome_demo.dart';
@@ -97,7 +97,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     // the incoming page cover the outgoing one as it slides across.
     final Widget page = ColoredBox(
       key: currentKey,
-      color: NhamColors.surface,
+      color: KalloColors.surface,
       child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -162,17 +162,17 @@ class _AuthPageState extends ConsumerState<AuthPage> {
               TextSpan(text: '${tr('auth.welcome.tagline')} '),
               TextSpan(
                 text: tr('auth.welcome.taglineHighlight'),
-                style: NhamTextStyles.serifItalic(
-                  fontSize: NhamFontSize.h3,
-                ).copyWith(color: NhamColors.accent),
+                style: KalloTextStyles.serifItalic(
+                  fontSize: KalloFontSize.h3,
+                ).copyWith(color: KalloColors.accent),
               ),
             ],
           ),
           textAlign: TextAlign.center,
-          style: NhamTextStyles.serifRegular(
-            fontSize: NhamFontSize.h3,
-            height: NhamLeading.snug,
-          ).copyWith(color: NhamColors.text),
+          style: KalloTextStyles.serifRegular(
+            fontSize: KalloFontSize.h3,
+            height: KalloLeading.snug,
+          ).copyWith(color: KalloColors.text),
         ),
         const SizedBox(height: 28),
         const WelcomeDemo(),
@@ -224,7 +224,7 @@ class _EmailEntryButtonState extends State<_EmailEntryButton> {
 
   @override
   Widget build(BuildContext context) {
-    final fill = _pressed ? NhamColors.cardCream : NhamColors.elev;
+    final fill = _pressed ? KalloColors.cardCream : KalloColors.elev;
     return Opacity(
       opacity: widget.busy ? 0.6 : 1.0,
       child: GestureDetector(
@@ -236,19 +236,19 @@ class _EmailEntryButtonState extends State<_EmailEntryButton> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp4,
-            vertical: NhamSpacing.sp3,
+            horizontal: KalloSpacing.sp4,
+            vertical: KalloSpacing.sp3,
           ),
           decoration: BoxDecoration(
             color: fill,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            border: Border.all(color: NhamColors.border),
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+            border: Border.all(color: KalloColors.border),
           ),
           alignment: Alignment.center,
           child: Text(
             tr('auth.welcome.continueWithEmail'),
             style: dashBody(weight: FontWeight.w500)
-                .copyWith(color: NhamColors.text, letterSpacing: -0.2),
+                .copyWith(color: KalloColors.text, letterSpacing: -0.2),
           ),
         ),
       ),

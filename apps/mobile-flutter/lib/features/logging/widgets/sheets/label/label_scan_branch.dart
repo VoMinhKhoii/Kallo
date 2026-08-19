@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/label_scan_providers.dart';
-import '../../../logic/label_review.dart';
+import '../../../logic/label/review.dart';
 import '../../../logic/meal_log_mode.dart';
 import '../../../../../models/nutrition_label.dart';
 import 'label_capture_step.dart';

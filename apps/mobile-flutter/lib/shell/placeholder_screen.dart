@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../shared/widgets/widgets.dart';
+import '../shared/widgets/surface/kallo_screen.dart';
 import '../theme/calm_tokens.dart';
-import '../theme/nham_theme.dart';
-import 'app_header.dart';
+import '../theme/kallo_theme.dart';
+import 'header/app_header.dart';
 
 /// Stand-in surface for nav destinations whose feature screens don't exist in
 /// the Flutter app yet (Groups, Admin). It keeps the drawer nav model honest —
@@ -23,7 +23,7 @@ class PlaceholderScreen extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
             // Back affordance: a deep link can land here directly, so the
             // header must always offer a way out (pop if possible, else home).
             child: AppHeader(

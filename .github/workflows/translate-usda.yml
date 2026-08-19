@@ -106,7 +106,7 @@ jobs:
           echo "::add-mask::$translate_key"
           DATABASE_URL="$database_url" \
           GOOGLE_TRANSLATE_API_KEY="$translate_key" \
-          bun scripts/translate-usda-vietnamese/index.ts --resume
+          bun scripts/data/translate-usda-vietnamese/run-pipeline.ts --resume
 
       # Must run even on cancel/timeout — see the restore step's comment.
       - name: Save translation checkpoints

@@ -2,25 +2,25 @@
 // every query must carry an explicit actor predicate (see ./types.ts).
 
 import { eq } from 'drizzle-orm';
-import { db as defaultDb } from '@/lib/db';
-import { publicProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
-import {
-  HANDLE_MAX_LENGTH,
-  isValidHandle,
-  validateHandle,
-} from '@/lib/groups/handles';
-import {
-  publicProfileColumns,
-  toPublicIdentity,
-} from '@/lib/groups/public-identity';
-import { generateInviteSlug } from '@/lib/groups/slug';
-import { handleFromName } from '@/lib/groups/slugify';
+import { Errors } from '@/lib/core/errors/catalog';
 import {
   handleSchema,
   renameProfileSchema,
   upsertPublicProfileSchema,
-} from '@/lib/validation';
+} from '@/lib/core/validation/social';
+import { handleFromName } from '@/lib/domain/social/identity/handle-from-name';
+import {
+  HANDLE_MAX_LENGTH,
+  isValidHandle,
+  validateHandle,
+} from '@/lib/domain/social/identity/handles';
+import { generateInviteSlug } from '@/lib/domain/social/identity/invite-slug';
+import {
+  publicProfileColumns,
+  toPublicIdentity,
+} from '@/lib/domain/social/identity/public-identity';
+import { db as defaultDb } from '@/lib/infra/db/client';
+import { publicProfiles } from '@/lib/infra/db/schema';
 
 import type { Db, PublicProfile } from './types';
 

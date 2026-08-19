@@ -4,8 +4,8 @@ import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
-import { calcMacroGrams } from '@/lib/onboarding/tdee';
-import type { Goal } from '@/lib/onboarding/types';
+import { calcMacroGrams } from '@/lib/domain/onboarding/tdee';
+import type { Goal } from '@/lib/domain/onboarding/types';
 import { AggressionSlider } from './aggression-slider';
 import { CarbSplitPicker } from './carb-split-picker';
 import {
@@ -56,10 +56,10 @@ export function GoalTuning({
     <section className="space-y-4 rounded-[28px] border border-[#EAE7E0] bg-white p-5">
       <div className="flex flex-col gap-4 border-[#EAE7E0]/80 border-b pb-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <span className="mb-1 block font-bold text-[11px] text-nham-stone uppercase tracking-widest">
+          <span className="mb-1 block font-bold text-[11px] text-kallo-stone uppercase tracking-widest">
             {t('bodyMetrics.tdee')}
           </span>
-          <div className="font-normal font-serif text-4xl text-nham-text tracking-tighter">
+          <div className="font-normal font-serif text-4xl text-kallo-text tracking-tighter">
             ~{Math.round(tdee).toLocaleString()}{' '}
             <span className="font-sans text-[#8B8682] text-lg">
               {t('bodyMetrics.kcal')}
@@ -68,7 +68,7 @@ export function GoalTuning({
         </div>
 
         <div className="w-full xl:w-auto">
-          <label className="mb-2 block font-bold text-[11px] text-nham-stone uppercase tracking-widest">
+          <label className="mb-2 block font-bold text-[11px] text-kallo-stone uppercase tracking-widest">
             {t('bodyMetrics.goal')}
           </label>
           <FormField
@@ -88,8 +88,8 @@ export function GoalTuning({
                         }}
                         className={`rounded-lg px-3 py-1.5 font-medium text-[14px] transition-all ${
                           field.value === g
-                            ? 'bg-white text-nham-text shadow-sm'
-                            : 'text-[#8B8682] hover:text-nham-text'
+                            ? 'bg-white text-kallo-text shadow-sm'
+                            : 'text-[#8B8682] hover:text-kallo-text'
                         }`}
                       >
                         {t(GOAL_KEYS[g])}

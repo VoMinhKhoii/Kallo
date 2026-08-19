@@ -3,27 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/scroll_separator.dart';
-import '../../../data/session_provider.dart';
+import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../../../services/auth/session_provider.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../models/nutrition.dart';
-import '../../../shared/widgets/nham_primitives.dart';
-import '../../../shared/widgets/nham_refresh.dart';
-import '../../../shared/widgets/nham_text.dart';
-import '../../../shared/widgets/top_toast.dart';
-import '../../../shell/app_header.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../models/nutrition/nutrition.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shared/widgets/feedback/kallo_refresh.dart';
+import '../../../shared/widgets/typography/kallo_text.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
+import '../../../shell/header/app_header.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../logic/bucket_detail.dart';
 import '../providers/nutrition_overview_provider.dart';
-import '../widgets/day_summary.dart';
-import '../widgets/empty_state.dart';
-import '../widgets/inline_error.dart';
-import '../widgets/nutrient_grid_card.dart';
-import '../widgets/nutrition_skeleton.dart';
-import '../widgets/range_selector.dart';
-import '../widgets/source_attribution.dart';
-import '../widgets/suggested_foods_sheet.dart';
+import '../widgets/summary/day_summary.dart';
+import '../widgets/states/empty_state.dart';
+import '../widgets/states/inline_error.dart';
+import '../widgets/nutrients/nutrient_grid_card.dart';
+import '../widgets/states/nutrition_skeleton.dart';
+import '../widgets/scope/range_selector.dart';
+import '../widgets/nutrients/source_attribution.dart';
+import '../widgets/nutrients/suggested_foods_sheet.dart';
 
 /// Whether the suggested-foods CTA is offered.
 ///
@@ -71,9 +71,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: NhamText(
+            child: KalloText(
               tr('common.notSignedIn'),
-              variant: NhamTextVariant.small,
+              variant: KalloTextVariant.small,
             ),
           ),
         ),
@@ -103,7 +103,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     return Screen(
       child: ScrollSeparator(
         header: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(
             trailing: NutritionRangeSelector(
               // An explicit pick highlights immediately. Reading the server's
@@ -122,7 +122,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
             ),
           ),
         ),
-        child: NhamRefresh(
+        child: KalloRefresh(
           onRefresh:
               () =>
                   ref.read(nutritionOverviewProvider(_arg).notifier).refetch(),
@@ -136,9 +136,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
               slivers: [
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(
-                    NhamSpacing.sp3,
-                    NhamSpacing.sp4,
-                    NhamSpacing.sp3,
+                    KalloSpacing.sp3,
+                    KalloSpacing.sp4,
+                    KalloSpacing.sp3,
                     0,
                   ),
                   sliver: SliverToBoxAdapter(
@@ -151,10 +151,10 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                 // page and simply follows the content on a long one.
                 const SliverPadding(
                   padding: EdgeInsets.fromLTRB(
-                    NhamSpacing.sp3,
-                    NhamSpacing.sp5,
-                    NhamSpacing.sp3,
-                    NhamSpacing.sp10,
+                    KalloSpacing.sp3,
+                    KalloSpacing.sp5,
+                    KalloSpacing.sp3,
+                    KalloSpacing.sp10,
                   ),
                   sliver: SliverFillRemaining(
                     hasScrollBody: false,
@@ -368,8 +368,8 @@ class _SuggestedFoodsButtonState extends State<_SuggestedFoodsButton> {
           height: 52,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: NhamColors.btn,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            color: KalloColors.btn,
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -377,13 +377,13 @@ class _SuggestedFoodsButtonState extends State<_SuggestedFoodsButton> {
               const Icon(
                 LucideIcons.sparkles300,
                 size: 18,
-                color: NhamColors.surface,
+                color: KalloColors.surface,
               ),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               Text(
                 tr('nutrition.suggestedFoods.button'),
                 style: dashBody(
-                  color: NhamColors.surface,
+                  color: KalloColors.surface,
                   weight: FontWeight.w600,
                 ),
               ),

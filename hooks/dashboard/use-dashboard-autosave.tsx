@@ -4,11 +4,9 @@ import { Undo2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import {
-  useConfirmMeal,
-  useDeleteMeal,
-} from '@/hooks/meals/use-meal-mutations';
-import type { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
+import type { useStreamAnalysis } from '@/hooks/meals/analysis/use-stream-analysis';
+import { useConfirmMeal } from '@/hooks/meals/mutations/use-confirm-meal';
+import { useDeleteMeal } from '@/hooks/meals/mutations/use-delete-meal';
 
 /**
  * Dashboard quick-capture has no confirm step: when the stream resolves, save
@@ -65,7 +63,7 @@ export function useDashboardAutoSave(args: {
                   removeMeal({ mealId });
                   toast.dismiss(toastId);
                 }}
-                className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-nham-btn px-2.5 py-1.5 font-medium text-white text-xs transition-colors hover:bg-nham-btn-hover"
+                className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-kallo-btn px-2.5 py-1.5 font-medium text-white text-xs transition-colors hover:bg-kallo-btn-hover"
               >
                 <Undo2 aria-hidden className="h-3.5 w-3.5" />
                 {t('streaming.undo')}

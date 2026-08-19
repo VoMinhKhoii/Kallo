@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { Errors, serializeError } from '@/lib/errors';
+import { Errors } from '@/lib/core/errors/catalog';
+import { serializeError } from '@/lib/core/errors/serialize';
 
 /**
  * Convert a thrown value into an API error response for `/api/v1/*` route
@@ -11,7 +12,8 @@ import { Errors, serializeError } from '@/lib/errors';
  *   (structured JSON for known errors, generic 500 otherwise).
  *
  * The resulting envelope is always `{ error: { code, status, retryable,
- * message } }`, which `parseApiError` (lib/errors.ts) on the client reads.
+ * message } }`, which `parseApiError` (lib/errors/client.ts) on the client
+ * reads.
  */
 export function handleRouteError(error: unknown) {
   if (error instanceof z.ZodError) {

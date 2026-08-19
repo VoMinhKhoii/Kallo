@@ -2,7 +2,10 @@
 
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import type { CalorieAverages, NutritionDayScope } from '@/lib/nutrition/types';
+import type {
+  CalorieAverages,
+  NutritionDayScope,
+} from '@/lib/domain/nutrition/types';
 import { formatLocalizedNumber } from '../primitives/helpers';
 
 interface CalorieScopeStatsProps {
@@ -65,18 +68,18 @@ export function CalorieScopeStats({
       {/* The figure leads, top-left; the switch takes the opposite corner. */}
       <div className="flex items-start justify-between gap-4">
         <span className="flex flex-wrap items-baseline gap-x-2 leading-none">
-          <span className="font-medium font-sans-display text-4xl text-nham-text tabular-nums tracking-[-0.03em] sm:text-5xl">
+          <span className="font-medium font-sans-display text-4xl text-kallo-text tabular-nums tracking-[-0.03em] sm:text-5xl">
             {value === null || value === undefined
               ? '—'
               : formatLocalizedNumber(value, locale)}
           </span>
-          <span className="text-lg text-nham-text-muted">
+          <span className="text-kallo-text-muted text-lg">
             {t('rhythm.calories')}
           </span>
           {/* Against the window before this one — it qualifies the figure, so
               it sits with it rather than down on the caption line. */}
           {diff !== null ? (
-            <span className="flex items-center gap-0.5 text-[12px] text-nham-text-muted tabular-nums">
+            <span className="flex items-center gap-0.5 text-[12px] text-kallo-text-muted tabular-nums">
               {/* The arrows are decorative, so without this a screen reader
                   reads "1451 kcal 525" and the direction is simply lost. */}
               <span className="sr-only">
@@ -96,7 +99,7 @@ export function CalorieScopeStats({
           <button
             type="button"
             onClick={() => onScopeChange(onComplete ? 'all' : 'complete')}
-            className="-mt-1 inline-flex shrink-0 items-center gap-1.5 font-medium text-[12px] text-nham-text-muted underline-offset-4 transition-colors hover:text-nham-text hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+            className="-mt-1 inline-flex shrink-0 items-center gap-1.5 font-medium text-[12px] text-kallo-text-muted underline-offset-4 transition-colors hover:text-kallo-text hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
           >
             {/* The arrow points the way the card moves: complete days sit to
                 the left of all days, so each label leads with its direction. */}
@@ -111,7 +114,7 @@ export function CalorieScopeStats({
         )}
       </div>
 
-      <span className="mt-1.5 block text-[13px] text-nham-text-muted tabular-nums">
+      <span className="mt-1.5 block text-[13px] text-kallo-text-muted tabular-nums">
         {dateSpan}
       </span>
     </div>

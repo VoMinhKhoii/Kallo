@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/logic/relog/slash_token.dart';
+import 'package:kallo_mobile/features/logging/logic/relog/slash_token.dart';
 
 /// Parse with the caret at the end of the text, which is where it sits while
 /// the user is typing a token.

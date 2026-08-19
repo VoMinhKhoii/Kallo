@@ -7,16 +7,16 @@ import { DocsPager } from '@/components/docs/docs-pager';
 import { DocsToc } from '@/components/docs/docs-toc';
 import { LastUpdated } from '@/components/docs/last-updated';
 import { routing } from '@/i18n/navigation';
-import { loadDoc } from '@/lib/docs/loader';
+import { loadDoc } from '@/lib/domain/docs/loader';
 import {
   DOCS_SLUGS,
   findSectionForSlug,
   getNeighbours,
-} from '@/lib/docs/navigation';
-import { getToc } from '@/lib/docs/toc';
-import { getDocsLinks } from '@/lib/docs/tree';
+} from '@/lib/domain/docs/navigation';
+import { getToc } from '@/lib/domain/docs/toc';
+import { getDocsLinks } from '@/lib/domain/docs/tree';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
-import { SITE_URL } from '@/lib/site';
+import { SITE_URL } from '@/lib/seo/site';
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
@@ -121,13 +121,13 @@ export default async function DocPage({
             everything below is the document, so it is full-strength ink
             rather than the hairline used between rows. */}
         <div className="mt-3 text-center">
-          <h1 className="text-balance font-bold font-serif text-h1 text-nham-text">
+          <h1 className="text-balance font-bold font-serif text-h1 text-kallo-text">
             {frontmatter.title}
           </h1>
           <LastUpdated date={frontmatter.lastUpdated} locale={locale} />
         </div>
 
-        <hr className="mt-8 border-nham-text border-t" />
+        <hr className="mt-8 border-kallo-text border-t" />
 
         <div className="mt-10">
           <Content />

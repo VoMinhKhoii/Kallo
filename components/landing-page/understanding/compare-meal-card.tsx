@@ -73,7 +73,7 @@ export function CompareMealCard({
   const base = `categories.${comparison.id}`;
 
   return (
-    <div className="relative isolate flex h-full flex-col overflow-hidden rounded-2xl border border-nham-border/60 bg-white p-3.5 shadow-sm md:row-span-3 md:grid md:grid-rows-subgrid">
+    <div className="relative isolate flex h-full flex-col overflow-hidden rounded-2xl border border-kallo-border/60 bg-white p-3.5 shadow-sm md:row-span-3 md:grid md:grid-rows-subgrid">
       {/* `fill` makes this absolutely positioned, so it is out of flow and
           never becomes a grid item. That matters: the card is a 3-row subgrid
           from `md`, and an in-flow child here would take the sentence's row and
@@ -110,7 +110,7 @@ export function CompareMealCard({
           Below `2xl` the sentence wraps and carries a two-line floor instead:
           the rows underneath still start at the same height whether the
           sentence took one line or two, which is the actual goal. */}
-      <p className="font-serif text-[15px] text-nham-text leading-snug first-letter:uppercase sm:text-[17px] 2xl:whitespace-nowrap">
+      <p className="font-serif text-[15px] text-kallo-text leading-snug first-letter:uppercase sm:text-[17px] 2xl:whitespace-nowrap">
         {t.rich(`${base}.variants.${variant.id}.input`, {
           // Bold and highlighted, in the same tint the moved macro wears below,
           // so the eye can travel from the words to the number they moved.
@@ -137,8 +137,8 @@ export function CompareMealCard({
         isAfter={isAfter}
       />
 
-      <div className="mt-1.5 flex items-center justify-between border-nham-border/50 border-t pt-2">
-        <span className="font-bold font-sans-display text-[13px] text-nham-text">
+      <div className="mt-1.5 flex items-center justify-between border-kallo-border/50 border-t pt-2">
+        <span className="font-bold font-sans-display text-[13px] text-kallo-text">
           {tHero('total')}
         </span>
         <div className="flex items-center gap-3">
@@ -150,12 +150,12 @@ export function CompareMealCard({
               their calories; the landing page does not, because here the two
               are being read across a pair rather than skimmed down a feed, and
               a macro you have to lean in for cannot be compared at a glance. */}
-          <span className="font-sans-display text-nham-text-soft text-sm tabular-nums lg:text-base">
+          <span className="font-sans-display text-kallo-text-soft text-sm tabular-nums lg:text-base">
             P: {formatMacroValue(totals.protein)}
             {'  '}C: {formatMacroValue(totals.carbs)}
             {'  '}F: {formatMacroValue(totals.fat)}
           </span>
-          <span className="font-bold font-sans-display text-nham-text tabular-nums">
+          <span className="font-bold font-sans-display text-kallo-text tabular-nums">
             {formatCaloriesValue(totals.calories)}
           </span>
         </div>

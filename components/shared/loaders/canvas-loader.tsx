@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { LoaderSpec } from '@/components/shared/loaders/loader-math';
+import type { LoaderSpec } from '@/lib/core/ui/loaders/loader-math';
 
 /**
  * Where the clock rests when the user asks for reduced motion.

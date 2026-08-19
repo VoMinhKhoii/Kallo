@@ -17,7 +17,7 @@ import {
 import type {
   ChatGroupDetail,
   ChatGroupMember,
-} from '@/lib/chat-groups/client';
+} from '@/lib/actions/chat-groups/types';
 
 const COLLAPSED_KEY = 'kallo-group-info-collapsed';
 const STACK_LIMIT = 5;
@@ -87,7 +87,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
 
   const rail = (
     <div
-      className="flex h-full min-h-0 flex-col rounded-xl border border-nham-border/60 bg-white shadow-nham-text/[0.03] shadow-sm transition-[width] duration-[220ms] ease-out"
+      className="flex h-full min-h-0 flex-col rounded-xl border border-kallo-border/60 bg-white shadow-kallo-text/[0.03] shadow-sm transition-[width] duration-[220ms] ease-out"
       style={{ width: collapsed ? 56 : 304 }}
     >
       {collapsed ? (
@@ -96,7 +96,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
             type="button"
             aria-label={t('expand')}
             onClick={toggleCollapsed}
-            className="flex size-8 items-center justify-center rounded-md text-nham-text-muted transition-colors hover:bg-[#141413]/[0.06] hover:text-nham-text"
+            className="flex size-8 items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-[#141413]/[0.06] hover:text-kallo-text"
           >
             <PanelRightOpen className="size-4" />
           </button>
@@ -123,7 +123,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
               type="button"
               aria-label={t('collapse')}
               onClick={toggleCollapsed}
-              className="flex size-7 items-center justify-center rounded-md text-nham-text-muted transition-colors hover:bg-[#141413]/[0.06] hover:text-nham-text"
+              className="flex size-7 items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-[#141413]/[0.06] hover:text-kallo-text"
             >
               <PanelRightClose className="size-4" />
             </button>
@@ -151,7 +151,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
           </SheetTrigger>
           <SheetContent
             side="right"
-            className="flex w-[88vw] max-w-[340px] flex-col gap-0 border-nham-border/60 bg-white p-0"
+            className="flex w-[88vw] max-w-[340px] flex-col gap-0 border-kallo-border/60 bg-white p-0"
           >
             <SheetHeader className="sr-only">
               <SheetTitle>{t('title')}</SheetTitle>

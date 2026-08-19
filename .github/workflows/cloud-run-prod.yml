@@ -150,7 +150,7 @@ jobs:
             echo "Validating pending migration(s):"
             echo "$pending_list"
             mapfile -t pending <<< "$pending_list"
-            node ./scripts/check-append-only-migrations.mjs "${pending[@]}"
+            node ./scripts/ci/check-append-only-migrations.mjs "${pending[@]}"
           fi
       - name: Apply pending migrations to prod DB
         run: yes | supabase db push --db-url "$PROD_DATABASE_URL_ENCODED"
@@ -200,7 +200,7 @@ jobs:
           AI_PROVIDER: vertex
           GOOGLE_CLOUD_PROJECT: ${{ vars.GCP_PROJECT_ID }}
           GOOGLE_CLOUD_LOCATION: global
-        run: bun scripts/backfill_embeddings.ts
+        run: bun scripts/db/backfill_embeddings.ts
       - name: Resolve image digest
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 import { ButtonsSection } from '@/components/design-system/buttons-section';
 import { ColorsSection } from '@/components/design-system/colors-section';
@@ -22,27 +23,29 @@ const TOC = [
 /**
  * Living style guide for the small stuff — typography ramp, spacing rhythm,
  * radii, warm shadows, and the button table — rendered by the exact tokens
- * production uses (app/globals.css + components/ui/button.tsx). Unlisted
- * and noindexed, like the design-lab routes. The full brand guide lives in
- * .agents/skills/nham-design/.
+ * production uses (app/globals.css + components/ui/button.tsx). Development
+ * only — it 404s in production builds. The full brand guide lives in
+ * .agents/skills/kallo-design/.
  */
 export default async function DesignSystemPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
+  if (process.env.NODE_ENV === 'production') notFound();
+
   const { locale } = await params;
   setRequestLocale(locale);
 
   return (
-    <main className="min-h-dvh bg-nham-surface">
+    <main className="min-h-dvh bg-kallo-surface">
       <div className="mx-auto max-w-5xl px-6 py-16">
         <header>
           <p className="eyebrow">Kallo design system</p>
           <h1 className="mt-3 font-serif text-h1">
             The small stuff, <span className="italic-accent">codified</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-nham-text-muted leading-relaxed">
+          <p className="mt-4 max-w-2xl text-kallo-text-muted leading-relaxed">
             Foundations for everything under the components: type, color,
             spacing, elevation, and buttons. Metrics are calibrated to
             Anthropic&rsquo;s design system — the type ramp, spacing rhythm,
@@ -54,7 +57,7 @@ export default async function DesignSystemPage({
           <nav className="mt-6 flex flex-wrap gap-x-5 gap-y-2">
             {TOC.map(([href, label]) => (
               <a
-                className="text-nham-text-soft text-sm underline-offset-4 hover:text-nham-text hover:underline"
+                className="text-kallo-text-soft text-sm underline-offset-4 hover:text-kallo-text hover:underline"
                 href={href}
                 key={href}
               >
@@ -72,12 +75,12 @@ export default async function DesignSystemPage({
           <ButtonsSection />
         </div>
 
-        <footer className="mt-16 border-nham-border/60 border-t pt-6">
-          <p className="text-nham-stone text-xs leading-relaxed">
+        <footer className="mt-16 border-kallo-border/60 border-t pt-6">
+          <p className="text-kallo-stone text-xs leading-relaxed">
             Hard rules: sentence case everywhere · no emoji, Lucide only · Lora
             is never bold · no pure red or green · preserve Vietnamese
             diacritics · bounded estimates, never fake precision. Full guide:
-            .agents/skills/nham-design/README.md
+            .agents/skills/kallo-design/README.md
           </p>
         </footer>
       </div>

@@ -21,7 +21,7 @@ function suffix(period: BillingPeriod) {
  * the price down out of line with the other card's.
  *
  * The app's selection language rather than a filled pill: the beige
- * `--nham-hover` wash with full-ink semibold text for the selected side, plain
+ * `--kallo-hover` wash with full-ink semibold text for the selected side, plain
  * muted ink for the other. `role="group"` and not a radiogroup — these are two
  * buttons that swap what the card shows, not a field being filled in.
  */
@@ -36,7 +36,7 @@ export function BillingToggle({
 
   return (
     <div
-      className="inline-flex shrink-0 rounded-full border border-nham-border/70 p-0.5"
+      className="inline-flex shrink-0 rounded-full border border-kallo-border/70 p-0.5"
       role="group"
     >
       {BILLING_PERIODS.map((option) => {
@@ -49,8 +49,8 @@ export function BillingToggle({
             onClick={() => onPeriodChange(option)}
             className={`cursor-pointer rounded-full px-3 py-1 font-sans-display text-xs transition-colors ${
               selected
-                ? 'bg-nham-hover font-semibold text-nham-text'
-                : 'text-nham-text-soft hover:text-nham-text'
+                ? 'bg-kallo-hover font-semibold text-kallo-text'
+                : 'text-kallo-text-soft hover:text-kallo-text'
             }`}
           >
             {t(`period.${option}`)}
@@ -96,10 +96,10 @@ export function PremiumPrice({ period }: { period: BillingPeriod }) {
   return (
     <div className="mt-8">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-2">
-        <p className="font-bold font-sans-display text-4xl text-nham-text tabular-nums">
+        <p className="font-bold font-sans-display text-4xl text-kallo-text tabular-nums">
           {t(`${base}.price${suffix(period)}`)}
         </p>
-        <span className="font-sans-display text-nham-text-soft text-sm">
+        <span className="font-sans-display text-kallo-text-soft text-sm">
           {t('perMonth')}
         </span>
         {showSaving && (
@@ -109,7 +109,7 @@ export function PremiumPrice({ period }: { period: BillingPeriod }) {
         )}
       </div>
 
-      <p className="mt-4 font-sans-display text-nham-text-soft text-sm leading-relaxed">
+      <p className="mt-4 font-sans-display text-kallo-text-soft text-sm leading-relaxed">
         {t(`${base}.fineprint${suffix(period)}`)}
       </p>
     </div>

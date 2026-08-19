@@ -4,15 +4,15 @@ import { Sparkles, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useTransition } from 'react';
-import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/domain/onboarding/constants';
 
 /**
  * Warm, on-brand onboarding-incomplete nudge.
  *
  * Two visual states:
  * - **Full** — gradient surface that lives in the wood/cream palette
- *   (`from-nham-accent/10 via-nham-surface to-nham-hover/55`). Shows step
+ *   (`from-kallo-accent/10 via-kallo-surface to-kallo-hover/55`). Shows step
  *   counter, copy, progress bar, and primary CTA.
  * - **Minimized pill** — a compact, low-dominance row (sparkles icon +
  *   short "Resume setup" label). Triggered by the small × button on the
@@ -82,7 +82,7 @@ export function OnboardingNudge({
           total,
         })}
         className={cn(
-          'group flex w-full items-center gap-2 rounded-lg border border-[#141413]/10 bg-nham-surface px-2.5 py-2 text-left transition-colors hover:bg-[#141413]/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+          'group flex w-full items-center gap-2 rounded-lg border border-[#141413]/10 bg-kallo-surface px-2.5 py-2 text-left transition-colors hover:bg-[#141413]/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white',
           className
         )}
       >
@@ -93,10 +93,10 @@ export function OnboardingNudge({
           <Sparkles className="h-3 w-3" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium font-sans-display text-[11px] text-nham-text leading-tight">
+          <span className="block truncate font-medium font-sans-display text-[11px] text-kallo-text leading-tight">
             {t('minimizedTitle')}
           </span>
-          <span className="block font-sans-display text-[10px] text-nham-text-muted leading-tight">
+          <span className="block font-sans-display text-[10px] text-kallo-text-muted leading-tight">
             {t('stepCounter', { current: currentStepLabel, total })}
           </span>
         </span>
@@ -109,7 +109,7 @@ export function OnboardingNudge({
       role="region"
       aria-label={t('regionLabel')}
       className={cn(
-        'group relative overflow-hidden rounded-2xl bg-nham-surface ring-1 ring-[#141413]/10 ring-inset transition-shadow hover:ring-[#141413]/15',
+        'group relative overflow-hidden rounded-2xl bg-kallo-surface ring-1 ring-[#141413]/10 ring-inset transition-shadow hover:ring-[#141413]/15',
         variant === 'default' ? 'p-3.5' : 'p-4',
         className
       )}
@@ -118,7 +118,7 @@ export function OnboardingNudge({
         type="button"
         onClick={handleMinimize}
         aria-label={t('minimize')}
-        className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-md text-nham-text-muted/70 opacity-0 transition-all duration-200 hover:bg-nham-hover/70 hover:text-nham-text focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent group-hover:opacity-100"
+        className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-md text-kallo-text-muted/70 opacity-0 transition-all duration-200 hover:bg-kallo-hover/70 hover:text-kallo-text focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent group-hover:opacity-100"
       >
         <X className="h-3.5 w-3.5" />
       </button>
@@ -130,15 +130,15 @@ export function OnboardingNudge({
         >
           <Sparkles className="h-3 w-3" />
         </span>
-        <span className="font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.06em]">
+        <span className="font-medium font-sans-display text-[10px] text-kallo-text-muted uppercase tracking-[0.06em]">
           {t('stepCounter', { current: currentStepLabel, total })}
         </span>
       </div>
 
-      <p className="mb-1 font-medium font-sans-display text-[12px] text-nham-text leading-snug">
+      <p className="mb-1 font-medium font-sans-display text-[12px] text-kallo-text leading-snug">
         {t('title')}
       </p>
-      <p className="mb-3 font-sans-display text-[11px] text-nham-text-muted leading-relaxed">
+      <p className="mb-3 font-sans-display text-[11px] text-kallo-text-muted leading-relaxed">
         {t('description')}
       </p>
 
@@ -159,7 +159,7 @@ export function OnboardingNudge({
       <button
         type="button"
         onClick={onResume}
-        className="w-full rounded-lg bg-nham-btn px-3 py-2 font-medium font-sans-display text-[11px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        className="w-full rounded-lg bg-kallo-btn px-3 py-2 font-medium font-sans-display text-[11px] text-white shadow-kallo-btn/20 shadow-sm transition-colors hover:bg-kallo-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white"
       >
         {t('cta')}
       </button>
@@ -179,7 +179,7 @@ export function OnboardingDot({
     <span
       aria-hidden="true"
       className={cn(
-        'pointer-events-none absolute h-2 w-2 animate-pulse-dot rounded-full bg-[#141413] ring-2 ring-nham-surface',
+        'pointer-events-none absolute h-2 w-2 animate-pulse-dot rounded-full bg-[#141413] ring-2 ring-kallo-surface',
         className
       )}
       {...rest}

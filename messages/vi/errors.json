@@ -1,0 +1,9 @@
+{
+  "notAuthenticated": "Bạn cần đăng nhập để sử dụng tính năng này.",
+  "profileNotFound": "Không tìm thấy hồ sơ. Vui lòng đăng nhập lại.",
+  "pipelineTimeout": "Phân tích mất quá lâu. Vui lòng thử lại.",
+  "rateLimited": "Hệ thống đang bận. Vui lòng đợi một chút rồi thử lại.",
+  "featureLockedTrialExpired": "Tuần dùng thử của bạn đã kết thúc — nâng cấp để tiếp tục phân tích bữa ăn bằng AI.",
+  "featureLockedNotEntitled": "Nâng cấp lên Kallo Premium để phân tích bữa ăn bằng AI.",
+  "internal": "Đã xảy ra lỗi. Vui lòng thử lại."
+}

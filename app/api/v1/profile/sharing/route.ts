@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { setAutoShareToCircle } from '@/lib/actions/sharing-preferences';
+import { setAutoShareToCircle } from '@/lib/actions/visibility/sharing-preferences';
 import { readJsonBody } from '@/lib/api/auth';
 import { sharingPreferencesSchema } from '@/lib/api/contracts/onboarding';
 import { handleRouteError } from '@/lib/api/respond';

@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/command';
 import { Kbd } from '@/components/ui/kbd';
 import { useRouter } from '@/i18n/navigation';
-import { DOCS_SECTIONS } from '@/lib/docs/navigation';
-import type { DocsSearchEntry } from '@/lib/docs/search-index';
+import { DOCS_SECTIONS } from '@/lib/domain/docs/navigation';
+import type { DocsSearchEntry } from '@/lib/domain/docs/search-index';
 
 /**
  * Strips Vietnamese diacritics so `dinh duong` finds `Dinh dưỡng`.
@@ -90,7 +90,7 @@ export function DocsSearch({ entries }: DocsSearchProps) {
   return (
     <>
       <button
-        className="flex h-9 items-center gap-2 rounded-lg border border-nham-border bg-white px-3 text-nham-text-muted transition-colors hover:bg-nham-hover hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+        className="flex h-9 items-center gap-2 rounded-lg border border-kallo-border bg-white px-3 text-kallo-text-muted transition-colors hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
         onClick={() => setOpen(true)}
         type="button"
       >
@@ -126,10 +126,10 @@ export function DocsSearch({ entries }: DocsSearchProps) {
                     value={`${entry.title} ${entry.description}`}
                   >
                     <div className="min-w-0">
-                      <p className="font-medium text-base text-nham-text">
+                      <p className="font-medium text-base text-kallo-text">
                         {entry.title}
                       </p>
-                      <p className="truncate text-caption text-nham-text-muted">
+                      <p className="truncate text-caption text-kallo-text-muted">
                         {entry.description}
                       </p>
                     </div>

@@ -25,10 +25,10 @@ export function CircleWallSkeleton() {
           key={index}
           className="flex gap-3 border-[#E8E6DC] border-b p-4 last:border-b-0"
         >
-          <div className="size-8 shrink-0 rounded-full bg-nham-track motion-safe:animate-pulse" />
+          <div className="size-8 shrink-0 rounded-full bg-kallo-track motion-safe:animate-pulse" />
           <div className="flex-1 space-y-2 pt-1">
-            <div className="h-3 w-1/3 rounded bg-nham-track motion-safe:animate-pulse" />
-            <div className="h-3 w-2/3 rounded bg-nham-track motion-safe:animate-pulse" />
+            <div className="h-3 w-1/3 rounded bg-kallo-track motion-safe:animate-pulse" />
+            <div className="h-3 w-2/3 rounded bg-kallo-track motion-safe:animate-pulse" />
           </div>
         </div>
       ))}

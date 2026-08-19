@@ -28,7 +28,7 @@ cd apps/mobile-flutter
 
 `tool/run_dev.sh` does everything for the app:
 
-1. Mirrors the app to `/tmp/nham-flutter` (out of iCloud — see below).
+1. Mirrors the app to `/tmp/kallo-flutter` (out of iCloud — see below).
 2. Boots / reuses an iOS Simulator.
 3. Reads dev Supabase creds from a `.env.local` (the repo root, or a sibling worktree).
 4. Runs `flutter run` with the **dev** `--dart-define`s (localhost API + dev Supabase).
@@ -37,10 +37,10 @@ Then use the live keys in that terminal: **`r`** hot reload · **`R`** hot resta
 
 ### Editing during a session
 
-The app runs from `/tmp/nham-flutter`, so hot reload watches **that** copy. Edit files there while iterating, then sync your changes back into the repo before committing:
+The app runs from `/tmp/kallo-flutter`, so hot reload watches **that** copy. Edit files there while iterating, then sync your changes back into the repo before committing:
 
 ```bash
-./tool/run_dev.sh back        # rsync /tmp/nham-flutter -> apps/mobile-flutter
+./tool/run_dev.sh back        # rsync /tmp/kallo-flutter -> apps/mobile-flutter
 git status                    # review, then commit
 ```
 
@@ -52,7 +52,7 @@ git status                    # review, then commit
 
 | Var | Default | Purpose |
 |-----|---------|---------|
-| `WORK` | `/tmp/nham-flutter` | working-copy dir |
+| `WORK` | `/tmp/kallo-flutter` | working-copy dir |
 | `API_BASE_URL` | `http://localhost:3000` | backend the app calls |
 | `NHAM_ENV_FILE` | auto-discovered | path to a `.env.local` with the Supabase creds |
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` | from `.env.local` | set to skip the `.env.local` lookup |
@@ -75,13 +75,13 @@ the [release lanes](./releasing.md) all build from a `/tmp` mirror for this reas
 ## Environment config
 
 Runtime config comes from compile-time `--dart-define`s, read in
-[`lib/data/env.dart`](../../mobile-flutter/lib/data/env.dart). Required: `SUPABASE_URL`,
+[`lib/services/env/env.dart`](../../mobile-flutter/lib/services/env/env.dart). Required: `SUPABASE_URL`,
 `SUPABASE_ANON_KEY`, `API_BASE_URL` (defaults to `http://localhost:3000`). Optional:
 `POSTHOG_KEY`, `POSTHOG_HOST`, `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` (native
 Google sign-in — empty disables the Google button without blocking startup), and
 `REVENUECAT_APPLE_API_KEY` / `REVENUECAT_GOOGLE_API_KEY` (RevenueCat public SDK keys for
 in-app subscriptions — the platform key is picked per-OS in
-[`lib/data/billing/purchases_service.dart`](../../mobile-flutter/lib/data/billing/purchases_service.dart);
+[`lib/services/billing/purchases_service.dart`](../../mobile-flutter/lib/services/billing/purchases_service.dart);
 release-capable keys must use the matching `appl_` / `goog_` prefix, while
 `test_` is accepted only in debug builds; secret-looking or wrong-platform keys
 are rejected before SDK configuration. When the current platform's key is empty the purchases service reports
@@ -94,7 +94,7 @@ dev build without RevenueCat config still boots).
 > projects). `GOOGLE_IOS_CLIENT_ID` is the **iOS** client ID; its reversed form
 > (`com.googleusercontent.apps.…`) must be set as a URL scheme in
 > [`ios/Runner/Info.plist`](../../mobile-flutter/ios/Runner/Info.plist). Android needs the
-> debug **SHA-1** registered on an Android OAuth client (package `com.nham.nham_mobile`);
+> debug **SHA-1** registered on an Android OAuth client (package `com.nham.kallo_mobile`);
 > no Firebase / `google-services.json`.
 
 | Environment | API_BASE_URL | Supabase |

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../../../theme/calm_tokens.dart';
-import '../../../../../../theme/nham_colors.dart';
-import '../../../../../../theme/nham_theme.dart';
+import '../../../../../../theme/kallo_colors.dart';
+import '../../../../../../theme/kallo_theme.dart';
 
 /// Every editable value on the label review sheet.
 ///
@@ -86,17 +86,17 @@ class _LabelFieldState extends State<LabelField> {
     final commit = widget.onCommit;
     final ruleColor =
         widget.hasError
-            ? NhamColors.danger
+            ? KalloColors.danger
             : _focus.hasFocus
-            ? NhamColors.accent
-            : NhamColors.border;
+            ? KalloColors.accent
+            : KalloColors.border;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.label != null) ...[
           widget.label!,
-          const SizedBox(height: NhamSpacing.sp1),
+          const SizedBox(height: KalloSpacing.sp1),
         ],
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -126,9 +126,9 @@ class _LabelFieldState extends State<LabelField> {
                     commit == null
                         ? null
                         : (_) => commit(widget.controller.text),
-                cursorColor: NhamColors.accent,
+                cursorColor: KalloColors.accent,
                 style: widget.textStyle.copyWith(
-                  color: widget.hasError ? NhamColors.danger : kInk,
+                  color: widget.hasError ? KalloColors.danger : kInk,
                 ),
                 decoration: InputDecoration(
                   isDense: true,
@@ -140,7 +140,7 @@ class _LabelFieldState extends State<LabelField> {
                   disabledBorder: InputBorder.none,
                   hintText: widget.hint,
                   hintStyle: widget.textStyle.copyWith(
-                    color: NhamColors.placeholderMuted40,
+                    color: KalloColors.placeholderMuted40,
                   ),
                 ),
               ),
@@ -151,7 +151,7 @@ class _LabelFieldState extends State<LabelField> {
             ],
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp1),
+        const SizedBox(height: KalloSpacing.sp1),
         // The rule carries focus and error state, so the field needs no box.
         AnimatedContainer(
           duration: const Duration(milliseconds: 140),
@@ -159,8 +159,8 @@ class _LabelFieldState extends State<LabelField> {
           color: ruleColor,
         ),
         if (widget.hasError && widget.errorText != null) ...[
-          const SizedBox(height: NhamSpacing.sp1),
-          Text(widget.errorText!, style: dashMeta(color: NhamColors.danger)),
+          const SizedBox(height: KalloSpacing.sp1),
+          Text(widget.errorText!, style: dashMeta(color: KalloColors.danger)),
         ],
       ],
     );

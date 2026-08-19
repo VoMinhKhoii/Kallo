@@ -6,7 +6,7 @@ import {
   RELOG_MAX_DISHES,
   RELOG_MAX_ROWS,
   type RelogRef,
-} from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/relog';
 
 /** The subset of a `meal_items` row this step needs to group and order. */
 export interface SourceItemRow {

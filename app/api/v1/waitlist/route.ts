@@ -4,8 +4,8 @@ import {
   waitlistSignupSchema,
 } from '@/lib/api/contracts/waitlist';
 import { handleRouteError } from '@/lib/api/respond';
-import { getRequestIp } from '@/lib/security/request-ip';
-import { signUpForWaitlist } from '@/lib/waitlist/signup';
+import { signUpForWaitlist } from '@/lib/domain/waitlist/signup';
+import { getRequestIp } from '@/lib/infra/security/request-ip';
 
 export const runtime = 'nodejs';
 

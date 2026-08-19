@@ -6,10 +6,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { useWaitlistSignup } from '@/hooks/landing/use-waitlist-signup';
+import { useWaitlistSignup } from '@/hooks/auth/use-waitlist-signup';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
-import { ApiError } from '@/lib/errors';
-import { cn } from '@/lib/utils';
+import { ApiError } from '@/lib/core/errors/client';
+import { cn } from '@/lib/core/ui/cn';
 
 /**
  * Landing-page waitlist capture — the hero's primary call to action.
@@ -43,14 +43,14 @@ export function WaitlistForm({ source = 'hero' }: { source?: 'hero' | 'cta' }) {
     return (
       <output
         aria-live="polite"
-        className="flex items-start gap-3 rounded-xl border border-nham-border bg-white/70 px-4 py-4"
+        className="flex items-start gap-3 rounded-xl border border-kallo-border bg-white/70 px-4 py-4"
       >
-        <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-nham-accent" />
+        <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-kallo-accent" />
         <div>
-          <p className="font-medium font-sans-display text-nham-text text-sm">
+          <p className="font-medium font-sans-display text-kallo-text text-sm">
             {t('success')}
           </p>
-          <p className="mt-1 font-sans-display text-nham-text-soft text-sm">
+          <p className="mt-1 font-sans-display text-kallo-text-soft text-sm">
             {t('successBody')}
           </p>
         </div>
@@ -78,10 +78,10 @@ export function WaitlistForm({ source = 'hero' }: { source?: 'hero' | 'cta' }) {
             aria-invalid={errors.email ? true : undefined}
             aria-describedby={errors.email ? 'waitlist-email-error' : undefined}
             className={cn(
-              'w-full rounded-xl border bg-white px-4 py-4 font-sans-display text-base text-nham-text outline-none transition-all duration-200 placeholder:text-nham-text-soft',
+              'w-full rounded-xl border bg-white px-4 py-4 font-sans-display text-base text-kallo-text outline-none transition-all duration-200 placeholder:text-kallo-text-soft',
               errors.email
-                ? 'border-nham-danger/50 focus:border-nham-danger focus:ring-2 focus:ring-nham-danger/10'
-                : 'border-nham-border/60 focus:border-nham-accent focus:ring-2 focus:ring-nham-accent/10'
+                ? 'border-kallo-danger/50 focus:border-kallo-danger focus:ring-2 focus:ring-kallo-danger/10'
+                : 'border-kallo-border/60 focus:border-kallo-accent focus:ring-2 focus:ring-kallo-accent/10'
             )}
             {...register('email')}
           />
@@ -101,7 +101,7 @@ export function WaitlistForm({ source = 'hero' }: { source?: 'hero' | 'cta' }) {
       {errors.email && (
         <p
           id="waitlist-email-error"
-          className="mt-2 font-sans-display text-nham-danger text-xs"
+          className="mt-2 font-sans-display text-kallo-danger text-xs"
         >
           {errors.email.message}
         </p>
@@ -109,12 +109,12 @@ export function WaitlistForm({ source = 'hero' }: { source?: 'hero' | 'cta' }) {
       {signup.isError && (
         <p
           aria-live="polite"
-          className="mt-2 font-sans-display text-nham-danger text-xs"
+          className="mt-2 font-sans-display text-kallo-danger text-xs"
         >
           {failureMessage}
         </p>
       )}
-      <p className="mt-3 font-sans-display text-nham-text-soft text-xs">
+      <p className="mt-3 font-sans-display text-kallo-text-soft text-xs">
         {t('privacy')}
       </p>
     </form>

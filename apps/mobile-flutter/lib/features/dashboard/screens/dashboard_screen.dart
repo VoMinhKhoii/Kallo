@@ -18,23 +18,25 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../models/dashboard.dart';
-import '../../../shared/widgets/widgets.dart';
-import '../widgets/card_skeletons.dart';
-import '../../../data/session_provider.dart';
-import '../../../shell/app_header.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../models/profile/dashboard.dart';
+import '../../../shared/widgets/feedback/skeleton.dart';
+import '../../../shared/widgets/surface/kallo_screen.dart';
+import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../widgets/states/card_skeletons.dart';
+import '../../../services/auth/session_provider.dart';
+import '../../../shell/header/app_header.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../logging/logic/timeline_utils.dart' hide WeekStrip;
 import '../data/dashboard_providers.dart';
-import '../logic/dashboard_format.dart';
+import '../../../shared/logic/display_format.dart';
 import '../logic/dashboard_spacing.dart';
-import '../widgets/adherence_heatmap.dart';
+import '../widgets/heatmap/adherence_heatmap.dart';
 import '../../../theme/calm_tokens.dart';
-import '../widgets/floating_meal_trigger.dart';
-import '../widgets/section_header.dart';
-import '../widgets/today_section.dart';
-import '../widgets/week_strip.dart';
-import '../widgets/weight_chart.dart';
+import '../widgets/chrome/floating_meal_trigger.dart';
+import '../widgets/chrome/section_header.dart';
+import '../widgets/today/today_section.dart';
+import '../widgets/chrome/week_strip.dart';
+import '../widgets/weight/weight_chart.dart';
 
 // EN copy (messages/en.json `dashboard.*`), matching the RN inlined COPY.
 
@@ -56,7 +58,7 @@ class DashboardScreen extends ConsumerWidget {
       return Screen(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.all(NhamSpacing.sp6),
+            padding: const EdgeInsets.all(KalloSpacing.sp6),
             child: Text(
               tr('common.notSignedIn'),
               style: dashBody(color: kInkMuted),
@@ -73,7 +75,7 @@ class DashboardScreen extends ConsumerWidget {
     return Screen(
       child: ScrollSeparator(
         header: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(
             child: Text(_greeting().tr(), style: dashHeadline()),
           ),
@@ -85,7 +87,7 @@ class DashboardScreen extends ConsumerWidget {
           error:
               (_, __) => Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(NhamSpacing.sp6),
+                  padding: const EdgeInsets.all(KalloSpacing.sp6),
                   child: SectionState(
                     icon: LucideIcons.cloudOff300,
                     message: tr('dashboard.todayLoadError'),
@@ -230,8 +232,8 @@ class _ContentState extends State<_Content> {
       children: [
         ListView(
           padding: EdgeInsets.only(
-            left: NhamSpacing.sp3,
-            right: NhamSpacing.sp3,
+            left: KalloSpacing.sp3,
+            right: KalloSpacing.sp3,
             top: DashboardSpacing.block,
             // Clear the FAB's resting footprint (44 + 20 bottom) with a small
             // gap — no more than that, so the scroll doesn't end in dead space.

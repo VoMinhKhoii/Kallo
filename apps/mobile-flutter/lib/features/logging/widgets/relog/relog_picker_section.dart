@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../models/relog.dart';
+import '../../../../models/logging/relog.dart';
 import '../../data/relog_providers.dart';
 import 'relog_picker_popup.dart';
 

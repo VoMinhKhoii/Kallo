@@ -4,12 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
-import '../../../data/billing/entitlement_state.dart';
+import '../../../services/billing/entitlement_state.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../paywall_controller.dart';
-import '../paywall_result.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../data/paywall_controller.dart';
+import '../logic/paywall_result.dart';
 import 'package_card.dart';
 import 'paywall_status.dart';
 
@@ -30,7 +30,7 @@ class PaywallPackageSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _PackageState(entitlement: entitlement, state: state),
-        const SizedBox(height: NhamSpacing.sp4),
+        const SizedBox(height: KalloSpacing.sp4),
         _RestoreRow(state: state),
       ],
     );
@@ -114,7 +114,7 @@ class _PackageList extends ConsumerWidget {
             enabled: !purchasing,
             onTap: () => _purchase(context, ref, package),
           ),
-          const SizedBox(height: NhamSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp3),
         ],
       ],
     );
@@ -157,12 +157,12 @@ class _RestoreRow extends ConsumerWidget {
                   if (context.mounted) handlePaywallResult(context, result);
                 },
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp2),
+          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),
           child: Text(
             tr('paywall.restore'),
             style: dashBody(
               weight: FontWeight.w500,
-              color: busy ? kInkMuted : NhamColors.text,
+              color: busy ? kInkMuted : KalloColors.text,
             ),
           ),
         ),

@@ -20,7 +20,7 @@ import {
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 import {
   addDays,
   buildCenteredStripFromAnchor,
@@ -107,11 +107,11 @@ function DayCell({
       type="button"
       onClick={() => onSelect(date)}
       className={cn(
-        'flex min-h-11 min-w-0 flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 overflow-hidden rounded-[0.9rem] px-0.5 py-1 transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.97] motion-reduce:transition-none',
+        'flex min-h-11 min-w-0 flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 overflow-hidden rounded-[0.9rem] px-0.5 py-1 transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-1 active:scale-[0.97] motion-reduce:transition-none',
         isSelected
-          ? 'bg-nham-hover font-semibold text-nham-text'
-          : 'text-nham-text-muted hover:bg-nham-hover/40',
-        isToday && !isSelected && 'bg-nham-hover text-nham-text'
+          ? 'bg-kallo-hover font-semibold text-kallo-text'
+          : 'text-kallo-text-muted hover:bg-kallo-hover/40',
+        isToday && !isSelected && 'bg-kallo-hover text-kallo-text'
       )}
       aria-label={accessibleDateLabel}
       aria-current={isSelected ? 'date' : undefined}
@@ -128,13 +128,13 @@ function DayCell({
           aria-hidden="true"
           className={cn(
             'h-1.5 w-1.5 rounded-full',
-            isSelected ? 'bg-nham-surface/70' : 'bg-nham-accent'
+            isSelected ? 'bg-kallo-surface/70' : 'bg-kallo-accent'
           )}
         />
       ) : (
         <span
           aria-hidden="true"
-          className="h-1.5 w-1.5 rounded-full border border-nham-border/40"
+          className="h-1.5 w-1.5 rounded-full border border-kallo-border/40"
         />
       )}
     </button>
@@ -351,7 +351,7 @@ export function MobileTimelinePicker({
             className={cn(
               'flex min-w-0 max-w-full items-center overflow-hidden',
               mode === 'chip'
-                ? 'h-11 max-w-[min(18rem,calc(100vw-2rem))] gap-2 rounded-full border border-nham-border/50 bg-nham-surface px-4'
+                ? 'h-11 max-w-[min(18rem,calc(100vw-2rem))] gap-2 rounded-full border border-kallo-border/50 bg-kallo-surface px-4'
                 : 'h-11 w-full gap-1'
             )}
           >
@@ -365,19 +365,19 @@ export function MobileTimelinePicker({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.15, ease: 'easeOut' }}
-                  className="inline-flex h-full w-full touch-manipulation items-center gap-2 font-medium text-[12px] text-nham-text outline-none focus-visible:rounded-full focus-visible:ring-[3px] focus-visible:ring-nham-accent/30"
+                  className="inline-flex h-full w-full touch-manipulation items-center gap-2 font-medium text-[12px] text-kallo-text outline-none focus-visible:rounded-full focus-visible:ring-[3px] focus-visible:ring-kallo-accent/30"
                   aria-label={t('selectDate')}
                   aria-controls={WEEK_SLIDER_ID}
                   aria-expanded={false}
                 >
                   <CalendarIcon
-                    className="size-3.5 shrink-0 text-nham-text-muted"
+                    className="size-3.5 shrink-0 text-kallo-text-muted"
                     aria-hidden="true"
                   />
                   <span className="min-w-0 truncate">{formattedDate}</span>
                   {hasMeal && (
                     <span
-                      className="inline-block size-1.5 shrink-0 rounded-full bg-nham-accent"
+                      className="inline-block size-1.5 shrink-0 rounded-full bg-kallo-accent"
                       role="status"
                       aria-label={t('hasMealIndicator')}
                     />
@@ -400,8 +400,8 @@ export function MobileTimelinePicker({
                     type="button"
                     onClick={scrollPrev}
                     className={cn(
-                      'flex h-10 w-9 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.96] motion-reduce:transition-none',
-                      'text-nham-text-muted hover:bg-nham-hover/40 hover:text-nham-text'
+                      'flex h-10 w-9 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-1 active:scale-[0.96] motion-reduce:transition-none',
+                      'text-kallo-text-muted hover:bg-kallo-hover/40 hover:text-kallo-text'
                     )}
                     aria-label={t('previousWeek')}
                   >
@@ -457,10 +457,10 @@ export function MobileTimelinePicker({
                     onClick={scrollNext}
                     disabled={!canNavigateNext}
                     className={cn(
-                      'flex h-10 w-9 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.96] disabled:active:scale-100 motion-reduce:transition-none',
+                      'flex h-10 w-9 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-1 active:scale-[0.96] disabled:active:scale-100 motion-reduce:transition-none',
                       canNavigateNext
-                        ? 'text-nham-text-muted hover:bg-nham-hover/40 hover:text-nham-text'
-                        : 'text-nham-text-muted/30'
+                        ? 'text-kallo-text-muted hover:bg-kallo-hover/40 hover:text-kallo-text'
+                        : 'text-kallo-text-muted/30'
                     )}
                     aria-label={t('nextWeek')}
                   >
@@ -476,11 +476,11 @@ export function MobileTimelinePicker({
       {isError && (
         <div className="flex justify-center px-3 md:hidden">
           <div
-            className="flex max-w-[min(22rem,calc(100vw-2rem))] items-center gap-2 rounded-full border border-nham-danger/30 bg-nham-danger/10 px-3 py-1.5"
+            className="flex max-w-[min(22rem,calc(100vw-2rem))] items-center gap-2 rounded-full border border-kallo-danger/30 bg-kallo-danger/10 px-3 py-1.5"
             data-testid="mobile-picker-error"
             role="alert"
           >
-            <div className="flex flex-1 items-center gap-1.5 text-nham-danger text-xs">
+            <div className="flex flex-1 items-center gap-1.5 text-kallo-danger text-xs">
               <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
               <span>{t('failedToLoadDates')}</span>
             </div>

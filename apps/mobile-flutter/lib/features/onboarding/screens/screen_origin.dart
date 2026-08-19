@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 import '../logic/step_one_defaults.dart';
 import '../widgets/country_select.dart';
 import '../widgets/language_toggle.dart';
@@ -59,15 +59,15 @@ class _ScreenOriginState extends State<ScreenOrigin> {
         // head — gap[1]
         Text(
           tr('onboarding.origin.title'),
-          style: NhamTextStyles.serifMedium(fontSize: 24)
-              .copyWith(letterSpacing: -0.3, color: NhamColors.text),
+          style: KalloTextStyles.serifMedium(fontSize: 24)
+              .copyWith(letterSpacing: -0.3, color: KalloColors.text),
         ),
-        const SizedBox(height: NhamSpacing.sp1),
+        const SizedBox(height: KalloSpacing.sp1),
         Text(
           tr('onboarding.origin.subtitle'),
           style: dashBody(color: kInkMuted),
         ),
-        const SizedBox(height: NhamSpacing.sp6),
+        const SizedBox(height: KalloSpacing.sp6),
 
         // Language card
         _Card(
@@ -76,7 +76,7 @@ class _ScreenOriginState extends State<ScreenOrigin> {
               icon: LucideIcons.languages300,
               label: tr('onboarding.origin.preferredLanguage'),
             ),
-            const SizedBox(height: NhamSpacing.sp4),
+            const SizedBox(height: KalloSpacing.sp4),
             LanguageToggle(
               value: _locale,
               onChange: (v) {
@@ -88,7 +88,7 @@ class _ScreenOriginState extends State<ScreenOrigin> {
             ),
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp6),
+        const SizedBox(height: KalloSpacing.sp6),
 
         // Origin + residence card
         _Card(
@@ -105,7 +105,7 @@ class _ScreenOriginState extends State<ScreenOrigin> {
                 },
               ),
             ),
-            const SizedBox(height: NhamSpacing.sp4),
+            const SizedBox(height: KalloSpacing.sp4),
             _Field(
               icon: LucideIcons.mapPin300,
               label: tr('onboarding.origin.countryOfResidence'),
@@ -118,7 +118,7 @@ class _ScreenOriginState extends State<ScreenOrigin> {
                 },
               ),
             ),
-            const SizedBox(height: NhamSpacing.sp4),
+            const SizedBox(height: KalloSpacing.sp4),
             Text(
               tr('onboarding.origin.fallbackNote'),
               style: dashMeta(),
@@ -138,11 +138,11 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp5),
+      padding: const EdgeInsets.all(KalloSpacing.sp5),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
+        color: KalloColors.elev,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: NhamColors.inputBorder),
+        border: Border.all(color: KalloColors.inputBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -162,8 +162,8 @@ class _LabelRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: NhamColors.textMuted),
-        const SizedBox(width: NhamSpacing.sp2),
+        Icon(icon, size: 16, color: KalloColors.textMuted),
+        const SizedBox(width: KalloSpacing.sp2),
         Text(
           label,
           style: dashBody(weight: FontWeight.w500),
@@ -192,12 +192,12 @@ class _Field extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _LabelRow(icon: icon, label: label),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         Text(
           hint,
           style: dashMeta(),
         ),
-        const SizedBox(height: NhamSpacing.sp3), // mb-3 before the field
+        const SizedBox(height: KalloSpacing.sp3), // mb-3 before the field
         child,
       ],
     );

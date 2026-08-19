@@ -5,14 +5,15 @@ const requireAuthAndProfile = vi.fn();
 const stageBarcodeMeal = vi.fn();
 const confirmAndSaveMealAction = vi.fn();
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile,
 }));
 
-vi.mock('@/lib/barcode/service', async (importActual) => {
+vi.mock('@/lib/domain/barcode/service', async (importActual) => {
   // Keep the real BarcodeServiceError so instanceof checks in the route's
   // error mapper see the same class the mock throws.
-  const actual = await importActual<typeof import('@/lib/barcode/service')>();
+  const actual =
+    await importActual<typeof import('@/lib/domain/barcode/service')>();
   return {
     BarcodeServiceError: actual.BarcodeServiceError,
     searchBarcodeProduct: vi.fn(),
@@ -24,7 +25,7 @@ vi.mock('@/lib/actions/meals/confirm-and-save', () => ({
   confirmAndSaveMealAction,
 }));
 
-const { BarcodeServiceError } = await import('@/lib/barcode/service');
+const { BarcodeServiceError } = await import('@/lib/domain/barcode/service');
 const { POST } = await import('@/app/api/v1/barcode/log/route');
 
 function makeRequest(body: unknown): NextRequest {
@@ -92,7 +93,7 @@ describe('POST /api/v1/barcode/log', () => {
   });
 
   it('rejects an unauthenticated request with 401', async () => {
-    const { Errors } = await import('@/lib/errors');
+    const { Errors } = await import('@/lib/core/errors/catalog');
     requireAuthAndProfile.mockRejectedValueOnce(Errors.notAuthenticated());
 
     const res = await POST(makeRequest(validBody));
@@ -115,7 +116,7 @@ describe('POST /api/v1/barcode/log', () => {
   });
 
   it('propagates AppErrors thrown by confirm (e.g. consumed analysis)', async () => {
-    const { Errors } = await import('@/lib/errors');
+    const { Errors } = await import('@/lib/core/errors/catalog');
     confirmAndSaveMealAction.mockRejectedValueOnce(
       Errors.validationFailed('Phân tích không tồn tại hoặc đã được lưu.')
     );

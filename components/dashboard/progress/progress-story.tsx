@@ -3,8 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { WeightChart } from '@/components/dashboard/progress/weight-chart';
 import { WeightLogPopover } from '@/components/dashboard/progress/weight-log-popover';
-import type { TimeRange } from '@/lib/types/dashboard';
-import type { WeightSummaryData } from '@/lib/types/weight';
+import type { TimeRange } from '@/lib/core/types/dashboard';
+import type { WeightSummaryData } from '@/lib/core/types/weight';
 
 interface ProgressStoryProps {
   weightSummary: WeightSummaryData | undefined;
@@ -21,8 +21,8 @@ export function ProgressStory({
 
   if (!weightSummary) {
     return (
-      <section className="flex min-h-[320px] flex-col rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] xl:h-full xl:min-h-0">
-        <div className="flex flex-1 items-center justify-center text-nham-text-muted text-sm">
+      <section className="flex min-h-[320px] flex-col rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-kallo-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-kallo-accent/50 hover:shadow-kallo-text/[0.06] hover:shadow-md xl:h-full xl:min-h-0">
+        <div className="flex flex-1 items-center justify-center text-kallo-text-muted text-sm">
           {t('loadingWeightTrend')}
         </div>
       </section>
@@ -39,15 +39,15 @@ export function ProgressStory({
   // affordance, then the full-width chart. No resident form, no status copy —
   // the chart itself carries the story.
   return (
-    <section className="flex min-h-[320px] flex-col gap-3 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] xl:h-full xl:min-h-0">
+    <section className="flex min-h-[320px] flex-col gap-3 rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-kallo-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-kallo-accent/50 hover:shadow-kallo-text/[0.06] hover:shadow-md xl:h-full xl:min-h-0">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-1.5">
-          <h2 className="font-sans-display text-hero text-nham-text tabular-nums">
+          <h2 className="font-sans-display text-hero text-kallo-text tabular-nums">
             {weightSummary.currentWeight.toFixed(1)}
           </h2>
-          <span className="text-nham-text-muted text-sm">{t('units.kg')}</span>
+          <span className="text-kallo-text-muted text-sm">{t('units.kg')}</span>
           {hasTrend && (
-            <span className="ml-1 font-medium text-nham-text-muted text-sm tabular-nums">
+            <span className="ml-1 font-medium text-kallo-text-muted text-sm tabular-nums">
               {delta > 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(1)}
             </span>
           )}

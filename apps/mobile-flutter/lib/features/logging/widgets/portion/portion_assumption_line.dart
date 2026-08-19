@@ -1,10 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../models/vessel.dart';
+import '../../../../models/nutrition/vessel.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../logic/portion/portion_display.dart';
 
 /// A quiet one-line portion assumption under a meal item — a small vessel
@@ -56,12 +56,12 @@ class _PortionAssumptionLineState extends State<PortionAssumptionLine> {
           // 40 is the tap-target floor, not the visual height — the thumbnail
           // is 20 and the label 12, so the row reads as quiet as the web's.
           constraints: const BoxConstraints(minHeight: 40),
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp1),
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp1),
           decoration: BoxDecoration(
             // The line sits on the card's WHITE surface, so the warm select
             // wash still registers here (unlike controls on the canvas).
-            color: _pressed ? NhamColors.hover40 : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.md),
+            color: _pressed ? KalloColors.hover40 : Colors.transparent,
+            borderRadius: BorderRadius.circular(KalloRadii.md),
           ),
           child: Row(
             children: [
@@ -73,7 +73,7 @@ class _PortionAssumptionLineState extends State<PortionAssumptionLine> {
                   fit: BoxFit.contain,
                 ),
               ),
-              const SizedBox(width: NhamSpacing.sp1_5), // gap-1.5
+              const SizedBox(width: KalloSpacing.sp1_5), // gap-1.5
               Flexible(
                 child: Text(
                   'logging.portionPicker.assumption'.tr(

@@ -1,36 +1,22 @@
 import { ArrowLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
+import { PipelineSummary } from '@/components/admin/pipeline-summary/pipeline-summary';
+import { PipelineVersionBadge } from '@/components/admin/requests/pipeline-version-badge';
+import { ReplayButton } from '@/components/admin/requests/replay-button';
+import { StageTimeline } from '@/components/admin/requests/stage-timeline';
 import { Link } from '@/i18n/navigation';
-import { formatUtcTimestamp } from '@/lib/admin/format';
-import { getRequestDetail } from '@/lib/admin/queries';
-import { requireAdmin } from '@/lib/admin/require-admin';
-import { db } from '@/lib/db';
-import { PipelineSummary } from './_components/pipeline-summary';
-import { PipelineVersionBadge } from './_components/pipeline-version-badge';
-import { ReplayButton } from './_components/replay-button';
-import type {
-  CompareLabel,
-  StageWithCalls,
-} from './_components/stage-timeline';
-import { StageTimeline } from './_components/stage-timeline';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
+import {
+  buildStagesWithCalls,
+  computeCompareDiff,
+  parsePromptVersionsUsed,
+} from '@/lib/admin/diagnostics/request-trace';
+import { getRequestDetail } from '@/lib/admin/queries/requests';
+import { formatUtcTimestamp } from '@/lib/core/text/utc-timestamp';
+import { db } from '@/lib/infra/db/client';
 
 export const dynamic = 'force-dynamic';
-
-/**
- * Validate the `pipeline_requests.prompt_versions_used` JSONB blob before
- * passing it to the version badge. The DB column is typed `unknown` after
- * Drizzle's `$type<>()`; an unexpected shape (legacy rows, manual SQL
- * edits, or a future schema change) must not crash the admin page.
- *
- * Per repo guidelines: validate all external inputs with Zod schemas.
- */
-const promptVersionsUsedSchema = z.record(z.string(), z.string()).nullable();
-
-function parsePromptVersionsUsed(raw: unknown): Record<string, string> | null {
-  const result = promptVersionsUsedSchema.safeParse(raw ?? null);
-  return result.success ? result.data : null;
-}
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -44,75 +30,6 @@ const STATUS_STYLES: Record<string, string> = {
   pending:
     'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
 };
-
-function sortJsonKeys(value: unknown): unknown {
-  if (value === null || typeof value !== 'object') return value;
-  if (Array.isArray(value)) return value.map(sortJsonKeys);
-
-  const record = value as Record<string, unknown>;
-  return Object.keys(record)
-    .sort()
-    .reduce<Record<string, unknown>>((sorted, key) => {
-      sorted[key] = sortJsonKeys(record[key]);
-      return sorted;
-    }, {});
-}
-
-const stableJsonString = (value: unknown): string =>
-  JSON.stringify(sortJsonKeys(value));
-
-/** Align two stage arrays by stageIndex and compute compare labels. */
-function computeCompareDiff(
-  leftStages: StageWithCalls[],
-  rightStages: StageWithCalls[]
-): {
-  left: StageWithCalls[];
-  right: StageWithCalls[];
-} {
-  const rightByIndex = new Map(rightStages.map((s) => [s.stage.stageIndex, s]));
-  const leftByIndex = new Map(leftStages.map((s) => [s.stage.stageIndex, s]));
-
-  const allIndexes = new Set([
-    ...leftStages.map((s) => s.stage.stageIndex),
-    ...rightStages.map((s) => s.stage.stageIndex),
-  ]);
-
-  const newLeft: StageWithCalls[] = [];
-  const newRight: StageWithCalls[] = [];
-
-  for (const idx of [...allIndexes].sort((a, b) => a - b)) {
-    const l = leftByIndex.get(idx);
-    const r = rightByIndex.get(idx);
-
-    let label: CompareLabel;
-    if (!l) {
-      label = 'only-here';
-    } else if (!r) {
-      label = 'only-here';
-    } else {
-      label =
-        stableJsonString(l.stage.outputJson) ===
-        stableJsonString(r.stage.outputJson)
-          ? 'unchanged'
-          : 'changed';
-    }
-
-    if (l) newLeft.push({ ...l, compareLabel: label });
-    if (r) newRight.push({ ...r, compareLabel: label });
-  }
-
-  return { left: newLeft, right: newRight };
-}
-
-/** Join llmCalls into stages in-memory (stageLogId is not a DB FK). */
-function buildStagesWithCalls(
-  detail: NonNullable<Awaited<ReturnType<typeof getRequestDetail>>>
-): StageWithCalls[] {
-  return detail.stageLogs.map((stage) => ({
-    stage,
-    calls: detail.llmCalls.filter((c) => c.stageLogId === stage.id),
-  }));
-}
 
 export default async function RequestDetailPage({
   params,

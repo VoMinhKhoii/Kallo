@@ -1,7 +1,11 @@
 import { and, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
-import { db as defaultDb } from '@/lib/db';
+import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
+import { Errors } from '@/lib/core/errors/catalog';
+import { createChatGroupSchema } from '@/lib/core/validation/chat';
+import { circleFeedSchema } from '@/lib/core/validation/social';
+import { todayLocalDate } from '@/lib/domain/social/feed/meal-feed';
+import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
   chatGroupMessages,
@@ -9,10 +13,7 @@ import {
   mealShares,
   meals,
   publicProfiles,
-} from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
-import { todayLocalDate } from '@/lib/groups/meal-feed';
-import { circleFeedSchema, createChatGroupSchema } from '@/lib/validation';
+} from '@/lib/infra/db/schema';
 import { ensureDirectChatsForAcceptedFriends } from './direct-chats';
 import { acceptedFriendsAmong, type ChatGroupDb } from './membership';
 import type { ChatGroupIdentity } from './types';

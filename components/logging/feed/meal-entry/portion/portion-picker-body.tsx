@@ -8,7 +8,7 @@ import {
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { PortionContainerBody } from '@/components/logging/feed/meal-entry/portion/portion-container-body';
 import { PortionRuler } from '@/components/logging/feed/meal-entry/portion/portion-ruler';
-import type { ClientVessel } from '@/lib/ai/portion/vessel-types';
+import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 
 interface PortionPickerBodyProps {
   vessel: ClientVessel;
@@ -49,16 +49,16 @@ export function PortionPickerBody({
   return (
     <div className="font-sans-display">
       <h2
-        className={`font-semibold text-[13px] text-nham-text ${isPiece ? 'mb-2' : 'mb-3'}`}
+        className={`font-semibold text-[13px] text-kallo-text ${isPiece ? 'mb-2' : 'mb-3'}`}
       >
         {t('title')}
       </h2>
 
       {vessel.family === 'piece' ? (
         <>
-          <p className="mb-3 text-center text-nham-text tabular-nums">
+          <p className="mb-3 text-center text-kallo-text tabular-nums">
             <span className="font-semibold text-lg">{grams} g</span>
-            <span className="text-[13px] text-nham-text-muted">
+            <span className="text-[13px] text-kallo-text-muted">
               {' · '}
               {formatCaloriesValue(kcal)}
             </span>
@@ -75,7 +75,7 @@ export function PortionPickerBody({
             ariaValueText={ariaValueText}
             onChange={onChange}
           />
-          <p className="mt-2 h-[18px] text-center text-[13px] text-nham-text-muted">
+          <p className="mt-2 h-[18px] text-center text-[13px] text-kallo-text-muted">
             {claimedName ? (
               <span className="font-semibold">{claimedName}</span>
             ) : (
@@ -101,14 +101,14 @@ export function PortionPickerBody({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg px-3 py-2 text-nham-text-muted text-sm transition-colors hover:bg-nham-hover/50 hover:text-nham-text"
+          className="rounded-lg px-3 py-2 text-kallo-text-muted text-sm transition-colors hover:bg-kallo-hover/50 hover:text-kallo-text"
         >
           {t('cancel')}
         </button>
         <button
           type="button"
           onClick={onApply}
-          className="rounded-lg bg-nham-btn px-4 py-2 font-medium text-nham-surface text-sm transition-colors hover:bg-nham-btn-hover"
+          className="rounded-lg bg-kallo-btn px-4 py-2 font-medium text-kallo-surface text-sm transition-colors hover:bg-kallo-btn-hover"
         >
           {t('apply')}
         </button>

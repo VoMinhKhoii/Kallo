@@ -10,8 +10,8 @@ import {
 } from '@/components/logging/feed/persisted/persisted-meal-card';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming/streaming-meal-entry';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-import type { CheatSliderLevels } from '@/lib/types/cheat';
-import type { ChatMessage, MealQuantityEdit } from '@/lib/types/meal';
+import type { CheatSliderLevels } from '@/lib/core/types/cheat';
+import type { ChatMessage, MealQuantityEdit } from '@/lib/core/types/meal';
 
 interface FeedCardsProps {
   orderedPersistedMeals: PersistedMeal[];
@@ -120,13 +120,13 @@ export function FeedCards({
                 animate={{ opacity: 1, y: 0 }}
                 className="relative"
               >
-                <div className="rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4">
+                <div className="rounded-2xl border border-kallo-danger/30 bg-kallo-danger/10 p-4">
                   {msg.userInput && (
-                    <p className="mb-2 font-sans-display text-[13px] text-nham-text-muted">
+                    <p className="mb-2 font-sans-display text-[13px] text-kallo-text-muted">
                       {msg.userInput}
                     </p>
                   )}
-                  <p className="font-sans-display text-nham-danger text-sm">
+                  <p className="font-sans-display text-kallo-danger text-sm">
                     {msg.content}
                   </p>
                 </div>

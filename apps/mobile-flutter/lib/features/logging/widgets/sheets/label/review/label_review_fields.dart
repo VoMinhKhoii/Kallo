@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../../../../../models/nutrition_label.dart';
-import '../../../../logic/label_review.dart';
+import '../../../../logic/label/review.dart';
 
 /// The text controllers behind the review step's nutrient fields, and the
 /// small rules that decide what each field shows.

@@ -8,7 +8,7 @@ import type {
   NutritionDayScope,
   NutritionDaySeries,
   NutritionRange,
-} from '@/lib/nutrition/types';
+} from '@/lib/domain/nutrition/types';
 import { formatLocalizedNumber } from '../primitives/helpers';
 import { CalorieScopeStats } from './calorie-scope-stats';
 import { MacroTrendChart } from './macro-trend-chart';
@@ -118,7 +118,7 @@ export function DaySummary({
           carry it ("kcal per complete day"); saying it once in the title keeps
           the figure clean without leaving the scope inferable only from a
           button that names the OTHER one. */}
-      <h2 className="font-medium text-[11px] text-nham-text-muted uppercase tracking-[0.08em]">
+      <h2 className="font-medium text-[11px] text-kallo-text-muted uppercase tracking-[0.08em]">
         {title}
       </h2>
       <div className="rounded-[1.375rem] bg-card p-5 shadow-[0_10px_32px_rgba(44,36,22,0.05)]">
@@ -145,7 +145,7 @@ export function DaySummary({
           <div
             role="img"
             aria-label={t('rhythm.macroCompositionAria')}
-            className="mt-4 flex h-2 w-full overflow-hidden rounded-full bg-nham-track"
+            className="mt-4 flex h-2 w-full overflow-hidden rounded-full bg-kallo-track"
           >
             {segments.map((segment) =>
               segment.pct > 0 ? (
@@ -179,7 +179,7 @@ export function DaySummary({
             return (
               <span
                 key={segment.key}
-                className="inline-flex items-center gap-1.5 text-[12px] text-nham-text tabular-nums"
+                className="inline-flex items-center gap-1.5 text-[12px] text-kallo-text tabular-nums"
               >
                 <Icon
                   aria-hidden="true"

@@ -4,7 +4,7 @@ import { Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-import { MEAL_TEXT_MAX_LENGTH } from '@/lib/validation';
+import { MEAL_TEXT_MAX_LENGTH } from '@/lib/core/validation/meal';
 
 // The NL-refine is submitted as `${rawInput} (${correction})` — the joining
 
@@ -53,7 +53,7 @@ export function RefineField({
     <>
       <label
         htmlFor={`refine-${meal.id}`}
-        className="px-1 font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
+        className="px-1 font-medium font-sans-display text-[10px] text-kallo-text-muted uppercase tracking-[0.08em]"
       >
         {t('refineLabel')}
       </label>
@@ -72,19 +72,19 @@ export function RefineField({
           placeholder={t('refinePlaceholder')}
           autoComplete="off"
           maxLength={refineMaxLength}
-          className="min-w-0 flex-1 rounded-lg border border-nham-border/60 bg-white px-3 py-2 font-sans-display text-[13px] text-nham-text placeholder:text-nham-text-muted/50 focus:border-nham-accent/50 focus:outline-none"
+          className="min-w-0 flex-1 rounded-lg border border-kallo-border/60 bg-white px-3 py-2 font-sans-display text-[13px] text-kallo-text placeholder:text-kallo-text-muted/50 focus:border-kallo-accent/50 focus:outline-none"
         />
         <button
           type="button"
           onClick={submitRefine}
           disabled={correction.trim().length === 0}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-nham-hover px-3 font-medium font-sans-display text-[12px] text-nham-text transition-colors hover:bg-nham-hover/70 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-kallo-hover px-3 font-medium font-sans-display text-[12px] text-kallo-text transition-colors hover:bg-kallo-hover/70 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Sparkles className="h-3.5 w-3.5" />
           {t('refineSubmit')}
         </button>
       </div>
-      <p className="mt-1.5 px-1 font-sans-display text-[11px] text-nham-text-muted/70">
+      <p className="mt-1.5 px-1 font-sans-display text-[11px] text-kallo-text-muted/70">
         {refineTight ? t('refineTightHint') : t('refineHint')}
       </p>
     </>

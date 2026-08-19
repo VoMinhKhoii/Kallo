@@ -1,6 +1,6 @@
-# Nhẩm Mobile — Docs
+# Kallo Mobile — Docs
 
-Documentation for the Nhẩm mobile client:
+Documentation for the Kallo mobile client:
 
 | App | Path | Stack | Status |
 |-----|------|-------|--------|

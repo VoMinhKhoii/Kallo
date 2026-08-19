@@ -5,8 +5,8 @@
 // (Bearer for mobile, cookie for web). Throws a structured AppError that the
 // route's serializeError() catch turns into the right HTTP status.
 
-import { Errors } from '@/lib/errors';
-import { createClient } from '@/lib/supabase/server';
+import { Errors } from '@/lib/core/errors/catalog';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export async function requireUserId(): Promise<string> {
   const supabase = await createClient();

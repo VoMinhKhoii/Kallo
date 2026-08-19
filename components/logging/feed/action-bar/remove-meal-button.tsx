@@ -42,7 +42,7 @@ export function RemoveMealButton({ label, onConfirm }: RemoveMealButtonProps) {
           <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
           <AlertDialogAction
             variant="ghost"
-            className="text-nham-danger hover:bg-transparent hover:text-nham-danger"
+            className="text-kallo-danger hover:bg-transparent hover:text-kallo-danger"
             onClick={onConfirm}
           >
             {t('remove')}

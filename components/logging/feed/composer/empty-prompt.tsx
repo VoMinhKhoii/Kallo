@@ -4,8 +4,11 @@ import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMyProfile } from '@/hooks/profile/use-profile';
-import { EMPTY_ENTRANCE, ENTRANCE_EASE } from '@/lib/logging/empty-entrance';
-import { drawEmptyPromptKey } from '@/lib/logging/empty-prompt';
+import {
+  EMPTY_ENTRANCE,
+  ENTRANCE_EASE,
+} from '@/lib/domain/logging/empty-entrance';
+import { drawEmptyPromptKey } from '@/lib/domain/logging/empty-prompt';
 
 /**
  * The first word to greet by, or null when we should stay impersonal.
@@ -49,7 +52,7 @@ export function EmptyPrompt() {
         delay: EMPTY_ENTRANCE.prompt,
         ease: ENTRANCE_EASE,
       }}
-      className="relative z-10 mx-auto mb-5 max-w-3xl text-balance px-2 text-center font-serif text-[22px] text-nham-text leading-snug sm:text-[26px]"
+      className="relative z-10 mx-auto mb-5 max-w-3xl text-balance px-2 text-center font-serif text-[22px] text-kallo-text leading-snug sm:text-[26px]"
     >
       {name ? t(`${key}Named`, { name }) : t(key)}
     </motion.p>

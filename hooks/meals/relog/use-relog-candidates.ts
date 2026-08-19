@@ -2,20 +2,16 @@
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { useDebouncedValue } from '@/hooks/ui/use-debounced-value';
 import { loadRelogCandidatesAction } from '@/lib/actions/meals/relog/load-candidates';
 import {
   RELOG_SEARCH_LIMIT,
   type RelogCandidate,
   type RelogCandidatesResponse,
-} from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/relog';
+import { relogCandidatesKeys } from '@/lib/domain/meals/query-keys';
 
 const DEBOUNCE_MS = 300;
-
-export const relogCandidatesKeys = {
-  all: ['relog-candidates'] as const,
-  byQuery: (query: string) => ['relog-candidates', query] as const,
-};
 
 const EMPTY: RelogCandidatesResponse = { dishes: [], meals: [] };
 

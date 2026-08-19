@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/widgets/streaming/ticker_flip.dart';
+import 'package:kallo_mobile/features/logging/widgets/streaming/ticker_flip.dart';
 
 Widget _wrap(String value, {bool reduceMotion = false}) => MediaQuery(
   data: MediaQueryData(disableAnimations: reduceMotion),

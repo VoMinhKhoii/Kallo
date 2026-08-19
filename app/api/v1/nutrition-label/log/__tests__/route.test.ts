@@ -5,11 +5,11 @@ const requireAuthAndProfile = vi.fn();
 const stageOcrMeal = vi.fn();
 const confirmAndSaveMealAction = vi.fn();
 
-vi.mock('@/lib/auth', () => ({ requireAuthAndProfile }));
+vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
 
-vi.mock('@/lib/nutrition/ocr-stage', async (importActual) => {
+vi.mock('@/lib/domain/nutrition/ocr/stage', async (importActual) => {
   const actual =
-    await importActual<typeof import('@/lib/nutrition/ocr-stage')>();
+    await importActual<typeof import('@/lib/domain/nutrition/ocr/stage')>();
   return {
     NutritionOcrStageError: actual.NutritionOcrStageError,
     stageOcrMeal,
@@ -112,7 +112,7 @@ describe('POST /api/v1/nutrition-label/log', () => {
   });
 
   it('rejects an unauthenticated request with 401', async () => {
-    const { Errors } = await import('@/lib/errors');
+    const { Errors } = await import('@/lib/core/errors/catalog');
     requireAuthAndProfile.mockRejectedValueOnce(Errors.notAuthenticated());
 
     const res = await POST(makeRequest(validBody));
@@ -121,7 +121,7 @@ describe('POST /api/v1/nutrition-label/log', () => {
   });
 
   it('propagates AppErrors thrown by confirm (e.g. consumed analysis)', async () => {
-    const { Errors } = await import('@/lib/errors');
+    const { Errors } = await import('@/lib/core/errors/catalog');
     confirmAndSaveMealAction.mockRejectedValueOnce(
       Errors.validationFailed('Phân tích không tồn tại hoặc đã được lưu.')
     );

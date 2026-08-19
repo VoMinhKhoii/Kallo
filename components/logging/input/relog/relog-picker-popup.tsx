@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { RelogPickerGroup } from '@/components/logging/input/relog/relog-picker-group';
 import type { RelogCandidateList } from '@/hooks/meals/relog/use-relog-candidates';
-import type { RelogCandidate } from '@/lib/logging/relog/relog';
+import type { RelogCandidate } from '@/lib/domain/logging/relog/relog';
 
 interface RelogPickerPopupProps {
   listboxId: string;
@@ -48,7 +48,7 @@ export function RelogPickerPopup({
       id={listboxId}
       role="listbox"
       aria-label={t('pickerLabel')}
-      className="absolute right-0 bottom-full left-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-xl border border-nham-border/50 bg-white py-1 shadow-[0_8px_30px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]"
+      className="absolute right-0 bottom-full left-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-xl border border-kallo-border/50 bg-white py-1 shadow-[0_8px_30px_color-mix(in_srgb,var(--color-kallo-accent)_12%,transparent)]"
     >
       <span aria-live="polite" className="sr-only">
         {isEmpty ? emptyMessage : t('resultCount', { count: options.length })}
@@ -74,7 +74,7 @@ export function RelogPickerPopup({
       />
 
       {isEmpty && (
-        <div className="px-3 py-2 font-sans-display text-nham-text-muted/70 text-sm">
+        <div className="px-3 py-2 font-sans-display text-kallo-text-muted/70 text-sm">
           {emptyMessage}
         </div>
       )}

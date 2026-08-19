@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { addChatGroupMembers } from '@/lib/actions/chat-groups';
+import { addChatGroupMembers } from '@/lib/actions/chat-groups/membership';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 

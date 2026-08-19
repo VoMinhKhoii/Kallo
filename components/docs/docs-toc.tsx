@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import type { TocEntry } from '@/lib/docs/toc';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
+import type { TocEntry } from '@/lib/domain/docs/toc';
 
 /**
  * The "on this page" rail, with scroll-spy.
@@ -52,12 +52,12 @@ export function DocsToc({ entries }: { entries: TocEntry[] }) {
   return (
     <nav aria-labelledby="docs-toc-heading">
       <p
-        className="font-sans-display font-semibold text-2xs text-nham-text-muted uppercase tracking-[0.14em]"
+        className="font-sans-display font-semibold text-2xs text-kallo-text-muted uppercase tracking-[0.14em]"
         id="docs-toc-heading"
       >
         {t('onThisPage')}
       </p>
-      <ul className="mt-3 space-y-1.5 border-nham-border border-l">
+      <ul className="mt-3 space-y-1.5 border-kallo-border border-l">
         {entries.map((entry) => {
           const isActive = activeId === entry.id;
 
@@ -69,8 +69,8 @@ export function DocsToc({ entries }: { entries: TocEntry[] }) {
                   '-ml-px block border-l py-0.5 font-sans-display text-2xs leading-snug transition-colors',
                   entry.depth === 3 ? 'pl-6' : 'pl-3',
                   isActive
-                    ? 'border-nham-accent font-semibold text-nham-text'
-                    : 'border-transparent text-nham-text-muted hover:text-nham-text'
+                    ? 'border-kallo-accent font-semibold text-kallo-text'
+                    : 'border-transparent text-kallo-text-muted hover:text-kallo-text'
                 )}
                 href={`#${entry.id}`}
               >

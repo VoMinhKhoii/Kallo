@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 import { DsCard, DsMeta, DsSection } from './specimen';
 
 const RADII = [
@@ -42,32 +42,32 @@ export function ElevationSection() {
             <div key={r.cls}>
               <div
                 className={cn(
-                  'h-16 border border-nham-border bg-nham-surface',
+                  'h-16 border border-kallo-border bg-kallo-surface',
                   r.cls
                 )}
               />
-              <p className="mt-2 font-medium text-nham-text text-sm">
+              <p className="mt-2 font-medium text-kallo-text text-sm">
                 {r.label}
               </p>
-              <p className="text-2xs text-nham-text-muted">{r.use}</p>
+              <p className="text-2xs text-kallo-text-muted">{r.use}</p>
             </div>
           ))}
         </div>
       </DsCard>
 
-      <DsCard className="bg-nham-surface" title="Warm shadow scale">
+      <DsCard className="bg-kallo-surface" title="Warm shadow scale">
         <div className="grid grid-cols-2 gap-6 py-4 sm:grid-cols-3 lg:grid-cols-6">
           {SHADOWS.map((s) => (
             <div key={s.cls}>
               <div className={cn('h-16 rounded-2xl bg-white', s.cls)} />
               <div className="mt-3">
                 <DsMeta>{s.label}</DsMeta>
-                <p className="mt-0.5 text-2xs text-nham-text-muted">{s.use}</p>
+                <p className="mt-0.5 text-2xs text-kallo-text-muted">{s.use}</p>
               </div>
             </div>
           ))}
         </div>
-        <p className="mt-2 text-nham-text-muted text-xs leading-relaxed">
+        <p className="mt-2 text-kallo-text-muted text-xs leading-relaxed">
           The scale replaces Tailwind&rsquo;s black-based defaults globally —
           shadow-sm anywhere in the app is already warm, and matches
           Anthropic&rsquo;s one canonical shadow (0 1px 3px at 8%). If a surface

@@ -2,8 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../../theme/calm_tokens.dart';
-import '../../../../../../theme/nham_theme.dart';
-import '../../../../logic/label_nutrients.dart';
+import '../../../../../../theme/kallo_theme.dart';
+import '../../../../logic/label/nutrients.dart';
 import 'label_field.dart';
 import 'label_field_label.dart';
 import 'label_macro_identity.dart';
@@ -36,7 +36,7 @@ class LabelMacroRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (var i = 0; i < definitions.length; i++) ...[
-          if (i > 0) const SizedBox(width: NhamSpacing.sp3),
+          if (i > 0) const SizedBox(width: KalloSpacing.sp3),
           Expanded(child: _column(definitions[i])),
         ],
       ],

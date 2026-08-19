@@ -34,7 +34,7 @@ export async function LastUpdated({ date, locale }: LastUpdatedProps) {
   }).format(parsed);
 
   return (
-    <p className="mt-4 font-sans-display text-caption text-nham-text-muted">
+    <p className="mt-4 font-sans-display text-caption text-kallo-text-muted">
       <time dateTime={date}>{t('lastUpdated', { date: formatted })}</time>
     </p>
   );

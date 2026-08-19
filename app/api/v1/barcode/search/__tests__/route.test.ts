@@ -4,14 +4,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const requireAuthAndProfile = vi.fn();
 const searchBarcodeProduct = vi.fn();
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile,
 }));
 
-vi.mock('@/lib/barcode/service', async (importActual) => {
+vi.mock('@/lib/domain/barcode/service', async (importActual) => {
   // Keep the real BarcodeServiceError so instanceof checks in the route's
   // error mapper see the same class the mock throws.
-  const actual = await importActual<typeof import('@/lib/barcode/service')>();
+  const actual =
+    await importActual<typeof import('@/lib/domain/barcode/service')>();
   return {
     BarcodeServiceError: actual.BarcodeServiceError,
     searchBarcodeProduct,
@@ -19,7 +20,7 @@ vi.mock('@/lib/barcode/service', async (importActual) => {
   };
 });
 
-const { BarcodeServiceError } = await import('@/lib/barcode/service');
+const { BarcodeServiceError } = await import('@/lib/domain/barcode/service');
 const { GET } = await import('@/app/api/v1/barcode/search/route');
 
 function makeRequest(params: Record<string, string>): NextRequest {
@@ -78,7 +79,7 @@ describe('GET /api/v1/barcode/search', () => {
   });
 
   it('rejects an unauthenticated request with 401', async () => {
-    const { Errors } = await import('@/lib/errors');
+    const { Errors } = await import('@/lib/core/errors/catalog');
     requireAuthAndProfile.mockRejectedValueOnce(Errors.notAuthenticated());
 
     const res = await GET(makeRequest({ code: '5449000000996' }));

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-import 'package:nham_mobile/features/nutrition/logic/format_date.dart';
+import 'package:kallo_mobile/features/nutrition/logic/format_date.dart';
 
 /// `count` consecutive bucket start dates stepping `stepDays` from `start`.
 /// Built in UTC: `add(Duration(days:))` moves fixed 24-hour spans, so a local

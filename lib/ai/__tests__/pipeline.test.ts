@@ -1,26 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Errors } from '@/lib/errors';
-import type { GeminiClient } from '../gemini';
-import { analyzeMeal } from '../pipeline';
+import { createMockGemini } from '@/lib/ai/__fixtures__/test-helpers';
+import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
+import type { MealDecomposition } from '@/lib/ai/types/decomposition';
+import type { NutritionPer100g } from '@/lib/ai/types/matching';
 import type {
   IngredientLlmNutrition,
-  MealDecomposition,
   NutritionAdjustment,
-  NutritionPer100g,
-  UserContext,
-} from '../types';
-import { createMockGemini } from './test-helpers';
+} from '@/lib/ai/types/nutrition-adjustment';
+import type { UserContext } from '@/lib/ai/types/user-context';
+import { Errors } from '@/lib/core/errors/catalog';
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../matching', () => ({
+vi.mock('@/lib/ai/matching/retrieve/legacy/cascade', () => ({
   matchIngredients: vi.fn(),
+}));
+
+vi.mock('@/lib/ai/matching/unmatched-log', () => ({
   logUnmatchedIngredients: vi.fn(),
 }));
 
-import { matchIngredients } from '../matching';
+import { matchIngredients } from '@/lib/ai/matching/retrieve/legacy/cascade';
 
 const mockMatchIngredients = matchIngredients as ReturnType<typeof vi.fn>;
 

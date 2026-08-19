@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
-import '../../../../theme/nham_typography.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
+import '../../../../theme/kallo_typography.dart';
 
 /// Which side of the package the user is pointing the phone at.
 enum ScanType { barcode, label }
@@ -25,16 +25,16 @@ class ScanTypeToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        NhamSpacing.sp4,
-        NhamSpacing.sp1,
-        NhamSpacing.sp4,
-        NhamSpacing.sp2,
+        KalloSpacing.sp4,
+        KalloSpacing.sp1,
+        KalloSpacing.sp4,
+        KalloSpacing.sp2,
       ),
       child: Container(
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: NhamColors.track,
-          borderRadius: BorderRadius.circular(NhamRadii.lg),
+          color: KalloColors.track,
+          borderRadius: BorderRadius.circular(KalloRadii.lg),
         ),
         child: Row(
           children: [
@@ -88,8 +88,8 @@ class _Segment extends StatelessWidget {
           duration: const Duration(milliseconds: 120),
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? NhamColors.elev : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.md),
+            color: selected ? KalloColors.elev : Colors.transparent,
+            borderRadius: BorderRadius.circular(KalloRadii.md),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -97,7 +97,7 @@ class _Segment extends StatelessWidget {
               Icon(
                 icon,
                 size: 15,
-                color: selected ? NhamColors.text : NhamColors.textMuted,
+                color: selected ? KalloColors.text : KalloColors.textMuted,
               ),
               const SizedBox(width: 6),
               Flexible(
@@ -105,10 +105,10 @@ class _Segment extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: NhamTextStyles.sansMedium(
-                    fontSize: NhamFontSize.detail,
+                  style: KalloTextStyles.sansMedium(
+                    fontSize: KalloFontSize.detail,
                   ).copyWith(
-                    color: selected ? NhamColors.text : NhamColors.textMuted,
+                    color: selected ? KalloColors.text : KalloColors.textMuted,
                   ),
                 ),
               ),

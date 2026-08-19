@@ -47,8 +47,8 @@ export function PlanCard({
     <div
       className={`flex flex-col rounded-3xl border bg-white p-7 text-left sm:p-8 md:row-span-4 md:grid md:grid-rows-subgrid ${
         featured
-          ? 'border-nham-accent/45 shadow-md ring-1 ring-nham-accent/15'
-          : 'border-nham-border/60 shadow-sm'
+          ? 'border-kallo-accent/45 shadow-md ring-1 ring-kallo-accent/15'
+          : 'border-kallo-border/60 shadow-sm'
       }`}
     >
       {/* The switch shares a row with the NAME only, and the tagline sits
@@ -58,14 +58,14 @@ export function PlanCard({
           happened to be. */}
       <div>
         <div className="flex items-start justify-between gap-4">
-          <h3 className="font-semibold font-serif text-3xl text-nham-text">
+          <h3 className="font-semibold font-serif text-3xl text-kallo-text">
             {t(`plans.${plan}.name`)}
           </h3>
           {featured && (
             <BillingToggle period={period} onPeriodChange={setPeriod} />
           )}
         </div>
-        <p className="mt-1 font-sans-display text-nham-text-soft">
+        <p className="mt-1 font-sans-display text-kallo-text-soft">
           {t(`plans.${plan}.tagline`)}
         </p>
       </div>
@@ -79,10 +79,10 @@ export function PlanCard({
         <PremiumPrice period={period} />
       ) : (
         <div className="mt-8">
-          <p className="font-bold font-sans-display text-4xl text-nham-text tabular-nums">
+          <p className="font-bold font-sans-display text-4xl text-kallo-text tabular-nums">
             {t(`plans.${plan}.price`)}
           </p>
-          <p className="mt-4 font-sans-display text-nham-text-soft text-sm leading-relaxed">
+          <p className="mt-4 font-sans-display text-kallo-text-soft text-sm leading-relaxed">
             {t(`plans.${plan}.fineprint`)}
           </p>
         </div>
@@ -99,8 +99,8 @@ export function PlanCard({
         {t(`plans.${plan}.cta`)}
       </Button>
 
-      <div className="mt-8 border-nham-border/50 border-t pt-6">
-        <p className="mb-4 font-sans-display font-semibold text-nham-text text-sm">
+      <div className="mt-8 border-kallo-border/50 border-t pt-6">
+        <p className="mb-4 font-sans-display font-semibold text-kallo-text text-sm">
           {t(`plans.${plan}.inherits`)}
         </p>
         <ul className="space-y-3">
@@ -108,9 +108,9 @@ export function PlanCard({
             <li key={id} className="flex items-start gap-2.5">
               <Check
                 aria-hidden
-                className="mt-0.5 h-4 w-4 shrink-0 text-nham-text-soft"
+                className="mt-0.5 h-4 w-4 shrink-0 text-kallo-text-soft"
               />
-              <span className="font-sans-display text-nham-text-soft text-sm leading-snug">
+              <span className="font-sans-display text-kallo-text-soft text-sm leading-snug">
                 {t(`features.${id}`)}
               </span>
             </li>

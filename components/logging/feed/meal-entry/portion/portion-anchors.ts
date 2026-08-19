@@ -1,14 +1,14 @@
 import {
-  midG,
   PIECE_TIERS,
   type PieceVesselTier,
   VESSEL_FAMILIES,
   type VesselTier,
-} from '@/lib/ai/portion/vessel-data';
+} from '@/lib/ai/portion/data/vessel-tables';
+import { midG } from '@/lib/ai/portion/vessel/geometry';
 import type {
   ContainerVessel,
   PieceVessel,
-} from '@/lib/ai/portion/vessel-types';
+} from '@/lib/ai/portion/vessel/types';
 
 /** Every tier a vessel family can expose (containers stop at 4, pieces at 5). */
 export type AnchorTier = PieceVesselTier;

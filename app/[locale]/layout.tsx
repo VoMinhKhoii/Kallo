@@ -19,7 +19,7 @@ import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { routing } from '@/i18n/navigation';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
-import { SITE_URL } from '@/lib/site';
+import { SITE_URL } from '@/lib/seo/site';
 import '../globals.css';
 
 const fraunces = Fraunces({

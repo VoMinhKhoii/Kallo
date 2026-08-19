@@ -46,4 +46,4 @@ jobs:
           DATABASE_URL="$database_url" \
           SUPABASE_SERVICE_ROLE_KEY="$service_key" \
           REVENUECAT_CUSTOMER_DELETE_API_KEY="$revenuecat_key" \
-          bun --conditions=react-server scripts/process-account-deletions.ts
+          bun --conditions=react-server scripts/ops/process-account-deletions.ts

@@ -1,7 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { readStagedDraft, writeStagedDraft } from '@/lib/logging/relog/draft';
+import {
+  readStagedDraft,
+  writeStagedDraft,
+} from '@/lib/domain/logging/relog/draft';
 import {
   buildMentionSegments,
   insertMention,
@@ -9,14 +12,14 @@ import {
   type RelogMention,
   reconcileMentions,
   stripMentions,
-} from '@/lib/logging/relog/mentions';
+} from '@/lib/domain/logging/relog/mentions';
 import {
   RELOG_MAX_STAGED,
   type RelogCandidate,
   type SlashToken,
   sumStagedMacros,
   toStagedEntry,
-} from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/relog';
 
 const DRAFT_DEBOUNCE_MS = 500;
 

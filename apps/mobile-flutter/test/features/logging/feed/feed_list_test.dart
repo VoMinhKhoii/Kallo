@@ -2,14 +2,14 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/data/logging_models.dart';
-import 'package:nham_mobile/features/logging/data/stream_analysis_controller.dart';
-import 'package:nham_mobile/features/logging/logic/feed/view_state.dart';
-import 'package:nham_mobile/features/logging/widgets/feed/feed_footer.dart';
-import 'package:nham_mobile/features/logging/widgets/feed/feed_list.dart';
-import 'package:nham_mobile/features/logging/widgets/streaming/streaming_entry.dart';
-import 'package:nham_mobile/models/meal.dart';
-import 'package:nham_mobile/models/streaming.dart';
+import 'package:kallo_mobile/features/logging/data/logging_models.dart';
+import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
+import 'package:kallo_mobile/features/logging/logic/feed/view_state.dart';
+import 'package:kallo_mobile/features/logging/widgets/feed/feed_footer.dart';
+import 'package:kallo_mobile/features/logging/widgets/feed/feed_list.dart';
+import 'package:kallo_mobile/features/logging/widgets/streaming/streaming_entry.dart';
+import 'package:kallo_mobile/models/logging/meal.dart';
+import 'package:kallo_mobile/models/logging/streaming.dart';
 
 import '../../../l10n_test_loader.dart';
 

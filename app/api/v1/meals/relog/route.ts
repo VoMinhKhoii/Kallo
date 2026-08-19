@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { relogMealItemsAction } from '@/lib/actions/meals/relog/relog-items';
 import { relogItemsSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
 export const runtime = 'nodejs';
 

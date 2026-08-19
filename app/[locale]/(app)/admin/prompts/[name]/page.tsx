@@ -1,12 +1,13 @@
 import { ArrowLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
+import { CompareLink } from '@/components/admin/prompts/compare-link';
+import { VersionDiff } from '@/components/admin/prompts/version-diff';
 import { Link } from '@/i18n/navigation';
-import { formatUtcTimestamp } from '@/lib/admin/format';
-import { getPromptVersions } from '@/lib/admin/prompt-queries';
-import { requireAdmin } from '@/lib/admin/require-admin';
-import { db } from '@/lib/db';
-import { VersionDiff } from './_components/version-diff';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
+import { getPromptVersions } from '@/lib/admin/queries/prompts';
+import { formatUtcTimestamp } from '@/lib/core/text/utc-timestamp';
+import { db } from '@/lib/infra/db/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -132,74 +133,5 @@ export default async function PromptDetailPage({
         </table>
       </div>
     </div>
-  );
-}
-
-/** Renders a compare link that toggles compare/with query params. */
-function CompareLink({
-  href,
-  versionId,
-  currentCompare,
-  currentWith,
-}: {
-  href: string;
-  versionId: string;
-  currentCompare: string | undefined;
-  currentWith: string | undefined;
-}) {
-  // If neither slot filled — pick as base
-  if (!currentCompare) {
-    return (
-      <Link
-        href={`${href}?compare=${versionId}`}
-        className="text-blue-600 text-xs hover:underline dark:text-blue-400"
-      >
-        Select A
-      </Link>
-    );
-  }
-
-  // Base filled, no target — pick as target (unless this IS the base)
-  if (versionId === currentCompare) {
-    return (
-      <Link
-        href={href}
-        className="text-muted-foreground text-xs hover:underline"
-      >
-        Clear A
-      </Link>
-    );
-  }
-
-  if (!currentWith) {
-    return (
-      <Link
-        href={`${href}?compare=${currentCompare}&with=${versionId}`}
-        className="text-blue-600 text-xs hover:underline dark:text-blue-400"
-      >
-        Compare with A
-      </Link>
-    );
-  }
-
-  // Both filled — clicking another clears and starts fresh
-  if (versionId === currentWith) {
-    return (
-      <Link
-        href={`${href}?compare=${currentCompare}`}
-        className="text-muted-foreground text-xs hover:underline"
-      >
-        Clear B
-      </Link>
-    );
-  }
-
-  return (
-    <Link
-      href={`${href}?compare=${currentCompare}&with=${versionId}`}
-      className="text-blue-600 text-xs hover:underline dark:text-blue-400"
-    >
-      Compare with A
-    </Link>
   );
 }

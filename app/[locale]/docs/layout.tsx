@@ -2,8 +2,8 @@ import { setRequestLocale } from 'next-intl/server';
 import { DocsFooter } from '@/components/docs/docs-footer';
 import { DocsHeader } from '@/components/docs/docs-header';
 import type { Locale } from '@/i18n/config';
-import { getSearchIndex } from '@/lib/docs/search-index';
-import { getDocsTree } from '@/lib/docs/tree';
+import { getSearchIndex } from '@/lib/domain/docs/search-index';
+import { getDocsTree } from '@/lib/domain/docs/tree';
 
 /**
  * The docs shell — a separate surface from both the marketing landing page and
@@ -36,7 +36,7 @@ export default async function DocsLayout({
   const searchEntries = await getSearchIndex(locale as Locale);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-nham-surface">
+    <div className="flex min-h-dvh flex-col bg-kallo-surface">
       <DocsHeader searchEntries={searchEntries} />
 
       <div className="mx-auto w-full max-w-[90rem] flex-1 px-4 sm:px-6">

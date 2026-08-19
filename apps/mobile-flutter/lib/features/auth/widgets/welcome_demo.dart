@@ -4,9 +4,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 
 /// The pre-auth typing demo: a Vietnamese meal string types itself in, then a
 /// small result chip springs in with a point calorie value.
@@ -98,9 +98,9 @@ class _WelcomeDemoState extends State<WelcomeDemo>
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(NhamRadii.xxl),
-        border: Border.all(color: NhamColors.border),
+        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(KalloRadii.xxl),
+        border: Border.all(color: KalloColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,10 +108,10 @@ class _WelcomeDemoState extends State<WelcomeDemo>
           // The user's words, in Lora — the loudest thing on the screen.
           Text(
             _full.substring(0, _typed),
-            style: NhamTextStyles.serifRegular(
-              fontSize: NhamFontSize.lg,
-              height: NhamLeading.snug,
-            ).copyWith(color: NhamColors.text),
+            style: KalloTextStyles.serifRegular(
+              fontSize: KalloFontSize.lg,
+              height: KalloLeading.snug,
+            ).copyWith(color: KalloColors.text),
           ),
           const SizedBox(height: 14),
           // The point result chip springs in once typing resolves.
@@ -142,9 +142,9 @@ class _WelcomeDemoState extends State<WelcomeDemo>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: NhamColors.accentSelectedFill,
-        borderRadius: BorderRadius.circular(NhamRadii.xl),
-        border: Border.all(color: NhamColors.accentSelectedBorder),
+        color: KalloColors.accentSelectedFill,
+        borderRadius: BorderRadius.circular(KalloRadii.xl),
+        border: Border.all(color: KalloColors.accentSelectedBorder),
       ),
       child: Text(
         tr('auth.welcome.demoResult', namedArgs: {'kcal': '620'}),

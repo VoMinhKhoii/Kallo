@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 import { KalloMark } from './kallo-mark';
 
 /**
@@ -11,11 +11,11 @@ export function KalloAppIcon({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'flex aspect-square items-center justify-center rounded-2xl bg-nham-text',
+        'flex aspect-square items-center justify-center rounded-2xl bg-kallo-text',
         className
       )}
     >
-      <KalloMark className="h-1/2 w-auto text-nham-surface" />
+      <KalloMark className="h-1/2 w-auto text-kallo-surface" />
     </div>
   );
 }

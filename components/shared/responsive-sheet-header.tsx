@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 
 /**
  * The sheet header, structurally identical to the Flutter app's
- * `NhamSheetHeader`: close button on the LEFT, a centered semibold title, and
+ * `KalloSheetHeader`: close button on the LEFT, a centered semibold title, and
  * a 48x48 spacer on the right so the title stays optically centered against
  * the close button.
  *
@@ -36,13 +36,13 @@ export function ResponsiveSheetHeader({
         aria-label={closeLabel}
         disabled={closeDisabled}
         onClick={onClose}
-        className="flex size-12 shrink-0 items-center justify-center rounded-full text-nham-text-muted transition-colors hover:bg-nham-hover hover:text-nham-text disabled:opacity-40"
+        className="flex size-12 shrink-0 items-center justify-center rounded-full text-kallo-text-muted transition-colors hover:bg-kallo-hover hover:text-kallo-text disabled:opacity-40"
       >
         <X className="size-[18px]" />
       </button>
 
       <div className="min-w-0 flex-1 text-center">
-        <p className="truncate font-semibold text-[17px] text-nham-text leading-tight">
+        <p className="truncate font-semibold text-[17px] text-kallo-text leading-tight">
           {title}
         </p>
       </div>

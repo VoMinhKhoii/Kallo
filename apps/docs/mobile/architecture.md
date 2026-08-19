@@ -1,6 +1,6 @@
 # Mobile — Architecture (Flutter)
 
-A map of the **Flutter** app (`apps/mobile-flutter`, package `nham_mobile`). It's a 1:1 port of
+A map of the **Flutter** app (`apps/mobile-flutter`, package `kallo_mobile`). It's a 1:1 port of
 the web app's mobile-responsive view, sharing the same backend and Supabase project.
 
 ## Stack
@@ -22,26 +22,33 @@ lib/
   main.dart            app entry: env assert, Supabase init, runApp
   app.dart             root widget (theme, localization, router wiring)
   router.dart          go_router routes + redirect/auth seam
-  data/
-    env.dart           compile-time config (String.fromEnvironment / --dart-define)
-    api_client.dart    typed client for the /api/v1 REST + SSE surface
-    session_provider.dart  Supabase session as a Riverpod provider
-    query.dart         shared fetch/query helpers
-    analytics.dart     PostHog wrapper (no-op until keys set)
-  services/
-    supabase_service.dart   Supabase initialization
-  models/              DTOs: meal, nutrition, dashboard, weight, onboarding, streaming
+  services/            infrastructure edges, one folder per concern:
+    http/                api_client.dart, api_client_uploads.dart, query.dart
+    auth/                supabase_service.dart, session_provider.dart
+    billing/             RevenueCat purchases + entitlement state
+    analytics/           PostHog wrapper (no-op until keys set)
+    env/                 compile-time config (String.fromEnvironment / --dart-define)
+  models/              DTOs grouped by domain: nutrition/ logging/ social/ profile/
   features/            one folder per surface (see below)
-  shared/widgets/      cross-cutting primitives (nham_primitives, nham_text,
-                       decimal_input, target_progress_bar, section_eyebrow)
-  shell/               app shell: header, sidebar/drawer, tab scaffold
-  theme/               nham_colors, nham_typography, nham_theme
+  shared/widgets/      cross-cutting primitives, one folder each: avatar/ brand/
+                       calorie_ring/ feedback/ form/ motion/ sheet/ surface/
+                       toast/ typography/
+  shared/logic/        pure functions >1 feature reads: tdee.dart, display_format.dart
+  shared/data/         static tables >1 feature reads: countries.dart
+  shell/               app shell: header/, sidebar/ (drawer), tab_scaffold.dart,
+                       placeholder_screen.dart
+  theme/               kallo_colors, kallo_typography, kallo_theme, calm_tokens
 ```
+
+There is no `lib/data/`: everything it held was infrastructure and merged into `services/`.
+The tree has no barrels — see `apps/mobile-flutter/AGENTS.md` §3 for the rule and the two
+shapes it covers.
 
 ### Features (one module per surface)
 
-`lib/features/{auth, onboarding, dashboard, logging, nutrition, settings}/` — each typically
-splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
+`lib/features/{auth, circle, dashboard, feedback, logging, nutrition, onboarding, paywall,
+settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `providers/`, and
+`logic/`:
 
 - **auth** — sign in / sign up, Google button, Supabase auth.
 - **onboarding** — 3-step profile (origin, body metrics, cooking) + TDEE calc.
@@ -69,13 +76,13 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
   port of `components/logging/feed/meal-entry/portion/`; the vessel rides in on the SSE
   `result` frame and on restored `/api/v1/meals/pending` rows.
   **Shared with web — keep them in lockstep.** The tier tables, envelope factors and
-  claim band are vendored copies of `lib/ai/portion/vessel-data.ts` and
+  claim band are vendored copies of `lib/ai/portion/data/vessel-tables.ts` and
   `components/logging/feed/meal-entry/portion/portion-anchors.ts`. Drift means the two
   clients commit *different tiers for the same meal* while each stays internally
   consistent, so `test/portion_vessel_assets_test.dart` reads the TypeScript and pins
   every shared number (asset filenames + aspects, `MAX_PIECE_COUNT`, envelope factors,
   `CLAIM_BAND`, `POSITION_MAX`, tier grams/ml). Change a number on one side and that test
-  fails. Validation is NOT vendored: `toParsedMeal` (`lib/ai/mappers.ts`) drops any vessel
+  fails. Validation is NOT vendored: `toParsedMeal` (`lib/ai/adapters/parsed-meal.ts`) drops any vessel
   a picker can't safely render, so both clients inherit one guarantee — the Dart parser's
   own checks are defense in depth for rows written before that guard existed.
 - **nutrition** — editorial overview, 7/30/90 toggle, macro composition, nutrient rows.
@@ -87,8 +94,8 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
   auth-gated routing. Riverpod controllers wrap streaming (`stream_analysis_controller.dart`).
 - **Navigation:** `go_router` with a shell route. The shell is a **left slide-in drawer**
   (hamburger), not a bottom tab bar — matching the web mobile nav.
-- **Sheets:** `showNhamSheet` (`shared/widgets/nham_sheet.dart`) + `NhamSheetSurface` +
-  `NhamSheetHeader` (`nham_sheet_header.dart`). `isScrollControlled` defaults to **true** —
+- **Sheets:** `showNhamSheet` (`shared/widgets/sheet/kallo_sheet.dart`) + `KalloSheetSurface` +
+  `KalloSheetHeader` (`kallo_sheet_header.dart`). `isScrollControlled` defaults to **true** —
   Material's default caps a sheet at 9/16 of the screen and clips the rest, which pushed
   action rows off-screen on short phones and in landscape. A sheet whose body is a plain
   `Column` also passes `scrollable: true` so it caps at 90% height and scrolls past it;
@@ -98,8 +105,8 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
 - **Data:** `api_client.dart` hits `/api/v1`. Note Drizzle decimals serialize as **strings**, and
   targets are **null** for not-fully-onboarded profiles — models tolerate nulls and fall back to
   the same defaults as the web app.
-- **Theming:** warm earthy palette on a cream surface (`theme/nham_colors.dart`), Lora serif +
-  DM Sans (`theme/nham_typography.dart`) — see the `nham-design` skill for the brand source.
+- **Theming:** warm earthy palette on a cream surface (`theme/kallo_colors.dart`), Lora serif +
+  DM Sans (`theme/kallo_typography.dart`) — see the `kallo-design` skill for the brand source.
 
 ## Web parity
 

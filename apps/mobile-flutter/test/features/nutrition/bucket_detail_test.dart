@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-import 'package:nham_mobile/features/nutrition/logic/bucket_detail.dart';
-import 'package:nham_mobile/models/nutrition.dart';
+import 'package:kallo_mobile/features/nutrition/logic/bucket_detail.dart';
+import 'package:kallo_mobile/models/nutrition/nutrition.dart';
 
 NutrientDaySeries _series(
   String metric,

@@ -9,10 +9,10 @@ import {
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import {
   PIECE_TIERS,
-  pieceAssetFor,
   VESSEL_FAMILIES,
-} from '@/lib/ai/portion/vessel-data';
-import type { ClientVessel } from '@/lib/ai/portion/vessel-types';
+} from '@/lib/ai/portion/data/vessel-tables';
+import { pieceAssetFor } from '@/lib/ai/portion/vessel/geometry';
+import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 
 interface PortionAssumptionLineProps
   extends React.ComponentPropsWithoutRef<'button'> {
@@ -57,7 +57,7 @@ export const PortionAssumptionLine = forwardRef<
       ref={ref}
       type="button"
       aria-label={t('adjust', { label })}
-      className="-mt-1 flex min-h-[40px] items-center gap-1.5 rounded-md px-1 text-left transition-colors hover:bg-nham-hover/40"
+      className="-mt-1 flex min-h-[40px] items-center gap-1.5 rounded-md px-1 text-left transition-colors hover:bg-kallo-hover/40"
       {...props}
     >
       <span className="flex shrink-0 items-end">
@@ -69,7 +69,7 @@ export const PortionAssumptionLine = forwardRef<
           className="h-5 w-auto opacity-80"
         />
       </span>
-      <span className="text-[12px] text-nham-text-muted">
+      <span className="text-[12px] text-kallo-text-muted">
         {t('assumption', { label })}
       </span>
     </button>

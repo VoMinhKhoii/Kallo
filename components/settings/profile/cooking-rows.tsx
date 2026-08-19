@@ -2,10 +2,10 @@
 
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
-import { SettingsRow } from '@/components/settings/group';
-import { OptionStrip } from '@/components/settings/option-strip';
+import { SettingsRow } from '@/components/settings/chrome/group';
+import { OptionStrip } from '@/components/settings/chrome/option-strip';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
-import type { ProfileFormValues } from './form-schema';
+import type { ProfileFormValues } from '@/lib/domain/settings/profile-form';
 
 type CookingField = Extract<
   keyof ProfileFormValues,

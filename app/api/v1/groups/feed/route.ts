@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { listCircleFeed } from '@/lib/actions/groups/feed';
 import { requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
-import { timezoneOffsetSchema } from '@/lib/validation';
+import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 
 export const runtime = 'nodejs';
 

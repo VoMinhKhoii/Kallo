@@ -6,12 +6,13 @@ import {
   formatCaloriesValue,
   formatMacroValue,
 } from '@/components/logging/feed/format-inline-nutrition';
-import { MealEntryItemSkeleton } from '@/components/logging/feed/skeletons';
+import { MealEntryItemSkeleton } from '@/components/logging/feed/skeletons/meal-entry-item-skeleton';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
-import { loaderIndexForKey } from '@/components/shared/loaders/registry';
 import { StreamTicker } from '@/components/shared/stream-ticker/stream-ticker';
-import { deriveStreamTicker } from '@/components/shared/stream-ticker/stream-ticker-frame';
-import type { ChatMessage, MealItem } from '@/lib/types/meal';
+import { formatTime } from '@/lib/core/date/format-time';
+import type { ChatMessage, MealItem } from '@/lib/core/types/meal';
+import { loaderIndexForKey } from '@/lib/core/ui/loaders/registry';
+import { deriveStreamTicker } from '@/lib/domain/logging/stream-ticker';
 
 const DEFAULT_SKELETON_COUNT = 3;
 
@@ -28,11 +29,11 @@ function CompletedItemRow({ item, index }: { item: MealItem; index: number }) {
       transition={{ delay: index * 0.04 }}
       className="flex items-center justify-between py-2.5 font-sans-display text-[13px]"
     >
-      <span className="min-w-0 truncate font-medium text-nham-text">
+      <span className="min-w-0 truncate font-medium text-kallo-text">
         {item.name}
       </span>
       <div className="flex shrink-0 items-center gap-3">
-        <div className="flex gap-2 text-[10px] text-nham-text-muted tabular-nums">
+        <div className="flex gap-2 text-[10px] text-kallo-text-muted tabular-nums">
           <span className="whitespace-nowrap text-right">
             P:{formatMacroValue(item.macros.protein)}
           </span>
@@ -43,7 +44,7 @@ function CompletedItemRow({ item, index }: { item: MealItem; index: number }) {
             F:{formatMacroValue(item.macros.fat)}
           </span>
         </div>
-        <span className="whitespace-nowrap text-right font-bold text-nham-text tabular-nums">
+        <span className="whitespace-nowrap text-right font-bold text-kallo-text tabular-nums">
           {formatCaloriesValue(item.macros.calories)}
         </span>
       </div>
@@ -84,10 +85,7 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
   const anonymousCount = Math.max(0, DEFAULT_SKELETON_COUNT - totalKnown);
   const showAnonymous = phase !== 'assembling' && phase !== 'done';
 
-  const timeLabel = message.timestamp.toLocaleTimeString(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const timeLabel = formatTime(message.timestamp, locale);
 
   const ticker = deriveStreamTicker({
     isAnalyzing: true,

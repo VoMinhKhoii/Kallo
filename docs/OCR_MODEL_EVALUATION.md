@@ -1,7 +1,7 @@
 # Nutrition Label OCR Model Evaluation & Benchmark Summary
 
 > [!NOTE]
-> This document preserves model comparison benchmarks, latency metrics, accuracy evaluations, and unit parsing fidelity (`g` vs `ml`, micronutrient precision) across Gemini Multimodal Vision models for the **Nhẩm** Nutrition Label OCR scanner.
+> This document preserves model comparison benchmarks, latency metrics, accuracy evaluations, and unit parsing fidelity (`g` vs `ml`, micronutrient precision) across Gemini Multimodal Vision models for the **Kallo** Nutrition Label OCR scanner.
 
 ---
 
@@ -75,12 +75,12 @@ Below is a comparative matrix benchmarking `gemini-3.1-flash-lite` against leadi
 You can run live extraction benchmark evaluations across sample test targets with:
 
 ```bash
-bun --env-file=.env.local tsx scripts/test-ocr-live.ts
+bun --env-file=.env.local tsx scripts/dev/test-ocr-live.ts
 ```
 
 Or execute unit & schema parsing benchmarks via:
 
 ```bash
-npx vitest run lib/nutrition/__tests__/ocr-schema.test.ts
+npx vitest run lib/domain/nutrition/__tests__/ocr-schema.test.ts
 ```
 

@@ -1,12 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../models/vessel.dart';
-import '../../../../shared/widgets/nham_sheet.dart';
-import '../../../../shared/widgets/nham_sheet_header.dart';
-import '../../../../shared/widgets/quiet_action_button.dart';
+import '../../../../models/nutrition/vessel.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
+import '../../../../shared/widgets/form/quiet_action_button.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../logic/portion/portion_anchors.dart';
 import 'portion_container_body.dart';
 import 'portion_piece_body.dart';
@@ -114,7 +114,7 @@ class _PortionPickerSheetState extends State<_PortionPickerSheet> {
         ? (widget.itemCalories * _grams) / widget.itemQuantity
         : 0.0;
 
-    return NhamSheetSurface(
+    return KalloSheetSurface(
       // Cup glyphs are taller than they are wide, so the container branch runs
       // ~400pt — past a short phone's height, and past every phone's in
       // landscape. Scrollable keeps Cancel/Apply reachable instead of clipped.
@@ -122,13 +122,13 @@ class _PortionPickerSheetState extends State<_PortionPickerSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          NhamSheetHeader(title: title),
+          KalloSheetHeader(title: title),
           Padding(
             padding: EdgeInsets.fromLTRB(
-              NhamSpacing.sp4,
-              NhamSpacing.sp2,
-              NhamSpacing.sp4,
-              bottomInset + NhamSpacing.sp4,
+              KalloSpacing.sp4,
+              KalloSpacing.sp2,
+              KalloSpacing.sp4,
+              bottomInset + KalloSpacing.sp4,
             ),
             child: Column(
               children: [
@@ -154,10 +154,10 @@ class _PortionPickerSheetState extends State<_PortionPickerSheet> {
                     onChanged: (grams) => setState(() => _grams = grams),
                   ),
                 },
-                const SizedBox(height: NhamSpacing.sp4),
+                const SizedBox(height: KalloSpacing.sp4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  spacing: NhamSpacing.sp2,
+                  spacing: KalloSpacing.sp2,
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),

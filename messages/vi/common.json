@@ -1,0 +1,19 @@
+{
+  "back": "Quay lại",
+  "next": "Tiếp theo",
+  "skip": "Bỏ qua",
+  "finish": "Hoàn tất",
+  "save": "Lưu",
+  "cancel": "Hủy",
+  "loading": "Đang tải…",
+  "error": "Đã xảy ra lỗi",
+  "retry": "Thử lại",
+  "search": "Tìm kiếm",
+  "noResults": "Không tìm thấy kết quả",
+  "confirm": "Xác nhận",
+  "close": "Đóng",
+  "or": "hoặc",
+  "optional": "Tùy chọn",
+  "notFound": "Không tìm thấy trang",
+  "notSignedIn": "Chưa đăng nhập."
+}

@@ -3,20 +3,20 @@ import type {
   DaySeriesBucketUnit,
   MacroKey,
   NutritionDaySeries,
-} from '@/lib/nutrition/types';
+} from '@/lib/domain/nutrition/types';
 
 export const KCAL_PER_GRAM = { protein: 4, carbohydrate: 4, fat: 9 } as const;
 
 export const COMPOSITION_KEYS = ['protein', 'carbohydrate', 'fat'] as const;
 export type CompositionKey = (typeof COMPOSITION_KEYS)[number];
 
-// The nutrition page's own, brighter pigments — NOT the --nham-macro-* trio the
+// The nutrition page's own, brighter pigments — NOT the --kallo-macro-* trio the
 // dashboard dock and logging feed use. Berry rose / apricot / sage separate by
 // hue, so a stacked column still reads at the 6px width the 30-day axis needs.
 export const COMPOSITION_COLORS: Record<CompositionKey, string> = {
-  protein: 'var(--nham-chart-protein)',
-  carbohydrate: 'var(--nham-chart-carbs)',
-  fat: 'var(--nham-chart-fat)',
+  protein: 'var(--kallo-chart-protein)',
+  carbohydrate: 'var(--kallo-chart-carbs)',
+  fat: 'var(--kallo-chart-fat)',
 };
 
 /**

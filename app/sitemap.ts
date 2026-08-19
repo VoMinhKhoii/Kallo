@@ -1,9 +1,9 @@
 import type { MetadataRoute } from 'next';
 import type { Locale } from '@/i18n/config';
 import { routing } from '@/i18n/navigation';
-import { loadFrontmatter } from '@/lib/docs/loader';
-import { DOCS_SLUGS } from '@/lib/docs/navigation';
-import { SITE_URL } from '@/lib/site';
+import { loadFrontmatter } from '@/lib/domain/docs/loader';
+import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
+import { SITE_URL } from '@/lib/seo/site';
 
 // Only the publicly crawlable, unauthenticated surfaces belong here. Everything
 // behind auth (dashboard, settings, groups, …) is disallowed in robots.ts.

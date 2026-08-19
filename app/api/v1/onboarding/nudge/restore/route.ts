@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { handleRouteError } from '@/lib/api/respond';
-import { restoreOnboardingNudge } from '@/lib/onboarding/actions';
+import { restoreOnboardingNudge } from '@/lib/domain/onboarding/actions';
 
 export const runtime = 'nodejs';
 

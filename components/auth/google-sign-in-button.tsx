@@ -8,8 +8,8 @@ import { WebviewGoogleNotice } from '@/components/auth/webview-google-notice';
 import { GoogleLogo } from '@/components/shared/brand-logos';
 import { useGoogleIdentity } from '@/hooks/auth/use-google-identity';
 import { useIsInAppBrowser } from '@/hooks/ui/use-in-app-browser';
-import { isInAppBrowser } from '@/lib/in-app-browser';
-import { createClient } from '@/lib/supabase/client';
+import { isInAppBrowser } from '@/lib/infra/platform/in-app-browser';
+import { createClient } from '@/lib/infra/supabase/client';
 
 export function GoogleSignInButton() {
   const t = useTranslations('auth.dialog');
@@ -68,7 +68,7 @@ export function GoogleSignInButton() {
         onClick={onClick}
         disabled={loading}
         aria-busy={loading}
-        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-nham-border bg-white px-4 py-3 font-medium font-sans-display text-nham-text text-sm tracking-tight transition-all duration-200 hover:bg-[#FFFCF8] disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-kallo-border bg-white px-4 py-3 font-medium font-sans-display text-kallo-text text-sm tracking-tight transition-all duration-200 hover:bg-[#FFFCF8] disabled:opacity-60"
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

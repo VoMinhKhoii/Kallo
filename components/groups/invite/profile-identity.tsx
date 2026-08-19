@@ -1,7 +1,7 @@
 'use client';
 
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
-import type { PublicProfile } from '@/lib/groups/client';
+import type { PublicProfile } from '@/lib/actions/groups/types';
 
 type Identity = Pick<PublicProfile, 'displayName' | 'handle'> & {
   avatarUrl?: string | null;

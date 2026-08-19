@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useRouter } from '@/i18n/navigation';
-import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/domain/onboarding/constants';
 
 const NUDGE_DISMISS_KEY = 'onboarding_nudge_dismiss_count';
 
@@ -67,12 +67,12 @@ export function NudgeDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="overflow-hidden rounded-2xl border border-nham-border/60 bg-[#FFFCF8] p-6 shadow-lg sm:max-w-md">
+      <DialogContent className="overflow-hidden rounded-2xl border border-kallo-border/60 bg-[#FFFCF8] p-6 shadow-lg sm:max-w-md">
         <DialogHeader className="space-y-3 pb-2 text-left">
-          <DialogTitle className="font-normal font-serif text-nham-text text-xl">
+          <DialogTitle className="font-normal font-serif text-kallo-text text-xl">
             Hồ sơ chưa hoàn tất
           </DialogTitle>
-          <DialogDescription className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
+          <DialogDescription className="font-sans-display text-kallo-text-muted text-sm leading-relaxed">
             Bạn đã dùng Kallo được 1 tuần! Hoàn tất hồ sơ giúp Kallo thông minh
             hơn và cá nhân hóa chính xác lượng dinh dưỡng cho riêng bạn.
           </DialogDescription>
@@ -81,13 +81,13 @@ export function NudgeDialog({
           <Button
             variant="ghost"
             onClick={handleDismiss}
-            className="h-10 w-full rounded-xl px-4 font-medium font-sans-display text-nham-text-muted text-sm transition-colors hover:bg-nham-hover/50 hover:text-nham-text sm:w-auto"
+            className="h-10 w-full rounded-xl px-4 font-medium font-sans-display text-kallo-text-muted text-sm transition-colors hover:bg-kallo-hover/50 hover:text-kallo-text sm:w-auto"
           >
             Để sau
           </Button>
           <Button
             onClick={handleGoToOnboarding}
-            className="h-10 w-full rounded-xl bg-nham-ink px-6 font-medium font-sans-display text-[#FFFCF8] text-sm transition-colors hover:bg-nham-ink-hover sm:w-auto"
+            className="h-10 w-full rounded-xl bg-kallo-ink px-6 font-medium font-sans-display text-[#FFFCF8] text-sm transition-colors hover:bg-kallo-ink-hover sm:w-auto"
           >
             Hoàn tất ngay
           </Button>

@@ -6,7 +6,7 @@ import { VI_COMPARISONS } from './comparisons-vi';
  *
  * Every number here came out of the real pipeline. They were captured live on
  * 2026-08-07 against the fixed pipeline (ai-studio, `PIPELINE_MODEL_PROFILE=
- * stable`, neutral profile) by `scripts/eval/capture-landing-v2.ts`, and the
+ * stable`, neutral profile) by `scripts/eval/local/capture-landing-v2.ts`, and the
  * raw capture is the source of truth. Nothing is authored, rounded to look
  * better, or nudged to make a point — the section's whole argument is that the
  * estimate really does move, so inventing the movement would defeat it.

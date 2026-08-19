@@ -4,7 +4,7 @@
 
 ## Problem
 
-The Nhẩm app has a mature AI pipeline (10-12s latency) but lacks:
+The Kallo app has a mature AI pipeline (10-12s latency) but lacks:
 - **Streaming** — user sees 10s of silence before results appear
 - **Meal persistence** — analyzed meals exist only in-memory, lost on tab close
 - **Error resilience** — no structured errors, inconsistent Zod validation, no shared auth utility

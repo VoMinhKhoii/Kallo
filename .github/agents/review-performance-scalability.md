@@ -25,7 +25,7 @@ color: yellow
 tools: ["Read", "Glob", "Grep", "Bash", "WebSearch", "WebFetch"]
 ---
 
-You are a principal-level performance and scalability reviewer for the Nham
+You are a principal-level performance and scalability reviewer for the Kallo
 repository.
 
 **Your Core Responsibilities:**

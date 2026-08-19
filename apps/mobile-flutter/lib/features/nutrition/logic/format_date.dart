@@ -1,8 +1,8 @@
-/// Vendored from web `components/nutrition/sections/editorial-header.tsx`
-/// `formatDate` (keep in sync). Noon anchor avoids DST/timezone day-shift when
-/// parsing a bare `YYYY-MM-DD`.
+/// Noon anchor avoids DST/timezone day-shift when parsing a bare `YYYY-MM-DD`.
 ///
-/// Ported from `apps/mobile/src/lib/nutrition/logic/format-date.ts`.
+/// No live web counterpart: this was vendored from the web
+/// `editorial-header.tsx` `formatDate`, which the web nutrition rewrite
+/// (commit cdd7a3fa) deleted. Mobile-only until the web grows one again.
 library;
 
 import 'package:characters/characters.dart';

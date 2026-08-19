@@ -17,28 +17,27 @@ import {
 } from '@testing-library/react';
 import { useRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
-import {
-  MealInput,
-  type MealInputHandle,
-} from '@/components/logging/input/meal-input';
+import { MealInput } from '@/components/logging/input/composer/meal-input';
 import { RelogPickerPopup } from '@/components/logging/input/relog/relog-picker-popup';
 import { StagedList } from '@/components/logging/input/relog/staged-list';
 import { useRelogComposer } from '@/hooks/meals/relog/use-relog-composer';
+import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
 import type {
   RelogCandidatesResponse,
   RelogDishCandidate,
   RelogMealCandidate,
-} from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/relog';
+import type { InputMode } from '@/lib/domain/logging/types';
 
 // The global next-intl stub echoes keys, so "{kcal} kcal" would never render a
 // number. Use the REAL Vietnamese messages here — the totals are the point of
 // several assertions below, and this also catches a missing/renamed key.
+// Everything this harness renders reads from `logging`, so that one namespace
+// is the whole message object; any other key echoes, exactly as before.
 vi.mock('next-intl', async () => {
-  const messages = (await import('@/messages/vi.json')).default as Record<
-    string,
-    unknown
-  >;
+  const messages = {
+    logging: (await import('@/messages/vi/logging.json')).default,
+  } as Record<string, unknown>;
   const lookup = (path: string) =>
     path
       .split('.')
@@ -222,7 +221,7 @@ const stagedRow = (name: string) =>
   screen.queryByRole('button', { name: `Bỏ ${name}` });
 /** The blue runs the mirror paints behind the textarea. */
 const mentionText = () =>
-  Array.from(document.querySelectorAll('.text-nham-mention')).map(
+  Array.from(document.querySelectorAll('.text-kallo-mention')).map(
     (el) => el.textContent
   );
 
@@ -298,7 +297,7 @@ describe('relog `/` flow', () => {
     const { textarea } = renderHarness();
     // Plain typing keeps the textarea's own ink.
     type(textarea, 'phở bò');
-    expect(textarea.className).toContain('text-nham-text');
+    expect(textarea.className).toContain('text-kallo-text');
     expect(textarea.className).not.toContain('text-transparent');
 
     type(textarea, '/');

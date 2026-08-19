@@ -3,10 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/logic/relog/mentions.dart';
-import 'package:nham_mobile/features/logging/widgets/relog/mention_text_controller.dart';
-import 'package:nham_mobile/models/relog.dart';
-import 'package:nham_mobile/theme/nham_colors.dart';
+import 'package:kallo_mobile/features/logging/logic/relog/mentions.dart';
+import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
+import 'package:kallo_mobile/models/logging/relog.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 RelogDishCandidate _dish(String name, {int order = 0}) => RelogDishCandidate(
   sourceMealId: 'meal-1',
@@ -307,7 +307,7 @@ void main() {
             builder: (context) {
               span = c.buildTextSpan(
                 context: context,
-                style: const TextStyle(color: NhamColors.text),
+                style: const TextStyle(color: KalloColors.text),
                 withComposing: false,
               );
               return const SizedBox();
@@ -325,7 +325,7 @@ void main() {
         // Blue ink and NOTHING else — no band, no fill. The slash is inside the
         // tinted run, so the whole token reads as one reference.
         final tinted = children.where(
-          (s) => s.style?.color == NhamColors.mention,
+          (s) => s.style?.color == KalloColors.mention,
         );
         expect(tinted.map((s) => s.text), ['/Phở bò']);
         for (final segment in tinted) {
@@ -340,17 +340,17 @@ void main() {
         final plain = children.where((s) => s.text != '/Phở bò');
         expect(plain, isNotEmpty);
         for (final segment in plain) {
-          expect(segment.style?.color, isNot(NhamColors.mention));
+          expect(segment.style?.color, isNot(KalloColors.mention));
           expect(segment.style?.backgroundColor, isNull);
         }
       },
     );
 
     test('the mention blue clears AA on the composer\'s white field', () {
-      // The web's --nham-mention (#4A90D9) measures 3.34:1 on white — under AA
+      // The web's --kallo-mention (#4A90D9) measures 3.34:1 on white — under AA
       // for 14px body text. This one is picked to clear 4.5:1; if someone
       // syncs it back to the web value, this fails.
-      expect(_contrastOnWhite(NhamColors.mention), greaterThanOrEqualTo(4.5));
+      expect(_contrastOnWhite(KalloColors.mention), greaterThanOrEqualTo(4.5));
     });
 
     testWidgets('leaves plain prose to the default span', (tester) async {
@@ -362,7 +362,7 @@ void main() {
           builder: (context) {
             span = c.buildTextSpan(
               context: context,
-              style: const TextStyle(color: NhamColors.text),
+              style: const TextStyle(color: KalloColors.text),
               withComposing: false,
             );
             return const SizedBox();

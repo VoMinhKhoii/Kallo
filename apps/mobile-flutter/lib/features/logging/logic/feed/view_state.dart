@@ -1,4 +1,4 @@
-import '../../../../models/streaming.dart';
+import '../../../../models/logging/streaming.dart';
 import '../../data/logging_keys.dart';
 import '../../data/logging_models.dart';
 import '../../data/stream_analysis_controller.dart';

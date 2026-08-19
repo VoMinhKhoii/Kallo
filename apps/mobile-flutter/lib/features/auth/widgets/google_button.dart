@@ -2,8 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../../shared/widgets/brand/google_logo.dart';
 
 /// "Continue with Google" button.
@@ -41,7 +41,7 @@ class _GoogleButtonState extends State<GoogleButton> {
   @override
   Widget build(BuildContext context) {
     // hover:bg-[#FFFCF8] → on press lerp the fill white → cream tint, 200ms.
-    final fill = _pressed ? NhamColors.cardCream : NhamColors.elev;
+    final fill = _pressed ? KalloColors.cardCream : KalloColors.elev;
 
     return Opacity(
       opacity: widget.busy ? 0.6 : 1.0,
@@ -54,13 +54,13 @@ class _GoogleButtonState extends State<GoogleButton> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp4,
-            vertical: NhamSpacing.sp3,
+            horizontal: KalloSpacing.sp4,
+            vertical: KalloSpacing.sp3,
           ),
           decoration: BoxDecoration(
             color: fill,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            border: Border.all(color: NhamColors.border),
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+            border: Border.all(color: KalloColors.border),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -71,7 +71,7 @@ class _GoogleButtonState extends State<GoogleButton> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: NhamColors.text,
+                    color: KalloColors.text,
                   ),
                 )
               else
@@ -80,7 +80,7 @@ class _GoogleButtonState extends State<GoogleButton> {
               Text(
                 tr('auth.dialog.continueWithGoogle'),
                 style: dashBody(weight: FontWeight.w500)
-                    .copyWith(color: NhamColors.text, letterSpacing: -0.2),
+                    .copyWith(color: KalloColors.text, letterSpacing: -0.2),
               ),
             ],
           ),

@@ -12,12 +12,12 @@
  * the resulting `AbortSignal` in, exactly as the inline call did.
  */
 
-import type { GeminiClient } from '@/lib/ai/gemini';
-import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/grounded-estimation';
 import {
   type GroundedEstimation,
   groundedEstimationSchema,
-} from '../schemas-v2';
+} from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/build/grounded-estimation';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type {
   GroundedEstimator,
   GroundedEstimatorInput,

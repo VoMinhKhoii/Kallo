@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../data/billing/entitlement_state.dart';
+import '../../../services/billing/entitlement_state.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 class PaywallFeatureList extends StatelessWidget {
   const PaywallFeatureList({super.key});
@@ -16,9 +16,9 @@ class PaywallFeatureList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _FeatureRow(text: tr('paywall.feature1')),
-        const SizedBox(height: NhamSpacing.sp3),
+        const SizedBox(height: KalloSpacing.sp3),
         _FeatureRow(text: tr('paywall.feature2')),
-        const SizedBox(height: NhamSpacing.sp3),
+        const SizedBox(height: KalloSpacing.sp3),
         _FeatureRow(text: tr('paywall.feature3')),
       ],
     );
@@ -41,23 +41,23 @@ class PaywallTrialCountdown extends StatelessWidget {
             );
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: NhamSpacing.sp3,
-        vertical: NhamSpacing.sp2_5,
+        horizontal: KalloSpacing.sp3,
+        vertical: KalloSpacing.sp2_5,
       ),
       decoration: BoxDecoration(
-        color: NhamColors.accent10,
-        borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+        color: KalloColors.accent10,
+        borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(LucideIcons.clock300, size: 15, color: NhamColors.accentDark),
-          const SizedBox(width: NhamSpacing.sp2),
+          const Icon(LucideIcons.clock300, size: 15, color: KalloColors.accentDark),
+          const SizedBox(width: KalloSpacing.sp2),
           Flexible(
             child: Text(
               label,
               style: dashMeta(
-                color: NhamColors.text,
+                color: KalloColors.text,
               ).copyWith(fontWeight: FontWeight.w500),
             ),
           ),
@@ -82,10 +82,10 @@ class _FeatureRow extends StatelessWidget {
           child: Icon(
             LucideIcons.check300,
             size: 17,
-            color: NhamColors.accentDark,
+            color: KalloColors.accentDark,
           ),
         ),
-        const SizedBox(width: NhamSpacing.sp3),
+        const SizedBox(width: KalloSpacing.sp3),
         Expanded(child: Text(text, style: dashBody())),
       ],
     );

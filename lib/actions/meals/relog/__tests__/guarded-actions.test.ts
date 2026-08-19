@@ -17,11 +17,17 @@ const loadRelogDishCandidates = vi.fn();
 const loadRelogMealCandidates = vi.fn();
 const resolveRelogSources = vi.fn();
 
-vi.mock('@/lib/rate-limit/analysis-guards', () => ({ checkAnalysisGuards }));
-vi.mock('@/lib/auth', () => ({ requireAuthAndProfile }));
-vi.mock('@/lib/logging/relog/dish-query', () => ({ loadRelogDishCandidates }));
-vi.mock('@/lib/logging/relog/meal-query', () => ({ loadRelogMealCandidates }));
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
+  checkAnalysisGuards,
+}));
+vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
+vi.mock('@/lib/domain/logging/relog/dish-query', () => ({
+  loadRelogDishCandidates,
+}));
+vi.mock('@/lib/domain/logging/relog/meal-query', () => ({
+  loadRelogMealCandidates,
+}));
+vi.mock('@/lib/infra/db/client', () => ({
   db: { transaction: (fn: (tx: unknown) => unknown) => fn({}) },
 }));
 vi.mock('@/lib/actions/meals/relog/resolve-sources', () => ({
@@ -37,7 +43,9 @@ const { stageRelogAnalysisAction } = await import(
 const { relogMealItemsAction } = await import(
   '@/lib/actions/meals/relog/relog-items'
 );
-const { RELOG_WRITE_ROUTE } = await import('@/lib/rate-limit/relog-guard');
+const { RELOG_WRITE_ROUTE } = await import(
+  '@/lib/infra/rate-limit/relog-guard'
+);
 
 const release = vi.fn();
 

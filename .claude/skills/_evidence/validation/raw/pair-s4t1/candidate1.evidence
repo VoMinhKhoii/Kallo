@@ -4,7 +4,7 @@ fc68095 test(account): cover export date-filter helper
 a62d1c4 feat(account): add export date-filter helper
 861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
 87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
-8a80c07 docs(design): fold the mobile system into the nham-design skill
+8a80c07 docs(design): fold the mobile system into the kallo-design skill
 === BRANCHES ===
   chore/ttr-task-templates 861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
 * feat/export-date-filter  d893e5b feat(account): wire optional sinceDate filter into data export

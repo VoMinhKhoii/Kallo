@@ -1,11 +1,11 @@
 ---
-description: Multi-axis pre-PR code review of the current branch using the Nham repo's review subagents.
+description: Multi-axis pre-PR code review of the current branch using the Kallo repo's review subagents.
 argument-hint: "[--architecture] [--state | --correctness] [--data] [--simplify] [--react] [--performance] [--security [--security-heavy]] [--a11y]"
 ---
 
 # /review-before-pr
 
-You are coordinating a pre-PR code review of the work on the current branch. The Nham repo ships with eight focused review subagents under `.claude/agents/` (symlinked from `.github/agents/` so Copilot and Claude Code share the source of truth):
+You are coordinating a pre-PR code review of the work on the current branch. The Kallo repo ships with eight focused review subagents under `.claude/agents/` (symlinked from `.github/agents/` so Copilot and Claude Code share the source of truth):
 
 | Subagent | Focus | Flags |
 | --- | --- | --- |

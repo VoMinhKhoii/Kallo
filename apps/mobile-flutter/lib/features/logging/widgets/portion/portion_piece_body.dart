@@ -2,9 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../models/vessel.dart';
+import '../../../../models/nutrition/vessel.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../logic/portion/portion_anchors.dart';
 import '../../logic/portion/portion_display.dart';
 import '../../logic/portion/vessel_data.dart';
@@ -45,7 +45,7 @@ class PortionPieceBody extends StatelessWidget {
     return Column(
       children: [
         PortionReadout(grams: grams, kcal: kcal),
-        const SizedBox(height: NhamSpacing.sp3),
+        const SizedBox(height: KalloSpacing.sp3),
         PortionRulerControl(
           anchors: anchors,
           grams: grams,
@@ -79,7 +79,7 @@ class PortionPieceBody extends StatelessWidget {
           labelFor: (index) => '${pieceTiers[anchors[index].tier - 1].grams} g',
           onChanged: onChanged,
         ),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         // No fixed height. Both states are one line of the same style, so the
         // sheet can't jump between them anyway — and an 18pt box clipped the
         // descenders off "phần lớn" once Dynamic Type pushed the line to 19.5.

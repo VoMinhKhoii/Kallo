@@ -112,7 +112,7 @@ gcloud storage buckets add-iam-policy-binding "gs://$GCS_PREVIEW_SEED_BUCKET" \
 Refresh the generated seed artifact with:
 
 ```bash
-bun scripts/generate-seed-food-sql.ts \
+bun scripts/db/generate-seed-food-sql.ts \
   --input "Vietnamese Food Composition.csv" \
   --output "./seed_food.sql"
 
@@ -213,7 +213,7 @@ export GITHUB_REPOSITORY="VoMinhKhoii/Nham"
 gcloud artifacts repositories create "$GCP_ARTIFACT_REPO" \
   --repository-format=docker \
   --location="$GCP_REGION" \
-  --description="Nham Cloud Run images"
+  --description="Kallo Cloud Run images"
 ```
 
 ## 2. Create service accounts
@@ -240,7 +240,7 @@ export GCP_RUNTIME_SERVICE_ACCOUNT="$GCP_RUNTIME_SA_ID@$GCP_PROJECT_ID.iam.gserv
 The deployer must be able to push images, create/update/delete Cloud Run
 services, attach the runtime service account, access Secret Manager for
 pre-deploy validation and database reset operations, and call Vertex AI — the
-"Backfill food embeddings" deploy step runs `scripts/backfill_embeddings.ts`
+"Backfill food embeddings" deploy step runs `scripts/db/backfill_embeddings.ts`
 with `AI_PROVIDER=vertex` under the deployer's own ADC.
 
 ```bash
@@ -478,7 +478,7 @@ The production service calls Gemini through **Vertex AI** via Application
 Default Credentials. Local dev and the helper scripts in
 `scripts/` continue to use the Google AI Studio API key from `GEMINI_API_KEY`.
 
-The selection is controlled by `AI_PROVIDER` in `lib/ai/gemini.ts:resolveGeminiProvider`:
+The selection is controlled by `AI_PROVIDER` in `lib/ai/provider/client.ts:resolveGeminiProvider`:
 
 | `AI_PROVIDER` | Auth | Required env |
 | --- | --- | --- |

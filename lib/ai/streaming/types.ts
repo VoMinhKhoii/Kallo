@@ -1,5 +1,5 @@
-import type { CheatSliderSpec } from '@/lib/types/cheat';
-import type { MealItem, ParsedMeal } from '@/lib/types/meal';
+import type { CheatSliderSpec } from '@/lib/core/types/cheat';
+import type { MealItem, ParsedMeal } from '@/lib/core/types/meal';
 
 // ---------------------------------------------------------------------------
 // SSE Event Types — contract between route handler and client consumer

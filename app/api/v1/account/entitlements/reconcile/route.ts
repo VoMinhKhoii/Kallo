@@ -1,15 +1,15 @@
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { Errors } from '@/lib/core/errors/catalog';
 import {
   fetchRevenueCatSnapshot,
+  getBillingConfig,
   getBillingEnvironmentForUser,
+  getEntitlementState,
   isBillingSandboxUser,
-} from '@/lib/billing/revenuecat';
-import { getBillingConfig } from '@/lib/entitlements/config';
-import { reconcileRevenueCatGrants } from '@/lib/entitlements/grants';
-import { getEntitlementState } from '@/lib/entitlements/service';
-import { Errors } from '@/lib/errors';
-import { checkAnalysisGuards } from '@/lib/rate-limit/analysis-guards';
+  reconcileRevenueCatGrants,
+} from '@/lib/domain/billing/billing';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { checkAnalysisGuards } from '@/lib/infra/rate-limit/analysis-guards';
 
 export const runtime = 'nodejs';
 

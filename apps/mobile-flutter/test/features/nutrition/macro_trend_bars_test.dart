@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/nutrition/logic/macro_trend_bars.dart';
-import 'package:nham_mobile/models/nutrition.dart';
+import 'package:kallo_mobile/features/nutrition/logic/macro_trend_bars.dart';
+import 'package:kallo_mobile/models/nutrition/nutrition.dart';
 
 DaySeriesBucket _bucket(
   String date,

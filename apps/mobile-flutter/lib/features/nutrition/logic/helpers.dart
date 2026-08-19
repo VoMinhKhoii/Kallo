@@ -1,12 +1,10 @@
 /// Pure nutrition helpers vendored verbatim from web
 /// `components/nutrition/primitives/helpers.ts` (keep in sync).
-///
-/// Ported from `apps/mobile/src/lib/nutrition/logic/helpers.ts`.
 library;
 
 import 'package:intl/intl.dart';
 
-import '../../../models/nutrition.dart';
+import '../../../models/nutrition/nutrition.dart';
 
 /// Whether a card's coverage is too thin to state a verdict — it mutes the
 /// figure and withholds the green "on target" tier.

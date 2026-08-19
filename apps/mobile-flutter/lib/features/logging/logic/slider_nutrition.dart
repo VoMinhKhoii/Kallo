@@ -8,7 +8,7 @@
 /// deliberately not ported.)
 library;
 
-import '../../../models/cheat.dart';
+import '../../../models/logging/cheat.dart';
 
 /// The six canonical, evenly-spaced stops every slider's anchors resolve to.
 /// Levels 0 and 10 are the endpoints; the odd levels between are the

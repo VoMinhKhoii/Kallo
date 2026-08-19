@@ -1,7 +1,7 @@
 === LOG ===
 861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
 87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
-8a80c07 docs(design): fold the mobile system into the nham-design skill
+8a80c07 docs(design): fold the mobile system into the kallo-design skill
 === STATUS ===
  M components/logging/input/barcode-product-step.tsx
  M components/logging/input/barcode-scanner-dialog.tsx
@@ -198,8 +198,8 @@ index e1ae6e5..b50968e 100644
 @@ -10,7 +10,14 @@ import type {
    PipelineResult,
  } from '@/lib/ai/types';
- import { requireAuthAndProfile } from '@/lib/auth';
--import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
+ import { requireAuthAndProfile } from '@/lib/infra/auth';
+-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
 +import {
 +  BEVERAGE_TYPE_EN,
 +  BEVERAGE_TYPE_VN,
@@ -207,7 +207,7 @@ index e1ae6e5..b50968e 100644
 +  PACKAGED_TYPE_EN,
 +  PACKAGED_TYPE_VN,
 +  unitFromTypeEn,
-+} from '@/lib/barcode/constants';
++} from '@/lib/domain/barcode/constants';
  import {
    fetchProductFromOpenFoodFacts,
    type ParsedBarcodeProduct,
@@ -343,8 +343,8 @@ index cf1973e..24a8dd2 100644
 +++ b/lib/barcode/openfoodfacts.ts
 @@ -1,5 +1,5 @@
  import { z } from 'zod';
--import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
-+import { MAX_FOOD_ITEM_GRAMS, type ProductUnit } from '@/lib/barcode/constants';
+-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
++import { MAX_FOOD_ITEM_GRAMS, type ProductUnit } from '@/lib/domain/barcode/constants';
  import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
  
  // Open Food Facts can be slow/unresponsive; bound the wait so the server

@@ -1,5 +1,5 @@
 /*
- * Nhẩm service worker — tier-1 offline posture.
+ * Kallo service worker — tier-1 offline posture.
  *
  * SAFETY: registration is gated behind NEXT_PUBLIC_ENABLE_SW (default OFF) in
  * the app; this file only runs when a build explicitly opts in. Even so it is
@@ -12,7 +12,7 @@
  *   - A version bump in CACHE_NAME drops every old cache on activate.
  */
 
-const CACHE_NAME = 'nham-shell-v1';
+const CACHE_NAME = 'kallo-shell-v1';
 const OFFLINE_URL = '/offline.html';
 
 // Minimal, build-stable precache: the offline page and the brand icons. We do

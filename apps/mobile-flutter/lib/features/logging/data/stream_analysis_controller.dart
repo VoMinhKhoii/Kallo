@@ -1,5 +1,5 @@
-/// Riverpod port of the RN `useStreamAnalysis` hook
-/// (`apps/mobile/src/lib/logging/hooks/use-stream-analysis.ts`).
+/// Riverpod port of the web `useStreamAnalysis` hook
+/// (`hooks/meals/analysis/use-stream-analysis.ts`).
 ///
 /// Consumes the SSE stream from `ApiClient.analyzeMeal` (named-event frames
 /// already parsed into [StreamEvent]s) and reduces it into a [StreamAnalysisState]
@@ -17,10 +17,10 @@ import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/cheat.dart';
-import '../../../models/meal.dart';
-import '../../../models/streaming.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/logging/cheat.dart';
+import '../../../models/logging/meal.dart';
+import '../../../models/logging/streaming.dart';
 
 /// Immutable streaming state — the RN `StreamAnalysisState`.
 class StreamAnalysisState {

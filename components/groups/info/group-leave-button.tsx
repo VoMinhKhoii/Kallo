@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useLeaveChatGroup } from '@/hooks/social/use-chat-groups';
+import { useLeaveChatGroup } from '@/hooks/social/circle/use-chat-groups';
 import { useRouter } from '@/i18n/navigation';
 
 /** The quiet leave action at the bottom of the group-info panel; confirmation
@@ -29,7 +29,7 @@ export function GroupLeaveButton({ groupId }: { groupId: string }) {
       <AlertDialogTrigger asChild>
         <button
           type="button"
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[#6E6D66] transition-colors duration-200 hover:bg-nham-hover hover:text-[#141413]"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[#6E6D66] transition-colors duration-200 hover:bg-kallo-hover hover:text-[#141413]"
         >
           <LogOut className="h-4 w-4" aria-hidden="true" />
           <span className="font-medium font-sans-display text-[13px] tracking-tight">
@@ -51,7 +51,7 @@ export function GroupLeaveButton({ groupId }: { groupId: string }) {
           <AlertDialogAction
             variant="ghost"
             disabled={leave.isPending}
-            className="text-nham-danger hover:bg-transparent hover:text-nham-danger"
+            className="text-kallo-danger hover:bg-transparent hover:text-kallo-danger"
             onClick={(event) => {
               event.preventDefault();
               leave.mutate(groupId, {

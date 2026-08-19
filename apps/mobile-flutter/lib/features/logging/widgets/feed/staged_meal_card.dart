@@ -1,11 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../../../models/cheat.dart';
-import '../../../../models/meal.dart';
+import '../../../../models/logging/cheat.dart';
+import '../../../../models/logging/meal.dart';
 import '../../data/logging_models.dart';
-import '../cheat_slider_card.dart';
-import '../meal_entry.dart';
+import '../cheat/cheat_slider_card.dart';
+import '../entry/meal_entry.dart';
 import '../turn/turn_header.dart';
 
 /// One analysis the SERVER has staged but the user hasn't confirmed yet.

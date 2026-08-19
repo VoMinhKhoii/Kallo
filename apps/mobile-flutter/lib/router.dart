@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'data/session_provider.dart';
+import 'services/auth/session_provider.dart';
 import 'features/auth/screens/sign_in_screen.dart';
 import 'features/auth/screens/sign_up_screen.dart';
 import 'features/circle/data/circle_providers.dart';
@@ -19,11 +19,11 @@ import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/onboarding/screens/welcome_setup_screen.dart';
 import 'features/paywall/screens/paywall_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
-import 'services/supabase_service.dart';
+import 'services/auth/supabase_service.dart';
 import 'shell/placeholder_screen.dart';
 import 'shell/tab_scaffold.dart';
-import 'theme/nham_colors.dart';
-import 'theme/nham_typography.dart';
+import 'theme/kallo_colors.dart';
+import 'theme/kallo_typography.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -40,8 +40,8 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 ///     header avatar with Cupertino swipe-back).
 ///   • `/` redirects based on auth + onboarding state.
 ///
-/// The redirect mirrors the RN gates (`app/index.tsx` +
-/// `app/(app)/_layout.tsx`): signed-out → `/sign-in`; signed-in but onboarding
+/// The redirect is the mobile counterpart of the web auth gate in
+/// `middleware.ts`: signed-out → `/sign-in`; signed-in but onboarding
 /// incomplete → `/onboarding`; otherwise → `/dashboard`. It re-evaluates on
 /// every auth state change via [refreshListenable] (an auth-stream bridge),
 /// matching RN's `onAuthStateChange` re-render.
@@ -338,12 +338,12 @@ class _SplashScreenState extends State<_SplashScreen>
   Widget build(BuildContext context) {
     final wordmark = Text(
       'Kallo',
-      style: NhamTextStyles.serifRegular(
+      style: KalloTextStyles.serifRegular(
         fontSize: 32,
-      ).copyWith(color: NhamColors.text),
+      ).copyWith(color: KalloColors.text),
     );
     return ColoredBox(
-      color: NhamColors.surface,
+      color: KalloColors.surface,
       child: Center(
         child: FadeTransition(
           opacity: Tween<double>(begin: 0.5, end: 1.0).animate(

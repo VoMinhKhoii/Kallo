@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../models/vessel.dart';
+import '../../../../models/nutrition/vessel.dart';
 import '../../logic/portion/portion_anchors.dart';
 import '../../logic/portion/vessel_data.dart';
 

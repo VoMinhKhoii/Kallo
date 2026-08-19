@@ -2,8 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// "Continue with Apple" — a custom button matching the Google / email buttons.
 ///
@@ -48,12 +48,12 @@ class _AppleButtonState extends State<AppleButton> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp4,
-            vertical: NhamSpacing.sp3,
+            horizontal: KalloSpacing.sp4,
+            vertical: KalloSpacing.sp3,
           ),
           decoration: BoxDecoration(
             color: _pressed ? _blackPressed : _black,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -72,7 +72,7 @@ class _AppleButtonState extends State<AppleButton> {
               Text(
                 tr('auth.dialog.continueWithApple'),
                 style: dashBody(weight: FontWeight.w500)
-                    .copyWith(color: NhamColors.elev, letterSpacing: -0.2),
+                    .copyWith(color: KalloColors.elev, letterSpacing: -0.2),
               ),
             ],
           ),

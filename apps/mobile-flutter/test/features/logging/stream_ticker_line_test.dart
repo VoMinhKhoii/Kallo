@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/logic/feed/stream_ticker.dart';
-import 'package:nham_mobile/features/logging/widgets/streaming/stream_ticker_line.dart';
-import 'package:nham_mobile/models/streaming.dart';
-import 'package:nham_mobile/theme/nham_colors.dart';
+import 'package:kallo_mobile/features/logging/logic/feed/stream_ticker.dart';
+import 'package:kallo_mobile/features/logging/widgets/streaming/stream_ticker_line.dart';
+import 'package:kallo_mobile/models/logging/streaming.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 import '../../l10n_test_loader.dart';
 
@@ -242,7 +242,7 @@ void main() {
     );
     await tester.pump();
     final span = tester.widget<Text>(find.byType(Text)).textSpan! as TextSpan;
-    expect(span.style?.color, NhamColors.btn);
+    expect(span.style?.color, KalloColors.btn);
   });
 
   group('Vietnamese', () {

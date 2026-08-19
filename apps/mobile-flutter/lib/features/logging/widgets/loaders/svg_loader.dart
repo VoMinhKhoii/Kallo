@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../../../theme/nham_colors.dart';
+import '../../../../theme/kallo_colors.dart';
 
 /// Inline loaders ported from the SVG-Loaders collection
 /// (https://github.com/SamHerbert/SVG-Loaders, MIT) — the same source the web
@@ -74,7 +74,7 @@ class SvgLoaderView extends StatefulWidget {
     super.key,
     required this.spec,
     this.size = 20,
-    this.color = NhamColors.textMuted,
+    this.color = KalloColors.textMuted,
   });
 
   final SvgLoaderSpec spec;

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// RN port of `components/onboarding/wizard/language-toggle.tsx`.
 ///
@@ -32,7 +32,7 @@ class LanguageToggle extends StatelessWidget {
     return Row(
       children: [
         for (var i = 0; i < _languages.length; i++) ...[
-          if (i > 0) const SizedBox(width: NhamSpacing.sp3),
+          if (i > 0) const SizedBox(width: KalloSpacing.sp3),
           Expanded(
             child: _LangButton(
               label: _languages[i].label,
@@ -69,8 +69,8 @@ class _LangButtonState extends State<_LangButton> {
     // Unselected: hover:border-[#C9A87C]/50 (border lightens toward accent).
     final borderColor =
         widget.selected
-            ? NhamColors.text.withValues(alpha: 0.3)
-            : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
+            ? KalloColors.text.withValues(alpha: 0.3)
+            : (_pressed ? KalloColors.accent50 : KalloColors.inputBorder);
     return Semantics(
       button: true,
       selected: widget.selected,
@@ -87,12 +87,12 @@ class _LangButtonState extends State<_LangButton> {
           duration: const Duration(milliseconds: 150),
           curve: const Cubic(0.25, 0.1, 0.25, 1),
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp4,
-            vertical: NhamSpacing.sp3,
+            horizontal: KalloSpacing.sp4,
+            vertical: KalloSpacing.sp3,
           ),
           decoration: BoxDecoration(
-            color: widget.selected ? NhamColors.hover : NhamColors.cream,
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+            color: widget.selected ? KalloColors.hover : KalloColors.cream,
+            borderRadius: BorderRadius.circular(KalloRadii.containerLg),
             border: Border.all(color: borderColor),
           ),
           child: Row(
@@ -106,11 +106,11 @@ class _LangButtonState extends State<_LangButton> {
                 ),
               ),
               if (widget.selected) ...[
-                const SizedBox(width: NhamSpacing.sp3),
+                const SizedBox(width: KalloSpacing.sp3),
                 const Icon(
                   LucideIcons.check300,
                   size: 16,
-                  color: NhamColors.text,
+                  color: KalloColors.text,
                 ),
               ],
             ],

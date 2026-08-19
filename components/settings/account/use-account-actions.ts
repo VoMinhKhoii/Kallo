@@ -2,8 +2,11 @@
 
 import { useTranslations } from 'next-intl';
 import { useAsyncAction } from '@/hooks/ui/use-async-action';
-import { deleteAccountAction, exportMyDataAction } from '@/lib/actions/account';
-import { createClient } from '@/lib/supabase/client';
+import {
+  deleteAccountAction,
+  exportMyDataAction,
+} from '@/lib/actions/identity/account';
+import { createClient } from '@/lib/infra/supabase/client';
 
 /**
  * The three account-level side effects — export, sign out, delete — as

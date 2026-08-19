@@ -1,11 +1,13 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import type * as schema from '@/lib/db/schema';
 import {
+  type InediblePctRow,
   NUTRITION_CACHE_SELECT_COLUMNS,
+  type NutritionCacheRow,
   parseNutritionRow,
-} from '../matching/nutrition-db';
-import type { NutritionPer100g } from '../types';
+} from '@/lib/ai/cache/nutrition-rows';
+import type { NutritionPer100g } from '@/lib/ai/types/matching';
+import type * as schema from '@/lib/infra/db/schema';
 
 /**
  * Module-level singleton nutrition cache.
@@ -137,11 +139,11 @@ export async function fetchNutritionForIds(
     ids.map((id) => sql`${id}`),
     sql`, `
   );
-  const rows = await db.execute(
+  const rows = await db.execute<NutritionCacheRow>(
     sql`SELECT ${sql.raw(NUTRITION_CACHE_SELECT_COLUMNS.join(', '))} FROM vietnamese_food_composition WHERE id IN (${idList})`
   );
-  for (const row of rows as unknown as Record<string, unknown>[]) {
-    const id = row.id as string;
+  for (const row of rows) {
+    const id = row.id;
     const nutrition = parseNutritionRow(row);
     map.set(id, nutrition);
     cache.set(id, nutrition);
@@ -175,11 +177,11 @@ export async function fetchInediblePctForIds(
     ids.map((id) => sql`${id}`),
     sql`, `
   );
-  const rows = await db.execute(
+  const rows = await db.execute<InediblePctRow>(
     sql`SELECT id, inedible_portion_pct FROM vietnamese_food_composition WHERE id IN (${idList})`
   );
-  for (const row of rows as unknown as Record<string, unknown>[]) {
-    const id = row.id as string;
+  for (const row of rows) {
+    const id = row.id;
     const inedible = row.inedible_portion_pct;
     if (inedible == null) continue;
     const parsed = Number(inedible);
@@ -206,13 +208,12 @@ async function ensureInitialized(
 }
 
 async function loadAll(db: PostgresJsDatabase<typeof schema>): Promise<void> {
-  const rows = await db.execute(
+  const rows = await db.execute<NutritionCacheRow>(
     sql`SELECT ${sql.raw(NUTRITION_CACHE_SELECT_COLUMNS.join(', '))} FROM vietnamese_food_composition WHERE source_id = 1`
   );
-  const allRows = rows as unknown as Record<string, unknown>[];
 
-  for (const row of allRows) {
-    const id = row.id as string;
+  for (const row of rows) {
+    const id = row.id;
     cache.set(id, parseNutritionRow(row));
     const foodGroupEn = row.type_en;
     if (typeof foodGroupEn === 'string' && foodGroupEn.length > 0) {

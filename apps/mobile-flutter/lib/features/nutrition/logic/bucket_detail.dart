@@ -4,7 +4,7 @@ library;
 
 import 'package:intl/intl.dart';
 
-import '../../../models/nutrition.dart';
+import '../../../models/nutrition/nutrition.dart';
 
 /// Charted macros, in the order the detail panel lists them.
 const List<String> kDetailMacros = [

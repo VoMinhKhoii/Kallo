@@ -1,0 +1,51 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <style>
+    .rail { background: #fff; border: 1px solid var(--border-soft); border-radius: var(--radius-xl); padding: 14px; width: 260px; box-shadow: var(--shadow-xs); }
+    .eyebrow { font-family: var(--font-ui); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); padding: 0 8px; margin-bottom: 8px; }
+    .nav { display: flex; flex-direction: column; gap: 4px; }
+    .item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: var(--radius-lg); font-family: var(--font-ui); font-size: 13px; font-weight: 500; color: var(--fg-muted); cursor: pointer; transition: all .2s; }
+    .item .ic { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; opacity: 0.8;}
+    .item.hover { background: color-mix(in srgb, var(--kallo-hover) 60%, transparent); color: var(--fg); }
+    .item.active { background: var(--kallo-btn); color: #fff; box-shadow: 0 1px 2px rgba(105,94,78,.2); }
+    .lbl { font-family: var(--font-mono); font-size: 10px; color: var(--fg-stone); margin-top: 6px; }
+    .pair { display:flex; gap: 24px; align-items: flex-start; }
+  </style>
+  <div class="pair">
+    <div>
+      <div class="rail">
+        <div class="eyebrow">Main</div>
+        <div class="nav">
+          <div class="item">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+            Dashboard
+          </div>
+          <div class="item hover">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Nutrition
+          </div>
+          <div class="item active">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2v20M11 2v6.5a2.5 2.5 0 0 1-5 0V2M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
+            Logging
+          </div>
+        </div>
+      </div>
+      <div class="lbl">Expanded · 260px</div>
+    </div>
+    <div>
+      <div style="background: #fff; border: 1px solid var(--border-soft); border-radius: var(--radius-xl); padding: 14px 12px; width: 68px; display: flex; flex-direction: column; gap: 6px; align-items: center; box-shadow: var(--shadow-xs);">
+        <div class="item" style="padding: 8px; justify-content: center;">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        </div>
+        <div class="item active" style="padding: 8px; justify-content: center;">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2v20M11 2v6.5a2.5 2.5 0 0 1-5 0V2M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
+        </div>
+        <div class="item" style="padding: 8px; justify-content: center;">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </div>
+      </div>
+      <div class="lbl">Collapsed · 68px</div>
+    </div>
+  </div>
+</div></body></html>

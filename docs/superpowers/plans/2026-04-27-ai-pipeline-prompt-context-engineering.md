@@ -19,7 +19,7 @@
 
 ## Coordination with `feat/admin-pipeline-dashboard` worktree (DESCOPE)
 
-A parallel worktree (`/Users/khoivo/Documents/nham-admin-dashboard`, branch `feat/admin-pipeline-dashboard`) is shipping the prompt-version registry, per-LLM-call audit log, per-stage I/O log, and replay UI. Its schema additions (already implemented and ahead of this branch in commit count) are:
+A parallel worktree (`/Users/khoivo/Documents/kallo-admin-dashboard`, branch `feat/admin-pipeline-dashboard`) is shipping the prompt-version registry, per-LLM-call audit log, per-stage I/O log, and replay UI. Its schema additions (already implemented and ahead of this branch in commit count) are:
 
 - **`prompt_versions`** — auto-registered on first use, keyed by `(name, code_hash)`, with `template_sample`, `model`, `git_sha`, `first_seen_at`. Hash auto-rolls on any source change → strictly richer than hand-bumped SemVer.
 - **`pipeline_llm_calls`** — per-attempt: `prompt_rendered`, `response_raw`, `tokens_*`, `latency_ms`, `attempt`, FK to `prompt_versions`. This IS the per-call audit trail.
@@ -165,7 +165,7 @@ Create `lib/ai/pipeline/__tests__/run-telemetry-schema.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
-import { pipelineRuns } from '@/lib/db/schema';
+import { pipelineRuns } from '@/lib/infra/db/schema';
 
 describe('pipelineRuns Drizzle schema', () => {
   it('exports a Drizzle table with the spec §0.4 columns', () => {
@@ -1746,10 +1746,10 @@ export function buildPipelineRunRow(input: BuildPipelineRunRowInput) {
 }
 
 export async function writePipelineRun(
-  db: import('@/lib/db').AppDb,
+  db: import('@/lib/infra/db/client').AppDb,
   row: ReturnType<typeof buildPipelineRunRow>
 ): Promise<void> {
-  const { pipelineRuns } = await import('@/lib/db/schema');
+  const { pipelineRuns } = await import('@/lib/infra/db/schema');
   await db.insert(pipelineRuns).values(row);
 }
 ```
@@ -3292,7 +3292,7 @@ COMMIT;
 
 ```ts
 import { describe, expect, it } from 'vitest';
-import { pipelineShadowRuns } from '@/lib/db/schema';
+import { pipelineShadowRuns } from '@/lib/infra/db/schema';
 
 describe('pipelineShadowRuns Drizzle schema', () => {
   it('has the expected columns', () => {

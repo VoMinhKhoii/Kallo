@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible problem in Nham
+about: Report a reproducible problem in Kallo
 title: "[bug] "
 labels: ["bug"]
 ---

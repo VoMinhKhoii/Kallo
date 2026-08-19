@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../../../theme/calm_tokens.dart';
-import '../../../../../../theme/nham_colors.dart';
-import '../../../../../../theme/nham_theme.dart';
-import '../../../../logic/label_review.dart';
+import '../../../../../../theme/kallo_colors.dart';
+import '../../../../../../theme/kallo_theme.dart';
+import '../../../../logic/label/review.dart';
 import 'label_field.dart';
 import 'label_field_label.dart';
 
@@ -70,9 +70,9 @@ class LabelReviewQuantity extends StatelessWidget {
           label: LabelFieldLabel(text: 'logging.labelScan.amountLabel'.tr()),
         ),
         if (chips.isNotEmpty) ...[
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Wrap(
-            spacing: NhamSpacing.sp2,
+            spacing: KalloSpacing.sp2,
             children: [
               for (final (label, amount) in chips)
                 _AmountChip(
@@ -109,7 +109,7 @@ class _AmountChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: NhamColors.hover,
+            color: KalloColors.hover,
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(label, style: dashMeta(color: kInk)),

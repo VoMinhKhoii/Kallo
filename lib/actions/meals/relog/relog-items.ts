@@ -1,32 +1,32 @@
 'use server';
 
 import { randomUUID } from 'node:crypto';
-import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
-import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import {
   buildMealItemGroupsFromRows,
   buildPersistedMeal,
   extractNutritionValues,
   inferMealSlot,
   nutritionValuesToRow,
-} from '@/lib/actions/persisted-meal';
-import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
+} from '@/lib/actions/logging/persisted-meal';
+import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
+import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
+import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import {
   type RelogItemsInput,
   relogItemsSchema,
 } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
-import { db } from '@/lib/db';
-import { mealItems, meals } from '@/lib/db/schema';
+import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import {
   buildRelogRawInput,
   weakestConfidence,
-} from '@/lib/logging/relog/relog';
+} from '@/lib/domain/logging/relog/relog';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db/client';
+import { mealItems, meals } from '@/lib/infra/db/schema';
 import {
   RELOG_WRITE_ROUTE,
   withRelogGuard,
-} from '@/lib/rate-limit/relog-guard';
+} from '@/lib/infra/rate-limit/relog-guard';
 import { insertDefaultCircleShare } from '../insert-default-share';
 
 // `relogItemsSchema` lives in the meals contract so the route can reuse it;

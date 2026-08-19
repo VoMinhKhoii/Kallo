@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { GoogleGenAI } from '@google/genai';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { retrieveHybridTopK } from '@/lib/ai/matching/top-k-retrieval';
-import { type AppDb, encodeDbUrl } from '@/lib/db';
+import { retrieveHybridTopK } from '@/lib/ai/matching/retrieve/top-k-retrieval';
+import { type AppDb, encodeDbUrl } from '@/lib/infra/db/client';
 import { foldText } from '../nin-text';
 
 const STABLE_QUERIES = ['ức gà', 'thịt heo', 'nước mắm', 'cơm', 'tôm', 'xôi'];

@@ -1,7 +1,7 @@
 'use client';
 
-import type { CircleMember } from '@/lib/groups/client';
-import { cn } from '@/lib/utils';
+import type { CircleMember } from '@/lib/actions/groups/types';
+import { cn } from '@/lib/core/ui/cn';
 import { labelFor, ProfileIdentity } from './profile-identity';
 
 /**

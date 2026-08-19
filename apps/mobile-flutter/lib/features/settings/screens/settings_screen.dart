@@ -6,28 +6,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../data/session_provider.dart';
-import '../../../shared/widgets/nham_primitives.dart';
-import '../../../shared/widgets/scroll_separator.dart';
+import '../../../services/auth/session_provider.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_theme.dart';
-import '../data/countries.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../shared/data/countries.dart';
 import '../data/profile_providers.dart';
 import '../logic/settings_spacing.dart';
-import '../panels/cooking.dart';
-import '../widgets/instant_commit_editor.dart';
-import '../../feedback/feedback_screen.dart';
-import '../widgets/auto_share_to_circle_toggle.dart';
-import '../widgets/profile_form.dart';
-import '../widgets/profile_status_views.dart';
-import '../widgets/region_editor.dart';
-import '../widgets/settings_group.dart';
-import '../widgets/settings_header.dart';
-import '../widgets/settings_navigator.dart';
-import '../widgets/settings_row.dart';
-import '../widgets/settings_skeleton.dart';
-import '../widgets/sign_out_row.dart';
-import '../widgets/subscription_section.dart';
+import 'cooking.dart';
+import '../widgets/profile/instant_commit_editor.dart';
+import '../../feedback/screens/feedback_screen.dart';
+import '../widgets/account/auto_share_to_circle_toggle.dart';
+import '../widgets/profile/profile_form.dart';
+import '../widgets/profile/profile_status_views.dart';
+import '../widgets/profile/region_editor.dart';
+import '../widgets/list/settings_group.dart';
+import '../widgets/chrome/settings_header.dart';
+import '../widgets/chrome/settings_navigator.dart';
+import '../widgets/list/settings_row.dart';
+import '../widgets/profile/settings_skeleton.dart';
+import '../widgets/account/sign_out_row.dart';
+import '../widgets/account/subscription_section.dart';
 import '../../circle/data/circle_providers.dart';
 import 'about_section.dart';
 import 'account_section.dart';
@@ -296,7 +296,7 @@ class _Centered extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: Padding(
-      padding: const EdgeInsets.all(NhamSpacing.sp6),
+      padding: const EdgeInsets.all(KalloSpacing.sp6),
       child: child,
     ),
   );

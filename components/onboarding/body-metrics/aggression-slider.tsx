@@ -3,8 +3,8 @@
 import { useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
-import { AGGRESSION_KCAL_PER_KG } from '@/lib/onboarding/constants';
-import type { Goal } from '@/lib/onboarding/types';
+import { AGGRESSION_KCAL_PER_KG } from '@/lib/domain/onboarding/constants';
+import type { Goal } from '@/lib/domain/onboarding/types';
 import type { Screen1FormData } from './constants';
 
 /** kg/week pace slider with the kcal/day translation footer. */
@@ -29,10 +29,10 @@ export function AggressionSlider({
             <FormControl>
               <div className="rounded-2xl border border-[#EAE7E0] bg-white p-4">
                 <div className="mb-3 flex items-end justify-between">
-                  <label className="block font-bold text-[13px] text-nham-text">
+                  <label className="block font-bold text-[13px] text-kallo-text">
                     {t('bodyMetrics.aggression')}
                   </label>
-                  <div className="font-medium text-[14px] text-nham-text">
+                  <div className="font-medium text-[14px] text-kallo-text">
                     {aggressionKg.toFixed(1)}{' '}
                     <span className="text-[#8B8682]">kg/week</span>
                   </div>
@@ -49,12 +49,12 @@ export function AggressionSlider({
                       field.onChange(v);
                       reportChange();
                     }}
-                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-[#EAE7E0] accent-nham-ink"
+                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-[#EAE7E0] accent-kallo-ink"
                   />
                   <div className="mt-2.5 flex justify-between text-[#8B8682] text-[11px]">
                     <span
                       className={
-                        aggressionKg <= 0.3 ? 'font-bold text-nham-text' : ''
+                        aggressionKg <= 0.3 ? 'font-bold text-kallo-text' : ''
                       }
                     >
                       {t('bodyMetrics.aggressionLow')}
@@ -62,7 +62,7 @@ export function AggressionSlider({
                     <span
                       className={
                         aggressionKg > 0.3 && aggressionKg <= 0.6
-                          ? 'font-bold text-nham-text'
+                          ? 'font-bold text-kallo-text'
                           : ''
                       }
                     >
@@ -70,16 +70,16 @@ export function AggressionSlider({
                     </span>
                     <span
                       className={
-                        aggressionKg > 0.6 ? 'font-bold text-nham-text' : ''
+                        aggressionKg > 0.6 ? 'font-bold text-kallo-text' : ''
                       }
                     >
                       {t('bodyMetrics.aggressionHigh')}
                     </span>
                   </div>
                 </div>
-                <div className="mt-3 rounded-lg bg-nham-track px-3 py-2 text-center text-[12px] text-nham-stone">
+                <div className="mt-3 rounded-lg bg-kallo-track px-3 py-2 text-center text-[12px] text-kallo-stone">
                   Translates to a{' '}
-                  <span className="font-medium text-nham-text">
+                  <span className="font-medium text-kallo-text">
                     ~{Math.round(aggressionKg * AGGRESSION_KCAL_PER_KG)}{' '}
                     kcal/day
                   </span>{' '}

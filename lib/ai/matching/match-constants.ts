@@ -1,4 +1,8 @@
-import type { MatchConfidence, MatchSource, MatchType } from '../types';
+import type {
+  MatchConfidence,
+  MatchSource,
+  MatchType,
+} from '@/lib/ai/types/matching';
 
 export const CONFIDENCE_THRESHOLDS = {
   /** Similarity well above all per-source floors — strong match */
@@ -111,10 +115,3 @@ export interface PickBestSourceContext {
   /** 'unknown' disables the state tie-breaker and falls back to similarity. */
   expectedState: DbIngredientState;
 }
-
-/**
- * Sort DB candidates by similarity descending.
- * The DB already returns results in order, but this ensures consistent
- * ordering when combining candidates from multiple sources.
- */
-/** @internal Exported for testing */

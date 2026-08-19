@@ -13,10 +13,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../data/api_client.dart';
+import '../../../services/http/api_client.dart';
 import '../../../models/nutrition_label.dart';
-import '../logic/label_image.dart';
-import '../logic/label_review.dart';
+import '../logic/label/image.dart';
+import '../logic/label/review.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 

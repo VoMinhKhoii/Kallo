@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import {
   listChatGroupMessages,
   sendChatGroupMessage,
-} from '@/lib/actions/chat-groups';
+} from '@/lib/actions/chat-groups/messages';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 

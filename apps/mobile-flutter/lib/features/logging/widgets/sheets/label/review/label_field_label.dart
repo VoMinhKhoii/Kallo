@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../../theme/calm_tokens.dart';
-import '../../../../../../theme/nham_colors.dart';
+import '../../../../../../theme/kallo_colors.dart';
 
 /// The caption above a [LabelField]: an optional macro glyph, the nutrient's
 /// name, and the required mark that replaced the sentence under the button.
@@ -35,7 +35,7 @@ class LabelFieldLabel extends StatelessWidget {
             style: dashMeta(),
           ),
         ),
-        if (isRequired) Text(' *', style: dashMeta(color: NhamColors.danger)),
+        if (isRequired) Text(' *', style: dashMeta(color: KalloColors.danger)),
       ],
     );
   }

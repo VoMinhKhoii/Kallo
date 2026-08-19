@@ -47,23 +47,23 @@ export function MealExample({ input, dishes, totalLabel }: MealExampleProps) {
   );
 
   return (
-    <div className="mt-6 rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
-      <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
+    <div className="mt-6 rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm sm:p-5">
+      <p className="font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]">
         &ldquo;{input}&rdquo;
       </p>
 
-      <div className="mt-5 border-nham-border border-t pt-4">
+      <div className="mt-5 border-kallo-border border-t pt-4">
         <div className="mb-4 space-y-1">
           {dishes.map((dish) => (
             <div
               className="flex items-center justify-between py-2 font-sans-display text-[13px]"
               key={dish.name}
             >
-              <span className="min-w-0 truncate font-medium text-nham-text">
+              <span className="min-w-0 truncate font-medium text-kallo-text">
                 {dish.name}
               </span>
               <div className="flex shrink-0 items-center gap-3">
-                <div className="flex gap-2 text-[10px] text-nham-text-muted tabular-nums">
+                <div className="flex gap-2 text-[10px] text-kallo-text-muted tabular-nums">
                   <span className="text-right">
                     P:{formatMacroValue(dish.protein)}
                   </span>
@@ -74,7 +74,7 @@ export function MealExample({ input, dishes, totalLabel }: MealExampleProps) {
                     F:{formatMacroValue(dish.fat)}
                   </span>
                 </div>
-                <span className="text-right font-bold text-nham-text tabular-nums">
+                <span className="text-right font-bold text-kallo-text tabular-nums">
                   {formatCaloriesValue(dish.calories)}
                 </span>
               </div>
@@ -82,18 +82,18 @@ export function MealExample({ input, dishes, totalLabel }: MealExampleProps) {
           ))}
         </div>
 
-        <div className="border-nham-border/50 border-t pt-3">
+        <div className="border-kallo-border/50 border-t pt-3">
           <div className="flex items-center justify-between">
-            <span className="font-bold font-sans-display text-[13px] text-nham-text">
+            <span className="font-bold font-sans-display text-[13px] text-kallo-text">
               {totalLabel}
             </span>
             <div className="flex items-center gap-4">
-              <span className="font-sans-display text-[11px] text-nham-text-muted tabular-nums">
+              <span className="font-sans-display text-[11px] text-kallo-text-muted tabular-nums">
                 P: {formatMacroValue(totals.protein)}
                 {'  '}C: {formatMacroValue(totals.carbs)}
                 {'  '}F: {formatMacroValue(totals.fat)}
               </span>
-              <span className="font-bold font-sans-display text-nham-text tabular-nums">
+              <span className="font-bold font-sans-display text-kallo-text tabular-nums">
                 {formatCaloriesValue(totals.calories)}
               </span>
             </div>

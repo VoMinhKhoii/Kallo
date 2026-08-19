@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { isDuplicateEmailError } from '@/lib/auth/duplicate-email';
-import { localeFromNext, publicUrl } from '@/lib/auth/redirects';
-import { safeNextPath } from '@/lib/auth/safe-next';
-import { createClient } from '@/lib/supabase/server';
+import { isDuplicateEmailError } from '@/lib/infra/auth/duplicate-email';
+import { localeFromNext, publicUrl } from '@/lib/infra/auth/redirects';
+import { safeNextPath } from '@/lib/infra/auth/safe-next';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export const runtime = 'nodejs';
 
@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
  * itself lives in `lib/auth/duplicate-email.ts` so the browser ID-token flow
  * can share it without importing a route module.
  */
-export { DUPLICATE_EMAIL_MARKER } from '@/lib/auth/duplicate-email';
+export { DUPLICATE_EMAIL_MARKER } from '@/lib/infra/auth/duplicate-email';
 
 /**
  * Handles the OAuth code-exchange and computes the redirect. Exported as a

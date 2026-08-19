@@ -1,7 +1,7 @@
 'use client';
 
 import type { RefObject } from 'react';
-import type { MentionSegment } from '@/lib/logging/relog/mentions';
+import type { MentionSegment } from '@/lib/domain/logging/relog/mentions';
 
 interface MentionOverlayProps {
   segments: MentionSegment[];
@@ -16,7 +16,7 @@ interface MentionOverlayProps {
  * A `<textarea>` cannot colour part of its value, so the picked-dish tint comes
  * from this mirror: the textarea's own glyphs are made transparent and this
  * element paints an identical copy underneath, with mention runs in
- * `--nham-mention`. Every typography and box property below MUST match the
+ * `--kallo-mention`. Every typography and box property below MUST match the
  * textarea's, or the painted text drifts out of register with the real caret.
  *
  * The trailing zero-width space keeps a value ending in "\n" from collapsing
@@ -27,13 +27,13 @@ export function MentionOverlay({ segments, mirrorRef }: MentionOverlayProps) {
     <div
       ref={mirrorRef}
       aria-hidden
-      className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words py-1.5 font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5"
+      className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words py-1.5 font-[var(--font-dm-sans)] font-normal text-kallo-text text-sm leading-5"
     >
       {segments.map((segment, index) => (
         <span
           // Segments are positional runs, not entities — index is the identity.
           key={`${index}-${segment.isMention}`}
-          className={segment.isMention ? 'text-nham-mention' : undefined}
+          className={segment.isMention ? 'text-kallo-mention' : undefined}
         >
           {segment.text}
         </span>

@@ -2,11 +2,14 @@
 
 import { and, eq, gte, lt } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
-import { db } from '@/lib/db';
-import { meals, pendingAnalyses } from '@/lib/db/schema';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/core/validation/primitives';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db/client';
+import { meals, pendingAnalyses } from '@/lib/infra/db/schema';
 
 /**
  * Whether a local day holds anything at all — a saved meal or an analysis

@@ -1,9 +1,10 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { removeMyAvatar, uploadMyAvatar } from '@/lib/actions/groups/avatar';
-import { Errors, serializeError } from '@/lib/errors';
-import { createClient } from '@/lib/supabase/server';
-import { MAX_IMAGE_BYTES } from '@/lib/uploads/image-file';
+import { Errors } from '@/lib/core/errors/catalog';
+import { serializeError } from '@/lib/core/errors/serialize';
+import { createClient } from '@/lib/infra/supabase/server';
+import { MAX_IMAGE_BYTES } from '@/lib/infra/uploads/image-file';
 
 export const runtime = 'nodejs';
 

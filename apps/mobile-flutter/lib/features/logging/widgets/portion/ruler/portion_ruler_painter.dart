@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../theme/nham_colors.dart';
+import '../../../../../theme/kallo_colors.dart';
 
 /// Paints the ruler face for the scrolling strip: a top edge with graduations
 /// hanging from it, tall at each vessel tier and short between them.
@@ -21,7 +21,7 @@ class PortionRulerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final edge = Paint()
-      ..color = NhamColors.border
+      ..color = KalloColors.border
       ..strokeWidth = 1;
     canvas.drawLine(const Offset(0, 0.5), Offset(size.width, 0.5), edge);
 
@@ -34,7 +34,7 @@ class PortionRulerPainter extends CustomPainter {
         Offset(x, 0),
         Offset(x, major ? size.height : minorHeight),
         Paint()
-          ..color = major ? NhamColors.text30 : NhamColors.border
+          ..color = major ? KalloColors.text30 : KalloColors.border
           ..strokeWidth = major ? 1.5 : 1,
       );
     }

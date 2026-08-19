@@ -18,6 +18,12 @@ const mockDbInsert = vi.fn();
 const mockDbInsertValues = vi.fn();
 const mockInsertValues = vi.fn();
 const mockOnConflict = vi.fn();
+const mockLogUnmatchedIngredients = vi.fn((..._args: unknown[]) =>
+  Promise.resolve()
+);
+const mockEstimateCheatMeal = vi.fn();
+const mockResolveRelogSources = vi.fn();
+const mockMergeRelogIntoPipelineResult = vi.fn();
 const mockAnalysisGuardEvents = { table: 'analysis_guard_events' };
 const mockPendingAnalyses = {
   table: 'pending_analyses',
@@ -47,14 +53,14 @@ const mockBuildAnalysisGuardEvent = vi.fn(
   })
 );
 
-vi.mock('@/lib/supabase/server', () => ({
+vi.mock('@/lib/infra/supabase/server', () => ({
   createClient: () =>
     Promise.resolve({
       auth: { getUser: mockGetUser },
     }),
 }));
 
-vi.mock('@/lib/db', () => {
+vi.mock('@/lib/infra/db/client', () => {
   const selectChain = {
     select: () => selectChain,
     from: () => selectChain,
@@ -92,18 +98,19 @@ vi.mock('@/lib/db', () => {
         return insertChain;
       },
       update: () => updateChain,
+      transaction: (fn: (tx: unknown) => unknown) => fn('tx'),
     },
   };
 });
 
-vi.mock('@/lib/db/schema', () => ({
+vi.mock('@/lib/infra/db/schema', () => ({
   userProfiles: { userId: 'userId' },
   analysisGuardEvents: mockAnalysisGuardEvents,
   pendingAnalyses: mockPendingAnalyses,
   pipelineRequests: mockPipelineRequests,
 }));
 
-vi.mock('@/lib/ai/gemini', () => ({
+vi.mock('@/lib/ai/provider/provider', () => ({
   createGeminiClient: (...args: unknown[]) => mockCreateGeminiClient(...args),
   resolveGeminiProvider: () => {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -112,15 +119,15 @@ vi.mock('@/lib/ai/gemini', () => ({
   },
 }));
 
-vi.mock('@/lib/entitlements/config', () => ({
+vi.mock('@/lib/domain/billing/entitlement/config', () => ({
   getBillingConfig: () => mockGetBillingConfig(),
 }));
 
-vi.mock('@/lib/entitlements/service', () => ({
+vi.mock('@/lib/domain/billing/entitlement/service', () => ({
   checkFeatureAccess: (...args: unknown[]) => mockCheckFeatureAccess(...args),
 }));
 
-vi.mock('@/lib/rate-limit/analysis-guards', () => ({
+vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
   buildAnalysisGuardEvent: (input: MockBuildAnalysisGuardEventInput) =>
     mockBuildAnalysisGuardEvent(input),
   checkAnalysisGuards: (...args: unknown[]) => mockCheckAnalysisGuards(...args),
@@ -131,12 +138,27 @@ vi.mock('@/lib/ai/pipeline/telemetry/logging', () => ({
   logPipelineEnd: (...args: unknown[]) => mockLogPipelineEnd(...args),
 }));
 
-vi.mock('@/lib/ai/pipeline', () => ({
+vi.mock('@/lib/ai/pipeline/analyze-meal', () => ({
   analyzeMeal: (...args: unknown[]) => mockAnalyzeMeal(...args),
 }));
 
-vi.mock('@/lib/ai/matching', () => ({
-  logUnmatchedIngredients: () => Promise.resolve(),
+vi.mock('@/lib/ai/matching/unmatched-log', () => ({
+  logUnmatchedIngredients: (...args: unknown[]) =>
+    mockLogUnmatchedIngredients(...args),
+}));
+
+vi.mock('@/lib/domain/cheat/estimate', () => ({
+  estimateCheatMeal: (...args: unknown[]) => mockEstimateCheatMeal(...args),
+}));
+
+vi.mock('@/lib/actions/meals/relog/resolve-sources', () => ({
+  resolveRelogSources: (...args: unknown[]) => mockResolveRelogSources(...args),
+}));
+
+vi.mock('@/lib/domain/logging/relog/build-relog-pipeline-result', () => ({
+  buildFrozenMealItem: (dish: { name: string }) => ({ frozen: dish.name }),
+  mergeRelogIntoPipelineResult: (...args: unknown[]) =>
+    mockMergeRelogIntoPipelineResult(...args),
 }));
 
 interface MockNutrition {
@@ -156,12 +178,22 @@ interface MockPipelineData {
   displayedNutrition?: MockNutrition;
 }
 
-vi.mock('@/lib/ai/mappers', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/ai/mappers')>();
+vi.mock('@/lib/ai/adapters/user-context', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/lib/ai/adapters/user-context')>();
 
   return {
     ...actual,
     buildUserContext: (...args: unknown[]) => mockBuildUserContext(...args),
+  };
+});
+
+vi.mock('@/lib/ai/adapters/parsed-meal', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/lib/ai/adapters/parsed-meal')>();
+
+  return {
+    ...actual,
     toParsedMeal: (data: MockPipelineData) => ({
       mealName: data.mealItems?.[0]?.name ?? 'Meal',
       items: (data.mealItems ?? []).map((mi: MockMealItem) => ({
@@ -319,6 +351,10 @@ describe('POST /api/analyze-meal', () => {
     mockInsert.mockResolvedValue([{ id: 'analysis-123' }]);
     mockInsertValues.mockClear();
     mockOnConflict.mockClear();
+    mockLogUnmatchedIngredients.mockClear();
+    mockEstimateCheatMeal.mockReset();
+    mockResolveRelogSources.mockReset();
+    mockMergeRelogIntoPipelineResult.mockReset();
   });
 
   afterEach(() => {
@@ -846,5 +882,430 @@ describe('POST /api/analyze-meal', () => {
       expect(errorEvent.code).toBe('internal');
       expect(errorEvent.message).toBe('Failed to process meal');
     }
+  });
+
+  // -------------------------------------------------------------------------
+  // Abort handling — every stage checks `request.signal.aborted` and returns
+  // silently rather than emitting into a stream nobody is reading.
+  // -------------------------------------------------------------------------
+
+  it('emits nothing and never builds a client when aborted before the pipeline', async () => {
+    const abortController = new AbortController();
+    abortController.abort();
+
+    const res = await POST(
+      createRequest(mealRequestBody('phở bò'), {}, abortController.signal)
+    );
+    const events = await readSSEEvents(res);
+
+    expect(events).toEqual([]);
+    expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+    expect(mockAnalyzeMeal).not.toHaveBeenCalled();
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockPendingAnalyses);
+  });
+
+  it('emits nothing and stages nothing when aborted during the pipeline', async () => {
+    const abortController = new AbortController();
+    mockAnalyzeMeal.mockImplementation(async () => {
+      abortController.abort();
+      return { success: true, data: mockPipelineData };
+    });
+
+    const res = await POST(
+      createRequest(mealRequestBody('phở bò'), {}, abortController.signal)
+    );
+    const events = await readSSEEvents(res);
+
+    expect(events).toEqual([]);
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockPendingAnalyses);
+    expect(mockLogPipelineEnd).not.toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // Cheat-meal branch — a slider spec instead of the decomposition pipeline.
+  // -------------------------------------------------------------------------
+
+  function cheatRequestBody(message: string) {
+    return { ...mealRequestBody(message), mode: 'cheat' as const };
+  }
+
+  it('surfaces a clarifying question without staging anything', async () => {
+    const spec = { clarifyingQuestion: 'Bao nhiêu ly bia?', sliders: [] };
+    mockEstimateCheatMeal.mockResolvedValue(spec);
+
+    const res = await POST(createRequest(cheatRequestBody('nhậu tối qua')));
+    const events = await readSSEEvents(res);
+
+    expect(events).toEqual([{ type: 'cheat_estimate', spec }]);
+    expect(mockAnalyzeMeal).not.toHaveBeenCalled();
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockPendingAnalyses);
+    expect(mockLogPipelineEnd).toHaveBeenCalledWith(
+      'request-123',
+      'success',
+      expect.any(Number),
+      expect.anything(),
+      undefined,
+      null
+    );
+  });
+
+  it('stages the cheat spec BEFORE surfacing it, then terminates', async () => {
+    const spec = { sliders: [{ id: 'beer' }] };
+    mockEstimateCheatMeal.mockResolvedValue(spec);
+    mockInsert.mockResolvedValue([{ id: 'cheat-analysis-1' }]);
+
+    const res = await POST(createRequest(cheatRequestBody('nhậu tối qua')));
+    const events = await readSSEEvents(res);
+
+    expect(events).toEqual([
+      { type: 'cheat_estimate', spec },
+      { type: 'analysis_complete', analysisId: 'cheat-analysis-1' },
+    ]);
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entryMode: 'cheat',
+        rawInput: 'nhậu tối qua',
+        pipelineResult: { entryMode: 'cheat', spec },
+        attemptId: TEST_ATTEMPT_ID,
+      })
+    );
+  });
+
+  it('passes the cheat chips and intensity through to the estimator', async () => {
+    mockEstimateCheatMeal.mockResolvedValue({ sliders: [] });
+
+    const res = await POST(
+      createRequest({
+        ...cheatRequestBody('nhậu tối qua'),
+        cheatType: 'bia',
+        clarifyAnswer: 'ba ly',
+        cheatIntensity: 'heavy',
+      })
+    );
+    await res.text();
+
+    expect(mockEstimateCheatMeal).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: 'nhậu tối qua',
+        cheatType: 'bia',
+        clarifyAnswer: 'ba ly',
+        cheatIntensity: 'heavy',
+      }),
+      expect.anything(),
+      expect.any(Function)
+    );
+  });
+
+  it('emits nothing when the cheat estimate lands after an abort', async () => {
+    const abortController = new AbortController();
+    mockEstimateCheatMeal.mockImplementation(async () => {
+      abortController.abort();
+      return { sliders: [] };
+    });
+
+    const res = await POST(
+      createRequest(cheatRequestBody('nhậu'), {}, abortController.signal)
+    );
+
+    expect(await readSSEEvents(res)).toEqual([]);
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockPendingAnalyses);
+  });
+
+  it('rejects cheat mode combined with relog picks before streaming', async () => {
+    const res = await POST(
+      createRequest({
+        ...cheatRequestBody('nhậu'),
+        refs: [
+          {
+            kind: 'dish',
+            sourceMealId: '22222222-2222-4222-8222-222222222222',
+            mealItemOrder: 0,
+          },
+        ],
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.code).toBe('VALIDATION_FAILED');
+  });
+
+  // -------------------------------------------------------------------------
+  // Completeness gate — runs BEFORE the empty-nutrition check, per ingredient.
+  // -------------------------------------------------------------------------
+
+  it('terminates on a chunk failure with a generic try-again message', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+      unresolved: { reason: 'chunk_failure' },
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    const events = await readSSEEvents(res);
+
+    expect(events).toEqual([
+      {
+        type: 'error',
+        code: 'partial_analysis_failure',
+        message:
+          'Part of your meal could not be analyzed just now. Please try again.',
+        retryable: true,
+      },
+    ]);
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockPendingAnalyses);
+    expect(mockLogPipelineEnd).toHaveBeenCalledWith(
+      'request-123',
+      'error',
+      expect.any(Number),
+      expect.anything(),
+      'chunk_failure',
+      null
+    );
+    // A chunk failure is an infra signal, never a coverage signal.
+    expect(mockLogUnmatchedIngredients).not.toHaveBeenCalled();
+  });
+
+  it('names the food and logs coverage on a no_macro_data carve-out', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+      unresolved: {
+        reason: 'no_macro_data',
+        ingredientName: 'Mì gói',
+        carvedOutNames: ['Mì gói'],
+      },
+    });
+
+    const res = await POST(createRequest(mealRequestBody('mì gói')));
+    const events = await readSSEEvents(res);
+
+    expect(events).toEqual([
+      {
+        type: 'error',
+        code: 'partial_analysis_failure',
+        message:
+          'Could not work out the nutrition for "Mì gói". Please try describing that part differently.',
+        retryable: true,
+      },
+    ]);
+    expect(mockLogPipelineEnd).toHaveBeenCalledWith(
+      'request-123',
+      'error',
+      expect.any(Number),
+      expect.anything(),
+      'no_macro_data',
+      null
+    );
+    expect(mockLogUnmatchedIngredients).toHaveBeenCalledWith(
+      [{ ingredientName: 'Mì gói', mealContext: 'no_macro_data carve-out' }],
+      null,
+      expect.anything()
+    );
+  });
+
+  it('falls back to an unnamed carve-out message', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+      unresolved: { reason: 'no_macro_data', carvedOutNames: [] },
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    const events = await readSSEEvents(res);
+
+    expect(events[0]).toMatchObject({
+      code: 'partial_analysis_failure',
+      message:
+        'Could not work out the nutrition for part of this meal. Please try describing it differently.',
+    });
+    expect(mockLogUnmatchedIngredients).not.toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // Empty-nutrition gate and success-path bookkeeping.
+  // -------------------------------------------------------------------------
+
+  it('emits empty_nutrition when every item has zero calories and protein', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: {
+        ...mockPipelineData,
+        mealItems: [
+          {
+            name: 'Nước lọc',
+            displayedNutrition: {
+              caloriesKcal: 0,
+              proteinG: 0,
+              carbohydrateG: 0,
+              fatG: 0,
+            },
+          },
+        ],
+      },
+    });
+
+    const res = await POST(createRequest(mealRequestBody('nước lọc')));
+    const events = await readSSEEvents(res);
+
+    expect(events).toEqual([
+      {
+        type: 'error',
+        code: 'empty_nutrition',
+        message:
+          'Could not estimate nutrition for this meal. Please try describing it differently.',
+        retryable: true,
+      },
+    ]);
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockPendingAnalyses);
+  });
+
+  it('logs unmatched ingredients after the terminal success event', async () => {
+    const unmatched = [{ ingredientName: 'rau đắng', mealContext: 'canh' }];
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: { ...mockPipelineData, unmatchedIngredients: unmatched },
+    });
+
+    const res = await POST(createRequest(mealRequestBody('canh rau đắng')));
+    await res.text();
+
+    expect(mockLogUnmatchedIngredients).toHaveBeenCalledWith(
+      unmatched,
+      null,
+      expect.anything()
+    );
+  });
+
+  it('reports the prompt versions the pipeline recorded', async () => {
+    mockAnalyzeMeal.mockImplementation(
+      async (
+        _msg: unknown,
+        _ctx: unknown,
+        _db: unknown,
+        _gemini: unknown,
+        _emit: unknown,
+        trace: { promptVersionsUsed: Map<string, string> }
+      ) => {
+        trace.promptVersionsUsed.set('decomposition', 'v2');
+        return { success: true, data: mockPipelineData };
+      }
+    );
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    await res.text();
+
+    expect(mockLogPipelineEnd).toHaveBeenCalledWith(
+      'request-123',
+      'success',
+      expect.any(Number),
+      expect.anything(),
+      undefined,
+      { decomposition: 'v2' }
+    );
+  });
+
+  it('never surfaces a meal it could not stage', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+    mockInsert.mockRejectedValue(new Error('insert exploded'));
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    const events = await readSSEEvents(res);
+
+    expect(events.map((e) => e.type)).toEqual(['error']);
+    expect(events[0]).toMatchObject({ code: 'internal', retryable: true });
+  });
+
+  // -------------------------------------------------------------------------
+  // Combined relog — picks folded in AFTER the pipeline ran on free text alone.
+  // -------------------------------------------------------------------------
+
+  const RELOG_REF = {
+    kind: 'dish' as const,
+    sourceMealId: '33333333-3333-4333-8333-333333333333',
+    mealItemOrder: 2,
+  };
+
+  it('merges relog picks into the staged result and the saved raw input', async () => {
+    mockAnalyzeMeal.mockImplementation(async () => ({
+      success: true,
+      data: { ...mockPipelineData },
+    }));
+    mockResolveRelogSources.mockResolvedValue({
+      dishes: [{ name: 'Cơm tấm' }, { name: 'Chè' }],
+      sourceConfidences: ['high', 'medium'],
+    });
+    mockMergeRelogIntoPipelineResult.mockImplementation(
+      (aiResult: object, items: unknown, confidence: string) => ({
+        ...aiResult,
+        merged: { items, confidence },
+      })
+    );
+
+    const res = await POST(
+      createRequest({ ...mealRequestBody('phở bò'), refs: [RELOG_REF] })
+    );
+    await res.text();
+
+    // The picks never entered the AI call.
+    expect(mockAnalyzeMeal.mock.calls[0]?.[0]).toBe('phở bò');
+    expect(mockResolveRelogSources).toHaveBeenCalledWith(
+      'tx',
+      'user-1',
+      [RELOG_REF],
+      { lock: true }
+    );
+    expect(mockMergeRelogIntoPipelineResult).toHaveBeenCalledWith(
+      expect.objectContaining({ mealSlot: 'breakfast' }),
+      [{ frozen: 'Cơm tấm' }, { frozen: 'Chè' }],
+      'medium'
+    );
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rawInput: 'phở bò, Cơm tấm, Chè',
+        entryMode: 'precise',
+        pipelineResult: expect.objectContaining({
+          merged: expect.anything(),
+        }),
+      })
+    );
+  });
+
+  it('downgrades an unrecognized relog confidence to low', async () => {
+    mockAnalyzeMeal.mockImplementation(async () => ({
+      success: true,
+      data: { ...mockPipelineData },
+    }));
+    mockResolveRelogSources.mockResolvedValue({
+      dishes: [{ name: 'Cơm tấm' }],
+      sourceConfidences: [null],
+    });
+    mockMergeRelogIntoPipelineResult.mockImplementation(
+      (aiResult: object) => aiResult
+    );
+
+    const res = await POST(
+      createRequest({ ...mealRequestBody('phở bò'), refs: [RELOG_REF] })
+    );
+    await res.text();
+
+    expect(mockMergeRelogIntoPipelineResult.mock.calls[0]?.[2]).toBe('low');
+  });
+
+  it('leaves the raw input alone when there are no picks', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    await res.text();
+
+    expect(mockResolveRelogSources).not.toHaveBeenCalled();
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ rawInput: 'phở bò' })
+    );
   });
 });

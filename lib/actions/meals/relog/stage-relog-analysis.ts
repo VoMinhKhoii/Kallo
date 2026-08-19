@@ -1,22 +1,22 @@
 'use server';
 
-import { upsertPendingAnalysis } from '@/app/api/analyze-meal/persist-analysis';
 import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
-import { toParsedMeal } from '@/lib/ai/mappers';
+import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
+import { upsertPendingAnalysis } from '@/lib/ai/pipeline/stream/persist-analysis';
 import {
   type StageRelogAnalysisInput,
   stageRelogAnalysisSchema,
 } from '@/lib/api/contracts/meals';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
-import { db } from '@/lib/db';
-import { buildRelogPipelineResult } from '@/lib/logging/relog/build-relog-pipeline-result';
-import { buildRelogRawInput } from '@/lib/logging/relog/relog';
+import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
+import type { ParsedMeal } from '@/lib/core/types/meal';
+import { buildRelogPipelineResult } from '@/lib/domain/logging/relog/build-relog-pipeline-result';
+import { buildRelogRawInput } from '@/lib/domain/logging/relog/relog';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db/client';
 import {
   RELOG_WRITE_ROUTE,
   withRelogGuard,
-} from '@/lib/rate-limit/relog-guard';
-import type { ParsedMeal } from '@/lib/types/meal';
+} from '@/lib/infra/rate-limit/relog-guard';
 
 /**
  * WEB pure-relog: stage the picked dishes as a `pending_analyses` row so they

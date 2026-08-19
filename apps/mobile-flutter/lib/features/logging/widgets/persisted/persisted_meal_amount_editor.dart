@@ -2,8 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/amount_editor_totals.dart';
 import '../../logic/format.dart';
@@ -126,7 +126,7 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
+          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
           const SizedBox(height: LoggingSpacing.section),
           for (final row in _rows)
             PersistedMealAmountEditorRow(
@@ -136,7 +136,7 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
               onToggleRemove: _toggleRemove,
             ),
           const SizedBox(height: LoggingSpacing.section),
-          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
+          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
           const SizedBox(height: LoggingSpacing.section),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -147,7 +147,7 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
                 children: [
                   Text(
                     'P: ${fmtG(totals.proteinG)}  C: ${fmtG(totals.carbohydrateG)}  F: ${fmtG(totals.fatG)}', style: dashMeta(tabular: true),),
-                  const SizedBox(width: NhamSpacing.sp4), // gap-4
+                  const SizedBox(width: KalloSpacing.sp4), // gap-4
                   Text(
                     fmtKcal(totals.caloriesKcal), style: dashValue(),),
                 ],
@@ -159,7 +159,7 @@ class _PersistedMealAmountEditorState extends State<PersistedMealAmountEditor> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               AmountEditorCancelButton(onTap: _saving ? null : widget.onCancel),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               AmountEditorSaveButton(
                 saving: _saving,
                 enabled: canSave,

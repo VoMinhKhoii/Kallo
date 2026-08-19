@@ -10,14 +10,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../data/api_client.dart';
-import '../../../data/session_provider.dart';
+import '../../../services/http/api_client.dart';
+import '../../../services/auth/session_provider.dart';
 import '../../../shared/widgets/brand/apple_logo.dart';
 import '../../../shared/widgets/brand/google_logo.dart';
-import '../../../shared/widgets/top_toast.dart';
-import '../widgets/settings_group.dart';
-import '../widgets/settings_row.dart';
-import '../widgets/settings_row_leading.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
+import '../widgets/list/settings_group.dart';
+import '../widgets/list/settings_row.dart';
+import '../widgets/list/settings_row_leading.dart';
 import 'account_delete_screen.dart';
 
 /// OAuth redirect for the manual-link browser flow — reuses the `nham://`

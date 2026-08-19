@@ -10,8 +10,8 @@ import {
   useState,
   useTransition,
 } from 'react';
-import { PaywallDialog } from '@/components/billing/paywall-dialog';
-import { TrialBanner } from '@/components/billing/trial-banner';
+import { PaywallDialog } from '@/components/billing/paywall/paywall-dialog';
+import { TrialBanner } from '@/components/billing/subscription/trial-banner';
 import { FeedArea } from '@/components/logging/feed/feed-area';
 import { MobileTimelinePicker } from '@/components/logging/sidebar/mobile-timeline-picker';
 import { TimelineSidebar } from '@/components/logging/sidebar/timeline-sidebar';
@@ -19,20 +19,10 @@ import {
   buildAllTimelineDates,
   todayDateString,
 } from '@/components/logging/sidebar/timeline-utils';
-import { usePrefetchDates } from '@/hooks/meals/use-prefetch-dates';
+import { usePrefetchDates } from '@/hooks/meals/queries/use-prefetch-dates';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { loadMealDates } from '@/lib/actions/meals/load-meals';
-import type { Goal } from '@/lib/onboarding/types';
-
-export interface LoggingProfile {
-  userId: string;
-  goal: Goal;
-  aggression: number;
-  calorieTarget: number;
-  proteinTargetG: number;
-  carbsTargetG: number;
-  fatTargetG: number;
-}
+import type { LoggingProfile } from '@/lib/domain/logging/types';
 
 interface LoggingShellProps {
   profile: LoggingProfile;

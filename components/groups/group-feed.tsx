@@ -5,7 +5,10 @@ import { useTranslations } from 'next-intl';
 import { FeedEntry } from '@/components/groups/feed-entry';
 import { GroupInfo } from '@/components/groups/info/group-info';
 import { ThreadFeed } from '@/components/groups/thread-feed';
-import { useChatGroup, useGroupMealFeed } from '@/hooks/social/use-chat-groups';
+import {
+  useChatGroup,
+  useGroupMealFeed,
+} from '@/hooks/social/circle/use-chat-groups';
 
 /** A group's meal feed with per-meal replies (stage 1 — no universal chat).
  * Logging happens through the AI meal bar in the Circle layout above. */

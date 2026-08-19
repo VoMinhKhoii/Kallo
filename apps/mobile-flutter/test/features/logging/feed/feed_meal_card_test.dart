@@ -2,12 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/data/logging_models.dart';
-import 'package:nham_mobile/features/logging/widgets/feed/feed_meal_card.dart';
-import 'package:nham_mobile/features/logging/widgets/turn/meal_time_divider.dart';
-import 'package:nham_mobile/features/logging/logic/logging_spacing.dart';
-import 'package:nham_mobile/theme/nham_colors.dart';
-import 'package:nham_mobile/features/logging/widgets/turn/user_message_bubble.dart';
+import 'package:kallo_mobile/features/logging/data/logging_models.dart';
+import 'package:kallo_mobile/features/logging/widgets/feed/feed_meal_card.dart';
+import 'package:kallo_mobile/features/logging/widgets/turn/meal_time_divider.dart';
+import 'package:kallo_mobile/features/logging/logic/logging_spacing.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
+import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
 
 import '../../../l10n_test_loader.dart';
 
@@ -122,7 +122,7 @@ void main() {
             (w) =>
                 w is DecoratedBox &&
                 w.decoration is BoxDecoration &&
-                (w.decoration as BoxDecoration).color == NhamColors.elev,
+                (w.decoration as BoxDecoration).color == KalloColors.elev,
           )
           .first,
     );

@@ -13,7 +13,7 @@ import {
 import { MealTriggerNotice } from '@/components/dashboard/today/meal-trigger-notice';
 import { StreamTicker } from '@/components/shared/stream-ticker/stream-ticker';
 import type { DashboardMealStream } from '@/hooks/dashboard/use-dashboard-meal-log';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 
 interface MealTriggerProps {
   /** In-place submit — the bar itself streams the analysis. */
@@ -85,8 +85,8 @@ function MealInputForm({
         compact ? 'h-11' : 'h-12',
         isStreamingLive
           ? 'border border-transparent'
-          : 'border border-nham-border/70 bg-card shadow-none focus-within:border-nham-accent/50 hover:border-nham-accent/50',
-        streaming.error && 'border-nham-danger/40'
+          : 'border border-kallo-border/70 bg-card shadow-none focus-within:border-kallo-accent/50 hover:border-kallo-accent/50',
+        streaming.error && 'border-kallo-danger/40'
       )}
     >
       {streaming.error ? (
@@ -110,7 +110,7 @@ function MealInputForm({
             type="text"
             placeholder={tl('placeholder')}
             maxLength={300}
-            className="min-w-0 flex-1 bg-transparent text-nham-text text-sm outline-none placeholder:text-nham-text-muted"
+            className="min-w-0 flex-1 bg-transparent text-kallo-text text-sm outline-none placeholder:text-kallo-text-muted"
             value={text}
             onChange={(event) => setText(event.target.value)}
           />
@@ -118,7 +118,7 @@ function MealInputForm({
             type="submit"
             aria-label={tm('send')}
             disabled={text.trim().length === 0}
-            className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-nham-btn text-white transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:bg-nham-btn-hover disabled:bg-nham-track disabled:text-nham-text-muted"
+            className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-kallo-btn text-white transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:bg-kallo-btn-hover disabled:bg-kallo-track disabled:text-kallo-text-muted"
           >
             <ArrowUp className="h-4 w-4" />
           </button>
@@ -182,7 +182,7 @@ export function FloatingMealTrigger(props: MealTriggerProps) {
         onClick={expanded ? handleClose : () => setExpanded(true)}
         aria-label={expanded ? tm('close') : t('logMeal')}
         aria-expanded={expanded}
-        className="fixed right-4 bottom-5 z-50 flex h-11 w-11 items-center justify-center rounded-2xl bg-nham-btn text-white shadow-[0_4px_16px_rgba(44,36,22,0.18)] transition-colors hover:bg-nham-btn-hover"
+        className="fixed right-4 bottom-5 z-50 flex h-11 w-11 items-center justify-center rounded-2xl bg-kallo-btn text-white shadow-[0_4px_16px_rgba(44,36,22,0.18)] transition-colors hover:bg-kallo-btn-hover"
       >
         {expanded ? (
           <X className="h-5 w-5" />

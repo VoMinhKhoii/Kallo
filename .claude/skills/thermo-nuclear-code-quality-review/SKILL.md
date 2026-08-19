@@ -8,7 +8,7 @@ description: |
   a change grows any file near the repo's 400/200 LOC limits or adds files to an
   already crowded folder. This project-local version shadows the global gstack
   skill of the same name: it replaces the generic 1000-line rule with the repo's
-  strict 400/200 thresholds (mechanically enforced by `bun check:filesize`) and
+  strict 400/200 thresholds (mechanically enforced by `bun check:structure`) and
   adds binding File & Folder Organization standards (feature-first nesting,
   separation of concerns, folder size limits, no barrels).
 allowed-tools:
@@ -22,7 +22,7 @@ metadata:
   version: "1.0.0"
 ---
 
-# Thermo-Nuclear Code Quality Review (Nhẩm/Kallo local)
+# Thermo-Nuclear Code Quality Review (Kallo/Kallo local)
 
 Use this skill for an unusually strict review focused on implementation quality,
 maintainability, abstraction quality, and codebase health.
@@ -58,7 +58,7 @@ Start from this baseline:
   `biome ci .`, `bun vitest run`. Flutter (`apps/mobile-flutter`): `flutter analyze`,
   `flutter test`. A restructuring proposal that hasn't been checked against these is
   a sketch, not a recommendation.
-- **The mechanical size gate already runs in CI** (`bun check:filesize`): 400 LOC
+- **The mechanical size gate already runs in CI** (`bun check:structure`): 400 LOC
   per source file, 200 LOC per component/widget file, ratchet baseline for legacy,
   explicit exemption list for data-not-logic files. Your job as reviewer is what the
   script can't see: near-threshold growth, poor split choices, mechanical
@@ -83,7 +83,7 @@ Apply the baseline prompt above, plus these explicit review rules:
      `components/ui/`), `app/**/_components/**/*.tsx`, Flutter
      `lib/**/widgets/**/*.dart` and `lib/shell/*.dart` — crossing **200 LOC** is a
      presumptive blocker.
-   - Exempt-listed files (see `EXEMPT` in `scripts/check-file-sizes.mjs`: Drizzle
+   - Exempt-listed files (see `SIZE_EXEMPT` in `scripts/ci/check-structure/config.mjs`: Drizzle
      schema, pure data catalogs, prompt text) are out of scope for size complaints
      but fully in scope for structure and legibility review.
    - A PR that merely *approaches* a limit on an already-busy file gets the same

@@ -1,11 +1,11 @@
-import type { AppDb } from '@/lib/db';
-import { capitalizeFirst } from '@/lib/utils';
-import type { GeminiClient } from '../gemini';
 import {
   cacheQueryEmbedding,
   normalizeIngredientKey,
   resolveQueryEmbedding,
-} from './embedding-cache';
+} from '@/lib/ai/cache/embedding-cache';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
+import { capitalizeFirst } from '@/lib/core/text/capitalize';
+import type { AppDb } from '@/lib/infra/db/client';
 
 /**
  * Extract ingredient names from a partial JSON stream.

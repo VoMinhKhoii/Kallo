@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { AppleLogo, GoogleLogo } from '@/components/shared/brand-logos';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/infra/supabase/client';
 
 /**
  * Linked sign-in methods: connect Google / Apple to the current account, or
@@ -81,7 +81,7 @@ export function LinkedAccounts() {
     // Until identities resolve we don't know what's linked — show a
     // placeholder rather than rendering every provider as "Connect".
     return (
-      <p className="text-[13px] text-nham-text-muted">{t('linkedLoading')}</p>
+      <p className="text-[13px] text-kallo-text-muted">{t('linkedLoading')}</p>
     );
   }
 
@@ -90,13 +90,13 @@ export function LinkedAccounts() {
     // (misleads the user into reconnecting). Offer an explicit retry.
     return (
       <div className="flex items-center justify-between gap-4">
-        <p className="text-[13px] text-nham-text-muted">
+        <p className="text-[13px] text-kallo-text-muted">
           {t('linkedLoadError')}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className="shrink-0 rounded-lg border border-nham-border bg-white px-3 py-1.5 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+          className="shrink-0 rounded-lg border border-kallo-border bg-white px-3 py-1.5 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
         >
           {t('linkedRetry')}
         </button>
@@ -105,7 +105,7 @@ export function LinkedAccounts() {
   }
 
   return (
-    <div className="flex flex-col divide-y divide-nham-border">
+    <div className="flex flex-col divide-y divide-kallo-border">
       {OAUTH_PROVIDERS.map(({ key, label, Logo }) => {
         const identity = identities?.find((i) => i.provider === key) ?? null;
         const linked = Boolean(identity);
@@ -118,8 +118,8 @@ export function LinkedAccounts() {
             className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0"
           >
             <div className="flex min-w-0 items-start gap-2.5">
-              <Logo className="mt-0.5 size-4 shrink-0 text-nham-text" />
-              <p className="text-[14px] text-nham-text">{label}</p>
+              <Logo className="mt-0.5 size-4 shrink-0 text-kallo-text" />
+              <p className="text-[14px] text-kallo-text">{label}</p>
             </div>
 
             {linked ? (
@@ -129,7 +129,7 @@ export function LinkedAccounts() {
                 disabled={busy || isLast}
                 aria-busy={busy}
                 aria-label={`${t('linkedDisconnect')} ${label}`}
-                className="shrink-0 rounded-lg px-3 py-1.5 font-medium text-[13px] text-nham-text-muted transition-colors duration-150 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-40"
+                className="shrink-0 rounded-lg px-3 py-1.5 font-medium text-[13px] text-kallo-text-muted transition-colors duration-150 hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-40"
               >
                 {t('linkedDisconnect')}
               </button>
@@ -140,7 +140,7 @@ export function LinkedAccounts() {
                 disabled={busy || identitiesLoading}
                 aria-busy={busy}
                 aria-label={`${t('linkedConnect')} ${label}`}
-                className="shrink-0 rounded-lg border border-nham-border bg-white px-3 py-1.5 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
+                className="shrink-0 rounded-lg border border-kallo-border bg-white px-3 py-1.5 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
               >
                 {t('linkedConnect')}
               </button>

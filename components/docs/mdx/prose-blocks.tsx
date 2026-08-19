@@ -1,5 +1,5 @@
 import type { ComponentPropsWithoutRef } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 
 /**
  * Code and table primitives for docs MDX.
@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils';
  * no copy button, because the only "code" here is literal meal text a reader
  * types into the composer. A hairline card in Geist Mono is the whole idea.
  *
- * Every block fills with WHITE, not `nham-track`. The docs canvas is
- * `nham-surface` (#fcfcfc) and the track wash is #f5f4f0 — a contrast ratio of
+ * Every block fills with WHITE, not `kallo-track`. The docs canvas is
+ * `kallo-surface` (#fcfcfc) and the track wash is #f5f4f0 — a contrast ratio of
  * 1.04:1, which is invisible. The palette has no neutral fill that separates
  * from this canvas on its own, so separation comes from the hairline plus a
  * white card sitting a step lighter, exactly as product cards do.
@@ -22,7 +22,7 @@ export function DocsInlineCode({
   return (
     <code
       className={cn(
-        'rounded-md border border-nham-border bg-white px-1.5 py-0.5 font-mono text-caption text-nham-text',
+        'rounded-md border border-kallo-border bg-white px-1.5 py-0.5 font-mono text-caption text-kallo-text',
         className
       )}
       {...props}
@@ -37,7 +37,7 @@ export function DocsPre({
   return (
     <pre
       className={cn(
-        'mt-6 overflow-x-auto rounded-xl border border-nham-border bg-white p-4 font-mono text-caption text-nham-text leading-relaxed [&_code]:border-0 [&_code]:bg-transparent [&_code]:p-0',
+        'mt-6 overflow-x-auto rounded-xl border border-kallo-border bg-white p-4 font-mono text-caption text-kallo-text leading-relaxed [&_code]:border-0 [&_code]:bg-transparent [&_code]:p-0',
         className
       )}
       {...props}
@@ -54,7 +54,7 @@ export function DocsTable({
   ...props
 }: ComponentPropsWithoutRef<'table'>) {
   return (
-    <div className="mt-6 overflow-x-auto rounded-xl border border-nham-border bg-white">
+    <div className="mt-6 overflow-x-auto rounded-xl border border-kallo-border bg-white">
       <table
         className={cn('w-full border-collapse text-left', className)}
         {...props}
@@ -74,7 +74,7 @@ export function DocsTh({
   return (
     <th
       className={cn(
-        'border-nham-border border-b-2 px-4 py-3 font-semibold text-caption text-nham-text',
+        'border-kallo-border border-b-2 px-4 py-3 font-semibold text-caption text-kallo-text',
         className
       )}
       {...props}
@@ -94,7 +94,7 @@ export function DocsTd({
   return (
     <td
       className={cn(
-        'border-nham-border/60 border-b px-4 py-3 align-top text-base text-nham-text leading-relaxed last:border-0',
+        'border-kallo-border/60 border-b px-4 py-3 align-top text-base text-kallo-text leading-relaxed last:border-0',
         className
       )}
       {...props}

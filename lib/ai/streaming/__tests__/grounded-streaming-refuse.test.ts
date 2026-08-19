@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type {
-  DecomposedIngredientV2,
-  GroundedMealItem,
-} from '@/lib/ai/pipeline/schemas-v2';
+import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import type { GroundedMealItem } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { resolveStreamingV2MealItem } from '@/lib/ai/streaming/grounded-parsers';
 
 const triple = (mid: number) => ({ low: mid, mid, high: mid });

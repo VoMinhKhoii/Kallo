@@ -1,0 +1,190 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { UserContext } from '@/lib/ai/types/user-context';
+
+const { mockMatchTopK } = vi.hoisted(() => ({
+  mockMatchTopK: vi.fn(),
+}));
+
+vi.mock('@/lib/ai/matching/retrieve/top-k-cascade', () => ({
+  matchTopKPerIngredient: mockMatchTopK,
+}));
+
+vi.mock('@/lib/ai/portion/ingredient-portion', () => ({
+  resolvePortionsForCallTwo: vi.fn((ingredients: unknown[]) => ({
+    resolutions: ingredients.map(() => ({
+      grams: null,
+      massBasis: null,
+      provenance: 'llm_range',
+      confidence: 'none',
+      note: 'test',
+    })),
+    anchors: ingredients.map(() => null),
+  })),
+}));
+
+import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
+import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import { prepareGrounding } from '@/lib/ai/pipeline/grounded/grounding';
+
+const userContext: UserContext = {
+  goal: 'maintaining',
+  aggression: 0,
+  countryOfOrigin: 'Vietnam',
+  countryOfResidence: 'Vietnam',
+  inputLanguage: 'vi',
+  outputLanguage: 'vi',
+  cookingHabits: {
+    oilUsage: 'normal',
+    defaultRicePortion: 'medium',
+    defaultProteinPortion: 'medium',
+    sugarBraised: 'medium',
+    brothConsumption: 'some',
+  },
+};
+
+beforeEach(() => {
+  mockMatchTopK.mockImplementation(async (ingredients: unknown[]) =>
+    ingredients.map((_, ingredientIndex) => ({
+      ingredientIndex,
+      candidates: [],
+    }))
+  );
+});
+
+afterEach(() => {
+  delete process.env.PORTION_VESSEL_ENABLED;
+  delete process.env.LLM_TIMEOUT_MS;
+  delete process.env.PIPELINE_MATCHING_TIMEOUT_MS;
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
+describe('prepareGrounding vessel envelopes', () => {
+  it('threads enabled envelopes index-aligned into the preparation and payload', async () => {
+    const decomposition: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'phở',
+          cookingMethod: 'ninh',
+          vesselToken: 'tô',
+          vesselSize: 'medium',
+          ingredients: [{ rawName: 'bánh phở', canonicalName: 'Bánh phở' }],
+        },
+        {
+          name: 'gà luộc',
+          cookingMethod: 'luộc',
+          ingredients: [{ rawName: 'gà', canonicalName: 'Gà' }],
+        },
+      ],
+    };
+
+    const prepared = await prepareGrounding({
+      decomposition,
+      userContext,
+      db: {} as never,
+      gemini: {} as never,
+      traceContext: undefined,
+      emit: vi.fn(),
+      topK: 3,
+      matchConcurrency: 2,
+      vesselEnabled: true,
+    });
+
+    expect(prepared.vesselEnvelopes[0]).toMatchObject({
+      token: 'tô',
+      vesselMl: 700,
+      dishClass: 'soup',
+    });
+    expect(prepared.vesselEnvelopes[1]).toBeNull();
+    expect(
+      prepared.mealItemsWithCandidates.map((item) => item.vesselEnvelope)
+    ).toEqual(prepared.vesselEnvelopes);
+  });
+
+  it('returns only null envelopes when the flag is off', async () => {
+    const decomposition: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'phở',
+          cookingMethod: 'ninh',
+          vesselToken: 'tô',
+          ingredients: [{ rawName: 'bánh phở', canonicalName: 'Bánh phở' }],
+        },
+      ],
+    };
+
+    const prepared = await prepareGrounding({
+      decomposition,
+      userContext,
+      db: {} as never,
+      gemini: {} as never,
+      traceContext: undefined,
+      emit: vi.fn(),
+      topK: 3,
+      matchConcurrency: 2,
+      vesselEnabled: false,
+    });
+
+    expect(prepared.vesselEnvelopes).toEqual([null]);
+    expect(prepared.mealItemsWithCandidates[0].vesselEnvelope).toBeNull();
+  });
+});
+
+describe('prepareGrounding matching deadline', () => {
+  it('rejects a matching operation that never settles', async () => {
+    vi.useFakeTimers();
+    mockMatchTopK.mockReturnValue(new Promise(() => {}));
+    const decomposition: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'salmon salad',
+          cookingMethod: 'pan-seared',
+          ingredients: [{ rawName: 'salmon', canonicalName: 'Salmon' }],
+        },
+      ],
+    };
+
+    const pending = prepareGrounding({
+      decomposition,
+      userContext,
+      db: {} as never,
+      gemini: {} as never,
+      traceContext: undefined,
+      emit: vi.fn(),
+      topK: 3,
+      matchConcurrency: 2,
+      vesselEnabled: false,
+    });
+    const assertion = expect(pending).rejects.toMatchObject({
+      code: 'PIPELINE_TIMEOUT',
+      retryable: true,
+    });
+
+    await vi.advanceTimersByTimeAsync(MATCHING_TIMEOUT_MS);
+    await assertion;
+  });
+
+  it('does not inherit the global LLM timeout', async () => {
+    process.env.LLM_TIMEOUT_MS = '120000';
+    vi.resetModules();
+
+    const config = await import('@/lib/ai/pipeline/config/stage-timeouts');
+
+    expect(config.MATCHING_TIMEOUT_MS).toBe(10_000);
+  });
+
+  it('honors the dedicated matching timeout override', async () => {
+    process.env.PIPELINE_MATCHING_TIMEOUT_MS = '7500';
+    vi.resetModules();
+
+    const config = await import('@/lib/ai/pipeline/config/stage-timeouts');
+
+    expect(config.MATCHING_TIMEOUT_MS).toBe(7500);
+  });
+});

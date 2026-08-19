@@ -7,7 +7,7 @@
 /// 1 cơm gà…". Stripping the markers in place preserves the order for free.
 library;
 
-import '../../../../models/relog.dart';
+import '../../../../models/logging/relog.dart';
 import 'slash_token.dart';
 
 /// A pick's name without the `/` it was summoned with.

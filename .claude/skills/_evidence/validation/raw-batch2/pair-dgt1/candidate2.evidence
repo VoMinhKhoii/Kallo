@@ -1,7 +1,7 @@
 === LOG ===
 861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
 87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
-8a80c07 docs(design): fold the mobile system into the nham-design skill
+8a80c07 docs(design): fold the mobile system into the kallo-design skill
 === STATUS ===
  M components/logging/input/barcode-product-step.tsx
  M components/logging/input/barcode-scanner-dialog.tsx
@@ -25,8 +25,8 @@ index 8f451d6..9e00dd2 100644
  import { useTranslations } from 'next-intl';
 -import { useMemo, useState } from 'react';
 +import { useEffect, useMemo, useState } from 'react';
- import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
- import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
+ import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
+ import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/openfoodfacts';
  
 @@ -43,6 +43,14 @@ interface BarcodeProductStepProps {
    onBack: () => void;
@@ -206,7 +206,7 @@ index 8f451d6..9e00dd2 100644
 +                  type="button"
 +                  onClick={handleClearServing}
 +                  disabled={isSavingOverride}
-+                  className="font-medium font-sans-display text-[#8B8682] text-[13px] transition-colors hover:text-nham-danger disabled:opacity-50"
++                  className="font-medium font-sans-display text-[#8B8682] text-[13px] transition-colors hover:text-kallo-danger disabled:opacity-50"
 +                >
 +                  {t('barcodeResetServing')}
 +                </button>
@@ -364,9 +364,9 @@ index 9003a49..05d4eb4 100644
 -});
 +}
  
- vi.mock('@/lib/auth', () => ({
+ vi.mock('@/lib/infra/auth', () => ({
    requireAuthAndProfile: vi.fn().mockResolvedValue({
-@@ -25,6 +40,7 @@ vi.mock('@/lib/db', () => ({
+@@ -25,6 +40,7 @@ vi.mock('@/lib/infra/db/client', () => ({
    db: {
      select: mockDbSelect,
      insert: mockDbInsert,
@@ -374,7 +374,7 @@ index 9003a49..05d4eb4 100644
    },
  }));
  
-@@ -35,6 +51,12 @@ vi.mock('@/lib/db/schema', () => ({
+@@ -35,6 +51,12 @@ vi.mock('@/lib/infra/db/schema', () => ({
      code: 'ingredientSources.code',
    },
    pendingAnalyses: { id: 'pendingAnalyses.id' },
@@ -386,10 +386,10 @@ index 9003a49..05d4eb4 100644
 +  },
  }));
  
- vi.mock('@/lib/barcode/openfoodfacts', async (importActual) => {
-@@ -51,7 +73,12 @@ vi.mock('@/lib/barcode/openfoodfacts', async (importActual) => {
+ vi.mock('@/lib/domain/barcode/openfoodfacts', async (importActual) => {
+@@ -51,7 +73,12 @@ vi.mock('@/lib/domain/barcode/openfoodfacts', async (importActual) => {
  import type { PipelineResult } from '@/lib/ai/types';
- import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
+ import { fetchProductFromOpenFoodFacts } from '@/lib/domain/barcode/openfoodfacts';
  // Import modules under test
 -import { searchBarcodeAction, stageBarcodeMealAction } from '../barcode';
 +import {

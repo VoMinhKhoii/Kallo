@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 
 /// "or continue with email" divider.
 ///
@@ -16,7 +16,7 @@ class AuthDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rule = Expanded(
-      child: Container(height: 1, color: NhamColors.borderSoft),
+      child: Container(height: 1, color: KalloColors.borderSoft),
     );
     return Row(
       children: [

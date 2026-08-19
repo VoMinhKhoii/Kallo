@@ -7,7 +7,7 @@
 /// unit JavaScript uses, so the offsets transfer exactly.
 library;
 
-import '../../../../models/relog.dart';
+import '../../../../models/logging/relog.dart';
 import 'slash_token.dart';
 
 /// A composer value plus the picks located inside it, captured before a submit

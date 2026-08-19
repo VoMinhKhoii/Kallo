@@ -3,11 +3,11 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:nham_mobile/data/api_client.dart';
-import 'package:nham_mobile/features/logging/data/label_scan_providers.dart';
-import 'package:nham_mobile/features/logging/logic/label_image.dart';
-import 'package:nham_mobile/features/logging/logic/label_review.dart';
-import 'package:nham_mobile/models/nutrition_label.dart';
+import 'package:kallo_mobile/features/logging/data/label_scan_providers.dart';
+import 'package:kallo_mobile/features/logging/logic/label/image.dart';
+import 'package:kallo_mobile/features/logging/logic/label/review.dart';
+import 'package:kallo_mobile/models/nutrition_label.dart';
+import 'package:kallo_mobile/services/http/api_client.dart';
 
 /// ApiClient stand-in that records requests and replays canned responses —
 /// never touches HTTP or the Supabase session. Same shape as the barcode

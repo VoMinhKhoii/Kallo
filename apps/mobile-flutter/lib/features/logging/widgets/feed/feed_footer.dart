@@ -1,14 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../models/cheat.dart';
-import '../../../../models/meal.dart';
+import '../../../../models/logging/cheat.dart';
+import '../../../../models/logging/meal.dart';
 import '../../data/stream_analysis_controller.dart';
 import '../../logic/feed/view_state.dart';
 import '../../logic/logging_spacing.dart';
-import '../cheat_slider_card.dart';
-import '../entrances.dart';
-import '../meal_entry.dart';
+import '../cheat/cheat_slider_card.dart';
+import '../composer/entrances.dart';
+import '../entry/meal_entry.dart';
 import '../turn/meal_time_divider.dart';
 import '../streaming/streaming_entry.dart';
 import '../turn/user_message_bubble.dart';

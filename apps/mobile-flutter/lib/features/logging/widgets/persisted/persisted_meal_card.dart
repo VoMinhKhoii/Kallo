@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
-import '../confirm_meal_removal.dart';
+import '../entry/confirm_meal_removal.dart';
 import '../turn/turn_header.dart';
 import 'persisted_meal_actions.dart';
 import 'persisted_meal_amount_editor.dart';
@@ -15,8 +15,8 @@ import 'persisted_meal_card_content.dart';
 
 /// A saved meal in the day's feed — collapsed by default, expandable.
 ///
-/// Ported 1:1 from
-/// `apps/mobile/src/components/logging/feed/persisted-meal-card.tsx`: the
+/// Ported 1:1 from web
+/// `components/logging/feed/persisted/persisted-meal-card.tsx`: the
 /// chevron rotates 0°↔180° (200ms), the collapsed summary cross-fades out, and
 /// the detail block animates its height open/closed (200ms).
 class PersistedMealCard extends StatefulWidget {
@@ -84,10 +84,10 @@ class _PersistedMealCardState extends State<PersistedMealCard>
       onDismissed: (_) => onRemove(),
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
+        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp5),
         decoration: BoxDecoration(
-          color: NhamColors.danger,
-          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+          color: KalloColors.danger,
+          borderRadius: BorderRadius.circular(KalloRadii.containerLg),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

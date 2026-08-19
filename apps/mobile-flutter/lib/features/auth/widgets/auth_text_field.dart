@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
 /// The auth email/password field, matching web `components/auth/form-input.tsx`.
 ///
@@ -90,10 +90,10 @@ class _AuthTextFieldState extends State<AuthTextField> {
       borderColor = _focused ? _red500 : _red400;
       ringColor = _focused ? _red500.withValues(alpha: 0.10) : null;
     } else if (_focused) {
-      borderColor = NhamColors.accent;
-      ringColor = NhamColors.accent.withValues(alpha: 0.10);
+      borderColor = KalloColors.accent;
+      ringColor = KalloColors.accent.withValues(alpha: 0.10);
     } else {
-      borderColor = NhamColors.borderSoft; // hairline #E8E6DC @ 60%
+      borderColor = KalloColors.borderSoft; // hairline #E8E6DC @ 60%
       ringColor = null;
     }
 
@@ -112,8 +112,8 @@ class _AuthTextFieldState extends State<AuthTextField> {
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
-            color: NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            color: KalloColors.elev,
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
             border: Border.all(color: borderColor),
             boxShadow: ringColor == null
                 ? null
@@ -137,7 +137,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
                 onChanged: widget.onChanged,
                 autocorrect: false,
                 enableSuggestions: !isPassword,
-                cursorColor: NhamColors.text,
+                cursorColor: KalloColors.text,
                 style: dashBody(),
                 decoration: InputDecoration(
                   isDense: true,
@@ -150,10 +150,10 @@ class _AuthTextFieldState extends State<AuthTextField> {
                   disabledBorder: InputBorder.none,
                   // px-4 py-3; reserve room on the right for the eye toggle.
                   contentPadding: EdgeInsets.only(
-                    left: NhamSpacing.sp4,
-                    right: isPassword ? 40 : NhamSpacing.sp4,
-                    top: NhamSpacing.sp3,
-                    bottom: NhamSpacing.sp3,
+                    left: KalloSpacing.sp4,
+                    right: isPassword ? 40 : KalloSpacing.sp4,
+                    top: KalloSpacing.sp3,
+                    bottom: KalloSpacing.sp3,
                   ),
                 ),
               ),
@@ -195,7 +195,7 @@ class _RevealToggleState extends State<_RevealToggle> {
   @override
   Widget build(BuildContext context) {
     final color =
-        _pressed ? NhamColors.textMuted : NhamColors.textMuted.withValues(alpha: 0.5);
+        _pressed ? KalloColors.textMuted : KalloColors.textMuted.withValues(alpha: 0.5);
     return Padding(
       padding: const EdgeInsets.only(right: 12), // right-3
       child: GestureDetector(

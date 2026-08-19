@@ -5,14 +5,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { useRouter } from '@/i18n/navigation';
-import { isDuplicateEmailError } from '@/lib/auth/duplicate-email';
+import { isDuplicateEmailError } from '@/lib/infra/auth/duplicate-email';
 import {
   createNoncePair,
   type GoogleCredentialResponse,
   loadGoogleIdentity,
-} from '@/lib/auth/google-identity';
-import { safeNextPath } from '@/lib/auth/safe-next';
-import { createClient } from '@/lib/supabase/client';
+} from '@/lib/infra/auth/google-identity';
+import { safeNextPath } from '@/lib/infra/auth/safe-next';
+import { createClient } from '@/lib/infra/supabase/client';
 
 /** Grace period after focus returns, so a credential callback can land first. */
 const POPUP_SETTLE_MS = 250;

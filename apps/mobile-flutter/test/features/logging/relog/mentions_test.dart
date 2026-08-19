@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nham_mobile/features/logging/logic/relog/mentions.dart';
-import 'package:nham_mobile/features/logging/logic/relog/slash_token.dart';
-import 'package:nham_mobile/models/relog.dart';
+import 'package:kallo_mobile/features/logging/logic/relog/mentions.dart';
+import 'package:kallo_mobile/features/logging/logic/relog/slash_token.dart';
+import 'package:kallo_mobile/models/logging/relog.dart';
 
 RelogMention _mention(String label, int start, {String? stageId}) =>
     RelogMention(

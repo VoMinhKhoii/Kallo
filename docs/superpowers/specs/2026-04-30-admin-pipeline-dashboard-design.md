@@ -2,7 +2,7 @@
 
 Date: 2026-04-30
 Branch: `feat/admin-pipeline-dashboard`
-Worktree: `../nham-admin-dashboard`
+Worktree: `../kallo-admin-dashboard`
 Revision: v2 (post spec-review fixes)
 
 ## 1. Problem

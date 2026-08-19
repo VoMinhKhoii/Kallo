@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
-import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
 import { loadLoggingDay } from '@/lib/actions/meals/load-meals';
-import { loadWeightSummaryAction } from '@/lib/actions/weight';
+import { loadCalorieAdherenceHeatmap } from '@/lib/actions/tracking/dashboard';
+import { loadWeightSummaryAction } from '@/lib/actions/tracking/weight';
 import type { DashboardBundle } from '@/lib/api/contracts/dashboard';
 import {
   dateStringSchema,
@@ -9,7 +9,7 @@ import {
 } from '@/lib/api/contracts/meals';
 import { parseTzParam } from '@/lib/api/query';
 import { handleRouteError } from '@/lib/api/respond';
-import { getOnboardingProfile } from '@/lib/onboarding/actions';
+import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 
 export const runtime = 'nodejs';
 

@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 import { DsCard, DsMeta, DsSection } from './specimen';
 
 type Swatch = {
@@ -12,77 +12,77 @@ type Swatch = {
 const BRAND: Swatch[] = [
   {
     name: 'Surface',
-    token: '--nham-surface',
-    className: 'bg-nham-surface',
+    token: '--kallo-surface',
+    className: 'bg-kallo-surface',
     note: 'App background — neutral gray-white',
     border: true,
   },
   {
     name: 'Text',
-    token: '--nham-text',
-    className: 'bg-nham-text',
+    token: '--kallo-text',
+    className: 'bg-kallo-text',
     note: 'Primary text — near-black ink',
   },
   {
     name: 'Text muted',
-    token: '--nham-text-muted',
-    className: 'bg-nham-text-muted',
+    token: '--kallo-text-muted',
+    className: 'bg-kallo-text-muted',
     note: 'Secondary text — muted neutral ink',
   },
   {
     name: 'Text soft',
-    token: '--nham-text-soft',
-    className: 'bg-nham-text-soft',
+    token: '--kallo-text-soft',
+    className: 'bg-kallo-text-soft',
     note: 'Landing body copy',
   },
   {
     name: 'Accent',
-    token: '--nham-accent',
-    className: 'bg-nham-accent',
+    token: '--kallo-accent',
+    className: 'bg-kallo-accent',
     note: 'Signature tan — highlights, italics',
   },
   {
     name: 'Accent hover',
-    token: '--nham-accent-hover',
-    className: 'bg-nham-accent-hover',
+    token: '--kallo-accent-hover',
+    className: 'bg-kallo-accent-hover',
     note: 'Accent darkened one step',
   },
   {
     name: 'Border',
-    token: '--nham-border',
-    className: 'bg-nham-border',
+    token: '--kallo-border',
+    className: 'bg-kallo-border',
     note: 'Hairlines, dividers — neutral hairline',
   },
   {
     name: 'Hover',
-    token: '--nham-hover',
-    className: 'bg-nham-hover',
+    token: '--kallo-hover',
+    className: 'bg-kallo-hover',
     note: 'Warm beige hover/selected wash',
     border: true,
   },
   {
     name: 'Track',
-    token: '--nham-track',
-    className: 'bg-nham-track',
+    token: '--kallo-track',
+    className: 'bg-kallo-track',
     note: 'Warm track — disabled, skeletons, chips',
     border: true,
   },
   {
     name: 'Stone',
-    token: '--nham-stone',
-    className: 'bg-nham-stone',
+    token: '--kallo-stone',
+    className: 'bg-kallo-stone',
     note: 'Cool gray — captions, fat macro',
   },
   {
     name: 'Button',
-    token: '--nham-btn',
-    className: 'bg-nham-btn',
+    token: '--kallo-btn',
+    className: 'bg-kallo-btn',
     note: 'Solid CTA — warm umber, not black',
   },
   {
     name: 'Ink',
-    token: '--nham-ink',
-    className: 'bg-nham-ink',
+    token: '--kallo-ink',
+    className: 'bg-kallo-ink',
     note: 'Ink as a surface (hero CTA)',
   },
 ];
@@ -131,32 +131,32 @@ const SEMANTIC: Swatch[] = [
 const STATUS: Swatch[] = [
   {
     name: 'Success',
-    token: '--nham-success',
-    className: 'bg-nham-success',
+    token: '--kallo-success',
+    className: 'bg-kallo-success',
     note: 'Leafy sage',
   },
   {
     name: 'Danger',
-    token: '--nham-danger',
-    className: 'bg-nham-danger',
+    token: '--kallo-danger',
+    className: 'bg-kallo-danger',
     note: 'Terracotta',
   },
   {
     name: 'Protein',
-    token: '--nham-macro-protein',
-    className: 'bg-nham-macro-protein',
+    token: '--kallo-macro-protein',
+    className: 'bg-kallo-macro-protein',
     note: 'Same as accent',
   },
   {
     name: 'Carbs',
-    token: '--nham-macro-carbs',
-    className: 'bg-nham-macro-carbs',
+    token: '--kallo-macro-carbs',
+    className: 'bg-kallo-macro-carbs',
     note: 'Same as text muted',
   },
   {
     name: 'Fat',
-    token: '--nham-macro-fat',
-    className: 'bg-nham-macro-fat',
+    token: '--kallo-macro-fat',
+    className: 'bg-kallo-macro-fat',
     note: 'Same as stone',
   },
 ];
@@ -170,12 +170,12 @@ function SwatchGrid({ swatches }: { swatches: Swatch[] }) {
             className={cn(
               'h-14 rounded-xl',
               s.className,
-              s.border && 'border border-nham-border/60'
+              s.border && 'border border-kallo-border/60'
             )}
           />
-          <p className="mt-2 font-medium text-nham-text text-sm">{s.name}</p>
+          <p className="mt-2 font-medium text-kallo-text text-sm">{s.name}</p>
           <DsMeta>{s.token}</DsMeta>
-          <p className="mt-0.5 text-2xs text-nham-text-muted">{s.note}</p>
+          <p className="mt-0.5 text-2xs text-kallo-text-muted">{s.note}</p>
         </div>
       ))}
     </div>

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nham_mobile/features/logging/data/stream_analysis_controller.dart';
-import 'package:nham_mobile/features/logging/logic/feed/stream_ticker.dart';
-import 'package:nham_mobile/models/meal.dart';
-import 'package:nham_mobile/models/streaming.dart';
+import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
+import 'package:kallo_mobile/features/logging/logic/feed/stream_ticker.dart';
+import 'package:kallo_mobile/models/logging/meal.dart';
+import 'package:kallo_mobile/models/logging/streaming.dart';
 
 MealItem _item(String id, String name, double calories) => MealItem(
   id: id,

@@ -6,7 +6,7 @@
 /// function testable without an `easy_localization` bootstrap.
 library;
 
-import '../../../../models/streaming.dart';
+import '../../../../models/logging/streaming.dart';
 import '../../data/stream_analysis_controller.dart';
 
 /// Statuses with a phase label of their own; everything else falls back to

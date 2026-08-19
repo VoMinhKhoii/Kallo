@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/infra/supabase/client';
 
 /**
  * Step one of password recovery: request a reset link. The email lands the
@@ -45,7 +45,7 @@ export function ForgotPasswordForm() {
 
   return (
     <div className="space-y-4">
-      <p className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
+      <p className="font-sans-display text-kallo-text-muted text-sm leading-relaxed">
         {t('description')}
       </p>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -59,7 +59,7 @@ export function ForgotPasswordForm() {
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-nham-ink px-4 py-3 font-medium font-sans-display text-sm text-white tracking-tight transition-all duration-200 hover:bg-nham-ink-hover disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-kallo-ink px-4 py-3 font-medium font-sans-display text-sm text-white tracking-tight transition-all duration-200 hover:bg-kallo-ink-hover disabled:opacity-60"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {t('submit')}
@@ -68,7 +68,7 @@ export function ForgotPasswordForm() {
       <button
         type="button"
         onClick={showAuth}
-        className="mx-auto flex items-center gap-1.5 font-sans-display text-nham-text-muted text-sm transition-colors hover:text-nham-text"
+        className="mx-auto flex items-center gap-1.5 font-sans-display text-kallo-text-muted text-sm transition-colors hover:text-kallo-text"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         {t('back')}

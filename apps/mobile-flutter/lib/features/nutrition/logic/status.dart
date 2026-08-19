@@ -1,23 +1,26 @@
-/// Nutrient-row status logic vendored from web `components/nutrition/rows/
-/// nutrient-row.tsx` + `nutrient-detail.tsx` (keep in sync). `kStatusColors`
-/// maps the web's `var(--nham-heatmap-*)` to the mobile heatmap tokens.
+/// Nutrient-row status logic. `kStatusColors` maps the web
+/// `var(--kallo-heatmap-*)` tokens to the mobile heatmap tokens.
 ///
-/// Ported from `apps/mobile/src/lib/nutrition/logic/status.ts`.
+/// The web `nutrient-row.tsx` / `nutrient-detail.tsx` pair this was vendored
+/// from was replaced by `components/nutrition/rows/nutrient-grid-card.tsx` in
+/// the web nutrition rewrite (commit cdd7a3fa), which reads its buckets from
+/// `getNutrientStatus` in `lib/domain/nutrition/pattern/aggregation.ts`.
+/// Parity has not been re-verified since that rewrite.
 library;
 
 import 'dart:ui';
 
-import '../../../models/nutrition.dart';
-import '../../../theme/nham_colors.dart';
+import '../../../models/nutrition/nutrition.dart';
+import '../../../theme/kallo_colors.dart';
 
 enum StatusKey { onTarget, close, slight, moderate, far }
 
 const Map<StatusKey, Color> kStatusColors = {
-  StatusKey.onTarget: NhamColors.heatmapOnTarget,
-  StatusKey.close: NhamColors.heatmapClose,
-  StatusKey.slight: NhamColors.heatmapSlight,
-  StatusKey.moderate: NhamColors.heatmapModerate,
-  StatusKey.far: NhamColors.heatmapFar,
+  StatusKey.onTarget: KalloColors.heatmapOnTarget,
+  StatusKey.close: KalloColors.heatmapClose,
+  StatusKey.slight: KalloColors.heatmapSlight,
+  StatusKey.moderate: KalloColors.heatmapModerate,
+  StatusKey.far: KalloColors.heatmapFar,
 };
 
 StatusKey statusKeyFor(NutrientCardData card) {

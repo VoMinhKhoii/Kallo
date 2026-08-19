@@ -1,5 +1,5 @@
-import { AppError } from '@/lib/errors';
-import { scanErrorCode } from '@/lib/nutrition/ocr-error';
+import { AppError } from '@/lib/core/errors/app-error';
+import { scanErrorCode } from '@/lib/domain/nutrition/ocr/error';
 
 /**
  * Map anything thrown by the label-scan path onto the standard `/api/v1`

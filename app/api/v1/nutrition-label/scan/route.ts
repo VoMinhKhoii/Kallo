@@ -1,9 +1,9 @@
 import type { NextRequest } from 'next/server';
-import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr';
+import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
 import { scanNutritionLabelSchema } from '@/lib/api/contracts/nutrition-label';
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { validateNutritionLabelImage } from '@/lib/nutrition/ocr-image';
+import { validateNutritionLabelImage } from '@/lib/domain/nutrition/ocr/image';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { mapNutritionLabelError } from '../_errors';
 
 // `sharp` decodes the image in validateNutritionLabelImage — Node runtime only.

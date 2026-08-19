@@ -11,8 +11,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/relog.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/logging/relog.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 

@@ -25,4 +25,4 @@ You can expect:
 - A triage and severity assessment within 5 business days.
 - A coordinated disclosure plan once a fix is ready.
 
-Thank you for helping keep Nham and its users safe.
+Thank you for helping keep Kallo and its users safe.
