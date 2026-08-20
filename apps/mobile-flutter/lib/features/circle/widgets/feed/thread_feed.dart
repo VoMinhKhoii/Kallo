@@ -88,7 +88,21 @@ class ThreadFeed extends ConsumerWidget {
     for (final entry in state.entries) {
       final date = DateTime.parse(entry.meal.sharedAt);
       final day = threadDayKey(date);
-      if (day != previousDay) children.add(_DaySeparator(date: date));
+      // A rule goes BEFORE each post rather than after it, so a day boundary
+      // and the end of the list get the day separator (or nothing) instead of
+      // a stray hairline stacked a few points above one.
+      if (day != previousDay) {
+        children.add(_DaySeparator(date: date));
+      } else {
+        children.add(
+          const Padding(
+            // Indented to the content rail so the rule reinforces the
+            // avatar/content structure instead of cutting the row in half.
+            padding: EdgeInsets.only(left: _contentRail),
+            child: Divider(height: 1, thickness: 1, color: kHairline),
+          ),
+        );
+      }
       children.add(
         Padding(
           key: ValueKey(entry.meal.shareId),
@@ -99,14 +113,6 @@ class ThreadFeed extends ConsumerWidget {
           // visibly bottom-heavy. See the rhythm note in `feed_entry.dart`.
           padding: const EdgeInsets.only(top: KalloSpacing.sp3),
           child: FeedEntry(entry: entry),
-        ),
-      );
-      // Indented to the content rail so the rule reinforces the avatar/content
-      // structure instead of cutting the whole row in half.
-      children.add(
-        const Padding(
-          padding: EdgeInsets.only(left: _contentRail),
-          child: Divider(height: 1, thickness: 1, color: kHairline),
         ),
       );
       previousDay = day;

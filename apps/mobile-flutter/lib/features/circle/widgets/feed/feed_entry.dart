@@ -74,7 +74,15 @@ class _FeedEntryState extends State<FeedEntry> {
                       children: [
                         TextSpan(
                           text: name,
-                          style: dashMeta(weight: FontWeight.w500),
+                          // Bold + ink against the muted timestamp beside it:
+                          // the Threads relationship, where a bold author sits
+                          // over regular body copy. w600 is above the w500 that
+                          // `mobile.md` caps DATA at — a name is identity, not
+                          // a figure, and the cap exists to stop numbers
+                          // shouting at each other.
+                          style: dashMeta(
+                            weight: FontWeight.w600,
+                          ).copyWith(color: kInk),
                         ),
                         // A backfilled (past-date) meal shared "now" would
                         // misleadingly read "just now" — hide the elapsed time.

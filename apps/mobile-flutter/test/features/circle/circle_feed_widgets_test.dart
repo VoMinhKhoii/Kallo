@@ -239,6 +239,9 @@ void main() {
   ) async {
     await pump(tester, FeedEntry(entry: entry()));
     expect(find.byType(CompositionBar), findsOneWidget);
+    final size = tester.getSize(find.byType(CompositionBar));
+    expect(size.height, 8);
+    expect(size.width, greaterThan(100));
   });
 
   testWidgets('reply opens composer and empty blur closes it', (tester) async {
@@ -250,6 +253,36 @@ void main() {
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pump();
     expect(find.byKey(const Key('reply-composer')), findsNothing);
+  });
+
+  testWidgets('a day boundary carries one rule, not two', (tester) async {
+    // Two posts today, one yesterday: rules go between posts WITHIN a day, and
+    // the day separator alone marks the boundary. A rule after every post left
+    // a stray hairline sitting a few points above each separator.
+    final state = SharedMealFeedState(
+      entries: [
+        entry(shareId: 's1'),
+        entry(shareId: 's2'),
+        entry(
+          shareId: 's3',
+          sharedAt: DateTime.now().subtract(const Duration(days: 1)),
+        ),
+      ],
+      nextCursor: null,
+    );
+    await pump(tester, _StaticThread(state: state));
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Yesterday'), findsOneWidget);
+    // Post rules are the ones indented to the content rail; the two day
+    // separators carry a Divider of their own, so count only the indented set.
+    // Before the fix this found three — one trailing every post, including the
+    // two that butt up against a separator.
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Padding && w.padding == const EdgeInsets.only(left: 48),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('day labels and empty add-friend CTA render', (tester) async {
