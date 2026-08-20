@@ -104,8 +104,12 @@ class _FeedEntryState extends State<FeedEntry> {
                         // Mirrors web `components/groups/feed-entry.tsx`.
                         if (!meal.isBackfilled)
                           TextSpan(
+                            // A plain space, no dot: the name is bold ink and
+                            // the time regular muted, so weight and colour
+                            // already part them. A separator on top of that is
+                            // punctuation doing work the type has done.
                             text:
-                                ' · ${formatElapsed(sharedAt, locale: context.locale.languageCode)}',
+                                ' ${formatElapsed(sharedAt, locale: context.locale.languageCode)}',
                             style: dashMeta(),
                           ),
                       ],

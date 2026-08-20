@@ -187,13 +187,18 @@ class _ReplyRow extends StatelessWidget {
               Text.rich(
                 TextSpan(
                   children: [
+                    // Same identity line as a post: a reply reuses the meal
+                    // anatomy, so its author should not read heavier than the
+                    // author of the thing being replied to.
                     TextSpan(
                       text: name,
-                      style: dashBody(weight: FontWeight.w500),
+                      style: dashMeta(
+                        weight: FontWeight.w600,
+                      ).copyWith(color: kInk),
                     ),
                     TextSpan(
                       text:
-                          '  ${formatElapsed(reply.createdAt, locale: locale)}',
+                          ' ${formatElapsed(reply.createdAt, locale: locale)}',
                       style: dashMeta(),
                     ),
                   ],
