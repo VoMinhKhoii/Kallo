@@ -145,7 +145,7 @@
   --color-kallo-macro-fat: var(--kallo-macro-fat);
   /* The brighter, hue-split trio — for anywhere the three macros sit side by
      side (nutrition charts, the label review row). Not interchangeable with
-     the quiet --kallo-macro-* set above. */
+     aliases of --kallo-macro-* above, kept for existing call sites. */
   --color-kallo-chart-protein: var(--kallo-chart-protein);
   --color-kallo-chart-carbs: var(--kallo-chart-carbs);
   --color-kallo-chart-fat: var(--kallo-chart-fat);
@@ -237,19 +237,19 @@
      the warm palette has no hue that reads as "this token is not free text"
      without also reading as a warning. Scoped to that one use. */
   --kallo-mention: #4a90d9;
-  --kallo-macro-protein: #c9a87c;
-  --kallo-macro-carbs: #8b7355;
-  --kallo-macro-fat: #a8a29e;
-  /* Nutrition-chart macro pigments — a SEPARATE, brighter set from the
-     --kallo-macro-* trio above, scoped to the nutrition page's stacked bars,
-     composition bar and legend. The macro tokens are tan-on-taupe-on-gray:
-     three low-chroma neighbours that turn to mud at the 6-10px bar widths the
-     trend chart uses. These split by hue instead of by value, so a column is
-     readable at 6px. The dashboard, logging feed and cheat sliders keep the
-     quieter --kallo-macro-* set; do not merge the two. */
-  --kallo-chart-protein: #d46a86;
-  --kallo-chart-carbs: #e09c84;
-  --kallo-chart-fat: #e8c55c;
+  /* Macro pigments — ONE set, app-wide: nutrition charts, the dashboard dock,
+     the logging feed and the cheat sliders all draw these. They split by HUE
+     rather than by value, which is what lets three of them sit adjacent in a
+     6-10px stacked bar and stay readable; the earlier tan-on-taupe-on-gray
+     trio turned to mud at that size and was retired. */
+  --kallo-macro-protein: #d46a86;
+  --kallo-macro-carbs: #e09c84;
+  --kallo-macro-fat: #e8c55c;
+  /* Kept as aliases so chart call sites keep reading; there is no longer a
+     separate chart palette. */
+  --kallo-chart-protein: var(--kallo-macro-protein);
+  --kallo-chart-carbs: var(--kallo-macro-carbs);
+  --kallo-chart-fat: var(--kallo-macro-fat);
   /* What an unselected column collapses to while another one is picked. */
   --kallo-chart-muted: #cfccc4;
   /* Semantic status tokens */
@@ -325,14 +325,14 @@
   --kallo-mention: #7ab3ea;
   --kallo-btn: #c9a87c;
   --kallo-btn-hover: #d4b88c;
-  --kallo-macro-protein: #c9a87c;
-  --kallo-macro-carbs: #b8a88e;
-  --kallo-macro-fat: #8a8580;
+  --kallo-macro-protein: #d46a86;
+  --kallo-macro-carbs: #e09c84;
+  --kallo-macro-fat: #e8c55c;
   /* Chart pigments carry over unchanged: all three are mid-tone enough to hold
      against the dark card (#251f15) without the light-mode values washing out. */
-  --kallo-chart-protein: #d46a86;
-  --kallo-chart-carbs: #e09c84;
-  --kallo-chart-fat: #e8c55c;
+  --kallo-chart-protein: var(--kallo-macro-protein);
+  --kallo-chart-carbs: var(--kallo-macro-carbs);
+  --kallo-chart-fat: var(--kallo-macro-fat);
   --kallo-chart-muted: #4a4336;
   /* Semantic status tokens */
   --kallo-success: #7faf6a;

@@ -174,22 +174,27 @@ abstract final class KalloColors {
   static const Color cheatMark = Color(0xFF8B7355);
 
   // ── Macros ───────────────────────────────────────────────────────────
-  static const Color macroProtein = Color(0xFFC9A87C);
-  static const Color macroCarbs = Color(0xFF8B7355);
-  static const Color macroFat = Color(0xFFA8A29E);
+  /// ONE macro palette, app-wide: nutrition charts, the composition bar, the
+  /// dashboard dock, the logging feed and the cheat sliders all draw these.
+  ///
+  /// They split by HUE rather than by value, which is what lets three of them
+  /// sit adjacent inside a 6–10px stacked bar and stay legible. The earlier
+  /// tan-on-taupe-on-gray trio (`#C9A87C`/`#8B7355`/`#A8A29E`) was three
+  /// low-chroma neighbours and turned to mud at that size; it was kept for the
+  /// large-fill surfaces for a while and then retired, so there is no longer a
+  /// quiet set to fall back to.
+  ///
+  /// Mirrors the web `--kallo-macro-*` tokens in `app/globals.css`.
+  static const Color macroProtein = Color(0xFFD46A86); // berry rose
+  static const Color macroCarbs = Color(0xFFE09C84); // apricot
+  static const Color macroFat = Color(0xFFE8C55C); // golden yellow
 
   // ── Macros, charted ──────────────────────────────────────────────────
-  /// A SEPARATE, brighter macro set for the nutrition page's stacked bars,
-  /// composition bar and legend. The [macroProtein]/[macroCarbs]/[macroFat]
-  /// trio above is tan-on-taupe-on-gray — three low-chroma neighbours that turn
-  /// to mud at the 6–10px column widths the trend chart uses. These split by
-  /// hue instead of by value, so a column still reads at 6px. The dashboard,
-  /// logging feed and cheat sliders keep the quieter set; do not merge the two.
-  ///
-  /// Mirrors the web `--kallo-chart-*` tokens in `app/globals.css`.
-  static const Color chartProtein = Color(0xFFD46A86); // berry rose
-  static const Color chartCarbs = Color(0xFFE09C84); // apricot
-  static const Color chartFat = Color(0xFFE8C55C); // golden yellow
+  /// Aliases of the macro trio, kept so chart call sites keep reading. There is
+  /// no longer a separate chart palette.
+  static const Color chartProtein = macroProtein;
+  static const Color chartCarbs = macroCarbs;
+  static const Color chartFat = macroFat;
 
   /// What an unselected column collapses to while another one is picked.
   static const Color chartMuted = Color(0xFFCFCCC4);
