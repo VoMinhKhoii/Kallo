@@ -124,3 +124,13 @@ The full module map — one line per folder stating its single concern — is `d
 | One-shot SSE ReadableStream (no WebSocket); raw fetch for the SSE consumer (no TanStack) | Serverless-compatible; purpose-built state machine beats fighting the abstraction |
 | 768-dim `gemini-embedding-001` vectors | Better multilingual quality |
 | Locket-style link invites instead of `@handle` search | No discovery surface; forwarded-link risk mitigated by remove-friend |
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
