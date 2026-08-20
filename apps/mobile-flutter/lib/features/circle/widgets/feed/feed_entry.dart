@@ -28,11 +28,15 @@ const double _standard = KalloSpacing.sp3; // 12
 /// How much of the nutrition page's bar this surface spends.
 ///
 /// That page draws one bar per screen; the feed draws one per post, so the same
-/// mark repeated down a list read as candy stripes at full weight. Half the
-/// height, a visible gutter between segments, and pigment pulled back toward
-/// the page — the three knobs to reach for if it still reads heavy, before
-/// touching the palette itself.
-const double _barHeight = 4;
+/// mark repeated down a list read as candy stripes at full weight. A shorter
+/// bar, a visible gutter between segments, and pigment pulled back toward the
+/// page — the three knobs to reach for if it reads heavy, before touching the
+/// palette itself.
+///
+/// Height is a trade in both directions: at 4 the bar is 80:1 and reads as a
+/// decorative rule under the calorie figure rather than as a composition; 6
+/// keeps it quiet while still reading as three parts of something.
+const double _barHeight = 6;
 const double _barGap = 2;
 const double _barOpacity = 0.8;
 
@@ -303,7 +307,10 @@ class _MacroValue extends StatelessWidget {
     children: [
       Icon(icon, size: 14, color: color),
       const SizedBox(width: KalloSpacing.sp1_5),
-      Text('$label $value', style: dashMeta(tabular: true)),
+      // Ink, not muted. These are the post's actual data — muted at 12 put
+      // them below the timestamp in prominence, which is backwards. Size still
+      // separates them from the calorie figure, so colour need not as well.
+      Text('$label $value', style: dashMeta(color: kInk, tabular: true)),
     ],
   );
 }
