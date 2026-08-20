@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+import 'package:kallo_mobile/features/circle/data/feed_time.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/share_replies.dart';
 import 'package:kallo_mobile/shared/widgets/nutrition/composition_bar.dart';
@@ -119,13 +120,24 @@ void main() {
     expect(find.textContaining('portion'), findsNothing);
   });
 
-  testWidgets('elapsed time is hidden for a backfilled share', (
+  testWidgets('the logged clock time shows, and hides for a backfill', (
     tester,
   ) async {
-    await pump(tester, FeedEntry(entry: entry()));
-    expect(find.textContaining('ago'), findsOneWidget);
-    await pump(tester, FeedEntry(entry: entry(isBackfilled: true)));
-    expect(find.textContaining('ago'), findsNothing);
+    // A fixed local instant, so the expectation does not drift with the clock
+    // or the machine's zone.
+    final loggedAt = DateTime(2026, 8, 13, 15, 2);
+    final shown = formatLoggedTime(loggedAt, locale: 'en');
+
+    await pump(tester, FeedEntry(entry: entry(sharedAt: loggedAt)));
+    expect(find.textContaining(shown), findsOneWidget);
+
+    // A backfilled share carries a sharedAt of "now", so its clock time would
+    // describe when the meal was typed up rather than when it was eaten.
+    await pump(
+      tester,
+      FeedEntry(entry: entry(sharedAt: loggedAt, isBackfilled: true)),
+    );
+    expect(find.textContaining(shown), findsNothing);
   });
 
   testWidgets('Log this too is hidden for self and shown for others', (

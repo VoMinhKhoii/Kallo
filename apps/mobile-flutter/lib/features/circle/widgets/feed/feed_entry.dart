@@ -99,9 +99,10 @@ class _FeedEntryState extends State<FeedEntry> {
                             weight: FontWeight.w600,
                           ).copyWith(color: kInk),
                         ),
-                        // A backfilled (past-date) meal shared "now" would
-                        // misleadingly read "just now" — hide the elapsed time.
-                        // Mirrors web `components/groups/feed-entry.tsx`.
+                        // A backfilled (past-date) meal carries a sharedAt of
+                        // "now", so its clock time describes when it was typed
+                        // up rather than when it was eaten — hide it. Mirrors
+                        // web `components/groups/feed-entry.tsx`.
                         if (!meal.isBackfilled)
                           TextSpan(
                             // A plain space, no dot: the name is bold ink and
@@ -109,7 +110,7 @@ class _FeedEntryState extends State<FeedEntry> {
                             // already part them. A separator on top of that is
                             // punctuation doing work the type has done.
                             text:
-                                ' ${formatElapsed(sharedAt, locale: context.locale.languageCode)}',
+                                ' ${formatLoggedTime(sharedAt, locale: context.locale.languageCode)}',
                             style: dashMeta(),
                           ),
                       ],
