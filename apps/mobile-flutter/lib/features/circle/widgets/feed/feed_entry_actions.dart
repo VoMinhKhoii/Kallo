@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_colors.dart';
 import '../../data/feed_mutations.dart';
 
 class FeedEntryActions extends ConsumerStatefulWidget {
@@ -112,6 +113,16 @@ const double _gap = 18;
 const double _glyph = 16;
 const double _hit = 44;
 
+/// Actions sit one step darker than the calm secondary.
+///
+/// `calm_tokens.dart` holds the app to two text colours, and this is a
+/// deliberate exception to it: at [kInkMuted] a 1.5-stroke glyph on the bright
+/// canvas read as an affordance that had been switched off — and this row
+/// already dims to 50% to mean exactly that, so the enabled and disabled states
+/// were separated by very little. Data stays on the two-colour rule; controls
+/// need to look pressable.
+const Color _actionInk = KalloColors.textSoft;
+
 class _Action extends StatelessWidget {
   const _Action({
     this.onTap,
@@ -138,11 +149,11 @@ class _Action extends StatelessWidget {
             Icon(
               icon,
               size: _glyph,
-              color: fill == 1 ? kInk : kInkMuted,
+              color: fill == 1 ? kInk : _actionInk,
               fill: fill,
             ),
             const SizedBox(width: 6),
-            Text(label, style: dashMeta()),
+            Text(label, style: dashMeta(color: _actionInk)),
           ],
         ),
       ),
