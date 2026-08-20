@@ -34,7 +34,7 @@ const double _standard = KalloSpacing.sp3; // 12
 /// touching the palette itself.
 const double _barHeight = 4;
 const double _barGap = 2;
-const double _barOpacity = 0.7;
+const double _barOpacity = 0.8;
 
 /// One shared meal: who and when, the meal itself, its calories and macro
 /// composition, then the action row.
@@ -165,11 +165,6 @@ class _Nutrition extends StatelessWidget {
 
   final CircleFeedMeal meal;
 
-  /// An em dash rather than the long "no data" string: three of those in one
-  /// row wraps the line and buries the figures that ARE known.
-  static String _grams(double? value) =>
-      value == null ? '—' : '${value.round()}g';
-
   @override
   Widget build(BuildContext context) {
     final composition = compositionFromGrams(
@@ -185,44 +180,22 @@ class _Nutrition extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: KalloSpacing.sp3,
-          runSpacing: _tight,
-          children: [
-            Text.rich(
+        Text.rich(
+          TextSpan(
+            // Unit stays at Meta so the figure carries the mass, not the word.
+            style: dashMeta(),
+            children: [
               TextSpan(
-                // Unit and grams stay at Meta so the figure carries the mass.
-                style: dashMeta(),
-                children: [
-                  TextSpan(
-                    text: kcal == null ? '—' : '${kcal.round()}',
-                    // Body, not Value: at 17 the figure outweighed the meal
-                    // name beside it, which put the post's focus back on the
-                    // number the redesign had just taken it off. Medium weight
-                    // and ink still mark it as the figure.
-                    style: dashBody(weight: FontWeight.w500, tabular: true),
-                  ),
-                  const TextSpan(text: ' kcal'),
-                ],
+                text: kcal == null ? '—' : '${kcal.round()}',
+                // Body, not Value: at 17 the figure outweighed the meal name
+                // above it, which put the post's focus back on the number this
+                // redesign had just taken it off. Medium weight and ink still
+                // mark it as the figure.
+                style: dashBody(weight: FontWeight.w500, tabular: true),
               ),
-            ),
-            for (final key in kCompositionKeys)
-              _MacroValue(
-                icon: kMacroIcons[key]!,
-                color: kCompositionColors[key]!,
-                label: switch (key) {
-                  'protein' => 'P',
-                  'carbohydrate' => 'C',
-                  _ => 'F',
-                },
-                value: _grams(switch (key) {
-                  'protein' => meal.proteinG,
-                  'carbohydrate' => meal.carbohydrateG,
-                  _ => meal.fatG,
-                }),
-              ),
-          ],
+              const TextSpan(text: ' kcal'),
+            ],
+          ),
         ),
         if (composition.totalKcal > 0) ...[
           const SizedBox(height: _tight),
@@ -231,6 +204,76 @@ class _Nutrition extends StatelessWidget {
             height: _barHeight,
             gap: _barGap,
             opacity: _barOpacity,
+          ),
+          const SizedBox(height: _tight),
+        ],
+        _MacroScale(segments: composition.segments, meal: meal),
+      ],
+    );
+  }
+}
+
+/// The macro figures, each centred under its own slice of the bar above.
+///
+/// The row mirrors the bar's flex weights and gutter exactly, so a label tracks
+/// its segment as the split changes — the bar becomes its own legend and the
+/// colour stops being encoded twice.
+///
+/// Two cases break that alignment, and both fall back to a plain left-aligned
+/// run instead of misreporting: a macro with no value has no slice to sit
+/// under, and a meal with no figures at all has no bar.
+class _MacroScale extends StatelessWidget {
+  const _MacroScale({required this.segments, required this.meal});
+
+  final List<CompositionSegment> segments;
+  final CircleFeedMeal meal;
+
+  static String _grams(double? value) =>
+      value == null ? '—' : '${value.round()}g';
+
+  double? _gramsFor(String key) => switch (key) {
+    'protein' => meal.proteinG,
+    'carbohydrate' => meal.carbohydrateG,
+    _ => meal.fatG,
+  };
+
+  String _labelFor(String key) => switch (key) {
+    'protein' => 'P',
+    'carbohydrate' => 'C',
+    _ => 'F',
+  };
+
+  Widget _value(String key) => _MacroValue(
+    icon: kMacroIcons[key]!,
+    color: kCompositionColors[key]!,
+    label: _labelFor(key),
+    value: _grams(_gramsFor(key)),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = segments.where((segment) => segment.pct > 0).toList();
+    if (visible.length != kCompositionKeys.length) {
+      return Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: KalloSpacing.sp3,
+        runSpacing: _tight,
+        children: [for (final key in kCompositionKeys) _value(key)],
+      );
+    }
+    return Row(
+      children: [
+        for (var i = 0; i < visible.length; i++) ...[
+          if (i > 0) const SizedBox(width: _barGap),
+          Expanded(
+            flex: (visible[i].pct * 1000).round(),
+            // A thin slice cannot hold its label at Meta. Scaling down beats
+            // dropping the figure or letting it run into its neighbour — the
+            // same trade `day_summary.dart` makes for its macro rows.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: _value(visible[i].key),
+            ),
           ),
         ],
       ],

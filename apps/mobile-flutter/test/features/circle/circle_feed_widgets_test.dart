@@ -273,6 +273,13 @@ void main() {
     final column = tester.getSize(find.text('Bún chả Hà Nội'));
     expect(bar.height, 4);
     expect(bar.width, greaterThan(column.width));
+
+    // Each figure is centred under its own slice: the label's centre should sit
+    // inside the segment it describes, not merely somewhere on the row.
+    final barLeft = tester.getTopLeft(find.byType(CompositionBar)).dx;
+    final proteinCentre = tester.getCenter(find.text('P 38g')).dx;
+    expect(proteinCentre, greaterThan(barLeft));
+    expect(proteinCentre, lessThan(barLeft + bar.width * 0.5));
   });
 
   testWidgets('a day boundary carries one rule, not two', (tester) async {
