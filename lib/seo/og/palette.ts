@@ -17,9 +17,9 @@ export const OG_COLORS = {
   border: '#e8e6dc',
   track: '#ecece9',
   stone: '#a8a29e',
-  macroProtein: '#c9a87c',
-  macroCarbs: '#8b7355',
-  macroFat: '#a8a29e',
+  macroProtein: '#d46a86',
+  macroCarbs: '#e09c84',
+  macroFat: '#e8c55c',
 } as const;
 
 /**

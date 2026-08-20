@@ -22,7 +22,7 @@ class MealInvitesSection extends ConsumerWidget {
       // A failed fetch must not read as "no invites" — a quiet, tappable retry.
       error:
           (_, __) => Padding(
-            padding: const EdgeInsets.only(bottom: KalloSpacing.sp4),
+            padding: const EdgeInsets.only(top: KalloSpacing.sp3),
             child: GestureDetector(
               onTap: () => ref.invalidate(mealShareInvitesProvider),
               child: Text(
@@ -38,6 +38,7 @@ class MealInvitesSection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: KalloSpacing.sp3),
             KalloText(
               tr('groups.invites.title'),
               variant: KalloTextVariant.eyebrow,
@@ -47,7 +48,6 @@ class MealInvitesSection extends ConsumerWidget {
               InviteCard(invite: invite),
               const SizedBox(height: KalloSpacing.sp3),
             ],
-            const SizedBox(height: KalloSpacing.sp3),
           ],
         );
       },

@@ -145,19 +145,19 @@ const STATUS: Swatch[] = [
     name: 'Protein',
     token: '--kallo-macro-protein',
     className: 'bg-kallo-macro-protein',
-    note: 'Same as accent',
+    note: 'Berry rose',
   },
   {
     name: 'Carbs',
     token: '--kallo-macro-carbs',
     className: 'bg-kallo-macro-carbs',
-    note: 'Same as text muted',
+    note: 'Apricot',
   },
   {
     name: 'Fat',
     token: '--kallo-macro-fat',
     className: 'bg-kallo-macro-fat',
-    note: 'Same as stone',
+    note: 'Golden yellow',
   },
 ];
 

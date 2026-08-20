@@ -7,6 +7,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_providers.dart';
 import '../../data/feed_time.dart';
+import 'day_separator.dart';
 import '../states/circle_error.dart';
 import '../states/circle_skeleton.dart';
 import 'feed_entry.dart';
@@ -80,20 +81,41 @@ class ThreadFeed extends ConsumerWidget {
         ),
       );
     }
-    final children = <Widget>[header, const SizedBox(height: KalloSpacing.sp3)];
+    // No spacer after the header here: the first thing in the list is always a
+    // day separator, and it pays its own top gap. Stacking both left ~36pt of
+    // dead air under the filter chips.
+    final children = <Widget>[header];
     String? previousDay;
     for (final entry in state.entries) {
       final date = DateTime.parse(entry.meal.sharedAt);
       final day = threadDayKey(date);
-      if (day != previousDay) children.add(_DaySeparator(date: date));
+      // A rule goes BEFORE each post rather than after it, so a day boundary
+      // and the end of the list get the day separator (or nothing) instead of
+      // a stray hairline stacked a few points above one.
+      if (day != previousDay) {
+        children.add(DaySeparator(date: date));
+      } else {
+        children.add(
+          const Padding(
+            // Indented to the content rail so the rule reinforces the
+            // avatar/content structure instead of cutting the row in half.
+            padding: EdgeInsets.only(left: kContentRail),
+            child: Divider(height: 1, thickness: 1, color: kHairline),
+          ),
+        );
+      }
       children.add(
         Padding(
           key: ValueKey(entry.meal.shareId),
-          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp4),
+          // Bottom is 0 by design: the post's last row is either the action
+          // row, whose 44pt tap target already carries ~14pt of slack under its
+          // glyphs, or ShareReplies, which pays its own bottom gap. Adding
+          // padding here would stack on top of one of them and leave the post
+          // visibly bottom-heavy. See the rhythm note in `feed_entry.dart`.
+          padding: const EdgeInsets.only(top: KalloSpacing.sp3),
           child: FeedEntry(entry: entry),
         ),
       );
-      children.add(const Divider(height: 1, thickness: 1, color: kHairline));
       previousDay = day;
     }
     if (state.isLoadingMore) {
@@ -117,34 +139,6 @@ class ThreadFeed extends ConsumerWidget {
         KalloSpacing.sp8,
       ),
       children: children,
-    );
-  }
-}
-
-class _DaySeparator extends StatelessWidget {
-  const _DaySeparator({required this.date});
-  final DateTime date;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = threadDayLabel(date, locale: context.locale.languageCode);
-    final text = switch (label.kind) {
-      ThreadDayLabelKind.today => tr('groups.wall.todayLabel'),
-      ThreadDayLabelKind.yesterday => tr('groups.wall.yesterdayLabel'),
-      ThreadDayLabelKind.date => label.dateLabel!,
-    };
-    return Padding(
-      padding: const EdgeInsets.only(top: KalloSpacing.sp4),
-      child: Row(
-        children: [
-          const Expanded(child: Divider(color: kHairline)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp2),
-            child: Text(text, style: dashMeta()),
-          ),
-          const Expanded(child: Divider(color: kHairline)),
-        ],
-      ),
     );
   }
 }

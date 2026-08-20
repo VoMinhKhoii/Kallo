@@ -1,11 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../models/nutrition/nutrition.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/helpers.dart';
+import '../../../../shared/widgets/nutrition/composition_bar.dart';
 import '../../logic/rhythm_logic.dart';
 import 'calorie_scope_stats.dart';
 import '../charts/macro_trend_chart.dart';
@@ -117,7 +117,7 @@ class DaySummary extends StatelessWidget {
                 onSelect: onSelect,
               )
             else
-              _CompositionBar(segments: composition.segments),
+              CompositionBar(segments: composition.segments),
             const SizedBox(height: KalloSpacing.sp3),
             // Colour key: which band is which macro (+ avg grams).
             //
@@ -143,7 +143,7 @@ class DaySummary extends StatelessWidget {
                       label: tr('nutrition.macrosShort.$key'),
                       grams: macros.where((m) => m.key == key).firstOrNull,
                       color: kCompositionColors[key]!,
-                      icon: _macroIcons[key]!,
+                      icon: kMacroIcons[key]!,
                       locale: locale,
                     ),
                 ],
@@ -157,41 +157,6 @@ class DaySummary extends StatelessWidget {
 }
 
 /// 8px rounded P/C/F kcal-share bar (static — the cells fill on the grid below).
-class _CompositionBar extends StatelessWidget {
-  const _CompositionBar({required this.segments});
-
-  final List<CompositionSegment> segments;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(KalloRadii.pill),
-      child: SizedBox(
-        height: 8,
-        child: Row(
-          children: [
-            for (final segment in segments)
-              if (segment.pct > 0)
-                Expanded(
-                  flex: (segment.pct * 1000).round(),
-                  child: ColoredBox(color: kCompositionColors[segment.key]!),
-                ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One food per macro instead of an abstract colour swatch — beef, wheat, and a
-/// drop of oil for fat, which has no single ingredient the way the other two
-/// do. Same three as the web legend (keep in sync).
-const Map<String, IconData> _macroIcons = {
-  'protein': LucideIcons.beef300,
-  'carbohydrate': LucideIcons.wheat300,
-  'fat': LucideIcons.droplet300,
-};
-
 class _MacroLegend extends StatelessWidget {
   const _MacroLegend({
     required this.label,

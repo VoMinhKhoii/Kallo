@@ -8,7 +8,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+import 'package:kallo_mobile/features/circle/data/feed_time.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
+import 'package:kallo_mobile/features/circle/widgets/feed/share_replies.dart';
+import 'package:kallo_mobile/shared/widgets/nutrition/composition_bar.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
 
@@ -92,18 +95,21 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('entry preserves diacritics and renders macros, kcal, and N/A', (
-    tester,
-  ) async {
-    await pump(tester, FeedEntry(entry: entry()));
-    expect(find.text('Mai'), findsOneWidget);
-    expect(find.text('Bún chả Hà Nội'), findsOneWidget);
-    expect(find.textContaining('P: 38g'), findsOneWidget);
-    expect(find.text('540 kcal'), findsOneWidget);
+  testWidgets(
+    'entry preserves diacritics and renders macros, kcal, and a missing macro',
+    (tester) async {
+      await pump(tester, FeedEntry(entry: entry()));
+      expect(find.textContaining('Mai'), findsOneWidget);
+      expect(find.text('Bún chả Hà Nội'), findsOneWidget);
+      expect(find.text('P 38g'), findsOneWidget);
+      expect(find.textContaining('540 kcal'), findsOneWidget);
 
-    await pump(tester, FeedEntry(entry: entry(protein: null)));
-    expect(find.textContaining('P: N/A'), findsOneWidget);
-  });
+      // A missing macro reads as an em dash, not the long "no data" string:
+      // three of those in one row wraps the line and buries the known figures.
+      await pump(tester, FeedEntry(entry: entry(protein: null)));
+      expect(find.text('P —'), findsOneWidget);
+    },
+  );
 
   testWidgets('portion badge only appears below a full portion', (
     tester,
@@ -114,13 +120,24 @@ void main() {
     expect(find.textContaining('portion'), findsNothing);
   });
 
-  testWidgets('elapsed time is hidden for a backfilled share', (
+  testWidgets('the logged clock time shows, and hides for a backfill', (
     tester,
   ) async {
-    await pump(tester, FeedEntry(entry: entry()));
-    expect(find.textContaining('ago'), findsOneWidget);
-    await pump(tester, FeedEntry(entry: entry(isBackfilled: true)));
-    expect(find.textContaining('ago'), findsNothing);
+    // A fixed local instant, so the expectation does not drift with the clock
+    // or the machine's zone.
+    final loggedAt = DateTime(2026, 8, 13, 15, 2);
+    final shown = formatLoggedTime(loggedAt, locale: 'en');
+
+    await pump(tester, FeedEntry(entry: entry(sharedAt: loggedAt)));
+    expect(find.textContaining(shown), findsOneWidget);
+
+    // A backfilled share carries a sharedAt of "now", so its clock time would
+    // describe when the meal was typed up rather than when it was eaten.
+    await pump(
+      tester,
+      FeedEntry(entry: entry(sharedAt: loggedAt, isBackfilled: true)),
+    );
+    expect(find.textContaining(shown), findsNothing);
   });
 
   testWidgets('Log this too is hidden for self and shown for others', (
@@ -200,6 +217,47 @@ void main() {
     expect(find.textContaining('earlier replies'), findsNothing);
   });
 
+  testWidgets('the three actions share one row and clear a 44pt target', (
+    tester,
+  ) async {
+    await pump(tester, FeedEntry(entry: entry()));
+    // Reply lives beside the heart now, not under the replies list: one row,
+    // one interaction system.
+    expect(find.text('Reply'), findsOneWidget);
+    expect(find.text('Log this too'), findsOneWidget);
+    for (final icon in [
+      LucideIcons.heart300,
+      LucideIcons.messageCircle300,
+      LucideIcons.copy300,
+    ]) {
+      final box = find
+          .ancestor(of: find.byIcon(icon), matching: find.byType(InkWell))
+          .first;
+      expect(tester.getSize(box).height, greaterThanOrEqualTo(44));
+    }
+  });
+
+  testWidgets('a post with no replies draws no reply block at all', (
+    tester,
+  ) async {
+    await pump(tester, FeedEntry(entry: entry()));
+    // Otherwise the post carries an empty padded box under its action row and
+    // reads bottom-heavy against the next hairline.
+    expect(tester.getSize(find.byType(ShareReplies)).height, 0);
+  });
+
+  testWidgets('the composition bar renders for a meal with macros', (
+    tester,
+  ) async {
+    await pump(tester, FeedEntry(entry: entry()));
+    expect(find.byType(CompositionBar), findsOneWidget);
+    final size = tester.getSize(find.byType(CompositionBar));
+    // The feed draws the bar at half the nutrition page's height; see the
+    // weight knobs in `feed_entry.dart`.
+    expect(size.height, 6);
+    expect(size.width, greaterThan(100));
+  });
+
   testWidgets('reply opens composer and empty blur closes it', (tester) async {
     await pump(tester, FeedEntry(entry: entry()));
     await tester.tap(find.text('Reply'));
@@ -209,6 +267,61 @@ void main() {
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pump();
     expect(find.byKey(const Key('reply-composer')), findsNothing);
+  });
+
+  testWidgets('the composition bar fills the content column, not 0pt', (
+    tester,
+  ) async {
+    // The bar is a Row of Expanded children, so its intrinsic width is zero: a
+    // regression here shows up as a full-height gap where the bar should be,
+    // not as a missing widget. Measure the width, never just the presence.
+    await pump(
+      tester,
+      _StaticThread(
+        state: SharedMealFeedState(entries: [entry()], nextCursor: null),
+      ),
+    );
+    final bar = tester.getSize(find.byType(CompositionBar));
+    final column = tester.getSize(find.text('Bún chả Hà Nội'));
+    expect(bar.height, 6);
+    expect(bar.width, greaterThan(column.width));
+
+    // Each figure is centred under its own slice: the label's centre should sit
+    // inside the segment it describes, not merely somewhere on the row.
+    final barLeft = tester.getTopLeft(find.byType(CompositionBar)).dx;
+    final proteinCentre = tester.getCenter(find.text('P 38g')).dx;
+    expect(proteinCentre, greaterThan(barLeft));
+    expect(proteinCentre, lessThan(barLeft + bar.width * 0.5));
+  });
+
+  testWidgets('a day boundary carries one rule, not two', (tester) async {
+    // Two posts today, one yesterday: rules go between posts WITHIN a day, and
+    // the day separator alone marks the boundary. A rule after every post left
+    // a stray hairline sitting a few points above each separator.
+    final state = SharedMealFeedState(
+      entries: [
+        entry(shareId: 's1'),
+        entry(shareId: 's2'),
+        entry(
+          shareId: 's3',
+          sharedAt: DateTime.now().subtract(const Duration(days: 1)),
+        ),
+      ],
+      nextCursor: null,
+    );
+    await pump(tester, _StaticThread(state: state));
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Yesterday'), findsOneWidget);
+    // Post rules are the ones indented to the content rail; the two day
+    // separators carry a Divider of their own, so count only the indented set.
+    // Before the fix this found three — one trailing every post, including the
+    // two that butt up against a separator.
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Padding && w.padding == const EdgeInsets.only(left: 48),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('day labels and empty add-friend CTA render', (tester) async {

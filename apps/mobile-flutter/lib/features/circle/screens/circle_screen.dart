@@ -50,14 +50,16 @@ class CircleScreen extends ConsumerWidget {
         '';
     return Screen(
       child: ScrollSeparator(
-        // Title on the header line, same slot and same serif as the
-        // dashboard greeting; the add control takes the trailing slot it was
-        // already reserving space for.
+        // Title on the header line, sans at Value 17 rather than the Lora
+        // headline: at 17 its cap-height sits level with the 24pt hamburger
+        // beside it. The screen runs on 12/14/17 — the three sizes `mobile.md`
+        // locks a surface to — and 17 is now spent HERE alone, the feed below
+        // holding to 12 and 14.
         header: Padding(
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(
             trailing: const CircleAddMenu(),
-            child: Text(tr('groups.page.title'), style: dashHeadline()),
+            child: Text(tr('groups.page.title'), style: dashPageTitle()),
           ),
         ),
         child: KalloRefresh(
@@ -69,7 +71,9 @@ class CircleScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const ViewSwitcher(),
-                const SizedBox(height: KalloSpacing.sp3),
+                // MealInvitesSection collapses to nothing when there are no
+                // invites, so it owns the gap above itself rather than having
+                // one reserved here for a widget that usually is not there.
                 const MealInvitesSection(),
                 if (selected != null) ...[
                   const SizedBox(height: KalloSpacing.sp3),

@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_theme.dart';
 import 'add_friend_sheet.dart';
 import '../groups/create_group_sheet.dart';
 
@@ -36,7 +37,16 @@ class CircleAddMenu extends StatelessWidget {
   Widget build(BuildContext context) => IconButton(
     tooltip: tr('groups.page.addFriend'),
     onPressed: () => _openActions(context),
-    icon: const Icon(LucideIcons.userPlus300, size: 18, color: kInk),
+    // Pinned to the header's 44 slot: IconButton's own 48 default made this
+    // 4pt wider than the leading menu button, which pushed the "centred" title
+    // 2pt off centre. Glyph matches the menu at the app-wide 24.
+    padding: EdgeInsets.zero,
+    constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+    icon: const Icon(
+      LucideIcons.userPlus300,
+      size: KalloIcons.size,
+      color: kInk,
+    ),
   );
 
   Future<void> _openActions(BuildContext context) async {
