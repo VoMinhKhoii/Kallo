@@ -9,6 +9,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
+import 'package:kallo_mobile/features/circle/widgets/feed/share_replies.dart';
+import 'package:kallo_mobile/shared/widgets/nutrition/composition_bar.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/thread_feed.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
 
@@ -92,18 +94,21 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('entry preserves diacritics and renders macros, kcal, and N/A', (
-    tester,
-  ) async {
-    await pump(tester, FeedEntry(entry: entry()));
-    expect(find.text('Mai'), findsOneWidget);
-    expect(find.text('Bún chả Hà Nội'), findsOneWidget);
-    expect(find.textContaining('P: 38g'), findsOneWidget);
-    expect(find.text('540 kcal'), findsOneWidget);
+  testWidgets(
+    'entry preserves diacritics and renders macros, kcal, and a missing macro',
+    (tester) async {
+      await pump(tester, FeedEntry(entry: entry()));
+      expect(find.textContaining('Mai'), findsOneWidget);
+      expect(find.text('Bún chả Hà Nội'), findsOneWidget);
+      expect(find.text('P 38g'), findsOneWidget);
+      expect(find.textContaining('540 kcal'), findsOneWidget);
 
-    await pump(tester, FeedEntry(entry: entry(protein: null)));
-    expect(find.textContaining('P: N/A'), findsOneWidget);
-  });
+      // A missing macro reads as an em dash, not the long "no data" string:
+      // three of those in one row wraps the line and buries the known figures.
+      await pump(tester, FeedEntry(entry: entry(protein: null)));
+      expect(find.text('P —'), findsOneWidget);
+    },
+  );
 
   testWidgets('portion badge only appears below a full portion', (
     tester,
@@ -198,6 +203,42 @@ void main() {
       FeedEntry(entry: entry(replies: [reply], repliesTotal: 1)),
     );
     expect(find.textContaining('earlier replies'), findsNothing);
+  });
+
+  testWidgets('the three actions share one row and clear a 44pt target', (
+    tester,
+  ) async {
+    await pump(tester, FeedEntry(entry: entry()));
+    // Reply lives beside the heart now, not under the replies list: one row,
+    // one interaction system.
+    expect(find.text('Reply'), findsOneWidget);
+    expect(find.text('Log this too'), findsOneWidget);
+    for (final icon in [
+      LucideIcons.heart300,
+      LucideIcons.messageCircle300,
+      LucideIcons.copy300,
+    ]) {
+      final box = find
+          .ancestor(of: find.byIcon(icon), matching: find.byType(InkWell))
+          .first;
+      expect(tester.getSize(box).height, greaterThanOrEqualTo(44));
+    }
+  });
+
+  testWidgets('a post with no replies draws no reply block at all', (
+    tester,
+  ) async {
+    await pump(tester, FeedEntry(entry: entry()));
+    // Otherwise the post carries an empty padded box under its action row and
+    // reads bottom-heavy against the next hairline.
+    expect(tester.getSize(find.byType(ShareReplies)).height, 0);
+  });
+
+  testWidgets('the composition bar renders for a meal with macros', (
+    tester,
+  ) async {
+    await pump(tester, FeedEntry(entry: entry()));
+    expect(find.byType(CompositionBar), findsOneWidget);
   });
 
   testWidgets('reply opens composer and empty blur closes it', (tester) async {

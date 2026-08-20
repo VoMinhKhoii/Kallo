@@ -9,9 +9,18 @@ import '../../../../theme/calm_tokens.dart';
 import '../../data/feed_mutations.dart';
 
 class FeedEntryActions extends ConsumerStatefulWidget {
-  const FeedEntryActions({required this.entry, super.key});
+  const FeedEntryActions({
+    required this.entry,
+    required this.onReply,
+    super.key,
+  });
 
   final CircleFeedEntry entry;
+
+  /// Opens the reply composer. Reply lives in this row rather than under the
+  /// replies list so that all three affordances read as one interaction
+  /// system; [ShareReplies] owns the composer itself.
+  final VoidCallback onReply;
 
   @override
   ConsumerState<FeedEntryActions> createState() => _FeedEntryActionsState();
@@ -74,8 +83,14 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
             label: '${reactions.count}',
           ),
         ),
+        const SizedBox(width: _gap),
+        _Action(
+          onTap: widget.onReply,
+          icon: LucideIcons.messageCircle300,
+          label: tr('groups.feed.reply'),
+        ),
         if (!widget.entry.isSelf) ...[
-          const SizedBox(width: 18),
+          const SizedBox(width: _gap),
           _Action(
             onTap: _logging ? null : _log,
             icon: LucideIcons.copy300,
@@ -86,6 +101,16 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
     );
   }
 }
+
+/// Horizontal gap between actions. The rows' 44pt hit boxes do not overlap, so
+/// this is pure visual spacing.
+const double _gap = 18;
+
+/// Glyph size, and the minimum square the tap target must fill. The glyph sits
+/// at the in-text-run size (a chip/meta-row exception to the app-wide 24), but
+/// the touch box still has to clear 44.
+const double _glyph = 16;
+const double _hit = 44;
 
 class _Action extends StatelessWidget {
   const _Action({
@@ -105,14 +130,14 @@ class _Action extends StatelessWidget {
     opacity: onTap == null ? 0.5 : 1,
     child: InkWell(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: _hit),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 15,
+              size: _glyph,
               color: fill == 1 ? kInk : kInkMuted,
               fill: fill,
             ),

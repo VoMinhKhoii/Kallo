@@ -80,7 +80,10 @@ class ThreadFeed extends ConsumerWidget {
         ),
       );
     }
-    final children = <Widget>[header, const SizedBox(height: KalloSpacing.sp3)];
+    // No spacer after the header here: the first thing in the list is always a
+    // day separator, and it pays its own top gap. Stacking both left ~36pt of
+    // dead air under the filter chips.
+    final children = <Widget>[header];
     String? previousDay;
     for (final entry in state.entries) {
       final date = DateTime.parse(entry.meal.sharedAt);
@@ -89,11 +92,23 @@ class ThreadFeed extends ConsumerWidget {
       children.add(
         Padding(
           key: ValueKey(entry.meal.shareId),
-          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp4),
+          // Bottom is 0 by design: the post's last row is either the action
+          // row, whose 44pt tap target already carries ~14pt of slack under its
+          // glyphs, or ShareReplies, which pays its own bottom gap. Adding
+          // padding here would stack on top of one of them and leave the post
+          // visibly bottom-heavy. See the rhythm note in `feed_entry.dart`.
+          padding: const EdgeInsets.only(top: KalloSpacing.sp3),
           child: FeedEntry(entry: entry),
         ),
       );
-      children.add(const Divider(height: 1, thickness: 1, color: kHairline));
+      // Indented to the content rail so the rule reinforces the avatar/content
+      // structure instead of cutting the whole row in half.
+      children.add(
+        const Padding(
+          padding: EdgeInsets.only(left: _contentRail),
+          child: Divider(height: 1, thickness: 1, color: kHairline),
+        ),
+      );
       previousDay = day;
     }
     if (state.isLoadingMore) {
@@ -121,6 +136,9 @@ class ThreadFeed extends ConsumerWidget {
   }
 }
 
+/// Avatar (36) + its gap (12): where the content column starts.
+const double _contentRail = 48;
+
 class _DaySeparator extends StatelessWidget {
   const _DaySeparator({required this.date});
   final DateTime date;
@@ -133,15 +151,15 @@ class _DaySeparator extends StatelessWidget {
       ThreadDayLabelKind.yesterday => tr('groups.wall.yesterdayLabel'),
       ThreadDayLabelKind.date => label.dateLabel!,
     };
+    // Label first, then one rule running out to the edge. Two rules around a
+    // centred label read as a chapter break; a day is a heading, and this is a
+    // feed where several people share the same day.
     return Padding(
-      padding: const EdgeInsets.only(top: KalloSpacing.sp4),
+      padding: const EdgeInsets.only(top: KalloSpacing.sp3),
       child: Row(
         children: [
-          const Expanded(child: Divider(color: kHairline)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp2),
-            child: Text(text, style: dashMeta()),
-          ),
+          Text(text, style: dashMeta(weight: FontWeight.w500)),
+          const SizedBox(width: KalloSpacing.sp2_5),
           const Expanded(child: Divider(color: kHairline)),
         ],
       ),

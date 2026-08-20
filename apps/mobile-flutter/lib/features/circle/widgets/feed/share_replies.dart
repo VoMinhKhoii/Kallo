@@ -14,11 +14,20 @@ class ShareReplies extends ConsumerStatefulWidget {
     required this.shareId,
     required this.replies,
     required this.repliesTotal,
+    required this.open,
+    required this.onClose,
     super.key,
   });
   final String shareId;
   final List<ShareReply> replies;
   final int repliesTotal;
+
+  /// Whether the composer is showing. Owned by [FeedEntry] because the trigger
+  /// now lives in the action row above, not in this widget.
+  final bool open;
+
+  /// Called when the composer gives up focus with nothing typed.
+  final VoidCallback onClose;
   @override
   ConsumerState<ShareReplies> createState() => _ShareRepliesState();
 }
@@ -26,24 +35,31 @@ class ShareReplies extends ConsumerStatefulWidget {
 class _ShareRepliesState extends ConsumerState<ShareReplies> {
   final _controller = TextEditingController();
   final _focus = FocusNode();
-  bool _open = false;
   bool _submitting = false;
   @override
   void initState() {
     super.initState();
     _controller.addListener(_changed);
     _focus.addListener(_focusChanged);
+    if (widget.open) _focusComposer();
+  }
+
+  @override
+  void didUpdateWidget(ShareReplies oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Opened from the action row — take focus so the keyboard comes up on the
+    // same tap rather than a second one.
+    if (widget.open && !oldWidget.open) _focusComposer();
   }
 
   void _changed() => setState(() {});
   void _focusChanged() {
     if (!_focus.hasFocus && _controller.text.trim().isEmpty && mounted) {
-      setState(() => _open = false);
+      widget.onClose();
     }
   }
 
-  void _showComposer() {
-    setState(() => _open = true);
+  void _focusComposer() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focus.requestFocus();
     });
@@ -81,8 +97,15 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     final hidden = widget.repliesTotal - widget.replies.length;
+    // Nothing to say and nothing to type: draw no box at all, so a post with no
+    // replies keeps the action row as its last line.
+    if (!widget.open && widget.replies.isEmpty && hidden <= 0) {
+      return const SizedBox.shrink();
+    }
+    // Top gap comes from the action row's tap slack above; this widget owns
+    // the post's bottom gap whenever it renders anything.
     return Padding(
-      padding: const EdgeInsets.only(top: KalloSpacing.sp3),
+      padding: const EdgeInsets.only(bottom: KalloSpacing.sp3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -97,19 +120,11 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
             _ReplyRow(reply: reply, locale: locale),
             const SizedBox(height: KalloSpacing.sp3),
           ],
-          if (_open) _composer() else _replyButton(),
+          if (widget.open) _composer(),
         ],
       ),
     );
   }
-
-  Widget _replyButton() => InkWell(
-    onTap: _showComposer,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Text(tr('groups.feed.reply'), style: dashMeta()),
-    ),
-  );
 
   Widget _composer() => Row(
     children: [
