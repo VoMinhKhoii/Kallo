@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-bun
-      # TODO: migrate to tsgo when GA for 10x faster type checking
+      # TypeScript 7 (the native port) — `tsc` here is the native binary.
       - run: bunx tsc --noEmit
 
   test:
