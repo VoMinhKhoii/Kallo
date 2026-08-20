@@ -154,6 +154,22 @@ TextStyle dashEyebrow({
     );
 
 /// Lora 22 / 400 — the single editorial serif moment per viewport (greeting).
+/// 17 / 600 — the page title on the header line.
+///
+/// Sans, not the Lora [dashHeadline] this replaced on headers: at 17 its
+/// cap-height sits level with the 24pt glyphs flanking it, and a screen then
+/// spends none of its three sizes on chrome. Lora stays for editorial moments
+/// INSIDE a screen — the first-run question, an empty state — so the serif is
+/// still in the app, just not in its furniture.
+TextStyle dashPageTitle({Color color = kInk}) => TextStyle(
+      fontFamily: KalloTextStyles.sansFamily,
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
+      height: 1.2,
+      letterSpacing: -0.3,
+      color: color,
+    );
+
 /// Serif appears ONCE, never bold, never repeated (the Anthropic-greeting rule).
 TextStyle dashHeadline({Color color = kInk}) => GoogleFonts.lora(
       fontSize: 22,

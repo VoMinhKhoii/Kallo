@@ -77,7 +77,7 @@ class DashboardScreen extends ConsumerWidget {
         header: Padding(
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(
-            child: Text(_greeting().tr(), style: dashHeadline()),
+            child: Text(_greeting().tr(), style: dashPageTitle()),
           ),
         ),
         child: bundle.when(

@@ -59,13 +59,7 @@ class CircleScreen extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(
             trailing: const CircleAddMenu(),
-            child: Text(
-              tr('groups.page.title'),
-              style: dashValue().copyWith(
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.3,
-              ),
-            ),
+            child: Text(tr('groups.page.title'), style: dashPageTitle()),
           ),
         ),
         child: KalloRefresh(

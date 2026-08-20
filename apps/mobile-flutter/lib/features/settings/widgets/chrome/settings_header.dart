@@ -36,7 +36,7 @@ class SettingsHeader extends StatelessWidget {
         child: Text(
           title,
           textAlign: TextAlign.center,
-          style: dashHeadline(),
+          style: dashPageTitle(),
         ),
       ),
     );
