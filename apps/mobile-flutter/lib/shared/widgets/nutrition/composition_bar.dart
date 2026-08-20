@@ -20,6 +20,13 @@ class CompositionBar extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(KalloRadii.pill),
       child: SizedBox(
+        // Explicitly full-width. The Row below carries only Expanded children,
+        // which gives it ZERO intrinsic width — so anywhere an ancestor sizes
+        // by intrinsics rather than by the incoming constraint, relying on
+        // Row's mainAxisSize.max collapses the bar to nothing. It keeps its
+        // 8pt of height while doing so, which is why the symptom is a gap in
+        // the layout rather than a missing widget.
+        width: double.infinity,
         height: height,
         child: Row(
           children: [

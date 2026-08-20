@@ -255,6 +255,24 @@ void main() {
     expect(find.byKey(const Key('reply-composer')), findsNothing);
   });
 
+  testWidgets('the composition bar fills the content column, not 0pt', (
+    tester,
+  ) async {
+    // The bar is a Row of Expanded children, so its intrinsic width is zero: a
+    // regression here shows up as a full-height gap where the bar should be,
+    // not as a missing widget. Measure the width, never just the presence.
+    await pump(
+      tester,
+      _StaticThread(
+        state: SharedMealFeedState(entries: [entry()], nextCursor: null),
+      ),
+    );
+    final bar = tester.getSize(find.byType(CompositionBar));
+    final column = tester.getSize(find.text('Bún chả Hà Nội'));
+    expect(bar.height, 8);
+    expect(bar.width, greaterThan(column.width));
+  });
+
   testWidgets('a day boundary carries one rule, not two', (tester) async {
     // Two posts today, one yesterday: rules go between posts WITHIN a day, and
     // the day separator alone marks the boundary. A rule after every post left
