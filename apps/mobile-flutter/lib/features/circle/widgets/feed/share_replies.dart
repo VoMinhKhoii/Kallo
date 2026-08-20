@@ -2,12 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../models/social/circle.dart';
-import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_mutations.dart';
-import '../../data/feed_time.dart';
+import 'reply_row.dart';
 
 class ShareReplies extends ConsumerStatefulWidget {
   const ShareReplies({
@@ -117,7 +116,7 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
             const SizedBox(height: KalloSpacing.sp3),
           ],
           for (final reply in widget.replies) ...[
-            _ReplyRow(reply: reply, locale: locale),
+            ReplyRow(reply: reply, locale: locale),
             const SizedBox(height: KalloSpacing.sp3),
           ],
           if (widget.open) _composer(),
@@ -164,51 +163,4 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
       ],
     ],
   );
-}
-
-class _ReplyRow extends StatelessWidget {
-  const _ReplyRow({required this.reply, required this.locale});
-
-  final ShareReply reply;
-  final String locale;
-
-  @override
-  Widget build(BuildContext context) {
-    final name = reply.isSelf ? tr('groups.wall.you') : reply.author.label;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ProfileAvatarDisc(profile: reply.author, size: 28),
-        const SizedBox(width: KalloSpacing.sp2),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text.rich(
-                TextSpan(
-                  children: [
-                    // Same identity line as a post: a reply reuses the meal
-                    // anatomy, so its author should not read heavier than the
-                    // author of the thing being replied to.
-                    TextSpan(
-                      text: name,
-                      style: dashMeta(
-                        weight: FontWeight.w600,
-                      ).copyWith(color: kInk),
-                    ),
-                    TextSpan(
-                      text:
-                          ' ${formatElapsed(reply.createdAt, locale: locale)}',
-                      style: dashMeta(),
-                    ),
-                  ],
-                ),
-              ),
-              Text(reply.body, style: dashBody()),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 }

@@ -34,7 +34,6 @@
     "components/logging/feed/meal-entry/meal-entry.tsx": 241,
     "apps/mobile-flutter/lib/features/dashboard/widgets/chrome/week_strip.dart": 239,
     "apps/mobile-flutter/lib/shared/widgets/typography/kallo_text.dart": 238,
-    "apps/mobile-flutter/lib/features/nutrition/widgets/summary/day_summary.dart": 232,
     "apps/mobile-flutter/lib/features/logging/widgets/timeline/partial_yesterday_prompt.dart": 229,
     "apps/mobile-flutter/lib/features/settings/widgets/profile/profile_form_values.dart": 226,
     "apps/mobile-flutter/lib/features/settings/widgets/profile/instant_commit_editor.dart": 221,
