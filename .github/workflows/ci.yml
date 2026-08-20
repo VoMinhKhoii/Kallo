@@ -55,6 +55,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-bun
+      # Turbopack's build filesystem cache (default-on since 16.3) lives in
+      # .next/cache and only pays off if it is restored before each build.
+      # The exact key never hits — it carries the SHA so every run writes a
+      # fresh entry — so the restore-keys fallbacks are what actually load
+      # the newest compatible cache.
+      - uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextbuild-${{ hashFiles('bun.lock') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nextbuild-${{ hashFiles('bun.lock') }}-
+            ${{ runner.os }}-nextbuild-
       - run: bun run build
 
   migrations:
