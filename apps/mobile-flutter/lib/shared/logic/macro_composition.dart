@@ -30,10 +30,17 @@ const Map<String, Color> kCompositionColors = {
 /// One food per macro instead of an abstract colour swatch — beef, wheat, and a
 /// drop of oil for fat, which has no single ingredient the way the other two
 /// do. Same three as the web legend (keep in sync).
+///
+/// Fat is drawn one stroke step heavier than its neighbours, which is an
+/// OPTICAL correction rather than an inconsistency: beef and wheat are dense
+/// glyphs carrying several strokes each, while the droplet is a single closed
+/// outline, so at a matched stroke width it reads noticeably lighter beside
+/// them. Lucide's suffix is the stroke width — 300 is 1.5, 400 is 2.0 — and
+/// there is no half step between, so this is the smallest nudge available.
 const Map<String, IconData> kMacroIcons = {
   'protein': LucideIcons.beef300,
   'carbohydrate': LucideIcons.wheat300,
-  'fat': LucideIcons.droplet300,
+  'fat': LucideIcons.droplet400,
 };
 
 class CompositionSegment {
