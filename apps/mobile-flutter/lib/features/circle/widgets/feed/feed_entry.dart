@@ -25,6 +25,17 @@ import 'share_replies.dart';
 const double _tight = KalloSpacing.sp1; // 4
 const double _standard = KalloSpacing.sp3; // 12
 
+/// How much of the nutrition page's bar this surface spends.
+///
+/// That page draws one bar per screen; the feed draws one per post, so the same
+/// mark repeated down a list read as candy stripes at full weight. Half the
+/// height, a visible gutter between segments, and pigment pulled back toward
+/// the page — the three knobs to reach for if it still reads heavy, before
+/// touching the palette itself.
+const double _barHeight = 4;
+const double _barGap = 2;
+const double _barOpacity = 0.7;
+
 /// One shared meal: who and when, the meal itself, its calories and macro
 /// composition, then the action row.
 class FeedEntry extends StatefulWidget {
@@ -145,10 +156,10 @@ class _FeedEntryState extends State<FeedEntry> {
 
 /// Calories and macros on one line, over the stacked composition bar.
 ///
-/// The calorie figure is the post's one [dashValue]; its unit and the macro
-/// grams stay at Meta so the number carries the mass rather than the word. The
-/// bar splits by CALORIE share, so a low-gram/high-energy fat slice reads at
-/// its true weight.
+/// The calorie figure sits at Body in medium ink; its unit and the macro grams
+/// stay at Meta, so the number carries the mass rather than the word without
+/// outweighing the meal name above it. The bar splits by CALORIE share, so a
+/// low-gram/high-energy fat slice reads at its true weight.
 class _Nutrition extends StatelessWidget {
   const _Nutrition({required this.meal});
 
@@ -186,7 +197,11 @@ class _Nutrition extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: kcal == null ? '—' : '${kcal.round()}',
-                    style: dashValue(),
+                    // Body, not Value: at 17 the figure outweighed the meal
+                    // name beside it, which put the post's focus back on the
+                    // number the redesign had just taken it off. Medium weight
+                    // and ink still mark it as the figure.
+                    style: dashBody(weight: FontWeight.w500, tabular: true),
                   ),
                   const TextSpan(text: ' kcal'),
                 ],
@@ -211,7 +226,12 @@ class _Nutrition extends StatelessWidget {
         ),
         if (composition.totalKcal > 0) ...[
           const SizedBox(height: _tight),
-          CompositionBar(segments: composition.segments),
+          CompositionBar(
+            segments: composition.segments,
+            height: _barHeight,
+            gap: _barGap,
+            opacity: _barOpacity,
+          ),
         ],
       ],
     );

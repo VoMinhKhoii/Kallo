@@ -52,8 +52,9 @@ class CircleScreen extends ConsumerWidget {
       child: ScrollSeparator(
         // Title on the header line, sans at Value 17 rather than the Lora
         // headline: at 17 its cap-height sits level with the 24pt hamburger
-        // beside it, and the whole screen then runs on 12/14/17 — the three
-        // sizes `mobile.md` locks a surface to, with none spent on chrome.
+        // beside it. The screen runs on 12/14/17 — the three sizes `mobile.md`
+        // locks a surface to — and 17 is now spent HERE alone, the feed below
+        // holding to 12 and 14.
         header: Padding(
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(

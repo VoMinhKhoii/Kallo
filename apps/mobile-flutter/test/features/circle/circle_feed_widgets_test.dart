@@ -240,7 +240,9 @@ void main() {
     await pump(tester, FeedEntry(entry: entry()));
     expect(find.byType(CompositionBar), findsOneWidget);
     final size = tester.getSize(find.byType(CompositionBar));
-    expect(size.height, 8);
+    // The feed draws the bar at half the nutrition page's height; see the
+    // weight knobs in `feed_entry.dart`.
+    expect(size.height, 4);
     expect(size.width, greaterThan(100));
   });
 
@@ -269,7 +271,7 @@ void main() {
     );
     final bar = tester.getSize(find.byType(CompositionBar));
     final column = tester.getSize(find.text('Bún chả Hà Nội'));
-    expect(bar.height, 8);
+    expect(bar.height, 4);
     expect(bar.width, greaterThan(column.width));
   });
 
