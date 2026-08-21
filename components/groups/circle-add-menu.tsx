@@ -3,6 +3,8 @@
 import { ChevronDown, UserPlus, Users2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { PremiumChip } from '@/components/billing/premium-chip';
+import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { AddFriendDialog } from '@/components/groups/add-friend-dialog';
 import {
   DropdownMenu,
@@ -20,6 +22,7 @@ import {
 export function CircleAddMenu() {
   const t = useTranslations('groups.page');
   const [tab, setTab] = useState<'friend' | 'group' | null>(null);
+  const { locked, requirePremium } = usePremiumGuard();
 
   return (
     <>
@@ -41,11 +44,15 @@ export function CircleAddMenu() {
           className="min-w-44 border-[#E8E6DC] bg-white"
         >
           <DropdownMenuItem
-            onSelect={() => setTab('group')}
+            onSelect={() => {
+              if (!requirePremium('unlimited_circle')) return;
+              setTab('group');
+            }}
             className="gap-2 font-sans-display text-[#141413] text-[13px]"
           >
             <Users2 className="h-4 w-4" />
             {t('createGroup')}
+            {locked('unlimited_circle') && <PremiumChip />}
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => setTab('friend')}

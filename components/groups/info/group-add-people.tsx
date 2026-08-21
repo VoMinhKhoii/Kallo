@@ -4,12 +4,15 @@ import { Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { PremiumChip } from '@/components/billing/premium-chip';
+import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { GroupMemberRow } from '@/components/groups/invite/group-member-row';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { Input } from '@/components/ui/input';
 import { useAddGroupMembers } from '@/hooks/social/circle/use-chat-groups';
 import { useFriends } from '@/hooks/social/circle/use-friends';
 import type { ChatGroupDetail } from '@/lib/actions/chat-groups/types';
+import { ApiError } from '@/lib/core/errors/client';
 
 /** Grow the group from the actor's accepted friends — same Messenger-style
  * picker as creation, scoped to friends not already in the group. */
@@ -17,6 +20,7 @@ export function GroupAddPeople({ group }: { group: ChatGroupDetail }) {
   const t = useTranslations('groups.info');
   const { data: members = [] } = useFriends();
   const addMembers = useAddGroupMembers(group.id);
+  const { locked, requirePremium } = usePremiumGuard();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -42,13 +46,22 @@ export function GroupAddPeople({ group }: { group: ChatGroupDetail }) {
 
   const submit = () => {
     if (selected.size === 0 || addMembers.isPending) return;
+    if (!requirePremium('unlimited_circle')) return;
     addMembers.mutate([...selected], {
       onSuccess: () => {
         toast.success(t('added'));
         setSelected(new Set());
         setQuery('');
       },
-      onError: () => toast.error(t('addError')),
+      // A group cap can belong to the person being ADDED, not the actor — that
+      // comes back as a 409 whose message names them, which beats the generic
+      // key. (A 402 for the actor's own lock is pre-empted above.)
+      onError: (error) =>
+        toast.error(
+          error instanceof ApiError && error.code === 'CIRCLE_LIMIT_REACHED'
+            ? error.message
+            : t('addError')
+        ),
     });
   };
 
@@ -98,6 +111,7 @@ export function GroupAddPeople({ group }: { group: ChatGroupDetail }) {
           className="inline-flex w-full items-center justify-center rounded-xl bg-kallo-btn px-4 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t('addCta')} · {selected.size}
+          {locked('unlimited_circle') && <PremiumChip className="ml-2" />}
         </button>
       )}
     </div>

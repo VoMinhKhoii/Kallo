@@ -2,6 +2,8 @@
 
 import { Check, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { PremiumChip } from '@/components/billing/premium-chip';
+import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +39,14 @@ export function CheatModePicker({
   onChangeIntensity,
 }: CheatModePickerProps) {
   const t = useTranslations('logging');
+  const { locked, requirePremium } = usePremiumGuard();
+  const cheatLocked = locked('cheat_meal');
+
+  const selectMode = (next: InputMode) => {
+    // Only cheat is gated — normal/manual switch as before.
+    if (next === 'cheat' && !requirePremium('cheat_meal')) return;
+    onChangeMode(next);
+  };
 
   const triggerLabel =
     mode === 'cheat'
@@ -67,13 +77,14 @@ export function CheatModePicker({
               key={m}
               onSelect={(event) => {
                 event.preventDefault();
-                onChangeMode(m);
+                selectMode(m);
               }}
               className="items-start gap-2"
             >
               <span className="min-w-0 flex-1">
-                <span className="block font-medium text-kallo-text text-sm">
+                <span className="flex items-center gap-1.5 font-medium text-kallo-text text-sm">
                   {t(`mode.${m}`)}
+                  {m === 'cheat' && cheatLocked && <PremiumChip />}
                 </span>
                 <span className="mt-0.5 block text-[11px] text-kallo-text-muted leading-snug">
                   {t(`mode.${m}Description`)}

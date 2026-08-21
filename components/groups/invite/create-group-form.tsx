@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { useCreateChatGroup } from '@/hooks/social/circle/use-chat-groups';
 import { useFriends } from '@/hooks/social/circle/use-friends';
+import { ApiError } from '@/lib/core/errors/client';
 import { GroupMemberRow } from './group-member-row';
 import { labelFor } from './profile-identity';
 
@@ -70,7 +71,14 @@ export function CreateGroupForm({
           setSelected(new Set());
           onCreated();
         },
-        onError: () => toast.error(t('createError')),
+        // Backstop only — CircleAddMenu gates the entry point. A cap that
+        // belongs to an invited member surfaces as a 409 naming them.
+        onError: (error) =>
+          toast.error(
+            error instanceof ApiError && error.code === 'CIRCLE_LIMIT_REACHED'
+              ? error.message
+              : t('createError')
+          ),
       }
     );
   };

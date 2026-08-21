@@ -2,6 +2,8 @@
 
 import { Copy, Heart } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { PremiumChip } from '@/components/billing/premium-chip';
+import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { ShareReplies } from '@/components/groups/share-replies';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
@@ -33,6 +35,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
   const locale = useLocale();
   const toggleReaction = useToggleReaction();
   const logSharedMeal = useLogSharedMeal();
+  const { locked, requirePremium } = usePremiumGuard();
   const { friend, meal } = entry;
 
   const label = entry.isSelf ? tWall('you') : labelFor(friend);
@@ -104,13 +107,15 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             <button
               type="button"
               disabled={logSharedMeal.isPending}
-              onClick={() =>
-                logSharedMeal.mutate({ shareId: meal.shareId, factor: 1 })
-              }
+              onClick={() => {
+                if (!requirePremium('copy_split')) return;
+                logSharedMeal.mutate({ shareId: meal.shareId, factor: 1 });
+              }}
               className="inline-flex items-center gap-1.5 transition-colors hover:text-[#141413] disabled:opacity-50"
             >
               <Copy className="size-[15px]" />
               <span>{t('logCopy')}</span>
+              {locked('copy_split') && <PremiumChip className="px-1.5 py-0" />}
             </button>
           )}
         </div>
