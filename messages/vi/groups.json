@@ -172,6 +172,9 @@
     "remove": "Xoá",
     "removeError": "Không thể xoá. Vui lòng thử lại."
   },
+  "circleLimit": {
+    "memberAtLimit": "Một người bạn chọn đã đạt giới hạn của gói miễn phí. Họ cần Premium để tham gia thêm."
+  },
   "error": {
     "title": "Không thể tải vòng kết nối",
     "body": "Đã xảy ra lỗi. Kiểm tra kết nối và thử lại.",

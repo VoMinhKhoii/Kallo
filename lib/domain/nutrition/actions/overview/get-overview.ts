@@ -164,6 +164,12 @@ export async function getNutritionOverview(
     { userId: user.id, profileCreatedAt: profile.createdAt },
     'micronutrients'
   );
+  // It is only awaited AFTER `buildOverview`, so a window-query failure would
+  // leave this one rejecting with nobody listening — an unhandled rejection
+  // that can take the process down. A detached no-op observer marks it handled
+  // without consuming it: `gatePromise` itself is still awaited below, so both
+  // its result and its rejection continue to propagate normally.
+  gatePromise.catch(() => {});
 
   // Start the count and hold the promise: it only ever gates which range to
   // use, so `auto` awaits it here and a pinned range lets it run alongside the

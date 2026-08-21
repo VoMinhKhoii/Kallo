@@ -18,6 +18,7 @@ import { ApiError } from '@/lib/core/errors/client';
  * picker as creation, scoped to friends not already in the group. */
 export function GroupAddPeople({ group }: { group: ChatGroupDetail }) {
   const t = useTranslations('groups.info');
+  const tLimit = useTranslations('groups.circleLimit');
   const { data: members = [] } = useFriends();
   const addMembers = useAddGroupMembers(group.id);
   const { locked, requirePremium } = usePremiumGuard();
@@ -54,12 +55,14 @@ export function GroupAddPeople({ group }: { group: ChatGroupDetail }) {
         setQuery('');
       },
       // A group cap can belong to the person being ADDED, not the actor — that
-      // comes back as a 409 whose message names them, which beats the generic
-      // key. (A 402 for the actor's own lock is pre-empted above.)
+      // comes back as a 409. Its server message is Vietnamese by contract (the
+      // API and mobile clients depend on it), so translate here rather than
+      // surfacing raw copy to an English reader. (A 402 for the actor's own
+      // lock is pre-empted above.)
       onError: (error) =>
         toast.error(
           error instanceof ApiError && error.code === 'CIRCLE_LIMIT_REACHED'
-            ? error.message
+            ? tLimit('memberAtLimit')
             : t('addError')
         ),
     });

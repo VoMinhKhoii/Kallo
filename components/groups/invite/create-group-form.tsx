@@ -28,6 +28,7 @@ export function CreateGroupForm({
   onAddFriend?: () => void;
 }) {
   const t = useTranslations('groups.createGroup');
+  const tLimit = useTranslations('groups.circleLimit');
   const { data: members = [], isError, isFetching, refetch } = useFriends();
   const createGroup = useCreateChatGroup();
   const [name, setName] = useState('');
@@ -72,11 +73,12 @@ export function CreateGroupForm({
           onCreated();
         },
         // Backstop only — CircleAddMenu gates the entry point. A cap that
-        // belongs to an invited member surfaces as a 409 naming them.
+        // belongs to an invited member surfaces as a 409 whose server message
+        // is Vietnamese by contract, so translate rather than echo it.
         onError: (error) =>
           toast.error(
             error instanceof ApiError && error.code === 'CIRCLE_LIMIT_REACHED'
-              ? error.message
+              ? tLimit('memberAtLimit')
               : t('createError')
           ),
       }

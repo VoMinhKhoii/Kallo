@@ -48,11 +48,11 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
   } = useBarcodeScannerDialogState(props);
 
   // The sheet owns the viewport on mobile, so the paywall has to replace it
-  // rather than stack on top of it — close first, then open the dialog.
+  // rather than stack on top of it — close first, then open the dialog. A save
+  // in flight refuses the close, and the paywall must stay shut with it.
   const handleSelectScanType = (next: 'barcode' | 'ocr') => {
     if (next === 'ocr' && ocrLocked) {
-      handleClose();
-      openPaywall();
+      if (handleClose()) openPaywall();
       return;
     }
     handleScanTypeChange(next);

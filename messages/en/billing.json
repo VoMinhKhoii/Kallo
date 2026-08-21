@@ -63,7 +63,8 @@
       "title": "Micronutrient insights",
       "body": "The vitamin and mineral breakdown of everything you log is a Premium feature. Upgrade to see which nutrients you're steady on and which need attention.",
       "cta": "Upgrade"
-    }
+    },
+    "purchasesUnavailable": "Upgrades aren't available yet. Premium features unlock soon."
   },
   "trialBanner": {
     "daysRemaining": "{days} {days, plural, one {day} other {days}} left in your free trial",
