@@ -177,6 +177,7 @@
     },
     "features": {
       "barcode": "Barcode scanning",
+      "labelScan": "Scan nutrition labels",
       "manualLogging": "Manual logging",
       "joinGroups": "Max 2 groups, view-only",
       "friends": "10 friends",
