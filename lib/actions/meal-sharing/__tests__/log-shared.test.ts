@@ -22,10 +22,17 @@ const { mockUser, mockCanViewShare, mockTxSelect, mockTxInsert, mockTx } =
     };
   });
 
+// copy_split gate. Stubbed so the locked case is reachable without an
+// entitlements fixture; the default no-op resolve mirrors an unenforced build.
+const assertFeatureAccess = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
+
+const PROFILE_CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
+
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: mockUser,
-    profile: {},
+    profile: { createdAt: new Date('2026-01-01T00:00:00.000Z') },
   }),
 }));
 vi.mock('@/lib/infra/db/client', () => ({
@@ -40,6 +47,7 @@ vi.mock('@/lib/domain/social/shares/share-visibility', () => ({
 }));
 
 import { logSharedMealAction } from '@/lib/actions/meal-sharing/log-shared';
+import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import { mealItems, mealShares, meals } from '@/lib/infra/db/schema';
 
 const SHARE_ID = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
@@ -228,6 +236,36 @@ describe('logSharedMealAction', () => {
     queueItems([]);
 
     await expect(log(1)).rejects.toThrow('không có món để thêm');
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+});
+
+describe('logSharedMealAction — premium (copy_split)', () => {
+  // Copying a friend's meal off the wall is the same Premium-card feature as
+  // the directed share, so it is gated on the same key — and, like the share,
+  // ahead of the transaction rather than inside it.
+  beforeEach(() => vi.clearAllMocks());
+
+  it('refuses a locked user before reading the share', async () => {
+    assertFeatureAccess.mockRejectedValueOnce(
+      new FeatureLockedError('copy_split', 'not_entitled', 'locked')
+    );
+
+    await expect(
+      logSharedMealAction({
+        shareId: SHARE_ID,
+        factor: 1,
+        loggedDate: '2026-06-24',
+        timezoneOffset: -420,
+      })
+    ).rejects.toBeInstanceOf(FeatureLockedError);
+
+    expect(assertFeatureAccess).toHaveBeenCalledWith(
+      { userId: mockUser.id, profileCreatedAt: PROFILE_CREATED_AT },
+      'copy_split'
+    );
+    expect(mockCanViewShare).not.toHaveBeenCalled();
+    expect(mockTxSelect).not.toHaveBeenCalled();
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 });

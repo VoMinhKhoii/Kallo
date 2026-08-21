@@ -9,6 +9,7 @@ import {
 } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import type { ParsedMeal } from '@/lib/core/types/meal';
+import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { buildRelogPipelineResult } from '@/lib/domain/logging/relog/build-relog-pipeline-result';
 import { buildRelogRawInput } from '@/lib/domain/logging/relog/relog';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
@@ -21,10 +22,12 @@ import {
 /**
  * WEB pure-relog: stage the picked dishes as a `pending_analyses` row so they
  * land in the SAME editable review card AI meals use, then let the ordinary
- * confirm path save them. Deterministic — no AI pipeline, no provider spend, no
- * billing gate or analysis guard (those defend AI cost, which this never
- * incurs). Mirrors `stageCheatRepeatAction`, which likewise stages a pending
- * card from a plain server action without streaming.
+ * confirm path save them. Deterministic — no AI pipeline, no provider spend, so
+ * no analysis guard in the AI-cost sense. It IS billing-gated: relog is a
+ * Premium-card feature, so `assertFeatureAccess(..., 'relog')` runs right after
+ * auth and BEFORE the rate guard — a locked user must not spend rate budget on
+ * a call that can only end in 402. Mirrors `stageCheatRepeatAction`, which
+ * likewise stages a pending card from a plain server action without streaming.
  *
  * BOTH clients go through here: the web composer calls this action directly and
  * the Flutter composer posts to `/api/v1/meals/relog/stage`, so a pure-relog
@@ -48,7 +51,13 @@ export async function stageRelogAnalysisAction(
   loggedAt: string;
 }> {
   const parsed = stageRelogAnalysisSchema.parse(input);
-  const { user } = await requireAuthAndProfile();
+  const { user, profile } = await requireAuthAndProfile();
+  // Premium gate BEFORE the rate guard: a locked user must not burn their
+  // (shared) relog write budget on a call that can only end in 402.
+  await assertFeatureAccess(
+    { userId: user.id, profileCreatedAt: profile.createdAt },
+    'relog'
+  );
 
   // Throttled HERE, not at the route: the web composer calls this action
   // directly. This path opens a transaction holding `FOR UPDATE` on the source

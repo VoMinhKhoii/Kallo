@@ -8,6 +8,9 @@ import { vi } from 'vitest';
 
 export const MOCK_USER = { id: 'user-123', email: 'me@example.com' };
 
+/** The premium gates key their trial window off the profile's creation date. */
+export const PROFILE_CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
+
 export const UUID_MEAL = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';
 export const UUID_FRIEND = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
 export const UUID_FRIEND_2 = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';

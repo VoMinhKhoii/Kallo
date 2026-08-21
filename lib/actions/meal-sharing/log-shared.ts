@@ -14,6 +14,7 @@ import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
+import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { canViewShare } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
@@ -45,7 +46,13 @@ export async function logSharedMealAction(input: {
   newMealId?: string;
 }): Promise<ConfirmMealResponse> {
   const parsed = logSharedMealSchema.parse(input);
-  const { user } = await requireAuthAndProfile();
+  const { user, profile } = await requireAuthAndProfile();
+  // Premium (copy_split): copying a friend's meal off the wall is the same
+  // Premium-card feature as the directed share. Gated before the transaction.
+  await assertFeatureAccess(
+    { userId: user.id, profileCreatedAt: profile.createdAt },
+    'copy_split'
+  );
 
   return db.transaction(async (tx) => {
     if (!(await canViewShare(user.id, parsed.shareId, tx))) {

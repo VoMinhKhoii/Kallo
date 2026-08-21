@@ -30,10 +30,17 @@ const { mockTxSelect, mockTxUpdate, mockTxInsert, mockTx } = vi.hoisted(() => {
   };
 });
 
+// copy_split gate. Stubbed so the locked case is reachable without an
+// entitlements fixture; the default no-op resolve mirrors an unenforced build.
+const assertFeatureAccess = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
+
 vi.mock('@/lib/infra/auth/session', async () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: (await import('./share-doubles')).MOCK_USER,
-    profile: {},
+    profile: {
+      createdAt: (await import('./share-doubles')).PROFILE_CREATED_AT,
+    },
   }),
 }));
 
@@ -55,9 +62,11 @@ vi.mock(
 // ---------------------------------------------------------------------------
 
 import { shareMealWithFriendsAction } from '@/lib/actions/meal-sharing/share-with-friends';
+import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import {
   friendEdge,
   MOCK_USER as mockUser,
+  PROFILE_CREATED_AT,
   routeInserts,
   sourceItem,
   sourceMeal,
@@ -251,5 +260,34 @@ describe('shareMealWithFriendsAction', () => {
         mode: 'copy',
       })
     ).rejects.toThrow();
+  });
+});
+
+describe('shareMealWithFriendsAction — premium (copy_split)', () => {
+  // Sending is the gated half. Accept stays free on purpose: a split has
+  // already halved the SENDER's meal by the time the invite lands, so refusing
+  // a free recipient's accept would strand a paying user's portion.
+  beforeEach(() => vi.clearAllMocks());
+
+  it('refuses a locked sender before the transaction opens', async () => {
+    assertFeatureAccess.mockRejectedValueOnce(
+      new FeatureLockedError('copy_split', 'not_entitled', 'locked')
+    );
+
+    await expect(
+      shareMealWithFriendsAction({
+        mealId: UUID_MEAL,
+        friendUserIds: [UUID_FRIEND],
+        mode: 'split',
+      })
+    ).rejects.toBeInstanceOf(FeatureLockedError);
+
+    expect(assertFeatureAccess).toHaveBeenCalledWith(
+      { userId: mockUser.id, profileCreatedAt: PROFILE_CREATED_AT },
+      'copy_split'
+    );
+    expect(mockTxSelect).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+    expect(mockTxUpdate).not.toHaveBeenCalled();
   });
 });
