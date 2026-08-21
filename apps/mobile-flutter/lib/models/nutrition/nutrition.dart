@@ -99,6 +99,12 @@ class NutritionOverview {
   final List<EducationCardData> educationCards;
   final NutritionDaySeries daySeries;
 
+  /// True when the account is not entitled to micronutrients AND the server is
+  /// enforcing that gate. The server has already emptied every premium section
+  /// on this response, so the screen shows an upsell in their place; calories
+  /// and macros stay visible either way.
+  final bool micronutrientsLocked;
+
   const NutritionOverview({
     required this.requestedRange,
     required this.resolvedRange,
@@ -119,6 +125,7 @@ class NutritionOverview {
     required this.moreNutrients,
     required this.educationCards,
     required this.daySeries,
+    this.micronutrientsLocked = false,
   });
 
   factory NutritionOverview.fromJson(Map<String, dynamic> json) {
@@ -170,6 +177,9 @@ class NutritionOverview {
       daySeries: NutritionDaySeries.fromJson(
         json['daySeries'] as Map<String, dynamic>,
       ),
+      // Absent on a server that predates the gate: false, so an old payload
+      // renders exactly as it always did.
+      micronutrientsLocked: json['micronutrientsLocked'] == true,
     );
   }
 
@@ -193,6 +203,7 @@ class NutritionOverview {
     'moreNutrients': moreNutrients.map((e) => e.toJson()).toList(),
     'educationCards': educationCards.map((e) => e.toJson()).toList(),
     'daySeries': daySeries.toJson(),
+    'micronutrientsLocked': micronutrientsLocked,
   };
 
   NutritionOverview copyWith({
@@ -215,6 +226,7 @@ class NutritionOverview {
     List<NutrientCardData>? moreNutrients,
     List<EducationCardData>? educationCards,
     NutritionDaySeries? daySeries,
+    bool? micronutrientsLocked,
   }) => NutritionOverview(
     requestedRange: requestedRange ?? this.requestedRange,
     resolvedRange: resolvedRange ?? this.resolvedRange,
@@ -236,5 +248,6 @@ class NutritionOverview {
     moreNutrients: moreNutrients ?? this.moreNutrients,
     educationCards: educationCards ?? this.educationCards,
     daySeries: daySeries ?? this.daySeries,
+    micronutrientsLocked: micronutrientsLocked ?? this.micronutrientsLocked,
   );
 }

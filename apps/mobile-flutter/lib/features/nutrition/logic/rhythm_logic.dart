@@ -14,7 +14,7 @@ import '../../../shared/logic/macro_composition.dart';
 export '../../../shared/logic/macro_composition.dart';
 
 
-const List<String> kOrderedMacros = ['protein', 'carbohydrate', 'fat', 'fiber'];
+const List<String> kOrderedMacros = ['protein', 'carbohydrate', 'fat'];
 
 String consistencyLabelKey(double? pct) {
   if (pct == null) return 'rhythm.consistency.noTarget';

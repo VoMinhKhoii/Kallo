@@ -490,6 +490,11 @@
       "retry": "Tải lại tổng quan",
       "candidatesError": "Chưa tải được gợi ý món ăn ngay lúc này."
     },
+    "locked": {
+      "title": "Vi chất là tính năng Premium",
+      "description": "Calo và macro vẫn miễn phí. Nâng cấp Premium để theo dõi vitamin, khoáng chất và chất xơ so với mục tiêu của bạn.",
+      "cta": "Xem Premium"
+    },
     "empty": {
       "title": "Chưa có bữa ăn trong khoảng này",
       "description": "Ghi nhận bữa ăn trong vài ngày để xem xu hướng macro và vi chất.",
@@ -1106,6 +1111,7 @@
         "invalidInput": "Mã vạch không hợp lệ. Vui lòng chỉ nhập chữ số.",
         "notFound": "Không tìm thấy sản phẩm với mã vạch này.",
         "notCached": "Sản phẩm không còn khả dụng. Vui lòng quét lại.",
+        "featureLocked": "Đây là tính năng Premium. Nâng cấp Premium để tiếp tục quét.",
         "serverError": "Đã xảy ra lỗi. Vui lòng thử lại."
       }
     },
@@ -1387,6 +1393,7 @@
         "noLabelDetected": "Ảnh này không giống bảng dinh dưỡng in trên bao bì; có thể bạn chụp mặt logo, thực đơn hoặc chữ viết tay. Hãy chọn đúng mặt có bảng dinh dưỡng hoặc nhập tay.",
         "rateLimited": "Hệ thống đang bận. Vui lòng thử lại sau giây lát.",
         "serverError": "Không thể quét bảng dinh dưỡng. Vui lòng thử lại sau.",
+        "featureLocked": "Quét bảng dinh dưỡng là tính năng Premium. Nâng cấp Premium để dùng.",
         "permissionDenied": "Chưa cấp quyền camera và ảnh. Hãy bật cho Kallo trong Cài đặt > Quyền riêng tư, hoặc nhập số bằng tay.",
         "imageTooLarge": "Ảnh này quá lớn để gửi. Hãy chụp lại, ảnh mới sẽ được tự động thu nhỏ."
       }

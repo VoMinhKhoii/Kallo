@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../services/billing/feature_lock.dart';
 import '../../../services/http/api_client.dart';
 import '../../../models/nutrition_label.dart';
 import '../logic/label/image.dart';
@@ -70,6 +71,12 @@ class LabelScanState {
   /// than reshooting the same wrong side of the package.
   bool get isNoLabelDetected =>
       errorKey == 'logging.labelScan.error.noLabelDetected';
+
+  /// The server refused the scan as a premium feature (HTTP 402). The sheet
+  /// sends the user to the paywall rather than offering a retry that cannot
+  /// succeed.
+  bool get isFeatureLocked =>
+      errorKey == 'logging.labelScan.error.featureLocked';
 }
 
 /// Map an [ApiError] from the label endpoints onto a stable l10n key. The
@@ -78,6 +85,10 @@ class LabelScanState {
 String _errorKeyFor(Object error) {
   if (error is ApiError) {
     switch (error.code) {
+      // Lowercase — the gate's code comes from the shared app-error catalog,
+      // not from the OCR codes below it.
+      case kFeatureLockedCode:
+        return 'logging.labelScan.error.featureLocked';
       case 'OCR_INVALID_IMAGE':
         return 'logging.labelScan.error.invalidImage';
       case 'OCR_NO_LABEL_DETECTED':

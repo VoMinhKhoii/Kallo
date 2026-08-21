@@ -490,6 +490,11 @@
       "retry": "Retry overview",
       "candidatesError": "Couldn't load food ideas right now."
     },
+    "locked": {
+      "title": "Micronutrients are a Premium view",
+      "description": "Calories and macros stay free. Go Premium to see vitamins, minerals and fiber tracked against your targets.",
+      "cta": "See Premium"
+    },
     "empty": {
       "title": "No meals in this range",
       "description": "Log meals for a few days to see macro and micronutrient patterns.",
@@ -1106,6 +1111,7 @@
         "invalidInput": "That barcode doesn't look right. Enter digits only.",
         "notFound": "No product found for this barcode.",
         "notCached": "This product is no longer available. Please scan it again.",
+        "featureLocked": "This is a Premium feature. Go Premium to keep scanning.",
         "serverError": "Something went wrong. Please try again."
       }
     },
@@ -1390,6 +1396,7 @@
         "noLabelDetected": "This does not look like a printed nutrition table. It may be the logo side, a menu, or handwritten notes. Choose the label photo or enter nutrition manually.",
         "rateLimited": "The OCR service is busy. Please try again in a moment.",
         "serverError": "Could not scan label. Please try again.",
+        "featureLocked": "Label scanning is a Premium feature. Go Premium to scan nutrition tables.",
         "permissionDenied": "Camera and photo access are off. Enable them for Kallo in Settings > Privacy, or enter the values by hand.",
         "imageTooLarge": "That photo is too large to send. Take another one and it will be resized automatically."
       }

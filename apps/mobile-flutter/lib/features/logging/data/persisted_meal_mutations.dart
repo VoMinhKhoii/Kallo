@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../services/billing/feature_lock.dart';
 import '../../../services/http/api_client.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
 import 'logging_keys.dart';
@@ -96,8 +97,10 @@ Future<void> logMealAgain(
         'timezoneOffset': timezoneOffsetMinutes(),
       },
     );
-  } catch (_) {
-    if (context.mounted) {
+  } catch (error) {
+    // Re-logging a saved meal is gated: send a 402 to the paywall rather than
+    // reporting it as a failed copy.
+    if (context.mounted && !handledFeatureLock(context, error)) {
       showTopToast(
         context,
         'logging.persistedMealCard.logAgainError'.tr(),
