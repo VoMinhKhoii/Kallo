@@ -3,6 +3,7 @@ import { hasLocale } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { Header } from '@/components/landing-page/header';
 import { PricingSection } from '@/components/landing-page/pricing/pricing-section';
 import { routing } from '@/i18n/navigation';
 import { googleWebClientId } from '@/lib/infra/auth/google-client-id';
@@ -18,10 +19,12 @@ import { SITE_URL } from '@/lib/seo/site';
  * place and both surfaces move together — a second copy of the cards here
  * would drift the first time a tier changes.
  *
- * No header and no footer: this is the sharable "what does it cost" link, and
- * the section is the whole answer. It carries its own beige ground, so the
+ * The landing header rides along so the page is escapable — in `standalone`
+ * mode, so its two section anchors link back to the landing page rather than
+ * scrolling to elements that do not exist here. No footer: the section is the
+ * whole answer to what it costs. It carries its own beige ground, so the
  * wrapper only has to extend that ground to the full viewport when the cards
- * do not fill it.
+ * do not fill it, and clear the fixed header.
  *
  * `AuthProvider` is here because each card's CTA opens the auth dialog. The
  * landing page mounts its own; the two never coexist, since this page is not
@@ -77,7 +80,9 @@ export default async function PricingPage({
 
   return (
     <AuthProvider googleClientId={googleWebClientId()}>
-      <main className="flex min-h-dvh flex-col justify-center bg-kallo-hover">
+      <Header standalone />
+      {/* pt-20 clears the fixed header; the cards then centre in what is left. */}
+      <main className="flex min-h-dvh flex-col justify-center bg-kallo-hover pt-20">
         <PricingSection />
       </main>
       <AuthDialog />
