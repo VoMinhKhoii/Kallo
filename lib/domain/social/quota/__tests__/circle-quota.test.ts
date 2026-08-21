@@ -1,3 +1,5 @@
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppError, FeatureLockedError } from '@/lib/core/errors/app-error';
 import type { CircleQuotaDb } from '@/lib/domain/social/quota/circle-quota';
@@ -42,7 +44,20 @@ const CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
 // rows. Results are consumed in select() call order.
 function makeDb() {
   const queue: unknown[][] = [];
+  // Every db call in issue order: 'select', or 'lock:<userId>' for an
+  // advisory-lock execute(). Lets a test assert the lock precedes the count.
+  const calls: string[] = [];
+  const dialect = new PgDialect();
+  const execute = vi.fn((query: SQL) => {
+    const { sql: text, params } = dialect.sqlToQuery(query);
+    expect(text).toBe(
+      "select pg_advisory_xact_lock(hashtext('circle_quota'), hashtext($1::text))"
+    );
+    calls.push(`lock:${String(params[0])}`);
+    return Promise.resolve([]);
+  });
   const select = vi.fn(() => {
+    calls.push('select');
     const rows = queue.shift() ?? [];
     const chain = Object.assign(
       Promise.resolve(rows),
@@ -60,8 +75,8 @@ function makeDb() {
     }
     return chain;
   });
-  const db = { select } as unknown as CircleQuotaDb;
-  return { db, queue, select };
+  const db = { select, execute } as unknown as CircleQuotaDb;
+  return { db, queue, select, execute, calls };
 }
 
 function profileRow(userId: string, displayName: string | null) {
@@ -80,9 +95,9 @@ beforeEach(() => {
 });
 
 describe('kill-switch', () => {
-  it('short-circuits every entry point before any query', async () => {
+  it('short-circuits every entry point before any query — including the lock', async () => {
     setEnforcement(false);
-    const { db, select } = makeDb();
+    const { db, select, execute } = makeDb();
 
     await expect(
       assertUnlimitedCircleActor(db, ACTOR)
@@ -97,7 +112,56 @@ describe('kill-switch', () => {
     ).resolves.toBeUndefined();
 
     expect(select).not.toHaveBeenCalled();
+    expect(execute).not.toHaveBeenCalled();
     expect(mockCheckFeatureAccess).not.toHaveBeenCalled();
+  });
+});
+
+// The real race needs two concurrent transactions against a live Postgres,
+// which this suite has no harness for. What is asserted here is the contract
+// that makes the race impossible: the per-user advisory lock is issued on the
+// caller's handle, with the namespaced two-arg form, for every affected user,
+// in ascending id order, and always BEFORE the count query it protects.
+describe('advisory locking', () => {
+  // a0ee… < b1ff… < c2aa…
+  const SORTED = [ACTOR, MEMBER, INVITER];
+
+  it('locks every added user in ascending id order before counting groups', async () => {
+    const { db, queue, calls } = makeDb();
+    queue.push([{ userId: MEMBER, groupCount: 1 }]);
+
+    // Deliberately unsorted, with a duplicate.
+    await assertGroupCapacity(db, [MEMBER, ACTOR, INVITER, ACTOR]);
+
+    expect(calls).toEqual([...SORTED.map((id) => `lock:${id}`), 'select']);
+  });
+
+  it('locks both sides of a friendship in ascending id order before counting', async () => {
+    const { db, queue, calls } = makeDb();
+    queue.push([{ accepterCount: 1, inviterCount: 1 }]);
+
+    await assertFriendCapacity(db, {
+      accepterId: INVITER,
+      inviterId: ACTOR,
+      inviterName: 'Phở Fan',
+    });
+
+    expect(calls).toEqual([`lock:${ACTOR}`, `lock:${INVITER}`, 'select']);
+  });
+
+  it('takes no lock when there is nothing to add', async () => {
+    const { db, execute } = makeDb();
+    await assertGroupCapacity(db, []);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it('does not lock for the actor-entitlement check', async () => {
+    const { db, queue, execute } = makeDb();
+    queue.push([{ profileCreatedAt: CREATED_AT }]);
+    mockCheckFeatureAccess.mockResolvedValue({ allowed: true });
+
+    await assertUnlimitedCircleActor(db, ACTOR);
+    expect(execute).not.toHaveBeenCalled();
   });
 });
 

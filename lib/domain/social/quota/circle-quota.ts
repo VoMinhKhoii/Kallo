@@ -21,7 +21,24 @@
  *
  * KILL-SWITCH: every entry point returns before touching the database when
  * `BILLING_ENFORCEMENT_ENABLED` is off, so an unenforced deployment issues
- * exactly the queries it issued before this module existed.
+ * exactly the queries it issued before this module existed — including the
+ * advisory locks below.
+ *
+ * CONCURRENCY: a count-then-insert is a race. Two adds of the same free user
+ * to DIFFERENT groups (or two accepts touching DIFFERENT friendship edges)
+ * touch no common row, so the callers' row locks never serialise them and
+ * both can observe a count under the cap and both commit. Every capacity
+ * check therefore takes a per-user transaction advisory lock on the caller's
+ * transaction BEFORE counting, which holds until the caller's insert commits.
+ *
+ * LOCK ORDERING — a new call site must not invert this:
+ *   1. the row lock it already needs (`lockChatGroup` in
+ *      lib/actions/chat-groups/membership.ts; the `FOR UPDATE` on the
+ *      friendship edge in lib/actions/groups/friendship.ts), THEN
+ *   2. the advisory locks taken here, in ascending user-id order.
+ * `createChatGroup` (lib/actions/chat-groups/create-and-list.ts) holds no row
+ * lock at all and so takes only step 2. Taking an advisory lock first and a
+ * row lock second in some future caller would create a lock cycle with these.
  */
 
 import { and, eq, inArray, or, sql } from 'drizzle-orm';
@@ -64,6 +81,31 @@ function enforcementOff(): boolean {
 // an open transaction a second pool connection can starve `DB_POOL_MAX=2`.
 function entitlementDeps(db: CircleQuotaDb) {
   return { db: db as AppDb };
+}
+
+/**
+ * Serialise the count-then-insert for each affected user.
+ *
+ * `pg_advisory_xact_lock` is taken on the CALLER's handle so it lives in the
+ * caller's transaction (a second pool connection would starve `DB_POOL_MAX=2`)
+ * and releases on commit/rollback with no unlock bookkeeping.
+ *
+ * The two-argument (classid, objid) form namespaces the lock under
+ * `hashtext('circle_quota')`, so a hash collision with another advisory-lock
+ * user costs at most extra serialisation, never a missed lock. Locks are taken
+ * one statement at a time in ascending id order: a set-returning
+ * `pg_advisory_xact_lock(...) FROM unnest(...)` has no guaranteed evaluation
+ * order and could deadlock two overlapping batches against each other.
+ */
+async function lockUserQuotas(
+  db: CircleQuotaDb,
+  userIds: string[]
+): Promise<void> {
+  for (const userId of [...new Set(userIds)].sort()) {
+    await db.execute(
+      sql`select pg_advisory_xact_lock(hashtext('circle_quota'), hashtext(${userId}::text))`
+    );
+  }
 }
 
 async function isAllowed(
@@ -155,6 +197,8 @@ export async function assertGroupCapacity(
   const userIds = [...new Set(addedUserIds)];
   if (userIds.length === 0) return;
 
+  await lockUserQuotas(db, userIds);
+
   const counts = await db
     .select({
       userId: chatGroupMembers.userId,
@@ -205,6 +249,8 @@ export async function assertFriendCapacity(
   { accepterId, inviterId, inviterName }: FriendCapacityInput
 ): Promise<void> {
   if (enforcementOff()) return;
+
+  await lockUserQuotas(db, [accepterId, inviterId]);
 
   const [counts] = await db
     .select({
