@@ -1,16 +1,28 @@
 /// The dashboard dock's meal list: today's logged meals, or the empty state.
 ///
-/// Split out of `today_section.dart` for the same reason as the macro rows —
-/// that file is frozen at its current size by the ratchet.
+/// Rows follow the Circle feed's vocabulary, because a meal should read the
+/// same whether you are looking at your own dock or at a friend's post: the
+/// name with its time, the calorie figure with its unit left quiet, the
+/// composition bar, then the macro figures under it.
+///
+/// Dropped from the feed's version: the avatar, the author, the action row and
+/// the replies. Those are social affordances with nothing to say on your own
+/// dashboard, and the meal name takes the bold-ink identity slot the author's
+/// name held there.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../shared/logic/display_format.dart';
+import '../../../../shared/logic/macro_composition.dart';
+import '../../../../shared/widgets/nutrition/composition_bar.dart';
+import '../../../../shared/widgets/nutrition/macro_scale.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
+import '../../../circle/data/feed_time.dart';
+import '../../../circle/widgets/feed/feed_rhythm.dart';
 import '../../data/logging_day.dart';
-import '../../../../shared/logic/display_format.dart';
 import '../../logic/dashboard_spacing.dart';
 
 /// Empty state — plain centered text on the card surface (no dashed border).
@@ -50,31 +62,14 @@ class MealList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Header row.
-        Padding(
-          padding: const EdgeInsets.only(bottom: DashboardSpacing.row * 2),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                tr('dashboard.recentMeals').toUpperCase(),
-                style: dashMeta(),
-              ),
-              Text(
-                tr(
-                  'dashboard.mealsLogged',
-                  namedArgs: {'count': '${meals.length}'},
-                ),
-                style: dashMeta(color: kInkMuted),
-              ),
-            ],
-          ),
-        ),
-        // No separator: each row carries DashboardSpacing.row top and bottom,
-        // so neighbours sit `row * 2` apart without a second gap owner.
-        for (final meal in meals) _MealRow(meal: meal),
+        for (var i = 0; i < meals.length; i++) ...[
+          // A hairline between posts, as the feed does. The feed insets its
+          // rule to the avatar rail; with no avatars here it runs the full
+          // width of the card.
+          if (i > 0)
+            const Divider(height: 1, thickness: 1, color: kHairline),
+          _MealRow(meal: meals[i]),
+        ],
       ],
     );
   }
@@ -86,41 +81,71 @@ class _MealRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final composition = compositionFromGrams(
+      protein: meal.nutrition.proteinG,
+      carbohydrate: meal.nutrition.carbohydrateG,
+      fat: meal.nutrition.fatG,
+    );
+    final loggedAt = DateTime.tryParse(meal.loggedAt);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: DashboardSpacing.row),
-      // Baseline-align the name and kcal so the row reads on one line; the meal
-      // name sits at content-left (aligned with the macro labels above) and
-      // kcal in the shared right column (aligned with the macro values).
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
+      padding: const EdgeInsets.symmetric(vertical: DashboardSpacing.section),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              meal.rawInput,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: dashBody(),
-            ),
-          ),
-          const SizedBox(width: KalloSpacing.sp2),
-          SizedBox(
-            width: dashboardValueColumnWidth,
-            // Shares the macro rows' right edge, so it needs the same guard:
-            // wrapping here would grow the meal row out of line with the bars
-            // above it.
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text(
-                '${round0(meal.nutrition.caloriesKcal)} kcal',
-                maxLines: 1,
-                softWrap: false,
-                textAlign: TextAlign.right,
-                style: dashMeta(color: kInkMuted, tabular: true),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(
+                child: Text(
+                  meal.rawInput,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: dashValue(),
+                ),
               ),
+              if (loggedAt != null) ...[
+                const SizedBox(width: KalloSpacing.sp3),
+                Text(
+                  formatLoggedTime(
+                    loggedAt,
+                    locale: context.locale.languageCode,
+                  ),
+                  style: dashMeta(),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: kFeedStandard),
+          Text.rich(
+            TextSpan(
+              // Unit stays at Meta so the figure carries the mass, not the word.
+              style: dashMeta(),
+              children: [
+                TextSpan(
+                  text: '${round0(meal.nutrition.caloriesKcal)}',
+                  style: dashValue(),
+                ),
+                const TextSpan(text: ' kcal'),
+              ],
             ),
           ),
+          if (composition.totalKcal > 0) ...[
+            const SizedBox(height: kFeedTight),
+            CompositionBar(
+              segments: composition.segments,
+              height: kFeedBarHeight,
+              gap: kFeedBarGap,
+              opacity: kFeedBarOpacity,
+            ),
+            const SizedBox(height: kFeedTight),
+            MacroScale(
+              protein: meal.nutrition.proteinG,
+              carbohydrate: meal.nutrition.carbohydrateG,
+              fat: meal.nutrition.fatG,
+            ),
+          ],
         ],
       ),
     );

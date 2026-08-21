@@ -5,6 +5,7 @@ library;
 
 export 'heatmap.dart';
 
+import '../nutrition/nutrition_enums.dart';
 import 'heatmap.dart';
 import 'weight.dart';
 
@@ -182,18 +183,38 @@ class NutritionData {
       );
 }
 
+/// The `goal` column is a free-text CHECK on (cutting, bulking, maintaining).
+/// Anything else — including null, and any value a future migration adds —
+/// falls through to null and is read as maintaining by [DashboardProfile].
+MacroGoal? _goalFromWire(String? value) => switch (value) {
+  'cutting' => MacroGoal.cutting,
+  'bulking' => MacroGoal.bulking,
+  'maintaining' => MacroGoal.maintaining,
+  _ => null,
+};
+
 class DashboardProfile {
   final double calorieTarget;
   final double proteinTargetG;
   final double carbsTargetG;
   final double fatTargetG;
 
+  /// Which way the day counts. A cutting user is shown what is LEFT; everyone
+  /// else is shown what they have EATEN. Null until onboarding sets it, and
+  /// treated as [MacroGoal.maintaining] — counting up is the safer default,
+  /// since it never implies a deficit the user did not ask for.
+  final MacroGoal? goal;
+
   const DashboardProfile({
     required this.calorieTarget,
     required this.proteinTargetG,
     required this.carbsTargetG,
     required this.fatTargetG,
+    this.goal,
   });
+
+  /// Whether the headline figure counts down toward zero.
+  bool get countsDown => goal == MacroGoal.cutting;
 
   factory DashboardProfile.fromJson(Map<String, dynamic> json) =>
       DashboardProfile(
@@ -203,6 +224,7 @@ class DashboardProfile {
         proteinTargetG: (json['proteinTargetG'] as num?)?.toDouble() ?? 150,
         carbsTargetG: (json['carbsTargetG'] as num?)?.toDouble() ?? 250,
         fatTargetG: (json['fatTargetG'] as num?)?.toDouble() ?? 65,
+        goal: _goalFromWire(json['goal'] as String?),
       );
 
   Map<String, dynamic> toJson() => {
@@ -210,6 +232,7 @@ class DashboardProfile {
         'proteinTargetG': proteinTargetG,
         'carbsTargetG': carbsTargetG,
         'fatTargetG': fatTargetG,
+        if (goal != null) 'goal': goal!.name,
       };
 
   DashboardProfile copyWith({
@@ -217,12 +240,14 @@ class DashboardProfile {
     double? proteinTargetG,
     double? carbsTargetG,
     double? fatTargetG,
+    MacroGoal? goal,
   }) =>
       DashboardProfile(
         calorieTarget: calorieTarget ?? this.calorieTarget,
         proteinTargetG: proteinTargetG ?? this.proteinTargetG,
         carbsTargetG: carbsTargetG ?? this.carbsTargetG,
         fatTargetG: fatTargetG ?? this.fatTargetG,
+        goal: goal ?? this.goal,
       );
 }
 

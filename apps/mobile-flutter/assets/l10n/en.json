@@ -1024,7 +1024,11 @@
       "evening2": "1 tô canh chua cá lóc",
       "evening3": "1 tô bún bò Huế"
     },
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "kcalRemaining": "kcal remaining",
+    "loggedOfTarget": "{logged}/{target} logged",
+    "leftOfTarget": "{left}/{target} left",
+    "overTargetBy": "{over} over {target}"
   },
   "logging": {
     "title": "What did you eat?",
