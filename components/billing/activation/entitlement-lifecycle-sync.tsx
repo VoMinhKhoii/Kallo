@@ -12,7 +12,7 @@ import {
   type EntitlementLifecycleSync as LifecycleSync,
 } from '@/lib/domain/billing/activation/entitlement-lifecycle';
 import {
-  entitlementsKeys,
+  applyEntitlementSnapshot,
   fetchEntitlements,
   reconcileEntitlements,
 } from '@/lib/domain/billing/entitlements-client';
@@ -39,13 +39,13 @@ export function EntitlementLifecycleSync({
     syncRef.current = createEntitlementLifecycleSync({
       refresh: async (id, signal) => {
         const data = await fetchEntitlements(id, signal);
-        queryClient.setQueryData(entitlementsKeys.user(id), data);
+        applyEntitlementSnapshot(queryClient, data);
         if (data.tier === 'premium') clearActivationPending(id);
         return data;
       },
       reconcile: async (id, signal) => {
         const data = await reconcileEntitlements(id, signal);
-        queryClient.setQueryData(entitlementsKeys.user(id), data);
+        applyEntitlementSnapshot(queryClient, data);
         if (data.tier === 'premium') {
           clearActivationPending(id);
         } else {

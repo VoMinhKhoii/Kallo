@@ -1,6 +1,8 @@
+import { QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   aiAnalysisAllowed,
+  applyEntitlementSnapshot,
   type EntitlementsResponse,
   entitlementsKeys,
   featureAllowed,
@@ -10,6 +12,7 @@ import {
   trialDaysRemaining,
 } from '@/lib/domain/billing/entitlements-client';
 import { BillingIdentityMismatchError } from '@/lib/domain/billing/identity';
+import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
 
 function makeFeatures(
   allowed: boolean,
@@ -125,5 +128,110 @@ describe('entitlement selectors', () => {
 
   it('featureLocked fails open on undefined data', () => {
     expect(featureLocked(undefined, 'cheat_meal')).toBe(false);
+  });
+});
+
+describe('applyEntitlementSnapshot', () => {
+  function harness(prev?: EntitlementsResponse) {
+    const queryClient = new QueryClient();
+    if (prev) queryClient.setQueryData(entitlementsKeys.user('user-a'), prev);
+    const setQueryData = vi.spyOn(queryClient, 'setQueryData');
+    const invalidateQueries = vi
+      .spyOn(queryClient, 'invalidateQueries')
+      .mockResolvedValue(undefined);
+    return { queryClient, setQueryData, invalidateQueries };
+  }
+
+  it('caches the snapshot without invalidating when the tier is unchanged', () => {
+    // The checkout poll writes every 2s and the visibility sync writes on every
+    // tab focus; invalidating on those would trash the nutrition cache.
+    const { queryClient, setQueryData, invalidateQueries } = harness(
+      make({ tier: 'free' })
+    );
+    const next = make({ tier: 'free', reconciliationRequired: true });
+
+    applyEntitlementSnapshot(queryClient, next);
+
+    expect(setQueryData).toHaveBeenCalledWith(
+      entitlementsKeys.user('user-a'),
+      next
+    );
+    expect(invalidateQueries).not.toHaveBeenCalled();
+  });
+
+  it('invalidates the nutrition cache when the tier flips free to premium', () => {
+    const { queryClient, setQueryData, invalidateQueries } = harness(
+      make({ tier: 'free' })
+    );
+    const next = make({ tier: 'premium' });
+
+    applyEntitlementSnapshot(queryClient, next);
+
+    expect(setQueryData).toHaveBeenCalledWith(
+      entitlementsKeys.user('user-a'),
+      next
+    );
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: nutritionKeys.all,
+    });
+  });
+
+  it('invalidates the nutrition cache when the tier flips premium to free', () => {
+    const { queryClient, setQueryData, invalidateQueries } = harness(
+      make({ tier: 'premium' })
+    );
+    const next = make({ tier: 'free' });
+
+    applyEntitlementSnapshot(queryClient, next);
+
+    expect(setQueryData).toHaveBeenCalledWith(
+      entitlementsKeys.user('user-a'),
+      next
+    );
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: nutritionKeys.all,
+    });
+  });
+
+  it('treats a first premium snapshot as a flip when nothing was cached', () => {
+    // The entitlements entry has no permanent observer and can be collected
+    // while a mounted nutrition query lives on. After such an eviction a real
+    // free -> premium flip would otherwise leave a paying user locked.
+    const { queryClient, invalidateQueries } = harness();
+
+    applyEntitlementSnapshot(queryClient, make({ tier: 'premium' }));
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: nutritionKeys.all,
+    });
+  });
+
+  it('does not invalidate on a first free snapshot', () => {
+    // Cold load: the nutrition overview was fetched against the same server
+    // that decided this tier, so it is already correct.
+    const { queryClient, setQueryData, invalidateQueries } = harness();
+    const next = make({ tier: 'free' });
+
+    applyEntitlementSnapshot(queryClient, next);
+
+    expect(setQueryData).toHaveBeenCalledWith(
+      entitlementsKeys.user('user-a'),
+      next
+    );
+    expect(invalidateQueries).not.toHaveBeenCalled();
+  });
+
+  it('scopes the write to the snapshot own user id', () => {
+    const queryClient = new QueryClient();
+    const next = make({ userId: 'user-b', tier: 'premium' });
+
+    applyEntitlementSnapshot(queryClient, next);
+
+    expect(queryClient.getQueryData(entitlementsKeys.user('user-b'))).toEqual(
+      next
+    );
+    expect(
+      queryClient.getQueryData(entitlementsKeys.user('user-a'))
+    ).toBeUndefined();
   });
 });

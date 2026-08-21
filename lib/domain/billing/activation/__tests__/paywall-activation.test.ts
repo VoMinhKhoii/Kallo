@@ -6,11 +6,12 @@ import type { EntitlementsResponse } from '@/lib/domain/billing/entitlements-cli
 const fetchEntitlements = vi.fn();
 const reconcileEntitlements = vi.fn();
 
-vi.mock('@/lib/domain/billing/entitlements-client', () => ({
-  entitlementsKeys: {
-    all: ['entitlements'],
-    user: (userId: string) => ['entitlements', userId],
-  },
+// Only the two network fetchers are stubbed: `applyEntitlementSnapshot` is the
+// real one so the caching assertions below still measure real cache writes.
+vi.mock('@/lib/domain/billing/entitlements-client', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/lib/domain/billing/entitlements-client')
+  >()),
   fetchEntitlements: (...args: unknown[]) => fetchEntitlements(...args),
   reconcileEntitlements: (...args: unknown[]) => reconcileEntitlements(...args),
 }));
