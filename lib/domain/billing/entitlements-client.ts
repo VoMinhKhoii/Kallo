@@ -1,5 +1,6 @@
 'use client';
 
+import type { FeatureKey } from '@/lib/domain/billing/entitlement/features';
 import { assertBillingIdentity } from '@/lib/domain/billing/identity';
 
 // The browser side of the entitlement contract: the response shape the two
@@ -41,9 +42,14 @@ export interface EntitlementsResponse {
     endsAt: string | null;
     daysRemaining: number;
   };
-  features: {
-    ai_analysis: { allowed: boolean; reason: FeatureAccessReason };
-  };
+  // The BILLING_ENFORCEMENT_ENABLED kill-switch as the server sees it. With it
+  // off the server gates nothing, so the client must not lock anything either
+  // — `featureLocked` reads this before it reads `features`.
+  enforcementEnabled: boolean;
+  features: Record<
+    FeatureKey,
+    { allowed: boolean; reason: FeatureAccessReason }
+  >;
 }
 
 export const entitlementsKeys = {
@@ -99,8 +105,32 @@ export function trialDaysRemaining(
   return data?.trial.active ? data.trial.daysRemaining : 0;
 }
 
+/** Does the server say this feature is available? Defaults to false. */
+export function featureAllowed(
+  data: EntitlementsResponse | undefined,
+  key: FeatureKey
+): boolean {
+  return data?.features[key]?.allowed ?? false;
+}
+
+/**
+ * Should the UI paint this feature as locked?
+ *
+ * Deliberately NOT `!featureAllowed(...)`: while the response is undefined the
+ * answer is false (fail open — the server backstops every gate), and with
+ * enforcement off the server allows everything regardless of tier, so locking
+ * the UI would strand users on a feature that actually works.
+ */
+export function featureLocked(
+  data: EntitlementsResponse | undefined,
+  key: FeatureKey
+): boolean {
+  if (!data) return false;
+  return data.enforcementEnabled && !data.features[key]?.allowed;
+}
+
 export function aiAnalysisAllowed(
   data: EntitlementsResponse | undefined
 ): boolean {
-  return data?.features.ai_analysis.allowed ?? false;
+  return featureAllowed(data, 'ai_analysis');
 }

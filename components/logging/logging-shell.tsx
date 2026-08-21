@@ -10,7 +10,7 @@ import {
   useState,
   useTransition,
 } from 'react';
-import { PaywallDialog } from '@/components/billing/paywall/paywall-dialog';
+import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { TrialBanner } from '@/components/billing/subscription/trial-banner';
 import { FeedArea } from '@/components/logging/feed/feed-area';
 import { MobileTimelinePicker } from '@/components/logging/sidebar/mobile-timeline-picker';
@@ -55,10 +55,11 @@ export function LoggingShell({
   // is a different question, and answering it with a stale hint would put the
   // composer in the middle of a day that has meals in it.
   const openingDate = useRef(selectedDate).current;
-  // Paywall opened by a pre-stream 402 from the analyze endpoint. The
-  // TrialBanner owns its OWN paywall for the upgrade CTA; this one covers the
-  // hard-locked (trial-expired / not-entitled) case where the banner is hidden.
-  const [paywallOpen, setPaywallOpen] = useState(false);
+  // A pre-stream 402 from the analyze endpoint opens the app-wide paywall
+  // hosted by PremiumGuardProvider. The TrialBanner owns its OWN paywall for
+  // the upgrade CTA; this one covers the hard-locked (trial-expired /
+  // not-entitled) case where the banner is hidden.
+  const { openPaywall } = usePremiumGuard();
   const lastUrlDateRef = useRef(initialDate ?? today);
   const [isDateNavigationPending, startDateNavigationTransition] =
     useTransition();
@@ -155,20 +156,12 @@ export function LoggingShell({
             initialMeal ? handleInitialMealApplied : undefined
           }
           onSelectDate={handleSelectDate}
-          onPaymentRequired={() => setPaywallOpen(true)}
+          onPaymentRequired={openPaywall}
           initiallyHasEntries={
             selectedDate === openingDate ? initiallyHasEntries : undefined
           }
         />
       </div>
-
-      <PaywallDialog
-        key={profile.userId}
-        open={paywallOpen}
-        onOpenChange={setPaywallOpen}
-        userId={profile.userId}
-        email={email}
-      />
     </div>
   );
 }

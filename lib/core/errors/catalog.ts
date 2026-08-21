@@ -56,6 +56,12 @@ export const Errors = {
 
   conflict: (detail: string) => new AppError('CONFLICT', 409, false, detail),
 
+  // A circle quota (groups, friends) that belongs to SOMEONE OTHER than the
+  // actor. Deliberately 409, not 402: a paywall would be shown to the wrong
+  // user. The actor's own quota denials go through `featureLocked`.
+  circleLimitReached: (detail: string) =>
+    new AppError('CIRCLE_LIMIT_REACHED', 409, false, detail),
+
   rateLimited: (message?: string, retryAfterSeconds?: number) =>
     new RateLimitedError(
       message ?? DEFAULT_MESSAGES.rateLimited,

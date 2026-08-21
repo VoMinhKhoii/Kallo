@@ -57,6 +57,14 @@
     "expiryTitle": "Your subscription is ending soon",
     "expiryBody": "Access ends in {days} {days, plural, one {day} other {days}}. Renew to keep AI meal analysis."
   },
+  "premium": {
+    "chip": "Premium",
+    "micronutrientsLock": {
+      "title": "Micronutrient insights",
+      "body": "The vitamin and mineral breakdown of everything you log is a Premium feature. Upgrade to see which nutrients you're steady on and which need attention.",
+      "cta": "Upgrade"
+    }
+  },
   "trialBanner": {
     "daysRemaining": "{days} {days, plural, one {day} other {days}} left in your free trial",
     "upgrade": "Upgrade"

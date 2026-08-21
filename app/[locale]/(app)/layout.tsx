@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/app/shell/app-shell';
 import { EntitlementLifecycleSync } from '@/components/billing/activation/entitlement-lifecycle-sync';
+import { PremiumGuardProvider } from '@/components/billing/premium-guard-provider';
 import { getMyPublicProfile } from '@/lib/actions/groups/profile';
 import { isAdminEmail } from '@/lib/admin/authz/is-admin';
 import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
@@ -92,7 +93,9 @@ export default async function AppLayout({
       initialSidebarExpandMode={initialSidebarExpandMode}
     >
       <EntitlementLifecycleSync userId={user.id} />
-      {children}
+      <PremiumGuardProvider userId={user.id} email={user.email ?? null}>
+        {children}
+      </PremiumGuardProvider>
     </AppShell>
   );
 }
