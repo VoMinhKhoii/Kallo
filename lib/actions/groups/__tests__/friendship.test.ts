@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Errors } from '@/lib/core/errors/catalog';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -49,6 +50,15 @@ vi.mock(
   '@/lib/infra/db/schema',
   async () => (await import('./circle-doubles')).schema
 );
+
+// The free-tier friend cap: pass-through unless a test arms it, so the suite
+// never depends on the BILLING_ENFORCEMENT_ENABLED env var.
+const { mockAssertFriendCapacity } = vi.hoisted(() => ({
+  mockAssertFriendCapacity: vi.fn(async (..._args: unknown[]) => undefined),
+}));
+vi.mock('@/lib/domain/social/quota/circle-quota', () => ({
+  assertFriendCapacity: mockAssertFriendCapacity,
+}));
 
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks
@@ -238,6 +248,63 @@ describe('acceptInvite', () => {
 
     expect(result.status).toBe('accepted');
     expect(mockTxUpdate).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('checks both parties against the friend cap on a NEW edge', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect
+      .mockReturnValueOnce(txSelect([]))
+      .mockReturnValueOnce(txSelect([{ id: DIRECT_GROUP_ID }]));
+    captureInserts();
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(mockAssertFriendCapacity).toHaveBeenCalledWith(expect.anything(), {
+      accepterId: ACTOR,
+      inviterId: INVITER,
+      inviterName: 'Phở Fan',
+    });
+  });
+
+  it('does NOT check the friend cap when the edge is already accepted', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect.mockReturnValueOnce(
+      txSelect([{ id: FRIENDSHIP_ID, status: 'accepted' }])
+    );
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(mockAssertFriendCapacity).not.toHaveBeenCalled();
+  });
+
+  it('propagates the accepter 402 without writing the edge', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect.mockReturnValueOnce(txSelect([]));
+    captureInserts();
+    mockAssertFriendCapacity.mockRejectedValueOnce(
+      Errors.featureLocked('unlimited_circle', 'not_entitled')
+    );
+
+    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toMatchObject({
+      status: 402,
+      code: 'feature_locked',
+    });
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('propagates a 409 when the inviter is at their friend cap', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect.mockReturnValueOnce(txSelect([]));
+    captureInserts();
+    mockAssertFriendCapacity.mockRejectedValueOnce(
+      Errors.circleLimitReached('Phở Fan đã đạt giới hạn 10 bạn bè.')
+    );
+
+    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toMatchObject({
+      status: 409,
+      code: 'CIRCLE_LIMIT_REACHED',
+    });
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 

@@ -5,6 +5,10 @@ import { Errors } from '@/lib/core/errors/catalog';
 import { createChatGroupSchema } from '@/lib/core/validation/chat';
 import { circleFeedSchema } from '@/lib/core/validation/social';
 import { todayLocalDate } from '@/lib/domain/social/feed/meal-feed';
+import {
+  assertGroupCapacity,
+  assertUnlimitedCircleActor,
+} from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
@@ -39,7 +43,13 @@ export async function createChatGroup(
     );
   }
 
+  // Creating a group is premium; each member added must also have room for
+  // another group (their cap, their 409 — see circle-quota).
+  await assertUnlimitedCircleActor(db, actorId);
+
   return db.transaction(async (tx) => {
+    await assertGroupCapacity(tx, memberIds);
+
     const [group] = await tx
       .insert(chatGroups)
       .values({ kind: 'group', name: parsed.name, createdBy: actorId })

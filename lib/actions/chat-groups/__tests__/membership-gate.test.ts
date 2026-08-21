@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { FeatureLockedError } from '@/lib/core/errors/app-error';
+import { Errors } from '@/lib/core/errors/catalog';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -47,6 +49,16 @@ vi.mock('drizzle-orm/pg-core', async (importOriginal) => {
 });
 
 vi.mock('@/lib/infra/db/schema', async () => await import('./schema-doubles'));
+
+// The premium circle gate is a pure pass-through here unless a test makes it
+// throw — explicit so the suite never depends on the enforcement env var.
+const { mockAssertActor } = vi.hoisted(() => ({
+  mockAssertActor: vi.fn(async (..._args: unknown[]) => undefined),
+}));
+vi.mock('@/lib/domain/social/quota/circle-quota', () => ({
+  assertUnlimitedCircleActor: mockAssertActor,
+  assertGroupCapacity: vi.fn(async () => undefined),
+}));
 
 vi.mock('@/lib/domain/social/shares/reactions', () => ({
   reactionsForShares: vi.fn(
@@ -254,6 +266,54 @@ describe('membership-gated reads', () => {
 
     expect(message.body).toBe('hi');
     expect(mockDbUpdate).toHaveBeenCalledTimes(1);
+    expect(mockAssertActor).toHaveBeenCalledWith(expect.anything(), USER_A);
+  });
+
+  it('does NOT gate a direct 1:1 send (direct chat stays free)', async () => {
+    mockDbSelect.mockReturnValueOnce(
+      selectRows([
+        accessRow({
+          kind: 'direct',
+          directUserLow: LOW,
+          directUserHigh: HIGH,
+        }),
+      ])
+    );
+    mockDbInsert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: 'm1',
+            groupId: DIRECT_GROUP_ID,
+            senderId: USER_A,
+            body: 'hi',
+            createdAt: new Date('2026-01-01T00:00:00Z'),
+          },
+        ]),
+      }),
+    });
+    stubUpdate();
+
+    await sendChatGroupMessage(USER_A, {
+      groupId: DIRECT_GROUP_ID,
+      body: 'hi',
+    });
+    expect(mockAssertActor).not.toHaveBeenCalled();
+  });
+
+  it('propagates a 402 from the group gate before inserting', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([accessRow()]));
+    mockAssertActor.mockRejectedValueOnce(
+      Errors.featureLocked('unlimited_circle', 'not_entitled')
+    );
+
+    const error = await sendChatGroupMessage(USER_A, {
+      groupId: GROUP_ID,
+      body: 'hi',
+    }).catch((e: unknown) => e);
+
+    expect((error as FeatureLockedError).status).toBe(402);
+    expect(mockDbInsert).not.toHaveBeenCalled();
   });
 });
 

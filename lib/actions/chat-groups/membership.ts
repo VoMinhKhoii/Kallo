@@ -6,6 +6,10 @@ import {
   removeChatGroupMemberSchema,
 } from '@/lib/core/validation/chat';
 import { orderedPair } from '@/lib/domain/social/friendship';
+import {
+  assertGroupCapacity,
+  assertUnlimitedCircleActor,
+} from '@/lib/domain/social/quota/circle-quota';
 import type { AppTransaction } from '@/lib/infra/db/client';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
@@ -244,6 +248,10 @@ export async function addChatGroupMembers(
     if (toInsert.length === 0) {
       return { added: 0 };
     }
+    // Adding members is premium, and every added member needs room for
+    // another group of their own (their cap → 409 naming them).
+    await assertUnlimitedCircleActor(tx, actorId);
+    await assertGroupCapacity(tx, toInsert);
 
     const inserted = await tx
       .insert(chatGroupMembers)
