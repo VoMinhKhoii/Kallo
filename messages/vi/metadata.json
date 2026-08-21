@@ -3,6 +3,10 @@
     "title": "Kallo — Trình theo dõi dinh dưỡng món Việt",
     "description": "Theo dõi bữa ăn Việt với phân tích dinh dưỡng bằng AI"
   },
+  "pricing": {
+    "title": "Bảng giá — Kallo",
+    "description": "Các gói và giá của Kallo. Dùng miễn phí, nâng cấp Premium để có ghi chép bằng AI, quét nhãn, vi chất và nhóm không giới hạn."
+  },
   "dashboard": {
     "title": "Tổng quan — Kallo"
   },
