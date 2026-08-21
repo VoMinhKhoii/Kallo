@@ -17,7 +17,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../../shared/logic/macro_composition.dart';
-import '../../../../shared/widgets/gauge/rounded_gauge_arc.dart';
+import '../../../../shared/widgets/gauge/gauge_dial.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 
@@ -74,9 +74,6 @@ class _MacroDial extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final valueStyle = dashValue();
-    final targetStyle = dashMeta(tabular: true);
-    final scaler = MediaQuery.textScalerOf(context);
     final color = kCompositionColors[data.compositionKey]!;
 
     return Column(
@@ -99,34 +96,12 @@ class _MacroDial extends StatelessWidget {
           ],
         ),
         const SizedBox(height: KalloSpacing.sp0_5),
-        SizedBox(
-          height: gaugeHeight(radius),
-          child: Stack(
-            alignment: Alignment.topCenter,
-            children: [
-              RoundedGaugeArc(
-                progress: data.target > 0 ? data.current / data.target : 0,
-                outerRadius: radius,
-                fill: color,
-              ),
-              Positioned(
-                top: readoutTopFor(
-                  outerRadius: radius,
-                  primaryHeight: gaugeLineHeight(valueStyle, scaler),
-                  secondaryHeight: gaugeLineHeight(targetStyle, scaler),
-                ),
-                left: 0,
-                right: 0,
-                child: Column(
-                  children: [
-                    Text('${data.current}g', style: valueStyle),
-                    const SizedBox(height: kGaugeReadoutGap),
-                    Text('/${data.target}g', style: targetStyle),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        GaugeDial(
+          progress: data.target > 0 ? data.current / data.target : 0,
+          radius: radius,
+          fill: color,
+          primary: GaugeLine('${data.current}g', dashValue()),
+          secondary: GaugeLine('/${data.target}g', dashMeta(tabular: true)),
         ),
       ],
     );

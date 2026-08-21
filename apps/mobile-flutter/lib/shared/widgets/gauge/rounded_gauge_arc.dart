@@ -1,8 +1,7 @@
 /// The dial itself: a 240° rounded arc that fills with what has been used.
 ///
-/// Draws only the arc. The figures that sit in its mouth are the caller's, laid
-/// out against [gaugeTipOffset] so the readout and the dial share a line — see
-/// [readoutTopFor], which every dial in the app positions its text with.
+/// Draws only the arc; [GaugeDial] is what callers want, and owns the figures
+/// that sit in its mouth.
 ///
 /// The sweep FILLS with consumption, matching the week strip, the heatmap and
 /// the nutrition page. A cutting user's headline figure counts down while this
@@ -17,33 +16,10 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import 'gauge_arc_geometry.dart';
 
-/// The gap between the readout's stacked lines.
-const double kGaugeReadoutGap = 2;
-
-/// A line's laid-out height at the viewer's text scale.
-double gaugeLineHeight(TextStyle style, TextScaler scaler) =>
-    scaler.scale(style.fontSize!) * (style.height ?? 1);
-
 /// How tall the dial draws at [outerRadius]: the top half, the drop to the
 /// tips, and the rounded cap that hangs below them.
 double gaugeHeight(double outerRadius) =>
     outerRadius + gaugeTipOffset(outerRadius) + outerRadius / 8;
-
-/// Where a readout must start for its SECOND line to sit centred on the dial's
-/// tips — the alignment every dial shares, so type and arc read as one object.
-///
-/// Computed rather than hard-coded because the lines grow with the viewer's
-/// text scale, and a fixed offset would drift off the tips at 1.3.
-double readoutTopFor({
-  required double outerRadius,
-  required double primaryHeight,
-  required double secondaryHeight,
-}) =>
-    outerRadius +
-    gaugeTipOffset(outerRadius) -
-    secondaryHeight / 2 -
-    kGaugeReadoutGap -
-    primaryHeight;
 
 class RoundedGaugeArc extends StatefulWidget {
   const RoundedGaugeArc({

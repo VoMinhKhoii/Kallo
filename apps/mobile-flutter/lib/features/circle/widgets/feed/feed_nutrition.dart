@@ -46,12 +46,7 @@ class FeedNutrition extends StatelessWidget {
         ),
         if (composition.totalKcal > 0) ...[
           const SizedBox(height: kFeedTight),
-          CompositionBar(
-            segments: composition.segments,
-            height: kFeedBarHeight,
-            gap: kFeedBarGap,
-            opacity: kFeedBarOpacity,
-          ),
+          CompositionBar.compact(segments: composition.segments),
           const SizedBox(height: kFeedTight),
         ],
         MacroScale(

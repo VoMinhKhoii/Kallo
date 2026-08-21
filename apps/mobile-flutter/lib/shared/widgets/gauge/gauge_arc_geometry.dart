@@ -63,11 +63,10 @@ Path roundedSectorPath({
   final innerEdge = (innerRadius + cornerRadius) * math.cos(innerInset * _deg);
   final corner = Radius.circular(cornerRadius);
 
+  final outerStart = arcPoint(center, outerEdge, startAngle);
+  final innerEnd = arcPoint(center, innerEdge, endAngle);
   path
-    ..moveTo(
-      arcPoint(center, outerEdge, startAngle).dx,
-      arcPoint(center, outerEdge, startAngle).dy,
-    )
+    ..moveTo(outerStart.dx, outerStart.dy)
     ..arcToPoint(
       arcPoint(center, outerRadius, startAngle - outerInset),
       radius: corner,
@@ -78,10 +77,7 @@ Path roundedSectorPath({
       largeArc: sweep - 2 * outerInset > 180,
     )
     ..arcToPoint(arcPoint(center, outerEdge, endAngle), radius: corner)
-    ..lineTo(
-      arcPoint(center, innerEdge, endAngle).dx,
-      arcPoint(center, innerEdge, endAngle).dy,
-    )
+    ..lineTo(innerEnd.dx, innerEnd.dy)
     ..arcToPoint(
       arcPoint(center, innerRadius, endAngle + innerInset),
       radius: corner,

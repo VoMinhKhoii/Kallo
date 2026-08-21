@@ -20,8 +20,6 @@ import '../../../../shared/widgets/nutrition/composition_bar.dart';
 import '../../../../shared/widgets/nutrition/macro_scale.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../circle/data/feed_time.dart';
-import '../../../circle/widgets/feed/feed_rhythm.dart';
 import '../../data/logging_day.dart';
 import '../../logic/dashboard_spacing.dart';
 
@@ -117,7 +115,7 @@ class _MealRow extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: kFeedStandard),
+          const SizedBox(height: DashboardSpacing.label),
           Text.rich(
             TextSpan(
               // Unit stays at Meta so the figure carries the mass, not the word.
@@ -132,14 +130,9 @@ class _MealRow extends StatelessWidget {
             ),
           ),
           if (composition.totalKcal > 0) ...[
-            const SizedBox(height: kFeedTight),
-            CompositionBar(
-              segments: composition.segments,
-              height: kFeedBarHeight,
-              gap: kFeedBarGap,
-              opacity: kFeedBarOpacity,
-            ),
-            const SizedBox(height: kFeedTight),
+            const SizedBox(height: DashboardSpacing.row),
+            CompositionBar.compact(segments: composition.segments),
+            const SizedBox(height: DashboardSpacing.row),
             MacroScale(
               protein: meal.nutrition.proteinG,
               carbohydrate: meal.nutrition.carbohydrateG,
