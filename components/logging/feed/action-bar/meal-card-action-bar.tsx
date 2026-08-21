@@ -12,6 +12,7 @@ import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { ShareMealDialog } from '@/components/groups/share-meal-dialog';
 import { ShareToCircleButton } from '@/components/logging/feed/persisted/share-buttons';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
+import { COPY_SPLIT_LIVE } from '@/lib/domain/social/copy-split-live';
 import { ActionIconButton } from './action-icon-button';
 import { RemoveMealButton } from './remove-meal-button';
 
@@ -39,9 +40,8 @@ export function MealCardActionBar({
   onDelete,
 }: MealCardActionBarProps) {
   const t = useTranslations('logging.persistedMealCard');
-  const { locked, openPaywall } = usePremiumGuard();
+  const { locked } = usePremiumGuard();
   const relogLocked = locked('relog');
-  const shareLocked = locked('copy_split');
 
   return (
     <div className="flex items-center justify-between">
@@ -74,29 +74,16 @@ export function MealCardActionBar({
             onClick={onEditAmounts}
           />
         )}
-        {canShare &&
-          // Locked: never mount the dialog at all — the trigger becomes a
-          // plain button onto the paywall, so share-meal-dialog stays untouched.
-          (shareLocked ? (
-            <>
-              <ActionIconButton
-                icon={UserPlus}
-                label={t('shareWithFriends')}
-                onClick={openPaywall}
-              />
-              <PremiumChip className="mr-1 px-1.5 py-0" />
-            </>
-          ) : (
-            <ShareMealDialog
-              mealId={mealId}
-              trigger={
-                <ActionIconButton
-                  icon={UserPlus}
-                  label={t('shareWithFriends')}
-                />
-              }
-            />
-          ))}
+        {/* Copy/split is paused — the only entry point to it on this card is
+            hidden outright (no premium chip: it is not a purchase away). */}
+        {COPY_SPLIT_LIVE && canShare && (
+          <ShareMealDialog
+            mealId={mealId}
+            trigger={
+              <ActionIconButton icon={UserPlus} label={t('shareWithFriends')} />
+            }
+          />
+        )}
         {onDelete && (
           <RemoveMealButton label={t('remove')} onConfirm={onDelete} />
         )}

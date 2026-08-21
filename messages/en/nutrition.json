@@ -55,6 +55,7 @@
     "description": "Use these cards to see which nutrients look adequate, which need more data, and which have source-specific caveats.",
     "vitamins": "Vitamins",
     "minerals": "Minerals",
+    "other": "Other",
     "sourceNote": "Targets from WHO/FAO · Vietnam RDA · NASEM DRI reference intakes."
   },
   "more": {

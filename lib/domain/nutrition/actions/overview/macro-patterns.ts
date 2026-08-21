@@ -15,7 +15,7 @@ export function buildMacroPatterns(
   profile: NutritionProfile
 ): MacroPattern[] {
   const macroInputs: {
-    key: MacroKey | 'fiber';
+    key: MacroKey;
     rowKey: NumericRowKey;
     labelKey: string;
     target: number | null;
@@ -49,13 +49,6 @@ export function buildMacroPatterns(
       target: nullableNumber(profile.fatTargetG),
       unit: 'g',
     },
-    {
-      key: 'fiber',
-      rowKey: 'fiberG',
-      labelKey: 'nutrition.macros.fiber',
-      target: null,
-      unit: 'g',
-    },
   ];
 
   return macroInputs.map((input) => ({
@@ -64,15 +57,12 @@ export function buildMacroPatterns(
     averagePerDay: sumRows(rows, input.rowKey) / safeLoggedDays,
     target: input.target,
     unit: input.unit,
-    consistencyPct:
-      input.key === 'fiber'
-        ? null
-        : getMacroConsistency({
-            macro: input.key,
-            target: input.target,
-            values: groupDailyValues(rows, input.rowKey),
-            goal: resolveMacroGoal(profile.goal),
-          }),
+    consistencyPct: getMacroConsistency({
+      macro: input.key,
+      target: input.target,
+      values: groupDailyValues(rows, input.rowKey),
+      goal: resolveMacroGoal(profile.goal),
+    }),
     nutrientType: input.key === 'calories' ? 'range' : 'floor',
   }));
 }

@@ -48,7 +48,6 @@ export const PLAN_FEATURES: Record<PlanId, readonly string[]> = {
     'micros',
     'relog',
     'cheatMeal',
-    'copySplit',
     'unlimitedCircle',
   ],
   lifetime: ['payOnce', 'futureUpdates'],

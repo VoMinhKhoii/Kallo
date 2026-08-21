@@ -72,7 +72,7 @@ export interface MacroConsistencySummary {
 }
 
 export interface MacroPattern {
-  key: MacroKey | 'fiber';
+  key: MacroKey;
   labelKey: string;
   averagePerDay: number;
   target: number | null;

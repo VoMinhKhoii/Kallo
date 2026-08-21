@@ -39,6 +39,14 @@ const { mockTxSelect, mockTxUpdate, mockTxInsert, mockDbUpdate, mockTx } =
 const assertFeatureAccess = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
 
+// The copy/split feature is paused repo-wide (COPY_SPLIT_LIVE = false). This
+// suite covers the behavior sitting BEHIND that switch, so it runs with the
+// switch on; the refusal itself is covered by copy-split-paused.test.ts.
+vi.mock('@/lib/domain/social/copy-split-live', () => ({
+  COPY_SPLIT_LIVE: true,
+  COPY_SPLIT_PAUSED_MESSAGE: 'paused',
+}));
+
 vi.mock('@/lib/infra/auth/session', async () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: (await import('./share-doubles')).MOCK_USER,

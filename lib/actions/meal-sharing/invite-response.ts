@@ -19,6 +19,10 @@ import {
   acceptMealShareInviteSchema,
   dismissMealShareInviteSchema,
 } from '@/lib/core/validation/social';
+import {
+  COPY_SPLIT_LIVE,
+  COPY_SPLIT_PAUSED_MESSAGE,
+} from '@/lib/domain/social/copy-split-live';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -40,6 +44,10 @@ export async function acceptMealShareInviteAction(input: {
 }): Promise<ConfirmMealResponse> {
   const parsed = acceptMealShareInviteSchema.parse(input);
   const { user } = await requireAuthAndProfile();
+  // Feature paused: refuse before any read or write. See copy-split-live.
+  if (!COPY_SPLIT_LIVE) {
+    throw Errors.conflict(COPY_SPLIT_PAUSED_MESSAGE);
+  }
 
   return await db.transaction(async (tx) => {
     // Discover the actor-scoped pending invite before touching cross-user data.
@@ -166,6 +174,10 @@ export async function dismissMealShareInviteAction(input: {
 }): Promise<{ success: true }> {
   const parsed = dismissMealShareInviteSchema.parse(input);
   const { user } = await requireAuthAndProfile();
+  // Feature paused: refuse before any write. See copy-split-live.
+  if (!COPY_SPLIT_LIVE) {
+    throw Errors.conflict(COPY_SPLIT_PAUSED_MESSAGE);
+  }
 
   const [updated] = await db
     .update(mealShareInvites)

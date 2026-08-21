@@ -1,6 +1,7 @@
 'use server';
 
 import { and, desc, eq, or } from 'drizzle-orm';
+import { COPY_SPLIT_LIVE } from '@/lib/domain/social/copy-split-live';
 import { avatarUrlFor } from '@/lib/domain/social/identity/avatar-url';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
@@ -14,6 +15,12 @@ import type { MealShareInvite } from './types';
 
 export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
   const { user } = await requireAuthAndProfile();
+  // Feature paused: an empty list at the source is what silences the nav's
+  // attention dot on web AND in Flutter, both of which count these rows. The
+  // rows themselves are left untouched. See copy-split-live.
+  if (!COPY_SPLIT_LIVE) {
+    return [];
+  }
 
   const rows = await db
     .select({

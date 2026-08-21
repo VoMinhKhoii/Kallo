@@ -15,6 +15,10 @@ import {
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
+import {
+  COPY_SPLIT_LIVE,
+  COPY_SPLIT_PAUSED_MESSAGE,
+} from '@/lib/domain/social/copy-split-live';
 import { canViewShare } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
@@ -47,8 +51,13 @@ export async function logSharedMealAction(input: {
 }): Promise<ConfirmMealResponse> {
   const parsed = logSharedMealSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
+  // Feature paused: refuse before any read or write. See copy-split-live.
+  if (!COPY_SPLIT_LIVE) {
+    throw Errors.conflict(COPY_SPLIT_PAUSED_MESSAGE);
+  }
   // Premium (copy_split): copying a friend's meal off the wall is the same
   // Premium-card feature as the directed share. Gated before the transaction.
+  // Unreachable while COPY_SPLIT_LIVE is false; kept so re-enabling is one edit.
   await assertFeatureAccess(
     { userId: user.id, profileCreatedAt: profile.createdAt },
     'copy_split'

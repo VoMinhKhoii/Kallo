@@ -26,6 +26,28 @@ function card(nutrient: NutritionNutrientKey): NutrientCardData {
   };
 }
 
+/**
+ * Fiber is a premium micronutrient (MORE_NUTRIENTS), not a macro row — it has
+ * no reference target, so it lands in `moreNutrients` with an unsupported
+ * target and must be stripped for non-entitled viewers like the rest.
+ */
+function fiberCard(): NutrientCardData {
+  return {
+    nutrient: 'fiberG',
+    labelKey: 'nutrition.nutrients.fiber',
+    group: 'other',
+    averagePerDay: 18,
+    target: null,
+    targetSource: 'unsupported',
+    targetSourceLabelKey: 'nutrition.targetSources.unsupported',
+    unit: 'g',
+    percentOfTarget: null,
+    confidence: 0.9,
+    displayState: 'normal',
+    nutrientType: 'floor',
+  };
+}
+
 function summaryItem(nutrient: NutritionNutrientKey): NutrientSummaryItem {
   return {
     nutrient,
@@ -114,7 +136,7 @@ function overview(): NutritionOverview {
     micronutrients: [card('calciumMg')],
     spotlight: [card('ironMg')],
     steady: [card('zincMg')],
-    moreNutrients: [card('copperMcg')],
+    moreNutrients: [card('copperMcg'), fiberCard()],
     educationCards: [
       {
         id: 'vitamin_d',
@@ -136,6 +158,19 @@ describe('stripMicronutrients', () => {
     expect(stripped.moreNutrients).toEqual([]);
     expect(stripped.educationCards).toEqual([]);
     expect(stripped.micronutrientsLocked).toBe(true);
+  });
+
+  it('strips fiber, which is a premium nutrient card and not a macro row', () => {
+    const input = overview();
+    const stripped = stripMicronutrients(input);
+
+    expect(
+      input.moreNutrients.some((entry) => entry.nutrient === 'fiberG')
+    ).toBe(true);
+    expect(stripped.moreNutrients).toEqual([]);
+    expect(stripped.macros.map((macro) => macro.labelKey)).not.toContain(
+      'nutrition.macros.fiber'
+    );
   });
 
   it('empties the summary lists and its limited-data count, keeping macro consistency', () => {

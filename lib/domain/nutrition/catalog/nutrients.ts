@@ -12,6 +12,7 @@ export const DEFAULT_NUTRIENTS = [
 ] as const satisfies readonly NutritionNutrientKey[];
 
 export const MORE_NUTRIENTS = [
+  'fiberG',
   'sodiumMg',
   'magnesiumMg',
   'potassiumMg',
