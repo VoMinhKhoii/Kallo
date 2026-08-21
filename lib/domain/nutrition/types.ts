@@ -228,4 +228,9 @@ export interface NutritionOverview {
   steady: NutrientCardData[];
   moreNutrients: NutrientCardData[];
   educationCards: EducationCardData[];
+  /**
+   * True when the viewer's plan hides micronutrient data; the micronutrient
+   * arrays arrive empty.
+   */
+  micronutrientsLocked: boolean;
 }

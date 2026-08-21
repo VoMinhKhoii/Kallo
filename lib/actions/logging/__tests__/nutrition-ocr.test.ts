@@ -25,13 +25,19 @@ vi.mock('@/lib/infra/db/client', () => ({
   },
 }));
 
-const { mockRequireAuthAndProfile, mockUser } = vi.hoisted(() => ({
-  mockRequireAuthAndProfile: vi.fn(),
-  mockUser: { id: 'user-123', email: 'test@example.com' },
-}));
+const { mockRequireAuthAndProfile, mockUser, mockCheckFeatureGate } =
+  vi.hoisted(() => ({
+    mockRequireAuthAndProfile: vi.fn(),
+    mockUser: { id: 'user-123', email: 'test@example.com' },
+    mockCheckFeatureGate: vi.fn(),
+  }));
 
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: mockRequireAuthAndProfile,
+}));
+
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  checkFeatureGate: mockCheckFeatureGate,
 }));
 
 vi.mock('@/lib/ai/pipeline/estimator/label-ocr/label-ocr', () => ({
@@ -117,13 +123,58 @@ function servingLabel(
 
 afterEach(cleanup);
 
+// Entitled by default: every pre-existing expectation is the unlocked path.
+beforeEach(() => {
+  mockCheckFeatureGate.mockResolvedValue({ locked: false });
+  mockRequireAuthAndProfile.mockResolvedValue({
+    user: mockUser,
+    profile: {
+      goal: 'cutting',
+      aggression: '0.5',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    },
+  });
+});
+
 describe('scanNutritionLabelAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequireAuthAndProfile.mockResolvedValue({
-      user: mockUser,
-      profile: { goal: 'cutting', aggression: '0.5' },
+  });
+
+  it('returns feature_locked from both actions without calling Gemini or staging', async () => {
+    mockCheckFeatureGate.mockResolvedValue({
+      locked: true,
+      reason: 'not_entitled',
     });
+    const { db } = await import('@/lib/infra/db/client');
+
+    expect(
+      await scanNutritionLabelAction({
+        imageBase64: validPngBase64,
+        mimeType: 'image/png',
+      })
+    ).toEqual({ success: false, code: 'feature_locked' });
+    expect(
+      await stageOcrMealAction({
+        productName: 'Bánh quy',
+        amount: 100,
+        unit: 'g',
+        confidence: 'high',
+        calories: 480,
+        proteinGrams: 6,
+        carbsGrams: 62,
+        fatGrams: 22,
+        loggedDate: '2026-08-06',
+        timezoneOffset: -420,
+      })
+    ).toEqual({ success: false, code: 'feature_locked' });
+
+    expect(mockCheckFeatureGate).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: mockUser.id }),
+      'label_scan'
+    );
+    expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
+    expect(db.insert).not.toHaveBeenCalled();
   });
 
   it('validates input and returns normalized label data', async () => {

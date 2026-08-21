@@ -1,12 +1,14 @@
 'use server';
 
 import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
+import { checkFeatureGate } from '@/lib/domain/billing/feature-gate';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import {
   getNutritionPeriod,
   getPreviousPeriod,
 } from '../../pattern/date-range';
 import { resolveInitialRange } from '../../pattern/summary';
+import { stripMicronutrients } from '../../premium-scope';
 import { nutritionOverviewInputSchema } from '../../schemas';
 import type {
   NutritionDayScope,
@@ -156,6 +158,13 @@ export async function getNutritionOverview(
   });
   const last30Bounds = getUtcBounds(last30Period, parsed.timezoneOffset);
 
+  // Started before the window queries so the entitlement read (when
+  // enforcement is on at all) overlaps them instead of adding a round trip.
+  const gatePromise = checkFeatureGate(
+    { userId: user.id, profileCreatedAt: profile.createdAt },
+    'micronutrients'
+  );
+
   // Start the count and hold the promise: it only ever gates which range to
   // use, so `auto` awaits it here and a pinned range lets it run alongside the
   // window fetch inside `buildOverview`.
@@ -168,7 +177,7 @@ export async function getNutritionOverview(
     timezoneOffset: parsed.timezoneOffset,
   });
 
-  return buildOverview({
+  const overview = await buildOverview({
     userId: user.id,
     profile,
     requestedRange: parsed.range,
@@ -180,4 +189,9 @@ export async function getNutritionOverview(
     dayScope: parsed.days,
     loggedDaysLast30,
   });
+
+  // Applies to the empty-data overview too (it is built by the same mapper),
+  // so a locked viewer with nothing logged still gets the lock card.
+  const gate = await gatePromise;
+  return gate.locked ? stripMicronutrients(overview) : overview;
 }

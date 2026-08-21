@@ -3,15 +3,21 @@ import type { OverviewMealItemRow } from '@/lib/domain/nutrition/actions/overvie
 import type { userProfiles } from '@/lib/infra/db/schema';
 
 const {
+  mockCheckFeatureGate,
   mockCountLoggedDaysLast30,
   mockFetchDailyCalorieTotals,
   mockFetchOverviewRows,
   mockRequireAuthAndProfile,
 } = vi.hoisted(() => ({
+  mockCheckFeatureGate: vi.fn(),
   mockCountLoggedDaysLast30: vi.fn(),
   mockFetchDailyCalorieTotals: vi.fn(),
   mockFetchOverviewRows: vi.fn(),
   mockRequireAuthAndProfile: vi.fn(),
+}));
+
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  checkFeatureGate: mockCheckFeatureGate,
 }));
 
 vi.mock('@/lib/infra/auth/session', () => ({
@@ -114,6 +120,7 @@ describe('getNutritionOverview', () => {
       user: { id: 'user-1' },
       profile: baseProfile,
     });
+    mockCheckFeatureGate.mockResolvedValue({ locked: false });
     mockCountLoggedDaysLast30.mockResolvedValue(14);
     mockFetchOverviewRows.mockResolvedValue(threeDayRows);
     mockFetchDailyCalorieTotals.mockResolvedValue([]);
@@ -207,6 +214,59 @@ describe('getNutritionOverview', () => {
     ]) {
       expect('trend' in card).toBe(false);
     }
+  });
+
+  it('ships micronutrients untouched when the feature is unlocked', async () => {
+    const overview = await getNutritionOverview({
+      range: '7d',
+      timezoneOffset: null,
+    });
+
+    expect(mockCheckFeatureGate).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-1' }),
+      'micronutrients'
+    );
+    expect(overview.micronutrientsLocked).toBe(false);
+    expect(overview.micronutrients.length).toBeGreaterThan(0);
+    expect(overview.moreNutrients.length).toBeGreaterThan(0);
+    expect(overview.educationCards.length).toBeGreaterThan(0);
+    expect(
+      overview.daySeries.series.some((series) => series.metric === 'calciumMg')
+    ).toBe(true);
+  });
+
+  it('strips micronutrients from the response when the feature is locked', async () => {
+    mockCheckFeatureGate.mockResolvedValue({
+      locked: true,
+      reason: 'not_entitled',
+    });
+
+    const overview = await getNutritionOverview({
+      range: '7d',
+      timezoneOffset: null,
+    });
+
+    expect(overview.micronutrientsLocked).toBe(true);
+    expect(overview.micronutrients).toEqual([]);
+    expect(overview.spotlight).toEqual([]);
+    expect(overview.steady).toEqual([]);
+    expect(overview.moreNutrients).toEqual([]);
+    expect(overview.educationCards).toEqual([]);
+    expect(overview.summary.mostConsistent).toEqual([]);
+    expect(overview.summary.needsAttention).toEqual([]);
+    expect(overview.summary.limitedDataCount).toBe(0);
+    expect(overview.daySeries.series.map((series) => series.metric)).toEqual([
+      'calories',
+      'protein',
+      'carbohydrate',
+      'fat',
+    ]);
+    // Calories and macros are free either way.
+    expect(overview.macros.length).toBeGreaterThan(0);
+    expect(overview.summary.macroConsistency).toEqual({
+      averageConsistencyPct: 75,
+      weakestMacro: 'protein',
+    });
   });
 
   it('uses profile targets for macro consistency thresholds', async () => {
