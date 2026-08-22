@@ -36,14 +36,3 @@ export function shouldShowExceed(
   if (type === 'range') return pct > 110 || pct < 90;
   return false;
 }
-
-/**
- * Locale-aware number formatter used across nutrition cards. Drops fraction
- * digits at >=100 to keep large grams and mg values compact, otherwise shows
- * a single decimal so e.g. 0.5g stays meaningful.
- */
-export function formatLocalizedNumber(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
-    maximumFractionDigits: value >= 100 ? 0 : 1,
-  }).format(value);
-}

@@ -6,6 +6,7 @@ import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 
 const DEFAULT_PROFILE: DashboardProfile = {
   userId: '',
+  goal: null,
   calorieTarget: 2000,
   proteinTargetG: 150,
   carbsTargetG: 250,
@@ -25,6 +26,10 @@ export default async function DashboardPage() {
 
   const profile: DashboardProfile = {
     userId: profileRow?.userId ?? DEFAULT_PROFILE.userId,
+    // The dial's headline follows the goal; anything the CHECK constraint does
+    // not allow (and an incomplete onboarding) falls through to counting up.
+    goal:
+      (profileRow?.goal as DashboardProfile['goal']) ?? DEFAULT_PROFILE.goal,
     calorieTarget: profileRow?.calorieTarget ?? DEFAULT_PROFILE.calorieTarget,
     proteinTargetG:
       profileRow?.proteinTargetG ?? DEFAULT_PROFILE.proteinTargetG,

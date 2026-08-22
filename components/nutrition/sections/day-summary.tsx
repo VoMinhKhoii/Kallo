@@ -2,6 +2,14 @@
 
 import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
+import {
+  COMPOSITION_COLORS,
+  COMPOSITION_ICONS,
+  type CompositionKey,
+  compositionFromGrams,
+} from '@/components/shared/nutrition/composition';
+import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
+import { formatLocalizedNumber } from '@/lib/core/text/format-number';
 import type {
   CalorieAverages,
   MacroPattern,
@@ -9,16 +17,9 @@ import type {
   NutritionDaySeries,
   NutritionRange,
 } from '@/lib/domain/nutrition/types';
-import { formatLocalizedNumber } from '../primitives/helpers';
 import { CalorieScopeStats } from './calorie-scope-stats';
 import { MacroTrendChart } from './macro-trend-chart';
-import {
-  buildMacroTrendData,
-  COMPOSITION_COLORS,
-  COMPOSITION_ICONS,
-  COMPOSITION_KEYS,
-  KCAL_PER_GRAM,
-} from './macro-trend-utils';
+import { buildMacroTrendData } from './macro-trend-utils';
 
 interface DaySummaryProps {
   macros: MacroPattern[];
@@ -76,23 +77,22 @@ export function DaySummary({
     !isSelected && activeAvg !== null && previousAvg !== null
       ? activeAvg - previousAvg
       : null;
-  const composition = COMPOSITION_KEYS.map((key) => {
+  const gramsFor = (key: CompositionKey) => {
     const macro = macros.find((m) => m.key === key);
-    const grams = macro && macro.averagePerDay > 0 ? macro.averagePerDay : 0;
-    return {
-      key,
-      grams,
-      kcal: grams * KCAL_PER_GRAM[key],
-      // The legend's own short names, not `macro.labelKey`: these sit beside a
-      // number in a tight row, so they are clipped harder than the full names
-      // the nutrient grid uses ("Pro" / "Đạm", not "Protein" / "Chất đạm").
-      label: t(`macrosShort.${key}`),
-    };
+    return macro && macro.averagePerDay > 0 ? macro.averagePerDay : 0;
+  };
+  const composition = compositionFromGrams({
+    protein: gramsFor('protein'),
+    carbohydrate: gramsFor('carbohydrate'),
+    fat: gramsFor('fat'),
   });
-  const totalKcal = composition.reduce((sum, c) => sum + c.kcal, 0);
-  const segments = composition.map((c) => ({
-    ...c,
-    pct: totalKcal > 0 ? (c.kcal / totalKcal) * 100 : 0,
+  const legend = composition.segments.map((segment) => ({
+    ...segment,
+    grams: gramsFor(segment.key),
+    // The legend's own short names, not `macro.labelKey`: these sit beside a
+    // number in a tight row, so they are clipped harder than the full names
+    // the nutrient grid uses ("Pro" / "Đạm", not "Protein" / "Chất đạm").
+    label: t(`macrosShort.${segment.key}`),
   }));
 
   // A selected column is that bucket, not an average over a day scope, so the
@@ -142,28 +142,11 @@ export function DaySummary({
             onSelect={onSelect}
           />
         ) : (
-          <div
-            role="img"
-            aria-label={t('rhythm.macroCompositionAria')}
-            className="mt-4 flex h-2 w-full overflow-hidden rounded-full bg-kallo-track"
-          >
-            {segments.map((segment) =>
-              segment.pct > 0 ? (
-                <motion.span
-                  key={segment.key}
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
-                  style={{
-                    width: `${segment.pct}%`,
-                    backgroundColor: COMPOSITION_COLORS[segment.key],
-                    transformOrigin: 'left',
-                  }}
-                  className="h-full"
-                />
-              ) : null
-            )}
-          </div>
+          <CompositionBar
+            ariaLabel={t('rhythm.macroCompositionAria')}
+            className="mt-4"
+            segments={composition.segments}
+          />
         )}
 
         {/* Centered legend: the macro's food icon in its band colour, then the
@@ -174,7 +157,7 @@ export function DaySummary({
             slack: this column is far wider than a phone's, so the three never
             crowd and spreading them would only strand them apart. */}
         <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2">
-          {segments.map((segment) => {
+          {legend.map((segment) => {
             const Icon = COMPOSITION_ICONS[segment.key];
             return (
               <span

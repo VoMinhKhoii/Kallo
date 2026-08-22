@@ -3,7 +3,6 @@
   "today": "Today",
   "thisWeek": "This Week",
   "caloriesConsumed": "Calories consumed",
-  "caloriesRemaining": "Calories remaining",
   "protein": "Protein",
   "carbs": "Carbs",
   "fat": "Fat",
@@ -77,6 +76,10 @@
     "farUnder": "Far under"
   },
   "caloriesLogged": "kcal logged",
+  "kcalRemaining": "kcal remaining",
+  "loggedOfTarget": "{logged}/{target} logged",
+  "leftOfTarget": "{left}/{target} left",
+  "overTargetBy": "{over} over {target}",
   "mealReceiptsHint": "Your meal receipts will show up here",
   "streaming": {
     "saved": "Meal saved",
