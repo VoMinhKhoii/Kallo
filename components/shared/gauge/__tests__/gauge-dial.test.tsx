@@ -33,7 +33,7 @@ describe('GaugeDial', () => {
     // 44 tall and the gap 2, so the stack starts at 156 − 20/2 − 2 − 44 = 100
     // and the body's own middle lands back on 156.
     const stack = screen.getByText('741').parentElement as HTMLElement;
-    expect(stack.style.top).toBe('100px');
+    expect(stack.style.paddingTop).toBe('100px');
   });
 
   it('reserves room for a line that hangs below the arc', () => {
@@ -42,6 +42,6 @@ describe('GaugeDial', () => {
     // gaugeHeight(104) is 169; the readout runs to 100 + 44 + 2 + 20 + 2 + 16
     // = 184, and the box has to be the taller of the two.
     const box = container.firstElementChild as HTMLElement;
-    expect(box.style.height).toBe('184px');
+    expect(box.style.minHeight).toBe('184px');
   });
 });

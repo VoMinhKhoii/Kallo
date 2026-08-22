@@ -141,17 +141,19 @@ void main() {
 
   testWidgets('the header counts the way the user does', (tester) async {
     // No goal on the profile reads as counting UP, the same fallback the dock
-    // takes — the headline is what has been logged.
+    // takes — the headline is what has been logged. The unit is one word here,
+    // not the dock's sentence: the compact mouth cannot hold "kcal logged", so
+    // the framing moves to the line under the arc.
     await _pump(tester);
     expect(find.text('1,850'), findsOneWidget);
-    expect(find.text('kcal logged'), findsOneWidget);
-    expect(find.text('150/2,000 left'), findsOneWidget);
+    expect(find.text('logged'), findsOneWidget);
+    expect(find.text('1,850/2,000'), findsOneWidget);
 
     // A cutter counts DOWN: the headline is what is left to spend.
     await _pump(tester, goal: MacroGoal.cutting);
     expect(find.text('150'), findsOneWidget);
-    expect(find.text('kcal remaining'), findsOneWidget);
-    expect(find.text('1,850/2,000 logged'), findsOneWidget);
+    expect(find.text('left'), findsOneWidget);
+    expect(find.text('1,850/2,000'), findsOneWidget);
   });
 
   testWidgets('a macro figure sits on its arc tips', (tester) async {

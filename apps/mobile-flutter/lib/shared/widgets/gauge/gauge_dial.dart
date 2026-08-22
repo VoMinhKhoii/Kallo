@@ -63,54 +63,78 @@ class GaugeDial extends StatelessWidget {
     double heightOf(GaugeLine line) =>
         scaler.scale(line.style.fontSize!) * (line.style.height ?? 1);
 
-    final top =
+    final readout = [primary, secondary, if (tertiary != null) tertiary!];
+    final readoutHeight =
+        readout.fold<double>(0, (sum, line) => sum + heightOf(line)) +
+        _lineGap * (readout.length - 1);
+
+    // Where the readout wants to start for its SECOND line to land on the
+    // tips.
+    final wanted =
         radius +
         gaugeTipOffset(radius) -
         heightOf(secondary) / 2 -
         _lineGap -
         heightOf(primary);
-    final readout = [primary, secondary, if (tertiary != null) tertiary!];
-    final bottom =
-        top +
-        readout.fold<double>(0, (sum, line) => sum + heightOf(line)) +
-        _lineGap * (readout.length - 1);
 
-    return SizedBox(
-      // The last line can hang below the arc, so the dial's own height is not
-      // always the whole of it.
-      height: math.max(gaugeHeight(radius), bottom),
+    // A small dial at a large text scale wants to start ABOVE its own arc —
+    // the lines are taller than the space over the tip line. Rather than clip
+    // the headline or quietly break the alignment, the ARC drops by the
+    // shortfall and the readout starts at 0: the two still share the tip line,
+    // and the dial simply reserves the extra height.
+    final arcTop = wanted < 0 ? -wanted : 0.0;
+    final readoutTop = wanted + arcTop;
+
+    // The READOUT sizes the dial, and the arc is painted behind it. The other
+    // way round — a box the width of the arc, with the lines clamped into it —
+    // is what the compact variant caught: at radius 52 the arc is 104 wide and
+    // "kcal remaining" is 102, so the sentence filled the box edge to edge and
+    // the detail under it was clipped by its own dial. A line is never narrower
+    // for being cramped; only the box can give.
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minWidth: radius * 2,
+        // The last line can hang below the arc, so the dial's own height is
+        // not always the whole of it.
+        minHeight: math.max(
+          arcTop + gaugeHeight(radius),
+          readoutTop + readoutHeight,
+        ),
+      ),
       child: Stack(
         alignment: Alignment.topCenter,
         children: [
-          RoundedGaugeArc(
-            progress: progress,
-            outerRadius: radius,
-            fill: fill,
-          ),
+          // Positioned, so it does not size the Stack — the Column below does.
           Positioned(
-            top: top,
+            top: arcTop,
             left: 0,
             right: 0,
-            child: Column(
-              children: [
-                for (final line in readout) ...[
-                  if (line != readout.first) const SizedBox(height: _lineGap),
-                  // One line each, always: the placement above measures a
-                  // single line per [GaugeLine], and a wrapped one would slide
-                  // every line below it off the tips. A figure that outgrows
-                  // the mouth overflows visibly rather than reflowing the
-                  // dial — the caller picked the wrong radius, and a silent
-                  // truncation would hide that behind a plausible number.
-                  Text(
-                    line.text,
-                    style: line.style,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.visible,
-                  ),
-                ],
-              ],
+            child: Center(
+              child: RoundedGaugeArc(
+                progress: progress,
+                outerRadius: radius,
+                fill: fill,
+              ),
             ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(height: readoutTop),
+              for (final line in readout) ...[
+                if (line != readout.first) const SizedBox(height: _lineGap),
+                // One line each, always: the placement above measures a single
+                // line per [GaugeLine], and a wrapped one would slide every
+                // line below it off the tips.
+                Text(
+                  line.text,
+                  style: line.style,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                ),
+              ],
+            ],
           ),
         ],
       ),

@@ -80,6 +80,9 @@
   "loggedOfTarget": "{logged}/{target} logged",
   "leftOfTarget": "{left}/{target} left",
   "overTargetBy": "{over} over {target}",
+  "remainingShort": "left",
+  "loggedShort": "logged",
+  "loggedOverTarget": "{logged}/{target}",
   "mealReceiptsHint": "Your meal receipts will show up here",
   "streaming": {
     "saved": "Meal saved",

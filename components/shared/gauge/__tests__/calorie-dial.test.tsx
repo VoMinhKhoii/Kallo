@@ -71,12 +71,13 @@ describe('CalorieDial', () => {
   it('does not shift the layout when the goal flips', () => {
     const cutting = renderDial(741, 'cutting');
     const cuttingBox = (cutting.container.firstElementChild as HTMLElement)
-      .style.height;
+      .style.minHeight;
     cutting.unmount();
 
     const bulking = renderDial(741, 'bulking');
+    expect(cuttingBox).not.toBe('');
     expect(
-      (bulking.container.firstElementChild as HTMLElement).style.height
+      (bulking.container.firstElementChild as HTMLElement).style.minHeight
     ).toBe(cuttingBox);
   });
 
@@ -87,5 +88,24 @@ describe('CalorieDial', () => {
 
     const svg = container.querySelector('svg') as SVGElement;
     expect(svg.getAttribute('width')).toBe('104');
+  });
+
+  it('shortens both lower lines on the compact variant', () => {
+    render(
+      <CalorieDial
+        goal="cutting"
+        logged={741}
+        target={TARGET}
+        variant="compact"
+      />
+    );
+
+    // The dock's sentence does not fit a 104px mouth; one word does, and the
+    // detail drops to the bare fraction every locale renders the same width.
+    expect(screen.getByText('remainingShort')).toBeInTheDocument();
+    expect(screen.queryByText('kcalRemaining')).not.toBeInTheDocument();
+    expect(
+      screen.getByText('loggedOverTarget logged=741 target=2,000')
+    ).toBeInTheDocument();
   });
 });

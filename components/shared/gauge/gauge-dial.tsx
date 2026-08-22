@@ -132,32 +132,41 @@ export function GaugeDial({
   );
 
   const lines = [primary, secondary, ...(tertiary ? [tertiary] : [])];
-  const top =
+  const readoutHeight =
+    lines.reduce((sum, line) => sum + line.heightPx, 0) +
+    LINE_GAP * (lines.length - 1);
+  // Where the readout wants to start for its SECOND line to land on the tips.
+  const wanted =
     radius +
     gaugeTipOffset(radius) -
     secondary.heightPx / 2 -
     LINE_GAP -
     primary.heightPx;
-  const bottom =
-    top +
-    lines.reduce((sum, line) => sum + line.heightPx, 0) +
-    LINE_GAP * (lines.length - 1);
+  // A small dial with tall lines wants to start ABOVE its own arc. Rather than
+  // clip the headline or quietly break the alignment, the ARC drops by the
+  // shortfall and the readout starts at 0: the two still share the tip line,
+  // and the dial simply reserves the extra height.
+  const arcTop = wanted < 0 ? -wanted : 0;
+  const readoutTop = wanted + arcTop;
   const arcHeight = gaugeHeight(radius);
 
   return (
     <div
-      className="relative shrink-0"
+      className="relative flex shrink-0 flex-col items-center"
       style={{
-        width: radius * 2,
-        // The last line can hang below the arc, so the dial's own height is not
-        // always the whole of it.
-        height: Math.max(arcHeight, bottom),
+        // The READOUT sizes the dial and the arc is painted behind it, so a
+        // line wider than the mark widens the box instead of spilling out of
+        // it. The last line can also hang below the arc, so the dial's own
+        // height is not always the whole of it.
+        minWidth: radius * 2,
+        minHeight: Math.max(arcTop + arcHeight, readoutTop + readoutHeight),
       }}
     >
       <svg
         aria-hidden="true"
-        className="absolute top-0 left-0"
+        className="absolute"
         height={arcHeight}
+        style={{ top: arcTop }}
         viewBox={`0 0 ${radius * 2} ${arcHeight}`}
         width={radius * 2}
       >
@@ -165,8 +174,8 @@ export function GaugeDial({
         <motion.path d={filled} fill={fill} />
       </svg>
       <div
-        className="absolute right-0 left-0 flex flex-col items-center"
-        style={{ top, gap: LINE_GAP }}
+        className="flex flex-col items-center"
+        style={{ paddingTop: readoutTop, gap: LINE_GAP }}
       >
         {lines.map((line) => (
           <span

@@ -45,11 +45,17 @@ class CalorieDial extends StatelessWidget {
   /// The variant for a surface that draws the dial inside a fixed header above
   /// a scrolling day, rather than giving it the top of the screen.
   ///
-  /// Half the radius, and the headline steps from Hero 40 to Value 17 — at 52
-  /// the mouth is ~78pt wide and a 40pt "1,259" simply does not fit in it. Only
-  /// the headline moves: the same three lines, the same fill, the same tip
-  /// alignment, so the small one still reads as the big one seen from further
-  /// away.
+  /// Half the radius, the headline steps from Hero 40 to Value 17, and both
+  /// lower lines shorten. The radius forces that: on the tip line the mouth is
+  /// only ~0.56× the radius each side, so at 52 it holds ~58pt, and the dock's
+  /// "kcal remaining" measures 102. The unit becomes one word, and the detail
+  /// drops to the bare fraction — figures and a slash, which every locale
+  /// renders at the same width, so a long translation cannot push the macro
+  /// dials beside it out of shape.
+  ///
+  /// This is the calorie ring's own composition, which this dial replaced: the
+  /// figure and a one-word label inside the mark, the day's arithmetic under
+  /// it.
   const CalorieDial.compact({
     required this.logged,
     required this.target,
@@ -90,21 +96,36 @@ class CalorieDial extends StatelessWidget {
   ) {
     final remaining = (target - logged).round();
 
+    // The compact dial's detail is the same fraction for every goal — the unit
+    // word above it says which of the two figures the headline is.
+    final progress = tr(
+      'dashboard.loggedOverTarget',
+      namedArgs: {'logged': fmt(logged), 'target': fmt(target)},
+    );
+
     if (goal == MacroGoal.cutting) {
       return (
         headline: fmt(math.max(0, remaining)),
-        unit: tr('dashboard.kcalRemaining'),
-        detail: tr(
-          'dashboard.loggedOfTarget',
-          namedArgs: {'logged': fmt(logged), 'target': fmt(target)},
-        ),
+        unit: _headlineIsHero
+            ? tr('dashboard.kcalRemaining')
+            : tr('dashboard.remainingShort'),
+        detail: _headlineIsHero
+            ? tr(
+                'dashboard.loggedOfTarget',
+                namedArgs: {'logged': fmt(logged), 'target': fmt(target)},
+              )
+            : progress,
       );
     }
 
     return (
       headline: fmt(logged),
-      unit: tr('dashboard.caloriesLogged'),
-      detail: remaining >= 0
+      unit: _headlineIsHero
+          ? tr('dashboard.caloriesLogged')
+          : tr('dashboard.loggedShort'),
+      detail: !_headlineIsHero
+          ? progress
+          : remaining >= 0
           ? tr(
               'dashboard.leftOfTarget',
               namedArgs: {'left': fmt(remaining), 'target': fmt(target)},
