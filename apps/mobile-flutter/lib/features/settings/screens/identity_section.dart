@@ -8,19 +8,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/circle.dart';
-import '../../../shared/widgets/nham_primitives.dart';
-import '../../../shared/widgets/profile_avatar.dart';
-import '../../../shared/widgets/scroll_separator.dart';
-import '../../../shared/widgets/skeleton.dart';
-import '../../../shared/widgets/top_toast.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/social/circle.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shared/widgets/avatar/profile_avatar.dart';
+import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../../../shared/widgets/feedback/skeleton.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../circle/data/circle_providers.dart';
 import '../logic/settings_spacing.dart';
-import '../widgets/settings_header.dart';
+import '../widgets/chrome/settings_header.dart';
 
 const int _maxAvatarBytes = 5 * 1024 * 1024;
 const int _displayNameMax = 50;
@@ -169,20 +169,20 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
           tr('settings.identity.description'),
           style: dashBody(color: kInkMuted),
         ),
-        const SizedBox(height: NhamSpacing.sp5),
+        const SizedBox(height: KalloSpacing.sp5),
 
         // ── Avatar ──────────────────────────────────────────────────────
         Row(
           children: [
             ProfileAvatarDisc(profile: profile, size: 64),
-            const SizedBox(width: NhamSpacing.sp4),
+            const SizedBox(width: KalloSpacing.sp4),
             Expanded(
               child: Wrap(
-                spacing: NhamSpacing.sp2,
-                runSpacing: NhamSpacing.sp2,
+                spacing: KalloSpacing.sp2,
+                runSpacing: KalloSpacing.sp2,
                 children: [
                   _PillButton(
-                    icon: LucideIcons.upload,
+                    icon: LucideIcons.upload300,
                     label: profile.hasCustomAvatar
                         ? tr('settings.identity.avatarChange')
                         : tr('settings.identity.avatarUpload'),
@@ -190,7 +190,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
                   ),
                   if (profile.hasCustomAvatar)
                     _PillButton(
-                      icon: LucideIcons.x,
+                      icon: LucideIcons.x300,
                       label: tr('settings.identity.avatarRemove'),
                       onTap: _busy ? null : _removeAvatar,
                       subdued: true,
@@ -200,14 +200,14 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
             ),
           ],
         ),
-        const SizedBox(height: NhamSpacing.sp5),
+        const SizedBox(height: KalloSpacing.sp5),
 
         // ── Name ────────────────────────────────────────────────────────
         Text(
           tr('settings.identity.nameLabel'),
           style: dashBody(weight: FontWeight.w500),
         ),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: KalloSpacing.sp2),
         TextField(
           controller: _name,
           maxLength: _displayNameMax,
@@ -219,30 +219,30 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-              borderSide: const BorderSide(color: NhamColors.inputBorder),
+              borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+              borderSide: const BorderSide(color: KalloColors.inputBorder),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-              borderSide: const BorderSide(color: NhamColors.inputBorder),
+              borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+              borderSide: const BorderSide(color: KalloColors.inputBorder),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-              borderSide: const BorderSide(color: NhamColors.accent),
+              borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+              borderSide: const BorderSide(color: KalloColors.accent),
             ),
           ),
           style: dashBody(),
         ),
-        const SizedBox(height: NhamSpacing.sp3),
+        const SizedBox(height: KalloSpacing.sp3),
         Align(
           alignment: Alignment.centerLeft,
           child: _PillButton(
-            icon: LucideIcons.check,
+            icon: LucideIcons.check300,
             label: tr('settings.identity.nameSave'),
             onTap: _busy ? null : () => unawaited(_saveName(profile)),
           ),
         ),
-        const SizedBox(height: NhamSpacing.sp4),
+        const SizedBox(height: KalloSpacing.sp4),
         Text(
           tr('settings.identity.linkWarning'),
           style: dashBody(color: kInkMuted),
@@ -267,11 +267,11 @@ class _IdentitySkeleton extends StatelessWidget {
           children: const [
             // Mirrors the real body: description line, then the avatar row.
             SkeletonBar(widthFactor: 0.9, height: 12, radius: 6),
-            SizedBox(height: NhamSpacing.sp5),
+            SizedBox(height: KalloSpacing.sp5),
             Row(
               children: [
                 SkeletonCircle(size: 64),
-                SizedBox(width: NhamSpacing.sp4),
+                SizedBox(width: KalloSpacing.sp4),
                 Expanded(child: SkeletonBar(height: 14, radius: 6)),
               ],
             ),
@@ -298,7 +298,7 @@ class _PillButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = subdued ? kInkMuted : NhamColors.text;
+    final color = subdued ? kInkMuted : KalloColors.text;
     return Semantics(
       button: true,
       enabled: onTap != null,
@@ -309,13 +309,13 @@ class _PillButton extends StatelessWidget {
           opacity: onTap == null ? 0.5 : 1,
           child: Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp4,
+              horizontal: KalloSpacing.sp4,
               vertical: 10,
             ),
             decoration: BoxDecoration(
               color: subdued ? Colors.transparent : Colors.white,
-              borderRadius: BorderRadius.circular(NhamRadii.pill),
-              border: Border.all(color: NhamColors.inputBorder),
+              borderRadius: BorderRadius.circular(KalloRadii.pill),
+              border: Border.all(color: KalloColors.inputBorder),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

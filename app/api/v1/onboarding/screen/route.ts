@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { onboardingScreenSchema } from '@/lib/api/contracts/onboarding';
 import { handleRouteError } from '@/lib/api/respond';
-import { saveOnboardingScreen } from '@/lib/onboarding/actions';
+import { saveOnboardingScreen } from '@/lib/domain/onboarding/actions';
 
 export const runtime = 'nodejs';
 

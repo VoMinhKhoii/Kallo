@@ -8,14 +8,13 @@ import { FriendPickRow } from '@/components/groups/share-meal/friend-pick-row';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useFriends } from '@/hooks/social/use-friends';
-import { useShareMealWithFriends } from '@/hooks/social/use-share-meal-with-friends';
-import { cn } from '@/lib/utils';
+import { useFriends } from '@/hooks/social/circle/use-friends';
+import { useShareMealWithFriends } from '@/hooks/social/sharing/use-share-meal-with-friends';
+import { cn } from '@/lib/core/ui/cn';
 
 type Mode = 'copy' | 'split';
 
@@ -99,14 +98,14 @@ export function ShareMealDialog({ mealId, trigger }: ShareMealDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="gap-5 border-nham-border/60 bg-white">
+      <DialogContent
+        aria-describedby={undefined}
+        className="gap-5 border-kallo-border/60 bg-white"
+      >
         <DialogHeader>
-          <DialogTitle className="font-serif text-nham-text text-xl">
+          <DialogTitle className="font-serif text-kallo-text text-xl">
             {t('title')}
           </DialogTitle>
-          <DialogDescription className="font-sans-display text-nham-text-muted">
-            {t('description')}
-          </DialogDescription>
         </DialogHeader>
 
         {/* Mode: full copy vs even split */}
@@ -120,14 +119,14 @@ export function ShareMealDialog({ mealId, trigger }: ShareMealDialogProps) {
               className={cn(
                 'rounded-xl border px-3 py-2.5 text-left transition-colors',
                 mode === m
-                  ? 'border-nham-border bg-nham-hover'
-                  : 'border-nham-border/60 bg-white hover:bg-nham-hover/40'
+                  ? 'border-kallo-border bg-kallo-hover'
+                  : 'border-kallo-border/60 bg-white hover:bg-kallo-hover/40'
               )}
             >
-              <span className="block font-medium font-sans-display text-[13px] text-nham-text">
+              <span className="block font-medium font-sans-display text-[13px] text-kallo-text">
                 {t(`mode.${m}.label`)}
               </span>
-              <span className="mt-0.5 block font-sans-display text-[11px] text-nham-text-muted">
+              <span className="mt-0.5 block font-sans-display text-[11px] text-kallo-text-muted">
                 {t(`mode.${m}.hint`)}
               </span>
             </button>
@@ -135,7 +134,7 @@ export function ShareMealDialog({ mealId, trigger }: ShareMealDialogProps) {
         </div>
 
         {mode === 'split' && count > 0 && (
-          <p className="font-medium font-sans-display text-[12px] text-nham-text">
+          <p className="font-medium font-sans-display text-[12px] text-kallo-text">
             {t('splitPreview', { portion: portionLabel })}
           </p>
         )}
@@ -143,12 +142,12 @@ export function ShareMealDialog({ mealId, trigger }: ShareMealDialogProps) {
         {/* Friend picker (accepted friends only) */}
         <div className="max-h-[40vh] space-y-1 overflow-y-auto">
           {isPending && (
-            <p className="font-sans-display text-[13px] text-nham-text-muted">
+            <p className="font-sans-display text-[13px] text-kallo-text-muted">
               {t('loadingFriends')}
             </p>
           )}
           {!isPending && friends.length === 0 && (
-            <p className="font-sans-display text-[13px] text-nham-text-muted">
+            <p className="font-sans-display text-[13px] text-kallo-text-muted">
               {t('noFriends')}
             </p>
           )}
@@ -167,7 +166,7 @@ export function ShareMealDialog({ mealId, trigger }: ShareMealDialogProps) {
           type="button"
           onClick={handleShare}
           disabled={count === 0 || share.isPending}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-nham-btn px-4 py-2.5 font-medium font-sans-display text-[14px] text-white transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-kallo-btn px-4 py-2.5 font-medium font-sans-display text-[14px] text-white transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {share.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { calcMacroGrams } from '@/lib/onboarding/tdee';
+import type { calcMacroGrams } from '@/lib/domain/onboarding/tdee';
 
 const AGGRESSIVE_PACE_KG = 0.6;
 
@@ -36,12 +36,14 @@ export function TargetHero({
     savedCalorieTarget !== null && Math.round(savedCalorieTarget) !== newTarget;
   const aggressivePace =
     goal !== 'maintaining' && (aggression ?? 0) > AGGRESSIVE_PACE_KG;
-  const newTargetClass = aggressivePace ? 'text-nham-danger' : 'text-nham-text';
+  const newTargetClass = aggressivePace
+    ? 'text-kallo-danger'
+    : 'text-kallo-text';
 
   return (
     <div className="p-card-sm">
-      <div className="rounded-xl border border-nham-accent/40 bg-nham-surface p-card text-center">
-        <span className="block font-bold text-[11px] text-nham-text-soft uppercase tracking-widest">
+      <div className="rounded-xl border border-kallo-accent/40 bg-kallo-surface p-card text-center">
+        <span className="block font-bold text-[11px] text-kallo-text-soft uppercase tracking-widest">
           {diverged ? tSettings('targetRitual.newLabel') : t('calorieTarget')}
         </span>
         {diverged && savedCalorieTarget !== null ? (
@@ -55,18 +57,18 @@ export function TargetHero({
           style={{ fontWeight: 400 }}
         >
           {newTarget.toLocaleString()}{' '}
-          <span className="font-sans text-lg text-nham-text-muted">
+          <span className="font-sans text-kallo-text-muted text-lg">
             {t('kcal')}
           </span>
         </div>
         {aggressivePace ? (
-          <p className="mt-1.5 text-[12px] text-nham-danger">
+          <p className="mt-1.5 text-[12px] text-kallo-danger">
             {tSettings('targetRitual.aggressivePace', {
               pace: (aggression ?? 0).toFixed(2),
             })}
           </p>
         ) : null}
-        <p className="mt-1.5 text-[12px] text-nham-text-muted">
+        <p className="mt-1.5 text-[12px] text-kallo-text-muted">
           {t('basedOnTdee')} ~{Math.round(tdee).toLocaleString()} {t('kcal')}
           {goal === 'maintaining' ? (
             <> · {t('maintenance')}</>
@@ -84,28 +86,28 @@ export function TargetHero({
             </>
           )}
         </p>
-        <div className="mt-5 grid grid-cols-3 gap-4 border-nham-accent/20 border-t pt-4">
+        <div className="mt-5 grid grid-cols-3 gap-4 border-kallo-accent/20 border-t pt-4">
           <div>
-            <div className="font-bold text-[10px] text-nham-text-soft uppercase tracking-widest">
+            <div className="font-bold text-[10px] text-kallo-text-soft uppercase tracking-widest">
               {t('protein')}
             </div>
-            <div className="font-medium text-lg text-nham-text">
+            <div className="font-medium text-kallo-text text-lg">
               {macros.proteinG}g
             </div>
           </div>
           <div>
-            <div className="font-bold text-[10px] text-nham-text-soft uppercase tracking-widest">
+            <div className="font-bold text-[10px] text-kallo-text-soft uppercase tracking-widest">
               {t('carbs')}
             </div>
-            <div className="font-medium text-lg text-nham-text">
+            <div className="font-medium text-kallo-text text-lg">
               {macros.carbsG}g
             </div>
           </div>
           <div>
-            <div className="font-bold text-[10px] text-nham-text-soft uppercase tracking-widest">
+            <div className="font-bold text-[10px] text-kallo-text-soft uppercase tracking-widest">
               {t('fat')}
             </div>
-            <div className="font-medium text-lg text-nham-text">
+            <div className="font-medium text-kallo-text text-lg">
               {macros.fatG}g
             </div>
           </div>

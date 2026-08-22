@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../theme/nham_colors.dart';
+import '../../../../theme/kallo_colors.dart';
 import '../../logic/logging_spacing.dart';
 
 /// The collapse chevron: its OWN button — a round pressed wash sized to the
@@ -47,16 +47,16 @@ class _PersistedMealChevronToggleState
             duration: const Duration(milliseconds: 150), // transition-colors
             padding: const EdgeInsets.all(4), // p-1
             decoration: BoxDecoration(
-              color: _pressed ? NhamColors.hover40 : Colors.transparent,
+              color: _pressed ? KalloColors.hover40 : Colors.transparent,
               shape: BoxShape.circle,
             ),
             child: RotationTransition(
               turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
               child: const Icon(
-                LucideIcons.chevronDown, // lucide ChevronDown
+                LucideIcons.chevronDown300, // lucide ChevronDown
                 // Same glyph size and ink as the action icons beneath the card.
                 size: LoggingIcons.size,
-                color: NhamColors.text,
+                color: KalloColors.text,
               ),
             ),
           ),

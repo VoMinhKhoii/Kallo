@@ -2,16 +2,19 @@
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { MotionConfig } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { getNutritionOverview } from '@/lib/nutrition/actions';
+import { getNutritionOverview } from '@/lib/domain/nutrition/actions/overview/get-overview';
+import { buildNutritionView } from '@/lib/domain/nutrition/bucket-detail';
+import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
 import type {
   NutritionDayScope,
   NutritionRangeInput,
-} from '@/lib/nutrition/types';
+} from '@/lib/domain/nutrition/types';
 import { NutritionSkeleton } from './nutrition-skeleton';
 import { DaySummary } from './sections/day-summary';
+import { findTodayIndex, localIsoDate } from './sections/macro-trend-utils';
 import { NutrientGrid } from './sections/nutrient-grid';
 import { NutritionHeader } from './sections/nutrition-header';
 import { SourceAttribution } from './sections/source-attribution';
@@ -25,19 +28,16 @@ function getTimezoneOffset(): number | null {
 
 export function NutritionShell() {
   const t = useTranslations('nutrition');
+  const locale = useLocale();
   const timezoneOffset = useMemo(() => getTimezoneOffset(), []);
   const [range, setRange] = useState<NutritionRangeInput>('auto');
   const [dayScope, setDayScope] = useState<NutritionDayScope>('complete');
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const hasShownErrorToast = useRef(false);
+  const today = useMemo(() => localIsoDate(), []);
 
   const overviewQuery = useQuery({
-    queryKey: [
-      'nutrition',
-      'overview',
-      range,
-      dayScope,
-      timezoneOffset ?? 'utc',
-    ],
+    queryKey: nutritionKeys.overview(range, dayScope, timezoneOffset ?? 'utc'),
     queryFn: () =>
       getNutritionOverview({ range, timezoneOffset, days: dayScope }),
     retry: false,
@@ -53,6 +53,18 @@ export function NutritionShell() {
   const overviewErrorMessage = t('errors.overview');
   const overviewErrorToast = t('errors.overviewToast');
   const overviewRetryLabel = t('errors.retry');
+
+  // A pointer click on a column focuses nothing, so the container's onKeyDown
+  // never receives the Escape that follows. Listen at the document while a
+  // selection is live; the container handler still serves the keyboard path.
+  useEffect(() => {
+    if (selectedIndex === null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedIndex(null);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [selectedIndex]);
 
   useEffect(() => {
     if (!isError) {
@@ -85,7 +97,24 @@ export function NutritionShell() {
   }
 
   const overview = overviewQuery.data;
-  const isEmpty = overview.loggedDays === 0;
+
+  // Tapping a column re-points the WHOLE page at that bucket — the calorie
+  // hero, the gram legend and the nutrient grid — rather than opening a second
+  // panel that repeats them. Tapping anywhere else puts the range back.
+  // `activeIndex`, not `selectedIndex`: tapping a column with nothing logged
+  // in it resolves to no detail, and the page stays on the range rather than
+  // greying every other column around an empty one.
+  const {
+    macros,
+    micronutrients,
+    moreNutrients,
+    dateSpan,
+    selectedIndex: activeIndex,
+  } = buildNutritionView(overview, selectedIndex, locale);
+  const todayIndex = findTodayIndex(
+    overview.daySeries.series[0]?.buckets ?? [],
+    today
+  );
 
   return (
     <MotionConfig reducedMotion="user">
@@ -95,40 +124,73 @@ export function NutritionShell() {
         <div className="shrink-0 px-4 pt-4 sm:px-6 lg:px-8">
           <div className="mx-auto mb-3 w-full max-w-2xl">
             <NutritionHeader
-              resolvedRange={overview.resolvedRange}
-              onRangeChange={setRange}
+              resolvedRange={range === 'auto' ? overview.resolvedRange : range}
+              // `selectedIndex` is positional, and the bucket axis is rebuilt
+              // on a range change — index 3 is a Thursday on 7d and some week
+              // in June on 90d. Carrying it over would silently scope the page
+              // to a bucket nobody picked. (The Flutter screen does the same.)
+              onRangeChange={(next) => {
+                setRange(next);
+                setSelectedIndex(null);
+              }}
               disabled={overviewQuery.isFetching}
             />
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-20 sm:px-6 lg:px-8">
+        {/* A click anywhere off the chart clears the selection; the chart stops
+            propagation. It is a dismissal, not a control — everything inside
+            stays reachable — and Escape does the same job from the keyboard. */}
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-4 pb-20 sm:px-6 lg:px-8"
+          onClick={() => setSelectedIndex(null)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setSelectedIndex(null);
+          }}
+        >
           <div className="mx-auto flex min-h-full max-w-2xl flex-col">
-            {isEmpty ? (
-              <div className="flex flex-1 items-center justify-center">
-                <EmptyState />
-              </div>
-            ) : (
-              <div
-                aria-live="polite"
-                aria-busy={overviewQuery.isFetching}
-                className="flex flex-col gap-7"
-              >
-                <DaySummary
-                  macros={overview.macros}
-                  daySeries={overview.daySeries}
-                  resolvedRange={overview.resolvedRange}
-                  calorieAverages={overview.calorieAverages}
-                  scope={dayScope}
-                  onScopeChange={setDayScope}
-                />
-                <NutrientGrid
-                  micronutrients={overview.micronutrients}
-                  moreNutrients={overview.moreNutrients}
-                />
+            {/* `aria-busy` covers the column; `aria-live` does NOT. Announcing
+                the whole subtree meant every range change read out the chart,
+                the grid and the source line — the figure and its date span are
+                what actually changed, and DaySummary marks those. */}
+            <div
+              aria-busy={overviewQuery.isFetching}
+              className="flex flex-1 flex-col gap-7"
+            >
+              <DaySummary
+                macros={macros}
+                daySeries={overview.daySeries}
+                resolvedRange={overview.resolvedRange}
+                calorieAverages={overview.calorieAverages}
+                previousCalorieAverages={overview.previousCalorieAverages}
+                scope={dayScope}
+                onScopeChange={setDayScope}
+                dateSpan={dateSpan}
+                isEmpty={overview.loggedDays === 0}
+                todayIndex={todayIndex}
+                selectedIndex={activeIndex}
+                onSelect={(index) =>
+                  setSelectedIndex((current) =>
+                    current === index ? null : index
+                  )
+                }
+              />
+              {/* Nothing logged yet: the page keeps its shape at zero and the
+                  prompt sits under the card rather than replacing everything,
+                  so the layout someone will use every day is what they see
+                  first. */}
+              {overview.loggedDays === 0 ? <EmptyState /> : null}
+              <NutrientGrid
+                micronutrients={micronutrients}
+                moreNutrients={moreNutrients}
+              />
+              {/* The source line belongs to the page, not to the last section
+                  above it — `mt-auto` keeps it on the bottom edge when the
+                  content is short instead of floating mid-screen. */}
+              <div className="mt-auto pt-7">
                 <SourceAttribution />
               </div>
-            )}
+            </div>
           </div>
         </div>
       </main>

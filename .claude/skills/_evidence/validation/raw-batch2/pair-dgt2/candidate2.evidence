@@ -1,7 +1,7 @@
 === LOG ===
 861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
 87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
-8a80c07 docs(design): fold the mobile system into the nham-design skill
+8a80c07 docs(design): fold the mobile system into the kallo-design skill
 === STATUS ===
  M components/dashboard/progress/progress-story.tsx
  M lib/actions/__tests__/weight.test.ts
@@ -17,9 +17,9 @@ index e0376aa..2f7b672 100644
 @@ -78,6 +78,13 @@ export function ProgressStory({
                  </h2>
                )}
-               <p className="mt-1 text-nham-stone text-xs">{copy.detail}</p>
+               <p className="mt-1 text-kallo-stone text-xs">{copy.detail}</p>
 +              {typeof weightSummary.weeklyChange === 'number' && (
-+                <p className="mt-1 font-medium text-[11px] text-nham-stone">
++                <p className="mt-1 font-medium text-[11px] text-kallo-stone">
 +                  {t('vsLastWeek', {
 +                    change: `${weightSummary.weeklyChange > 0 ? '+' : ''}${weightSummary.weeklyChange.toFixed(1)}`,
 +                  })}

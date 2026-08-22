@@ -1,0 +1,143 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+/// Font size constants matching the web/RN design system.
+abstract final class KalloFontSize {
+  static const double display = 48;
+  static const double h1 = 40;
+  static const double h2 = 32;
+  static const double h3 = 24;
+  static const double h4 = 20;
+  static const double lg = 18;
+  static const double md = 16;
+  static const double sm = 14;
+  static const double detail = 13;
+  static const double xs = 12;
+  static const double xxs = 11;
+  static const double eyebrow = 10;
+}
+
+/// Line-height multipliers.
+abstract final class KalloLeading {
+  static const double display = 1.1;
+  static const double tight = 1.2;
+  static const double snug = 1.35;
+  static const double normal = 1.5;
+  static const double relaxed = 1.65;
+}
+
+/// Letter-spacing values (in logical pixels).
+abstract final class KalloTracking {
+  static const double eyebrow = 2.0;
+  static const double wide = 0.6;
+  static const double tight = -0.3;
+  static const double display = -1.4;
+}
+
+/// Text styles built from Lora (serif) and Be Vietnam Pro (sans-serif).
+///
+/// Lora = display/serif (headings, numbers > 18px, meal quotes -- never bold).
+/// Be Vietnam Pro = UI/body (buttons, labels, tabular numbers). It replaces the
+/// previous DM Sans, whose bundled subset lacked Vietnamese diacritics and made
+/// `phở` / `bún chả` fall back mid-word; Be Vietnam Pro covers the full
+/// Vietnamese set, so all UI text renders in one consistent typeface.
+abstract final class KalloTextStyles {
+  /// The bundled sans family (declared in pubspec `fonts:`).
+  static const String sansFamily = 'BeVietnamPro';
+
+  // ── Serif (Lora) ───────────────────────────────────────────────────
+
+  static TextStyle serifRegular({double? fontSize, double? height}) =>
+      GoogleFonts.lora(
+        fontWeight: FontWeight.w400,
+        fontSize: fontSize,
+        height: height,
+      );
+
+  static TextStyle serifMedium({double? fontSize, double? height}) =>
+      GoogleFonts.lora(
+        fontWeight: FontWeight.w500,
+        fontSize: fontSize,
+        height: height,
+      );
+
+  // No serifSemiBold: Lora is allowed up to w500 for select display/number
+  // treatments, but never w600+ bold weight.
+
+  static TextStyle serifItalic({double? fontSize, double? height}) =>
+      GoogleFonts.lora(
+        fontWeight: FontWeight.w400,
+        fontStyle: FontStyle.italic,
+        fontSize: fontSize,
+        height: height,
+      );
+
+  // ── Sans (Be Vietnam Pro) ─────────────────────────────────────────
+
+  static TextStyle sansRegular({double? fontSize, double? height}) => TextStyle(
+        fontFamily: sansFamily,
+        fontWeight: FontWeight.w400,
+        fontSize: fontSize,
+        height: height,
+      );
+
+  static TextStyle sansMedium({double? fontSize, double? height}) => TextStyle(
+        fontFamily: sansFamily,
+        fontWeight: FontWeight.w500,
+        fontSize: fontSize,
+        height: height,
+      );
+
+  static TextStyle sansSemiBold({double? fontSize, double? height}) => TextStyle(
+        fontFamily: sansFamily,
+        fontWeight: FontWeight.w600,
+        fontSize: fontSize,
+        height: height,
+      );
+
+  static TextStyle sansBold({double? fontSize, double? height}) => TextStyle(
+        fontFamily: sansFamily,
+        fontWeight: FontWeight.w700,
+        fontSize: fontSize,
+        height: height,
+      );
+
+  // ── Semantic presets ──────────────────────────────────────────────
+
+  static TextStyle displayLarge() => serifRegular(
+    fontSize: KalloFontSize.display,
+    height: KalloLeading.display,
+  ).copyWith(letterSpacing: KalloTracking.display);
+
+  static TextStyle heading1() =>
+      serifRegular(fontSize: KalloFontSize.h1, height: KalloLeading.tight);
+
+  static TextStyle heading2() =>
+      serifRegular(fontSize: KalloFontSize.h2, height: KalloLeading.tight);
+
+  static TextStyle heading3() =>
+      serifMedium(fontSize: KalloFontSize.h3, height: KalloLeading.snug);
+
+  static TextStyle heading4() =>
+      serifMedium(fontSize: KalloFontSize.h4, height: KalloLeading.snug);
+
+  static TextStyle bodyLarge() =>
+      sansRegular(fontSize: KalloFontSize.lg, height: KalloLeading.normal);
+
+  static TextStyle body() =>
+      sansRegular(fontSize: KalloFontSize.md, height: KalloLeading.normal);
+
+  static TextStyle bodySmall() =>
+      sansRegular(fontSize: KalloFontSize.sm, height: KalloLeading.normal);
+
+  static TextStyle caption() =>
+      sansRegular(fontSize: KalloFontSize.xs, height: KalloLeading.normal);
+
+  static TextStyle eyebrow() => sansSemiBold(
+    fontSize: KalloFontSize.eyebrow,
+    height: KalloLeading.normal,
+  ).copyWith(letterSpacing: KalloTracking.eyebrow);
+
+  static TextStyle buttonLabel() =>
+      sansSemiBold(fontSize: KalloFontSize.sm, height: KalloLeading.snug);
+}

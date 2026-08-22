@@ -1,9 +1,13 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import type { NutrientCardData } from '@/lib/nutrition/types';
-import { cn } from '@/lib/utils';
-import { formatLocalizedNumber, shouldShowExceed } from '../primitives/helpers';
+import { cn } from '@/lib/core/ui/cn';
+import type { NutrientCardData } from '@/lib/domain/nutrition/types';
+import {
+  formatLocalizedNumber,
+  isLowConfidence,
+  shouldShowExceed,
+} from '../primitives/helpers';
 import { TargetProgressBar } from '../primitives/target-progress-bar';
 
 interface NutrientGridCardProps {
@@ -46,15 +50,18 @@ export function NutrientGridCard({
 
   const label = tRoot(card.labelKey);
   const pct = card.percentOfTarget;
-  const isLimited =
-    card.displayState === 'limited_data' ||
-    card.displayState === 'insufficient_data';
+  const isLimited = isLowConfidence(card.displayState);
   const showExceed = shouldShowExceed(card.nutrientType, pct);
   const adequate =
     pct !== null && !isLimited && !showExceed && isOnTarget(card);
 
   let figure: string;
-  if (card.displayState === 'insufficient_data') {
+  // Nothing measured at all — an empty range, or a nutrient with no per-bucket
+  // series while a column is selected. A dash, not "Limited": there is no thin
+  // reading to caveat, there is no reading.
+  if (card.averagePerDay === null && pct === null) {
+    figure = '—';
+  } else if (card.displayState === 'insufficient_data') {
     figure = t('steady.limited');
   } else if (pct === null) {
     figure = t('steady.noTarget');
@@ -82,24 +89,24 @@ export function NutrientGridCard({
       className={cn(
         'rounded-2xl border p-3',
         adequate
-          ? 'border-nham-success-border bg-nham-success-faint'
-          : 'border-nham-border/60 bg-card'
+          ? 'border-kallo-success-border bg-kallo-success-faint'
+          : 'border-kallo-border/60 bg-card'
       )}
     >
       <div className="flex items-baseline gap-2">
-        <span className="min-w-0 flex-1 truncate text-[12px] text-nham-text">
+        <span className="min-w-0 flex-1 truncate text-[12px] text-kallo-text">
           {label}
         </span>
         <span
           className={cn(
             'shrink-0 text-[12px] tabular-nums',
             showExceed
-              ? 'text-nham-danger'
+              ? 'text-kallo-danger'
               : isLimited || pct === null
-                ? 'text-nham-text-muted'
+                ? 'text-kallo-text-muted'
                 : adequate
-                  ? 'text-nham-success-dark'
-                  : 'text-nham-text'
+                  ? 'text-kallo-success-dark'
+                  : 'text-kallo-text'
           )}
         >
           {figure}
@@ -115,7 +122,7 @@ export function NutrientGridCard({
           adequate={adequate}
         />
       </div>
-      <p className="mt-2 truncate text-[12px] text-nham-text-muted tabular-nums">
+      <p className="mt-2 truncate text-[12px] text-kallo-text-muted tabular-nums">
         {goalText}
       </p>
     </div>

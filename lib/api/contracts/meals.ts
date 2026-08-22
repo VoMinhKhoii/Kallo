@@ -9,21 +9,36 @@
  *   - `export type` re-exports of the actions' return types (erased at runtime).
  */
 import { z } from 'zod';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import { relogRefSchema } from '@/lib/core/validation/meal';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/core/validation/primitives';
 
-export { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+export {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/core/validation/primitives';
 
 /**
- * Request body for `POST /api/v1/meals/confirm` → `confirmAndSaveMealAction`.
+ * Full input for `confirmAndSaveMealAction`, and the request body for
+ * `POST /api/v1/meals/confirm`. Defined here rather than in the action module
+ * because that module carries `'use server'` (which may only export async
+ * functions) and this file is imported by the mobile client — so the schema is
+ * defined once here and imported back by the action, exactly like
+ * {@link updateMealSchema}. There is no second copy to keep in step.
  *
- * Mirrors the (un-exported) `confirmAndSaveSchema` in lib/actions/meals.ts
- * exactly: an `analysisId` UUID, an optional client-generated `mealId` UUID,
- * and optional quantity-override `edits`. Omitting `ingredientIndex` scales the
- * whole dish, so `newGrams` is the new total cooked weight.
+ * `analysisId` names the staged pending analysis; `mealId` is the optional
+ * client-generated id. Omitting an edit's `ingredientIndex` scales the whole
+ * dish, so `newGrams` is the new total cooked weight.
  */
 export const confirmMealSchema = z.object({
   analysisId: z.string().uuid('analysisId phải là UUID hợp lệ.'),
+  // Client-generated id so the optimistic card and the persisted row share a
+  // stable React key (avoids a remount/re-fade once the refetch lands).
   mealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
+  // Quantity overrides. Omitting `ingredientIndex` scales the whole dish
+  // (every ingredient) so `newGrams` is the new total cooked weight.
   edits: z
     .array(
       z.object({
@@ -34,9 +49,9 @@ export const confirmMealSchema = z.object({
     )
     .max(50)
     .optional(),
-  // Cheat-meal: chosen slider positions (0–10 per axis). Must mirror
-  // `confirmAndSaveSchema` — Zod strips unknown keys, so omitting this here
-  // would silently save mobile cheat confirms at the spec's default levels.
+  // Cheat-meal: the user's chosen slider positions (0–10 per axis). The server
+  // recomputes nutrition from the staged spec + these levels — it never trusts
+  // client-sent nutrition numbers.
   levels: z
     .partialRecord(
       z.enum(['protein', 'carbs', 'fat', 'drinks']),
@@ -160,6 +175,76 @@ export const duplicateMealBodySchema = duplicateMealSchema.omit({
 export type DuplicateMealInput = z.infer<typeof duplicateMealSchema>;
 export type DuplicateMealBody = z.infer<typeof duplicateMealBodySchema>;
 
+/**
+ * Query params for `GET /api/v1/meals/relog/candidates` →
+ * `loadRelogCandidatesAction`. The `/`-picker's search: an empty `q` returns
+ * the user's top dishes and meals by the frequency×recency score, so there is
+ * no separate "recents" endpoint.
+ *
+ * `q` is normalized to NFC because Vietnamese typed through Telex/VNI can
+ * arrive decomposed, and the stored names are composed — comparing the two
+ * forms byte-wise would silently miss.
+ */
+export const relogCandidatesQuerySchema = z.object({
+  q: z
+    .string()
+    .trim()
+    .max(60)
+    .default('')
+    .transform((value) => value.normalize('NFC')),
+  limit: z.coerce.number().int().min(1).max(12).default(8),
+});
+
+export type RelogCandidatesQuery = z.infer<typeof relogCandidatesQuerySchema>;
+
+/**
+ * Full input for `relogMealItemsAction` → `POST /api/v1/meals/relog`.
+ *
+ * Every entry is a REFERENCE, never a payload: no nutrition, grams or names
+ * cross the wire. The server re-resolves each one under `WHERE user_id = …`, so
+ * a tampered or stale client can only ever point at its own rows (or at
+ * nothing, which errors). A `dish` ref names one `meal_items` group; a `meal`
+ * ref expands server-side into every dish of that meal.
+ *
+ * `newMealId` is the client-generated id so the optimistic card and the
+ * persisted row share a stable React key (mirrors confirm/manual/duplicate).
+ */
+export const relogItemsSchema = z.object({
+  newMealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
+  items: z.array(relogRefSchema).min(1).max(20),
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+export type RelogItemsInput = z.infer<typeof relogItemsSchema>;
+
+/**
+ * Input for `stageRelogAnalysisAction` — the pure-relog path shared by both
+ * clients (the web composer calls the action; Flutter posts to
+ * `/api/v1/meals/relog/stage`). Instead of writing a meal directly (as
+ * `relogMealItemsAction` does), it stages a `pending_analyses` row so the picks
+ * land in the same editable review card AI meals use. Same reference-only
+ * `items` as the relog contract; carries
+ * `attemptId` (not `newMealId`) because the meal id is minted at confirm time,
+ * and the attempt id lets a re-stage of the same card upsert its pending row.
+ *
+ * `attemptId` is REQUIRED, unlike the analyze-meal request's optional one. That
+ * upsert keys on `(user_id, attempt_id)` and NULLs never conflict in Postgres,
+ * so an omitted id makes every call a fresh INSERT of a fat `pipelineResult`
+ * row — and the only reaper is a lazy, >7-days-expired sweep on the user's own
+ * day load. Requiring it caps a client to one live pending row per attempt.
+ * Costs nothing: both callers already mint one (web `use-relog-submit.ts`,
+ * Flutter `relog_providers.dart`).
+ */
+export const stageRelogAnalysisSchema = z.object({
+  items: relogItemsSchema.shape.items,
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+  attemptId: z.string().uuid('attemptId phải là UUID hợp lệ.'),
+});
+
+export type StageRelogAnalysisInput = z.infer<typeof stageRelogAnalysisSchema>;
+
 export type {
   ConfirmMealResponse,
   LoggingDayData,
@@ -169,3 +254,10 @@ export type {
   PersistedMealItemGroup,
   RecentCheatOccasion,
 } from '@/lib/actions/meals/types';
+export type {
+  RelogCandidate,
+  RelogCandidatesResponse,
+  RelogDishCandidate,
+  RelogMealCandidate,
+  RelogRef,
+} from '@/lib/domain/logging/relog/relog';

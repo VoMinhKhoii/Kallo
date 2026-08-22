@@ -9,8 +9,9 @@
  * global when no locale-specific prior exists).
  */
 
-import type { DecomposedIngredientV2 } from '../pipeline/schemas-v2';
-import { AMBIGUOUS, resolveConcept } from './concepts';
+import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import { AMBIGUOUS } from './lexicon/concept-aliases';
+import { resolveConcept } from './lexicon/concepts';
 import { resolvePortion } from './resolver';
 import type {
   FoodForm,
@@ -71,9 +72,18 @@ export function resolveIngredientPortion(args: {
   const { ingredient, dishCookingMethod, inputLanguage } = args;
 
   const byRaw = resolveConcept(ingredient.rawName);
+  // Call 1 often separates a counter from the food name (`1 con cá` becomes
+  // rawName=`cá`, unitToken=`con`). Recompose only for exact concept lookup;
+  // the unit still carries no grams without the resulting scoped prior.
+  const byRawWithUnit = ingredient.unitToken
+    ? (resolveConcept(`${ingredient.unitToken} ${ingredient.rawName}`) ??
+      resolveConcept(`${ingredient.rawName} ${ingredient.unitToken}`))
+    : null;
   const byCanonical = resolveConcept(ingredient.canonicalName);
-  const resolution = byRaw ?? byCanonical;
-  const ambiguous = byRaw === AMBIGUOUS || byCanonical === AMBIGUOUS;
+  const resolution = byRaw ?? byRawWithUnit ?? byCanonical;
+  // Raw user language is authoritative for the portion concept. A wrong or
+  // generic selected-row canonical name must not erase a valid raw anchor.
+  const ambiguous = resolution === AMBIGUOUS;
 
   const conceptId = resolution && resolution !== AMBIGUOUS ? resolution : null;
 
@@ -82,6 +92,8 @@ export function resolveIngredientPortion(args: {
     ambiguous,
     locale: deriveLocale(inputLanguage),
     form: deriveForm(ingredient, dishCookingMethod),
+    rawName: ingredient.rawName,
+    canonicalName: ingredient.canonicalName,
     dbServingSizeG: args.dbServingSizeG ?? null,
   };
 
@@ -116,6 +128,7 @@ export function anchorGramsFromResolution(r: PortionResolution): number | null {
   if (!r.grams) return null;
   if (r.provenance === 'llm_range' || r.provenance === 'unresolved')
     return null;
+  if (r.massBasis !== 'edible') return null;
   return r.grams.mid;
 }
 

@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../circle/widgets/share_meal_sheet.dart';
+import '../../../circle/widgets/share/share_meal_sheet.dart';
 import '../../data/logging_models.dart';
-import '../confirm_meal_removal.dart';
-import '../meal_action_icon_button.dart';
+import '../entry/confirm_meal_removal.dart';
+import '../entry/meal_action_icon_button.dart';
 import 'persisted_meal_share_to_circle_button.dart';
 
 class PersistedMealActions extends StatelessWidget {
@@ -39,13 +39,13 @@ class PersistedMealActions extends StatelessWidget {
         if (onLogAgain != null) _LogAgainButton(onLogAgain: onLogAgain!),
         if (onEditAmounts != null)
           MealActionIconButton(
-            icon: LucideIcons.slidersHorizontal,
+            icon: LucideIcons.slidersHorizontal300,
             label: 'logging.persistedMealCard.editAmounts'.tr(),
             onTap: onEditAmounts,
           ),
         if (meal.mealItemGroups.isNotEmpty)
           MealActionIconButton(
-            icon: LucideIcons.userPlus,
+            icon: LucideIcons.userPlus300,
             label: 'logging.persistedMealCard.shareWithFriends'.tr(),
             onTap: () => showShareMealSheet(context, meal.id),
           ),
@@ -53,7 +53,7 @@ class PersistedMealActions extends StatelessWidget {
         PersistedMealShareToCircleButton(mealId: meal.id, share: meal.share),
         if (onRemove != null)
           MealActionIconButton(
-            icon: LucideIcons.trash2,
+            icon: LucideIcons.trash2300,
             label: 'logging.remove'.tr(),
             danger: true,
             onTap: () async {
@@ -97,7 +97,7 @@ class _LogAgainButtonState extends State<_LogAgainButton> {
   @override
   Widget build(BuildContext context) {
     return MealActionIconButton(
-      icon: LucideIcons.rotateCcw,
+      icon: LucideIcons.rotateCcw300,
       label: 'logging.persistedMealCard.logAgain'.tr(),
       pending: _pending,
       onTap: _run,

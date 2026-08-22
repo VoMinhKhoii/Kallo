@@ -1,9 +1,12 @@
 // Client-facing meal shapes returned by the read/write actions in this folder.
 // Kept in a plain (non-'use server') module so they can be imported as types
 // from anywhere without dragging in the server-action runtime.
-import type { toParsedMeal } from '@/lib/ai/mappers';
-import type { NutritionValues } from '@/lib/ai/types';
-import type { CheatSliderSpec, CheatSlidersPersisted } from '@/lib/types/cheat';
+import type { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
+import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
+import type {
+  CheatSliderSpec,
+  CheatSlidersPersisted,
+} from '@/lib/core/types/cheat';
 
 /** Persisted meal returned to client */
 export interface PersistedMeal {

@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../../models/cheat.dart';
-import '../../../../models/meal.dart';
-import '../../../../shared/widgets/top_toast.dart';
+import '../../../../models/logging/cheat.dart';
+import '../../../../models/logging/meal.dart';
+import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/logging_providers.dart';
 import '../../data/stream_analysis_controller.dart';
 

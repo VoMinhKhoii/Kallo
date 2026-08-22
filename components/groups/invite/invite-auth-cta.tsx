@@ -19,16 +19,27 @@ function InviteAuthButton() {
     <button
       type="button"
       onClick={() => openDialog('sign-up')}
-      className="inline-flex items-center justify-center rounded-xl bg-nham-btn px-6 py-3 font-medium font-sans-display text-[15px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90"
+      className="inline-flex items-center justify-center rounded-xl bg-kallo-btn px-6 py-3 font-medium font-sans-display text-[15px] text-white shadow-kallo-btn/20 shadow-sm transition-colors hover:bg-kallo-btn/90"
     >
       {t('signIn')}
     </button>
   );
 }
 
-export function InviteAuthCta({ next }: { next: string }) {
+export function InviteAuthCta({
+  next,
+  googleClientId,
+}: {
+  next: string;
+  /** Resolved server-side by the invite page; see `AuthProvider`. */
+  googleClientId: string | null;
+}) {
   return (
-    <AuthProvider next={next} initialTab="sign-up">
+    <AuthProvider
+      next={next}
+      googleClientId={googleClientId}
+      initialTab="sign-up"
+    >
       <InviteAuthButton />
       <AuthDialog />
     </AuthProvider>

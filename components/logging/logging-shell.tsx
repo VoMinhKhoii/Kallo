@@ -10,8 +10,8 @@ import {
   useState,
   useTransition,
 } from 'react';
-import { PaywallDialog } from '@/components/billing/paywall-dialog';
-import { TrialBanner } from '@/components/billing/trial-banner';
+import { PaywallDialog } from '@/components/billing/paywall/paywall-dialog';
+import { TrialBanner } from '@/components/billing/subscription/trial-banner';
 import { FeedArea } from '@/components/logging/feed/feed-area';
 import { MobileTimelinePicker } from '@/components/logging/sidebar/mobile-timeline-picker';
 import { TimelineSidebar } from '@/components/logging/sidebar/timeline-sidebar';
@@ -19,20 +19,10 @@ import {
   buildAllTimelineDates,
   todayDateString,
 } from '@/components/logging/sidebar/timeline-utils';
-import { usePrefetchDates } from '@/hooks/meals/use-prefetch-dates';
+import { usePrefetchDates } from '@/hooks/meals/queries/use-prefetch-dates';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { loadMealDates } from '@/lib/actions/meals/load-meals';
-import type { Goal } from '@/lib/onboarding/types';
-
-export interface LoggingProfile {
-  userId: string;
-  goal: Goal;
-  aggression: number;
-  calorieTarget: number;
-  proteinTargetG: number;
-  carbsTargetG: number;
-  fatTargetG: number;
-}
+import type { LoggingProfile } from '@/lib/domain/logging/types';
 
 interface LoggingShellProps {
   profile: LoggingProfile;
@@ -40,6 +30,12 @@ interface LoggingShellProps {
   initialDate?: string;
   // Signed-in user's email — pre-fills the web checkout in the paywall.
   email?: string | null;
+  /**
+   * The server's answer to "does the opening day hold anything?", so the
+   * composer paints where it belongs instead of docking and then correcting.
+   * Undefined when the server could not answer honestly.
+   */
+  initiallyHasEntries?: boolean;
 }
 
 export function LoggingShell({
@@ -47,6 +43,7 @@ export function LoggingShell({
   initialMeal,
   initialDate,
   email,
+  initiallyHasEntries,
 }: LoggingShellProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -54,6 +51,10 @@ export function LoggingShell({
 
   const today = useMemo(() => todayDateString(), []);
   const [selectedDate, setSelectedDate] = useState(() => initialDate ?? today);
+  // The server answered for the day the page OPENED on. Navigating the timeline
+  // is a different question, and answering it with a stale hint would put the
+  // composer in the middle of a day that has meals in it.
+  const openingDate = useRef(selectedDate).current;
   // Paywall opened by a pre-stream 402 from the analyze endpoint. The
   // TrialBanner owns its OWN paywall for the upgrade CTA; this one covers the
   // hard-locked (trial-expired / not-entitled) case where the banner is hidden.
@@ -136,7 +137,7 @@ export function LoggingShell({
   };
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col gap-0 overflow-hidden md:h-[calc(100vh-1.5rem)] md:flex-row md:gap-3">
+    <div className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col gap-0 overflow-hidden md:h-full md:flex-row md:gap-3">
       <MobileTimelinePicker
         {...timelineState}
         isRetrying={isFetching && !isPending}
@@ -155,6 +156,9 @@ export function LoggingShell({
           }
           onSelectDate={handleSelectDate}
           onPaymentRequired={() => setPaywallOpen(true)}
+          initiallyHasEntries={
+            selectedDate === openingDate ? initiallyHasEntries : undefined
+          }
         />
       </div>
 

@@ -1,44 +1,30 @@
 import type { NextRequest } from 'next/server';
-import { createGeminiClient } from '@/lib/ai/gemini';
 import {
   buildAiRequestContext,
   buildUserContext,
-  toParsedMeal,
-} from '@/lib/ai/mappers';
-import { logUnmatchedIngredients } from '@/lib/ai/matching';
-import { analyzeMeal } from '@/lib/ai/pipeline';
-import { estimateCheatMeal } from '@/lib/ai/pipeline/cheat-estimate';
-import {
-  logPipelineEnd,
-  logPipelineStart,
-} from '@/lib/ai/pipeline/telemetry/logging';
-import type { StreamEvent } from '@/lib/ai/streaming';
-import { encodeSSE } from '@/lib/ai/streaming';
-import { db } from '@/lib/db';
-import { withDeadline } from '@/lib/with-deadline';
-import { acquireAnalysisGuard } from './analysis-guard';
-import { getBillingAccessError } from './billing-access';
-import { upsertPendingAnalysis } from './persist-analysis';
+} from '@/lib/ai/adapters/user-context';
+import { runAnalysisStream } from '@/lib/ai/pipeline/stream/run-analysis-stream';
+import { logPipelineStart } from '@/lib/ai/pipeline/telemetry/logging';
+import { encodeSSE } from '@/lib/ai/streaming/encoder';
+import type { StreamEvent } from '@/lib/ai/streaming/types';
+import { withDeadline } from '@/lib/core/async/with-deadline';
+import { db } from '@/lib/infra/db/client';
+import { acquireAnalysisGuard } from './_lib/analysis-guard';
+import { applyRelogRefs } from './_lib/apply-relog-refs';
+import { getBillingAccessError } from './_lib/billing-access';
 import {
   createGuardRelease,
   resolveGeminiConfig,
   validateRequest,
-} from './request-validation';
-import { toStreamErrorEvent } from './stream-errors';
-import { emitUnresolvedOutcome } from './unresolved-response';
+} from './_lib/request-validation';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-// Bound the awaited `pendingAnalyses` insert so a stalled DB connection (the
-// `max: 2` pool can starve under a saturated Supabase pooler) can't leave the
-// SSE stream open forever between `stage: assembling` and `analysis_complete`.
-// On timeout we emit an `error` terminal event and close, instead of hanging.
-const PERSIST_DEADLINE_MS =
-  Number(process.env.ANALYZE_PERSIST_DEADLINE_MS) || 15_000;
-// The guard release in `finally` is DB-backed too; bound it so it can never
-// block `controller.close()`.
+// The guard release in `finally` is DB-backed; bound it so it can never block
+// `controller.close()`.
 const GUARD_RELEASE_DEADLINE_MS = 5_000;
+
 export async function POST(request: NextRequest) {
   // Phase 1: Pre-stream validation — errors returned as JSON
   const validation = await validateRequest(request);
@@ -53,6 +39,7 @@ export async function POST(request: NextRequest) {
     clarifyAnswer,
     cheatIntensity,
     attemptId,
+    refs,
     profile,
   } = validation.data;
 
@@ -67,7 +54,6 @@ export async function POST(request: NextRequest) {
 
   const providerConfig = resolveGeminiConfig();
   if (!providerConfig.ok) return providerConfig.error;
-  const geminiConfig = providerConfig.config;
 
   const userContext = buildAiRequestContext(buildUserContext(profile), {
     mealText: message,
@@ -103,10 +89,6 @@ export async function POST(request: NextRequest) {
       const emit = (event: StreamEvent) => {
         controller.enqueue(encoder.encode(encodeSSE(event)));
       };
-
-      const startTime = Date.now();
-      const promptVersionsUsed = new Map<string, string>();
-      const traceContext = { requestId, db, userId, promptVersionsUsed };
       const releaseOnAbort = () => {
         void releaseGuard();
       };
@@ -114,227 +96,26 @@ export async function POST(request: NextRequest) {
       request.signal.addEventListener('abort', releaseOnAbort, { once: true });
 
       try {
-        if (request.signal.aborted) {
-          return;
-        }
-
-        const gemini = createGeminiClient(geminiConfig);
-
-        // Cheat-meal branch: one reasoning call returns a slider spec instead
-        // of the full decomposition pipeline. The precise path below is
-        // untouched.
-        if (mode === 'cheat') {
-          const spec = await estimateCheatMeal(
-            {
-              description: message,
-              cheatType,
-              clarifyAnswer,
-              cheatIntensity,
-              userContext,
-            },
-            gemini,
-            emit
-          );
-
-          if (request.signal.aborted) {
-            return;
-          }
-
-          // Vague input — surface the clarifying question and stop. The client
-          // re-calls with `clarifyAnswer`; nothing is staged for confirm yet.
-          if (spec.clarifyingQuestion) {
-            emit({ type: 'cheat_estimate', spec });
-            logPipelineEnd(
-              requestId,
-              'success',
-              Date.now() - startTime,
-              db,
-              undefined,
-              null
-            );
-            return;
-          }
-
-          // Stage the spec so confirm can recompute nutrition authoritatively
-          // from the user's chosen levels. Persist BEFORE surfacing (same
-          // ordering rationale as the precise path).
-          const [insertedCheat] = await withDeadline(
-            upsertPendingAnalysis({
-              userId,
-              pipelineResult: { entryMode: 'cheat', spec },
-              rawInput: message,
-              entryMode: 'cheat',
-              loggedAt,
-              attemptId,
-            }),
-            PERSIST_DEADLINE_MS
-          );
-
-          emit({ type: 'cheat_estimate', spec });
-          emit({ type: 'analysis_complete', analysisId: insertedCheat.id });
-
-          logPipelineEnd(
-            requestId,
-            'success',
-            Date.now() - startTime,
-            db,
-            undefined,
-            null
-          );
-          return;
-        }
-
-        const result = await analyzeMeal(
-          message,
-          userContext,
-          db,
-          gemini,
+        await runAnalysisStream({
           emit,
-          traceContext,
-          { clarifyAnswer }
-        );
-
-        // Check for abort after pipeline completes
-        if (request.signal.aborted) {
-          return;
-        }
-
-        const pvu =
-          promptVersionsUsed.size > 0
-            ? Object.fromEntries(promptVersionsUsed)
-            : null;
-
-        if (!result.success) {
-          console.error(
-            '[analyze-meal] Pipeline returned error:',
-            result.error.type,
-            result.error.message
-          );
-          logPipelineEnd(
-            requestId,
-            'error',
-            Date.now() - startTime,
+          ctx: {
+            signal: request.signal,
             db,
-            result.error.message,
-            pvu
-          );
-          emit({
-            type: 'error',
-            code: result.error.type,
-            message: result.error.message,
-            retryable: result.error.retryable,
-          });
-          return;
-        }
-
-        // Completeness gate (precise clarify) — MUST run BEFORE the
-        // empty_nutrition gate: a meal whose only ingredients are unresolved
-        // (e.g. "0 fried chicken") assembles to all-zero macros, and the
-        // nutrition gate would swallow the clarify with a generic error.
-        // The pipeline finished but ≥1
-        // ingredient's portion/match couldn't be resolved. Mirror the cheat
-        // clarify early-exit — surface ONE targeted question and stop WITHOUT
-        // persisting an incomplete pending_analyses row. The client re-submits
-        // with `clarifyAnswer`.
-        if (result.unresolved) {
-          await emitUnresolvedOutcome({
-            unresolved: result.unresolved,
-            locale: locale ?? profile.preferredLocale ?? 'en',
-            emit,
             requestId,
-            db,
-            startTime,
-            promptVersionsUsed: pvu,
-          });
-          return;
-        }
-
-        const meal = toParsedMeal(result.data);
-        const hasNutrition = meal.items?.some(
-          (item) => item.macros.calories !== 0 || item.macros.protein !== 0
-        );
-
-        if (!hasNutrition) {
-          console.error('[analyze-meal] Pipeline returned all-null nutrition', {
-            inputLength: message.length,
-          });
-          logPipelineEnd(
-            requestId,
-            'error',
-            Date.now() - startTime,
-            db,
-            'empty_nutrition',
-            pvu
-          );
-          emit({
-            type: 'error',
-            code: 'empty_nutrition',
-            message:
-              'Could not estimate nutrition for this meal. Please try describing it differently.',
-            retryable: true,
-          });
-          return;
-        }
-
-        // Persist the analysis BEFORE telling the client the meal is ready,
-        // so a failed insert produces an error path with no half-state. If
-        // we emit `result` first and then the insert throws, the client has
-        // a populated meal preview with no `analysisId` to confirm it.
-        const [inserted] = await withDeadline(
-          upsertPendingAnalysis({
             userId,
-            pipelineResult: result.data,
-            rawInput: message,
-            entryMode: 'precise',
+            message,
+            userContext,
             loggedAt,
             attemptId,
-          }),
-          PERSIST_DEADLINE_MS
-        );
-
-        // Now safe to surface the meal — durable row exists.
-        emit({ type: 'result', data: meal });
-
-        // Terminal event — analysis stored, safe to confirm.
-        emit({
-          type: 'analysis_complete',
-          analysisId: inserted.id,
+            geminiConfig: providerConfig.config,
+            mode,
+            cheatType,
+            clarifyAnswer,
+            cheatIntensity,
+            refs,
+            mergeRelogRefs: applyRelogRefs,
+          },
         });
-
-        // Fire-and-forget: log success + unmatched ingredients
-        logPipelineEnd(
-          requestId,
-          'success',
-          Date.now() - startTime,
-          db,
-          undefined,
-          pvu
-        );
-        if (result.data.unmatchedIngredients.length > 0) {
-          logUnmatchedIngredients(
-            result.data.unmatchedIngredients,
-            null,
-            db
-          ).catch((err) =>
-            console.error('Failed to log unmatched ingredients:', err)
-          );
-        }
-      } catch (error) {
-        console.error('[analyze-meal] Stream error:', error);
-        const pvu =
-          promptVersionsUsed.size > 0
-            ? Object.fromEntries(promptVersionsUsed)
-            : null;
-        logPipelineEnd(
-          requestId,
-          'error',
-          Date.now() - startTime,
-          db,
-          error instanceof Error ? error.message : 'unknown',
-          pvu
-        );
-
-        emit(toStreamErrorEvent(error));
       } finally {
         request.signal.removeEventListener('abort', releaseOnAbort);
         // The guard release is a DB write; bound it so a stalled pool can't

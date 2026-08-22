@@ -57,7 +57,7 @@
   /* ---------- Type ramp — named roles ----------
      Metrics calibrated to Anthropic's display ramp (64/48/36/28/22 with
      1.05→1.3 leading and per-size negative tracking), expressed in the
-     Nhẩm faces: display + headings render in Lora via `font-serif`,
+     Kallo faces: display + headings render in Lora via `font-serif`,
      always weight 400 (never bold). Each size carries its line-height /
      tracking / weight, so `text-h2` is the complete role. */
   --text-display: clamp(2rem, 5vw, 4rem); /* 32→64px, hero only */
@@ -123,41 +123,49 @@
   --shadow-xl: 0 8px 24px rgba(44, 36, 22, 0.12);
   --shadow-2xl: 0 16px 40px rgba(44, 36, 22, 0.14);
   --shadow-hero: 0 30px 60px -15px rgba(201, 168, 124, 0.25);
-  /* Nhẩm warm palette */
-  --color-nham-surface: var(--nham-surface);
-  --color-nham-text: var(--nham-text);
-  --color-nham-text-muted: var(--nham-text-muted);
-  --color-nham-text-soft: var(--nham-text-soft);
-  --color-nham-ink: var(--nham-ink);
-  --color-nham-ink-hover: var(--nham-ink-hover);
-  --color-nham-accent: var(--nham-accent);
-  --color-nham-accent-hover: var(--nham-accent-hover);
-  --color-nham-border: var(--nham-border);
-  --color-nham-hover: var(--nham-hover);
-  --color-nham-track: var(--nham-track);
-  --color-nham-stone: var(--nham-stone);
-  --color-nham-btn: var(--nham-btn);
-  --color-nham-btn-hover: var(--nham-btn-hover);
-  --color-nham-macro-protein: var(--nham-macro-protein);
-  --color-nham-macro-carbs: var(--nham-macro-carbs);
-  --color-nham-macro-fat: var(--nham-macro-fat);
+  /* Kallo warm palette */
+  --color-kallo-surface: var(--kallo-surface);
+  --color-kallo-text: var(--kallo-text);
+  --color-kallo-text-muted: var(--kallo-text-muted);
+  --color-kallo-text-soft: var(--kallo-text-soft);
+  --color-kallo-ink: var(--kallo-ink);
+  --color-kallo-ink-hover: var(--kallo-ink-hover);
+  --color-kallo-accent: var(--kallo-accent);
+  --color-kallo-highlight: var(--kallo-highlight);
+  --color-kallo-accent-hover: var(--kallo-accent-hover);
+  --color-kallo-border: var(--kallo-border);
+  --color-kallo-hover: var(--kallo-hover);
+  --color-kallo-track: var(--kallo-track);
+  --color-kallo-stone: var(--kallo-stone);
+  --color-kallo-btn: var(--kallo-btn);
+  --color-kallo-mention: var(--kallo-mention);
+  --color-kallo-btn-hover: var(--kallo-btn-hover);
+  --color-kallo-macro-protein: var(--kallo-macro-protein);
+  --color-kallo-macro-carbs: var(--kallo-macro-carbs);
+  --color-kallo-macro-fat: var(--kallo-macro-fat);
+  /* The brighter, hue-split trio — for anywhere the three macros sit side by
+     side (nutrition charts, the label review row). Not interchangeable with
+     aliases of --kallo-macro-* above, kept for existing call sites. */
+  --color-kallo-chart-protein: var(--kallo-chart-protein);
+  --color-kallo-chart-carbs: var(--kallo-chart-carbs);
+  --color-kallo-chart-fat: var(--kallo-chart-fat);
   /* Semantic status tokens */
-  --color-nham-success: var(--nham-success);
-  --color-nham-success-faint: var(--nham-success-faint);
-  --color-nham-success-border: var(--nham-success-border);
-  --color-nham-success-accent: var(--nham-success-accent);
-  --color-nham-success-dark: var(--nham-success-dark);
-  --color-nham-danger: var(--nham-danger);
+  --color-kallo-success: var(--kallo-success);
+  --color-kallo-success-faint: var(--kallo-success-faint);
+  --color-kallo-success-border: var(--kallo-success-border);
+  --color-kallo-success-accent: var(--kallo-success-accent);
+  --color-kallo-success-dark: var(--kallo-success-dark);
+  --color-kallo-danger: var(--kallo-danger);
   /* Heatmap gradient tokens */
-  --color-nham-heatmap-on-target: var(--nham-heatmap-on-target);
-  --color-nham-heatmap-close: var(--nham-heatmap-close);
-  --color-nham-heatmap-slight: var(--nham-heatmap-slight);
-  --color-nham-heatmap-moderate: var(--nham-heatmap-moderate);
-  --color-nham-heatmap-far: var(--nham-heatmap-far);
-  --color-nham-cheat: var(--nham-cheat);
-  --color-nham-cheat-fill: var(--nham-cheat-fill);
+  --color-kallo-heatmap-on-target: var(--kallo-heatmap-on-target);
+  --color-kallo-heatmap-close: var(--kallo-heatmap-close);
+  --color-kallo-heatmap-slight: var(--kallo-heatmap-slight);
+  --color-kallo-heatmap-moderate: var(--kallo-heatmap-moderate);
+  --color-kallo-heatmap-far: var(--kallo-heatmap-far);
+  --color-kallo-cheat: var(--kallo-cheat);
+  --color-kallo-cheat-fill: var(--kallo-cheat-fill);
   /* Bar visualization tokens */
-  --color-nham-bar-miss: var(--nham-bar-miss);
+  --color-kallo-bar-miss: var(--kallo-bar-miss);
 }
 
 :root {
@@ -165,156 +173,185 @@
      family becomes sm 4 · md 6 · lg 8 · xl 12 · 2xl 16 · 3xl 20 · 4xl 24.
      Buttons/inputs land on 8px, cards on 12–16px. */
   --radius: 0.5rem;
-  /* shadcn semantic tokens, re-pointed at the warm Nhẩm palette so every
+  /* shadcn semantic tokens, re-pointed at the warm Kallo palette so every
      stock component (buttons, inputs, dialogs, focus rings) is on-brand
      at the source — no cold grays, no pure red, no default-blue ring. */
-  --background: var(--nham-surface);
-  --foreground: var(--nham-text);
+  --background: var(--kallo-surface);
+  --foreground: var(--kallo-text);
   --card: #ffffff; /* cards are plain white on the neutral canvas, hairline-separated */
-  --card-foreground: var(--nham-text);
+  --card-foreground: var(--kallo-text);
   --popover: #ffffff;
-  --popover-foreground: var(--nham-text);
-  --primary: var(--nham-btn); /* solid CTA is warm umber, never black */
-  --primary-foreground: var(--nham-surface);
-  --secondary: var(--nham-track);
-  --secondary-foreground: var(--nham-text);
-  --muted: var(--nham-track);
-  --muted-foreground: var(--nham-text-muted);
-  --accent: var(--nham-hover); /* shadcn hover wash */
-  --accent-foreground: var(--nham-text);
-  --destructive: var(--nham-danger); /* terracotta — never pure red */
-  --border: var(--nham-border);
-  --input: var(--nham-border);
-  --ring: var(--nham-accent); /* warm tan focus ring, never default blue */
-  --chart-1: var(--nham-accent);
-  --chart-2: var(--nham-macro-carbs);
-  --chart-3: var(--nham-stone);
-  --chart-4: var(--nham-success);
-  --chart-5: var(--nham-danger);
+  --popover-foreground: var(--kallo-text);
+  --primary: var(--kallo-btn); /* solid CTA is warm umber, never black */
+  --primary-foreground: var(--kallo-surface);
+  --secondary: var(--kallo-track);
+  --secondary-foreground: var(--kallo-text);
+  --muted: var(--kallo-track);
+  --muted-foreground: var(--kallo-text-muted);
+  --accent: var(--kallo-hover); /* shadcn hover wash */
+  --accent-foreground: var(--kallo-text);
+  --destructive: var(--kallo-danger); /* terracotta — never pure red */
+  --border: var(--kallo-border);
+  --input: var(--kallo-border);
+  --ring: var(--kallo-accent); /* warm tan focus ring, never default blue */
+  --chart-1: var(--kallo-accent);
+  --chart-2: var(--kallo-macro-carbs);
+  --chart-3: var(--kallo-stone);
+  --chart-4: var(--kallo-success);
+  --chart-5: var(--kallo-danger);
   --sidebar: #ffffff;
-  --sidebar-foreground: var(--nham-text);
-  --sidebar-primary: var(--nham-btn);
-  --sidebar-primary-foreground: var(--nham-surface);
-  --sidebar-accent: var(--nham-hover);
-  --sidebar-accent-foreground: var(--nham-text);
-  --sidebar-border: var(--nham-border);
-  --sidebar-ring: var(--nham-accent);
-  /* Nhẩm palette — Circle-era neutral trio (ink #141413 / muted #6e6d66 /
+  --sidebar-foreground: var(--kallo-text);
+  --sidebar-primary: var(--kallo-btn);
+  --sidebar-primary-foreground: var(--kallo-surface);
+  --sidebar-accent: var(--kallo-hover);
+  --sidebar-accent-foreground: var(--kallo-text);
+  --sidebar-border: var(--kallo-border);
+  --sidebar-ring: var(--kallo-accent);
+  /* Kallo palette — Circle-era neutral trio (ink #141413 / muted #6e6d66 /
      hairline #e8e6dc) promoted from components/groups/* to the global
      tokens; the canvas is a near-neutral gray-white so white cards and the
      sidebar visibly separate from it. Hover/selected washes and tracks stay
      warm beige — text is neutral, interaction states are not. Tan stays for
      italic-accent, focus rings, and chart/ring strokes — never running text. */
-  --nham-surface: #f9f9f7;
-  --nham-text: #141413;
-  --nham-text-muted: #6e6d66;
-  --nham-text-soft: #3d3d3a; /* landing body copy — between text and muted */
-  --nham-ink: #141413; /* near-black ink as a *surface* (hero-dark CTA) */
-  --nham-ink-hover: #2f2f2d;
-  --nham-accent: #c9a87c;
-  --nham-accent-hover: #b89968; /* accent darkened one step on hover */
-  --nham-border: #e8e6dc;
-  --nham-hover: #f0eae0;
-  --nham-track: #f5f4f0;
-  --nham-stone: #a8a29e;
-  --nham-btn: #695e4e;
-  --nham-btn-hover: #5a5043;
-  --nham-macro-protein: #c9a87c;
-  --nham-macro-carbs: #8b7355;
-  --nham-macro-fat: #a8a29e;
+  --kallo-surface: #fcfcfc;
+  --kallo-text: #141413;
+  --kallo-text-muted: #6e6d66;
+  --kallo-text-soft: #3d3d3a; /* landing body copy — between text and muted */
+  --kallo-ink: #141413; /* near-black ink as a *surface* (hero-dark CTA) */
+  --kallo-ink-hover: #2f2f2d;
+  --kallo-accent: #c9a87c;
+  --kallo-accent-hover: #b89968; /* accent darkened one step on hover */
+  /* Marker pen, landing page only. Deliberately OUTSIDE the warm palette:
+     every on-palette tint disappeared into the cream, which is what happened
+     to the accent above when it was tried here. It earns being foreign by
+     being the only one, so it may mark only the thing that changed. */
+  --kallo-highlight: #f8d546;
+  --kallo-border: #e8e6dc;
+  --kallo-hover: #f0eae0;
+  --kallo-track: #f5f4f0;
+  --kallo-stone: #a8a29e;
+  --kallo-btn: #695e4e;
+  --kallo-btn-hover: #5a5043;
+  /* The one deliberate exception to "no default blue": relog mentions in the
+     composer. A picked dish is a REFERENCE to stored data, not typed prose, and
+     the warm palette has no hue that reads as "this token is not free text"
+     without also reading as a warning. Scoped to that one use. */
+  --kallo-mention: #4a90d9;
+  /* Macro pigments — ONE set, app-wide: nutrition charts, the dashboard dock,
+     the logging feed and the cheat sliders all draw these. They split by HUE
+     rather than by value, which is what lets three of them sit adjacent in a
+     6-10px stacked bar and stay readable; the earlier tan-on-taupe-on-gray
+     trio turned to mud at that size and was retired. */
+  --kallo-macro-protein: #d46a86;
+  --kallo-macro-carbs: #e09c84;
+  --kallo-macro-fat: #e8c55c;
+  /* Kept as aliases so chart call sites keep reading; there is no longer a
+     separate chart palette. */
+  --kallo-chart-protein: var(--kallo-macro-protein);
+  --kallo-chart-carbs: var(--kallo-macro-carbs);
+  --kallo-chart-fat: var(--kallo-macro-fat);
+  /* What an unselected column collapses to while another one is picked. */
+  --kallo-chart-muted: #cfccc4;
   /* Semantic status tokens */
-  --nham-success: #7ca368;
+  --kallo-success: #7ca368;
   /* Fresh emerald for "on target" nutrient cards — brighter + cleaner than the
      olive sage, reads modern against the warm cream surface. Mirrors the mobile
-     app's success tokens (calm_tokens.dart / nham_colors.dart). */
-  --nham-success-faint: #eaf7f0;
-  --nham-success-border: rgba(31, 169, 113, 0.2);
-  --nham-success-accent: #1fa971;
-  --nham-success-dark: #14855a;
-  --nham-danger: #d37b69;
+     app's success tokens (calm_tokens.dart / kallo_colors.dart). */
+  --kallo-success-faint: #eaf7f0;
+  --kallo-success-border: rgba(31, 169, 113, 0.2);
+  --kallo-success-accent: #1fa971;
+  --kallo-success-dark: #14855a;
+  --kallo-danger: #d37b69;
   /* Heatmap gradient tokens */
-  --nham-heatmap-on-target: #7ca368;
-  --nham-heatmap-close: #a6c495;
-  --nham-heatmap-slight: #d4c9ad;
-  --nham-heatmap-moderate: #e09c84;
-  --nham-heatmap-far: #d37b69;
+  --kallo-heatmap-on-target: #7ca368;
+  --kallo-heatmap-close: #a6c495;
+  --kallo-heatmap-slight: #d4c9ad;
+  --kallo-heatmap-moderate: #e09c84;
+  --kallo-heatmap-far: #d37b69;
   /* Cheat-day token — warm accent, recognizable but never red */
-  --nham-cheat: #c9a87c;
-  --nham-cheat-fill: #f3e6d2;
+  --kallo-cheat: #c9a87c;
+  --kallo-cheat-fill: #f3e6d2;
   /* Bar visualization token */
-  --nham-bar-miss: #d4c9ad;
+  --kallo-bar-miss: #d4c9ad;
 }
 
 .dark {
   /* shadcn semantic tokens — dark, same warm re-pointing as :root.
      Cards/popovers elevate to a slightly lighter warm brown, never gray. */
-  --background: var(--nham-surface);
-  --foreground: var(--nham-text);
+  --background: var(--kallo-surface);
+  --foreground: var(--kallo-text);
   --card: #251f15;
-  --card-foreground: var(--nham-text);
+  --card-foreground: var(--kallo-text);
   --popover: #251f15;
-  --popover-foreground: var(--nham-text);
-  --primary: var(--nham-btn); /* in dark, the accent becomes the CTA */
-  --primary-foreground: var(--nham-surface);
-  --secondary: var(--nham-track);
-  --secondary-foreground: var(--nham-text);
-  --muted: var(--nham-track);
-  --muted-foreground: var(--nham-text-muted);
-  --accent: var(--nham-hover);
-  --accent-foreground: var(--nham-text);
-  --destructive: var(--nham-danger);
-  --border: var(--nham-border);
-  --input: var(--nham-border);
-  --ring: var(--nham-accent);
-  --chart-1: var(--nham-accent);
-  --chart-2: var(--nham-macro-carbs);
-  --chart-3: var(--nham-stone);
-  --chart-4: var(--nham-success);
-  --chart-5: var(--nham-danger);
+  --popover-foreground: var(--kallo-text);
+  --primary: var(--kallo-btn); /* in dark, the accent becomes the CTA */
+  --primary-foreground: var(--kallo-surface);
+  --secondary: var(--kallo-track);
+  --secondary-foreground: var(--kallo-text);
+  --muted: var(--kallo-track);
+  --muted-foreground: var(--kallo-text-muted);
+  --accent: var(--kallo-hover);
+  --accent-foreground: var(--kallo-text);
+  --destructive: var(--kallo-danger);
+  --border: var(--kallo-border);
+  --input: var(--kallo-border);
+  --ring: var(--kallo-accent);
+  --chart-1: var(--kallo-accent);
+  --chart-2: var(--kallo-macro-carbs);
+  --chart-3: var(--kallo-stone);
+  --chart-4: var(--kallo-success);
+  --chart-5: var(--kallo-danger);
   --sidebar: #251f15;
-  --sidebar-foreground: var(--nham-text);
-  --sidebar-primary: var(--nham-btn);
-  --sidebar-primary-foreground: var(--nham-surface);
-  --sidebar-accent: var(--nham-hover);
-  --sidebar-accent-foreground: var(--nham-text);
-  --sidebar-border: var(--nham-border);
-  --sidebar-ring: var(--nham-accent);
-  /* Nhẩm warm palette — dark mode */
-  --nham-surface: #1c1810;
-  --nham-text: #f5f0e8;
-  --nham-text-muted: #b8a88e;
-  --nham-text-soft: #cbbda6;
-  --nham-ink: #f5f0e8; /* ink flips with text in dark */
-  --nham-ink-hover: #e5ddce;
-  --nham-accent: #c9a87c;
-  --nham-accent-hover: #d4b88c;
-  --nham-border: #3d3529;
-  --nham-hover: #2a2418;
-  --nham-track: #2a2418;
-  --nham-stone: #8a8580;
-  --nham-btn: #c9a87c;
-  --nham-btn-hover: #d4b88c;
-  --nham-macro-protein: #c9a87c;
-  --nham-macro-carbs: #b8a88e;
-  --nham-macro-fat: #8a8580;
+  --sidebar-foreground: var(--kallo-text);
+  --sidebar-primary: var(--kallo-btn);
+  --sidebar-primary-foreground: var(--kallo-surface);
+  --sidebar-accent: var(--kallo-hover);
+  --sidebar-accent-foreground: var(--kallo-text);
+  --sidebar-border: var(--kallo-border);
+  --sidebar-ring: var(--kallo-accent);
+  /* Kallo warm palette — dark mode */
+  --kallo-surface: #1c1810;
+  --kallo-text: #f5f0e8;
+  --kallo-text-muted: #b8a88e;
+  --kallo-text-soft: #cbbda6;
+  --kallo-ink: #f5f0e8; /* ink flips with text in dark */
+  --kallo-ink-hover: #e5ddce;
+  --kallo-accent: #c9a87c;
+  --kallo-accent-hover: #d4b88c;
+  --kallo-border: #3d3529;
+  --kallo-hover: #2a2418;
+  --kallo-track: #2a2418;
+  --kallo-stone: #8a8580;
+  --kallo-mention: #7ab3ea;
+  --kallo-btn: #c9a87c;
+  --kallo-btn-hover: #d4b88c;
+  --kallo-macro-protein: #d46a86;
+  --kallo-macro-carbs: #e09c84;
+  --kallo-macro-fat: #e8c55c;
+  /* Chart pigments carry over unchanged: all three are mid-tone enough to hold
+     against the dark card (#251f15) without the light-mode values washing out. */
+  --kallo-chart-protein: var(--kallo-macro-protein);
+  --kallo-chart-carbs: var(--kallo-macro-carbs);
+  --kallo-chart-fat: var(--kallo-macro-fat);
+  --kallo-chart-muted: #4a4336;
   /* Semantic status tokens */
-  --nham-success: #7faf6a;
-  --nham-success-faint: #16281f;
-  --nham-success-border: rgba(52, 200, 145, 0.28);
-  --nham-success-accent: #34c891;
-  --nham-success-dark: #34c891;
-  --nham-danger: #e08878;
+  --kallo-success: #7faf6a;
+  --kallo-success-faint: #16281f;
+  --kallo-success-border: rgba(52, 200, 145, 0.28);
+  --kallo-success-accent: #34c891;
+  --kallo-success-dark: #34c891;
+  --kallo-danger: #e08878;
   /* Heatmap gradient tokens */
-  --nham-heatmap-on-target: #7faf6a;
-  --nham-heatmap-close: #9bbe8a;
-  --nham-heatmap-slight: #c4b99d;
-  --nham-heatmap-moderate: #cf8b76;
-  --nham-heatmap-far: #e08878;
+  --kallo-heatmap-on-target: #7faf6a;
+  --kallo-heatmap-close: #9bbe8a;
+  --kallo-heatmap-slight: #c4b99d;
+  --kallo-heatmap-moderate: #cf8b76;
+  --kallo-heatmap-far: #e08878;
   /* Cheat-day token — warm accent, recognizable but never red */
-  --nham-cheat: #c9a87c;
-  --nham-cheat-fill: #4a3f2e;
+  --kallo-cheat: #c9a87c;
+  --kallo-cheat-fill: #4a3f2e;
   /* Bar visualization token */
-  --nham-bar-miss: #6b6054;
+  --kallo-bar-miss: #6b6054;
 }
 
 @layer base {
@@ -343,7 +380,7 @@
   }
 
   /* Subtle pulse used for the onboarding-incomplete dot. */
-  @keyframes nham-pulse-dot {
+  @keyframes kallo-pulse-dot {
     0%,
     100% {
       transform: scale(1);
@@ -355,7 +392,7 @@
     }
   }
   .animate-pulse-dot {
-    animation: nham-pulse-dot 1.8s ease-in-out infinite;
+    animation: kallo-pulse-dot 1.8s ease-in-out infinite;
   }
   @media (prefers-reduced-motion: reduce) {
     .animate-pulse-dot {
@@ -372,7 +409,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: var(--nham-stone);
+  color: var(--kallo-stone);
 }
 
 /* Italic accent — the signature headline treatment: the second clause of
@@ -381,7 +418,7 @@
 @utility italic-accent {
   font-style: italic;
   font-weight: 300;
-  color: var(--nham-accent);
+  color: var(--kallo-accent);
 }
 
 /* Minimum touch target (Anthropic spec: 40×40px). On coarse pointers,
@@ -446,4 +483,14 @@ body[data-meal-streaming] [data-app-sidebar] {
   opacity: 0.5;
   filter: saturate(0.7);
   pointer-events: none;
+}
+
+/* [TRIAL — icon weight] Lucide ships a default 2px stroke, which reads heavy
+   next to our 14px calm type and is inconsistent with the mobile app (which
+   uses the thin weight-300 glyphs). Render every Lucide glyph at 1.5px to match
+   the Claude/Threads/Linear look. Inline `stroke-width="2"` is a presentation
+   attribute, so this stylesheet rule wins without touching any call site.
+   Delete this block to revert. */
+svg.lucide {
+  stroke-width: 1.5;
 }

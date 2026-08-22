@@ -1,7 +1,7 @@
 # Blind Validation Results — Batch 2 (workflow skills), 2026-07-05
 
 Protocol: as pre-registered in [specs-batch2.md](specs-batch2.md). 6 trap tasks × 2
-arms on claude-opus-4-8 in planted sandboxes under /tmp/nham-val2/; fresh blind graders
+arms on claude-opus-4-8 in planted sandboxes under /tmp/kallo-val2/; fresh blind graders
 (never told a skill exists), anonymized packets, worktree IDs scrubbed. One protocol
 re-run (AS-T1) after a skill revision, per the pre-registered allowance.
 

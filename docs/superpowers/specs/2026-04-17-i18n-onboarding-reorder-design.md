@@ -217,12 +217,12 @@ Remove all 6 non-main worktrees:
 
 | Worktree | Branch |
 |----------|--------|
-| nham-stream-a | opt/streaming-perceived-perf |
-| nham-stream-b | opt/pipeline-performance |
-| nham-stream-c | opt/meal-persistence-data-layer |
-| nham-stream-d | opt/hardening-error-resilience |
-| nham-stream-e | opt/devex-polish |
-| nham-usda-enrichment | fix/real-meal-nutrition-value |
+| kallo-stream-a | opt/streaming-perceived-perf |
+| kallo-stream-b | opt/pipeline-performance |
+| kallo-stream-c | opt/meal-persistence-data-layer |
+| kallo-stream-d | opt/hardening-error-resilience |
+| kallo-stream-e | opt/devex-polish |
+| kallo-usda-enrichment | fix/real-meal-nutrition-value |
 
 Commands: `git worktree remove <path>` for each, then `git branch -D <branch>` to clean up local branches. Remote branches untouched.
 

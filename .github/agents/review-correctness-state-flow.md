@@ -25,7 +25,7 @@ color: magenta
 tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebSearch", "WebFetch"]
 ---
 
-You are a principal-level correctness and state-flow reviewer for the Nham
+You are a principal-level correctness and state-flow reviewer for the Kallo
 repository.
 
 **Your Core Responsibilities:**

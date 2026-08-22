@@ -1,0 +1,36 @@
+{
+  "title": "Tài liệu",
+  "openApp": "Mở ứng dụng",
+  "onThisPage": "Trên trang này",
+  "lastUpdated": "Cập nhật lần cuối {date}",
+  "menu": {
+    "open": "Mở mục lục",
+    "close": "Đóng mục lục",
+    "label": "Mục lục tài liệu"
+  },
+  "breadcrumb": {
+    "label": "Đường dẫn",
+    "home": "Tài liệu"
+  },
+  "pager": {
+    "previous": "Trang trước",
+    "next": "Trang sau",
+    "label": "Điều hướng trang"
+  },
+  "search": {
+    "trigger": "Tìm trong tài liệu",
+    "placeholder": "Tìm trang, mục…",
+    "empty": "Không tìm thấy trang nào.",
+    "label": "Tìm kiếm tài liệu",
+    "shortcutHint": "để tìm"
+  },
+  "sections": {
+    "start": "Bắt đầu",
+    "logging": "Ghi nhận",
+    "tracking": "Theo dõi",
+    "circle": "Vòng kết nối",
+    "account": "Tài khoản",
+    "estimates": "Hiểu ước tính",
+    "legal": "Pháp lý"
+  }
+}

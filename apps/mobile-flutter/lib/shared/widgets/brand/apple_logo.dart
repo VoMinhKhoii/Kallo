@@ -1,13 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 
 /// The Apple brand mark, rendered in a single ink tint (never a fixed brand
 /// colour — Apple's glyph inherits `currentColor`).
 ///
 /// Matches the web `AppleLogo` (`components/shared/brand-logos.tsx`) rendered at
-/// `size-4` = 16x16 in `text-nham-text`, with the same `currentColor` path.
+/// `size-4` = 16x16 in `text-kallo-text`, with the same `currentColor` path.
 ///
 /// Uses `flutter_svg` to render the verbatim SVG rather than a hand-rolled path
 /// parser (the source path uses cubic-Bézier commands).
@@ -16,7 +16,7 @@ class AppleLogo extends StatelessWidget {
 
   final double size;
 
-  /// Tint. Defaults to the ink text colour, mirroring web `text-nham-text`.
+  /// Tint. Defaults to the ink text colour, mirroring web `text-kallo-text`.
   final Color? color;
 
   @override
@@ -26,7 +26,7 @@ class AppleLogo extends StatelessWidget {
       width: size,
       height: size,
       colorFilter: ColorFilter.mode(
-        color ?? NhamColors.text,
+        color ?? KalloColors.text,
         BlendMode.srcIn,
       ),
     );

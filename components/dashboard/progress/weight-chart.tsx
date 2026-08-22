@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { TimeRange } from '@/lib/types/dashboard';
+import type { TimeRange } from '@/lib/core/types/dashboard';
 import { WeightChartTooltip } from './weight-chart-tooltip';
 import { buildXTicks } from './weight-chart-utils';
 
@@ -30,7 +30,7 @@ interface ChartPoint {
   forecast: number | null;
 }
 
-const ACCENT = 'var(--nham-accent)';
+const ACCENT = 'var(--kallo-accent)';
 
 export function WeightChart({
   data,
@@ -97,7 +97,7 @@ export function WeightChart({
 
   if (data.length === 0) {
     return (
-      <div className="flex h-full min-h-[200px] items-center justify-center text-nham-text-muted text-sm xl:min-h-0">
+      <div className="flex h-full min-h-[200px] items-center justify-center text-kallo-text-muted text-sm xl:min-h-0">
         {t('noWeightData')}
       </div>
     );
@@ -137,7 +137,7 @@ export function WeightChart({
           >
             <CartesianGrid
               vertical={false}
-              stroke="var(--nham-border)"
+              stroke="var(--kallo-border)"
               strokeOpacity={0.6}
             />
 
@@ -146,8 +146,8 @@ export function WeightChart({
               type="number"
               domain={[0, isSinglePoint ? rangeDays - 1 : forecastDay]}
               tickLine={false}
-              axisLine={{ stroke: 'var(--nham-border)' }}
-              tick={{ fontSize: 12, fill: 'var(--nham-text-muted)' }}
+              axisLine={{ stroke: 'var(--kallo-border)' }}
+              tick={{ fontSize: 12, fill: 'var(--kallo-text-muted)' }}
               ticks={xTicks}
               tickFormatter={(v: number, i: number) => xFormatter(v, i)}
             />
@@ -156,7 +156,7 @@ export function WeightChart({
               ticks={yTicks}
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 12, fill: 'var(--nham-text-muted)' }}
+              tick={{ fontSize: 12, fill: 'var(--kallo-text-muted)' }}
               tickFormatter={(v: number) =>
                 yStep >= 1 ? v.toFixed(0) : v.toFixed(1)
               }

@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { loadWeightSummaryAction } from '@/lib/actions/weight';
+import { loadWeightSummaryAction } from '@/lib/actions/tracking/weight';
 import { weightSummaryQuerySchema } from '@/lib/api/contracts/weight';
 import { parseTzParam } from '@/lib/api/query';
 import { handleRouteError } from '@/lib/api/respond';

@@ -11,20 +11,21 @@ import {
 import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { TimeDivider } from '@/components/logging/feed/time-divider';
+import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
-import {
-  CHEAT_SLIDER_COLORS,
-  defaultLevels,
-  resolveSliderNutrition,
-} from '@/lib/cheat/slider-nutrition';
+import { formatTime } from '@/lib/core/date/format-time';
 import type {
   CheatSlider,
   CheatSliderLevels,
   CheatSliderSpec,
-} from '@/lib/types/cheat';
-import { cn } from '@/lib/utils';
+} from '@/lib/core/types/cheat';
+import { cn } from '@/lib/core/ui/cn';
+import {
+  CHEAT_SLIDER_COLORS,
+  defaultLevels,
+  resolveSliderNutrition,
+} from '@/lib/domain/cheat/slider-nutrition';
 
 // One food-domain icon per macro axis — encodes the slider's identity (and
 // shares its accent color), replacing the decorative status dot.
@@ -65,10 +66,7 @@ export function CheatSliderCard({
     [spec, levels]
   );
 
-  const timeLabel = timestamp.toLocaleTimeString(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const timeLabel = formatTime(timestamp, locale);
 
   // Vague-input fallback: a single clarifying question instead of sliders.
   if (spec.clarifyingQuestion) {
@@ -79,14 +77,14 @@ export function CheatSliderCard({
         animate={{ opacity: 1 }}
         className="relative"
       >
-        <TimeDivider timeLabel={timeLabel} />
-        <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
+        <TurnHeader timeLabel={timeLabel} message={userInput} />
+        <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm sm:p-5">
           {userInput && (
-            <p className="mb-3 font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
+            <p className="mb-3 font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]">
               {userInput}
             </p>
           )}
-          <p className="mb-3 font-sans-display text-nham-text text-sm">
+          <p className="mb-3 font-sans-display text-kallo-text text-sm">
             {q.prompt}
           </p>
           {q.options && q.options.length > 0 && (
@@ -98,7 +96,7 @@ export function CheatSliderCard({
                   disabled={isConfirming}
                   aria-busy={isConfirming}
                   onClick={() => onClarify?.(option)}
-                  className="rounded-full border border-nham-border/60 px-3 py-1.5 font-sans-display text-nham-text text-sm transition-colors hover:border-nham-accent/60 hover:bg-nham-hover/40 disabled:opacity-50"
+                  className="rounded-full border border-kallo-border/60 px-3 py-1.5 font-sans-display text-kallo-text text-sm transition-colors hover:border-kallo-accent/60 hover:bg-kallo-hover/40 disabled:opacity-50"
                 >
                   {option}
                 </button>
@@ -116,16 +114,16 @@ export function CheatSliderCard({
       animate={{ opacity: 1 }}
       className="relative"
     >
-      <TimeDivider timeLabel={timeLabel} />
+      <TurnHeader timeLabel={timeLabel} message={userInput} />
 
-      <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
+      <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-start justify-between gap-3">
           {userInput && (
-            <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
+            <p className="font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]">
               {userInput}
             </p>
           )}
-          <Badge className="shrink-0 gap-1 border-transparent bg-nham-accent/15 font-sans-display text-nham-text">
+          <Badge className="shrink-0 gap-1 border-transparent bg-kallo-accent/15 font-sans-display text-kallo-text">
             <PartyPopper className="h-3 w-3" />
             {t('badge')}
           </Badge>
@@ -133,10 +131,10 @@ export function CheatSliderCard({
 
         {/* Live calorie + macro readout */}
         <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-sans-display">
-          <span className="font-semibold text-2xl text-nham-text">
+          <span className="font-semibold text-2xl text-kallo-text">
             ≈ {resolved.caloriesKcal} {t('kcal')}
           </span>
-          <span className="text-nham-text-muted text-sm">
+          <span className="text-kallo-text-muted text-sm">
             P {Math.round(resolved.proteinG)}g · C{' '}
             {Math.round(resolved.carbohydrateG)}g · F{' '}
             {Math.round(resolved.fatG)}g
@@ -168,7 +166,7 @@ export function CheatSliderCard({
         disabled={isConfirming}
         aria-busy={isConfirming}
         onClick={() => onConfirm?.(levels)}
-        className="mt-2 w-full rounded-xl bg-nham-btn py-2.5 font-medium font-sans-display text-sm text-white transition-colors hover:bg-nham-btn-hover disabled:opacity-50"
+        className="mt-2 w-full rounded-xl bg-kallo-btn py-2.5 font-medium font-sans-display text-sm text-white transition-colors hover:bg-kallo-btn-hover disabled:opacity-50"
       >
         {t('confirm')}
       </button>
@@ -230,10 +228,10 @@ function CheatSliderRow({
           side === 'top' ? 'bottom-0 pb-3' : 'top-0 pt-3',
           isLeftEdge ? 'text-left' : isRightEdge ? 'text-right' : 'text-center',
           isExact
-            ? 'font-semibold text-nham-text'
+            ? 'font-semibold text-kallo-text'
             : isBetween
-              ? 'text-nham-text'
-              : 'text-nham-text-muted hover:text-nham-text'
+              ? 'text-kallo-text'
+              : 'text-kallo-text-muted hover:text-kallo-text'
         )}
         style={{
           left: `${anchor.level * 10}%`,
@@ -253,7 +251,7 @@ function CheatSliderRow({
     <div className="font-sans-display">
       <div className="mb-1 flex items-center gap-1.5">
         <Icon aria-hidden className="h-4 w-4 shrink-0" style={{ color }} />
-        <span className="font-medium text-nham-text text-sm">
+        <span className="font-medium text-kallo-text text-sm">
           {slider.label}
         </span>
       </div>

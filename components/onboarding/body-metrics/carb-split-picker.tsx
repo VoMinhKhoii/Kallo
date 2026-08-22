@@ -21,10 +21,10 @@ export function CarbSplitPicker({
   return (
     <div>
       <div className="mb-3 flex items-baseline justify-between">
-        <label className="block font-bold text-[11px] text-nham-stone uppercase tracking-widest">
+        <label className="block font-bold text-[11px] text-kallo-stone uppercase tracking-widest">
           {t('bodyMetrics.macroSummary')}
         </label>
-        <div className="font-normal font-serif text-2xl text-nham-text">
+        <div className="font-normal font-serif text-2xl text-kallo-text">
           {targetCalories}{' '}
           <span className="font-sans text-[#8B8682] text-sm">
             {t('bodyMetrics.kcal')}
@@ -48,15 +48,15 @@ export function CarbSplitPicker({
                     }}
                     className={`overflow-hidden rounded-[22px] border text-left transition-all ${
                       field.value === opt.id
-                        ? 'border-nham-accent bg-[#FFF8EF] shadow-[0_10px_24px_rgba(201,168,124,0.14)]'
-                        : 'border-[#EAE7E0] bg-white hover:border-nham-accent/50'
+                        ? 'border-kallo-accent bg-[#FFF8EF] shadow-[0_10px_24px_rgba(201,168,124,0.14)]'
+                        : 'border-[#EAE7E0] bg-white hover:border-kallo-accent/50'
                     }`}
                   >
                     <div
                       className={`px-3.5 py-2.5 ${
                         field.value === opt.id
-                          ? 'bg-[#FBF2E6] text-nham-text'
-                          : 'bg-nham-track text-nham-text'
+                          ? 'bg-[#FBF2E6] text-kallo-text'
+                          : 'bg-kallo-track text-kallo-text'
                       }`}
                     >
                       <div className="font-medium text-[13px]">{opt.label}</div>
@@ -93,7 +93,7 @@ export function CarbSplitPicker({
                             <span className="text-[#6F6556] text-[10px] uppercase tracking-wide">
                               {macro.label}
                             </span>
-                            <span className="font-semibold text-[12px] text-nham-text">
+                            <span className="font-semibold text-[12px] text-kallo-text">
                               {macro.value}
                               {t('bodyMetrics.grams')}
                             </span>

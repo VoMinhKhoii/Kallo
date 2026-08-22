@@ -93,10 +93,10 @@ export function CustomSelect({
         }}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className={`flex w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-[14px] text-nham-text transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
+        className={`flex w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-[14px] text-kallo-text transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30 ${
           isOpen
-            ? 'border-nham-accent shadow-sm ring-1 ring-nham-accent/20'
-            : 'border-[#EAE7E0] hover:border-nham-accent/50'
+            ? 'border-kallo-accent shadow-sm ring-1 ring-kallo-accent/20'
+            : 'border-[#EAE7E0] hover:border-kallo-accent/50'
         }`}
       >
         <span className="truncate pr-2">{selectedOption?.label}</span>
@@ -134,13 +134,13 @@ export function CustomSelect({
                       onChange(opt.value);
                       setIsOpen(false);
                     }}
-                    className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[14px] text-nham-text transition-colors hover:bg-nham-track"
+                    className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[14px] text-kallo-text transition-colors hover:bg-kallo-track"
                   >
                     <span className={value === opt.value ? 'font-medium' : ''}>
                       {opt.label}
                     </span>
                     {value === opt.value && (
-                      <Check className="h-4 w-4 text-nham-text" />
+                      <Check className="h-4 w-4 text-kallo-text" />
                     )}
                   </button>
                 ))}

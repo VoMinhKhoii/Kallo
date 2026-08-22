@@ -1,11 +1,11 @@
-import type { Goal } from '@/lib/onboarding/types';
-import type { MacroBreakdown, MealItem } from '@/lib/types/meal';
-import { GOAL_BOUND_DIRECTION } from '../constants';
+import { GOAL_BOUND_DIRECTION } from '@/lib/ai/pipeline/assemble/goal-bounds';
+import type { MealItemNutrition } from '@/lib/ai/types/nutrition-adjustment';
 import type {
   BoundedEstimate,
   GoalAdjustedNutrient,
-  MealItemNutrition,
-} from '../types';
+} from '@/lib/ai/types/nutrition-values';
+import type { MacroBreakdown, MealItem } from '@/lib/core/types/meal';
+import type { Goal } from '@/lib/domain/onboarding/types';
 
 // ---------------------------------------------------------------------------
 // Call 1: Extract meal item names from partial decomposition JSON

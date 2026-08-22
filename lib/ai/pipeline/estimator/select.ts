@@ -7,7 +7,7 @@
  * adapters. The Claude/OpenAI adapters are stubs that throw until wired.
  */
 
-import type { GeminiClient } from '../../gemini';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { createClaudeEstimator } from './claude-estimator';
 import { createGeminiEstimator } from './gemini-estimator';
 import { createOpenAiEstimator } from './openai-estimator';

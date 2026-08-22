@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { submitFeedbackAction } from '@/lib/actions/feedback';
+import { submitFeedbackAction } from '@/lib/actions/support/feedback';
 import { submitFeedbackSchema } from '@/lib/api/contracts/feedback';
 import { handleRouteError } from '@/lib/api/respond';
 

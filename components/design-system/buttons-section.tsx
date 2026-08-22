@@ -44,7 +44,7 @@ export function ButtonsSection() {
             </div>
           ))}
         </div>
-        <p className="mt-5 text-nham-text-muted text-xs leading-relaxed">
+        <p className="mt-5 text-kallo-text-muted text-xs leading-relaxed">
           Last column is the disabled state. Focus with the keyboard (Tab) to
           see the 3px tan ring — components never override it with blue.
         </p>
@@ -62,6 +62,9 @@ export function ButtonsSection() {
           <Button size="header" variant="header-cta">
             Get started
           </Button>
+          <Button className="h-11" variant="landing-ink">
+            Start free trial
+          </Button>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Button size="hero" variant="hero-dark">
@@ -73,7 +76,7 @@ export function ButtonsSection() {
             See a live demo
           </Button>
         </div>
-        <p className="mt-5 text-nham-text-muted text-xs leading-relaxed">
+        <p className="mt-5 text-kallo-text-muted text-xs leading-relaxed">
           Hero CTAs are the only buttons that lift on hover (translateY(-2px));
           everything else darkens by one step with no movement. Never invent a
           new variant inline — extend buttonVariants in components/ui/button.tsx

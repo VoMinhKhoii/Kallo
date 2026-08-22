@@ -4,7 +4,7 @@ import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { KalloMark } from '@/components/brand/kallo-mark';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 import { SidebarTooltip } from './sidebar-tooltip';
 
 interface SidebarBrandHeaderProps {
@@ -33,7 +33,7 @@ export function SidebarBrandHeader({
       )}
     >
       {!collapsed && (
-        <KalloWordmark className="ml-1.5 h-5 w-auto text-nham-text" />
+        <KalloWordmark className="ml-1.5 h-5 w-auto text-kallo-text" />
       )}
       <SidebarTooltip
         enabled={collapsed}
@@ -48,13 +48,13 @@ export function SidebarBrandHeader({
           aria-pressed={pinnedCollapsed}
           aria-keyshortcuts="Meta+B Control+B"
           className={cn(
-            'group/toggle relative flex items-center justify-center rounded-md text-nham-text-muted transition-colors hover:bg-[#141413]/[0.06] hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
+            'group/toggle relative flex items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-[#141413]/[0.06] hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent',
             collapsed ? 'h-8 w-8' : 'h-7 w-7'
           )}
         >
           {collapsed ? (
             <>
-              <KalloMark className="h-5 w-auto text-nham-text transition-opacity duration-150 group-hover/toggle:opacity-0 group-focus-visible/toggle:opacity-0" />
+              <KalloMark className="h-5 w-auto text-kallo-text transition-opacity duration-150 group-hover/toggle:opacity-0 group-focus-visible/toggle:opacity-0" />
               <PanelLeftOpen className="absolute h-4 w-4 opacity-0 transition-opacity duration-150 group-hover/toggle:opacity-100 group-focus-visible/toggle:opacity-100" />
             </>
           ) : (

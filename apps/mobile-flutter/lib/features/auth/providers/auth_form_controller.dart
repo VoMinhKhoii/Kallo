@@ -9,8 +9,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../data/session_provider.dart';
-import '../../../services/supabase_service.dart';
+import '../../../services/auth/session_provider.dart';
+import '../../../services/auth/supabase_service.dart';
 
 /// Which auth action is currently in flight. Lets the UI spin only the button
 /// that was tapped while still disabling the others — replacing the old single

@@ -1,0 +1,79 @@
+---
+title: How estimates work
+description: Where the number comes from — and why Kallo starts from text rather than a photo.
+lastUpdated: '2026-08-03'
+---
+
+You do not need this page to use Kallo. But if you want to know where the number
+came from — and how much to trust it — here it is.
+
+There are two things worth knowing, and both are things you can verify on your
+own screen.
+
+## The numbers come from data, not from the model's memory
+
+**The AI model does not invent the nutrition figures.** It does reading
+comprehension: separating your sentence into dishes, then into ingredients, with
+the cooking method attached. The numbers come from food composition data — the
+Vietnam National Food Composition Table 2007, plus FAO and USDA data.
+
+That is why `chicken caesar salad` comes back as four components, each with its
+own row of numbers, rather than one figure for the whole plate.
+
+<Callout label="If you write in Vietnamese">
+Kallo does not strip accents from either the query or the reference data,
+because `bò` (beef), `bơ` (butter) and `bổ` (nutritious) would collapse into one
+if it did. Writing with diacritics gives markedly better results.
+</Callout>
+
+## When there isn't enough to go on, Kallo asks
+
+The thing that decides most of the accuracy is not recognising the dish — it is
+the weight. "One bowl" could be 200ml or 700ml, and that gap carries through
+every number after it.
+
+If you stated a weight, Kallo uses exactly that. If the dish is genuinely too
+ambiguous to settle, Kallo **stops and asks which size you used**, with
+reference photographs — rather than picking something in the middle and
+presenting it as though it were certain.
+
+> A useful estimate, not manufactured certainty.
+
+## Why text, not a photo
+
+Kallo starts from the sentence you write. That is a deliberate choice, not a
+photo feature we haven't got to yet.
+
+|                        | Describing it in text            | Taking a photo                    |
+| ---------------------- | -------------------------------- | --------------------------------- |
+| What you can see       | Every ingredient, every number   | One number for the whole plate    |
+| Fixing one detail      | Correct that exact detail        | Reshoot, re-guess                 |
+| What a lens can't see  | Oil, broth, sugar, what's buried | No way to know                    |
+| Logging the same meal again | Same sentence, same result  | Lighting and angle change it      |
+| Speed                  | You have to type                 | Faster                            |
+
+That last row is the real cost, and we are not hiding it: typing a sentence is
+slower than holding up a camera. In exchange you get what a photograph cannot
+give you — you see what Kallo understood, you can correct the exact thing that
+is wrong, and logging the same meal tomorrow gives the same number.
+
+Put another way, this is **manual logging done properly**: you still decide what
+you ate, you just don't have to translate it into ten separate searches.
+
+<Callout label="The real limit of this approach" tone="caution">
+A description is only as good as what you actually know about the dish. With
+home cooking, you know how much oil went in. With restaurant food nobody does —
+and no logging method solves that. Detail in
+[Accuracy and limits](/docs/estimates/accuracy-and-limits).
+</Callout>
+
+## What is never sent
+
+The model receives only your meal description, your countries, your cooking
+habits and the output language. Your goal, targets, weight, age and sex stay on
+the server. Detail in [Your data](/docs/account/your-data).
+
+## Read next
+
+[Accuracy and limits](/docs/estimates/accuracy-and-limits) covers where this
+approach goes wrong, and by how much.

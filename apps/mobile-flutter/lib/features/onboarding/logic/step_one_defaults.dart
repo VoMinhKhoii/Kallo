@@ -1,4 +1,5 @@
-/// Mobile adaptation of RN `lib/onboarding/logic/step-one-defaults.ts`.
+/// Mobile adaptation of web
+/// `lib/domain/onboarding/steps/step-one-defaults.ts`.
 ///
 /// The web's sessionStorage locale-draft dance (for the mid-wizard locale switch
 /// that remounts the app) is dropped — Flutter keeps in-memory wizard state and

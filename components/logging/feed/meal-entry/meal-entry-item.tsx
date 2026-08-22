@@ -7,8 +7,8 @@ import {
   formatCaloriesValue,
   formatMacroValue,
 } from '@/components/logging/feed/format-inline-nutrition';
-import { MIN_DISH_GRAMS } from '@/lib/meal-utils';
-import type { MealItem } from '@/lib/types/meal';
+import type { MealItem } from '@/lib/core/types/meal';
+import { MIN_DISH_GRAMS } from '@/lib/domain/meals/quantity-recalculation';
 
 interface MealEntryItemProps {
   item: MealItem;
@@ -37,7 +37,7 @@ export function MealEntryItem({
       {/* Left: item name — flex-1 + block truncate so long names ellipsize
           instead of running under the right-side controls */}
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-nham-text">{item.name}</p>
+        <p className="truncate font-medium text-kallo-text">{item.name}</p>
       </div>
 
       {/* Right: edit controls + P/C/F macros + calories */}
@@ -49,24 +49,24 @@ export function MealEntryItem({
               aria-label={t('decreaseQuantity', { name: item.name })}
               disabled={item.quantity <= MIN_DISH_GRAMS}
               onClick={() => onQuantityChange(item.id, getDelta(-1))}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border bg-white text-nham-text transition-colors hover:bg-nham-hover disabled:opacity-40"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-white text-kallo-text transition-colors hover:bg-kallo-hover disabled:opacity-40"
             >
               <Minus className="h-2.5 w-2.5" />
             </button>
-            <span className="w-7 text-center font-semibold text-[11px] text-nham-text tabular-nums">
+            <span className="w-7 text-center font-semibold text-[11px] text-kallo-text tabular-nums">
               {item.quantity}
             </span>
             <button
               type="button"
               aria-label={t('increaseQuantity', { name: item.name })}
               onClick={() => onQuantityChange(item.id, getDelta(1))}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border bg-white text-nham-text transition-colors hover:bg-nham-hover"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-white text-kallo-text transition-colors hover:bg-kallo-hover"
             >
               <Plus className="h-2.5 w-2.5" />
             </button>
           </div>
         )}
-        <div className="flex gap-2 text-[10px] text-nham-text-muted tabular-nums">
+        <div className="flex gap-2 text-[10px] text-kallo-text-muted tabular-nums">
           <span className="whitespace-nowrap text-right">
             P:{formatMacroValue(item.macros.protein)}
           </span>
@@ -77,7 +77,7 @@ export function MealEntryItem({
             F:{formatMacroValue(item.macros.fat)}
           </span>
         </div>
-        <span className="whitespace-nowrap text-right font-bold text-nham-text tabular-nums">
+        <span className="whitespace-nowrap text-right font-bold text-kallo-text tabular-nums">
           {formatCaloriesValue(item.macros.calories)}
         </span>
       </div>

@@ -20,21 +20,21 @@ export function MealTriggerNotice({
     <div className="flex min-w-0 flex-1 items-center gap-3">
       <span
         role="alert"
-        className="min-w-0 flex-1 truncate text-nham-danger text-sm"
+        className="min-w-0 flex-1 truncate text-kallo-danger text-sm"
       >
         {streaming.error}
       </span>
       <button
         type="button"
         onClick={streaming.onRetry}
-        className="shrink-0 font-medium text-nham-btn text-xs underline-offset-2 hover:underline"
+        className="shrink-0 font-medium text-kallo-btn text-xs underline-offset-2 hover:underline"
       >
         {td('retry')}
       </button>
       <button
         type="button"
         onClick={streaming.onDismiss}
-        className="shrink-0 text-nham-text-muted text-xs underline-offset-2 hover:underline"
+        className="shrink-0 text-kallo-text-muted text-xs underline-offset-2 hover:underline"
       >
         {td('streaming.dismiss')}
       </button>

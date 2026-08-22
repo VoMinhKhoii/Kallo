@@ -1,4 +1,8 @@
-import type { MatchConfidence, MatchSource, MatchType } from '../types';
+import type {
+  MatchConfidence,
+  MatchSource,
+  MatchType,
+} from '@/lib/ai/types/matching';
 
 export const CONFIDENCE_THRESHOLDS = {
   /** Similarity well above all per-source floors — strong match */
@@ -10,6 +14,8 @@ export const CONFIDENCE_THRESHOLDS = {
 /** Source IDs for food composition databases */
 export const SOURCE_FAO = 1;
 export const SOURCE_USDA = 2;
+export const SOURCE_OPEN_FOOD_FACTS = 3;
+export const SOURCE_NIN = 4;
 
 /** Minimum similarity to accept a FAO vector match (higher bar for curated VN data) */
 export const FAO_VECTOR_THRESHOLD = 0.8;
@@ -61,8 +67,12 @@ export function splitBySource(rows: SourcedMatchRow[]): {
   const fao: FuzzyMatchRow[] = [];
   const usda: FuzzyMatchRow[] = [];
   for (const row of rows) {
-    if (row.source_id === SOURCE_FAO) fao.push(row);
-    else if (row.source_id === SOURCE_USDA) usda.push(row);
+    if (row.source_id === SOURCE_USDA) usda.push(row);
+    else if (row.source_id === SOURCE_FAO || row.source_id === SOURCE_NIN) {
+      // Curated Vietnamese sources (FAO and additive NIN snapshots) share the
+      // stricter domestic-source acceptance threshold.
+      fao.push(row);
+    }
   }
   return { fao, usda };
 }
@@ -85,6 +95,8 @@ export interface MatchInfo {
   ingredientId?: string;
   ingredientName: string;
   foodCompositionId: string;
+  /** Authoritative DB food-group taxonomy, attached with row metadata. */
+  foodGroupEn?: string;
   matchedName: string;
   similarity: number;
   confidence: MatchConfidence;
@@ -103,10 +115,3 @@ export interface PickBestSourceContext {
   /** 'unknown' disables the state tie-breaker and falls back to similarity. */
   expectedState: DbIngredientState;
 }
-
-/**
- * Sort DB candidates by similarity descending.
- * The DB already returns results in order, but this ensures consistent
- * ordering when combining candidates from multiple sources.
- */
-/** @internal Exported for testing */

@@ -52,9 +52,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Kallo uses the camera to scan product barcodes so you can log packaged foods.</string>
+	<string>Kallo uses the camera to scan product barcodes and to photograph nutrition labels so you can log packaged foods.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Kallo lets you attach a screenshot from your photo library when you send feedback.</string>
+	<string>Kallo lets you choose a nutrition label photo to scan, and attach a screenshot when you send feedback.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

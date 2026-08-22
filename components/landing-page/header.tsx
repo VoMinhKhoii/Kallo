@@ -5,26 +5,25 @@ import { useTranslations } from 'next-intl';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
+import { AUTH_CTAS_LIVE } from './cta-hold';
 import { LocaleSwitcher } from './locale-switcher';
+import { scrollToAnchorId } from './scroll-to-anchor';
+
+/** The two in-page sections. Docs is a route, so it isn't in here. */
+const ANCHORS = [
+  { id: 'why', key: 'why' },
+  { id: 'pricing', key: 'pricing' },
+] as const;
 
 export function Header() {
   const t = useTranslations('landing.header');
   const { openDialog } = useAuthDialog();
 
-  // Smooth-scroll the in-page anchors, honoring reduced-motion (instant jump
-  // for users who opt out). Offsets for the fixed header via scroll-margin.
   const scrollToAnchor =
     (id: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
-      const target = document.getElementById(id);
-      if (!target) return;
-      const prefersReduced = window.matchMedia(
-        '(prefers-reduced-motion: reduce)'
-      ).matches;
-      target.scrollIntoView({
-        behavior: prefersReduced ? 'auto' : 'smooth',
-        block: 'start',
-      });
+      scrollToAnchorId(id);
     };
 
   return (
@@ -32,37 +31,34 @@ export function Header() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="fixed top-0 right-0 left-0 z-50 border-nham-border/30 border-b bg-nham-surface/80 backdrop-blur-xl"
+      className="fixed top-0 right-0 left-0 z-50 border-kallo-border/30 border-b bg-kallo-surface/80 backdrop-blur-xl"
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+      {/* Matches the section measure below it, so the wordmark sits on the
+          same left edge as the first meal card and the first plan. */}
+      <div className="mx-auto flex max-w-[92rem] items-center justify-between px-6 py-5 sm:px-12 lg:px-20">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <KalloWordmark className="h-5 w-auto text-nham-text" />
+          <KalloWordmark className="h-5 w-auto text-kallo-text" />
         </div>
 
         {/* Nav Links */}
         <nav className="hidden items-center gap-8 md:flex">
-          <a
-            href="#features"
-            onClick={scrollToAnchor('features')}
-            className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
+          {ANCHORS.map((anchor) => (
+            <a
+              key={anchor.id}
+              href={`#${anchor.id}`}
+              onClick={scrollToAnchor(anchor.id)}
+              className="font-sans-display text-kallo-text text-sm transition-colors hover:text-kallo-text/70"
+            >
+              {t(anchor.key)}
+            </a>
+          ))}
+          <Link
+            href="/docs/overview"
+            className="font-sans-display text-kallo-text text-sm transition-colors hover:text-kallo-text/70"
           >
-            {t('features')}
-          </a>
-          <a
-            href="#how"
-            onClick={scrollToAnchor('how')}
-            className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
-          >
-            {t('howItWorks')}
-          </a>
-          <a
-            href="#pricing"
-            onClick={scrollToAnchor('pricing')}
-            className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
-          >
-            {t('pricing')}
-          </a>
+            {t('docs')}
+          </Link>
         </nav>
 
         {/* CTA Buttons */}
@@ -71,14 +67,18 @@ export function Header() {
           <Button
             variant="landing-ghost"
             className="hidden font-sans-display sm:block"
+            disabled={!AUTH_CTAS_LIVE}
             onClick={() => openDialog('sign-in')}
           >
             {t('signIn')}
           </Button>
+          {/* Black, not the brown `header-cta`. This page is black and white
+              throughout: the waitlist pill, every plan button, and this. */}
           <Button
-            variant="header-cta"
+            variant="landing-ink"
             size="header"
-            className="font-sans-display"
+            className="font-sans-display text-sm"
+            disabled={!AUTH_CTAS_LIVE}
             onClick={() => openDialog('sign-up')}
           >
             {t('getStarted')}

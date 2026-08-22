@@ -1,8 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { barcodeSearchQuerySchema } from '@/lib/api/contracts/barcode';
 import { handleRouteError } from '@/lib/api/respond';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { searchBarcodeProduct } from '@/lib/barcode/service';
+import { searchBarcodeProduct } from '@/lib/domain/barcode/service';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { mapBarcodeServiceError } from '../_errors';
 
 export const runtime = 'nodejs';

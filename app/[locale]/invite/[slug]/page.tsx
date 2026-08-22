@@ -9,7 +9,8 @@ import {
   getProfileBySlug,
 } from '@/lib/actions/groups/profile';
 import type { PublicProfile } from '@/lib/actions/groups/types';
-import { createClient } from '@/lib/supabase/server';
+import { googleWebClientId } from '@/lib/infra/auth/google-client-id';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export const runtime = 'nodejs';
 
@@ -27,20 +28,20 @@ function Shell({
 }) {
   const label = profile ? profile.displayName?.trim() || profile.handle : null;
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-nham-surface px-5 py-12">
+    <main className="flex min-h-dvh items-center justify-center bg-kallo-surface px-5 py-12">
       <div className="flex w-full max-w-sm flex-col items-center gap-5 text-center">
         {label ? (
-          <span className="flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/50 ring-1 ring-nham-accent/25">
-            <span className="font-bold font-sans-display text-2xl text-nham-btn">
+          <span className="flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-kallo-accent/40 to-kallo-border/50 ring-1 ring-kallo-accent/25">
+            <span className="font-bold font-sans-display text-2xl text-kallo-btn">
               {label.charAt(0).toUpperCase()}
             </span>
           </span>
         ) : null}
         <div className="space-y-2">
-          <h1 className="font-normal font-serif text-2xl text-nham-text tracking-tight">
+          <h1 className="font-normal font-serif text-2xl text-kallo-text tracking-tight">
             {title}
           </h1>
-          <p className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
+          <p className="font-sans-display text-kallo-text-muted text-sm leading-relaxed">
             {body}
           </p>
         </div>
@@ -80,7 +81,7 @@ export default async function InvitePage({
         title={t('signedOutTitle', { name })}
         body={t('signedOutBody')}
       >
-        <InviteAuthCta next={invitePath} />
+        <InviteAuthCta next={invitePath} googleClientId={googleWebClientId()} />
       </Shell>
     );
   }
@@ -130,7 +131,7 @@ function CircleLink({ label }: { label: string }) {
   return (
     <Link
       href="/circle"
-      className="inline-flex items-center justify-center rounded-xl border border-nham-border/60 bg-white px-6 py-3 font-medium font-sans-display text-[15px] text-nham-text transition-colors hover:border-nham-accent/50"
+      className="inline-flex items-center justify-center rounded-xl border border-kallo-border/60 bg-white px-6 py-3 font-medium font-sans-display text-[15px] text-kallo-text transition-colors hover:border-kallo-accent/50"
     >
       {label}
     </Link>

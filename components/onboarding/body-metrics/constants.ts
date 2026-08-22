@@ -1,6 +1,10 @@
 import type { z } from 'zod';
-import { bodyMetricsSchema, goalSchema } from '@/lib/onboarding/schemas';
-import type { ActivityLevel, CarbSplit, Goal } from '@/lib/onboarding/types';
+import { bodyMetricsSchema, goalSchema } from '@/lib/domain/onboarding/schemas';
+import type {
+  ActivityLevel,
+  CarbSplit,
+  Goal,
+} from '@/lib/domain/onboarding/types';
 
 // Merged schema for screen 1
 export const screen1Schema = bodyMetricsSchema.merge(goalSchema);
@@ -49,7 +53,7 @@ export const GOAL_KEYS: Record<Goal, string> = {
 // with viewport-fixed positioning so it overflows the wizard's overflow-hidden
 // modal instead of being clipped at the bottom edge.
 
-import type { calcMacroGrams } from '@/lib/onboarding/tdee';
+import type { calcMacroGrams } from '@/lib/domain/onboarding/tdee';
 
 export interface CarbOption {
   id: CarbSplit;

@@ -1,5 +1,5 @@
-name: nham_mobile
-description: "Nham - AI-powered Vietnamese meal tracker"
+name: kallo_mobile
+description: "Kallo - AI-powered Vietnamese meal tracker"
 publish_to: "none"
 # Marketing version (CFBundleShortVersionString). The build number (+N) is
 # overridden at release time by fastlane (`--build-number`) to the next
@@ -55,6 +55,11 @@ flutter:
   uses-material-design: true
   assets:
     - assets/l10n/
+    # Vessel silhouettes for the portion picker — the SAME art the web serves
+    # from `public/portions/`. Bundled rather than fetched so a silhouette never
+    # flashes in (or goes missing offline) on the surface whose entire job is to
+    # show the user what the AI assumed.
+    - assets/portions/
     # Bundled brand fonts (OFL). google_fonts resolves the Lora files in here by
     # their API filenames — do NOT rename — so serif renders on a cold offline
     # start instead of falling back while fetching. Runtime fetching is disabled
@@ -62,7 +67,7 @@ flutter:
     - assets/google_fonts/
   # Be Vietnam Pro is the UI sans (replaces DM Sans, whose bundled subset lacked
   # Vietnamese diacritics). Declared as a native family — referenced directly by
-  # NhamTextStyles.sansFamily — so the full Vietnamese glyph set is guaranteed.
+  # KalloTextStyles.sansFamily — so the full Vietnamese glyph set is guaranteed.
   fonts:
     - family: BeVietnamPro
       fonts:

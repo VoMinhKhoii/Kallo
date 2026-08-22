@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../logic/amount_editor_totals.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_utils.dart';
-import '../meal_stepper_button.dart';
+import '../composer/meal_stepper_button.dart';
 
 /// One ingredient row in the amount editor: name, ±10g steppers with a tabular
 /// grams readout, and an X toggle that flags the row for removal (opacity 0.40 +
@@ -45,35 +45,49 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
                 name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style:
-                    dashBody().merge(row.removed
-                        ? const TextStyle(
-                          decoration: TextDecoration.lineThrough,
-                          decorationColor: kInkMuted,
-                          color: kInkMuted,
-                        )
-                        : null),
+                style: dashBody().merge(
+                  row.removed
+                      ? const TextStyle(
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: kInkMuted,
+                        color: kInkMuted,
+                      )
+                      : null,
+                ),
               ),
             ),
-            const SizedBox(width: NhamSpacing.sp2),
+            const SizedBox(width: KalloSpacing.sp2),
             if (showSteppers) ...[
               MealStepperButton(
-                icon: LucideIcons.minus,
+                icon: LucideIcons.minus300,
                 disabled: minusDisabled,
                 onTap: minusDisabled ? null : () => onStep(row.id, -10),
               ),
               const SizedBox(width: 2), // gap-0.5
               SizedBox(
-                width: 36,
-                child: Text(
-                  '${grams.round()}g',
-                  textAlign: TextAlign.center,
-                  style: dashMeta(color: kInk, tabular: true),
+                // Wide enough for `1000g` at Meta 12: the steppers move grams
+                // in 10s with no cap, so four digits is reachable and a
+                // wrapped value would grow the whole editor row.
+                //
+                // It SCALES DOWN past that rather than clipping. Clipping a
+                // number is the worst failure available: `1200g` cut to the
+                // cell reads as a smaller, entirely plausible amount, and the
+                // user has no way to see it is wrong.
+                width: 44,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${grams.round()}g',
+                    maxLines: 1,
+                    softWrap: false,
+                    textAlign: TextAlign.center,
+                    style: dashMeta(color: kInk, tabular: true),
+                  ),
                 ),
               ),
               const SizedBox(width: 2),
               MealStepperButton(
-                icon: LucideIcons.plus,
+                icon: LucideIcons.plus300,
                 onTap: () => onStep(row.id, 10),
               ),
               const SizedBox(width: 2),
@@ -119,9 +133,9 @@ class _RemoveToggle extends StatelessWidget {
           height: LoggingIcons.hit,
           child: Center(
             child: Icon(
-              LucideIcons.x,
+              LucideIcons.x300,
               size: LoggingIcons.size,
-              color: removed ? NhamColors.danger : NhamColors.text,
+              color: removed ? KalloColors.danger : KalloColors.text,
             ),
           ),
         ),

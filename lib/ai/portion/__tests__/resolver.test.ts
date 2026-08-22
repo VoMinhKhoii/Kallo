@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { anchorGramsFromResolution } from '../ingredient-portion';
 import { MAX_RELATIVE_BAND_WIDTH, resolvePortion } from '../resolver';
 import type { ResolverConceptInput } from '../types';
 
@@ -23,32 +24,59 @@ describe('resolvePortion — fallback ladder', () => {
     });
     expect(r.provenance).toBe('unresolved');
     expect(r.grams).toBeNull();
-    expect(r.unresolvedReason).toBe('unresolved_portion');
+    expect(r.unresolvedReason).toBe('explicit_zero');
   });
 
   it('step 0: zero count outranks even an explicit mass', () => {
     const r = resolvePortion(conceptInput({ conceptId: 'chicken-breast' }), {
       count: 0,
-      explicitMass: { grams: 200, basis: 'raw' },
+      explicitMass: { grams: 200, basis: 'edible' },
     });
     expect(r.provenance).toBe('unresolved');
   });
 
-  it('step 1: explicit user mass is honored verbatim (raw basis, no yield fudge)', () => {
+  it('step 1: explicit edible mass is honored verbatim', () => {
     const r = resolvePortion(
       conceptInput({ conceptId: 'chicken-breast', form: 'raw' }),
-      { explicitMass: { grams: 250, basis: 'raw' } }
+      { explicitMass: { grams: 250, basis: 'edible' } }
     );
     expect(r.provenance).toBe('explicit_user_mass');
     expect(r.grams).toEqual({ low: 250, mid: 250, high: 250 });
+    expect(r.massBasis).toBe('edible');
     expect(r.confidence).toBe('high');
+  });
+
+  it('step 1: unknown mass becomes edible when no refuse-bearing cut exists', () => {
+    const r = resolvePortion(
+      conceptInput({
+        conceptId: 'chicken-breast',
+        canonicalName: 'Ức gà',
+        rawName: 'ức gà',
+      }),
+      { explicitMass: { grams: 300, basis: 'unknown' } }
+    );
+    expect(r.grams?.mid).toBe(300);
+    expect(r.massBasis).toBe('edible');
+  });
+
+  it('step 1: unknown mass becomes gross for a refuse-bearing cut', () => {
+    const r = resolvePortion(
+      conceptInput({
+        conceptId: 'rib-piece',
+        canonicalName: 'Sườn heo',
+        rawName: 'sườn heo',
+      }),
+      { explicitMass: { grams: 300, basis: 'unknown' } }
+    );
+    expect(r.grams?.mid).toBe(300);
+    expect(r.massBasis).toBe('gross_as_served');
   });
 
   it('step 1 outranks a prior when both are present', () => {
     const r = resolvePortion(conceptInput(), {
       count: 2,
       unitToken: 'bánh bao',
-      explicitMass: { grams: 300, basis: 'cooked' },
+      explicitMass: { grams: 300, basis: 'edible' },
     });
     expect(r.provenance).toBe('explicit_user_mass');
     expect(r.grams?.mid).toBe(300);
@@ -71,6 +99,32 @@ describe('resolvePortion — fallback ladder', () => {
     expect(r.provenance).toBe('retrieved_prior');
     expect(r.grams).toEqual({ low: 150, mid: 165, high: 180 });
     expect(r.confidence).toBe('high');
+  });
+
+  it('anchors one rib piece as gross-as-served instead of unresolved', () => {
+    const r = resolvePortion(
+      conceptInput({ conceptId: 'rib-piece', form: 'any' }),
+      { count: 1, unitToken: 'miếng' }
+    );
+    expect(r).toMatchObject({
+      grams: { low: 70, mid: 85, high: 100 },
+      massBasis: 'gross_as_served',
+      provenance: 'retrieved_prior',
+    });
+  });
+
+  it.each([
+    ['fish-fillet', 'miếng', 90],
+    ['peeled-shrimp', 'con', 16],
+    ['picked-crab-meat', 'phần', 65],
+    ['peeled-egg', 'quả', 50],
+  ] as const)('resolves the already-edible %s prior as a promptable anchor', (conceptId, unitToken, expectedGrams) => {
+    const result = resolvePortion(conceptInput({ conceptId, form: 'any' }), {
+      count: 1,
+      unitToken,
+    });
+    expect(result.massBasis).toBe('edible');
+    expect(anchorGramsFromResolution(result)).toBe(expectedGrams);
   });
 
   it('step 4: curated global prior (chicken breast count, locale=global)', () => {
@@ -194,11 +248,37 @@ describe('D4 regression — raw-weight honored verbatim', () => {
   it('250gr ức gà cân sống → 250g exactly, no yield conversion', () => {
     const r = resolvePortion(
       conceptInput({ conceptId: 'chicken-breast', form: 'raw' }),
-      { explicitMass: { grams: 250, basis: 'raw' } }
+      { explicitMass: { grams: 250, basis: 'edible' } }
     );
     expect(r.provenance).toBe('explicit_user_mass');
     expect(r.grams).toEqual({ low: 250, mid: 250, high: 250 });
     expect(r.note).toMatch(/no yield fudge/);
+  });
+
+  it('defaults unknown explicit mass to gross for a refuse-bearing cut', () => {
+    const r = resolvePortion(
+      conceptInput({
+        conceptId: null,
+        canonicalName: 'Sườn heo',
+        rawName: '1 miếng sườn heo',
+      }),
+      { explicitMass: { grams: 200, basis: 'unknown' } }
+    );
+    expect(r.grams?.mid).toBe(200);
+    expect(r.massBasis).toBe('gross_as_served');
+  });
+
+  it('maps unknown basis to edible when the ingredient has no refuse cut', () => {
+    const r = resolvePortion(
+      conceptInput({
+        conceptId: null,
+        canonicalName: 'Cá kho',
+        rawName: 'unknown-basis ingredient',
+      }),
+      { explicitMass: { grams: 200, basis: 'unknown' } }
+    );
+    expect(r.grams?.mid).toBe(200);
+    expect(r.massBasis).toBe('edible');
   });
 });
 

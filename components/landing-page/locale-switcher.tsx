@@ -1,15 +1,24 @@
 'use client';
 
-import { GB, VN } from 'country-flag-icons/react/3x2';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 
+/**
+ * Two locales, so the switch is two words rather than a control.
+ *
+ * It used to be a pair of bordered pills carrying national flag SVGs. Flags are
+ * the wrong instrument twice over — a flag names a country, not a language, and
+ * two of them in a header read as a settings widget somebody forgot to style.
+ * What is left is the smallest thing that still says "you can read this in the
+ * other one": the two codes, the current one in full ink, the other soft, and a
+ * hairline between them doing the work the borders used to.
+ */
 const LOCALES = [
-  { code: 'en' as Locale, label: 'English', Flag: GB },
-  { code: 'vi' as Locale, label: 'Tiếng Việt', Flag: VN },
+  { code: 'en' as Locale, short: 'EN', label: 'English' },
+  { code: 'vi' as Locale, short: 'VI', label: 'Tiếng Việt' },
 ];
 
 export function LocaleSwitcher() {
@@ -31,31 +40,40 @@ export function LocaleSwitcher() {
   return (
     <div
       role="group"
-      className="flex items-center gap-2 font-sans-display"
+      className={cn(
+        'flex items-center font-sans-display transition-opacity',
+        isPending && 'opacity-60'
+      )}
       aria-label={t('label')}
     >
-      {LOCALES.map(({ code, label, Flag }) => {
+      {LOCALES.map(({ code, short, label }, index) => {
         const selected = code === locale;
 
         return (
-          <button
-            key={code}
-            type="button"
-            onClick={() => handleChange(code)}
-            disabled={isPending}
-            aria-pressed={selected}
-            title={label}
-            className={cn(
-              'flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors',
-              selected
-                ? 'border-nham-accent bg-nham-border/30 text-nham-text'
-                : 'border-nham-border/50 bg-white/70 text-nham-text-soft hover:border-nham-accent/60 hover:text-nham-text',
-              isPending && 'opacity-70'
+          <div className="flex items-center" key={code}>
+            {index > 0 && (
+              <span aria-hidden="true" className="h-3 w-px bg-kallo-border" />
             )}
-          >
-            <Flag className="h-3.5 w-5 rounded-[2px]" />
-            <span>{label}</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleChange(code)}
+              disabled={isPending}
+              aria-pressed={selected}
+              title={label}
+              // The visible text is "EN" / "VI"; the accessible name has to
+              // stay the language's own name, or a screen reader announces two
+              // buttons called after country-ish abbreviations.
+              aria-label={label}
+              className={cn(
+                'cursor-pointer px-2.5 py-1 text-[11px] uppercase tracking-[0.08em] transition-colors disabled:cursor-wait',
+                selected
+                  ? 'font-semibold text-kallo-text'
+                  : 'font-normal text-kallo-text-soft hover:text-kallo-text'
+              )}
+            >
+              {short}
+            </button>
+          </div>
         );
       })}
     </div>

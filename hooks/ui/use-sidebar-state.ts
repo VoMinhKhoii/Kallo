@@ -4,10 +4,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   parseSidebarExpandMode,
   parseSidebarState,
+  readSidebarCookie,
   SIDEBAR_EXPAND_MODE_COOKIE,
   SIDEBAR_STATE_COOKIE,
   writeSidebarCookie,
 } from '@/lib/sidebar/cookies';
+import {
+  acceptsSidebarEvent,
+  type SidebarEnv,
+  type SidebarEvent,
+  sidebarTransition,
+} from '@/lib/sidebar/state-machine';
 import type {
   SidebarExpandMode,
   SidebarRestingState,
@@ -21,28 +28,13 @@ export type {
 } from '@/lib/sidebar/types';
 
 /**
- * Sidebar state machine — explicit 3-state FSM.
+ * React binding for the sidebar's 3-state FSM.
  *
- * States (mutually exclusive):
- *   - 'closed'  — rail is collapsed, no overlay
- *   - 'peeked'  — rail is ephemerally expanded as an overlay (entered via
- *                 hover or focus, exits when those gestures end)
- *   - 'open'    — rail is durably expanded (user pinned via toggle button)
- *
- * Orthogonal preference:
- *   - expandMode: 'click' | 'hover' — controls which gestures move between
- *     states. Mode itself never appears in the state name; it just gates
- *     transitions.
- *
- * Transition table:
- *   ┌──────────┬───────────────┬───────────────┬─────────────┬─────────────┐
- *   │ from \ ev│ pointerEnter  │ pointerLeave  │ togglePin   │ focus enter │
- *   ├──────────┼───────────────┼───────────────┼─────────────┼─────────────┤
- *   │ closed   │ →peeked (h)   │ —             │ →open       │ →peeked     │
- *   │ peeked   │ —             │ →closed       │ →open       │ —           │
- *   │ open     │ —             │ —             │ →closed     │ —           │
- *   └──────────┴───────────────┴───────────────┴─────────────┴─────────────┘
- *   (h) = only when expandMode === 'hover'
+ * The transition table itself — states, gestures, delays — is
+ * `lib/sidebar/state-machine.ts`. This hook only supplies the environment the
+ * machine consults (two media queries), commits the state it returns, and
+ * carries out the two effects a transition can ask for: a cookie write and a
+ * delayed peek.
  *
  * Persistence: only the *resting* state ('closed' | 'open') is persisted,
  * plus the expandMode. 'peeked' is ephemeral by definition. Storage is
@@ -54,9 +46,6 @@ export type {
  * guard. The `hydrated` flag is still exposed for consumers that want to
  * suppress motion on the very first paint.
  */
-
-const PEEK_IN_DELAY_MS = 120;
-const PEEK_OUT_DELAY_MS = 240;
 
 export interface UseSidebarStateOptions {
   /** SSR-provided initial resting state (read from cookie in app layout). */
@@ -101,39 +90,24 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-/** Read a cookie value by name, client-side only. */
-function readCookieClient(name: string): string | undefined {
-  if (typeof document === 'undefined') return undefined;
-  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  if (!match) return undefined;
-  try {
-    return decodeURIComponent(match[1]);
-  } catch {
-    return undefined;
-  }
-}
-
 export function useSidebarState(
   options: UseSidebarStateOptions = {}
 ): UseSidebarStateResult {
   const { initialState = 'open', initialExpandMode = 'click' } = options;
 
-  // Lazy initializer reads the client cookie synchronously on first render
+  // Lazy initializers read the client cookie synchronously on first render
   // when SSR didn't provide a value (e.g., when used outside a server-
   // wrapped layout). This avoids the flash that a post-mount read would
   // cause. On the server, document is undefined and we use the prop default.
-  const [state, setState] = useState<SidebarState>(() => {
-    const cookieValue = parseSidebarState(
-      readCookieClient(SIDEBAR_STATE_COOKIE)
-    );
-    return cookieValue ?? initialState;
-  });
-  const [expandMode, setExpandModeState] = useState<SidebarExpandMode>(() => {
-    const cookieValue = parseSidebarExpandMode(
-      readCookieClient(SIDEBAR_EXPAND_MODE_COOKIE)
-    );
-    return cookieValue ?? initialExpandMode;
-  });
+  const [state, setState] = useState<SidebarState>(
+    () =>
+      parseSidebarState(readSidebarCookie(SIDEBAR_STATE_COOKIE)) ?? initialState
+  );
+  const [expandMode, setExpandModeState] = useState<SidebarExpandMode>(
+    () =>
+      parseSidebarExpandMode(readSidebarCookie(SIDEBAR_EXPAND_MODE_COOKIE)) ??
+      initialExpandMode
+  );
   const [hydrated, setHydrated] = useState(false);
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -148,110 +122,65 @@ export function useSidebarState(
     }
   }, []);
 
-  /** Persist only the resting state — never 'peeked'. */
-  const persistRestingState = useCallback((s: SidebarState) => {
-    if (s === 'peeked') return;
-    writeSidebarCookie(SIDEBAR_STATE_COOKIE, s);
-  }, []);
-
-  // ─── Transitions ─────────────────────────────────────────────────────────
-
-  const setPinnedCollapsed = useCallback(
-    (next: boolean) => {
+  /** Run one event through the machine and carry out what it asks for. */
+  const dispatch = useCallback(
+    (event: SidebarEvent) => {
+      const env: SidebarEnv = {
+        expandMode,
+        finePointer: prefersFinePointer(),
+        reducedMotion: prefersReducedMotion(),
+      };
+      // A rejected event must not even cancel a pending peek.
+      if (!acceptsSidebarEvent(event, env)) return;
       clearPeekTimer();
-      const target: SidebarRestingState = next ? 'closed' : 'open';
-      setState(target);
-      persistRestingState(target);
+      setState((prev) => {
+        const { next, persist, defer } = sidebarTransition(prev, event, env);
+        if (persist) writeSidebarCookie(SIDEBAR_STATE_COOKIE, next);
+        if (defer) {
+          peekTimerRef.current = setTimeout(() => {
+            setState((s) => (s === defer.from ? defer.to : s));
+          }, defer.delayMs);
+        }
+        return next;
+      });
     },
-    [clearPeekTimer, persistRestingState]
+    [expandMode, clearPeekTimer]
   );
 
-  const togglePinned = useCallback(() => {
-    clearPeekTimer();
-    setState((prev) => {
-      // closed/peeked → open ; open → closed.
-      const next: SidebarRestingState = prev === 'open' ? 'closed' : 'open';
-      persistRestingState(next);
-      return next;
-    });
-  }, [clearPeekTimer, persistRestingState]);
-
+  const togglePinned = useCallback(
+    () => dispatch({ type: 'togglePin' }),
+    [dispatch]
+  );
+  const setPinnedCollapsed = useCallback(
+    (next: boolean) => dispatch({ type: 'setPinned', collapsed: next }),
+    [dispatch]
+  );
   const setExpandMode = useCallback(
     (next: SidebarExpandMode) => {
-      // Cancel any in-flight peek before changing the rules of the world.
-      clearPeekTimer();
+      // Mode is not FSM state: commit it before the machine resolves the
+      // sidebar state it implies (the event carries the new mode along).
       setExpandModeState(next);
       writeSidebarCookie(SIDEBAR_EXPAND_MODE_COOKIE, next);
-
-      if (next === 'click') {
-        // Switching to click while peeked locks the visual: peeked → open.
-        setState((prev) => {
-          const target: SidebarRestingState =
-            prev === 'peeked' ? 'open' : (prev as SidebarRestingState);
-          persistRestingState(target);
-          return target;
-        });
-        return;
-      }
-      // Switching to hover always returns to the resting closed state.
-      // Hover mode at rest = closed; hover-in is the way to peek.
-      setState('closed');
-      persistRestingState('closed');
+      dispatch({ type: 'setExpandMode', mode: next });
     },
-    [clearPeekTimer, persistRestingState]
+    [dispatch]
   );
-
-  // ─── Pointer / focus event handlers ──────────────────────────────────────
-
-  const onPointerEnter = useCallback(() => {
-    // Peek-in only valid: hover mode + currently closed + fine pointer.
-    if (expandMode !== 'hover') return;
-    if (!prefersFinePointer()) return;
-    clearPeekTimer();
-    setState((prev) => {
-      if (prev !== 'closed') return prev;
-      if (prefersReducedMotion()) return 'peeked';
-      // Schedule async transition.
-      peekTimerRef.current = setTimeout(() => {
-        setState((s) => (s === 'closed' ? 'peeked' : s));
-      }, PEEK_IN_DELAY_MS);
-      return prev;
-    });
-  }, [expandMode, clearPeekTimer]);
-
-  const onPointerLeave = useCallback(() => {
-    // Pointer leaves only matter in hover mode. In click mode, pointer
-    // events must not touch the FSM at all — focus-peek owns peek lifecycle.
-    if (expandMode !== 'hover') return;
-    clearPeekTimer();
-    setState((prev) => {
-      if (prev !== 'peeked') return prev;
-      if (prefersReducedMotion()) return 'closed';
-      peekTimerRef.current = setTimeout(() => {
-        setState((s) => (s === 'peeked' ? 'closed' : s));
-      }, PEEK_OUT_DELAY_MS);
-      return prev;
-    });
-  }, [expandMode, clearPeekTimer]);
-
-  // Focus-peek is mode-agnostic: keyboard tabbing into a closed rail must
-  // reveal labels. Otherwise keyboard users navigate invisible buttons.
-  const onFocusEnter = useCallback(() => {
-    clearPeekTimer();
-    setState((prev) => (prev === 'closed' ? 'peeked' : prev));
-  }, [clearPeekTimer]);
-
-  const onFocusLeave = useCallback(() => {
-    clearPeekTimer();
-    setState((prev) => {
-      if (prev !== 'peeked') return prev;
-      if (prefersReducedMotion()) return 'closed';
-      peekTimerRef.current = setTimeout(() => {
-        setState((s) => (s === 'peeked' ? 'closed' : s));
-      }, PEEK_OUT_DELAY_MS);
-      return prev;
-    });
-  }, [clearPeekTimer]);
+  const onPointerEnter = useCallback(
+    () => dispatch({ type: 'pointerEnter' }),
+    [dispatch]
+  );
+  const onPointerLeave = useCallback(
+    () => dispatch({ type: 'pointerLeave' }),
+    [dispatch]
+  );
+  const onFocusEnter = useCallback(
+    () => dispatch({ type: 'focusEnter' }),
+    [dispatch]
+  );
+  const onFocusLeave = useCallback(
+    () => dispatch({ type: 'focusLeave' }),
+    [dispatch]
+  );
 
   // ─── Keyboard shortcut ───────────────────────────────────────────────────
 

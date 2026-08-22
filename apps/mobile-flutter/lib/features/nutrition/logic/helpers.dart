@@ -1,12 +1,25 @@
 /// Pure nutrition helpers vendored verbatim from web
 /// `components/nutrition/primitives/helpers.ts` (keep in sync).
-///
-/// Ported from `apps/mobile/src/lib/nutrition/logic/helpers.ts`.
 library;
 
 import 'package:intl/intl.dart';
 
-import '../../../models/nutrition.dart';
+import '../../../models/nutrition/nutrition.dart';
+
+/// Whether a card's coverage is too thin to state a verdict — it mutes the
+/// figure and withholds the green "on target" tier.
+///
+/// This is the SAME 40% coverage line the server's `getNutrientStatus` uses,
+/// not the wider `limitedData` band. `getConfidenceDisplayState` labels 40–70%
+/// coverage `limitedData`, but that band still shows a full, trustworthy
+/// percentage — so treating it as unverdictable made a nutrient that clearly
+/// cleared its floor (niacin at 106%) render grey while announcing 106%. The
+/// card said "enough" and looked like "not enough".
+///
+/// Mirror of web `isLowConfidence` (keep in sync).
+bool isLowConfidence(ConfidenceDisplayState state) =>
+    state == ConfidenceDisplayState.warningPoints ||
+    state == ConfidenceDisplayState.insufficientData;
 
 /// Whether a nutrient with the given type & % of target should render the
 /// coral exceed indicator (danger color, +N% figure, coral end-tick).

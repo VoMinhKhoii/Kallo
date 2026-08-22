@@ -1,5 +1,5 @@
-import type { CheatSliderSpec } from '@/lib/types/cheat';
-import type { MealItem, ParsedMeal } from '@/lib/types/meal';
+import type { CheatSliderSpec } from '@/lib/core/types/cheat';
+import type { MealItem, ParsedMeal } from '@/lib/core/types/meal';
 
 // ---------------------------------------------------------------------------
 // SSE Event Types — contract between route handler and client consumer
@@ -72,22 +72,6 @@ export interface AnalysisCompleteEvent {
   analysisId: string;
 }
 
-/**
- * Precise-mode clarify — the pipeline finished with ≥1 ingredient whose
- * portion or food match couldn't be resolved, so instead of persisting an
- * under-weighted meal we ask ONE targeted question and stop. The client
- * re-submits with `clarifyAnswer` (mirrors the cheat-mode clarify round-trip).
- * Like the cheat clarify path, this is a TERMINAL event with NO
- * `analysis_complete` — nothing is staged for confirm.
- */
-export interface ClarifyEvent {
-  type: 'clarify';
-  question: string;
-  /** Run-scoped meal-item id of the unresolved item, when known. */
-  mealItemId?: string;
-  reason: 'unresolved_portion' | 'ambiguous_food';
-}
-
 /** Error during streaming — terminal event */
 export interface StreamErrorEvent {
   type: 'error';
@@ -109,7 +93,6 @@ export type StreamEvent =
   | ItemMacrosEvent
   | ResultEvent
   | CheatEstimateEvent
-  | ClarifyEvent
   | AnalysisCompleteEvent
   | StreamErrorEvent;
 

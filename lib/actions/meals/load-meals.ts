@@ -6,15 +6,26 @@ import {
   buildMealItemGroupsFromRows,
   buildPersistedMeal,
   extractNutritionValues,
-} from '@/lib/actions/persisted-meal';
-import { toParsedMeal } from '@/lib/ai/mappers';
-import type { PipelineResult } from '@/lib/ai/types';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
-import { db } from '@/lib/db';
-import { mealItems, mealShares, meals, pendingAnalyses } from '@/lib/db/schema';
-import type { CheatSliderSpec, CheatSlidersPersisted } from '@/lib/types/cheat';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+} from '@/lib/actions/logging/persisted-meal';
+import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
+import type { PipelineResult } from '@/lib/ai/types/result';
+import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
+import type {
+  CheatSliderSpec,
+  CheatSlidersPersisted,
+} from '@/lib/core/types/cheat';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/core/validation/primitives';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db/client';
+import {
+  mealItems,
+  mealShares,
+  meals,
+  pendingAnalyses,
+} from '@/lib/infra/db/schema';
 import type {
   LoggingDayData,
   PendingMealConfirmation,
@@ -150,13 +161,26 @@ async function loadPendingAnalysesByDateForUser(
       and(
         eq(pendingAnalyses.userId, userId),
         gte(pendingAnalyses.loggedAt, dayStart),
-        lt(pendingAnalyses.loggedAt, dayEnd),
-        // Only surface still-valid staging rows. A pending analysis is deleted
-        // on confirm; an un-confirmed one expires (default now()+30min). Without
-        // this filter, orphaned rows left behind by re-analysis (re-submit,
-        // NL-refine, cheat-clarify, retry) render as an unsaved duplicate of the
-        // already-saved meal. Compare against DB now() to avoid client skew.
-        sql`${pendingAnalyses.expiresAt} > now()`
+        lt(pendingAnalyses.loggedAt, dayEnd)
+        // NOT filtered on `expiresAt > now()` any more. That filter hid an
+        // unconfirmed meal 30 minutes after it was staged, so a card the user
+        // fully intended to save just disappeared out from under them.
+        //
+        // It was safe to drop because it is not what prevents the duplicate
+        // "unsaved" card it was written for. Re-analysis (re-submit, NL-refine,
+        // cheat-clarify, retry) is deduped STRUCTURALLY: every analyze caller
+        // sends a stable `attemptId`, and `upsertPendingAnalysis` upserts on the
+        // `(user_id, attempt_id)` unique index, so a re-run supersedes its own
+        // row instead of orphaning one. The time window was the older, weaker
+        // guard for the same problem.
+        //
+        // Nor does it gate confirmability: `confirmAndSaveMealAction` deletes by
+        // (id, userId) and never reads `expiresAt`, so an "expired" row was
+        // always still confirmable — the 30 minutes only ever decided whether
+        // the card was VISIBLE.
+        //
+        // `expiresAt` is now purely the reaper's input (see loadLoggingDay), so
+        // an abandoned row's real lifetime is ~a week rather than 30 minutes.
       )
     )
     .orderBy(desc(pendingAnalyses.loggedAt));
@@ -240,15 +264,17 @@ export async function loadLoggingDay(input: {
     loadMealsByDateForUser(user.id, parsed),
     loadPendingAnalysesByDateForUser(user.id, parsed),
     // Hygiene: reap this user's long-abandoned staging rows so the table doesn't
-    // grow unbounded. Correctness never depends on it — the load above already
-    // hides expired rows from the feed — so it is best-effort:
+    // grow unbounded. Best-effort:
     //  - swallow its own errors: a failed DELETE (lock/pooler hiccup) must not
     //    reject the whole day load and 500 the logging page.
-    //  - only delete rows a full WEEK past expiry, never merely-expired ones: an
-    //    actively-open confirm card lives in client state and stays confirmable
-    //    past the 30-min feed cutoff, so yanking its row out mid-session would
-    //    make Confirm throw "phân tích không tồn tại". A pg_cron purge would be
-    //    the tidier long-term home, but this keeps the fix self-contained.
+    //  - only delete rows a full WEEK past expiry, never merely-expired ones.
+    //    Since the load above no longer hides expired rows, this reaper IS the
+    //    lifetime of an unconfirmed card: it stays visible and confirmable until
+    //    reaped, roughly a week after staging. Anything shorter would take a
+    //    card off screen while the user still meant to save it, which is exactly
+    //    what the old 30-minute display window did.
+    //    A pg_cron purge would be the tidier long-term home, but this keeps the
+    //    fix self-contained.
     reapAbandonedPendingAnalyses(user.id),
   ]);
 
@@ -288,14 +314,12 @@ export async function loadMealDates(input: {
         date: pendingDateExpr.as('date'),
       })
       .from(pendingAnalyses)
-      // Match loadPendingAnalysesByDate: expired orphans must not paint a
-      // timeline dot for a day that has no live pending card.
-      .where(
-        and(
-          eq(pendingAnalyses.userId, user.id),
-          sql`${pendingAnalyses.expiresAt} > now()`
-        )
-      )
+      // Match loadPendingAnalysesByDate, which no longer hides rows by
+      // `expiresAt`. Keeping the window here would paint NO timeline dot for a
+      // day whose only content is a pending card older than 30 minutes — a day
+      // the feed does render. The two queries have to agree on what counts as a
+      // live pending card or the sidebar lies about which days have anything.
+      .where(eq(pendingAnalyses.userId, user.id))
       .orderBy(desc(pendingDateExpr)),
   ]);
 

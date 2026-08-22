@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { acceptMealShareInviteAction } from '@/lib/actions/meal-sharing';
+import { acceptMealShareInviteAction } from '@/lib/actions/meal-sharing/invite-response';
 import { readJsonBody } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 

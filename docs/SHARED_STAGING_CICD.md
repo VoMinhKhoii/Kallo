@@ -33,7 +33,7 @@ from Secret Manager when they are active.
   validate schema changes before merging to `main`. CI failures on `staging`
   block the auto-deploy entirely (no lease acquired, no `db push`).
 - `main` — feeds `nham-internal` (dogfooding). Also the future source of
-  `nham-prod` once the prod environment is provisioned (see
+  `kallo-prod` once the prod environment is provisioned (see
   "Future production environment" below).
 
 ## Automatic flows
@@ -203,7 +203,7 @@ Current supporting resources:
 ## Production environment (`kallo-prod`)
 
 Production runs as the `kallo-prod` Cloud Run service, fronting the **kallo.fit**
-domain (the app is rebranding Nhẩm → Kallo). Deploy pipeline:
+domain (the app is rebranding Kallo → Kallo). Deploy pipeline:
 
 - **Workflow:** `.github/workflows/cloud-run-prod.yml` — triggered by a
   successful `CI` run on `main` (`workflow_run`), the same gate as internal. It

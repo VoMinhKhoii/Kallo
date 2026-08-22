@@ -7,16 +7,16 @@
 
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import { db as defaultDb } from '@/lib/db';
-import { publicProfiles } from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
-import type { createClient } from '@/lib/supabase/server';
-import { processAvatarImage } from '@/lib/uploads/avatar-image';
+import { Errors } from '@/lib/core/errors/catalog';
+import { db as defaultDb } from '@/lib/infra/db/client';
+import { publicProfiles } from '@/lib/infra/db/schema';
+import type { createClient } from '@/lib/infra/supabase/server';
+import { processAvatarImage } from '@/lib/infra/uploads/avatar-image';
 import {
   IMAGE_TYPES,
   MAX_IMAGE_BYTES,
   signatureMatches,
-} from '@/lib/uploads/image-file';
+} from '@/lib/infra/uploads/image-file';
 
 import { getMyPublicProfile, getOrCreateMyProfile } from './profile';
 import type { Db, PublicProfile } from './types';

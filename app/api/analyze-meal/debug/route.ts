@@ -1,22 +1,21 @@
 import { eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
-import { isAdminEmail } from '@/lib/admin/is-admin';
+import { isAdminEmail } from '@/lib/admin/authz/is-admin';
+import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
+import { buildUserContext } from '@/lib/ai/adapters/user-context';
+import { getMemoryCacheStats } from '@/lib/ai/cache/embedding-cache';
+import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
+import { getDecompositionPromptLabel } from '@/lib/ai/prompts/build/decomposition';
+import { getNutritionPromptLabel } from '@/lib/ai/prompts/build/nutrition';
+import { getProviderJsonSchemaMode } from '@/lib/ai/prompts/schema';
 import {
   createGeminiClient,
   type GeminiClient,
   resolveGeminiProvider,
-} from '@/lib/ai/gemini';
-import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
-import { getMemoryCacheStats } from '@/lib/ai/matching/embedding-cache';
-import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
-import {
-  getDecompositionPromptLabel,
-  getNutritionPromptLabel,
-} from '@/lib/ai/prompts';
-import { getProviderJsonSchemaMode } from '@/lib/ai/prompts/schema';
-import { db } from '@/lib/db';
-import { userProfiles } from '@/lib/db/schema';
-import { createClient } from '@/lib/supabase/server';
+} from '@/lib/ai/provider/provider';
+import { db } from '@/lib/infra/db/client';
+import { userProfiles } from '@/lib/infra/db/schema';
+import { createClient } from '@/lib/infra/supabase/server';
 
 import { runDbLookupDebugStep } from './step-db-lookup';
 import { runDecompositionDebugStep } from './step-decomposition';

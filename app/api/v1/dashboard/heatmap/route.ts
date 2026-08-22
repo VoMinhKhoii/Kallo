@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
+import { loadCalorieAdherenceHeatmap } from '@/lib/actions/tracking/dashboard';
 import { heatmapQuerySchema } from '@/lib/api/contracts/dashboard';
 import { parseTzParam } from '@/lib/api/query';
 import { handleRouteError } from '@/lib/api/respond';

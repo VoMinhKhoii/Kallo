@@ -3,16 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../models/onboarding.dart';
+import '../../../models/profile/onboarding.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/constants.dart';
 import '../data/profile_row.dart';
 import '../logic/step_one_defaults.dart';
 import '../providers/onboarding_providers.dart';
 import '../screens/screen_body_metrics.dart';
-import '../../../shared/widgets/top_toast.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
 import '../screens/screen_cooking.dart';
 import '../screens/screen_origin.dart';
 import 'step_indicator.dart';
@@ -37,9 +37,9 @@ double? _parseAggression(String? raw, double fallback) {
 /// The modal entrance animation (scale/opacity/y) is intentionally NOT here: it
 /// belongs to the dialog presentation ([showOnboardingDialog]), not the wizard.
 ///
-/// Icons are Lucide one-for-one: `X`→[LucideIcons.x],
-/// `ArrowLeft`→[LucideIcons.arrowLeft], `ArrowRight`→[LucideIcons.arrowRight],
-/// `SkipForward`→[LucideIcons.skipForward].
+/// Icons are Lucide one-for-one: `X`→[LucideIcons.x300],
+/// `ArrowLeft`→[LucideIcons.arrowLeft300], `ArrowRight`→[LucideIcons.arrowRight300],
+/// `SkipForward`→[LucideIcons.skipForward300].
 class OnboardingWizard extends ConsumerStatefulWidget {
   const OnboardingWizard({
     super.key,
@@ -178,7 +178,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
             children: [
               SingleChildScrollView(
                 controller: _scrollController,
-                padding: const EdgeInsets.all(NhamSpacing.sp5),
+                padding: const EdgeInsets.all(KalloSpacing.sp5),
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 child: _StepTransition(
@@ -206,7 +206,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                           colors: [
-                            NhamColors.cream, // from-[#FDFCF8]
+                            KalloColors.cream, // from-[#FDFCF8]
                             Color(0x00FDFCF8), // to-transparent
                           ],
                         ),
@@ -243,12 +243,12 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: NhamSpacing.sp5,
-        vertical: NhamSpacing.sp4,
+        horizontal: KalloSpacing.sp5,
+        vertical: KalloSpacing.sp4,
       ),
       decoration: const BoxDecoration(
         // border @60%
-        border: Border(bottom: BorderSide(color: Color(0x99E8E6DC))),
+        border: Border(bottom: BorderSide(color: KalloColors.borderSoft)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -258,7 +258,7 @@ class _Header extends StatelessWidget {
           // header's own paddingHorizontal sp5 keeps it off the true edge.
           if (onClose != null)
             Transform.translate(
-              offset: const Offset(NhamSpacing.sp2, 0),
+              offset: const Offset(KalloSpacing.sp2, 0),
               child: _CloseButton(onTap: onClose!),
             ),
         ],
@@ -289,15 +289,15 @@ class _CloseButtonState extends State<_CloseButton> {
       onTapCancel: () => setState(() => _pressed = false),
       onTap: widget.onTap,
       child: Container(
-        padding: const EdgeInsets.all(NhamSpacing.sp2),
+        padding: const EdgeInsets.all((KalloIcons.hit - KalloIcons.size) / 2),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: _pressed ? const Color(0x80E8E6DC) : Colors.transparent,
+          color: _pressed ? KalloColors.borderHalf : Colors.transparent,
         ),
         child: Icon(
-          LucideIcons.x,
-          size: 20,
-          color: _pressed ? NhamColors.text : NhamColors.textHelp,
+          LucideIcons.x300,
+          size: KalloIcons.size,
+          color: _pressed ? KalloColors.text : KalloColors.textHelp,
         ),
       ),
     );
@@ -486,12 +486,12 @@ class _Footer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: NhamSpacing.sp5,
-        vertical: NhamSpacing.sp4,
+        horizontal: KalloSpacing.sp5,
+        vertical: KalloSpacing.sp4,
       ),
       decoration: const BoxDecoration(
-        color: Color(0x80F5F4F0), // bg-[#F5F4F0]/50
-        border: Border(top: BorderSide(color: Color(0x99E8E6DC))), // /60
+        color: KalloColors.track50,
+        border: Border(top: BorderSide(color: KalloColors.borderSoft)), // /60
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -508,7 +508,7 @@ class _Footer extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _SkipButton(onTap: onSkip, pending: pendingSkip),
-              const SizedBox(width: NhamSpacing.sp3),
+              const SizedBox(width: KalloSpacing.sp3),
               _NextButton(
                 pending: pendingNext,
                 isLastStep: isLastStep,
@@ -536,7 +536,7 @@ class _BackButtonState extends State<_BackButton> {
 
   @override
   Widget build(BuildContext context) {
-    final color = _pressed ? NhamColors.text : NhamColors.textHelp;
+    final color = _pressed ? KalloColors.text : KalloColors.textHelp;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => setState(() => _pressed = true),
@@ -546,8 +546,8 @@ class _BackButtonState extends State<_BackButton> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(LucideIcons.arrowLeft, size: 16, color: color),
-          const SizedBox(width: NhamSpacing.sp2),
+          Icon(LucideIcons.arrowLeft300, size: 16, color: color),
+          const SizedBox(width: KalloSpacing.sp2),
           Text(
             tr('common.back'),
             style: dashBody(color: color, weight: FontWeight.w500),
@@ -573,7 +573,7 @@ class _SkipButtonState extends State<_SkipButton> {
   @override
   Widget build(BuildContext context) {
     // hover:bg-[#EAE7E0]/50 + hover:text-[#2C2416]
-    final textColor = _pressed ? NhamColors.text : NhamColors.textHelp;
+    final textColor = _pressed ? KalloColors.text : KalloColors.textHelp;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown:
@@ -583,12 +583,12 @@ class _SkipButtonState extends State<_SkipButton> {
       onTap: widget.onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp4,
+          horizontal: KalloSpacing.sp4,
           vertical: 10,
         ),
         decoration: BoxDecoration(
-          color: _pressed ? const Color(0x80E8E6DC) : Colors.transparent,
-          borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // rounded-xl
+          color: _pressed ? KalloColors.borderHalf : Colors.transparent,
+          borderRadius: BorderRadius.circular(KalloRadii.buttonXl), // rounded-xl
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -609,7 +609,7 @@ class _SkipButtonState extends State<_SkipButton> {
                 ),
               )
             else
-              Icon(LucideIcons.skipForward, size: 14, color: textColor),
+              Icon(LucideIcons.skipForward300, size: 14, color: textColor),
           ],
         ),
       ),
@@ -651,14 +651,14 @@ class _NextButtonState extends State<_NextButton> {
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp5,
+            horizontal: KalloSpacing.sp5,
             vertical: 10,
           ),
           decoration: BoxDecoration(
             // hover:bg-[#1C1917] darken on press
-            color: _pressed ? NhamColors.btnDarkHover : NhamColors.text,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // rounded-xl
-            boxShadow: const [NhamShadows.sm], // shadow-sm
+            color: _pressed ? KalloColors.btnDarkHover : KalloColors.text,
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl), // rounded-xl
+            boxShadow: const [KalloShadows.sm], // shadow-sm
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -666,9 +666,9 @@ class _NextButtonState extends State<_NextButton> {
               // Label stays put; the trailing arrow is what becomes the spinner.
               Text(
                 isLastStep ? tr('common.finish') : tr('common.next'),
-                style: dashBody(color: NhamColors.cream, weight: FontWeight.w500),
+                style: dashBody(color: KalloColors.cream, weight: FontWeight.w500),
               ),
-              const SizedBox(width: NhamSpacing.sp2),
+              const SizedBox(width: KalloSpacing.sp2),
               if (pending)
                 const SizedBox(
                   width: 16,
@@ -676,12 +676,12 @@ class _NextButtonState extends State<_NextButton> {
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor:
-                        AlwaysStoppedAnimation<Color>(NhamColors.cream),
+                        AlwaysStoppedAnimation<Color>(KalloColors.cream),
                   ),
                 )
               else
-                const Icon(LucideIcons.arrowRight,
-                    size: 16, color: NhamColors.cream),
+                const Icon(LucideIcons.arrowRight300,
+                    size: 16, color: KalloColors.cream),
             ],
           ),
         ),

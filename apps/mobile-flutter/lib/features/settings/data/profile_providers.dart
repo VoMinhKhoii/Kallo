@@ -1,15 +1,16 @@
 /// Profile read/write providers for the settings surface.
 ///
-/// Ports RN `lib/onboarding/hooks/use-profile.ts` (GET) and
-/// `lib/onboarding/hooks/use-save-profile.ts` (PUT) to Riverpod. Both share the
+/// Ports web `hooks/profile/use-profile.ts` (GET) and `saveProfileSettings`
+/// from `lib/domain/onboarding/actions.ts` (PUT, driven by
+/// `hooks/profile/use-profile-form.ts`) to Riverpod. Both share the
 /// `['onboarding','profile']` cache key the dashboard/logging readers use; a
 /// save invalidates the read so every reader refreshes.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/onboarding.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/profile/onboarding.dart';
 
 /// The raw `userProfiles` row returned by `GET /api/v1/onboarding/profile`.
 ///

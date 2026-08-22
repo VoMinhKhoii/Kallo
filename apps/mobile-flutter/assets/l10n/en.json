@@ -31,17 +31,17 @@
   },
   "metadata": {
     "root": {
-      "title": "Nhẩm — Vietnamese Meal Tracker",
+      "title": "Kallo — Vietnamese Meal Tracker",
       "description": "Track Vietnamese meals with AI-powered nutrition analysis"
     },
     "dashboard": {
-      "title": "Dashboard — Nhẩm"
+      "title": "Dashboard — Kallo"
     },
     "nutrition": {
-      "title": "Nutrition — Nhẩm"
+      "title": "Nutrition — Kallo"
     },
     "groups": {
-      "title": "Groups — Nhẩm"
+      "title": "Groups — Kallo"
     }
   },
   "shared": {
@@ -105,11 +105,11 @@
     "title": "Nutrition",
     "subtitle": "Review long-term macro and micronutrient patterns.",
     "loading": "Loading nutrition overview…",
+    "cardTitle": "Average",
     "range": {
       "label": "Nutrition range",
-      "1d": "Today",
-      "7d": "Week",
-      "30d": "Month",
+      "7d": "7 days",
+      "30d": "30 days",
       "90d": "90 days"
     },
     "nutrientGroups": {
@@ -166,6 +166,11 @@
       "target": "Target",
       "noTarget": "No target"
     },
+    "macrosShort": {
+      "protein": "Pro",
+      "carbohydrate": "Carbs",
+      "fat": "Fat"
+    },
     "grid": {
       "eyebrow": "Micronutrients",
       "title": "Micronutrient coverage",
@@ -186,6 +191,9 @@
       "collapse": "Hide trend"
     },
     "detail": {
+      "perDay": "per day",
+      "close": "Close details",
+      "noNutrients": "No nutrient data for this period.",
       "averageVsTarget": "Average vs target"
     },
     "confidence": {
@@ -513,12 +521,16 @@
     "rhythm": {
       "eyebrow": "The shape of your days",
       "calories": "kcal",
+      "loggedDays": "All",
+      "completeDays": "Complete days",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
       "days": "days",
       "noCompleteDays": "No fully-logged days yet — keep logging, or tap All.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Macro composition",
+      "diffUp": "up from the period before",
+      "diffDown": "down from the period before",
       "consistency": {
         "steady": "steady",
         "rhythmic": "rhythmic",
@@ -828,18 +840,18 @@
       "step1TextMobile": "Describe your meal naturally in Vietnamese, English, or both.",
       "step2Label": "Step 2",
       "step2Title": "We break it into real ingredients",
-      "step2Text": "Nhẩm maps your description to Vietnamese ingredients and dish components from a curated nutrition dataset.",
-      "step2TextMobile": "Nhẩm maps your text to real Vietnamese ingredients and dish components.",
+      "step2Text": "Kallo maps your description to Vietnamese ingredients and dish components from a curated nutrition dataset.",
+      "step2TextMobile": "Kallo maps your text to real Vietnamese ingredients and dish components.",
       "step3Label": "Step 3",
       "step3Title": "Personal context sharpens the estimate",
       "step3Text": "Region, cooking habits, and nutrition goals help the AI understand hidden calories and likely portion adjustments.",
       "step3TextMobile": "Region, cooking habits, and goals help the AI tighten the estimate.",
       "step4Label": "Step 4",
       "step4Title": "You get a useful, bounded result",
-      "step4Text": "Instead of fake precision, Nhẩm gives a realistic calorie and macro range you can actually use.",
+      "step4Text": "Instead of fake precision, Kallo gives a realistic calorie and macro range you can actually use.",
       "step4TextMobile": "Get a realistic calorie and macro range instead of fake precision.",
       "cta": "Start tracking now",
-      "whyLabel": "Why Nhẩm works better",
+      "whyLabel": "Why Kallo works better",
       "whyTitle": "Built around how Vietnamese meals are actually eaten",
       "feature1Title": "Vietnamese-first ingredient matching",
       "feature1Text": "Matches meals against Vietnamese food composition data instead of forcing Western substitutes.",
@@ -901,7 +913,7 @@
       "blog": "Blog",
       "contact": "Contact",
       "privacy": "Privacy",
-      "copyright": "© {year} Nhẩm. All rights reserved.",
+      "copyright": "© {year} Kallo. All rights reserved.",
       "terms": "Terms",
       "privacyLink": "Privacy policy",
       "security": "Security"
@@ -1000,7 +1012,7 @@
     "caloriesLogged": "kcal logged",
     "mealReceiptsHint": "Your meal receipts will show up here",
     "firstRunQuestion": "What did you eat today?",
-    "firstRunHint": "Describe your first meal — Nhẩm estimates the rest.",
+    "firstRunHint": "Describe your first meal — Kallo estimates the rest.",
     "firstRunChips": {
       "morning1": "1 tô phở bò + quẩy",
       "morning2": "2 trứng ốp la + bánh mì",
@@ -1012,7 +1024,11 @@
       "evening2": "1 tô canh chua cá lóc",
       "evening3": "1 tô bún bò Huế"
     },
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "kcalRemaining": "kcal remaining",
+    "loggedOfTarget": "{logged}/{target} logged",
+    "leftOfTarget": "{left}/{target} left",
+    "overTargetBy": "{over} over {target}"
   },
   "logging": {
     "title": "What did you eat?",
@@ -1027,13 +1043,12 @@
       "cheatDesc": "Log a treat without the breakdown",
       "manual": "Manual",
       "manualDesc": "Search foods, enter exact grams",
-      "barcode": "Barcode",
-      "barcodeDesc": "Scan a packaged product"
+      "barcode": "Scan product",
+      "barcodeDesc": "Scan a barcode or a nutrition label"
     },
     "cheatPlaceholder": "Korean BBQ buffet, went all out…",
     "quickLog": {
-      "title": "Log a meal",
-      "subtitle": "We'll analyze it on your feed"
+      "title": "Log a meal"
     },
     "cheatIntensity": {
       "label": "How much did you eat?",
@@ -1063,10 +1078,8 @@
     },
     "barcode": {
       "title": "Scan barcode",
-      "subtitle": "Nutrition for packaged products",
-      "scanning": "Center the barcode inside the frame",
       "torch": "Flashlight",
-      "cameraDenied": "Camera access is off. Enable it for Nhẩm in Settings > Privacy > Camera, or enter the barcode below.",
+      "cameraDenied": "Camera access is off. Enable it for Kallo in Settings > Privacy > Camera, or enter the barcode below.",
       "cameraError": "The camera isn't available on this device.",
       "manualEntry": "Enter barcode manually",
       "backToCamera": "Back to camera",
@@ -1185,7 +1198,28 @@
       "estimating": "Estimating nutrition…",
       "assembling": "Putting it all together…",
       "analyzing": "Analyzing…",
-      "stillWorking": "Still working on it — almost there."
+      "stillWorking": "Still working on it — almost there.",
+      "verbs": {
+        "prefix": "",
+        "connecting1": "Connecting…",
+        "connecting2": "Warming up…",
+        "connecting3": "Kindling…",
+        "decomposing1": "Prepping…",
+        "decomposing2": "Chopping…",
+        "decomposing3": "Unpacking…",
+        "matching1": "Foraging…",
+        "matching2": "Sourcing…",
+        "matching3": "Gathering…",
+        "estimating1": "Weighing…",
+        "estimating2": "Calculating…",
+        "estimating3": "Crunching…",
+        "assembling1": "Plating…",
+        "assembling2": "Garnishing…",
+        "assembling3": "Finishing…",
+        "analyzing1": "Analyzing…",
+        "analyzing2": "Simmering…",
+        "analyzing3": "Marinating…"
+      }
     },
     "failedAttempt": {
       "message": "We couldn't read this one. Your note is safe — give it another try.",
@@ -1198,6 +1232,14 @@
       "increaseQuantity": "Increase {name} quantity",
       "toggleDetails": "Toggle meal details",
       "total": "Total"
+    },
+    "portionPicker": {
+      "title": "Portion size",
+      "assumption": "≈ {label}",
+      "adjust": "Adjust portion, currently {label}",
+      "custom": "Custom portion",
+      "apply": "Apply",
+      "cancel": "Cancel"
     },
     "persistedMealCard": {
       "toggleDetails": "Toggle meal details",
@@ -1238,7 +1280,6 @@
     "manualLogging": {
       "openSheet": "Log manually",
       "title": "Log manually",
-      "subtitle": "Search foods, enter exact grams — no AI",
       "searchPlaceholder": "Search foods...",
       "recentFoods": "Recent foods",
       "recentsHint": "Search to add foods",
@@ -1253,6 +1294,109 @@
       "removeItem": "Remove food",
       "save": "Save meal",
       "relatedMatch": "related"
+    },
+    "relog": {
+      "groupDishes": "Dishes",
+      "groupMeals": "Meals",
+      "macroSplit": "P {protein}g · C {carbs}g · F {fat}g",
+      "optionKcal": "{kcal} kcal",
+      "searching": "Searching...",
+      "noResults": "No dishes found",
+      "noHistory": "Nothing logged yet",
+      "searchFailed": "Couldn't load your dishes",
+      "closePicker": "Close",
+      "stagedFull": "You can stage up to {max} at a time."
+    },
+    "scan": {
+      "barcodeTab": "Barcode",
+      "labelTab": "Nutrition label",
+      "tryLabelInstead": "Scan the nutrition label instead",
+      "tryBarcodeInstead": "Scan the barcode instead",
+      "savedMeal": "Meal added"
+    },
+    "labelScan": {
+      "title": "Scan Nutrition Label",
+      "reviewTitle": "Verify Extracted Nutrition",
+      "captureGuide": "Avoid glare, and flatten curved packaging.",
+      "takePhoto": "Take photo",
+      "choosePhoto": "Choose a photo instead",
+      "scanPhoto": "Read this label",
+      "retake": "Take another photo",
+      "retryPhoto": "Try this photo again",
+      "manualEntry": "Enter nutrition manually",
+      "defaultProductName": "Scanned packaged food",
+      "productName": "Product name",
+      "invalidProductName": "Enter a product name up to 200 characters.",
+      "amountLabel": "Amount consumed",
+      "invalidAmount": "Enter an amount greater than 0 and no more than 100,000.",
+      "servingShortcut": "1 serving",
+      "packageShortcut": "Whole package",
+      "micronutrients": "Other nutrients on the label ({count})",
+      "addMeal": "Add meal",
+      "back": "Back",
+      "basisLabel": "Values shown",
+      "confidenceLabel": "Scan confidence",
+      "servingLabel": "Serving",
+      "servingsPerContainerLabel": "Servings per package",
+      "basis": {
+        "per100g": "Per 100 g",
+        "per100ml": "Per 100 ml",
+        "perServing": "Per serving",
+        "perContainer": "Per package",
+        "per100gAndServing": "Per 100 g and per serving",
+        "per100mlAndServing": "Per 100 ml and per serving"
+      },
+      "confidence": {
+        "high": "High",
+        "medium": "Medium — please review",
+        "low": "Low — check every value"
+      },
+      "unit": {
+        "g": "g",
+        "ml": "ml",
+        "serving": {
+          "one": "serving",
+          "other": "servings"
+        }
+      },
+      "nutrients": {
+        "calories": "Calories",
+        "protein": "Protein",
+        "carbohydrates": "Carbohydrates",
+        "fat": "Fat",
+        "fiber": "Fiber",
+        "sodium": "Sodium",
+        "calcium": "Calcium",
+        "iron": "Iron",
+        "magnesium": "Magnesium",
+        "phosphorus": "Phosphorus",
+        "potassium": "Potassium",
+        "zinc": "Zinc",
+        "copper": "Copper",
+        "manganese": "Manganese",
+        "betaCarotene": "Beta carotene",
+        "vitaminA": "Vitamin A",
+        "vitaminC": "Vitamin C",
+        "vitaminD": "Vitamin D",
+        "vitaminE": "Vitamin E",
+        "vitaminK": "Vitamin K",
+        "vitaminB1": "Vitamin B1",
+        "vitaminB2": "Vitamin B2",
+        "vitaminPp": "Vitamin PP",
+        "vitaminB5": "Vitamin B5",
+        "vitaminB6": "Vitamin B6",
+        "vitaminB9": "Vitamin B9",
+        "vitaminB12": "Vitamin B12",
+        "vitaminH": "Vitamin H"
+      },
+      "error": {
+        "invalidImage": "Please upload a clear image of a nutrition facts table.",
+        "noLabelDetected": "This does not look like a printed nutrition table. It may be the logo side, a menu, or handwritten notes. Choose the label photo or enter nutrition manually.",
+        "rateLimited": "The OCR service is busy. Please try again in a moment.",
+        "serverError": "Could not scan label. Please try again.",
+        "permissionDenied": "Camera and photo access are off. Enable them for Kallo in Settings > Privacy, or enter the values by hand.",
+        "imageTooLarge": "That photo is too large to send. Take another one and it will be resized automatically."
+      }
     }
   },
   "groups": {
@@ -1290,7 +1434,6 @@
     },
     "createGroup": {
       "title": "Create a group",
-      "description": "Name it and add members from your circle.",
       "nameLabel": "Group name",
       "namePlaceholder": "e.g. Weekend hikers",
       "membersLabel": "Add members",
@@ -1343,7 +1486,7 @@
       "errorShare": "Couldn't share to your circle. Try again.",
       "errorUnshare": "Couldn't update sharing. Try again.",
       "shareCard": "Share card",
-      "shareCardTitle": "My meal on Nhẩm"
+      "shareCardTitle": "My meal on Kallo"
     },
     "shareMeal": {
       "title": "Share this meal",
@@ -1458,12 +1601,12 @@
       "unlinkError": "Couldn't disconnect that account. Please try again.",
       "loadError": "Couldn't load your sign-in methods.",
       "signOut": "Sign out",
-      "signOutConfirmTitle": "Sign out of Nhẩm?",
+      "signOutConfirmTitle": "Sign out of Kallo?",
       "cancel": "Cancel",
       "delete": "Delete account",
       "deleteScreenTitle": "Delete account",
       "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
-      "deleteSubscriptionWarning": "Deleting your Kallo account does not cancel an Apple or Google subscription. Cancel it in the store first to prevent future charges. A Kallo web subscription is canceled as part of account deletion. You can still delete immediately.",
+      "deleteSubscriptionWarning": "Deleting your Kallo account does not cancel an active subscription. Cancel it first — in the App Store, Google Play, or the billing portal you purchased through on the web — to prevent future charges. You can still delete immediately.",
       "deleteManageSubscription": "Manage or cancel subscription",
       "deleteConfirmLabel": "Type {word} to confirm",
       "deleteConfirmWord": "DELETE",
@@ -1534,12 +1677,12 @@
       "placeholder": {
         "bug": "What went wrong? What did you expect to happen?",
         "ingredient": "Which ingredient or food is missing?",
-        "idea": "What would make Nhẩm better for you?"
+        "idea": "What would make Kallo better for you?"
       },
       "addScreenshot": "Add a screenshot",
       "removeScreenshot": "Remove screenshot",
       "screenshotTooLarge": "That image is over 5 MB. Please pick a smaller one.",
-      "photoPermission": "Nhẩm needs photo access to attach a screenshot. Enable it in Settings.",
+      "photoPermission": "Kallo needs photo access to attach a screenshot. Enable it in Settings.",
       "submit": "Send feedback",
       "successTitle": "Thanks — we got it",
       "successBody": "Your feedback is with the team. We read every one.",

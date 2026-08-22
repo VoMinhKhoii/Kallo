@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AddFriendDialog } from '@/components/groups/add-friend-dialog';
 import { FeedEntry } from '@/components/groups/feed-entry';
 import { ThreadFeed } from '@/components/groups/thread-feed';
-import { useFriendsThreadFeed } from '@/hooks/social/use-friend-thread-feed';
+import { useFriendsThreadFeed } from '@/hooks/social/circle/use-friend-thread-feed';
 
 /** Right-pane detail for the combined Friends feed: every accepted friend's
  * shared meal plus the actor's own, merged into one feed, infinite-scrolled —
@@ -45,7 +45,7 @@ export function FriendsFeed() {
           trigger={
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-nham-btn px-3.5 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-nham-btn/90"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-kallo-btn px-3.5 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90"
             >
               <UserPlus className="h-3.5 w-3.5" />
               {t('addFriend')}

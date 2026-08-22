@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { profileSettingsSchema } from '@/lib/api/contracts/onboarding';
 import { handleRouteError } from '@/lib/api/respond';
-import { saveProfileSettings } from '@/lib/onboarding/actions';
+import { saveProfileSettings } from '@/lib/domain/onboarding/actions';
 
 export const runtime = 'nodejs';
 

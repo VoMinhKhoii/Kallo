@@ -1,12 +1,12 @@
+import { FeedbackFilters } from '@/components/admin/feedback/feedback-filters';
+import { FeedbackTable } from '@/components/admin/feedback/feedback-table';
 import { Link } from '@/i18n/navigation';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import {
   feedbackFiltersSchema,
   listFeedback,
-} from '@/lib/admin/feedback-queries';
-import { requireAdmin } from '@/lib/admin/require-admin';
-import { db } from '@/lib/db';
-import { FeedbackFilters } from './_components/feedback-filters';
-import { FeedbackTable } from './_components/feedback-table';
+} from '@/lib/admin/queries/feedback';
+import { db } from '@/lib/infra/db/client';
 
 export const dynamic = 'force-dynamic';
 

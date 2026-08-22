@@ -47,7 +47,7 @@ The Key ID / Issuer ID / Team ID are baked into the `Fastfile` (they're useless 
 
 - **Bundle id:** `com.khoivo.nham` — intentionally the **same as the earlier RN port**, so the Flutter
   build appears as a new build of the existing App Store Connect record (App id `6775761392`),
-  with the same testers. (The Flutter project's original `com.nham.nhamMobile` was changed for this.)
+  with the same testers. (The Flutter project's original `com.nham.kalloMobile` was changed for this.)
 - **Marketing version:** `1.0.0` (from `pubspec.yaml`'s `version:`). Bump it there when you want a
   new version train.
 

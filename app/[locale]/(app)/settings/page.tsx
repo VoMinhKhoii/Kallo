@@ -1,22 +1,22 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { SubscriptionSettings } from '@/components/billing/subscription-settings';
+import { SubscriptionSettings } from '@/components/billing/subscription/subscription-settings';
 import { AccountPanel } from '@/components/settings/account/account-panel';
-import { SettingsAnchorNav } from '@/components/settings/anchor-nav';
+import { SettingsAnchorNav } from '@/components/settings/chrome/anchor-nav';
+import { SettingsGroup } from '@/components/settings/chrome/group';
+import { SectionHeader } from '@/components/settings/chrome/section-header';
+import { FeedbackPanel } from '@/components/settings/feedback/feedback-panel';
+import { IdentityRows } from '@/components/settings/identity/identity-rows';
+import { SettingsForm } from '@/components/settings/profile/settings-form';
+import { Link } from '@/i18n/navigation';
+import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 import {
   ACCOUNT_ANCHOR,
   FEEDBACK_ANCHOR,
   PROFILE_ANCHOR,
   SUBSCRIPTION_ANCHOR,
-} from '@/components/settings/anchors';
-import { FeedbackPanel } from '@/components/settings/feedback/feedback-panel';
-import { SettingsGroup } from '@/components/settings/group';
-import { IdentityRows } from '@/components/settings/identity/identity-rows';
-import { SettingsForm } from '@/components/settings/profile/settings-form';
-import { SectionHeader } from '@/components/settings/section-header';
-import { Link } from '@/i18n/navigation';
-import { getOnboardingProfile } from '@/lib/onboarding/actions';
-import { createClient } from '@/lib/supabase/server';
+} from '@/lib/domain/settings/anchors';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export async function generateMetadata({
   params,
@@ -77,16 +77,16 @@ export default async function SettingsPage({
             <SettingsGroup>
               <IdentityRows />
             </SettingsGroup>
-            <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-nham-border bg-white px-4 py-12 text-center">
-              <h2 className="font-serif text-lg text-nham-text">
+            <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-kallo-border bg-white px-4 py-12 text-center">
+              <h2 className="font-serif text-kallo-text text-lg">
                 {tProfile('emptyTitle')}
               </h2>
-              <p className="max-w-sm text-[14px] text-nham-text-soft">
+              <p className="max-w-sm text-[14px] text-kallo-text-soft">
                 {tProfile('emptyDescription')}
               </p>
               <Link
                 href="/onboarding"
-                className="rounded-lg bg-nham-btn px-4 py-2 font-medium text-sm text-white"
+                className="rounded-lg bg-kallo-btn px-4 py-2 font-medium text-sm text-white"
               >
                 {tProfile('startSetup')}
               </Link>
@@ -102,7 +102,7 @@ export default async function SettingsPage({
             className="mt-8 scroll-mt-20"
           >
             <div className="mb-4">
-              <h2 className="font-normal font-serif text-nham-text text-xl tracking-tight">
+              <h2 className="font-normal font-serif text-kallo-text text-xl tracking-tight">
                 {tBilling('title')}
               </h2>
               <p className="mt-1 text-[#7B6F62] text-[14px]">

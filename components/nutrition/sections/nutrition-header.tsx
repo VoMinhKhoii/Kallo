@@ -1,13 +1,17 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/core/ui/cn';
 import type {
   NutritionRange,
   NutritionRangeInput,
-} from '@/lib/nutrition/types';
-import { cn } from '@/lib/utils';
+} from '@/lib/domain/nutrition/types';
 
-const RANGES = ['1d', '7d', '30d'] as const satisfies readonly NutritionRange[];
+const RANGES = [
+  '7d',
+  '30d',
+  '90d',
+] as const satisfies readonly NutritionRange[];
 
 interface NutritionHeaderProps {
   resolvedRange: NutritionRange;
@@ -29,13 +33,13 @@ export function NutritionHeader({
 
   return (
     <header className="flex items-center justify-between gap-4">
-      <h1 className="font-bold font-sans-display text-[18px] text-nham-text tracking-[-0.01em]">
+      <h1 className="font-bold font-sans-display text-[18px] text-kallo-text tracking-[-0.01em]">
         {t('title')}
       </h1>
       <div
         role="group"
         aria-label={t('range.label')}
-        className="inline-flex items-center gap-px rounded-full bg-nham-track p-1"
+        className="inline-flex items-center gap-px rounded-full bg-kallo-track p-1"
       >
         {RANGES.map((range) => {
           const active = resolvedRange === range;
@@ -47,10 +51,10 @@ export function NutritionHeader({
               onClick={() => onRangeChange(range)}
               disabled={disabled}
               className={cn(
-                'touch-manipulation rounded-full px-3 py-1.5 font-medium text-[12px] tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface disabled:opacity-60',
+                'touch-manipulation rounded-full px-3 py-1.5 font-medium text-[12px] tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface disabled:opacity-60',
                 active
-                  ? 'bg-card text-nham-text shadow-sm'
-                  : 'text-nham-text-muted hover:text-nham-text'
+                  ? 'bg-card text-kallo-text shadow-sm'
+                  : 'text-kallo-text-muted hover:text-kallo-text'
               )}
             >
               {t(`range.${range}`)}

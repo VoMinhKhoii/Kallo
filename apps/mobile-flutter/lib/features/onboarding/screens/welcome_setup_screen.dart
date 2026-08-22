@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../data/session_provider.dart';
+import '../../../services/auth/session_provider.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_typography.dart';
 import '../../circle/data/circle_providers.dart';
 import '../../dashboard/data/dashboard_providers.dart';
-import '../../dashboard/logic/dashboard_format.dart';
+import '../../../shared/logic/display_format.dart';
 import '../../logging/data/logging_providers.dart';
 import '../providers/onboarding_providers.dart';
 
@@ -109,7 +109,7 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: NhamColors.cream,
+      backgroundColor: KalloColors.cream,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -146,9 +146,9 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
                           ],
                         ),
                         textAlign: TextAlign.center,
-                        style: NhamTextStyles.serifRegular(
-                          fontSize: NhamFontSize.h1,
-                        ).copyWith(color: NhamColors.text),
+                        style: KalloTextStyles.serifRegular(
+                          fontSize: KalloFontSize.h1,
+                        ).copyWith(color: KalloColors.text),
                       );
                     },
                   ),
@@ -157,8 +157,8 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
                 Text(
                   tr('onboarding.setup.title'),
                   textAlign: TextAlign.center,
-                  style: NhamTextStyles.serifRegular(fontSize: NhamFontSize.h3)
-                      .copyWith(color: NhamColors.text),
+                  style: KalloTextStyles.serifRegular(fontSize: KalloFontSize.h3)
+                      .copyWith(color: KalloColors.text),
                 ),
                 const SizedBox(height: 8),
                 Text(

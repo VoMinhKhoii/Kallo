@@ -3,15 +3,15 @@
  *
  * Imported by both the web hooks and the mobile (React Native) client, so this
  * file must stay free of server-only / db / supabase imports. Schemas depend
- * only on `zod` and the pure `@/lib/api/contracts/common` re-exports; the
- * response type is re-exported from the pure `@/lib/types/dashboard` module.
+ * only on `zod` and the pure `@/lib/core/validation/primitives` validators; the
+ * response type is re-exported from the pure `@/lib/core/types/dashboard` module.
  */
 import { z } from 'zod';
-import { timezoneOffsetSchema } from '@/lib/api/contracts/common';
 import type { LoggingDayData } from '@/lib/api/contracts/meals';
 import type { getOnboardingProfile } from '@/lib/api/contracts/onboarding';
 import type { WeightSummaryData } from '@/lib/api/contracts/weight';
-import type { HeatmapData } from '@/lib/types/dashboard';
+import type { HeatmapData } from '@/lib/core/types/dashboard';
+import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 
 /**
  * Query schema for `GET /api/v1/dashboard/heatmap`. The heatmap range is the

@@ -1,19 +1,15 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { friendsKeys } from '@/hooks/social/use-friends';
+import type { PublicProfile } from '@/lib/actions/groups/types';
 import {
   fetchMyProfile,
-  type PublicProfile,
   removeMyAvatar,
   renameMyProfile,
   saveMyProfile,
   uploadMyAvatar,
-} from '@/lib/groups/client';
-
-export const profileKeys = {
-  mine: ['my-profile'] as const,
-};
+} from '@/lib/domain/social/circle-client';
+import { friendsKeys, profileKeys } from '@/lib/domain/social/query-keys';
 
 /** The signed-in user's own profile (auto-provisioned, so never null). */
 export function useMyProfile() {

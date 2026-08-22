@@ -1,0 +1,71 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <style>
+    .lead { font-family: var(--font-ui); font-size: 12px; color: var(--fg-muted); line-height: 1.55; }
+    .lead em { font-family: var(--font-display); font-style: italic; color: var(--kallo-accent); font-weight: 400;}
+    .annot { font-family: var(--font-mono); font-size: 10px; color: var(--fg-stone); margin-top: 6px; line-height: 1.4; }
+
+    /* ----- Workout empty state ----- */
+    .empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 28px 16px; background: rgba(254,251,246,0.6); border: 1px solid var(--border-soft); border-radius: var(--radius-3xl);}
+    .empty .ic-box { width: 40px; height: 40px; border-radius: var(--radius-xl); background: rgba(232,213,181,0.3); display: flex; align-items: center; justify-content: center; color: var(--fg-muted); font-size: 18px;}
+    .empty h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 22px; color: var(--fg); letter-spacing: -0.01em;}
+    .empty p { margin: 0; font-family: var(--font-ui); font-size: 13px; color: var(--fg-muted); }
+    .empty .chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 4px;}
+    .empty .chip { background: rgba(255,255,255,0.8); border: 1px solid var(--border-soft); border-radius: 999px; padding: 5px 14px; font-family: var(--font-ui); font-size: 12px; color: var(--fg-muted); font-weight: 500;}
+
+    /* ----- Persisted workout card ----- */
+    .stage { padding-left: 44px; position: relative; margin-top: 20px;}
+    .dot { position: absolute; left: 0; top: 28px; width: 8px; height: 8px; border-radius: 999px; border: 2px solid var(--kallo-accent); background: #fff; box-sizing: border-box; }
+    .line { position: absolute; left: 3px; top: 38px; bottom: -8px; width: 1px; background: var(--border-soft); }
+    .time { font-family: var(--font-ui); font-weight: 700; font-size: 11px; letter-spacing: 0.15em; color: color-mix(in srgb, var(--kallo-text-muted) 60%, transparent); text-transform: uppercase; margin-bottom: 8px;}
+    .wcard { background: #fff; border: 1px solid var(--border-soft); border-radius: var(--radius-3xl); padding: 18px 22px; box-shadow: var(--shadow-sm);}
+    .quote { font-family: var(--font-display); font-weight: 400; font-size: 17px; line-height: 1.5; color: var(--fg); margin: 0;}
+    .ex-list { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--kallo-border); display: flex; flex-direction: column; gap: 6px;}
+    .ex-row { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-ui); font-size: 13px; padding: 4px 0; }
+    .ex-row .ex-name { color: var(--fg); font-weight: 500; }
+    .ex-row .ex-stat { color: var(--fg-muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+    .ex-row .ex-stat strong { color: var(--fg); font-weight: 600; }
+    .summary { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-soft); display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-ui); font-variant-numeric: tabular-nums;}
+    .summary .lbl { font-size: 11px; color: var(--fg-muted); }
+    .summary .val { font-weight: 700; color: var(--fg); font-size: 14px;}
+    .verdict { font-family: var(--font-ui); font-size: 12px; color: var(--fg-muted); line-height: 1.5; margin: 10px 0 0;}
+    .verdict em { font-family: var(--font-display); font-style: italic; color: var(--kallo-accent); font-weight: 400; }
+  </style>
+
+  <p class="lead">A Workouts feature, designed in the existing voice. <em>Same thesis as meal logging</em> — natural language is the most accurate input. Same timeline, same composer, same persisted-card shape; the only new thing is the inside of the card.</p>
+
+  <!-- Empty state -->
+  <div class="empty">
+    <div class="ic-box">⋮⋮</div>
+    <h2>What did you train?</h2>
+    <p>Describe your session — sets, reps, weight, however you'd say it out loud.</p>
+    <div class="chips">
+      <span class="chip">Push day</span>
+      <span class="chip">Pull day</span>
+      <span class="chip">5 km easy run</span>
+    </div>
+  </div>
+  <div class="annot">Empty state mirrors meal logging exactly. Lora question (22px), DM Sans subline, three suggestion chips. No dumbbell mascot, no motivational quote.</div>
+
+  <!-- Persisted card -->
+  <div class="stage">
+    <span class="dot"></span><span class="line"></span>
+    <div class="time">07:14 · 1h 12m</div>
+    <article class="wcard">
+      <p class="quote">&ldquo;Push day — bench 4×8 @ 70 kg, OHP 3×10 @ 40, dips bodyweight ×12 ×3 + 8 min cooldown bike&rdquo;</p>
+      <div class="ex-list">
+        <div class="ex-row"><span class="ex-name">Bench press</span><span class="ex-stat">4 × 8 @ <strong>70 kg</strong> &nbsp;·&nbsp; vol <strong>2,240 kg</strong></span></div>
+        <div class="ex-row"><span class="ex-name">Overhead press</span><span class="ex-stat">3 × 10 @ <strong>40 kg</strong> &nbsp;·&nbsp; vol <strong>1,200 kg</strong></span></div>
+        <div class="ex-row"><span class="ex-name">Dips</span><span class="ex-stat">3 × 12 bodyweight &nbsp;·&nbsp; <strong>36 reps</strong></span></div>
+        <div class="ex-row"><span class="ex-name">Cooldown bike</span><span class="ex-stat"><strong>8 min</strong> · easy</span></div>
+      </div>
+      <div class="summary">
+        <span class="lbl">Volume · est. burn</span>
+        <span class="val">3,440 kg <span style="color: var(--fg-muted); font-weight: 500; margin-left: 6px;">· ~280 kcal</span></span>
+      </div>
+      <p class="verdict"><em>A solid push week.</em> Bench is up 5 kg from four weeks ago.</p>
+    </article>
+  </div>
+  <div class="annot">Timeline dot + rail (`-left-[43px]` / `-left-10`). Curly-quoted natural input in Lora 17. Sets table uses dashed hairlines (the meal-entry pattern) — no zebra stripes, no edit icons. Verdict in Lora italic tan.</div>
+</div></body></html>

@@ -18,7 +18,8 @@ import { ServiceWorkerRegister } from '@/components/app/shell/service-worker-reg
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { routing } from '@/i18n/navigation';
-import { SITE_URL } from '@/lib/site';
+import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
+import { SITE_URL } from '@/lib/seo/site';
 import '../globals.css';
 
 const fraunces = Fraunces({
@@ -69,7 +70,7 @@ export const viewport: Viewport = {
   // Cream canvas, light-only. The product ships a single warm theme; the prior
   // white / near-black status-bar zone framed the cream paper incorrectly in
   // standalone PWA.
-  themeColor: '#f9f9f7',
+  themeColor: '#fcfcfc',
   viewportFit: 'cover',
 };
 
@@ -97,13 +98,12 @@ export async function generateMetadata({
     openGraph: {
       // No shared `url` here: child pages (e.g. /privacy, /terms) would inherit
       // the locale-root URL as their canonical. Pages that need a canonical set
-      // their own openGraph.url.
-      type: 'website',
-      siteName: t('title'),
+      // their own openGraph.url — and must spread SHARED_OPEN_GRAPH when they
+      // do, since declaring `openGraph` replaces this object wholesale.
+      ...SHARED_OPEN_GRAPH,
       title: t('title'),
       description: t('description'),
       locale,
-      images: [{ url: '/og-image.png', width: 1200, height: 630 }],
     },
     twitter: {
       card: 'summary_large_image',

@@ -1,11 +1,17 @@
 import { z } from 'zod';
 
 const macroRangeSchema = z.tuple([z.number().min(0), z.number().min(0)]);
+const vesselExpectationSchema = z.object({
+  family: z.enum(['bowl', 'plate', 'cup']),
+  tier: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+});
 
 const expectationSchema = z.object({
   isFood: z.boolean(),
   staples: z.array(z.string().min(1)).optional(),
   kcalRange: z.tuple([z.number(), z.number()]).optional(),
+  /** Ordered per-meal-item vessel expectations; null asserts no vessel. */
+  expectVessel: z.array(vesselExpectationSchema).min(1).nullable().optional(),
   /**
    * Golden-set macro bands (grams, meal total, checked against the mid
    * estimate). Bands are deliberately generous (±25-35%) — wide enough not to
@@ -20,6 +26,14 @@ const expectationSchema = z.object({
     })
     .optional(),
   noSilentZeros: z.boolean().optional(),
+  /**
+   * Minimum number of distinct meal items Call 1 must decompose the input
+   * into. Guards the collapse class: "1 tô mì gói + sữa" came back as ONE
+   * ingredient ("Mì gói sữa") instead of noodles + milk, which let a single
+   * unmatched item swallow a whole meal. Macro bands alone cannot catch this —
+   * a collapsed item can still land inside them.
+   */
+  minMealItems: z.number().int().positive().optional(),
   expectClarify: z.boolean().optional(),
   maxDurationMs: z.number().positive().optional(),
   /**
@@ -32,9 +46,22 @@ const expectationSchema = z.object({
   latencyBudgetMs: z.number().positive().optional(),
 });
 
-/** Where a golden expectation came from — makes incremental updates auditable. */
+/**
+ * Where a golden expectation came from — makes incremental updates auditable.
+ *
+ * `db-anchored` is stronger evidence than `knowledge-estimate`: the band was
+ * computed from a named `vietnamese_food_composition` row times a named
+ * portion prior, so it is re-derivable by query rather than recalled. Cite the
+ * row id and the prior in `note` so the arithmetic can be re-checked when
+ * either changes.
+ */
 const provenanceSchema = z.object({
-  source: z.enum(['knowledge-estimate', 'staging-confirmed', 'user-corrected']),
+  source: z.enum([
+    'knowledge-estimate',
+    'staging-confirmed',
+    'user-corrected',
+    'db-anchored',
+  ]),
   setAt: z.string().min(1),
   note: z.string().optional(),
 });
@@ -50,11 +77,24 @@ export const fixtureCaseSchema = z.object({
   note: z.string().optional(),
 });
 
+export const fixtureRelationSchema = z.object({
+  id: z.string().min(1),
+  kind: z.literal('strictlyIncreasingFatMid'),
+  caseIds: z
+    .array(z.string().min(1))
+    .min(2)
+    .refine((ids) => new Set(ids).size === ids.length, {
+      message: 'relation caseIds must be unique',
+    }),
+  note: z.string().optional(),
+});
+
 export const fixtureFileSchema = z.object({
   $schema: z.string().optional(),
   version: z.number().int().positive(),
   notes: z.string().optional(),
   cases: z.array(fixtureCaseSchema),
+  relations: z.array(fixtureRelationSchema).optional(),
 });
 
 export const cliOptionsSchema = z.object({
@@ -70,6 +110,7 @@ export const cliOptionsSchema = z.object({
 });
 
 export type EvalFixtureCase = z.infer<typeof fixtureCaseSchema>;
+export type EvalFixtureRelation = z.infer<typeof fixtureRelationSchema>;
 export type EvalCliOptions = z.infer<typeof cliOptionsSchema>;
 
 export interface EvalStageTimings {
@@ -118,6 +159,10 @@ export interface EvalCaseResult {
     carbohydrateG: { low: number; mid: number; high: number } | null;
     fatG: { low: number; mid: number; high: number } | null;
   } | null;
+  vessels: Array<{
+    family: 'bowl' | 'plate' | 'cup' | 'piece';
+    tier: 1 | 2 | 3 | 4 | 5;
+  } | null>;
   silentZeroViolations: SilentZeroViolation[];
   error: string | null;
   timedOut: boolean;

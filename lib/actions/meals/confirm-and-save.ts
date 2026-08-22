@@ -9,25 +9,26 @@ import {
   buildPersistedMealItemGroup,
   inferMealSlot,
   nutritionValuesToRow,
-} from '@/lib/actions/persisted-meal';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
+} from '@/lib/actions/logging/persisted-meal';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,
-} from '@/lib/ai/pipeline/goal-adjustment';
-import type { PipelineResult } from '@/lib/ai/types';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
+} from '@/lib/ai/pipeline/assemble/goal-adjustment';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
+import type { PipelineResult } from '@/lib/ai/types/result';
+import { confirmMealSchema } from '@/lib/api/contracts/meals';
+import { Errors } from '@/lib/core/errors/catalog';
+import type { CheatSliderLevels } from '@/lib/core/types/cheat';
+import { goalEnumSchema } from '@/lib/domain/onboarding/schemas';
+import type { Goal } from '@/lib/domain/onboarding/types';
+import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db/client';
 import {
   mealItems,
   meals,
   pendingAnalyses,
   unmatchedIngredients,
-} from '@/lib/db/schema';
-import { Errors } from '@/lib/errors';
-import { goalEnumSchema } from '@/lib/onboarding/schemas';
-import type { Goal } from '@/lib/onboarding/types';
-import type { CheatSliderLevels } from '@/lib/types/cheat';
+} from '@/lib/infra/db/schema';
 import { confirmCheatMeal } from './confirm-cheat';
 import { insertDefaultCircleShare } from './insert-default-share';
 import type { ConfirmMealResponse, PersistedMealItemGroup } from './types';
@@ -36,33 +37,11 @@ import type { ConfirmMealResponse, PersistedMealItemGroup } from './types';
 // Zod schemas for input validation
 // ---------------------------------------------------------------------------
 
-const confirmAndSaveSchema = z.object({
-  analysisId: z.string().uuid('analysisId phải là UUID hợp lệ.'),
-  // Client-generated id so the optimistic card and the persisted row share a
-  // stable React key (avoids a remount/re-fade once the refetch lands).
-  mealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
-  // Quantity overrides. Omitting `ingredientIndex` scales the whole dish
-  // (every ingredient) so `newGrams` is the new total cooked weight.
-  edits: z
-    .array(
-      z.object({
-        mealItemOrder: z.number().int().min(0),
-        ingredientIndex: z.number().int().min(0).optional(),
-        newGrams: z.number().positive().finite().max(100_000),
-      })
-    )
-    .max(50)
-    .optional(),
-  // Cheat-meal: the user's chosen slider positions (0–10 per axis). The server
-  // recomputes nutrition from the staged spec + these levels — it never trusts
-  // client-sent nutrition numbers.
-  levels: z
-    .partialRecord(
-      z.enum(['protein', 'carbs', 'fat', 'drinks']),
-      z.number().min(0).max(10)
-    )
-    .optional(),
-});
+// `confirmMealSchema` (this action's full input) lives in the meals contract so
+// the `/api/v1/meals/confirm` route and the mobile client validate against the
+// same object; imported here since this `'use server'` module may only export
+// async functions. Same arrangement as `updateMealSchema` in mutate-meal.ts.
+
 const profileNutritionSettingsSchema = z
   .object({
     goal: goalEnumSchema.nullish(),
@@ -101,7 +80,7 @@ export async function confirmAndSaveMealAction(input: {
   }[];
   levels?: CheatSliderLevels;
 }): Promise<ConfirmMealResponse> {
-  const parsed = confirmAndSaveSchema.parse(input);
+  const parsed = confirmMealSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
 
   return await db.transaction(async (tx) => {
@@ -167,7 +146,17 @@ export async function confirmAndSaveMealAction(input: {
             (sum, ing) => sum + ing.estimatedGrams,
             0
           );
-          const ratio = totalGrams > 0 ? edit.newGrams / totalGrams : 0;
+          // A dish with unknown/zero base weight can't be gram-scaled: there's
+          // no ratio to apply. Record the new grams but leave nutrition intact
+          // rather than multiplying it to zero (which silently nuked relogged
+          // items whose source row had null `estimated_grams`).
+          if (totalGrams <= 0) {
+            for (const ingredient of mealItem.ingredients) {
+              ingredient.estimatedGrams = edit.newGrams;
+            }
+            continue;
+          }
+          const ratio = edit.newGrams / totalGrams;
           for (const ingredient of mealItem.ingredients) {
             ingredient.estimatedGrams *= ratio;
             scaleIngredient(ingredient, ratio);
@@ -178,10 +167,13 @@ export async function confirmAndSaveMealAction(input: {
         const ingredient = mealItem.ingredients[edit.ingredientIndex];
         if (!ingredient) continue;
 
-        const ratio =
-          ingredient.estimatedGrams > 0
-            ? edit.newGrams / ingredient.estimatedGrams
-            : 0;
+        // Same guard for a single-ingredient edit: no base weight ⇒ no ratio,
+        // so set the grams but keep the authoritative nutrition.
+        if (ingredient.estimatedGrams <= 0) {
+          ingredient.estimatedGrams = edit.newGrams;
+          continue;
+        }
+        const ratio = edit.newGrams / ingredient.estimatedGrams;
         ingredient.estimatedGrams = edit.newGrams;
         scaleIngredient(ingredient, ratio);
       }

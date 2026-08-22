@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from '@/i18n/navigation';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 import { SidebarTooltip } from '../sidebar-tooltip';
 
 export interface SidebarNavItem {
@@ -33,8 +33,8 @@ export function SidebarNavLink({
         className={cn(
           'group/nav relative flex items-center rounded-lg px-3 py-2 transition-colors duration-200',
           isActive
-            ? 'bg-nham-hover text-[#141413]'
-            : 'text-[#6E6D66] hover:bg-nham-hover hover:text-[#141413]'
+            ? 'bg-kallo-hover text-[#141413]'
+            : 'text-[#6E6D66] hover:bg-kallo-hover hover:text-[#141413]'
         )}
       >
         <span
@@ -45,7 +45,7 @@ export function SidebarNavLink({
         >
           {item.icon}
           {showBadge && collapsed && (
-            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-nham-accent ring-2 ring-white" />
+            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-kallo-accent ring-2 ring-white" />
           )}
         </span>
         <span
@@ -58,7 +58,7 @@ export function SidebarNavLink({
           {item.label}
         </span>
         {showBadge && !collapsed && (
-          <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-nham-accent" />
+          <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-kallo-accent" />
         )}
       </Link>
     </SidebarTooltip>

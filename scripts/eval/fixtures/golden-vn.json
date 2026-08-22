@@ -863,6 +863,72 @@
         "source": "knowledge-estimate",
         "setAt": "2026-07-18"
       }
+    },
+    {
+      "id": "gvn-banh-uot-cha-bo-regression",
+      "input": "1 dĩa bánh ướt chả bò + 1 trứng nhỏ",
+      "tags": ["vi", "golden", "staple", "regression-bug"],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "staples": ["bánh ướt"],
+        "kcalRange": [380, 750],
+        "macroRanges": {
+          "proteinG": [15, 40],
+          "carbohydrateG": [30, 75],
+          "fatG": [12, 40]
+        },
+        "latencyBudgetMs": 15000,
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "staging-confirmed",
+        "setAt": "2026-07-22",
+        "note": "0g-carb silent persist bug (tt 867463e3): bánh ướt was unmatched and Call 2 emitted C:0, persisting P:15/C:0/F:12. The carb band is the real guard — noSilentZeros only checks grams<=1/kcal=0 and did NOT catch this. Bands: sheets 150-300g (C 36-72 at 24g/100g) + chả bò 80-120g + 1 small egg (~60 kcal); the carb FLOOR (30) is the regression guard, the ceiling is portion-variance headroom. Requires the usda_20134_cooked row (add_banh_uot_row migration) for the staples match."
+      }
+    },
+    {
+      "id": "gvn-mi-goi-to-regression",
+      "input": "1 tô mì gói",
+      "tags": ["vi", "golden", "unit-bowl", "regression-bug"],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "staples": ["mì gói"],
+        "kcalRange": [280, 520],
+        "macroRanges": {
+          "carbohydrateG": [35, 65],
+          "fatG": [10, 26]
+        },
+        "latencyBudgetMs": 8000,
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "db-anchored",
+        "setAt": "2026-08-06",
+        "note": "Guards BOTH halves of the incident. Floor: the prod bug shipped C:0g / 412 kcal because Call 2 omitted the then-optional carbohydrateG for the unmatched noodles. Ceiling: usda_6583_raw is DRY (440 kcal/100g), so emitting a bowl's ~230-260g COOKED mass against it would read ~1000-1150 kcal. A bowl is one 70-90g goi -> 308-396 kcal."
+      }
+    },
+    {
+      "id": "gvn-mi-goi-plus-sua-decomposition",
+      "input": "1 tô mì gói + sữa",
+      "tags": ["vi", "golden", "decomposition", "regression-bug"],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "minMealItems": 2,
+        "kcalRange": [400, 700],
+        "macroRanges": {
+          "carbohydrateG": [45, 85]
+        },
+        "latencyBudgetMs": 8000,
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "db-anchored",
+        "setAt": "2026-08-06",
+        "note": "Decomposition guard: an 'X + Y' input must split into two meal items. Correction to the original note: the real incident ('mi goi sua' = noodles + JELLYFISH) did NOT collapse - Call 1 decomposed it correctly and the jellyfish matched at 0.776; only the noodles returned zero candidates (untranslated USDA names + floors + state penalty). This fixture guards the collapse CLASS anyway, since minMealItems is the only assertion that can see it."
+      }
     }
   ]
 }

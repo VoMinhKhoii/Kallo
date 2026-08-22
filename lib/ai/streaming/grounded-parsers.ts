@@ -15,20 +15,22 @@
  *      run unchanged.
  */
 
-import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
-import { ZERO_TRIPLE } from '../pipeline/bridge-verdicts';
-import type { RawNutritionAdjustment } from '../pipeline/nutrition';
-import { __testing as nutritionTesting } from '../pipeline/nutrition';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type {
-  DecomposedIngredientV2,
   GroundedIngredientEstimate,
   GroundedMealItem,
-} from '../pipeline/schemas-v2';
+} from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import type { RawNutritionAdjustment } from '@/lib/ai/pipeline/resolve/macro-resolution';
+import { __testing as nutritionTesting } from '@/lib/ai/pipeline/resolve/macro-resolution';
+import { resolveGroundedMass } from '@/lib/ai/pipeline/resolve/refuse-mass';
+import { ZERO_TRIPLE } from '@/lib/ai/pipeline/resolve/verdicts';
 import type {
   IngredientLlmNutrition,
   MacroBase,
   MealItemNutrition,
-} from '../types';
+} from '@/lib/ai/types/nutrition-adjustment';
+import { mealItemHasDiscreteOil } from '@/lib/domain/nutrition/absorbed-oil';
 
 /**
  * Same partial-JSON marker as v1's nutrition stream. Each `{"mealItemName":`
@@ -112,6 +114,7 @@ export function extractCompletedGroundedMealItems(
 export function resolveStreamingV2MealItem(
   rawItem: GroundedMealItem,
   decomposedIngredients: DecomposedIngredientV2[],
+  dishCookingMethod: string | null,
   matchResults: IngredientV2MatchResult[],
   flatIngredientStart: number
 ): { nutrition: MealItemNutrition; totalGrams: number } {
@@ -130,6 +133,14 @@ export function resolveStreamingV2MealItem(
     else localIdxByName.set(key, [i]);
   });
 
+  // Same rule the reconciled path applies (`nutrition.ts`): one discrete oil
+  // row suppresses its siblings' absorbed-oil allowance. Without it the
+  // streamed preview shows the oil twice and then silently corrects itself
+  // once reconciliation lands.
+  const siblingOilPresent = mealItemHasDiscreteOil(
+    rawItem.ingredients.map((ing) => ing.ingredientName)
+  );
+
   rawItem.ingredients.forEach((rawIng, streamIdx) => {
     const nameKey = rawIng.ingredientName.trim().toLocaleLowerCase('vi-VN');
     const localIdx = localIdxByName.get(nameKey)?.shift() ?? streamIdx;
@@ -141,17 +152,29 @@ export function resolveStreamingV2MealItem(
       (decompForName?.prepNotes ?? []).some(
         (n) => typeof n === 'string' && n.trim().length > 0
       ) ?? false;
+    const cookingMethod =
+      decompForName?.cookingMethod ?? dishCookingMethod ?? null;
 
-    const grams = rawIng.grams;
+    const selectedCandidate = candidateFromVerdict(rawIng, candidates);
+    const mass = resolveGroundedMass({
+      ground: rawIng,
+      candidateInediblePct: selectedCandidate?.inediblePct ?? null,
+      canonicalName: decompForName?.canonicalName ?? rawIng.ingredientName,
+      rawName: decompForName?.rawName ?? rawIng.ingredientName,
+      prepNotes: decompForName?.prepNotes,
+    });
+    const grams = mass.edibleG ?? 0;
     totalGrams += grams;
 
     const base = computeBaseFromVerdict(rawIng, candidates, grams);
 
-    // Phase 4 (D3): matched ingredients omit caloriesKcal/proteinG/
-    // carbohydrateG in Call-2 output because the server overwrites them from
-    // the DB anchor. Default an omitted triple to ZERO_TRIPLE — harmless for
-    // matched (resolveIngredientMacros replaces it), and a safe floor for the
-    // rare unmatched ingredient that drops a triple. fatG is always emitted.
+    // Every macro triple is schema-REQUIRED now, so a well-formed Call-2
+    // response can never omit one. These defaults survive for exactly one
+    // reason: this speculative streaming path reads partial chunks with no zod
+    // parse, so a triple can still be absent mid-stream from truncation. Zero
+    // is the safe placeholder — a matched ingredient has it replaced by
+    // resolveIngredientMacros from the DB anchor, and the final reconciliation
+    // re-parses the complete payload.
     const rawAdjustment: RawNutritionAdjustment['mealItems'][number]['ingredients'][number] =
       {
         ingredientName: rawIng.ingredientName,
@@ -165,7 +188,10 @@ export function resolveStreamingV2MealItem(
       rawAdjustment,
       base,
       grams,
-      prepNotesPresent
+      prepNotesPresent,
+      cookingMethod,
+      decompForName?.prepNotes,
+      siblingOilPresent
     );
 
     ingredients.push({
@@ -215,29 +241,22 @@ function computeBaseFromVerdict(
   };
 }
 
-export interface MealItemOffset {
-  decomposedIngredients: DecomposedIngredientV2[];
-  flatIngredientStart: number;
+function candidateFromVerdict(
+  rawIng: GroundedIngredientEstimate,
+  candidates: IngredientV2MatchResult['candidates']
+): IngredientV2MatchResult['candidates'][number] | null {
+  const selected = rawIng.selectedCandidateId;
+  if (!selected || selected === 'none') return null;
+  const match = /^c(\d+)$/.exec(selected);
+  if (!match) return null;
+  const idx = Number.parseInt(match[1], 10) - 1;
+  return idx >= 0 && idx < candidates.length ? candidates[idx] : null;
 }
 
-/**
- * Map each v2 meal item to the `(decomposed ingredients slice, flat-ingredient
- * start offset)` pair the streaming resolver needs. Computed once per request
- * from the parsed v2 decomposition, so streaming chunks just look up by
- * meal-item index.
- */
-export function buildPerMealItemOffsetMap(
-  v2MealItems: Array<{ ingredients: DecomposedIngredientV2[] }>
-): MealItemOffset[] {
-  let start = 0;
-  return v2MealItems.map((mi) => {
-    const entry = {
-      decomposedIngredients: mi.ingredients,
-      flatIngredientStart: start,
-    };
-    start += mi.ingredients.length;
-    return entry;
-  });
+export interface MealItemOffset {
+  decomposedIngredients: DecomposedIngredientV2[];
+  dishCookingMethod: string | null;
+  flatIngredientStart: number;
 }
 
 /**
@@ -255,7 +274,11 @@ export function buildPerMealItemOffsetMap(
  * to the D3 output-shape change.
  */
 export function buildMealItemOffsetByName(
-  v2MealItems: Array<{ name: string; ingredients: DecomposedIngredientV2[] }>
+  v2MealItems: Array<{
+    name: string;
+    ingredients: DecomposedIngredientV2[];
+    cookingMethod: string;
+  }>
 ): Map<string, MealItemOffset> {
   const byName = new Map<string, MealItemOffset>();
   const occ = new Map<string, number>();
@@ -266,6 +289,7 @@ export function buildMealItemOffsetByName(
     occ.set(key, n);
     byName.set(`${key}::${n}`, {
       decomposedIngredients: mi.ingredients,
+      dishCookingMethod: mi.cookingMethod,
       flatIngredientStart: start,
     });
     start += mi.ingredients.length;

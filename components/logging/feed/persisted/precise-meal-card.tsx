@@ -9,7 +9,8 @@ import {
   formatCaloriesOrNA,
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
-import { TimeDivider } from '@/components/logging/feed/time-divider';
+import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
+import { formatTime } from '@/lib/core/date/format-time';
 import { MealAmountEditor } from './meal-amount-editor';
 import { MealDetails } from './meal-details';
 // The NL-refine is submitted as `${rawInput} (${correction})` — the joining
@@ -48,10 +49,7 @@ export function PrecisePersistedMealCard({
   // works for tweaking the share).
   const refine = isFractional ? undefined : onRefine;
 
-  const timeLabel = new Date(meal.loggedAt).toLocaleTimeString(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const timeLabel = formatTime(meal.loggedAt, locale);
 
   const calories = formatCaloriesOrNA(meal.nutrition.caloriesKcal);
   const protein = formatMacroOrNA(meal.nutrition.proteinG);
@@ -65,19 +63,19 @@ export function PrecisePersistedMealCard({
       exit={{ opacity: 0, height: 0 }}
       className="relative"
     >
-      <TimeDivider timeLabel={timeLabel}>
+      <TurnHeader timeLabel={timeLabel} message={meal.rawInput}>
         {isFractional && (
-          <span className="rounded-full bg-nham-hover px-2 py-0.5 font-medium font-sans-display text-[10px] text-nham-text">
+          <span className="rounded-full bg-kallo-hover px-2 py-0.5 font-medium font-sans-display text-[10px] text-kallo-text">
             {t('portionChip', { portion: portionText })}
           </span>
         )}
-      </TimeDivider>
+      </TurnHeader>
 
       {/* Card */}
-      <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
+      <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
-          <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
+          <p className="font-serif text-[17px] text-kallo-text leading-relaxed sm:text-[19px]">
             {meal.rawInput}
           </p>
           <button
@@ -85,7 +83,7 @@ export function PrecisePersistedMealCard({
             aria-label={t('toggleDetails')}
             aria-expanded={!isCollapsed}
             onClick={() => setIsCollapsed((prev) => !prev)}
-            className="rounded-full p-1 text-nham-text-muted/60 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
+            className="rounded-full p-1 text-kallo-text-muted/60 transition-colors hover:bg-kallo-hover/40 hover:text-kallo-text"
           >
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
@@ -125,12 +123,12 @@ export function PrecisePersistedMealCard({
                   transition={{ duration: 0.15 }}
                   className="mt-2 flex items-center justify-between font-sans-display"
                 >
-                  <span className="text-[11px] text-nham-text-muted tabular-nums">
+                  <span className="text-[11px] text-kallo-text-muted tabular-nums">
                     P: {protein}
                     {'  '}C: {carbs}
                     {'  '}F: {fat}
                   </span>
-                  <span className="font-bold text-nham-text text-sm tabular-nums">
+                  <span className="font-bold text-kallo-text text-sm tabular-nums">
                     {calories}
                   </span>
                 </motion.div>
@@ -159,7 +157,7 @@ export function PrecisePersistedMealCard({
             {/* The refine field opened from the action row — one interaction
                 from the collapsed card. Also inside the amount editor. */}
             {isRefineOpen && refine && (
-              <div className="mt-3 border-nham-border/40 border-t pt-3">
+              <div className="mt-3 border-kallo-border/40 border-t pt-3">
                 <RefineField
                   meal={meal}
                   autoFocus

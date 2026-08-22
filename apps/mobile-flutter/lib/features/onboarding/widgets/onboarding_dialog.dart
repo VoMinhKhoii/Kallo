@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../providers/onboarding_providers.dart';
 import 'onboarding_wizard.dart';
 
@@ -30,10 +30,10 @@ Future<void> showOnboardingDialog(BuildContext context, WidgetRef ref) {
       final insets = MediaQuery.paddingOf(ctx);
       return Padding(
         padding: EdgeInsets.only(
-          top: insets.top + NhamSpacing.sp3,
-          bottom: insets.bottom + NhamSpacing.sp3,
-          left: NhamSpacing.sp3,
-          right: NhamSpacing.sp3,
+          top: insets.top + KalloSpacing.sp3,
+          bottom: insets.bottom + KalloSpacing.sp3,
+          left: KalloSpacing.sp3,
+          right: KalloSpacing.sp3,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
@@ -41,7 +41,7 @@ Future<void> showOnboardingDialog(BuildContext context, WidgetRef ref) {
           // step-2 TextFields need (the full page gets this from its Scaffold;
           // showGeneralDialog has no Scaffold, so supply one here).
           child: Material(
-            color: NhamColors.cream,
+            color: KalloColors.cream,
             child: OnboardingWizard(
               onComplete: () {
                 Navigator.of(ctx).pop();

@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 import '../providers/auth_form_controller.dart';
 
 /// The post-sign-up "Check your email" state.
@@ -99,13 +99,13 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
             width: 56,
             height: 56,
             decoration: const BoxDecoration(
-              color: NhamColors.hover,
+              color: KalloColors.hover,
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              LucideIcons.mail,
+              LucideIcons.mail300,
               size: 24,
-              color: NhamColors.textMuted,
+              color: KalloColors.textMuted,
             ),
           ),
         ),
@@ -113,9 +113,9 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
         Text(
           tr('auth.confirm.title'),
           textAlign: TextAlign.center,
-          style: NhamTextStyles.serifRegular(
-            fontSize: NhamFontSize.h3,
-          ).copyWith(color: NhamColors.text),
+          style: KalloTextStyles.serifRegular(
+            fontSize: KalloFontSize.h3,
+          ).copyWith(color: KalloColors.text),
         ),
         const SizedBox(height: 8),
         Text(
@@ -142,13 +142,13 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
           onTap: canResend ? _resend : null,
           child: Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp4,
-              vertical: NhamSpacing.sp3,
+              horizontal: KalloSpacing.sp4,
+              vertical: KalloSpacing.sp3,
             ),
             decoration: BoxDecoration(
-              color: NhamColors.elev,
-              borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-              border: Border.all(color: NhamColors.border),
+              color: KalloColors.elev,
+              borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+              border: Border.all(color: KalloColors.border),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -160,7 +160,7 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
                     ),
               style: dashBody(
                 weight: FontWeight.w500,
-                color: canResend ? NhamColors.text : kInkMuted,
+                color: canResend ? KalloColors.text : kInkMuted,
               ),
             ),
           ),

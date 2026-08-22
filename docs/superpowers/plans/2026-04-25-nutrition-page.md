@@ -21,14 +21,14 @@
 - [ ] **Step 1: Create a dedicated worktree from the approved spec branch**
 
 ```bash
-cd /Users/khoivo/Documents/nham-nutrition-page
-git worktree add ../nham-nutrition-page-impl -b feat/nutrition-page-implementation feat/nutrition-page
-cd ../nham-nutrition-page-impl
+cd /Users/khoivo/Documents/kallo-nutrition-page
+git worktree add ../kallo-nutrition-page-impl -b feat/nutrition-page-implementation feat/nutrition-page
+cd ../kallo-nutrition-page-impl
 git --no-pager status --short
 git --no-pager branch --show-current
 ```
 
-Expected: new worktree at `/Users/khoivo/Documents/nham-nutrition-page-impl`, clean status, branch `feat/nutrition-page-implementation`.
+Expected: new worktree at `/Users/khoivo/Documents/kallo-nutrition-page-impl`, clean status, branch `feat/nutrition-page-implementation`.
 
 - [ ] **Step 2: Install dependencies if needed**
 
@@ -2032,7 +2032,7 @@ Create `lib/nutrition/actions/candidates.test.ts`:
 import { describe, expect, it, vi } from 'vitest';
 import { getFoodSourceCandidates } from './candidates';
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/infra/auth', () => ({
   requireAuthAndProfile: vi.fn(async () => ({
     user: { id: 'user-1' },
     profile: {},
@@ -2047,7 +2047,7 @@ describe('getFoodSourceCandidates', () => {
   });
 
   it('authenticates before returning curated candidates', async () => {
-    const { requireAuthAndProfile } = await import('@/lib/auth');
+    const { requireAuthAndProfile } = await import('@/lib/infra/auth');
 
     await getFoodSourceCandidates({ nutrient: 'ironMg' });
 
@@ -2074,7 +2074,7 @@ Create `lib/nutrition/actions/candidates.ts`:
 import { getCuratedFoodSourceCandidates } from '../food-source-candidates';
 import type { SupportedCandidateNutrient } from '../nutrients';
 import { foodSourceCandidatesInputSchema } from '../schemas';
-import { requireAuthAndProfile } from '@/lib/auth';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
 
 export async function getFoodSourceCandidates(input: {
   nutrient: SupportedCandidateNutrient;
@@ -2095,13 +2095,13 @@ Create `lib/nutrition/actions/overview-query.ts`:
 
 ```ts
 import { and, eq, gt, gte, lte, sql } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { db } from '@/lib/infra/db/client';
 import {
   ingredientSources,
   mealItems,
   meals,
   vietnameseFoodComposition,
-} from '@/lib/db/schema';
+} from '@/lib/infra/db/schema';
 import { localDateSqlExpression } from '../date-range';
 
 export interface OverviewMealItemRow {
@@ -2277,7 +2277,7 @@ import type {
   NutritionRangeInput,
 } from '../types';
 import type { OverviewMealItemRow } from './overview-query';
-import type { userProfiles } from '@/lib/db/schema';
+import type { userProfiles } from '@/lib/infra/db/schema';
 
 type NutritionProfile = typeof userProfiles.$inferSelect;
 const DEFAULT_NUTRIENT_SET = new Set<NutritionNutrientKey>(DEFAULT_NUTRIENTS);
@@ -2521,7 +2521,7 @@ Add to `messages/en.json`:
 {
   "metadata": {
     "nutrition": {
-      "title": "Nutrition — Nhẩm"
+      "title": "Nutrition — Kallo"
     }
   },
   "app": {
@@ -2538,7 +2538,7 @@ Add Vietnamese equivalents:
 {
   "metadata": {
     "nutrition": {
-      "title": "Dinh dưỡng — Nhẩm"
+      "title": "Dinh dưỡng — Kallo"
     }
   },
   "app": {
@@ -2608,8 +2608,8 @@ Use a client component:
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { getNutritionOverview } from '@/lib/nutrition/actions';
-import type { NutritionRange, NutritionRangeInput } from '@/lib/nutrition/types';
+import { getNutritionOverview } from '@/lib/domain/nutrition/actions/overview/get-overview';
+import type { NutritionRange, NutritionRangeInput } from '@/lib/domain/nutrition/types';
 import { MacroPatternSection } from './macro-pattern-section';
 import { NutritionSkeleton } from './nutrition-skeleton';
 import { RangeSelector } from './range-selector';
@@ -3175,6 +3175,6 @@ Only commit if review fixes were needed.
 - Do not add dependencies unless absolutely necessary.
 - Do not add database migrations for v1.
 - Do not run `bun dev`, `bun run build`, or `bun start` unless explicitly requested.
-- Always use aliases like `@/lib/nutrition/...`, not deep relative imports across feature boundaries.
+- Always use aliases like `@/lib/domain/nutrition/...`, not deep relative imports across feature boundaries.
 - Keep user-facing text in `messages/en.json` and `messages/vi.json`.
 - Server-side Drizzle queries must be scoped by `user_id`; do not rely on RLS for app code.

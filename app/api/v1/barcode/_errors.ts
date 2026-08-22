@@ -1,5 +1,6 @@
-import { BarcodeServiceError } from '@/lib/barcode/service';
-import { AppError, Errors } from '@/lib/errors';
+import { AppError } from '@/lib/core/errors/app-error';
+import { Errors } from '@/lib/core/errors/catalog';
+import { BarcodeServiceError } from '@/lib/domain/barcode/service';
 
 /**
  * Map a {@link BarcodeServiceError} onto the standard `/api/v1` error envelope

@@ -1,34 +1,18 @@
-/// Pure daily-rhythm helpers vendored from web `components/nutrition/sections/
-/// daily-rhythm.tsx` (keep in sync). `kCompositionColors` swaps the web's
-/// `var(--nham-macro-*)` for resolved mobile tokens.
+/// Pure daily-rhythm helpers. The composition primitives now live in
+/// `shared/logic/macro_composition.dart` and are re-exported here so existing
+/// call sites keep reading; the web side is `COMPOSITION_COLORS` in
+/// `components/nutrition/sections/macro-trend-utils.ts` (keep in sync).
 ///
-/// Ported from `apps/mobile/src/lib/nutrition/logic/rhythm-logic.ts`.
+/// The `daily-rhythm.tsx` section the rest of this was vendored from was
+/// removed in the web nutrition rewrite (commit cdd7a3fa); parity of the
+/// remaining helpers has not been re-verified since.
 library;
 
-import 'dart:ui';
+import '../../../models/nutrition/nutrition.dart';
+import '../../../shared/logic/macro_composition.dart';
 
-import '../../../models/nutrition.dart';
-import '../../../theme/nham_colors.dart';
+export '../../../shared/logic/macro_composition.dart';
 
-const Map<String, double> kKcalPerGram = {
-  'protein': 4,
-  'carbohydrate': 4,
-  'fat': 9,
-};
-
-const List<String> kCompositionKeys = ['protein', 'carbohydrate', 'fat'];
-
-const Map<String, Color> kCompositionColors = {
-  'protein': NhamColors.macroProtein,
-  'carbohydrate': NhamColors.macroCarbs,
-  'fat': NhamColors.macroFat,
-};
-
-const Map<String, String> kCompositionShort = {
-  'protein': 'P',
-  'carbohydrate': 'C',
-  'fat': 'F',
-};
 
 const List<String> kOrderedMacros = ['protein', 'carbohydrate', 'fat', 'fiber'];
 
@@ -38,18 +22,6 @@ String consistencyLabelKey(double? pct) {
   if (pct >= 55) return 'rhythm.consistency.rhythmic';
   if (pct >= 30) return 'rhythm.consistency.varies';
   return 'rhythm.consistency.thin';
-}
-
-class CompositionSegment {
-  final String key;
-  final double pct;
-  const CompositionSegment({required this.key, required this.pct});
-}
-
-class Composition {
-  final double totalKcal;
-  final List<CompositionSegment> segments;
-  const Composition({required this.totalKcal, required this.segments});
 }
 
 /// Builds the macro composition (kcal-share) segments for the calorie pill.

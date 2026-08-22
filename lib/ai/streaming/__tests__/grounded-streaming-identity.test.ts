@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { NULL_NUTRITION_VALUES } from '@/lib/ai/__tests__/test-helpers';
-import type { IngredientV2MatchResult } from '@/lib/ai/matching/top-k-cascade';
-import { createCall2StreamHandler } from '@/lib/ai/pipeline/grounded-support';
-import type { MealDecompositionV2 } from '@/lib/ai/pipeline/schemas-v2';
+import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
+import type { IngredientV2MatchResult } from '@/lib/ai/matching/retrieve/top-k-cascade';
+import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import {
+  createCall2StreamHandler,
+  flushUnstreamedItemMacros,
+} from '@/lib/ai/pipeline/grounded/call-two/item-macros';
 import { buildMealItemOffsetByName } from '@/lib/ai/streaming/grounded-parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 
@@ -91,19 +95,30 @@ function matchResults(): IngredientV2MatchResult[] {
   ];
 }
 
-/** A single streamed meal item with only the fields Call 2 emits (D3 slim). */
-function streamedItem(name: string, ingName: string): string {
-  return JSON.stringify({
+/** A single meal item with only the fields Call 2 emits (D3 slim). */
+function groundedItem(
+  name: string,
+  ingName: string
+): GroundedEstimation['mealItems'][number] {
+  return {
     mealItemName: name,
     ingredients: [
       {
         ingredientName: ingName,
         selectedCandidateId: 'c1',
-        grams: 100,
+        grossG: 100,
+        refusePct: 0,
+        caloriesKcal: { low: 10, mid: 20, high: 30 },
+        proteinG: { low: 1, mid: 2, high: 3 },
+        carbohydrateG: { low: 1, mid: 2, high: 3 },
         fatG: { low: 10, mid: 12, high: 14 },
       },
     ],
-  });
+  };
+}
+
+function streamedItem(name: string, ingName: string): string {
+  return JSON.stringify(groundedItem(name, ingName));
 }
 
 function collect(): {
@@ -216,5 +231,38 @@ describe('createCall2StreamHandler — identity-based mapping (D4)', () => {
     const byName = new Map(events.map((e) => [e.name, e]));
     expect(byName.get('Cá kho')!.calories).toBeGreaterThan(120);
     expect(byName.get('Rau luộc')!.calories).toBeLessThan(80);
+  });
+});
+
+describe('flushUnstreamedItemMacros — identity-based mapping', () => {
+  it('resolves a reordered final item against its own decomposition slice', () => {
+    const decomp = decomposition();
+    const { emit, events } = collect();
+
+    flushUnstreamedItemMacros({
+      matchResults: matchResults(),
+      grounded: {
+        mealItems: [
+          groundedItem('Rau luộc', 'rau'),
+          groundedItem('Cá kho', 'cá'),
+        ],
+      },
+      streamedMealItemIds: new Map([
+        ['Rau luộc::1', 'rau-id'],
+        ['Cá kho::1', 'ca-id'],
+      ]),
+      alreadyStreamed: new Set(['rau-id']),
+      offsetByName: buildMealItemOffsetByName(decomp.mealItems),
+      goal: 'maintaining',
+      aggression: 0,
+      emit,
+    });
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      mealItemId: 'ca-id',
+      name: 'Cá kho',
+    });
+    expect(events[0].calories).toBeGreaterThan(120);
   });
 });

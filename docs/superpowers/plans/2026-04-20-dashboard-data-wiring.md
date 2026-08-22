@@ -22,13 +22,13 @@
 
 ```bash
 cd /Users/khoivo/Documents/nham
-git worktree add ../nham-current-section -b feat/dashboard-current-section
+git worktree add ../kallo-current-section -b feat/dashboard-current-section
 ```
 
 - [ ] **Step 2: Install dependencies**
 
 ```bash
-cd /Users/khoivo/Documents/nham-current-section && bun install
+cd /Users/khoivo/Documents/kallo-current-section && bun install
 ```
 
 ---
@@ -44,9 +44,9 @@ cd /Users/khoivo/Documents/nham-current-section && bun install
 'use server';
 
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { bodyWeightLog, meals } from '@/lib/db/schema';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db/client';
+import { bodyWeightLog, meals } from '@/lib/infra/db/schema';
 import type { PaceStatus, StatsData, VerdictData } from '@/components/dashboard/types';
 
 interface CurrentSectionData {
@@ -228,19 +228,19 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { PaceStatus } from '@/components/dashboard/types';
 
 // Mock dependencies before importing the action
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/infra/auth', () => ({
   requireAuthAndProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: vi.fn(),
   },
 }));
 
-import { getCurrentSectionData } from '@/lib/dashboard/actions/current';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { getCurrentSectionData } from '@/lib/domain/dashboard/actions/current';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db/client';
 
 const mockProfile = {
   weightKg: '70.0',
@@ -319,7 +319,7 @@ describe('getCurrentSectionData', () => {
 - [ ] **Step 2: Run test to verify it passes**
 
 ```bash
-cd /Users/khoivo/Documents/nham-current-section
+cd /Users/khoivo/Documents/kallo-current-section
 bun --env-file=.env.local vitest run lib/dashboard/__tests__/current-action.test.ts
 ```
 
@@ -369,7 +369,7 @@ In `components/dashboard/mock-data.ts`, remove `streak: 12` from `getStatsData()
 - [ ] **Step 3: Verify no other files reference streak**
 
 ```bash
-cd /Users/khoivo/Documents/nham-current-section
+cd /Users/khoivo/Documents/kallo-current-section
 grep -rn 'streak' components/dashboard/ --include='*.ts' --include='*.tsx'
 ```
 
@@ -501,7 +501,7 @@ Key changes:
 // Add: import { useQuery } from '@tanstack/react-query';
 // Add: import { useEffect } from 'react';
 // Add: import { toast } from 'sonner';
-// Add: import { getCurrentSectionData } from '@/lib/dashboard/actions/current';
+// Add: import { getCurrentSectionData } from '@/lib/domain/dashboard/actions/current';
 
 export function CurrentSection() {
   const t = useTranslations('dashboard.current');
@@ -527,10 +527,10 @@ export function CurrentSection() {
 function CurrentSectionSkeleton() {
   return (
     <div className="flex gap-3 animate-pulse">
-      <div className="flex-1 rounded-2xl bg-nham-hover h-[140px]" />
-      <div className="flex-1 rounded-2xl bg-nham-hover h-[140px]" />
-      <div className="flex-1 rounded-2xl bg-nham-hover h-[140px]" />
-      <div className="flex-1 rounded-2xl bg-nham-hover h-[140px]" />
+      <div className="flex-1 rounded-2xl bg-kallo-hover h-[140px]" />
+      <div className="flex-1 rounded-2xl bg-kallo-hover h-[140px]" />
+      <div className="flex-1 rounded-2xl bg-kallo-hover h-[140px]" />
+      <div className="flex-1 rounded-2xl bg-kallo-hover h-[140px]" />
     </div>
   );
 }
@@ -581,7 +581,7 @@ In `components/dashboard/dashboard-shell.tsx`:
 - [ ] **Step 6: Verify build**
 
 ```bash
-cd /Users/khoivo/Documents/nham-current-section
+cd /Users/khoivo/Documents/kallo-current-section
 bunx @biomejs/biome check --write .
 bun --env-file=.env.local vitest run lib/dashboard/__tests__/current-action.test.ts
 ```
@@ -612,13 +612,13 @@ git commit -m "feat(dashboard): wire CurrentSection to real data + i18n
 
 ```bash
 cd /Users/khoivo/Documents/nham
-git worktree add ../nham-progress-section -b feat/dashboard-progress-section
+git worktree add ../kallo-progress-section -b feat/dashboard-progress-section
 ```
 
 - [ ] **Step 2: Install dependencies**
 
 ```bash
-cd /Users/khoivo/Documents/nham-progress-section && bun install
+cd /Users/khoivo/Documents/kallo-progress-section && bun install
 ```
 
 ---
@@ -634,9 +634,9 @@ cd /Users/khoivo/Documents/nham-progress-section && bun install
 'use server';
 
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { bodyWeightLog, meals } from '@/lib/db/schema';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db/client';
+import { bodyWeightLog, meals } from '@/lib/infra/db/schema';
 import type { TimeRange } from '@/components/dashboard/types';
 
 interface WeightChartMeta {
@@ -770,19 +770,19 @@ git commit -m "feat(dashboard): add getProgressData server action"
 ```ts
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/infra/auth', () => ({
   requireAuthAndProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: vi.fn(),
   },
 }));
 
-import { getProgressData } from '@/lib/dashboard/actions/progress';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { getProgressData } from '@/lib/domain/dashboard/actions/progress';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db/client';
 
 const mockProfile = {
   weightKg: '70.0',
@@ -851,7 +851,7 @@ describe('getProgressData', () => {
 - [ ] **Step 2: Run test**
 
 ```bash
-cd /Users/khoivo/Documents/nham-progress-section
+cd /Users/khoivo/Documents/kallo-progress-section
 bun --env-file=.env.local vitest run lib/dashboard/__tests__/progress-action.test.ts
 ```
 
@@ -992,7 +992,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { getProgressData } from '@/lib/dashboard/actions/progress';
+import { getProgressData } from '@/lib/domain/dashboard/actions/progress';
 import type { TimeRange } from '@/components/dashboard/types';
 import { cn } from '@/lib/utils';
 import { AdherenceHeatmap } from './adherence-heatmap';
@@ -1021,10 +1021,10 @@ export function ProgressSection({ timeRange, onTimeRangeChange }: ProgressSectio
     <>
       {/* Header with time-range toggle */}
       <div className="mb-1 flex items-center justify-between">
-        <span className="font-bold text-[12px] text-nham-stone uppercase tracking-[0.2em]">
+        <span className="font-bold text-[12px] text-kallo-stone uppercase tracking-[0.2em]">
           {t('title')}
         </span>
-        <div className="flex rounded-xl bg-nham-hover p-0.5">
+        <div className="flex rounded-xl bg-kallo-hover p-0.5">
           {(['30d', '90d'] as const).map((r) => (
             <button
               key={r}
@@ -1033,8 +1033,8 @@ export function ProgressSection({ timeRange, onTimeRangeChange }: ProgressSectio
               className={cn(
                 'rounded-lg px-3 py-1 font-medium text-[11px] transition-all',
                 timeRange === r
-                  ? 'bg-card text-nham-text shadow-sm'
-                  : 'text-nham-stone hover:text-nham-text-muted',
+                  ? 'bg-card text-kallo-text shadow-sm'
+                  : 'text-kallo-stone hover:text-kallo-text-muted',
               )}
             >
               {t(`timeRange.${r}`)}
@@ -1045,13 +1045,13 @@ export function ProgressSection({ timeRange, onTimeRangeChange }: ProgressSectio
 
       {/* Charts */}
       <div className="flex h-full gap-3">
-        <div className="flex flex-1 flex-col rounded-2xl border border-nham-border/60 bg-card p-3 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
-          <span className="mb-1 block font-bold text-[10px] text-nham-stone uppercase tracking-[0.15em]">
+        <div className="flex flex-1 flex-col rounded-2xl border border-kallo-border/60 bg-card p-3 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
+          <span className="mb-1 block font-bold text-[10px] text-kallo-stone uppercase tracking-[0.15em]">
             {t('weightTrend')}
           </span>
           {isLoading || !data ? (
             <div className="flex flex-1 items-center justify-center">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-nham-stone/30 border-t-nham-accent" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-kallo-stone/30 border-t-kallo-accent" />
             </div>
           ) : (
             <WeightChart
@@ -1063,10 +1063,10 @@ export function ProgressSection({ timeRange, onTimeRangeChange }: ProgressSectio
             />
           )}
         </div>
-        <div className="flex shrink-0 flex-col rounded-2xl border border-nham-border/60 bg-card px-3 pt-3 pb-2 shadow-[0_4px_24px_rgba(44,36,22,0.04)] transition-all duration-300 ease-out">
+        <div className="flex shrink-0 flex-col rounded-2xl border border-kallo-border/60 bg-card px-3 pt-3 pb-2 shadow-[0_4px_24px_rgba(44,36,22,0.04)] transition-all duration-300 ease-out">
           {isLoading || !data ? (
             <div className="flex flex-1 items-center justify-center">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-nham-stone/30 border-t-nham-accent" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-kallo-stone/30 border-t-kallo-accent" />
             </div>
           ) : (
             <AdherenceHeatmap data={data.heatmapData} range={timeRange} />
@@ -1114,7 +1114,7 @@ In `components/dashboard/dashboard-shell.tsx`:
 - [ ] **Step 5: Verify build + lint**
 
 ```bash
-cd /Users/khoivo/Documents/nham-progress-section
+cd /Users/khoivo/Documents/kallo-progress-section
 bunx @biomejs/biome check --write .
 bun --env-file=.env.local vitest run lib/dashboard/__tests__/progress-action.test.ts
 ```
@@ -1144,13 +1144,13 @@ git commit -m "feat(dashboard): wire ProgressSection to real data + i18n
 
 ```bash
 cd /Users/khoivo/Documents/nham
-git worktree add ../nham-today-section -b feat/dashboard-today-section
+git worktree add ../kallo-today-section -b feat/dashboard-today-section
 ```
 
 - [ ] **Step 2: Install dependencies**
 
 ```bash
-cd /Users/khoivo/Documents/nham-today-section && bun install
+cd /Users/khoivo/Documents/kallo-today-section && bun install
 ```
 
 ---
@@ -1166,9 +1166,9 @@ cd /Users/khoivo/Documents/nham-today-section && bun install
 'use server';
 
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { meals } from '@/lib/db/schema';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db/client';
+import { meals } from '@/lib/infra/db/schema';
 import type { MealEntry, NutritionData } from '@/components/dashboard/types';
 
 interface TodayData {
@@ -1255,19 +1255,19 @@ git commit -m "feat(dashboard): add getTodayData server action"
 ```ts
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/lib/infra/auth', () => ({
   requireAuthAndProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: vi.fn(),
   },
 }));
 
-import { getTodayData } from '@/lib/dashboard/actions/today';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { getTodayData } from '@/lib/domain/dashboard/actions/today';
+import { requireAuthAndProfile } from '@/lib/infra/auth';
+import { db } from '@/lib/infra/db/client';
 
 const mockProfile = {
   calorieTarget: 2000,
@@ -1334,7 +1334,7 @@ describe('getTodayData', () => {
 - [ ] **Step 2: Run test**
 
 ```bash
-cd /Users/khoivo/Documents/nham-today-section
+cd /Users/khoivo/Documents/kallo-today-section
 bun --env-file=.env.local vitest run lib/dashboard/__tests__/today-action.test.ts
 ```
 
@@ -1437,7 +1437,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { CalorieRing } from '@/components/shared/calorie-ring';
 import { MacroBars } from '@/components/shared/macro-bars';
-import { getTodayData } from '@/lib/dashboard/actions/today';
+import { getTodayData } from '@/lib/domain/dashboard/actions/today';
 import { MealList } from './meal-list';
 
 export function TodaySection() {
@@ -1465,21 +1465,21 @@ export function TodaySection() {
       label: t('protein'),
       current: nutrition.protein.current,
       target: nutrition.protein.target,
-      color: 'var(--nham-macro-protein)',
+      color: 'var(--kallo-macro-protein)',
       unit: 'g' as const,
     },
     {
       label: t('carbs'),
       current: nutrition.carbs.current,
       target: nutrition.carbs.target,
-      color: 'var(--nham-macro-carbs)',
+      color: 'var(--kallo-macro-carbs)',
       unit: 'g' as const,
     },
     {
       label: t('fat'),
       current: nutrition.fat.current,
       target: nutrition.fat.target,
-      color: 'var(--nham-macro-fat)',
+      color: 'var(--kallo-macro-fat)',
       unit: 'g' as const,
     },
   ];
@@ -1490,7 +1490,7 @@ export function TodaySection() {
         <CalorieRing current={nutrition.calories.current} target={nutrition.calories.target} />
         <MacroBars items={macroItems} />
       </div>
-      <div className="w-[36%] min-w-0 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
+      <div className="w-[36%] min-w-0 rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
         <MealList meals={meals} />
       </div>
     </div>
@@ -1501,17 +1501,17 @@ function TodaySectionSkeleton() {
   return (
     <div className="flex h-full items-stretch gap-5 animate-pulse">
       <div className="flex flex-1 items-center gap-5">
-        <div className="h-24 w-24 rounded-full bg-nham-hover" />
+        <div className="h-24 w-24 rounded-full bg-kallo-hover" />
         <div className="flex flex-1 flex-col gap-2">
-          <div className="h-3 w-20 rounded bg-nham-hover" />
-          <div className="h-2 w-full rounded bg-nham-hover" />
-          <div className="h-3 w-16 rounded bg-nham-hover" />
-          <div className="h-2 w-full rounded bg-nham-hover" />
-          <div className="h-3 w-14 rounded bg-nham-hover" />
-          <div className="h-2 w-full rounded bg-nham-hover" />
+          <div className="h-3 w-20 rounded bg-kallo-hover" />
+          <div className="h-2 w-full rounded bg-kallo-hover" />
+          <div className="h-3 w-16 rounded bg-kallo-hover" />
+          <div className="h-2 w-full rounded bg-kallo-hover" />
+          <div className="h-3 w-14 rounded bg-kallo-hover" />
+          <div className="h-2 w-full rounded bg-kallo-hover" />
         </div>
       </div>
-      <div className="w-[36%] rounded-2xl bg-nham-hover" />
+      <div className="w-[36%] rounded-2xl bg-kallo-hover" />
     </div>
   );
 }
@@ -1535,7 +1535,7 @@ In `components/dashboard/dashboard-shell.tsx`:
 - [ ] **Step 4: Verify build + lint**
 
 ```bash
-cd /Users/khoivo/Documents/nham-today-section
+cd /Users/khoivo/Documents/kallo-today-section
 bunx @biomejs/biome check --write .
 bun --env-file=.env.local vitest run lib/dashboard/__tests__/today-action.test.ts
 ```
@@ -1565,7 +1565,7 @@ After all 3 worktrees are complete and merged to main:
 - [ ] Run full tests: `bun --env-file=.env.local vitest run`
 - [ ] Clean up worktrees:
   ```bash
-  git worktree remove ../nham-current-section
-  git worktree remove ../nham-progress-section
-  git worktree remove ../nham-today-section
+  git worktree remove ../kallo-current-section
+  git worktree remove ../kallo-progress-section
+  git worktree remove ../kallo-today-section
   ```

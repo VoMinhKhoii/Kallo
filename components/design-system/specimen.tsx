@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 
 /**
  * Shared scaffolding for the /design-system style guide. Every section is
@@ -36,7 +36,7 @@ export function DsSection({
         ) : null}
       </h2>
       {intro ? (
-        <p className="mt-3 max-w-2xl text-nham-text-muted text-sm leading-relaxed">
+        <p className="mt-3 max-w-2xl text-kallo-text-muted text-sm leading-relaxed">
           {intro}
         </p>
       ) : null}
@@ -57,12 +57,14 @@ export function DsCard({
   return (
     <div
       className={cn(
-        'rounded-2xl border border-nham-border/60 bg-white p-card shadow-xs',
+        'rounded-2xl border border-kallo-border/60 bg-white p-card shadow-xs',
         className
       )}
     >
       {title ? (
-        <p className="mb-4 font-medium text-nham-text-muted text-xs">{title}</p>
+        <p className="mb-4 font-medium text-kallo-text-muted text-xs">
+          {title}
+        </p>
       ) : null}
       {children}
     </div>
@@ -71,7 +73,7 @@ export function DsCard({
 
 export function DsMeta({ children }: { children: ReactNode }) {
   return (
-    <p className="font-mono text-2xs text-nham-stone tabular-nums">
+    <p className="font-mono text-2xs text-kallo-stone tabular-nums">
       {children}
     </p>
   );

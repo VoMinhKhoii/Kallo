@@ -6,7 +6,6 @@ import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -64,14 +63,14 @@ export function AddFriendDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="gap-5 border-[#E8E6DC] bg-white">
+      <DialogContent
+        aria-describedby={undefined}
+        className="gap-5 border-[#E8E6DC] bg-white"
+      >
         <DialogHeader>
           <DialogTitle className="font-serif text-[#141413] text-xl">
             {tab === 'friend' ? t('title') : tGroup('title')}
           </DialogTitle>
-          <DialogDescription className="font-sans-display text-[#6E6D66]">
-            {tab === 'friend' ? t('description') : tGroup('description')}
-          </DialogDescription>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={(value) => setTab(value as DialogTab)}>

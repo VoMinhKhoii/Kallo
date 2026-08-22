@@ -1,9 +1,10 @@
-import '../../../../models/streaming.dart';
+import '../../../../models/logging/streaming.dart';
 import '../../data/logging_keys.dart';
 import '../../data/logging_models.dart';
 import '../../data/stream_analysis_controller.dart';
 import '../format.dart';
 import '../meal_utils.dart' show isLikelyPartialDay;
+import 'feed_entries.dart';
 
 /// Everything the day's feed renders off, derived once per frame from the day
 /// query, the live analysis stream and the composer's local attempt state.
@@ -16,6 +17,7 @@ class FeedViewState {
   const FeedViewState({
     required this.persistedMeals,
     required this.pendingConfirmations,
+    required this.entries,
     required this.isLoading,
     required this.hasError,
     required this.hasUnknownDailyMacros,
@@ -28,7 +30,7 @@ class FeedViewState {
     required this.dailyFat,
     required this.hasFailedAttempt,
     required this.isEmpty,
-    required this.hasFooterItems,
+    required this.hasLiveTail,
     required this.showPartialDayNotice,
   });
 
@@ -56,8 +58,19 @@ class FeedViewState {
             .where((m) => !pendingRemovalIds.contains(m.id))
             .toList()
           ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
+    // The revealed answer is already staged server-side, and the day is
+    // refreshed the moment it lands so the card survives a hot reload or a
+    // relaunch. Until the user confirms, that row and the reveal are the SAME
+    // meal — render both and it appears twice.
+    final revealedId = stream.status == StreamStatus.done ? stream.analysisId : null;
+    // Oldest first, like persistedMeals above. The server hands these back
+    // `ORDER BY logged_at DESC`, so taking them as-is put two unconfirmed meals
+    // on screen in the opposite order to every other card in the day.
     final pendingConfirmations =
-        day?.pendingConfirmations ?? const <PendingMealConfirmation>[];
+        (day?.pendingConfirmations ?? const <PendingMealConfirmation>[])
+            .where((p) => p.id != revealedId)
+            .toList()
+          ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
 
     // Legacy meals can carry unknown macros — when any do, the daily summary
     // can't be totalled honestly, so we show a quiet note instead of the ring.
@@ -113,21 +126,20 @@ class FeedViewState {
       persistedMeals.fold<double>(0, (s, m) => s + (m.nutrition.fatG ?? 0)),
     );
 
-    final isEmpty =
-        !isLoading &&
-        persistedMeals.isEmpty &&
-        pendingConfirmations.isEmpty &&
-        !isStreaming &&
-        !isRevealing &&
-        !isCheatRevealing &&
-        !hasFailedAttempt;
+    // Saved and staged meals read as ONE list, ordered by when they were
+    // logged. Kept apart, confirming a staged meal moved its card out of the
+    // lower block and into the upper one — a save in the middle of the day
+    // jumped to the top.
+    final entries = buildFeedEntries(
+      saved: persistedMeals,
+      staged: pendingConfirmations,
+    );
 
-    final hasFooterItems =
-        pendingConfirmations.isNotEmpty ||
-        isStreaming ||
-        isRevealing ||
-        isCheatRevealing ||
-        hasFailedAttempt;
+    // Only the live turn and a failed attempt live below the list now.
+    final hasLiveTail =
+        isStreaming || isRevealing || isCheatRevealing || hasFailedAttempt;
+
+    final isEmpty = !isLoading && entries.isEmpty && !hasLiveTail;
 
     // A past day with real meals but under half the target reads as
     // under-logged; the trends set it aside, so we say so (and offer to fold it
@@ -148,6 +160,7 @@ class FeedViewState {
     return FeedViewState(
       persistedMeals: persistedMeals,
       pendingConfirmations: pendingConfirmations,
+      entries: entries,
       isLoading: isLoading,
       hasError: dayHasError,
       hasUnknownDailyMacros: hasUnknownDailyMacros,
@@ -160,7 +173,7 @@ class FeedViewState {
       dailyFat: dailyFat,
       hasFailedAttempt: hasFailedAttempt,
       isEmpty: isEmpty,
-      hasFooterItems: hasFooterItems,
+      hasLiveTail: hasLiveTail,
       showPartialDayNotice: showPartialDayNotice,
     );
   }
@@ -170,6 +183,10 @@ class FeedViewState {
 
   /// Analyses the server has staged but the user hasn't confirmed yet.
   final List<PendingMealConfirmation> pendingConfirmations;
+
+  /// The day's cards — saved and staged interleaved, oldest first. What the
+  /// feed list actually renders; the two lists above are the ingredients.
+  final List<FeedEntry> entries;
 
   /// First load only — a refetch keeps the previous day on screen.
   final bool isLoading;
@@ -192,9 +209,10 @@ class FeedViewState {
   /// Nothing saved, staged, in flight or failed — the empty state's day.
   final bool isEmpty;
 
-  /// The footer carries at least one card (pending / streaming / revealed /
-  /// failed), so the list reserves a trailing slot for it.
-  final bool hasFooterItems;
+  /// Something is happening below the day's cards — an analysis streaming, a
+  /// revealed answer, or a failed attempt — so the list reserves a trailing
+  /// slot for the footer.
+  final bool hasLiveTail;
 
   final bool showPartialDayNotice;
 }

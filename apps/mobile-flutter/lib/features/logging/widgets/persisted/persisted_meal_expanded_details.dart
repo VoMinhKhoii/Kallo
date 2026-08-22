@@ -1,12 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../macro_trio.dart';
+import '../macros/macro_trio.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
-import '../../logic/format.dart';
 import '../../logic/logging_spacing.dart';
 
 class PersistedMealExpandedDetails extends StatelessWidget {
@@ -24,7 +23,7 @@ class PersistedMealExpandedDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
+          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
           const SizedBox(height: LoggingSpacing.section),
           Padding(
             padding: const EdgeInsets.only(bottom: LoggingSpacing.section),
@@ -37,13 +36,21 @@ class PersistedMealExpandedDetails extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
+                        // TWO lines, not one. The macro tail is fixed-width, so
+                        // the name gets ~96pt on a 390 phone — under half of
+                        // what "Top blade áp chảo" needs (128 measured). At one
+                        // line, ordinary Vietnamese dish names ellipsize away
+                        // the part that identifies them; the row grows a line
+                        // only for the names that need it.
                         Expanded(
                           child: Text(
                             group.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis, style: dashBody(),),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: dashBody(),
+                          ),
                         ),
-                        const SizedBox(width: NhamSpacing.sp3), // gap-3
+                        const SizedBox(width: KalloSpacing.sp3), // gap-3
                         MacroTrio(
                           protein: group.nutrition.proteinG,
                           carbs: group.nutrition.carbohydrateG,
@@ -56,23 +63,14 @@ class PersistedMealExpandedDetails extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
+          const Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
           const SizedBox(height: LoggingSpacing.section),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'logging.persistedMealCard.total'.tr(), style: dashBody(weight: FontWeight.w500, tabular: true),),
-              Row(
-                children: [
-                  Text(
-                    'P: ${fmtG(n.proteinG)}  C: ${fmtG(n.carbohydrateG)}  F: ${fmtG(n.fatG)}', style: dashMeta(tabular: true),),
-                  const SizedBox(width: NhamSpacing.sp4), // gap-4
-                  Text(
-                    fmtKcal(n.caloriesKcal), style: dashValue(),),
-                ],
-              ),
-            ],
+          MealTotalsRow(
+            label: 'logging.persistedMealCard.total'.tr(),
+            protein: n.proteinG,
+            carbs: n.carbohydrateG,
+            fat: n.fatG,
+            calories: n.caloriesKcal,
           ),
         ],
       ),

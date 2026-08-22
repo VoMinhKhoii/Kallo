@@ -27,7 +27,7 @@ export function CircleAddMenu() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-nham-btn px-3 py-2 text-white transition-colors hover:bg-nham-btn/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-kallo-btn px-3 py-2 text-white transition-colors hover:bg-kallo-btn/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface"
           >
             <UserPlus className="h-3.5 w-3.5" />
             <span className="font-medium font-sans-display text-[12px]">

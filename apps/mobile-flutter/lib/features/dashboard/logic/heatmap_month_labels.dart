@@ -16,7 +16,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/painting.dart';
 
-import '../../../models/dashboard.dart';
+import '../../../models/profile/dashboard.dart';
 
 /// A month header with a resolved, collision-free position.
 class MonthLabelBox {

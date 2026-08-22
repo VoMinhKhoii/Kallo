@@ -1,4 +1,4 @@
-import type { TimeRange } from '@/lib/types/dashboard';
+import type { TimeRange } from '@/lib/core/types/dashboard';
 
 export function buildXTicks(
   count: number,

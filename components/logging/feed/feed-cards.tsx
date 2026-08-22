@@ -1,6 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
+import { useRef } from 'react';
 import { CheatSliderCard } from '@/components/logging/feed/cheat/cheat-slider-card';
 import { MealEntry } from '@/components/logging/feed/meal-entry/meal-entry';
 import {
@@ -9,8 +10,8 @@ import {
 } from '@/components/logging/feed/persisted/persisted-meal-card';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming/streaming-meal-entry';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
-import type { CheatSliderLevels } from '@/lib/types/cheat';
-import type { ChatMessage, MealQuantityEdit } from '@/lib/types/meal';
+import type { CheatSliderLevels } from '@/lib/core/types/cheat';
+import type { ChatMessage, MealQuantityEdit } from '@/lib/core/types/meal';
 
 interface FeedCardsProps {
   orderedPersistedMeals: PersistedMeal[];
@@ -42,6 +43,12 @@ export function FeedCards({
   onConfirmCheatMeal,
   onCheatClarify,
 }: FeedCardsProps) {
+  // Which messages the user actually watched stream. The reveal has to know:
+  // its card closes around rows that are already on screen, while a card
+  // restored from the server on load has nothing behind it and should enter
+  // normally. A ref, not state — this must not cause a render of its own.
+  const streamedIds = useRef(new Set<string>());
+
   return (
     <div className="mx-auto w-full max-w-3xl">
       <div className="flex flex-col gap-5 sm:gap-8">
@@ -75,6 +82,7 @@ export function FeedCards({
         <AnimatePresence initial={false}>
           {unconfirmedMessages.map((msg) => {
             if (msg.isStreaming) {
+              streamedIds.current.add(msg.id);
               return <StreamingMealEntry key={msg.id} message={msg} />;
             }
 
@@ -98,6 +106,7 @@ export function FeedCards({
                   key={msg.id}
                   message={msg}
                   isConfirming={isConfirming}
+                  revealing={streamedIds.current.has(msg.id)}
                   onConfirm={(edits) => onConfirmMeal(msg, edits)}
                 />
               );
@@ -111,13 +120,13 @@ export function FeedCards({
                 animate={{ opacity: 1, y: 0 }}
                 className="relative"
               >
-                <div className="rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4">
+                <div className="rounded-2xl border border-kallo-danger/30 bg-kallo-danger/10 p-4">
                   {msg.userInput && (
-                    <p className="mb-2 font-sans-display text-[13px] text-nham-text-muted">
+                    <p className="mb-2 font-sans-display text-[13px] text-kallo-text-muted">
                       {msg.userInput}
                     </p>
                   )}
-                  <p className="font-sans-display text-nham-danger text-sm">
+                  <p className="font-sans-display text-kallo-danger text-sm">
                     {msg.content}
                   </p>
                 </div>

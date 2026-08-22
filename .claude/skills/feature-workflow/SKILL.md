@@ -31,7 +31,7 @@ wrong order. This skill is the order.
 ## Phase 0 — Orient (before ANY edit)
 
 1. AGENTS.md §2.2 preflight: invoke the matching stack skills (vercel-react-best-practices
-   / nham-design / mobile docs) — the most-skipped mandatory step on record.
+   / kallo-design / mobile docs) — the most-skipped mandatory step on record.
 2. Load **probe-state-before-acting**: fetch, check whether the branch/work already
    exists, confirm the worktree root. (Worktree from latest main per repo convention.)
 3. Restate the ask. If it's multi-part feedback, produce a numbered parse of every

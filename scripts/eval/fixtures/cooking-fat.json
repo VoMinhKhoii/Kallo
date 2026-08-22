@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "notes": "Cooking-method fat regressions. The tofu variants are scored as one cross-case monotonicity assertion in the order no oil -> light oil -> deep fried.",
+  "cases": [
+    {
+      "id": "fat-vn-tofu-no-oil",
+      "input": "1 tô bún đậu hũ nướng không dầu + rau sống",
+      "tags": ["vi", "cooking-fat", "regression-bug"],
+      "tier": "extended",
+      "expect": {
+        "isFood": true,
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "staging-confirmed",
+        "setAt": "2026-08-07",
+        "note": "Baseline member. Live-verified 2026-08-07 on fix/cooking-oil-fat-guard: 346 kcal, 6.0g total fat."
+      }
+    },
+    {
+      "id": "fat-vn-tofu-light-oil",
+      "input": "1 tô bún đậu hũ chiên ít dầu + rau sống",
+      "tags": ["vi", "cooking-fat", "regression-bug"],
+      "tier": "extended",
+      "expect": {
+        "isFood": true,
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "staging-confirmed",
+        "setAt": "2026-08-07",
+        "note": "Middle member. Live-verified 2026-08-07 on fix/cooking-oil-fat-guard: 397 kcal, 13.0g total fat."
+      }
+    },
+    {
+      "id": "fat-vn-tofu-deep-oil",
+      "input": "1 tô bún đậu hũ chiên ngập dầu + rau sống",
+      "tags": ["vi", "cooking-fat", "regression-bug"],
+      "tier": "extended",
+      "expect": {
+        "isFood": true,
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "staging-confirmed",
+        "setAt": "2026-08-07",
+        "note": "Top member. Live-verified 2026-08-07 on fix/cooking-oil-fat-guard: 460 kcal, 19.0g total fat. Pre-fix this returned 9g, BELOW the light-oil variant."
+      }
+    },
+    {
+      "id": "fat-vn-stir-fried-vegetable",
+      "input": "1 dĩa rau muống xào tỏi",
+      "tags": ["vi", "cooking-fat", "vegetable", "regression-bug"],
+      "tier": "extended",
+      "expect": {
+        "isFood": true,
+        "macroRanges": {
+          "fatG": [5, 25]
+        },
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-08-07",
+        "note": "A standard stir-fry should retain at least the shared 5g lower absorbed-oil prior rather than collapse toward the raw vegetable row."
+      }
+    }
+  ],
+  "relations": [
+    {
+      "id": "fat-vn-tofu-oil-monotonic",
+      "kind": "strictlyIncreasingFatMid",
+      "caseIds": [
+        "fat-vn-tofu-no-oil",
+        "fat-vn-tofu-light-oil",
+        "fat-vn-tofu-deep-oil"
+      ],
+      "note": "One assertion covering Call-1 ingredient methods, additive fat guarding, and mandatory Call 2."
+    }
+  ]
+}

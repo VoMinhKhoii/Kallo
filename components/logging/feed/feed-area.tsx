@@ -1,17 +1,18 @@
 'use client';
 
+import { EmptyPrompt } from '@/components/logging/feed/composer/empty-prompt';
+import { FeedComposer } from '@/components/logging/feed/composer/feed-composer';
 import { FeedCards } from '@/components/logging/feed/feed-cards';
-import { FeedComposer } from '@/components/logging/feed/feed-composer';
 import {
   LoggingDayErrorState,
   LoggingDaySkeleton,
 } from '@/components/logging/feed/feed-day-states';
 import { FeedHeader } from '@/components/logging/feed/feed-header';
 import { PartialYesterdayPrompt } from '@/components/logging/feed/partial-day/partial-yesterday-prompt';
-import type { LoggingProfile } from '@/components/logging/logging-shell';
 import { addDays } from '@/components/logging/sidebar/timeline-utils';
-import { useFeedController } from '@/hooks/meals/use-feed-controller';
-import { cn } from '@/lib/utils';
+import { useFeedController } from '@/hooks/meals/feed/use-feed-controller';
+import { cn } from '@/lib/core/ui/cn';
+import type { LoggingProfile } from '@/lib/domain/logging/types';
 
 interface FeedAreaProps {
   selectedDate: string;
@@ -22,6 +23,8 @@ interface FeedAreaProps {
   onInitialMealApplied?: () => void;
   onSelectDate: (date: string) => void;
   onPaymentRequired?: () => void;
+  /** The server's answer for this day, when it had one. See `useFeedController`. */
+  initiallyHasEntries?: boolean;
 }
 
 // "Fix with words" (natural-language refine) is hidden for now. It currently
@@ -42,6 +45,7 @@ export function FeedArea({
   onInitialMealApplied,
   onSelectDate,
   onPaymentRequired,
+  initiallyHasEntries,
 }: FeedAreaProps) {
   const feed = useFeedController({
     selectedDate,
@@ -51,6 +55,7 @@ export function FeedArea({
     isDateNavigationPending,
     onInitialMealApplied,
     onPaymentRequired,
+    initiallyHasEntries,
   });
   const { day } = feed;
 
@@ -96,7 +101,9 @@ export function FeedArea({
           )}
           data-testid="meal-card-scroll"
         >
-          {day.isDayLoading && <LoggingDaySkeleton />}
+          {/* No ghost cards for a day the server already told us is empty —
+              they would flash in and out for no reason. */}
+          {day.isDayLoading && feed.expectEntries && <LoggingDaySkeleton />}
 
           {!day.isDayLoading && day.isDayError && (
             <LoggingDayErrorState
@@ -123,6 +130,10 @@ export function FeedArea({
           )}
         </div>
 
+        {/* The one editorial line on an empty day — the app asking, rather
+            than a bare input bar standing in for a question. */}
+        {feed.isEmptyComposer && <EmptyPrompt />}
+
         <FeedComposer
           inputRef={feed.inputRef}
           isCheat={feed.isCheat}
@@ -131,10 +142,15 @@ export function FeedArea({
             feed.isStagingRepeat || feed.stream.isAnalyzing
           }
           onSelectCheatOccasion={feed.handleRepeatCheat}
+          relog={feed.relog}
           onSubmit={
             feed.loggingMode === 'manual'
               ? feed.handleManualSubmit
-              : feed.handleSubmit
+              : // Normal mode routes through one unified handler: it picks
+                // text-only AI, pure-relog staging, or the combined merge based
+                // on what's typed and staged. Cheat submits ride the same path
+                // (no picks staged in cheat mode → straight to the estimator).
+                feed.relog.handleNormalSubmit
           }
           onCancel={feed.handleCancel}
           disabled={feed.stream.isAnalyzing}
@@ -144,6 +160,7 @@ export function FeedArea({
           onChangeIntensity={feed.setCheatIntensity}
           selectedDate={selectedDate}
           onBarcodeSuccess={feed.handleBarcodeSuccess}
+          animateLayout={feed.animateComposerLayout}
         />
       </div>
     </main>

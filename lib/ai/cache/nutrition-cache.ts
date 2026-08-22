@@ -1,11 +1,13 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import type * as schema from '@/lib/db/schema';
 import {
+  type InediblePctRow,
   NUTRITION_CACHE_SELECT_COLUMNS,
+  type NutritionCacheRow,
   parseNutritionRow,
-} from '../matching/nutrition-db';
-import type { NutritionPer100g } from '../types';
+} from '@/lib/ai/cache/nutrition-rows';
+import type { NutritionPer100g } from '@/lib/ai/types/matching';
+import type * as schema from '@/lib/infra/db/schema';
 
 /**
  * Module-level singleton nutrition cache.
@@ -27,6 +29,7 @@ import type { NutritionPer100g } from '../types';
  */
 const cache = new Map<string, NutritionPer100g>();
 const inedibleCache = new Map<string, number>();
+const foodGroupCache = new Map<string, string>();
 
 /** True only after loadAll() finishes successfully */
 let initialized = false;
@@ -38,6 +41,7 @@ let initPromise: Promise<void> | null = null;
 export function clearNutritionCache(): void {
   cache.clear();
   inedibleCache.clear();
+  foodGroupCache.clear();
   initialized = false;
   initPromise = null;
 }
@@ -95,6 +99,11 @@ export function peekNutritionCache(): Map<string, NutritionPer100g> {
   return cache;
 }
 
+/** Return food-group metadata loaded alongside cached nutrition rows. */
+export function peekFoodGroupCache(): Map<string, string> {
+  return foodGroupCache;
+}
+
 /** Insert a directly-fetched row into the singleton so later hits are warm. */
 export function primeNutritionEntry(
   id: string,
@@ -130,14 +139,18 @@ export async function fetchNutritionForIds(
     ids.map((id) => sql`${id}`),
     sql`, `
   );
-  const rows = await db.execute(
+  const rows = await db.execute<NutritionCacheRow>(
     sql`SELECT ${sql.raw(NUTRITION_CACHE_SELECT_COLUMNS.join(', '))} FROM vietnamese_food_composition WHERE id IN (${idList})`
   );
-  for (const row of rows as unknown as Record<string, unknown>[]) {
-    const id = row.id as string;
+  for (const row of rows) {
+    const id = row.id;
     const nutrition = parseNutritionRow(row);
     map.set(id, nutrition);
     cache.set(id, nutrition);
+    const foodGroupEn = row.type_en;
+    if (typeof foodGroupEn === 'string' && foodGroupEn.length > 0) {
+      foodGroupCache.set(id, foodGroupEn);
+    }
     const inedible = row.inedible_portion_pct;
     if (inedible != null) {
       const parsed = Number(inedible);
@@ -164,11 +177,11 @@ export async function fetchInediblePctForIds(
     ids.map((id) => sql`${id}`),
     sql`, `
   );
-  const rows = await db.execute(
+  const rows = await db.execute<InediblePctRow>(
     sql`SELECT id, inedible_portion_pct FROM vietnamese_food_composition WHERE id IN (${idList})`
   );
-  for (const row of rows as unknown as Record<string, unknown>[]) {
-    const id = row.id as string;
+  for (const row of rows) {
+    const id = row.id;
     const inedible = row.inedible_portion_pct;
     if (inedible == null) continue;
     const parsed = Number(inedible);
@@ -195,14 +208,17 @@ async function ensureInitialized(
 }
 
 async function loadAll(db: PostgresJsDatabase<typeof schema>): Promise<void> {
-  const rows = await db.execute(
+  const rows = await db.execute<NutritionCacheRow>(
     sql`SELECT ${sql.raw(NUTRITION_CACHE_SELECT_COLUMNS.join(', '))} FROM vietnamese_food_composition WHERE source_id = 1`
   );
-  const allRows = rows as unknown as Record<string, unknown>[];
 
-  for (const row of allRows) {
-    const id = row.id as string;
+  for (const row of rows) {
+    const id = row.id;
     cache.set(id, parseNutritionRow(row));
+    const foodGroupEn = row.type_en;
+    if (typeof foodGroupEn === 'string' && foodGroupEn.length > 0) {
+      foodGroupCache.set(id, foodGroupEn);
+    }
     // Postgres `numeric` columns arrive as strings from postgres-js, but tests
     // pass numbers; `Number()` normalizes both. Skip NaN (null/missing/junk).
     const inedible = row.inedible_portion_pct;

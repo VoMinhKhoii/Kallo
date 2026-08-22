@@ -63,6 +63,20 @@ export function scoreCase(
     });
   }
 
+  if (fixture.expect.minMealItems != null) {
+    // Derived from the observed ingredients rather than a new observation
+    // field — every ingredient already carries its owning meal-item name.
+    const distinctMealItems = new Set(
+      observed.ingredients.map((item) => item.mealItemName)
+    ).size;
+    checks.push({
+      name: 'minMealItems',
+      pass: distinctMealItems >= fixture.expect.minMealItems,
+      expected: fixture.expect.minMealItems,
+      actual: distinctMealItems,
+    });
+  }
+
   if (fixture.expect.kcalRange) {
     const [min, max] = fixture.expect.kcalRange;
     const mid = observed.mealKcal?.mid ?? null;
@@ -71,6 +85,25 @@ export function scoreCase(
       pass: mid != null && mid >= min && mid <= max,
       expected: fixture.expect.kcalRange,
       actual: mid,
+    });
+  }
+
+  if (fixture.expect.expectVessel !== undefined) {
+    const expected = fixture.expect.expectVessel;
+    const actual = observed.vessels;
+    checks.push({
+      name: 'vessel',
+      pass:
+        expected === null
+          ? actual.every((vessel) => vessel === null)
+          : expected.length === actual.length &&
+            expected.every(
+              (vessel, index) =>
+                vessel.family === actual[index]?.family &&
+                vessel.tier === actual[index]?.tier
+            ),
+      expected,
+      actual,
     });
   }
 

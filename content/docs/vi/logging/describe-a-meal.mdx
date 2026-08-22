@@ -1,0 +1,105 @@
+---
+title: Mô tả bữa ăn
+description: Cách viết để Kallo hiểu đúng, và chuyện gì xảy ra giữa lúc bạn gửi và lúc kết quả hiện ra.
+lastUpdated: '2026-08-03'
+---
+
+Đây là cách ghi nhận chính của Kallo. Bạn viết một câu; Kallo trả lại các món,
+nguyên liệu, khối lượng và chỉ số dinh dưỡng để bạn kiểm tra rồi xác nhận.
+
+## Viết thế nào cho tốt
+
+Không có cú pháp bắt buộc. Nhưng vài thói quen giúp kết quả sát hơn nhiều.
+
+### Giữ nguyên dấu tiếng Việt
+
+`bò`, `bơ` và `bổ` là ba thứ khác nhau. Kallo dựa vào dấu để phân biệt, nên viết
+không dấu sẽ làm kết quả kém đi đáng kể.
+
+### Nói cách chế biến
+
+Cách nấu ảnh hưởng tới chất béo nhiều hơn hầu hết mọi thứ khác:
+
+- `cá kho` và `cá chiên` — cùng con cá, lệch nhau rõ rệt.
+- `rau luộc` và `rau xào` — khác nhau ở lượng dầu.
+- `gà nướng` và `gà rán` — khác nhau lớn.
+
+### Cho biết khối lượng khi bạn biết
+
+Một con số cụ thể luôn thắng phép đoán. `50gr nạc dăm luộc` sẽ được dùng nguyên
+vẹn, không qua ước lượng.
+
+### Ghi cả bữa trong một câu
+
+`cơm tấm sườn bì chả + canh chua + 1 ly trà đá` cho kết quả tốt hơn ba lần nhập
+riêng lẻ, vì Kallo nhìn thấy toàn bộ bữa ăn cùng lúc và nhóm các món đúng cách.
+
+<MealExample
+  input="cơm tấm sườn bì chả, thêm trứng ốp la"
+  totalLabel="Tổng"
+  dishes={[
+    { name: 'Cơm tấm sườn bì chả', protein: 38, carbs: 84, fat: 27, calories: 730 },
+    { name: 'Trứng ốp la', protein: 7, carbs: 1, fat: 9, calories: 110 },
+  ]}
+/>
+
+## Chuyện gì xảy ra khi bạn gửi
+
+Kết quả hiện dần chứ không đợi xong hết mới hiển thị. Bạn sẽ thấy các giai đoạn
+nối nhau:
+
+<Steps>
+<Step index={1} title="Tách bữa ăn">
+Câu của bạn được tách thành các món, mỗi món thành các nguyên liệu, kèm cách chế
+biến và các gợi ý về khẩu phần. Ở bước này chưa có gam nào cả.
+</Step>
+
+<Step index={2} title="Khớp nguyên liệu">
+Từng nguyên liệu được tra trong dữ liệu thành phần thực phẩm. Tên món hiện ra
+trước ở bước này.
+</Step>
+
+<Step index={3} title="Neo khẩu phần">
+Khối lượng được chốt lại. Nếu bạn đã nói rõ, Kallo dùng đúng con số đó. Nếu món
+quá mơ hồ để kết luận, bước này chuyển thành một câu hỏi cho bạn.
+</Step>
+
+<Step index={4} title="Ước lượng dinh dưỡng">
+Với từng nguyên liệu đã khớp, Kallo tính các chỉ số dinh dưỡng kèm biên độ, rồi
+mới thu về con số hiển thị.
+</Step>
+</Steps>
+
+## Khi Kallo hỏi lại
+
+Đôi khi bạn sẽ thấy một câu hỏi thay vì một con số. Đó là chủ ý.
+
+`1 tô canh` có thể là 200ml hoặc 700ml — chênh lệch quá lớn để đoán. Thay vì
+chọn bừa một con số ở giữa, Kallo hỏi bạn dùng tô nào, và đưa ra các cỡ tham
+chiếu kèm hình để bạn chọn.
+
+<Callout label="Vì sao lại hỏi thay vì đoán">
+Một ước lượng sai nhưng trông tự tin còn tệ hơn một câu hỏi. Kallo có ngưỡng cụ
+thể cho việc này: khi khoảng khối lượng khả dĩ rộng quá mức, nó dừng lại và hỏi.
+</Callout>
+
+## Chỉnh trước khi lưu
+
+Chạm **Sửa** để tăng giảm khối lượng từng món. Với nguyên liệu tính bằng gam
+hoặc ml, mỗi lần chạm đổi 10 đơn vị; với thứ đếm được, mỗi lần chạm là một đơn
+vị. Tổng cập nhật ngay.
+
+Với món có vật chứa — tô, chén, ly, đĩa — bạn còn có bộ chọn cỡ riêng, kèm hình
+ảnh tham chiếu.
+
+Không có gì được lưu cho tới khi bạn xác nhận.
+
+## Khi kết quả không đúng
+
+Vài cách xử lý, theo thứ tự nên thử:
+
+1. **Viết lại cụ thể hơn.** Thêm cách nấu, thêm khối lượng, tách món ra.
+2. **Chỉnh tay sau khi phân tích.** Nhanh hơn viết lại nếu chỉ lệch một món.
+3. **Dùng [ghi thủ công](/docs/logging/manual)** nếu bạn đã cân nguyên liệu.
+4. **Gửi góp ý.** Nếu một nguyên liệu bị thiếu hoặc khớp sai, báo cho chúng tôi
+   trong Cài đặt — góp ý đến thẳng đội ngũ.

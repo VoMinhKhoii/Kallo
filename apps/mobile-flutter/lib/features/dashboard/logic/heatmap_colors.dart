@@ -3,26 +3,26 @@
 /// label set in sync with it.
 ///
 /// Pure helper. The resolved light-theme hex values mirror
-/// `NhamColors.heatmap*` exactly (the RN copy hardcodes the same hexes because
+/// `KalloColors.heatmap*` exactly (the RN copy hardcodes the same hexes because
 /// CSS `var(--…)` does not resolve outside the web).
 library;
 
 import 'dart:ui';
 
-import '../../../theme/nham_colors.dart';
+import '../../../theme/kallo_colors.dart';
 
 /// The diverging adherence scale, as hex strings (used by the SVG legend
 /// gradient and as raw fills).
 abstract final class HeatmapColors {
-  static const Color onTarget = NhamColors.heatmapOnTarget; // #7ca368
-  static const Color close = NhamColors.heatmapClose; // #a6c495
-  static const Color slight = NhamColors.heatmapSlight; // #d4c9ad
-  static const Color moderate = NhamColors.heatmapModerate; // #e09c84
-  static const Color far = NhamColors.heatmapFar; // #d37b69
+  static const Color onTarget = KalloColors.heatmapOnTarget; // #7ca368
+  static const Color close = KalloColors.heatmapClose; // #a6c495
+  static const Color slight = KalloColors.heatmapSlight; // #d4c9ad
+  static const Color moderate = KalloColors.heatmapModerate; // #e09c84
+  static const Color far = KalloColors.heatmapFar; // #d37b69
 
   /// Cheat days are neutral — a calm warm ring + fill instead of intensity
-  /// grading (web `--nham-cheat` / `--nham-cheat-fill`), never red.
-  static const Color cheat = NhamColors.accent; // #c9a87c
+  /// grading (web `--kallo-cheat` / `--kallo-cheat-fill`), never red.
+  static const Color cheat = KalloColors.accent; // #c9a87c
   static const Color cheatFill = Color(0xFFF3E6D2);
 }
 

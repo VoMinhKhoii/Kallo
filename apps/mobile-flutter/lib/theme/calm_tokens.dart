@@ -12,10 +12,10 @@
 /// labels. One editorial serif moment (the greeting) per viewport. The
 /// throughline — hierarchy comes from contrast + weight, not from loud type.
 ///
-/// Canonical doc: `.agents/skills/nham-design/mobile.md`.
+/// Canonical doc: `.agents/skills/kallo-design/mobile.md`.
 ///
 /// Colour values are NOT restated here: every surface/ink token DERIVES from
-/// [NhamColors] (the single source of truth for the palette). This file owns
+/// [KalloColors] (the single source of truth for the palette). This file owns
 /// only the calm TYPE system + the semantic colour aliases (kPage, kInk, …)
 /// that map design-system intent onto those canonical values.
 library;
@@ -23,22 +23,24 @@ library;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'nham_colors.dart';
-import 'nham_typography.dart';
+import 'kallo_colors.dart';
+import 'kallo_typography.dart';
 
-// ── Surfaces (all solid, 100% opacity) — semantic aliases onto NhamColors ──
-const Color kPage = NhamColors.surface; // app page — neutral canvas
-const Color kCardSurface = NhamColors.elev; // cards — solid white
-const Color kTrack = NhamColors.track; // ring/bar tracks — the ONLY low-contrast surface (warm)
-const Color kHairline = NhamColors.border; // the one border (neutral hairline, solid)
-const Color kFieldFill = NhamColors.elev; // input fills read white on the neutral canvas
+// ── Surfaces (all solid, 100% opacity) — semantic aliases onto KalloColors ──
+const Color kPage = KalloColors.surface; // app page — neutral canvas
+const Color kCardSurface = KalloColors.elev; // cards — solid white
+// Tracks the canvas: whenever [kPage] moves, this moves with it by the same
+// delta, or the "recessed" surface ends up lighter than the page it sits on.
+const Color kTrack = KalloColors.track; // ring/bar tracks — the ONLY low-contrast surface (warm)
+const Color kHairline = KalloColors.border; // the one border (neutral hairline, solid)
+const Color kFieldFill = KalloColors.elev; // input fills read white on the neutral canvas
 
 // ── Text colours — the app uses exactly TWO (Threads: black + grey) ────────
-const Color kInk = NhamColors.text; // near-black ink — primary data
+const Color kInk = KalloColors.text; // near-black ink — primary data
 // Canonical calm secondary: ONE warm neutral grey for every secondary role
 // (labels, units, captions, meta, dates). This is the mobile design-system
 // secondary text colour — the only secondary text colour there is.
-const Color kInkMuted = NhamColors.textMuted;
+const Color kInkMuted = KalloColors.textMuted;
 
 // ── Shape ────────────────────────────────────────────────────────────────
 const double kCardRadius = 22; // one card radius — modern iOS grouped-card feel
@@ -76,7 +78,7 @@ const List<FontFeature> _tnum = [FontFeature.tabularFigures()];
 /// Full size (the number is the point) but MEDIUM, not semibold — Be Vietnam
 /// Pro reads heavy, so w500 keeps it prominent without the "thick" feel.
 TextStyle dashHero({Color color = kInk}) => TextStyle(
-      fontFamily: NhamTextStyles.sansFamily,
+      fontFamily: KalloTextStyles.sansFamily,
       fontSize: 40,
       fontWeight: FontWeight.w500,
       height: 1.0,
@@ -87,7 +89,7 @@ TextStyle dashHero({Color color = kInk}) => TextStyle(
 
 /// 17 / 500 — ring-center number, macro gram values, metric values.
 TextStyle dashValue({Color color = kInk}) => TextStyle(
-      fontFamily: NhamTextStyles.sansFamily,
+      fontFamily: KalloTextStyles.sansFamily,
       fontSize: 17,
       fontWeight: FontWeight.w500,
       height: 1.1,
@@ -104,7 +106,7 @@ TextStyle dashBody({
   bool tabular = false,
 }) =>
     TextStyle(
-      fontFamily: NhamTextStyles.sansFamily,
+      fontFamily: KalloTextStyles.sansFamily,
       fontSize: 14,
       fontWeight: weight,
       height: 1.3,
@@ -115,11 +117,20 @@ TextStyle dashBody({
 /// 12 / 400 — secondary captions, stat values (quiet, Threads-light meta).
 /// Leading 1.25 — meta lines are short and rarely wrap; the extra leading only
 /// grew the rows around them.
-TextStyle dashMeta({Color color = kInkMuted, bool tabular = false}) =>
+///
+/// [weight] exists for the one case where Meta-12 is NOT secondary: a section
+/// header in ink. At w400 it reads as small body text sitting above the rows
+/// rather than labelling them, since size is then the only thing separating it
+/// from a 14 label of the same colour.
+TextStyle dashMeta({
+  Color color = kInkMuted,
+  FontWeight weight = FontWeight.w400,
+  bool tabular = false,
+}) =>
     TextStyle(
-      fontFamily: NhamTextStyles.sansFamily,
+      fontFamily: KalloTextStyles.sansFamily,
       fontSize: 12,
-      fontWeight: FontWeight.w400,
+      fontWeight: weight,
       height: 1.25,
       color: color,
       fontFeatures: tabular ? _tnum : null,
@@ -134,7 +145,7 @@ TextStyle dashEyebrow({
   FontWeight weight = FontWeight.w500,
 }) =>
     TextStyle(
-      fontFamily: NhamTextStyles.sansFamily,
+      fontFamily: KalloTextStyles.sansFamily,
       fontSize: 11,
       fontWeight: weight,
       height: 1.3,
@@ -143,6 +154,22 @@ TextStyle dashEyebrow({
     );
 
 /// Lora 22 / 400 — the single editorial serif moment per viewport (greeting).
+/// 17 / 600 — the page title on the header line.
+///
+/// Sans, not the Lora [dashHeadline] this replaced on headers: at 17 its
+/// cap-height sits level with the 24pt glyphs flanking it, and a screen then
+/// spends none of its three sizes on chrome. Lora stays for editorial moments
+/// INSIDE a screen — the first-run question, an empty state — so the serif is
+/// still in the app, just not in its furniture.
+TextStyle dashPageTitle({Color color = kInk}) => TextStyle(
+      fontFamily: KalloTextStyles.sansFamily,
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
+      height: 1.2,
+      letterSpacing: -0.3,
+      color: color,
+    );
+
 /// Serif appears ONCE, never bold, never repeated (the Anthropic-greeting rule).
 TextStyle dashHeadline({Color color = kInk}) => GoogleFonts.lora(
       fontSize: 22,

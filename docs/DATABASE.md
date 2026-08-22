@@ -12,13 +12,13 @@ This project enforces a two-domain model. Do not mix responsibilities.
 
 ### Domain A — Application Data Shape (Drizzle owns this)
 
-`lib/db/schema.ts` is the single source of truth for:
+`lib/infra/db/schema.ts` is the single source of truth for:
 - Tables, columns, types, defaults
 - Foreign keys, indexes
 - CHECK constraints (via Drizzle's `check()` API)
 
 **Workflow when schema changes:**
-1. Edit `lib/db/schema.ts`
+1. Edit `lib/infra/db/schema.ts`
 2. Run `bunx drizzle-kit generate` → outputs a new timestamped SQL file to `supabase/migrations/`
 3. Rename the generated file to match a real Supabase timestamp if needed (see Naming Convention below)
 4. Apply via `supabase db push`
@@ -37,7 +37,7 @@ the same non-prod Supabase database. To keep that survivable:
   an intentional maintenance pass
 
 CI enforces this append-only rule against newly changed migration files via
-`scripts/check-append-only-migrations.mjs`.
+`scripts/ci/check-append-only-migrations.mjs`.
 
 If shared staging gets into a bad state, recover it with the manual
 `Reset Staging Database` GitHub Actions workflow. That reset replays the current
@@ -63,8 +63,8 @@ in a separate Domain B migration. Document the exception in the migration.
 
 | Path | Purpose |
 |------|---------|
-| `lib/db/schema.ts` | Drizzle schema — Domain A source of truth |
-| `lib/db/index.ts` | Drizzle client (`db` export) |
+| `lib/infra/db/schema.ts` | Drizzle schema — Domain A source of truth |
+| `lib/infra/db/client.ts` | Drizzle client (`db` export) |
 | `drizzle.config.ts` | Drizzle config — `out` points to `supabase/migrations/` |
 | `supabase/migrations/` | All migration SQL files (Drizzle-generated + manual) |
 | `supabase/migrations/meta/` | Drizzle internal state — do not edit manually |
@@ -103,6 +103,7 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260708141500_chat_group_members_last_read_rls.sql` | B (Manual) | RLS UPDATE policy so a member can bump their own `last_read_at` |
 | `20260728123331_add_billing_reconciliation.sql` | A + deny boundary | RevenueCat grants, CustomerInfo + deterministic ownership watermarks, webhook replay state, indexes, constraints, and same-transaction RLS/revokes |
 | `20260728123400_harden_billing_trial_anchor.sql` | B (Manual) | Preserve the server-created trial anchor when profiles are updated |
+| `20260801120000_curate_broth_search_names.sql` | B (Manual) | Curated Vietnamese broth names/variants; queues targeted embedding regeneration |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
@@ -168,7 +169,7 @@ Both columns are populated by a trigger on INSERT/UPDATE.
 
 - **Model**: `gemini-embedding-001` (768 dimensions)
 - **Embedding text**: `name_primary | name_alt | name_en | type_vn | type_en` (food group categories add semantic context)
-- **Backfill script**: `scripts/backfill_embeddings.ts`
+- **Backfill script**: `scripts/db/backfill_embeddings.ts`
 - All 526 rows have embeddings pre-populated
 
 #### Query Embedding Cache (Tiered Lookup)
@@ -177,7 +178,7 @@ The query-side embedding (for the ingredient name output by the LLM) is resolved
 
 | Tier | Source | Latency | Location |
 |------|--------|---------|----------|
-| L1 | In-memory `Map<string, number[]>` | ~0ms | `lib/ai/matching/embedding-cache.ts` |
+| L1 | In-memory `Map<string, number[]>` | ~0ms | `lib/ai/cache/embedding-cache.ts` |
 | L2 | Exact match: `WHERE name_vi = $1` | ~1-3ms | Supabase (PK scan) |
 | L3 | Gemini API (`gemini-embedding-001`) | ~400-700ms | External API (rare after seed) |
 
@@ -187,12 +188,13 @@ The query-side embedding (for the ingredient name output by the LLM) is resolved
 - **L2 hit**: Exact match on `name_vi` or `lower(name_en)`. Promotes both `name_vi` and `name_en` into L1.
 - **L2 miss**: Neither `name_vi` nor `lower(name_en)` matched. The system logs a `synonym_candidates` row asynchronously (fire-and-forget) and continues to L3.
 - **L3 fallback**: Calls Gemini API, then fire-and-forget inserts into L2 (as `name_vi`) + sets L1. `ON CONFLICT DO NOTHING` for concurrency safety.
+- **Provider memo (in front of L3)**: `lib/ai/cache/provider-embedding-memo.ts` is a second in-memory map at the SDK call boundary, keyed on the **raw** text (no `normalizeIngredientKey`), so it is not interchangeable with L1. It catches the speculative-prewarm race (background embed lands after the matcher's L1 read) and is the only cache left when `PIPELINE_EMBEDDING_CACHE_ENABLED=false`. Unbounded, no TTL.
 - **L1 priming**: `warmEmbeddingCache()` is now explicit only; the live request path does not kick off a full-table warm-up on cache miss. L1 is primarily primed by `nutrition-cache.loadAll()` when VN FCT rows are fetched, avoiding extra DB contention on cold requests.
 - **pg_trgm**: Removed from the live lookup path. GIN trgm indexes remain for a future background synonym discovery job that writes to `synonym_candidates`.
 - **Seed migration**: `20260319034000_seed_query_embeddings_from_fct.sql` copies `(name_primary, name_en, embedding)` from `vietnamese_food_composition`.
 - **Table**: `ingredient_query_embeddings(name_vi TEXT PK, name_en TEXT, embedding VECTOR(768), created_at TIMESTAMPTZ)`
 - **Indexes**: B-tree on `name_en`, GIN trgm on `name_vi` and `name_en` (for background job)
-- **Translation backfill**: `scripts/backfill-translations.ts` fills NULL `name_en` (vi→en) or `name_vi` (en→vi) via Google Cloud Translation API
+- **Translation backfill**: `scripts/db/backfill-translations.ts` fills NULL `name_en` (vi→en) or `name_vi` (en→vi) via Google Cloud Translation API
 
 #### Synonym Candidates
 
@@ -218,8 +220,8 @@ User describes meal → LLM decomposes into ingredients
 ## DB Client Usage
 
 ```ts
-import { db } from '@/lib/db';
-import { userProfiles } from '@/lib/db/schema';
+import { db } from '@/lib/infra/db/client';
+import { userProfiles } from '@/lib/infra/db/schema';
 
 const profile = await db.query.userProfiles.findFirst({
   where: (t, { eq }) => eq(t.userId, userId),
@@ -261,7 +263,8 @@ The `db` instance uses `postgres-js` under the hood with `DATABASE_URL` from env
 
 | Command | Description |
 |---------|-------------|
-| `bun --env-file=.env.local scripts/backfill_embeddings.ts` | Backfill embeddings via Gemini API (rate-limited) |
+| `bun --env-file=.env.local scripts/db/backfill_embeddings.ts` | Backfill embeddings via Gemini API (rate-limited) |
+| `bun --env-file=.env.local scripts/db/backfill_embeddings.ts --ids=<id,...>` | Force-regenerate embeddings for specific food rows |
 
 ## Seeding Reference Data
 
@@ -269,6 +272,16 @@ The `db` instance uses `postgres-js` under the hood with `DATABASE_URL` from env
 The seed file inserts all 526 VTN FCT 2007 records into `vietnamese_food_composition`.
 
 **After seeding**, `dbr:reset` automatically runs the embedding backfill via Gemini API. This takes ~5 minutes due to rate limiting (100 req/min free tier). Use `dbr:reset:nobackfill` to skip this step if embeddings are not needed.
+
+Data-curation migrations that change food names should set the affected
+`embedding` values to `NULL`. The production Cloud Run deploy detects those rows
+after applying migrations and runs the backfill before deploying the new revision.
+Because Supabase applies migrations before `seed.sql`, curation migrations for
+separately imported USDA rows must tolerate those rows being absent in a fresh
+FAO-only reset. The backfill script verifies that no rows in its scope still have
+NULL embeddings before the deploy can continue.
+For a local or targeted repair, pass the affected IDs to `backfill_embeddings.ts`
+with `--ids` so existing non-null vectors are regenerated from the new names.
 
 ## Known Quirks & Gotchas
 
@@ -320,6 +333,6 @@ be invoked from a daily worker.
 `match_ingredients_by_source` and `fuzzy_match_ingredients_by_source`
 (introduced in `20260412143500_add_source_aware_match_functions.sql`)
 already project the `state` column in their `RETURNS TABLE` signature.
-The cascade in `lib/ai/matching/source-matching.ts` exclusively calls
+The cascade in `lib/ai/matching/retrieve/legacy/source-matching.ts` exclusively calls
 these `_by_source` variants, so no additional migration is required for
 DB-state propagation.

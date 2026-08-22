@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { ActionIconButton } from '@/components/logging/feed/action-bar/action-icon-button';
-import { useShareMeal } from '@/hooks/social/use-share-meal';
+import { useShareMeal } from '@/hooks/social/sharing/use-share-meal';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 
 export function ShareCardButton({ shareId }: { shareId: string }) {

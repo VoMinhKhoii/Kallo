@@ -2,7 +2,7 @@
 
 import { Download, LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { SettingsGroup, SettingsRow } from '@/components/settings/group';
+import { SettingsGroup, SettingsRow } from '@/components/settings/chrome/group';
 import { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { DangerZone } from './danger-zone';
 import { LinkedAccounts } from './linked-accounts';
@@ -15,7 +15,7 @@ import { useAccountActions } from './use-account-actions';
  *
  * Deletion lives in its own danger-variant group as an inline, type-to-confirm
  * panel (not a modal-first flow) in the brand's calm "concern" register —
- * terracotta `nham-danger`, never the cold shadcn `destructive`. Sign out lives
+ * terracotta `kallo-danger`, never the cold shadcn `destructive`. Sign out lives
  * here as well as in the user menu so the settings area is self-sufficient.
  */
 export function AccountPanel({
@@ -41,7 +41,7 @@ export function AccountPanel({
       <SettingsGroup>
         {email && (
           <SettingsRow label={t('emailLabel')}>
-            <p className="text-[15px] text-nham-text-muted">{email}</p>
+            <p className="text-[15px] text-kallo-text-muted">{email}</p>
           </SettingsRow>
         )}
 
@@ -58,7 +58,7 @@ export function AccountPanel({
             onClick={handleExport}
             disabled={exportPending}
             aria-busy={exportPending}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-nham-border bg-white px-3.5 py-2 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-white px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
           >
             <Download className="h-3.5 w-3.5" />
             {exportPending ? t('exporting') : t('exportAction')}
@@ -71,7 +71,7 @@ export function AccountPanel({
             onClick={handleSignOut}
             disabled={signOutPending}
             aria-busy={signOutPending}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-nham-border bg-white px-3.5 py-2 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-white px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
           >
             <LogOut className="h-3.5 w-3.5" />
             {t('signOutAction')}

@@ -3,9 +3,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { weightSummaryKeys } from '@/hooks/weight/use-weight-summary';
-import { deleteWeightLogAction, logWeightAction } from '@/lib/actions/weight';
-import type { WeightSummaryData } from '@/lib/types/weight';
-import type { WeightLogInput } from '@/lib/validation';
+import {
+  deleteWeightLogAction,
+  logWeightAction,
+} from '@/lib/actions/tracking/weight';
+import type { WeightSummaryData } from '@/lib/core/types/weight';
+import type { WeightLogInput } from '@/lib/core/validation/weight';
 
 type WeightSummarySnapshot = Array<
   [readonly unknown[], WeightSummaryData | undefined]

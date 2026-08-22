@@ -3,9 +3,10 @@ import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../data/api_client.dart';
-import '../../../../models/cheat.dart';
-import '../../../../models/streaming.dart';
+import '../../../../services/http/api_client.dart';
+import '../../../../models/logging/cheat.dart';
+import '../../../../models/logging/relog.dart';
+import '../../../../models/logging/streaming.dart';
 import '../../data/logging_keys.dart';
 import '../../data/logging_providers.dart';
 import '../../data/stream_analysis_controller.dart';
@@ -14,6 +15,13 @@ import '../../data/stream_analysis_controller.dart';
 /// of a failed attempt, and a cheat-clarify resubmit — they differ only in the
 /// [attemptId] they carry and whether an answer to a clarifying question rides
 /// along.
+///
+/// [refs] carries relog picks made alongside free text. The server analyzes
+/// [message] alone and merges the picks deterministically afterwards, so a
+/// relogged dish is copied verbatim rather than re-estimated. Relog is
+/// normal-mode only — the server REJECTS cheat+refs rather than silently
+/// dropping the picks — so they are dropped here when [isCheat] is set, which
+/// keeps a stale draft from turning a cheat estimate into a 400.
 void startMealAnalysis(
   WidgetRef ref, {
   required String message,
@@ -22,6 +30,7 @@ void startMealAnalysis(
   required CheatIntensity cheatIntensity,
   String? clarifyAnswer,
   String? attemptId,
+  List<RelogRef>? refs,
 }) {
   ref
       .read(streamAnalysisProvider.notifier)
@@ -34,6 +43,7 @@ void startMealAnalysis(
           cheatIntensity: isCheat ? cheatIntensity.name : null,
           clarifyAnswer: clarifyAnswer,
           attemptId: attemptId,
+          refs: isCheat ? null : refs,
         ),
       );
 }
@@ -51,6 +61,25 @@ void startMealAnalysis(
 ///
 /// On error: never destroy the typed meal. [onFailed] restores the raw text
 /// into the composer AND renders the failed attempt as a feed card (Try again).
+/// Subscribe the feed to those two moments. Called from `build`, where
+/// `ref.listen` belongs; [onFailed] also carries whether the error was a
+/// paywall, which only the raw state knows.
+void listenToAnalysisStream(
+  WidgetRef ref, {
+  required VoidCallback onRevealed,
+  required void Function(bool retryable, bool paymentRequired) onFailed,
+}) {
+  ref.listen<StreamAnalysisState>(
+    streamAnalysisProvider,
+    (prev, next) => onStreamTransition(
+      prev,
+      next,
+      onRevealed: onRevealed,
+      onFailed: (retryable) => onFailed(retryable, next.paymentRequired),
+    ),
+  );
+}
+
 void onStreamTransition(
   StreamAnalysisState? prev,
   StreamAnalysisState next, {
@@ -67,10 +96,23 @@ void onStreamTransition(
   }
 }
 
-/// A second submit while an unconfirmed reveal is showing must not vaporize the
-/// first answer: that analysis is already stored server-side as pending, so
-/// refresh its origin day — it resurfaces as a pending-confirmation card.
-void refreshRevealedAnalysisDay(
+/// Pull the staged row for a revealed analysis into the day cache.
+///
+/// A revealed answer is drawn from CLIENT state (`streamAnalysisProvider`),
+/// but the server has already staged it as a pending analysis. Until the day is
+/// refreshed, that row exists only on the server, and anything that clears the
+/// stream — a hot reload, which makes Riverpod re-run `Notifier.build()`, or a
+/// relaunch — leaves nothing on screen: the reveal is gone and the cached day
+/// predates the staging. The unsaved meal simply vanished.
+///
+/// Refreshing here means the card is backed by server state from the moment it
+/// appears, so it survives all of that. [FeedViewState] hides the pending row
+/// while the reveal is still up, so the two never render as one meal twice.
+///
+/// Also covers a second submit while a reveal is showing: that answer is
+/// already staged, so it resurfaces as a pending-confirmation card rather than
+/// being vaporized by the new run.
+void refreshStagedAnalysisDay(
   WidgetRef ref, {
   required String userId,
   required String fallbackDate,

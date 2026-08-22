@@ -2,25 +2,25 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/session_provider.dart';
-import '../../../shared/widgets/nham_primitives.dart';
-import '../../../shared/widgets/skeleton.dart';
+import '../../../services/auth/session_provider.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shared/widgets/feedback/skeleton.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
 import '../logic/logging_spacing.dart';
-import '../widgets/feed_area.dart';
-import '../widgets/partial_yesterday_prompt.dart';
-import '../widgets/timeline_picker.dart';
+import '../widgets/feed/feed_area.dart';
+import '../widgets/timeline/partial_yesterday_prompt.dart';
+import '../widgets/timeline/timeline_picker.dart';
 
 /// The logging tab. Owns the selected date + picker-expanded state so the date
 /// strip (in the header) and the feed share one source of truth — mirrors the
 /// RN `LoggingScreen` and the web `LoggingShell`'s `selectedDate`.
 ///
-/// Ported 1:1 from `apps/mobile/src/app/(app)/(tabs)/logging.tsx`.
+/// Ported 1:1 from web `components/logging/logging-shell.tsx`.
 class LoggingScreen extends ConsumerStatefulWidget {
   const LoggingScreen({super.key});
 
@@ -94,7 +94,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
           Padding(
             // No bottom inset — the macro summary below owns the one
             // block gap, so the date strip never double-spaces it.
-            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
             child: DateMorph(
               dates: mealDates,
               today: today,
@@ -138,10 +138,10 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
 
   Widget _centered(Widget child) {
     return ColoredBox(
-      color: NhamColors.surface,
+      color: KalloColors.surface,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(NhamSpacing.sp6),
+          padding: const EdgeInsets.all(KalloSpacing.sp6),
           child: Center(child: child),
         ),
       ),
@@ -159,7 +159,7 @@ class _LoggingSkeleton extends StatelessWidget {
     return Semantics(
       label: tr('common.loading'),
       child: ColoredBox(
-        color: NhamColors.surface,
+        color: KalloColors.surface,
         child: SafeArea(
           bottom: false,
           child: SkeletonPulse(
@@ -168,9 +168,9 @@ class _LoggingSkeleton extends StatelessWidget {
               children: [
                 const Padding(
                   padding: EdgeInsets.fromLTRB(
-                    NhamSpacing.sp3,
+                    KalloSpacing.sp3,
                     LoggingSpacing.block,
-                    NhamSpacing.sp3,
+                    KalloSpacing.sp3,
                     LoggingSpacing.block,
                   ),
                   child: Row(
@@ -184,9 +184,9 @@ class _LoggingSkeleton extends StatelessWidget {
                 for (var i = 0; i < 3; i++)
                   const Padding(
                     padding: EdgeInsets.fromLTRB(
-                      NhamSpacing.sp3,
+                      KalloSpacing.sp3,
                       0,
-                      NhamSpacing.sp3,
+                      KalloSpacing.sp3,
                       LoggingSpacing.block,
                     ),
                     child: SkeletonBar(height: 96, radius: 16),

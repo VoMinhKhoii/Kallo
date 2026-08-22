@@ -13,11 +13,11 @@ export function AuthDialogHeader({
       <KalloAppIcon className="mx-auto mb-4 w-12 rounded-xl" />
       <h2
         id="auth-dialog-title"
-        className="mb-1 font-normal font-serif text-2xl text-nham-text"
+        className="mb-1 font-normal font-serif text-2xl text-kallo-text"
       >
         {title}
       </h2>
-      <p className="font-sans-display text-nham-text-muted text-sm">
+      <p className="font-sans-display text-kallo-text-muted text-sm">
         {subtitle}
       </p>
     </div>

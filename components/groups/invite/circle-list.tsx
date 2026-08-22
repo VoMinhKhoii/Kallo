@@ -7,8 +7,8 @@ import {
   useBlockFriend,
   useFriends,
   useRemoveFriend,
-} from '@/hooks/social/use-friends';
-import type { CircleMember } from '@/lib/groups/client';
+} from '@/hooks/social/circle/use-friends';
+import type { CircleMember } from '@/lib/actions/groups/types';
 import { ProfileIdentity } from './profile-identity';
 
 /** The signed-in user's accepted connections, each with Remove/Block actions
@@ -60,7 +60,7 @@ export function CircleList() {
                 }
                 disabled={blockFriend.isPending}
                 aria-busy={blockFriend.isPending}
-                className="inline-flex items-center rounded-lg border border-[#E8E6DC] px-2.5 py-1.5 font-medium font-sans-display text-[#6E6D66] text-[12px] transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-lg border border-[#E8E6DC] px-2.5 py-1.5 font-medium font-sans-display text-[#6E6D66] text-[12px] transition-colors hover:bg-kallo-danger/10 hover:text-kallo-danger disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {tWall('block')}
               </button>
@@ -73,7 +73,7 @@ export function CircleList() {
                 }
                 disabled={removeFriend.isPending}
                 aria-busy={removeFriend.isPending}
-                className="inline-flex items-center rounded-lg border border-[#E8E6DC] px-2.5 py-1.5 font-medium font-sans-display text-[#6E6D66] text-[12px] transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-lg border border-[#E8E6DC] px-2.5 py-1.5 font-medium font-sans-display text-[#6E6D66] text-[12px] transition-colors hover:bg-kallo-danger/10 hover:text-kallo-danger disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {t('remove')}
               </button>

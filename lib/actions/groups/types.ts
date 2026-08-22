@@ -10,9 +10,9 @@
 // predicate. RLS is the source of truth only for the Supabase-session/PostgREST
 // path (direct client reads + the OG card route).
 
-import type { db as defaultDb } from '@/lib/db';
-import type { SharedMealEntry } from '@/lib/groups/meal-feed';
-import type { PublicIdentity } from '@/lib/groups/public-identity';
+import type { SharedMealEntry } from '@/lib/domain/social/feed/meal-feed';
+import type { PublicIdentity } from '@/lib/domain/social/identity/public-identity';
+import type { db as defaultDb } from '@/lib/infra/db/client';
 
 export type Db = typeof defaultDb;
 

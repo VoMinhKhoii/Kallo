@@ -5,15 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/circle.dart';
-import '../../../shared/widgets/nham_primitives.dart';
-import '../../../shared/widgets/top_toast.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/social/circle.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 import '../data/circle_providers.dart';
-import '../widgets/connect_skeleton.dart';
+import '../widgets/states/connect_skeleton.dart';
 
 /// The invite-accept target (deep link `/circle/invite/:slug`). Previews the
 /// inviter and, depending on the viewer's relationship, shows Accept / already
@@ -61,10 +61,10 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           Align(
             alignment: Alignment.topLeft,
             child: Padding(
-              padding: const EdgeInsets.all(NhamSpacing.sp3),
+              padding: const EdgeInsets.all(KalloSpacing.sp3),
               child: IconButton(
-                icon: const Icon(LucideIcons.x, size: 22),
-                color: NhamColors.textMuted,
+                icon: const Icon(LucideIcons.x300, size: KalloIcons.size),
+                color: KalloColors.textMuted,
                 onPressed: () =>
                     context.canPop() ? context.pop() : context.go('/circle'),
               ),
@@ -72,7 +72,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           ),
           Center(
             child: Padding(
-              padding: const EdgeInsets.all(NhamSpacing.sp3),
+              padding: const EdgeInsets.all(KalloSpacing.sp3),
               child: previewAsync.when(
                 loading: () => const ConnectPreviewSkeleton(),
                 error: (error, _) => _errorFor(error),
@@ -111,7 +111,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         children: [
           SizedBox(
             width: double.infinity,
-            child: NhamButton(
+            child: KalloButton(
               title: tr('groups.connect.signIn'),
               onPressed: _signIn,
             ),
@@ -207,7 +207,7 @@ class _ConnectPanelState extends ConsumerState<_ConnectPanel> {
                 curve: Curves.easeOut,
                 child: _connected
                     ? Padding(
-                        padding: const EdgeInsets.only(left: NhamSpacing.sp2),
+                        padding: const EdgeInsets.only(left: KalloSpacing.sp2),
                         child: TweenAnimationBuilder<double>(
                           tween: Tween(begin: 0, end: 1),
                           duration: const Duration(milliseconds: 450),
@@ -229,7 +229,7 @@ class _ConnectPanelState extends ConsumerState<_ConnectPanel> {
               ),
             ],
           ),
-          const SizedBox(height: NhamSpacing.sp5),
+          const SizedBox(height: KalloSpacing.sp5),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: Text(
@@ -239,31 +239,31 @@ class _ConnectPanelState extends ConsumerState<_ConnectPanel> {
                       namedArgs: {'name': widget.inviter.label}),
               key: ValueKey(_connected),
               textAlign: TextAlign.center,
-              style: NhamTextStyles.serifRegular(fontSize: NhamFontSize.h3)
+              style: KalloTextStyles.serifRegular(fontSize: KalloFontSize.h3)
                   .copyWith(
-                color: NhamColors.text,
-                letterSpacing: NhamTracking.tight,
+                color: KalloColors.text,
+                letterSpacing: KalloTracking.tight,
               ),
             ),
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Text(
             _connected
                 ? tr('groups.connect.connectedBody')
                 : tr('groups.connect.connectBody'),
             textAlign: TextAlign.center,
-            style: NhamTextStyles.sansRegular(
-              fontSize: NhamFontSize.sm,
-              height: NhamLeading.relaxed,
-            ).copyWith(color: NhamColors.textMuted),
+            style: KalloTextStyles.sansRegular(
+              fontSize: KalloFontSize.sm,
+              height: KalloLeading.relaxed,
+            ).copyWith(color: KalloColors.textMuted),
           ),
-          const SizedBox(height: NhamSpacing.sp5),
+          const SizedBox(height: KalloSpacing.sp5),
           if (_connected)
             const _GoToCircleButton()
           else
             SizedBox(
               width: double.infinity,
-              child: NhamButton(
+              child: KalloButton(
                 title: tr('groups.connect.accept'),
                 loading: _accepting,
                 onPressed: _accept,
@@ -297,19 +297,19 @@ class _Disc extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: highlighted
               ? const [Color(0x8CC9A87C), Color(0x99E8E6DC)] // 55% → 60%
-              : const [NhamColors.accent40, NhamColors.borderHalf],
+              : const [KalloColors.accent40, KalloColors.borderHalf],
         ),
         border: Border.all(
           color: highlighted
-              ? NhamColors.accent40
+              ? KalloColors.accent40
               : const Color(0x40C9A87C), // accent @ 25%
           width: highlighted ? 2 : 1,
         ),
       ),
       child: Text(
         initial,
-        style: NhamTextStyles.sansBold(fontSize: NhamFontSize.h4)
-            .copyWith(color: NhamColors.btn),
+        style: KalloTextStyles.sansBold(fontSize: KalloFontSize.h4)
+            .copyWith(color: KalloColors.btn),
       ),
     );
   }
@@ -338,28 +338,28 @@ class _Shell extends StatelessWidget {
         children: [
           if (profile != null) ...[
             _Disc(label: profile!.label),
-            const SizedBox(height: NhamSpacing.sp5),
+            const SizedBox(height: KalloSpacing.sp5),
           ],
           Text(
             title,
             textAlign: TextAlign.center,
-            style: NhamTextStyles.serifRegular(fontSize: NhamFontSize.h3)
+            style: KalloTextStyles.serifRegular(fontSize: KalloFontSize.h3)
                 .copyWith(
-              color: NhamColors.text,
-              letterSpacing: NhamTracking.tight,
+              color: KalloColors.text,
+              letterSpacing: KalloTracking.tight,
             ),
           ),
-          const SizedBox(height: NhamSpacing.sp2),
+          const SizedBox(height: KalloSpacing.sp2),
           Text(
             body,
             textAlign: TextAlign.center,
-            style: NhamTextStyles.sansRegular(
-              fontSize: NhamFontSize.sm,
-              height: NhamLeading.relaxed,
-            ).copyWith(color: NhamColors.textMuted),
+            style: KalloTextStyles.sansRegular(
+              fontSize: KalloFontSize.sm,
+              height: KalloLeading.relaxed,
+            ).copyWith(color: KalloColors.textMuted),
           ),
           if (children.isNotEmpty) ...[
-            const SizedBox(height: NhamSpacing.sp5),
+            const SizedBox(height: KalloSpacing.sp5),
             ...children,
           ],
         ],
@@ -383,9 +383,9 @@ class _RetryState extends StatelessWidget {
       children: [
         SizedBox(
           width: double.infinity,
-          child: NhamButton(
+          child: KalloButton(
             title: tr('groups.error.retry'),
-            variant: NhamButtonVariant.secondary,
+            variant: KalloButtonVariant.secondary,
             onPressed: onRetry,
           ),
         ),
@@ -401,9 +401,9 @@ class _GoToCircleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: NhamButton(
+      child: KalloButton(
         title: tr('groups.connect.goToCircle'),
-        variant: NhamButtonVariant.secondary,
+        variant: KalloButtonVariant.secondary,
         onPressed: () => context.go('/circle'),
       ),
     );

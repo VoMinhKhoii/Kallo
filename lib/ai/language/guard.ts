@@ -1,4 +1,5 @@
-import type { MealDecomposition, UserContext } from '@/lib/ai/types';
+import type { MealDecomposition } from '@/lib/ai/types/decomposition';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { detectMealInputLanguage } from './detect';
 
 export type LanguageGuardSeverity = 'info' | 'warning' | 'error';

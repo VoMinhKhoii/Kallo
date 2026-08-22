@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { overviewQuerySchema } from '@/lib/api/contracts/nutrition';
 import { parseTzParam } from '@/lib/api/query';
 import { handleRouteError } from '@/lib/api/respond';
-import { getNutritionOverview } from '@/lib/nutrition/actions/overview';
+import { getNutritionOverview } from '@/lib/domain/nutrition/actions/overview/get-overview';
 
 export const runtime = 'nodejs';
 

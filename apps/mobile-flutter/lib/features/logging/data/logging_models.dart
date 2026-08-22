@@ -7,8 +7,8 @@
 /// four macros the feed renders. Unknown fields are ignored on decode.
 library;
 
-import '../../../models/cheat.dart';
-import '../../../models/meal.dart';
+import '../../../models/logging/cheat.dart';
+import '../../../models/logging/meal.dart';
 
 /// The macro subset of `NutritionValues` the feed shows. Each value is nullable
 /// (legacy meals can have unknown macros → `N/A`).

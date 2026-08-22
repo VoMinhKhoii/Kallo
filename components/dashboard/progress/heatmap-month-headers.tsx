@@ -1,4 +1,4 @@
-import type { HeatmapMonthHeader } from '@/lib/types/dashboard';
+import type { HeatmapMonthHeader } from '@/lib/core/types/dashboard';
 
 /** A month must own at least this many week columns to be worth labelling. */
 const MIN_LABEL_COLUMNS = 2;
@@ -48,7 +48,7 @@ export function HeatmapMonthHeaderRow({
     <>
       {layoutMonthHeaders(headers).map((header) => (
         <div
-          className="truncate pb-1 font-medium text-nham-text-muted text-xs"
+          className="truncate pb-1 font-medium text-kallo-text-muted text-xs"
           key={`${header.month}-${header.startColumn}`}
           style={{
             gridRow: 1,

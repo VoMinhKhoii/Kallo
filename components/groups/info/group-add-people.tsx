@@ -7,9 +7,9 @@ import { toast } from 'sonner';
 import { GroupMemberRow } from '@/components/groups/invite/group-member-row';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { Input } from '@/components/ui/input';
-import { useAddGroupMembers } from '@/hooks/social/use-chat-groups';
-import { useFriends } from '@/hooks/social/use-friends';
-import type { ChatGroupDetail } from '@/lib/chat-groups/client';
+import { useAddGroupMembers } from '@/hooks/social/circle/use-chat-groups';
+import { useFriends } from '@/hooks/social/circle/use-friends';
+import type { ChatGroupDetail } from '@/lib/actions/chat-groups/types';
 
 /** Grow the group from the actor's accepted friends — same Messenger-style
  * picker as creation, scoped to friends not already in the group. */
@@ -95,7 +95,7 @@ export function GroupAddPeople({ group }: { group: ChatGroupDetail }) {
           type="button"
           onClick={submit}
           disabled={addMembers.isPending}
-          className="inline-flex w-full items-center justify-center rounded-xl bg-nham-btn px-4 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center rounded-xl bg-kallo-btn px-4 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t('addCta')} · {selected.size}
         </button>

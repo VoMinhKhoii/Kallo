@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { deleteWeightLogAction } from '@/lib/actions/weight';
+import { deleteWeightLogAction } from '@/lib/actions/tracking/weight';
 import { handleRouteError } from '@/lib/api/respond';
 
 export const runtime = 'nodejs';

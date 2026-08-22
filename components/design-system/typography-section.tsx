@@ -39,7 +39,7 @@ const RAMP = [
   {
     role: 'text-lg',
     sample: 'Describe a meal the way you would tell a friend.',
-    className: 'text-lg text-nham-text-muted',
+    className: 'text-lg text-kallo-text-muted',
     metrics: '18px · sans',
     use: 'Lead paragraphs',
   },
@@ -53,14 +53,14 @@ const RAMP = [
   {
     role: 'text-caption',
     sample: 'Weight basis — cooked, drained',
-    className: 'text-caption text-nham-text-muted',
+    className: 'text-caption text-kallo-text-muted',
     metrics: '13px · lh 1.4 · sans 500',
     use: 'Form labels, list captions',
   },
   {
     role: 'text-xs / text-2xs',
     sample: 'Logged 12 minutes ago · 3 ingredients',
-    className: 'text-2xs text-nham-stone',
+    className: 'text-2xs text-kallo-stone',
     metrics: '12 / 11px · sans',
     use: 'Meta rows, timestamps',
   },
@@ -84,7 +84,7 @@ export function TypographySection() {
                 <DsMeta>
                   {r.role} — {r.metrics}
                 </DsMeta>
-                <p className="text-2xs text-nham-text-muted">{r.use}</p>
+                <p className="text-2xs text-kallo-text-muted">{r.use}</p>
               </div>
             </div>
           ))}
@@ -112,7 +112,9 @@ export function TypographySection() {
           <div>
             <p className="font-serif text-h1 tabular-nums">
               1,860{' '}
-              <span className="text-h4 text-nham-text-muted">– 2,040 kcal</span>
+              <span className="text-h4 text-kallo-text-muted">
+                – 2,040 kcal
+              </span>
             </p>
             <DsMeta>
               Numbers — Lora, tabular-nums, shown as bounded ranges, never fake

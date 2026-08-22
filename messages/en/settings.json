@@ -1,0 +1,123 @@
+{
+  "title": "Settings",
+  "profile": "Profile",
+  "profileDescription": "How you appear, and what your body needs.",
+  "preferences": "Preferences",
+  "preferencesDescription": "Language, region, how you cook, and sharing.",
+  "bodyMetrics": "Body Metrics",
+  "save": "Save changes",
+  "saveWithTarget": "Save — new target {target} kcal",
+  "saved": "Changes saved",
+  "targetRitual": {
+    "newLabel": "New target",
+    "unit": "kcal",
+    "aggressivePace": "{pace} kg/wk — an aggressive pace"
+  },
+  "language": "Language",
+  "languageHint": "Change the app language",
+  "anchorNav": {
+    "label": "On this page",
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "subscription": "Subscription",
+    "feedback": "Feedback",
+    "account": "Account"
+  },
+  "feedback": {
+    "title": "Send feedback",
+    "description": "Found a bug, missing an ingredient, or have an idea? Tell us — it goes straight to the team.",
+    "typeLabel": "What's this about?",
+    "types": {
+      "bug": "Bug",
+      "ingredient": "Ingredient",
+      "idea": "Idea"
+    },
+    "messageLabel": "Your message",
+    "placeholder": {
+      "bug": "What went wrong? What did you expect to happen?",
+      "ingredient": "Which ingredient or food is missing?",
+      "idea": "What would make Kallo better for you?"
+    },
+    "addScreenshot": "Add a screenshot",
+    "removeScreenshot": "Remove screenshot",
+    "screenshotTooLarge": "That image is over 5 MB. Please pick a smaller one.",
+    "submit": "Send feedback",
+    "submitting": "Sending…",
+    "successTitle": "Thanks — we got it",
+    "successBody": "Your feedback is with the team. We read every one.",
+    "sendAnother": "Send more feedback",
+    "error": "Couldn't send your feedback. Please try again.",
+    "rateLimitError": "You've sent a lot of feedback just now. Please wait a little while and try again."
+  },
+  "account": {
+    "title": "Account",
+    "description": "Your sign-in, your data, and how to leave.",
+    "emailLabel": "Signed in as",
+    "linkedTitle": "Sign-in methods",
+    "linkedConnect": "Connect",
+    "linkedDisconnect": "Disconnect",
+    "linkedConnectError": "Could not connect that account. Please try again.",
+    "linkedDisconnectError": "Could not disconnect that account. Please try again.",
+    "linkedLoadError": "Could not load your sign-in methods.",
+    "linkedLoading": "Loading sign-in methods…",
+    "linkedRetry": "Try again",
+    "exportTitle": "Export my data",
+    "exportDescription": "Download everything Kallo holds for you, as a JSON file.",
+    "exportAction": "Export",
+    "exporting": "Preparing your data…",
+    "exportError": "Could not export your data. Please try again.",
+    "signOutError": "Couldn't sign out. Please try again.",
+    "signOutTitle": "Sign out",
+    "signOutAction": "Sign out",
+    "deleteTitle": "Delete account",
+    "deleteDescription": "Permanently remove your account and everything in it.",
+    "deleteAction": "Delete account",
+    "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
+    "deleteSubscriptionWarning": "Deleting your Kallo account does not cancel an active subscription. Cancel it first — in the App Store, Google Play, or the billing portal you purchased through on the web — to prevent future charges. You can still delete immediately.",
+    "deleteManageSubscription": "Manage or cancel subscription",
+    "deleteConfirmLabel": "Type {word} to confirm",
+    "deleteConfirmWord": "DELETE",
+    "deleteConfirmAction": "Delete my account",
+    "deleting": "Deleting your account…",
+    "deleteCancel": "Keep my account",
+    "deleteError": "Could not delete your account. Please try again."
+  },
+  "regionalPanel": {
+    "searchCountryLabel": "Search country",
+    "clearLabel": "Clear selection"
+  },
+  "profilePage": {
+    "emptyTitle": "No profile found",
+    "emptyDescription": "You need to complete the initial setup before editing your settings.",
+    "startSetup": "Start setup"
+  },
+  "profilePanel": {
+    "saveError": "Failed to save settings. Please try again.",
+    "invalidError": "Some entries are invalid — please review your body metrics."
+  },
+  "identity": {
+    "title": "Profile",
+    "description": "How you appear across Kallo and to your circle.",
+    "avatarLabel": "Profile photo",
+    "avatarUpload": "Upload photo",
+    "avatarChange": "Change photo",
+    "avatarRemove": "Remove",
+    "avatarSaved": "Photo updated",
+    "avatarRemoved": "Photo removed",
+    "avatarError": "Couldn't update your photo",
+    "avatarTooLarge": "Image must be under 5 MB",
+    "avatarType": "Use a PNG, JPG, or WebP image",
+    "nameLabel": "What should we call you?",
+    "namePlaceholder": "Your name",
+    "nameSave": "Save name",
+    "nameSaved": "Name updated",
+    "nameError": "Couldn't update your name",
+    "linkPreview": "Your invite link:",
+    "linkWarning": "Changing your name updates your invite link — old links stop working."
+  },
+  "sharing": {
+    "autoShareLabel": "Share new meals with your circle",
+    "autoShareHint": "When this is on, each new meal is shared with your circle automatically.",
+    "error": "Couldn't update your sharing preference. Please try again."
+  }
+}

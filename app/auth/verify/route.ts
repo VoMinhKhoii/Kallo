@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { localeFromNext, publicUrl } from '@/lib/auth/redirects';
-import { safeNextPath } from '@/lib/auth/safe-next';
-import { createClient } from '@/lib/supabase/server';
+import { localeFromNext, publicUrl } from '@/lib/infra/auth/redirects';
+import { safeNextPath } from '@/lib/infra/auth/safe-next';
+import { createClient } from '@/lib/infra/supabase/server';
 
 export const runtime = 'nodejs';
 

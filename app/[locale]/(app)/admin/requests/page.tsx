@@ -1,9 +1,12 @@
+import { FiltersForm } from '@/components/admin/requests/filters-form';
+import { RequestsTable } from '@/components/admin/requests/requests-table';
 import { Link } from '@/i18n/navigation';
-import { listRequests, requestFiltersSchema } from '@/lib/admin/queries';
-import { requireAdmin } from '@/lib/admin/require-admin';
-import { db } from '@/lib/db';
-import { FiltersForm } from './_components/filters-form';
-import { RequestsTable } from './_components/requests-table';
+import { requireAdmin } from '@/lib/admin/authz/require-admin';
+import {
+  listRequests,
+  requestFiltersSchema,
+} from '@/lib/admin/queries/requests';
+import { db } from '@/lib/infra/db/client';
 
 export const dynamic = 'force-dynamic';
 

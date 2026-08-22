@@ -16,6 +16,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    pool: 'forks',
     setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.test.{ts,tsx}'],
     exclude: [
@@ -24,6 +25,12 @@ export default defineConfig({
       // Flutter app is Dart; its gitignored build/ dir vendors third-party
       // TS test files (RevenueCat pod checkouts) that are not ours to run.
       'apps/mobile-flutter/**',
+      // Git worktrees live here and carry their own node_modules. Without
+      // this, vitest globs their test files, resolves a SECOND copy of React
+      // for them, and every render fails on `useContext` of null — 166
+      // phantom failures, and a run slow enough to look hung.
+      '.claude/worktrees/**',
+      ...(process.env.RUN_LIVE_OCR_TESTS ? [] : ['**/label-ocr-live.test.ts']),
     ],
   },
 });

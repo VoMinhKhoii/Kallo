@@ -1,0 +1,188 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_theme.dart';
+import '../../data/feed_providers.dart';
+import '../../data/feed_time.dart';
+import 'day_separator.dart';
+import '../states/circle_error.dart';
+import '../states/circle_skeleton.dart';
+import 'feed_entry.dart';
+
+class ThreadFeed extends ConsumerWidget {
+  const ThreadFeed({
+    required this.feed,
+    required this.header,
+    required this.onRetry,
+    required this.onAddFriend,
+    this.scope,
+    this.emptyTitleKey = 'groups.page.friendsEmptyTitle',
+    this.emptyDescriptionKey = 'groups.page.friendsNoMealToday',
+    this.emptyNamedArgs = const {},
+    this.showAddFriend = true,
+    super.key,
+  });
+
+  final AsyncValue<SharedMealFeedState> feed;
+  final Widget header;
+  final VoidCallback onRetry;
+  final VoidCallback onAddFriend;
+  final String? scope;
+  final String emptyTitleKey;
+  final String emptyDescriptionKey;
+  final Map<String, String> emptyNamedArgs;
+  final bool showAddFriend;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification.metrics.axis == Axis.vertical &&
+            notification.depth == 0 &&
+            notification.metrics.extentAfter < 400) {
+          ref.read(sharedMealFeedProvider(scope).notifier).loadMore();
+        }
+        return false;
+      },
+      child: feed.when(
+        loading: () => _list(const CircleWallSkeleton()),
+        error:
+            (_, __) => _list(
+              CircleErrorCard(onRetry: onRetry, isRetrying: feed.isLoading),
+            ),
+        data: (state) => _dataList(context, state),
+      ),
+    );
+  }
+
+  Widget _list(Widget body) => ListView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    padding: const EdgeInsets.fromLTRB(
+      KalloSpacing.sp3,
+      KalloSpacing.sp2,
+      KalloSpacing.sp3,
+      KalloSpacing.sp8,
+    ),
+    children: [header, const SizedBox(height: KalloSpacing.sp3), body],
+  );
+
+  Widget _dataList(BuildContext context, SharedMealFeedState state) {
+    if (state.entries.isEmpty) {
+      return _list(
+        _EmptyState(
+          onAdd: onAddFriend,
+          titleKey: emptyTitleKey,
+          descriptionKey: emptyDescriptionKey,
+          namedArgs: emptyNamedArgs,
+          showAdd: showAddFriend,
+        ),
+      );
+    }
+    // No spacer after the header here: the first thing in the list is always a
+    // day separator, and it pays its own top gap. Stacking both left ~36pt of
+    // dead air under the filter chips.
+    final children = <Widget>[header];
+    String? previousDay;
+    for (final entry in state.entries) {
+      final date = DateTime.parse(entry.meal.sharedAt);
+      final day = threadDayKey(date);
+      // A rule goes BEFORE each post rather than after it, so a day boundary
+      // and the end of the list get the day separator (or nothing) instead of
+      // a stray hairline stacked a few points above one.
+      if (day != previousDay) {
+        children.add(DaySeparator(date: date));
+      } else {
+        children.add(
+          const Padding(
+            // Indented to the content rail so the rule reinforces the
+            // avatar/content structure instead of cutting the row in half.
+            padding: EdgeInsets.only(left: kContentRail),
+            child: Divider(height: 1, thickness: 1, color: kHairline),
+          ),
+        );
+      }
+      children.add(
+        Padding(
+          key: ValueKey(entry.meal.shareId),
+          // Bottom is 0 by design: the post's last row is either the action
+          // row, whose 44pt tap target already carries ~14pt of slack under its
+          // glyphs, or ShareReplies, which pays its own bottom gap. Adding
+          // padding here would stack on top of one of them and leave the post
+          // visibly bottom-heavy. See the rhythm note in `feed_entry.dart`.
+          padding: const EdgeInsets.only(top: KalloSpacing.sp3),
+          child: FeedEntry(entry: entry),
+        ),
+      );
+      previousDay = day;
+    }
+    if (state.isLoadingMore) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.all(KalloSpacing.sp2),
+          child: Text(
+            tr('groups.wall.loadingMore'),
+            textAlign: TextAlign.center,
+            style: dashMeta(),
+          ),
+        ),
+      );
+    }
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        KalloSpacing.sp3,
+        KalloSpacing.sp2,
+        KalloSpacing.sp3,
+        KalloSpacing.sp8,
+      ),
+      children: children,
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({
+    required this.onAdd,
+    required this.titleKey,
+    required this.descriptionKey,
+    required this.namedArgs,
+    required this.showAdd,
+  });
+  final VoidCallback onAdd;
+  final String titleKey;
+  final String descriptionKey;
+  final Map<String, String> namedArgs;
+  final bool showAdd;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp10),
+    child: Column(
+      children: [
+        const Icon(LucideIcons.users300, color: kInkMuted, size: 24),
+        const SizedBox(height: KalloSpacing.sp3),
+        Text(
+          tr(titleKey, namedArgs: namedArgs),
+          style: dashBody(weight: FontWeight.w500),
+        ),
+        const SizedBox(height: KalloSpacing.sp1),
+        Text(
+          tr(descriptionKey, namedArgs: namedArgs),
+          textAlign: TextAlign.center,
+          style: dashMeta(),
+        ),
+        if (showAdd) ...[
+          const SizedBox(height: KalloSpacing.sp3),
+          TextButton.icon(
+            onPressed: onAdd,
+            icon: const Icon(LucideIcons.userPlus300, size: 16),
+            label: Text(tr('groups.page.addFriend')),
+          ),
+        ],
+      ],
+    ),
+  );
+}

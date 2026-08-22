@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1100" viewBox="0 0 900 1100">
+  <rect width="900" height="1100" fill="#fffdf8"/>
+  <rect x="35" y="35" width="830" height="1030" fill="none" stroke="#111" stroke-width="8"/>
+  <g fill="#111" font-family="Arial, sans-serif">
+    <text x="70" y="125" font-size="56" font-weight="700">BẢNG GIÁ TRỊ DINH DƯỠNG</text>
+    <text x="70" y="185" font-size="32">Sữa hạt thử nghiệm</text>
+    <line x1="70" y1="220" x2="830" y2="220" stroke="#111" stroke-width="9"/>
+    <text x="70" y="280" font-size="34">Giá trị trung bình trong 100 ml</text>
+    <line x1="70" y1="315" x2="830" y2="315" stroke="#111" stroke-width="5"/>
+    <text x="70" y="400" font-size="42">Năng lượng</text>
+    <text x="655" y="400" font-size="42">210 kJ</text>
+    <line x1="70" y1="435" x2="830" y2="435" stroke="#111" stroke-width="3"/>
+    <text x="70" y="520" font-size="42">Chất đạm</text>
+    <text x="675" y="520" font-size="42">3,5 g</text>
+    <line x1="70" y1="555" x2="830" y2="555" stroke="#111" stroke-width="3"/>
+    <text x="70" y="640" font-size="42">Carbohydrat</text>
+    <text x="675" y="640" font-size="42">4,8 g</text>
+    <line x1="70" y1="675" x2="830" y2="675" stroke="#111" stroke-width="3"/>
+    <text x="70" y="760" font-size="42">Chất béo</text>
+    <text x="675" y="760" font-size="42">1,5 g</text>
+    <line x1="70" y1="795" x2="830" y2="795" stroke="#111" stroke-width="3"/>
+    <text x="70" y="880" font-size="42">Natri</text>
+    <text x="650" y="880" font-size="42">120 mg</text>
+  </g>
+</svg>

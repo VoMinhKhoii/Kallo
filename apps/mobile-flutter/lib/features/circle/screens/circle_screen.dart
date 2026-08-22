@@ -3,21 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/nham_sheet.dart';
-import '../../../shared/widgets/widgets.dart';
-import '../../../shell/app_header.dart';
+import '../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../shared/widgets/surface/kallo_screen.dart';
+import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../../../shell/header/app_header.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
+import '../../../theme/kallo_theme.dart';
 import '../data/chat_group_providers.dart';
 import '../data/circle_providers.dart';
 import '../data/feed_providers.dart';
-import '../widgets/add_friend_sheet.dart';
-import '../widgets/circle_add_menu.dart';
-import '../widgets/group_info_sheet.dart';
-import '../widgets/meal_invites.dart';
-import '../widgets/thread_feed.dart';
-import '../widgets/view_switcher.dart';
+import '../widgets/invite/add_friend_sheet.dart';
+import '../widgets/invite/circle_add_menu.dart';
+import '../widgets/groups/group_info_sheet.dart';
+import '../widgets/invite/meal_invites.dart';
+import '../widgets/feed/thread_feed.dart';
+import '../widgets/feed/view_switcher.dart';
+import '../../../shared/widgets/feedback/kallo_refresh.dart';
 
 Future<void> _showGroupInfoSheet(BuildContext context, String groupId) =>
     showNhamSheet<void>(
@@ -49,19 +50,19 @@ class CircleScreen extends ConsumerWidget {
         '';
     return Screen(
       child: ScrollSeparator(
-        // Title on the header line, same slot and same serif as the
-        // dashboard greeting; the add control takes the trailing slot it was
-        // already reserving space for.
+        // Title on the header line, sans at Value 17 rather than the Lora
+        // headline: at 17 its cap-height sits level with the 24pt hamburger
+        // beside it. The screen runs on 12/14/17 — the three sizes `mobile.md`
+        // locks a surface to — and 17 is now spent HERE alone, the feed below
+        // holding to 12 and 14.
         header: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(
             trailing: const CircleAddMenu(),
-            child: Text(tr('groups.page.title'), style: dashHeadline()),
+            child: Text(tr('groups.page.title'), style: dashPageTitle()),
           ),
         ),
-        child: RefreshIndicator(
-          color: NhamColors.accent,
-          backgroundColor: NhamColors.elev,
+        child: KalloRefresh(
           onRefresh: () => _refresh(ref, selected),
           child: ThreadFeed(
             scope: selected,
@@ -70,10 +71,12 @@ class CircleScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const ViewSwitcher(),
-                const SizedBox(height: NhamSpacing.sp3),
+                // MealInvitesSection collapses to nothing when there are no
+                // invites, so it owns the gap above itself rather than having
+                // one reserved here for a widget that usually is not there.
                 const MealInvitesSection(),
                 if (selected != null) ...[
-                  const SizedBox(height: NhamSpacing.sp3),
+                  const SizedBox(height: KalloSpacing.sp3),
                   _GroupHeader(
                     groupId: selected,
                     name: name,
@@ -142,7 +145,7 @@ class _GroupHeader extends StatelessWidget {
       IconButton(
         tooltip: tr('groups.info.title'),
         onPressed: () => _showGroupInfoSheet(context, groupId),
-        icon: const Icon(LucideIcons.info, size: 18, color: kInkMuted),
+        icon: const Icon(LucideIcons.info300, size: 18, color: kInkMuted),
       ),
     ],
   );

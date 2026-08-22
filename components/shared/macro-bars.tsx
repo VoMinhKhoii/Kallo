@@ -22,10 +22,10 @@ export function MacroBars({ items }: MacroBarsProps) {
           target > 0 ? Math.max(0, Math.min((current / target) * 100, 100)) : 0;
         return (
           <div key={label} className="flex items-center gap-3">
-            <span className="w-16 font-medium text-nham-text text-xs uppercase tracking-[0.08em]">
+            <span className="w-16 font-medium text-kallo-text text-xs uppercase tracking-[0.08em]">
               {label}
             </span>
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-nham-track">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-kallo-track">
               <motion.div
                 className="h-full rounded-full"
                 style={{ backgroundColor: color }}
@@ -38,7 +38,7 @@ export function MacroBars({ items }: MacroBarsProps) {
                 }}
               />
             </div>
-            <span className="w-[68px] text-right text-nham-text text-xs tabular-nums">
+            <span className="w-[68px] text-right text-kallo-text text-xs tabular-nums">
               {Math.round(current)}/{target}
               {unit}
             </span>

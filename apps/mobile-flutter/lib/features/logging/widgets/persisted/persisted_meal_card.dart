@@ -3,36 +3,34 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
-import '../confirm_meal_removal.dart';
-import '../meal_time_divider.dart';
+import '../entry/confirm_meal_removal.dart';
+import '../turn/turn_header.dart';
 import 'persisted_meal_actions.dart';
 import 'persisted_meal_amount_editor.dart';
 import 'persisted_meal_card_content.dart';
 
 /// A saved meal in the day's feed — collapsed by default, expandable.
 ///
-/// Ported 1:1 from
-/// `apps/mobile/src/components/logging/feed/persisted-meal-card.tsx`: the
+/// Ported 1:1 from web
+/// `components/logging/feed/persisted/persisted-meal-card.tsx`: the
 /// chevron rotates 0°↔180° (200ms), the collapsed summary cross-fades out, and
 /// the detail block animates its height open/closed (200ms).
 class PersistedMealCard extends StatefulWidget {
   const PersistedMealCard({
     super.key,
     required this.meal,
-    this.isLast = false,
     this.onRemove,
     this.onUpdate,
     this.onLogAgain,
   });
 
   final PersistedMeal meal;
-  final bool isLast;
 
-  /// iOS trailing-swipe removal (terracotta, never red) — fired when the card is
+  /// iOS trailing-swipe removal (destructive red) — fired when the card is
   /// dismissed. Null disables the swipe.
   final VoidCallback? onRemove;
 
@@ -74,8 +72,8 @@ class _PersistedMealCardState extends State<PersistedMealCard>
     super.dispose();
   }
 
-  /// Wrap the card in a trailing-swipe-to-remove Dismissible (terracotta, never
-  /// red) when [onRemove] is set; otherwise return the card untouched.
+  /// Wrap the card in a trailing-swipe-to-remove Dismissible (destructive red)
+  /// when [onRemove] is set; otherwise return the card untouched.
   Widget _maybeDismissible(Widget card) {
     final onRemove = widget.onRemove;
     if (onRemove == null) return card;
@@ -86,16 +84,16 @@ class _PersistedMealCardState extends State<PersistedMealCard>
       onDismissed: (_) => onRemove(),
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
+        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp5),
         decoration: BoxDecoration(
-          color: NhamColors.danger,
-          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+          color: KalloColors.danger,
+          borderRadius: BorderRadius.circular(KalloRadii.containerLg),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              LucideIcons.trash2,
+              LucideIcons.trash2300,
               size: LoggingIcons.size,
               color: Colors.white,
             ),
@@ -156,8 +154,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
       children: [
         // Time as a centered divider on top of the card (── 1:04 AM ──) —
         // no left timeline gutter, so the card gets the full row width.
-        MealTimeDivider(time: time),
-        const SizedBox(height: LoggingSpacing.block),
+        TurnHeader(time: time, message: meal.rawInput),
         // Editing swaps the body in place AND hides the action row (the web
         // hides the action bar while editing). While editing the card is not
         // swipe-dismissible — a stray swipe must not delete the meal mid-edit.

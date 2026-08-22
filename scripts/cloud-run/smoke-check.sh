@@ -3,7 +3,7 @@ set -euo pipefail
 
 base_url="${1:?base URL required}"
 base_url="${base_url%/}"
-healthz_body_file="$(mktemp "${TMPDIR:-/tmp}/nham-healthz-body.XXXXXX")"
+healthz_body_file="$(mktemp "${TMPDIR:-/tmp}/kallo-healthz-body.XXXXXX")"
 curl_config_file=""
 cleanup() {
   rm -f "$healthz_body_file"
@@ -27,7 +27,7 @@ trap cleanup EXIT
 # base flags (never empty — safe under `set -u`).
 curl_opts=(--silent --show-error --connect-timeout 2 --max-time 5)
 if [ -n "${ORIGIN_SHARED_SECRET:-}" ]; then
-  curl_config_file="$(mktemp "${TMPDIR:-/tmp}/nham-curl-cfg.XXXXXX")"
+  curl_config_file="$(mktemp "${TMPDIR:-/tmp}/kallo-curl-cfg.XXXXXX")"
   printf 'header = "X-Origin-Verify: %s"\n' "$ORIGIN_SHARED_SECRET" > "$curl_config_file"
   curl_opts+=(--config "$curl_config_file")
 fi
@@ -57,7 +57,7 @@ for _ in 1 2 3 4 5; do
     health_json="$(cat "$healthz_body_file")"
     # Explicit validation: check for required JSON fields
     if echo "$health_json" | grep -q '"ok":true' && \
-       echo "$health_json" | grep -q '"service":"nham"'; then
+       echo "$health_json" | grep -q '"service":"kallo"'; then
       if check_landing_page; then
         exit 0
       fi

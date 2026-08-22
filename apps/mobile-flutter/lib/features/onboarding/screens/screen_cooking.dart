@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
-import '../widgets/option_strip.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
+import '../../../shared/widgets/form/option_strip.dart';
 
 /// Partial seed for step 3 (string values keyed by field name).
 class ScreenThreeDefaults {
@@ -177,17 +177,17 @@ class _ScreenCookingState extends State<ScreenCooking> {
       children: [
         Text(
           tr('onboarding.cooking.title'),
-          style: NhamTextStyles.serifMedium(fontSize: 24)
-              .copyWith(letterSpacing: -0.3, color: NhamColors.text),
+          style: KalloTextStyles.serifMedium(fontSize: 24)
+              .copyWith(letterSpacing: -0.3, color: KalloColors.text),
         ),
-        const SizedBox(height: NhamSpacing.sp1),
+        const SizedBox(height: KalloSpacing.sp1),
         Text(
           tr('onboarding.cooking.subtitle'),
           style: dashBody(color: kInkMuted),
         ),
-        const SizedBox(height: NhamSpacing.sp6),
+        const SizedBox(height: KalloSpacing.sp6),
         for (var i = 0; i < fields.length; i++) ...[
-          if (i > 0) const SizedBox(height: NhamSpacing.sp6),
+          if (i > 0) const SizedBox(height: KalloSpacing.sp6),
           _buildCard(fields[i]),
         ],
       ],
@@ -207,14 +207,14 @@ class _ScreenCookingState extends State<ScreenCooking> {
         if (f.hint != null)
           Padding(
             // RN marginTop: -space[1] then card gap[3] → net spacing.
-            padding: const EdgeInsets.only(top: NhamSpacing.sp3 - NhamSpacing.sp1),
+            padding: const EdgeInsets.only(top: KalloSpacing.sp3 - KalloSpacing.sp1),
             child: Text(
               f.hint!,
               style: dashMeta(),
             ),
           ),
-        const SizedBox(height: NhamSpacing.sp3),
-        OptionStrip(
+        const SizedBox(height: KalloSpacing.sp3),
+        OptionStrip.onboarding(
           options: f.options,
           value: _values[f.name]!,
           onChange: (v) {

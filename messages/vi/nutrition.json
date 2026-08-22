@@ -1,0 +1,452 @@
+{
+  "eyebrow": "Phân tích xu hướng",
+  "title": "Dinh dưỡng",
+  "cardTitle": "Trung bình",
+  "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn từ những bữa ăn bạn đã ghi.",
+  "loading": "Đang tải tổng quan dinh dưỡng…",
+  "detail": {
+    "perDay": "mỗi ngày",
+    "close": "Đóng chi tiết ngày",
+    "noNutrients": "Chưa có dữ liệu vi chất cho khoảng này."
+  },
+  "range": {
+    "label": "Khoảng thời gian dinh dưỡng",
+    "7d": "7 ngày",
+    "30d": "30 ngày",
+    "90d": "90 ngày"
+  },
+  "summary": {
+    "label": "Tóm tắt dinh dưỡng",
+    "mostConsistent": "Ổn định nhất",
+    "needsAttention": "Cần chú ý",
+    "limitedData": "Dữ liệu hạn chế",
+    "macroConsistency": "Độ ổn định macro",
+    "coverageHint": "Vi chất có độ phủ mỏng",
+    "weakest": "Yếu nhất",
+    "none": "Chưa có",
+    "verdict": {
+      "label": "Kết luận xu hướng",
+      "attention": "{nutrients} cần chú ý",
+      "steady": "{nutrients} đang ổn định",
+      "empty": "Tiếp tục ghi nhận để tạo xu hướng"
+    }
+  },
+  "macros": {
+    "eyebrow": "Nhịp theo giai đoạn",
+    "title": "Xu hướng macro",
+    "calories": "Calo",
+    "protein": "Đạm",
+    "carbohydrate": "Carb",
+    "fat": "Chất béo",
+    "fiber": "Chất xơ",
+    "averagePerDay": "Trung bình mỗi ngày",
+    "consistency": "Độ ổn định",
+    "weakest": "Yếu nhất",
+    "target": "Mục tiêu",
+    "noTarget": "Không có mục tiêu"
+  },
+  "macrosShort": {
+    "protein": "Đạm",
+    "carbohydrate": "Tinh bột",
+    "fat": "Chất béo"
+  },
+  "grid": {
+    "title": "Độ phủ vi chất",
+    "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn.",
+    "vitamins": "Vitamin",
+    "minerals": "Khoáng chất",
+    "sourceNote": "Mục tiêu theo tham chiếu WHO/FAO · RDA Việt Nam · NASEM DRI."
+  },
+  "more": {
+    "show": "Xem thêm vi chất",
+    "hide": "Ẩn bớt vi chất"
+  },
+  "card": {
+    "average": "Trung bình",
+    "target": "Mục tiêu",
+    "targetProgress": "Tiến độ mục tiêu",
+    "context": "Ngữ cảnh",
+    "noData": "Chưa có dữ liệu",
+    "noTargetClaim": "Chưa kết luận theo mục tiêu",
+    "averageVsTarget": "{average} TB · mục tiêu {target}",
+    "expand": "Xem xu hướng",
+    "collapse": "Ẩn xu hướng"
+  },
+  "targetSources": {
+    "vietnamRda": "RDA Việt Nam",
+    "whoFao": "WHO/FAO",
+    "nasem": "DRI NASEM",
+    "unsupported": "Chưa có nguồn mục tiêu"
+  },
+  "trend": {
+    "loading": "Đang tải xu hướng…",
+    "error": "Không tải được xu hướng này.",
+    "lineMode": "Có thể xem đường xu hướng cho vi chất này.",
+    "pointMode": "Chỉ hiển thị điểm dữ liệu vì độ phủ còn hạn chế.",
+    "insufficientData": "Chưa đủ dữ liệu món ăn đáng tin cậy để kết luận theo mục tiêu.",
+    "noDataPoint": "Chưa có dữ liệu",
+    "chartLabel": "Biểu đồ xu hướng vi chất"
+  },
+  "caveats": {
+    "sodium": "Natri từ nước chấm, gia vị và các loại mắm truyền thống có thể bị tính thiếu.",
+    "vitaminABetaCarotene": "Vitamin A có thể chồng lấp với beta-carotene từ rau củ nhiều màu."
+  },
+  "education": {
+    "label": "Giải thích",
+    "vitaminD": {
+      "title": "Vitamin D là trường hợp khác",
+      "body": "Thực phẩm thường đóng góp rất ít vitamin D. Ánh nắng, lối sống và xét nghiệm theo tư vấn y tế quan trọng hơn nhật ký món ăn này."
+    }
+  },
+  "candidates": {
+    "open": "Xem gợi ý món",
+    "close": "Ẩn gợi ý món",
+    "title": "Món có thể cân nhắc",
+    "description": "Đây là các món có thể cân nhắc để tăng độ đa dạng và độ phủ dữ liệu. Chúng không phải chẩn đoán, đơn ăn bắt buộc hay lời khuyên dùng thực phẩm bổ sung.",
+    "loading": "Đang tải gợi ý món…",
+    "error": "Không tải được gợi ý món. Hãy thử lại.",
+    "retry": "Tải lại gợi ý món",
+    "empty": "Chưa có gợi ý món cho vi chất này.",
+    "cautionLabel": "Lưu ý:",
+    "calciumMg": {
+      "tofu": {
+        "name": "Đậu phụ kết tủa canxi",
+        "serving": "Một miếng cỡ lòng bàn tay trong canh, xào hoặc kho",
+        "rationale": "Bổ sung canxi kèm đạm thực vật và hợp với bữa cơm Việt."
+      },
+      "smallFishWithBones": {
+        "name": "Cá nhỏ ăn cả xương",
+        "serving": "Một phần nhỏ cá mòi, cá cơm hoặc loại cá nhỏ tương tự",
+        "rationale": "Xương mềm ăn được có thể đóng góp canxi đáng kể."
+      },
+      "yogurt": {
+        "name": "Sữa chua không đường",
+        "serving": "Một hũ nhỏ như bữa phụ hoặc ăn kèm bữa sáng",
+        "rationale": "Một lựa chọn từ sữa tiện lợi khi bữa chính ít dùng sữa."
+      },
+      "mustardGreens": {
+        "name": "Cải xanh",
+        "serving": "Một bát rau nấu canh hoặc xào",
+        "rationale": "Thêm canxi cùng chất xơ và vitamin C."
+      },
+      "soyMilk": {
+        "name": "Sữa đậu nành bổ sung canxi",
+        "serving": "Một ly với bữa sáng hoặc bữa phụ",
+        "rationale": "Loại được bổ sung canxi giúp tăng canxi mà không cần phụ thuộc vào sữa bò."
+      }
+    },
+    "ironMg": {
+      "clams": {
+        "name": "Nghêu, sò",
+        "serving": "Một bát nhỏ trong canh, cháo hoặc món xào",
+        "rationale": "Hải sản có vỏ có thể là nguồn sắt đậm đặc."
+      },
+      "leanBeef": {
+        "name": "Thịt bò nạc",
+        "serving": "Một phần cỡ lòng bàn tay trong phở, salad hoặc món xào",
+        "rationale": "Bổ sung sắt heme, thường dễ hấp thu hơn."
+      },
+      "porkLiver": {
+        "name": "Gan heo",
+        "serving": "Một phần nhỏ thỉnh thoảng",
+        "rationale": "Rất giàu sắt nên một lượng nhỏ cũng có thể thay đổi xu hướng theo tuần.",
+        "caution": "Gan rất giàu vitamin A. Nên xoay vòng món này thay vì dùng hằng ngày."
+      },
+      "waterSpinach": {
+        "name": "Rau muống",
+        "serving": "Một bát rau muống nấu canh hoặc xào",
+        "rationale": "Thêm sắt thực vật và hợp khi ăn cùng món giàu vitamin C."
+      },
+      "mungBeans": {
+        "name": "Đậu xanh",
+        "serving": "Một bát nhỏ trong cháo, canh hoặc chè ít ngọt",
+        "rationale": "Bổ sung sắt thực vật, chất xơ và một lựa chọn đậu quen thuộc."
+      }
+    },
+    "vitaminCMg": {
+      "guava": {
+        "name": "Ổi",
+        "serving": "Nửa đến một quả ổi",
+        "rationale": "Nguồn vitamin C gọn và cũng thêm chất xơ."
+      },
+      "pomelo": {
+        "name": "Bưởi",
+        "serving": "Vài múi sau bữa ăn",
+        "rationale": "Thêm vitamin C bằng một loại trái cây Việt quen thuộc."
+      },
+      "papaya": {
+        "name": "Đu đủ",
+        "serving": "Một bát nhỏ đu đủ chín",
+        "rationale": "Thêm vitamin C và carotenoid."
+      },
+      "mustardGreens": {
+        "name": "Cải xanh",
+        "serving": "Một bát nấu vừa chín trong canh hoặc xào",
+        "rationale": "Bổ sung vitamin C mà vẫn giữ bữa ăn thiên về món mặn."
+      },
+      "freshHerbs": {
+        "name": "Rau thơm tươi",
+        "serving": "Một nắm rộng với bún, cuốn hoặc cơm đĩa",
+        "rationale": "Những phần nhỏ lặp lại có thể cải thiện độ phủ vitamin C qua nhiều bữa."
+      }
+    },
+    "phosphorusMg": {
+      "fish": {
+        "name": "Cá",
+        "serving": "Một phần cỡ lòng bàn tay, hấp, kho hoặc nấu canh",
+        "rationale": "Bổ sung phốt pho cùng đạm."
+      },
+      "eggs": {
+        "name": "Trứng",
+        "serving": "Một quả ăn cùng cơm, mì hoặc canh",
+        "rationale": "Cách đơn giản để thêm phốt pho và đạm."
+      },
+      "tofu": {
+        "name": "Đậu phụ",
+        "serving": "Một miếng cỡ lòng bàn tay trong canh, xào hoặc kho",
+        "rationale": "Bổ sung phốt pho trong một lựa chọn thiên về thực vật."
+      },
+      "chicken": {
+        "name": "Thịt gà",
+        "serving": "Một phần cỡ lòng bàn tay trong canh, gỏi hoặc cơm",
+        "rationale": "Bổ sung phốt pho từ nguồn đạm nạc quen thuộc."
+      },
+      "peanuts": {
+        "name": "Đậu phộng",
+        "serving": "Một thìa nhỏ làm topping",
+        "rationale": "Thêm phốt pho và độ giòn trong khẩu phần nhỏ."
+      }
+    },
+    "vitaminB1Mg": {
+      "pork": {
+        "name": "Thịt heo",
+        "serving": "Một phần nạc cỡ lòng bàn tay",
+        "rationale": "Thịt heo là nguồn thiamin quen thuộc."
+      },
+      "mungBeans": {
+        "name": "Đậu xanh",
+        "serving": "Một bát nhỏ trong canh, cháo hoặc salad",
+        "rationale": "Bổ sung thiamin cùng chất xơ và đạm thực vật."
+      },
+      "brownRice": {
+        "name": "Gạo lứt",
+        "serving": "Trộn một phần với cơm trắng",
+        "rationale": "Giữ thói quen ăn cơm nhưng thêm thiamin so với gạo xát trắng."
+      },
+      "peanuts": {
+        "name": "Đậu phộng",
+        "serving": "Một thìa nhỏ làm topping",
+        "rationale": "Thêm thiamin bằng một món rắc quen thuộc."
+      },
+      "soybeans": {
+        "name": "Đậu nành",
+        "serving": "Một bát nhỏ đậu nành luộc hoặc món từ đậu nành",
+        "rationale": "Bổ sung thiamin cùng đạm thực vật."
+      }
+    },
+    "vitaminB2Mg": {
+      "eggs": {
+        "name": "Trứng",
+        "serving": "Một quả trong bữa ăn",
+        "rationale": "Bổ sung riboflavin bằng món dễ tìm."
+      },
+      "yogurt": {
+        "name": "Sữa chua không đường",
+        "serving": "Một hũ nhỏ",
+        "rationale": "Thêm riboflavin và canxi."
+      },
+      "porkLiver": {
+        "name": "Gan heo",
+        "serving": "Một phần nhỏ thỉnh thoảng",
+        "rationale": "Rất giàu riboflavin nên phần nhỏ cũng có ý nghĩa.",
+        "caution": "Gan rất giàu vitamin A. Nên xoay vòng món này thay vì dùng hằng ngày."
+      },
+      "fish": {
+        "name": "Cá",
+        "serving": "Một phần cỡ lòng bàn tay, hấp, kho hoặc nấu canh",
+        "rationale": "Bổ sung riboflavin cùng đạm."
+      },
+      "mushrooms": {
+        "name": "Nấm",
+        "serving": "Một nắm trong canh, mì hoặc món xào",
+        "rationale": "Thêm riboflavin và vị umami."
+      }
+    },
+    "vitaminPpMg": {
+      "chicken": {
+        "name": "Thịt gà",
+        "serving": "Một phần cỡ lòng bàn tay",
+        "rationale": "Bổ sung niacin từ nguồn đạm nạc quen thuộc."
+      },
+      "fish": {
+        "name": "Cá",
+        "serving": "Một phần cỡ lòng bàn tay",
+        "rationale": "Thêm niacin cùng đạm và sự đa dạng."
+      },
+      "peanuts": {
+        "name": "Đậu phộng",
+        "serving": "Một thìa nhỏ làm topping hoặc bữa phụ",
+        "rationale": "Bổ sung niacin trong khẩu phần gọn."
+      },
+      "leanPork": {
+        "name": "Thịt heo nạc",
+        "serving": "Một phần cỡ lòng bàn tay trong canh, cơm hoặc bún",
+        "rationale": "Thêm niacin và hợp với cách nấu Việt hằng ngày."
+      },
+      "mushrooms": {
+        "name": "Nấm",
+        "serving": "Một nắm trong canh hoặc món xào",
+        "rationale": "Thêm niacin và vị ngọt tự nhiên."
+      }
+    },
+    "vitaminAMcg": {
+      "carrots": {
+        "name": "Cà rốt",
+        "serving": "Một nắm trong canh, hầm hoặc xào",
+        "rationale": "Bổ sung beta-carotene, chất góp phần vào tình trạng vitamin A."
+      },
+      "pumpkin": {
+        "name": "Bí đỏ",
+        "serving": "Một bát trong canh hoặc món hầm",
+        "rationale": "Thêm carotenoid với kết cấu mềm quen thuộc."
+      },
+      "sweetPotato": {
+        "name": "Khoai lang",
+        "serving": "Một củ nhỏ luộc hoặc nướng",
+        "rationale": "Bổ sung carotenoid và tinh bột tiêu hóa chậm hơn."
+      },
+      "eggYolk": {
+        "name": "Lòng đỏ trứng",
+        "serving": "Một quả trứng nguyên hoặc món có lòng đỏ",
+        "rationale": "Bổ sung vitamin A dạng có sẵn trong món quen thuộc."
+      },
+      "darkLeafyGreens": {
+        "name": "Rau lá xanh đậm",
+        "serving": "Một bát nấu canh hoặc xào",
+        "rationale": "Thêm carotenoid đồng thời hỗ trợ chất xơ và khoáng chất."
+      }
+    }
+  },
+  "nutrients": {
+    "fiber": "Chất xơ",
+    "sodium": "Natri",
+    "calcium": "Canxi",
+    "iron": "Sắt",
+    "magnesium": "Magie",
+    "phosphorus": "Phốt pho",
+    "potassium": "Kali",
+    "zinc": "Kẽm",
+    "copper": "Đồng",
+    "manganese": "Mangan",
+    "betaCarotene": "Beta-carotene",
+    "vitaminA": "Vitamin A",
+    "vitaminD": "Vitamin D",
+    "vitaminE": "Vitamin E",
+    "vitaminK": "Vitamin K",
+    "vitaminC": "Vitamin C",
+    "vitaminB1": "Vitamin B1",
+    "vitaminB2": "Vitamin B2",
+    "vitaminPp": "Niacin",
+    "vitaminB5": "Vitamin B5",
+    "vitaminB6": "Vitamin B6",
+    "vitaminB9": "Folate",
+    "vitaminB12": "Vitamin B12",
+    "vitaminH": "Biotin"
+  },
+  "errors": {
+    "overview": "Không tải được tổng quan dinh dưỡng. Hãy làm mới trang hoặc thử lại sau khi ghi nhận thêm bữa ăn.",
+    "overviewToast": "Không tải được tổng quan dinh dưỡng.",
+    "retry": "Tải lại tổng quan",
+    "candidatesError": "Chưa tải được gợi ý món ăn ngay lúc này."
+  },
+  "empty": {
+    "title": "Chưa có bữa ăn trong khoảng này",
+    "description": "Ghi nhận bữa ăn trong vài ngày để xem xu hướng macro và vi chất.",
+    "logMeal": "Ghi nhận bữa ăn"
+  },
+  "trends": {
+    "tooFewDays": "Hãy tiếp tục ghi nhận bữa ăn để tạo đường xu hướng đáng tin cậy. Các mức trung bình hiện có vẫn được hiển thị."
+  },
+  "editorial": {
+    "eyebrow": "Xu hướng",
+    "dateRange": "{start} – {end}"
+  },
+  "verdict": {
+    "both": "{period} bạn ăn ổn định ở {consistent}, nhưng {attention} đang khá mỏng.",
+    "steadyOnly": "{period} bạn giữ ổn định ở {consistent}.",
+    "attentionOnly": "{attention} cần để ý hơn trong {period}.",
+    "quiet": "Một giai đoạn yên ả. Tiếp tục ghi nhận để hoàn thiện xu hướng.",
+    "gathering": "Vẫn đang gom dần xu hướng của bạn.",
+    "gatheringSub": "Đã có {days} ngày đủ bữa — cứ tiếp tục, bức tranh sẽ rõ dần.",
+    "trustLineNoConfidence": "{days} ngày đủ bữa",
+    "partialNote": "· {count, plural, other {tạm bỏ qua # ngày ghi thiếu}}",
+    "period1d": "hôm nay",
+    "period7d": "7 ngày qua",
+    "period30d": "30 ngày qua",
+    "period90d": "90 ngày qua"
+  },
+  "rhythm": {
+    "calories": "kcal",
+    "loggedDays": "Tất cả",
+    "completeDays": "Ngày đủ bữa",
+    "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
+    "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
+    "dayCount": "{count} ngày",
+    "noCompleteDays": "Chưa có ngày nào ghi đủ — hãy tiếp tục ghi, hoặc chạm Tất cả.",
+    "compositionLabel": "{macro} {pct}%",
+    "macroCompositionAria": "Tỷ lệ macro",
+    "macroTrendAria": "Calo từ đạm, tinh bột và chất béo theo thời gian",
+    "consistency": {
+      "steady": "ổn định",
+      "rhythmic": "đều đặn",
+      "varies": "thất thường",
+      "thin": "mỏng",
+      "noTarget": "chưa có mục tiêu"
+    },
+    "rowLabel": "{macro}: {average} {unit} mỗi ngày ghi, {label}",
+    "barAria": "Tiến độ {macro} so với mục tiêu",
+    "timeAxis": {
+      "byDay": "Từng ngày",
+      "byWeek": "Từng tuần",
+      "rangeLabel": "{low}–{high} {unit}",
+      "stripAria": "{macro} mỗi {bucket}: thấp {low}, cao {high} {unit}",
+      "bucketDay": "ngày",
+      "bucketWeek": "tuần",
+      "gap": "chưa ghi đủ bữa"
+    },
+    "diffUp": "tăng so với kỳ trước",
+    "diffDown": "giảm so với kỳ trước"
+  },
+  "focus": {
+    "eyebrow": "Cần để ý",
+    "tryLabel": "Thử",
+    "percentOfTarget": "{value}% mục tiêu",
+    "averageLine": "TB {value} {unit}/ngày ghi · {source}",
+    "spotlightBarAria": "{label}: {pct}% của mục tiêu",
+    "noFoodIdeas": "Sẽ sớm có gợi ý món cho vi chất này."
+  },
+  "steady": {
+    "eyebrow": "Đang giữ ổn định",
+    "percent": "{value}%",
+    "limited": "dữ liệu hạn chế",
+    "noTarget": "chưa có mục tiêu",
+    "row": {
+      "expand": "Mở rộng {nutrient}",
+      "collapse": "Thu gọn {nutrient}"
+    }
+  },
+  "background": {
+    "eyebrow": "Trong nền",
+    "hint": "Những vi chất ít theo dõi hơn, để nhẹ ở đây có chủ đích.",
+    "show": "Xem {count}",
+    "hide": "Ẩn"
+  },
+  "pullQuote": {
+    "eyebrow": "Lời ngỏ của ban biên tập"
+  },
+  "emptyV2": {
+    "title": "Chưa ghi bữa ăn nào",
+    "description": "Ghi vài bữa ăn để xem tổng quan dinh dưỡng của bạn.",
+    "logMeal": "Ghi bữa ăn"
+  }
+}

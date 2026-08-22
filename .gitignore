@@ -44,7 +44,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/.planning
 supabase/.temp/
 __pycache__/
 
@@ -54,16 +53,27 @@ __pycache__/
 .claude/scheduled_tasks/
 .claude/_runtime/
 
-# USDA download output (large CSV, regenerate with scripts/usda/)
+# USDA download output (large CSV, regenerate with scripts/data/usda/)
 data/usda_sr/
 
 # Translation pipeline checkpoints (generated, resume-safe)
 data/translation-checkpoints/
 seed_food.sql
 
-# Local git worktrees
+# Local NIN ingestion snapshots and bulky generated artifacts
+scripts/enrich/input/
+scripts/enrich/out/*
+!scripts/enrich/out/dups.csv
+!scripts/enrich/out/manifest.json
+
+# Local git worktrees — hundreds of thousands of files, each a full checkout.
 .worktrees/
+.claude/worktrees/
 .gstack/
+
+# Per-developer agent scratch state (Codex CLI, context captures) — noise, not source.
+.codex/
+.context/
 
 # Local Claude Code MCP server config (no secrets, but per-developer)
 .mcp.json
@@ -71,5 +81,20 @@ seed_food.sql
 # Playwright MCP session artifacts
 .playwright-mcp/
 
-# Eval run artifacts: keep the human-readable .md summaries, not the raw JSON
-scripts/eval/reports/*.json
+# Eval run artifacts — generated per run, not reviewable source. Kept on disk
+# for local comparison, out of the repo so PRs stay readable.
+scripts/eval/reports/
+
+# Live pipeline captures. Megabytes of raw model output, non-deterministic, and
+# not something a reviewer can read a diff of — `landing-v2.json` alone is
+# ~1.1 MB across 29 cases. One was committed by accident and backed out in
+# aaa5a760; this stops the next time. The analysis that makes a capture worth
+# keeping goes on ttr instead (see DEV-105 for the landing set).
+#
+# Anchored to this directory, so the hand-authored fixtures under
+# scripts/eval/fixtures/ stay tracked — they are source, these are output.
+scripts/eval/*.json
+
+# One-off local eval harnesses — throwaway probes, not a shared entry point.
+# They live in scripts/eval/local/ alongside the tracked one-off captures.
+scripts/eval/local/*.local.ts

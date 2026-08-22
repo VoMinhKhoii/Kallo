@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import type { AppTransaction } from '@/lib/db';
-import { mealShares, userProfiles } from '@/lib/db/schema';
+import type { AppTransaction } from '@/lib/infra/db/client';
+import { mealShares, userProfiles } from '@/lib/infra/db/schema';
 
 /**
  * Insert the default circle share for a meal, respecting the actor's

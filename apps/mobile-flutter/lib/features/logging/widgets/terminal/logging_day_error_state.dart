@@ -4,31 +4,31 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../logic/logging_spacing.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/nham_colors.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 
-/// Day fetch error: a warm alert card — terracotta `nham-danger` accents on
+/// Day fetch error: a warm alert card — terracotta `kallo-danger` accents on
 /// the cream surface (never literal reds, which break the palette on sight) —
 /// with a CircleAlert, title/desc, and a retry pill (LoggingDayErrorState).
 class LoggingDayErrorState extends StatelessWidget {
   const LoggingDayErrorState({super.key, required this.onRetry});
   final VoidCallback onRetry;
 
-  static const _dangerFill = Color(0x1AD37B69); // nham-danger @ 10%
+  static const _dangerFill = KalloColors.danger10;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(NhamSpacing.sp6),
+        padding: const EdgeInsets.all(KalloSpacing.sp6),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 448), // max-w-md
           padding: LoggingSpacing.card,
           decoration: BoxDecoration(
-            color: NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
-            border: Border.all(color: NhamColors.borderSoft),
-            boxShadow: const [NhamShadows.sm],
+            color: KalloColors.elev,
+            borderRadius: BorderRadius.circular(KalloRadii.containerLg), // 2xl
+            border: Border.all(color: KalloColors.borderSoft),
+            boxShadow: const [KalloShadows.sm],
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,12 +36,12 @@ class LoggingDayErrorState extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.only(top: 2), // mt-0.5
                 child: Icon(
-                  LucideIcons.circleAlert, // lucide AlertCircle
+                  LucideIcons.circleAlert300, // lucide AlertCircle
                   size: 20,
-                  color: NhamColors.danger,
+                  color: KalloColors.danger,
                 ),
               ),
-              const SizedBox(width: NhamSpacing.sp3), // gap-3
+              const SizedBox(width: KalloSpacing.sp3), // gap-3
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,7 +55,7 @@ class LoggingDayErrorState extends StatelessWidget {
                       'logging.feedArea.loadErrorDescription'.tr(),
                       style: dashMeta(),
                     ),
-                    const SizedBox(height: NhamSpacing.sp3), // mt-3
+                    const SizedBox(height: KalloSpacing.sp3), // mt-3
                     _RetryPill(onRetry: onRetry),
                   ],
                 ),
@@ -84,21 +84,21 @@ class _RetryPill extends StatelessWidget {
         ), // px-3.5 py-2
         decoration: BoxDecoration(
           color: LoggingDayErrorState._dangerFill,
-          borderRadius: BorderRadius.circular(NhamRadii.pill),
+          borderRadius: BorderRadius.circular(KalloRadii.pill),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              LucideIcons.refreshCw, // lucide RefreshCw
+              LucideIcons.refreshCw300, // lucide RefreshCw
               size: 16,
-              color: NhamColors.danger,
+              color: KalloColors.danger,
             ),
-            const SizedBox(width: NhamSpacing.sp2), // gap-2
+            const SizedBox(width: KalloSpacing.sp2), // gap-2
             Text(
               'logging.feedArea.retryDay'.tr(),
               style: dashBody(
-                color: NhamColors.danger,
+                color: KalloColors.danger,
                 weight: FontWeight.w500,
               ),
             ),

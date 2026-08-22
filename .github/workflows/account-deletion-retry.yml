@@ -9,6 +9,10 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: account-deletion-retry-production
+  cancel-in-progress: false
+
 jobs:
   retry-provider-erasure:
     runs-on: ubuntu-latest
@@ -42,4 +46,4 @@ jobs:
           DATABASE_URL="$database_url" \
           SUPABASE_SERVICE_ROLE_KEY="$service_key" \
           REVENUECAT_CUSTOMER_DELETE_API_KEY="$revenuecat_key" \
-          bun --conditions=react-server scripts/process-account-deletions.ts
+          bun --conditions=react-server scripts/ops/process-account-deletions.ts

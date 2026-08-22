@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { listGroupMealFeed } from '@/lib/actions/chat-groups';
+import { listGroupMealFeed } from '@/lib/actions/chat-groups/feed';
 import { requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 

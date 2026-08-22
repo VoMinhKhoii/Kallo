@@ -31,9 +31,17 @@ splash tiles):
 | `public/apple-icon.png`, `public/icon-{192,512}.png`, `public/icon-maskable-512.png` | Web manifest + touch icons |
 | `public/og-image.png` | 1200×630 Open Graph / Twitter card |
 | `apps/mobile-flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/` | Full iOS icon set (15 sizes, no alpha) |
-| `apps/mobile-flutter/ios/Runner/Assets.xcassets/LaunchImage.imageset/` | Splash tile 1x/2x/3x (rounded corners baked) |
+| `apps/mobile-flutter/ios/Runner/Assets.xcassets/LaunchImage.imageset/` | Splash mark 1x/2x/3x |
 | `apps/mobile-flutter/android/.../mipmap-*/ic_launcher.png` | Launcher icons, 5 densities |
-| `apps/mobile-flutter/android/.../drawable-*/launch_image.png` | Splash tiles, 5 densities |
+| `apps/mobile-flutter/android/.../drawable-*/launch_image.png` | Splash mark, 5 densities |
+
+The two **splash** rows are the exception to "render the SVG": they are the
+mark alone in umber `#695E4E` on transparency — no tile — because the launch
+page is already cream on both platforms (iOS's `LaunchScreen.storyboard`
+background, Android's `@color/launch_background`), and an espresso tile on it
+read as black. Regenerate them with `node scripts/assets/gen-splash-mark.mjs`, which
+rasterises `kallo-mark.svg`'s three polygons directly and needs no renderer
+installed. Everything else here still comes from the SVGs above.
 | `apps/mobile-flutter/web/icons/`, `apps/mobile-flutter/web/favicon.png` | Flutter web icons |
 
 The lockup rule: the mark is never placed next to the wordmark (the wordmark's

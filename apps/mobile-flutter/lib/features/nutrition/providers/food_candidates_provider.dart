@@ -8,8 +8,8 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/nutrition.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/nutrition/nutrition.dart';
 import 'candidates_response.dart';
 
 final foodCandidatesProvider =

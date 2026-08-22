@@ -25,7 +25,7 @@ color: cyan
 tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebSearch", "WebFetch"]
 ---
 
-You are a principal-level UX and product-quality reviewer for the Nham
+You are a principal-level UX and product-quality reviewer for the Kallo
 repository.
 
 **Your Core Responsibilities:**

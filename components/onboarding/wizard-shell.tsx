@@ -6,15 +6,15 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { defaultLocale, type Locale } from '@/i18n/config';
 import { useRouter } from '@/i18n/navigation';
-import type { getOnboardingProfile } from '@/lib/onboarding/actions';
-import { saveOnboardingScreen } from '@/lib/onboarding/actions';
-import { WIZARD_DEFAULTS } from '@/lib/onboarding/constants';
-import { buildStepOneDefaults } from '@/lib/onboarding/step-one-defaults';
+import type { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
+import { saveOnboardingScreen } from '@/lib/domain/onboarding/actions';
+import { WIZARD_DEFAULTS } from '@/lib/domain/onboarding/constants';
+import { buildStepOneDefaults } from '@/lib/domain/onboarding/steps/step-one-defaults';
 import {
   clearStepOneLocaleDraft,
   readStepOneLocaleDraft,
   type StepOneLocaleDraft,
-} from '@/lib/onboarding/step-one-locale-draft';
+} from '@/lib/domain/onboarding/steps/step-one-locale-draft';
 import { ScreenBodyMetrics, type ScreenOneData } from './screen-body-metrics';
 import { ScreenCooking } from './screen-cooking';
 import { ScreenOrigin } from './screen-origin';
@@ -255,7 +255,7 @@ export function WizardShell({
   const isNextDisabled = isPending || !screenData[currentStep];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-nham-ink/20 p-4 font-sans-display backdrop-blur-sm sm:p-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-kallo-ink/20 p-4 font-sans-display backdrop-blur-sm sm:p-6">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -276,7 +276,7 @@ export function WizardShell({
               type="button"
               onClick={onClose}
               aria-label={tCommon('close')}
-              className="-mr-2 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-[#EAE7E0]/50 hover:text-nham-text"
+              className="-mr-2 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-[#EAE7E0]/50 hover:text-kallo-text"
             >
               <X className="h-5 w-5" />
             </button>
@@ -344,7 +344,7 @@ export function WizardShell({
         </div>
 
         {/* Footer Navigation */}
-        <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-t bg-nham-track/50 px-5 py-4 sm:px-6">
+        <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-t bg-kallo-track/50 px-5 py-4 sm:px-6">
           <button
             type="button"
             onClick={handleBack}
@@ -352,7 +352,7 @@ export function WizardShell({
             className={`flex touch-manipulation items-center gap-2 font-medium text-[14px] transition-colors ${
               currentStep === 1
                 ? 'pointer-events-none opacity-0'
-                : 'text-[#8B8682] hover:text-nham-text'
+                : 'text-[#8B8682] hover:text-kallo-text'
             }`}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -364,7 +364,7 @@ export function WizardShell({
               type="button"
               onClick={handleSkip}
               disabled={isPending}
-              className="flex touch-manipulation items-center gap-1.5 rounded-xl px-4 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#EAE7E0]/50 hover:text-nham-text disabled:opacity-50"
+              className="flex touch-manipulation items-center gap-1.5 rounded-xl px-4 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#EAE7E0]/50 hover:text-kallo-text disabled:opacity-50"
             >
               {t('skip')}
               <SkipForward className="h-3.5 w-3.5" />
@@ -373,7 +373,7 @@ export function WizardShell({
               type="button"
               onClick={handleNext}
               disabled={isNextDisabled}
-              className="flex touch-manipulation items-center gap-2 rounded-xl bg-nham-ink px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
+              className="flex touch-manipulation items-center gap-2 rounded-xl bg-kallo-ink px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {currentStep >= TOTAL_STEPS ? t('finish') : t('next')}

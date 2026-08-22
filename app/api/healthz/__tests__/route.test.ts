@@ -5,7 +5,7 @@ const consoleError = vi
   .spyOn(console, 'error')
   .mockImplementation(() => undefined);
 
-vi.mock('@/lib/db', () => ({
+vi.mock('@/lib/infra/db/client', () => ({
   db: {
     execute,
   },
@@ -38,7 +38,7 @@ describe('GET /api/healthz', () => {
     const json = await res.json();
     expect(json).toEqual({
       ok: true,
-      service: 'nham',
+      service: 'kallo',
       checks: {
         hasUserProfiles: true,
         hasFoodTable: true,
@@ -69,7 +69,7 @@ describe('GET /api/healthz', () => {
     const json = await res.json();
     expect(json).toEqual({
       ok: false,
-      service: 'nham',
+      service: 'kallo',
       checks: {
         hasUserProfiles: true,
         hasFoodTable: true,
@@ -91,7 +91,7 @@ describe('GET /api/healthz', () => {
     const json = await res.json();
     expect(json).toEqual({
       ok: false,
-      service: 'nham',
+      service: 'kallo',
       error: 'Shared database health check failed.',
     });
     expect(consoleError).toHaveBeenCalled();

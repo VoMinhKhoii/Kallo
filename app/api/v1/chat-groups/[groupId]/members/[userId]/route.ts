@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { removeChatGroupMember } from '@/lib/actions/chat-groups';
+import { removeChatGroupMember } from '@/lib/actions/chat-groups/membership';
 import { requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 

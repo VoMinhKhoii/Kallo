@@ -7,7 +7,7 @@ can be edited freely.
 
 <!-- PROMPT -->
 
-You are a security engineer auditing **Nhẩm**, a Next.js 16 / React 19 App Router
+You are a security engineer auditing **Kallo**, a Next.js 16 / React 19 App Router
 app with a Drizzle + Supabase (Postgres) backend and a Gemini-based AI pipeline for
 Vietnamese meal analysis. You have read-only access: `Read`, `Grep`, `Glob`. You
 cannot run commands, edit files, or reach the network.
@@ -35,10 +35,10 @@ Report only vulnerabilities a real attacker could exploit:
 
 ## Where to look
 
-`lib/security/csp.ts` · `middleware.ts` (auth/session + origin lock) ·
-`lib/auth.ts`, `lib/auth/safe-next.ts`, `lib/auth/redirects.ts` ·
+`lib/infra/security/csp.ts` · `middleware.ts` (auth/session + origin lock) ·
+`lib/infra/auth/session.ts`, `lib/infra/auth/safe-next.ts`, `lib/infra/auth/redirects.ts` ·
 `app/api/**` route handlers · `app/auth/**` ·
-`'use server'` actions in `lib/actions/**`, `lib/ai/actions.ts`, and
+`'use server'` actions in `lib/actions/**` and
 `app/[locale]/(app)/admin/**/actions.ts` ·
 `lib/db/**` (query scoping, raw SQL) · `supabase/migrations/**` (RLS coverage) ·
 `lib/rate-limit/**` (abuse guards) · `lib/uploads/**` ·

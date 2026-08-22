@@ -31,17 +31,17 @@
   },
   "metadata": {
     "root": {
-      "title": "Nhẩm — Trình theo dõi bữa ăn Việt",
+      "title": "Kallo — Trình theo dõi bữa ăn Việt",
       "description": "Theo dõi bữa ăn Việt với phân tích dinh dưỡng bằng AI"
     },
     "dashboard": {
-      "title": "Tổng quan — Nhẩm"
+      "title": "Tổng quan — Kallo"
     },
     "nutrition": {
-      "title": "Dinh dưỡng — Nhẩm"
+      "title": "Dinh dưỡng — Kallo"
     },
     "groups": {
-      "title": "Nhóm — Nhẩm"
+      "title": "Nhóm — Kallo"
     }
   },
   "shared": {
@@ -105,11 +105,11 @@
     "title": "Dinh dưỡng",
     "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn.",
     "loading": "Đang tải tổng quan dinh dưỡng…",
+    "cardTitle": "Trung bình",
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
-      "1d": "Hôm nay",
-      "7d": "Tuần",
-      "30d": "Tháng",
+      "7d": "7 ngày",
+      "30d": "30 ngày",
       "90d": "90 ngày"
     },
     "nutrientGroups": {
@@ -166,6 +166,11 @@
       "target": "Mục tiêu",
       "noTarget": "Không có mục tiêu"
     },
+    "macrosShort": {
+      "protein": "Đạm",
+      "carbohydrate": "Tinh bột",
+      "fat": "Chất béo"
+    },
     "grid": {
       "eyebrow": "Vi chất",
       "title": "Độ phủ vi chất",
@@ -186,6 +191,9 @@
       "collapse": "Ẩn xu hướng"
     },
     "detail": {
+      "perDay": "mỗi ngày",
+      "close": "Đóng chi tiết",
+      "noNutrients": "Chưa có dữ liệu vi chất cho khoảng này.",
       "averageVsTarget": "Trung bình so với mục tiêu"
     },
     "confidence": {
@@ -513,12 +521,16 @@
     "rhythm": {
       "eyebrow": "Nhịp ăn mỗi ngày",
       "calories": "kcal",
+      "loggedDays": "Tất cả",
+      "completeDays": "Ngày đủ bữa",
       "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
       "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
       "days": "ngày",
       "noCompleteDays": "Chưa có ngày nào ghi đủ — hãy tiếp tục ghi, hoặc chạm Tất cả.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Tỷ lệ macro",
+      "diffUp": "tăng so với kỳ trước",
+      "diffDown": "giảm so với kỳ trước",
       "consistency": {
         "steady": "ổn định",
         "rhythmic": "đều đặn",
@@ -828,18 +840,18 @@
       "step1TextMobile": "Mô tả bữa ăn tự nhiên bằng tiếng Việt, tiếng Anh hoặc cả hai.",
       "step2Label": "Bước 2",
       "step2Title": "Chúng tôi tách nó thành nguyên liệu thật",
-      "step2Text": "Nhẩm ánh xạ mô tả của bạn sang nguyên liệu và thành phần món ăn Việt từ bộ dữ liệu dinh dưỡng được tuyển chọn.",
-      "step2TextMobile": "Nhẩm ánh xạ mô tả sang nguyên liệu và thành phần món ăn Việt thật.",
+      "step2Text": "Kallo ánh xạ mô tả của bạn sang nguyên liệu và thành phần món ăn Việt từ bộ dữ liệu dinh dưỡng được tuyển chọn.",
+      "step2TextMobile": "Kallo ánh xạ mô tả sang nguyên liệu và thành phần món ăn Việt thật.",
       "step3Label": "Bước 3",
       "step3Title": "Ngữ cảnh cá nhân làm ước tính chính xác hơn",
       "step3Text": "Vùng miền, thói quen nấu ăn và mục tiêu dinh dưỡng giúp AI hiểu calo ẩn và điều chỉnh khẩu phần hợp lý hơn.",
       "step3TextMobile": "Vùng miền, thói quen nấu ăn và mục tiêu giúp AI siết chặt ước tính.",
       "step4Label": "Bước 4",
       "step4Title": "Bạn nhận được kết quả có ích, có biên độ",
-      "step4Text": "Thay vì độ chính xác giả, Nhẩm trả về khoảng calo và macro thực tế để bạn dễ ra quyết định hơn.",
+      "step4Text": "Thay vì độ chính xác giả, Kallo trả về khoảng calo và macro thực tế để bạn dễ ra quyết định hơn.",
       "step4TextMobile": "Nhận khoảng calo và macro thực tế thay vì độ chính xác giả.",
       "cta": "Bắt đầu theo dõi",
-      "whyLabel": "Vì sao Nhẩm tốt hơn",
+      "whyLabel": "Vì sao Kallo tốt hơn",
       "whyTitle": "Được xây dựng theo cách bữa ăn Việt thực sự diễn ra",
       "feature1Title": "Khớp nguyên liệu theo ngữ cảnh Việt Nam",
       "feature1Text": "Đối chiếu món ăn với dữ liệu thành phần thực phẩm Việt thay vì ép sang món thay thế phương Tây.",
@@ -901,7 +913,7 @@
       "blog": "Blog",
       "contact": "Liên hệ",
       "privacy": "Quyền riêng tư",
-      "copyright": "© {year} Nhẩm. Mọi quyền được bảo lưu.",
+      "copyright": "© {year} Kallo. Mọi quyền được bảo lưu.",
       "terms": "Điều khoản",
       "privacyLink": "Chính sách riêng tư",
       "security": "Bảo mật"
@@ -1000,7 +1012,7 @@
     "caloriesLogged": "kcal đã ghi",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
     "firstRunQuestion": "Hôm nay bạn đã ăn gì?",
-    "firstRunHint": "Mô tả bữa đầu tiên — Nhẩm lo phần còn lại.",
+    "firstRunHint": "Mô tả bữa đầu tiên — Kallo lo phần còn lại.",
     "firstRunChips": {
       "morning1": "1 tô phở bò + quẩy",
       "morning2": "2 trứng ốp la + bánh mì",
@@ -1012,7 +1024,11 @@
       "evening2": "1 tô canh chua cá lóc",
       "evening3": "1 tô bún bò Huế"
     },
-    "yesterday": "Hôm qua"
+    "yesterday": "Hôm qua",
+    "kcalRemaining": "kcal còn lại",
+    "loggedOfTarget": "đã ghi {logged}/{target}",
+    "leftOfTarget": "còn {left}/{target}",
+    "overTargetBy": "vượt {over}/{target}"
   },
   "logging": {
     "title": "Bạn đã ăn gì?",
@@ -1027,13 +1043,12 @@
       "cheatDesc": "Ghi nhanh bữa xả, không cần phân tích",
       "manual": "Thủ công",
       "manualDesc": "Tìm món, nhập gram chính xác",
-      "barcode": "Mã vạch",
-      "barcodeDesc": "Quét sản phẩm đóng gói"
+      "barcode": "Quét sản phẩm",
+      "barcodeDesc": "Quét mã vạch hoặc bảng dinh dưỡng"
     },
     "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn…",
     "quickLog": {
-      "title": "Ghi nhận bữa ăn",
-      "subtitle": "Món sẽ được phân tích ngay trong nhật ký"
+      "title": "Ghi nhận bữa ăn"
     },
     "cheatIntensity": {
       "label": "Bạn đã ăn nhiều cỡ nào?",
@@ -1063,10 +1078,8 @@
     },
     "barcode": {
       "title": "Quét mã vạch",
-      "subtitle": "Dinh dưỡng sản phẩm đóng gói",
-      "scanning": "Căn chỉnh mã vạch vào khung",
       "torch": "Đèn pin",
-      "cameraDenied": "Chưa cấp quyền camera. Hãy bật camera cho Nhẩm trong Cài đặt > Quyền riêng tư > Camera, hoặc nhập mã vạch bên dưới.",
+      "cameraDenied": "Chưa cấp quyền camera. Hãy bật camera cho Kallo trong Cài đặt > Quyền riêng tư > Camera, hoặc nhập mã vạch bên dưới.",
       "cameraError": "Camera không khả dụng trên thiết bị này.",
       "manualEntry": "Nhập mã vạch thủ công",
       "backToCamera": "Quay lại camera",
@@ -1185,7 +1198,25 @@
       "estimating": "Đang ước tính dinh dưỡng…",
       "assembling": "Đang tổng hợp kết quả…",
       "analyzing": "Đang phân tích…",
-      "stillWorking": "Vẫn đang xử lý — sắp xong rồi."
+      "stillWorking": "Vẫn đang xử lý — sắp xong rồi.",
+      "verbs": {
+        "prefix": "Đang",
+        "connecting1": "kết nối…",
+        "connecting2": "bắc bếp…",
+        "decomposing1": "sơ chế…",
+        "decomposing2": "bóc tách…",
+        "decomposing3": "chuẩn bị…",
+        "matching1": "tra cứu…",
+        "matching2": "lựa nguyên liệu…",
+        "estimating1": "tính toán…",
+        "estimating2": "cân đo…",
+        "estimating3": "nhẩm…",
+        "assembling1": "bày biện…",
+        "assembling2": "trình bày…",
+        "assembling3": "dọn mâm…",
+        "analyzing1": "phân tích…",
+        "analyzing2": "ngẫm…"
+      }
     },
     "failedAttempt": {
       "message": "Chưa đọc được món này. Ghi chú của bạn vẫn còn — thử lại nhé.",
@@ -1198,6 +1229,14 @@
       "increaseQuantity": "Tăng khối lượng {name}",
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng"
+    },
+    "portionPicker": {
+      "title": "Khẩu phần",
+      "assumption": "≈ {label}",
+      "adjust": "Chỉnh khẩu phần, hiện tại {label}",
+      "custom": "Khẩu phần tuỳ chỉnh",
+      "apply": "Áp dụng",
+      "cancel": "Hủy"
     },
     "persistedMealCard": {
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
@@ -1238,7 +1277,6 @@
     "manualLogging": {
       "openSheet": "Ghi thủ công",
       "title": "Ghi thủ công",
-      "subtitle": "Tìm món, nhập chính xác số gam — không dùng AI",
       "searchPlaceholder": "Tìm món ăn...",
       "recentFoods": "Món gần đây",
       "recentsHint": "Tìm món để thêm",
@@ -1253,6 +1291,109 @@
       "removeItem": "Xóa món",
       "save": "Lưu bữa ăn",
       "relatedMatch": "liên quan"
+    },
+    "relog": {
+      "groupDishes": "Món",
+      "groupMeals": "Bữa ăn",
+      "macroSplit": "P {protein}g · C {carbs}g · F {fat}g",
+      "optionKcal": "{kcal} kcal",
+      "searching": "Đang tìm...",
+      "noResults": "Không tìm thấy món nào",
+      "noHistory": "Chưa có món nào trong lịch sử",
+      "searchFailed": "Không tải được danh sách món",
+      "closePicker": "Đóng",
+      "stagedFull": "Mỗi lần chỉ ghi lại được tối đa {max} món."
+    },
+    "scan": {
+      "barcodeTab": "Mã vạch",
+      "labelTab": "Bảng dinh dưỡng",
+      "tryLabelInstead": "Quét bảng dinh dưỡng thay vì mã vạch",
+      "tryBarcodeInstead": "Quét mã vạch thay vì bảng dinh dưỡng",
+      "savedMeal": "Đã thêm bữa ăn"
+    },
+    "labelScan": {
+      "title": "Quét Bảng Giá Trị Dinh Dưỡng",
+      "reviewTitle": "Xác nhận Thông tin Dinh dưỡng",
+      "captureGuide": "Tránh ánh sáng chói và vuốt phẳng bao bì bị cong.",
+      "takePhoto": "Chụp ảnh",
+      "choosePhoto": "Chọn ảnh có sẵn",
+      "scanPhoto": "Đọc bảng dinh dưỡng",
+      "retake": "Chụp ảnh khác",
+      "retryPhoto": "Thử lại với ảnh này",
+      "manualEntry": "Nhập dinh dưỡng bằng tay",
+      "defaultProductName": "Sản phẩm quét từ nhãn",
+      "productName": "Tên sản phẩm",
+      "invalidProductName": "Nhập tên sản phẩm, tối đa 200 ký tự.",
+      "amountLabel": "Lượng bạn đã dùng",
+      "invalidAmount": "Nhập số lớn hơn 0 và không quá 100.000.",
+      "servingShortcut": "1 khẩu phần",
+      "packageShortcut": "Cả gói",
+      "micronutrients": "Vi chất khác trên nhãn ({count})",
+      "addMeal": "Thêm bữa ăn",
+      "back": "Quay lại",
+      "basisLabel": "Số liệu trên nhãn",
+      "confidenceLabel": "Độ tin cậy khi quét",
+      "servingLabel": "Khẩu phần",
+      "servingsPerContainerLabel": "Số khẩu phần mỗi gói",
+      "basis": {
+        "per100g": "Trên 100 g",
+        "per100ml": "Trên 100 ml",
+        "perServing": "Mỗi khẩu phần",
+        "perContainer": "Cả gói",
+        "per100gAndServing": "Trên 100 g và mỗi khẩu phần",
+        "per100mlAndServing": "Trên 100 ml và mỗi khẩu phần"
+      },
+      "confidence": {
+        "high": "Cao",
+        "medium": "Trung bình — nên kiểm tra lại",
+        "low": "Thấp — hãy kiểm tra từng số"
+      },
+      "unit": {
+        "g": "g",
+        "ml": "ml",
+        "serving": {
+          "one": "khẩu phần",
+          "other": "khẩu phần"
+        }
+      },
+      "nutrients": {
+        "calories": "Calo",
+        "protein": "Đạm",
+        "carbohydrates": "Carb",
+        "fat": "Chất béo",
+        "fiber": "Chất xơ",
+        "sodium": "Natri",
+        "calcium": "Canxi",
+        "iron": "Sắt",
+        "magnesium": "Magie",
+        "phosphorus": "Phốt pho",
+        "potassium": "Kali",
+        "zinc": "Kẽm",
+        "copper": "Đồng",
+        "manganese": "Mangan",
+        "betaCarotene": "Beta-caroten",
+        "vitaminA": "Vitamin A",
+        "vitaminC": "Vitamin C",
+        "vitaminD": "Vitamin D",
+        "vitaminE": "Vitamin E",
+        "vitaminK": "Vitamin K",
+        "vitaminB1": "Vitamin B1",
+        "vitaminB2": "Vitamin B2",
+        "vitaminPp": "Vitamin PP",
+        "vitaminB5": "Vitamin B5",
+        "vitaminB6": "Vitamin B6",
+        "vitaminB9": "Vitamin B9",
+        "vitaminB12": "Vitamin B12",
+        "vitaminH": "Vitamin H"
+      },
+      "error": {
+        "invalidImage": "Vui lòng chọn ảnh chụp rõ nét bảng thông tin dinh dưỡng.",
+        "noLabelDetected": "Ảnh này không giống bảng dinh dưỡng in trên bao bì; có thể bạn chụp mặt logo, thực đơn hoặc chữ viết tay. Hãy chọn đúng mặt có bảng dinh dưỡng hoặc nhập tay.",
+        "rateLimited": "Hệ thống đang bận. Vui lòng thử lại sau giây lát.",
+        "serverError": "Không thể quét bảng dinh dưỡng. Vui lòng thử lại sau.",
+        "permissionDenied": "Chưa cấp quyền camera và ảnh. Hãy bật cho Kallo trong Cài đặt > Quyền riêng tư, hoặc nhập số bằng tay.",
+        "imageTooLarge": "Ảnh này quá lớn để gửi. Hãy chụp lại, ảnh mới sẽ được tự động thu nhỏ."
+      }
     }
   },
   "groups": {
@@ -1265,7 +1406,11 @@
       "groupNoActivity": "Chưa có gì được chia sẻ trong {name}."
     },
     "friendsLoadError": "Không tải được danh sách bạn bè.",
-    "switcher": {"all": "Tất cả", "label": "Chế độ xem vòng kết nối", "retry": "Thử lại"},
+    "switcher": {
+      "all": "Tất cả",
+      "label": "Chế độ xem vòng kết nối",
+      "retry": "Thử lại"
+    },
     "feed": {
       "heart": "Thả tim",
       "reactionError": "Không thể cập nhật lượt thả tim. Hãy thử lại.",
@@ -1277,13 +1422,49 @@
       "logCopy": "Ăn theo",
       "logSuccess": "Đã thêm vào nhật ký hôm nay",
       "logError": "Không thể thêm bữa ăn này. Hãy thử lại.",
-      "leave": "Rời nhóm", "leaveTitle": "Rời nhóm này?", "leaveDescription": "Bạn sẽ không còn xem được dòng thời gian của nhóm.", "leaveConfirm": "Rời nhóm", "leaveError": "Không thể rời nhóm. Hãy thử lại.", "cancel": "Huỷ"
+      "leave": "Rời nhóm",
+      "leaveTitle": "Rời nhóm này?",
+      "leaveDescription": "Bạn sẽ không còn xem được dòng thời gian của nhóm.",
+      "leaveConfirm": "Rời nhóm",
+      "leaveError": "Không thể rời nhóm. Hãy thử lại.",
+      "cancel": "Huỷ"
     },
     "createGroup": {
-      "title": "Tạo nhóm", "description": "Đặt tên và thêm thành viên từ vòng kết nối của bạn.", "nameLabel": "Tên nhóm", "namePlaceholder": "VD: Hội leo núi cuối tuần", "membersLabel": "Thêm thành viên", "membersCount": "Đã chọn {count}", "searchPlaceholder": "Tìm kiếm", "emptyTitle": "Chưa có bạn bè", "addFriendCta": "Thêm bạn", "noMatches": "Không tìm thấy", "noFriends": "Hãy kết bạn trước — bạn chỉ có thể thêm người đã có trong vòng kết nối.", "submit": "Tạo nhóm", "creating": "Đang tạo…", "created": "Đã tạo nhóm", "createError": "Không thể tạo nhóm. Hãy thử lại."
+      "title": "Tạo nhóm",
+      "nameLabel": "Tên nhóm",
+      "namePlaceholder": "VD: Hội leo núi cuối tuần",
+      "membersLabel": "Thêm thành viên",
+      "membersCount": "Đã chọn {count}",
+      "searchPlaceholder": "Tìm kiếm",
+      "emptyTitle": "Chưa có bạn bè",
+      "addFriendCta": "Thêm bạn",
+      "noMatches": "Không tìm thấy",
+      "noFriends": "Hãy kết bạn trước — bạn chỉ có thể thêm người đã có trong vòng kết nối.",
+      "submit": "Tạo nhóm",
+      "creating": "Đang tạo…",
+      "created": "Đã tạo nhóm",
+      "createError": "Không thể tạo nhóm. Hãy thử lại."
     },
     "info": {
-      "title": "Thông tin nhóm", "membersHeading": "Thành viên", "memberCount": "{count} thành viên", "owner": "Chủ nhóm", "addPeople": "Thêm người", "searchPlaceholder": "Tìm bạn bè", "noMatches": "Không tìm thấy", "everyoneIn": "Mọi người trong vòng kết nối đều đã ở đây.", "addCta": "Thêm", "added": "Đã thêm vào nhóm", "addError": "Không thể thêm. Hãy thử lại.", "renameLabel": "Đổi tên nhóm", "renameSave": "Lưu", "renameError": "Không thể đổi tên nhóm. Hãy thử lại.", "removeLabel": "Xóa {name}", "removeTitle": "Xóa {name}?", "removeDescription": "Họ sẽ mất quyền xem bữa ăn và trả lời trong nhóm này.", "removeConfirm": "Xóa", "removeError": "Không thể xóa thành viên này. Hãy thử lại."
+      "title": "Thông tin nhóm",
+      "membersHeading": "Thành viên",
+      "memberCount": "{count} thành viên",
+      "owner": "Chủ nhóm",
+      "addPeople": "Thêm người",
+      "searchPlaceholder": "Tìm bạn bè",
+      "noMatches": "Không tìm thấy",
+      "everyoneIn": "Mọi người trong vòng kết nối đều đã ở đây.",
+      "addCta": "Thêm",
+      "added": "Đã thêm vào nhóm",
+      "addError": "Không thể thêm. Hãy thử lại.",
+      "renameLabel": "Đổi tên nhóm",
+      "renameSave": "Lưu",
+      "renameError": "Không thể đổi tên nhóm. Hãy thử lại.",
+      "removeLabel": "Xóa {name}",
+      "removeTitle": "Xóa {name}?",
+      "removeDescription": "Họ sẽ mất quyền xem bữa ăn và trả lời trong nhóm này.",
+      "removeConfirm": "Xóa",
+      "removeError": "Không thể xóa thành viên này. Hãy thử lại."
     },
     "wall": {
       "loading": "Đang tải vòng kết nối của bạn",
@@ -1302,7 +1483,7 @@
       "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
       "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại.",
       "shareCard": "Chia sẻ thẻ",
-      "shareCardTitle": "Bữa ăn của tôi trên Nhẩm"
+      "shareCardTitle": "Bữa ăn của tôi trên Kallo"
     },
     "shareMeal": {
       "title": "Chia sẻ bữa ăn này",
@@ -1417,12 +1598,12 @@
       "unlinkError": "Không thể hủy liên kết tài khoản đó. Vui lòng thử lại.",
       "loadError": "Không tải được phương thức đăng nhập.",
       "signOut": "Đăng xuất",
-      "signOutConfirmTitle": "Đăng xuất khỏi Nhẩm?",
+      "signOutConfirmTitle": "Đăng xuất khỏi Kallo?",
       "cancel": "Hủy",
       "delete": "Xóa tài khoản",
       "deleteScreenTitle": "Xóa tài khoản",
       "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
-      "deleteSubscriptionWarning": "Xóa tài khoản Kallo không hủy gói đăng ký qua Apple hoặc Google. Hãy hủy trong cửa hàng trước để tránh phí về sau. Gói Kallo trên web sẽ được hủy trong quá trình xóa tài khoản. Bạn vẫn có thể xóa ngay.",
+      "deleteSubscriptionWarning": "Xóa tài khoản Kallo không hủy gói đăng ký đang hoạt động. Hãy hủy trước — trong App Store, Google Play, hoặc cổng thanh toán bạn đã dùng trên web — để tránh phí về sau. Bạn vẫn có thể xóa ngay.",
       "deleteManageSubscription": "Quản lý hoặc hủy gói",
       "deleteConfirmLabel": "Nhập {word} để xác nhận",
       "deleteConfirmWord": "XOA",
@@ -1493,12 +1674,12 @@
       "placeholder": {
         "bug": "Điều gì đã xảy ra? Bạn mong đợi điều gì?",
         "ingredient": "Nguyên liệu hoặc món ăn nào đang thiếu?",
-        "idea": "Điều gì sẽ giúp Nhẩm tốt hơn cho bạn?"
+        "idea": "Điều gì sẽ giúp Kallo tốt hơn cho bạn?"
       },
       "addScreenshot": "Thêm ảnh chụp màn hình",
       "removeScreenshot": "Bỏ ảnh chụp màn hình",
       "screenshotTooLarge": "Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.",
-      "photoPermission": "Nhẩm cần quyền truy cập ảnh để đính kèm ảnh chụp màn hình. Hãy bật trong Cài đặt.",
+      "photoPermission": "Kallo cần quyền truy cập ảnh để đính kèm ảnh chụp màn hình. Hãy bật trong Cài đặt.",
       "submit": "Gửi góp ý",
       "successTitle": "Cảm ơn — chúng tôi đã nhận được",
       "successBody": "Góp ý của bạn đã đến đội ngũ. Chúng tôi đọc từng góp ý một.",

@@ -1,0 +1,118 @@
+'use client';
+
+import Image from 'next/image';
+import { useTranslations } from 'next-intl';
+import { formatCaloriesValue } from '@/components/logging/feed/format-inline-nutrition';
+import {
+  nearestAnchor,
+  type PortionAnchor,
+} from '@/components/logging/feed/meal-entry/portion/portion-anchors';
+import { PortionSlider } from '@/components/logging/feed/meal-entry/portion/portion-slider';
+import {
+  type ContainerFamily,
+  VESSEL_FAMILIES,
+  type VesselTier,
+} from '@/lib/ai/portion/data/vessel-tables';
+
+interface PortionContainerBodyProps {
+  family: ContainerFamily;
+  anchors: PortionAnchor[];
+  grams: number;
+  min: number;
+  max: number;
+  kcal: number;
+  onChange: (grams: number) => void;
+}
+
+/**
+ * Container layout: a true-to-scale glyph row whose heights scale as
+ * cbrt(volume) (tap to jump to a tier), the nearest-tier label, the live
+ * gram/kcal readout, and a plain fine-adjustment slider. Unchanged from the
+ * pre-redesign picker — the redesign only reshaped the piece branch.
+ */
+export function PortionContainerBody({
+  family,
+  anchors,
+  grams,
+  min,
+  max,
+  kcal,
+  onChange,
+}: PortionContainerBodyProps) {
+  const t = useTranslations('logging.portionPicker');
+  const glyphs = anchors.map((anchor) => {
+    const tier = VESSEL_FAMILIES[family].tiers[anchor.tier as VesselTier];
+    return {
+      asset: tier.asset,
+      aspect: tier.aspect,
+      sizeLabel: tier.sizeLabel,
+      ml: tier.ml,
+    };
+  });
+  const largestMl = glyphs.at(-1)?.ml ?? 1;
+  const nearest = nearestAnchor(anchors, grams);
+  const nearestIndex = anchors.findIndex((a) => a.tier === nearest.tier);
+  const nearestGlyph = glyphs[nearestIndex] ?? glyphs[0];
+  const ariaValueText = `${grams} g — ${nearest.label} (${nearestGlyph?.sizeLabel})`;
+
+  return (
+    <>
+      <div className="mx-auto mb-4 flex w-full max-w-[340px] items-end justify-center gap-2">
+        {anchors.map((anchor, index) => {
+          const glyph = glyphs[index];
+          const selected = anchor.tier === nearest.tier;
+          const weight = Math.cbrt(glyph.ml / largestMl) * glyph.aspect;
+          return (
+            <button
+              key={anchor.tier}
+              type="button"
+              onClick={() => onChange(anchor.value)}
+              aria-label={`${anchor.label} (${glyph.sizeLabel})`}
+              aria-pressed={selected}
+              style={{ flex: `${weight} 1 0%` }}
+              className={`flex flex-col items-center transition-opacity ${
+                selected ? 'opacity-100' : 'opacity-45 hover:opacity-75'
+              }`}
+            >
+              <div
+                className="relative w-full"
+                style={{ aspectRatio: glyph.aspect }}
+              >
+                <Image
+                  src={`/portions/${glyph.asset}`}
+                  alt=""
+                  fill
+                  sizes="96px"
+                  className="object-contain object-bottom"
+                />
+              </div>
+              <span
+                className={`mt-1 h-0.5 w-6 rounded-full transition-colors ${
+                  selected ? 'bg-kallo-accent' : 'bg-transparent'
+                }`}
+              />
+            </button>
+          );
+        })}
+      </div>
+      <p className="mb-1 text-center text-[13px] text-kallo-text-muted">
+        {nearest.label} · {nearestGlyph?.sizeLabel}
+      </p>
+      <p className="mb-4 text-center text-kallo-text tabular-nums">
+        <span className="font-semibold text-lg">{grams} g</span>
+        <span className="text-[13px] text-kallo-text-muted">
+          {' · '}
+          {formatCaloriesValue(kcal)}
+        </span>
+      </p>
+      <PortionSlider
+        grams={grams}
+        min={min}
+        max={max}
+        ariaLabel={t('title')}
+        ariaValueText={ariaValueText}
+        onChange={onChange}
+      />
+    </>
+  );
+}

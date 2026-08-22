@@ -7,12 +7,15 @@
  *   - `export type` re-exports (erased at runtime).
  */
 import { z } from 'zod';
-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
-import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import {
+  dateStringSchema,
+  timezoneOffsetSchema,
+} from '@/lib/core/validation/primitives';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
 
 /**
  * The one source of truth for what a barcode string looks like — shared by
- * the REST contract below and the server actions in `lib/actions/barcode.ts`.
+ * the REST contract below and the server actions in `lib/actions/logging/barcode.ts`.
  */
 export const barcodeSchema = z
   .string()
@@ -53,4 +56,4 @@ export type LogBarcodeMealInput = z.infer<typeof logBarcodeMealSchema>;
 export type {
   BarcodeErrorCode,
   ParsedBarcodeProduct,
-} from '@/lib/barcode/types';
+} from '@/lib/domain/barcode/types';

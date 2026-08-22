@@ -156,13 +156,54 @@ Left sidebar **Redirect Rules** (under Rules):
 
 ---
 
-## 7. Email — support@kallo.fit (free)
+## 7. Email — inbound support@kallo.fit (free)
 
 Left sidebar **Email** → **Email Routing** → **Get started** → enable. Cloudflare
 adds the needed MX + SPF/DKIM/DMARC DNS records automatically. Then **Create
 address** → `support@kallo.fit` → **Send to** your personal inbox → verify that
 inbox via the email Cloudflare sends. (Used by the OpenFoodFacts contact + the
 legal-page mailto links.)
+
+This is **receiving only**. Outbound is §7b.
+
+---
+
+## 7b. Email — outbound via Resend
+
+Every email the app sends — auth confirmations, password resets, email-change
+confirmations, and the landing-page waitlist — is composed in this repo
+(`lib/email/templates/`) and delivered by Resend.
+
+**1. Verify a sending subdomain.** In Resend → **Domains** → **Add Domain** →
+`mail.kallo.fit`. Use the **subdomain**, not the apex: §7 already put an SPF
+record on `kallo.fit` for Cloudflare Email Routing, and stacking a second
+`include:` on it is the classic way to break inbound and outbound at once.
+Add the SPF/DKIM/DMARC records Resend shows to Cloudflare DNS as **DNS-only**
+(grey cloud), then click **Verify**.
+
+**2. Create the API key** (Resend → **API Keys**, sending permission only).
+That value becomes `RESEND_API_KEY` / the `kallo-prod-resend-api-key` secret.
+
+**3. Enable the Supabase hook.** Supabase dashboard → **Authentication** →
+**Hooks** → **Send Email** → type **HTTPS** → URI
+`https://kallo.fit/api/auth/send-email` → **Generate secret**. Copy the
+`v1,whsec_…` value into the `kallo-prod-send-email-hook-secret` GCP secret
+(`SEND_EMAIL_HOOK_SECRET`). Once the hook is on, GoTrue stops sending mail
+itself and the dashboard's own email templates are no longer used.
+
+Raise **Authentication → Rate Limits → Emails per hour** from the default 2 at
+the same time; it now only guards the hook, not delivery.
+
+**4. Let Supabase through the WAF.** §6 turned on Bot Fight Mode and a rate
+limiting rule. Supabase's hook POSTs come from its servers, not a browser, so
+add a **WAF → Custom rule** that **skips** managed rules, bot fight mode and
+rate limiting when `http.request.uri.path eq "/api/auth/send-email"`. The
+route authenticates itself with a Standard Webhooks signature, so skipping the
+edge checks does not open it up. Without this the hook is silently blocked and
+nobody can confirm an account.
+
+**Rollback.** Turning the Send Email hook off in the dashboard immediately
+reverts auth email to Supabase's own sender — no deploy required.
 
 ---
 
@@ -177,6 +218,11 @@ Configuration**:
 Google & Apple sign-in are already wired on this project — nothing to recreate.
 (Apple: the Services ID must stay **first** in the provider's Client IDs list.)
 
+Emailed links keep pointing at `https://kallo.fit/auth/verify?token_hash=…&type=…`
+(never `…supabase.co/auth/v1/verify`, which is unreachable on many VN networks).
+That link is now built by `lib/infra/email/auth-email.ts` rather than a dashboard
+template, so the templates in the dashboard no longer need hand-editing.
+
 ---
 
 ## 9. Google Cloud OAuth (project 714321235532)
@@ -184,7 +230,24 @@ Google & Apple sign-in are already wired on this project — nothing to recreate
 console.cloud.google.com → **APIs & Services** → **Credentials** → open the OAuth
 **Web client** → under **Authorized JavaScript origins** add `https://kallo.fit` and
 `https://www.kallo.fit` → **Save**. (The redirect URI stays the Supabase
-`…supabase.co/auth/v1/callback` — leave it.)
+`…supabase.co/auth/v1/callback` — leave it; the fallback flow below still uses it.)
+
+The **JavaScript origins are load-bearing**, not optional. Web Google sign-in
+mints the ID token on our own origin via Google Identity Services and hands it to
+`signInWithIdToken` — the same call the Flutter app makes — so Google's account
+picker is labelled `kallo.fit` instead of the Supabase project ref. GIS refuses to
+run on an origin that isn't listed here.
+
+Set the client ID as a Cloud Run env var so the server pages can pass it down:
+repo **Settings → Secrets and variables → Actions → Variables** → add
+`GOOGLE_WEB_CLIENT_ID` (same value the Flutter build uses as `serverClientId`,
+already listed under the Supabase Google provider's *Authorized Client IDs*). The
+prod deploy passes it through `--update-env-vars`. It is a runtime var, not
+`NEXT_PUBLIC_*`, so changing it needs no image rebuild.
+
+**Rollback / degraded mode.** Unset the variable (or let GIS be blocked by an ad
+blocker) and the button falls back to the old `signInWithOAuth` redirect — users
+still sign in, they just see `…supabase.co` on the consent screen again.
 
 ---
 
@@ -237,8 +300,15 @@ on `/dashboard`, and send a test email to `support@kallo.fit`.
   pause for a click.
 - **Legal copy.** `/privacy` and `/terms` ship minimal placeholders — replace with
   reviewed text before a public launch.
-- **Full brand rename.** UI copy, PWA manifest name, `/api/healthz` `service` field,
-  App Store / TestFlight listing are still `nham`/`Nhẩm`.
+- **Brand rename — what is left.** UI copy, the PWA manifest name and the
+  `/api/healthz` `service` field now all say Kallo. Still outstanding, and
+  deliberately so: the App Store / TestFlight listing, the iOS bundle id
+  `com.khoivo.nham`, the Android `applicationId`, the `nham://` URL scheme, the
+  `nham.app` domain, the `VoMinhKhoii/Nham` GitHub repo, the `nham` Artifact
+  Registry image, and the non-prod Cloud Run services and Secret Manager entries
+  (`nham-internal`, `nham-staging`, `nham-pr-<n>`, `nham-nonprod-*`). Each of
+  those names a resource that lives outside this repo — renaming the string here
+  would only make the docs lie. Prod was already migrated (`kallo-prod*`).
 - **Rotating the origin secret** means updating BOTH
   `kallo-prod-origin-shared-secret` (Secret Manager, then redeploy) and the
   Cloudflare Transform Rule value.

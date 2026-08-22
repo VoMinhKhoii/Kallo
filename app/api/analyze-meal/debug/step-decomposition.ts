@@ -1,12 +1,12 @@
-import type { GeminiClient } from '@/lib/ai/gemini';
-import type { buildUserContext } from '@/lib/ai/mappers';
+import type { buildUserContext } from '@/lib/ai/adapters/user-context';
 import type { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
-import { NON_FOOD_BLOCKLIST } from '@/lib/ai/pipeline/errors';
-import { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/ids';
-import { ingredientDisplayName } from '@/lib/ai/pipeline/ingredient-accessors';
-import { mealDecompositionSchema } from '@/lib/ai/pipeline/schemas';
-import { getDecompositionPromptBuilder } from '@/lib/ai/prompts';
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/contracts/decomposition-ids';
+import { NON_FOOD_BLOCKLIST } from '@/lib/ai/pipeline/contracts/failure';
+import { ingredientDisplayName } from '@/lib/ai/pipeline/contracts/ingredient-accessors';
+import { mealDecompositionSchema } from '@/lib/ai/pipeline/contracts/schemas/decomposition';
+import { getDecompositionPromptBuilder } from '@/lib/ai/prompts/build/decomposition';
+import type { GeminiClient } from '@/lib/ai/provider/provider';
+import { fetchWithTimeout } from '@/lib/core/async/fetch-with-timeout';
 
 import { DEBUG_LLM_TIMEOUT_MS, serializeAttempt } from './debug-shared';
 

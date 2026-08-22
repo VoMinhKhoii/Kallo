@@ -2,7 +2,7 @@ import React from 'react';
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
-// V2 pipeline defaults to ON in production (see lib/ai/pipeline/pipeline-feature-flag.ts).
+// V2 pipeline defaults to ON in production (see lib/ai/pipeline/config/grounded-path-flag.ts).
 // Most of the existing test suite was written for v1, so default to v1
 // in tests. V2-specific tests call `analyzeMealV2` directly and aren't
 // affected by this flag.
@@ -27,6 +27,9 @@ vi.mock('next-intl', () => ({
     };
     t.rich = t;
     t.raw = t;
+    // The mock carries no messages, so every optional key is genuinely absent.
+    // Code that probes with `t.has` must take its fallback branch here.
+    t.has = () => false;
     return t;
   },
   useLocale: () => 'en',
@@ -42,6 +45,7 @@ vi.mock('next-intl/server', () => ({
     const t = (key: string) => key;
     t.rich = t;
     t.raw = t;
+    t.has = () => false;
     return t;
   },
   getMessages: async () => ({}),

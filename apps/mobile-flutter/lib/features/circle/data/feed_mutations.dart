@@ -4,8 +4,8 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../data/api_client.dart';
-import '../../../models/circle.dart';
+import '../../../services/http/api_client.dart';
+import '../../../models/social/circle.dart';
 import '../../dashboard/data/dashboard_providers.dart'
     show
         dashboardBundleProvider,

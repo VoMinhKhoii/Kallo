@@ -4,17 +4,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../data/session_provider.dart';
-import '../../../../models/cheat.dart';
-import '../../../../shared/widgets/nham_sheet.dart';
-import '../../../../theme/nham_theme.dart';
+import '../../../../services/auth/session_provider.dart';
+import '../../../../models/logging/cheat.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
+import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_keys.dart';
 import '../../data/logging_providers.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_log_mode.dart';
-import '../cheat_intensity_row.dart';
-import '../feed/composer_actions.dart';
-import '../meal_input.dart';
+import '../cheat/cheat_intensity_row.dart';
+import '../composer/composer_actions.dart';
+import '../composer/meal_input.dart';
 import 'manual_log_sheet.dart';
 
 /// Opens the quick-log sheet — the dashboard FAB's composer.
@@ -46,12 +47,12 @@ Future<void> showQuickLogSheet(BuildContext context, WidgetRef ref) async {
     case MealLogMode.manual:
       await showManualLogSheet(context, userId: userId, date: date);
     case MealLogMode.barcode:
-      await openBarcodeLogSheet(
+      await openScanLogSheet(
         context,
         userId: userId,
         date: date,
-        // Product not found → the AI composer is the better tool. From here
-        // that means re-opening the sheet the user came from, caret in field.
+        // Neither scan got us there → the AI composer is the better tool. From
+        // here that means re-opening the sheet the user came from, caret in field.
         onFallbackToText: () {
           if (context.mounted) showQuickLogSheet(context, ref);
         },
@@ -140,22 +141,21 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
 
     return Padding(
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: NhamSheetSurface(
+      child: KalloSheetSurface(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            NhamSheetHeader(
+            KalloSheetHeader(
               title: 'logging.quickLog.title'.tr(),
-              subtitle: 'logging.quickLog.subtitle'.tr(),
             ),
             Padding(
               // The keyboard's inset already clears the home indicator when it
               // is up; only pay the safe-area bottom when it is down.
               padding: EdgeInsets.fromLTRB(
-                NhamSpacing.sp3,
-                NhamSpacing.sp2,
-                NhamSpacing.sp3,
-                (keyboardInset > 0 ? 0 : bottomInset) + NhamSpacing.sp4,
+                KalloSpacing.sp3,
+                KalloSpacing.sp2,
+                KalloSpacing.sp3,
+                (keyboardInset > 0 ? 0 : bottomInset) + KalloSpacing.sp4,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -1,0 +1,443 @@
+---
+title: Privacy policy
+description: What Kallo collects, what actually reaches the AI model, how long it is kept, and the control you have over it.
+lastUpdated: '2026-08-03'
+---
+
+This policy describes how VÕ MINH KHÔI ("Kallo", "we") collects, uses,
+shares and protects personal data when you use Kallo on the web, iOS and
+Android.
+
+It applies to every Kallo account, including accounts without a Premium
+subscription, and to anyone who joins the waitlist before having an account.
+
+## 1. Who is responsible for your data
+
+The data controller is VÕ MINH KHÔI, at 88/2 Đ. Đào Duy Anh, Đức Nhuận ward, Ho Chi Minh City 700000, Vietnam.
+
+For any privacy question, access request or complaint, write to
+[support@kallo.fit](mailto:support@kallo.fit).
+
+## 2. What we collect
+
+### Account information
+
+Your email address, sign-in method (email and password, Google, or Apple), and
+an account identifier. We do **not** store readable passwords — authentication
+is handled by Supabase Auth.
+
+### Profile and goals
+
+Display name, handle, avatar, the language you picked; weight, height, age,
+biological sex and activity level; your goal of cutting, bulking or maintaining,
+the pace you set for it, and the calorie and macro targets derived from those;
+the country you grew up in and the country you live in.
+
+Both countries are ones **you pick yourself** during onboarding, from a list.
+Kallo does **not** read your device location: the app requests no location
+permission, uses no GPS, and does not infer where you are from your IP address.
+
+### Cooking habits
+
+How much oil you typically use, your default rice and protein portions, whether
+you add sugar to braised dishes, and how much broth you drink. These make
+estimates match how you actually cook.
+
+### Meal log
+
+The sentence you write to describe a meal, when you logged it, the meal slot,
+the entry mode (Normal, Manual or Cheat meal), the dishes and ingredients Kallo
+recognises, estimated weights, cooking method, ingredient-match confidence,
+alcohol where relevant, the slider positions when you use Cheat meal, and all 28
+nutrient values computed for each meal and each item.
+
+### Weight over time
+
+Your weight entries and the dates they belong to.
+
+### Circle content
+
+Friendships, meals you share, reactions, replies, portion invites, the groups
+you join and the messages you send in groups or private chats.
+
+### Feedback
+
+Feedback type, your message, any screenshot you attach (stored in a private,
+non-public bucket), plus app version, platform, language and the screen you were
+on.
+
+### Billing
+
+Premium entitlement status, the store you purchased through, product identifier,
+start and expiry, renewal state, and the customer identifier issued by the
+billing provider. **We never receive or store full card numbers** — payment
+details are handled by Apple, Google, RevenueCat Billing or Stripe.
+
+### Waitlist
+
+If you sign up before having an account: email, language, signup source, a
+hashed confirmation token, and a **hash of your IP address** used for abuse
+prevention. We do not retain the raw IP address for this purpose.
+
+### Operational and anti-abuse data
+
+Technical records of each analysis: processing stages, timings, token counts and
+errors. Anti-abuse events are recorded against **HMAC-hashed identifiers**
+rather than raw account identifiers.
+
+## 3. What actually reaches the AI model
+
+When you request a meal analysis, the AI model receives **only**:
+
+- Your meal description.
+- The country you grew up in and the country you live in.
+- Your cooking habits.
+- The language you want the result in.
+
+The model does **not** know your weight goal, your pace, your calorie or
+macro targets, weight, height, age, sex, email, name, or meal history.
+
+<Callout label="Why this matters" tone="tip">
+Goal adjustment happens **on our servers, after** the model returns — not by
+telling the model you are cutting. That keeps your goal from biasing the
+estimate, and the boundary is enforced by the type system in our source code
+rather than by convention.
+</Callout>
+
+We do **not** use your content to train shared AI models.
+
+### What happens to it on Google's side
+
+Production Kallo calls Gemini through **Vertex AI on Google Cloud** — the
+enterprise service, not the consumer Gemini app. Under Google Cloud's terms,
+prompts and responses are **not used to train or fine-tune Google's models**.
+
+There are two exceptions:
+
+- **Caching for up to 24 hours.** Google caches inputs to reduce latency on
+  subsequent requests. The cached copy sits in the data centre that served the
+  request.
+- **Abuse monitoring for up to 30 days.** If automated safety classifiers flag a
+  request as suspicious, Google may retain that prompt to investigate a policy
+  violation. That data is still **not** used to train models.
+
+Kallo calls Vertex AI's **global endpoint**, so a request may be served from any
+region Google operates in. That means your meal description — and only the meal
+description plus the four fields above — can leave Vietnam while it is being
+processed. See section 9.
+
+Developer machines and internal scripts use a different connection (Google AI
+Studio) with test data, not your account data.
+
+## 4. Why we use it
+
+| Purpose | Data involved |
+| --- | --- |
+| Authenticate you and keep you signed in | Account, device |
+| Produce nutrition estimates | Meal text, cooking habits, country |
+| Personalise targets and charts | Profile, body metrics, goal, meal log |
+| Show content you share | Circle, shared meals |
+| Maintain Premium access | Billing data from the provider |
+| Prevent abuse, fraud and overload | Rate-limit events, hashed identifiers |
+| Troubleshoot and improve reliability | Operational logs, feedback |
+| Respond to support | Your message, account |
+| Meet legal obligations | As applicable |
+
+Our legal bases are: **performance of a contract** with you (providing the
+service you signed up for), **legitimate interests** (system safety, abuse
+prevention, quality), **your consent** (for example health-related data and
+optional notifications), and **legal obligations**.
+
+Some of what you provide — weight, height, eating habits — may count as
+**sensitive personal data** under Vietnamese law. We process it on the basis of
+your consent, and you can withdraw that consent at any time by deleting the data
+or your account.
+
+**We do not sell your personal data**, and we do not share it for third-party
+advertising.
+
+## 5. Providers that process data for us
+
+| Provider | Role | Data reached |
+| --- | --- | --- |
+| Supabase | Authentication, database, file storage | Account, all app data, avatars and feedback screenshots |
+| Google Cloud (Vertex AI, Gemini) | AI meal analysis | Meal text, country, cooking habits, language |
+| Google Cloud Run | Application hosting | Request traffic, server logs |
+| Google Cloud Translate | Translating ingredient data | Ingredient names |
+| Cloudflare | Content delivery, attack protection | Request metadata, IP address |
+| Resend | Authentication and notification email | Email address, message content |
+| RevenueCat | Cross-platform subscription state | Account identifier, purchase metadata |
+| Apple App Store, Google Play | In-app payments | Your payment details, held by the store |
+| Stripe (via RevenueCat Billing) | Web payments | Payment details |
+| Paddle | Web payments (merchant of record) | Payment details, invoice and tax data |
+| Open Food Facts | Packaged product lookup | The barcode you scan |
+
+This list changes as our infrastructure changes; updates are reflected here.
+
+Beyond the providers above, we may transfer personal data in connection with a
+**merger, sale of company assets, financing, or acquisition of all or part of
+our business** by another entity. Where that happens, we will give notice in
+advance, and the receiving party remains bound by this policy.
+
+We may also disclose personal data where required by law, where necessary to
+establish or defend the legal rights of ourselves or a third party, or where
+necessary to protect **the life or health of an individual** in an emergency.
+
+## 6. When you share in Circle
+
+A meal you share is visible to the audience you choose — friends, a group, or a
+private chat — including its description, dishes and nutrition figures.
+
+Friend invites work by link, so anyone holding the link can send a request. You
+can remove a friend at any time. If you enable automatic sharing in Settings,
+new meals are shared without further action — check that setting if you want
+your log to stay private.
+
+Content others have already viewed or copied into their own log may persist
+after you delete your original.
+
+## 7. Retention and deletion
+
+We keep account content while your account is active, and afterwards only for as
+long as needed for security, dispute resolution, legal compliance and backup
+recovery.
+
+You can delete your account in **Settings**. Deletion runs as a scheduled job
+that also erases your customer record at the billing provider.
+
+<Callout label="Before you delete" tone="caution">
+Deleting your Kallo account does **not** cancel a subscription bought through
+Apple or Google. Cancel in the store first if you want charges to stop. A
+subscription bought on the web is cancelled as part of deletion.
+</Callout>
+
+Deletion removes your data from the systems that serve the app. Where our
+hosting provider holds system-level backups, deleted data may persist in them
+until they are overwritten; during that window it is not used to serve the app
+and is not accessible in it. We do not currently publish a fixed backup
+retention period, and we will state one here once we set it.
+
+## 8. Security
+
+We apply several layers of protection:
+
+- Encrypted connections in transit.
+- Row-level authorisation in the database, so one account's data cannot be read
+  from another.
+- Server-side permission checks on every cross-account read in Circle.
+- An origin lock that only accepts traffic arriving through our edge layer.
+- Private storage buckets for avatars and feedback screenshots.
+- Tightly restricted access to server credentials.
+
+No system is perfectly secure. If an incident affects your personal data, we
+will notify you as applicable law requires.
+
+## 9. International transfers
+
+The providers listed in section 5 may process data in countries other than where
+you live. Specifically:
+
+- **Application servers** run on Google Cloud Run in the `asia-southeast1`
+  region (Singapore). Google Cloud has no region in Vietnam, so application data
+  is processed outside Vietnam.
+- **The database**, operated by Supabase, is also in Singapore, next to the
+  application servers.
+- **AI meal analysis** goes through Vertex AI's global endpoint, so it may be
+  processed in any region Google operates in, including outside Vietnam. Only
+  the four fields listed in section 3 travel this path.
+- **Every other provider** processes data in the regions it operates.
+
+Where data leaves Vietnam, we do so in line with personal data protection law,
+including preparing and retaining a transfer impact assessment where required.
+
+## 10. Your rights
+
+Under Decree 13/2023/ND-CP on personal data protection, and under the law where
+you live, you have the right to:
+
+- **Know** what data is processed and how.
+- **Access** and receive a copy of your data.
+- **Correct** inaccurate data.
+- **Withdraw consent** you previously gave.
+- **Delete** your personal data.
+- **Restrict** or **object to** certain processing.
+- **Receive your data** in a portable format.
+- **Complain** to the competent authority.
+- **Claim compensation** for damage, as the law provides.
+
+To exercise any of these, email
+[support@kallo.fit](mailto:support@kallo.fit). We may need to verify your
+identity first, and will respond within the statutory period.
+
+Most requests you can handle yourself immediately: edit your profile, delete an
+individual meal, or delete your whole account — all in **Settings**.
+
+## 11. Children
+
+Kallo is not directed to anyone under 13. In Vietnam, processing the personal
+data of anyone under 16 requires consent from a parent or legal guardian.
+
+If you believe your child has given us data without the necessary consent,
+contact support@kallo.fit and we will delete it.
+
+## 12. Cookies and on-device storage
+
+We use cookies and local storage only as far as necessary:
+
+- Keeping you signed in.
+- Remembering your chosen language.
+- Remembering interface state, such as whether the sidebar is open or collapsed.
+
+We use no advertising cookies and embed no third-party ad-network trackers.
+
+## 13. Automated decision-making
+
+Kallo's nutrition estimates are produced by automated means. Those estimates do
+**not** constitute automated decisions producing legal or similarly significant
+effects within the meaning of Article 22 GDPR: they are nutritional information,
+and they determine no access to services, credit, employment or any other
+entitlement.
+
+You can review, edit or delete any individual result both before and after it is
+saved. If you would like a human to review how a result was produced, contact
+[support@kallo.fit](mailto:support@kallo.fit) and we will explain the main
+factors involved.
+
+We do **not** carry out profiling for advertising, credit scoring, insurance
+risk assessment, or any purpose beyond delivering the service you requested.
+
+## 14. Do-Not-Track signals
+
+Most web browsers, and some mobile operating systems and applications, include a
+Do-Not-Track ("DNT") feature you can use to signal a preference not to have your
+browsing activity monitored.
+
+No uniform technology standard for recognising and honouring DNT signals has
+been finalised. We therefore **do not respond** to DNT signals or any comparable
+automated mechanism. Should a binding standard be adopted, we will update this
+policy. California law requires us to disclose this.
+
+## 15. Privacy rights of United States residents
+
+This section applies if you reside in California, Colorado, Connecticut,
+Delaware, Florida, Indiana, Iowa, Kentucky, Maryland, Minnesota, Montana,
+Nebraska, New Hampshire, New Jersey, Oregon, Rhode Island, Tennessee, Texas,
+Utah or Virginia.
+
+### Categories of personal data collected
+
+The table below lists the categories of personal data, as classified under
+California law, that we have collected in the preceding twelve (12) months.
+
+| Category | Examples | Collected |
+| --- | --- | --- |
+| A. Identifiers | Display name, email, account identifier, hash of IP address | Yes |
+| B. Personal data under the California Customer Records statute | Name, contact details | Yes |
+| C. Protected classification characteristics | Age, biological sex | Yes |
+| D. Commercial information | Premium subscription history, purchase metadata | Yes |
+| E. Biometric information | Fingerprints, voiceprints | No |
+| F. Internet or network activity | Server logs, in-app actions | Yes |
+| G. Geolocation data | Device location | No |
+| H. Audio, visual and sensory information | Avatar, feedback screenshots | Yes |
+| I. Professional or employment information | Job title, work history | No |
+| J. Education information | Student records | No |
+| K. Inferences drawn from collected data | Calorie and macro targets, nutrition trends | Yes |
+| L. Sensitive personal data | Health data: weight, height, meal log | Yes |
+
+We retain each category above for as long as your account exists, unless the law
+requires a different period.
+
+### No sale, no sharing
+
+In the preceding twelve (12) months we have **not sold and not shared** personal
+data with third parties for commercial or targeted-advertising purposes within
+the meaning of the state laws above. We have no plans to do so.
+
+We do **not** collect or process sensitive personal data for the purpose of
+inferring characteristics about you.
+
+### Your rights
+
+Depending on your state of residence, you may have the following rights:
+
+- **Right to know** whether we are processing your personal data.
+- **Right to access** your personal data and the categories being processed.
+- **Right to correct** inaccuracies.
+- **Right to request deletion** of your personal data.
+- **Right to obtain a copy** of the data you provided, in a portable format.
+- **Right to non-discrimination** for exercising these rights.
+- **Right to opt out** of processing for targeted advertising, the sale of
+  personal data, or profiling in furtherance of decisions with legal effects.
+- **Right to limit** the use and disclosure of sensitive personal data.
+- **Right to obtain a list** of third parties to which we have disclosed
+  personal data, to the extent your state's law provides.
+
+### How to exercise your rights
+
+Email [support@kallo.fit](mailto:support@kallo.fit). Most actions you can also
+take yourself in **Settings**.
+
+**Request verification.** On receiving a request we must verify that you are the
+data subject. We use the information in your request solely for that purpose. If
+we cannot verify you from the data we already hold, we may ask for additional
+information.
+
+**Authorised agents.** You may designate an agent to submit a request on your
+behalf. We may deny a request where the agent does not produce valid written
+authorisation.
+
+**Appeals.** If we decline your request, you may appeal by emailing
+[support@kallo.fit](mailto:support@kallo.fit). We will respond in writing,
+setting out the action taken or not taken and the reasons for it. If your appeal
+is denied, you may complain to your state attorney general.
+
+**California "Shine The Light" law.** Under California Civil Code Section
+1798.83, California residents may request, once a year and free of charge,
+information about the categories of personal data (if any) we disclosed to third
+parties for their direct marketing purposes. Because we make no such
+disclosures, the answer to any such request is "none".
+
+## 16. Complaints to a supervisory authority
+
+If you believe we are processing your personal data unlawfully, you have the
+right to complain to a supervisory authority:
+
+- **Vietnam.** The Department of Cybersecurity and High-Tech Crime Prevention
+  (A05), Ministry of Public Security, is the authority responsible for personal
+  data protection under Decree 13/2023/ND-CP.
+- **European Economic Area.** The data protection authority of your member
+  state.
+- **United Kingdom.** Information Commissioner's Office —
+  [ico.org.uk/make-a-complaint](https://ico.org.uk/make-a-complaint), telephone
+  0303 123 1113.
+- **Switzerland.** The Federal Data Protection and Information Commissioner
+  (FDPIC).
+
+We would ask you to contact us first at
+[support@kallo.fit](mailto:support@kallo.fit). We will acknowledge a complaint
+within 30 days, investigate without undue delay, and inform you of the outcome
+with an explanation.
+
+## 17. Data from Google APIs
+
+If you sign in with a Google account, our use of information received from
+Google APIs adheres to the
+[Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy),
+including the
+[Limited Use requirements](https://developers.google.com/terms/api-services-user-data-policy#limited-use).
+
+We receive only your email address, display name and avatar from your Google
+account, and use them only to create and maintain your Kallo account.
+
+## 18. Changes to this policy
+
+As the service or the law changes, we will update this document and change the
+date at the top. For material changes we will give notice in the app or by email
+before they take effect.
+
+## 19. Contact
+
+Privacy questions and requests:
+[support@kallo.fit](mailto:support@kallo.fit)
+
+Operated by VÕ MINH KHÔI, 88/2 Đ. Đào Duy Anh, Đức Nhuận ward, Ho Chi Minh City 700000, Vietnam.

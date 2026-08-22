@@ -1,18 +1,18 @@
-/// Riverpod port of the RN `useNutritionOverview` hook
-/// (`apps/mobile/src/lib/nutrition/hooks/use-nutrition-overview.ts`).
+/// Riverpod port of the web nutrition-overview query.
 ///
-/// Mirrors the web `NutritionShell` query exactly: 4-element key by range +
-/// timezone bucket (`['nutrition','overview', range, tz ?? 'utc']`),
+/// Mirrors the web `NutritionShell`
+/// (`components/nutrition/nutrition-shell.tsx`) exactly: 4-element key by
+/// range + timezone bucket (`['nutrition','overview', range, tz ?? 'utc']`),
 /// `retry:false`, 5-minute `staleTime`, and `placeholderData: keepPreviousData`
 /// so the editorial layout stays in place while a new range refetches.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/api_client.dart';
-import '../../../data/query.dart';
-import '../../../data/session_provider.dart';
-import '../../../models/nutrition.dart';
+import '../../../services/http/api_client.dart';
+import '../../../services/http/query.dart';
+import '../../../services/auth/session_provider.dart';
+import '../../../models/nutrition/nutrition.dart';
 
 /// Raw `getTimezoneOffset()` parity: JS returns minutes POSITIVE west of UTC.
 /// Dart's `timeZoneOffset` is positive EAST of UTC, so we negate it.
@@ -28,39 +28,51 @@ typedef NutritionOverviewArg = ({
 /// Family keyed by (range, scope). The query key registry tuple is
 /// `QueryKeys.nutritionOverview(range, tz, scope)`.
 ///
-/// `keepPreviousData` semantics: when the family arg changes (range OR scope
-/// toggle), the new provider instance keeps the previously-resolved overview as
-/// its initial value so the layout doesn't collapse to a skeleton mid-refetch —
-/// which is what makes the All/Complete swap feel instant.
+/// `keepPreviousData` semantics: a provider instance seeds from its own last
+/// overview when it has one, and otherwise from whatever the account last saw —
+/// so switching range or day scope keeps the page standing while the new
+/// numbers land, rather than blanking to a grey skeleton and back.
 final nutritionOverviewProvider = AsyncNotifierProvider.family<
   NutritionOverviewNotifier,
   NutritionOverview,
   NutritionOverviewArg
 >(NutritionOverviewNotifier.new);
 
-/// Holds the last successful overview across the family so a range switch can
-/// seed the next instance (the RN `keepPreviousData` behavior). It is keyed by
-/// user + timezone so an account switch can never seed another user's nutrition
-/// pattern into the placeholder state.
+/// The last successful overview for each selection, so a returning instance
+/// renders instantly instead of collapsing to a skeleton.
+final Map<String, NutritionOverview> _lastOverviewByArg = {};
+
+/// The last successful overview for the ACCOUNT, whatever selection produced
+/// it — the fallback seed when a selection has nothing of its own yet.
+///
+/// This is `keepPreviousData`: switching range or day scope keeps the page
+/// standing and swaps the numbers when they land, rather than blanking to grey
+/// and back. It is safe now that the range selector reads the REQUESTED range
+/// rather than the seeded overview's `resolvedRange` — otherwise the stale
+/// value drove the highlight and 30d → 90d flashed 7d on the way.
 final Map<String, NutritionOverview> _lastOverviewByAccount = {};
 
-String _overviewCacheKey(String? userId) =>
+String _accountKey(String? userId) =>
     '${userId ?? 'signed-out'}:${nutritionTimezoneOffset()}';
+
+String _overviewCacheKey(String? userId, NutritionOverviewArg arg) =>
+    '${_accountKey(userId)}:${arg.range.value}:${arg.scope.value}';
 
 class NutritionOverviewNotifier
     extends FamilyAsyncNotifier<NutritionOverview, NutritionOverviewArg> {
   @override
   Future<NutritionOverview> build(NutritionOverviewArg arg) async {
     final userId = ref.watch(currentSessionProvider)?.user.id;
-    final cacheKey = _overviewCacheKey(userId);
-    final previous = _lastOverviewByAccount[cacheKey];
+    final cacheKey = _overviewCacheKey(userId, arg);
+    // This selection's own data if we have it, otherwise whatever the account
+    // last saw, so the layout never blanks mid-switch.
+    final previous =
+        _lastOverviewByArg[cacheKey] ?? _lastOverviewByAccount[_accountKey(userId)];
     if (previous != null) {
-      // Seed with the prior overview so consumers keep rendering the editorial
-      // stack while the new range/scope loads (placeholderData: keepPreviousData).
       state = AsyncData(previous);
     }
     final overview = await _fetch(arg);
-    _lastOverviewByAccount[cacheKey] = overview;
+    _remember(userId, arg, overview);
     return overview;
   }
 
@@ -73,6 +85,15 @@ class NutritionOverviewNotifier
       '&days=${arg.scope.value}',
     );
     return NutritionOverview.fromJson(json);
+  }
+
+  void _remember(
+    String? userId,
+    NutritionOverviewArg arg,
+    NutritionOverview overview,
+  ) {
+    _lastOverviewByArg[_overviewCacheKey(userId, arg)] = overview;
+    _lastOverviewByAccount[_accountKey(userId)] = overview;
   }
 
   /// Refetch the current range — mirrors `query.refetch()`. Keeps the existing
@@ -91,8 +112,7 @@ class NutritionOverviewNotifier
     );
     try {
       final overview = await _fetch(arg);
-      final userId = ref.read(currentSessionProvider)?.user.id;
-      _lastOverviewByAccount[_overviewCacheKey(userId)] = overview;
+      _remember(ref.read(currentSessionProvider)?.user.id, arg, overview);
       state = AsyncData(overview);
       return true;
     } catch (error, stack) {

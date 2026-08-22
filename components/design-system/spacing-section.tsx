@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
 import { DsCard, DsMeta, DsSection } from './specimen';
 
 const STEPS = [
@@ -33,8 +33,8 @@ export function SpacingSection() {
               <div className="w-16 shrink-0">
                 <DsMeta>{s.label}</DsMeta>
               </div>
-              <div className={cn('h-4 rounded-sm bg-nham-accent', s.cls)} />
-              <p className="text-2xs text-nham-text-muted">{s.use}</p>
+              <div className={cn('h-4 rounded-sm bg-kallo-accent', s.cls)} />
+              <p className="text-2xs text-kallo-text-muted">{s.use}</p>
             </div>
           ))}
         </div>
@@ -42,25 +42,25 @@ export function SpacingSection() {
 
       <DsCard title="Card rhythm — p-card outside, gap-3 stacks inside">
         <div className="grid gap-6 sm:grid-cols-2">
-          <div className="rounded-2xl border border-nham-border/60 bg-nham-surface p-card">
+          <div className="rounded-2xl border border-kallo-border/60 bg-kallo-surface p-card">
             <p className="eyebrow">Default card</p>
             <div className="mt-3 space-y-3">
-              <div className="h-3 w-3/4 rounded-full bg-nham-track" />
-              <div className="h-3 w-1/2 rounded-full bg-nham-track" />
-              <div className="h-3 w-2/3 rounded-full bg-nham-track" />
+              <div className="h-3 w-3/4 rounded-full bg-kallo-track" />
+              <div className="h-3 w-1/2 rounded-full bg-kallo-track" />
+              <div className="h-3 w-2/3 rounded-full bg-kallo-track" />
             </div>
             <DsMeta>p-card (20px) · space-y-3 (12px)</DsMeta>
           </div>
-          <div className="rounded-2xl border border-nham-border/60 bg-nham-surface p-card-sm">
+          <div className="rounded-2xl border border-kallo-border/60 bg-kallo-surface p-card-sm">
             <p className="eyebrow">Compact card</p>
             <div className="mt-3 space-y-2">
-              <div className="h-3 w-3/4 rounded-full bg-nham-track" />
-              <div className="h-3 w-1/2 rounded-full bg-nham-track" />
+              <div className="h-3 w-3/4 rounded-full bg-kallo-track" />
+              <div className="h-3 w-1/2 rounded-full bg-kallo-track" />
             </div>
             <DsMeta>p-card-sm (16px) · space-y-2 (8px)</DsMeta>
           </div>
         </div>
-        <p className="mt-4 text-nham-text-muted text-xs leading-relaxed">
+        <p className="mt-4 text-kallo-text-muted text-xs leading-relaxed">
           Rules of thumb: one padding value per card — never mix p-4 and p-5 on
           siblings. Sections stack with gap-section (32px). Content never
           exceeds 1440px. When a layout feels cramped, add space before adding

@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { saveManualMealAction } from '@/lib/actions/manual-meals';
+import { saveManualMealAction } from '@/lib/actions/logging/manual-meals';
 import { saveManualMealSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 

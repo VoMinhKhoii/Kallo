@@ -1,4 +1,4 @@
-import type { UserContext } from '@/lib/ai/types';
+import type { UserContext } from '@/lib/ai/types/user-context';
 
 /**
  * Spec §3.1 — the only `UserContext` slice that prompt builders are allowed

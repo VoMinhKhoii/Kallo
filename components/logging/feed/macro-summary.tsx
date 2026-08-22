@@ -3,7 +3,7 @@
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { CalorieRing } from '@/components/shared/calorie-ring';
-import type { MacroBreakdown } from '@/lib/types/meal';
+import type { MacroBreakdown } from '@/lib/core/types/meal';
 
 interface MacroSummaryProps {
   totals: MacroBreakdown;
@@ -11,9 +11,9 @@ interface MacroSummaryProps {
 }
 
 const MACRO_COLORS: Record<'protein' | 'carbs' | 'fat', string> = {
-  protein: 'var(--nham-macro-protein)',
-  carbs: 'var(--nham-macro-carbs)',
-  fat: 'var(--nham-macro-fat)',
+  protein: 'var(--kallo-macro-protein)',
+  carbs: 'var(--kallo-macro-carbs)',
+  fat: 'var(--kallo-macro-fat)',
 };
 
 export function MacroSummary({ totals, targets }: MacroSummaryProps) {
@@ -50,23 +50,23 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
           className="size-[78px] [--calorie-ring-stroke:3px] sm:size-[86px] sm:[--calorie-ring-stroke:4px]"
           center={
             <>
-              <span className="font-semibold font-sans-display text-[17px] text-nham-text tabular-nums leading-none sm:text-[19px]">
+              <span className="font-sans-display font-semibold text-[17px] text-kallo-text tabular-nums leading-none sm:text-[19px]">
                 {remaining.toLocaleString()}
               </span>
-              <span className="mt-0.5 font-bold font-sans-display text-[8px] text-nham-stone uppercase tracking-[0.15em]">
+              <span className="mt-0.5 font-bold font-sans-display text-[8px] text-kallo-stone uppercase tracking-[0.15em]">
                 {tRing('left')}
               </span>
             </>
           }
         />
-        <span className="font-sans-display font-semibold text-nham-text-muted text-xs tabular-nums">
+        <span className="font-sans-display font-semibold text-kallo-text-muted text-xs tabular-nums">
           {calories.toLocaleString()} / {targets.calories.toLocaleString()} kcal
         </span>
       </div>
 
       {/* Divider */}
       <div
-        className="hidden h-12 w-px bg-nham-border/30 sm:block"
+        className="hidden h-12 w-px bg-kallo-border/30 sm:block"
         aria-hidden="true"
       />
 
@@ -82,10 +82,10 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
 
           return (
             <div key={key} className="flex items-center gap-3">
-              <span className="w-12 font-bold font-sans-display text-[10px] text-nham-text-muted/70 uppercase tracking-wider sm:w-14">
+              <span className="w-12 font-bold font-sans-display text-[10px] text-kallo-text-muted/70 uppercase tracking-wider sm:w-14">
                 {label}
               </span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-nham-track">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-kallo-track">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${percent}%` }}
@@ -98,7 +98,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
                   style={{ backgroundColor: color }}
                 />
               </div>
-              <span className="w-14 text-right font-sans-display text-[11px] text-nham-text-muted tabular-nums sm:w-16">
+              <span className="w-14 text-right font-sans-display text-[11px] text-kallo-text-muted tabular-nums sm:w-16">
                 {Math.round(current)}/{target}g
               </span>
             </div>

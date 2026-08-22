@@ -1,0 +1,6 @@
+{
+  "calorieRing": {
+    "left": "left",
+    "ariaLabel": "{remaining} of {target} calories remaining"
+  }
+}

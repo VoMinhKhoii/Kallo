@@ -1,6 +1,6 @@
 import { Minus, Plus, X } from 'lucide-react';
-import { MIN_DISH_GRAMS } from '@/lib/meal-utils';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/ui/cn';
+import { MIN_DISH_GRAMS } from '@/lib/domain/meals/quantity-recalculation';
 
 export interface EditableRow {
   id: string;
@@ -32,7 +32,7 @@ export function AmountEditorRow({
     >
       <span
         className={cn(
-          'min-w-0 truncate font-medium text-nham-text',
+          'min-w-0 truncate font-medium text-kallo-text',
           row.removed && 'line-through'
         )}
       >
@@ -46,17 +46,17 @@ export function AmountEditorRow({
               aria-label={t('removeRow', { name: row.name })}
               disabled={row.grams <= MIN_DISH_GRAMS}
               onClick={() => onStep(row.id, -10)}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border bg-white text-nham-text transition-colors hover:bg-nham-hover disabled:opacity-40"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-white text-kallo-text transition-colors hover:bg-kallo-hover disabled:opacity-40"
             >
               <Minus className="h-2.5 w-2.5" />
             </button>
-            <span className="w-9 text-center font-semibold text-[11px] text-nham-text tabular-nums">
+            <span className="w-9 text-center font-semibold text-[11px] text-kallo-text tabular-nums">
               {Math.round(row.grams)}g
             </span>
             <button
               type="button"
               onClick={() => onStep(row.id, 10)}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border bg-white text-nham-text transition-colors hover:bg-nham-hover"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-white text-kallo-text transition-colors hover:bg-kallo-hover"
             >
               <Plus className="h-2.5 w-2.5" />
             </button>
@@ -67,7 +67,7 @@ export function AmountEditorRow({
           aria-label={t('removeRow', { name: row.name })}
           aria-pressed={row.removed}
           onClick={() => onToggleRemove(row.id)}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-kallo-text-muted/70 transition-colors hover:bg-kallo-danger/10 hover:text-kallo-danger"
         >
           <X className="h-3.5 w-3.5" />
         </button>

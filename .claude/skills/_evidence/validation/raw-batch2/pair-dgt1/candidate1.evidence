@@ -1,7 +1,7 @@
 === LOG ===
 861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
 87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
-8a80c07 docs(design): fold the mobile system into the nham-design skill
+8a80c07 docs(design): fold the mobile system into the kallo-design skill
 === STATUS ===
  M components/logging/input/barcode-product-step.tsx
  M components/logging/input/barcode-scanner-dialog.tsx
@@ -29,8 +29,8 @@ index 8f451d6..1db15e2 100644
 +  deleteBarcodeServingOverrideAction,
 +  saveBarcodeServingOverrideAction,
 +} from '@/lib/actions/barcode';
- import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
- import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
+ import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
+ import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/openfoodfacts';
  
 @@ -43,6 +48,9 @@ interface BarcodeProductStepProps {
    onBack: () => void;
@@ -314,7 +314,7 @@ index 8f451d6..1db15e2 100644
 +                    type="button"
 +                    onClick={handleResetOverride}
 +                    disabled={isSavingOverride}
-+                    className="ml-auto rounded-lg px-3 py-2 font-medium font-sans-display text-[13px] text-nham-danger/80 transition-colors hover:text-nham-danger disabled:opacity-50"
++                    className="ml-auto rounded-lg px-3 py-2 font-medium font-sans-display text-[13px] text-kallo-danger/80 transition-colors hover:text-kallo-danger disabled:opacity-50"
 +                  >
 +                    {t('barcodeResetServing')}
 +                  </button>

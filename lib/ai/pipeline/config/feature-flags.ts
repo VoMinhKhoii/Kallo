@@ -11,7 +11,7 @@
  *
  * All flags here default ON. Canary toggles that default OFF
  * (PIPELINE_DECOMPOSITION_PROMPT_LABEL, PIPELINE_PROVIDER_SCHEMA_MODE, etc.)
- * stay in their own modules — see lib/ai/prompts/* and lib/ai/pipeline/model-profile.ts.
+ * stay in their own modules — see lib/ai/prompts/* and lib/ai/pipeline/config/model-profile.ts.
  */
 
 const FALSY_VALUES = new Set([

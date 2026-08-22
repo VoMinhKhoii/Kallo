@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/navigation';
-import { SITE_URL } from '@/lib/site';
+import { SITE_URL } from '@/lib/seo/site';
 
 // Authenticated app surfaces. next-intl serves these under a locale prefix
 // (/en/dashboard, /vi/dashboard, …), and robots path matching is a literal

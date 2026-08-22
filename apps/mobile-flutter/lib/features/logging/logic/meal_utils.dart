@@ -1,9 +1,9 @@
-/// Pure meal-quantity helpers — vendored 1:1 from the web's `lib/meal-utils.ts`
-/// (via `apps/mobile/src/lib/logging/logic/meal-utils.ts`). The scaling math
-/// must match the web exactly so confirmed edits agree with the server.
+/// Pure meal-quantity helpers — vendored 1:1 from web
+/// `lib/domain/meals/quantity-recalculation.ts`. The scaling math must match
+/// the web exactly so confirmed edits agree with the server.
 library;
 
-import '../../../models/meal.dart';
+import '../../../models/logging/meal.dart';
 
 /// Minimum allowed cooked weight for a grams/ml dish.
 const double minDishGrams = 10;
