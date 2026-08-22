@@ -183,16 +183,6 @@ class NutritionData {
       );
 }
 
-/// The `goal` column is a free-text CHECK on (cutting, bulking, maintaining).
-/// Anything else — including null, and any value a future migration adds —
-/// falls through to null and is read as maintaining by [DashboardProfile].
-MacroGoal? _goalFromWire(String? value) => switch (value) {
-  'cutting' => MacroGoal.cutting,
-  'bulking' => MacroGoal.bulking,
-  'maintaining' => MacroGoal.maintaining,
-  _ => null,
-};
-
 class DashboardProfile {
   final double calorieTarget;
   final double proteinTargetG;
@@ -224,7 +214,7 @@ class DashboardProfile {
         proteinTargetG: (json['proteinTargetG'] as num?)?.toDouble() ?? 150,
         carbsTargetG: (json['carbsTargetG'] as num?)?.toDouble() ?? 250,
         fatTargetG: (json['fatTargetG'] as num?)?.toDouble() ?? 65,
-        goal: _goalFromWire(json['goal'] as String?),
+        goal: macroGoalFromWire(json['goal'] as String?),
       );
 
   Map<String, dynamic> toJson() => {

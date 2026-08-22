@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:kallo_mobile/features/dashboard/widgets/today/today_calorie_dial.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/calorie_dial.dart';
 import 'package:kallo_mobile/models/nutrition/nutrition_enums.dart';
 
-import '../../l10n_test_loader.dart';
+import '../../../l10n_test_loader.dart';
 
 Widget _wrap(Widget child) => EasyLocalization(
   supportedLocales: const [Locale('en')],
@@ -30,7 +30,7 @@ Future<void> _pump(
 }) async {
   await tester.pumpWidget(
     _wrap(
-      TodayCalorieDial(logged: logged, target: 2000, goal: goal),
+      CalorieDial(logged: logged, target: 2000, goal: goal),
     ),
   );
   await tester.pumpAndSettle();
@@ -90,8 +90,8 @@ void main() {
 
   testWidgets('the layout does not shift when the goal flips', (tester) async {
     await _pump(tester, logged: 741, goal: MacroGoal.cutting);
-    final cutting = tester.getSize(find.byType(TodayCalorieDial));
+    final cutting = tester.getSize(find.byType(CalorieDial));
     await _pump(tester, logged: 741, goal: MacroGoal.bulking);
-    expect(tester.getSize(find.byType(TodayCalorieDial)), cutting);
+    expect(tester.getSize(find.byType(CalorieDial)), cutting);
   });
 }

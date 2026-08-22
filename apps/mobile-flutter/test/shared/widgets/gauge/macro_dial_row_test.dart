@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:kallo_mobile/features/dashboard/widgets/today/today_macro_dials.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/macro_dial_row.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/gauge_arc_geometry.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/rounded_gauge_arc.dart';
 

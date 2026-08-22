@@ -20,8 +20,8 @@ import '../chrome/section_header.dart';
 import '../states/card_skeletons.dart';
 import 'dock_targets.dart';
 import 'fade_in_down.dart';
-import 'today_calorie_dial.dart';
-import 'today_macro_dials.dart';
+import '../../../../shared/widgets/gauge/calorie_dial.dart';
+import '../../../../shared/widgets/gauge/macro_dial_row.dart';
 import 'today_first_run.dart';
 import 'today_meal_list.dart';
 
@@ -142,7 +142,7 @@ class _Dock extends StatelessWidget {
           // (a) The calorie dial, straight on the canvas. No card: the arc
           // draws its own shape, and a border around a round mark only fenced
           // it in.
-          TodayCalorieDial(
+          CalorieDial(
             logged: calories.toDouble(),
             target: targets.calorieTarget,
             goal: targets.goal,

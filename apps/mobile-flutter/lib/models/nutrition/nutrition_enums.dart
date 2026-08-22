@@ -131,3 +131,17 @@ enum NutritionNutrientKey {
 enum MacroKey { calories, protein, carbohydrate, fat }
 
 enum MacroGoal { cutting, bulking, maintaining }
+
+/// The `goal` column is a free-text CHECK on (cutting, bulking, maintaining).
+/// Anything else — including null, and any value a future migration adds —
+/// falls through to null, which every reader treats as counting up.
+///
+/// Lives beside the enum rather than inside one profile model: the dashboard
+/// bundle and the logging profile arrive on different endpoints and must read
+/// the same column the same way.
+MacroGoal? macroGoalFromWire(String? value) => switch (value) {
+  'cutting' => MacroGoal.cutting,
+  'bulking' => MacroGoal.bulking,
+  'maintaining' => MacroGoal.maintaining,
+  _ => null,
+};

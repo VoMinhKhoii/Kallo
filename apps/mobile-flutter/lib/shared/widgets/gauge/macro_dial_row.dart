@@ -1,11 +1,11 @@
-/// The dock's three macro dials — the same arc as the calorie dial, a third of
-/// the size, in each macro's own pigment.
+/// The three macro dials — the same arc as the calorie dial, a third of the
+/// size, in each macro's own pigment.
 ///
-/// Replaces the labelled progress bars this file used to hold. A bar reads its
-/// value against a track that runs the full width of the card, which put three
-/// long horizontal rules under a round dial and made the two halves of the card
-/// look unrelated. The dial repeats the calorie mark's shape, so the section
-/// reads as one family of objects.
+/// Replaces the labelled progress bars both the dock and the logging header
+/// used to draw. A bar reads its value against a track that runs the full width
+/// of the surface, which put three long horizontal rules beside a round dial and
+/// made the two halves look unrelated. The dial repeats the calorie mark's
+/// shape, so the section reads as one family of objects.
 ///
 /// The glyph carries the identity: pigment alone cannot separate three arcs
 /// this small, and the beef / wheat / droplet set is already the app's macro
@@ -16,13 +16,16 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../../shared/logic/macro_composition.dart';
-import '../../../../shared/widgets/gauge/gauge_dial.dart';
-import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/kallo_theme.dart';
+import '../../../theme/calm_tokens.dart';
+import '../../../theme/kallo_theme.dart';
+import '../../logic/macro_composition.dart';
+import 'gauge_dial.dart';
 
 /// Full size on a 390pt screen; [MacroDialRow] shrinks it on narrower ones.
 const double kMacroDialRadius = 44;
+
+/// The embedded size — see [MacroDialRow.compact].
+const double kCompactMacroDialRadius = 30;
 
 class MacroDialData {
   const MacroDialData({
@@ -40,9 +43,20 @@ class MacroDialData {
 }
 
 class MacroDialRow extends StatelessWidget {
-  const MacroDialRow({required this.macros, super.key});
+  const MacroDialRow({required this.macros, super.key})
+    : maxRadius = kMacroDialRadius,
+      _headlineIsValue = true;
+
+  /// The variant that sits beside `CalorieDial.compact` in a fixed header:
+  /// two thirds of the radius, and the gram figure steps from Value 17 to Body
+  /// 14 so it still clears the mouth at the 1.3 text-scale cap.
+  const MacroDialRow.compact({required this.macros, super.key})
+    : maxRadius = kCompactMacroDialRadius,
+      _headlineIsValue = false;
 
   final List<MacroDialData> macros;
+  final double maxRadius;
+  final bool _headlineIsValue;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -52,13 +66,19 @@ class MacroDialRow extends StatelessWidget {
       final column =
           (constraints.maxWidth - KalloSpacing.sp2 * (macros.length - 1)) /
           macros.length;
-      final radius = math.min(kMacroDialRadius, column / 2);
+      final radius = math.min(maxRadius, column / 2);
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (var i = 0; i < macros.length; i++) ...[
             if (i > 0) const SizedBox(width: KalloSpacing.sp2),
-            Expanded(child: _MacroDial(data: macros[i], radius: radius)),
+            Expanded(
+              child: _MacroDial(
+                data: macros[i],
+                radius: radius,
+                headlineIsValue: _headlineIsValue,
+              ),
+            ),
           ],
         ],
       );
@@ -67,10 +87,15 @@ class MacroDialRow extends StatelessWidget {
 }
 
 class _MacroDial extends StatelessWidget {
-  const _MacroDial({required this.data, required this.radius});
+  const _MacroDial({
+    required this.data,
+    required this.radius,
+    required this.headlineIsValue,
+  });
 
   final MacroDialData data;
   final double radius;
+  final bool headlineIsValue;
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +125,12 @@ class _MacroDial extends StatelessWidget {
           progress: data.target > 0 ? data.current / data.target : 0,
           radius: radius,
           fill: color,
-          primary: GaugeLine('${data.current}g', dashValue()),
+          primary: GaugeLine(
+            '${data.current}g',
+            headlineIsValue
+                ? dashValue()
+                : dashBody(weight: FontWeight.w500, tabular: true),
+          ),
           secondary: GaugeLine('/${data.target}g', dashMeta(tabular: true)),
         ),
       ],

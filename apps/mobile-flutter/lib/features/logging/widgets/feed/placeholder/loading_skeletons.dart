@@ -2,54 +2,59 @@ import 'package:flutter/material.dart';
 
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
+import '../../../../../shared/widgets/gauge/calorie_dial.dart';
+import '../../../../../shared/widgets/gauge/macro_dial_row.dart';
+import '../../../../../shared/widgets/gauge/rounded_gauge_arc.dart';
 import '../../../logic/logging_spacing.dart';
 import 'pulse.dart';
 
 // ── Loading / error states ──────────────────────────────────────────────
 
-/// Macro header skeleton: a 2-col grid of 4 rounded-2xl border/50 bg-hover/25
-/// tiles, each with a label bar + accent/25 value bar (MacroSummarySkeleton).
+/// Macro header skeleton: the dial row's own silhouette — one wide mark for
+/// the calorie dial, three narrow ones for the macros, each a pill the height
+/// the arc draws at.
+///
+/// Shaped like what it stands in for, so the header does not visibly change
+/// layout when the day arrives. The tile grid this replaced matched nothing
+/// that had ever rendered here.
 class MacroSummarySkeleton extends StatelessWidget {
   const MacroSummarySkeleton({super.key});
 
-  static const _labelWidths = [64.0, 52.0, 58.0, 48.0];
-
   @override
   Widget build(BuildContext context) {
-    Widget tile(int i) => Container(
-      padding: const EdgeInsets.all(KalloSpacing.sp3), // p-3
-      decoration: BoxDecoration(
-        color: const Color(0x40F0EAE0), // bg-kallo-hover/25
-        borderRadius: BorderRadius.circular(KalloRadii.containerLg), // 2xl
-        border: Border.all(color: KalloColors.borderHalf), // border/50
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          skeletonBar(_labelWidths[i], 12, KalloColors.border70), // border/70
-          const SizedBox(height: KalloSpacing.sp2), // mb-2
-          skeletonBar(64, 20, KalloColors.track), // h-5 w-16 track skeleton pill
-        ],
-      ),
-    );
+    Widget pill(double width, double height) =>
+        skeletonBar(width, height, KalloColors.track);
 
     return Pulse(
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(child: tile(0)),
-              const SizedBox(width: KalloSpacing.sp3), // gap-3
-              Expanded(child: tile(1)),
-            ],
+          pill(
+            kCompactCalorieDialRadius * 2,
+            gaugeHeight(kCompactCalorieDialRadius),
           ),
-          const SizedBox(height: KalloSpacing.sp3),
-          Row(
-            children: [
-              Expanded(child: tile(2)),
-              const SizedBox(width: KalloSpacing.sp3),
-              Expanded(child: tile(3)),
-            ],
+          const SizedBox(width: KalloSpacing.sp3),
+          Expanded(
+            child: Row(
+              children: [
+                for (var i = 0; i < 3; i++) ...[
+                  if (i > 0) const SizedBox(width: KalloSpacing.sp2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        pill(44, 11),
+                        const SizedBox(height: KalloSpacing.sp0_5),
+                        pill(
+                          kCompactMacroDialRadius * 2,
+                          gaugeHeight(kCompactMacroDialRadius),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),

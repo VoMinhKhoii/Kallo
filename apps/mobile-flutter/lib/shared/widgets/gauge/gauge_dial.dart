@@ -95,7 +95,19 @@ class GaugeDial extends StatelessWidget {
               children: [
                 for (final line in readout) ...[
                   if (line != readout.first) const SizedBox(height: _lineGap),
-                  Text(line.text, style: line.style),
+                  // One line each, always: the placement above measures a
+                  // single line per [GaugeLine], and a wrapped one would slide
+                  // every line below it off the tips. A figure that outgrows
+                  // the mouth overflows visibly rather than reflowing the
+                  // dial — the caller picked the wrong radius, and a silent
+                  // truncation would hide that behind a plausible number.
+                  Text(
+                    line.text,
+                    style: line.style,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                  ),
                 ],
               ],
             ),

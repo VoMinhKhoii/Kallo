@@ -9,6 +9,7 @@ library;
 
 import '../../../models/logging/cheat.dart';
 import '../../../models/logging/meal.dart';
+import '../../../models/nutrition/nutrition_enums.dart';
 
 /// The macro subset of `NutritionValues` the feed shows. Each value is nullable
 /// (legacy meals can have unknown macros → `N/A`).
@@ -242,7 +243,11 @@ class LoggingDayData {
       );
 }
 
-/// The logging profile (targets) the feed needs. Mirrors the RN `LoggingProfile`.
+/// The logging profile the feed needs: what a day is supposed to add up to,
+/// and which direction the user is counting.
+///
+/// Mirrors the web `LoggingProfile` (`lib/domain/logging/types.ts`), which has
+/// carried `goal` all along.
 class LoggingProfile {
   final String userId;
   final int calorieTarget;
@@ -250,11 +255,16 @@ class LoggingProfile {
   final int carbsTargetG;
   final int fatTargetG;
 
+  /// Not a target, but it comes off the same profile row, and the calorie dial
+  /// cannot pick its headline without it. Null reads as counting up.
+  final MacroGoal? goal;
+
   const LoggingProfile({
     required this.userId,
     required this.calorieTarget,
     required this.proteinTargetG,
     required this.carbsTargetG,
     required this.fatTargetG,
+    this.goal,
   });
 }
