@@ -42,7 +42,8 @@ class RoundedGaugeArc extends StatefulWidget {
 
 class _RoundedGaugeArcState extends State<RoundedGaugeArc>
     with SingleTickerProviderStateMixin {
-  // The app's signature sweep, shared with CalorieRing.
+  // The app's signature sweep — the same curve the day pager, the timeline
+  // picker and the feed's scroll animate on.
   static const Curve _curve = Cubic(0.16, 1, 0.3, 1);
 
   late final AnimationController _controller = AnimationController(
@@ -84,18 +85,16 @@ class _RoundedGaugeArcState extends State<RoundedGaugeArc>
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return AnimatedBuilder(
       animation: _sweep,
-      builder: (context, _) => CustomPaint(
-        size: Size(
-          widget.outerRadius * 2,
-          gaugeHeight(widget.outerRadius),
-        ),
-        painter: _GaugePainter(
-          progress: reduceMotion ? widget.progress : _sweep.value,
-          outerRadius: widget.outerRadius,
-          fill: widget.fill,
-          track: widget.track,
-        ),
-      ),
+      builder:
+          (context, _) => CustomPaint(
+            size: Size(widget.outerRadius * 2, gaugeHeight(widget.outerRadius)),
+            painter: _GaugePainter(
+              progress: reduceMotion ? widget.progress : _sweep.value,
+              outerRadius: widget.outerRadius,
+              fill: widget.fill,
+              track: widget.track,
+            ),
+          ),
     );
   }
 }

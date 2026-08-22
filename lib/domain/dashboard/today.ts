@@ -27,6 +27,13 @@ export function mapPersistedMealsToMealEntries(
     id: meal.id,
     label: meal.rawInput,
     calories: roundNutritionValue(meal.nutrition.caloriesKcal),
+    loggedAt: meal.loggedAt,
+    // Passed through unrounded and un-defaulted: the row needs to tell a meal
+    // with no fat from a legacy meal whose macros were never resolved, and
+    // `?? 0` erases that difference.
+    proteinG: meal.nutrition.proteinG,
+    carbsG: meal.nutrition.carbohydrateG,
+    fatG: meal.nutrition.fatG,
   }));
 }
 

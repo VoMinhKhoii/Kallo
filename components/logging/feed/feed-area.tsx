@@ -79,6 +79,7 @@ export function FeedArea({
         targets={day.targets}
         showPartialDayNotice={feed.showPartialDayNotice}
         calorieTarget={profile.calorieTarget}
+        goal={profile.goal}
       />
 
       {/* Body: the cards region + the composer. When empty, the composer is

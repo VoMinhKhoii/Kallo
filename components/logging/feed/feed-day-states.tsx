@@ -2,26 +2,43 @@
 
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { COMPACT_CALORIE_DIAL_RADIUS } from '@/components/shared/gauge/calorie-dial';
+import { COMPACT_MACRO_DIAL_RADIUS } from '@/components/shared/gauge/macro-dials';
 import { cn } from '@/lib/core/ui/cn';
+import { gaugeHeight } from '@/lib/core/ui/gauge-arc-geometry';
 
+/**
+ * The dial row's own silhouette — one wide mark for the day, three narrow ones
+ * for the macros. Shaped like what it stands in for, so the header does not
+ * visibly change layout when the day arrives.
+ */
 export function MacroSummarySkeleton() {
   return (
     <div
       aria-hidden="true"
-      className="grid animate-pulse grid-cols-2 gap-3 sm:grid-cols-4"
+      className="flex animate-pulse flex-wrap items-start justify-center gap-x-4 gap-y-3 sm:justify-start"
     >
-      {[64, 52, 58, 48].map((width, index) => (
-        <div
-          key={index}
-          className="rounded-2xl border border-kallo-border/50 bg-kallo-hover/25 p-3"
-        >
-          <div
-            className="mb-2 h-3 rounded-full bg-kallo-border/70"
-            style={{ width }}
-          />
-          <div className="h-5 w-16 rounded-full bg-kallo-track" />
-        </div>
-      ))}
+      <div
+        className="shrink-0 rounded-full bg-kallo-track"
+        style={{
+          width: COMPACT_CALORIE_DIAL_RADIUS * 2,
+          height: gaugeHeight(COMPACT_CALORIE_DIAL_RADIUS),
+        }}
+      />
+      <div className="flex min-w-[200px] flex-1 justify-center gap-x-2">
+        {[0, 1, 2].map((index) => (
+          <div className="flex flex-col items-center gap-1" key={index}>
+            <div className="h-3 w-11 rounded-full bg-kallo-border/70" />
+            <div
+              className="rounded-full bg-kallo-track"
+              style={{
+                width: COMPACT_MACRO_DIAL_RADIUS * 2,
+                height: gaugeHeight(COMPACT_MACRO_DIAL_RADIUS),
+              }}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

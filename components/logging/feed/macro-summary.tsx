@@ -1,109 +1,56 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { useTranslations } from 'next-intl';
-import { CalorieRing } from '@/components/shared/calorie-ring';
+import { CalorieDial } from '@/components/shared/gauge/calorie-dial';
+import { MacroDials } from '@/components/shared/gauge/macro-dials';
 import type { MacroBreakdown } from '@/lib/core/types/meal';
+import type { Goal } from '@/lib/domain/onboarding/types';
 
 interface MacroSummaryProps {
   totals: MacroBreakdown;
   targets: MacroBreakdown;
+  /** Which direction the user counts — the dial's headline follows it. */
+  goal: Goal | null;
 }
 
-const MACRO_COLORS: Record<'protein' | 'carbs' | 'fat', string> = {
-  protein: 'var(--kallo-macro-protein)',
-  carbs: 'var(--kallo-macro-carbs)',
-  fat: 'var(--kallo-macro-fat)',
-};
-
-export function MacroSummary({ totals, targets }: MacroSummaryProps) {
-  const td = useTranslations('dashboard');
-  const tRing = useTranslations('shared.calorieRing');
-
-  const MACROS: {
-    key: 'protein' | 'carbs' | 'fat';
-    label: string;
-    color: string;
-  }[] = [
-    { key: 'protein', label: td('protein'), color: MACRO_COLORS.protein },
-    { key: 'carbs', label: td('carbs'), color: MACRO_COLORS.carbs },
-    { key: 'fat', label: td('fat'), color: MACRO_COLORS.fat },
-  ];
-  const { calories } = totals;
-  const remaining = Math.max(0, targets.calories - calories);
-
+/**
+ * The feed's header: the day's calorie dial and the three macro dials beside
+ * it.
+ *
+ * The dock gives the dial the top of the screen; this header sits FIXED above a
+ * scrolling day, so it draws the compact variants — the same marks, the same
+ * goal-aware readout, at a height the feed can afford.
+ */
+export function MacroSummary({ totals, targets, goal }: MacroSummaryProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
+      // The dials hold their size, so on a viewport too narrow for the row the
+      // macros wrap under the day rather than shrinking toward illegible.
+      className="flex flex-wrap items-start justify-center gap-x-4 gap-y-3 sm:justify-start"
+      initial={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
-      className="flex items-center gap-4 sm:gap-6"
     >
-      {/* Circular calorie progress */}
-      <div className="flex shrink-0 flex-col items-center gap-1">
-        <CalorieRing
-          current={calories}
-          target={targets.calories}
-          // Size + stroke driven by CSS media queries (no JS hook, no
-          // hydration flash). Stroke value reaches CalorieRing via the
-          // `--calorie-ring-stroke` CSS variable.
-          className="size-[78px] [--calorie-ring-stroke:3px] sm:size-[86px] sm:[--calorie-ring-stroke:4px]"
-          center={
-            <>
-              <span className="font-sans-display font-semibold text-[17px] text-kallo-text tabular-nums leading-none sm:text-[19px]">
-                {remaining.toLocaleString()}
-              </span>
-              <span className="mt-0.5 font-bold font-sans-display text-[8px] text-kallo-stone uppercase tracking-[0.15em]">
-                {tRing('left')}
-              </span>
-            </>
-          }
-        />
-        <span className="font-sans-display font-semibold text-kallo-text-muted text-xs tabular-nums">
-          {calories.toLocaleString()} / {targets.calories.toLocaleString()} kcal
-        </span>
-      </div>
-
-      {/* Divider */}
-      <div
-        className="hidden h-12 w-px bg-kallo-border/30 sm:block"
-        aria-hidden="true"
+      <CalorieDial
+        goal={goal}
+        logged={totals.calories}
+        target={targets.calories}
+        variant="compact"
       />
-
-      {/* Macro progress bars */}
-      <div className="flex flex-1 flex-col gap-2 sm:gap-3">
-        {MACROS.map(({ key, label, color }) => {
-          const current = totals[key];
-          const target = targets[key];
-          const percent =
-            target > 0
-              ? Math.max(0, Math.min(100, (current / target) * 100))
-              : 0;
-
-          return (
-            <div key={key} className="flex items-center gap-3">
-              <span className="w-12 font-bold font-sans-display text-[10px] text-kallo-text-muted/70 uppercase tracking-wider sm:w-14">
-                {label}
-              </span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-kallo-track">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${percent}%` }}
-                  transition={{
-                    duration: 1,
-                    delay: 0.2,
-                    ease: 'easeOut',
-                  }}
-                  className="h-full rounded-full"
-                  style={{ backgroundColor: color }}
-                />
-              </div>
-              <span className="w-14 text-right font-sans-display text-[11px] text-kallo-text-muted tabular-nums sm:w-16">
-                {Math.round(current)}/{target}g
-              </span>
-            </div>
-          );
-        })}
+      <div className="min-w-[200px] flex-1">
+        <MacroDials
+          current={{
+            protein: totals.protein,
+            carbohydrate: totals.carbs,
+            fat: totals.fat,
+          }}
+          target={{
+            protein: targets.protein,
+            carbohydrate: targets.carbs,
+            fat: targets.fat,
+          }}
+          variant="compact"
+        />
       </div>
     </motion.div>
   );

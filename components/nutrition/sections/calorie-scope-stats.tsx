@@ -2,11 +2,11 @@
 
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { formatLocalizedNumber } from '@/lib/core/text/format-number';
 import type {
   CalorieAverages,
   NutritionDayScope,
 } from '@/lib/domain/nutrition/types';
-import { formatLocalizedNumber } from '../primitives/helpers';
 
 interface CalorieScopeStatsProps {
   averages: CalorieAverages;

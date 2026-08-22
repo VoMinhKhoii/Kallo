@@ -1,17 +1,19 @@
 'use client';
 
-import { Flame } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
-import { CalorieRing } from '@/components/shared/calorie-ring';
-import { MacroBars } from '@/components/shared/macro-bars';
+import { CalorieDial } from '@/components/shared/gauge/calorie-dial';
+import { MacroDials } from '@/components/shared/gauge/macro-dials';
 import type { MealEntry, NutritionData } from '@/lib/core/types/dashboard';
 import { cn } from '@/lib/core/ui/cn';
+import type { Goal } from '@/lib/domain/onboarding/types';
 import { MealList } from './meal-list';
 
 interface TodayDockProps {
   nutrition: NutritionData;
   meals: MealEntry[];
+  /** Which direction the user counts — the dial's headline follows it. */
+  goal: Goal | null;
   /** True while the input bar is streaming an analysis — the card leans in. */
   isStreaming?: boolean;
 }
@@ -19,104 +21,55 @@ interface TodayDockProps {
 export function TodayDock({
   nutrition,
   meals,
+  goal,
   isStreaming = false,
 }: TodayDockProps) {
   const t = useTranslations('dashboard');
-  const remaining = Math.max(
-    0,
-    nutrition.calories.target - nutrition.calories.current
-  );
-  const macroItems = [
-    {
-      label: t('protein'),
-      current: nutrition.protein.current,
-      target: nutrition.protein.target,
-      color: 'var(--kallo-macro-protein)',
-      unit: 'g' as const,
-    },
-    {
-      label: t('carbs'),
-      current: nutrition.carbs.current,
-      target: nutrition.carbs.target,
-      color: 'var(--kallo-macro-carbs)',
-      unit: 'g' as const,
-    },
-    {
-      label: t('fat'),
-      current: nutrition.fat.current,
-      target: nutrition.fat.target,
-      color: 'var(--kallo-macro-fat)',
-      unit: 'g' as const,
-    },
-  ];
 
-  // ONE flat solid card (the Flutter TodaySection redesign): calorie hero + ring,
-  // macro bars, and a plain meal list. Zones are separated by whitespace and a
-  // single hairline — not by nested tinted sub-panels. Stacks on mobile (like
-  // Flutter); on wide screens the meal list moves beside the summary so the
-  // short dashboard row stays legible.
+  // The day as one family of round marks: the calorie dial, then the same arc a
+  // third of the size in each macro's pigment. Nothing here is carded except
+  // the meals, so the zones are separated by a rhythm of whitespace — the
+  // Flutter dock's label 8 / block 20 / majorBreak 40 — rather than by nested
+  // fills. Stacks on mobile; on wide screens the meal list moves beside the
+  // dials so the short dashboard row stays legible.
   return (
     <motion.section
-      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45 }}
+      aria-label={t('today')}
       className={cn(
         'flex min-h-0 flex-col gap-4 rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-kallo-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-kallo-accent/50 hover:shadow-kallo-text/[0.06] hover:shadow-md xl:grid xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(240px,0.44fr)] xl:gap-5',
         isStreaming && 'border-kallo-accent/60'
       )}
-      aria-label={t('today')}
+      initial={{ opacity: 0, y: 10 }}
+      transition={{ duration: 0.45 }}
     >
-      <div className="flex min-w-0 flex-col justify-center">
-        {/* (a) Hero: calories-remaining number on the left, macro bars in the
-            middle (md+), ring on the right. On narrow screens the bars drop
-            below the hero instead. */}
-        <div className="flex items-center gap-4 md:gap-6">
-          <div className="min-w-0 shrink-0">
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-sans-display text-hero text-kallo-text tabular-nums">
-                {remaining.toLocaleString()}
-              </span>
-              <span className="font-sans-display text-kallo-text-muted text-sm">
-                / {nutrition.calories.target.toLocaleString()}
-              </span>
-            </div>
-            <p className="mt-1.5 text-kallo-text-muted text-xs">
-              {nutrition.calories.current.toLocaleString()}{' '}
-              {t('caloriesLogged')}
-            </p>
-          </div>
-
-          <div className="hidden min-w-0 flex-1 md:block">
-            <MacroBars items={macroItems} />
-          </div>
-
-          <div className="ml-auto shrink-0 md:ml-0">
-            <CalorieRing
-              current={nutrition.calories.current}
-              target={nutrition.calories.target}
-              size={80}
-              strokeWidth={5}
-              center={
-                <Flame
-                  className={cn(
-                    'h-6 w-6 text-kallo-accent',
-                    isStreaming && 'animate-pulse'
-                  )}
-                />
-              }
-            />
-          </div>
-        </div>
-
-        {/* (b) Macro bars — full width under the hero on narrow screens. */}
-        <div className="mt-4 md:hidden">
-          <MacroBars items={macroItems} />
+      <div className="flex min-w-0 flex-col items-center justify-center">
+        <CalorieDial
+          goal={goal}
+          logged={nutrition.calories.current}
+          target={nutrition.calories.target}
+        />
+        {/* 20px: the dials qualify the figure above them, so they sit closer
+            than the 40px break that separates today's numbers from the meals
+            behind them. */}
+        <div className="mt-5 w-full">
+          <MacroDials
+            current={{
+              protein: nutrition.protein.current,
+              carbohydrate: nutrition.carbs.current,
+              fat: nutrition.fat.current,
+            }}
+            target={{
+              protein: nutrition.protein.target,
+              carbohydrate: nutrition.carbs.target,
+              fat: nutrition.fat.target,
+            }}
+          />
         </div>
       </div>
 
-      {/* (c) Meal list — plain, on the card surface (no nested fill). A hairline
-          separates it from the summary: horizontal when stacked, vertical when
-          the list sits beside the summary on wide screens. */}
+      {/* The meals behind those numbers. A hairline separates them: horizontal
+          when stacked, vertical when the list sits beside the dials. */}
       <div className="min-h-0 border-kallo-border/50 border-t pt-4 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-5">
         <MealList meals={meals} />
       </div>

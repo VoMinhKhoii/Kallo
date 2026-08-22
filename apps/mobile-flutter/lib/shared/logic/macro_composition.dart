@@ -79,11 +79,15 @@ Composition compositionFromKcal(Map<String, double> kcalByKey) {
 /// weight it reads about half the slice its energy earns. A null macro counts
 /// as zero rather than collapsing the bar — a meal missing one figure still
 /// shows the shape of the two it has.
-Composition compositionFromGrams({
-  required double? protein,
-  required double? carbohydrate,
-  required double? fat,
-}) {
+/// Grams per macro — the one shape every nutrition primitive speaks, so a
+/// caller drawing both the bar and the figures under it spells the three field
+/// names once instead of at each of them.
+typedef MacroGrams = ({double? protein, double? carbohydrate, double? fat});
+
+Composition compositionFromGrams(MacroGrams macros) {
+  final protein = macros.protein;
+  final carbohydrate = macros.carbohydrate;
+  final fat = macros.fat;
   final grams = <String, double?>{
     'protein': protein,
     'carbohydrate': carbohydrate,

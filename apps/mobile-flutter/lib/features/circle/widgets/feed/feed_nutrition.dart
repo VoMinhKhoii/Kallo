@@ -14,15 +14,19 @@ class FeedNutrition extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final composition = compositionFromGrams(
+    // Spelled once: the bar and the figures under it read the same record.
+    final macros = (
       protein: meal.proteinG,
       carbohydrate: meal.carbohydrateG,
       fat: meal.fatG,
     );
+    final composition = compositionFromGrams(macros);
     final kcal = meal.caloriesKcal;
     // Nothing measured at all — draw nothing rather than a row of dashes over
     // an empty bar.
-    if (kcal == null && composition.totalKcal <= 0) return const SizedBox.shrink();
+    if (kcal == null && composition.totalKcal <= 0) {
+      return const SizedBox.shrink();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,11 +53,7 @@ class FeedNutrition extends StatelessWidget {
           CompositionBar.compact(segments: composition.segments),
           const SizedBox(height: kFeedTight),
         ],
-        MacroScale(
-          protein: meal.proteinG,
-          carbohydrate: meal.carbohydrateG,
-          fat: meal.fatG,
-        ),
+        MacroScale(macros: macros),
       ],
     );
   }

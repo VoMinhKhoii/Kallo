@@ -22,18 +22,12 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 
 class MacroScale extends StatelessWidget {
-  const MacroScale({
-    required this.protein,
-    required this.carbohydrate,
-    required this.fat,
-    super.key,
-  });
+  const MacroScale({required this.macros, super.key});
 
-  /// Grams. Null is a macro that was never measured, and shows as an em dash
-  /// rather than a confident zero.
-  final double? protein;
-  final double? carbohydrate;
-  final double? fat;
+  /// The same record [compositionFromGrams] takes, so a row drawing both reads
+  /// one shape. Null is a macro that was never measured, and shows as an em
+  /// dash rather than a confident zero.
+  final MacroGrams macros;
 
   static String _grams(double? value) =>
       value == null ? '—' : '${value.round()}g';
@@ -45,9 +39,9 @@ class MacroScale extends StatelessWidget {
   };
 
   double? _gramsFor(String key) => switch (key) {
-    'protein' => protein,
-    'carbohydrate' => carbohydrate,
-    _ => fat,
+    'protein' => macros.protein,
+    'carbohydrate' => macros.carbohydrate,
+    _ => macros.fat,
   };
 
   @override

@@ -1,13 +1,10 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
+import { formatLocalizedNumber } from '@/lib/core/text/format-number';
 import { cn } from '@/lib/core/ui/cn';
 import type { NutrientCardData } from '@/lib/domain/nutrition/types';
-import {
-  formatLocalizedNumber,
-  isLowConfidence,
-  shouldShowExceed,
-} from '../primitives/helpers';
+import { isLowConfidence, shouldShowExceed } from '../primitives/helpers';
 import { TargetProgressBar } from '../primitives/target-progress-bar';
 
 interface NutrientGridCardProps {
