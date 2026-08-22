@@ -52,22 +52,6 @@ String formatElapsed(DateTime value, {DateTime? now, required String locale}) {
   return '$amount$englishUnit ago';
 }
 
-/// The clock time a meal was logged, in the VIEWER's zone.
-///
-/// The feed is already grouped by day, so an elapsed span next to the author
-/// repeated a fact the separator above had just stated — and buried the one it
-/// had not: what time of day the meal was eaten.
-///
-/// This reads [CircleFeedMeal.sharedAt] rather than the server's `loggedAt`,
-/// which is not exported to the client and would be the wrong field anyway:
-/// `loggedAt` carries the chosen local DATE stamped with the time-of-day the
-/// meal was ANALYZED, so for a backfill its clock time is meaningless. sharedAt
-/// is set within minutes of analysis for a real-time log, and the one case
-/// where the two diverge — a backfilled share — already hides the timestamp
-/// altogether.
-String formatLoggedTime(DateTime value, {required String locale}) =>
-    DateFormat.jm(locale).format(value.toLocal());
-
 /// Viewer-local calendar-day identity used to group adjacent feed entries.
 String threadDayKey(DateTime value) {
   final local = value.toLocal();

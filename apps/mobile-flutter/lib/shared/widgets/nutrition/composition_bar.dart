@@ -23,6 +23,19 @@ class CompositionBar extends StatelessWidget {
     super.key,
   });
 
+  /// The variant for a surface that repeats the bar down a LIST — the Circle
+  /// feed, the dashboard's meal rows — rather than drawing one per screen.
+  ///
+  /// Shorter, gapped and softened, because the same mark at full weight read as
+  /// candy stripes once it appeared on every row. Height is a trade in both
+  /// directions: at 4 the bar is 80:1 and reads as a decorative rule under the
+  /// calorie figure rather than as a composition; 6 keeps it quiet while still
+  /// reading as three parts of something.
+  const CompositionBar.compact({required this.segments, super.key})
+    : height = 6,
+      gap = 2,
+      opacity = 0.8;
+
   final List<CompositionSegment> segments;
   final double height;
 

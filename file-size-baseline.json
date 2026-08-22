@@ -1,5 +1,5 @@
 {
-  "note": "Ratchet baseline for scripts/ci/check-structure. Frozen legacy violations: may shrink, never grow. Do not add entries by hand — split the file or the folder instead (see AGENTS.md \"File & Folder Organization\").",
+  "note": "Ratchet baseline for scripts/ci/check-structure. Frozen legacy violations: may shrink, never grow. Do not add entries by hand \u2014 split the file or the folder instead (see AGENTS.md \"File & Folder Organization\").",
   "files": {
     "apps/mobile-flutter/lib/features/onboarding/widgets/onboarding_wizard.dart": 691,
     "apps/mobile-flutter/lib/features/settings/screens/body_metrics.dart": 646,
@@ -9,8 +9,6 @@
     "apps/mobile-flutter/lib/features/settings/widgets/profile/profile_form.dart": 518,
     "components/logging/sidebar/mobile-timeline-picker.tsx": 502,
     "apps/mobile-flutter/lib/features/dashboard/widgets/heatmap/adherence_heatmap.dart": 502,
-    "apps/mobile-flutter/lib/features/dashboard/screens/dashboard_screen.dart": 463,
-    "apps/mobile-flutter/lib/features/dashboard/widgets/today/today_section.dart": 424,
     "apps/mobile-flutter/lib/features/settings/widgets/inputs/country_select.dart": 419,
     "apps/mobile-flutter/lib/features/circle/screens/connect_screen.dart": 411,
     "components/onboarding/wizard-shell.tsx": 387,

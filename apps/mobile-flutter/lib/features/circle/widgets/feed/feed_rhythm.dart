@@ -18,18 +18,3 @@ import '../../../../theme/kallo_theme.dart';
 /// either side of it. Adding a [SizedBox] there would render as ~26.
 const double kFeedTight = KalloSpacing.sp1; // 4
 const double kFeedStandard = KalloSpacing.sp2; // 8
-
-/// How much of the nutrition page's bar this surface spends.
-///
-/// That page draws one bar per screen; the feed draws one per post, so the same
-/// mark repeated down a list read as candy stripes at full weight. A shorter
-/// bar, a visible gutter between segments, and pigment pulled back toward the
-/// page — the three knobs to reach for if it reads heavy, before touching the
-/// palette itself.
-///
-/// Height is a trade in both directions: at 4 the bar is 80:1 and reads as a
-/// decorative rule under the calorie figure rather than as a composition; 6
-/// keeps it quiet while still reading as three parts of something.
-const double kFeedBarHeight = 6;
-const double kFeedBarGap = 2;
-const double kFeedBarOpacity = 0.8;

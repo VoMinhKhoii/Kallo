@@ -9,39 +9,21 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../theme/kallo_colors.dart';
-import '../../../../theme/kallo_theme.dart';
-import '../../../logging/data/logging_providers.dart' show pendingMealProvider;
-import '../../../logging/widgets/macros/count_up.dart';
 import '../../data/dashboard_providers.dart';
 import '../../data/logging_day.dart';
 import '../../../../shared/logic/display_format.dart';
 import '../../logic/dashboard_spacing.dart';
-import '../../../../shared/widgets/calorie_ring/calorie_ring.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../chrome/section_header.dart';
 import '../states/card_skeletons.dart';
-import 'today_macro_rows.dart';
+import 'dock_targets.dart';
+import 'fade_in_down.dart';
+import 'today_calorie_dial.dart';
+import 'today_macro_dials.dart';
+import 'today_first_run.dart';
 import 'today_meal_list.dart';
-
-/// Per-screen dock targets (profile values, with the web DEFAULT_PROFILE
-/// fallbacks applied by the screen).
-class DockTargets {
-  const DockTargets({
-    required this.calorieTarget,
-    required this.proteinTargetG,
-    required this.carbsTargetG,
-    required this.fatTargetG,
-  });
-
-  final double calorieTarget;
-  final double proteinTargetG;
-  final double carbsTargetG;
-  final double fatTargetG;
-}
 
 class TodaySection extends ConsumerWidget {
   const TodaySection({
@@ -69,7 +51,7 @@ class TodaySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (isFirstRun) return const _FirstRunCard();
+    if (isFirstRun) return const FirstRunCard();
 
     // Today reads the bundle's day slice (warm cache, seam parity with the rest
     // of the dashboard); any other day fetches its own slice so browsing never
@@ -95,107 +77,6 @@ class TodaySection extends ConsumerWidget {
   }
 }
 
-/// First-run collapse: a single Lora question, no ring, no "% on track", plus
-/// three time-of-day-aware suggestion chips that open the meal composer
-/// prefilled. Shown only when the user has never logged a meal (zero today
-/// AND zero history).
-class _FirstRunCard extends ConsumerWidget {
-  const _FirstRunCard();
-
-  /// Which suggestion set fits the device clock (morning / midday / evening).
-  static String _chipBucket() => switch (DateTime.now().hour) {
-    < 11 => 'morning',
-    < 16 => 'midday',
-    _ => 'evening',
-  };
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final bucket = _chipBucket();
-    final suggestions = [
-      for (var i = 1; i <= 3; i++) tr('dashboard.firstRunChips.$bucket$i'),
-    ];
-    // Park the text for the feed to claim, then land on it (as the FAB does).
-    void openWithMeal(String meal) {
-      ref.read(pendingMealProvider.notifier).state = meal;
-      context.go('/logging');
-    }
-
-    return _FadeInDown(
-      child: Container(
-        width: double.infinity,
-        // Deliberately NOT DashboardSpacing.card: this is the one editorial
-        // empty state (serif question + hint + chips) and its air is the point.
-        padding: const EdgeInsets.symmetric(
-          vertical: KalloSpacing.sp6,
-          horizontal: KalloSpacing.sp4,
-        ),
-        decoration: BoxDecoration(
-          color: kCardSurface,
-          borderRadius: BorderRadius.circular(kCardRadius),
-          boxShadow: kCardShadows,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(tr('dashboard.firstRunQuestion'), style: dashHeadline()),
-            const SizedBox(height: DashboardSpacing.row * 2),
-            Text(
-              tr('dashboard.firstRunHint'),
-              style: dashBody(color: kInkMuted),
-            ),
-            const SizedBox(height: DashboardSpacing.section),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final s in suggestions)
-                  _FirstRunChip(label: s, onTap: () => openWithMeal(s)),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A suggestion pill matching the logging empty-state chips: border hairline,
-/// pill radius, white fill; pressed → accent-tinged border.
-class _FirstRunChip extends StatefulWidget {
-  const _FirstRunChip({required this.label, required this.onTap});
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  State<_FirstRunChip> createState() => _FirstRunChipState();
-}
-
-class _FirstRunChipState extends State<_FirstRunChip> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: _pressed ? KalloColors.border15 : KalloColors.elev,
-          borderRadius: BorderRadius.circular(KalloRadii.pill),
-          border: Border.all(
-            color: _pressed ? KalloColors.accent50 : KalloColors.borderSoft,
-          ),
-        ),
-        child: Text(widget.label, style: dashMeta(color: kInk)),
-      ),
-    );
-  }
-}
-
 class _Dock extends StatelessWidget {
   const _Dock({
     required this.day,
@@ -209,7 +90,6 @@ class _Dock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final locale = context.locale.toString();
     final meals = [...day.persistedMeals]
       ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
 
@@ -224,200 +104,87 @@ class _Dock extends StatelessWidget {
       totalFat += m.nutrition.fatG ?? 0;
     }
     final calories = round0(totalCalories);
-    // Honest signed remaining — negative when over target (no censoring clamp).
-    final remaining = (targets.calorieTarget - calories).round();
-    final overTarget = remaining < 0;
 
-    final macroBars = <MacroBarData>[
-      MacroBarData(
-        tr('dashboard.protein'),
-        round0(totalProtein),
-        targets.proteinTargetG.round(),
-        KalloColors.macroProtein,
+    final macroDials = <MacroDialData>[
+      MacroDialData(
+        compositionKey: 'protein',
+        label: tr('dashboard.protein'),
+        current: round0(totalProtein),
+        target: targets.proteinTargetG.round(),
       ),
-      MacroBarData(
-        tr('dashboard.carbs'),
-        round0(totalCarbs),
-        targets.carbsTargetG.round(),
-        KalloColors.macroCarbs,
+      MacroDialData(
+        compositionKey: 'carbohydrate',
+        label: tr('dashboard.carbs'),
+        current: round0(totalCarbs),
+        target: targets.carbsTargetG.round(),
       ),
-      MacroBarData(
-        tr('dashboard.fat'),
-        round0(totalFat),
-        targets.fatTargetG.round(),
-        KalloColors.macroFat,
+      MacroDialData(
+        compositionKey: 'fat',
+        label: tr('dashboard.fat'),
+        current: round0(totalFat),
+        target: targets.fatTargetG.round(),
       ),
     ];
 
-    return _FadeInDown(
+    return FadeInDown(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Section header OUTSIDE the card — label left, day right. Same
-          // eyebrow treatment + flush alignment as the Progress / Consistency
-          // headers so all three sections share one rhythm (12px title→card).
+          // Which day this is showing. The calorie eyebrow that used to sit
+          // beside it is gone — the dial's own readout now names its figure —
+          // but the date stays: the dock pages to other days, and nothing else
+          // inside it says which one you are looking at.
           Padding(
-            padding: const EdgeInsets.only(bottom: DashboardSpacing.block),
+            padding: const EdgeInsets.only(bottom: DashboardSpacing.label),
+            child: Text(dateLabel.toUpperCase(), style: dashMeta()),
+          ),
+
+          // (a) The calorie dial, straight on the canvas. No card: the arc
+          // draws its own shape, and a border around a round mark only fenced
+          // it in.
+          TodayCalorieDial(
+            logged: calories.toDouble(),
+            target: targets.calorieTarget,
+            goal: targets.goal,
+          ),
+
+          const SizedBox(height: DashboardSpacing.block),
+
+          // (b) The three macros, the same dial a third of the size.
+          MacroDialRow(macros: macroDials),
+
+          const SizedBox(height: DashboardSpacing.majorBreak),
+
+          // (c) The meals behind those numbers — the one place on the section
+          // that still takes a card, because a list needs an edge to sit on.
+          Padding(
+            padding: const EdgeInsets.only(bottom: DashboardSpacing.label),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Flexible(
-                  child: Text(
-                    (overTarget
-                            ? tr('dashboard.caloriesOverTarget')
-                            : tr('dashboard.caloriesRemaining'))
-                        .toUpperCase(),
-                    style: dashMeta(),
+                Text(tr('dashboard.recentMeals').toUpperCase(), style: dashMeta()),
+                Text(
+                  tr(
+                    'dashboard.mealsLogged',
+                    namedArgs: {'count': '${meals.length}'},
                   ),
+                  style: dashMeta(),
                 ),
-                Text(dateLabel.toUpperCase(), style: dashMeta()),
               ],
             ),
           ),
           Container(
-            padding: DashboardSpacing.card,
+            padding: meals.isEmpty
+                ? DashboardSpacing.card
+                : DashboardSpacing.rowCard,
             decoration: BoxDecoration(
-              color: kCardSurface, // solid white
+              color: kCardSurface,
               borderRadius: BorderRadius.circular(kCardRadius),
-              boxShadow: kCardShadows, // shadow only, no border
+              boxShadow: kCardShadows,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // (a) Hero: big calories number on the left, ring on the right.
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Flexible(
-                                // Counts the remaining figure up on day-swap
-                                // (~300ms) so paging settles in place.
-                                child: CountUpText(
-                                  value: remaining.abs().toDouble(),
-                                  enabled:
-                                      !MediaQuery.disableAnimationsOf(context),
-                                  duration: const Duration(milliseconds: 300),
-                                  style: dashHero(),
-                                  format: (v) => _fmt(v.round(), locale),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                overTarget
-                                    ? tr('dashboard.over')
-                                    : '/ ${_fmt(targets.calorieTarget.round(), locale)}',
-                                style: dashBody(color: kInkMuted),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: DashboardSpacing.row),
-                          Text(
-                            '${_fmt(calories, locale)} ${tr('dashboard.caloriesLogged')}',
-                            style: dashMeta(color: kInkMuted),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: KalloSpacing.sp4),
-                    CalorieRing.refilling(
-                      current: calories.toDouble(),
-                      target: targets.calorieTarget,
-                      size: 84, // an illustration, not an icon
-                      strokeWidth: 6,
-                      center: const Icon(
-                        LucideIcons.flame300,
-                        size: KalloIcons.size,
-                        color: kInk,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: DashboardSpacing.section),
-
-                // (b) Macro bars — full width.
-                for (var i = 0; i < macroBars.length; i++) ...[
-                  if (i > 0) const SizedBox(height: DashboardSpacing.row * 2),
-                  MacroRow(bar: macroBars[i], idx: i),
-                ],
-
-                const _Separator(),
-
-                // (c) Meal list — plain, on the card surface (no nested fill).
-                meals.isEmpty ? const EmptyMeals() : MealList(meals: meals),
-              ],
-            ),
+            child: meals.isEmpty ? const EmptyMeals() : MealList(meals: meals),
           ),
         ],
-      ),
-    );
-  }
-
-  // Locale-aware thousands grouping (en → "2,000", vi → "2.000").
-  static String _fmt(int n, String locale) => formatCount(n, locale);
-}
-
-/// A hairline divider between the card's zones (hero · macros · meals).
-/// Full content-width (stretched by the card Column) so it lines up with every
-/// row's left/right edges.
-class _Separator extends StatelessWidget {
-  const _Separator();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 1,
-    margin: const EdgeInsets.symmetric(vertical: DashboardSpacing.section),
-    color: kHairline, // the one border colour
-  );
-}
-
-/// motion.section initial {opacity:0,y:10} → {1,0} over 0.45s.
-class _FadeInDown extends StatefulWidget {
-  const _FadeInDown({required this.child});
-  final Widget child;
-
-  @override
-  State<_FadeInDown> createState() => _FadeInDownState();
-}
-
-class _FadeInDownState extends State<_FadeInDown>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 450),
-  )..forward();
-
-  late final Animation<double> _opacity = CurvedAnimation(
-    parent: _c,
-    curve: Curves.easeOut,
-  );
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _opacity,
-      child: AnimatedBuilder(
-        animation: _opacity,
-        builder:
-            (context, child) => Transform.translate(
-              offset: Offset(0, 10 * (1 - _opacity.value)),
-              child: child,
-            ),
-        child: widget.child,
       ),
     );
   }
