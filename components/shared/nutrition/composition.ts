@@ -36,6 +36,15 @@ export const COMPOSITION_ICONS: Record<CompositionKey, LucideIcon> = {
   fat: Droplet,
 };
 
+/**
+ * Grams per macro — the one shape every nutrition primitive speaks, so a caller
+ * spells the three field names once instead of at each of them.
+ */
+export type MacroGrams = Record<CompositionKey, number>;
+
+/** The same record as it arrives from a meal: any macro may be unmeasured. */
+export type MacroGramsInput = Record<CompositionKey, number | null | undefined>;
+
 export interface CompositionSegment {
   key: CompositionKey;
   /** Share of the total, 0–100. */
@@ -48,7 +57,7 @@ export interface Composition {
 }
 
 /** Splits already-computed per-macro calories into percentage segments. */
-export function compositionFromKcal(
+function compositionFromKcal(
   kcalByKey: Record<CompositionKey, number>
 ): Composition {
   const totalKcal = COMPOSITION_KEYS.reduce(
@@ -73,11 +82,7 @@ export function compositionFromKcal(
  * zero rather than collapsing the bar — a meal missing one figure still shows
  * the two it has.
  */
-export function compositionFromGrams(grams: {
-  protein: number | null | undefined;
-  carbohydrate: number | null | undefined;
-  fat: number | null | undefined;
-}): Composition {
+export function compositionFromGrams(grams: MacroGramsInput): Composition {
   return compositionFromKcal({
     protein: (grams.protein ?? 0) * KCAL_PER_GRAM.protein,
     carbohydrate: (grams.carbohydrate ?? 0) * KCAL_PER_GRAM.carbohydrate,

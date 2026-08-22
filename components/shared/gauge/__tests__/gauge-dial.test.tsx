@@ -1,6 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { GaugeDial, gaugeLine } from '../gauge-dial';
+import { gaugeHeight } from '@/lib/core/ui/gauge-arc-geometry';
+import { gaugeReadoutLayout } from '@/lib/core/ui/gauge-readout-layout';
+import { GaugeDial } from '../gauge-dial';
+import { gaugeLine } from '../gauge-lines';
 
 function renderDial(progress: number) {
   return render(
@@ -26,22 +29,16 @@ describe('GaugeDial', () => {
     expect(screen.getByText('1,259/2,000 left')).toBeInTheDocument();
   });
 
-  it('centres the second line on the arc tips', () => {
-    renderDial(0.37);
-
-    // radius 104 → tips at 104 + 52 = 156 from the top of the box. The hero is
-    // 44 tall and the gap 2, so the stack starts at 156 − 20/2 − 2 − 44 = 100
-    // and the body's own middle lands back on 156.
-    const stack = screen.getByText('741').parentElement as HTMLElement;
-    expect(stack.style.paddingTop).toBe('100px');
-  });
-
-  it('reserves room for a line that hangs below the arc', () => {
+  it('places the readout where the layout rule says', () => {
     const { container } = renderDial(0.37);
+    // The rule itself is `gaugeReadoutLayout`'s, and tested there. What this
+    // asserts is that the component actually applies its answer.
+    const layout = gaugeReadoutLayout(104, [44, 20, 16]);
 
-    // gaugeHeight(104) is 169; the readout runs to 100 + 44 + 2 + 20 + 2 + 16
-    // = 184, and the box has to be the taller of the two.
+    const stack = screen.getByText('741').parentElement as HTMLElement;
+    expect(stack.style.paddingTop).toBe(`${layout.readoutTop}px`);
     const box = container.firstElementChild as HTMLElement;
-    expect(box.style.minHeight).toBe('184px');
+    expect(box.style.minHeight).toBe(`${layout.height}px`);
+    expect(layout.height).toBeGreaterThan(gaugeHeight(104));
   });
 });

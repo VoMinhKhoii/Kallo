@@ -31,11 +31,13 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
   const { friend, meal } = entry;
 
   const label = entry.isSelf ? tWall('you') : labelFor(friend);
-  const composition = compositionFromGrams({
+  // Spelled once: the bar and the figures under it read the same record.
+  const grams = {
     protein: meal.proteinG,
     carbohydrate: meal.carbohydrateG,
     fat: meal.fatG,
-  });
+  };
+  const composition = compositionFromGrams(grams);
   // Nothing measured at all — draw nothing rather than a row of dashes over an
   // empty bar.
   const hasNutrition = meal.caloriesKcal != null || composition.totalKcal > 0;
@@ -86,11 +88,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                 variant="compact"
               />
             )}
-            <MacroScale
-              carbohydrate={meal.carbohydrateG}
-              fat={meal.fatG}
-              protein={meal.proteinG}
-            />
+            <MacroScale grams={grams} />
           </div>
         )}
         <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[#6E6D66] text-[11.5px] tabular-nums">

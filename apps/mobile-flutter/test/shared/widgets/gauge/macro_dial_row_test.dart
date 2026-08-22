@@ -1,50 +1,81 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/shared/widgets/gauge/macro_dial_row.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/gauge_arc_geometry.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/rounded_gauge_arc.dart';
 
+import '../../../l10n_test_loader.dart';
+
 /// The dock's real width on a 390pt phone, less the page's 16pt inset.
 const double _dockWidth = 358;
 
-const _macros = [
-  MacroDialData(
-    compositionKey: 'protein',
-    label: 'Protein',
-    current: 42,
-    target: 140,
-  ),
-  MacroDialData(
-    compositionKey: 'carbohydrate',
-    label: 'Carbs',
-    current: 96,
-    target: 220,
-  ),
-  MacroDialData(compositionKey: 'fat', label: 'Fat', current: 21, target: 62),
-];
+const _current = {'protein': 42, 'carbohydrate': 96, 'fat': 21};
+const _target = {'protein': 140, 'carbohydrate': 220, 'fat': 62};
 
-Widget _wrap(Widget child, {double textScale = 1.0, double width = _dockWidth}) =>
-    MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
-        child: Scaffold(
-          body: Center(child: SizedBox(width: width, child: child)),
+Widget _wrap(
+  Widget child, {
+  double textScale = 1.0,
+  double width = _dockWidth,
+}) => EasyLocalization(
+  supportedLocales: const [Locale('en')],
+  path: 'assets/l10n',
+  fallbackLocale: const Locale('en'),
+  assetLoader: const FsL10nLoader(),
+  child: Builder(
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
+            child: Scaffold(
+              body: Center(child: SizedBox(width: width, child: child)),
+            ),
+          ),
         ),
-      ),
-    );
+  ),
+);
 
 /// Drain the dials' entrance sweep so nothing is left pending at teardown.
-Future<void> _pump(WidgetTester tester, {double textScale = 1.0, double width = _dockWidth}) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  double textScale = 1.0,
+  double width = _dockWidth,
+}) async {
   await tester.pumpWidget(
-    _wrap(const MacroDialRow(macros: _macros), textScale: textScale, width: width),
+    _wrap(
+      const MacroDialRow(current: _current, target: _target),
+      textScale: textScale,
+      width: width,
+    ),
   );
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('shows each macro against its target', (tester) async {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/shared_preferences'),
+          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
+        );
+    await EasyLocalization.ensureInitialized();
+  });
+
+  testWidgets('shows each macro against its target, named by the row', (
+    tester,
+  ) async {
     await _pump(tester);
+    // The row reads its own labels — a caller hands over figures, not copy.
+    expect(find.text('PROTEIN'), findsOneWidget);
+    expect(find.text('CARBS'), findsOneWidget);
+    expect(find.text('FAT'), findsOneWidget);
     expect(find.text('42g'), findsOneWidget);
     expect(find.text('/140g'), findsOneWidget);
     expect(find.text('96g'), findsOneWidget);
@@ -58,7 +89,8 @@ void main() {
     final arc = tester.getRect(find.byType(RoundedGaugeArc).first);
     // The dial is drawn with its arc flush to the top of its box, so the tips
     // are one radius down plus the drop to them.
-    final tipLine = arc.top + kMacroDialRadius + gaugeTipOffset(kMacroDialRadius);
+    final tipLine =
+        arc.top + kMacroDialRadius + gaugeTipOffset(kMacroDialRadius);
     expect(
       tester.getRect(find.text('/140g')).center.dy,
       closeTo(tipLine, 1),
@@ -66,10 +98,13 @@ void main() {
     );
   });
 
-  testWidgets('holds that alignment at the 1.3 Dynamic Type cap', (tester) async {
+  testWidgets('holds that alignment at the 1.3 Dynamic Type cap', (
+    tester,
+  ) async {
     await _pump(tester, textScale: 1.3);
     final arc = tester.getRect(find.byType(RoundedGaugeArc).first);
-    final tipLine = arc.top + kMacroDialRadius + gaugeTipOffset(kMacroDialRadius);
+    final tipLine =
+        arc.top + kMacroDialRadius + gaugeTipOffset(kMacroDialRadius);
     expect(tester.getRect(find.text('/140g')).center.dy, closeTo(tipLine, 1));
     expect(tester.takeException(), isNull);
   });
@@ -83,7 +118,9 @@ void main() {
     expect(arc.width, kMacroDialRadius * 2);
   });
 
-  testWidgets('shrinks rather than overflowing when narrower still', (tester) async {
+  testWidgets('shrinks rather than overflowing when narrower still', (
+    tester,
+  ) async {
     await _pump(tester, width: 240);
     expect(tester.takeException(), isNull);
     final arc = tester.getRect(find.byType(RoundedGaugeArc).first);

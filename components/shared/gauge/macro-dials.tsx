@@ -1,10 +1,14 @@
 'use client';
 
-import { GaugeDial, gaugeLine } from '@/components/shared/gauge/gauge-dial';
+import { useTranslations } from 'next-intl';
+import { GaugeDial } from '@/components/shared/gauge/gauge-dial';
+import { gaugeLine } from '@/components/shared/gauge/gauge-lines';
 import {
   COMPOSITION_COLORS,
   COMPOSITION_ICONS,
+  COMPOSITION_KEYS,
   type CompositionKey,
+  type MacroGrams,
 } from '@/components/shared/nutrition/composition';
 
 /**
@@ -24,23 +28,36 @@ import {
  * Mirrors `apps/mobile-flutter/lib/shared/widgets/gauge/macro_dial_row.dart`.
  */
 
-export const MACRO_DIAL_RADIUS = 44;
+const MACRO_DIAL_RADIUS = 44;
 export const COMPACT_MACRO_DIAL_RADIUS = 30;
 
-export interface MacroDialDatum {
-  /** Picks the glyph and the pigment. */
-  key: CompositionKey;
-  label: string;
-  current: number;
-  target: number;
-}
+/** The label each dial wears, in the namespace every surface already reads. */
+const LABEL_KEY: Record<CompositionKey, string> = {
+  protein: 'protein',
+  carbohydrate: 'carbs',
+  fat: 'fat',
+};
 
 interface MacroDialsProps {
-  macros: MacroDialDatum[];
+  /** Grams eaten so far. */
+  current: MacroGrams;
+  /** Grams the day is aiming at. */
+  target: MacroGrams;
   variant?: 'full' | 'compact';
 }
 
-export function MacroDials({ macros, variant = 'full' }: MacroDialsProps) {
+/**
+ * The row owns the keys, the pigments, the glyphs AND the labels, so a surface
+ * that wants dials hands over two records and nothing else. Every caller used
+ * to spell the same three-row table itself, which is three chances to disagree
+ * about what "carbs" is called.
+ */
+export function MacroDials({
+  current,
+  target,
+  variant = 'full',
+}: MacroDialsProps) {
+  const t = useTranslations('dashboard');
   const radius =
     variant === 'full' ? MACRO_DIAL_RADIUS : COMPACT_MACRO_DIAL_RADIUS;
 
@@ -51,16 +68,35 @@ export function MacroDials({ macros, variant = 'full' }: MacroDialsProps) {
     // they wrap instead, which costs a line of height only where there was
     // never room for the row.
     <div className="flex flex-wrap items-start justify-center gap-x-2 gap-y-3">
-      {macros.map((macro) => (
-        <MacroDial data={macro} key={macro.key} radius={radius} />
+      {COMPOSITION_KEYS.map((key) => (
+        <MacroDial
+          current={current[key]}
+          dialKey={key}
+          key={key}
+          label={t(LABEL_KEY[key])}
+          radius={radius}
+          target={target[key]}
+        />
       ))}
     </div>
   );
 }
 
-function MacroDial({ data, radius }: { data: MacroDialDatum; radius: number }) {
-  const color = COMPOSITION_COLORS[data.key];
-  const Icon = COMPOSITION_ICONS[data.key];
+function MacroDial({
+  dialKey,
+  label,
+  current,
+  target,
+  radius,
+}: {
+  dialKey: CompositionKey;
+  label: string;
+  current: number;
+  target: number;
+  radius: number;
+}) {
+  const color = COMPOSITION_COLORS[dialKey];
+  const Icon = COMPOSITION_ICONS[dialKey];
 
   return (
     <div className="flex flex-col items-center">
@@ -72,15 +108,15 @@ function MacroDial({ data, radius }: { data: MacroDialDatum; radius: number }) {
           className="h-3.5 w-3.5 shrink-0"
           style={{ color }}
         />
-        <span className="eyebrow whitespace-nowrap">{data.label}</span>
+        <span className="eyebrow whitespace-nowrap">{label}</span>
       </div>
       <div className="mt-0.5">
         <GaugeDial
           fill={color}
-          primary={gaugeLine('value', `${Math.round(data.current)}g`)}
-          progress={data.target > 0 ? data.current / data.target : 0}
+          primary={gaugeLine('value', `${Math.round(current)}g`)}
+          progress={target > 0 ? current / target : 0}
           radius={radius}
-          secondary={gaugeLine('meta', `/${Math.round(data.target)}g`)}
+          secondary={gaugeLine('meta', `/${Math.round(target)}g`)}
         />
       </div>
     </div>

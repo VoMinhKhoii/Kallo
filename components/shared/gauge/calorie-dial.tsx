@@ -1,21 +1,22 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { GaugeDial, gaugeLine } from '@/components/shared/gauge/gauge-dial';
+import { GaugeDial } from '@/components/shared/gauge/gauge-dial';
+import { gaugeLine } from '@/components/shared/gauge/gauge-lines';
+import {
+  type CalorieFraming,
+  calorieReadout,
+} from '@/lib/domain/nutrition/calorie-readout';
 import type { Goal } from '@/lib/domain/onboarding/types';
 
 /**
  * The calorie dial: the 240° arc with the day's figures in its mouth.
  *
- * WHICH figure is the headline depends on the user's goal. Cutting counts DOWN
- * — what is left is the number they act on — and everyone else counts UP,
- * because a bulking or maintaining user is trying to reach a figure, not stay
- * under one. Both numbers are always on screen; only the hierarchy moves, so
- * the layout never shifts when a user changes goal.
- *
- * A cutter is never shown a negative. Past target the headline reads 0 and the
- * overshoot is carried by the line underneath — the deficit is spent, and
- * "−341 remaining" is a riddle where "0" is a fact.
+ * WHICH figure leads is `calorieReadout`'s decision, not this file's — see
+ * `lib/domain/nutrition/calorie-readout.ts` for the goal rule and why a cutter
+ * is never shown a negative. This component's own job is the two axes of
+ * PRESENTATION: the readout's framing picks the words, and the variant picks
+ * how many of them there is room for.
  *
  * The arc FILLS with consumption for every goal. Draining it for cutters was
  * considered and dropped: it would make "exactly on target" and "800 over"
@@ -52,6 +53,20 @@ interface CalorieDialProps {
   variant?: 'full' | 'compact';
 }
 
+/**
+ * The word under the headline, per framing and per how much room there is.
+ *
+ * A table rather than a branch: the framing and the variant are independent
+ * questions, and multiplying them into conditionals is what made this
+ * unreadable the first time.
+ */
+const UNIT_KEY = {
+  remaining: { full: 'kcalRemaining', compact: 'remainingShort' },
+  logged: { full: 'caloriesLogged', compact: 'loggedShort' },
+} as const satisfies Record<CalorieFraming, Record<Variant, string>>;
+
+type Variant = 'full' | 'compact';
+
 export function CalorieDial({
   logged,
   target,
@@ -61,55 +76,37 @@ export function CalorieDial({
   const t = useTranslations('dashboard');
   const locale = useLocale();
   const format = (value: number) => Math.round(value).toLocaleString(locale);
-  const remaining = Math.round(target - logged);
 
-  const full = variant === 'full';
+  const readout = calorieReadout(logged, target, goal);
+  const fraction = { logged: format(logged), target: format(target) };
+  const targetOnly = { target: format(target) };
+
   // The compact dial's detail is the same fraction for every goal — the unit
-  // word above it says which of the two figures the headline is.
-  const progress = t('loggedOverTarget', {
-    logged: format(logged),
-    target: format(target),
-  });
-
-  // The three lines are decided together so each goal reads as one piece rather
-  // than as three conditionals that have to agree.
-  const readout =
-    goal === 'cutting'
-      ? {
-          headline: format(Math.max(0, remaining)),
-          unit: full ? t('kcalRemaining') : t('remainingShort'),
-          detail: full
-            ? t('loggedOfTarget', {
-                logged: format(logged),
-                target: format(target),
-              })
-            : progress,
-        }
-      : {
-          headline: format(logged),
-          unit: full ? t('caloriesLogged') : t('loggedShort'),
-          detail: !full
-            ? progress
-            : remaining >= 0
-              ? t('leftOfTarget', {
-                  left: format(remaining),
-                  target: format(target),
-                })
-              : t('overTargetBy', {
-                  over: format(-remaining),
-                  target: format(target),
-                }),
-        };
+  // word above it says which of the two figures the headline is. The full dial
+  // has room to say it in words.
+  const detail =
+    variant === 'compact'
+      ? t('loggedOverTarget', fraction)
+      : readout.framing === 'remaining'
+        ? t('loggedOfTarget', fraction)
+        : readout.over === null
+          ? t('leftOfTarget', { left: format(readout.left), ...targetOnly })
+          : t('overTargetBy', { over: format(readout.over), ...targetOnly });
 
   return (
     <GaugeDial
       // The calorie mark's own colour, as on the week strip and the heatmap.
       fill="var(--kallo-accent)"
-      primary={gaugeLine(full ? 'hero' : 'value', readout.headline)}
+      primary={gaugeLine(
+        variant === 'full' ? 'hero' : 'value',
+        format(readout.headline)
+      )}
       progress={target > 0 ? logged / target : 0}
-      radius={full ? CALORIE_DIAL_RADIUS : COMPACT_CALORIE_DIAL_RADIUS}
-      secondary={gaugeLine('body', readout.unit)}
-      tertiary={gaugeLine('meta', readout.detail)}
+      radius={
+        variant === 'full' ? CALORIE_DIAL_RADIUS : COMPACT_CALORIE_DIAL_RADIUS
+      }
+      secondary={gaugeLine('body', t(UNIT_KEY[readout.framing][variant]))}
+      tertiary={gaugeLine('meta', detail)}
     />
   );
 }

@@ -6,6 +6,7 @@ import {
   COMPOSITION_ICONS,
   COMPOSITION_KEYS,
   type CompositionKey,
+  type MacroGramsInput,
 } from '@/components/shared/nutrition/composition';
 import { formatLocalizedNumber } from '@/lib/core/text/format-number';
 import { cn } from '@/lib/core/ui/cn';
@@ -32,32 +33,25 @@ const LABELS: Record<CompositionKey, string> = {
 };
 
 interface MacroScaleProps {
-  /** Grams. Null is a macro that was never measured, and shows as an em dash
-   * rather than a confident zero. */
-  protein: number | null;
-  carbohydrate: number | null;
-  fat: number | null;
+  /**
+   * Grams per macro — the same record `compositionFromGrams` takes, so a row
+   * drawing both spells the three field names once.
+   *
+   * Null is a macro that was never measured, and shows as an em dash rather
+   * than a confident zero.
+   */
+  grams: MacroGramsInput;
   className?: string;
 }
 
-export function MacroScale({
-  protein,
-  carbohydrate,
-  fat,
-  className,
-}: MacroScaleProps) {
+export function MacroScale({ grams, className }: MacroScaleProps) {
   const locale = useLocale();
-  const grams: Record<CompositionKey, number | null> = {
-    protein,
-    carbohydrate,
-    fat,
-  };
 
   return (
     <div className={cn('flex items-center justify-evenly gap-2', className)}>
       {COMPOSITION_KEYS.map((key) => {
         const Icon = COMPOSITION_ICONS[key];
-        const value = grams[key];
+        const value = grams[key] ?? null;
 
         return (
           <span

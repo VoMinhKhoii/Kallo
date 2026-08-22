@@ -57,11 +57,13 @@ export function MealList({ meals }: MealListProps) {
 
 function MealRow({ meal }: { meal: MealEntry }) {
   const locale = useLocale();
-  const composition = compositionFromGrams({
+  // Spelled once: the bar and the figures under it read the same record.
+  const grams = {
     protein: meal.proteinG,
     carbohydrate: meal.carbsG,
     fat: meal.fatG,
-  });
+  };
+  const composition = compositionFromGrams(grams);
 
   return (
     <div className="flex flex-col gap-1 py-3">
@@ -92,12 +94,7 @@ function MealRow({ meal }: { meal: MealEntry }) {
             segments={composition.segments}
             variant="compact"
           />
-          <MacroScale
-            carbohydrate={meal.carbsG}
-            className="mt-1"
-            fat={meal.fatG}
-            protein={meal.proteinG}
-          />
+          <MacroScale className="mt-1" grams={grams} />
         </>
       )}
     </div>

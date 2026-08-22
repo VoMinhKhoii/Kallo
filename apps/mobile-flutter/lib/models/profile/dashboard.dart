@@ -13,9 +13,9 @@ enum WeightRange { d30, d90 }
 
 extension WeightRangeValue on WeightRange {
   String get value => switch (this) {
-        WeightRange.d30 => '30d',
-        WeightRange.d90 => '90d',
-      };
+    WeightRange.d30 => '30d',
+    WeightRange.d90 => '90d',
+  };
 }
 
 class MealEntry {
@@ -30,22 +30,18 @@ class MealEntry {
   });
 
   factory MealEntry.fromJson(Map<String, dynamic> json) => MealEntry(
-        id: json['id'] as String,
-        label: json['label'] as String,
-        calories: (json['calories'] as num).toDouble(),
-      );
+    id: json['id'] as String,
+    label: json['label'] as String,
+    calories: (json['calories'] as num).toDouble(),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'label': label,
-        'calories': calories,
-      };
+    'id': id,
+    'label': label,
+    'calories': calories,
+  };
 
-  MealEntry copyWith({
-    String? id,
-    String? label,
-    double? calories,
-  }) =>
+  MealEntry copyWith({String? id, String? label, double? calories}) =>
       MealEntry(
         id: id ?? this.id,
         label: label ?? this.label,
@@ -56,19 +52,19 @@ class MealEntry {
 enum PaceStatus { onPace, ahead, behind, tooEarly }
 
 PaceStatus paceStatusFromString(String s) => switch (s) {
-      'on_pace' => PaceStatus.onPace,
-      'ahead' => PaceStatus.ahead,
-      'behind' => PaceStatus.behind,
-      'too_early' => PaceStatus.tooEarly,
-      _ => throw ArgumentError('Unknown PaceStatus: $s'),
-    };
+  'on_pace' => PaceStatus.onPace,
+  'ahead' => PaceStatus.ahead,
+  'behind' => PaceStatus.behind,
+  'too_early' => PaceStatus.tooEarly,
+  _ => throw ArgumentError('Unknown PaceStatus: $s'),
+};
 
 String paceStatusToString(PaceStatus s) => switch (s) {
-      PaceStatus.onPace => 'on_pace',
-      PaceStatus.ahead => 'ahead',
-      PaceStatus.behind => 'behind',
-      PaceStatus.tooEarly => 'too_early',
-    };
+  PaceStatus.onPace => 'on_pace',
+  PaceStatus.ahead => 'ahead',
+  PaceStatus.behind => 'behind',
+  PaceStatus.tooEarly => 'too_early',
+};
 
 class VerdictData {
   final double weeklyRate;
@@ -107,14 +103,14 @@ class VerdictData {
   }
 
   Map<String, dynamic> toJson() => {
-        'weeklyRate': weeklyRate,
-        'totalDelta': totalDelta,
-        'planStartDate': planStartDate,
-        'status': paceStatusToString(status),
-        'rollingAvg': {'start': rollingAvg.start, 'end': rollingAvg.end},
-        'currentWeight': currentWeight,
-        'proteinDays': proteinDays,
-      };
+    'weeklyRate': weeklyRate,
+    'totalDelta': totalDelta,
+    'planStartDate': planStartDate,
+    'status': paceStatusToString(status),
+    'rollingAvg': {'start': rollingAvg.start, 'end': rollingAvg.end},
+    'currentWeight': currentWeight,
+    'proteinDays': proteinDays,
+  };
 
   VerdictData copyWith({
     double? weeklyRate,
@@ -124,16 +120,15 @@ class VerdictData {
     ({double start, double end})? rollingAvg,
     double? currentWeight,
     List<bool>? proteinDays,
-  }) =>
-      VerdictData(
-        weeklyRate: weeklyRate ?? this.weeklyRate,
-        totalDelta: totalDelta ?? this.totalDelta,
-        planStartDate: planStartDate ?? this.planStartDate,
-        status: status ?? this.status,
-        rollingAvg: rollingAvg ?? this.rollingAvg,
-        currentWeight: currentWeight ?? this.currentWeight,
-        proteinDays: proteinDays ?? this.proteinDays,
-      );
+  }) => VerdictData(
+    weeklyRate: weeklyRate ?? this.weeklyRate,
+    totalDelta: totalDelta ?? this.totalDelta,
+    planStartDate: planStartDate ?? this.planStartDate,
+    status: status ?? this.status,
+    rollingAvg: rollingAvg ?? this.rollingAvg,
+    currentWeight: currentWeight ?? this.currentWeight,
+    proteinDays: proteinDays ?? this.proteinDays,
+  );
 }
 
 class NutritionData {
@@ -151,9 +146,9 @@ class NutritionData {
 
   factory NutritionData.fromJson(Map<String, dynamic> json) {
     ({double current, double target}) parse(Map<String, dynamic> m) => (
-          current: (m['current'] as num).toDouble(),
-          target: (m['target'] as num).toDouble(),
-        );
+      current: (m['current'] as num).toDouble(),
+      target: (m['target'] as num).toDouble(),
+    );
     return NutritionData(
       calories: parse(json['calories'] as Map<String, dynamic>),
       protein: parse(json['protein'] as Map<String, dynamic>),
@@ -163,24 +158,23 @@ class NutritionData {
   }
 
   Map<String, dynamic> toJson() => {
-        'calories': {'current': calories.current, 'target': calories.target},
-        'protein': {'current': protein.current, 'target': protein.target},
-        'carbs': {'current': carbs.current, 'target': carbs.target},
-        'fat': {'current': fat.current, 'target': fat.target},
-      };
+    'calories': {'current': calories.current, 'target': calories.target},
+    'protein': {'current': protein.current, 'target': protein.target},
+    'carbs': {'current': carbs.current, 'target': carbs.target},
+    'fat': {'current': fat.current, 'target': fat.target},
+  };
 
   NutritionData copyWith({
     ({double current, double target})? calories,
     ({double current, double target})? protein,
     ({double current, double target})? carbs,
     ({double current, double target})? fat,
-  }) =>
-      NutritionData(
-        calories: calories ?? this.calories,
-        protein: protein ?? this.protein,
-        carbs: carbs ?? this.carbs,
-        fat: fat ?? this.fat,
-      );
+  }) => NutritionData(
+    calories: calories ?? this.calories,
+    protein: protein ?? this.protein,
+    carbs: carbs ?? this.carbs,
+    fat: fat ?? this.fat,
+  );
 }
 
 class DashboardProfile {
@@ -218,12 +212,12 @@ class DashboardProfile {
       );
 
   Map<String, dynamic> toJson() => {
-        'calorieTarget': calorieTarget,
-        'proteinTargetG': proteinTargetG,
-        'carbsTargetG': carbsTargetG,
-        'fatTargetG': fatTargetG,
-        if (goal != null) 'goal': goal!.name,
-      };
+    'calorieTarget': calorieTarget,
+    'proteinTargetG': proteinTargetG,
+    'carbsTargetG': carbsTargetG,
+    'fatTargetG': fatTargetG,
+    if (goal != null) 'goal': goal!.name,
+  };
 
   DashboardProfile copyWith({
     double? calorieTarget,
@@ -231,14 +225,13 @@ class DashboardProfile {
     double? carbsTargetG,
     double? fatTargetG,
     MacroGoal? goal,
-  }) =>
-      DashboardProfile(
-        calorieTarget: calorieTarget ?? this.calorieTarget,
-        proteinTargetG: proteinTargetG ?? this.proteinTargetG,
-        carbsTargetG: carbsTargetG ?? this.carbsTargetG,
-        fatTargetG: fatTargetG ?? this.fatTargetG,
-        goal: goal ?? this.goal,
-      );
+  }) => DashboardProfile(
+    calorieTarget: calorieTarget ?? this.calorieTarget,
+    proteinTargetG: proteinTargetG ?? this.proteinTargetG,
+    carbsTargetG: carbsTargetG ?? this.carbsTargetG,
+    fatTargetG: fatTargetG ?? this.fatTargetG,
+    goal: goal ?? this.goal,
+  );
 }
 
 class DashboardSnapshot {
@@ -258,26 +251,27 @@ class DashboardSnapshot {
 
   factory DashboardSnapshot.fromJson(Map<String, dynamic> json) =>
       DashboardSnapshot(
-        verdict:
-            VerdictData.fromJson(json['verdict'] as Map<String, dynamic>),
-        nutrition:
-            NutritionData.fromJson(json['nutrition'] as Map<String, dynamic>),
-        meals: (json['meals'] as List<dynamic>)
-            .map((e) => MealEntry.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        heatmap:
-            HeatmapData.fromJson(json['heatmap'] as Map<String, dynamic>),
+        verdict: VerdictData.fromJson(json['verdict'] as Map<String, dynamic>),
+        nutrition: NutritionData.fromJson(
+          json['nutrition'] as Map<String, dynamic>,
+        ),
+        meals:
+            (json['meals'] as List<dynamic>)
+                .map((e) => MealEntry.fromJson(e as Map<String, dynamic>))
+                .toList(),
+        heatmap: HeatmapData.fromJson(json['heatmap'] as Map<String, dynamic>),
         weightSummary: WeightSummaryData.fromJson(
-            json['weightSummary'] as Map<String, dynamic>),
+          json['weightSummary'] as Map<String, dynamic>,
+        ),
       );
 
   Map<String, dynamic> toJson() => {
-        'verdict': verdict.toJson(),
-        'nutrition': nutrition.toJson(),
-        'meals': meals.map((e) => e.toJson()).toList(),
-        'heatmap': heatmap.toJson(),
-        'weightSummary': weightSummary.toJson(),
-      };
+    'verdict': verdict.toJson(),
+    'nutrition': nutrition.toJson(),
+    'meals': meals.map((e) => e.toJson()).toList(),
+    'heatmap': heatmap.toJson(),
+    'weightSummary': weightSummary.toJson(),
+  };
 
   DashboardSnapshot copyWith({
     VerdictData? verdict,
@@ -285,14 +279,13 @@ class DashboardSnapshot {
     List<MealEntry>? meals,
     HeatmapData? heatmap,
     WeightSummaryData? weightSummary,
-  }) =>
-      DashboardSnapshot(
-        verdict: verdict ?? this.verdict,
-        nutrition: nutrition ?? this.nutrition,
-        meals: meals ?? this.meals,
-        heatmap: heatmap ?? this.heatmap,
-        weightSummary: weightSummary ?? this.weightSummary,
-      );
+  }) => DashboardSnapshot(
+    verdict: verdict ?? this.verdict,
+    nutrition: nutrition ?? this.nutrition,
+    meals: meals ?? this.meals,
+    heatmap: heatmap ?? this.heatmap,
+    weightSummary: weightSummary ?? this.weightSummary,
+  );
 }
 
 class Micronutrient {
@@ -313,22 +306,22 @@ class Micronutrient {
   });
 
   factory Micronutrient.fromJson(Map<String, dynamic> json) => Micronutrient(
-        key: json['key'] as String,
-        name: json['name'] as String,
-        unit: json['unit'] as String,
-        current: (json['current'] as num).toDouble(),
-        target: (json['target'] as num).toDouble(),
-        group: json['group'] as String,
-      );
+    key: json['key'] as String,
+    name: json['name'] as String,
+    unit: json['unit'] as String,
+    current: (json['current'] as num).toDouble(),
+    target: (json['target'] as num).toDouble(),
+    group: json['group'] as String,
+  );
 
   Map<String, dynamic> toJson() => {
-        'key': key,
-        'name': name,
-        'unit': unit,
-        'current': current,
-        'target': target,
-        'group': group,
-      };
+    'key': key,
+    'name': name,
+    'unit': unit,
+    'current': current,
+    'target': target,
+    'group': group,
+  };
 
   Micronutrient copyWith({
     String? key,
@@ -337,13 +330,12 @@ class Micronutrient {
     double? current,
     double? target,
     String? group,
-  }) =>
-      Micronutrient(
-        key: key ?? this.key,
-        name: name ?? this.name,
-        unit: unit ?? this.unit,
-        current: current ?? this.current,
-        target: target ?? this.target,
-        group: group ?? this.group,
-      );
+  }) => Micronutrient(
+    key: key ?? this.key,
+    name: name ?? this.name,
+    unit: unit ?? this.unit,
+    current: current ?? this.current,
+    target: target ?? this.target,
+    group: group ?? this.group,
+  );
 }

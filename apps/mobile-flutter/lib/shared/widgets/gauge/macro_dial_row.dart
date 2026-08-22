@@ -14,6 +14,7 @@ library;
 
 import 'dart:math' as math;
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
@@ -27,56 +28,62 @@ const double kMacroDialRadius = 44;
 /// The embedded size — see [MacroDialRow.compact].
 const double kCompactMacroDialRadius = 30;
 
-class MacroDialData {
-  const MacroDialData({
-    required this.compositionKey,
-    required this.label,
-    required this.current,
-    required this.target,
-  });
+/// The label each dial wears, in the namespace every surface already reads.
+const Map<String, String> _labelKey = {
+  'protein': 'dashboard.protein',
+  'carbohydrate': 'dashboard.carbs',
+  'fat': 'dashboard.fat',
+};
 
-  /// One of [kCompositionKeys] — picks the glyph and the pigment.
-  final String compositionKey;
-  final String label;
-  final int current;
-  final int target;
-}
-
+/// The row owns the keys, the pigments, the glyphs AND the labels, so a surface
+/// that wants dials hands over two maps and nothing else. Every caller used to
+/// spell the same three-row table itself, which is three chances to disagree
+/// about what "carbs" is called.
 class MacroDialRow extends StatelessWidget {
-  const MacroDialRow({required this.macros, super.key})
+  const MacroDialRow({required this.current, required this.target, super.key})
     : maxRadius = kMacroDialRadius,
-      _headlineIsValue = true;
+      _isCompact = false;
 
   /// The variant that sits beside `CalorieDial.compact` in a fixed header:
   /// two thirds of the radius, and the gram figure steps from Value 17 to Body
   /// 14 so it still clears the mouth at the 1.3 text-scale cap.
-  const MacroDialRow.compact({required this.macros, super.key})
-    : maxRadius = kCompactMacroDialRadius,
-      _headlineIsValue = false;
+  const MacroDialRow.compact({
+    required this.current,
+    required this.target,
+    super.key,
+  }) : maxRadius = kCompactMacroDialRadius,
+       _isCompact = true;
 
-  final List<MacroDialData> macros;
+  /// Grams eaten so far, keyed by [kCompositionKeys].
+  final Map<String, int> current;
+
+  /// Grams the day is aiming at, keyed by [kCompositionKeys].
+  final Map<String, int> target;
+
   final double maxRadius;
-  final bool _headlineIsValue;
+  final bool _isCompact;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       // Three columns and two gutters. On a narrow phone the dials shrink
       // rather than overflow — the arc holds its proportions at any size.
+      final count = kCompositionKeys.length;
       final column =
-          (constraints.maxWidth - KalloSpacing.sp2 * (macros.length - 1)) /
-          macros.length;
+          (constraints.maxWidth - KalloSpacing.sp2 * (count - 1)) / count;
       final radius = math.min(maxRadius, column / 2);
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < macros.length; i++) ...[
+          for (var i = 0; i < count; i++) ...[
             if (i > 0) const SizedBox(width: KalloSpacing.sp2),
             Expanded(
               child: _MacroDial(
-                data: macros[i],
+                compositionKey: kCompositionKeys[i],
+                current: current[kCompositionKeys[i]] ?? 0,
+                target: target[kCompositionKeys[i]] ?? 0,
                 radius: radius,
-                headlineIsValue: _headlineIsValue,
+                isCompact: _isCompact,
               ),
             ),
           ],
@@ -88,18 +95,22 @@ class MacroDialRow extends StatelessWidget {
 
 class _MacroDial extends StatelessWidget {
   const _MacroDial({
-    required this.data,
+    required this.compositionKey,
+    required this.current,
+    required this.target,
     required this.radius,
-    required this.headlineIsValue,
+    required this.isCompact,
   });
 
-  final MacroDialData data;
+  final String compositionKey;
+  final int current;
+  final int target;
   final double radius;
-  final bool headlineIsValue;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
-    final color = kCompositionColors[data.compositionKey]!;
+    final color = kCompositionColors[compositionKey]!;
 
     return Column(
       children: [
@@ -108,11 +119,11 @@ class _MacroDial extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(kMacroIcons[data.compositionKey]!, size: 14, color: color),
+            Icon(kMacroIcons[compositionKey]!, size: 14, color: color),
             const SizedBox(width: KalloSpacing.sp1_5),
             Flexible(
               child: Text(
-                data.label.toUpperCase(),
+                tr(_labelKey[compositionKey]!).toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: dashEyebrow(),
@@ -122,16 +133,16 @@ class _MacroDial extends StatelessWidget {
         ),
         const SizedBox(height: KalloSpacing.sp0_5),
         GaugeDial(
-          progress: data.target > 0 ? data.current / data.target : 0,
+          progress: target > 0 ? current / target : 0,
           radius: radius,
           fill: color,
           primary: GaugeLine(
-            '${data.current}g',
-            headlineIsValue
-                ? dashValue()
-                : dashBody(weight: FontWeight.w500, tabular: true),
+            '${current}g',
+            isCompact
+                ? dashBody(weight: FontWeight.w500, tabular: true)
+                : dashValue(),
           ),
-          secondary: GaugeLine('/${data.target}g', dashMeta(tabular: true)),
+          secondary: GaugeLine('/${target}g', dashMeta(tabular: true)),
         ),
       ],
     );

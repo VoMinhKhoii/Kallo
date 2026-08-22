@@ -39,9 +39,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
     final userId = session?.user.id;
 
     if (userId == null) {
-      return _centered(
-        Text('common.notSignedIn'.tr(), style: dashMeta(),),
-      );
+      return _centered(Text('common.notSignedIn'.tr(), style: dashMeta()));
     }
 
     final profileAsync = ref.watch(loggingProfileProvider);

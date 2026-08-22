@@ -8,76 +8,24 @@ import {
   useTransform,
 } from 'motion/react';
 import { useEffect } from 'react';
+import type { GaugeLine } from '@/components/shared/gauge/gauge-lines';
+import { cn } from '@/lib/core/ui/cn';
+import { gaugeHeight, gaugePaths } from '@/lib/core/ui/gauge-arc-geometry';
 import {
-  gaugeHeight,
-  gaugePaths,
-  gaugeTipOffset,
-} from '@/lib/core/ui/gauge-arc-geometry';
+  GAUGE_LINE_GAP,
+  gaugeReadoutLayout,
+} from '@/lib/core/ui/gauge-readout-layout';
 
 /**
  * A gauge dial: the 240° arc with its figures nested in the mouth.
  *
  * This is the gauge module's entry point — callers want a dial, not an arc plus
- * a hand-positioned readout. It owns the one alignment rule the app's dials
- * share: the SECOND line's middle sits on the arc's tips, so the type and the
- * arc read as a single object rather than a number parked near a shape.
+ * a hand-positioned readout. Where the type sits against the arc is
+ * `gaugeReadoutLayout`'s rule; this file's job is to paint it and to animate
+ * the sweep.
  *
  * Mirrors `apps/mobile-flutter/lib/shared/widgets/gauge/gauge_dial.dart`.
  */
-
-/**
- * One line of a dial's readout.
- *
- * `heightPx` is not decoration: the placement below measures the stack before
- * it draws it, and the line is rendered at exactly this line-height so the
- * measurement cannot disagree with what the browser lays out.
- */
-export interface GaugeLine {
-  text: string;
-  className: string;
-  heightPx: number;
-}
-
-/**
- * The four readout lines the app's dials draw, each pairing its classes with
- * the height they resolve to. Stated together because the placement arithmetic
- * needs the number and the browser needs the classes — split them and they
- * drift.
- */
-export const GAUGE_LINES = {
-  /** The dashboard's one hero figure per card. */
-  hero: {
-    className: 'font-sans-display text-hero text-kallo-text',
-    heightPx: 44,
-  },
-  /** The embedded dial's headline, and the macro dials' gram figure. */
-  value: {
-    className: 'font-sans-display font-semibold text-kallo-text text-sm',
-    heightPx: 20,
-  },
-  /** What the headline is — the line that lands on the tips. */
-  body: {
-    className: 'font-sans-display text-kallo-text-muted text-sm',
-    heightPx: 20,
-  },
-  /** The quiet detail under the arc, and the macro dials' `/target`. */
-  meta: {
-    className: 'font-sans-display text-kallo-text-muted text-xs',
-    heightPx: 16,
-  },
-} as const;
-
-/** Build a readout line from one of the named styles above. */
-export function gaugeLine(
-  style: keyof typeof GAUGE_LINES,
-  text: string
-): GaugeLine {
-  return { ...GAUGE_LINES[style], text };
-}
-
-/** The gap between the readout's stacked lines. */
-const LINE_GAP = 2;
-
 interface GaugeDialProps {
   /** Consumed ÷ target. Over 1 the arc simply reads full. */
   progress: number;
@@ -122,32 +70,27 @@ export function GaugeDial({
   // The path changes SHAPE with the sweep, so there is nothing for the browser
   // to interpolate — a scalar is animated and the two paths are derived from it
   // each frame, off the React render path.
+  const center = { x: radius, y: radius };
   const filled = useTransform(
     sweep,
-    (value) => gaugePaths({ x: radius, y: radius }, radius, value).filled
+    (value) => gaugePaths(center, radius, value).filled
   );
   const remainder = useTransform(
     sweep,
-    (value) => gaugePaths({ x: radius, y: radius }, radius, value).remainder
+    (value) => gaugePaths(center, radius, value).remainder
   );
 
-  const lines = [primary, secondary, ...(tertiary ? [tertiary] : [])];
-  const readoutHeight =
-    lines.reduce((sum, line) => sum + line.heightPx, 0) +
-    LINE_GAP * (lines.length - 1);
-  // Where the readout wants to start for its SECOND line to land on the tips.
-  const wanted =
-    radius +
-    gaugeTipOffset(radius) -
-    secondary.heightPx / 2 -
-    LINE_GAP -
-    primary.heightPx;
-  // A small dial with tall lines wants to start ABOVE its own arc. Rather than
-  // clip the headline or quietly break the alignment, the ARC drops by the
-  // shortfall and the readout starts at 0: the two still share the tip line,
-  // and the dial simply reserves the extra height.
-  const arcTop = wanted < 0 ? -wanted : 0;
-  const readoutTop = wanted + arcTop;
+  // The readout is a fixed stack of ROLES, not a list of data — which is also
+  // what each line is keyed by.
+  const lines = [
+    { role: 'primary', line: primary },
+    { role: 'secondary', line: secondary },
+    ...(tertiary ? [{ role: 'tertiary', line: tertiary }] : []),
+  ];
+  const layout = gaugeReadoutLayout(
+    radius,
+    lines.map(({ line }) => line.heightPx)
+  );
   const arcHeight = gaugeHeight(radius);
 
   return (
@@ -156,17 +99,16 @@ export function GaugeDial({
       style={{
         // The READOUT sizes the dial and the arc is painted behind it, so a
         // line wider than the mark widens the box instead of spilling out of
-        // it. The last line can also hang below the arc, so the dial's own
-        // height is not always the whole of it.
+        // it.
         minWidth: radius * 2,
-        minHeight: Math.max(arcTop + arcHeight, readoutTop + readoutHeight),
+        minHeight: layout.height,
       }}
     >
       <svg
         aria-hidden="true"
         className="absolute"
         height={arcHeight}
-        style={{ top: arcTop }}
+        style={{ top: layout.arcTop }}
         viewBox={`0 0 ${radius * 2} ${arcHeight}`}
         width={radius * 2}
       >
@@ -175,12 +117,12 @@ export function GaugeDial({
       </svg>
       <div
         className="flex flex-col items-center"
-        style={{ paddingTop: readoutTop, gap: LINE_GAP }}
+        style={{ paddingTop: layout.readoutTop, gap: GAUGE_LINE_GAP }}
       >
-        {lines.map((line) => (
+        {lines.map(({ role, line }) => (
           <span
-            className={`${line.className} whitespace-nowrap tabular-nums`}
-            key={line.text}
+            className={cn('whitespace-nowrap', line.className)}
+            key={role}
             style={{ lineHeight: `${line.heightPx}px` }}
           >
             {line.text}

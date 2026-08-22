@@ -105,27 +105,6 @@ class _Dock extends StatelessWidget {
     }
     final calories = round0(totalCalories);
 
-    final macroDials = <MacroDialData>[
-      MacroDialData(
-        compositionKey: 'protein',
-        label: tr('dashboard.protein'),
-        current: round0(totalProtein),
-        target: targets.proteinTargetG.round(),
-      ),
-      MacroDialData(
-        compositionKey: 'carbohydrate',
-        label: tr('dashboard.carbs'),
-        current: round0(totalCarbs),
-        target: targets.carbsTargetG.round(),
-      ),
-      MacroDialData(
-        compositionKey: 'fat',
-        label: tr('dashboard.fat'),
-        current: round0(totalFat),
-        target: targets.fatTargetG.round(),
-      ),
-    ];
-
     return FadeInDown(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -151,7 +130,18 @@ class _Dock extends StatelessWidget {
           const SizedBox(height: DashboardSpacing.block),
 
           // (b) The three macros, the same dial a third of the size.
-          MacroDialRow(macros: macroDials),
+          MacroDialRow(
+            current: {
+              'protein': round0(totalProtein),
+              'carbohydrate': round0(totalCarbs),
+              'fat': round0(totalFat),
+            },
+            target: {
+              'protein': targets.proteinTargetG.round(),
+              'carbohydrate': targets.carbsTargetG.round(),
+              'fat': targets.fatTargetG.round(),
+            },
+          ),
 
           const SizedBox(height: DashboardSpacing.majorBreak),
 
@@ -162,7 +152,10 @@ class _Dock extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(tr('dashboard.recentMeals').toUpperCase(), style: dashMeta()),
+                Text(
+                  tr('dashboard.recentMeals').toUpperCase(),
+                  style: dashMeta(),
+                ),
                 Text(
                   tr(
                     'dashboard.mealsLogged',
@@ -174,9 +167,10 @@ class _Dock extends StatelessWidget {
             ),
           ),
           Container(
-            padding: meals.isEmpty
-                ? DashboardSpacing.card
-                : DashboardSpacing.rowCard,
+            padding:
+                meals.isEmpty
+                    ? DashboardSpacing.card
+                    : DashboardSpacing.rowCard,
             decoration: BoxDecoration(
               color: kCardSurface,
               borderRadius: BorderRadius.circular(kCardRadius),

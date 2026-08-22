@@ -32,27 +32,6 @@ class MacroSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final macroDials = [
-      MacroDialData(
-        compositionKey: 'protein',
-        label: 'dashboard.protein'.tr(),
-        current: view.dailyProtein,
-        target: profile.proteinTargetG,
-      ),
-      MacroDialData(
-        compositionKey: 'carbohydrate',
-        label: 'dashboard.carbs'.tr(),
-        current: view.dailyCarbs,
-        target: profile.carbsTargetG,
-      ),
-      MacroDialData(
-        compositionKey: 'fat',
-        label: 'dashboard.fat'.tr(),
-        current: view.dailyFat,
-        target: profile.fatTargetG,
-      ),
-    ];
-
     return FadeInUp(
       child: Container(
         color: KalloColors.surface,
@@ -62,33 +41,47 @@ class MacroSummary extends StatelessWidget {
           KalloSpacing.sp3,
           LoggingSpacing.block,
         ),
-        child: view.isLoading
-            ? const MacroSummarySkeleton()
-            : view.hasUnknownDailyMacros
-            // Some legacy meals have unknown macros — the day can't be
-            // totalled, so say so plainly instead of showing wrong dials.
-            ? Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'logging.feedArea.legacyMacroWarning'.tr(),
-                  style: dashMeta(),
-                ),
-              )
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CalorieDial.compact(
-                    logged: view.dailyCalories.toDouble(),
-                    target: profile.calorieTarget.toDouble(),
-                    goal: profile.goal,
+        child:
+            view.isLoading
+                ? const MacroSummarySkeleton()
+                : view.hasUnknownDailyMacros
+                // Some legacy meals have unknown macros — the day can't be
+                // totalled, so say so plainly instead of showing wrong dials.
+                ? Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'logging.feedArea.legacyMacroWarning'.tr(),
+                    style: dashMeta(),
                   ),
-                  // The calorie dial is the widest single mark in the row and
-                  // sizes itself; everything left over goes to the three
-                  // macros, which shrink to fit rather than overflow.
-                  const SizedBox(width: KalloSpacing.sp3),
-                  Expanded(child: MacroDialRow.compact(macros: macroDials)),
-                ],
-              ),
+                )
+                : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CalorieDial.compact(
+                      logged: view.dailyCalories.toDouble(),
+                      target: profile.calorieTarget.toDouble(),
+                      goal: profile.goal,
+                    ),
+                    // The calorie dial is the widest single mark in the row and
+                    // sizes itself; everything left over goes to the three
+                    // macros, which shrink to fit rather than overflow.
+                    const SizedBox(width: KalloSpacing.sp3),
+                    Expanded(
+                      child: MacroDialRow.compact(
+                        current: {
+                          'protein': view.dailyProtein,
+                          'carbohydrate': view.dailyCarbs,
+                          'fat': view.dailyFat,
+                        },
+                        target: {
+                          'protein': profile.proteinTargetG,
+                          'carbohydrate': profile.carbsTargetG,
+                          'fat': profile.fatTargetG,
+                        },
+                      ),
+                    ),
+                  ],
+                ),
       ),
     );
   }

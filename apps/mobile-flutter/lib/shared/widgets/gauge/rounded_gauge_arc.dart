@@ -85,18 +85,16 @@ class _RoundedGaugeArcState extends State<RoundedGaugeArc>
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return AnimatedBuilder(
       animation: _sweep,
-      builder: (context, _) => CustomPaint(
-        size: Size(
-          widget.outerRadius * 2,
-          gaugeHeight(widget.outerRadius),
-        ),
-        painter: _GaugePainter(
-          progress: reduceMotion ? widget.progress : _sweep.value,
-          outerRadius: widget.outerRadius,
-          fill: widget.fill,
-          track: widget.track,
-        ),
-      ),
+      builder:
+          (context, _) => CustomPaint(
+            size: Size(widget.outerRadius * 2, gaugeHeight(widget.outerRadius)),
+            painter: _GaugePainter(
+              progress: reduceMotion ? widget.progress : _sweep.value,
+              outerRadius: widget.outerRadius,
+              fill: widget.fill,
+              track: widget.track,
+            ),
+          ),
     );
   }
 }

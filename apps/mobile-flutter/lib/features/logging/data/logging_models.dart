@@ -29,11 +29,11 @@ class MealNutrition {
   static double? _num(Object? v) => v == null ? null : (v as num).toDouble();
 
   factory MealNutrition.fromJson(Map<String, dynamic> json) => MealNutrition(
-        caloriesKcal: _num(json['caloriesKcal']),
-        proteinG: _num(json['proteinG']),
-        carbohydrateG: _num(json['carbohydrateG']),
-        fatG: _num(json['fatG']),
-      );
+    caloriesKcal: _num(json['caloriesKcal']),
+    proteinG: _num(json['proteinG']),
+    carbohydrateG: _num(json['carbohydrateG']),
+    fatG: _num(json['fatG']),
+  );
 }
 
 /// A single ingredient row within a dish group — the amount-editable unit.
@@ -67,8 +67,9 @@ class PersistedIngredient {
         ingredientName: json['ingredientName'] as String? ?? '',
         estimatedGrams: MealNutrition._num(json['estimatedGrams']),
         userFacingUnit: json['userFacingUnit'] as String?,
-        nutrition:
-            MealNutrition.fromJson(json['nutrition'] as Map<String, dynamic>),
+        nutrition: MealNutrition.fromJson(
+          json['nutrition'] as Map<String, dynamic>,
+        ),
       );
 }
 
@@ -88,17 +89,19 @@ class PersistedMealItemGroup {
     this.ingredients = const [],
   });
 
-  factory PersistedMealItemGroup.fromJson(Map<String, dynamic> json) =>
-      PersistedMealItemGroup(
-        name: json['name'] as String,
-        order: (json['order'] as num).toInt(),
-        nutrition:
-            MealNutrition.fromJson(json['nutrition'] as Map<String, dynamic>),
-        ingredients: (json['ingredients'] as List<dynamic>? ?? [])
-            .map((e) =>
-                PersistedIngredient.fromJson(e as Map<String, dynamic>))
+  factory PersistedMealItemGroup.fromJson(
+    Map<String, dynamic> json,
+  ) => PersistedMealItemGroup(
+    name: json['name'] as String,
+    order: (json['order'] as num).toInt(),
+    nutrition: MealNutrition.fromJson(
+      json['nutrition'] as Map<String, dynamic>,
+    ),
+    ingredients:
+        (json['ingredients'] as List<dynamic>? ?? [])
+            .map((e) => PersistedIngredient.fromJson(e as Map<String, dynamic>))
             .toList(),
-      );
+  );
 }
 
 /// A saved meal in the day's feed.
@@ -117,9 +120,9 @@ class MealShare {
   bool get isShared => visibility != 'private';
 
   factory MealShare.fromJson(Map<String, dynamic> json) => MealShare(
-        shareId: json['shareId'] as String?,
-        visibility: json['visibility'] as String? ?? 'private',
-      );
+    shareId: json['shareId'] as String?,
+    visibility: json['visibility'] as String? ?? 'private',
+  );
 }
 
 class PersistedMeal {
@@ -156,25 +159,31 @@ class PersistedMeal {
   bool get isCheat => entryMode == 'cheat';
 
   factory PersistedMeal.fromJson(Map<String, dynamic> json) => PersistedMeal(
-        id: json['id'] as String,
-        rawInput: json['rawInput'] as String? ?? '',
-        loggedAt: json['loggedAt'] as String,
-        nutrition:
-            MealNutrition.fromJson(json['nutrition'] as Map<String, dynamic>),
-        mealItemGroups: (json['mealItemGroups'] as List<dynamic>? ?? [])
-            .map((e) =>
-                PersistedMealItemGroup.fromJson(e as Map<String, dynamic>))
+    id: json['id'] as String,
+    rawInput: json['rawInput'] as String? ?? '',
+    loggedAt: json['loggedAt'] as String,
+    nutrition: MealNutrition.fromJson(
+      json['nutrition'] as Map<String, dynamic>,
+    ),
+    mealItemGroups:
+        (json['mealItemGroups'] as List<dynamic>? ?? [])
+            .map(
+              (e) => PersistedMealItemGroup.fromJson(e as Map<String, dynamic>),
+            )
             .toList(),
-        entryMode: json['entryMode'] as String? ?? 'precise',
-        alcoholG: MealNutrition._num(json['alcoholG']),
-        cheatSliders: json['cheatSliders'] == null
+    entryMode: json['entryMode'] as String? ?? 'precise',
+    alcoholG: MealNutrition._num(json['alcoholG']),
+    cheatSliders:
+        json['cheatSliders'] == null
             ? null
             : CheatSlidersPersisted.fromJson(
-                json['cheatSliders'] as Map<String, dynamic>),
-        share: json['share'] == null
+              json['cheatSliders'] as Map<String, dynamic>,
+            ),
+    share:
+        json['share'] == null
             ? null
             : MealShare.fromJson(json['share'] as Map<String, dynamic>),
-      );
+  );
 }
 
 /// An unconfirmed analysis awaiting the user's confirm tap.
@@ -202,13 +211,18 @@ class PendingMealConfirmation {
         id: json['id'] as String,
         rawInput: json['rawInput'] as String? ?? '',
         loggedAt: json['loggedAt'] as String,
-        parsedMeal: json['parsedMeal'] == null
-            ? null
-            : ParsedMeal.fromJson(json['parsedMeal'] as Map<String, dynamic>),
-        cheatSpec: json['cheatSpec'] == null
-            ? null
-            : CheatSliderSpec.fromJson(
-                json['cheatSpec'] as Map<String, dynamic>),
+        parsedMeal:
+            json['parsedMeal'] == null
+                ? null
+                : ParsedMeal.fromJson(
+                  json['parsedMeal'] as Map<String, dynamic>,
+                ),
+        cheatSpec:
+            json['cheatSpec'] == null
+                ? null
+                : CheatSliderSpec.fromJson(
+                  json['cheatSpec'] as Map<String, dynamic>,
+                ),
       );
 }
 
@@ -223,24 +237,26 @@ class LoggingDayData {
   });
 
   factory LoggingDayData.fromJson(Map<String, dynamic> json) => LoggingDayData(
-        persistedMeals: (json['persistedMeals'] as List<dynamic>? ?? [])
+    persistedMeals:
+        (json['persistedMeals'] as List<dynamic>? ?? [])
             .map((e) => PersistedMeal.fromJson(e as Map<String, dynamic>))
             .toList(),
-        pendingConfirmations:
-            (json['pendingConfirmations'] as List<dynamic>? ?? [])
-                .map((e) =>
-                    PendingMealConfirmation.fromJson(e as Map<String, dynamic>))
-                .toList(),
-      );
+    pendingConfirmations:
+        (json['pendingConfirmations'] as List<dynamic>? ?? [])
+            .map(
+              (e) =>
+                  PendingMealConfirmation.fromJson(e as Map<String, dynamic>),
+            )
+            .toList(),
+  );
 
   LoggingDayData copyWith({
     List<PersistedMeal>? persistedMeals,
     List<PendingMealConfirmation>? pendingConfirmations,
-  }) =>
-      LoggingDayData(
-        persistedMeals: persistedMeals ?? this.persistedMeals,
-        pendingConfirmations: pendingConfirmations ?? this.pendingConfirmations,
-      );
+  }) => LoggingDayData(
+    persistedMeals: persistedMeals ?? this.persistedMeals,
+    pendingConfirmations: pendingConfirmations ?? this.pendingConfirmations,
+  );
 }
 
 /// The logging profile the feed needs: what a day is supposed to add up to,

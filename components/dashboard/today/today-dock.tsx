@@ -3,10 +3,7 @@
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { CalorieDial } from '@/components/shared/gauge/calorie-dial';
-import {
-  type MacroDialDatum,
-  MacroDials,
-} from '@/components/shared/gauge/macro-dials';
+import { MacroDials } from '@/components/shared/gauge/macro-dials';
 import type { MealEntry, NutritionData } from '@/lib/core/types/dashboard';
 import { cn } from '@/lib/core/ui/cn';
 import type { Goal } from '@/lib/domain/onboarding/types';
@@ -28,26 +25,6 @@ export function TodayDock({
   isStreaming = false,
 }: TodayDockProps) {
   const t = useTranslations('dashboard');
-  const macros: MacroDialDatum[] = [
-    {
-      key: 'protein',
-      label: t('protein'),
-      current: nutrition.protein.current,
-      target: nutrition.protein.target,
-    },
-    {
-      key: 'carbohydrate',
-      label: t('carbs'),
-      current: nutrition.carbs.current,
-      target: nutrition.carbs.target,
-    },
-    {
-      key: 'fat',
-      label: t('fat'),
-      current: nutrition.fat.current,
-      target: nutrition.fat.target,
-    },
-  ];
 
   // The day as one family of round marks: the calorie dial, then the same arc a
   // third of the size in each macro's pigment. Nothing here is carded except
@@ -76,7 +53,18 @@ export function TodayDock({
             than the 40px break that separates today's numbers from the meals
             behind them. */}
         <div className="mt-5 w-full">
-          <MacroDials macros={macros} />
+          <MacroDials
+            current={{
+              protein: nutrition.protein.current,
+              carbohydrate: nutrition.carbs.current,
+              fat: nutrition.fat.current,
+            }}
+            target={{
+              protein: nutrition.protein.target,
+              carbohydrate: nutrition.carbs.target,
+              fat: nutrition.fat.target,
+            }}
+          />
         </div>
       </div>
 

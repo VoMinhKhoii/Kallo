@@ -64,8 +64,7 @@ class MealList extends StatelessWidget {
           // A hairline between posts, as the feed does. The feed insets its
           // rule to the avatar rail; with no avatars here it runs the full
           // width of the card.
-          if (i > 0)
-            const Divider(height: 1, thickness: 1, color: kHairline),
+          if (i > 0) const Divider(height: 1, thickness: 1, color: kHairline),
           _MealRow(meal: meals[i]),
         ],
       ],
@@ -79,11 +78,13 @@ class _MealRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final composition = compositionFromGrams(
+    // Spelled once: the bar and the figures under it read the same record.
+    final macros = (
       protein: meal.nutrition.proteinG,
       carbohydrate: meal.nutrition.carbohydrateG,
       fat: meal.nutrition.fatG,
     );
+    final composition = compositionFromGrams(macros);
     final loggedAt = DateTime.tryParse(meal.loggedAt);
 
     return Padding(
@@ -133,11 +134,7 @@ class _MealRow extends StatelessWidget {
             const SizedBox(height: DashboardSpacing.row),
             CompositionBar.compact(segments: composition.segments),
             const SizedBox(height: DashboardSpacing.row),
-            MacroScale(
-              protein: meal.nutrition.proteinG,
-              carbohydrate: meal.nutrition.carbohydrateG,
-              fat: meal.nutrition.fatG,
-            ),
+            MacroScale(macros: macros),
           ],
         ],
       ),
