@@ -15,7 +15,7 @@ import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
 
 /**
  * The one source of truth for what a barcode string looks like — shared by
- * the REST contract below and the server actions in `lib/actions/barcode.ts`.
+ * the REST contract below and the server actions in `lib/actions/logging/barcode.ts`.
  */
 export const barcodeSchema = z
   .string()
@@ -53,5 +53,7 @@ export const logBarcodeMealSchema = z.object({
 
 export type LogBarcodeMealInput = z.infer<typeof logBarcodeMealSchema>;
 
-export type { ParsedBarcodeProduct } from '@/lib/domain/barcode/openfoodfacts';
-export type { BarcodeErrorCode } from '@/lib/domain/barcode/types';
+export type {
+  BarcodeErrorCode,
+  ParsedBarcodeProduct,
+} from '@/lib/domain/barcode/types';

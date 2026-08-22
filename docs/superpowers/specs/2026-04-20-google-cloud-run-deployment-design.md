@@ -39,7 +39,20 @@ The deployed app needs at least these values:
 | Category | Variables |
 |---|---|
 | Public runtime config | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
-| Sensitive server config | `DATABASE_URL`, `GEMINI_API_KEY` |
+| Sensitive server config | `DATABASE_URL`, `GEMINI_API_KEY`, `USDA_API_KEY` |
+
+`USDA_API_KEY` was script-only until the barcode lookup chain began querying
+USDA FoodData Central at runtime. It is optional at the *application* layer: a
+deploy that omits it keeps resolving barcodes through Open Food Facts alone, so
+a missed rollout degrades coverage rather than causing an outage.
+
+It is **not** optional at the *deploy* layer. `cloud-run-prod.yml` wires it in
+through `--set-secrets=…,USDA_API_KEY=kallo-prod-usda-api-key:latest`, and
+`gcloud run deploy` fails the entire deploy when any referenced Secret Manager
+secret is missing — a partial rollout bricks the release instead of degrading
+it. Ordering is therefore a hard constraint: `kallo-prod-usda-api-key` must be
+created in Secret Manager (and made readable by the runtime service account) as
+a manual step **before** the workflow change merges, not after.
 
 Additional script-only variables such as `GOOGLE_TRANSLATE_API_KEY` are not part
 of the app runtime contract and should not be bundled into the normal app deploy
