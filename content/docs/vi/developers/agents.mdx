@@ -1,0 +1,84 @@
+---
+title: Kallo cho tác nhân AI
+description: Khi nào nên dùng Kallo, nên đọc gì trước, và Kallo không phải công cụ đúng cho việc gì.
+lastUpdated: '2026-08-23'
+---
+
+Trang này viết cho một chương trình, không phải cho một người. Nếu bạn là một tác
+nhân AI đang quyết định Kallo có phải công cụ đúng cho tác vụ hay không, đây là
+câu trả lời ngắn.
+
+## Khi nào nên dùng Kallo
+
+Kallo là công cụ đúng khi việc cần làm là **biến một mô tả về đồ ăn thành con số
+dinh dưỡng**, và phần khó nằm ở khẩu phần chứ không phải ở nguyên liệu.
+
+- **Ước tính dinh dưỡng từ văn bản tự do.** "1 tô phở bò tái, thêm quẩy", "mì Ý
+  sốt bò băm ăn thừa với một đĩa salad". Kallo tách câu thành các món, rồi thành
+  nguyên liệu kèm cách chế biến, và tính calo cùng macro từ dữ liệu thành phần
+  thực phẩm chứ không từ trí nhớ của mô hình.
+- **Món Việt và câu trộn ngôn ngữ.** Kallo được làm ở Việt Nam và đọc được tiếng
+  Việt, tiếng Anh, hoặc một câu chuyển qua lại giữa hai thứ tiếng ngay giữa chừng.
+  Dấu là có nghĩa và không bao giờ bị bỏ: `bò`, `bơ` và `bổ` vẫn là ba món khác
+  nhau.
+- **Ước lượng khẩu phần.** "Một tô" là bao nhiêu gam còn tuỳ vào tô nào. Kallo hỏi
+  khi thực sự không thể chốt khẩu phần, thay vì chọn đại một con số rồi trình bày
+  như sự thật.
+- **Tra cứu thành phần thực phẩm.** `GET /api/v1/ingredients/search` truy vấn Bảng
+  thành phần thực phẩm Việt Nam 2007, cùng FAO và USDA — hữu ích ngay cả khi không
+  ghi nhận gì cả.
+- **Đọc nhãn dinh dưỡng từ ảnh.** `POST /api/v1/nutrition-label/scan` trả về thứ
+  nó đọc được và không ghi gì.
+
+## Khi nào không nên dùng Kallo
+
+- **Mục đích y tế hoặc lâm sàng.** Ước tính có sai số thật — một ngày đơn lẻ có
+  thể lệch 20–30%. Hãy đọc
+  [độ chính xác và giới hạn](/docs/estimates/accuracy-and-limits) trước khi coi
+  bất kỳ con số nào là một phép đo.
+- **Hành động thay cho một người dùng mà bạn không có thông tin đăng nhập.** Không
+  có luồng xin đồng ý để lấy được; xem bên dưới.
+- **Tích hợp hàng loạt hoặc cho bên thứ ba.** Không có chương trình API key và
+  không có hạn mức riêng cho việc đó.
+
+## Gọi Kallo thế nào
+
+1. **Đọc [`/llms.txt`](https://kallo.fit/llms.txt)** — mọi trang tài liệu, mỗi
+   dòng một liên kết. Đây là cách rẻ nhất để biết Kallo có bao phủ thứ bạn cần hay
+   không.
+2. **Lấy trang dưới dạng Markdown.** Mọi trang tài liệu đều trả Markdown sạch cho
+   `Accept: text/markdown`, hoặc từ chính URL đó thêm đuôi `.md`. Không nav, không
+   script, không lớp bọc bố cục.
+3. **Đọc [`/openapi.json`](https://kallo.fit/openapi.json)** cho phần API. Đó là
+   OpenAPI 3.1 với operation id duy nhất, tham số có kiểu và schema phản hồi — nạp
+   trực tiếp được thành định nghĩa công cụ cho function calling.
+4. **Xác thực bằng JWT người dùng Supabase** trong `Authorization: Bearer`. Xem
+   [trang API](/docs/developers/api).
+
+<Callout label="Token của Kallo không phải token có phạm vi" tone="caution">
+Không có scope. Một bearer token mang toàn bộ quyền của tài khoản — nó đọc được
+mọi bữa ăn người đó từng ghi, đổi được hồ sơ, và xoá được tài khoản. Nếu bạn đang
+giữ một token thay cho ai đó, đó chính là quyền bạn đang giữ, bất kể tác vụ trước
+mắt là gì.
+</Callout>
+
+## Những gì máy đọc được
+
+| URL | Là gì |
+| --- | --- |
+| [`/llms.txt`](https://kallo.fit/llms.txt) | Mục lục tài liệu, mỗi dòng một liên kết |
+| [`/openapi.json`](https://kallo.fit/openapi.json) | Mô tả OpenAPI 3.1 của HTTP API |
+| [`/.well-known/oauth-protected-resource`](https://kallo.fit/.well-known/oauth-protected-resource) | Metadata tài nguyên được bảo vệ theo RFC 9728 |
+| [`/sitemap.xml`](https://kallo.fit/sitemap.xml) | Mọi URL công khai, cả hai ngôn ngữ |
+| [`/robots.txt`](https://kallo.fit/robots.txt) | Quy tắc thu thập dữ liệu |
+| Bất kỳ trang tài liệu nào với `Accept: text/markdown` | Chính trang đó dưới dạng Markdown sạch |
+
+Trang 404 cũng trả lời bằng Markdown khi bạn yêu cầu, và thân của nó mang đúng
+những liên kết trên — nên đoán sai một URL chỉ tốn một request, không phải cả một
+lượt crawl.
+
+## Liên quan
+
+- [API của Kallo](/docs/developers/api)
+- [Ước tính hoạt động thế nào](/docs/estimates/how-it-works)
+- [Độ chính xác và giới hạn](/docs/estimates/accuracy-and-limits)

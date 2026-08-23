@@ -1,0 +1,71 @@
+---
+title: About Kallo
+description: Who makes Kallo, where its numbers come from, and what it deliberately does not do.
+lastUpdated: '2026-08-23'
+---
+
+Kallo is a nutrition tracker that starts from a sentence. You describe what you
+ate the way you would tell a friend — "big bowl of phở, extra rare beef" — and
+Kallo splits it into dishes, then into ingredients, and derives calories and
+macros from published food-composition data.
+
+## Why it exists
+
+Most nutrition apps make you translate your meal into their language: search for
+each ingredient, pick a row that looks close, guess the portion, repeat. For a
+bowl of noodle soup with ten things in it, that takes longer than the meal did.
+People give up, and the app is useless to them.
+
+Kallo was built in Vietnam, and that is not incidental. In Vietnamese food the
+ingredient is rarely the hard part — the portion is. Nobody weighs a bowl of
+phở. What matters is how big the bowl was, whether the chicken had its skin on,
+whether the potatoes were deep-fried or air-fried. So Kallo reads those details
+out of the sentence instead of asking you to encode them in a search box, and it
+asks when the portion genuinely cannot be settled rather than guessing quietly.
+
+It reads Vietnamese, English, or a sentence that switches between them mid-clause.
+
+## Where the numbers come from
+
+Every ingredient is matched against published food-composition data — the
+Vietnam National Food Composition Table 2007, plus FAO and USDA tables — rather
+than a figure the language model produced. The model's job is to read your
+sentence and decide what you ate and roughly how much; the arithmetic is done
+against reference data, and the source is recorded per row.
+
+This matters because the failure mode of an AI nutrition app is a plausible
+invented number. Kallo is built so that the invented part is the portion
+estimate, which is honest about being an estimate, and never the composition
+figure, which is looked up.
+
+## What it does not do
+
+- **It is not a photo app.** Kallo starts from text on purpose. A sentence shows
+  you what it understood, lets you correct the one thing that is wrong, and gives
+  the same result next time. See
+  [how estimates work](/docs/estimates/how-it-works) for the full comparison.
+- **It is not a medical device.** Estimates carry real error, and
+  [the docs say by how much](/docs/estimates/accuracy-and-limits) rather than
+  presenting a number without its limits.
+- **It does not sell your data.** What is stored, and what actually reaches the
+  AI model, is set out in [your data](/docs/account/your-data) and the
+  [privacy policy](/docs/legal/privacy).
+
+## Who makes it
+
+Kallo is made by VÕ MINH KHÔI, an independent developer in Ho Chi Minh City,
+Vietnam. It is not a company with a support department; it is one person who
+answers the support address. The data controller and full registered address are
+named in the [privacy policy](/docs/legal/privacy), as data protection law
+requires.
+
+Kallo is currently free while it is in beta. The
+[pricing on the landing page](https://kallo.fit/en) is what starts when beta
+ends, and existing users will be told before that happens.
+
+## Related
+
+- [What Kallo is](/docs/overview) — the product tour
+- [Contact](/docs/company/contact)
+- [Kallo Premium](/docs/account/premium)
+- [Privacy policy](/docs/legal/privacy)

@@ -1,0 +1,120 @@
+---
+title: The Kallo API
+description: What the HTTP API is, how it authenticates, what it returns when something goes wrong, and what you may and may not rely on.
+lastUpdated: '2026-08-23'
+---
+
+Kallo has an HTTP API. It is the same API the web app and the mobile app use —
+there is no separate public one — and this page describes it honestly, including
+the parts that are not ready for you to build on.
+
+The machine-readable description is at
+[https://kallo.fit/openapi.json](https://kallo.fit/openapi.json). It is OpenAPI
+3.1, every operation has a unique `operationId` and a description, and request
+bodies are generated from the same schemas the server validates against, so they
+cannot drift from what the endpoints actually accept.
+
+## Base URL
+
+```
+https://kallo.fit
+```
+
+Endpoints live under `/api/v1/`. The one exception is `/api/healthz`, which is
+unversioned because it is a liveness probe rather than part of the surface.
+
+## Authentication
+
+Every endpoint except the ones tagged `Public` needs a Supabase-issued access
+token for a Kallo user:
+
+```
+Authorization: Bearer <jwt>
+```
+
+<Callout label="There is no API key programme" tone="caution">
+You cannot sign up for a key. The only way to get a token today is to sign in as
+a Kallo user, which means an integration can act for exactly one account — the
+one whose credentials it holds. If you need something else, write to us; it is
+not built because nobody has needed it yet, not because it is refused.
+</Callout>
+
+The token carries **no scopes**. A bearer holds the account's full authority: it
+can read every meal, change the profile, and delete the account. There is no way
+to issue a narrower one. That is why
+[the protected-resource metadata](https://kallo.fit/.well-known/oauth-protected-resource)
+declares no `scopes_supported` — publishing a scope list nothing enforces would
+be worse than publishing none.
+
+Protected-resource metadata follows RFC 9728 and names the Supabase Auth issuer
+as the authorization server. Kallo itself is not an authorization server: there
+is no `/oauth/authorize`, no `/oauth/token`, and no dynamic client registration.
+
+## Errors
+
+Every endpoint returns the same envelope:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "status": 400,
+    "retryable": false,
+    "message": "date must be YYYY-MM-DD."
+  }
+}
+```
+
+`code` is stable and meant to be branched on. `message` is for a human and may
+be translated. `retryable` answers the only question a client automating a retry
+actually has: can repeating this identical request ever succeed?
+
+| Code | Status | Retryable | Means |
+| --- | --- | --- | --- |
+| `VALIDATION_FAILED` | 400 | no | The request body or query is wrong. Fix it. |
+| `NOT_AUTHENTICATED` | 401 | no | Missing, expired or invalid token. |
+| `feature_locked` | 402 | no | The account's plan does not include this. |
+| `NOT_FOUND` | 404 | no | No such resource, or it is not yours. The two are deliberately indistinguishable. |
+| `CONFLICT` | 409 | no | The resource changed under you. |
+| `RATE_LIMITED` | 429 | yes | Back off. Honour `Retry-After` when it is present. |
+| `PIPELINE_TIMEOUT` | 504 | yes | Meal analysis took too long. |
+| `INTERNAL` | 500 | yes | Our fault. |
+
+Any `/api/` path with no handler returns a 404 in this same JSON shape, never an
+HTML page — so a mistyped endpoint is something your client can parse rather
+than something it has to guess at.
+
+## Rate limits
+
+There is no published per-endpoint quota. Limits exist and are applied per user
+and, for the unauthenticated endpoints, per IP address. When you hit one you get
+`RATE_LIMITED` with a `Retry-After` header where the wait is known. Treat that
+header as authoritative rather than backing off on a fixed schedule.
+
+## What you may rely on
+
+Operations tagged `Public` in the spec are safe to depend on:
+
+- `GET /api/healthz`
+- `POST /api/v1/waitlist`
+- `GET /api/v1/groups/invite/{slug}`
+
+Everything else is marked `x-internal: true`. Those endpoints exist to serve
+Kallo's own clients. They are versioned under `/v1`, but that version is not a
+promise to third parties — a shape can change to suit the apps without a bump.
+If you build on one, pin your expectations loosely and read the spec again
+before you upgrade.
+
+## Cost
+
+The free tier is real, needs no card, and is enough to use the API for anything
+you can do in the app on a free account. There is no separate API price and no
+sandbox environment — you develop against production, with your own account and
+your own data.
+
+## Related
+
+- [How an agent should use Kallo](/docs/developers/agents)
+- [OpenAPI specification](https://kallo.fit/openapi.json)
+- [Your data](/docs/account/your-data) — what is stored, and what reaches the model
+- [Contact](/docs/company/contact)

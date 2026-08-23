@@ -43,6 +43,7 @@ export function PricingSection() {
     // stops at this band — which is wanted: the page ends on something solid
     // instead of fading out under the footer.
     <section
+      aria-labelledby="landing-pricing"
       id="pricing"
       className="relative scroll-mt-20 border-kallo-border/40 border-t bg-kallo-hover pt-8 pb-8 md:pt-10 md:pb-10"
     >
@@ -50,6 +51,7 @@ export function PricingSection() {
         <motion.h2
           {...reveal}
           className="text-center font-normal font-serif text-4xl text-kallo-text tracking-[-0.02em] sm:text-5xl md:text-6xl"
+          id="landing-pricing"
         >
           {t('title')}
         </motion.h2>

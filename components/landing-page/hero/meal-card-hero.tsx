@@ -55,6 +55,7 @@ export function MealCardHero() {
 
   return (
     <section
+      aria-labelledby="landing-headline"
       className="relative isolate flex min-h-[100dvh] flex-col overflow-hidden"
       onPointerLeave={() => setActiveId(null)}
     >
@@ -78,10 +79,19 @@ export function MealCardHero() {
           </motion.div>
         </div>
 
-        <motion.div
+        {/* A section, not a div: the four cards are the page's second real block
+            of content and had no heading at all, so the document went h1 →
+            (nothing) → h3 and neither a screen reader nor a crawler could tell
+            where the hero ended. The heading is visually hidden because the
+            cards are self-explanatory to anyone who can see them. */}
+        <motion.section
           {...rise(3)}
+          aria-labelledby="landing-examples"
           className="mx-auto mt-10 grid w-full max-w-[100rem] grid-cols-1 items-start gap-x-5 gap-y-8 sm:grid-cols-2 md:mt-12 lg:grid-cols-4"
         >
+          <h2 className="sr-only" id="landing-examples">
+            {t('examplesHeading')}
+          </h2>
           {HERO_MEALS.map((meal, index) => (
             <LoggedMealCard
               key={meal.id}
@@ -94,7 +104,7 @@ export function MealCardHero() {
               onSelectMeal={() => setActiveId(meal.id)}
             />
           ))}
-        </motion.div>
+        </motion.section>
 
         <motion.div
           {...rise(4)}

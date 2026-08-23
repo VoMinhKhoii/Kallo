@@ -50,6 +50,11 @@ export async function generateMetadata({
       // Every slug is guaranteed to exist in both locales by
       // generateStaticParams, so the hreflang set is always complete.
       languages: alternateLanguages(`/docs/${path}`),
+      // The Markdown representation of this same page. It is also served from
+      // the canonical URL to `Accept: text/markdown`, but a crawler that does
+      // not negotiate needs a plain link to follow, and this is the one Next
+      // renders as `<link rel="alternate" type="text/markdown">`.
+      types: { 'text/markdown': `${url}.md` },
     },
     openGraph: {
       // Spread, not a bare `{ url, title, description }`: declaring `openGraph`

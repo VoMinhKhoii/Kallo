@@ -15,5 +15,13 @@
   "or": "or",
   "optional": "Optional",
   "notFound": "Page not found",
+  "notFoundBody": "There is no page at this URL. Nothing was moved — this path never existed.",
+  "notFoundWhereToLook": "Where to look instead",
+  "notFoundHome": "Home",
+  "notFoundDocs": "Documentation",
+  "notFoundContact": "Contact",
+  "notFoundIndex": "Documentation index (llms.txt)",
+  "notFoundSitemap": "Sitemap",
+  "notFoundApi": "API specification",
   "notSignedIn": "Not signed in."
 }
