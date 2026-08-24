@@ -65,8 +65,29 @@ describe('the markdown route', () => {
     const response = await call('en', ['index']);
     expect(response.status).toBe(200);
     const body = await response.text();
-    expect(body).toContain('# ');
+    expect(body.startsWith('# ')).toBe(true);
+    expect(body.match(/^# /gm)).toHaveLength(1);
+    expect(body.match(/^## /gm)?.length).toBeGreaterThanOrEqual(4);
+    expect(body.length).toBeGreaterThan(500);
     expect(body).toContain('/openapi.json');
+  });
+
+  it.each([
+    'en',
+    'vi',
+  ])('serves substantial About, Contact and Privacy trust pages in %s', async (locale) => {
+    for (const slug of [
+      ['company', 'about'],
+      ['company', 'contact'],
+      ['legal', 'privacy'],
+    ]) {
+      const response = await call(locale, ['docs', ...slug]);
+      expect(response.status, `${locale}/${slug.join('/')}`).toBe(200);
+
+      const body = await response.text();
+      expect(body.startsWith('# '), `${locale}/${slug.join('/')}`).toBe(true);
+      expect(body.length, `${locale}/${slug.join('/')}`).toBeGreaterThan(500);
+    }
   });
 
   it('answers the 404 slug with a 404 and recovery links', async () => {

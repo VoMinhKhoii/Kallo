@@ -54,7 +54,7 @@ describe('the published OpenAPI document', () => {
       const where = `${method.toUpperCase()} ${path}`;
       const codes = Object.keys(op.responses);
       expect(
-        codes.some((code) => code.startsWith('2') || code === '302'),
+        codes.some((code) => code.startsWith('2') || code === '307'),
         where
       ).toBe(true);
       for (const code of ['400', '429', '500']) {
@@ -121,6 +121,63 @@ describe('the published OpenAPI document', () => {
     expect(missing).toEqual([]);
   });
 
+  it('publishes concrete named object schemas for function callers', () => {
+    const schemas = (
+      doc.components as {
+        schemas: Record<
+          string,
+          {
+            type?: string | string[];
+            properties?: object;
+            oneOf?: unknown[];
+            additionalProperties?: boolean;
+          }
+        >;
+      }
+    ).schemas;
+
+    for (const [name, schema] of Object.entries(schemas)) {
+      if (schema.type !== 'object') continue;
+      expect(schema.additionalProperties, name).not.toBe(true);
+      expect(Object.keys(schema.properties ?? {}), name).not.toHaveLength(0);
+    }
+  });
+
+  it('describes the heatmap as a two-dimensional grid', () => {
+    const schemas = (
+      doc.components as {
+        schemas: Record<string, { properties?: Record<string, unknown> }>;
+      }
+    ).schemas;
+    const heatmap = schemas.Heatmap;
+    const cells = heatmap.properties?.cells as {
+      type: string;
+      items: { type: string; items: { type: string } };
+    };
+
+    expect(Object.keys(heatmap.properties ?? {})).toEqual([
+      'cells',
+      'monthHeaders',
+    ]);
+    expect(cells.type).toBe('array');
+    expect(cells.items.type).toBe('array');
+    expect(cells.items.items.type).toBe('object');
+  });
+
+  it('documents a machine-actionable resolution on every API error', () => {
+    const schemas = (
+      doc.components as {
+        schemas: Record<string, { required?: string[]; properties?: object }>;
+      }
+    ).schemas;
+    const error = schemas.Error;
+    const detail = (error.properties as { error: Record<string, unknown> })
+      .error as { required: string[]; properties: Record<string, unknown> };
+
+    expect(detail.required).toContain('resolution');
+    expect(detail.properties).toHaveProperty('resolution');
+  });
+
   it('names the four public operations', () => {
     const publicIds = everyOperation()
       .filter(({ op }) => !op['x-internal'])
@@ -132,5 +189,16 @@ describe('the published OpenAPI document', () => {
       'getInvitePreview',
       'joinWaitlist',
     ]);
+  });
+
+  it('documents the waitlist confirmation as its actual bodyless 307 redirect', () => {
+    const response = paths['/api/v1/waitlist/confirm'].get?.responses as Record<
+      string,
+      { content?: unknown }
+    >;
+
+    expect(response).toHaveProperty('307');
+    expect(response['307']).not.toHaveProperty('content');
+    expect(response).not.toHaveProperty('302');
   });
 });

@@ -52,7 +52,7 @@ Kallo không phải máy chủ uỷ quyền: không có `/oauth/authorize`, khô
 
 ## Lỗi
 
-Mọi endpoint trả về cùng một cấu trúc:
+Mọi lỗi API đã được tài liệu hóa đều trả về cùng một cấu trúc:
 
 ```json
 {
@@ -60,14 +60,17 @@ Mọi endpoint trả về cùng một cấu trúc:
     "code": "VALIDATION_FAILED",
     "status": 400,
     "retryable": false,
-    "message": "date must be YYYY-MM-DD."
+    "message": "date must be YYYY-MM-DD.",
+    "resolution": "Correct the request using the published schema, then retry."
   }
 }
 ```
 
 `code` là mã ổn định, dùng để rẽ nhánh trong code. `message` dành cho người đọc
-và có thể được dịch. `retryable` trả lời đúng câu hỏi duy nhất mà một client tự
-động thử lại thực sự cần: lặp lại y hệt yêu cầu này có bao giờ thành công không?
+và có thể được dịch. `retryable` cho biết việc lặp lại cùng yêu cầu có thể thành
+công hay không. `resolution` cung cấp bước tiếp theo cho agent mà không buộc nó
+phải phân tích văn bản dành cho con người. Các thao tác chỉ chuyển hướng và health
+probe mô tả cấu trúc phản hồi riêng trong OpenAPI.
 
 | Mã | Trạng thái | Thử lại được | Nghĩa là |
 | --- | --- | --- | --- |
@@ -97,6 +100,7 @@ Các thao tác gắn nhãn `Public` trong đặc tả là an toàn để phụ t
 
 - `GET /api/healthz`
 - `POST /api/v1/waitlist`
+- `GET /api/v1/waitlist/confirm`
 - `GET /api/v1/groups/invite/{slug}`
 
 Tất cả phần còn lại đánh dấu `x-internal: true`. Những endpoint đó tồn tại để phục

@@ -94,7 +94,7 @@ interface OperationInput {
   bodyMedia?: string;
   /** Success response schema. */
   ok: JsonSchema;
-  okStatus?: '200' | '201' | '204' | '302';
+  okStatus?: '200' | '201' | '204' | '302' | '307';
   okDescription?: string;
   /** Media type of the success response. Defaults to `application/json`. */
   okMedia?: string;
@@ -105,7 +105,7 @@ function build(input: OperationInput, authenticated: boolean): Operation {
   const responses: JsonSchema = {
     [status]: {
       description: input.okDescription ?? 'Success.',
-      ...(status === '204' || status === '302'
+      ...(status === '204' || status === '302' || status === '307'
         ? {}
         : {
             content: {

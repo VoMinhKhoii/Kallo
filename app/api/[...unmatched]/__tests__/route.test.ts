@@ -44,6 +44,7 @@ describe('the /api catch-all', () => {
         status: 404,
         retryable: false,
         message: expect.stringContaining('/api/v1/nope'),
+        resolution: expect.stringContaining('/openapi.json'),
       },
     });
   });

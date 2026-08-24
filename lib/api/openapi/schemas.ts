@@ -1,24 +1,13 @@
 import type { JsonSchema } from '@/lib/api/openapi/components';
+import { RESPONSE_SCHEMAS } from '@/lib/api/openapi/schema-shapes';
 
 /**
  * Named response schemas.
  *
- * Two tiers, deliberately. Payloads whose shape is small and stable enough to
- * transcribe faithfully are written out in full. The large aggregates — a day
- * of logged meals, the nutrition overview — are declared as objects with the
- * TypeScript type and source file that define them, rather than a hand-copied
- * property list that would be wrong within a release. A schema that lies is
- * worse for a machine than a schema that says "object, defined here".
+ * The detailed application response shapes live in `schema-shapes.ts`; this
+ * file owns the protocol-level schemas and composes the complete components
+ * map exported by the OpenAPI document.
  */
-
-/** Tier two: an honest, self-describing placeholder. */
-function documented(type: string, file: string, note: string): JsonSchema {
-  return {
-    type: 'object',
-    additionalProperties: true,
-    description: `${note}\n\nShape is the TypeScript type \`${type}\` in \`${file}\`. It is not transcribed here because it is large and evolves with the product; treat the fields you read as best-effort.`,
-  };
-}
 
 const string = (description: string): JsonSchema => ({
   type: 'string',
@@ -35,11 +24,11 @@ export const SCHEMAS: Record<string, JsonSchema> = {
     required: ['error'],
     additionalProperties: false,
     description:
-      'The single error envelope every endpoint returns. `code` is the stable, machine-readable identifier; `message` is human-facing and localised where the caller supplied a locale.',
+      'The shared API error envelope. `code` is stable, `message` is human-facing, and `resolution` is the next machine-actionable step.',
     properties: {
       error: {
         type: 'object',
-        required: ['code', 'status', 'retryable', 'message'],
+        required: ['code', 'status', 'retryable', 'message', 'resolution'],
         properties: {
           code: {
             type: 'string',
@@ -63,6 +52,9 @@ export const SCHEMAS: Record<string, JsonSchema> = {
               'Whether retrying the identical request can succeed. `false` means fix the request or the session first.',
           },
           message: string('Human-readable explanation.'),
+          resolution: string(
+            'Machine-actionable next step that does not require parsing the message.'
+          ),
           feature: string(
             'Present only on `feature_locked`: the gated feature.'
           ),
@@ -111,11 +103,7 @@ export const SCHEMAS: Record<string, JsonSchema> = {
     description:
       'Preview of a friend-invite link. A blocked edge returns the same 404 as an invalid slug — the payload never reveals that a block exists.',
     properties: {
-      inviter: documented(
-        'PublicProfile',
-        'lib/domain/groups/',
-        'The person whose link this is.'
-      ),
+      inviter: { $ref: '#/components/schemas/PublicProfile' },
       status: {
         type: 'string',
         enum: ['self', 'accepted', 'none'],
@@ -168,37 +156,46 @@ export const SCHEMAS: Record<string, JsonSchema> = {
 
   Heatmap: {
     type: 'object',
+    required: ['cells', 'monthHeaders'],
+    additionalProperties: false,
     description:
       'Calorie-adherence grid backing the dashboard consistency view.',
     properties: {
       cells: {
         type: 'array',
         items: {
-          type: 'object',
-          properties: {
-            date: { type: 'string', format: 'date' },
-            ratio: {
-              type: ['number', 'null'],
-              description:
-                'Adherence ratio for colour grading; null on partial days.',
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['date', 'ratio', 'consumedRatio', 'status'],
+            additionalProperties: false,
+            properties: {
+              date: { type: 'string', format: 'date' },
+              ratio: {
+                type: ['number', 'null'],
+                description:
+                  'Adherence ratio for colour grading; null on partial days.',
+              },
+              consumedRatio: {
+                type: ['number', 'null'],
+                description:
+                  'Calories ÷ target, never gated by the partial rule.',
+              },
+              status: {
+                type: 'string',
+                enum: ['logged', 'partial', 'unlogged', 'future', 'outside'],
+              },
+              hasCheatMeal: { type: 'boolean' },
             },
-            consumedRatio: {
-              type: ['number', 'null'],
-              description:
-                'Calories ÷ target, never gated by the partial rule.',
-            },
-            status: {
-              type: 'string',
-              enum: ['logged', 'partial', 'unlogged', 'future', 'outside'],
-            },
-            hasCheatMeal: { type: 'boolean' },
           },
         },
       },
-      months: {
+      monthHeaders: {
         type: 'array',
         items: {
           type: 'object',
+          required: ['month', 'monthIndex', 'startColumn', 'span'],
+          additionalProperties: false,
           properties: {
             month: string('English short name.'),
             monthIndex: { type: 'integer', minimum: 1, maximum: 12 },
@@ -236,61 +233,14 @@ export const SCHEMAS: Record<string, JsonSchema> = {
     properties: {
       results: {
         type: 'array',
-        items: documented(
-          'IngredientMatch',
-          'lib/domain/ingredients/search/ingredient-search.ts',
-          'One matched food-composition row.'
-        ),
+        items: { $ref: '#/components/schemas/IngredientSearchResult' },
       },
     },
   },
-
-  LoggingDay: documented(
-    'LoggingDayData',
-    'lib/api/contracts/meals.ts',
-    'Everything logged on one calendar day, with per-meal macros and the day totals.'
-  ),
-  Meal: documented('Meal', 'lib/api/contracts/meals.ts', 'One logged meal.'),
+  ...RESPONSE_SCHEMAS,
   MealList: {
     type: 'array',
     items: { $ref: '#/components/schemas/Meal' },
     description: 'Meals for the requested day.',
-  },
-  OnboardingProfile: documented(
-    'Awaited<ReturnType<typeof getOnboardingProfile>>',
-    'lib/domain/onboarding/actions.ts',
-    'Body metrics, goal, region and cooking habits — the inputs that decide every target the app shows.'
-  ),
-  NutritionOverview: documented(
-    'NutritionOverview',
-    'lib/domain/nutrition/types.ts',
-    'Micronutrient intake over a range, with the data-coverage figure behind each nutrient.'
-  ),
-  Entitlements: documented(
-    'Entitlements',
-    'lib/domain/billing/',
-    'Which paid features the current user has, and where that entitlement came from.'
-  ),
-  ChatGroup: documented(
-    'ChatGroup',
-    'lib/domain/groups/',
-    'A small shared space — housemates, a partner, a training group.'
-  ),
-  Feed: documented(
-    'FeedPage',
-    'lib/domain/groups/',
-    'A page of shared meals, newest first.'
-  ),
-  PublicProfile: documented(
-    'PublicProfile',
-    'lib/domain/groups/',
-    'The name and avatar other people see.'
-  ),
-  /** `{ ok: true }` and friends — endpoints whose value is the status code. */
-  Acknowledgement: {
-    type: 'object',
-    additionalProperties: true,
-    description:
-      'A small acknowledgement object. The status code carries the outcome; the body carries whatever the action returned, commonly `{ ok: true }` or the updated row.',
   },
 };

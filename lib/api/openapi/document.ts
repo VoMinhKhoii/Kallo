@@ -52,7 +52,7 @@ Every endpoint except those tagged \`Public\` needs a Supabase-issued user JWT i
 
 ## Errors
 
-Every endpoint returns the same envelope: \`{ "error": { "code", "status", "retryable", "message" } }\`. \`code\` is stable and machine-readable; \`retryable\` says whether repeating the identical request could ever succeed. Any \`/api/*\` path with no handler returns a 404 in this same shape, never HTML.
+Every documented API error returns the same envelope: \`{ "error": { "code", "status", "retryable", "message", "resolution" } }\`. \`code\` is stable and machine-readable; \`retryable\` says whether repeating the identical request could ever succeed; \`resolution\` gives the next machine-actionable step. Any \`/api/*\` path with no handler returns a 404 in this same shape, never HTML. Redirect-only operations and the health probe document their own non-error responses explicitly.
 
 ## Stability
 

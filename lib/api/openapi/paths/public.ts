@@ -60,7 +60,7 @@ export const PUBLIC_PATHS: Record<string, PathItem> = {
         },
       ],
       ok: {},
-      okStatus: '302',
+      okStatus: '307',
       okDescription: 'Redirect to `/{locale}/?waitlist=<status>`.',
     }),
   },

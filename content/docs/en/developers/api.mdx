@@ -52,7 +52,7 @@ is no `/oauth/authorize`, no `/oauth/token`, and no dynamic client registration.
 
 ## Errors
 
-Every endpoint returns the same envelope:
+Every documented API error returns the same envelope:
 
 ```json
 {
@@ -60,14 +60,17 @@ Every endpoint returns the same envelope:
     "code": "VALIDATION_FAILED",
     "status": 400,
     "retryable": false,
-    "message": "date must be YYYY-MM-DD."
+    "message": "date must be YYYY-MM-DD.",
+    "resolution": "Correct the request using the published schema, then retry."
   }
 }
 ```
 
 `code` is stable and meant to be branched on. `message` is for a human and may
-be translated. `retryable` answers the only question a client automating a retry
-actually has: can repeating this identical request ever succeed?
+be translated. `retryable` says whether repeating the identical request can
+succeed. `resolution` gives an agent the next action without asking it to parse
+the human prose. Redirect-only operations and the health probe document their
+own response shapes in OpenAPI.
 
 | Code | Status | Retryable | Means |
 | --- | --- | --- | --- |
@@ -97,6 +100,7 @@ Operations tagged `Public` in the spec are safe to depend on:
 
 - `GET /api/healthz`
 - `POST /api/v1/waitlist`
+- `GET /api/v1/waitlist/confirm`
 - `GET /api/v1/groups/invite/{slug}`
 
 Everything else is marked `x-internal: true`. Those endpoints exist to serve
