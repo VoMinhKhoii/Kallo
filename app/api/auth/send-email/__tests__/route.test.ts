@@ -139,6 +139,8 @@ describe('handleSendEmailHook', () => {
       const res = await run(payload());
 
       expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('application/json');
+      await expect(res.json()).resolves.toEqual({});
       const { to, url, tags } = sentLink();
       expect(to).toBe('nguyen@example.com');
       expect(url.pathname).toBe('/auth/verify');
@@ -325,6 +327,8 @@ describe('handleSendEmailHook', () => {
       );
 
       expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('application/json');
+      await expect(res.json()).resolves.toEqual({});
       expect(sendEmail).not.toHaveBeenCalled();
       expect(info).toHaveBeenCalled();
       expect(error).not.toHaveBeenCalled();
