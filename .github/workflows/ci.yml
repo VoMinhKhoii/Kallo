@@ -95,7 +95,8 @@ jobs:
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    # Dependency Review requires GitHub Code Security for private repositories.
+    if: github.event_name == 'pull_request' && github.event.repository.private == false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/dependency-review-action@v4
