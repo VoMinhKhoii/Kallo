@@ -13,6 +13,7 @@ describe('serializeError', () => {
     const body = await res.json();
     expect(body.error.code).toBe('RATE_LIMITED');
     expect(body.error.retryable).toBe(true);
+    expect(body.error.resolution).toContain('Retry-After');
   });
 
   it('wraps unknown errors as INTERNAL 500', async () => {
@@ -20,6 +21,7 @@ describe('serializeError', () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error.code).toBe('INTERNAL');
+    expect(body.error.resolution).toContain('Retry with backoff');
   });
 
   it('wraps non-Error values as INTERNAL 500', async () => {

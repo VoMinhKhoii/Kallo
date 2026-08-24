@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { defaultLocale } from '@/i18n/config';
 import { loadFrontmatter } from '@/lib/domain/docs/loader';
 import { DOCS_SECTIONS } from '@/lib/domain/docs/navigation';
+import { FOR_AGENTS, INTRO, WHEN_TO_USE } from '@/lib/seo/llms/sections';
 import { SITE_URL } from '@/lib/seo/site';
 
 /**
@@ -36,11 +37,11 @@ export async function GET(): Promise<Response> {
     '',
     `> ${t('description')}`,
     '',
-    'Kallo logs a meal from the sentence you would say out loud — "big bowl of',
-    'phở, extra rare beef" or "leftover spaghetti bolognese and a side salad" —',
-    'instead of a search box and a row of database matches. It was built in',
-    'Vietnam, where the portion rather than the ingredient is the hard part of',
-    'the estimate, and it reads any cuisine described in English or Vietnamese.',
+    ...INTRO,
+    '',
+    ...WHEN_TO_USE,
+    '',
+    ...FOR_AGENTS,
     '',
   ];
 

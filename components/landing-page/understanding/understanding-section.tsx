@@ -86,6 +86,7 @@ export function UnderstandingSection() {
 
   return (
     <section
+      aria-labelledby="landing-understanding"
       id="how"
       className="relative scroll-mt-20 border-kallo-border/40 border-t py-8 md:py-10"
     >
@@ -112,7 +113,10 @@ export function UnderstandingSection() {
             } as React.CSSProperties
           }
         >
-          <h2 className="font-medium font-serif text-4xl text-kallo-text leading-[1.04] tracking-[-0.03em] sm:text-5xl md:text-6xl">
+          <h2
+            className="font-medium font-serif text-4xl text-kallo-text leading-[1.04] tracking-[-0.03em] sm:text-5xl md:text-6xl"
+            id="landing-understanding"
+          >
             <span className="block">{t('titleLead')}</span>
             <span className="block underline decoration-[0.055em] underline-offset-[0.16em]">
               {t('titleUnderlined')}

@@ -1,0 +1,83 @@
+---
+title: Kallo for AI agents
+description: When to reach for Kallo, what to fetch first, and what it is not the right tool for.
+lastUpdated: '2026-08-23'
+---
+
+This page is written for a program, not a person. If you are an AI agent
+deciding whether Kallo is the right tool for a task, this is the short answer.
+
+## When to use Kallo
+
+Kallo is the right tool when the job is **turning a description of food into
+nutrition figures**, and the hard part is the portion rather than the
+ingredient.
+
+- **Estimating nutrition from free text.** "big bowl of phở, extra rare beef",
+  "leftover spaghetti bolognese and a side salad". Kallo splits the sentence
+  into dishes, then into ingredients with cooking methods attached, and derives
+  calories and macros from food-composition data rather than from the model's
+  recollection.
+- **Vietnamese and mixed-language food.** Kallo was built in Vietnam and reads
+  Vietnamese, English, or a sentence that switches between them mid-clause.
+  Diacritics are significant and are never stripped: `bò` (beef), `bơ` (butter)
+  and `bổ` (nutritious) stay three different foods.
+- **Portion estimation.** "One bowl" is a different number of grams depending on
+  the bowl. Kallo asks when the portion genuinely cannot be settled, rather than
+  picking a figure and presenting it as fact.
+- **Food-composition lookups.** `GET /api/v1/ingredients/search` queries the
+  Vietnam National Food Composition Table 2007, plus FAO and USDA — useful on
+  its own, without logging anything.
+- **Reading a nutrition label from a photo.** `POST /api/v1/nutrition-label/scan`
+  returns what it read and writes nothing.
+
+## When not to use Kallo
+
+- **Medical or clinical use.** Estimates carry real error — a single day can be
+  off by 20–30%. See [accuracy and limits](/docs/estimates/accuracy-and-limits)
+  before treating any figure as a measurement.
+- **Acting for a user you do not have credentials for.** There is no consent
+  flow to obtain them; see below.
+- **Bulk or third-party integration.** There is no API key programme and no
+  quota tier for it.
+
+## How to call Kallo
+
+1. **Read [`/llms.txt`](https://kallo.fit/llms.txt)** — every documentation page,
+   one link per line. This is the cheapest way to find out whether Kallo covers
+   what you need.
+2. **Fetch pages as Markdown.** Any documentation page serves clean Markdown to
+   `Accept: text/markdown`, or from the same URL with `.md` appended. No nav, no
+   scripts, no layout wrappers.
+3. **Read [`/openapi.json`](https://kallo.fit/openapi.json)** for the API. It is
+   OpenAPI 3.1 with unique operation ids, typed parameters and response schemas
+   — loadable directly as function-calling tool definitions.
+4. **Authenticate with a Supabase user JWT** in `Authorization: Bearer`. See
+   [the API page](/docs/developers/api).
+
+<Callout label="A Kallo token is not a scoped token" tone="caution">
+There are no scopes. A bearer token holds the user's entire account authority —
+it can read every meal they have ever logged, change their profile, and delete
+their account. If you are holding one on someone's behalf, that is the
+permission you are holding, whatever the task in front of you is.
+</Callout>
+
+## What is machine-readable
+
+| URL | What it is |
+| --- | --- |
+| [`/llms.txt`](https://kallo.fit/llms.txt) | Documentation index, one link per line |
+| [`/openapi.json`](https://kallo.fit/openapi.json) | OpenAPI 3.1 description of the HTTP API |
+| [`/.well-known/oauth-protected-resource`](https://kallo.fit/.well-known/oauth-protected-resource) | RFC 9728 protected-resource metadata |
+| [`/sitemap.xml`](https://kallo.fit/sitemap.xml) | Every public URL, both languages |
+| [`/robots.txt`](https://kallo.fit/robots.txt) | Crawl rules |
+| Any docs page with `Accept: text/markdown` | The same page as clean Markdown |
+
+A 404 also answers in Markdown when you ask it to, and its body carries these
+same links — so a wrong guess costs you one request, not a crawl.
+
+## Related
+
+- [The Kallo API](/docs/developers/api)
+- [How estimates work](/docs/estimates/how-it-works)
+- [Accuracy and limits](/docs/estimates/accuracy-and-limits)

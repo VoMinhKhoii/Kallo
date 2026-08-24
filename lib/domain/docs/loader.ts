@@ -62,6 +62,10 @@ const VI_DOCS: DocRegistry = {
     import('@/content/docs/vi/estimates/how-it-works.mdx'),
   'estimates/accuracy-and-limits': () =>
     import('@/content/docs/vi/estimates/accuracy-and-limits.mdx'),
+  'developers/api': () => import('@/content/docs/vi/developers/api.mdx'),
+  'developers/agents': () => import('@/content/docs/vi/developers/agents.mdx'),
+  'company/about': () => import('@/content/docs/vi/company/about.mdx'),
+  'company/contact': () => import('@/content/docs/vi/company/contact.mdx'),
   'legal/terms': () => import('@/content/docs/vi/legal/terms.mdx'),
   'legal/privacy': () => import('@/content/docs/vi/legal/privacy.mdx'),
 };
@@ -96,6 +100,10 @@ const EN_DOCS: DocRegistry = {
     import('@/content/docs/en/estimates/how-it-works.mdx'),
   'estimates/accuracy-and-limits': () =>
     import('@/content/docs/en/estimates/accuracy-and-limits.mdx'),
+  'developers/api': () => import('@/content/docs/en/developers/api.mdx'),
+  'developers/agents': () => import('@/content/docs/en/developers/agents.mdx'),
+  'company/about': () => import('@/content/docs/en/company/about.mdx'),
+  'company/contact': () => import('@/content/docs/en/company/contact.mdx'),
   'legal/terms': () => import('@/content/docs/en/legal/terms.mdx'),
   'legal/privacy': () => import('@/content/docs/en/legal/privacy.mdx'),
 };

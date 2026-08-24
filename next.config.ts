@@ -42,6 +42,22 @@ const nextConfig: NextConfig = {
         destination: '/:locale/docs/legal/privacy',
         permanent: true,
       },
+      // /about and /contact are the URLs a person types and an AI agent guesses
+      // when checking whether a business is real. The pages themselves live in
+      // the docs tree — same as the legal pages — so they get the sidebar, the
+      // sitemap entry, the llms.txt line and the Markdown representation for
+      // free. Not `permanent`: if either ever becomes a standalone marketing
+      // page, a 308 cached in every visitor's browser would be hard to undo.
+      {
+        source: '/:locale(en|vi)/about',
+        destination: '/:locale/docs/company/about',
+        permanent: false,
+      },
+      {
+        source: '/:locale(en|vi)/contact',
+        destination: '/:locale/docs/company/contact',
+        permanent: false,
+      },
       // The docs hub was removed — the footer carries the full tree, so a
       // landing page listing it again was a second copy of the same thing.
       // /docs stays a working URL because it is the one people type, and the

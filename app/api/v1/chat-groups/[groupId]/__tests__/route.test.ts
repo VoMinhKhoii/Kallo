@@ -27,6 +27,8 @@ describe('GET /api/v1/chat-groups/[groupId]', () => {
         status: 400,
         retryable: false,
         message: 'Phải là UUID hợp lệ.',
+        resolution:
+          'Correct the request using the published schema, then retry.',
       },
     });
     expect(mockDbSelect).not.toHaveBeenCalled();

@@ -9,7 +9,8 @@ export class ApiError extends Error {
   constructor(
     public readonly code: string,
     public readonly status: number,
-    public readonly retryable: boolean
+    public readonly retryable: boolean,
+    public readonly resolution?: string
   ) {
     super(code);
     this.name = 'ApiError';
@@ -17,7 +18,7 @@ export class ApiError extends Error {
 }
 
 /**
- * Parse the `{ error: { code, status, retryable, message } }` shape
+ * Parse the `{ error: { code, status, retryable, message, resolution } }` shape
  * returned by `serializeError` into an `ApiError` instance.
  */
 export function parseApiError(body: unknown): ApiError {
@@ -31,7 +32,8 @@ export function parseApiError(body: unknown): ApiError {
     return new ApiError(
       typeof err.code === 'string' ? err.code : 'UNKNOWN',
       typeof err.status === 'number' ? err.status : 500,
-      typeof err.retryable === 'boolean' ? err.retryable : false
+      typeof err.retryable === 'boolean' ? err.retryable : false,
+      typeof err.resolution === 'string' ? err.resolution : undefined
     );
   }
   return new ApiError('UNKNOWN', 500, false);

@@ -19,6 +19,8 @@ describe('handleRouteError', () => {
         status: 400,
         retryable: false,
         message: 'UUID không hợp lệ.',
+        resolution:
+          'Correct the request using the published schema, then retry.',
       },
     });
   });

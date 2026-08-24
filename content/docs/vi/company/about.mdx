@@ -1,0 +1,72 @@
+---
+title: Về Kallo
+description: Ai làm Kallo, con số của nó đến từ đâu, và những gì nó cố ý không làm.
+lastUpdated: '2026-08-23'
+---
+
+Kallo là ứng dụng theo dõi dinh dưỡng bắt đầu từ một câu nói. Bạn mô tả mình đã
+ăn gì như khi kể với một người bạn — "1 tô phở bò tái, thêm quẩy" — và Kallo tách
+ra thành các món, rồi thành nguyên liệu, và tính calo cùng macro từ dữ liệu thành
+phần thực phẩm đã công bố.
+
+## Vì sao Kallo tồn tại
+
+Hầu hết ứng dụng dinh dưỡng bắt bạn dịch bữa ăn của mình sang ngôn ngữ của chúng:
+tìm từng nguyên liệu, chọn một dòng gần đúng, đoán khẩu phần, lặp lại. Với một tô
+bún bò có mười thứ trong đó, việc này mất nhiều thời gian hơn cả bữa ăn. Người ta
+bỏ cuộc, và ứng dụng trở thành vô dụng với họ.
+
+Kallo được làm ở Việt Nam, và đó không phải chi tiết ngẫu nhiên. Với món ăn Việt,
+nguyên liệu hiếm khi là phần khó — khẩu phần mới là. Không ai cân một tô phở. Thứ
+quan trọng là tô đó lớn cỡ nào, con gà còn da hay đã lột da, khoai chiên ngập dầu
+hay chiên không dầu. Nên Kallo đọc những chi tiết ấy ra từ chính câu bạn viết,
+thay vì bắt bạn mã hoá chúng vào một ô tìm kiếm, và nó hỏi khi thực sự không đủ
+căn cứ để chốt khẩu phần, thay vì lặng lẽ đoán.
+
+Kallo đọc được tiếng Việt, tiếng Anh, hoặc một câu chuyển qua lại giữa hai thứ
+tiếng ngay giữa chừng.
+
+## Con số đến từ đâu
+
+Mỗi nguyên liệu được khớp với dữ liệu thành phần thực phẩm đã công bố — Bảng
+thành phần thực phẩm Việt Nam 2007, cùng bảng của FAO và USDA — chứ không phải
+một con số do mô hình ngôn ngữ nghĩ ra. Việc của mô hình là đọc câu của bạn và
+quyết định bạn đã ăn gì, khoảng bao nhiêu; phần tính toán được làm dựa trên dữ
+liệu tham chiếu, và nguồn được ghi lại theo từng dòng.
+
+Điều này quan trọng vì kiểu hỏng đặc trưng của một ứng dụng dinh dưỡng dùng AI là
+một con số bịa ra nghe rất hợp lý. Kallo được dựng sao cho phần "ước lượng" nằm ở
+khẩu phần — thứ vốn thành thật rằng nó là ước lượng — chứ không bao giờ nằm ở
+con số thành phần, vốn được tra cứu.
+
+## Những gì Kallo không làm
+
+- **Không phải ứng dụng chụp ảnh.** Kallo bắt đầu từ chữ, một cách có chủ đích.
+  Một câu cho bạn thấy nó đã hiểu gì, cho bạn sửa đúng chỗ sai, và cho cùng một
+  kết quả ở lần sau. Xem [ước tính hoạt động thế nào](/docs/estimates/how-it-works)
+  để có so sánh đầy đủ.
+- **Không phải thiết bị y tế.** Ước tính có sai số thật, và
+  [tài liệu nói rõ sai số bao nhiêu](/docs/estimates/accuracy-and-limits) thay vì
+  đưa ra con số mà giấu đi giới hạn của nó.
+- **Không bán dữ liệu của bạn.** Những gì được lưu, và những gì thực sự đi tới mô
+  hình AI, được trình bày trong [dữ liệu của bạn](/docs/account/your-data) và
+  [chính sách quyền riêng tư](/docs/legal/privacy).
+
+## Ai làm Kallo
+
+Kallo do VÕ MINH KHÔI làm, một nhà phát triển độc lập tại Thành phố Hồ Chí Minh,
+Việt Nam. Đây không phải một công ty có phòng chăm sóc khách hàng; đây là một
+người trả lời địa chỉ hỗ trợ. Bên kiểm soát dữ liệu và địa chỉ đăng ký đầy đủ
+được nêu trong [chính sách quyền riêng tư](/docs/legal/privacy), theo yêu cầu của
+pháp luật về bảo vệ dữ liệu.
+
+Kallo hiện miễn phí trong thời gian thử nghiệm. [Bảng giá trên trang chủ](https://kallo.fit/vi)
+là mức bắt đầu áp dụng khi giai đoạn thử nghiệm kết thúc, và người dùng hiện tại
+sẽ được báo trước.
+
+## Liên quan
+
+- [Kallo là gì](/docs/overview) — giới thiệu sản phẩm
+- [Liên hệ](/docs/company/contact)
+- [Kallo Premium](/docs/account/premium)
+- [Chính sách quyền riêng tư](/docs/legal/privacy)

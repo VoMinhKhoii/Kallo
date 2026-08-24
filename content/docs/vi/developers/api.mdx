@@ -1,0 +1,124 @@
+---
+title: API của Kallo
+description: HTTP API là gì, xác thực ra sao, trả về gì khi có lỗi, và bạn được phép — hoặc không được phép — dựa vào điều gì.
+lastUpdated: '2026-08-23'
+---
+
+Kallo có một HTTP API. Nó chính là API mà ứng dụng web và ứng dụng di động đang
+dùng — không có một API công khai riêng — và trang này mô tả nó một cách thành
+thật, kể cả những phần chưa sẵn sàng để bạn xây dựng lên trên.
+
+Bản mô tả máy đọc được nằm ở
+[https://kallo.fit/openapi.json](https://kallo.fit/openapi.json). Đó là OpenAPI
+3.1, mỗi thao tác đều có `operationId` duy nhất và phần mô tả, và thân yêu cầu
+được sinh ra từ chính các schema mà máy chủ dùng để kiểm tra, nên chúng không thể
+lệch khỏi thứ các endpoint thực sự chấp nhận.
+
+## Địa chỉ gốc
+
+```
+https://kallo.fit
+```
+
+Các endpoint nằm dưới `/api/v1/`. Ngoại lệ duy nhất là `/api/healthz`, không đánh
+phiên bản vì nó là kiểm tra sống chứ không phải một phần của bề mặt API.
+
+## Xác thực
+
+Mọi endpoint trừ những cái gắn nhãn `Public` đều cần một access token do Supabase
+cấp cho một người dùng Kallo:
+
+```
+Authorization: Bearer <jwt>
+```
+
+<Callout label="Không có chương trình API key" tone="caution">
+Bạn không thể đăng ký lấy key. Cách duy nhất để có token hiện nay là đăng nhập
+với tư cách người dùng Kallo, nghĩa là một tích hợp chỉ hành động thay cho đúng
+một tài khoản — tài khoản mà nó giữ thông tin đăng nhập. Nếu bạn cần thứ khác,
+hãy viết cho chúng tôi; nó chưa được làm vì chưa ai cần, không phải vì bị từ chối.
+</Callout>
+
+Token **không mang phạm vi (scope)** nào. Ai giữ token là giữ toàn bộ quyền của
+tài khoản: đọc mọi bữa ăn, đổi hồ sơ, và xoá tài khoản. Không có cách nào cấp một
+token hẹp hơn. Đó là lý do
+[metadata tài nguyên được bảo vệ](https://kallo.fit/.well-known/oauth-protected-resource)
+không khai báo `scopes_supported` — công bố một danh sách scope mà không có gì
+thực thi còn tệ hơn là không công bố gì.
+
+Metadata này theo RFC 9728 và nêu tên máy chủ uỷ quyền là Supabase Auth. Bản thân
+Kallo không phải máy chủ uỷ quyền: không có `/oauth/authorize`, không có
+`/oauth/token`, và không có đăng ký client động.
+
+## Lỗi
+
+Mọi lỗi API đã được tài liệu hóa đều trả về cùng một cấu trúc:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "status": 400,
+    "retryable": false,
+    "message": "date must be YYYY-MM-DD.",
+    "resolution": "Correct the request using the published schema, then retry."
+  }
+}
+```
+
+`code` là mã ổn định, dùng để rẽ nhánh trong code. `message` dành cho người đọc
+và có thể được dịch. `retryable` cho biết việc lặp lại cùng yêu cầu có thể thành
+công hay không. `resolution` cung cấp bước tiếp theo cho agent mà không buộc nó
+phải phân tích văn bản dành cho con người. Các thao tác chỉ chuyển hướng và health
+probe mô tả cấu trúc phản hồi riêng trong OpenAPI.
+
+| Mã | Trạng thái | Thử lại được | Nghĩa là |
+| --- | --- | --- | --- |
+| `VALIDATION_FAILED` | 400 | không | Thân yêu cầu hoặc query sai. Hãy sửa. |
+| `NOT_AUTHENTICATED` | 401 | không | Thiếu token, token hết hạn hoặc không hợp lệ. |
+| `feature_locked` | 402 | không | Gói của tài khoản không bao gồm tính năng này. |
+| `NOT_FOUND` | 404 | không | Không có tài nguyên đó, hoặc nó không phải của bạn. Hai trường hợp này cố ý không phân biệt được. |
+| `CONFLICT` | 409 | không | Tài nguyên đã thay đổi trong lúc bạn thao tác. |
+| `RATE_LIMITED` | 429 | có | Hãy giãn nhịp. Tôn trọng `Retry-After` khi có. |
+| `PIPELINE_TIMEOUT` | 504 | có | Phân tích bữa ăn quá lâu. |
+| `INTERNAL` | 500 | có | Lỗi của chúng tôi. |
+
+Bất kỳ đường dẫn `/api/` nào không có handler đều trả 404 với cùng cấu trúc JSON
+này, không bao giờ là trang HTML — nên một endpoint gõ sai là thứ client của bạn
+đọc được, chứ không phải thứ nó phải đoán.
+
+## Giới hạn tần suất
+
+Không có hạn mức công bố theo từng endpoint. Giới hạn có tồn tại và được áp theo
+người dùng, còn với các endpoint không cần xác thực thì theo địa chỉ IP. Khi chạm
+giới hạn bạn nhận `RATE_LIMITED` kèm header `Retry-After` ở những chỗ đã biết thời
+gian chờ. Hãy coi header đó là nguồn đúng, thay vì lùi theo một lịch cố định.
+
+## Bạn được dựa vào cái gì
+
+Các thao tác gắn nhãn `Public` trong đặc tả là an toàn để phụ thuộc:
+
+- `GET /api/healthz`
+- `POST /api/v1/waitlist`
+- `GET /api/v1/waitlist/confirm`
+- `GET /api/v1/groups/invite/{slug}`
+
+Tất cả phần còn lại đánh dấu `x-internal: true`. Những endpoint đó tồn tại để phục
+vụ chính các client của Kallo. Chúng được đánh phiên bản dưới `/v1`, nhưng phiên
+bản ấy không phải lời hứa với bên thứ ba — một cấu trúc có thể đổi để hợp với ứng
+dụng mà không tăng phiên bản. Nếu bạn xây dựng lên trên, hãy ràng buộc kỳ vọng
+lỏng, và đọc lại đặc tả trước khi nâng cấp.
+
+## Chi phí
+
+Gói miễn phí là thật, không cần thẻ, và đủ để dùng API cho mọi việc bạn làm được
+trong ứng dụng với tài khoản miễn phí. Không có giá riêng cho API và không có môi
+trường sandbox — bạn phát triển trên production, với tài khoản của chính bạn và dữ
+liệu của chính bạn.
+
+## Liên quan
+
+- [Tác nhân AI nên dùng Kallo thế nào](/docs/developers/agents)
+- [Đặc tả OpenAPI](https://kallo.fit/openapi.json)
+- [Dữ liệu của bạn](/docs/account/your-data) — cái gì được lưu, và cái gì tới mô hình
+- [Liên hệ](/docs/company/contact)

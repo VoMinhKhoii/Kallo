@@ -30,6 +30,7 @@ export function HeroHeadline({
 
   return (
     <h1
+      id="landing-headline"
       className={`font-medium font-serif text-[clamp(3.25rem,6.6vw,5rem)] leading-[1.04] tracking-[-0.03em] ${ink} ${className}`}
     >
       {CLAUSES.map((clause, index) => (
