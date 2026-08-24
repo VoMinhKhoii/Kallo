@@ -15,6 +15,7 @@ import {
 } from '@/lib/domain/docs/navigation';
 import { getToc } from '@/lib/domain/docs/toc';
 import { getDocsLinks } from '@/lib/domain/docs/tree';
+import { alternateLanguages } from '@/lib/seo/alternates';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 
@@ -47,11 +48,8 @@ export async function generateMetadata({
     alternates: {
       canonical: url,
       // Every slug is guaranteed to exist in both locales by
-      // generateStaticParams, so the hreflang pair is always complete.
-      languages: {
-        en: `${SITE_URL}/en/docs/${path}`,
-        vi: `${SITE_URL}/vi/docs/${path}`,
-      },
+      // generateStaticParams, so the hreflang set is always complete.
+      languages: alternateLanguages(`/docs/${path}`),
     },
     openGraph: {
       // Spread, not a bare `{ url, title, description }`: declaring `openGraph`
