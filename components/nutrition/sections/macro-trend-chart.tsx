@@ -10,14 +10,16 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import {
+  COMPOSITION_COLORS,
+  COMPOSITION_KEYS,
+  type CompositionKey,
+} from '@/components/shared/nutrition/composition';
 import { formatDateSpan } from '@/lib/domain/nutrition/bucket-detail';
 import type { DaySeriesBucketUnit } from '@/lib/domain/nutrition/types';
 import {
   buildBucketTickLabels,
   buildMacroTrendAxis,
-  COMPOSITION_COLORS,
-  COMPOSITION_KEYS,
-  type CompositionKey,
   isColumnDimmed,
   type MacroTrendPoint,
 } from './macro-trend-utils';

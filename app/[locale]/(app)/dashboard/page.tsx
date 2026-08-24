@@ -3,9 +3,11 @@ import { getTranslations } from 'next-intl/server';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import type { DashboardProfile } from '@/lib/core/types/dashboard';
 import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
+import { goalEnumSchema } from '@/lib/domain/onboarding/schemas';
 
 const DEFAULT_PROFILE: DashboardProfile = {
   userId: '',
+  goal: null,
   calorieTarget: 2000,
   proteinTargetG: 150,
   carbsTargetG: 250,
@@ -25,6 +27,10 @@ export default async function DashboardPage() {
 
   const profile: DashboardProfile = {
     userId: profileRow?.userId ?? DEFAULT_PROFILE.userId,
+    // The dial's headline follows the goal, and the column is free text with a
+    // CHECK — so it is PARSED, not cast. Anything the enum does not allow (and
+    // an incomplete onboarding) falls through to counting up.
+    goal: goalEnumSchema.nullish().catch(null).parse(profileRow?.goal) ?? null,
     calorieTarget: profileRow?.calorieTarget ?? DEFAULT_PROFILE.calorieTarget,
     proteinTargetG:
       profileRow?.proteinTargetG ?? DEFAULT_PROFILE.proteinTargetG,

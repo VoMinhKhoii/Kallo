@@ -17,7 +17,7 @@ void main() {
             width: 300,
             child: CompositionBar(
               segments: compositionFromGrams(
-                protein: 25, carbohydrate: 89, fat: 15,
+                (protein: 25, carbohydrate: 89, fat: 15),
               ).segments,
               height: 6,
             ),

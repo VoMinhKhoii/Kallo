@@ -1,34 +1,9 @@
-import { Beef, Droplet, type LucideIcon, Wheat } from 'lucide-react';
+import { KCAL_PER_GRAM } from '@/components/shared/nutrition/composition';
 import type {
   DaySeriesBucketUnit,
   MacroKey,
   NutritionDaySeries,
 } from '@/lib/domain/nutrition/types';
-
-export const KCAL_PER_GRAM = { protein: 4, carbohydrate: 4, fat: 9 } as const;
-
-export const COMPOSITION_KEYS = ['protein', 'carbohydrate', 'fat'] as const;
-export type CompositionKey = (typeof COMPOSITION_KEYS)[number];
-
-// The nutrition page's own, brighter pigments — NOT the --kallo-macro-* trio the
-// dashboard dock and logging feed use. Berry rose / apricot / sage separate by
-// hue, so a stacked column still reads at the 6px width the 30-day axis needs.
-export const COMPOSITION_COLORS: Record<CompositionKey, string> = {
-  protein: 'var(--kallo-chart-protein)',
-  carbohydrate: 'var(--kallo-chart-carbs)',
-  fat: 'var(--kallo-chart-fat)',
-};
-
-/**
- * The legend's key, one food per macro instead of an abstract colour swatch —
- * beef, wheat, and a drop of oil for fat, which has no single ingredient the
- * way the other two do. Same three on both platforms (keep in sync).
- */
-export const COMPOSITION_ICONS: Record<CompositionKey, LucideIcon> = {
-  protein: Beef,
-  carbohydrate: Wheat,
-  fat: Droplet,
-};
 
 export interface MacroTrendPoint {
   index: number;

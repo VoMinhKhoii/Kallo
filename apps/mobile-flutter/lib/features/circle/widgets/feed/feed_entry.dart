@@ -5,7 +5,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../data/feed_time.dart';
+import '../../../../shared/logic/display_format.dart';
 import 'feed_entry_actions.dart';
 import 'feed_nutrition.dart';
 import 'feed_rhythm.dart';

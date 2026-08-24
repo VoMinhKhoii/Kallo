@@ -329,12 +329,11 @@ void main() {
       await c.read(entitlementsProvider(userA).future);
       final stopwatch = Stopwatch()..start();
 
+      const interval = Duration(milliseconds: 1);
+      const timeout = Duration(milliseconds: 20);
       final premium = await c
           .read(entitlementsProvider(userA).notifier)
-          .pollUntilPremium(
-            interval: const Duration(milliseconds: 1),
-            timeout: const Duration(milliseconds: 20),
-          );
+          .pollUntilPremium(interval: interval, timeout: timeout);
       stopwatch.stop();
 
       expect(premium, isFalse);
@@ -350,7 +349,23 @@ void main() {
       // bare `lessThanOrEqualTo(2)` would also pass if none had fired at all.
       expect(api.postCalls, greaterThanOrEqualTo(1));
       expect(api.postCalls, lessThanOrEqualTo(2));
-      expect(api.getCalls, 1);
+      // The cold fetch, plus whatever local reads the leftover window bought.
+      // `getCalls == 1` was the same fast-machine pin `postCalls` used to be:
+      // when the hung reconcile hands back a sliver of budget, the loop spends
+      // it on a local read — which is precisely what the design says the window
+      // is FOR ("everything between is a local entitlement read so a slow
+      // webhook does not amplify into repeated RevenueCat API calls").
+      //
+      // The ceiling is derived, not guessed. A leftover at or above the retry
+      // floor (timeout/4) is spent on the second RECONCILE, which is hung too
+      // and eats the rest — so pure local reads only happen inside a sub-floor
+      // sliver, which holds at most `timeout/4 ~/ interval` of them. A poll
+      // that actually spun on the hung reconcile would run the whole window at
+      // `interval` and land near 21, well outside this.
+      final localReadCeiling =
+          1 + (timeout ~/ 4).inMilliseconds ~/ interval.inMilliseconds;
+      expect(api.getCalls, greaterThanOrEqualTo(1));
+      expect(api.getCalls, lessThanOrEqualTo(localReadCeiling));
       expect(
         c.read(entitlementsProvider(userA)).valueOrNull?.isPremium,
         isFalse,

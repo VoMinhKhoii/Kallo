@@ -103,14 +103,13 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                 restoredDraft={restoredDraft}
               />
             </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-medium text-kallo-text-muted text-xs uppercase tracking-[0.08em]">
-                {t('caloriesRemaining')}
-              </span>
-              <span className="font-medium text-kallo-text-muted text-xs">
-                {t('today')}
-              </span>
-            </div>
+            {/* Which day this is showing. The calorie eyebrow that sat beside
+                it is gone — the dial's own readout names its figure, and
+                "Calories remaining" was simply wrong for the bulking and
+                maintaining users whose dial counts up. */}
+            <span className="font-medium text-kallo-text-muted text-xs uppercase tracking-[0.08em]">
+              {t('today')}
+            </span>
             <div className="xl:min-h-0 xl:flex-1">
               {dailyMealsQuery.isPending ? (
                 <DashboardSectionState message={t('todayLoading')} />
@@ -124,9 +123,10 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                 />
               ) : (
                 <TodayDock
-                  nutrition={todayNutrition}
-                  meals={todayMeals}
+                  goal={profile.goal}
                   isStreaming={streaming.isActive}
+                  meals={todayMeals}
+                  nutrition={todayNutrition}
                 />
               )}
             </div>

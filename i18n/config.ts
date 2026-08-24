@@ -38,7 +38,6 @@ export const namespaces = [
   'common',
   'nav',
   'metadata',
-  'shared',
   'app',
   'nutrition',
   'onboarding',

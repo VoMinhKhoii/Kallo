@@ -1,5 +1,90 @@
 # Changelog
 
+## [1.12.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.11.0...v1.12.0) (2026-08-22)
+
+
+### Features
+
+* **barcode:** resolve barcodes through a multi-provider chain (OFF + USDA FDC) ([2dc4a13](https://github.com/VoMinhKhoii/Kallo/commit/2dc4a13becae2d5b112cfb06b4f402d1e3619397))
+* **circle:** centre each macro figure under its slice of the bar ([30ff1f5](https://github.com/VoMinhKhoii/Kallo/commit/30ff1f52ff6e6edc13c8065ba1b9d6343593eb1e))
+* **circle:** rebuild the feed's hierarchy, rhythm and action row ([c065d5a](https://github.com/VoMinhKhoii/Kallo/commit/c065d5a9acb20df9208ff2e7d247e47150254c39))
+* **circle:** rebuild the feed's hierarchy, rhythm and action row ([1156b91](https://github.com/VoMinhKhoii/Kallo/commit/1156b911bee0bf184d5f729366d6f858403e10f5))
+* **circle:** show the logged clock time, not an elapsed span ([3922cab](https://github.com/VoMinhKhoii/Kallo/commit/3922cabf8e21d17ab46a44cab795236a6c0b54e7))
+* **dashboard:** rebuild the dock around a 240° gauge dial ([4e6de7f](https://github.com/VoMinhKhoii/Kallo/commit/4e6de7f83486e9be96e40db7fb696589eb3b7b11))
+* **dashboard:** rebuild the dock around a 240° gauge dial ([621793a](https://github.com/VoMinhKhoii/Kallo/commit/621793a7eaabcb18dd73bcbc7c89709ea5387d3b))
+* **lib:** dissolve the lib/ root into concern folders ([35b2cbb](https://github.com/VoMinhKhoii/Kallo/commit/35b2cbbbc6f23968e0f663efddfaf240ddaf5b5d))
+* light the meal composer, and give web the empty-day question ([71912f4](https://github.com/VoMinhKhoii/Kallo/commit/71912f4de24c8757eb5bd2831262294ffacd8807))
+* **logging:** finalize nutrition label ocr pipeline with micronutrient support ([f734c7d](https://github.com/VoMinhKhoii/Kallo/commit/f734c7da1b6caa9b51eb6dcf5848839503ecc944))
+* **logging:** streaming ticker on both platforms, lit composer, first-paint layout ([12926c6](https://github.com/VoMinhKhoii/Kallo/commit/12926c69e3031e480c0f9ef31742c2100f0dccdb))
+* **nutrition-ocr:** expand micronutrients extraction and upgrade vis… ([27ec63b](https://github.com/VoMinhKhoii/Kallo/commit/27ec63bf59a1b7c0fc7b690f6c699fbb59733302))
+* **nutrition-ocr:** expand micronutrients extraction and upgrade vision model ([2f46f64](https://github.com/VoMinhKhoii/Kallo/commit/2f46f6409befa16e2521b73435b2ebd91f622464))
+* **scan:** read a nutrition label on mobile, and unify the scan surfaces ([fbba8a3](https://github.com/VoMinhKhoii/Kallo/commit/fbba8a35336830436f69227ff2b4fa3407a5da8a))
+* **scan:** read a nutrition label on mobile, and unify the scan surfaces ([4dc8875](https://github.com/VoMinhKhoii/Kallo/commit/4dc8875d62d6cd7b1e9d85fdd03b118a6cbf7c2f))
+* **seo:** make the site discoverable, and stop describing it as Vietnamese-only ([a9344a1](https://github.com/VoMinhKhoii/Kallo/commit/a9344a1fc12de5d64648d25b8c919269ff4cb959))
+* **seo:** name the category "nutrition tracker", not meal or calories ([a4ab128](https://github.com/VoMinhKhoii/Kallo/commit/a4ab128c537494e4315ccad389dda3952aa64b5c))
+* **seo:** put the hook in the title, and stop pages dropping their og:image ([c881307](https://github.com/VoMinhKhoii/Kallo/commit/c881307d1deeb1314696de9712eed825a39b9bc5))
+* **seo:** put the hook in the title, and stop pages dropping their og:image ([920d826](https://github.com/VoMinhKhoii/Kallo/commit/920d82608e2b64221dba37cc54b9232fbdf689a7))
+* **seo:** reposition the en metadata from Vietnamese-only to global ([1c529b6](https://github.com/VoMinhKhoii/Kallo/commit/1c529b63c55de152c86b1cbba10138f6533e6fe3))
+* **web:** let the server say where the composer goes ([ef65c1b](https://github.com/VoMinhKhoii/Kallo/commit/ef65c1bd0afa234d10dba99f1e515e5df30d8299))
+
+
+### Bug Fixes
+
+* address adversarial review findings ([447672c](https://github.com/VoMinhKhoii/Kallo/commit/447672c109bfb01a5b9b82f66c7e6e8921b77f01))
+* **ai:** stop counting bone weight as meat in grounded estimation ([3841a57](https://github.com/VoMinhKhoii/Kallo/commit/3841a5784d12f7bc5d7479ba929fd56a64535979))
+* **ai:** stop counting bone weight as meat in grounded estimation ([d4579a5](https://github.com/VoMinhKhoii/Kallo/commit/d4579a5c573a74af2d48b23dc73ccf80f56ae223))
+* **biome:** organize imports/exports in lib/ai/gemini.ts ([147cb10](https://github.com/VoMinhKhoii/Kallo/commit/147cb10322a6448323e6ad4e1586fd7c6d396b36))
+* **circle:** bar to 6pt, macro figures to ink ([ad5ece6](https://github.com/VoMinhKhoii/Kallo/commit/ad5ece66b7c47b7fc8b50740a4d7a5b3bff3a5c4))
+* **circle:** one rule per day boundary, bold the author name ([1e82f25](https://github.com/VoMinhKhoii/Kallo/commit/1e82f255c7ca79b799b18aeea12efc8c3d171de7))
+* **circle:** take the weight back out of the feed's nutrition block ([8847e40](https://github.com/VoMinhKhoii/Kallo/commit/8847e4019353b738c3a33f175f9036e9b855d9e5))
+* **ci:** refactor barcode scanner dialog under 200 lines threshold ([871d2b2](https://github.com/VoMinhKhoii/Kallo/commit/871d2b2a344247de391d1a8e4623d1fa93dcb38d))
+* **ci:** resolve tsc build errors and test import paths for label ocr ([62dff72](https://github.com/VoMinhKhoii/Kallo/commit/62dff72002e47221ae7eba76ea3daeaa162c814f))
+* land the composer where it belongs instead of flying it there ([6e7df77](https://github.com/VoMinhKhoii/Kallo/commit/6e7df77f3a92231dd624db445ed6d3734e796ee0))
+* **logging:** optimize barcode scanner framerate, format filter, and scan bounds ([2769cf4](https://github.com/VoMinhKhoii/Kallo/commit/2769cf477d81a0b597a20e16927784b3264555cf))
+* **mobile:** keep the auth session stream alive across gotrue errors ([0a0ff04](https://github.com/VoMinhKhoii/Kallo/commit/0a0ff04c0363ef4a5f3f5a5322d976d9533e834a))
+* **mobile:** keep the auth session stream alive across gotrue errors ([93199da](https://github.com/VoMinhKhoii/Kallo/commit/93199daa0abf1a9fff18d9fa01a86caadb74f1d4))
+* **mobile:** keep the composer halo off the meal cards ([428316b](https://github.com/VoMinhKhoii/Kallo/commit/428316b375a15156a2fe8ce4585468d363cb93e5))
+* **nutrition:** stop the composition bar collapsing to zero width ([c3e8b67](https://github.com/VoMinhKhoii/Kallo/commit/c3e8b6792895562dc57bd67d813468e321687b22))
+* **nutrition:** stretch the composition bar's segments to the bar height ([0e66e99](https://github.com/VoMinhKhoii/Kallo/commit/0e66e99dbdaa695cbaa1bb5cf7c76254287b521c))
+* **ocr:** address CodeRabbit logic findings on the hardening PR ([7d10b59](https://github.com/VoMinhKhoii/Kallo/commit/7d10b59f387a52545465369dcf0ac9c451010c39))
+* **ocr:** address CodeRabbit UI and lifecycle findings ([b202d30](https://github.com/VoMinhKhoii/Kallo/commit/b202d307ec215931033346992cb5ec1f0b51b33d))
+* **ocr:** fix seam-test CI flake and restore Flutter barcode scan window ([846bfdb](https://github.com/VoMinhKhoii/Kallo/commit/846bfdb00fc73e3c456b59f9ece39523a30bfb1f))
+* **ocr:** harden nutrition label OCR data flow and execution lifecycle ([bc450db](https://github.com/VoMinhKhoii/Kallo/commit/bc450db4011d028caee6b18f4639385909fe3b1d))
+* **ocr:** read thousands groups as thousands, not decimals ([d1b2fbf](https://github.com/VoMinhKhoii/Kallo/commit/d1b2fbf93350828324fbb5385d9a83b2fe8b5d08))
+* **ocr:** stop advertising server-side HEIF, pluralize serving label ([ed78138](https://github.com/VoMinhKhoii/Kallo/commit/ed78138a1c6de253eade7ca0372fef7f77888dfb))
+* **security:** sanitize previewUrl in ocr-scanner-tab to resolve CodeQL alert ([eed29cb](https://github.com/VoMinhKhoii/Kallo/commit/eed29cb712bc34dbedd943d0e7bec121617a9050))
+* **security:** stop emitting a CSP directive that report-only ignores ([8aed570](https://github.com/VoMinhKhoii/Kallo/commit/8aed570728dbea7b909db98d7b569d0266faba83))
+* **security:** stop emitting a CSP directive that report-only ignores ([04bc627](https://github.com/VoMinhKhoii/Kallo/commit/04bc6278f5edee3f0cabd84ced9afc8666074acf))
+* **seo:** drop the hook from the Vietnamese title ([0cc3334](https://github.com/VoMinhKhoii/Kallo/commit/0cc3334aba85c8d43dc14d8b1f827ba6ae0d44b1))
+* **seo:** restore "Trình theo dõi" to the Vietnamese title ([f368933](https://github.com/VoMinhKhoii/Kallo/commit/f3689339210c2fabd22acbe1f676d81704a487d0))
+* **seo:** reword the Vietnamese title ([c44dca5](https://github.com/VoMinhKhoii/Kallo/commit/c44dca525fbcfefdf77e10762d5e5b656a558479))
+* **test:** use direct wikimedia image URL with browser User-Agent in label-ocr live test ([11cade3](https://github.com/VoMinhKhoii/Kallo/commit/11cade3a4d5e2d75eee7c323aa211ddf53b9e91b))
+* **web:** stop the halo being cut off by its own box, and stage its entrance ([5163836](https://github.com/VoMinhKhoii/Kallo/commit/5163836cc5ccaadddba483583a6d9760bb68d22f))
+
+
+### Refactor
+
+* **ai:** decompose the meal pipeline into named concern folders ([15cb62b](https://github.com/VoMinhKhoii/Kallo/commit/15cb62b300f67db983f9c907222e23be6fd95044))
+* **ai:** extract gemini-provider module to satisfy file size limit ([3d27e85](https://github.com/VoMinhKhoii/Kallo/commit/3d27e8590cc3a65355892c900eba67ac3514b62a))
+* **ai:** make the gross+refuse schema permanent, not a toggle ([3bd8013](https://github.com/VoMinhKhoii/Kallo/commit/3bd8013e805eb249404a568dc51ebd4448f739bc))
+* **ai:** restructure the rest of lib/ai into concern folders ([43e29ea](https://github.com/VoMinhKhoii/Kallo/commit/43e29eae39e3bc976d214185123da94a2a144059))
+* **app:** thin the fat route handlers and lift admin out of the route tree ([21c8488](https://github.com/VoMinhKhoii/Kallo/commit/21c84883ba82eb9a4a6404aade93f1f32a7e4d72))
+* **circle:** split the feed widgets under the 200-line gate ([1afa874](https://github.com/VoMinhKhoii/Kallo/commit/1afa8747f64cbc50c9e3145ba8fb80767409752c))
+* **components,hooks:** break the layering inversion and split the over-cap folders ([3b9d7b4](https://github.com/VoMinhKhoii/Kallo/commit/3b9d7b431535d1ca1106f33a63a9113f26dec9dd))
+* **dashboard:** give the dial one owner and close the feature boundary ([a2e4f73](https://github.com/VoMinhKhoii/Kallo/commit/a2e4f7349dc742c95b832b81c9a4ea79d2ffd7cd))
+* fix what the quality review found in this branch ([a0d0a92](https://github.com/VoMinhKhoii/Kallo/commit/a0d0a925b8face699ffca1cd8858094ebda6a5aa))
+* **lib:** group lib/ by function — 38 top-level entries down to 12 ([0fc7a77](https://github.com/VoMinhKhoii/Kallo/commit/0fc7a77fe62d5d31aaa594b7a412f9f60700cc28))
+* **lib:** merge billing, split actions, onboarding, admin and contracts ([8d9d8f7](https://github.com/VoMinhKhoii/Kallo/commit/8d9d8f72718168e43e7e3f51d7d8de0fee9de698))
+* **lib:** merge groups and chat-groups into lib/social ([cf7cb5a](https://github.com/VoMinhKhoii/Kallo/commit/cf7cb5a4deb157ec37cfa27e3d595b64cf10d08b))
+* **mobile:** drop the redundant session fallback and duplicate observer ([7beffdc](https://github.com/VoMinhKhoii/Kallo/commit/7beffdc4fd8b554e832a57075c066cc8120ae331))
+* **mobile:** restructure the Flutter tree ([4f260f6](https://github.com/VoMinhKhoii/Kallo/commit/4f260f651347829f2f3fe2b6f795832d3ae996cb))
+* **scan:** one field widget, and a folder that can be scanned ([5127394](https://github.com/VoMinhKhoii/Kallo/commit/512739424a340269f893d06b0476c13a46bb0c47))
+* **scan:** rebuild the label review as a readout, not a form ([a2701b0](https://github.com/VoMinhKhoii/Kallo/commit/a2701b0b3f01025e9bc427de8aeb2307b51f69ea))
+* **scripts,i18n:** reorganise scripts and split the message catalogues ([8626dac](https://github.com/VoMinhKhoii/Kallo/commit/8626dac8d5edd8d087ad82c00c2c8a2f1c5dc82f))
+* **theme:** one macro palette app-wide ([34e9007](https://github.com/VoMinhKhoii/Kallo/commit/34e900766f02d0b30f3965004af7260cfd444f42))
+* **ui:** drop the lines that only restated the title ([c10e797](https://github.com/VoMinhKhoii/Kallo/commit/c10e7977ee39c60f695b4a379e2ab6ea2a1295c5))
+* **ui:** extract OcrModeToggle to satisfy component file size limit ([3d31659](https://github.com/VoMinhKhoii/Kallo/commit/3d31659f3f07cdd22386155ccd0071928f98709b))
+
 ## [1.11.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.10.0...v1.11.0) (2026-08-13)
 
 
