@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../shared/widgets/form/kallo_switch.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/sharing_providers.dart';
 import '../list/settings_row.dart';
@@ -59,18 +60,18 @@ class _AutoShareToCircleToggleState
 
   @override
   Widget build(BuildContext context) {
+    // No subline: the label says what the toggle does, and the hint it used to
+    // carry was prose in a single-line ellipsised slot — it read as a truncated
+    // fragment rather than an explanation.
     return SettingsRow(
       icon: LucideIcons.users300,
       label: tr('settings.sharing.autoShareLabel'),
-      subline: tr('settings.sharing.autoShareHint'),
       // The static row provides no toggle semantics of its own — name the
       // switch so screen readers don't announce a bare on/off control.
-      trailing: Semantics(
-        label: tr('settings.sharing.autoShareLabel'),
-        child: Switch.adaptive(
-          value: _enabled,
-          onChanged: _pending ? null : _toggle,
-        ),
+      trailing: KalloSwitch(
+        value: _enabled,
+        onChanged: _pending ? null : _toggle,
+        semanticLabel: tr('settings.sharing.autoShareLabel'),
       ),
     );
   }
