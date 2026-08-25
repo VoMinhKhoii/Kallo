@@ -52,6 +52,14 @@ export const DOCS_SECTIONS: DocsSection[] = [
     slugs: ['estimates/how-it-works', 'estimates/accuracy-and-limits'],
   },
   {
+    id: 'developers',
+    slugs: ['developers/api', 'developers/agents'],
+  },
+  {
+    id: 'company',
+    slugs: ['company/about', 'company/contact'],
+  },
+  {
     id: 'legal',
     slugs: ['legal/terms', 'legal/privacy'],
   },

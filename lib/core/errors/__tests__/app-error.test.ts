@@ -31,6 +31,8 @@ describe('AppError', () => {
         status: 429,
         retryable: true,
         message: 'Slow down',
+        resolution:
+          'Wait for Retry-After when present, then retry with backoff.',
       },
     });
   });

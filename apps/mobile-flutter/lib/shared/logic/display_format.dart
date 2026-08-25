@@ -28,3 +28,16 @@ String todayDateString([DateTime? date]) {
   final day = d.day.toString().padLeft(2, '0');
   return '$y-$m-$day';
 }
+
+/// The clock time a meal was logged, in the VIEWER's zone.
+///
+/// Both surfaces that list meals want the same thing: they are already grouped
+/// by day, so an elapsed span ("2h ago") repeats what the day heading just
+/// said and buries what it did not — what time of day the meal was eaten.
+///
+/// Callers pass the timestamp that reflects when the meal was ANALYSED, not a
+/// backfill's chosen date: the Circle feed passes `sharedAt`, the dock passes
+/// `loggedAt`. A backfilled entry's clock time is meaningless, and the feed
+/// hides the timestamp for those rather than printing a misleading one.
+String formatLoggedTime(DateTime value, {required String locale}) =>
+    DateFormat.jm(locale).format(value.toLocal());

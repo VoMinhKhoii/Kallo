@@ -12,8 +12,7 @@ import { serializeError } from '@/lib/core/errors/serialize';
  *   (structured JSON for known errors, generic 500 otherwise).
  *
  * The resulting envelope is always `{ error: { code, status, retryable,
- * message } }`, which `parseApiError` (lib/errors/client.ts) on the client
- * reads.
+ * message, resolution } }`, which `parseApiError` on the client reads.
  */
 export function handleRouteError(error: unknown) {
   if (error instanceof z.ZodError) {

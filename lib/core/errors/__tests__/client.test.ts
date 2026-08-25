@@ -23,6 +23,7 @@ describe('parseApiError', () => {
         status: 504,
         retryable: true,
         message: 'Timeout',
+        resolution: 'Retry with backoff.',
       },
     };
     const err = parseApiError(body);
@@ -30,6 +31,7 @@ describe('parseApiError', () => {
     expect(err.code).toBe('PIPELINE_TIMEOUT');
     expect(err.status).toBe(504);
     expect(err.retryable).toBe(true);
+    expect(err.resolution).toBe('Retry with backoff.');
   });
 
   it('returns UNKNOWN for malformed body', () => {

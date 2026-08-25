@@ -37,24 +37,16 @@ vi.mock('@/lib/infra/db/schema', () => ({
   pendingAnalyses: { id: 'pendingAnalyses.id' },
 }));
 
-vi.mock('@/lib/domain/barcode/openfoodfacts', async (importActual) => {
-  // Keep the real parseSizeGrams (used by the cache-read path); only the
-  // network fetch is stubbed.
-  const actual =
-    await importActual<typeof import('@/lib/domain/barcode/openfoodfacts')>();
-  return {
-    ...actual,
-    fetchProductFromOpenFoodFacts: vi.fn(),
-  };
-});
+// Stubbing the chain is what keeps this suite off the network — it owns every
+// provider fetch.
+vi.mock('@/lib/domain/barcode/chain', () => ({
+  resolveBarcodeProduct: vi.fn(),
+}));
 
-// Import modules under test
-import {
-  searchBarcodeAction,
-  stageBarcodeMealAction,
-} from '@/lib/actions/logging/barcode';
 import type { PipelineResult } from '@/lib/ai/types/result';
-import { fetchProductFromOpenFoodFacts } from '@/lib/domain/barcode/openfoodfacts';
+import { resolveBarcodeProduct } from '@/lib/domain/barcode/chain';
+// Import modules under test
+import { searchBarcodeAction, stageBarcodeMealAction } from '../barcode';
 
 describe('searchBarcodeAction', () => {
   beforeEach(() => {
@@ -117,7 +109,7 @@ describe('searchBarcodeAction', () => {
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([{ id: 42 }]), // source ID
+            limit: vi.fn().mockResolvedValue([{ id: 42, code: 'OFF' }]),
           }),
         }),
       });
@@ -136,7 +128,17 @@ describe('searchBarcodeAction', () => {
       packageSizeG: null,
     };
 
-    vi.mocked(fetchProductFromOpenFoodFacts).mockResolvedValue(mockProduct);
+    vi.mocked(resolveBarcodeProduct).mockResolvedValue({
+      provider: {
+        id: 'off',
+        sourceCode: 'OFF',
+        cachePrefix: 'off_',
+        timeoutMs: 8000,
+        isConfigured: () => true,
+        fetch: vi.fn(),
+      },
+      product: mockProduct,
+    });
 
     const capturedValues: unknown[] = [];
     mockDbInsert.mockReturnValue({
@@ -150,7 +152,9 @@ describe('searchBarcodeAction', () => {
 
     const result = await searchBarcodeAction({ barcode: '8934563138162' });
 
-    expect(fetchProductFromOpenFoodFacts).toHaveBeenCalledWith('8934563138162');
+    expect(resolveBarcodeProduct).toHaveBeenCalledWith('8934563138162', {
+      seededSourceCodes: new Set(['OFF']),
+    });
     expect(result).toEqual({
       success: true,
       data: mockProduct,

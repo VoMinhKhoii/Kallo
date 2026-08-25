@@ -13,7 +13,6 @@ library;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -34,6 +33,8 @@ import '../widgets/heatmap/adherence_heatmap.dart';
 import '../../../theme/calm_tokens.dart';
 import '../widgets/chrome/floating_meal_trigger.dart';
 import '../widgets/chrome/section_header.dart';
+import '../widgets/today/dock_targets.dart';
+import '../widgets/today/day_pager.dart';
 import '../widgets/today/today_section.dart';
 import '../widgets/chrome/week_strip.dart';
 import '../widgets/weight/weight_chart.dart';
@@ -137,6 +138,8 @@ class DashboardScreen extends ConsumerWidget {
       proteinTargetG: p?.proteinTargetG ?? _defaultProteinTargetG,
       carbsTargetG: p?.carbsTargetG ?? _defaultCarbsTargetG,
       fatTargetG: p?.fatTargetG ?? _defaultFatTargetG,
+      // Null until onboarding sets it; the dial reads that as counting up.
+      goal: p?.goal,
     );
   }
 }
@@ -259,7 +262,7 @@ class _ContentState extends State<_Content> {
                         dateLabel: _dateLabel(widget.todayDate, locale),
                         isFirstRun: true,
                       )
-                      : _DayPager(
+                      : DayPager(
                         controller: _pageController,
                         days: _days,
                         todayPage: _todayPage,
@@ -297,143 +300,6 @@ class _ContentState extends State<_Content> {
         const FloatingMealTrigger(),
       ],
     );
-  }
-}
-
-/// The paged day-viewer: a PageView of [TodaySection]s, one per browsable day,
-/// synced to the week strip. Swiping or tapping a strip day moves the page.
-///
-/// A PageView needs a bounded height, but each day's card differs in height
-/// (different meal counts). Each page reports its measured height; the pager
-/// animates its own height to the active page so the surrounding ListView
-/// reflows smoothly instead of the card being clipped or over-tall.
-class _DayPager extends StatefulWidget {
-  const _DayPager({
-    required this.controller,
-    required this.days,
-    required this.todayPage,
-    required this.userId,
-    required this.targets,
-    required this.onPageChanged,
-    required this.dateLabel,
-  });
-
-  final PageController controller;
-  final List<String> days;
-  final int todayPage;
-  final String userId;
-  final DockTargets targets;
-  final ValueChanged<int> onPageChanged;
-  final String Function(String date) dateLabel;
-
-  @override
-  State<_DayPager> createState() => _DayPagerState();
-}
-
-class _DayPagerState extends State<_DayPager> {
-  late final List<double?> _heights = List.filled(widget.days.length, null);
-  late int _active = widget.todayPage;
-
-  void _report(int index, double height) {
-    if (_heights[index] == height) return;
-    // Defer the setState out of the layout/build phase.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      setState(() => _heights[index] = height);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // While a page is unmeasured, fall back to the tallest known height (or a
-    // sensible minimum) so the first frame isn't zero-height.
-    final known = _heights.whereType<double>();
-    final fallback =
-        known.isEmpty ? 280.0 : known.reduce((a, b) => a > b ? a : b);
-    final height = _heights[_active] ?? fallback;
-
-    // Clip.none the whole way down. The viewport is EXACTLY the card's measured
-    // height, so every default Clip.hardEdge here (AnimatedSize's, the
-    // PageView's, _MeasuredPage's) put a clip rect on the card's own rect and
-    // sheared kCardShadows off all four sides — the Today card read hard-edged
-    // while its neighbours floated. Nothing on this path needs to clip: the
-    // ListView viewport still bounds the scroll.
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 220),
-      curve: const Cubic(0.16, 1, 0.3, 1),
-      alignment: Alignment.topCenter,
-      clipBehavior: Clip.none,
-      child: SizedBox(
-        height: height,
-        child: PageView.builder(
-          clipBehavior: Clip.none,
-          controller: widget.controller,
-          itemCount: widget.days.length,
-          onPageChanged: (p) {
-            setState(() => _active = p);
-            widget.onPageChanged(p);
-          },
-          itemBuilder: (context, index) {
-            final date = widget.days[index];
-            return _MeasuredPage(
-              onHeight: (h) => _report(index, h),
-              child: TodaySection(
-                args: (userId: widget.userId, date: date),
-                targets: widget.targets,
-                dateLabel: widget.dateLabel(date),
-                isToday: index == widget.todayPage,
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-/// Reports its child's laid-out height once per layout pass, top-aligned so the
-/// card sits at the top of the (taller) page viewport.
-class _MeasuredPage extends StatelessWidget {
-  const _MeasuredPage({required this.child, required this.onHeight});
-  final Widget child;
-  final ValueChanged<double> onHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      physics: const NeverScrollableScrollPhysics(),
-      clipBehavior: Clip.none, // let the card's shadow out (see _DayPager)
-      child: _SizeReporter(onHeight: onHeight, child: child),
-    );
-  }
-}
-
-class _SizeReporter extends SingleChildRenderObjectWidget {
-  const _SizeReporter({required this.onHeight, required super.child});
-  final ValueChanged<double> onHeight;
-
-  @override
-  _SizeReporterRender createRenderObject(BuildContext context) =>
-      _SizeReporterRender(onHeight);
-
-  @override
-  void updateRenderObject(BuildContext context, _SizeReporterRender obj) =>
-      obj.onHeight = onHeight;
-}
-
-class _SizeReporterRender extends RenderProxyBox {
-  _SizeReporterRender(this.onHeight);
-  ValueChanged<double> onHeight;
-  double? _last;
-
-  @override
-  void performLayout() {
-    super.performLayout();
-    final h = size.height;
-    if (h != _last) {
-      _last = h;
-      onHeight(h);
-    }
   }
 }
 

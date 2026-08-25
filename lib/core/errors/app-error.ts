@@ -25,8 +25,39 @@ export class AppError extends Error {
         status: this.status,
         retryable: this.retryable,
         message: this.userMessage,
+        resolution: resolutionFor(this.status, this.retryable),
       },
     };
+  }
+}
+
+/**
+ * Stable, machine-actionable next step for an HTTP failure.
+ *
+ * The human message may be localized or domain-specific. Resolution is kept
+ * deliberately small and status-driven so an agent can decide what to do next
+ * without parsing prose or learning every domain error code first.
+ */
+function resolutionFor(status: number, retryable: boolean): string {
+  switch (status) {
+    case 400:
+      return 'Correct the request using the published schema, then retry.';
+    case 401:
+      return 'Authenticate with a valid Kallo user access token, then retry.';
+    case 402:
+      return 'Use an account whose plan includes this feature.';
+    case 404:
+      return 'Verify the path and resource identifier against /openapi.json.';
+    case 409:
+      return 'Read the latest resource state, reconcile the conflict, then retry.';
+    case 422:
+      return 'Change the supplied content as described by the error message.';
+    case 429:
+      return 'Wait for Retry-After when present, then retry with backoff.';
+    default:
+      return retryable
+        ? 'Retry with backoff; contact support if the failure persists.'
+        : 'Change the request or account state before retrying.';
   }
 }
 
@@ -68,6 +99,7 @@ export class FeatureLockedError extends AppError {
         status: this.status,
         retryable: this.retryable,
         message: this.userMessage,
+        resolution: resolutionFor(this.status, this.retryable),
         feature: this.feature,
         reason: this.reason,
       },

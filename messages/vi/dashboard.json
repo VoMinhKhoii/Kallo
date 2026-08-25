@@ -3,7 +3,6 @@
   "today": "Hôm nay",
   "thisWeek": "Tuần này",
   "caloriesConsumed": "Calo đã nạp",
-  "caloriesRemaining": "Calo còn lại",
   "protein": "Đạm",
   "carbs": "Carb",
   "fat": "Chất béo",
@@ -77,6 +76,13 @@
     "farUnder": "Thiếu nhiều"
   },
   "caloriesLogged": "kcal đã ghi",
+  "kcalRemaining": "kcal còn lại",
+  "loggedOfTarget": "đã ghi {logged}/{target}",
+  "leftOfTarget": "còn {left}/{target}",
+  "overTargetBy": "vượt {over}/{target}",
+  "remainingShort": "còn lại",
+  "loggedShort": "đã ghi",
+  "loggedOverTarget": "{logged}/{target}",
   "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
   "streaming": {
     "saved": "Đã lưu bữa ăn",

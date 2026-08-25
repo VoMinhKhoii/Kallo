@@ -1,5 +1,10 @@
 import { SITE_URL } from '@/lib/seo/site';
 
+/** Where a reader — or an agent answering "how do I contact them" — should write. */
+export const SUPPORT_EMAIL = 'support@kallo.fit';
+/** The address SECURITY.md publishes for private vulnerability reports. */
+export const SECURITY_EMAIL = 'minhkhoitdn@gmail.com';
+
 /**
  * The landing page's JSON-LD graph.
  *
@@ -34,6 +39,35 @@ export function landingStructuredData({
         name: 'Kallo',
         url: SITE_URL,
         logo: `${SITE_URL}/icon-512.png`,
+        email: SUPPORT_EMAIL,
+        // Locality and country, not the street address. The full address is
+        // published in the privacy policy because data protection law requires
+        // a controller to give one; repeating it in markup that gets scraped
+        // into every AI index is a different exposure, and `PostalAddress`
+        // needs neither `streetAddress` nor `postalCode` to be valid.
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Ho Chi Minh City',
+          addressCountry: 'VN',
+        },
+        // Two points, because the two inboxes have genuinely different
+        // handling: support is read by a person during the day, security is the
+        // address SECURITY.md commits to a 48-hour acknowledgement on.
+        contactPoint: [
+          {
+            '@type': 'ContactPoint',
+            contactType: 'customer support',
+            email: SUPPORT_EMAIL,
+            url: `${SITE_URL}/en/docs/company/contact`,
+            availableLanguage: ['en', 'vi'],
+          },
+          {
+            '@type': 'ContactPoint',
+            contactType: 'security',
+            email: SECURITY_EMAIL,
+            availableLanguage: ['en', 'vi'],
+          },
+        ],
       },
       {
         '@type': 'WebSite',

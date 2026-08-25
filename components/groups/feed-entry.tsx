@@ -6,20 +6,15 @@ import { PremiumChip } from '@/components/billing/premium-chip';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { ShareReplies } from '@/components/groups/share-replies';
+import { compositionFromGrams } from '@/components/shared/nutrition/composition';
+import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
+import { MacroScale } from '@/components/shared/nutrition/macro-scale';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { useLogSharedMeal } from '@/hooks/social/sharing/use-log-shared-meal';
 import { useToggleReaction } from '@/hooks/social/sharing/use-toggle-reaction';
 import type { CircleFeedEntry } from '@/lib/actions/groups/types';
 import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import { cn } from '@/lib/core/ui/cn';
-
-function formatMacro(value: number | null, na: string): string {
-  return value == null ? na : `${Math.round(value)}g`;
-}
-
-function formatCalories(value: number | null, na: string): string {
-  return value == null ? na : `${Math.round(value)} kcal`;
-}
 
 function fractionLabel(factor: number): string {
   if (Math.abs(factor - 0.5) < 0.001) return '½';
@@ -42,11 +37,16 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
   const copyLocked = locked('copy_split');
 
   const label = entry.isSelf ? tWall('you') : labelFor(friend);
-  const na = tWall('na');
-  const protein = formatMacro(meal.proteinG, na);
-  const carbs = formatMacro(meal.carbohydrateG, na);
-  const fat = formatMacro(meal.fatG, na);
-  const calories = formatCalories(meal.caloriesKcal, na);
+  // Spelled once: the bar and the figures under it read the same record.
+  const grams = {
+    protein: meal.proteinG,
+    carbohydrate: meal.carbohydrateG,
+    fat: meal.fatG,
+  };
+  const composition = compositionFromGrams(grams);
+  // Nothing measured at all — draw nothing rather than a row of dashes over an
+  // empty bar.
+  const hasNutrition = meal.caloriesKcal != null || composition.totalKcal > 0;
 
   return (
     <div className="flex gap-3">
@@ -74,15 +74,29 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
         <p className="font-medium font-sans-display text-[#141413] text-[15px] leading-[1.45]">
           {meal.rawInput}
         </p>
-        <div className="mt-2.5 flex items-center justify-between font-sans-display text-[#6E6D66] text-[11px] tabular-nums">
-          {/* flex gap, not literal spaces — HTML collapses those to one. */}
-          <span className="flex items-center gap-2.5">
-            <span>P: {protein}</span>
-            <span>C: {carbs}</span>
-            <span>F: {fat}</span>
-          </span>
-          <b className="font-bold text-[#141413] text-[13px]">{calories}</b>
-        </div>
+        {hasNutrition && (
+          <div className="mt-2.5 flex flex-col gap-1">
+            {/* The unit stays quiet so the figure carries the mass, not the
+                word. Body weight, not the meal name's: at a larger size the
+                figure outweighed the dish above it, which puts the post's
+                focus back on the number this vocabulary took it off. */}
+            <span className="font-sans-display text-[#6E6D66] text-[11px]">
+              <span className="font-medium text-[#141413] text-[13px] tabular-nums">
+                {meal.caloriesKcal == null
+                  ? '—'
+                  : Math.round(meal.caloriesKcal)}
+              </span>{' '}
+              kcal
+            </span>
+            {composition.totalKcal > 0 && (
+              <CompositionBar
+                segments={composition.segments}
+                variant="compact"
+              />
+            )}
+            <MacroScale grams={grams} />
+          </div>
+        )}
         <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[#6E6D66] text-[11.5px] tabular-nums">
           <button
             type="button"

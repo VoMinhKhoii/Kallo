@@ -1,8 +1,3 @@
-import 'dart:io';
-// `easy_localization` re-exports intl's own TextDirection, which shadows the
-// painting one this file needs.
-import 'dart:ui' as ui;
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,50 +5,61 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/logic/feed/view_state.dart';
-import 'package:kallo_mobile/features/logging/widgets/feed/summary/macro_bar.dart';
+import 'package:kallo_mobile/features/logging/widgets/feed/placeholder/loading_skeletons.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/summary/macro_summary.dart';
-import 'package:kallo_mobile/theme/calm_tokens.dart';
+import 'package:kallo_mobile/models/nutrition/nutrition_enums.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/calorie_dial.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/gauge_arc_geometry.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/macro_dial_row.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/rounded_gauge_arc.dart';
 
 import '../../../../l10n_test_loader.dart';
 
-Widget _wrap(Widget child, {double textScale = 1.0}) => EasyLocalization(
-  supportedLocales: const [Locale('en'), Locale('vi')],
-  path: 'assets/l10n',
-  fallbackLocale: const Locale('en'),
-  assetLoader: const FsL10nLoader(),
-  child: Builder(
-    builder:
-        (context) => MaterialApp(
+/// iPhone 14/15 logical width — the narrow end of what this ships on.
+const double _phoneWidth = 390;
+
+/// A 320pt phone (SE). The calorie dial holds its size; the macros give way.
+const double _narrowPhoneWidth = 320;
+
+Widget _wrap(Widget child, {double textScale = 1.0, double width = _phoneWidth}) =>
+    EasyLocalization(
+      supportedLocales: const [Locale('en'), Locale('vi')],
+      path: 'assets/l10n',
+      fallbackLocale: const Locale('en'),
+      assetLoader: const FsL10nLoader(),
+      child: Builder(
+        builder: (context) => MaterialApp(
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
           home: MediaQuery(
             data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
             child: Scaffold(
-              // A real phone, not the 800pt test surface. The bar is the only
-              // flexible column, so every width claim here is meaningless
-              // unless the row is as tight as it is on a device.
+              // A real phone, not the 800pt test surface. The macro dials are
+              // the only flexible column, so every size claim here is
+              // meaningless unless the row is as tight as it is on a device.
               body: Center(
                 child: SizedBox(
-                  width: _phoneWidth,
+                  width: width,
                   child: SingleChildScrollView(child: child),
                 ),
               ),
             ),
           ),
         ),
-  ),
-);
+      ),
+    );
 
-/// A settled day with three-digit macro figures — the shape that wrapped the
-/// `current/target g` readout onto a second line.
-const _view = FeedViewState(
-  persistedMeals: [],
-  pendingConfirmations: [],
-  entries: [],
-  isLoading: false,
+FeedViewState _viewState({
+  bool isLoading = false,
+  bool hasUnknownDailyMacros = false,
+}) => FeedViewState(
+  persistedMeals: const [],
+  pendingConfirmations: const [],
+  entries: const [],
+  isLoading: isLoading,
   hasError: false,
-  hasUnknownDailyMacros: false,
+  hasUnknownDailyMacros: hasUnknownDailyMacros,
   isStreaming: false,
   isRevealing: false,
   isCheatRevealing: false,
@@ -67,38 +73,44 @@ const _view = FeedViewState(
   showPartialDayNotice: false,
 );
 
-const _profile = LoggingProfile(
+LoggingProfile _profile({MacroGoal? goal}) => LoggingProfile(
   userId: 'u1',
   calorieTarget: 2000,
   proteinTargetG: 135,
   carbsTargetG: 350,
   fatTargetG: 70,
+  goal: goal,
 );
 
-/// Height of a single `dashMeta` line (12 / 1.25), plus slack for rounding. A
-/// wrapped value is 30+, so this cleanly separates one line from two.
-const _oneLineMax = 22.0;
-
-/// iPhone 14/15 logical width — the narrow end of what this ships on.
-const _phoneWidth = 390.0;
-
-double _renderedWidth(String text, {double textScale = 1.0}) {
-  final painter = TextPainter(
-    text: TextSpan(text: text, style: dashMeta(tabular: true)),
-    textDirection: ui.TextDirection.ltr,
-    textScaler: TextScaler.linear(textScale),
-    maxLines: 1,
-  )..layout();
-  return painter.width;
+Future<void> _pump(
+  WidgetTester tester, {
+  MacroGoal? goal,
+  bool isLoading = false,
+  bool hasUnknownDailyMacros = false,
+  double textScale = 1.0,
+  double width = _phoneWidth,
+}) async {
+  await tester.pumpWidget(
+    _wrap(
+      MacroSummary(
+        view: _viewState(
+          isLoading: isLoading,
+          hasUnknownDailyMacros: hasUnknownDailyMacros,
+        ),
+        profile: _profile(goal: goal),
+      ),
+      textScale: textScale,
+      width: width,
+    ),
+  );
+  if (isLoading) {
+    // The skeleton pulses forever; settling it never returns.
+    await tester.pump();
+    return;
+  }
+  // Drain the dials' 1000ms entrance sweep so nothing is pending at teardown.
+  await tester.pumpAndSettle();
 }
-
-/// The width the value's fixed column actually gives it.
-double _columnWidth(WidgetTester tester, Finder text) =>
-    tester
-        .widget<SizedBox>(
-          find.ancestor(of: text, matching: find.byType(SizedBox)).first,
-        )
-        .width!;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -110,138 +122,99 @@ void main() {
           (call) async => call.method == 'getAll' ? <String, Object>{} : null,
         );
     await EasyLocalization.ensureInitialized();
-    // Measure against the real typeface, not the test font (whose glyphs are
-    // all one em wide) — the column width is a claim about Be Vietnam Pro.
-    final loader = FontLoader('BeVietnamPro')..addFont(
-      File(
-        'assets/google_fonts/BeVietnamPro-Regular.ttf',
-      ).readAsBytes().then(ByteData.sublistView),
-    );
-    await loader.load();
   });
 
-  testWidgets('keeps a three-digit macro value on one line', (tester) async {
-    await tester.pumpWidget(
-      _wrap(const MacroSummary(view: _view, profile: _profile)),
-    );
-    await tester.pumpAndSettle();
+  testWidgets('draws four dials: the day, then its three macros', (
+    tester,
+  ) async {
+    await _pump(tester);
 
-    final value = find.text('120/135g');
-    expect(value, findsOneWidget);
+    expect(find.byType(RoundedGaugeArc), findsNWidgets(4));
+    expect(find.text('120g'), findsOneWidget);
+    expect(find.text('/135g'), findsOneWidget);
+    expect(find.text('240g'), findsOneWidget);
+    expect(find.text('/350g'), findsOneWidget);
+    expect(find.text('60g'), findsOneWidget);
+    expect(find.text('/70g'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the header counts the way the user does', (tester) async {
+    // No goal on the profile reads as counting UP, the same fallback the dock
+    // takes — the headline is what has been logged. The unit is one word here,
+    // not the dock's sentence: the compact mouth cannot hold "kcal logged", so
+    // the framing moves to the line under the arc.
+    await _pump(tester);
+    expect(find.text('1,850'), findsOneWidget);
+    expect(find.text('logged'), findsOneWidget);
+    expect(find.text('1,850/2,000'), findsOneWidget);
+
+    // A cutter counts DOWN: the headline is what is left to spend.
+    await _pump(tester, goal: MacroGoal.cutting);
+    expect(find.text('150'), findsOneWidget);
+    expect(find.text('left'), findsOneWidget);
+    expect(find.text('1,850/2,000'), findsOneWidget);
+  });
+
+  testWidgets('a macro figure sits on its arc tips', (tester) async {
+    await _pump(tester);
+
+    // The second arc is protein's — the first is the day's calorie dial.
+    final arc = tester.getRect(find.byType(RoundedGaugeArc).at(1));
+    final tipLine =
+        arc.top +
+        kCompactMacroDialRadius +
+        gaugeTipOffset(kCompactMacroDialRadius);
     expect(
-      tester.getSize(value).height,
-      lessThan(_oneLineMax),
-      reason: '120/135g wrapped onto a second line',
+      tester.getRect(find.text('/135g')).center.dy,
+      closeTo(tipLine, 1),
+      reason: 'the secondary line and the arc tips share one line',
+    );
+  });
+
+  testWidgets('holds at the Dynamic Type cap', (tester) async {
+    await _pump(tester, textScale: 1.3);
+
+    expect(find.text('120g'), findsOneWidget);
+    expect(find.text('1,850'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the macros give way on a narrow phone, the day does not', (
+    tester,
+  ) async {
+    await _pump(tester);
+    final wide = tester.getRect(find.byType(RoundedGaugeArc).at(1));
+    expect(wide.width, kCompactMacroDialRadius * 2);
+
+    await _pump(tester, width: _narrowPhoneWidth);
+    final narrow = tester.getRect(find.byType(RoundedGaugeArc).at(1));
+    expect(narrow.width, lessThan(kCompactMacroDialRadius * 2));
+    expect(narrow.width, greaterThan(0));
+    // The calorie dial is fixed: it is the row's anchor, and shrinking it would
+    // put the day's own figure below its macros in prominence.
+    expect(
+      tester.getRect(find.byType(RoundedGaugeArc).first).width,
+      kCompactCalorieDialRadius * 2,
     );
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('still holds one line at a raised text scale', (tester) async {
-    await tester.pumpWidget(
-      _wrap(const MacroSummary(view: _view, profile: _profile), textScale: 1.3),
-    );
-    await tester.pumpAndSettle();
-
-    expect(
-      tester.getSize(find.text('120/135g')).height,
-      lessThan(_oneLineMax * 1.3),
-      reason: 'the readout wrapped once Dynamic Type was raised',
-    );
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('the value column fits the widest realistic figure', (
+  testWidgets('a day it cannot total says so instead of drawing dials', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      _wrap(const MacroSummary(view: _view, profile: _profile)),
-    );
-    await tester.pumpAndSettle();
+    await _pump(tester, hasUnknownDailyMacros: true);
 
-    // The guards above stop a narrow column from wrapping, so they'd also hide
-    // a column too narrow to READ. Assert the width itself: carbs is the widest
-    // realistic case (a four-digit intake against a three-digit target).
-    final column = _columnWidth(tester, find.text('120/135g'));
-    expect(
-      _renderedWidth('1024/350g'),
-      lessThanOrEqualTo(column),
-      reason: 'the value column clips the widest realistic figure',
-    );
+    expect(find.byType(RoundedGaugeArc), findsNothing);
+    expect(find.textContaining('macros'), findsOneWidget);
   });
 
-  testWidgets('makes the bar the widest column in its row', (tester) async {
-    // At 390pt the bar was the SHORTEST of the three — 71.3pt, against a 76pt
-    // label box holding a 54pt label, and a 72pt value box. It is the only
-    // thing in the row that reads at a glance, so it should be the longest.
-    //
-    // The floor is absolute on purpose: "wider than its neighbours" alone would
-    // still pass if the row grew, and this is a claim about a phone.
-    await tester.pumpWidget(
-      _wrap(const MacroSummary(view: _view, profile: _profile)),
-    );
-    await tester.pumpAndSettle();
-
-    final bar = tester.getSize(find.byType(MacroBar).first).width;
-    final label = _columnWidth(tester, find.text('Protein'));
-    final value = _columnWidth(tester, find.text('120/135g'));
-
-    expect(bar, greaterThan(label));
-    expect(bar, greaterThan(value));
-    expect(
-      bar,
-      greaterThanOrEqualTo(95),
-      reason:
-          'the bar is back down to $bar at ${_phoneWidth}pt — it was 71.3 '
-          'before the label column and gaps were measured',
-    );
-  });
-
-  testWidgets('scales a macro label down instead of clipping it', (
+  testWidgets('stands in with the dial row\'s own silhouette while loading', (
     tester,
   ) async {
-    // The label column is measured at scale 1.0, so Vietnamese — "Chất béo",
-    // the widest at ~55 — has to shrink rather than clip once Dynamic Type is
-    // raised. It previously had 20pt of slack it did not need.
-    await tester.pumpWidget(
-      _wrap(const MacroSummary(view: _view, profile: _profile)),
-    );
-    await tester.pumpAndSettle();
+    await _pump(tester, isLoading: true);
 
-    expect(
-      find.ancestor(
-        of: find.text('Protein'),
-        matching: find.byWidgetPredicate(
-          (w) => w is FittedBox && w.fit == BoxFit.scaleDown,
-        ),
-      ),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('scales the value down rather than truncating it', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _wrap(const MacroSummary(view: _view, profile: _profile)),
-    );
-    await tester.pumpAndSettle();
-
-    // At the 1.3 Dynamic Type cap the widest figure no longer fits the column.
-    // Without the FittedBox it would CLIP, and "1024/350g" truncated to
-    // "1024/35" reads as a real — but wrong — number.
-    expect(
-      _renderedWidth('1024/350g', textScale: 1.3),
-      greaterThan(_columnWidth(tester, find.text('120/135g'))),
-      reason: 'if this ever fits, the scale-down is no longer load-bearing',
-    );
-    expect(
-      find.ancestor(
-        of: find.text('120/135g'),
-        matching: find.byWidgetPredicate(
-          (w) => w is FittedBox && w.fit == BoxFit.scaleDown,
-        ),
-      ),
-      findsOneWidget,
-    );
+    expect(find.byType(MacroSummarySkeleton), findsOneWidget);
+    expect(find.byType(RoundedGaugeArc), findsNothing);
   });
 }

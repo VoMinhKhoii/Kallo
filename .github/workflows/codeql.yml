@@ -16,6 +16,8 @@ concurrency:
 jobs:
   analyze:
     name: Analyze
+    # GitHub Code Security is unavailable for personal-account private repos.
+    if: github.event.repository.private == false
     runs-on: ubuntu-latest
     permissions:
       security-events: write

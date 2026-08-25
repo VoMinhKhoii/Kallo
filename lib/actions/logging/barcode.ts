@@ -7,13 +7,15 @@ import {
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
 import { MAX_FOOD_ITEM_GRAMS } from '@/lib/domain/barcode/constants';
-import type { ParsedBarcodeProduct } from '@/lib/domain/barcode/openfoodfacts';
 import {
   BarcodeServiceError,
   searchBarcodeProduct,
   stageBarcodeMeal,
 } from '@/lib/domain/barcode/service';
-import type { BarcodeErrorCode } from '@/lib/domain/barcode/types';
+import type {
+  BarcodeErrorCode,
+  ParsedBarcodeProduct,
+} from '@/lib/domain/barcode/types';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
 export type { BarcodeErrorCode } from '@/lib/domain/barcode/types';
@@ -42,7 +44,7 @@ function getErrorCode(error: unknown): BarcodeErrorCode {
  * Search for a product by barcode. If not in DB, fetches from Open Food Facts API
  * and caches it in vietnamese_food_composition.
  *
- * Thin wrapper over `lib/barcode/service.ts` (shared with the `/api/v1/barcode`
+ * Thin wrapper over `lib/domain/barcode/service.ts` (shared with the `/api/v1/barcode`
  * routes) preserving the web dialog's `{success, code}` result contract.
  */
 export async function searchBarcodeAction(input: {
@@ -65,7 +67,7 @@ export async function searchBarcodeAction(input: {
 /**
  * Scales the nutrition values for a barcode product and stages it in pending_analyses.
  *
- * Thin wrapper over `lib/barcode/service.ts` (shared with the `/api/v1/barcode`
+ * Thin wrapper over `lib/domain/barcode/service.ts` (shared with the `/api/v1/barcode`
  * routes) preserving the web dialog's `{success, code}` result contract.
  */
 export async function stageBarcodeMealAction(input: {

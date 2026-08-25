@@ -107,7 +107,7 @@ export async function handleSendEmailHook(
     const action = payload.email_data.email_action_type;
     const log = action.endsWith('_notification') ? console.info : console.error;
     log(`[auth/send-email] no template for "${action}" — nothing sent`);
-    return new NextResponse(null, { status: 200 });
+    return NextResponse.json({}, { status: 200 });
   }
 
   // Scope the idempotency key per email so the two-message email-change flow
@@ -134,7 +134,7 @@ export async function handleSendEmailHook(
     }
   }
 
-  return new NextResponse(null, { status: 200 });
+  return NextResponse.json({}, { status: 200 });
 }
 
 export async function POST(request: Request) {

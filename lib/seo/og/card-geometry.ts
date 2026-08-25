@@ -9,10 +9,12 @@ export const CARD_WIDTH = 1080;
 export const CARD_HEIGHT = 1920;
 
 /**
- * The calorie-ring geometry from `components/shared/calorie-ring.tsx`, so the
- * shared card matches the in-app ring exactly. Duplicated rather than imported
- * because that component is a client component built on motion + CSS variables,
- * neither of which Satori can render.
+ * The share card's own calorie ring.
+ *
+ * The app's in-product surfaces have moved to the 240° gauge dial
+ * (`components/shared/gauge/`); the card keeps the ring, because Satori lays
+ * out a fixed canvas with no CSS variables and no motion, and because a share
+ * card is read once at a glance rather than scanned against a target.
  */
 export const RING_VIEWBOX = 100;
 export const RING_RADIUS = 46;

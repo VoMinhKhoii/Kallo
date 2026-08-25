@@ -54,6 +54,7 @@ describe('DashboardPage', () => {
     expect(page?.props).toEqual({
       profile: {
         userId: '',
+        goal: null,
         calorieTarget: 2000,
         proteinTargetG: 150,
         carbsTargetG: 250,
@@ -66,6 +67,7 @@ describe('DashboardPage', () => {
   it('renders the full dashboard when targets are present', async () => {
     getOnboardingProfileMock.mockResolvedValue({
       userId: 'user-1',
+      goal: 'cutting',
       calorieTarget: 1800,
       proteinTargetG: 140,
       carbsTargetG: 180,
@@ -78,6 +80,7 @@ describe('DashboardPage', () => {
     expect(page?.props).toEqual({
       profile: {
         userId: 'user-1',
+        goal: 'cutting',
         calorieTarget: 1800,
         proteinTargetG: 140,
         carbsTargetG: 180,
@@ -101,6 +104,7 @@ describe('DashboardPage', () => {
     expect(page?.props).toEqual({
       profile: {
         userId: '',
+        goal: null,
         calorieTarget: 1800,
         proteinTargetG: 150,
         carbsTargetG: 180,

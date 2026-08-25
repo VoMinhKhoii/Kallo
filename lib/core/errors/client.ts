@@ -14,6 +14,10 @@ export class ApiError extends Error {
     // existing 3-argument construction keeps compiling. `Error.message` still
     // falls back to `code` when the envelope carried none.
     public readonly serverMessage?: string,
+    // The stable, status-driven next step from `resolutionFor`. Machine-
+    // actionable where `serverMessage` is prose, so an agent can decide what
+    // to do without parsing the human copy.
+    public readonly resolution?: string,
     // Only present on a `FeatureLockedError` envelope (402): which feature was
     // locked and why — what the client keys the paywall on.
     public readonly feature?: string,
@@ -25,9 +29,9 @@ export class ApiError extends Error {
 }
 
 /**
- * Parse the `{ error: { code, status, retryable, message } }` shape
- * returned by `serializeError` into an `ApiError` instance. A 402 envelope
- * additionally carries `feature` + `reason` (see `FeatureLockedError`).
+ * Parse the `{ error: { code, status, retryable, message, resolution } }`
+ * shape returned by `serializeError` into an `ApiError` instance. A 402
+ * envelope additionally carries `feature` + `reason` (see `FeatureLockedError`).
  */
 export function parseApiError(body: unknown): ApiError {
   if (
@@ -42,6 +46,7 @@ export function parseApiError(body: unknown): ApiError {
       typeof err.status === 'number' ? err.status : 500,
       typeof err.retryable === 'boolean' ? err.retryable : false,
       typeof err.message === 'string' ? err.message : undefined,
+      typeof err.resolution === 'string' ? err.resolution : undefined,
       typeof err.feature === 'string' ? err.feature : undefined,
       typeof err.reason === 'string' ? err.reason : undefined
     );

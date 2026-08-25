@@ -164,6 +164,22 @@ describe('fetchProductFromOpenFoodFacts', () => {
     expect(result?.caloriesKcal).toBe(250);
   });
 
+  it('honors an explicit timeout override', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(global, 'fetch').mockImplementation((_url, init) => {
+      const signal = (init as RequestInit).signal as AbortSignal;
+      return new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () => reject(signal.reason));
+      });
+    });
+
+    const started = Date.now();
+    const result = await fetchProductFromOpenFoodFacts('8934563138162', 20);
+
+    expect(result).toBeNull();
+    expect(Date.now() - started).toBeLessThan(2000);
+  });
+
   it('resolves sodium from salt when sodium is missing', async () => {
     const mockApiResponse = {
       status: 1,

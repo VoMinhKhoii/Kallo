@@ -103,8 +103,25 @@ const meals: PersistedMeal[] = [
 describe('dashboard today helpers', () => {
   it('maps persisted meals into dashboard meal entries', () => {
     expect(mapPersistedMealsToMealEntries(meals)).toEqual([
-      { id: 'meal-1', label: 'Pho bo', calories: 553 },
-      { id: 'meal-2', label: 'Sua chua', calories: 0 },
+      {
+        id: 'meal-1',
+        label: 'Pho bo',
+        calories: 553,
+        loggedAt: '2026-04-29T01:00:00.000Z',
+        proteinG: 37.6,
+        carbsG: 61.5,
+        fatG: 17.8,
+      },
+      {
+        id: 'meal-2',
+        label: 'Sua chua',
+        calories: 0,
+        loggedAt: '2026-04-29T08:00:00.000Z',
+        proteinG: 2.4,
+        carbsG: 14.4,
+        // Null, not 0 — the row has to tell "no fat" from "never resolved".
+        fatG: null,
+      },
     ]);
   });
 

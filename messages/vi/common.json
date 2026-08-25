@@ -15,5 +15,13 @@
   "or": "hoặc",
   "optional": "Tùy chọn",
   "notFound": "Không tìm thấy trang",
+  "notFoundBody": "Không có trang nào ở địa chỉ này. Không có gì bị di chuyển — đường dẫn này chưa từng tồn tại.",
+  "notFoundWhereToLook": "Bạn có thể xem",
+  "notFoundHome": "Trang chủ",
+  "notFoundDocs": "Tài liệu",
+  "notFoundContact": "Liên hệ",
+  "notFoundIndex": "Mục lục tài liệu (llms.txt)",
+  "notFoundSitemap": "Sơ đồ trang",
+  "notFoundApi": "Đặc tả API",
   "notSignedIn": "Chưa đăng nhập."
 }

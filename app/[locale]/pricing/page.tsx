@@ -7,6 +7,7 @@ import { Header } from '@/components/landing-page/header';
 import { PricingSection } from '@/components/landing-page/pricing/pricing-section';
 import { routing } from '@/i18n/navigation';
 import { googleWebClientId } from '@/lib/infra/auth/google-client-id';
+import { alternateLanguages } from '@/lib/seo/alternates';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 
@@ -52,11 +53,7 @@ export async function generateMetadata({
     // own or inherits the locale root as one.
     alternates: {
       canonical: url,
-      languages: {
-        en: `${SITE_URL}/en/pricing`,
-        vi: `${SITE_URL}/vi/pricing`,
-        'x-default': `${SITE_URL}/${routing.defaultLocale}/pricing`,
-      },
+      languages: alternateLanguages('/pricing'),
     },
     // Spread, not a bare object: declaring `openGraph` replaces the layout's
     // wholesale, and setting only the url would drop the preview image.

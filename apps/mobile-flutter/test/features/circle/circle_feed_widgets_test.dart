@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
-import 'package:kallo_mobile/features/circle/data/feed_time.dart';
+import 'package:kallo_mobile/shared/logic/display_format.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/share_replies.dart';
 import 'package:kallo_mobile/shared/widgets/nutrition/composition_bar.dart';

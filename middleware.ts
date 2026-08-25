@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
 import { routing } from '@/i18n/navigation';
+import { appendVaryAccept } from '@/lib/infra/http/accept';
+import { markdownAlternatePath, negotiate } from '@/lib/infra/http/negotiate';
 import { buildCsp } from '@/lib/infra/security/csp';
 import { updateSession } from '@/lib/infra/supabase/middleware';
 
@@ -11,7 +13,20 @@ const intlMiddleware = createMiddleware(routing);
 // were previously excluded from the matcher entirely; they now pass through the
 // matcher so the origin-lock below can protect them, then short-circuit before
 // the intl/session logic to preserve their prior behaviour.
-const SKIP_INTL_PREFIXES = ['/api', '/auth/callback', '/auth/verify'];
+const SKIP_INTL_PREFIXES = [
+  '/api',
+  '/auth/callback',
+  '/auth/verify',
+  // Machine-readable metadata at fixed root paths. These must NOT be locale
+  // rewritten — an agent asks for /openapi.json, and /en/openapi.json does not
+  // exist. They stay inside the matcher (unlike robots.txt / sitemap.xml, which
+  // are excluded from it) so the origin-lock still covers them.
+  '/openapi.json',
+  '/.well-known',
+  // The markdown variants middleware rewrites TO. A direct request must not be
+  // locale-rewritten into a path that does not exist.
+  '/md',
+];
 
 function shouldSkipIntl(pathname: string) {
   return SKIP_INTL_PREFIXES.some(
@@ -54,6 +69,34 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Markdown content negotiation (acceptmarkdown.com / RFC 9110 §12.5.1). Runs
+  // before intl so a rewrite skips the locale machinery entirely; the decision
+  // itself is a pure function in lib/infra/http/negotiate.ts.
+  const negotiation = negotiate({
+    pathname: request.nextUrl.pathname,
+    accept: request.headers.get('accept'),
+    method: request.method,
+  });
+
+  if (negotiation.kind === 'not-acceptable') {
+    const response = new NextResponse(
+      'Not Acceptable — this URL serves text/html and text/markdown.\n',
+      { status: 406, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
+    );
+    appendVaryAccept(response.headers);
+    return response;
+  }
+
+  if (negotiation.kind !== 'pass') {
+    const url = request.nextUrl.clone();
+    url.pathname = negotiation.rewriteTo;
+    url.search = '';
+    // No `Vary` here: every rewrite target is the /md route handler, which sets
+    // it on the response it produces. A second header line would say the same
+    // thing twice.
+    return NextResponse.rewrite(url);
+  }
+
   // Per-request CSP nonce. Set it on the *request* headers BEFORE next-intl
   // runs: next-intl forwards a clone of request.headers, so the nonce (and the
   // CSP it lives in) reach the RSC render, where Next extracts `nonce-…` and
@@ -73,6 +116,29 @@ export async function middleware(request: NextRequest) {
   // header name to `content-security-policy` to enforce (see lib/security/csp.ts
   // for the additional force-dynamic step enforcing requires).
   response.headers.set('content-security-policy-report-only', csp);
+
+  // Advertise the Markdown sibling on the pages that have one, so a client that
+  // reads headers but never parses the HTML can still find it. The docs pages
+  // also carry it in the document head via `alternates.types`.
+  //
+  // `Vary: Accept` is deliberately NOT set on this half of the pair, and not
+  // because it is unwanted. Next owns `vary` on an app-router page render
+  // (`setVaryHeader`, next/dist/server/base-server.js) and discards whatever
+  // middleware or `next.config.headers()` put there — verified against the
+  // standalone production server, where the value was confirmed present on the
+  // middleware response object and absent from the wire, for both `set` and
+  // `append`. `Link` merges; `vary` does not. The Markdown and 406 responses,
+  // which the /md route handler and this file own outright, DO carry it — and
+  // those are the ones the acceptmarkdown convention asks for. Covering the
+  // HTML half needs a Cloudflare Transform Rule until Next stops clobbering it.
+  const alternate = markdownAlternatePath(request.nextUrl.pathname);
+  if (alternate) {
+    response.headers.append(
+      'Link',
+      `<${alternate}>; rel="alternate"; type="text/markdown"`
+    );
+  }
+
   return response;
 }
 

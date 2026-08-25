@@ -19,6 +19,7 @@ import { getDocsTree } from '@/lib/domain/docs/tree';
 import { googleWebClientId } from '@/lib/infra/auth/google-client-id';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
 import { createClient } from '@/lib/infra/supabase/server';
+import { alternateLanguages } from '@/lib/seo/alternates';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 import { landingStructuredData } from '@/lib/seo/structured-data';
@@ -45,11 +46,7 @@ export async function generateMetadata({
   return {
     alternates: {
       canonical: `${SITE_URL}/${locale}`,
-      languages: {
-        en: `${SITE_URL}/en`,
-        vi: `${SITE_URL}/vi`,
-        'x-default': `${SITE_URL}/en`,
-      },
+      languages: alternateLanguages(''),
     },
     // Spread, not `{ url }` alone: declaring `openGraph` replaces the layout's
     // object, so setting only the url drops the preview image and site name.

@@ -3,6 +3,21 @@ export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = 'en';
 
 /**
+ * Shared next-intl routing policy.
+ *
+ * Page metadata and the sitemap own hreflang links so they can use the
+ * locale-prefixed default URL consistently. next-intl's generated HTTP Link
+ * header points x-default at the unprefixed path, which redirects to English
+ * and gives crawlers a conflicting canonical signal.
+ */
+export const routingConfig = {
+  locales,
+  defaultLocale,
+  localePrefix: 'always',
+  alternateLinks: false,
+} as const;
+
+/**
  * The message namespaces, in the order they merge into one message object.
  *
  * One file per namespace under `messages/<locale>/`, because a single
@@ -23,7 +38,6 @@ export const namespaces = [
   'common',
   'nav',
   'metadata',
-  'shared',
   'app',
   'nutrition',
   'onboarding',

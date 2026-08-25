@@ -154,6 +154,33 @@ Left sidebar **Redirect Rules** (under Rules):
 - Create a rule: if `Hostname equals www.kallo.fit` → **Dynamic redirect** to
   `concat("https://kallo.fit", http.request.uri.path)`, status **301**.
 
+### Response-header rule for Markdown negotiation
+
+Next.js owns the `Vary` header on App Router HTML responses and replaces values
+set by middleware. The Markdown response already sends
+`Vary: Accept, Accept-Encoding`; add the matching cache signal to HTML at the
+edge so Cloudflare never serves a cached HTML variant to an agent requesting
+Markdown (or the reverse).
+
+Left sidebar **Rules** → **Transform Rules** → **Modify Response Header** →
+**Create rule**:
+
+- **Rule name:** `vary accept for negotiated pages`
+- **When incoming requests match:** use this custom expression:
+  `(http.host in {"kallo.fit" "www.kallo.fit"} and (http.request.uri.path in {"/en" "/vi"} or starts_with(http.request.uri.path, "/en/docs/") or starts_with(http.request.uri.path, "/vi/docs/")))`
+- **Then… Add static** → **Header name:** `Vary` → **Value:** `Accept`.
+  Cloudflare's **Add** operation preserves the origin's existing `Vary` values;
+  multiple `Vary` field lines are equivalent to one comma-separated field.
+- **Deploy**.
+
+After deployment, verify both representations. Each response must include
+`Accept` in `Vary`, and only the second must be Markdown:
+
+```bash
+curl -sSI -H 'Accept: text/html' https://kallo.fit/en | grep -i '^vary:'
+curl -sSI -H 'Accept: text/markdown' https://kallo.fit/en | grep -Ei '^(content-type|vary):'
+```
+
 ---
 
 ## 7. Email — inbound support@kallo.fit (free)

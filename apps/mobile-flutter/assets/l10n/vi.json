@@ -1029,7 +1029,14 @@
       "evening2": "1 tô canh chua cá lóc",
       "evening3": "1 tô bún bò Huế"
     },
-    "yesterday": "Hôm qua"
+    "yesterday": "Hôm qua",
+    "kcalRemaining": "kcal còn lại",
+    "loggedOfTarget": "đã ghi {logged}/{target}",
+    "leftOfTarget": "còn {left}/{target}",
+    "overTargetBy": "vượt {over}/{target}",
+    "remainingShort": "còn lại",
+    "loggedShort": "đã ghi",
+    "loggedOverTarget": "{logged}/{target}"
   },
   "logging": {
     "title": "Bạn đã ăn gì?",
