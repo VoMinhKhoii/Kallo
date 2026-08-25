@@ -22,7 +22,8 @@
     "increase": "Increase",
     "decrease": "Decrease",
     "copied": "Link copied",
-    "country": "Country"
+    "country": "Country",
+    "remove": "Remove"
   },
   "nav": {
     "logging": "Logging",
