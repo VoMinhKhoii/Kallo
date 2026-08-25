@@ -5,9 +5,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_motion.dart';
-import '../../../../theme/kallo_theme.dart';
 import '../../logic/timeline_utils.dart';
 import 'timeline_day_cell.dart';
+import 'timeline_nav_button.dart';
 
 // A large midpoint so the PageView can page many weeks into the past while the
 // current week sits at a known index (weeks are unbounded backwards).
@@ -154,7 +154,7 @@ class _TimelineStripState extends State<TimelineStrip> {
       height: 56,
       child: Row(
         children: [
-          _NavButton(
+          TimelineNavButton(
             icon: LucideIcons.chevronLeft300,
             onTap: _scrollPrev,
             color: KalloColors.textMuted,
@@ -179,7 +179,7 @@ class _TimelineStripState extends State<TimelineStrip> {
             ),
           ),
           const SizedBox(width: 4),
-          _NavButton(
+          TimelineNavButton(
             icon: LucideIcons.chevronRight300,
             onTap: _canNavigateNext ? _scrollNext : null,
             color: _canNavigateNext
@@ -187,47 +187,6 @@ class _TimelineStripState extends State<TimelineStrip> {
                 : const Color(0x4D6E6D66), // text-kallo-text-muted/30
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _NavButton extends StatefulWidget {
-  const _NavButton({required this.icon, required this.color, this.onTap});
-
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onTap;
-
-  @override
-  State<_NavButton> createState() => _NavButtonState();
-}
-
-class _NavButtonState extends State<_NavButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = widget.onTap != null;
-    return GestureDetector(
-      onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
-      onTapUp: enabled ? (_) => setState(() => _pressed = false) : null,
-      onTapCancel: enabled ? () => setState(() => _pressed = false) : null,
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _pressed ? 0.96 : 1,
-        duration: const Duration(milliseconds: 150), // duration-150
-        curve: Curves.easeOut,
-        child: Container(
-          width: 36, // w-9
-          height: 40, // h-10
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: _pressed ? KalloColors.hover40 : Colors.transparent,
-            borderRadius: BorderRadius.circular(KalloRadii.pill),
-          ),
-          child: Icon(widget.icon, size: 16, color: widget.color),
-        ),
       ),
     );
   }
