@@ -108,15 +108,15 @@ void main() {
 
   /// The production layout of `MacroSummary`, minus the padding widget itself:
   /// a self-sizing calorie dial, the gap, and the macro row in what is left.
-  Widget loggingHeader() => Row(
+  Widget loggingHeader() => const Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const CalorieDial.compact(
+      CalorieDial.compact(
         logged: 2219,
         target: 1844,
         goal: MacroGoal.cutting,
       ),
-      const SizedBox(width: KalloSpacing.sp2),
+      SizedBox(width: KalloSpacing.sp2),
       Expanded(
         child: MacroDialRow.compact(current: _current, target: _target),
       ),

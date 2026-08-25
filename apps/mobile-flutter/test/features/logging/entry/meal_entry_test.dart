@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kallo_mobile/features/logging/widgets/composer/entrances.dart';
 import 'package:kallo_mobile/features/logging/widgets/entry/meal_entry.dart';
 import 'package:kallo_mobile/models/logging/meal.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
@@ -250,5 +251,52 @@ void main() {
         reason: 'revealing: $revealing',
       );
     }
+  });
+
+  group('entrances belong to the live turn, not to every scroll-back', () {
+    testWidgets('a card restored from the server mounts at rest', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          MealEntry(
+            parsedMeal: _meal,
+            rawInput: 'cơm gà',
+            // A real loggedAt is what marks a card as restored — the live
+            // reveal is the only one without it.
+            loggedAt: DateTime(2026, 8, 25, 12, 15),
+            onConfirm: (_) {},
+          ),
+          width: 390,
+        ),
+      );
+      // One frame only. The feed recycles its cards, so an entrance here would
+      // replay in full every time this card scrolled back into view.
+      await tester.pump();
+
+      expect(
+        find.byType(FadeInLeft),
+        findsNothing,
+        reason: 'a restored card has been on the day all along',
+      );
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the live turn still staggers its rows in', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          MealEntry(
+            parsedMeal: _meal,
+            rawInput: 'cơm gà',
+            onConfirm: (_) {},
+          ),
+          width: 390,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(FadeInLeft), findsWidgets);
+      await tester.pumpAndSettle();
+    });
   });
 }

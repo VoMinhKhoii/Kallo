@@ -61,4 +61,6 @@ test/           — mirrors lib/; only widget_test.dart, app_fonts.dart and
 - **Widget tests + l10n**: locale JSON >50KiB makes `easy_localization` isolate-decode and stall forever under fake-async. Pass `FsL10nLoader` from `test/l10n_test_loader.dart` in widget tests.
 - **fastlane**: install via gem/bundler context described in `releasing.md`; the Homebrew fastlane breaks CocoaPods (reinstall pods if hit).
 - **Simulator**: build from the `/tmp` mirror; iOS 26 runtime must be downloaded; ATS needs `NSAllowsLocalNetworking` for the local dev API; use idb clipboard-paste to enter text.
+- **Measuring text width in a widget test requires `loadAppFonts()`** (`test/app_fonts.dart`). Without it every glyph renders in a ~1em placeholder: "CHẤT BÉO" measures 90pt instead of 59pt, which is enough to fail a layout that is fine — and, in the other direction, to pass one that is not.
+- **Discarding a staged meal is mobile-only.** `DELETE /api/v1/meals/pending/[analysisId]` and the trash affordance on `StagedMealCard` have no web counterpart yet, so the two feeds are NOT 1:1 here. Web staged cards still exit only by being confirmed.
 - **Backend**: the app talks to `/api/v1/*` on the web dev server; Drizzle decimals arrive as strings, and targets are `null` for incomplete onboarding — model accordingly.
