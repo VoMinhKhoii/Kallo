@@ -20,7 +20,6 @@
     "notSignedIn": "Chưa đăng nhập.",
     "increase": "Tăng",
     "decrease": "Giảm",
-    "copied": "Đã sao chép liên kết",
     "country": "Quốc gia"
   },
   "nav": {
@@ -1624,8 +1623,7 @@
     "language": "Ngôn ngữ",
     "languageHint": "Thay đổi ngôn ngữ ứng dụng",
     "sharing": {
-      "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
-      "autoShareHint": "Khi bật, mỗi bữa ăn mới sẽ tự động được chia sẻ với vòng kết nối của bạn.",
+      "autoShareLabel": "Tự động chia sẻ với vòng kết nối",
       "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
     },
     "sidebar": {
@@ -1662,9 +1660,7 @@
       "pacePerWeek": "{pace} {unit}/tuần"
     },
     "feedback": {
-      "groupLabel": "Góp ý",
       "rowLabel": "Gửi góp ý",
-      "rowSubline": "Báo lỗi, yêu cầu nguyên liệu, hoặc chia sẻ ý tưởng",
       "title": "Gửi góp ý",
       "description": "Gặp lỗi, thiếu nguyên liệu, hay có ý tưởng? Góp ý sẽ đến thẳng đội ngũ.",
       "typeLabel": "Bạn muốn góp ý về điều gì?",

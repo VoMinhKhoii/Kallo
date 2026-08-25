@@ -20,7 +20,6 @@
     "notSignedIn": "Not signed in.",
     "increase": "Increase",
     "decrease": "Decrease",
-    "copied": "Link copied",
     "country": "Country"
   },
   "nav": {
@@ -1627,8 +1626,7 @@
     "language": "Language",
     "languageHint": "Change the app language",
     "sharing": {
-      "autoShareLabel": "Share new meals with your circle",
-      "autoShareHint": "When this is on, each new meal is shared with your circle automatically.",
+      "autoShareLabel": "Auto-share to your circle",
       "error": "Couldn't update your sharing preference. Please try again."
     },
     "sidebar": {
@@ -1665,9 +1663,7 @@
       "pacePerWeek": "{pace} {unit}/wk"
     },
     "feedback": {
-      "groupLabel": "Feedback",
       "rowLabel": "Send feedback",
-      "rowSubline": "Report a bug, request an ingredient, or share an idea",
       "title": "Send feedback",
       "description": "Found a bug, missing an ingredient, or have an idea? It goes straight to the team.",
       "typeLabel": "What's this about?",
