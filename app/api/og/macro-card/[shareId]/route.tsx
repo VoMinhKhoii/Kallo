@@ -56,7 +56,7 @@ export async function GET(
 
     // Supabase is the auth session only — every table read below goes through
     // Drizzle, because the `anon`/`authenticated` roles hold no table grants
-    // (20260821110107_lock_postgrest_data_plane).
+    // (20260825120000_lock_postgrest_data_plane).
     const supabase = await createClient();
     const {
       data: { user },
