@@ -95,8 +95,8 @@ export async function reconcileEntitlements(
 }
 
 /**
- * Cache a freshly fetched entitlement snapshot, invalidating the tier-shaped
- * caches when — and only when — the tier actually changed.
+ * Cache a freshly fetched entitlement snapshot, invalidating the shape-bearing
+ * caches when — and only when — access to `micronutrients` actually changed.
  *
  * Every write of the entitlement snapshot goes through here. Writing
  * `setQueryData` directly is the bug this replaces: after a purchase the new
@@ -104,27 +104,35 @@ export async function reconcileEntitlements(
  * serving the `micronutrientsLocked` response it fetched as a free user, for
  * the rest of its 5-minute staleTime. The inverse holds on expiry.
  *
- * The tier comparison is load-bearing, not an optimisation: the checkout poll
- * writes a snapshot every 2 seconds and the lifecycle sync writes one on every
+ * The comparison is load-bearing, not an optimisation: the checkout poll writes
+ * a snapshot every 2 seconds and the lifecycle sync writes one on every
  * tab-visibility change. Invalidating unconditionally would throw the nutrition
  * cache away several times per checkout and once per tab focus forever after.
  *
- * Scope: nutrition is the ONLY cached GET whose response SHAPE depends on tier
- * (`stripMicronutrients`). The other gates — relog, cheat repeat, copy/split,
- * label scan, circle quota — are mutation-time refusals, so nothing cached goes
- * stale when they flip. If a second tier-shaped cached read ever appears, widen
- * this helper rather than adding invalidation at the call sites.
+ * It compares the FEATURE, not `tier`, because the feature is what the server
+ * strips on: a free-tier trial carries `micronutrients.allowed: true`, so at
+ * trial expiry the tier never moves while the response shape does — a tier
+ * comparison would keep serving the unstripped overview. It also cuts the other
+ * way: converting a trial to premium changes the tier but not the shape, so
+ * there is nothing to refetch.
  *
- * No previous snapshot (`prev === undefined`) counts as a flip only when the
- * incoming tier is `premium`. On a cold load the nutrition overview was fetched
- * against the same server that decides the tier, so it is already correct and
- * invalidating would only buy a duplicate request. But the entitlements entry
- * has no permanent observer and can be garbage-collected while a mounted
- * nutrition query lives on; after such an eviction a genuine free→premium flip
- * would otherwise be invisible and strand a paying user on locked sections.
- * The asymmetry is deliberate: locking a user who paid is the failure worth a
- * redundant refetch, while a lapsed user briefly seeing micronutrients is
- * benign and self-heals at the next refetch.
+ * Scope: nutrition is the ONLY cached GET whose response SHAPE depends on an
+ * entitlement (`stripMicronutrients`). The other gates — relog, cheat repeat,
+ * copy/split, label scan, circle quota — are mutation-time refusals, so nothing
+ * cached goes stale when they flip. If a second shape-bearing cached read ever
+ * appears, widen this helper rather than adding invalidation at the call sites.
+ *
+ * No previous snapshot (`prev === undefined`) reads as "no access", so a cold
+ * load counts as a flip only when micronutrients are now allowed. On a cold
+ * load the nutrition overview was fetched against the same server that decides
+ * the gate, so it is already correct and invalidating would only buy a
+ * duplicate request. But the entitlements entry has no permanent observer and
+ * can be garbage-collected while a mounted nutrition query lives on; after such
+ * an eviction a genuine locked→unlocked flip would otherwise be invisible and
+ * strand a paying user on locked sections. The asymmetry is deliberate:
+ * locking a user who paid is the failure worth a redundant refetch, while a
+ * lapsed user briefly seeing micronutrients is benign and self-heals at the
+ * next refetch.
  */
 export function applyEntitlementSnapshot(
   queryClient: QueryClient,
@@ -134,8 +142,10 @@ export function applyEntitlementSnapshot(
   const prev = queryClient.getQueryData<EntitlementsResponse>(key);
   queryClient.setQueryData(key, data);
 
-  const tierChanged = prev ? prev.tier !== data.tier : data.tier === 'premium';
-  if (tierChanged) {
+  const accessChanged =
+    featureAllowed(prev, 'micronutrients') !==
+    featureAllowed(data, 'micronutrients');
+  if (accessChanged) {
     queryClient.invalidateQueries({ queryKey: nutritionKeys.all });
   }
 }

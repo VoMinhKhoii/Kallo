@@ -163,7 +163,10 @@ describe('applyEntitlementSnapshot', () => {
     const { queryClient, setQueryData, invalidateQueries } = harness(
       make({ tier: 'free' })
     );
-    const next = make({ tier: 'premium' });
+    const next = make({
+      tier: 'premium',
+      features: makeFeatures(true, 'entitled'),
+    });
 
     applyEntitlementSnapshot(queryClient, next);
 
@@ -178,7 +181,7 @@ describe('applyEntitlementSnapshot', () => {
 
   it('invalidates the nutrition cache when the tier flips premium to free', () => {
     const { queryClient, setQueryData, invalidateQueries } = harness(
-      make({ tier: 'premium' })
+      make({ tier: 'premium', features: makeFeatures(true, 'entitled') })
     );
     const next = make({ tier: 'free' });
 
@@ -199,7 +202,10 @@ describe('applyEntitlementSnapshot', () => {
     // free -> premium flip would otherwise leave a paying user locked.
     const { queryClient, invalidateQueries } = harness();
 
-    applyEntitlementSnapshot(queryClient, make({ tier: 'premium' }));
+    applyEntitlementSnapshot(
+      queryClient,
+      make({ tier: 'premium', features: makeFeatures(true, 'entitled') })
+    );
 
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: nutritionKeys.all,
@@ -218,6 +224,41 @@ describe('applyEntitlementSnapshot', () => {
       entitlementsKeys.user('user-a'),
       next
     );
+    expect(invalidateQueries).not.toHaveBeenCalled();
+  });
+
+  it('invalidates when a trial expires without the tier moving', () => {
+    // A trial runs on the free tier with micronutrients allowed; expiry flips
+    // the feature and the response SHAPE while `tier` never moves.
+    const { queryClient, invalidateQueries } = harness(
+      make({
+        tier: 'free',
+        features: makeFeatures(true, 'trial'),
+        trial: { active: true, endsAt: null, daysRemaining: 1 },
+      })
+    );
+
+    applyEntitlementSnapshot(
+      queryClient,
+      make({ tier: 'free', features: makeFeatures(false, 'trial_expired') })
+    );
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: nutritionKeys.all,
+    });
+  });
+
+  it('does not invalidate when a trial converts to premium', () => {
+    // The tier moves but access — and therefore the overview shape — does not.
+    const { queryClient, invalidateQueries } = harness(
+      make({ tier: 'free', features: makeFeatures(true, 'trial') })
+    );
+
+    applyEntitlementSnapshot(
+      queryClient,
+      make({ tier: 'premium', features: makeFeatures(true, 'entitled') })
+    );
+
     expect(invalidateQueries).not.toHaveBeenCalled();
   });
 
