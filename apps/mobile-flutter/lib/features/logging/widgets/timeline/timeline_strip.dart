@@ -22,6 +22,7 @@ class TimelineStrip extends StatefulWidget {
     required this.dates,
     required this.today,
     required this.selectedDate,
+    required this.expanded,
     required this.onSelectDate,
     required this.onClose,
   });
@@ -29,6 +30,13 @@ class TimelineStrip extends StatefulWidget {
   final List<String> dates;
   final String today;
   final String selectedDate;
+
+  /// Whether the picker is currently showing this strip.
+  ///
+  /// The strip stays mounted even while collapsed (that is what keeps the morph
+  /// from re-inflating a PageView mid-animation), so it has to be TOLD when it
+  /// comes back into view — see [_TimelineStripState.didUpdateWidget].
+  final bool expanded;
   final ValueChanged<String> onSelectDate;
   final VoidCallback onClose;
 
@@ -108,6 +116,34 @@ class _TimelineStripState extends State<TimelineStrip> {
     if (!identical(old.dates, widget.dates)) {
       _mealDates = widget.dates.toSet();
     }
+    // Re-anchor on the way back into view, and whenever the day changes under
+    // the strip while it is hidden (the under-logged-yesterday prompt and a
+    // meal composed on another tab both do that).
+    //
+    // This used to happen for free: the picker destroyed this widget on every
+    // collapse, so re-opening re-ran the `late` initialisers below. Keeping it
+    // mounted is what stopped the morph tearing down a PageView mid-animation,
+    // but it also stopped the re-anchor — leaving the strip on whatever week
+    // the user had last paged to, with the selected day nowhere on screen.
+    final reopened = widget.expanded && !old.expanded;
+    if (reopened || widget.selectedDate != old.selectedDate) {
+      _reanchor();
+    }
+  }
+
+  /// Put the pager back on the week holding the selected day.
+  ///
+  /// Deferred: [didUpdateWidget] runs before this frame's layout, and a
+  /// PageController cannot jump until its viewport has one.
+  void _reanchor() {
+    final anchor = _selectedAnchor;
+    final page = _pageForAnchor(anchor);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_pageController.hasClients) return;
+      if (_pageController.page?.round() == page) return;
+      _pageController.jumpToPage(page);
+      if (_visibleAnchor != anchor) setState(() => _visibleAnchor = anchor);
+    });
   }
 
   @override

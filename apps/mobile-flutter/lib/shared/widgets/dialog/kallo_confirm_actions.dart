@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
 
 /// The confirm dialog's two buttons, STACKED rather than sat side by side.
@@ -98,8 +99,8 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
         },
         child: AnimatedScale(
           scale: _pressed ? 0.97 : 1,
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
+          duration: KalloMotion.press,
+          curve: KalloEase.press,
           child: Container(
             alignment: Alignment.center,
             constraints: const BoxConstraints(minHeight: 44),

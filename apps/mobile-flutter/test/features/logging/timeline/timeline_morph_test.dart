@@ -27,6 +27,10 @@ class _HostState extends State<_Host> {
   bool expanded = false;
   String selected = _today;
 
+  /// The screen changes the day from outside the picker too — the
+  /// under-logged-yesterday prompt and a meal composed on another tab both do.
+  void setSelected(String d) => setState(() => selected = d);
+
   /// The screen toggles this from outside; the test does the same rather than
   /// reaching into `setState`, which is protected for good reason.
   void setExpanded(bool value) => setState(() => expanded = value);
@@ -150,5 +154,73 @@ void main() {
     await tester.tap(find.text('24').first);
     await tester.pumpAndSettle();
     expect(picked, ['2026-08-24']);
+  });
+
+  group('re-opening the picker returns to the selected week', () {
+    /// The pager's current page — page 5000 is the week holding `today`.
+    double? page(WidgetTester tester) =>
+        tester.widget<PageView>(find.byType(PageView)).controller?.page;
+
+    Future<void> pageBack(WidgetTester tester, int weeks) async {
+      for (var i = 0; i < weeks; i++) {
+        await tester.drag(find.byType(PageView), const Offset(400, 0));
+        await tester.pumpAndSettle();
+      }
+    }
+
+    testWidgets('after paging away and collapsing without picking a day', (
+      tester,
+    ) async {
+      final key = GlobalKey<_HostState>();
+      await tester.pumpWidget(_app(key, (_) {}));
+      await tester.pumpAndSettle();
+
+      key.currentState!.setExpanded(true);
+      await tester.pumpAndSettle();
+      final opened = page(tester);
+
+      await pageBack(tester, 3);
+      expect(page(tester), lessThan(opened!));
+
+      key.currentState!.setExpanded(false);
+      await tester.pumpAndSettle();
+      key.currentState!.setExpanded(true);
+      await tester.pumpAndSettle();
+
+      // Keeping the strip mounted across the morph (so the PageView is not torn
+      // down mid-animation) silently dropped the re-anchor that used to come
+      // free from being destroyed and rebuilt.
+      expect(
+        page(tester),
+        opened,
+        reason: 'the picker should reopen on the selected week',
+      );
+    });
+
+    testWidgets('after the day changes while the picker is closed', (
+      tester,
+    ) async {
+      final key = GlobalKey<_HostState>();
+      await tester.pumpWidget(_app(key, (_) {}));
+      await tester.pumpAndSettle();
+
+      key.currentState!.setExpanded(true);
+      await tester.pumpAndSettle();
+      await pageBack(tester, 2);
+      key.currentState!.setExpanded(false);
+      await tester.pumpAndSettle();
+
+      // Something outside the picker moves the day — the yesterday prompt.
+      key.currentState!.setSelected('2026-08-24');
+      await tester.pumpAndSettle();
+      key.currentState!.setExpanded(true);
+      await tester.pumpAndSettle();
+
+      // 24 Aug is in the same week as today (25 Aug), so the anchor page is the
+      // one the picker first opened on. The worse half of this bug: the
+      // selected day was not even on screen.
+      expect(page(tester), 5000.0);
+      expect(find.text('24'), findsWidgets);
+    });
   });
 }

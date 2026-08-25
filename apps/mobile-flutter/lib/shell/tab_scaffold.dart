@@ -60,10 +60,18 @@ class _TabScaffoldState extends State<TabScaffold>
 
   void _close() => _controller.reverse();
 
+  /// A finger has landed in the edge strip. Inflate the drawer NOW, before it
+  /// starts moving — the same reason [_open] defers its own forward() by a
+  /// frame. Doing it on the first drag update instead put the SVG parse and the
+  /// provider subscriptions inside a frame that was already animating the
+  /// panel, which is the hitch this whole path exists to avoid.
+  void _onEdgeDragDown() {
+    if (!_drawerMounted) setState(() => _drawerMounted = true);
+  }
+
   /// Edge-swipe driver: while the user drags in from the left edge, advance the
   /// open animation 1:1 with the finger.
   void _onEdgeDragUpdate(double delta, double panelWidth) {
-    if (!_drawerMounted) setState(() => _drawerMounted = true);
     _controller.value = (_controller.value + delta / panelWidth).clamp(0.0, 1.0);
   }
 
@@ -115,6 +123,7 @@ class _TabScaffoldState extends State<TabScaffold>
               width: 20,
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
+                onHorizontalDragDown: (_) => _onEdgeDragDown(),
                 onHorizontalDragUpdate:
                     (d) => _onEdgeDragUpdate(d.primaryDelta ?? 0, panelWidth),
                 onHorizontalDragEnd:

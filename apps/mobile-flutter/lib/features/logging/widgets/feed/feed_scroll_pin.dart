@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import '../../../../theme/kallo_motion.dart';
+
 /// Imperative handle for [FeedScrollPin] — the feed asks the tail to follow.
 ///
 /// Held by `FeedArea` and handed to the three places that put something new at
@@ -50,12 +52,12 @@ class _FeedScrollPinState extends State<FeedScrollPin> {
 
   /// The deliberate travel when the feed asks for the tail — the feel the
   /// one-shot scroll had, kept.
-  static const Duration _travel = Duration(milliseconds: 400);
-  static const Curve _travelCurve = Cubic(0.16, 1, 0.3, 1);
+  static const Duration _travel = KalloMotion.scrollTo;
+  static const Curve _travelCurve = KalloEase.decelerate;
 
   /// The corrections afterwards. Short, because each one only closes the gap
   /// the last layout change opened; at 400ms they would visibly lag the card.
-  static const Duration _follow = Duration(milliseconds: 100);
+  static const Duration _follow = KalloMotion.instant;
 
   bool _pinned = false;
 
@@ -136,7 +138,7 @@ class _FeedScrollPinState extends State<FeedScrollPin> {
           },
           child: NotificationListener<ScrollMetricsNotification>(
             onNotification: (n) {
-              if (n.depth == 0 && _pinned) _scroll(_follow, Curves.easeOut);
+              if (n.depth == 0 && _pinned) _scroll(_follow, KalloEase.press);
               return false;
             },
             child: widget.child,

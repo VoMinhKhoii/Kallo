@@ -158,6 +158,7 @@ class _DateMorphState extends State<DateMorph>
                     dates: widget.dates,
                     today: widget.today,
                     selectedDate: widget.selectedDate,
+                    expanded: widget.expanded,
                     onSelectDate: widget.onSelectDate,
                     onClose: widget.onCollapse,
                   ),

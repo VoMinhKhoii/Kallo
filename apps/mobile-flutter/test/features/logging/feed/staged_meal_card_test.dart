@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
+import 'package:kallo_mobile/features/logging/widgets/composer/entrances.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/staged_meal_card.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/meal_time_divider.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
@@ -167,5 +168,31 @@ void main() {
 
     expect(find.byType(Dialog), findsNothing);
     expect(discarded, 0);
+  });
+
+  testWidgets('does not replay its arrival animation on every remount', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        const PendingMealConfirmation(
+          id: 'p1',
+          rawInput: 'cơm gà',
+          // Staged an hour ago and restored from GET /logging/day — which is
+          // what EVERY card of this kind is.
+          loggedAt: '2026-08-11T12:15:00.000Z',
+          parsedMeal: _meal,
+        ),
+      ),
+    );
+    // One frame: an entrance would still be mid-flight here.
+    await tester.pump();
+
+    // MealEntry decides this from `loggedAt`, and the unit test for it passes
+    // one explicitly — so this asserts the thing that actually broke: that the
+    // real caller wires it through. The feed recycles its cards, so without
+    // this an hour-old pending meal waterfalls in again on every scroll-back.
+    expect(find.byType(FadeInLeft), findsNothing);
+    await tester.pumpAndSettle();
   });
 }

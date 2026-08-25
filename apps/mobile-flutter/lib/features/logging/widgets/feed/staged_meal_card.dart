@@ -74,6 +74,11 @@ class StagedMealCard extends StatelessWidget {
           MealEntry(
             rawInput: pending.rawInput,
             parsedMeal: parsedMeal!,
+            // This card has been on the day since it was staged — sometimes
+            // for the better part of an hour. Passing the real time is what
+            // tells MealEntry not to play its arrival animation every time the
+            // list recycles the card back into view.
+            loggedAt: loggedAt,
             showTimeDivider: false,
             busy: busy,
             onConfirm: (edits) => onConfirm(pending.id, edits),
