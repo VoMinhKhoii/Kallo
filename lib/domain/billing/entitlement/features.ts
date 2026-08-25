@@ -19,9 +19,9 @@ export const FEATURES = {
   micronutrients: { required: 'premium', trialCovered: true },
   relog: { required: 'premium', trialCovered: true },
   cheat_meal: { required: 'premium', trialCovered: true },
-  // Copy/split is paused feature-wide (lib/domain/social/copy-split-live.ts),
-  // so this rule is currently unreachable. Kept — with its server gates — so
-  // re-enabling the feature is a single constant flip.
+  // Charged to whoever INITIATES the copy/split (sending an offer, or pulling a
+  // copy off the feed). Responding to an offer is deliberately ungated — see
+  // lib/actions/meal-sharing/invite-response.ts.
   copy_split: { required: 'premium', trialCovered: true },
   unlimited_circle: { required: 'premium', trialCovered: true },
 } as const satisfies Record<string, FeatureRule>;

@@ -18,10 +18,6 @@ import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareMealWithFriendsSchema } from '@/lib/core/validation/social';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
-import {
-  COPY_SPLIT_LIVE,
-  COPY_SPLIT_PAUSED_MESSAGE,
-} from '@/lib/domain/social/copy-split-live';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -45,14 +41,9 @@ export async function shareMealWithFriendsAction(input: {
 }> {
   const parsed = shareMealWithFriendsSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
-  // Feature paused: refuse before any read or write. 409 (not 402) — this is
-  // not something a purchase unlocks, and the mobile client surfaces the
-  // message. See copy-split-live.
-  if (!COPY_SPLIT_LIVE) {
-    throw Errors.conflict(COPY_SPLIT_PAUSED_MESSAGE);
-  }
   // Premium (copy_split): gated on the SEND side only, before the transaction.
-  // Unreachable while COPY_SPLIT_LIVE is false; kept so re-enabling is one edit.
+  // The initiator pays; accept stays free (see invite-response) because a split
+  // has already scaled this meal down by the time the recipient sees the offer.
   await assertFeatureAccess(
     { userId: user.id, profileCreatedAt: profile.createdAt },
     'copy_split'

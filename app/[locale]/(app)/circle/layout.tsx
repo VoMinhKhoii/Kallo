@@ -4,7 +4,6 @@ import { CircleAddMenu } from '@/components/groups/circle-add-menu';
 import { CircleMealBar } from '@/components/groups/circle-meal-bar';
 import { MealInvites } from '@/components/groups/meal-invites';
 import { ViewSwitcher } from '@/components/groups/view-switcher';
-import { COPY_SPLIT_LIVE } from '@/lib/domain/social/copy-split-live';
 
 /**
  * The Circle surface as one centered Threads-style column: a compact header,
@@ -52,7 +51,7 @@ export default async function GroupsLayout({
          * a long invite list so it can't push the feed panel off a short
          * viewport. */}
         <div className="mb-3 max-h-[35vh] shrink-0 overflow-y-auto empty:hidden">
-          {COPY_SPLIT_LIVE && <MealInvites />}
+          <MealInvites />
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>

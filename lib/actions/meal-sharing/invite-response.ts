@@ -19,10 +19,6 @@ import {
   acceptMealShareInviteSchema,
   dismissMealShareInviteSchema,
 } from '@/lib/core/validation/social';
-import {
-  COPY_SPLIT_LIVE,
-  COPY_SPLIT_PAUSED_MESSAGE,
-} from '@/lib/domain/social/copy-split-live';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -44,11 +40,9 @@ export async function acceptMealShareInviteAction(input: {
 }): Promise<ConfirmMealResponse> {
   const parsed = acceptMealShareInviteSchema.parse(input);
   const { user } = await requireAuthAndProfile();
-  // Feature paused: refuse before any read or write. See copy-split-live.
-  if (!COPY_SPLIT_LIVE) {
-    throw Errors.conflict(COPY_SPLIT_PAUSED_MESSAGE);
-  }
-
+  // No premium gate here on purpose: the INITIATOR pays. By the time an invite
+  // exists a split has already halved the sender's meal, so refusing the
+  // recipient would strand that half against an offer they can never take.
   return await db.transaction(async (tx) => {
     // Discover the actor-scoped pending invite before touching cross-user data.
     // The source meal is then locked BEFORE the invite is claimed, matching the
@@ -174,11 +168,8 @@ export async function dismissMealShareInviteAction(input: {
 }): Promise<{ success: true }> {
   const parsed = dismissMealShareInviteSchema.parse(input);
   const { user } = await requireAuthAndProfile();
-  // Feature paused: refuse before any write. See copy-split-live.
-  if (!COPY_SPLIT_LIVE) {
-    throw Errors.conflict(COPY_SPLIT_PAUSED_MESSAGE);
-  }
-
+  // Ungated for the same reason as accept: responding to someone else's offer
+  // is never the billable action.
   const [updated] = await db
     .update(mealShareInvites)
     .set({ status: 'dismissed', respondedAt: new Date() })

@@ -39,14 +39,6 @@ const { mockTxSelect, mockTxUpdate, mockTxInsert, mockDbUpdate, mockTx } =
 const assertFeatureAccess = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
 
-// The copy/split feature is paused repo-wide (COPY_SPLIT_LIVE = false). This
-// suite covers the behavior sitting BEHIND that switch, so it runs with the
-// switch on; the refusal itself is covered by copy-split-paused.test.ts.
-vi.mock('@/lib/domain/social/copy-split-live', () => ({
-  COPY_SPLIT_LIVE: true,
-  COPY_SPLIT_PAUSED_MESSAGE: 'paused',
-}));
-
 vi.mock('@/lib/infra/auth/session', async () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: (await import('./share-doubles')).MOCK_USER,
@@ -209,9 +201,9 @@ describe('dismissMealShareInviteAction', () => {
 });
 
 describe('the recipient side stays free', () => {
-  // A gated accept would strand a premium sender: a split has ALREADY halved
-  // their meal by the time the invite exists, so a 402 here would silently eat
-  // the other half. Decision recorded in the premium-gating plan — do not
+  // The INITIATOR pays. A gated accept would strand a premium sender: a split
+  // has ALREADY halved their meal by the time the invite exists, so a 402 here
+  // would silently eat the other half against an offer nobody can take. Do not
   // "fix" this by adding a gate.
   beforeEach(() => vi.clearAllMocks());
 
@@ -229,6 +221,22 @@ describe('the recipient side stays free', () => {
       loggedDate: '2026-04-05',
       timezoneOffset: -420,
     });
+
+    expect(assertFeatureAccess).not.toHaveBeenCalled();
+  });
+
+  it('dismisses an invite without ever consulting the feature gate', async () => {
+    mockDbUpdate.mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: UUID_INVITE }]),
+        }),
+      }),
+    });
+
+    await expect(
+      dismissMealShareInviteAction({ inviteId: UUID_INVITE })
+    ).resolves.toEqual({ success: true });
 
     expect(assertFeatureAccess).not.toHaveBeenCalled();
   });
