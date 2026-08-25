@@ -7,6 +7,7 @@ import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.da
 import 'package:kallo_mobile/features/logging/logic/feed/view_state.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_footer.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_list.dart';
+import 'package:kallo_mobile/features/logging/widgets/feed/feed_scroll_pin.dart';
 import 'package:kallo_mobile/features/logging/widgets/streaming/streaming_entry.dart';
 import 'package:kallo_mobile/models/logging/meal.dart';
 import 'package:kallo_mobile/models/logging/streaming.dart';
@@ -91,6 +92,8 @@ Widget _wrap(FeedViewState view, {Widget? footer}) => EasyLocalization(
             view: view,
             dockHeight: 0,
             scrollController: ScrollController(),
+            pin: FeedScrollPinHandle(),
+            onDiscardPending: (_) {},
             footer: footer ?? const SizedBox.shrink(),
             confirmPending: false,
             onRefresh: () async {},

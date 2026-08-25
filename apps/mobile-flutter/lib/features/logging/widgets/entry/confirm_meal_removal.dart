@@ -17,3 +17,18 @@ Future<bool> confirmMealRemoval(BuildContext context) => showKalloConfirm(
   description: 'logging.removeConfirmDescription'.tr(),
   destructive: true,
 );
+
+/// "Bỏ bữa ăn chưa lưu này?" — the confirm behind discarding a STAGED card.
+///
+/// Its own copy rather than [confirmMealRemoval]'s: nothing has been saved yet,
+/// so "biến mất khỏi nhật ký" would overstate what is being lost, and the way
+/// back is simply to type it again.
+///
+/// It lives beside its sibling because `widgets/entry/` is at the folder gate's
+/// ten-file cap; the two confirms are one concern anyway.
+Future<bool> confirmPendingDiscard(BuildContext context) => showKalloConfirm(
+  context,
+  title: 'logging.stagedMealCard.discardConfirmTitle'.tr(),
+  description: 'logging.stagedMealCard.discardConfirmDescription'.tr(),
+  destructive: true,
+);

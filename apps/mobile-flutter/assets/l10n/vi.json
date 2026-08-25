@@ -1398,7 +1398,13 @@
         "permissionDenied": "Chưa cấp quyền camera và ảnh. Hãy bật cho Kallo trong Cài đặt > Quyền riêng tư, hoặc nhập số bằng tay.",
         "imageTooLarge": "Ảnh này quá lớn để gửi. Hãy chụp lại, ảnh mới sẽ được tự động thu nhỏ."
       }
-    }
+    },
+    "stagedMealCard": {
+      "discard": "Bỏ",
+      "discardConfirmTitle": "Bỏ bữa ăn chưa lưu này?",
+      "discardConfirmDescription": "Phân tích sẽ biến mất. Bạn có thể nhập lại bất cứ lúc nào."
+    },
+    "pendingDiscarded": "Đã bỏ bữa ăn chưa lưu"
   },
   "groups": {
     "page": {

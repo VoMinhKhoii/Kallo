@@ -1401,7 +1401,13 @@
         "permissionDenied": "Camera and photo access are off. Enable them for Kallo in Settings > Privacy, or enter the values by hand.",
         "imageTooLarge": "That photo is too large to send. Take another one and it will be resized automatically."
       }
-    }
+    },
+    "stagedMealCard": {
+      "discard": "Discard",
+      "discardConfirmTitle": "Discard this unsaved meal?",
+      "discardConfirmDescription": "The analysis disappears. You can enter it again any time."
+    },
+    "pendingDiscarded": "Unsaved meal discarded"
   },
   "groups": {
     "page": {
