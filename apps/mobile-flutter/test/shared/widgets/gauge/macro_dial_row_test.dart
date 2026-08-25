@@ -1,12 +1,17 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kallo_mobile/models/nutrition/nutrition_enums.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/calorie_dial.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/macro_dial_row.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/gauge_arc_geometry.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/rounded_gauge_arc.dart';
+import 'package:kallo_mobile/theme/kallo_theme.dart';
 
+import '../../../app_fonts.dart';
 import '../../../l10n_test_loader.dart';
 
 /// The dock's real width on a 390pt phone, less the page's 16pt inset.
@@ -19,8 +24,10 @@ Widget _wrap(
   Widget child, {
   double textScale = 1.0,
   double width = _dockWidth,
+  Locale locale = const Locale('en'),
 }) => EasyLocalization(
-  supportedLocales: const [Locale('en')],
+  supportedLocales: const [Locale('en'), Locale('vi')],
+  startLocale: locale,
   path: 'assets/l10n',
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
@@ -66,6 +73,10 @@ void main() {
           (call) async => call.method == 'getAll' ? <String, Object>{} : null,
         );
     await EasyLocalization.ensureInitialized();
+    // This file measures text WIDTH — without the real font every glyph is a
+    // ~1em placeholder and "CHẤT BÉO" measures 90pt instead of 59pt, which is
+    // enough to fail a passing layout. See app_fonts.dart.
+    await loadAppFonts();
   });
 
   testWidgets('shows each macro against its target, named by the row', (
@@ -82,6 +93,59 @@ void main() {
     expect(find.text('/220g'), findsOneWidget);
     expect(find.text('21g'), findsOneWidget);
     expect(find.text('/62g'), findsOneWidget);
+  });
+
+  // ── The logging header, in Vietnamese ───────────────────────────────────
+  //
+  // The compact row does not get the screen: it gets whatever the calorie dial
+  // beside it leaves over. That residue is what the macro labels are measured
+  // against, and it is why "CHẤT BÉO" — the longest of the three in the app's
+  // primary locale — was the only label ellipsizing on a real phone.
+
+  /// The logging header's real inner width: a 390pt phone less the page's two
+  /// 12pt insets (`macro_summary.dart`).
+  const double headerWidth = 366;
+
+  /// The production layout of `MacroSummary`, minus the padding widget itself:
+  /// a self-sizing calorie dial, the gap, and the macro row in what is left.
+  Widget loggingHeader() => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const CalorieDial.compact(
+        logged: 2219,
+        target: 1844,
+        goal: MacroGoal.cutting,
+      ),
+      const SizedBox(width: KalloSpacing.sp2),
+      Expanded(
+        child: MacroDialRow.compact(current: _current, target: _target),
+      ),
+    ],
+  );
+
+  testWidgets('renders every Vietnamese macro label in full', (tester) async {
+    await tester.pumpWidget(
+      _wrap(loggingHeader(), width: headerWidth, locale: const Locale('vi')),
+    );
+    await tester.pumpAndSettle();
+
+    // Not just "the string is somewhere in the tree" — a truncated paragraph
+    // still matches its full text. Ask the render object whether it had to cut.
+    //
+    // Measured on this layout: the calorie dial takes its 104 minimum, leaving
+    // the row 254, so a column is 82 and the label 66 after the glyph and its
+    // gap. "CHẤT BÉO" is 59.4. Before the gaps were tightened the label had 58
+    // and this failed. The margin is ~11%, i.e. it holds to about 1.1x Dynamic
+    // Type and ellipsizes above that — the documented degradation, since the
+    // column does not scale with the text.
+    for (final label in const ['ĐẠM', 'CARB', 'CHẤT BÉO']) {
+      final paragraph = tester.renderObject<RenderParagraph>(find.text(label));
+      expect(
+        paragraph.didExceedMaxLines,
+        isFalse,
+        reason: '$label is ellipsized in the logging header',
+      );
+    }
   });
 
   testWidgets('sits the target line on the arc tips', (tester) async {

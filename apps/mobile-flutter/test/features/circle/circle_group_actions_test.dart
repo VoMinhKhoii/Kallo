@@ -259,7 +259,15 @@ void main() {
     );
     await tester.tap(find.byTooltip('Remove Mai'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Remove'));
+    // The affirmative is the neutral "Agree"/"Đồng ý", not the verb: beside
+    // the cancel, "Remove"/"Xoá" read as the same choice. Scoped to the dialog
+    // so this can only pass by tapping what the user taps.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.text('Agree'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(api.requests.single.method, 'DELETE');
@@ -287,7 +295,14 @@ void main() {
     );
     await tester.tap(find.widgetWithText(TextButton, 'Leave group'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Leave group').last);
+    // This confirm keeps its verb — "Leave group" beside "Cancel" is not
+    // ambiguous — so the dialog repeats the row's label; scope to the dialog.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.text('Leave group'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(api.requests.single.method, 'DELETE');

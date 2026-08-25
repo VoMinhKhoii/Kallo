@@ -12,6 +12,7 @@
     "search": "Search",
     "noResults": "No results found",
     "confirm": "Confirm",
+    "agree": "Agree",
     "dismiss": "Dismiss",
     "close": "Close",
     "or": "or",
@@ -1432,8 +1433,7 @@
       "leaveTitle": "Leave this group?",
       "leaveDescription": "You'll lose access to this group's timeline.",
       "leaveConfirm": "Leave group",
-      "leaveError": "Couldn't leave the group. Try again.",
-      "cancel": "Cancel"
+      "leaveError": "Couldn't leave the group. Try again."
     },
     "createGroup": {
       "title": "Create a group",
@@ -1469,7 +1469,6 @@
       "removeLabel": "Remove {name}",
       "removeTitle": "Remove {name}?",
       "removeDescription": "They'll lose access to this group's meals and replies.",
-      "removeConfirm": "Remove",
       "removeError": "Couldn't remove this member. Try again."
     },
     "wall": {
@@ -1605,7 +1604,6 @@
       "loadError": "Couldn't load your sign-in methods.",
       "signOut": "Sign out",
       "signOutConfirmTitle": "Sign out of Kallo?",
-      "cancel": "Cancel",
       "delete": "Delete account",
       "deleteScreenTitle": "Delete account",
       "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
