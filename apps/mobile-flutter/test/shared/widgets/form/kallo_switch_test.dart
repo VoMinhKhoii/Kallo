@@ -9,10 +9,8 @@ import 'package:kallo_mobile/theme/kallo_colors.dart';
 /// on the widget itself. If Flutter ever changes that, the third test fails and
 /// KalloSwitch can collapse back into the theme.
 void main() {
-  Widget host({required ThemeData theme, required Widget child}) => MaterialApp(
-    theme: theme,
-    home: Scaffold(body: Center(child: child)),
-  );
+  Widget host({required ThemeData theme, required Widget child}) =>
+      MaterialApp(theme: theme, home: Scaffold(body: Center(child: child)));
 
   RenderObject trackOf(WidgetTester tester) =>
       tester.renderObject(find.byType(Switch));
