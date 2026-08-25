@@ -1405,7 +1405,9 @@
       "discardConfirmTitle": "Bỏ bữa ăn chưa lưu này?",
       "discardConfirmDescription": "Phân tích sẽ biến mất. Bạn có thể nhập lại bất cứ lúc nào."
     },
-    "pendingDiscarded": "Đã bỏ bữa ăn chưa lưu"
+    "pendingDiscarded": "Đã bỏ bữa ăn chưa lưu",
+    "copyMessage": "Sao chép",
+    "messageCopied": "Đã sao chép"
   },
   "groups": {
     "page": {

@@ -1408,7 +1408,9 @@
       "discardConfirmTitle": "Discard this unsaved meal?",
       "discardConfirmDescription": "The analysis disappears. You can enter it again any time."
     },
-    "pendingDiscarded": "Unsaved meal discarded"
+    "pendingDiscarded": "Unsaved meal discarded",
+    "copyMessage": "Copy",
+    "messageCopied": "Copied"
   },
   "groups": {
     "page": {
