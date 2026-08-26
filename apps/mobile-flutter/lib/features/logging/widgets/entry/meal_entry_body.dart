@@ -22,6 +22,7 @@ class MealEntryBody extends StatelessWidget {
     required this.totals,
     required this.editing,
     required this.revealing,
+    required this.animateIn,
     required this.countUp,
     required this.onToggleEditing,
     required this.onChange,
@@ -33,6 +34,9 @@ class MealEntryBody extends StatelessWidget {
   final MacroBreakdown totals;
   final bool editing;
   final bool revealing;
+
+  /// See [MealEntryItemRow.animateIn].
+  final bool animateIn;
 
   /// Only the reveal's opening frame counts the totals up from zero.
   final bool countUp;
@@ -72,6 +76,7 @@ class MealEntryBody extends StatelessWidget {
                   index: index,
                   editing: editing,
                   revealing: revealing,
+                  animateIn: animateIn,
                   onChange: onChange,
                   onAdjustPortion: onAdjustPortion,
                 ),

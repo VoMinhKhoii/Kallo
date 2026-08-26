@@ -19,7 +19,7 @@ import 'sidebar_nav_list.dart';
 ///     is not here — it is the bottom-most row of the Settings screen.
 ///
 /// The panel chrome (width 88vw≤320, slide animation, scrim) is owned by
-/// [NavDrawer] in `tab_scaffold.dart`; this widget is purely the content.
+/// [NavDrawer] in `sidebar/nav_drawer.dart`; this widget is purely the content.
 class Sidebar extends ConsumerWidget {
   const Sidebar({required this.onClose, super.key});
 

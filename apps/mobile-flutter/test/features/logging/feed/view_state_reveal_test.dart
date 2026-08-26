@@ -40,6 +40,7 @@ const _profile = LoggingProfile(
 FeedViewState _view({
   required StreamAnalysisState stream,
   List<PendingMealConfirmation> pending = const [],
+  Set<String> removed = const {},
 }) => FeedViewState.from(
   day: LoggingDayData(persistedMeals: const [], pendingConfirmations: pending),
   dayIsLoading: false,
@@ -47,7 +48,7 @@ FeedViewState _view({
   stream: stream,
   profile: _profile,
   date: _date,
-  pendingRemovalIds: const {},
+  pendingRemovalIds: removed,
   hasFailedAttempt: false,
 );
 
@@ -153,6 +154,46 @@ void main() {
         ['a1', 'a2'],
         reason: 'two unconfirmed meals must not read backwards',
       );
+    });
+  });
+
+  group('a discarded staged card leaves the feed for its undo window', () {
+    test('is filtered out while its id is held', () {
+      final view = _view(
+        stream: const StreamAnalysisState(),
+        pending: const [_staged],
+        removed: const {'a1'},
+      );
+
+      // Same mechanism a swiped saved meal uses: the day cache is never
+      // mutated, so Undo is just dropping the id again.
+      expect(view.pendingConfirmations, isEmpty);
+      expect(view.entries, isEmpty);
+    });
+
+    test('comes back when the id is released', () {
+      final view = _view(
+        stream: const StreamAnalysisState(),
+        pending: const [_staged],
+      );
+
+      expect(view.entries.whereType<StagedEntry>(), hasLength(1));
+    });
+
+    test('never counted toward the day, so totals do not move', () {
+      final held = _view(
+        stream: const StreamAnalysisState(),
+        pending: const [_staged],
+        removed: const {'a1'},
+      );
+      final shown = _view(
+        stream: const StreamAnalysisState(),
+        pending: const [_staged],
+      );
+
+      // A staged meal is not saved, so it was never in the totals — discarding
+      // one must not make the day's numbers jump.
+      expect(held.dailyCalories, shown.dailyCalories);
     });
   });
 }

@@ -305,3 +305,20 @@ final entitlementsProvider = AsyncNotifierProvider.autoDispose
     .family<EntitlementsController, EntitlementState, String?>(
       EntitlementsController.new,
     );
+
+/// Whether the settings root emits the subscription group.
+///
+/// The predicate lives here rather than inside `SubscriptionSection` because
+/// the PARENT owns the gap above a group (`.agents/skills/kallo-design/mobile.md`,
+/// "A card never carries a bottom margin"). A section that hid itself internally
+/// left the parent's 24px gaps behind on both sides as a 48px void — which is
+/// exactly what shipped before this provider existed.
+///
+/// A null snapshot means the fetch is still in flight: reserve the slot rather
+/// than collapsing it, so the group doesn't pop in and shove the list down.
+final subscriptionSectionVisibleProvider = Provider.autoDispose<bool>((ref) {
+  final userId = ref.watch(entitlementsUserIdProvider);
+  final entitlement = ref.watch(entitlementsProvider(userId)).valueOrNull;
+  if (entitlement == null) return true;
+  return entitlement.purchasesEnabled || entitlement.isPremium;
+});
