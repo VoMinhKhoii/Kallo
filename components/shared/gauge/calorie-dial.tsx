@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { GaugeDial } from '@/components/shared/gauge/gauge-dial';
 import { gaugeCalorieLines } from '@/components/shared/gauge/gauge-lines';
+import { gaugeFitsLongUnit } from '@/lib/core/ui/gauge-figure-size';
 import {
   type CalorieFraming,
   calorieReadout,
@@ -27,17 +28,6 @@ import type { Goal } from '@/lib/domain/onboarding/types';
  * except that the radius is now handed in by `GaugeStrip` rather than picked
  * from two named variants.
  */
-
-/**
- * Where the long wording starts fitting.
- *
- * The unit line sits ON the tips, where the sweep has ENDED — so what bounds it
- * is the opening between the two tip caps, ~1.48× the radius. "kcal remaining"
- * measures about 7em, which clears that opening from here up. Below it the dial
- * says "left", which is the same split Flutter draws between its full and
- * compact dials — derived rather than hand-assigned.
- */
-export const LONG_WORDING_MIN_RADIUS = 64;
 
 interface CalorieDialProps {
   logged: number;
@@ -73,7 +63,8 @@ export function CalorieDial({
   const format = (value: number) => Math.round(value).toLocaleString(locale);
 
   const readout = calorieReadout(logged, target, goal);
-  const wording: Wording = radius >= LONG_WORDING_MIN_RADIUS ? 'long' : 'short';
+  // Whether the words FIT, not how big the mark is — see `gaugeFitsLongUnit`.
+  const wording: Wording = gaugeFitsLongUnit(radius) ? 'long' : 'short';
   const fraction = { logged: format(logged), target: format(target) };
   const targetOnly = { target: format(target) };
 
