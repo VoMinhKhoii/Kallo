@@ -52,7 +52,8 @@ class FeedViewState {
 
     // Swiped-away meals inside the undo window are filtered out here (not
     // removed from the cache), so totals heal immediately and a mid-window
-    // refetch cannot resurrect the card.
+    // refetch cannot resurrect the card. Discarded STAGED cards go through the
+    // same set — see `pendingConfirmations` below.
     final persistedMeals =
         (day?.persistedMeals ?? const <PersistedMeal>[])
             .where((m) => !pendingRemovalIds.contains(m.id))
@@ -66,9 +67,16 @@ class FeedViewState {
     // Oldest first, like persistedMeals above. The server hands these back
     // `ORDER BY logged_at DESC`, so taking them as-is put two unconfirmed meals
     // on screen in the opposite order to every other card in the day.
+    //
+    // `pendingRemovalIds` filters these too: a staged card the user discarded is
+    // held out of the feed for its undo window exactly like a saved one. Meal
+    // ids and pending-analysis ids are both server UUIDs from disjoint tables,
+    // so one set can safely hold both.
     final pendingConfirmations =
         (day?.pendingConfirmations ?? const <PendingMealConfirmation>[])
-            .where((p) => p.id != revealedId)
+            .where(
+              (p) => p.id != revealedId && !pendingRemovalIds.contains(p.id),
+            )
             .toList()
           ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
 

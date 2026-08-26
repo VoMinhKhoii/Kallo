@@ -63,6 +63,7 @@ vi.mock(
 
 import {
   deleteMealAction,
+  discardPendingAnalysisAction,
   updateMealAction,
 } from '@/lib/actions/meals/mutate-meal';
 import {
@@ -105,6 +106,46 @@ describe('deleteMealAction', () => {
 
   it('should reject invalid mealId', async () => {
     await expect(deleteMealAction({ mealId: 'bad' })).rejects.toThrow();
+  });
+});
+
+describe('discardPendingAnalysisAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /** The delete resolves through .where().returning(), like deleteMealAction. */
+  function queueDiscard(rows: unknown[]) {
+    mockDbDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue(rows),
+      }),
+    });
+  }
+
+  it('should return success when the staged analysis is discarded', async () => {
+    queueDiscard([{ id: UUID_1 }]);
+
+    await expect(
+      discardPendingAnalysisAction({ analysisId: UUID_1 })
+    ).resolves.toEqual({ success: true });
+  });
+
+  it("should throw for an analysis that is gone or someone else's", async () => {
+    // The WHERE userId filter is the only tenant guard (Drizzle bypasses RLS),
+    // so another user's row comes back as no rows — indistinguishable from an
+    // expired or already-confirmed one, and reported the same way.
+    queueDiscard([]);
+
+    await expect(
+      discardPendingAnalysisAction({ analysisId: UUID_2 })
+    ).rejects.toThrow('Phân tích không tồn tại');
+  });
+
+  it('should reject an analysisId that is not a uuid', async () => {
+    await expect(
+      discardPendingAnalysisAction({ analysisId: 'bad' })
+    ).rejects.toThrow();
   });
 });
 

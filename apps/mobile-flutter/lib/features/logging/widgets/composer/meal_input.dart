@@ -7,6 +7,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
+import 'composer_card_surface.dart';
 import 'meal_input_controls.dart';
 import '../relog/mention_text_controller.dart';
 
@@ -182,10 +183,15 @@ class _MealInputState extends State<MealInput>
   bool get _canSubmit => _controller.text.trim().isNotEmpty;
 
   void _submit() {
-    if (_canSubmit) {
-      HapticFeedback.lightImpact();
-      widget.onSubmit(_controller.text);
-    }
+    if (!_canSubmit) return;
+    HapticFeedback.lightImpact();
+    // Drop the keyboard before the answer arrives. It covers half the feed, and
+    // the card that is about to stream in belongs at the bottom of a viewport
+    // that is about to grow — leaving focus put meant the user sent a meal and
+    // then had to dismiss the keyboard themselves to read the reply. Every flow
+    // that wants the field back asks for it (MealInputController.focus).
+    _focusNode.unfocus();
+    widget.onSubmit(_controller.text);
   }
 
   @override
@@ -202,37 +208,8 @@ class _MealInputState extends State<MealInput>
   }
 
   Widget _buildCard(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _focus,
-      builder: (context, child) {
-        final t = _focus.value;
-        final borderColor =
-            Color.lerp(
-              KalloColors.borderBiscotti40,
-              KalloColors.borderAccent40,
-              t,
-            )!;
-        // Interpolate the input glow opacity (resting → focus).
-        final glow = BoxShadow(
-          color: KalloColors.accent.withValues(alpha: 0.06 + t * 0.06),
-          blurRadius: 20,
-          offset: const Offset(0, 4),
-        );
-        return Container(
-          // No padding here — the notice sets its own inset, so the field and
-          // controls carry theirs on the column below.
-          decoration: BoxDecoration(
-            // Opaque: the feed reads through the DOCK, never through the field.
-            color: KalloColors.elev,
-            borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-            border: Border.all(color: borderColor),
-            // Ink contact + ambient under the accent glow — what lifts the
-            // card off the feed scrolling behind it.
-            boxShadow: [KalloShadows.md, KalloShadows.xs, glow],
-          ),
-          child: child,
-        );
-      },
+    return ComposerCardSurface(
+      focus: _focus,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,

@@ -11,11 +11,19 @@ import {
 } from '@/lib/actions/logging/persisted-meal';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
-import { updateMealSchema } from '@/lib/api/contracts/meals';
+import {
+  discardPendingSchema,
+  updateMealSchema,
+} from '@/lib/api/contracts/meals';
 import { Errors } from '@/lib/core/errors/catalog';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
-import { mealItems, mealShares, meals } from '@/lib/infra/db/schema';
+import {
+  mealItems,
+  mealShares,
+  meals,
+  pendingAnalyses,
+} from '@/lib/infra/db/schema';
 import type { ConfirmMealResponse } from './types';
 
 const deleteMealSchema = z.object({
@@ -45,6 +53,48 @@ export async function deleteMealAction(input: { mealId: string }) {
     throw Errors.validationFailed(
       'Bữa ăn không tồn tại hoặc không thuộc về bạn.'
     );
+  }
+
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// C3b: Discard a staged (unconfirmed) analysis
+// ---------------------------------------------------------------------------
+
+/**
+ * Throw away a pending analysis the user decided against.
+ *
+ * Before this the only exits from a staged card were confirming it or waiting
+ * out `pending_analyses.expires_at` (30 minutes) — so a meal the user did not
+ * want sat in their day, and re-entering it produced a second card beside the
+ * first. This is the delete already inside `confirmAndSaveMealAction`, without
+ * the save.
+ *
+ * Tenant isolation: Drizzle bypasses Supabase RLS, so the `WHERE userId` filter
+ * is the only guard — same shape as `deleteMealAction` above. A row that has
+ * already expired or been confirmed reports the same "not found" as one that
+ * never existed; the client treats both as "it is gone", which is the honest
+ * answer either way.
+ */
+export async function discardPendingAnalysisAction(input: {
+  analysisId: string;
+}) {
+  const parsed = discardPendingSchema.parse(input);
+  const { user } = await requireAuthAndProfile();
+
+  const [discarded] = await db
+    .delete(pendingAnalyses)
+    .where(
+      and(
+        eq(pendingAnalyses.id, parsed.analysisId),
+        eq(pendingAnalyses.userId, user.id)
+      )
+    )
+    .returning({ id: pendingAnalyses.id });
+
+  if (!discarded) {
+    throw Errors.validationFailed('Phân tích không tồn tại hoặc đã được lưu.');
   }
 
   return { success: true };

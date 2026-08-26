@@ -8,8 +8,9 @@ import '../../data/logging_models.dart';
 import '../../data/logging_providers.dart';
 import '../../data/persisted_meal_mutations.dart';
 
-/// Everything the feed does to an already-SAVED meal: swipe removal with its
-/// undo window, amount edits, "log again", and pull-to-refresh.
+/// Everything the feed does to a meal card that already exists server-side:
+/// removal with its undo window (for a SAVED meal, and for a STAGED analysis
+/// the user decided against), amount edits, "log again", and pull-to-refresh.
 ///
 /// The removal callbacks are the whole undo mechanism: the day cache is never
 /// locally mutated, so the caller holds the meal id in a pending-removal set
@@ -49,6 +50,18 @@ class FeedMealActions {
     _finalizeRemoval(meal);
   }
 
+  /// Throw away a staged analysis the user does not want saved.
+  ///
+  /// Deliberately the same shape as [remove], down to the undo window: a staged
+  /// card is a real server row (`pending_analyses`), so discarding it is a
+  /// DELETE like any other, and the user should get the same five seconds to
+  /// change their mind. Before this there was no way out of a staged card at
+  /// all except confirming it or waiting out its 30-minute expiry.
+  void discardPending(PendingMealConfirmation pending) {
+    onHoldRemoval(pending.id);
+    _finalizeDiscard(pending);
+  }
+
   /// Persist an amount edit (gram overrides + per-row removals) on a saved meal.
   Future<void> update(
     PersistedMeal meal, {
@@ -75,6 +88,51 @@ class FeedMealActions {
     await ref
         .read(loggingDayProvider(LoggingDayArgs(userId, date)).notifier)
         .refresh();
+  }
+
+  Future<void> _finalizeDiscard(PendingMealConfirmation pending) async {
+    var undone = false;
+    await showTopToast(
+      context,
+      'logging.pendingDiscarded'.tr(),
+      actionLabel: 'logging.undo'.tr(),
+      duration: const Duration(seconds: 5),
+      onAction: () {
+        undone = true;
+        if (context.mounted) onReleaseRemoval(pending.id);
+      },
+    );
+    if (undone || !context.mounted) return;
+    try {
+      await ref
+          .read(apiClientProvider)
+          .delete<void>(
+            '/api/v1/meals/pending/${Uri.encodeComponent(pending.id)}',
+          );
+    } on ApiError catch (error) {
+      // A staged row expires on its own after 30 minutes, and confirming it
+      // consumes it. Either way the server says "not found" — and either way it
+      // IS gone, so the card must stay gone. Only a real failure puts it back.
+      if (error.status != 400 && error.status != 404) {
+        invalidateMealSurfaces(ref.invalidate, userId, date);
+        if (context.mounted) onRemovalFailed(pending.id);
+        return;
+      }
+    } catch (_) {
+      invalidateMealSurfaces(ref.invalidate, userId, date);
+      if (context.mounted) onRemovalFailed(pending.id);
+      return;
+    }
+    if (!context.mounted) return;
+    invalidateMealSurfaces(ref.invalidate, userId, date, includeDay: false);
+    try {
+      await ref
+          .read(loggingDayProvider(LoggingDayArgs(userId, date)).notifier)
+          .refresh();
+    } catch (_) {
+      return;
+    }
+    if (context.mounted) onReleaseRemoval(pending.id);
   }
 
   Future<void> _finalizeRemoval(PersistedMeal meal) async {

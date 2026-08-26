@@ -9,6 +9,7 @@ import '../../logic/feed/view_state.dart';
 import '../../logic/logging_spacing.dart';
 import '../terminal/logging_day_error_state.dart';
 import 'feed_meal_card.dart';
+import 'feed_scroll_pin.dart';
 import 'placeholder/feed_no_meals_view.dart';
 import 'staged_meal_card.dart';
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
@@ -22,11 +23,13 @@ class FeedList extends StatelessWidget {
     required this.view,
     required this.dockHeight,
     required this.scrollController,
+    required this.pin,
     required this.footer,
     required this.confirmPending,
     required this.onRefresh,
     required this.onRetryDay,
     required this.onRemoveMeal,
+    required this.onDiscardPending,
     required this.onUpdateMeal,
     required this.onLogAgain,
     required this.onConfirm,
@@ -46,11 +49,15 @@ class FeedList extends StatelessWidget {
   final double dockHeight;
   final ScrollController scrollController;
 
+  /// Lets the feed ask the tail to stay in view while an answer streams in.
+  final FeedScrollPinHandle pin;
+
   /// The streaming / revealed / failed tail, rendered after the last card.
   final Widget footer;
   final Future<void> Function() onRefresh;
   final VoidCallback onRetryDay;
   final void Function(PersistedMeal meal) onRemoveMeal;
+  final void Function(PendingMealConfirmation pending) onDiscardPending;
   final Future<void> Function(
     PersistedMeal meal, {
     required List<Map<String, dynamic>> edits,
@@ -60,22 +67,12 @@ class FeedList extends StatelessWidget {
   final Future<void> Function(PersistedMeal meal) onLogAgain;
 
   @override
-  Widget build(BuildContext context) {
-    // Drag-to-dismiss for every feed scroll view. `onDrag` alone is not enough:
-    // it needs a ScrollUpdateNotification carrying dragDetails, which never
-    // arrives when the drag is pure overscroll (dragging DOWN from the top
-    // clamps, so pixels never move and only an OverscrollNotification fires). A
-    // drag START always fires, whether or not the offset survives.
-    return NotificationListener<ScrollStartNotification>(
-      onNotification: (n) {
-        if (n.depth == 0 && n.dragDetails != null) {
-          FocusManager.instance.primaryFocus?.unfocus();
-        }
-        return false;
-      },
-      child: _buildBody(context),
-    );
-  }
+  Widget build(BuildContext context) =>
+      FeedScrollPin(
+        handle: pin,
+        controller: scrollController,
+        child: _buildBody(context),
+      );
 
   Widget _buildBody(BuildContext context) {
     final entries = view.entries;
@@ -136,6 +133,7 @@ class FeedList extends StatelessWidget {
               busy: confirmPending,
               onConfirm: onConfirm,
               onConfirmCheat: onConfirmCheat,
+              onDiscard: () => onDiscardPending(pending),
             ),
           };
         },
