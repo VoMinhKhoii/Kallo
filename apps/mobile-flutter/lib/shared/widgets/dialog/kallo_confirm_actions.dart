@@ -77,12 +77,10 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
   Widget build(BuildContext context) {
     final Color resting =
         widget.destructive ? KalloColors.danger : KalloColors.btn;
-    // Darken rather than lighten on press: both fills are darker than the card
-    // they sit on, so a lighter press would read as the button lifting away.
+    // Both pressed fills are tokens, the way every other pill in the app names
+    // its own: btn → btnHover, danger → dangerHover.
     final Color held =
-        widget.destructive
-            ? Color.alphaBlend(const Color(0x1F000000), KalloColors.danger)
-            : KalloColors.btnHover;
+        widget.destructive ? KalloColors.dangerHover : KalloColors.btnHover;
 
     return Semantics(
       button: true,
@@ -103,8 +101,11 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
           curve: KalloEase.press,
           child: Container(
             alignment: Alignment.center,
-            constraints: const BoxConstraints(minHeight: 44),
-            padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3),
+            // Height comes from the padding alone, like every other button in
+            // the app — 14 + 14 + a 14pt label's 18.2 line box is 46.2, so the
+            // minHeight this used to carry was never the thing clearing the
+            // 44pt tap floor. It was also the only one in the app.
+            padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3_5),
             decoration: BoxDecoration(
               color: _pressed ? held : resting,
               borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
@@ -148,10 +149,15 @@ class _CancelButtonState extends State<_CancelButton> {
         onTapUp: (_) => setState(() => _pressed = false),
         onTapCancel: () => setState(() => _pressed = false),
         onTap: widget.onTap,
-        child: Container(
+        // Animated, not a bare Container: every other quiet button in the app
+        // crossfades its wash rather than snapping it on (TerminalDiscardButton,
+        // profile_form's ghost button).
+        child: AnimatedContainer(
+          duration: KalloMotion.press,
+          curve: KalloEase.press,
           alignment: Alignment.center,
-          constraints: const BoxConstraints(minHeight: 44),
-          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3),
+          // Matches the affirmative above it, so the stack is one height.
+          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp3_5),
           decoration: BoxDecoration(
             color: _pressed ? KalloColors.hover : Colors.transparent,
             borderRadius: BorderRadius.circular(KalloRadii.buttonXl),

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
+import 'package:kallo_mobile/theme/kallo_motion.dart';
 
 import '../../../app_fonts.dart';
 import '../../../l10n_test_loader.dart';
@@ -172,5 +173,52 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(tester.getRect(find.text('Huỷ')).bottom, lessThan(568));
+  });
+
+  testWidgets('the two buttons are one height, and both clear the tap floor', (
+    tester,
+  ) async {
+    await _open(tester, _host(onResult: (_) {}));
+
+    // Read the rendered pills rather than restating their padding, so this
+    // fails on the drift itself. Both numbers matter: the buttons used to be
+    // the only ones in the app propped up by a minHeight, and taking that away
+    // is only safe while the padding alone still clears 44.
+    final confirm = tester.getRect(
+      find.ancestor(
+        of: find.text('Đồng ý'),
+        matching: find.byType(DecoratedBox),
+      ).first,
+    );
+    final cancel = tester.getRect(
+      find.ancestor(
+        of: find.text('Huỷ'),
+        matching: find.byType(DecoratedBox),
+      ).first,
+    );
+
+    expect(
+      confirm.height,
+      closeTo(cancel.height, 0.5),
+      reason: 'a stacked pair reads as one control; two heights reads as a bug',
+    );
+    expect(confirm.height, greaterThanOrEqualTo(44));
+  });
+
+  testWidgets('the cancel fades its wash in rather than snapping it', (
+    tester,
+  ) async {
+    await _open(tester, _host(onResult: (_) {}));
+
+    // Every other quiet button in the app crossfades — this one was a bare
+    // Container, so the wash appeared in one frame.
+    final animated = tester.widgetList<AnimatedContainer>(
+      find.ancestor(
+        of: find.text('Huỷ'),
+        matching: find.byType(AnimatedContainer),
+      ),
+    );
+    expect(animated, isNotEmpty);
+    expect(animated.first.duration, KalloMotion.press);
   });
 }
