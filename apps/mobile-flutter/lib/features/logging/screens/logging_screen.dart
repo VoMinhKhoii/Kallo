@@ -15,6 +15,7 @@ import '../data/logging_providers.dart';
 import '../logic/logging_spacing.dart';
 import '../widgets/feed/feed_area.dart';
 import '../widgets/timeline/partial_yesterday_prompt.dart';
+import '../widgets/timeline/picker_dismiss_layer.dart';
 import '../widgets/timeline/timeline_picker.dart';
 
 /// The logging tab. Owns the selected date + picker-expanded state so the date
@@ -137,27 +138,12 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
               onOpenDay: (date) => setState(() => _selectedDate = date),
             ),
           Expanded(
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: FeedArea(profile: profile, date: _selectedDate),
-                ),
-                // The outside-tap scrim. Same notifier, so opening and closing
-                // the picker never touches the feed above.
-                ValueListenableBuilder<bool>(
-                  valueListenable: _pickerExpanded,
-                  builder:
-                      (_, expanded, _) =>
-                          expanded
-                              ? Positioned.fill(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.translucent,
-                                  onTap: () => _pickerExpanded.value = false,
-                                ),
-                              )
-                              : const SizedBox.shrink(),
-                ),
-              ],
+            // The outside-tap scrim reads the same notifier, so opening and
+            // closing the picker never touches the feed beneath it.
+            child: PickerDismissLayer(
+              expanded: _pickerExpanded,
+              onDismiss: () => _pickerExpanded.value = false,
+              child: FeedArea(profile: profile, date: _selectedDate),
             ),
           ),
         ],
