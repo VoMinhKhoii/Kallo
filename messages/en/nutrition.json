@@ -389,6 +389,7 @@
     "calories": "kcal",
     "loggedDays": "All",
     "completeDays": "Complete days",
+    "completeDaysHint": "Only days logging at least 85% of your calorie target are counted here - the rest are counted in “{allLabel}”.",
     "avgPerLoggedDay": "avg per logged day",
     "avgPerCompleteDay": "avg per complete day",
     "dayCount": "{count, plural, one {# day} other {# days}}",
