@@ -1,4 +1,4 @@
-import { DEFAULT_NUTRIENTS, MORE_NUTRIENTS } from '../../catalog/nutrients';
+import { CARD_NUTRIENTS } from '../../catalog/nutrients';
 import type { MicronutrientTarget } from '../../catalog/reference-targets';
 import {
   buildNutrientCard,
@@ -17,7 +17,6 @@ import type {
 import type { OverviewMealItemRow } from './query';
 import { sumRows } from './row-metrics';
 
-const ALL_CARD_NUTRIENTS = [...DEFAULT_NUTRIENTS, ...MORE_NUTRIENTS];
 const FAO_VIETNAM_SOURCE_CODE = 'FAO_VN_2007';
 const CONDIMENT_TYPE_EN = 'Condiments, traditional sauces';
 const CONDIMENT_TYPE_VN = 'Gia vị, nước chấm';
@@ -106,7 +105,7 @@ export function buildNutrientCards({
 }): NutrientCardData[] {
   const sodiumStats = getSodiumSourceStats(rows, totalCalories);
 
-  return ALL_CARD_NUTRIENTS.map((nutrient) => {
+  return CARD_NUTRIENTS.map((nutrient) => {
     const target = targets[nutrient];
     const nutrientRows = rows.map((row) => ({
       calories: row.calories,

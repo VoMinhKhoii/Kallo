@@ -31,13 +31,16 @@ class NutrientGridCard extends StatelessWidget {
 
     // Success = a real, confident reading that's on target (floor met, or a
     // ceiling held under its limit). An exceeded ceiling is never "success".
-    final adequate = pct != null &&
+    final adequate =
+        pct != null &&
         !isLimited &&
         !showExceed &&
         statusKeyFor(card) == StatusKey.onTarget;
 
     String figure;
-    if (card.displayState == ConfidenceDisplayState.insufficientData) {
+    if (card.averagePerDay == null && pct == null) {
+      figure = '—';
+    } else if (card.displayState == ConfidenceDisplayState.insufficientData) {
       figure = tr('nutrition.cell.limited');
     } else if (pct == null) {
       figure = tr('nutrition.cell.noTarget');
@@ -50,24 +53,27 @@ class NutrientGridCard extends StatelessWidget {
       );
     }
 
-    final Color figureColor = showExceed
-        ? KalloColors.offTarget
-        : isLimited || pct == null
+    final Color figureColor =
+        showExceed
+            ? KalloColors.offTarget
+            : isLimited || pct == null
             ? kInkMuted
             : adequate
-                ? KalloColors.successDark
-                : kInk;
+            ? KalloColors.successDark
+            : kInk;
 
     // Absolute average / goal in the nutrient's own unit (g or mg/mcg).
     final String goalText;
     if (card.target != null) {
-      final avgStr = card.averagePerDay != null
-          ? formatLocalizedNumber(card.averagePerDay!, locale)
-          : '0';
+      final avgStr =
+          card.averagePerDay != null
+              ? formatLocalizedNumber(card.averagePerDay!, locale)
+              : '—';
       goalText =
           '$avgStr / ${formatLocalizedNumber(card.target!, locale)} ${card.unit}';
     } else if (card.averagePerDay != null) {
-      goalText = '${formatLocalizedNumber(card.averagePerDay!, locale)} ${card.unit}';
+      goalText =
+          '${formatLocalizedNumber(card.averagePerDay!, locale)} ${card.unit}';
     } else {
       goalText = '—';
     }
@@ -101,10 +107,7 @@ class NutrientGridCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: KalloSpacing.sp2),
-              Text(
-                figure,
-                style: dashMeta(color: figureColor, tabular: true),
-              ),
+              Text(figure, style: dashMeta(color: figureColor, tabular: true)),
             ],
           ),
           const SizedBox(height: KalloSpacing.sp2),

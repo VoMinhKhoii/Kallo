@@ -88,7 +88,7 @@ class NutrientDaySeries {
   };
 }
 
-/// The overview's per-bucket time axis (macros + default micronutrients).
+/// The overview's per-bucket time axis (macros + displayed micronutrients).
 class NutritionDaySeries {
   final String unit; // 'day' | 'week'
   final List<NutrientDaySeries> series;

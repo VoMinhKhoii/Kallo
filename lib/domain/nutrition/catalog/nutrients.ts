@@ -28,10 +28,12 @@ export const MORE_NUTRIENTS = [
 
 // The nutrients shown as cards (default + extended) — every one can surface
 // DB-derived food suggestions, since the composition table has a column for each.
-export const CANDIDATE_NUTRIENTS = [
+export const CARD_NUTRIENTS = [
   ...DEFAULT_NUTRIENTS,
   ...MORE_NUTRIENTS,
 ] as const satisfies readonly NutritionNutrientKey[];
+
+export const CANDIDATE_NUTRIENTS = CARD_NUTRIENTS;
 
 export const HIDDEN_NUTRIENTS = [
   'vitaminHMcg',
