@@ -33,12 +33,32 @@ const SWIPE_COOLDOWN_MS = 250;
 const WEEK_SLIDER_ID = 'mobile-week-slider';
 const MOBILE_HEADER_SLOT_ID = 'app-mobile-header-slot';
 
-// useSyncExternalStore inputs for resolving the portal slot. The slot is created
-// once by MobileNav, so we don't need a real subscription — but we do need stable
-// references to avoid an infinite loop in dev.
-const subscribeNoop = () => () => {};
+/**
+ * MobileNav's header is `md:hidden`, so its slot exists in the DOM at every
+ * width but only has a box below md. Portalling into it from md up hides the
+ * chip completely — which is exactly what happened when the timeline sidebar
+ * moved from md to lg and left 768px with neither the sidebar nor the chip.
+ * So the slot counts as a target only while that header is actually shown.
+ */
+const MOBILE_HEADER_QUERY = '(max-width: 767.98px)';
+
+// `matchMedia` is absent in jsdom (and in any host without it). Falling back to
+// the inline row is the safe branch: the chip is visible either way, it just
+// does not share the hamburger's row.
+const mobileHeaderQuery = () =>
+  typeof window.matchMedia === 'function'
+    ? window.matchMedia(MOBILE_HEADER_QUERY)
+    : null;
+
+const subscribeToMobileHeader = (onChange: () => void) => {
+  const query = mobileHeaderQuery();
+  query?.addEventListener('change', onChange);
+  return () => query?.removeEventListener('change', onChange);
+};
 const getMobileHeaderSlot = (): HTMLElement | null =>
-  document.getElementById(MOBILE_HEADER_SLOT_ID);
+  mobileHeaderQuery()?.matches
+    ? document.getElementById(MOBILE_HEADER_SLOT_ID)
+    : null;
 const getNoSlot = (): HTMLElement | null => null;
 
 export interface MobileTimelinePickerProps {
@@ -163,7 +183,7 @@ export function MobileTimelinePicker({
   // useSyncExternalStore so SSR returns null (no DOM) and the client picks up
   // the slot on the first commit without needing setState in an effect.
   const portalTarget = useSyncExternalStore(
-    subscribeNoop,
+    subscribeToMobileHeader,
     getMobileHeaderSlot,
     getNoSlot
   );
@@ -315,17 +335,23 @@ export function MobileTimelinePicker({
     [scrollNext, scrollPrev]
   );
 
-  // When the host page provides the header slot (LoggingShell inside AppShell),
-  // render into it via a portal so the chip sits in the mobile header row. The
-  // inline fallback is the test/Storybook contract — production always finds the
-  // slot because MobileNav mounts as a sibling. Do not delete the fallback when
-  // refactoring; the tests rely on it to render without an AppShell parent.
+  // Below md the chip rides in MobileNav's header row, beside the hamburger.
+  // From md to lg there is no mobile header — the app rail is shown and the
+  // timeline sidebar is not — so the chip gets its own row above the feed.
+  // That inline path is also the test/Storybook contract: do not delete it when
+  // refactoring, the tests render this without an AppShell parent.
   const renderIntoSlot = (node: React.ReactNode) =>
-    portalTarget ? createPortal(node, portalTarget) : node;
+    portalTarget ? (
+      createPortal(node, portalTarget)
+    ) : (
+      <div className="flex w-full shrink-0 justify-center px-3 pt-1 lg:hidden">
+        {node}
+      </div>
+    );
 
   if (isPending) {
     return renderIntoSlot(
-      <div className="flex w-full justify-center md:hidden">
+      <div className="flex w-full justify-center lg:hidden">
         <Skeleton
           className="h-9 w-44 rounded-full"
           data-testid="mobile-picker-skeleton"
@@ -343,7 +369,7 @@ export function MobileTimelinePicker({
           // (the hamburger was retired for the bottom tab bar), so the strip
           // already owns the whole row.
           data-strip-mode={mode === 'strip'}
-          className="flex min-w-0 flex-1 items-center justify-center gap-2 md:hidden"
+          className="flex min-w-0 flex-1 items-center justify-center gap-2 lg:hidden"
         >
           <motion.div
             layout
@@ -474,7 +500,7 @@ export function MobileTimelinePicker({
       )}
 
       {isError && (
-        <div className="flex justify-center px-3 md:hidden">
+        <div className="flex justify-center px-3 lg:hidden">
           <div
             className="flex max-w-[min(22rem,calc(100vw-2rem))] items-center gap-2 rounded-full border border-kallo-danger/30 bg-kallo-danger/10 px-3 py-1.5"
             data-testid="mobile-picker-error"

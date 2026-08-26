@@ -2,10 +2,12 @@
 
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { COMPACT_CALORIE_DIAL_RADIUS } from '@/components/shared/gauge/calorie-dial';
-import { COMPACT_MACRO_DIAL_RADIUS } from '@/components/shared/gauge/macro-dials';
 import { cn } from '@/lib/core/ui/cn';
 import { gaugeHeight } from '@/lib/core/ui/gauge-arc-geometry';
+import {
+  FEED_MACRO_CAP,
+  gaugeStripSizes,
+} from '@/lib/core/ui/gauge-strip-layout';
 
 /**
  * The dial row's own silhouette — one wide mark for the day, three narrow ones
@@ -13,32 +15,39 @@ import { gaugeHeight } from '@/lib/core/ui/gauge-arc-geometry';
  * visibly change layout when the day arrives.
  */
 export function MacroSummarySkeleton() {
+  // At the cap, which is what the strip settles on for any feed-width column —
+  // shaped like what it stands in for, so the header does not visibly change
+  // layout when the day arrives.
+  const { calorieRadius, macroRadius, gap } = gaugeStripSizes(
+    Number.POSITIVE_INFINITY,
+    FEED_MACRO_CAP
+  );
+
   return (
     <div
       aria-hidden="true"
-      className="flex animate-pulse flex-wrap items-start justify-center gap-x-4 gap-y-3 sm:justify-start"
+      className="flex animate-pulse items-start justify-center"
+      style={{ gap }}
     >
       <div
         className="shrink-0 rounded-full bg-kallo-track"
         style={{
-          width: COMPACT_CALORIE_DIAL_RADIUS * 2,
-          height: gaugeHeight(COMPACT_CALORIE_DIAL_RADIUS),
+          width: calorieRadius * 2,
+          height: gaugeHeight(calorieRadius),
         }}
       />
-      <div className="flex min-w-[200px] flex-1 justify-center gap-x-2">
-        {[0, 1, 2].map((index) => (
-          <div className="flex flex-col items-center gap-1" key={index}>
-            <div className="h-3 w-11 rounded-full bg-kallo-border/70" />
-            <div
-              className="rounded-full bg-kallo-track"
-              style={{
-                width: COMPACT_MACRO_DIAL_RADIUS * 2,
-                height: gaugeHeight(COMPACT_MACRO_DIAL_RADIUS),
-              }}
-            />
-          </div>
-        ))}
-      </div>
+      {[0, 1, 2].map((index) => (
+        <div className="flex flex-col items-center gap-1" key={index}>
+          <div className="h-3 w-11 rounded-full bg-kallo-border/70" />
+          <div
+            className="rounded-full bg-kallo-track"
+            style={{
+              width: macroRadius * 2,
+              height: gaugeHeight(macroRadius),
+            }}
+          />
+        </div>
+      ))}
     </div>
   );
 }
