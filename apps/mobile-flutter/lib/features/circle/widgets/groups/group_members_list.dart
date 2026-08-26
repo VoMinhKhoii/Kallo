@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/chat_group.dart';
 import '../../../../shared/widgets/avatar/profile_avatar.dart';
+import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../data/chat_group_providers.dart';
@@ -52,27 +53,15 @@ class GroupMembersList extends ConsumerWidget {
     WidgetRef ref,
     ChatGroupMember member,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            title: Text(
-              tr('groups.info.removeTitle', namedArgs: {'name': member.label}),
-            ),
-            content: Text(tr('groups.info.removeDescription')),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(tr('groups.feed.cancel')),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(tr('groups.info.removeConfirm')),
-              ),
-            ],
-          ),
+    // "Xoá {name}?" — the affirmative is the neutral "Đồng ý", not the verb
+    // "Xoá", which beside "Huỷ" reads as the same choice twice.
+    final confirmed = await showKalloConfirm(
+      context,
+      title: tr('groups.info.removeTitle', namedArgs: {'name': member.label}),
+      description: tr('groups.info.removeDescription'),
+      destructive: true,
     );
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
     final container = ProviderScope.containerOf(context, listen: false);
     try {
       await removeGroupMember(

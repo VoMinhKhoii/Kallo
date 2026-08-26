@@ -31,7 +31,22 @@ class LoggingScreen extends ConsumerStatefulWidget {
 
 class _LoggingScreenState extends ConsumerState<LoggingScreen> {
   late String _selectedDate = todayDateString();
-  bool _pickerExpanded = false;
+
+  /// Whether the date picker is showing its week strip.
+  ///
+  /// A ValueNotifier, not `setState` state: expanding the picker changes
+  /// nothing about the feed, but a setState here rebuilt this whole screen —
+  /// which hands [FeedArea] a fresh [LoggingProfile] and so re-runs its entire
+  /// build (the view state's sort and filter, five action objects, two gauge
+  /// painters, the composer, the list) on the very frame of the tap. That was
+  /// the lag between touching the chip and anything moving.
+  final ValueNotifier<bool> _pickerExpanded = ValueNotifier(false);
+
+  @override
+  void dispose() {
+    _pickerExpanded.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,14 +110,20 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
             // No bottom inset — the macro summary below owns the one
             // block gap, so the date strip never double-spaces it.
             padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-            child: DateMorph(
-              dates: mealDates,
-              today: today,
-              selectedDate: _selectedDate,
-              expanded: _pickerExpanded,
-              onSelectDate: (date) => setState(() => _selectedDate = date),
-              onExpand: () => setState(() => _pickerExpanded = true),
-              onCollapse: () => setState(() => _pickerExpanded = false),
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _pickerExpanded,
+              builder:
+                  (_, expanded, _) => DateMorph(
+                    dates: mealDates,
+                    today: today,
+                    selectedDate: _selectedDate,
+                    expanded: expanded,
+                    // Changing the DAY does have to rebuild the feed.
+                    onSelectDate:
+                        (date) => setState(() => _selectedDate = date),
+                    onExpand: () => _pickerExpanded.value = true,
+                    onCollapse: () => _pickerExpanded.value = false,
+                  ),
             ),
           ),
           // A once-daily nudge when *yesterday* was under-logged — only while
@@ -121,13 +142,21 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                 Positioned.fill(
                   child: FeedArea(profile: profile, date: _selectedDate),
                 ),
-                if (_pickerExpanded)
-                  Positioned.fill(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onTap: () => setState(() => _pickerExpanded = false),
-                    ),
-                  ),
+                // The outside-tap scrim. Same notifier, so opening and closing
+                // the picker never touches the feed above.
+                ValueListenableBuilder<bool>(
+                  valueListenable: _pickerExpanded,
+                  builder:
+                      (_, expanded, _) =>
+                          expanded
+                              ? Positioned.fill(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.translucent,
+                                  onTap: () => _pickerExpanded.value = false,
+                                ),
+                              )
+                              : const SizedBox.shrink(),
+                ),
               ],
             ),
           ),

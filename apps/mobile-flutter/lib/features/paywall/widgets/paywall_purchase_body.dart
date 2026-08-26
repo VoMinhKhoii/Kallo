@@ -1,8 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../services/billing/entitlement_state.dart';
+import '../../../shared/logic/legal_links.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
@@ -11,8 +11,10 @@ import '../data/paywall_controller.dart';
 import 'paywall_features.dart';
 import 'paywall_package_section.dart';
 
-const _termsUrl = 'https://kallo.fit/terms';
-const _privacyUrl = 'https://kallo.fit/privacy';
+// URLs and the in-app browser come from `shared/logic/legal_links.dart`: these
+// are the same two pages the settings About group links to, and they used to be
+// reached here through the bare redirect paths, which re-detect the locale from
+// scratch instead of landing in the app's own language.
 
 /// The upsell / trial-expired variant: pitch, package cards, and restore/legal
 /// actions.
@@ -31,6 +33,7 @@ class PaywallPurchaseBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final languageCode = context.locale.languageCode;
     final eyebrow = tr(
       _expiredVariant ? 'paywall.expiredEyebrow' : 'paywall.upsellEyebrow',
     );
@@ -73,20 +76,18 @@ class PaywallPurchaseBody extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextButton(
-              onPressed: () => _openLegalUrl(_termsUrl),
+              onPressed:
+                  () => openLegalPage(context, termsUrlFor(languageCode)),
               child: Text(tr('paywall.terms')),
             ),
             TextButton(
-              onPressed: () => _openLegalUrl(_privacyUrl),
+              onPressed:
+                  () => openLegalPage(context, privacyUrlFor(languageCode)),
               child: Text(tr('paywall.privacy')),
             ),
           ],
         ),
       ],
     );
-  }
-
-  void _openLegalUrl(String url) {
-    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 }

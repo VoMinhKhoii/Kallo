@@ -12,6 +12,7 @@
     "search": "Search",
     "noResults": "No results found",
     "confirm": "Confirm",
+    "agree": "Agree",
     "dismiss": "Dismiss",
     "close": "Close",
     "or": "or",
@@ -20,8 +21,8 @@
     "notSignedIn": "Not signed in.",
     "increase": "Increase",
     "decrease": "Decrease",
-    "copied": "Link copied",
-    "country": "Country"
+    "country": "Country",
+    "remove": "Remove"
   },
   "nav": {
     "logging": "Logging",
@@ -1400,7 +1401,15 @@
         "permissionDenied": "Camera and photo access are off. Enable them for Kallo in Settings > Privacy, or enter the values by hand.",
         "imageTooLarge": "That photo is too large to send. Take another one and it will be resized automatically."
       }
-    }
+    },
+    "stagedMealCard": {
+      "discard": "Discard",
+      "discardConfirmTitle": "Discard this unsaved meal?",
+      "discardConfirmDescription": "The analysis disappears. You can enter it again any time."
+    },
+    "pendingDiscarded": "Unsaved meal discarded",
+    "copyMessage": "Copy",
+    "messageCopied": "Copied"
   },
   "groups": {
     "page": {
@@ -1432,8 +1441,7 @@
       "leaveTitle": "Leave this group?",
       "leaveDescription": "You'll lose access to this group's timeline.",
       "leaveConfirm": "Leave group",
-      "leaveError": "Couldn't leave the group. Try again.",
-      "cancel": "Cancel"
+      "leaveError": "Couldn't leave the group. Try again."
     },
     "createGroup": {
       "title": "Create a group",
@@ -1469,7 +1477,6 @@
       "removeLabel": "Remove {name}",
       "removeTitle": "Remove {name}?",
       "removeDescription": "They'll lose access to this group's meals and replies.",
-      "removeConfirm": "Remove",
       "removeError": "Couldn't remove this member. Try again."
     },
     "wall": {
@@ -1605,7 +1612,6 @@
       "loadError": "Couldn't load your sign-in methods.",
       "signOut": "Sign out",
       "signOutConfirmTitle": "Sign out of Kallo?",
-      "cancel": "Cancel",
       "delete": "Delete account",
       "deleteScreenTitle": "Delete account",
       "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
@@ -1627,8 +1633,7 @@
     "language": "Language",
     "languageHint": "Change the app language",
     "sharing": {
-      "autoShareLabel": "Share new meals with your circle",
-      "autoShareHint": "When this is on, each new meal is shared with your circle automatically.",
+      "autoShareLabel": "Auto-share to your circle",
       "error": "Couldn't update your sharing preference. Please try again."
     },
     "sidebar": {
@@ -1665,9 +1670,7 @@
       "pacePerWeek": "{pace} {unit}/wk"
     },
     "feedback": {
-      "groupLabel": "Feedback",
       "rowLabel": "Send feedback",
-      "rowSubline": "Report a bug, request an ingredient, or share an idea",
       "title": "Send feedback",
       "description": "Found a bug, missing an ingredient, or have an idea? It goes straight to the team.",
       "typeLabel": "What's this about?",

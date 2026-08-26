@@ -283,4 +283,30 @@ class LoggingProfile {
     required this.fatTargetG,
     this.goal,
   });
+
+  // Value equality: the logging screen rebuilds this from the profile query on
+  // every build, so without it two identical profiles compare unequal and
+  // anything downstream that diffs on the value sees a change that never
+  // happened. Six scalars — cheap to compare, and the alternative is a
+  // widget-identity trap that is invisible until something re-runs.
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoggingProfile &&
+          other.userId == userId &&
+          other.calorieTarget == calorieTarget &&
+          other.proteinTargetG == proteinTargetG &&
+          other.carbsTargetG == carbsTargetG &&
+          other.fatTargetG == fatTargetG &&
+          other.goal == goal;
+
+  @override
+  int get hashCode => Object.hash(
+    userId,
+    calorieTarget,
+    proteinTargetG,
+    carbsTargetG,
+    fatTargetG,
+    goal,
+  );
 }
