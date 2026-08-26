@@ -53,9 +53,9 @@ export function NutrientGridCard({
     pct !== null && !isLimited && !showExceed && isOnTarget(card);
 
   let figure: string;
-  // Nothing measured at all — an empty range, or a nutrient with no per-bucket
-  // series while a column is selected. A dash, not "Limited": there is no thin
-  // reading to caveat, there is no reading.
+  // Nothing measured at all — an empty range or an unavailable selected-bucket
+  // reading. A dash, not "Limited": there is no thin reading to caveat, there
+  // is no reading.
   if (card.averagePerDay === null && pct === null) {
     figure = '—';
   } else if (card.displayState === 'insufficient_data') {
@@ -73,7 +73,7 @@ export function NutrientGridCard({
     const avg =
       card.averagePerDay !== null
         ? formatLocalizedNumber(card.averagePerDay, locale)
-        : '0';
+        : '—';
     goalText = `${avg} / ${formatLocalizedNumber(card.target, locale)} ${card.unit}`;
   } else if (card.averagePerDay !== null) {
     goalText = `${formatLocalizedNumber(card.averagePerDay, locale)} ${card.unit}`;

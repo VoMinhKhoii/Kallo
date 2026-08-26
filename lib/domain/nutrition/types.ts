@@ -82,9 +82,9 @@ export interface MacroPattern {
 }
 
 /**
- * A metric the per-day time axis can chart: the macros plus the default
- * micronutrients (the ones rendered as cards). Keyed off the same identifiers
- * the rest of the DTO uses so the UI can join a series to its card.
+ * A metric the per-day time axis can chart: the macros plus every micronutrient
+ * rendered as a card. Keyed off the same identifiers the rest of the DTO uses
+ * so the UI can join a series to its card.
  */
 export type DaySeriesMetricKey =
   | 'calories'
@@ -93,7 +93,7 @@ export type DaySeriesMetricKey =
   | 'fat'
   | NutritionNutrientKey;
 
-/** Whether the time axis buckets by day (7d/30d) or by week (90d). */
+/** Whether the time axis buckets by day (1d/7d) or by week (30d/90d). */
 export type DaySeriesBucketUnit = 'day' | 'week';
 
 export interface DaySeriesBucket {
@@ -217,8 +217,8 @@ export interface NutritionOverview {
   previousCalorieAverages: CalorieAverages;
   macros: MacroPattern[];
   /**
-   * Per-bucket time series for the macros and default micronutrients. Days for
-   * the 7d/30d ranges, weeks for 90d. Empty when there are no complete days.
+   * Per-bucket time series for the macros and displayed micronutrients. Days for
+   * the 7d range, weeks for 30d/90d. Empty when there are no complete days.
    */
   daySeries: NutritionDaySeries;
   micronutrients: NutrientCardData[];
