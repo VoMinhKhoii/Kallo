@@ -438,7 +438,7 @@ describe('FeedArea', () => {
   });
 
   it('shows the in-context partial-day notice on a past under-logged day', () => {
-    dayWithMeals([makeMeal(400)]); // 400 < 50% of the 2000 target
+    dayWithMeals([makeMeal(400)]); // 400 < 85% of the 2000 target
 
     render(
       <FeedArea

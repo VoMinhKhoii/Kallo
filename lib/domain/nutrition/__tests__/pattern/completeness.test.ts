@@ -26,7 +26,7 @@ describe('classifyDayCompleteness', () => {
       [
         { date: 'a', calories: 2000 },
         { date: 'b', calories: 1800 },
-        { date: 'c', calories: 400 }, // < 50% of 2000
+        { date: 'c', calories: 400 }, // < 85% of 2000
       ],
       2000
     );
@@ -38,7 +38,7 @@ describe('classifyDayCompleteness', () => {
   });
 
   it('falls back to the median when no target is set', () => {
-    // median of [2000, 2200, 1800] is 2000 → floor 1000.
+    // median of [2000, 2200, 1800] is 2000 → floor 1700.
     const result = classifyDayCompleteness(
       [
         { date: 'a', calories: 2000 },
@@ -104,7 +104,7 @@ describe('classifyDayCompleteness', () => {
 
 describe('isLikelyPartialDay', () => {
   it('flags a day below the target floor', () => {
-    expect(isLikelyPartialDay(400, 2000)).toBe(true); // 400 < 1000
+    expect(isLikelyPartialDay(400, 2000)).toBe(true); // 400 < 1700
   });
 
   it('flags a lone partial day (no safety valve unlike the classifier)', () => {

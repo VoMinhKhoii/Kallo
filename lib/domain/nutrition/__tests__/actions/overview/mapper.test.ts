@@ -128,7 +128,7 @@ describe('mapOverviewRowsToDto', () => {
       row({ localDate: '2026-04-22', calories: 2000, proteinG: 100 }),
       row({ localDate: '2026-04-23', calories: 2000, proteinG: 100 }),
       row({ localDate: '2026-04-24', calories: 2000, proteinG: 100 }),
-      // Breakfast-only day: < 50% of the 2000 kcal target.
+      // Breakfast-only day: < 85% of the 2000 kcal target.
       row({ localDate: '2026-04-25', calories: 400, proteinG: 10 }),
     ]);
 
