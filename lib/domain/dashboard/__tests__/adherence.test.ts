@@ -54,7 +54,7 @@ describe('buildCalorieAdherenceHeatmap', () => {
       now: new Date('2026-04-23T12:00:00.000Z'),
       dailyCalories: [
         { date: '2026-04-22', calories: 2000 },
-        { date: '2026-04-23', calories: 400 }, // < 50% of target
+        { date: '2026-04-23', calories: 400 }, // < 85% of target
       ],
     });
 

@@ -44,7 +44,7 @@ describe('PartialYesterdayPrompt', () => {
     );
 
   it('renders when yesterday is under-logged', () => {
-    dayWith(400); // 400 < 50% of 2000
+    dayWith(400); // 400 < 85% of 2000
     renderPrompt();
 
     expect(screen.getByRole('status')).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe('PartialYesterdayPrompt', () => {
 
   it.each([
     ['the day has no meals', [] as number[]],
-    ['the day is at or above the floor', [1200]],
+    ['the day is at or above the floor', [1800]], // 1800 >= 85% of 2000
     ['calories are unknown', [null]],
   ])('renders nothing when %s', (_label, calories) => {
     dayWith(...calories);
