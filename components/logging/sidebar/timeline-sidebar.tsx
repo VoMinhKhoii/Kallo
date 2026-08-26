@@ -87,7 +87,7 @@ export function TimelineSidebar({
   if (isPending) {
     return (
       <nav
-        className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
+        className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
         aria-label={t('navigationLabel')}
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain">
@@ -105,7 +105,7 @@ export function TimelineSidebar({
 
   return (
     <nav
-      className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
+      className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
       aria-label={t('navigationLabel')}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden overscroll-contain">
