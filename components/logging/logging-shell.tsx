@@ -137,8 +137,13 @@ export function LoggingShell({
     onSelectDate: handleSelectDate,
   };
 
+  // The timeline splits at LG, not MD. At md the page carried three columns —
+  // the app rail (260), this sidebar (252) and the feed — which left the feed
+  // about 160px on a 768px tablet: too narrow for a meal card, and narrow
+  // enough that the day's gauge strip wrapped. Below lg the date chip carries
+  // the same navigation in one row and the feed gets the width back.
   return (
-    <div className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col gap-0 overflow-hidden md:h-full md:flex-row md:gap-3">
+    <div className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col gap-0 overflow-hidden lg:h-full lg:flex-row lg:gap-3">
       <MobileTimelinePicker
         {...timelineState}
         isRetrying={isFetching && !isPending}

@@ -160,6 +160,11 @@ abstract final class KalloColors {
   // Washes and hairlines behind destructive UI. These existed as hardcoded
   // hexes at six call sites, which is how they silently kept the old terracotta
   // when [danger] moved; they are tokens now so the next change carries them.
+  /// Pressed [danger], the way [btnHover] is pressed [btn]. Darker, not
+  /// lighter: the fill already sits darker than the card behind it, so a
+  /// lighter press would read as the button lifting away rather than going in.
+  static const Color dangerHover = Color(0xFFB81717);
+
   static const Color danger70 = Color(0xB3D11A1A); // 70%
   static const Color danger30 = Color(0x4DD11A1A); // 30% — danger hairline
   static const Color danger10 = Color(0x1AD11A1A); // 10% — pressed/fill wash

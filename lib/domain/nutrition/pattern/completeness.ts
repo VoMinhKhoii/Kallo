@@ -7,8 +7,11 @@
  * "complete" days only and surface "partial" days separately.
  */
 
-/** Calories below this fraction of the completeness baseline mark a partial day. */
-export const PARTIAL_DAY_FRACTION = 0.5;
+/**
+ * Calories below this fraction of the completeness baseline mark a partial day.
+ * A day counts as fully logged only once it reaches 85% of the daily goal.
+ */
+export const PARTIAL_DAY_FRACTION = 0.85;
 
 export interface DayCompleteness {
   completeDates: Set<string>;

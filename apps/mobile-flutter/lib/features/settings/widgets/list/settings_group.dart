@@ -13,20 +13,25 @@ import '../../logic/settings_spacing.dart';
 ///
 /// The individual row primitive lives in `settings_row.dart`.
 
-/// A labelled section: one Meta-12 header in ink above its rows. Rows are
-/// spread flat (no wrapping surface) so nothing but the label + spacing groups
-/// them.
+/// A labelled section: one header in ink above its rows. Rows are spread flat
+/// (no wrapping surface) so nothing but the label + spacing groups them.
 ///
 /// The header used to be an 11px ALL-CAPS eyebrow — a fourth type size, and the
-/// only shouted text on a screen built to whisper. It is on the calm scale now
-/// ([dashMeta], sentence case), so the screen holds exactly three sizes: serif
-/// title 22 / row label 14 / meta 12.
+/// only shouted text on a screen built to whisper. That went; the header then
+/// spent a while on [dashMeta] (12), which left it **smaller than the 14px rows
+/// it governs and in their exact colour** — the structural element was the
+/// quietest thing on the screen, and the list read as one undifferentiated
+/// column.
+///
+/// It is now [dashBody] at `w500`: the same 14 as a row label, one weight step
+/// above it. That is the system's own throughline — *hierarchy comes from
+/// weight + colour, not size* — and the screen still holds exactly three sizes:
+/// page title 17 / label 14 / meta 12.
 ///
 /// It is **ink, not muted**. Muted put the header in the same colour as the row
-/// sublines directly beneath it, so section headings and current-value text
-/// were typographically identical and the screen read as one undifferentiated
-/// grey column. Muted is now reserved for one job on this screen: a field's
-/// current value. Everything structural — headers, labels, glyphs — is ink.
+/// sublines directly beneath it. Muted is reserved for one job on this screen:
+/// a field's current value. Everything structural — headers, labels, glyphs —
+/// is ink.
 class SettingsGroup extends StatelessWidget {
   const SettingsGroup({super.key, required this.label, required this.children});
 
@@ -35,6 +40,11 @@ class SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A group with nothing to show must occupy no space at all — the parent
+    // stack puts a gap on each side of it, and a header floating above zero
+    // rows would strand both of them as a void.
+    if (children.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -47,7 +57,7 @@ class SettingsGroup extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: dashMeta(color: kInk, weight: FontWeight.w500),
+            style: dashBody(color: kInk, weight: FontWeight.w500),
           ),
         ),
         ...children,

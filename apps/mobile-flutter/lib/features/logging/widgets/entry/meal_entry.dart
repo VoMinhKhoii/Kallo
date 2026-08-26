@@ -149,6 +149,11 @@ class _MealEntryState extends State<MealEntry> {
             totals: totals,
             editing: _editing,
             revealing: widget.revealing,
+            // Only the live turn earns an entrance. A card restored from the
+            // server carries a real loggedAt (see [_enteredAt] above) and has
+            // been on the day all along — replaying its stagger every time the
+            // list recycles it back into view read as the card re-arriving.
+            animateIn: widget.loggedAt == null,
             countUp: _countUp,
             onToggleEditing: () => setState(() => _editing = !_editing),
             onChange: _change,

@@ -37,10 +37,8 @@ export interface BucketDetail {
  * tap-a-column detail panel.
  *
  * No refetch: `daySeries` already carries a per-bucket series for the four
- * macros AND the eight default micronutrients, so a day's breakdown is a read
- * of data that shipped with the page. The extended `moreNutrients` set has no
- * per-bucket series, so it is deliberately absent here — a day view shows the
- * headline eight, not a second full grid.
+ * macros and every displayed micronutrient, so a day's breakdown is a read of
+ * data that shipped with the page.
  *
  * Returns null for a bucket with nothing logged, so the caller can ignore taps
  * on an empty column.
@@ -116,12 +114,11 @@ export function scopeMacrosToBucket(
 /**
  * Re-point the nutrient cards at one bucket.
  *
- * Only the eight default micronutrients carry a per-bucket series, so the
- * extended set resolves to null — the card renders "—" rather than showing the
- * range's average under a single day's heading. `confidence`/`displayState`
- * stay as computed for the range: they describe how much of the food data
- * carried this nutrient at all, which does not become a different question for
- * one column.
+ * Every displayed micronutrient carries a per-bucket series. A missing series
+ * still resolves to null rather than carrying the range average under a single
+ * day's heading. `confidence`/`displayState` stay as computed for the range:
+ * they describe how much of the food data carried this nutrient at all, which
+ * does not become a different question for one column.
  */
 export function scopeCardsToBucket(
   cards: NutrientCardData[],

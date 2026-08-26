@@ -1,6 +1,6 @@
 import { dayKeyToUtcDate, toUtcDayKey } from '@/lib/core/date/day-key';
 import { MS_PER_DAY } from '@/lib/core/date/ms';
-import { DEFAULT_NUTRIENTS, getNutrientMeta } from '../../catalog/nutrients';
+import { CARD_NUTRIENTS, getNutrientMeta } from '../../catalog/nutrients';
 import type { MicronutrientTarget } from '../../catalog/reference-targets';
 import type {
   DaySeriesBucket,
@@ -34,7 +34,7 @@ export const RANGE_BUCKET_UNIT: Record<NutritionRange, DaySeriesBucketUnit> = {
 };
 
 // Metrics charted on the per-day time axis: the four targeted macros followed
-// by the default micronutrients. Each entry knows the row column it sums and
+// by every displayed micronutrient. Each entry knows the row column it sums and
 // the macro target (micros resolve their target from `targets` at build time).
 const DAY_SERIES_MACROS: {
   metric: DaySeriesMetricKey;
@@ -246,7 +246,7 @@ export function buildDaySeries({
       unit: macro.unit,
       target: macro.target(profile),
     })),
-    ...DEFAULT_NUTRIENTS.map((nutrient) => {
+    ...CARD_NUTRIENTS.map((nutrient) => {
       const meta = getNutrientMeta(nutrient);
       return {
         metric: nutrient as DaySeriesMetricKey,

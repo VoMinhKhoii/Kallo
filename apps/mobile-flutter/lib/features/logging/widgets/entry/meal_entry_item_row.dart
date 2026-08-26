@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../models/logging/meal.dart';
+import '../../../../theme/kallo_motion.dart';
 import '../composer/entrances.dart';
 import 'meal_entry_dish_line.dart';
 import '../portion/portion_assumption_line.dart';
@@ -19,6 +20,7 @@ class MealEntryItemRow extends StatelessWidget {
     required this.index,
     required this.editing,
     required this.revealing,
+    required this.animateIn,
     required this.onChange,
     required this.onAdjustPortion,
   });
@@ -32,6 +34,10 @@ class MealEntryItemRow extends StatelessWidget {
 
   /// True on the streaming-reveal morph's first mount.
   final bool revealing;
+
+  /// Whether this row is arriving for the first time. False for a card restored
+  /// from the server, which is only being scrolled back to.
+  final bool animateIn;
 
   final void Function(String itemId, double delta) onChange;
 
@@ -56,12 +62,19 @@ class MealEntryItemRow extends StatelessWidget {
         // Web: each item enters opacity 0→1, x:-8→0, staggered index*0.05s
         // (meal-entry-item.tsx:32-35). On the reveal the rows were already on
         // screen in the streaming card — crossfade in place, don't re-enter.
-        if (revealing)
-          FadeIn(duration: const Duration(milliseconds: 150), child: dishLine)
+        // A card restored from the server has always been there — it is only
+        // scrolling back into view. The feed recycles its cards, so a fresh
+        // _EntranceState was being built and replayed every time one came back,
+        // spinning up an AnimationController and an Opacity saveLayer per row
+        // and waterfalling an hour-old meal in again.
+        if (!animateIn)
+          dishLine
+        else if (revealing)
+          FadeIn(duration: KalloMotion.press, child: dishLine)
         else
           FadeInLeft(
             offset: 8,
-            delay: Duration(milliseconds: index * 50),
+            delay: KalloMotion.stagger * index,
             child: dishLine,
           ),
         if (vessel != null)

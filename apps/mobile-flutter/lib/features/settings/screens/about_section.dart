@@ -1,43 +1,46 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/toast/top_toast.dart';
+import '../../../shared/logic/legal_links.dart';
+import '../../feedback/screens/feedback_screen.dart';
 import '../widgets/list/settings_group.dart';
 import '../widgets/list/settings_row.dart';
 
 /// The marketing version string (no `package_info_plus` dependency in pubspec,
 /// so this is rendered statically — keep in sync with `pubspec.yaml`).
 const String _appVersion = '1.0.1';
-// The legal pages live in the docs site now. The bare /privacy and /terms
-// paths still redirect there, but building the canonical URL here means the
-// copied link lands directly, in the language the app is running in, rather
-// than going through a redirect that re-detects the locale from scratch.
-const String _docsBase = 'https://kallo.fit';
 
-String _privacyUrl(String locale) => '$_docsBase/$locale/docs/legal/privacy';
-
-String _termsUrl(String locale) => '$_docsBase/$locale/docs/legal/terms';
-
-/// The About/legal group on the settings root: version, privacy, terms.
-/// Extracted from `settings_screen.dart` to keep that file within its size
-/// baseline.
+/// The About group on the settings root: feedback, version, and the legal
+/// pages. Extracted from `settings_screen.dart` to keep that file within its
+/// size baseline.
+///
+/// Feedback lives here rather than under a header of its own. A single-row
+/// group spent a whole section label and two 24px gaps on one row, and section
+/// labels are the most expensive thing on a screen this flat.
+///
+/// The legal rows OPEN their page rather than copying its URL. They used to
+/// carry the raw URL as a subline — the one piece of text on the screen that
+/// read as a database field — and copying a link on tap is a surprising thing
+/// for a row to do with no affordance saying so. The URLs and the in-app
+/// browser both come from `shared/logic/legal_links.dart`, so the paywall's
+/// links to the same two pages behave identically.
 class AboutSection extends StatelessWidget {
   const AboutSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // The web docs ship in the same two locales as the app, so the language
-    // code maps across directly; anything unexpected falls back to English.
     final languageCode = context.locale.languageCode;
-    final locale = languageCode == 'vi' ? 'vi' : 'en';
-    final privacyUrl = _privacyUrl(locale);
-    final termsUrl = _termsUrl(locale);
 
     return SettingsGroup(
       label: tr('settings.about.title'),
       children: [
+        SettingsRow(
+          icon: LucideIcons.messageSquare300,
+          label: tr('settings.feedback.rowLabel'),
+          showChevron: true,
+          onTap: () => _openFeedback(context),
+        ),
         SettingsRow(
           icon: LucideIcons.info300,
           label: tr('settings.about.version'),
@@ -46,21 +49,22 @@ class AboutSection extends StatelessWidget {
         SettingsRow(
           icon: LucideIcons.shieldCheck300,
           label: tr('settings.about.privacy'),
-          subline: privacyUrl,
-          onTap: () => _copyLink(context, privacyUrl),
+          showChevron: true,
+          onTap: () => openLegalPage(context, privacyUrlFor(languageCode)),
         ),
         SettingsRow(
           icon: LucideIcons.fileText300,
           label: tr('settings.about.terms'),
-          subline: termsUrl,
-          onTap: () => _copyLink(context, termsUrl),
+          showChevron: true,
+          onTap: () => openLegalPage(context, termsUrlFor(languageCode)),
         ),
       ],
     );
   }
 
-  void _copyLink(BuildContext context, String url) {
-    Clipboard.setData(ClipboardData(text: url));
-    showTopToast(context, tr('common.copied'));
+  void _openFeedback(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(CupertinoPageRoute<void>(builder: (_) => const FeedbackScreen()));
   }
 }

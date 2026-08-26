@@ -10,7 +10,11 @@ import {
 import { useEffect } from 'react';
 import type { GaugeLine } from '@/components/shared/gauge/gauge-lines';
 import { cn } from '@/lib/core/ui/cn';
-import { gaugeHeight, gaugePaths } from '@/lib/core/ui/gauge-arc-geometry';
+import {
+  gaugeHeight,
+  gaugeOvershootCapPath,
+  gaugePaths,
+} from '@/lib/core/ui/gauge-arc-geometry';
 import {
   GAUGE_LINE_GAP,
   gaugeReadoutLayout,
@@ -48,6 +52,9 @@ export function GaugeDial({
   secondary,
   tertiary,
 }: GaugeDialProps) {
+  // Past target the fill clamps, so 101% and 135% paint the same full arc. The
+  // cap is what stops those reading identically.
+  const isOver = Number.isFinite(progress) && progress > 1;
   const prefersReducedMotion = useReducedMotion();
   const target = Number.isFinite(progress) ? Math.max(progress, 0) : 0;
   const sweep = useMotionValue(prefersReducedMotion ? target : 0);
@@ -114,6 +121,12 @@ export function GaugeDial({
       >
         <motion.path d={remainder} fill="var(--kallo-track)" />
         <motion.path d={filled} fill={fill} />
+        {isOver && (
+          <path
+            d={gaugeOvershootCapPath(center, radius)}
+            fill="var(--kallo-danger)"
+          />
+        )}
       </svg>
       <div
         className="flex flex-col items-center"
@@ -123,7 +136,10 @@ export function GaugeDial({
           <span
             className={cn('whitespace-nowrap', line.className)}
             key={role}
-            style={{ lineHeight: `${line.heightPx}px` }}
+            style={{
+              fontSize: `${line.fontSizePx}px`,
+              lineHeight: `${line.heightPx}px`,
+            }}
           >
             {line.text}
           </span>

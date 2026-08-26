@@ -64,8 +64,13 @@ class MacroSummary extends StatelessWidget {
                     ),
                     // The calorie dial is the widest single mark in the row and
                     // sizes itself; everything left over goes to the three
-                    // macros, which shrink to fit rather than overflow.
-                    const SizedBox(width: KalloSpacing.sp3),
+                    // macros, which shrink to fit rather than overflow — so this
+                    // gap is width taken straight off their labels. At 12 the
+                    // Vietnamese fat label ellipsized; 8 is the smallest step
+                    // that still reads as a gap between two different kinds of
+                    // mark. The screen inset either side stays at the app-wide
+                    // 12 — that one is the page rhythm, not slack.
+                    const SizedBox(width: KalloSpacing.sp2),
                     Expanded(
                       child: MacroDialRow.compact(
                         current: {

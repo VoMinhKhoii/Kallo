@@ -1,11 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../services/auth/session_provider.dart';
+import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../list/settings_row.dart';
 
@@ -17,7 +17,10 @@ import '../list/settings_row.dart';
 /// "Delete account" row would put a reversible action and an irreversible one
 /// side by side in the same colour.
 ///
-/// Confirmation stays a [CupertinoActionSheet] — one tap can't end the session.
+/// It always confirms — one tap can't end the session — through the app's own
+/// [showKalloConfirm] rather than a [CupertinoActionSheet]. The two-tap reason
+/// survives; the platform chrome does not, so this reads like every other
+/// confirm in the app.
 class SignOutRow extends ConsumerStatefulWidget {
   const SignOutRow({super.key});
 
@@ -29,26 +32,15 @@ class _SignOutRowState extends ConsumerState<SignOutRow> {
   bool _signingOut = false;
 
   Future<void> _confirm() async {
-    HapticFeedback.lightImpact(); // sheet-open cue
-    final confirmed = await showCupertinoModalPopup<bool>(
-      context: context,
-      builder:
-          (sheetContext) => CupertinoActionSheet(
-            title: Text(tr('settings.account.signOutConfirmTitle')),
-            actions: [
-              CupertinoActionSheetAction(
-                isDestructiveAction: true,
-                onPressed: () => Navigator.of(sheetContext).pop(true),
-                child: Text(tr('settings.account.signOut')),
-              ),
-            ],
-            cancelButton: CupertinoActionSheetAction(
-              onPressed: () => Navigator.of(sheetContext).pop(false),
-              child: Text(tr('settings.account.cancel')),
-            ),
-          ),
+    // "Đăng xuất" beside "Huỷ" is unambiguous, so it keeps its verb; the
+    // open cue now lives inside showKalloConfirm.
+    final confirmed = await showKalloConfirm(
+      context,
+      title: tr('settings.account.signOutConfirmTitle'),
+      confirmLabel: tr('settings.account.signOut'),
+      destructive: true,
     );
-    if (confirmed != true || _signingOut || !mounted) return;
+    if (!confirmed || _signingOut || !mounted) return;
     setState(() => _signingOut = true);
     try {
       await ref.read(authControllerProvider).signOut();

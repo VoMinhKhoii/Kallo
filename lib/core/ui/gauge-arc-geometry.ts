@@ -152,6 +152,36 @@ export function gaugePaths(
   };
 }
 
+/** How far past the end angle the overshoot cap reaches. */
+const OVERSHOOT_CAP_ANGLE = 22;
+
+/**
+ * The mark a dial wears when it is PAST its target.
+ *
+ * Over 1 `gaugePaths` clamps: 101% of target and 135% of target paint an
+ * identical full arc, so a day that overshot read exactly like a day that
+ * landed. This is a short sector at the sweep's very end, drawn over the fill
+ * in a warning pigment, so "past it" is visible without the arc having to
+ * lie about how far past.
+ *
+ * Web-only for now — the Flutter dial does not draw it yet, so this is the one
+ * place `gauge_arc_geometry.dart` has no counterpart.
+ */
+export function gaugeOvershootCapPath(
+  center: Point,
+  outerRadius: number
+): string {
+  const band = outerRadius * BAND_RATIO;
+  return roundedSectorPath({
+    center,
+    innerRadius: outerRadius - band,
+    outerRadius,
+    startAngle: GAUGE_END_ANGLE + OVERSHOOT_CAP_ANGLE,
+    endAngle: GAUGE_END_ANGLE,
+    cornerRadius: band * CORNER_RATIO,
+  });
+}
+
 /**
  * Where the dial's two tips sit below its centre — the line a readout's second
  * line is centred on, so type and dial share one baseline.

@@ -24,6 +24,7 @@ import '../relog/mention_text_controller.dart';
 import '../sheets/feed_sheets.dart';
 import 'feed_footer.dart';
 import 'feed_list.dart';
+import 'feed_scroll_pin.dart';
 import 'summary/macro_summary.dart';
 
 /// The day's meal feed: macro summary header, the scrollable card list, the
@@ -62,7 +63,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     composer: _textController,
     input: _inputController,
     onChanged: _rebuild,
-    onScrollToAnswer: _scrollToAnswer,
+    onScrollToAnswer: _pin.pinToBottom,
   );
 
   /// Which of the three shapes a submit is, and running it.
@@ -70,7 +71,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     composer: _textController,
     run: _analysis,
     onChanged: _rebuild,
-    onStaged: _scrollToAnswer,
+    onStaged: _pin.pinToBottom,
   );
 
   /// True while a "log it again" occasion is being re-staged server-side.
@@ -78,6 +79,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
 
   /// Scrolls the freshly-revealed answer into view (nothing scrolled it before).
   final ScrollController _scrollController = ScrollController();
+
+  /// Keeps the tail in view while the answer lands. See [FeedScrollPin] — a
+  /// single post-frame scroll aimed at a `maxScrollExtent` that the streaming
+  /// card and the keyboard inset were both still changing, so it stopped short.
+  final FeedScrollPinHandle _pin = FeedScrollPinHandle();
 
   /// Inline error for a failed confirm (saving a meal) — not analysis errors,
   /// which surface as the failed-attempt card.
@@ -140,18 +146,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     date: widget.date,
     text: text,
   );
-
-  /// Bring the footer (streaming card / revealed answer) into view.
-  void _scrollToAnswer() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 400),
-        curve: const Cubic(0.16, 1, 0.3, 1),
-      );
-    });
-  }
 
   /// Run the parked meal exactly as if it had been typed into the composer
   /// below. Deferred past the frame that spotted it — it writes provider state
@@ -246,7 +240,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       input: _inputController,
       isStaging: () => _stagingRepeat,
       onStagingChange: (staging) => setState(() => _stagingRepeat = staging),
-      onStaged: _scrollToAnswer,
+      onStaged: _pin.pinToBottom,
     );
 
     final sheets = FeedSheets(
@@ -321,11 +315,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         view: view,
         dockHeight: _dockHeight,
         scrollController: _scrollController,
+        pin: _pin,
         footer: footer,
         confirmPending: confirmPending,
         onRefresh: mealActions.refreshDay,
         onRetryDay: () => ref.invalidate(loggingDayProvider(_dayArgs)),
         onRemoveMeal: mealActions.remove,
+        onDiscardPending: mealActions.discardPending,
         onUpdateMeal: mealActions.update,
         onLogAgain: mealActions.logAgain,
         onConfirm: confirmActions.confirmPending,

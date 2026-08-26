@@ -15,7 +15,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
@@ -27,19 +26,11 @@ import {
   dateStringToDate,
   formatTimelineDayLabel,
 } from './timeline-utils';
+import { useMobileHeaderSlot } from './use-mobile-header-slot';
 
 const SWIPE_THRESHOLD_PX = 40;
 const SWIPE_COOLDOWN_MS = 250;
 const WEEK_SLIDER_ID = 'mobile-week-slider';
-const MOBILE_HEADER_SLOT_ID = 'app-mobile-header-slot';
-
-// useSyncExternalStore inputs for resolving the portal slot. The slot is created
-// once by MobileNav, so we don't need a real subscription — but we do need stable
-// references to avoid an infinite loop in dev.
-const subscribeNoop = () => () => {};
-const getMobileHeaderSlot = (): HTMLElement | null =>
-  document.getElementById(MOBILE_HEADER_SLOT_ID);
-const getNoSlot = (): HTMLElement | null => null;
 
 export interface MobileTimelinePickerProps {
   dates: string[];
@@ -162,11 +153,7 @@ export function MobileTimelinePicker({
   // hamburger share a single mobile row. We resolve the slot lazily via
   // useSyncExternalStore so SSR returns null (no DOM) and the client picks up
   // the slot on the first commit without needing setState in an effect.
-  const portalTarget = useSyncExternalStore(
-    subscribeNoop,
-    getMobileHeaderSlot,
-    getNoSlot
-  );
+  const portalTarget = useMobileHeaderSlot();
 
   // Click anywhere outside the picker, or press Escape, collapses back to the
   // chip without forcing a date selection.
@@ -315,17 +302,23 @@ export function MobileTimelinePicker({
     [scrollNext, scrollPrev]
   );
 
-  // When the host page provides the header slot (LoggingShell inside AppShell),
-  // render into it via a portal so the chip sits in the mobile header row. The
-  // inline fallback is the test/Storybook contract — production always finds the
-  // slot because MobileNav mounts as a sibling. Do not delete the fallback when
-  // refactoring; the tests rely on it to render without an AppShell parent.
+  // Below md the chip rides in MobileNav's header row, beside the hamburger.
+  // From md to lg there is no mobile header — the app rail is shown and the
+  // timeline sidebar is not — so the chip gets its own row above the feed.
+  // That inline path is also the test/Storybook contract: do not delete it when
+  // refactoring, the tests render this without an AppShell parent.
   const renderIntoSlot = (node: React.ReactNode) =>
-    portalTarget ? createPortal(node, portalTarget) : node;
+    portalTarget ? (
+      createPortal(node, portalTarget)
+    ) : (
+      <div className="flex w-full shrink-0 justify-center px-3 pt-1 lg:hidden">
+        {node}
+      </div>
+    );
 
   if (isPending) {
     return renderIntoSlot(
-      <div className="flex w-full justify-center md:hidden">
+      <div className="flex w-full justify-center lg:hidden">
         <Skeleton
           className="h-9 w-44 rounded-full"
           data-testid="mobile-picker-skeleton"
@@ -343,7 +336,7 @@ export function MobileTimelinePicker({
           // (the hamburger was retired for the bottom tab bar), so the strip
           // already owns the whole row.
           data-strip-mode={mode === 'strip'}
-          className="flex min-w-0 flex-1 items-center justify-center gap-2 md:hidden"
+          className="flex min-w-0 flex-1 items-center justify-center gap-2 lg:hidden"
         >
           <motion.div
             layout
@@ -474,7 +467,7 @@ export function MobileTimelinePicker({
       )}
 
       {isError && (
-        <div className="flex justify-center px-3 md:hidden">
+        <div className="flex justify-center px-3 lg:hidden">
           <div
             className="flex max-w-[min(22rem,calc(100vw-2rem))] items-center gap-2 rounded-full border border-kallo-danger/30 bg-kallo-danger/10 px-3 py-1.5"
             data-testid="mobile-picker-error"
