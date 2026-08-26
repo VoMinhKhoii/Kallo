@@ -74,14 +74,7 @@ class _KalloConfirmDialog extends StatelessWidget {
     // theme's dialogTheme so a dialog built anywhere else still lands here.
     return Dialog(
       child: Padding(
-        // Horizontal is half the vertical: the card is already inset 24 from
-        // each screen edge by the dialog theme, so a matching 20 in here spent
-        // 44 a side before any content started. The stacked buttons want the
-        // width more than the edge wants the air.
-        padding: const EdgeInsets.symmetric(
-          horizontal: KalloSpacing.sp2_5,
-          vertical: KalloSpacing.sp5,
-        ),
+        padding: const EdgeInsets.all(KalloSpacing.sp5),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
