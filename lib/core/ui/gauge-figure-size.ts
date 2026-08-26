@@ -28,10 +28,22 @@
 /**
  * Ratio of figure size to outer radius, per readout.
  *
- * `calorie` is sized for "2,219" (2.60 em in the app's tabular sans), `macro`
- * for "196g" (2.29 em) — the widest either line realistically holds.
+ * `calorie` is sized for "2,219", `macro` for "196g" — the widest either line
+ * realistically holds. The em widths below were MEASURED in the browser at the
+ * real weight and tracking, not estimated: an estimate that runs 3% narrow
+ * quietly spends the clearance the fill target was reserving.
  */
-export const FIGURE_RATIO = { calorie: 0.4, macro: 0.455 } as const;
+export const FIGURE_EM = { calorie: 2.665, macro: 2.369 } as const;
+
+/**
+ * Solving "largest figure filling 74% of the chord inside the band, bounded at
+ * the edge of its own cap-height box" across r = 20…104 is near-linear, so the
+ * rule is one ratio per figure rather than a stepped table — a table
+ * under-fills at the top of every band. Re-solved against the measured
+ * `FIGURE_EM` above; the first pass used estimates 3% narrow and spent the
+ * clearance it meant to keep.
+ */
+export const FIGURE_RATIO = { calorie: 0.39, macro: 0.44 } as const;
 
 export type FigureKind = keyof typeof FIGURE_RATIO;
 
@@ -60,6 +72,33 @@ export function gaugeFigureSize(radius: number, kind: FigureKind): number {
 /** The line that lands on the tips — what the headline is, in words. */
 export function gaugeUnitSize(radius: number): number {
   return clamp(Math.round(0.18 * radius), 11, 16);
+}
+
+/**
+ * How wide the mouth is at the TIP line, where the unit sits.
+ *
+ * The sweep has ENDED there — 210° to −30° — so what bounds a line is the
+ * opening between the two tip caps' inner edges, not the band's inner circle.
+ * That is the only reason the long wording fits at all.
+ */
+export const tipOpening = (radius: number) => 1.482 * radius;
+
+/** "kcal remaining", measured in the browser at the real weight and tracking. */
+export const LONG_UNIT_EM = 6.608;
+
+/**
+ * Whether the dial has room for the long wording ("kcal remaining") rather than
+ * the one-word form ("left").
+ *
+ * A FIT test, not a radius threshold. A threshold made the copy depend on how
+ * wide the column happened to be, so collapsing the app's sidebar changed what
+ * the dial said at an unchanged viewport — the same rule, two answers, reading
+ * as a glitch. Asking whether the string physically fits gives one answer per
+ * size and drops to the short form only where it genuinely cannot fit (a
+ * phone-width card, where the strip has wrapped anyway).
+ */
+export function gaugeFitsLongUnit(radius: number): boolean {
+  return LONG_UNIT_EM * gaugeUnitSize(radius) <= 0.9 * tipOpening(radius);
 }
 
 /** The quiet detail under the arc, and a macro dial's label above it. */

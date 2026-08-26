@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FIGURE_MIN_PX,
   gaugeFigureSize,
+  gaugeFitsLongUnit,
   gaugeMetaSize,
   gaugeUnitSize,
 } from '@/lib/core/ui/gauge-figure-size';
@@ -132,5 +133,51 @@ describe('the readout sizes the strip resolves to', () => {
   it('caps the lines that sit on the tips, where the opening stops growing', () => {
     expect(gaugeUnitSize(300)).toBe(16);
     expect(gaugeMetaSize(300)).toBe(14);
+  });
+});
+
+/**
+ * The app rail collapses from 260px to 68px, which changes the dock's gauge
+ * column by ~190px at an unchanged viewport. The marks are supposed to respond
+ * to that; the COPY is not — a dial that says "left" with the rail open and
+ * "kcal remaining" with it shut reads as a glitch, and that is what a radius
+ * threshold produced before `gaugeFitsLongUnit` replaced it.
+ */
+describe('the dial reads the same however wide the rail is', () => {
+  const EXPANDED_RAIL = 260;
+  const COLLAPSED_RAIL = 68;
+
+  /** The dock's gauge column: 44% of the Today card's content box. */
+  const gaugeColumn = (viewport: number, rail: number) =>
+    Math.round(0.44 * (Math.min(1440, viewport - 24 - rail - 12) - 64 - 32));
+
+  it('picks the same wording in both rail states, at every desktop width', () => {
+    for (let viewport = 1280; viewport <= 1920; viewport += 1) {
+      const open = gaugeStripSizes(
+        gaugeColumn(viewport, EXPANDED_RAIL),
+        DOCK_MACRO_CAP
+      );
+      const shut = gaugeStripSizes(
+        gaugeColumn(viewport, COLLAPSED_RAIL),
+        DOCK_MACRO_CAP
+      );
+
+      // The marks DO respond to the extra room — that part is the point.
+      expect(shut.calorieRadius).toBeGreaterThanOrEqual(open.calorieRadius);
+      // The words do not.
+      expect(gaugeFitsLongUnit(shut.calorieRadius)).toBe(
+        gaugeFitsLongUnit(open.calorieRadius)
+      );
+      expect(gaugeFitsLongUnit(open.calorieRadius)).toBe(true);
+    }
+  });
+
+  it('drops to the short wording only where it genuinely will not fit', () => {
+    // The logging header caps its marks small, and a phone-width card has
+    // wrapped the strip; neither has room for the sentence.
+    expect(
+      gaugeFitsLongUnit(gaugeStripSizes(COMPOSER, FEED_MACRO_CAP).calorieRadius)
+    ).toBe(false);
+    expect(gaugeFitsLongUnit(48)).toBe(false);
   });
 });
