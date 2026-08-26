@@ -93,7 +93,19 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
 - **State:** Riverpod providers per feature (`*_providers.dart`); the Supabase session drives
   auth-gated routing. Riverpod controllers wrap streaming (`stream_analysis_controller.dart`).
 - **Navigation:** `go_router` with a shell route. The shell is a **left slide-in drawer**
-  (hamburger), not a bottom tab bar — matching the web mobile nav.
+  (hamburger), not a bottom tab bar — matching the web mobile nav. Its chrome is
+  `shell/sidebar/nav_drawer.dart` (`tab_scaffold.dart` owns only the controller and the
+  edge-swipe zone). Its **timing deliberately diverges** from the web sheet it was ported
+  from — 280/220 rather than 500/300 — see the Motion section of `kallo-design/mobile.md`.
+- **Motion:** durations and curves are tokens (`theme/kallo_motion.dart`: `KalloMotion`,
+  `KalloEase`), named by role. Full rules, and the traps behind them, in `kallo-design/mobile.md`.
+- **Dialogs:** one confirmation surface, `shared/widgets/dialog/kallo_confirm.dart`
+  (`showKalloConfirm`) — a centred title, a centred muted line, and the two buttons
+  **stacked**, affirmative above cancel. It replaced three separate chromes (bare Material
+  `AlertDialog`, `CupertinoActionSheet`, and a hand-rolled one). Vietnamese affirmatives
+  default to `common.agree` ("Đồng ý") because "huỷ" means both *cancel* and *destroy*, so a
+  verb like "Xoá" beside "Huỷ" reads as the same choice twice; a confirm whose verb does not
+  collide (e.g. "Rời nhóm") passes its own `confirmLabel`.
 - **Sheets:** `showNhamSheet` (`shared/widgets/sheet/kallo_sheet.dart`) + `KalloSheetSurface` +
   `KalloSheetHeader` (`kallo_sheet_header.dart`). `isScrollControlled` defaults to **true** —
   Material's default caps a sheet at 9/16 of the screen and clips the rest, which pushed

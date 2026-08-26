@@ -5,13 +5,14 @@
     "skip": "Bỏ qua",
     "finish": "Hoàn tất",
     "save": "Lưu",
-    "cancel": "Hủy",
+    "cancel": "Huỷ",
     "loading": "Đang tải…",
     "error": "Đã xảy ra lỗi",
     "retry": "Thử lại",
     "search": "Tìm kiếm",
     "noResults": "Không tìm thấy kết quả",
     "confirm": "Xác nhận",
+    "agree": "Đồng ý",
     "dismiss": "Bỏ qua",
     "close": "Đóng",
     "or": "hoặc",
@@ -20,8 +21,8 @@
     "notSignedIn": "Chưa đăng nhập.",
     "increase": "Tăng",
     "decrease": "Giảm",
-    "copied": "Đã sao chép liên kết",
-    "country": "Quốc gia"
+    "country": "Quốc gia",
+    "remove": "Xoá"
   },
   "nav": {
     "logging": "Ghi nhận",
@@ -1072,7 +1073,7 @@
     },
     "cheatMealCard": {
       "badge": "Bữa xả",
-      "remove": "Xóa",
+      "remove": "Xoá",
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",
       "youSet": "Bạn đã chọn",
@@ -1127,10 +1128,10 @@
     "mealSlot": "Bữa ăn",
     "confirm": "Lưu bữa ăn",
     "discard": "Bỏ",
-    "remove": "Xóa",
+    "remove": "Xoá",
     "removeConfirmTitle": "Xoá bữa ăn này?",
     "removeConfirmDescription": "Bữa ăn sẽ biến mất khỏi nhật ký của bạn và bảng tin của vòng kết nối.",
-    "mealRemoved": "Đã xóa bữa ăn",
+    "mealRemoved": "Đã xoá bữa ăn",
     "undo": "Hoàn tác",
     "edit": "Sửa",
     "nutritionSummary": "Tóm tắt dinh dưỡng",
@@ -1239,7 +1240,7 @@
       "adjust": "Chỉnh khẩu phần, hiện tại {label}",
       "custom": "Khẩu phần tuỳ chỉnh",
       "apply": "Áp dụng",
-      "cancel": "Hủy"
+      "cancel": "Huỷ"
     },
     "persistedMealCard": {
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
@@ -1249,7 +1250,7 @@
       "logAgain": "Ghi lại",
       "logAgainError": "Không ghi lại được — hãy thử lại.",
       "removeRow": "Bỏ {name}",
-      "cancelEdit": "Hủy",
+      "cancelEdit": "Huỷ",
       "saveEdit": "Lưu thay đổi",
       "savingEdit": "Đang lưu…",
       "mealUpdated": "Đã cập nhật bữa ăn",
@@ -1291,7 +1292,7 @@
       "gramsUnit": "g",
       "kcal": "kcal",
       "kcalPer100g": "kcal/100g",
-      "removeItem": "Xóa món",
+      "removeItem": "Xoá món",
       "save": "Lưu bữa ăn",
       "relatedMatch": "liên quan"
     },
@@ -1397,7 +1398,15 @@
         "permissionDenied": "Chưa cấp quyền camera và ảnh. Hãy bật cho Kallo trong Cài đặt > Quyền riêng tư, hoặc nhập số bằng tay.",
         "imageTooLarge": "Ảnh này quá lớn để gửi. Hãy chụp lại, ảnh mới sẽ được tự động thu nhỏ."
       }
-    }
+    },
+    "stagedMealCard": {
+      "discard": "Bỏ",
+      "discardConfirmTitle": "Bỏ bữa ăn chưa lưu này?",
+      "discardConfirmDescription": "Phân tích sẽ biến mất. Bạn có thể nhập lại bất cứ lúc nào."
+    },
+    "pendingDiscarded": "Đã bỏ bữa ăn chưa lưu",
+    "copyMessage": "Sao chép",
+    "messageCopied": "Đã sao chép"
   },
   "groups": {
     "page": {
@@ -1429,8 +1438,7 @@
       "leaveTitle": "Rời nhóm này?",
       "leaveDescription": "Bạn sẽ không còn xem được dòng thời gian của nhóm.",
       "leaveConfirm": "Rời nhóm",
-      "leaveError": "Không thể rời nhóm. Hãy thử lại.",
-      "cancel": "Huỷ"
+      "leaveError": "Không thể rời nhóm. Hãy thử lại."
     },
     "createGroup": {
       "title": "Tạo nhóm",
@@ -1463,11 +1471,10 @@
       "renameLabel": "Đổi tên nhóm",
       "renameSave": "Lưu",
       "renameError": "Không thể đổi tên nhóm. Hãy thử lại.",
-      "removeLabel": "Xóa {name}",
-      "removeTitle": "Xóa {name}?",
+      "removeLabel": "Xoá {name}",
+      "removeTitle": "Xoá {name}?",
       "removeDescription": "Họ sẽ mất quyền xem bữa ăn và trả lời trong nhóm này.",
-      "removeConfirm": "Xóa",
-      "removeError": "Không thể xóa thành viên này. Hãy thử lại."
+      "removeError": "Không thể xoá thành viên này. Hãy thử lại."
     },
     "wall": {
       "loading": "Đang tải vòng kết nối của bạn",
@@ -1595,23 +1602,22 @@
       "connectApple": "Liên kết Apple",
       "googleConnected": "Google · Đã liên kết",
       "appleConnected": "Apple · Đã liên kết",
-      "disconnect": "Hủy liên kết",
-      "disconnectConfirmTitle": "Hủy liên kết phương thức đăng nhập này?",
+      "disconnect": "Huỷ liên kết",
+      "disconnectConfirmTitle": "Huỷ liên kết phương thức đăng nhập này?",
       "linkError": "Không thể liên kết tài khoản đó. Vui lòng thử lại.",
-      "unlinkError": "Không thể hủy liên kết tài khoản đó. Vui lòng thử lại.",
+      "unlinkError": "Không thể huỷ liên kết tài khoản đó. Vui lòng thử lại.",
       "loadError": "Không tải được phương thức đăng nhập.",
       "signOut": "Đăng xuất",
       "signOutConfirmTitle": "Đăng xuất khỏi Kallo?",
-      "cancel": "Hủy",
-      "delete": "Xóa tài khoản",
-      "deleteScreenTitle": "Xóa tài khoản",
-      "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
-      "deleteSubscriptionWarning": "Xóa tài khoản Kallo không hủy gói đăng ký đang hoạt động. Hãy hủy trước — trong App Store, Google Play, hoặc cổng thanh toán bạn đã dùng trên web — để tránh phí về sau. Bạn vẫn có thể xóa ngay.",
-      "deleteManageSubscription": "Quản lý hoặc hủy gói",
+      "delete": "Xoá tài khoản",
+      "deleteScreenTitle": "Xoá tài khoản",
+      "deleteConsequence": "Thao tác này xoá hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
+      "deleteSubscriptionWarning": "Xoá tài khoản Kallo không huỷ gói đăng ký đang hoạt động. Hãy huỷ trước — trong App Store, Google Play, hoặc cổng thanh toán bạn đã dùng trên web — để tránh phí về sau. Bạn vẫn có thể xoá ngay.",
+      "deleteManageSubscription": "Quản lý hoặc huỷ gói",
       "deleteConfirmLabel": "Nhập {word} để xác nhận",
       "deleteConfirmWord": "XOA",
-      "deleteConfirmAction": "Xóa tài khoản của tôi",
-      "deleteError": "Không thể xóa tài khoản. Vui lòng thử lại."
+      "deleteConfirmAction": "Xoá tài khoản của tôi",
+      "deleteError": "Không thể xoá tài khoản. Vui lòng thử lại."
     },
     "profile": "Hồ sơ",
     "preferences": "Tùy chỉnh",
@@ -1624,8 +1630,7 @@
     "language": "Ngôn ngữ",
     "languageHint": "Thay đổi ngôn ngữ ứng dụng",
     "sharing": {
-      "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
-      "autoShareHint": "Khi bật, mỗi bữa ăn mới sẽ tự động được chia sẻ với vòng kết nối của bạn.",
+      "autoShareLabel": "Tự động chia sẻ với vòng kết nối",
       "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
     },
     "sidebar": {
@@ -1636,7 +1641,7 @@
     "regionalPanel": {
       "description": "AI dùng thông tin quốc gia của bạn để hiểu văn hóa ẩm thực và nguyên liệu dễ tìm tại nơi bạn sống.",
       "searchCountryLabel": "Tìm quốc gia",
-      "clearLabel": "Xóa lựa chọn"
+      "clearLabel": "Xoá lựa chọn"
     },
     "profilePage": {
       "title": "Hồ sơ",
@@ -1662,9 +1667,7 @@
       "pacePerWeek": "{pace} {unit}/tuần"
     },
     "feedback": {
-      "groupLabel": "Góp ý",
       "rowLabel": "Gửi góp ý",
-      "rowSubline": "Báo lỗi, yêu cầu nguyên liệu, hoặc chia sẻ ý tưởng",
       "title": "Gửi góp ý",
       "description": "Gặp lỗi, thiếu nguyên liệu, hay có ý tưởng? Góp ý sẽ đến thẳng đội ngũ.",
       "typeLabel": "Bạn muốn góp ý về điều gì?",
@@ -1785,7 +1788,7 @@
     "packageMonthly": "Hằng tháng",
     "packageAnnual": "Hằng năm",
     "packageLifetime": "Trọn đời",
-    "legal": "Thanh toán được tính ngay vào tài khoản cửa hàng của bạn. Gói tự động gia hạn trừ khi bạn hủy ít nhất 24 giờ trước khi kỳ hiện tại kết thúc.",
+    "legal": "Thanh toán được tính ngay vào tài khoản cửa hàng của bạn. Gói tự động gia hạn trừ khi bạn huỷ ít nhất 24 giờ trước khi kỳ hiện tại kết thúc.",
     "terms": "Điều khoản sử dụng",
     "privacy": "Chính sách riêng tư"
   }

@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:path_provider/path_provider.dart';
@@ -13,6 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../services/http/api_client.dart';
 import '../../../services/auth/session_provider.dart';
 import '../../../shared/widgets/brand/apple_logo.dart';
+import '../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../shared/widgets/brand/google_logo.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../widgets/list/settings_group.dart';
@@ -142,26 +142,16 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
 
   Future<void> _disconnect(UserIdentity identity) async {
     if ((_identities?.length ?? 0) <= 1 || _busyProvider != null) return;
-    HapticFeedback.lightImpact();
-    final confirmed = await showCupertinoModalPopup<bool>(
-      context: context,
-      builder:
-          (sheetContext) => CupertinoActionSheet(
-            title: Text(tr('settings.account.disconnectConfirmTitle')),
-            actions: [
-              CupertinoActionSheetAction(
-                isDestructiveAction: true,
-                onPressed: () => Navigator.of(sheetContext).pop(true),
-                child: Text(tr('settings.account.disconnect')),
-              ),
-            ],
-            cancelButton: CupertinoActionSheetAction(
-              onPressed: () => Navigator.of(sheetContext).pop(false),
-              child: Text(tr('settings.account.cancel')),
-            ),
-          ),
+    // The sharpest case for the neutral affirmative in the app: this action is
+    // called "Huỷ liên kết", so keeping the verb put "Huỷ liên kết" directly
+    // above "Huỷ" — the destructive button literally opening with the cancel
+    // word. It defers to "Đồng ý"; the title already says what is being undone.
+    final confirmed = await showKalloConfirm(
+      context,
+      title: tr('settings.account.disconnectConfirmTitle'),
+      destructive: true,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     setState(() => _busyProvider = identity.provider);
     try {
       await ref.read(authControllerProvider).unlinkIdentity(identity);

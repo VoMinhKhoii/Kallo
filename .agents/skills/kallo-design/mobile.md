@@ -225,6 +225,65 @@ terracotta action button carry the signal while the message itself reads in
 `kInkMuted`. A whole card of red text reads as an alarm for something the user
 can usually just retry.
 
+## Motion — one named set, and one deliberate fork from web
+
+Durations and curves resolve to `apps/mobile-flutter/lib/theme/kallo_motion.dart`
+(`KalloMotion` for durations, `KalloEase` for curves), the same way colour, type
+and spacing already did. Before it there were 125 inline
+`Duration(milliseconds: N)` literals across 34 values, so "how long is a press"
+had no answer you could look up. The distribution was already bimodal — 46 sites
+at 150, 15 at 200 — which is a system that existed but was never written down.
+
+| Token | Value | Role |
+|-------|-------|------|
+| `instant` | 100 | a correction the eye shouldn't read as travel (re-pinning a scrolled tail) |
+| `press` | 150 | every tap scale/wash — the app's most common duration |
+| `quick` | 200 | a small in-place state change |
+| `emphasis` | 300 | a control changing shape (field focus, card expand) |
+| `entrance` | 350 | arriving on screen for the first time |
+| `morph` | 340 | the date chip ↔ week strip crossfade |
+| `page` | 280 | one week of the strip paging |
+| `scrollTo` | 400 | a deliberate journey down the feed |
+| `drawerOpen` / `drawerClose` | 280 / 220 | the nav drawer |
+| `toast` | 2200 | a passive toast's dwell |
+| `undoWindow` | 5s | the grace period on anything destructive |
+| `stagger` | 50 | between staggered siblings |
+
+**Name the role, not the number.** A call site asking for `press` survives 150
+becoming 140; one spelling `Duration(milliseconds: 150)` does not, and a reviewer
+can't tell it from a typo.
+
+**The drawer's timing forks from web on purpose.** `tab_scaffold.dart` cited
+`components/ui/sheet.tsx` (500ms open / 300ms close, `ease-in-out`) as its source
+of truth. Half a second is about twice Material's own drawer, and on a phone it
+reads as lag *even when every frame lands*; the web sheet is a pointer-driven
+surface where the longer travel reads as deliberate instead. Mobile runs 280/220
+on `Curves.fastOutSlowIn`, and closes faster than it opens — a dismissal should
+feel like getting out of the way, not like a second animation to sit through.
+This is the same kind of decision as "the canvas is grey, not near-white": a
+considered divergence, not drift. Do not resync the two without re-deciding it.
+
+**An entrance is for arriving, not for scrolling back.** The feed recycles its
+cards, so a card scrolled out and back is destroyed and re-inflated — and a
+`FadeInLeft` inside it replays in full, spinning up an `AnimationController` and
+an `Opacity` saveLayer per row. Gate entrances on whether the thing is genuinely
+new: `MealEntry` uses `loggedAt == null`, since only the live reveal lacks one.
+
+**Animate transforms, not layout.** The drawer slid by animating a `Positioned`
+`left:` — a faithful port of the CSS, and a full relayout of the panel subtree
+every frame. `SlideTransition` moves the same pixels without touching layout.
+Likewise, hand an `AnimatedBuilder` its `child:`: the drawer rebuilt the entire
+sidebar (two `ref.watch`es, two `GoRouterState.of` lookups, an SVG parse) about
+thirty times per open for a subtree that never changed while it travelled.
+
+**Conditional children in a `Stack` need keys.** The date morph added and removed
+its two layers with `if (t < 1)` / `if (t > 0)`. The children list changed length
+mid-animation, both branches were unkeyed `Opacity`, so Flutter matched the
+surviving strip against the chip's slot, mismatched three levels down, and
+destroyed the whole `TimelineStrip` — `PageController`, paged-to week and all —
+inside an animation frame. Keep both layers mounted, key them, and gate
+hit-testing with `IgnorePointer`.
+
 ## Reference implementation (source of truth)
 
 `apps/mobile-flutter/lib/theme/calm_tokens.dart` —

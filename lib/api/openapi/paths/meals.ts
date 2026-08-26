@@ -123,6 +123,20 @@ export const MEAL_PATHS: Record<string, PathItem> = {
     }),
   },
 
+  '/api/v1/meals/pending/{analysisId}': {
+    delete: authed({
+      operationId: 'discardPendingMeal',
+      summary: 'Discard an analysis awaiting confirmation',
+      description:
+        'Throws away a staged analysis the user decided against, so it stops appearing as a review card. Without this the only exits from a staged meal are confirming it or waiting out its 30-minute expiry.',
+      tags: TAGS,
+      parameters: [
+        pathParam('analysisId', 'UUID of the pending analysis to discard.'),
+      ],
+      ok: ref('Acknowledgement'),
+    }),
+  },
+
   '/api/v1/meals/cheat-occasions': {
     get: authed({
       operationId: 'listCheatOccasions',

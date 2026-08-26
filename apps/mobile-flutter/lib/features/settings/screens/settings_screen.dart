@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../services/auth/session_provider.dart';
+import '../../../services/billing/entitlements_provider.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../theme/calm_tokens.dart';
@@ -16,7 +17,6 @@ import '../data/profile_providers.dart';
 import '../logic/settings_spacing.dart';
 import 'cooking.dart';
 import '../widgets/profile/instant_commit_editor.dart';
-import '../../feedback/screens/feedback_screen.dart';
 import '../widgets/account/auto_share_to_circle_toggle.dart';
 import '../widgets/profile/profile_form.dart';
 import '../widgets/profile/profile_status_views.dart';
@@ -61,6 +61,7 @@ class _SettingsList extends ConsumerWidget {
     final userId = session?.user.id;
     final profileAsync = ref.watch(profileProvider(userId != null));
     final profile = profileAsync.valueOrNull;
+    final showSubscription = ref.watch(subscriptionSectionVisibleProvider);
 
     return Screen(
       bottom: false,
@@ -96,10 +97,12 @@ class _SettingsList extends ConsumerWidget {
                   showChevron: true,
                   onTap: () => _push(context, _EditorKind.goal),
                 ),
+                // No subline: its description is the first thing the cooking
+                // editor itself shows, and in a single-line ellipsised slot it
+                // only ever rendered as a truncated fragment.
                 SettingsRow(
                   icon: LucideIcons.utensilsCrossed300,
                   label: tr('settings.rows.cooking'),
-                  subline: tr('settings.profilePanel.cookingSubtitle'),
                   showChevron: true,
                   onTap: () => _push(context, _EditorKind.cooking),
                 ),
@@ -117,27 +120,21 @@ class _SettingsList extends ConsumerWidget {
               ],
             ),
 
-            const SizedBox(height: SettingsSpacing.group),
-            const SubscriptionSection(),
-
-            const SizedBox(height: SettingsSpacing.group),
-            // ── Feedback (kept above Account, away from delete-account) ───
-            SettingsGroup(
-              label: tr('settings.feedback.groupLabel'),
-              children: [
-                SettingsRow(
-                  icon: LucideIcons.messageSquare300,
-                  label: tr('settings.feedback.rowLabel'),
-                  subline: tr('settings.feedback.rowSubline'),
-                  showChevron: true,
-                  onTap: () => _openFeedback(context),
-                ),
-              ],
-            ),
+            // The one conditional section on the screen, so the gap above it
+            // belongs to the condition too: a section that hid itself while
+            // the parent kept emitting both gaps left a 48px void behind.
+            if (showSubscription) ...[
+              const SizedBox(height: SettingsSpacing.group),
+              const SubscriptionSection(),
+            ],
 
             const SizedBox(height: SettingsSpacing.group),
             const AccountSection(),
 
+            // ── About — version, legal, and the feedback row ───────────
+            // It sits between the delete-account row and sign out, which is
+            // what keeps the session action people reach for by habit from
+            // stacking against the irreversible one.
             const SizedBox(height: SettingsSpacing.group),
             const AboutSection(),
 
@@ -167,12 +164,6 @@ class _SettingsList extends ConsumerWidget {
     final profile = ref.watch(myCircleProfileProvider).valueOrNull;
     if (profile == null) return tr('settings.rows.notSet');
     return profile.label;
-  }
-
-  void _openFeedback(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(CupertinoPageRoute<void>(builder: (_) => const FeedbackScreen()));
   }
 
   /// "Cutting · 0.50 kg/wk" — the saved goal + pace, or "Not set" when no

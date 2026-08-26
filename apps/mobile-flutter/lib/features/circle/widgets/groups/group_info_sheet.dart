@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../services/http/api_client.dart';
+import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
@@ -56,25 +57,17 @@ class _GroupInfoSheetState extends ConsumerState<GroupInfoSheet> {
 
   Future<void> _leave() async {
     final sheetContext = context;
-    final yes = await showDialog<bool>(
-      context: sheetContext,
-      builder:
-          (dialogContext) => AlertDialog(
-            title: Text(tr('groups.feed.leaveTitle')),
-            content: Text(tr('groups.feed.leaveDescription')),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(tr('groups.feed.cancel')),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(tr('groups.feed.leaveConfirm')),
-              ),
-            ],
-          ),
+    // This one KEEPS its verb: "Rời nhóm" above "Huỷ" is two different words
+    // for two different things, so there is nothing to disambiguate. Only the
+    // confirms whose affirmative collides with the cancel go to "Đồng ý".
+    final yes = await showKalloConfirm(
+      sheetContext,
+      title: tr('groups.feed.leaveTitle'),
+      description: tr('groups.feed.leaveDescription'),
+      confirmLabel: tr('groups.feed.leaveConfirm'),
+      destructive: true,
     );
-    if (yes != true || !sheetContext.mounted) return;
+    if (!yes || !sheetContext.mounted) return;
     final container = ProviderScope.containerOf(sheetContext, listen: false);
     try {
       await leaveChatGroup(container, widget.groupId);

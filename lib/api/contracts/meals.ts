@@ -63,6 +63,17 @@ export const confirmMealSchema = z.object({
 export type ConfirmMealInput = z.infer<typeof confirmMealSchema>;
 
 /**
+ * Discarding a staged analysis the user decided against. The id is the same
+ * `pending_analyses.id` `confirmMealSchema` calls `analysisId`, so the two
+ * halves of a staged card's life are addressed the same way.
+ */
+export const discardPendingSchema = z.object({
+  analysisId: z.string().uuid('analysisId phải là UUID hợp lệ.'),
+});
+
+export type DiscardPendingInput = z.infer<typeof discardPendingSchema>;
+
+/**
  * Full input for `updateMealAction` (edit a persisted precise meal). Lives here
  * rather than in the action module because the action carries `'use server'`
  * (which may only export async functions) and this file is imported by the
