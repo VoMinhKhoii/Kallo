@@ -15,7 +15,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
@@ -27,39 +26,11 @@ import {
   dateStringToDate,
   formatTimelineDayLabel,
 } from './timeline-utils';
+import { useMobileHeaderSlot } from './use-mobile-header-slot';
 
 const SWIPE_THRESHOLD_PX = 40;
 const SWIPE_COOLDOWN_MS = 250;
 const WEEK_SLIDER_ID = 'mobile-week-slider';
-const MOBILE_HEADER_SLOT_ID = 'app-mobile-header-slot';
-
-/**
- * MobileNav's header is `md:hidden`, so its slot exists in the DOM at every
- * width but only has a box below md. Portalling into it from md up hides the
- * chip completely — which is exactly what happened when the timeline sidebar
- * moved from md to lg and left 768px with neither the sidebar nor the chip.
- * So the slot counts as a target only while that header is actually shown.
- */
-const MOBILE_HEADER_QUERY = '(max-width: 767.98px)';
-
-// `matchMedia` is absent in jsdom (and in any host without it). Falling back to
-// the inline row is the safe branch: the chip is visible either way, it just
-// does not share the hamburger's row.
-const mobileHeaderQuery = () =>
-  typeof window.matchMedia === 'function'
-    ? window.matchMedia(MOBILE_HEADER_QUERY)
-    : null;
-
-const subscribeToMobileHeader = (onChange: () => void) => {
-  const query = mobileHeaderQuery();
-  query?.addEventListener('change', onChange);
-  return () => query?.removeEventListener('change', onChange);
-};
-const getMobileHeaderSlot = (): HTMLElement | null =>
-  mobileHeaderQuery()?.matches
-    ? document.getElementById(MOBILE_HEADER_SLOT_ID)
-    : null;
-const getNoSlot = (): HTMLElement | null => null;
 
 export interface MobileTimelinePickerProps {
   dates: string[];
@@ -182,11 +153,7 @@ export function MobileTimelinePicker({
   // hamburger share a single mobile row. We resolve the slot lazily via
   // useSyncExternalStore so SSR returns null (no DOM) and the client picks up
   // the slot on the first commit without needing setState in an effect.
-  const portalTarget = useSyncExternalStore(
-    subscribeToMobileHeader,
-    getMobileHeaderSlot,
-    getNoSlot
-  );
+  const portalTarget = useMobileHeaderSlot();
 
   // Click anywhere outside the picker, or press Escape, collapses back to the
   // chip without forcing a date selection.

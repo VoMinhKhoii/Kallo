@@ -87,7 +87,6 @@ export function TimelineSidebar({
   if (isPending) {
     return (
       <nav
-        // LG, not MD: at 768 this column plus the app rail left the feed ~160px.
         className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 lg:flex"
         aria-label={t('navigationLabel')}
       >

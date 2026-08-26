@@ -22,6 +22,9 @@ import {
  * rendered one slides every line off the arc's tips.
  */
 
+/** Which readout a dial draws — the calorie stack, or a macro's. */
+export type ReadoutKind = FigureKind;
+
 export interface GaugeLine {
   text: string;
   className: string;
