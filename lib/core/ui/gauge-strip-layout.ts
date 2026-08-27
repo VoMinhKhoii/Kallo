@@ -30,8 +30,12 @@ export const MACRO_MIN_RADIUS = 26;
 /**
  * The caps each surface sets on itself.
  *
- * `FEED_MACRO_CAP` is picked so the header lands at the height the old one
- * already took — every pixel above that is feed the reader loses.
+ * `FEED_MACRO_CAP` is picked so the calorie dial can SAY THE SAME SENTENCE the
+ * dock's does. Every pixel here is feed the reader loses, so it was 28 — but at
+ * the radius that gives (53) "kcal remaining" measures 96% of the mouth, so the
+ * header dropped to "left" and the same dial answered "how am I doing today?"
+ * two different ways on two pages. 32 puts the string at 85% of the mouth,
+ * which clears `gaugeFitsLongUnit`'s margin honestly, for 10px of header.
  *
  * `DOCK_MACRO_CAP` is picked from the NARROW case, not the wide one. At xl the
  * dock's gauge column is 44% of the card and the cap barely binds; below xl the
@@ -39,7 +43,7 @@ export const MACRO_MIN_RADIUS = 26;
  * BIGGER marks on a tablet than on a 16-inch desktop. Capping at the xl size
  * keeps one look across the breakpoint.
  */
-export const FEED_MACRO_CAP = 28;
+export const FEED_MACRO_CAP = 32;
 export const DOCK_MACRO_CAP = 48;
 
 /**
