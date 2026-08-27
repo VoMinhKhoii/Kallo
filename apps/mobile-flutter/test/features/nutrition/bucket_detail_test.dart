@@ -14,14 +14,17 @@ NutrientDaySeries _series(
   for (var i = 0; i < values.length; i++) {
     final date = '2026-05-0${i + 1}';
     final value = values[i];
-    buckets.add(DaySeriesBucket(
-      startDate: date,
-      endDate: date,
-      value: value,
-      ratioOfTarget: value != null && target != null && target > 0
-          ? value / target
-          : null,
-    ));
+    buckets.add(
+      DaySeriesBucket(
+        startDate: date,
+        endDate: date,
+        value: value,
+        ratioOfTarget:
+            value != null && target != null && target > 0
+                ? value / target
+                : null,
+      ),
+    );
   }
   return NutrientDaySeries(
     metric: metric,
@@ -36,6 +39,21 @@ NutrientDaySeries _series(
 
 NutritionDaySeries _daySeries(List<NutrientDaySeries> list) =>
     NutritionDaySeries(unit: 'day', series: list);
+
+NutrientCardData _card(NutritionNutrientKey nutrient) => NutrientCardData(
+  nutrient: nutrient,
+  labelKey: 'nutrition.nutrients.${nutrient.name}',
+  group: NutrientGroup.mineral,
+  averagePerDay: 999,
+  target: 2000,
+  targetSource: TargetSource.nasem,
+  targetSourceLabelKey: 'nutrition.targetSources.nasem',
+  unit: 'mg',
+  percentOfTarget: 50,
+  confidence: 100,
+  displayState: ConfidenceDisplayState.normal,
+  nutrientType: NutrientType.ceiling,
+);
 
 void main() {
   setUpAll(() async {
@@ -61,7 +79,9 @@ void main() {
 
     test('converts ratioOfTarget into a percentage', () {
       final detail = buildBucketDetail(
-        _daySeries([_series('calciumMg', [500], target: 1000, unit: 'mg')]),
+        _daySeries([
+          _series('calciumMg', [500], target: 1000, unit: 'mg'),
+        ]),
         0,
       );
       expect(detail!.nutrients.first.percentOfTarget, closeTo(50, 0.001));
@@ -69,7 +89,9 @@ void main() {
 
     test('leaves percentOfTarget null when the nutrient has no target', () {
       final detail = buildBucketDetail(
-        _daySeries([_series('calciumMg', [500], unit: 'mg')]),
+        _daySeries([
+          _series('calciumMg', [500], unit: 'mg'),
+        ]),
         0,
       );
       expect(detail!.nutrients.first.percentOfTarget, isNull);
@@ -96,21 +118,53 @@ void main() {
         ]),
         0,
       );
-      expect(detail!.macros.map((m) => m.metric),
-          ['calories', 'carbohydrate', 'fat']);
+      expect(detail!.macros.map((m) => m.metric), [
+        'calories',
+        'carbohydrate',
+        'fat',
+      ]);
     });
 
     test('returns null for an out-of-range index', () {
       expect(
-        buildBucketDetail(_daySeries([_series('calories', [2000])]), 9),
+        buildBucketDetail(
+          _daySeries([
+            _series('calories', [2000]),
+          ]),
+          9,
+        ),
         isNull,
       );
+    });
+
+    test('scopes extended micronutrients to their selected-day values', () {
+      final detail = buildBucketDetail(
+        _daySeries([
+          _series('calories', [2000], target: 2000, unit: 'kcal'),
+          _series('sodiumMg', [2519], target: 2000, unit: 'mg'),
+        ]),
+        0,
+      );
+
+      final scoped = scopeCardsToBucket([
+        _card(NutritionNutrientKey.sodiumMg),
+        _card(NutritionNutrientKey.magnesiumMg),
+      ], detail!);
+
+      expect(scoped.first.averagePerDay, 2519);
+      expect(scoped.first.percentOfTarget, closeTo(125.95, 0.001));
+      expect(scoped.last.averagePerDay, isNull);
+      expect(scoped.last.percentOfTarget, isNull);
     });
   });
 
   group('findTodayIndex', () {
     DaySeriesBucket bucket(String start, String end) => DaySeriesBucket(
-        startDate: start, endDate: end, value: 1, ratioOfTarget: null);
+      startDate: start,
+      endDate: end,
+      value: 1,
+      ratioOfTarget: null,
+    );
 
     test('matches the exact day on a day axis', () {
       final buckets = [
@@ -129,8 +183,10 @@ void main() {
     });
 
     test('returns -1 when today is outside the window', () {
-      expect(findTodayIndex([bucket('2026-05-04', '2026-05-04')], '2026-06-01'),
-          -1);
+      expect(
+        findTodayIndex([bucket('2026-05-04', '2026-05-04')], '2026-06-01'),
+        -1,
+      );
     });
   });
 
@@ -146,16 +202,24 @@ void main() {
     });
 
     test('states the month and year once inside a single month', () {
-      expect(formatDateSpan('2026-08-10', '2026-08-16', 'en'), '10 – 16 Aug 2026');
+      expect(
+        formatDateSpan('2026-08-10', '2026-08-16', 'en'),
+        '10 – 16 Aug 2026',
+      );
     });
 
     test('repeats the month when the span crosses one', () {
-      expect(formatDateSpan('2026-07-28', '2026-08-03', 'en'), '28 Jul – 3 Aug 2026');
+      expect(
+        formatDateSpan('2026-07-28', '2026-08-03', 'en'),
+        '28 Jul – 3 Aug 2026',
+      );
     });
 
     test('states both years when the span crosses one', () {
-      expect(formatDateSpan('2025-12-29', '2026-01-04', 'en'),
-          '29 Dec 2025 – 4 Jan 2026');
+      expect(
+        formatDateSpan('2025-12-29', '2026-01-04', 'en'),
+        '29 Dec 2025 – 4 Jan 2026',
+      );
     });
   });
 }

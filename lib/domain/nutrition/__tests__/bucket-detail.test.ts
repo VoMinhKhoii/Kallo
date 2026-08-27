@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   buildBucketDetail,
   formatDateSpan,
+  scopeCardsToBucket,
 } from '@/lib/domain/nutrition/bucket-detail';
 import type {
   DaySeriesBucket,
+  NutrientCardData,
   NutrientDaySeries,
   NutritionDaySeries,
 } from '@/lib/domain/nutrition/types';
@@ -38,6 +40,25 @@ function series(
 
 function daySeries(list: NutrientDaySeries[]): NutritionDaySeries {
   return { unit: 'day', series: list };
+}
+
+function nutrientCard(
+  nutrient: NutrientCardData['nutrient']
+): NutrientCardData {
+  return {
+    nutrient,
+    labelKey: `nutrition.nutrients.${nutrient}`,
+    group: 'mineral',
+    averagePerDay: 999,
+    target: 2000,
+    targetSource: 'nasem',
+    targetSourceLabelKey: 'nutrition.targetSources.nasem',
+    unit: 'mg',
+    percentOfTarget: 50,
+    confidence: 100,
+    displayState: 'normal',
+    nutrientType: 'ceiling',
+  };
 }
 
 describe('buildBucketDetail', () => {
@@ -120,6 +141,26 @@ describe('buildBucketDetail', () => {
     expect(
       buildBucketDetail(daySeries([series('calories', [2000])]), 9)
     ).toBeNull();
+  });
+
+  it('scopes extended micronutrient cards to the selected day', () => {
+    const detail = buildBucketDetail(
+      daySeries([
+        series('calories', [2000], { target: 2000, unit: 'kcal' }),
+        series('sodiumMg', [2519], { target: 2000, unit: 'mg' }),
+      ]),
+      0
+    );
+
+    const scoped = scopeCardsToBucket(
+      [nutrientCard('sodiumMg'), nutrientCard('magnesiumMg')],
+      detail!
+    );
+
+    expect(scoped[0].averagePerDay).toBe(2519);
+    expect(scoped[0].percentOfTarget).toBeCloseTo(125.95);
+    expect(scoped[1].averagePerDay).toBeNull();
+    expect(scoped[1].percentOfTarget).toBeNull();
   });
 });
 

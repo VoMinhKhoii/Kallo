@@ -151,6 +151,36 @@ abstract final class KalloTheme {
           side: const BorderSide(color: KalloColors.border, width: 1),
         ),
       ),
+      // The one context menu in the app (long-press a sent message). Same
+      // white surface and hairline as a card; M3 would otherwise tint it by
+      // elevation and round it to its own 4px radius.
+      popupMenuTheme: PopupMenuThemeData(
+        color: KalloColors.elev,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+          side: const BorderSide(color: KalloColors.border, width: 1),
+        ),
+      ),
+      // Dialogs are sheets that happen to be centred, so they wear the sheet's
+      // surface and the one card radius. Without this M3 supplies a 28pt
+      // radius, an elevation tint over the warm palette and a 40/24 inset —
+      // the stock chrome that made the delete confirm look foreign.
+      dialogTheme: DialogThemeData(
+        backgroundColor: KalloColors.elev,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KalloRadii.xxxl),
+        ),
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: KalloSpacing.sp6,
+          vertical: KalloSpacing.sp6,
+        ),
+        // The same black/50 scrim the nav drawer and the web dialog use.
+        barrierColor: const Color(0x80000000),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: KalloColors.btn,

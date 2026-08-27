@@ -1,9 +1,9 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { CalorieDial } from '@/components/shared/gauge/calorie-dial';
-import { MacroDials } from '@/components/shared/gauge/macro-dials';
+import { GaugeStrip } from '@/components/shared/gauge/gauge-strip';
 import type { MacroBreakdown } from '@/lib/core/types/meal';
+import { FEED_MACRO_CAP } from '@/lib/core/ui/gauge-strip-layout';
 import type { Goal } from '@/lib/domain/onboarding/types';
 
 interface MacroSummaryProps {
@@ -14,44 +14,36 @@ interface MacroSummaryProps {
 }
 
 /**
- * The feed's header: the day's calorie dial and the three macro dials beside
- * it.
+ * The feed's header: the day's four marks in one row.
  *
- * The dock gives the dial the top of the screen; this header sits FIXED above a
- * scrolling day, so it draws the compact variants — the same marks, the same
- * goal-aware readout, at a height the feed can afford.
+ * The dock gives the strip a card to fill; this header sits FIXED above a
+ * scrolling day, so it caps its marks small — every pixel here is a pixel the
+ * feed does not get. `FEED_MACRO_CAP` is the smallest cap at which the calorie
+ * dial still has room for the sentence the dock's says, so the two pages
+ * answer "how am I doing today?" the same way.
  */
 export function MacroSummary({ totals, targets, goal }: MacroSummaryProps) {
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
-      // The dials hold their size, so on a viewport too narrow for the row the
-      // macros wrap under the day rather than shrinking toward illegible.
-      className="flex flex-wrap items-start justify-center gap-x-4 gap-y-3 sm:justify-start"
       initial={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
     >
-      <CalorieDial
+      <GaugeStrip
+        calories={{ current: totals.calories, target: targets.calories }}
+        current={{
+          protein: totals.protein,
+          carbohydrate: totals.carbs,
+          fat: totals.fat,
+        }}
         goal={goal}
-        logged={totals.calories}
-        target={targets.calories}
-        variant="compact"
+        macroCap={FEED_MACRO_CAP}
+        target={{
+          protein: targets.protein,
+          carbohydrate: targets.carbs,
+          fat: targets.fat,
+        }}
       />
-      <div className="min-w-[200px] flex-1">
-        <MacroDials
-          current={{
-            protein: totals.protein,
-            carbohydrate: totals.carbs,
-            fat: totals.fat,
-          }}
-          target={{
-            protein: targets.protein,
-            carbohydrate: targets.carbs,
-            fat: targets.fat,
-          }}
-          variant="compact"
-        />
-      </div>
     </motion.div>
   );
 }

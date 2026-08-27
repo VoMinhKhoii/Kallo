@@ -144,8 +144,8 @@ describe('getNutritionOverview', () => {
   it('reads the previous window as a per-day calorie aggregate, not full item rows', async () => {
     mockFetchDailyCalorieTotals.mockResolvedValue([
       { date: '2026-04-13', calories: 2000 },
-      { date: '2026-04-14', calories: 1000 },
-      // Under half the 2000 kcal target — partial, so it counts toward `all`
+      { date: '2026-04-14', calories: 1800 },
+      // Under 85% of the 2000 kcal target — partial, so it counts toward `all`
       // but not `complete`.
       { date: '2026-04-15', calories: 400 },
     ]);
@@ -166,8 +166,8 @@ describe('getNutritionOverview', () => {
     // One query for the current window only — the previous one never pulls rows.
     expect(mockFetchOverviewRows).toHaveBeenCalledTimes(1);
     expect(overview.previousCalorieAverages).toEqual({
-      all: { averagePerDay: 1133.3333333333333, days: 3 },
-      complete: { averagePerDay: 1500, days: 2 },
+      all: { averagePerDay: 1400, days: 3 },
+      complete: { averagePerDay: 1900, days: 2 },
     });
   });
 

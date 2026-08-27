@@ -49,4 +49,28 @@ describe('MealList', () => {
     expect(screen.getByText('noMealsToday')).toBeInTheDocument();
     expect(screen.getByText('mealReceiptsHint')).toBeInTheDocument();
   });
+
+  it('lets a long Vietnamese label run to two lines at every width', () => {
+    const label = 'cơm tấm + 1 đùi góc tư nướng bỏ da + mắm + đồ chua';
+    render(
+      <MealList
+        meals={Array.from({ length: 8 }, (_, index) => ({
+          ...MEAL,
+          id: `meal-${index}`,
+          label: index === 0 ? label : `${MEAL.label} ${index}`,
+        }))}
+      />
+    );
+
+    // The row used to squeeze to one line at xl, which clipped the tail off a
+    // dish name. With the gauge column bounded there is room for the Circle
+    // feed's own rhythm, at one density.
+    const name = screen.getByText(label);
+    expect(name).toHaveClass('line-clamp-2');
+    expect(name.className).not.toContain('xl:');
+    expect(screen.getByTestId('meal-list-scroll')).toHaveClass(
+      'flex-1',
+      'overflow-y-auto'
+    );
+  });
 });

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { mapOverviewRowsToDto } from '@/lib/domain/nutrition/actions/overview/mapper';
 import type { OverviewMealItemRow } from '@/lib/domain/nutrition/actions/overview/query';
+import {
+  DEFAULT_NUTRIENTS,
+  MORE_NUTRIENTS,
+} from '@/lib/domain/nutrition/catalog/nutrients';
 import type { CalorieAverages } from '@/lib/domain/nutrition/types';
 import type { userProfiles } from '@/lib/infra/db/schema';
 
@@ -124,7 +128,7 @@ describe('mapOverviewRowsToDto', () => {
       row({ localDate: '2026-04-22', calories: 2000, proteinG: 100 }),
       row({ localDate: '2026-04-23', calories: 2000, proteinG: 100 }),
       row({ localDate: '2026-04-24', calories: 2000, proteinG: 100 }),
-      // Breakfast-only day: < 50% of the 2000 kcal target.
+      // Breakfast-only day: < 85% of the 2000 kcal target.
       row({ localDate: '2026-04-25', calories: 400, proteinG: 10 }),
     ]);
 
@@ -268,13 +272,44 @@ describe('mapOverviewRowsToDto', () => {
       expect(calories?.buckets).toHaveLength(13);
     });
 
-    it('includes the default micronutrients in the series', () => {
+    it('includes every displayed micronutrient in the series', () => {
       const overview = mapRows([
-        row({ localDate: '2026-04-25', calciumMg: 600 }),
+        row({ localDate: '2026-04-25', calciumMg: 600, sodiumMg: 2519 }),
       ]);
       const metrics = overview.daySeries.series.map((s) => s.metric);
-      expect(metrics).toContain('calciumMg');
-      expect(metrics).toContain('protein');
+      expect(metrics).toEqual([
+        'calories',
+        'protein',
+        'carbohydrate',
+        'fat',
+        ...DEFAULT_NUTRIENTS,
+        ...MORE_NUTRIENTS,
+      ]);
+
+      const expectedExtendedValues = {
+        sodiumMg: 2519,
+        magnesiumMg: 10,
+        potassiumMg: 100,
+        zincMg: 1,
+        copperMcg: 20,
+        manganeseMg: 0.1,
+        vitaminB12Mcg: 0.1,
+        vitaminB9Mcg: 10,
+        vitaminB5Mg: 0.1,
+        vitaminB6Mg: 0.1,
+        vitaminEMg: 0.5,
+        vitaminKMcg: 1,
+      } as const;
+
+      for (const nutrient of MORE_NUTRIENTS) {
+        const series = overview.daySeries.series.find(
+          (candidate) => candidate.metric === nutrient
+        );
+        expect(
+          series?.buckets.find((bucket) => bucket.startDate === '2026-04-25')
+            ?.value
+        ).toBe(expectedExtendedValues[nutrient]);
+      }
     });
 
     it('returns an empty series for a zero-logged period', () => {

@@ -1,5 +1,5 @@
 /// Pure helpers for the tap-a-column breakdown. Mirror of web
-/// `components/nutrition/sections/bucket-detail-utils.ts` (keep in sync).
+/// `lib/domain/nutrition/bucket-detail.ts` (keep in sync).
 library;
 
 import 'package:intl/intl.dart';
@@ -55,10 +55,8 @@ class BucketDetailData {
 /// Everything the overview already knows about one bucket.
 ///
 /// No refetch: `daySeries` already carries a per-bucket series for the four
-/// macros AND the eight default micronutrients, so a day's breakdown is a read
-/// of data that shipped with the page. The extended `moreNutrients` set has no
-/// per-bucket series, so it is deliberately absent — a day view shows the
-/// headline eight, not a second full grid.
+/// macros and every displayed micronutrient, so a day's breakdown is a read of
+/// data that shipped with the page.
 ///
 /// Returns null for a bucket with nothing logged, so the caller can ignore taps
 /// on an empty column.
@@ -79,9 +77,8 @@ BucketDetailData? buildBucketDetail(NutritionDaySeries daySeries, int index) {
       unit: series.unit,
       value: value,
       target: series.target,
-      percentOfTarget: bucket!.ratioOfTarget == null
-          ? null
-          : bucket.ratioOfTarget! * 100,
+      percentOfTarget:
+          bucket!.ratioOfTarget == null ? null : bucket.ratioOfTarget! * 100,
     );
     if (kDetailMacros.contains(series.metric)) {
       macros.add(metric);
@@ -93,8 +90,11 @@ BucketDetailData? buildBucketDetail(NutritionDaySeries daySeries, int index) {
   if (macros.isEmpty && nutrients.isEmpty) return null;
 
   // Keep the macro order stable regardless of the series order on the wire.
-  macros.sort((a, b) =>
-      kDetailMacros.indexOf(a.metric).compareTo(kDetailMacros.indexOf(b.metric)));
+  macros.sort(
+    (a, b) => kDetailMacros
+        .indexOf(a.metric)
+        .compareTo(kDetailMacros.indexOf(b.metric)),
+  );
 
   return BucketDetailData(
     index: index,
@@ -154,9 +154,9 @@ List<MacroPattern> scopeMacrosToBucket(
 
 /// Re-point the nutrient cards at one bucket.
 ///
-/// Only the eight default micronutrients carry a per-bucket series, so the
-/// extended set resolves to null — the card renders "—" rather than showing the
-/// range's average under a single day's heading.
+/// Every displayed micronutrient carries a per-bucket series. A missing series
+/// still resolves to null so the card cannot carry a range average into a
+/// single day's heading.
 List<NutrientCardData> scopeCardsToBucket(
   List<NutrientCardData> cards,
   BucketDetailData detail,

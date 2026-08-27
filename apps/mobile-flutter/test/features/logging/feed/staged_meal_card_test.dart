@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
+import 'package:kallo_mobile/features/logging/widgets/composer/entrances.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/staged_meal_card.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/meal_time_divider.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
@@ -24,7 +25,11 @@ const _meal = ParsedMeal(
   ],
 );
 
-Widget _wrap(PendingMealConfirmation pending) => EasyLocalization(
+Widget _wrap(
+  PendingMealConfirmation pending, {
+  VoidCallback? onDiscard,
+  bool busy = false,
+}) => EasyLocalization(
   supportedLocales: const [Locale('en'), Locale('vi')],
   path: 'assets/l10n',
   fallbackLocale: const Locale('en'),
@@ -40,9 +45,10 @@ Widget _wrap(PendingMealConfirmation pending) => EasyLocalization(
           body: SingleChildScrollView(
             child: StagedMealCard(
               pending: pending,
-              busy: false,
+              busy: busy,
               onConfirm: (_, _) {},
               onConfirmCheat: (_, _) {},
+              onDiscard: onDiscard ?? () {},
             ),
           ),
         ),
@@ -106,5 +112,87 @@ void main() {
     expect(find.byType(UserMessageBubble), findsOneWidget);
     expect(find.byType(MealTimeDivider), findsOneWidget);
     expect(find.text('cơm gà'), findsNWidgets(2));
+  });
+
+  testWidgets('can be thrown away, once the confirm is answered', (
+    tester,
+  ) async {
+    var discarded = 0;
+    await tester.pumpWidget(
+      _wrap(
+        const PendingMealConfirmation(
+          id: 'p1',
+          rawInput: 'cơm gà',
+          loggedAt: '2026-08-11T12:00:00.000Z',
+          parsedMeal: _meal,
+        ),
+        onDiscard: () => discarded++,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Before this the only exit from a staged card was confirming it: the user
+    // had to save a meal they did not want in order to be able to delete it.
+    await tester.tap(find.bySemanticsLabel('Discard'));
+    await tester.pumpAndSettle();
+    expect(discarded, 0, reason: 'the confirm must come first');
+
+    await tester.tap(
+      find.descendant(of: find.byType(Dialog), matching: find.text('Agree')),
+    );
+    await tester.pumpAndSettle();
+    expect(discarded, 1);
+  });
+
+  testWidgets('keeps the discard shut while a confirm is in flight', (
+    tester,
+  ) async {
+    var discarded = 0;
+    await tester.pumpWidget(
+      _wrap(
+        const PendingMealConfirmation(
+          id: 'p1',
+          rawInput: 'cơm gà',
+          loggedAt: '2026-08-11T12:00:00.000Z',
+          parsedMeal: _meal,
+        ),
+        onDiscard: () => discarded++,
+        busy: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The row is mid-save. Deleting it now would race the confirm.
+    await tester.tap(find.bySemanticsLabel('Discard'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dialog), findsNothing);
+    expect(discarded, 0);
+  });
+
+  testWidgets('does not replay its arrival animation on every remount', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        const PendingMealConfirmation(
+          id: 'p1',
+          rawInput: 'cơm gà',
+          // Staged an hour ago and restored from GET /logging/day — which is
+          // what EVERY card of this kind is.
+          loggedAt: '2026-08-11T12:15:00.000Z',
+          parsedMeal: _meal,
+        ),
+      ),
+    );
+    // One frame: an entrance would still be mid-flight here.
+    await tester.pump();
+
+    // MealEntry decides this from `loggedAt`, and the unit test for it passes
+    // one explicitly — so this asserts the thing that actually broke: that the
+    // real caller wires it through. The feed recycles its cards, so without
+    // this an hour-old pending meal waterfalls in again on every scroll-back.
+    expect(find.byType(FadeInLeft), findsNothing);
+    await tester.pumpAndSettle();
   });
 }

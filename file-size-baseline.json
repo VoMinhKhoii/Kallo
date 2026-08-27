@@ -1,11 +1,10 @@
 {
-  "note": "Ratchet baseline for scripts/ci/check-structure. Frozen legacy violations: may shrink, never grow. Do not add entries by hand \u2014 split the file or the folder instead (see AGENTS.md \"File & Folder Organization\").",
+  "note": "Ratchet baseline for scripts/ci/check-structure. Frozen legacy violations: may shrink, never grow. Do not add entries by hand — split the file or the folder instead (see AGENTS.md \"File & Folder Organization\").",
   "files": {
     "apps/mobile-flutter/lib/features/onboarding/widgets/onboarding_wizard.dart": 691,
     "apps/mobile-flutter/lib/features/settings/screens/body_metrics.dart": 646,
     "apps/mobile-flutter/lib/features/logging/widgets/sheets/manual_log_sheet.dart": 639,
     "apps/mobile-flutter/lib/features/logging/widgets/cheat/cheat_slider_card.dart": 579,
-    "apps/mobile-flutter/lib/features/logging/widgets/timeline/timeline_picker.dart": 540,
     "apps/mobile-flutter/lib/features/settings/widgets/profile/profile_form.dart": 518,
     "components/logging/sidebar/mobile-timeline-picker.tsx": 502,
     "apps/mobile-flutter/lib/features/dashboard/widgets/heatmap/adherence_heatmap.dart": 502,
@@ -15,13 +14,13 @@
     "components/onboarding/screen-origin.tsx": 358,
     "apps/mobile-flutter/lib/features/settings/widgets/inputs/custom_select.dart": 354,
     "apps/mobile-flutter/lib/features/dashboard/widgets/weight/compact_weight_log.dart": 344,
-    "apps/mobile-flutter/lib/features/logging/widgets/feed/feed_area.dart": 336,
-    "apps/mobile-flutter/lib/features/logging/widgets/composer/meal_input.dart": 327,
+    "apps/mobile-flutter/lib/features/logging/widgets/feed/feed_area.dart": 332,
     "apps/mobile-flutter/lib/features/onboarding/widgets/country_select.dart": 323,
     "apps/mobile-flutter/lib/features/onboarding/widgets/custom_select.dart": 321,
     "components/onboarding/screen-cooking.tsx": 312,
     "components/logging/sidebar/timeline-sidebar.tsx": 311,
     "apps/mobile-flutter/lib/features/logging/widgets/cheat/cheat_meal_card.dart": 308,
+    "apps/mobile-flutter/lib/features/logging/widgets/composer/meal_input.dart": 304,
     "components/logging/feed/cheat/cheat-slider-card.tsx": 283,
     "apps/mobile-flutter/lib/features/dashboard/widgets/weight/weight_chart.dart": 282,
     "apps/mobile-flutter/lib/features/dashboard/widgets/weight/weight_chart_canvas.dart": 273,
@@ -43,7 +42,6 @@
     "components/logging/feed/cheat/cheat-meal-card.tsx": 207,
     "components/app/navigation/mobile-nav.tsx": 206,
     "components/design-system/colors-section.tsx": 205,
-    "apps/mobile-flutter/lib/shell/tab_scaffold.dart": 204,
     "apps/mobile-flutter/lib/features/logging/widgets/composer/entrances.dart": 201
   },
   "folders": {

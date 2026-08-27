@@ -37,7 +37,7 @@ export function FeedHeader({
         className="shrink-0 bg-kallo-surface px-3 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-3"
         data-testid="macro-summary-region"
       >
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-3xl">
           {isDayLoading ? (
             <MacroSummarySkeleton />
           ) : isDayError ? null : hasUnknownDailyMacros ? (
@@ -52,7 +52,7 @@ export function FeedHeader({
 
       {showPartialDayNotice && (
         <div className="shrink-0 px-3 pb-2 sm:px-6">
-          <div className="mx-auto max-w-4xl">
+          <div className="mx-auto max-w-3xl">
             <PartialDayNotice
               calories={dailyTotals.calories}
               target={calorieTarget}

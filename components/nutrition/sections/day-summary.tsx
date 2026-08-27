@@ -174,6 +174,15 @@ export function DaySummary({
             );
           })}
         </div>
+
+        {/* The complete-day rule, said once where the filtered figure lives.
+            Only on that scope: on All nothing is being set aside, so the note
+            would explain a rule the card is not applying. */}
+        {scope === 'complete' && !(isSelected || isEmpty) ? (
+          <p className="mt-4 border-kallo-border/50 border-t pt-3 text-[12px] text-kallo-text-muted leading-snug">
+            {t('rhythm.completeDaysHint', { allLabel: t('rhythm.loggedDays') })}
+          </p>
+        ) : null}
       </div>
     </motion.section>
   );

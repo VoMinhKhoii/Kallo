@@ -14,6 +14,12 @@ import '../list/settings_group.dart';
 import '../list/settings_row.dart';
 
 /// Current plan state, store-management access, and purchase restoration.
+///
+/// This section does NOT decide whether it is shown — the settings root does,
+/// via `subscriptionSectionVisibleProvider`, because the parent owns the gap on
+/// either side of a group. Hiding itself here would leave those two gaps behind
+/// as a 48px void, which is the bug that moved the predicate out. Keep the rule
+/// in exactly one place.
 class SubscriptionSection extends ConsumerStatefulWidget {
   const SubscriptionSection({super.key});
 
@@ -31,9 +37,6 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
     final entitlementAsync = ref.watch(entitlementsProvider(userId));
     final entitlement = entitlementAsync.valueOrNull;
     final isPremium = entitlement?.isPremium ?? false;
-    if (entitlement != null && !entitlement.purchasesEnabled && !isPremium) {
-      return const SizedBox.shrink();
-    }
 
     final rows = <Widget>[
       SettingsRow(
