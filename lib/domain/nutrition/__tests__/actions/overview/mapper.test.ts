@@ -287,6 +287,7 @@ describe('mapOverviewRowsToDto', () => {
       ]);
 
       const expectedExtendedValues = {
+        fiberG: 2,
         sodiumMg: 2519,
         magnesiumMg: 10,
         potassiumMg: 100,
