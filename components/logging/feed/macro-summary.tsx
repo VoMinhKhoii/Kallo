@@ -17,9 +17,10 @@ interface MacroSummaryProps {
  * The feed's header: the day's four marks in one row.
  *
  * The dock gives the strip a card to fill; this header sits FIXED above a
- * scrolling day, so it caps its marks small — `FEED_MACRO_CAP` is picked so the
- * row lands at the height the old header already took. Every pixel here is a
- * pixel the feed does not get.
+ * scrolling day, so it caps its marks small — every pixel here is a pixel the
+ * feed does not get. `FEED_MACRO_CAP` is the smallest cap at which the calorie
+ * dial still has room for the sentence the dock's says, so the two pages
+ * answer "how am I doing today?" the same way.
  */
 export function MacroSummary({ totals, targets, goal }: MacroSummaryProps) {
   return (

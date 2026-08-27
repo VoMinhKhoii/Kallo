@@ -83,8 +83,21 @@ export function gaugeUnitSize(radius: number): number {
  */
 export const tipOpening = (radius: number) => 1.482 * radius;
 
-/** "kcal remaining", measured in the browser at the real weight and tracking. */
-export const LONG_UNIT_EM = 6.608;
+/**
+ * "kcal remaining", measured in the browser at the real weight and tracking.
+ *
+ * Measured at 11px — the SMALLEST size {@link gaugeUnitSize} can return — and
+ * not at some middle of the range, because the em width is not constant: the
+ * same string runs 6.876em at 11px and 6.521em at 16px, since hinting and
+ * subpixel rounding cost proportionally more the smaller the text. A figure
+ * taken at 15px (6.608) is 4% narrow at 11px, which is exactly the end where
+ * this test is close enough for 4% to change its answer. The worst case is the
+ * only safe one to hold.
+ *
+ * English is the widest of the two locales: "kcal còn lại" measures 58.3px at
+ * 11px against this string's 75.6px.
+ */
+export const LONG_UNIT_EM = 6.876;
 
 /**
  * Whether the dial has room for the long wording ("kcal remaining") rather than
