@@ -292,6 +292,10 @@ Tests: `lib/infra/push/__tests__/fcm.test.ts` (JWT assembly, token cache reuse, 
 4. `bun db:generate` produces only intended DDL; migration application is handed to the user.
 5. Manual two-account flows (Phase 3 list); Phase 4: send a real FCM message to a sandbox token via a scratch script before wiring producers.
 
+## Audience visibility rule
+
+A notification (and its `data` payload — reply previews, meal names) must never outlive the access it rode in on. Fan-out audiences computed from **history** are re-gated on **current** visibility at write time: `share.reply` filters prior repliers through `canViewShareOwnedBy` before `notify()`, so an unfriended replier silently drops out of the thread audience. Owner-directed types (`share.reaction`, `share.logged`, `share.invite_accepted`) need no gate — the owner always sees their own share. `share.invite`'s `mealName` goes only to an explicitly addressed invitee (a per-invite grant, not passive fan-out), and is deliberately retained even across a later unfriend. Already-written notification rows are point-in-time records and are not retroactively purged on unfriend/block — new fan-out simply stops including the departed party.
+
 ## Known risks
 
 - `share.invite` re-offer after the old notification was read creates a fresh row — correct; the live join keys on `objectId` (inviteId, stable per meal+recipient).

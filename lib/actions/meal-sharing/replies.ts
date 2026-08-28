@@ -114,16 +114,26 @@ export async function createShareReplyAction(input: {
     // Thread audience: the meal's owner plus everyone who already replied
     // (the insert above is included, hence the author filter). One aggregated
     // row per recipient per share — "X and 2 others replied".
+    // Prior repliers are re-gated on their CURRENT visibility: notification
+    // content (previewBody) must never outlive the access it rode in on, so an
+    // unfriended replier drops out of the audience. The owner always sees
+    // their own share and skips the check.
     const repliers = await tx
       .selectDistinct({ userId: mealShareReplies.userId })
       .from(mealShareReplies)
       .where(eq(mealShareReplies.shareId, parsed.shareId));
-    const recipientIds = [
-      ...new Set([
-        lockedShares[0].actorId,
-        ...repliers.map((row) => row.userId),
-      ]),
-    ].filter((id) => id !== user.id);
+    const candidateIds = [
+      ...new Set(repliers.map((row) => row.userId)),
+    ].filter((id) => id !== user.id && id !== lockedShares[0].actorId);
+    const visibleReplierIds: string[] = [];
+    for (const candidateId of candidateIds) {
+      if (await canViewShareOwnedBy(candidateId, lockedShares[0], tx)) {
+        visibleReplierIds.push(candidateId);
+      }
+    }
+    const recipientIds = [lockedShares[0].actorId, ...visibleReplierIds].filter(
+      (id) => id !== user.id
+    );
     pushRecipients = await notify(
       tx,
       recipientIds.map((recipientId) => ({

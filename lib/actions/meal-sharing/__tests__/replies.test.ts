@@ -222,6 +222,42 @@ describe('createShareReplyAction', () => {
     expect(inputs[0].data.previewBody).toBe('Ngon quá');
   });
 
+  it('drops a prior replier who can no longer see the share', async () => {
+    const OWNER = 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44';
+    const UNFRIENDED = 'e4ccff33-d04f-4cc2-af01-affdf0724e55';
+    lockShare();
+    insertReturning([
+      {
+        id: REPLY_ID,
+        userId: mockUser.id,
+        body: 'Ngon quá',
+        createdAt: CREATED_AT,
+      },
+    ]);
+    repliers([OWNER, UNFRIENDED, mockUser.id]);
+    selectRows([]);
+    // The author still sees the share; the prior replier lost access (e.g.
+    // the owner unfriended them after their reply).
+    mockCanViewShare.mockImplementation(async (viewerId: string) => {
+      return viewerId !== UNFRIENDED;
+    });
+
+    await createShareReplyAction({
+      shareId: SHARE_ID,
+      replyId: REPLY_ID,
+      body: 'Ngon quá',
+    });
+
+    const inputs = mockNotify.mock.lastCall?.[1] as { recipientId: string }[];
+    expect(inputs.map((input) => input.recipientId)).toEqual([OWNER]);
+    // The owner never goes through the gate — their own share is always theirs.
+    expect(mockCanViewShare).not.toHaveBeenCalledWith(
+      OWNER,
+      expect.anything(),
+      expect.anything()
+    );
+  });
+
   it('schedules one push for the whole thread audience after commit', async () => {
     const OWNER = 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44';
     const OTHER_REPLIER = 'e4ccff33-d04f-4cc2-af01-affdf0724e55';
