@@ -10,6 +10,7 @@ import {
   removeFriendSchema,
 } from '@/lib/core/validation/social';
 import { orderedPair } from '@/lib/domain/social/friendship';
+import { assertFriendCapacity } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { circleEvents, friendships } from '@/lib/infra/db/schema';
 
@@ -66,13 +67,24 @@ export async function acceptInvite(
       .limit(1)
       .for('update');
 
+    if (existing[0]?.status === 'blocked') {
+      throw Errors.conflict('Không thể kết nối.');
+    }
+    if (existing[0]?.status === 'accepted') {
+      return { status: 'accepted' as const, inviter };
+    }
+
+    // Only a NEW accepted edge consumes free-tier friend quota — the
+    // already-accepted return above is the grandfather path and never gets
+    // here. Both parties are checked (see circle-quota: accepter → 402,
+    // inviter → 409).
+    await assertFriendCapacity(tx, {
+      accepterId: actorId,
+      inviterId: inviter.userId,
+      inviterName: inviter.displayName?.trim() || inviter.handle,
+    });
+
     if (existing[0]) {
-      if (existing[0].status === 'blocked') {
-        throw Errors.conflict('Không thể kết nối.');
-      }
-      if (existing[0].status === 'accepted') {
-        return { status: 'accepted' as const, inviter };
-      }
       // Promote a pending edge (either direction) to accepted. The row is
       // locked above; the status guard is defence-in-depth.
       await tx

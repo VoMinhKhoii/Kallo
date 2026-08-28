@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/logging/cheat.dart';
+import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/logging_providers.dart';
 import '../../logic/meal_log_mode.dart';
@@ -86,8 +87,11 @@ Future<void> repeatCheatOccasion(
       date: date,
     );
     onStaged();
-  } catch (_) {
-    if (context.mounted) showTopToast(context, 'errors.internal'.tr());
+  } catch (error) {
+    // Cheat repeat is gated: a 402 is "not entitled", not an internal error.
+    if (context.mounted && !handledFeatureLock(context, error)) {
+      showTopToast(context, 'errors.internal'.tr());
+    }
   } finally {
     if (context.mounted) onStagingChange(false);
   }

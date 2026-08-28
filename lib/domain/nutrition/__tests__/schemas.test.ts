@@ -40,10 +40,14 @@ describe('food source candidates schema', () => {
       foodSourceCandidatesInputSchema.safeParse({ nutrient: 'magnesiumMg' })
         .success
     ).toBe(true);
+    // Fiber is an extended card nutrient too, not a macro row.
+    expect(
+      foodSourceCandidatesInputSchema.safeParse({ nutrient: 'fiberG' }).success
+    ).toBe(true);
   });
 
-  it('rejects non-card nutrients (hidden / education / macros)', () => {
-    for (const nutrient of ['vitaminHMcg', 'vitaminDMcg', 'fiberG']) {
+  it('rejects non-card nutrients (hidden / education)', () => {
+    for (const nutrient of ['vitaminHMcg', 'vitaminDMcg']) {
       expect(
         foodSourceCandidatesInputSchema.safeParse({ nutrient }).success
       ).toBe(false);

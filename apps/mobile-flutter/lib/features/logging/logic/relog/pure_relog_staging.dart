@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../models/logging/relog.dart';
+import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/relog_providers.dart';
 import '../../widgets/relog/mention_text_controller.dart';
@@ -88,8 +89,13 @@ Future<void> stagePureRelog(
     // The feed's attempt id is deliberately untouched: it belongs to whatever
     // AI attempt is on screen, and a relog is a separate card.
     onStaged();
-  } catch (_) {
-    if (context.mounted) showTopToast(context, 'errors.internal'.tr());
+  } catch (error) {
+    // Relog is gated: a 402 means "not entitled", which a generic internal
+    // error toast would misreport. Server enforcement stays the only gate —
+    // this is purely how the refusal is presented.
+    if (context.mounted && !handledFeatureLock(context, error)) {
+      showTopToast(context, 'errors.internal'.tr());
+    }
   } finally {
     if (context.mounted) onStagingChange(false);
   }

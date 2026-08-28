@@ -120,5 +120,7 @@ export function buildEmptyOverview({
         bodyKey: 'nutrition.education.vitaminD.body',
       },
     ],
+    // The gate runs above this builder: see `stripMicronutrients`.
+    micronutrientsLocked: false,
   };
 }

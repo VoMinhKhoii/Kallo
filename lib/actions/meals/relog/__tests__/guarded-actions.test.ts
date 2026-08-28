@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FeatureLockedError } from '@/lib/core/errors/app-error';
 
 /**
  * The throttle lives on the ACTIONS, not the routes.
@@ -16,10 +17,12 @@ const requireAuthAndProfile = vi.fn();
 const loadRelogDishCandidates = vi.fn();
 const loadRelogMealCandidates = vi.fn();
 const resolveRelogSources = vi.fn();
+const assertFeatureAccess = vi.fn();
 
 vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
   checkAnalysisGuards,
 }));
+vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
 vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
 vi.mock('@/lib/domain/logging/relog/dish-query', () => ({
   loadRelogDishCandidates,
@@ -48,6 +51,7 @@ const { RELOG_WRITE_ROUTE } = await import(
 );
 
 const release = vi.fn();
+const PROFILE_CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
 
 beforeEach(() => {
   checkAnalysisGuards.mockReset();
@@ -55,9 +59,13 @@ beforeEach(() => {
   loadRelogDishCandidates.mockReset();
   loadRelogMealCandidates.mockReset();
   resolveRelogSources.mockReset();
+  assertFeatureAccess.mockReset();
   release.mockReset();
 
-  requireAuthAndProfile.mockResolvedValue({ user: { id: 'user-123' } });
+  requireAuthAndProfile.mockResolvedValue({
+    user: { id: 'user-123' },
+    profile: { createdAt: PROFILE_CREATED_AT },
+  });
   checkAnalysisGuards.mockResolvedValue({ allowed: true, release });
   loadRelogDishCandidates.mockResolvedValue([]);
   loadRelogMealCandidates.mockResolvedValue([]);
@@ -146,5 +154,72 @@ describe('the write actions share one counter', () => {
     expect(checkAnalysisGuards).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'user-123', route: RELOG_WRITE_ROUTE })
     );
+  });
+});
+
+describe('the write actions are premium-gated ahead of the rate guard', () => {
+  // Relog is a Premium-card feature. The gate has to sit BEFORE
+  // `withRelogGuard`, not inside it: a locked user's call can only end in 402,
+  // so charging it against the shared relog write window would let a free
+  // account drain the budget the paying surfaces share.
+  const relogInput = {
+    items: [{ kind: 'meal' as const, sourceMealId: crypto.randomUUID() }],
+    loggedDate: '2026-08-03',
+    timezoneOffset: 0,
+  };
+
+  function lock() {
+    assertFeatureAccess.mockRejectedValue(
+      new FeatureLockedError('relog', 'not_entitled', 'locked')
+    );
+  }
+
+  it('stage refuses a locked user without spending rate budget', async () => {
+    lock();
+
+    await expect(
+      stageRelogAnalysisAction({
+        ...relogInput,
+        attemptId: crypto.randomUUID(),
+      })
+    ).rejects.toBeInstanceOf(FeatureLockedError);
+
+    expect(assertFeatureAccess).toHaveBeenCalledWith(
+      { userId: 'user-123', profileCreatedAt: PROFILE_CREATED_AT },
+      'relog'
+    );
+    expect(checkAnalysisGuards).not.toHaveBeenCalled();
+    expect(resolveRelogSources).not.toHaveBeenCalled();
+  });
+
+  it('instant-save refuses a locked user without spending rate budget', async () => {
+    lock();
+
+    await expect(relogMealItemsAction(relogInput)).rejects.toBeInstanceOf(
+      FeatureLockedError
+    );
+
+    expect(assertFeatureAccess).toHaveBeenCalledWith(
+      { userId: 'user-123', profileCreatedAt: PROFILE_CREATED_AT },
+      'relog'
+    );
+    expect(checkAnalysisGuards).not.toHaveBeenCalled();
+    expect(resolveRelogSources).not.toHaveBeenCalled();
+  });
+
+  it('an unlocked user reaches the guard exactly as before', async () => {
+    resolveRelogSources.mockRejectedValue(new Error('stop here'));
+
+    await expect(relogMealItemsAction(relogInput)).rejects.toThrow('stop here');
+
+    expect(checkAnalysisGuards).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-123', route: RELOG_WRITE_ROUTE })
+    );
+  });
+
+  it('reads stay open — candidates never consults the gate', async () => {
+    await loadRelogCandidatesAction({ q: 'pho', limit: 8 });
+
+    expect(assertFeatureAccess).not.toHaveBeenCalled();
   });
 });

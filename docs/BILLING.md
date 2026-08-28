@@ -114,17 +114,60 @@ There is no trial row. The trial is computed in
 
 ### Enforcement kill-switch
 
-`BILLING_ENFORCEMENT_ENABLED` (default `false`) gates whether routes actually
-block. Gating is always *computed*; it is only *enforced* when the flag is on.
-The check lives at the route layer — `app/api/analyze-meal/route.ts` calls
-`checkFeatureAccess({ userId, profileCreatedAt }, 'ai_analysis')` after auth/
-profile and **before** the rate-limit guards, and returns a pre-stream HTTP
-**402** when blocked. Clients key on the 402 status to open the paywall.
+`BILLING_ENFORCEMENT_ENABLED` (default `false`) gates whether the server
+actually blocks. Gating is always *computed*; it is only *enforced* when the
+flag is on. Every gate reads the flag **first**, before any entitlement or
+profile query, so a flag-off deployment costs nothing at the chokepoints and
+cannot lock anyone out through a database failure.
 
-Only routes that actually spend Gemini meal analysis are gated. Today that is
-`/api/analyze-meal` only (both precise and cheat modes). `cheat-repeat`,
-`cheat-occasions`, `barcode/*`, and `ingredients/search` do **not** run AI
-meal analysis and are intentionally ungated.
+The shared helpers live in `lib/domain/billing/feature-gate.ts`:
+`assertFeatureAccess` throws the locked error, `checkFeatureGate` returns the
+verdict for callers that would rather degrade than fail (the nutrition overview
+strips its micronutrient sections instead of refusing the whole response). A
+blocked actor gets HTTP **402** with `code: "feature_locked"`; clients key on
+the 402 status to open the paywall.
+
+The API surface reports the flag too: the entitlements endpoint returns
+`enforcementEnabled` alongside the snapshot, so a client can tell "you are not
+entitled" from "nothing is being enforced yet" without guessing from env.
+
+#### Gate matrix
+
+| Feature key | What it gates | Server chokepoints |
+|---|---|---|
+| `ai_analysis` | Text meal analysis, including fresh cheat-meal estimates and natural-language refinement | `POST /api/analyze-meal` |
+| `label_scan` | Nutrition-label OCR scan and the log that follows it | `scanNutritionLabelAction`, `stageOcrMealAction` (`lib/actions/logging/nutrition-ocr.ts`); `POST /api/v1/nutrition-label/scan`, `POST /api/v1/nutrition-label/log` |
+| `micronutrients` | The micronutrient sections of the nutrition overview and the food-source candidates behind them | `getNutritionOverview` (response stripped by `stripMicronutrients` in `lib/domain/nutrition/premium-scope.ts`, flagged `micronutrientsLocked`); `POST /api/v1/nutrition/candidates` |
+| `relog` | Duplicate / log-again, and relog from the slash picker | `duplicateMealAction`, `stageRelogAnalysisAction`, `relogMealItemsAction` (reading the relog candidates stays open) |
+| `cheat_meal` | Cheat repeat and cheat confirm | `stageCheatRepeatAction`; `assertCheatConfirmAllowed` in `confirm-cheat.ts`, called from `confirmAndSaveMealAction` (reading cheat occasions stays open) |
+| `copy_split` | Sending a copy/split offer, and "log this too" from the wall | `shareMealWithFriendsAction`, `logSharedMealAction` |
+| `unlimited_circle` | Creating a group, posting group messages, adding members — plus the free-tier circle caps | `createChatGroup`, `sendChatGroupMessage`, `addChatGroupMembers`, `acceptInvite`; quota helpers in `lib/domain/social/quota/circle-quota.ts` |
+
+Notes the table cannot hold:
+
+- **"Visual edit" has no key.** The pre-confirm portion picker is only reachable
+  from the AI-analysis and relog flows, both gated, so it is premium
+  transitively; a dedicated gate would be a second lock on the same door.
+- **Accepting a meal share is free.** `acceptMealShareInviteAction` is
+  deliberately ungated: the sender already paid for the copy/split and their
+  meal has already been halved, so gating the recipient would strand a premium
+  user's split with no one able to take the other half.
+- **Group messages only.** `sendChatGroupMessage` gates `kind = 'group'`; direct
+  messages stay free.
+- **Free-tier circle caps.** Free users get at most 2 groups (checked per added
+  user, so the cap follows whoever is being added) and 10 friends (checked for
+  *both* parties when an invite is accepted). Relationships that already exceed
+  a cap are grandfathered — the caps block new growth, they do not tear down
+  what exists.
+- **409, not 402, across users.** When the *other* party's quota is what blocks
+  an action, the server returns HTTP **409** with `code: "CIRCLE_LIMIT_REACHED"`
+  rather than 402. A 402 would pop the paywall in front of the wrong person —
+  the actor cannot buy their way past someone else's full circle. Denials that
+  are genuinely the actor's own stay 402 `feature_locked`.
+
+Routes that spend no gated capability — `cheat-occasions`, `barcode/*`,
+`ingredients/search`, and the read side of the relog/cheat pickers — remain
+open on purpose.
 
 `BILLING_PURCHASES_ENABLED` is a separate default-off commerce switch. When it
 is false, free users do not see paywalls/trial upsells and both web and mobile

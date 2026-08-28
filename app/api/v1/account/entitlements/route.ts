@@ -23,6 +23,7 @@ export async function GET() {
     return Response.json({
       userId: profile.userId,
       purchasesEnabled,
+      enforcementEnabled: getBillingConfig().enforcementEnabled,
       tier: state.tier,
       reconciliationRequired: state.reconciliationRequired,
       isLifetime: state.isLifetime,

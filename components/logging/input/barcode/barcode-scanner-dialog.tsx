@@ -1,8 +1,9 @@
 'use client';
 
-import { Barcode, FileText } from 'lucide-react';
+import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { BarcodeProductStep } from '@/components/logging/input/barcode/barcode-product-step';
 import { BarcodeSearchForm } from '@/components/logging/input/barcode/barcode-search-form';
+import { ScanTypeToggle } from '@/components/logging/input/barcode/scan-type-toggle';
 import { useBarcodeScannerDialogState } from '@/components/logging/input/barcode/use-barcode-scanner-dialog-state';
 import { OcrReviewStep } from '@/components/logging/input/ocr/review/ocr-review-step';
 import { OcrScannerTab } from '@/components/logging/input/ocr/scan/ocr-scanner-tab';
@@ -16,9 +17,9 @@ interface BarcodeScannerDialogProps {
   onSuccess: () => void;
 }
 
-const SCAN_TYPES = ['barcode', 'ocr'] as const;
-
 export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
+  const { locked, openPaywall } = usePremiumGuard();
+  const ocrLocked = locked('label_scan');
   const {
     t,
     scanType,
@@ -45,6 +46,17 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
     handleConfirmOcrMeal,
     handleClose,
   } = useBarcodeScannerDialogState(props);
+
+  // The sheet owns the viewport on mobile, so the paywall has to replace it
+  // rather than stack on top of it — close first, then open the dialog. A save
+  // in flight refuses the close, and the paywall must stay shut with it.
+  const handleSelectScanType = (next: 'barcode' | 'ocr') => {
+    if (next === 'ocr' && ocrLocked) {
+      if (handleClose()) openPaywall();
+      return;
+    }
+    handleScanTypeChange(next);
+  };
 
   const title =
     step === 'ocr-review'
@@ -73,35 +85,11 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
       {step === 'input' ? (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="border-kallo-border/70 border-b px-4 pt-3 pb-1 sm:px-6">
-            <div className="grid grid-cols-2 rounded-xl bg-kallo-track p-1">
-              {SCAN_TYPES.map((st) => (
-                <button
-                  key={st}
-                  type="button"
-                  aria-pressed={scanType === st}
-                  onClick={() => {
-                    handleScanTypeChange(st);
-                  }}
-                  className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-medium text-[12px] transition-all ${
-                    scanType === st
-                      ? 'bg-white text-kallo-text shadow-sm'
-                      : 'text-kallo-text-muted hover:text-kallo-text'
-                  }`}
-                >
-                  {st === 'barcode' ? (
-                    <>
-                      <Barcode className="h-3.5 w-3.5" />
-                      {t('barcodeScan')}
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="h-3.5 w-3.5" />
-                      {t('ocrTab')}
-                    </>
-                  )}
-                </button>
-              ))}
-            </div>
+            <ScanTypeToggle
+              scanType={scanType}
+              ocrLocked={ocrLocked}
+              onSelect={handleSelectScanType}
+            />
           </div>
 
           {scanType === 'ocr' ? (
@@ -131,7 +119,7 @@ export function BarcodeScannerDialog(props: BarcodeScannerDialogProps) {
               selectedCameraId={effectiveCameraId}
               onCameraChange={setSelectedCameraId}
               onFallbackToOcr={() => {
-                handleScanTypeChange('ocr');
+                handleSelectScanType('ocr');
               }}
               onSearch={handleSearch}
             />

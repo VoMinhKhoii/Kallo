@@ -4,6 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import { FeedArea } from '../feed-area';
 
+// The feed's actions ask the app-wide premium provider, which this test does
+// not mount. Unlocked — the gate itself is tested elsewhere.
+vi.mock('@/components/billing/premium-guard-provider', () => ({
+  usePremiumGuard: () => ({
+    locked: () => false,
+    requirePremium: () => true,
+    openPaywall: vi.fn(),
+  }),
+}));
+
 vi.mock('@/components/logging/feed/macro-summary', () => ({
   MacroSummary: ({ totals }: { totals: { calories: number } }) => (
     <div data-testid="macro-summary" data-calories={totals.calories} />

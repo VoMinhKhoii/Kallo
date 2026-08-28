@@ -2,8 +2,10 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/app/shell/app-shell';
 import { EntitlementLifecycleSync } from '@/components/billing/activation/entitlement-lifecycle-sync';
+import { PremiumGuardProvider } from '@/components/billing/premium-guard-provider';
 import { getMyPublicProfile } from '@/lib/actions/groups/profile';
 import { isAdminEmail } from '@/lib/admin/authz/is-admin';
+import { getBillingConfig } from '@/lib/domain/billing/billing';
 import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 import { createClient } from '@/lib/infra/supabase/server';
 import {
@@ -73,6 +75,12 @@ export default async function AppLayout({
   // Read sidebar UI prefs from cookies so the first paint matches the user's
   // saved state (no flash, no hydration mismatch). Falls back to sensible
   // defaults: open + click mode.
+  // Read the kill-switch here rather than letting the client discover it from
+  // an entitlements fetch: with enforcement off the guard provider skips that
+  // request and never pulls the paywall chunk. Deliberately uncaught — a
+  // misconfigured launch date must fail loudly, not quietly gate nothing.
+  const { enforcementEnabled } = getBillingConfig();
+
   const cookieStore = await cookies();
   const initialSidebarState =
     parseSidebarState(cookieStore.get(SIDEBAR_STATE_COOKIE)?.value) ?? 'open';
@@ -92,7 +100,13 @@ export default async function AppLayout({
       initialSidebarExpandMode={initialSidebarExpandMode}
     >
       <EntitlementLifecycleSync userId={user.id} />
-      {children}
+      <PremiumGuardProvider
+        userId={user.id}
+        email={user.email ?? null}
+        enforcementEnabled={enforcementEnabled}
+      >
+        {children}
+      </PremiumGuardProvider>
     </AppShell>
   );
 }

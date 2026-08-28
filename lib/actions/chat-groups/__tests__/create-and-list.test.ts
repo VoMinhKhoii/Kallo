@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Errors } from '@/lib/core/errors/catalog';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -40,6 +41,17 @@ vi.mock('drizzle-orm/pg-core', async (importOriginal) => {
 });
 
 vi.mock('@/lib/infra/db/schema', async () => await import('./schema-doubles'));
+
+// Premium circle gates: pass-through unless a test arms one, so the suite
+// never depends on the BILLING_ENFORCEMENT_ENABLED env var.
+const { mockAssertActor, mockAssertCapacity } = vi.hoisted(() => ({
+  mockAssertActor: vi.fn(async (..._args: unknown[]) => undefined),
+  mockAssertCapacity: vi.fn(async (..._args: unknown[]) => undefined),
+}));
+vi.mock('@/lib/domain/social/quota/circle-quota', () => ({
+  assertUnlimitedCircleActor: mockAssertActor,
+  assertGroupCapacity: mockAssertCapacity,
+}));
 
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks
@@ -126,6 +138,32 @@ describe('createChatGroup', () => {
       userId: USER_B,
       role: 'member',
     });
+    expect(mockAssertActor).toHaveBeenCalledWith(expect.anything(), USER_A);
+    expect(mockAssertCapacity.mock.lastCall?.[1]).toEqual([USER_B, USER_C]);
+  });
+
+  it('propagates the actor 402 without opening the transaction', async () => {
+    acceptedFriendsQuery([USER_B]);
+    mockAssertActor.mockRejectedValueOnce(
+      Errors.featureLocked('unlimited_circle', 'not_entitled')
+    );
+
+    await expect(
+      createChatGroup(USER_A, { name: 'Trip', memberUserIds: [USER_B] })
+    ).rejects.toMatchObject({ status: 402, code: 'feature_locked' });
+    expect(mockDbTransaction).not.toHaveBeenCalled();
+  });
+
+  it('propagates a 409 when an invited member is at their group cap', async () => {
+    acceptedFriendsQuery([USER_B]);
+    mockAssertCapacity.mockRejectedValueOnce(
+      Errors.circleLimitReached('Phở Fan đã đạt giới hạn 2 nhóm.')
+    );
+
+    await expect(
+      createChatGroup(USER_A, { name: 'Trip', memberUserIds: [USER_B] })
+    ).rejects.toMatchObject({ status: 409, code: 'CIRCLE_LIMIT_REACHED' });
+    expect(mockTxInsert).not.toHaveBeenCalled();
   });
 });
 

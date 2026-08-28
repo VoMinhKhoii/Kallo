@@ -1,9 +1,19 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { PersistedMealCard } from '../persisted-meal-card';
+
+// The action bar asks the app-wide premium provider, which this test does not
+// mount. Unlocked — the gate itself is tested elsewhere.
+vi.mock('@/components/billing/premium-guard-provider', () => ({
+  usePremiumGuard: () => ({
+    locked: () => false,
+    requirePremium: () => true,
+    openPaywall: vi.fn(),
+  }),
+}));
 
 function renderCard(meal: PersistedMeal) {
   const queryClient = new QueryClient();

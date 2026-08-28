@@ -55,6 +55,7 @@
     "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn.",
     "vitamins": "Vitamin",
     "minerals": "Khoáng chất",
+    "other": "Khác",
     "sourceNote": "Mục tiêu theo tham chiếu WHO/FAO · RDA Việt Nam · NASEM DRI."
   },
   "more": {

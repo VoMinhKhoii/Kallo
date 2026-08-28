@@ -29,7 +29,7 @@ import {
   pendingAnalyses,
   unmatchedIngredients,
 } from '@/lib/infra/db/schema';
-import { confirmCheatMeal } from './confirm-cheat';
+import { assertCheatConfirmAllowed, confirmCheatMeal } from './confirm-cheat';
 import { insertDefaultCircleShare } from './insert-default-share';
 import type { ConfirmMealResponse, PersistedMealItemGroup } from './types';
 
@@ -82,6 +82,14 @@ export async function confirmAndSaveMealAction(input: {
 }): Promise<ConfirmMealResponse> {
   const parsed = confirmMealSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
+  // Premium (cheat_meal) — resolved and enforced BEFORE the transaction opens
+  // (no entitlement reads inside an open tx; pool max is 2). No-op unless the
+  // pending row is a cheat one. See `assertCheatConfirmAllowed`.
+  await assertCheatConfirmAllowed(
+    user.id,
+    profile.createdAt,
+    parsed.analysisId
+  );
 
   return await db.transaction(async (tx) => {
     // Atomically consume the pending analysis (prevents duplicate confirms)

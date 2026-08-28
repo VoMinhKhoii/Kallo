@@ -66,6 +66,16 @@ vi.mock('next-intl', async () => {
   };
 });
 
+// Relog is Premium-gated through the app-wide provider, which this harness
+// does not mount. Unlocked here — the gate has its own tests.
+vi.mock('@/components/billing/premium-guard-provider', () => ({
+  usePremiumGuard: () => ({
+    locked: () => false,
+    requirePremium: () => true,
+    openPaywall: vi.fn(),
+  }),
+}));
+
 const loadCandidates = vi.hoisted(() => vi.fn());
 const stageRelog = vi.hoisted(() => vi.fn());
 

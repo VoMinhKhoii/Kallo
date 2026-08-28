@@ -11,9 +11,12 @@ interface NutrientGridProps {
 
 /**
  * The micronutrient overview — every tracked nutrient in a 2-column grid,
- * grouped Vitamins then Minerals with an inline progress bar per cell. The
- * lean Flutter nutrition layout: dense but scannable, no per-nutrient
+ * grouped Vitamins, Minerals, then Other with an inline progress bar per cell.
+ * The lean Flutter nutrition layout: dense but scannable, no per-nutrient
  * expand/collapse rows.
+ *
+ * Minerals matches `group === 'mineral'` rather than "not a vitamin": fiber is
+ * a card now, and it is neither, so a catch-all filed it under Minerals.
  */
 export function NutrientGrid({
   micronutrients,
@@ -22,7 +25,10 @@ export function NutrientGrid({
   const t = useTranslations('nutrition');
   const all = [...micronutrients, ...moreNutrients];
   const vitamins = all.filter((c) => c.group === 'vitamin');
-  const minerals = all.filter((c) => c.group !== 'vitamin');
+  const minerals = all.filter((c) => c.group === 'mineral');
+  const other = all.filter(
+    (c) => c.group !== 'vitamin' && c.group !== 'mineral'
+  );
 
   return (
     <div className="flex flex-col gap-7">
@@ -31,6 +37,9 @@ export function NutrientGrid({
       ) : null}
       {minerals.length > 0 ? (
         <Group label={t('grid.minerals')} cards={minerals} />
+      ) : null}
+      {other.length > 0 ? (
+        <Group label={t('grid.other')} cards={other} />
       ) : null}
     </div>
   );

@@ -1,15 +1,17 @@
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { FEATURES } from '@/lib/domain/billing/entitlement/features';
 import type { EntitlementsResponse } from '@/lib/domain/billing/entitlements-client';
 
 const fetchEntitlements = vi.fn();
 const reconcileEntitlements = vi.fn();
 
-vi.mock('@/lib/domain/billing/entitlements-client', () => ({
-  entitlementsKeys: {
-    all: ['entitlements'],
-    user: (userId: string) => ['entitlements', userId],
-  },
+// Only the two network fetchers are stubbed: `applyEntitlementSnapshot` is the
+// real one so the caching assertions below still measure real cache writes.
+vi.mock('@/lib/domain/billing/entitlements-client', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/lib/domain/billing/entitlements-client')
+  >()),
   fetchEntitlements: (...args: unknown[]) => fetchEntitlements(...args),
   reconcileEntitlements: (...args: unknown[]) => reconcileEntitlements(...args),
 }));
@@ -20,6 +22,7 @@ function snapshot(tier: 'free' | 'premium'): EntitlementsResponse {
   return {
     userId: 'user-a',
     purchasesEnabled: true,
+    enforcementEnabled: false,
     tier,
     reconciliationRequired: false,
     isLifetime: false,
@@ -31,13 +34,21 @@ function snapshot(tier: 'free' | 'premium'): EntitlementsResponse {
     managementStore: null,
     hasActiveSubscription: false,
     trial: { active: false, endsAt: null, daysRemaining: 0 },
-    features: {
-      ai_analysis: {
-        allowed: tier === 'premium',
-        reason: tier === 'premium' ? 'entitled' : 'not_entitled',
-      },
-    },
+    features: entitlementFeatures(tier === 'premium'),
   };
+}
+
+// Every gated feature answers the same way in these tests; derive them from
+// the catalog so adding a feature never breaks this fixture.
+function entitlementFeatures(
+  allowed: boolean
+): EntitlementsResponse['features'] {
+  return Object.fromEntries(
+    Object.keys(FEATURES).map((key) => [
+      key,
+      { allowed, reason: allowed ? 'entitled' : 'not_entitled' },
+    ])
+  ) as EntitlementsResponse['features'];
 }
 
 /**

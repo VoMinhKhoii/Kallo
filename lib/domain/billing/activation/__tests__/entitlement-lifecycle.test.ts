@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { FEATURES } from '@/lib/domain/billing/entitlement/features';
 import type { EntitlementsResponse } from '@/lib/domain/billing/entitlements-client';
 import { createEntitlementLifecycleSync } from '../entitlement-lifecycle';
 
@@ -8,6 +9,7 @@ function snapshot(
   return {
     userId: 'user-a',
     purchasesEnabled: true,
+    enforcementEnabled: false,
     tier: 'free',
     reconciliationRequired: false,
     isLifetime: false,
@@ -19,7 +21,12 @@ function snapshot(
     managementStore: null,
     hasActiveSubscription: false,
     trial: { active: false, endsAt: null, daysRemaining: 0 },
-    features: { ai_analysis: { allowed: false, reason: 'not_entitled' } },
+    features: Object.fromEntries(
+      Object.keys(FEATURES).map((key) => [
+        key,
+        { allowed: false, reason: 'not_entitled' },
+      ])
+    ) as EntitlementsResponse['features'],
     ...overrides,
   };
 }

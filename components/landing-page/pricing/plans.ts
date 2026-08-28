@@ -16,9 +16,15 @@
  * still while you read it.
  *
  * Note this describes the plan Kallo is launching with, not what the code
- * enforces: `lib/billing/entitlement/features.ts` gates exactly one feature,
- * `ai_analysis`. The section carries a beta note saying prices apply when beta
- * ends, so nothing here claims a paywall that is live.
+ * enforces. The catalog in `lib/domain/billing/entitlement/features.ts` gates
+ * seven features — `ai_analysis`, `label_scan`, `micronutrients`, `relog`,
+ * `cheat_meal`, `copy_split` and `unlimited_circle` — which is what the Premium
+ * list below is drawn from. "Visual edit" is the one entry with no key of its
+ * own: the portion picker it names is only reachable from the AI-analysis and
+ * relog flows, so gating either one already puts it behind the paywall and a
+ * dedicated gate would only be a second lock on the same door. The section
+ * carries a beta note saying prices apply when beta ends, so nothing here
+ * claims a paywall that is live.
  */
 export type PlanId = 'free' | 'premium' | 'lifetime';
 
@@ -34,17 +40,12 @@ export const PLAN_IDS = ['free', 'premium'] as const;
 
 /** Feature keys per tier, resolved against `landing.pricing.features`. */
 export const PLAN_FEATURES: Record<PlanId, readonly string[]> = {
-  free: [
-    'barcode',
-    'manualLogging',
-    'joinGroups',
-    'friends',
-    'macros',
-    'micros',
-  ],
+  free: ['barcode', 'manualLogging', 'joinGroups', 'friends', 'macros'],
   premium: [
     'textLogging',
+    'labelScan',
     'visualEdit',
+    'micros',
     'relog',
     'cheatMeal',
     'copySplit',

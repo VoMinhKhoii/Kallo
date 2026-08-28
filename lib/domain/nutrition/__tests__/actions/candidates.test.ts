@@ -1,12 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockRequireAuthAndProfile, mockLimit } = vi.hoisted(() => ({
-  mockRequireAuthAndProfile: vi.fn(),
-  mockLimit: vi.fn(),
-}));
+const { mockRequireAuthAndProfile, mockLimit, mockAssertFeatureAccess } =
+  vi.hoisted(() => ({
+    mockRequireAuthAndProfile: vi.fn(),
+    mockLimit: vi.fn(),
+    mockAssertFeatureAccess: vi.fn(),
+  }));
 
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: mockRequireAuthAndProfile,
+}));
+
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  assertFeatureAccess: mockAssertFeatureAccess,
 }));
 
 vi.mock('@/lib/infra/db/client', () => {
@@ -20,6 +26,7 @@ vi.mock('@/lib/infra/db/client', () => {
   return { db: chain };
 });
 
+import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import { getFoodSourceCandidates } from '@/lib/domain/nutrition/actions/candidates';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
@@ -28,8 +35,20 @@ describe('getFoodSourceCandidates', () => {
     vi.clearAllMocks();
     mockRequireAuthAndProfile.mockResolvedValue({
       user: { id: 'user-1' },
-      profile: {},
+      profile: { createdAt: new Date('2026-01-01T00:00:00.000Z') },
     });
+    mockAssertFeatureAccess.mockResolvedValue(undefined);
+  });
+
+  it('refuses a viewer without the micronutrients feature, before any query', async () => {
+    mockAssertFeatureAccess.mockRejectedValueOnce(
+      new FeatureLockedError('micronutrients', 'not_entitled', 'locked')
+    );
+
+    await expect(
+      getFoodSourceCandidates({ nutrient: 'calciumMg' })
+    ).rejects.toBeInstanceOf(FeatureLockedError);
+    expect(mockLimit).not.toHaveBeenCalled();
   });
 
   it('rejects non-card nutrient keys (e.g. hidden vitamin H)', async () => {
@@ -49,6 +68,10 @@ describe('getFoodSourceCandidates', () => {
     const result = await getFoodSourceCandidates({ nutrient: 'calciumMg' });
 
     expect(requireAuthAndProfile).toHaveBeenCalledTimes(1);
+    expect(mockAssertFeatureAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-1' }),
+      'micronutrients'
+    );
     expect(result.nutrient).toBe('calciumMg');
     expect(result.foods).toHaveLength(2);
     expect(result.foods[0]).toMatchObject({

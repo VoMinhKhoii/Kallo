@@ -9,6 +9,8 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../services/billing/entitlement_state.dart';
+import '../../../services/billing/entitlements_provider.dart';
 import '../../../services/http/api_client.dart';
 import '../../../services/http/query.dart';
 import '../../../services/auth/session_provider.dart';
@@ -52,6 +54,12 @@ final Map<String, NutritionOverview> _lastOverviewByArg = {};
 /// value drove the highlight and 30d → 90d flashed 7d on the way.
 final Map<String, NutritionOverview> _lastOverviewByAccount = {};
 
+/// The tier the cached overviews were fetched under. An overview is
+/// entitlement-shaped — `micronutrientsLocked` and the emptied premium
+/// sections depend on what the server saw — so a tier flip has to drop the
+/// seeds rather than flash a stale locked (or stale unlocked) page.
+EntitlementTier? _cachedTier;
+
 String _accountKey(String? userId) =>
     '${userId ?? 'signed-out'}:${nutritionTimezoneOffset()}';
 
@@ -63,6 +71,17 @@ class NutritionOverviewNotifier
   @override
   Future<NutritionOverview> build(NutritionOverviewArg arg) async {
     final userId = ref.watch(currentSessionProvider)?.user.id;
+    // Watched, not read: a purchase (or a lapse) rebuilds this provider, which
+    // refetches the overview under the new tier. Null means "not resolved yet"
+    // — never a reason to throw away good data.
+    final tier = ref.watch(
+      entitlementsProvider(userId).select((e) => e.valueOrNull?.tier),
+    );
+    if (tier != null && tier != _cachedTier) {
+      _cachedTier = tier;
+      _lastOverviewByArg.clear();
+      _lastOverviewByAccount.clear();
+    }
     final cacheKey = _overviewCacheKey(userId, arg);
     // This selection's own data if we have it, otherwise whatever the account
     // last saw, so the layout never blanks mid-switch.

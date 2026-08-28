@@ -1,6 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
+import { Errors } from '@/lib/core/errors/catalog';
 
 vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
+
+// Premium circle gates: pass-through unless a test arms one, so the suite
+// never depends on the BILLING_ENFORCEMENT_ENABLED env var.
+const { mockAssertActor, mockAssertCapacity } = vi.hoisted(() => ({
+  mockAssertActor: vi.fn(async (..._args: unknown[]) => undefined),
+  mockAssertCapacity: vi.fn(async (..._args: unknown[]) => undefined),
+}));
+vi.mock('@/lib/domain/social/quota/circle-quota', () => ({
+  assertUnlimitedCircleActor: mockAssertActor,
+  assertGroupCapacity: mockAssertCapacity,
+}));
 
 import { renameChatGroup } from '@/lib/actions/chat-groups/details';
 import {
@@ -210,6 +222,39 @@ describe('chat-group membership locking', () => {
         state.db as never
       )
     ).rejects.toThrow('Nhóm tối đa 50 thành viên.');
+    expect(state.members.has(MEMBER_ID)).toBe(false);
+  });
+
+  it('propagates the actor 402 without inserting the member', async () => {
+    const state = atomicMembershipDb();
+    mockAssertActor.mockRejectedValueOnce(
+      Errors.featureLocked('unlimited_circle', 'not_entitled')
+    );
+
+    await expect(
+      addChatGroupMembers(
+        OWNER_ID,
+        { groupId: GROUP_ID, memberUserIds: [MEMBER_ID] },
+        state.db as never
+      )
+    ).rejects.toMatchObject({ status: 402, code: 'feature_locked' });
+    expect(state.members.has(MEMBER_ID)).toBe(false);
+  });
+
+  it('propagates a 409 when an added member is at their group cap', async () => {
+    const state = atomicMembershipDb();
+    mockAssertCapacity.mockRejectedValueOnce(
+      Errors.circleLimitReached('Phở Fan đã đạt giới hạn 2 nhóm.')
+    );
+
+    await expect(
+      addChatGroupMembers(
+        OWNER_ID,
+        { groupId: GROUP_ID, memberUserIds: [MEMBER_ID] },
+        state.db as never
+      )
+    ).rejects.toMatchObject({ status: 409, code: 'CIRCLE_LIMIT_REACHED' });
+    expect(mockAssertCapacity.mock.lastCall?.[1]).toEqual([MEMBER_ID]);
     expect(state.members.has(MEMBER_ID)).toBe(false);
   });
 

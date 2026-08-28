@@ -17,6 +17,7 @@ import { and, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareMealWithFriendsSchema } from '@/lib/core/validation/social';
+import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -39,7 +40,14 @@ export async function shareMealWithFriendsAction(input: {
   meal: PersistedMeal | null;
 }> {
   const parsed = shareMealWithFriendsSchema.parse(input);
-  const { user } = await requireAuthAndProfile();
+  const { user, profile } = await requireAuthAndProfile();
+  // Premium (copy_split): gated on the SEND side only, before the transaction.
+  // The initiator pays; accept stays free (see invite-response) because a split
+  // has already scaled this meal down by the time the recipient sees the offer.
+  await assertFeatureAccess(
+    { userId: user.id, profileCreatedAt: profile.createdAt },
+    'copy_split'
+  );
 
   // Dedup and drop self — you cannot share a meal with yourself.
   const recipientIds = Array.from(new Set(parsed.friendUserIds)).filter(

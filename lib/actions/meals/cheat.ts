@@ -12,6 +12,7 @@ import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
+import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { groupOccasions } from '@/lib/domain/cheat/occasion-grouping';
 import { withLevelsAsDefaults } from '@/lib/domain/cheat/slider-nutrition';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
@@ -82,7 +83,14 @@ export async function stageCheatRepeatAction(input: {
   loggedAt: string;
 }> {
   const parsed = stageCheatRepeatSchema.parse(input);
-  const { user } = await requireAuthAndProfile();
+  const { user, profile } = await requireAuthAndProfile();
+  // Premium: cheat meals are a Premium-card feature. Only the WRITE path is
+  // gated — `loadRecentCheatOccasionsAction` above stays open so a free user
+  // still sees their own history (and the chips that sell the upgrade).
+  await assertFeatureAccess(
+    { userId: user.id, profileCreatedAt: profile.createdAt },
+    'cheat_meal'
+  );
 
   const [source] = await db
     .select({

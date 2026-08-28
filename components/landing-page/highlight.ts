@@ -8,6 +8,14 @@
  * that changed: the words a user added, the macro they moved, the saving a
  * yearly plan makes. Add a third use and it stops meaning anything.
  *
+ * SANCTIONED ADDITIONAL USE — the Premium chip
+ * (`components/billing/premium-chip.tsx`) wears the badge shape on gated entry
+ * points inside the app. It stays within the rule rather than breaking it: the
+ * chip marks the one thing that changed about that control — it now costs
+ * money — and it is deliberately the same ink as the pricing card's "Save …%"
+ * pill, so the mark a user learns on the landing page keeps its meaning after
+ * they sign in. Nothing else may claim this colour.
+ *
  * The colour itself is the `--kallo-highlight` token in `app/globals.css`, not
  * a hex written here — these two strings only choose its shape.
  */

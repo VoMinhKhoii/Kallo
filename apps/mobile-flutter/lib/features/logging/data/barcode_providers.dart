@@ -6,6 +6,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../services/billing/feature_lock.dart';
 import '../../../services/http/api_client.dart';
 import '../../../models/nutrition/barcode_product.dart';
 import 'logging_keys.dart';
@@ -57,6 +58,10 @@ class BarcodeFlowState {
 String _errorKeyFor(Object error) {
   if (error is ApiError) {
     switch (error.code) {
+      // Mirrored from the label controller — kept in sync with it. Lowercase:
+      // the gate's code comes from the shared app-error catalog.
+      case kFeatureLockedCode:
+        return 'logging.barcode.error.featureLocked';
       case 'BARCODE_NOT_FOUND':
         return 'logging.barcode.error.notFound';
       case 'BARCODE_NOT_CACHED':

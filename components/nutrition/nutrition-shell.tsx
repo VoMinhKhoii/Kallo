@@ -3,8 +3,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { MotionConfig } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { useCallback, useMemo, useState } from 'react';
 import { getNutritionOverview } from '@/lib/domain/nutrition/actions/overview/get-overview';
 import { buildNutritionView } from '@/lib/domain/nutrition/bucket-detail';
 import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
@@ -15,11 +14,12 @@ import type {
 import { NutritionSkeleton } from './nutrition-skeleton';
 import { DaySummary } from './sections/day-summary';
 import { findTodayIndex, localIsoDate } from './sections/macro-trend-utils';
-import { NutrientGrid } from './sections/nutrient-grid';
+import { NutrientSection } from './sections/nutrient-section';
 import { NutritionHeader } from './sections/nutrition-header';
 import { SourceAttribution } from './sections/source-attribution';
 import { EmptyState } from './states/empty-state';
 import { InlineError } from './states/inline-error';
+import { useNutritionShellEffects } from './use-nutrition-shell-effects';
 
 function getTimezoneOffset(): number | null {
   if (typeof window === 'undefined') return null;
@@ -33,7 +33,7 @@ export function NutritionShell() {
   const [range, setRange] = useState<NutritionRangeInput>('auto');
   const [dayScope, setDayScope] = useState<NutritionDayScope>('complete');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const hasShownErrorToast = useRef(false);
+  const clearSelection = useCallback(() => setSelectedIndex(null), []);
   const today = useMemo(() => localIsoDate(), []);
 
   const overviewQuery = useQuery({
@@ -54,28 +54,13 @@ export function NutritionShell() {
   const overviewErrorToast = t('errors.overviewToast');
   const overviewRetryLabel = t('errors.retry');
 
-  // A pointer click on a column focuses nothing, so the container's onKeyDown
-  // never receives the Escape that follows. Listen at the document while a
-  // selection is live; the container handler still serves the keyboard path.
-  useEffect(() => {
-    if (selectedIndex === null) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSelectedIndex(null);
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [selectedIndex]);
-
-  useEffect(() => {
-    if (!isError) {
-      hasShownErrorToast.current = false;
-      return;
-    }
-    if (hasShownErrorToast.current) return;
-    hasShownErrorToast.current = true;
-    console.error('[nutrition] overview query failed', error);
-    toast.error(overviewErrorToast);
-  }, [isError, error, overviewErrorToast]);
+  useNutritionShellEffects({
+    selectedIndex,
+    clearSelection,
+    isError,
+    error,
+    errorToast: overviewErrorToast,
+  });
 
   if (overviewQuery.isLoading) return <NutritionSkeleton />;
 
@@ -180,9 +165,10 @@ export function NutritionShell() {
                   so the layout someone will use every day is what they see
                   first. */}
               {overview.loggedDays === 0 ? <EmptyState /> : null}
-              <NutrientGrid
+              <NutrientSection
                 micronutrients={micronutrients}
                 moreNutrients={moreNutrients}
+                locked={overview.micronutrientsLocked}
               />
               {/* The source line belongs to the page, not to the last section
                   above it — `mt-auto` keeps it on the bottom edge when the

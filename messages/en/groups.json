@@ -172,6 +172,9 @@
     "remove": "Remove",
     "removeError": "Couldn't remove them. Try again."
   },
+  "circleLimit": {
+    "memberAtLimit": "Someone in your selection has reached the free plan's limit. They'll need Premium to join more."
+  },
   "error": {
     "title": "Couldn't load your circle",
     "body": "Something went wrong. Check your connection and try again.",

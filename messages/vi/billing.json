@@ -57,6 +57,15 @@
     "expiryTitle": "Gói của bạn sắp kết thúc",
     "expiryBody": "Quyền truy cập kết thúc sau {days} ngày. Gia hạn để giữ phân tích bữa ăn bằng AI."
   },
+  "premium": {
+    "chip": "Premium",
+    "micronutrientsLock": {
+      "title": "Thông tin vi chất",
+      "body": "Phân tích vitamin và khoáng chất trong mọi bữa bạn ghi lại là tính năng Premium. Nâng cấp để xem vi chất nào bạn đang ổn định và vi chất nào cần chú ý.",
+      "cta": "Nâng cấp"
+    },
+    "purchasesUnavailable": "Hiện chưa thể nâng cấp. Các tính năng Premium sẽ sớm được mở."
+  },
   "trialBanner": {
     "daysRemaining": "Còn {days} ngày dùng thử miễn phí",
     "upgrade": "Nâng cấp"
