@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
@@ -64,9 +65,13 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                 : 'groups.shareMeal.copySuccess')
             .plural(count, namedArgs: {'count': '$count'}),
       );
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
+      // Copy/split is gated on the INITIATOR: a 402 means "not entitled", not
+      // a failed share. Server enforcement stays the only gate — this is
+      // purely how the refusal is presented.
+      if (handledFeatureLock(context, error)) return;
       showTopToast(
         context,
         tr('groups.shareMeal.error'),

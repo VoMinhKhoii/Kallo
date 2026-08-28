@@ -1,7 +1,16 @@
 import { ImageResponse } from '@vercel/og';
+import { eq } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { Errors } from '@/lib/core/errors/catalog';
 import { serializeError } from '@/lib/core/errors/serialize';
+import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
+import { db } from '@/lib/infra/db/client';
+import {
+  analysisGuardEvents,
+  mealShares,
+  meals,
+  publicProfiles,
+} from '@/lib/infra/db/schema';
 import {
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
@@ -13,8 +22,8 @@ import { loadOgFonts } from '@/lib/seo/og/fonts';
 import { dishColorFromSeed, OG_COLORS } from '@/lib/seo/og/palette';
 import { type MacroBar, MacroCard } from './_components/macro-card';
 
-// Node runtime: the route reads the DB (RLS-gated via the user's Supabase
-// session) and the vendored font binaries off disk.
+// Node runtime: the route reads the DB over the Drizzle owner connection and
+// the vendored font binaries off disk.
 export const runtime = 'nodejs';
 
 const ogRoute = '/api/og/macro-card';
@@ -45,10 +54,9 @@ export async function GET(
       throw Errors.notFound('Macro card not found.');
     }
 
-    // Auth + RLS-gated read share the same Supabase session client. RLS on
-    // meal_shares/meals only returns rows the viewer is allowed to see (own
-    // meal, or an accepted friend's 'circle' share, or an active coach's
-    // client) — an unauthorized or unshared shareId resolves to no row.
+    // Supabase is the auth session only — every table read below goes through
+    // Drizzle, because the `anon`/`authenticated` roles hold no table grants
+    // (20260825120000_lock_postgrest_data_plane).
     const supabase = await createClient();
     const {
       data: { user },
@@ -67,8 +75,6 @@ export async function GET(
     if (!guard.allowed) {
       // Best-effort guard event log (non-fatal).
       try {
-        const { db } = await import('@/lib/infra/db/client');
-        const { analysisGuardEvents } = await import('@/lib/infra/db/schema');
         await db.insert(analysisGuardEvents).values(
           buildAnalysisGuardEvent({
             userId: user.id,
@@ -86,55 +92,69 @@ export async function GET(
       );
     }
 
-    const { data: share } = await supabase
-      .from('meal_shares')
-      .select('id, meal_id, actor_id')
-      .eq('id', shareId)
-      .maybeSingle();
-    if (!share) {
-      // RLS denied, or the share does not exist — indistinguishable by design.
+    const [share] = await db
+      .select({
+        mealId: mealShares.mealId,
+        actorId: mealShares.actorId,
+        sharedAt: mealShares.sharedAt,
+        visibility: mealShares.visibility,
+      })
+      .from(mealShares)
+      .where(eq(mealShares.id, shareId))
+      .limit(1);
+    // Drizzle bypasses RLS, so the visibility rule that used to be enforced by
+    // the meal_shares SELECT policy is enforced here instead — same contract
+    // (own share, or a non-private share from someone in the viewer's circle),
+    // and the row is already loaded so the owner case costs no extra query.
+    // A denied share and a missing one stay indistinguishable by design.
+    if (!share || !(await canViewShareOwnedBy(user.id, share, db))) {
       throw Errors.notFound('Macro card not found.');
     }
 
-    const { data: meal } = await supabase
-      .from('meals')
-      .select(
-        'raw_input, calories_kcal, protein_g, carbohydrate_g, fat_g, user_id'
-      )
-      .eq('id', share.meal_id)
-      .maybeSingle();
+    const [meal] = await db
+      .select({
+        rawInput: meals.rawInput,
+        caloriesKcal: meals.caloriesKcal,
+        proteinG: meals.proteinG,
+        carbohydrateG: meals.carbohydrateG,
+        fatG: meals.fatG,
+        userId: meals.userId,
+      })
+      .from(meals)
+      .where(eq(meals.id, share.mealId))
+      .limit(1);
     if (!meal) {
       throw Errors.notFound('Macro card not found.');
     }
 
-    const { data: profile } = await supabase
-      .from('public_profiles')
-      .select('avatar_seed')
-      .eq('user_id', meal.user_id)
-      .maybeSingle();
+    const [profile] = await db
+      .select({ avatarSeed: publicProfiles.avatarSeed })
+      .from(publicProfiles)
+      .where(eq(publicProfiles.userId, meal.userId))
+      .limit(1);
 
     const macros: MacroBar[] = [
       {
         label: 'P',
-        grams: toNumber(meal.protein_g),
+        grams: toNumber(meal.proteinG),
         color: OG_COLORS.macroProtein,
       },
       {
         label: 'C',
-        grams: toNumber(meal.carbohydrate_g),
+        grams: toNumber(meal.carbohydrateG),
         color: OG_COLORS.macroCarbs,
       },
-      { label: 'F', grams: toNumber(meal.fat_g), color: OG_COLORS.macroFat },
+      { label: 'F', grams: toNumber(meal.fatG), color: OG_COLORS.macroFat },
     ];
 
     const fonts = await loadOgFonts();
 
     return new ImageResponse(
       <MacroCard
-        calories={toNumber(meal.calories_kcal)}
-        dishName={(meal.raw_input as string)?.trim() || '—'}
+        calories={toNumber(meal.caloriesKcal)}
+        dishName={meal.rawInput.trim() || '—'}
         macros={macros}
-        swatch={dishColorFromSeed(profile?.avatar_seed ?? null)}
+        swatch={dishColorFromSeed(profile?.avatarSeed ?? null)}
       />,
       {
         width: CARD_WIDTH,
@@ -145,7 +165,7 @@ export async function GET(
         ],
         headers: {
           // Card text is fixed once the meal is saved, so the PNG is immutable
-          // per shareId. RLS still gates the upstream read, so cache privately.
+          // per shareId. The share gate above is per-viewer, so cache privately.
           'Cache-Control':
             'private, max-age=86400, stale-while-revalidate=604800, immutable',
         },

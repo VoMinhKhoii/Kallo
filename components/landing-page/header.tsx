@@ -16,7 +16,18 @@ const ANCHORS = [
   { id: 'pricing', key: 'pricing' },
 ] as const;
 
-export function Header() {
+const NAV_LINK =
+  'font-sans-display text-kallo-text text-sm transition-colors hover:text-kallo-text/70';
+
+/**
+ * `standalone` is for the headers that are NOT on the landing page — /pricing
+ * today. The anchors above are in-page scrolls there and dead links here:
+ * `scrollToAnchorId` returns early when the element is missing, so "Why text"
+ * on /pricing would swallow the click and read as a broken page. When
+ * standalone they become locale-aware links back to the landing section, which
+ * is where the reader was trying to go.
+ */
+export function Header({ standalone = false }: { standalone?: boolean } = {}) {
   const t = useTranslations('landing.header');
   const { openDialog } = useAuthDialog();
 
@@ -43,20 +54,27 @@ export function Header() {
 
         {/* Nav Links */}
         <nav className="hidden items-center gap-8 md:flex">
-          {ANCHORS.map((anchor) => (
-            <a
-              key={anchor.id}
-              href={`#${anchor.id}`}
-              onClick={scrollToAnchor(anchor.id)}
-              className="font-sans-display text-kallo-text text-sm transition-colors hover:text-kallo-text/70"
-            >
-              {t(anchor.key)}
-            </a>
-          ))}
-          <Link
-            href="/docs/overview"
-            className="font-sans-display text-kallo-text text-sm transition-colors hover:text-kallo-text/70"
-          >
+          {ANCHORS.map((anchor) =>
+            standalone ? (
+              <Link
+                key={anchor.id}
+                href={`/#${anchor.id}`}
+                className={NAV_LINK}
+              >
+                {t(anchor.key)}
+              </Link>
+            ) : (
+              <a
+                key={anchor.id}
+                href={`#${anchor.id}`}
+                onClick={scrollToAnchor(anchor.id)}
+                className={NAV_LINK}
+              >
+                {t(anchor.key)}
+              </a>
+            )
+          )}
+          <Link href="/docs/overview" className={NAV_LINK}>
             {t('docs')}
           </Link>
         </nav>

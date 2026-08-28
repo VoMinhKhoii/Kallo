@@ -3,6 +3,7 @@ import {
   getChatGroupSchema,
   sendChatGroupMessageSchema,
 } from '@/lib/core/validation/chat';
+import { assertUnlimitedCircleActor } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
   chatGroupMembers,
@@ -59,7 +60,11 @@ export async function sendChatGroupMessage(
   db: ChatGroupDb = defaultDb
 ): Promise<ChatGroupMessage> {
   const parsed = sendChatGroupMessageSchema.parse(input);
-  await requireGroupAccess(actorId, parsed.groupId, db);
+  const access = await requireGroupAccess(actorId, parsed.groupId, db);
+  // Group chat is premium; 1:1 direct chats stay free.
+  if (access.kind === 'group') {
+    await assertUnlimitedCircleActor(db, actorId);
+  }
 
   const [row] = await db
     .insert(chatGroupMessages)

@@ -6,6 +6,7 @@ import {
   type SetStateAction,
   useCallback,
 } from 'react';
+import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { useRelogCandidates } from '@/hooks/meals/relog/use-relog-candidates';
 import { useRelogSubmit } from '@/hooks/meals/relog/use-relog-submit';
 import { useSlashPicker } from '@/hooks/meals/relog/use-slash-picker';
@@ -67,12 +68,21 @@ export function useRelogComposer(args: {
     [inputRef]
   );
 
+  const { locked, openPaywall } = usePremiumGuard();
+
   // A pick rewrites the composer text; the picker writes the result back
   // through setText, so draft persistence and auto-resize stay in one place.
+  // Refusing here (null) is the picker's own "pick rejected" path — the `/`
+  // token stays as typed, so nothing is lost behind the paywall.
   const onSelect = useCallback(
-    (candidate: RelogCandidate, value: string, token: SlashToken) =>
-      staged.add(candidate, value, token),
-    [staged]
+    (candidate: RelogCandidate, value: string, token: SlashToken) => {
+      if (locked('relog')) {
+        openPaywall();
+        return null;
+      }
+      return staged.add(candidate, value, token);
+    },
+    [staged, locked, openPaywall]
   );
 
   // The picker produces the query; the query produces the options; the options

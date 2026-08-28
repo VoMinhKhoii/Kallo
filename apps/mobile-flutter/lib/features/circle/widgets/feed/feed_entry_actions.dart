@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
+import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
@@ -55,8 +56,11 @@ class _FeedEntryActionsState extends ConsumerState<FeedEntryActions> {
     try {
       await logSharedMeal(ref, widget.entry.meal.shareId);
       if (mounted) showTopToast(context, tr('groups.feed.logSuccess'));
-    } catch (_) {
-      if (mounted) {
+    } catch (error) {
+      // Pulling a copy off a friend's meal is the initiator side of copy/split
+      // and is gated: send a 402 to the paywall rather than reporting it as a
+      // failed log.
+      if (mounted && !handledFeatureLock(context, error)) {
         showTopToast(
           context,
           tr('groups.feed.logError'),

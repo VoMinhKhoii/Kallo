@@ -7,9 +7,11 @@
  * every literal hex token, the ring geometry, the seeded swatch and the
  * font-size branch, so an extraction that changes one pixel fails loudly.
  */
+import { getTableName, is, Table } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { analysisGuardEvents } from '@/lib/infra/db/schema';
 
 class MockImageResponse {
   static calls: { element: React.ReactElement; options: MockOptions }[] = [];
@@ -34,28 +36,43 @@ const mockBuildAnalysisGuardEvent = vi.fn((input: unknown) => ({
 }));
 const mockDbInsert = vi.fn();
 const mockDbInsertValues = vi.fn();
-const mockAnalysisGuardEvents = { table: 'analysis_guard_events' };
 
-/** table name -> row (or null) returned by `.maybeSingle()` */
-const tableRows = new Map<string, unknown>();
-const fromCalls: { table: string; columns: string; id: unknown }[] = [];
+/** table name -> the rows that table's SELECT resolves to */
+const tableRows = new Map<string, unknown[]>();
+const selectedTables: string[] = [];
+/** What `canViewShareOwnedBy`'s friendship/group probe resolves to. */
+let relationshipVisible = false;
 
 vi.mock('@/lib/infra/supabase/server', () => ({
-  createClient: () =>
-    Promise.resolve({
-      auth: { getUser: mockGetUser },
-      from: (table: string) => ({
-        select: (columns: string) => ({
-          eq: (_col: string, id: unknown) => ({
-            maybeSingle: () => {
-              fromCalls.push({ table, columns, id });
-              return Promise.resolve({ data: tableRows.get(table) ?? null });
-            },
-          }),
-        }),
-      }),
-    }),
+  createClient: () => Promise.resolve({ auth: { getUser: mockGetUser } }),
 }));
+
+/**
+ * A Drizzle select stub good enough for the three table reads and for the
+ * relationship probe inside `canViewShareOwnedBy` — which selects from a SQL
+ * literal rather than a table, so the two are told apart by the `from` source.
+ */
+function selectStub() {
+  let source: unknown;
+  const query = {
+    from(src: unknown) {
+      source = src;
+      return query;
+    },
+    where() {
+      return query;
+    },
+    limit() {
+      if (!is(source, Table)) {
+        return Promise.resolve([{ visible: relationshipVisible }]);
+      }
+      const table = getTableName(source);
+      selectedTables.push(table);
+      return Promise.resolve(tableRows.get(table) ?? []);
+    },
+  };
+  return query;
+}
 
 vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
   buildAnalysisGuardEvent: (input: unknown) =>
@@ -65,6 +82,7 @@ vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
 
 vi.mock('@/lib/infra/db/client', () => {
   const chain = {
+    select: () => selectStub(),
     insert: (table?: unknown) => {
       mockDbInsert(table);
       return chain;
@@ -76,10 +94,6 @@ vi.mock('@/lib/infra/db/client', () => {
   };
   return { db: chain };
 });
-
-vi.mock('@/lib/infra/db/schema', () => ({
-  analysisGuardEvents: mockAnalysisGuardEvents,
-}));
 
 const { GET } = await import('@/app/api/og/macro-card/[shareId]/route');
 
@@ -103,25 +117,30 @@ function renderedCard(index = 0): string {
 }
 
 const MEAL = {
-  raw_input: 'Phở bò tái',
-  calories_kcal: 512.4,
-  protein_g: 28.6,
-  carbohydrate_g: 61.2,
-  fat_g: 14.9,
-  user_id: 'user-1',
+  rawInput: 'Phở bò tái',
+  caloriesKcal: 512.4,
+  proteinG: 28.6,
+  carbohydrateG: 61.2,
+  fatG: 14.9,
+  userId: 'viewer-1',
+};
+
+/** The default share is the viewer's own — authorized without a probe. */
+const OWN_SHARE = {
+  mealId: 'meal-1',
+  actorId: 'viewer-1',
+  sharedAt: new Date('2026-08-01T00:00:00Z'),
+  visibility: 'circle',
 };
 
 beforeEach(() => {
   MockImageResponse.calls = [];
-  fromCalls.length = 0;
+  selectedTables.length = 0;
+  relationshipVisible = false;
   tableRows.clear();
-  tableRows.set('meal_shares', {
-    id: SHARE_ID,
-    meal_id: 'meal-1',
-    actor_id: 'user-1',
-  });
-  tableRows.set('meals', MEAL);
-  tableRows.set('public_profiles', { avatar_seed: 'seed-alpha' });
+  tableRows.set('meal_shares', [OWN_SHARE]);
+  tableRows.set('meals', [MEAL]);
+  tableRows.set('public_profiles', [{ avatarSeed: 'seed-alpha' }]);
 
   mockGetUser.mockReset();
   mockGetUser.mockResolvedValue({ data: { user: { id: 'viewer-1' } } });
@@ -216,7 +235,7 @@ describe('GET /api/og/macro-card/[shareId]', () => {
     const json = await res.json();
     expect(json.error.code).toBe('RATE_LIMITED');
 
-    expect(mockDbInsert).toHaveBeenCalledWith(mockAnalysisGuardEvents);
+    expect(mockDbInsert).toHaveBeenCalledWith(analysisGuardEvents);
     expect(mockBuildAnalysisGuardEvent).toHaveBeenCalledWith({
       userId: 'viewer-1',
       ip: '198.51.100.4',
@@ -242,8 +261,36 @@ describe('GET /api/og/macro-card/[shareId]', () => {
     expect(res.headers.get('Retry-After')).toBe('7');
   });
 
-  it('404s when RLS hides the share row', async () => {
-    tableRows.set('meal_shares', null);
+  it('renders the card for the share owner', async () => {
+    const res = await call();
+
+    expect(res).toBeInstanceOf(MockImageResponse);
+    expect(MockImageResponse.calls).toHaveLength(1);
+  });
+
+  it('404s a viewer with no relationship to the sharer', async () => {
+    // Drizzle bypasses RLS, so this is the check that has to hold.
+    tableRows.set('meal_shares', [{ ...OWN_SHARE, actorId: 'someone-else' }]);
+    relationshipVisible = false;
+
+    const res = await call();
+
+    expect(res.status).toBe(404);
+    const json = await res.json();
+    expect(json.error.message).toBe('Macro card not found.');
+    expect(MockImageResponse.calls).toHaveLength(0);
+  });
+
+  it('renders for a viewer the share visibility gate allows', async () => {
+    tableRows.set('meal_shares', [{ ...OWN_SHARE, actorId: 'someone-else' }]);
+    relationshipVisible = true;
+
+    const res = await call();
+    expect(res).toBeInstanceOf(MockImageResponse);
+  });
+
+  it('404s a shareId that does not exist, exactly like a denied one', async () => {
+    tableRows.set('meal_shares', []);
 
     const res = await call();
 
@@ -253,29 +300,16 @@ describe('GET /api/og/macro-card/[shareId]', () => {
   });
 
   it('404s when the meal row is missing', async () => {
-    tableRows.set('meals', null);
+    tableRows.set('meals', []);
 
     const res = await call();
     expect(res.status).toBe(404);
   });
 
-  it('reads share, meal and profile through the RLS-gated session client', async () => {
+  it('reads share, meal and profile through Drizzle', async () => {
     await call();
 
-    expect(fromCalls).toEqual([
-      {
-        table: 'meal_shares',
-        columns: 'id, meal_id, actor_id',
-        id: SHARE_ID,
-      },
-      {
-        table: 'meals',
-        columns:
-          'raw_input, calories_kcal, protein_g, carbohydrate_g, fat_g, user_id',
-        id: 'meal-1',
-      },
-      { table: 'public_profiles', columns: 'avatar_seed', id: 'user-1' },
-    ]);
+    expect(selectedTables).toEqual(['meal_shares', 'meals', 'public_profiles']);
   });
 
   it('renders at 1080x1920 with both vendored fonts and a private cache header', async () => {
@@ -310,26 +344,28 @@ describe('GET /api/og/macro-card/[shareId]', () => {
   });
 
   it('renders em-dashes and N/A when the meal has no numbers', async () => {
-    tableRows.set('meals', {
-      raw_input: '   ',
-      calories_kcal: null,
-      protein_g: null,
-      carbohydrate_g: null,
-      fat_g: null,
-      user_id: 'user-1',
-    });
-    tableRows.set('public_profiles', null);
+    tableRows.set('meals', [
+      {
+        rawInput: '   ',
+        caloriesKcal: null,
+        proteinG: null,
+        carbohydrateG: null,
+        fatG: null,
+        userId: 'viewer-1',
+      },
+    ]);
+    tableRows.set('public_profiles', []);
 
     await call();
     expect(renderedCard()).toMatchSnapshot();
   });
 
   it('drops the dish font size from 110 to 84 past 40 characters', async () => {
-    tableRows.set('meals', { ...MEAL, raw_input: 'x'.repeat(40) });
+    tableRows.set('meals', [{ ...MEAL, rawInput: 'x'.repeat(40) }]);
     await call();
     expect(renderedCard(0)).toContain('font-size:110px');
 
-    tableRows.set('meals', { ...MEAL, raw_input: 'y'.repeat(41) });
+    tableRows.set('meals', [{ ...MEAL, rawInput: 'y'.repeat(41) }]);
     await call();
     expect(renderedCard(1)).toContain('font-size:84px');
   });
@@ -341,11 +377,11 @@ describe('GET /api/og/macro-card/[shareId]', () => {
     await call();
     const a = swatchOf(renderedCard(0));
 
-    tableRows.set('public_profiles', { avatar_seed: 'seed-beta' });
+    tableRows.set('public_profiles', [{ avatarSeed: 'seed-beta' }]);
     await call();
     const b = swatchOf(renderedCard(1));
 
-    tableRows.set('public_profiles', { avatar_seed: 'seed-alpha' });
+    tableRows.set('public_profiles', [{ avatarSeed: 'seed-alpha' }]);
     await call();
     const c = swatchOf(renderedCard(2));
 
@@ -355,22 +391,19 @@ describe('GET /api/og/macro-card/[shareId]', () => {
   });
 
   it('falls back to the "nham" seed when the profile has none', async () => {
-    tableRows.set('public_profiles', { avatar_seed: null });
+    tableRows.set('public_profiles', [{ avatarSeed: null }]);
     await call();
     const seeded = renderedCard(0);
 
-    tableRows.set('public_profiles', { avatar_seed: '' });
+    tableRows.set('public_profiles', [{ avatarSeed: '' }]);
     await call();
     expect(renderedCard(1)).toBe(seeded);
   });
 
   it('scales macro bars against the largest macro in the meal, not a percentage', async () => {
-    tableRows.set('meals', {
-      ...MEAL,
-      protein_g: 25,
-      carbohydrate_g: 100,
-      fat_g: 0,
-    });
+    tableRows.set('meals', [
+      { ...MEAL, proteinG: 25, carbohydrateG: 100, fatG: 0 },
+    ]);
 
     await call();
     const markup = renderedCard();
@@ -383,12 +416,9 @@ describe('GET /api/og/macro-card/[shareId]', () => {
   });
 
   it('keeps a zero-macro meal from dividing by zero', async () => {
-    tableRows.set('meals', {
-      ...MEAL,
-      protein_g: 0,
-      carbohydrate_g: 0,
-      fat_g: 0,
-    });
+    tableRows.set('meals', [
+      { ...MEAL, proteinG: 0, carbohydrateG: 0, fatG: 0 },
+    ]);
 
     await call();
     const markup = renderedCard();
@@ -397,13 +427,15 @@ describe('GET /api/og/macro-card/[shareId]', () => {
   });
 
   it('coerces numeric strings from the driver', async () => {
-    tableRows.set('meals', {
-      ...MEAL,
-      calories_kcal: '1234.6',
-      protein_g: '10.4',
-      carbohydrate_g: 'not-a-number',
-      fat_g: Number.NaN,
-    });
+    tableRows.set('meals', [
+      {
+        ...MEAL,
+        caloriesKcal: '1234.6',
+        proteinG: '10.4',
+        carbohydrateG: 'not-a-number',
+        fatG: Number.NaN,
+      },
+    ]);
 
     await call();
     const markup = renderedCard();

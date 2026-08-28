@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
+import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { useDuplicateMeal } from '@/hooks/meals/mutations/use-duplicate-meal';
 import { useUpdateMeal } from '@/hooks/meals/mutations/use-update-meal';
 import { deleteMealAction } from '@/lib/actions/meals/mutate-meal';
@@ -27,6 +28,7 @@ export function useMealCardActions({
   selectedDate,
 }: UseMealCardActionsParams) {
   const t = useTranslations('logging.feedArea');
+  const { requirePremium } = usePremiumGuard();
   const queryClient = useQueryClient();
   const updateMeal = useUpdateMeal(userId, selectedDate);
   const duplicateMeal = useDuplicateMeal(userId);
@@ -185,6 +187,9 @@ export function useMealCardActions({
   // prior manual edits.
   const handleLogAgain = useCallback(
     (meal: PersistedMeal) => {
+      // Before the optimistic paint: a refused relog must leave the feed
+      // untouched rather than flash a card the server will reject.
+      if (!requirePremium('relog')) return;
       if (duplicateMeal.isPending) return;
       const newMealId = crypto.randomUUID();
       duplicateMeal.mutate(
@@ -201,7 +206,7 @@ export function useMealCardActions({
         }
       );
     },
-    [duplicateMeal, selectedDate, t]
+    [duplicateMeal, selectedDate, t, requirePremium]
   );
 
   return { handleDeleteMeal, handleUpdateMeal, handleLogAgain, replaceOldMeal };

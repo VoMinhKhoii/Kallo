@@ -1,6 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { PremiumChip } from '@/components/billing/premium-chip';
+import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { RelogPickerGroup } from '@/components/logging/input/relog/relog-picker-group';
 import type { RelogCandidateList } from '@/hooks/meals/relog/use-relog-candidates';
 import type { RelogCandidate } from '@/lib/domain/logging/relog/relog';
@@ -31,6 +33,7 @@ export function RelogPickerPopup({
   onSelect,
 }: RelogPickerPopupProps) {
   const t = useTranslations('logging.relog');
+  const { locked } = usePremiumGuard();
   const { dishes, meals, options, isLoading, isFetching } = candidates;
 
   const isEmpty = options.length === 0;
@@ -53,6 +56,15 @@ export function RelogPickerPopup({
       <span aria-live="polite" className="sr-only">
         {isEmpty ? emptyMessage : t('resultCount', { count: options.length })}
       </span>
+
+      {locked('relog') && (
+        <div className="flex items-center justify-between gap-2 px-3 py-1.5">
+          <span className="font-sans-display text-[11px] text-kallo-text-muted">
+            {t('pickerLabel')}
+          </span>
+          <PremiumChip />
+        </div>
+      )}
 
       <RelogPickerGroup
         label={t('groupDishes')}

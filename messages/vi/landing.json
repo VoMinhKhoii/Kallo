@@ -177,6 +177,7 @@
     },
     "features": {
       "barcode": "Quét mã vạch",
+      "labelScan": "Quét nhãn dinh dưỡng",
       "manualLogging": "Nhập thủ công",
       "joinGroups": "Tối đa 2 nhóm, chỉ xem",
       "friends": "10 bạn bè",

@@ -35,9 +35,15 @@ vi.mock('@/components/billing/subscription/trial-banner', () => ({
   TrialBanner: () => <div data-testid="trial-banner" />,
 }));
 
-vi.mock('@/components/billing/paywall/paywall-dialog', () => ({
-  PaywallDialog: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="paywall-dialog" /> : null,
+// The paywall now lives on the app-wide PremiumGuardProvider; the shell only
+// hands it the analyze-402 handler.
+const mockOpenPaywall = vi.fn();
+vi.mock('@/components/billing/premium-guard-provider', () => ({
+  usePremiumGuard: () => ({
+    locked: () => false,
+    requirePremium: () => true,
+    openPaywall: mockOpenPaywall,
+  }),
 }));
 
 vi.mock('@/components/logging/sidebar/timeline-sidebar', () => ({

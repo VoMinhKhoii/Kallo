@@ -40,7 +40,9 @@ export async function acceptMealShareInviteAction(input: {
 }): Promise<ConfirmMealResponse> {
   const parsed = acceptMealShareInviteSchema.parse(input);
   const { user } = await requireAuthAndProfile();
-
+  // No premium gate here on purpose: the INITIATOR pays. By the time an invite
+  // exists a split has already halved the sender's meal, so refusing the
+  // recipient would strand that half against an offer they can never take.
   return await db.transaction(async (tx) => {
     // Discover the actor-scoped pending invite before touching cross-user data.
     // The source meal is then locked BEFORE the invite is claimed, matching the
@@ -166,7 +168,8 @@ export async function dismissMealShareInviteAction(input: {
 }): Promise<{ success: true }> {
   const parsed = dismissMealShareInviteSchema.parse(input);
   const { user } = await requireAuthAndProfile();
-
+  // Ungated for the same reason as accept: responding to someone else's offer
+  // is never the billable action.
   const [updated] = await db
     .update(mealShareInvites)
     .set({ status: 'dismissed', respondedAt: new Date() })

@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PipelineResult } from '@/lib/ai/types/result';
 
@@ -34,6 +35,16 @@ const { mockTxDelete, mockTxInsert, mockTxUpdate, mockTxSelect, mockTx } =
     };
   });
 
+// Only the premium gate is stubbed out of confirm-cheat; `confirmCheatMeal`
+// itself stays real so the cheat branch keeps being exercised for what it
+// writes. Its own behaviour (kill-switch, entry-mode resolution) is covered in
+// confirm-cheat-gate.test.ts.
+const assertCheatConfirmAllowed = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/actions/meals/confirm-cheat', async (importActual) => ({
+  ...(await importActual<typeof import('@/lib/actions/meals/confirm-cheat')>()),
+  assertCheatConfirmAllowed,
+}));
+
 vi.mock('@/lib/infra/auth/session', async () => {
   const { MOCK_USER, MOCK_PROFILE } = await import('./meal-doubles');
   return {
@@ -64,9 +75,12 @@ vi.mock(
 // ---------------------------------------------------------------------------
 
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
+import { FeatureLockedError } from '@/lib/core/errors/app-error';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
+import { db } from '@/lib/infra/db/client';
 import {
   LOGGED_AT,
+  MOCK_PROFILE,
   makeBoundedNutrition,
   mockInsertRouting,
   MOCK_USER as mockUser,
@@ -495,5 +509,47 @@ describe('confirmAndSaveMealAction', () => {
     expect(firstItem.estimatedGrams).toBe(150);
     expect(firstItem.caloriesKcal).toBe(215);
     expect(firstItem.carbohydrateG).toBe(51);
+  });
+
+  // -------------------------------------------------------------------------
+  // Premium: cheat_meal on the confirm path
+  // -------------------------------------------------------------------------
+
+  it('runs the cheat gate before the transaction opens', async () => {
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([]),
+      }),
+    });
+
+    await expect(
+      confirmAndSaveMealAction({ analysisId: UUID_1 })
+    ).rejects.toThrow('Phân tích không tồn tại');
+
+    expect(assertCheatConfirmAllowed).toHaveBeenCalledWith(
+      mockUser.id,
+      MOCK_PROFILE.createdAt,
+      UUID_1
+    );
+    // The gate resolved BEFORE the transaction — an entitlement read inside an
+    // open tx can deadlock a pool that defaults to two connections.
+    const gateOrder = assertCheatConfirmAllowed.mock.invocationCallOrder[0];
+    const txOrder = (db.transaction as unknown as Mock).mock
+      .invocationCallOrder[0];
+    expect(gateOrder).toBeLessThan(txOrder);
+  });
+
+  it('a locked cheat confirm writes nothing and consumes no pending row', async () => {
+    assertCheatConfirmAllowed.mockRejectedValueOnce(
+      new FeatureLockedError('cheat_meal', 'not_entitled', 'locked')
+    );
+
+    await expect(
+      confirmAndSaveMealAction({ analysisId: UUID_1, levels: {} })
+    ).rejects.toBeInstanceOf(FeatureLockedError);
+
+    expect(db.transaction).not.toHaveBeenCalled();
+    expect(mockTxDelete).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
   });
 });

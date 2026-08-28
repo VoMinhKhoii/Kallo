@@ -5,6 +5,7 @@ import {
   logNutritionLabelMealSchema,
   scanNutritionLabelSchema,
 } from '@/lib/api/contracts/nutrition-label';
+import { checkFeatureGate } from '@/lib/domain/billing/feature-gate';
 import { scanErrorCode } from '@/lib/domain/nutrition/ocr/error';
 import { validateNutritionLabelImage } from '@/lib/domain/nutrition/ocr/image';
 import type {
@@ -26,7 +27,14 @@ export async function scanNutritionLabelAction(input: {
   if (!parsed.success) return { success: false, code: 'invalid_image' };
 
   try {
-    await requireAuthAndProfile();
+    const { user, profile } = await requireAuthAndProfile();
+    // Label scanning is premium. Returned as a code, never thrown: `scanErrorCode`
+    // would classify a thrown FeatureLockedError as `server_error`.
+    const gate = await checkFeatureGate(
+      { userId: user.id, profileCreatedAt: profile.createdAt },
+      'label_scan'
+    );
+    if (gate.locked) return { success: false, code: 'feature_locked' };
     // TODO(rate-limit): Enforce the per-user OCR limit here and throw an error with code "rate_limited".
     await validateNutritionLabelImage(parsed.data);
 
@@ -52,7 +60,13 @@ export async function stageOcrMealAction(
 > {
   try {
     const parsed = logNutritionLabelMealSchema.parse(input);
-    const { user } = await requireAuthAndProfile();
+    const { user, profile } = await requireAuthAndProfile();
+    // Same premium gate as the scan step, same return-don't-throw reasoning.
+    const gate = await checkFeatureGate(
+      { userId: user.id, profileCreatedAt: profile.createdAt },
+      'label_scan'
+    );
+    if (gate.locked) return { success: false, code: 'feature_locked' };
 
     return { success: true, ...(await stageOcrMeal(user.id, parsed)) };
   } catch (error) {

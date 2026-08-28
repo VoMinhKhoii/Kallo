@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../../services/billing/feature_lock.dart';
 import '../../../data/label_scan_providers.dart';
 import '../../../logic/label/review.dart';
 import '../../../logic/meal_log_mode.dart';
@@ -75,6 +76,15 @@ class _LabelScanBranchState extends ConsumerState<LabelScanBranch> {
 
   @override
   Widget build(BuildContext context) {
+    // The controller maps the server's 402 onto an error key rather than
+    // rethrowing, so the paywall hop happens here — the first place with a
+    // BuildContext. Same destination as `handledFeatureLock`.
+    ref.listen<LabelScanState>(labelScanProvider, (prev, next) {
+      if (next.isFeatureLocked && !(prev?.isFeatureLocked ?? false)) {
+        openPaywall(context);
+      }
+    });
+
     final state = ref.watch(labelScanProvider);
     final notifier = ref.read(labelScanProvider.notifier);
 

@@ -33,6 +33,12 @@ const { mockTxSelect, mockTxUpdate, mockTxInsert, mockDbUpdate, mockTx } =
     };
   });
 
+// The accept side is deliberately UNGATED (see share-with-friends: a split has
+// already halved the sender's meal). Mocked only so this suite can prove the
+// gate module is never reached.
+const assertFeatureAccess = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
+
 vi.mock('@/lib/infra/auth/session', async () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
     user: (await import('./share-doubles')).MOCK_USER,
@@ -191,5 +197,47 @@ describe('dismissMealShareInviteAction', () => {
     await expect(
       dismissMealShareInviteAction({ inviteId: 'bad' })
     ).rejects.toThrow();
+  });
+});
+
+describe('the recipient side stays free', () => {
+  // The INITIATOR pays. A gated accept would strand a premium sender: a split
+  // has ALREADY halved their meal by the time the invite exists, so a 402 here
+  // would silently eat the other half against an offer nobody can take. Do not
+  // "fix" this by adding a gate.
+  beforeEach(() => vi.clearAllMocks());
+
+  it('completes a full accept without ever consulting the feature gate', async () => {
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([sourceMeal({ portionFactor: 0.5, caloriesKcal: 100 })]);
+    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    queueLimitSelect([{ id: 'friendship-1' }]);
+    queueWhereSelect([sourceItem({ estimatedGrams: 200, caloriesKcal: 100 })]);
+    mockTxInsert.mockImplementation(routeInserts({}));
+
+    await acceptMealShareInviteAction({
+      inviteId: UUID_INVITE,
+      newMealId: UUID_NEW,
+      loggedDate: '2026-04-05',
+      timezoneOffset: -420,
+    });
+
+    expect(assertFeatureAccess).not.toHaveBeenCalled();
+  });
+
+  it('dismisses an invite without ever consulting the feature gate', async () => {
+    mockDbUpdate.mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: UUID_INVITE }]),
+        }),
+      }),
+    });
+
+    await expect(
+      dismissMealShareInviteAction({ inviteId: UUID_INVITE })
+    ).resolves.toEqual({ success: true });
+
+    expect(assertFeatureAccess).not.toHaveBeenCalled();
   });
 });

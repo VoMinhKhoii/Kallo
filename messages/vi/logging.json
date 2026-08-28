@@ -130,6 +130,7 @@
     "vitaminH": "Vitamin H"
   },
   "ocrError": {
+    "feature_locked": "Quét bảng dinh dưỡng là tính năng Premium. Hãy nâng cấp để quét nhãn dinh dưỡng.",
     "invalid_image": "Vui lòng chọn ảnh chụp rõ nét bảng thông tin dinh dưỡng.",
     "no_label_detected": "Ảnh này không giống bảng dinh dưỡng in trên bao bì; có thể bạn chụp mặt logo, thực đơn hoặc chữ viết tay. Hãy chọn đúng mặt có bảng dinh dưỡng hoặc nhập tay.",
     "rate_limited": "Hệ thống đang bận. Vui lòng thử lại sau giây lát.",

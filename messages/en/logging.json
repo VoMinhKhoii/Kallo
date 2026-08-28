@@ -130,6 +130,7 @@
     "vitaminH": "Vitamin H"
   },
   "ocrError": {
+    "feature_locked": "Label scanning is a Premium feature. Upgrade to scan nutrition labels.",
     "invalid_image": "Please upload a clear image of a nutrition facts table.",
     "no_label_detected": "This does not look like a printed nutrition table. It may be the logo side, a menu, or handwritten notes. Choose the label photo or enter nutrition manually.",
     "rate_limited": "The OCR service is busy. Please try again in a moment.",

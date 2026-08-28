@@ -20,6 +20,7 @@ import '../widgets/summary/day_summary.dart';
 import '../widgets/states/empty_state.dart';
 import '../widgets/states/inline_error.dart';
 import '../widgets/nutrients/nutrient_grid_card.dart';
+import '../widgets/states/micronutrients_locked_card.dart';
 import '../widgets/states/nutrition_skeleton.dart';
 import '../widgets/scope/range_selector.dart';
 import '../widgets/nutrients/source_attribution.dart';
@@ -267,6 +268,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                     showSuggestedFoodsSheet(context, nutrients: foodNutrients),
           ),
         ],
+        if (overview.micronutrientsLocked) const MicronutrientsLockedCard(),
         if (vitamins.isNotEmpty) ...[
           const SizedBox(height: 28),
           _GroupHeader(label: tr('nutrition.nutrientGroups.vitamins')),

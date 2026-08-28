@@ -36,6 +36,14 @@ describe('Errors factories', () => {
     expect(err.retryable).toBe(true);
   });
 
+  it('circleLimitReached is a non-retryable 409 carrying the detail', () => {
+    const err = Errors.circleLimitReached('Mai đã đạt giới hạn 2 nhóm.');
+    expect(err.code).toBe('CIRCLE_LIMIT_REACHED');
+    expect(err.status).toBe(409);
+    expect(err.retryable).toBe(false);
+    expect(err.userMessage).toBe('Mai đã đạt giới hạn 2 nhóm.');
+  });
+
   it('internal stores cause', () => {
     const cause = new TypeError('oops');
     const err = Errors.internal(cause);

@@ -412,3 +412,73 @@ describe('checkFeatureAccess', () => {
     expect(result).toEqual({ allowed: false, reason: 'trial_expired' });
   });
 });
+
+// The catalog is the only place a gated feature is declared, and the state
+// builder walks it — so every Premium-card feature must appear here without
+// any per-feature code in the service.
+const PREMIUM_FEATURES = [
+  'ai_analysis',
+  'label_scan',
+  'micronutrients',
+  'relog',
+  'cheat_meal',
+  'copy_split',
+  'unlimited_circle',
+] as const;
+
+describe('feature catalog coverage', () => {
+  it('exposes every gated feature in the state', async () => {
+    const state = await getEntitlementState(
+      { userId, profileCreatedAt: oldSignup },
+      { db: makeDb([]), now }
+    );
+    expect(Object.keys(state.features).sort()).toEqual(
+      [...PREMIUM_FEATURES].sort()
+    );
+  });
+
+  it('all features are trial-covered: active trial allows every one', async () => {
+    const state = await getEntitlementState(
+      { userId, profileCreatedAt: new Date('2026-08-06T00:00:00.000Z') },
+      { db: makeDb([]), now }
+    );
+
+    expect(state.tier).toBe('free');
+    expect(state.trial.active).toBe(true);
+    for (const key of PREMIUM_FEATURES) {
+      expect(state.features[key]).toEqual({ allowed: true, reason: 'trial' });
+    }
+  });
+
+  it('expired trial without a grant locks every one as trial_expired', async () => {
+    process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-01T00:00:00.000Z';
+    const state = await getEntitlementState(
+      { userId, profileCreatedAt: oldSignup },
+      { db: makeDb([]), now }
+    );
+
+    expect(state.trial.active).toBe(false);
+    for (const key of PREMIUM_FEATURES) {
+      expect(state.features[key]).toEqual({
+        allowed: false,
+        reason: 'trial_expired',
+      });
+    }
+  });
+
+  it('an active premium grant entitles every one', async () => {
+    process.env.SUBSCRIPTION_LAUNCH_DATE = '2026-08-01T00:00:00.000Z';
+    const state = await getEntitlementState(
+      { userId, profileCreatedAt: oldSignup },
+      { db: makeDb([makeGrant({})]), now }
+    );
+
+    expect(state.tier).toBe('premium');
+    for (const key of PREMIUM_FEATURES) {
+      expect(state.features[key]).toEqual({
+        allowed: true,
+        reason: 'entitled',
+      });
+    }
+  });
+});
