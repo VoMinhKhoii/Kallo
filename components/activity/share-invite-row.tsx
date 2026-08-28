@@ -56,10 +56,12 @@ export function ShareInviteRow({
   // The shared invite hooks refresh the circle surfaces; the activity feed and
   // its badge are ours to refresh on top of them.
   //
-  // Acting on the offer is also what READS this row. Nothing else can: the
-  // card is not a link, so without this its `readAt` stays null forever, the
-  // aggregate never closes, and a later re-share would rewrite this row
-  // instead of opening a fresh one beside it as history (lifecycle FSM).
+  // Acting on the offer also READS this row, so the card dims immediately.
+  // The durable close is server-side: accept/dismiss close the aggregate in
+  // the same transaction as the status transition (closeInviteNotification),
+  // which is what covers resolutions this card never sees — Circle, another
+  // device, a split's auto-dismiss. This markRead is the optimistic half and a
+  // harmless second close (the server predicate is `read_at IS NULL`).
   // Fire-and-forget — the mutation dims optimistically and rolls itself back;
   // the feed refresh rides on its settle so the refetch cannot outrun the
   // write and paint the row unread again.

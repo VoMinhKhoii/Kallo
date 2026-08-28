@@ -34,6 +34,16 @@ vi.mock('@/lib/domain/notifications/notify', () => ({
   retractActor: mockRetractActor,
 }));
 
+// Same split as notify: the helper's own predicates live in
+// lib/domain/notifications/__tests__/close-invite-notification.test.ts; this
+// suite only asserts WHOSE aggregate the split closes.
+const mockCloseInviteNotification = vi.hoisted(() =>
+  vi.fn(async (..._args: unknown[]): Promise<void> => undefined)
+);
+vi.mock('@/lib/domain/notifications/close-invite-notification', () => ({
+  closeInviteNotification: mockCloseInviteNotification,
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks — db.* is the singleton; tx.* is the transaction handle. Both are
 // distinct mocks (mirrors meals.test.ts) so lookups never collide.
@@ -330,6 +340,48 @@ describe('shareMealWithFriendsAction', () => {
     // The sender's meal must NOT be scaled and no invite rows written.
     expect(mockTxUpdate).not.toHaveBeenCalled();
     expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  // The third party never acts on the offer — it vanishes under them — so
+  // nothing on their side could ever read the row. The split closes it for
+  // them, in the same tx that dismissed the invite; a later re-offer of this
+  // meal then opens fresh history instead of rewriting the stale card.
+  it('split mode: closes the notification of every auto-dismissed third party', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueLimitSelect([]); // no already-accepted invite among the recipients
+    queueWhereSelect([friendEdge]);
+    queueLimitSelect([]); // no existing share row (scaleOwnMealInPlace)
+    // The only `.returning()` in this transaction is the auto-dismiss sweep.
+    installUpdate({ returning: [{ toUserId: UUID_FRIEND_2 }] });
+    mockTxInsert.mockImplementation(routeInserts({}));
+
+    await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'split',
+    });
+
+    expect(mockCloseInviteNotification).toHaveBeenCalledTimes(1);
+    expect(mockCloseInviteNotification).toHaveBeenCalledWith(mockTx, {
+      recipientId: UUID_FRIEND_2,
+      sourceMealId: UUID_MEAL,
+    });
+  });
+
+  it('copy mode: dismisses nothing, so no notification is closed', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueWhereSelect([friendEdge]);
+    mockTxInsert.mockImplementation(routeInserts({}));
+
+    await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'copy',
+    });
+
+    expect(mockCloseInviteNotification).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid mealId', async () => {

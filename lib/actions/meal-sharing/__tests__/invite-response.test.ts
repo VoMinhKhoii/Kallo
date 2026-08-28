@@ -34,38 +34,45 @@ vi.mock('@/lib/domain/notifications/notify', () => ({
   retractActor: mockRetractActor,
 }));
 
+// Closing the invite's own notification is a domain helper with its own suite
+// (lib/domain/notifications/__tests__/close-invite-notification.test.ts). Here
+// we only assert THAT every resolution path fires it, and for whom.
+const mockCloseInviteNotification = vi.hoisted(() =>
+  vi.fn(async (..._args: unknown[]): Promise<void> => undefined)
+);
+vi.mock('@/lib/domain/notifications/close-invite-notification', () => ({
+  closeInviteNotification: mockCloseInviteNotification,
+}));
+
 // ---------------------------------------------------------------------------
-// Mocks — db.* is the singleton (dismiss writes through it); tx.* is the
-// transaction handle accept opens. Both are distinct mocks so lookups never
-// collide.
+// Mocks — tx.* is the transaction handle both accept and dismiss open; the db
+// singleton only opens it.
 // ---------------------------------------------------------------------------
 
-const { mockTxSelect, mockTxUpdate, mockTxInsert, mockDbUpdate, mockTx } =
-  vi.hoisted(() => {
-    const mockTxSelect = vi.fn(() => ({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue(
-          // Thenable + .for('update') — the share helper locks the row.
-          Object.assign(Promise.resolve([{ autoShareToCircle: true }]), {
-            for: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
-          })
-        ),
-      }),
-    }));
-    const mockTxUpdate = vi.fn();
-    const mockTxInsert = vi.fn();
-    return {
-      mockTxSelect,
-      mockTxUpdate,
-      mockTxInsert,
-      mockDbUpdate: vi.fn(),
-      mockTx: {
-        select: mockTxSelect,
-        update: mockTxUpdate,
-        insert: mockTxInsert,
-      },
-    };
-  });
+const { mockTxSelect, mockTxUpdate, mockTxInsert, mockTx } = vi.hoisted(() => {
+  const mockTxSelect = vi.fn(() => ({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue(
+        // Thenable + .for('update') — the share helper locks the row.
+        Object.assign(Promise.resolve([{ autoShareToCircle: true }]), {
+          for: vi.fn().mockResolvedValue([{ autoShareToCircle: true }]),
+        })
+      ),
+    }),
+  }));
+  const mockTxUpdate = vi.fn();
+  const mockTxInsert = vi.fn();
+  return {
+    mockTxSelect,
+    mockTxUpdate,
+    mockTxInsert,
+    mockTx: {
+      select: mockTxSelect,
+      update: mockTxUpdate,
+      insert: mockTxInsert,
+    },
+  };
+});
 
 // The accept side is deliberately UNGATED (see share-with-friends: a split has
 // already halved the sender's meal). Mocked only so this suite can prove the
@@ -85,7 +92,6 @@ vi.mock('@/lib/infra/db/client', () => ({
     transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) =>
       fn(mockTx)
     ),
-    update: mockDbUpdate,
   },
 }));
 
@@ -226,25 +232,18 @@ describe('acceptMealShareInviteAction', () => {
 describe('dismissMealShareInviteAction', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  function queueUpdateReturning(rows: unknown[]) {
-    mockDbUpdate.mockReturnValue({
-      set: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          returning: vi.fn().mockResolvedValue(rows),
-        }),
-      }),
-    });
-  }
-
   it('throws when the invite is not mine or already handled', async () => {
-    queueUpdateReturning([]);
+    installUpdate({ returning: [] });
     await expect(
       dismissMealShareInviteAction({ inviteId: UUID_INVITE })
     ).rejects.toThrow('Lời mời');
+    expect(mockCloseInviteNotification).not.toHaveBeenCalled();
   });
 
   it('succeeds when a pending invite is dismissed', async () => {
-    queueUpdateReturning([{ id: UUID_INVITE }]);
+    installUpdate({
+      returning: [{ id: UUID_INVITE, sourceMealId: UUID_MEAL }],
+    });
     const result = await dismissMealShareInviteAction({
       inviteId: UUID_INVITE,
     });
@@ -255,6 +254,66 @@ describe('dismissMealShareInviteAction', () => {
     await expect(
       dismissMealShareInviteAction({ inviteId: 'bad' })
     ).rejects.toThrow();
+  });
+});
+
+// A dismiss resolves the offer just as finally as an accept, and both can
+// happen from Circle or another device — so the aggregate has to close in the
+// action itself, not in whichever card happened to be on screen. Without it
+// `read_at` stays null forever and a later re-offer rewrites this row instead
+// of inserting fresh history beside it.
+describe('every resolution closes the invite notification server-side', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('closes the recipient aggregate inside the accept transaction', async () => {
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([sourceMeal()]);
+    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    queueLimitSelect([{ id: 'friendship-1' }]);
+    queueWhereSelect([sourceItem()]);
+    mockTxInsert.mockImplementation(routeInserts({}));
+
+    await acceptMealShareInviteAction({
+      inviteId: UUID_INVITE,
+      newMealId: UUID_NEW,
+      loggedDate: '2026-04-05',
+      timezoneOffset: -420,
+    });
+
+    expect(mockCloseInviteNotification).toHaveBeenCalledTimes(1);
+    expect(mockCloseInviteNotification).toHaveBeenCalledWith(mockTx, {
+      recipientId: mockUser.id,
+      sourceMealId: UUID_MEAL,
+    });
+  });
+
+  it('closes the recipient aggregate inside the dismiss transaction', async () => {
+    installUpdate({
+      returning: [{ id: UUID_INVITE, sourceMealId: UUID_MEAL }],
+    });
+
+    await dismissMealShareInviteAction({ inviteId: UUID_INVITE });
+
+    expect(mockCloseInviteNotification).toHaveBeenCalledTimes(1);
+    expect(mockCloseInviteNotification).toHaveBeenCalledWith(mockTx, {
+      recipientId: mockUser.id,
+      sourceMealId: UUID_MEAL,
+    });
+  });
+
+  it('does not close anything when the accept loses the claim race', async () => {
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([sourceMeal()]);
+    installUpdate({ returning: [] }); // claim matched zero rows
+
+    await expect(
+      acceptMealShareInviteAction({
+        inviteId: UUID_INVITE,
+        loggedDate: '2026-04-05',
+        timezoneOffset: -420,
+      })
+    ).rejects.toThrow('Lời mời');
+    expect(mockCloseInviteNotification).not.toHaveBeenCalled();
   });
 });
 
@@ -284,12 +343,8 @@ describe('the recipient side stays free', () => {
   });
 
   it('dismisses an invite without ever consulting the feature gate', async () => {
-    mockDbUpdate.mockReturnValue({
-      set: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          returning: vi.fn().mockResolvedValue([{ id: UUID_INVITE }]),
-        }),
-      }),
+    installUpdate({
+      returning: [{ id: UUID_INVITE, sourceMealId: UUID_MEAL }],
     });
 
     await expect(

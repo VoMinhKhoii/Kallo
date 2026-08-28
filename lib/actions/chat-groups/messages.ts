@@ -68,33 +68,45 @@ export async function sendChatGroupMessage(
     await assertUnlimitedCircleActor(db, actorId);
   }
 
-  const [row] = await db
-    .insert(chatGroupMessages)
-    .values({
-      groupId: parsed.groupId,
-      senderId: actorId,
-      body: parsed.body,
-    })
-    .returning();
+  // The message, the activity bump and the push audience are ONE transaction:
+  // a member who joins between the write and the audience capture must not be
+  // handed a preview of a message sent before they were in the room. Sharing a
+  // transaction is not on its own enough for that (READ COMMITTED gives each
+  // statement a fresh snapshot) — what serialises it is the chat_groups row.
+  // The bump takes that row's write lock FIRST, and every membership change
+  // (addChatGroupMembers / removeChatGroupMember) opens with the same
+  // `lockChatGroup` FOR UPDATE, so a concurrent join either lands entirely
+  // before this message exists or entirely after this audience was read.
+  const { row, recipientIds } = await db.transaction(async (tx) => {
+    await tx
+      .update(chatGroups)
+      .set({ updatedAt: new Date() })
+      .where(eq(chatGroups.id, parsed.groupId));
 
-  await db
-    .update(chatGroups)
-    .set({ updatedAt: new Date() })
-    .where(eq(chatGroups.id, parsed.groupId));
+    const [message] = await tx
+      .insert(chatGroupMessages)
+      .values({
+        groupId: parsed.groupId,
+        senderId: actorId,
+        body: parsed.body,
+      })
+      .returning();
 
-  // The push audience is captured HERE, in the write's own scope, rather than
-  // inside the after() callback: a member who joins between this write and the
-  // fan-out must not be handed a preview of a message sent before they were in
-  // the room.
-  const recipients = await db
-    .select({ userId: chatGroupMembers.userId })
-    .from(chatGroupMembers)
-    .where(
-      and(
-        eq(chatGroupMembers.groupId, parsed.groupId),
-        ne(chatGroupMembers.userId, actorId)
-      )
-    );
+    const recipients = await tx
+      .select({ userId: chatGroupMembers.userId })
+      .from(chatGroupMembers)
+      .where(
+        and(
+          eq(chatGroupMembers.groupId, parsed.groupId),
+          ne(chatGroupMembers.userId, actorId)
+        )
+      );
+
+    return {
+      row: message,
+      recipientIds: recipients.map((member) => member.userId),
+    };
+  });
 
   // Push only, never a notification row: chat unread is already carried by
   // chat_group_members.lastReadAt, and a row here would double-badge (Gate 3).
@@ -103,7 +115,7 @@ export async function sendChatGroupMessage(
       groupId: parsed.groupId,
       senderId: actorId,
       preview: parsed.body,
-      recipientIds: recipients.map((member) => member.userId),
+      recipientIds,
     })
   );
 

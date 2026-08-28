@@ -46,24 +46,30 @@ import { Errors } from '@/lib/core/errors/catalog';
 
 const {
   mockDbSelect,
-  mockDbInsert,
   mockDbUpdate,
   mockDbTransaction,
   mockTxSelect,
+  mockTxInsert,
+  mockTxUpdate,
   mockTxDelete,
   mockTx,
 } = vi.hoisted(() => {
   const mockTxSelect = vi.fn();
+  const mockTxInsert = vi.fn();
+  const mockTxUpdate = vi.fn();
   const mockTxDelete = vi.fn();
   return {
     mockDbSelect: vi.fn(),
-    mockDbInsert: vi.fn(),
     mockDbUpdate: vi.fn(),
     mockDbTransaction: vi.fn(),
     mockTxSelect,
+    mockTxInsert,
+    mockTxUpdate,
     mockTxDelete,
     mockTx: {
       select: mockTxSelect,
+      insert: mockTxInsert,
+      update: mockTxUpdate,
       delete: mockTxDelete,
     },
   };
@@ -72,7 +78,6 @@ const {
 vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: mockDbSelect,
-    insert: mockDbInsert,
     update: mockDbUpdate,
     transaction: mockDbTransaction,
   },
@@ -154,26 +159,50 @@ function accessRow(
   };
 }
 
-// The chat push audience, captured at write time: a bare
-// `.from().where()` that resolves to the member rows (no limit, no join).
-function queueMemberRows(userIds: string[]) {
-  mockDbSelect.mockReturnValueOnce({
-    from: vi.fn().mockReturnValue({
-      where: vi.fn().mockResolvedValue(userIds.map((userId) => ({ userId }))),
-    }),
-  });
-}
-
-// A stub update chain: db.update(table).set(vals).where(cond) -> resolves.
+// A stub update chain: update(table).set(vals).where(cond) -> resolves.
 function stubUpdate() {
   mockDbUpdate.mockReturnValue({
     set: vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) })),
   });
 }
 
+// The whole send write: the activity bump, the message insert and the push
+// audience are ONE transaction, in that order — the bump takes the
+// chat_groups write lock before the message exists, so a concurrent join
+// cannot slip between the write and the audience capture.
+function stubSendTx(message: Record<string, unknown>, memberIds: string[]) {
+  mockTxUpdate.mockReturnValueOnce({
+    set: vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) })),
+  });
+  mockTxInsert.mockReturnValueOnce({
+    values: vi.fn().mockReturnValue({
+      returning: vi.fn().mockResolvedValue([message]),
+    }),
+  });
+  mockTxSelect.mockReturnValueOnce({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue(memberIds.map((userId) => ({ userId }))),
+    }),
+  });
+}
+
+function sentMessage(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'm1',
+    groupId: GROUP_ID,
+    senderId: USER_A,
+    body: 'hi',
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    ...overrides,
+  };
+}
+
 describe('membership-gated reads', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDbTransaction.mockImplementation((fn: (tx: typeof mockTx) => unknown) =>
+      fn(mockTx)
+    );
   });
 
   it('getChatGroup rejects a non-member', async () => {
@@ -252,7 +281,7 @@ describe('membership-gated reads', () => {
     await expect(
       sendChatGroupMessage(USER_A, { groupId: DIRECT_GROUP_ID, body: 'hi' })
     ).rejects.toThrow('Không tìm thấy nhóm chat.');
-    expect(mockDbInsert).not.toHaveBeenCalled();
+    expect(mockDbTransaction).not.toHaveBeenCalled();
   });
 
   it('direct chat: a current accepted friend passes the gate', async () => {
@@ -265,21 +294,7 @@ describe('membership-gated reads', () => {
         }),
       ])
     );
-    mockDbInsert.mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        returning: vi.fn().mockResolvedValue([
-          {
-            id: 'm1',
-            groupId: DIRECT_GROUP_ID,
-            senderId: USER_A,
-            body: 'hi',
-            createdAt: new Date('2026-01-01T00:00:00Z'),
-          },
-        ]),
-      }),
-    });
-    queueMemberRows([USER_B]);
-    stubUpdate();
+    stubSendTx(sentMessage({ groupId: DIRECT_GROUP_ID }), [USER_B]);
 
     const message = await sendChatGroupMessage(USER_A, {
       groupId: DIRECT_GROUP_ID,
@@ -290,21 +305,7 @@ describe('membership-gated reads', () => {
 
   it('sendChatGroupMessage bumps the group activity timestamp', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([accessRow()]));
-    mockDbInsert.mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        returning: vi.fn().mockResolvedValue([
-          {
-            id: 'm1',
-            groupId: GROUP_ID,
-            senderId: USER_A,
-            body: 'hi',
-            createdAt: new Date('2026-01-01T00:00:00Z'),
-          },
-        ]),
-      }),
-    });
-    queueMemberRows([USER_B]);
-    stubUpdate();
+    stubSendTx(sentMessage(), [USER_B]);
 
     const message = await sendChatGroupMessage(USER_A, {
       groupId: GROUP_ID,
@@ -312,7 +313,9 @@ describe('membership-gated reads', () => {
     });
 
     expect(message.body).toBe('hi');
-    expect(mockDbUpdate).toHaveBeenCalledTimes(1);
+    // The bump rides inside the send transaction, not on the db singleton.
+    expect(mockTxUpdate).toHaveBeenCalledTimes(1);
+    expect(mockDbUpdate).not.toHaveBeenCalled();
     expect(mockAssertActor).toHaveBeenCalledWith(expect.anything(), USER_A);
   });
 
@@ -320,21 +323,7 @@ describe('membership-gated reads', () => {
   // chat_group_members.lastReadAt already carries the unread state (Gate 3).
   it('sendChatGroupMessage pushes without creating a notification row', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([accessRow()]));
-    mockDbInsert.mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        returning: vi.fn().mockResolvedValue([
-          {
-            id: 'm1',
-            groupId: GROUP_ID,
-            senderId: USER_A,
-            body: 'Ăn cơm chưa',
-            createdAt: new Date('2026-01-01T00:00:00Z'),
-          },
-        ]),
-      }),
-    });
-    queueMemberRows([USER_B]);
-    stubUpdate();
+    stubSendTx(sentMessage({ body: 'Ăn cơm chưa' }), [USER_B]);
 
     await sendChatGroupMessage(USER_A, {
       groupId: GROUP_ID,
@@ -353,8 +342,28 @@ describe('membership-gated reads', () => {
       recipientIds: [USER_B],
     });
     expect(
-      mockDbSelect.mock.invocationCallOrder.at(-1) ?? Number.POSITIVE_INFINITY
+      mockTxSelect.mock.invocationCallOrder.at(-1) ?? Number.POSITIVE_INFINITY
     ).toBeLessThan(mockAfter.mock.invocationCallOrder[0]);
+  });
+
+  // The race this closes: a member joining between the message write and the
+  // audience read would be pushed a preview of a message sent before they were
+  // in the room. All three statements share one transaction, and the
+  // chat_groups bump takes that row's write lock FIRST — the same lock every
+  // membership change opens with — so no join can interleave.
+  it('sendChatGroupMessage captures the audience inside the write transaction', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([accessRow()]));
+    stubSendTx(sentMessage(), [USER_B]);
+
+    await sendChatGroupMessage(USER_A, { groupId: GROUP_ID, body: 'hi' });
+
+    expect(mockDbTransaction).toHaveBeenCalledTimes(1);
+    // Bump (lock) -> insert -> audience, all on the transaction handle.
+    const bump = mockTxUpdate.mock.invocationCallOrder[0];
+    const insert = mockTxInsert.mock.invocationCallOrder[0];
+    const audience = mockTxSelect.mock.invocationCallOrder[0];
+    expect(bump).toBeLessThan(insert);
+    expect(insert).toBeLessThan(audience);
   });
 
   it('does NOT gate a direct 1:1 send (direct chat stays free)', async () => {
@@ -367,21 +376,7 @@ describe('membership-gated reads', () => {
         }),
       ])
     );
-    mockDbInsert.mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        returning: vi.fn().mockResolvedValue([
-          {
-            id: 'm1',
-            groupId: DIRECT_GROUP_ID,
-            senderId: USER_A,
-            body: 'hi',
-            createdAt: new Date('2026-01-01T00:00:00Z'),
-          },
-        ]),
-      }),
-    });
-    queueMemberRows([USER_B]);
-    stubUpdate();
+    stubSendTx(sentMessage({ groupId: DIRECT_GROUP_ID }), [USER_B]);
 
     await sendChatGroupMessage(USER_A, {
       groupId: DIRECT_GROUP_ID,
@@ -402,7 +397,7 @@ describe('membership-gated reads', () => {
     }).catch((e: unknown) => e);
 
     expect((error as FeatureLockedError).status).toBe(402);
-    expect(mockDbInsert).not.toHaveBeenCalled();
+    expect(mockDbTransaction).not.toHaveBeenCalled();
   });
 });
 

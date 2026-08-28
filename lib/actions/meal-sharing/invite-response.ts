@@ -20,6 +20,7 @@ import {
   acceptMealShareInviteSchema,
   dismissMealShareInviteSchema,
 } from '@/lib/core/validation/social';
+import { closeInviteNotification } from '@/lib/domain/notifications/close-invite-notification';
 import { shareInviteAcceptedKey } from '@/lib/domain/notifications/group-keys';
 import { notify } from '@/lib/domain/notifications/notify';
 import { sendNotificationPush } from '@/lib/domain/notifications/push';
@@ -106,6 +107,16 @@ export async function acceptMealShareInviteAction(input: {
     if (!claimed[0]) {
       throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
     }
+
+    // Close my own invite notification here, in the tx that resolved the offer,
+    // so EVERY resolution path closes the aggregate — this card, the Circle
+    // page, another device, or the sender's split auto-dismiss. A fresh
+    // re-offer then INSERTs new history instead of rewriting this row. The
+    // Activity card's markRead is a harmless second close (read_at IS NULL).
+    await closeInviteNotification(tx, {
+      recipientId: user.id,
+      sourceMealId: invite.sourceMealId,
+    });
 
     // The offer was created under an accepted friendship — re-check it still
     // holds (the sender may have been unfriended or blocked since). Rolls back.
@@ -198,19 +209,39 @@ export async function dismissMealShareInviteAction(input: {
   const { user } = await requireAuthAndProfile();
   // Ungated for the same reason as accept: responding to someone else's offer
   // is never the billable action.
-  const [updated] = await db
-    .update(mealShareInvites)
-    .set({ status: 'dismissed', respondedAt: new Date() })
-    .where(
-      and(
-        eq(mealShareInvites.id, parsed.inviteId),
-        eq(mealShareInvites.toUserId, user.id),
-        eq(mealShareInvites.status, 'pending')
+  //
+  // Transactional so the guarded dismiss and the notification close land
+  // together: a dismiss that committed while the close failed would leave an
+  // open aggregate for an offer that no longer exists, and a later re-offer
+  // would rewrite that row instead of opening fresh history.
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(mealShareInvites)
+      .set({ status: 'dismissed', respondedAt: new Date() })
+      .where(
+        and(
+          eq(mealShareInvites.id, parsed.inviteId),
+          eq(mealShareInvites.toUserId, user.id),
+          eq(mealShareInvites.status, 'pending')
+        )
       )
-    )
-    .returning({ id: mealShareInvites.id });
-  if (!updated) {
-    throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
-  }
-  return { success: true };
+      .returning({
+        id: mealShareInvites.id,
+        // The notification aggregates on the SOURCE meal, not the invite.
+        sourceMealId: mealShareInvites.sourceMealId,
+      });
+    if (!updated) {
+      throw Errors.notFound('Lời mời không tồn tại hoặc đã được xử lý.');
+    }
+
+    // Same close as accept: a dismiss from Circle or another device resolves
+    // the offer just as finally as one from the Activity card, so the card is
+    // not the only thing that can read this row.
+    await closeInviteNotification(tx, {
+      recipientId: user.id,
+      sourceMealId: updated.sourceMealId,
+    });
+
+    return { success: true };
+  });
 }
