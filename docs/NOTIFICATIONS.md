@@ -19,7 +19,7 @@ Goal: a **Threads/Instagram-style Activity page** (web, mobile-responsive) backe
 
 - **Slack**: ordered short-circuit decision gates; sparse preference overrides; push only when not active in-app. V1 has no prefs UI, but the dot-namespaced type taxonomy (`category.event`) lets a `notification_prefs(user_id, category, channel)` table bolt on later with zero data migration.
 - **Instagram tri-state**: `seenAt` (badge = count where null; bulk-cleared on opening Activity), `readAt` (per-item on tap → dim), sections "New / Last 30 days / Older" are presentation-only.
-- **Aggregation**: upsert on `(recipientId, groupKey)` partial unique index while unread — "X and 2 others reacted"; keep 3 most recent `actorIds` + true `actorCount`.
+- **Aggregation**: upsert on `(recipientId, groupKey)` partial unique index while the row is open — "X and 2 others reacted". `actorIds` holds the aggregate's **full** deduplicated membership, newest first, and `actorCount` is derived from it (`cardinality`), so the total is exact and any actor can be retracted. Audiences are bounded (≤10 friends, ≤50 group members), so the array stays small; the UI renders the first two faces.
 - **Actionable notifications** (the copy/split invite) reference the domain object, never own state: render live `meal_share_invites.status`; resolved elsewhere → buttons collapse to a status chip; mutations reuse the existing idempotent accept/dismiss actions.
 - **Fan-out on write** (single per-recipient table): audiences are ≤10 friends / ≤50 members. 90-day retention via pg_cron.
 
@@ -44,7 +44,7 @@ flowchart LR
         A10["Unfriend · block · remove member<br/>· leave · edit/delete meal"]
     end
 
-    subgraph GATES["DECISION GATES (in tx)"]
+    subgraph GATES["DECISION GATES 1-4 (inside the producing tx)"]
         direction TB
         G1{"1 · in catalog?"}
         G2{"2 · self-action?"}
@@ -57,15 +57,15 @@ flowchart LR
         N[("notifications<br/>per-recipient rows<br/>seenAt / readAt / dismissedAt<br/>actorIds+count · groupKey · data")]
         MI[("meal_share_invites<br/>status: pending/accepted/dismissed<br/>= source of truth for invite cards")]
         PT[("push_tokens")]
-        CRON["pg_cron: delete > 90 days"]
+        CRON["pg_cron: delete rows > 90 days<br/>(any state — unseen, read,<br/>dismissed alike)"]
     end
 
     subgraph OUT["DELIVERY"]
         direction TB
         B["Badge poll 30s<br/>count(seenAt IS NULL)<br/>desktop sidebar · mobile heart · drawer"]
         F["/activity page<br/>New / Last 30 days / Older<br/>open → bulk markSeen<br/>tap row → markRead + deep link"]
-        AC["Actionable invite card<br/>LIVE status join → Accept/Dismiss<br/>or 'Added'/'Dismissed' chip<br/>(reuses existing invite mutations)"]
-        PUSH["after() commit → FCM HTTP v1<br/>iOS native push (Flutter)<br/>collapse-key per groupKey/group<br/>prune dead tokens"]
+        AC["Actionable invite card<br/>LIVE status join → Accept/Dismiss<br/>or 'Added' / neutral 'No longer<br/>available' chip<br/>(reuses existing invite mutations)"]
+        PUSH["GATE 5, after the tx COMMITS:<br/>after() → FCM HTTP v1<br/>iOS native push (Flutter)<br/>collapse-key per groupKey/group<br/>prune dead tokens"]
     end
 
     A1 & A2 & A3 & A4 & A6 & A7 & A8 --> G1
@@ -81,78 +81,107 @@ flowchart LR
     G1 -- yes --> G2
     G2 -- "recipient==actor" --> X
     G2 -- no --> G3
-    G3 -- "push-only" --> PUSH
+    G3 -- "push-only: NO row is written<br/>(nothing lands in the feed)" --> PUSH
     G3 -- no --> G4
-    G4 -- "yes → UPDATE row<br/>(add actor, count++,<br/>re-badge only if was seen)" --> N
-    G4 -- "no → INSERT row" --> N
+    G4 -- "yes → UPDATE row<br/>(add actor, recount,<br/>re-badge only if was seen)<br/>NO push" --> N
+    G4 -- "no → INSERT row → push" --> N
     A6 -- "toggle OFF →<br/>retractActor (open rows only)" --> N
     N --> B
     N --> F
     N -- "type=share.invite:<br/>join live status" --> AC
     AC -- "accept/dismiss" --> MI
     MI -- "accept → notify sender<br/>share.invite_accepted" --> G1
-    N -- "recipients after commit" --> PUSH
+    N -- "recipients of INSERTED rows,<br/>after commit" --> PUSH
     PT --> PUSH
     CRON --> N
 ```
+
+Reading the picture: gates 1–4 all run **inside the producing transaction**, so a notification can never exist for a domain write that rolled back — the `notify()` upsert is part of the same tx. Gate 5 (push) runs **after that tx commits**, via `after()`, and only for recipients whose row was freshly INSERTED. `chat.message` short-circuits at gate 3 into push only: **no notification row is ever written for it**, so it never appears in `/activity` and never touches the badge — the group's existing `lastReadAt` dot is its unread surface.
 
 ## Notification lifecycle — FSM
 
 Every notification row moves through this machine. The aggregation transitions (`refresh`/`retract`) are the anti-flood mechanism; the tri-state read model is the anti-starvation mechanism (nothing silently disappears — it must be seen, then read).
 
+**"Open aggregate" is defined once, here, and used with exactly this meaning everywhere below:** a row with `read_at IS NULL AND dismissed_at IS NULL` — precisely the predicate of the partial unique index. **Seen rows are open**: `seen_at` plays no part in it. A new event on an open row aggregates into it, and `retractActor` can still remove an actor from it. Reading (or dismissing) a row is what closes it; a later event then starts a fresh row.
+
 ```mermaid
 stateDiagram-v2
-    [*] --> Unseen : notify() insert\n(badge +1, push sent)
+    [*] --> Unseen : notify() INSERT\n(badge +1, push sent —\nthe only push this row gets)
 
     state "Unseen (open aggregate)" as Unseen
     state "Seen (open aggregate)" as Seen
     state "Read (closed)" as Read
     state "Dismissed" as Dismissed
 
-    Unseen --> Unseen : same groupKey event\n→ UPSERT same row\n(add actor, count++,\nbump updatedAt — NO new row,\nNO extra badge)
-    Seen --> Unseen : same groupKey event\n→ reset seenAt\n(re-badges ONCE, still one row)
+    Unseen --> Unseen : same groupKey event\n→ UPSERT same row\n(add actor, recount,\ncreatedAt/updatedAt bump — NO new row,\nNO extra badge, NO push)
+    Seen --> Unseen : same groupKey event\n→ reset seenAt\n(re-badges ONCE, still one row,\nstill NO push)
 
     Unseen --> Seen : user opens /activity\n(bulk markSeen — badge → 0)
     Unseen --> Unseen : retractActor (un-react)\ncount--, delete row at 0
     Seen --> Seen : retractActor\ncount--, delete row at 0
 
     Seen --> Read : user taps the row\n(readAt set, row dims)
-    Unseen --> Read : tap directly from feed
+    Unseen --> Read : tap directly from feed\n(markRead also fills seenAt\nwhen null — a Read row\ncan never be badged)
 
-    Read --> [*] : same groupKey fires AGAIN\n→ unique index no longer matches\n→ FRESH row starts at Unseen\n(history preserved, new badge)
+    Read --> [*] : same groupKey fires AGAIN\n→ unique index no longer matches\n→ FRESH row starts at Unseen\n(history preserved, new badge, new push)
     Read --> Dismissed : user swipes/dismisses (optional v1)
-    Dismissed --> [*] : hidden from feed
-    Read --> [*] : retention cron deletes at 90 days
+    Dismissed --> [*] : hidden from the feed\n(the row still exists\nuntil retention removes it)
+
+    note right of Dismissed
+      Retention (pg_cron, 90 days by createdAt)
+      deletes rows in ANY state — unseen, seen,
+      read and dismissed alike. It is not a
+      transition out of Read only.
+    end note
 ```
 
 Key invariants encoded above:
-- **One open aggregate per `(recipient, groupKey)`** — enforced by the partial unique index (`WHERE read_at IS NULL AND dismissed_at IS NULL`). 10 people reacting to your meal = **1 row, ≤2 badge events** (first reaction badges; subsequent ones update silently while unseen; only a seen→unseen reset re-badges).
-- **Read rows are immutable history** — `retractActor` and refresh never touch them (Instagram behavior: un-liking doesn't rewrite the past; a new like after you've read starts a fresh row).
+- **One open aggregate per `(recipient, groupKey)`** — enforced by the partial unique index (`WHERE read_at IS NULL AND dismissed_at IS NULL`). 10 people reacting to your meal = **1 row**.
+- **At most one badge event per open aggregate per visit cycle.** The INSERT badges. Every later event that lands on the still-unseen row refreshes it silently. Once the user has visited (row seen) the next event resets `seen_at` and re-badges — once — and that is a new cycle. So the badge count is "how many conversations have something new since your last visit", not "how many events happened".
+- **At most one push per open aggregate, full stop** — `notify()` returns only recipients whose row was INSERTED, so silent refreshes and seen→unseen re-badges never reach a device. The in-app row is the durable record; the push is only the first knock.
+- **Read rows are immutable history** — `retractActor` and refresh never touch them (Instagram behavior: un-liking doesn't rewrite the past; a new like after you've read starts a fresh row). Seen-but-unread rows are *not* history: they are open, and both refresh and retract still apply to them.
+- **Reading implies seeing** — `markRead` sets `read_at` and fills `seen_at` when it is null (`lib/actions/notifications/state.ts`), so tapping a row straight out of an unseen feed cannot leave the badge stuck counting a row the user has already opened. A Read row is never badged.
 - **Badge = count(seenAt IS NULL)**; opening Activity zeroes it in bulk; per-row `readAt` only controls bold/dim.
+- **`created_at` is the aggregate's *latest* activity, not its birth** — a refresh resets it so the row jumps back to the top of the feed. Consequences: the feed is ordered by recency of activity (intended), retention ages rows out by last activity (intended), and mid-scroll re-ordering is possible (see the pagination tradeoff under mark-seen).
+
+### Badge clearing (`markSeen`) — deliberate Instagram semantics
+
+Opening `/activity` posts `markSeen(maxCreatedAt of the first page)`, which clears `seen_at` for **every** unseen row at or before that timestamp — including rows the user never scrolled to, on pages that were never fetched. That is intentional, and it is what Instagram does: the badge answers "is there anything new since you last looked", and *looking* is the whole gesture. A badge that survived the visit because page 3 was never reached would be unclearable without infinite scrolling.
+
+Two consequences worth naming:
+
+- **The "New" section is a client-held snapshot, not a live read of `seen_at`.** The mark-seen call invalidates the feed as well as the badge, so re-reading `seen_at` would empty the section a round trip after it painted. `activity-sections.tsx` freezes the ids that were unseen on first render, so rows keep their tint for the whole visit.
+- **The equal-timestamp edge is benign.** A row created in the same instant as the bound is cleared too. Under badge-clearing intent that is the desired outcome, not a lost notification: the row is still in the feed, still tinted for this visit's snapshot, and only its badge contribution is gone.
+
+**Pagination tradeoff (accepted).** Because a refresh resets `created_at`, an aggregate can move *above* the cursor a reader has already scrolled past. That row is then missed by the in-flight pagination and only re-appears on the next 30-second refetch or invalidation, at the top where it belongs. This is standard for any re-surfacing feed (Instagram, Slack activity) and is accepted: nothing is lost, only briefly out of view, and the badge still counts it.
 
 ## Decision pipeline — "should this event notify?" (Slack-style ordered gates)
 
 Every producer event flows through these short-circuit gates; each gate exists to prevent a specific flood or gap:
 
+Gates 1–4 execute **inside the producing transaction**, alongside the domain write; gate 5 executes **after that transaction commits**.
+
 ```mermaid
 flowchart TD
-    E[Domain event committed in tx] --> G1{Gate 1 — Relevance\nIs the type in the v1 catalog?}
+    E[Domain write, inside its tx] --> G1{Gate 1 — Relevance\nIs the type in the v1 catalog?}
     G1 -- "no (unfriend, block, removal,\nleave, edit, dismiss)" --> X1[Silent by design]
     G1 -- yes --> G2{Gate 2 — Self-notification\nrecipient == actor?}
     G2 -- yes --> X2[Skip: never notify\nyourself]
     G2 -- no --> G3{Gate 3 — Double-badging\nDoes another surface already\ncarry this unread state?}
-    G3 -- "chat.message → lastReadAt\ndot already exists" --> P[Push-only:\nNO notification row]
-    G3 -- no --> G4{Gate 4 — Aggregation\nOpen row for same\nrecipient + groupKey?}
-    G4 -- yes --> U[UPDATE existing row\nadd actor / bump count\nreset seenAt if seen]
+    G3 -- "chat.message → lastReadAt\ndot already exists" --> P[Push-only:\nNO notification row —\nnothing to show in /activity]
+    G3 -- no --> G4{Gate 4 — Aggregation\nOpen row for same\nrecipient + groupKey?\nopen = read_at IS NULL\nAND dismissed_at IS NULL}
+    G4 -- yes --> U[UPDATE existing row\nadd actor / recount\nreset seenAt if seen\nIN-APP ONLY]
     G4 -- no --> I[INSERT new row\n→ Unseen]
-    U --> G5
-    I --> G5{Gate 5 — Channel routing\nafter tx commit}
+    U -.-> C1
+    I --> G5{Gate 5 — Channel routing\nAFTER the tx commits.\nOnly INSERTed rows\nreach this gate}
     P --> G5
     G5 --> C1[In-app: row is already live\nvia 30s badge poll]
     G5 --> C2{Push eligible?\ntoken registered\n+ FCM configured}
     C2 -- yes --> S[after&#40;&#41; fire-and-forget\nFCM send, collapse-key\nper groupKey / chat group]
     C2 -- no --> X3[In-app only]
 ```
+
+**Gate 5 fires only on an aggregate INSERT.** `notify()` reports back the recipients whose row Postgres actually inserted (`RETURNING (xmax = 0)`), and the producers hand exactly that list to `after(() => sendNotificationPush(...))`. An event that aggregated into an already-open row updates the feed and the badge but does not buzz the device again — otherwise the eighth reaction on a meal you have not opened yet would be the eighth push. `chat.message` is the one path that reaches gate 5 without a row at all: it is push-only by design and writes nothing to the feed.
 
 Calibration ("not excessive, not minimal") per type:
 - **High-signal, always individual**: `friend.joined`, `group.added`, `share.invite`, `share.invite_accepted` — each is a distinct human action toward you; never collapsed across objects.
@@ -168,11 +197,18 @@ The notification never owns this state — it renders `meal_share_invites.status
 stateDiagram-v2
     [*] --> Pending : offer created (mode = copy | split)\ncopy → invitee gets full-portion offer\nsplit → portionFactor set AND sender's own\nmeal scaled down in place immediately
     Pending --> Accepted : accept (here or anywhere)\nguarded UPDATE WHERE status='pending'\n→ meal copy created in invitee's diary\n(portionFactor applied) → buttons collapse\nto "Added" chip → sender notified\n(share.invite_accepted)
-    Pending --> DismissedI : dismiss (here or anywhere)\n→ "Dismissed" chip, sender NOT told
-    Pending --> DismissedI : AUTO-dismiss — sender split the\nsame meal with someone else\n(3rd party silently dropped, no signal)
+    Pending --> DismissedI : dismiss (here or anywhere)\n→ neutral "No longer available" chip,\nsender NOT told
+    Pending --> DismissedI : AUTO-dismiss — sender split the\nsame meal with someone else\n(3rd party silently dropped, no signal;\nsame neutral chip — the client cannot\ntell the two apart, so it must not\nsay the reader dismissed it)
     DismissedI --> Pending : sender re-shares\n(upsert re-pends; notification refreshes\nif open, else fresh row per lifecycle FSM)
     Accepted --> Accepted : re-share is a no-op\n(never resets an accepted invite)
 ```
+
+Invariants for this sub-FSM:
+
+- **Accept is a guarded `UPDATE ... WHERE status = 'pending'` inside the accept transaction** (`invite-response.ts`, after a `FOR UPDATE` lock on the source meal). Two taps, two devices, or a tap racing an auto-dismiss all resolve to one winner: the loser's statement matches zero rows, the whole tx rolls back with "already handled", and no second meal copy can be materialized. Race-safe and idempotent by construction — which is why the notification card can be a thin renderer of `meal_share_invites.status` and why acting from Circle, Activity, or another device stays consistent.
+- **Auto-dismiss of third parties happens inside the sender's split transaction** (`share-with-friends.ts`): the same tx that scales the sender's meal down also dismisses every *other* still-pending invite for that meal, because accept copies the source verbatim and would otherwise hand a straggler the halved portion under a "full copy" label. It is never a follow-up write, so there is no window in which a third party can accept the stale offer.
+- **The dismissed chip is deliberately neutral.** That auto-dismiss is silent by design (no rejection signal), and the third party's card would otherwise read "Dismissed" for something they never did; see the deferred-decisions note below.
+- **NOTE, not fixed here:** the split ↔ meal-rescaling interaction (re-sharing a split of the same meal, and the compounding shrink it would cause) is pre-existing meal-sharing domain behaviour. Today it is refused up front by the `portionFactor < 1` guard, and any residual edge around re-shares lives in the sharing domain, not in this notification system — flagged for follow-up rather than changed under this design.
 
 ## Event catalog v1
 
@@ -197,7 +233,7 @@ Deliberately silent: unfriend, block, member removal, leave, meal edit/delete, i
 
 **Schema** (edit `lib/infra/db/schema.ts`, then `bun db:generate`; NEVER `dbr:push`/`dbr:reset` — user applies migrations):
 
-`notifications`: id uuid PK, recipientId (FK auth.users cascade), type text, actorIds uuid[] (recent ≤3), actorCount int, objectType/objectId, targetType/targetId, groupKey text, data jsonb, createdAt/updatedAt, seenAt, readAt, dismissedAt.
+`notifications`: id uuid PK, recipientId (FK auth.users cascade), type text, actorIds uuid[] (full membership, newest first), actorCount int (= `cardinality(actorIds)`), objectType/objectId, targetType/targetId, groupKey text, data jsonb, createdAt/updatedAt, seenAt, readAt, dismissedAt.
 Indexes: `(recipientId, createdAt DESC, id DESC) WHERE dismissed_at IS NULL` (feed cursor); `(recipientId) WHERE seen_at IS NULL AND dismissed_at IS NULL` (badge); **unique** `(recipientId, groupKey) WHERE read_at IS NULL AND dismissed_at IS NULL` (aggregation upsert target); CHECK on type list (pre-widened incl. reserved types).
 
 **Hand-written SQL** (new files in `supabase/migrations/`, append-only, manual timestamps):
@@ -206,12 +242,12 @@ Indexes: `(recipientId, createdAt DESC, id DESC) WHERE dismissed_at IS NULL` (fe
 
 **Helper** — new `lib/domain/notifications/`:
 - `types.ts` — `NotificationType`, `NotifyInput { recipientId, type, actorId, objectType?, objectId?, targetType?, targetId?, groupKey, data? }`.
-- `notify.ts` — `notify(tx, inputs[]): Promise<string[]>` (returns recipient ids for Phase 4 push): skips self (recipient===actor), Drizzle `onConflictDoUpdate` against the partial unique index — prepend actor (dedup, cap 3), bump actorCount only for new actors, reset `seenAt`/`createdAt` so aggregates re-badge. `retractActor(tx, {recipientId, groupKey, actorId})` for un-react: decrement, delete at zero, no-op on seen/read rows (Instagram behavior).
+- `notify.ts` — `notify(tx, inputs[]): Promise<string[]>`: skips self (recipient===actor), Drizzle `onConflictDoUpdate` against the partial unique index — prepend the actor into the deduplicated **full** membership array (no cap: audiences are bounded), recompute `actorCount` as its `cardinality`, reset `seenAt`/`createdAt` so aggregates re-badge and re-surface. **Returns only the recipients whose row was INSERTED** (`RETURNING (xmax = 0)`) — the Phase 4 push list, so a device is knocked once per open aggregate and never again while it stays open. `retractActor(tx, {recipientId, groupKey, actorId})` for un-react: remove the actor, decrement, delete at zero; applies to any OPEN row (seen ones included) and is a no-op on read/dismissed rows (Instagram behavior).
 - `group-keys.ts` — pure key builders (`'share.reaction:'+shareId`, etc.), unit-tested.
 
 **Producer wiring** (7 files above, all inside the existing tx; carry recipient ids out of the tx closure — small mechanical refactor where actions `return db.transaction(...)` directly).
 
-Tests: `lib/domain/notifications/__tests__/` (upsert semantics, dedup/cap, self-skip, retract paths) + per-producer recipient assertions in existing action test folders.
+Tests: `lib/domain/notifications/__tests__/` (input shaping, conflict-key spreading, inserted-only reporting, self-skip, retract paths) + per-producer recipient assertions in existing action test folders.
 
 ## Phase 2 — API + hooks
 
@@ -245,7 +281,7 @@ Tests: section bucketing, template selection per type, invite card state machine
 
 Status: implemented.
 
-**Delivery decision**: fire-and-forget via Next 16 `after()` scheduled **after tx commit** (recipient ids returned by `notify()`), behind a mockable `lib/infra/push` boundary. No queue table — in-app row is the durable record; lost push on process death is acceptable at this scale. Works self-hosted (repo ships a Dockerfile).
+**Delivery decision**: fire-and-forget via Next 16 `after()` scheduled **after tx commit**, for the recipient ids returned by `notify()` — which are the recipients whose aggregate was freshly INSERTED, so an already-open aggregate absorbing another actor updates the feed without re-buzzing the device — behind a mockable `lib/infra/push` boundary. No queue table — in-app row is the durable record; lost push on process death is acceptable at this scale. Works self-hosted (repo ships a Dockerfile).
 
 - `lib/infra/push/types.ts` — `PushMessage {token, title, body, data, collapseKey?, badge?}`, `PushSendResult {token, ok, shouldPrune}`, `PushSender`.
 - `lib/infra/push/fcm.ts` — FCM HTTP v1 **without new deps**: service-account JWT via `node:crypto` RSA-SHA256 → oauth2 token (module-level cache, 55 min) → `messages:send`, ten per `Promise.allSettled` wave; env `FCM_SERVICE_ACCOUNT_JSON` (whole service-account JSON in one var, documented in `.env.example`). The `apns`/`android` blocks are built conditionally — FCM 400s on unknown or null fields. Prune classification: HTTP 404 or `UNREGISTERED`, and 400 `INVALID_ARGUMENT`; 401/403/429/5xx keep the row. (`firebase-admin` is the drop-in alternative behind the same interface if preferred later.)
@@ -294,7 +330,15 @@ Tests: `lib/infra/push/__tests__/fcm.test.ts` (JWT assembly, token cache reuse, 
 
 ## Audience visibility rule
 
-A notification (and its `data` payload — reply previews, meal names) must never outlive the access it rode in on. Fan-out audiences computed from **history** are re-gated on **current** visibility at write time: `share.reply` filters prior repliers through `canViewShareOwnedBy` before `notify()`, so an unfriended replier silently drops out of the thread audience. Owner-directed types (`share.reaction`, `share.logged`, `share.invite_accepted`) need no gate — the owner always sees their own share. `share.invite`'s `mealName` goes only to an explicitly addressed invitee (a per-invite grant, not passive fan-out), and is deliberately retained even across a later unfriend. Already-written notification rows are point-in-time records and are not retroactively purged on unfriend/block — new fan-out simply stops including the departed party.
+The rule governs **new fan-out**, at write time: a notification (and its `data` payload — reply previews, meal names) is only ever created for a recipient who can see the thing it describes *at the moment it is written*. Audiences computed from **history** are therefore re-gated on **current** visibility: `share.reply` filters prior repliers through `canViewShareOwnedBy` before `notify()`, so an unfriended replier silently drops out of the thread audience. Owner-directed types (`share.reaction`, `share.logged`, `share.invite_accepted`) need no gate — the owner always sees their own share. `share.invite`'s `mealName` goes only to an explicitly addressed invitee (a per-invite grant, not passive fan-out).
+
+**Rows already written are durable point-in-time snapshots and are never retroactively purged** — this is the Instagram model, and it is not a gap in the rule above: unfriending someone does not un-send the message they already received, it stops the next one. A later unfriend or block ends the person's participation in *future* fan-out; the activity they were legitimately told about at the time stays in their feed until retention removes it. (If a hard right-to-erase requirement ever lands, it belongs in a deletion job over `notifications` keyed on the broken edge, not in this write path.)
+
+## Deferred decisions (deliberate in v1, named so they are not rediscovered as bugs)
+
+- **No mute / preferences for `chat.message` push.** A group member with a registered device is pushed for every message in every group; there is no per-group mute, no quiet hours, no channel toggle. V1 ships to a handful of small groups, and the dot-namespaced type taxonomy exists precisely so a `notification_prefs(user_id, category, channel)` table can bolt onto **gate 5** later as a filter — no data migration, no change to gates 1–4, no producer edits.
+- **Reaction and reply notifications deep-link to `/circle`, not to the meal.** There is no per-share anchor route today (the wall is a single feed), so `share.reaction` / `share.reply` / `share.logged` all land on the circle feed and leave the reader to spot the meal (`friend.joined` → `/circle` is already the right destination; `group.added` deep-links properly via `targetId`). When a `/circle/s/[shareId]`-style route exists, `notificationHref()` is the single place to change — those rows already store the share id in `objectId`.
+- **Auto-dismissed invites render a neutral chip.** A sender splitting a meal with someone else auto-dismisses other pending invites, and the client cannot distinguish that from a self-dismiss, so every non-accepted terminal state (dismissed here, dismissed elsewhere, auto-dismissed, or gone) collapses to one "No longer available" / "Không còn hiệu lực" chip. Naming the act ("Dismissed") would tell a third party they did something they never did.
 
 ## Known risks
 

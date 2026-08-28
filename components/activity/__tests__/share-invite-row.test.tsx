@@ -81,9 +81,12 @@ describe('ShareInviteRow', () => {
     expect(screen.getByText('invite.modeSplit')).toBeInTheDocument();
   });
 
+  // "Dismissed" would be a lie on a third party's card: a sender splitting the
+  // meal with somebody else auto-dismisses their pending invite, and the client
+  // cannot tell that apart from a self-dismiss. Only "accepted" names an act.
   it.each([
     [{ status: 'accepted' }, 'invite.status.accepted'],
-    [{ status: 'dismissed' }, 'invite.status.dismissed'],
+    [{ status: 'dismissed' }, 'invite.status.unavailable'],
     [null, 'invite.status.unavailable'],
   ])('collapses to a chip when the invite is %o', (invite, chip) => {
     renderRow(item({ invite }));

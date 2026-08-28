@@ -15,12 +15,14 @@ import { notificationKeys } from '@/lib/domain/notifications/query-keys';
 import { inviteMode } from './notification-copy';
 import { NotificationAvatars, NotificationMessage } from './notification-row';
 
-/** The invite's terminal state, as a quiet chip. `null` invite (or a missing
- *  object id) means the offer is gone — say so rather than showing dead
- *  buttons. */
+/** The invite's terminal state, as a quiet chip. Only "accepted" names an act:
+ *  everything else — dismissed here, dismissed elsewhere, auto-dismissed
+ *  because the sender split the same meal with someone else, or gone entirely
+ *  (`null` invite / missing object id) — collapses to one neutral "no longer
+ *  available" chip. The client cannot tell a self-dismiss from an automatic
+ *  one, so it must not imply the reader acted. */
 function statusKey(status: string | undefined): string {
   if (status === 'accepted') return 'invite.status.accepted';
-  if (status === 'dismissed') return 'invite.status.dismissed';
   return 'invite.status.unavailable';
 }
 

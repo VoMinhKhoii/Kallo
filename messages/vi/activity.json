@@ -52,7 +52,6 @@
     "error": "Chưa thực hiện được. Hãy thử lại.",
     "status": {
       "accepted": "Đã thêm",
-      "dismissed": "Đã bỏ qua",
       "unavailable": "Không còn hiệu lực"
     }
   }

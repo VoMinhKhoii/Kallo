@@ -1,11 +1,12 @@
-// The SQL-level aggregation semantics (dedup + cap 3, actor_count growing only
-// for a new actor, the seen_at/created_at reset) live in the ON CONFLICT SET
-// clause and are enforced by the partial unique index — they cannot execute
-// without a database, and are covered by the constraint design rather than
-// here. What IS testable in isolation, and what this suite pins, is the input
-// shaping: which inputs reach the statement at all, how conflicting keys are
-// spread across statements, what notify() reports back, and the guards that
-// make retractActor a no-op.
+// The SQL-level aggregation semantics (dedup into the full actor membership,
+// actor_count derived from it, the seen_at/created_at reset) live in the ON
+// CONFLICT SET clause and are enforced by the partial unique index — they
+// cannot execute without a database, and are covered by the constraint design
+// rather than here. What IS testable in isolation, and what this suite pins, is
+// the input shaping: which inputs reach the statement at all, how conflicting
+// keys are spread across statements, what notify() reports back (INSERTed rows
+// only — the anti-flood push gate), and the guards that make retractActor a
+// no-op.
 
 import { describe, expect, it, vi } from 'vitest';
 import { notify, retractActor } from '@/lib/domain/notifications/notify';
@@ -21,8 +22,10 @@ interface InsertedRow {
   groupKey: string;
 }
 
-/** A tx double capturing every insert batch and returning one row per value. */
-function insertingTx() {
+/** A tx double capturing every insert batch and returning one row per value.
+ *  `aggregated` names the recipients whose statement took the ON CONFLICT
+ *  branch — Postgres reports those with `xmax <> 0`, i.e. `inserted: false`. */
+function insertingTx(aggregated: string[] = []) {
   const batches: InsertedRow[][] = [];
   const insert = vi.fn(() => ({
     values: (rows: InsertedRow[]) => {
@@ -31,7 +34,10 @@ function insertingTx() {
         onConflictDoUpdate: () => ({
           returning: () =>
             Promise.resolve(
-              rows.map((row) => ({ recipientId: row.recipientId }))
+              rows.map((row) => ({
+                recipientId: row.recipientId,
+                inserted: !aggregated.includes(row.recipientId),
+              }))
             ),
         }),
       };
@@ -73,6 +79,28 @@ describe('notify', () => {
 
     expect(notified).toEqual([OWNER, OTHER]);
     expect(batches[0].map((row) => row.recipientId)).toEqual([OWNER, OTHER]);
+  });
+
+  // The push gate: one buzz per open aggregate. A row that absorbed the event
+  // into an aggregate the recipient has not read yet updates in-app only.
+  it('reports only the recipients whose row was freshly inserted', async () => {
+    const { tx } = insertingTx([OTHER]);
+
+    const notified = await notify(tx, [
+      input({ recipientId: OWNER }),
+      input({ recipientId: OTHER, groupKey: 'share.reply:share-1' }),
+    ]);
+
+    expect(notified).toEqual([OWNER]);
+  });
+
+  it('reports nobody when every row aggregated into an open one', async () => {
+    const { tx, insert } = insertingTx([OWNER]);
+
+    const notified = await notify(tx, [input()]);
+
+    expect(notified).toEqual([]);
+    expect(insert).toHaveBeenCalledTimes(1);
   });
 
   it('seeds each row with exactly one actor', async () => {
@@ -156,8 +184,9 @@ describe('retractActor', () => {
     expect(del).not.toHaveBeenCalled();
   });
 
-  // No open row (already read/dismissed), or an actor who has aged out of the
-  // three-deep list: the guarded UPDATE matches nothing and nothing follows.
+  // No open row (already read/dismissed), or an actor who was never part of
+  // this aggregate: the guarded UPDATE matches nothing and nothing follows.
+  // Nobody ages out of the actor array, so membership is the only question.
   it('does nothing when the guarded update matches no row', async () => {
     const { tx, update, del } = retractingTx([]);
 

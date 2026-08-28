@@ -122,9 +122,9 @@ export async function createShareReplyAction(input: {
       .selectDistinct({ userId: mealShareReplies.userId })
       .from(mealShareReplies)
       .where(eq(mealShareReplies.shareId, parsed.shareId));
-    const candidateIds = [
-      ...new Set(repliers.map((row) => row.userId)),
-    ].filter((id) => id !== user.id && id !== lockedShares[0].actorId);
+    const candidateIds = [...new Set(repliers.map((row) => row.userId))].filter(
+      (id) => id !== user.id && id !== lockedShares[0].actorId
+    );
     const visibleReplierIds: string[] = [];
     for (const candidateId of candidateIds) {
       if (await canViewShareOwnedBy(candidateId, lockedShares[0], tx)) {

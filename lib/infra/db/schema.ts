@@ -1742,8 +1742,10 @@ export const notifications = pgTable(
       .notNull()
       .references(() => authUsers.id, { onDelete: 'cascade' }),
     type: text('type').notNull(),
-    // The ≤3 most recent actors, newest first — enough for "A, B and 2 others"
-    // without loading the full actor set. actor_count is the true total.
+    // The aggregate's FULL membership, newest actor first — audiences are
+    // bounded (≤10 friends, ≤50 group members), so nobody ages out to be
+    // re-counted as new or to become unretractable. The UI renders the first
+    // two faces; actor_count (= cardinality of this array) carries the rest.
     actorIds: uuid('actor_ids').array().notNull().default(sql`'{}'::uuid[]`),
     actorCount: integer('actor_count').notNull().default(1),
     // What happened (the invite / friendship row), versus where tapping goes

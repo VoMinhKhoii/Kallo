@@ -52,8 +52,7 @@
     "error": "That didn't go through. Try again.",
     "status": {
       "accepted": "Added",
-      "dismissed": "Dismissed",
-      "unavailable": "Unavailable"
+      "unavailable": "No longer available"
     }
   }
 }
