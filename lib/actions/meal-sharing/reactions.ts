@@ -7,6 +7,8 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { Errors } from '@/lib/core/errors/catalog';
+import { shareReactionKey } from '@/lib/domain/notifications/group-keys';
+import { notify, retractActor } from '@/lib/domain/notifications/notify';
 import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
@@ -71,6 +73,25 @@ export async function toggleShareReactionAction(input: {
           target: [mealShareReactions.shareId, mealShareReactions.userId],
         })
         .returning({ id: mealShareReactions.id });
+      // Aggregates per share: ten hearts are one row, "X and 9 others".
+      await notify(tx, [
+        {
+          recipientId: lockedShares[0].actorId,
+          type: 'share.reaction',
+          actorId: user.id,
+          objectType: 'share',
+          objectId: parsed.shareId,
+          groupKey: shareReactionKey(parsed.shareId),
+        },
+      ]);
+    } else {
+      // Un-reacting withdraws this actor from the still-open aggregate (and
+      // deletes the row at zero); a read row is history and stays untouched.
+      await retractActor(tx, {
+        recipientId: lockedShares[0].actorId,
+        groupKey: shareReactionKey(parsed.shareId),
+        actorId: user.id,
+      });
     }
 
     const [summary] = await tx

@@ -157,7 +157,17 @@ export function routeInserts(captured: Record<string, { vals: unknown }>) {
       return {
         values: vi.fn().mockImplementation((vals: unknown) => {
           captured.invites = { vals };
-          return { onConflictDoUpdate: vi.fn().mockResolvedValue(undefined) };
+          // RETURNING yields the rows the upsert actually wrote — the set the
+          // producer notifies. Accepted invites are filtered out by setWhere
+          // in Postgres, so a test models that by omitting them here.
+          const written = (vals as { toUserId: string }[]).map(
+            (row, index) => ({ id: `invite-${index}`, toUserId: row.toUserId })
+          );
+          return {
+            onConflictDoUpdate: vi.fn().mockReturnValue({
+              returning: vi.fn().mockResolvedValue(written),
+            }),
+          };
         }),
       };
     }

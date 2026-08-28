@@ -1,4 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Notifications: this suite asserts WHO gets told; the helper's own upsert and
+// retract semantics live in lib/domain/notifications/__tests__.
+const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
+  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+  mockRetractActor: vi.fn(
+    async (..._args: unknown[]): Promise<void> => undefined
+  ),
+}));
+vi.mock('@/lib/domain/notifications/notify', () => ({
+  notify: mockNotify,
+  retractActor: mockRetractActor,
+}));
+
 import { Errors } from '@/lib/core/errors/catalog';
 
 // ---------------------------------------------------------------------------
@@ -236,6 +250,47 @@ describe('acceptInvite', () => {
       directUserLow: ACTOR,
       directUserHigh: INVITER,
     });
+  });
+
+  it('tells the inviter their link landed on the promote path', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect
+      .mockReturnValueOnce(txSelect([{ id: FRIENDSHIP_ID, status: 'pending' }]))
+      .mockReturnValueOnce(txSelect([{ id: DIRECT_GROUP_ID }]));
+    mockTxUpdate.mockReturnValue({
+      set: vi
+        .fn()
+        .mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+    });
+    captureInserts();
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(mockNotify.mock.lastCall?.[1]).toEqual([
+      {
+        recipientId: INVITER,
+        type: 'friend.joined',
+        actorId: ACTOR,
+        objectType: 'friendship',
+        objectId: FRIENDSHIP_ID,
+        groupKey: `friend.joined:${FRIENDSHIP_ID}`,
+      },
+    ]);
+  });
+
+  // The writer that won the insert already notified — a second signal here
+  // would double-badge the inviter for one join.
+  it('stays silent on the race-reconcile path', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect
+      .mockReturnValueOnce(txSelect([]))
+      .mockReturnValueOnce(txSelect([{ status: 'accepted' }]))
+      .mockReturnValueOnce(txSelect([{ id: DIRECT_GROUP_ID }]));
+    insertConflicted();
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(mockNotify).not.toHaveBeenCalled();
   });
 
   it('is a no-op when already connected', async () => {

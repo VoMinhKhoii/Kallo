@@ -1,5 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Notifications: this suite asserts WHO gets told; the helper's own upsert and
+// retract semantics live in lib/domain/notifications/__tests__.
+const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
+  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+  mockRetractActor: vi.fn(
+    async (..._args: unknown[]): Promise<void> => undefined
+  ),
+}));
+vi.mock('@/lib/domain/notifications/notify', () => ({
+  notify: mockNotify,
+  retractActor: mockRetractActor,
+}));
+
 const {
   mockUser,
   mockCanViewShare,
@@ -130,6 +143,58 @@ describe('toggleShareReactionAction', () => {
     await expect(
       toggleShareReactionAction({ shareId: SHARE_ID })
     ).resolves.toEqual({ reacted: true, count: 1 });
+  });
+
+  it('notifies the meal owner when the heart goes on', async () => {
+    const OWNER = 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44';
+    lockShare([
+      {
+        id: SHARE_ID,
+        actorId: OWNER,
+        sharedAt: new Date('2026-07-18T00:00:00.000Z'),
+        visibility: 'circle',
+      },
+    ]);
+    deleteReturning([]);
+    insertReturning([{ id: 'reaction' }]);
+    summary([{ count: 1, mine: true }]);
+
+    await toggleShareReactionAction({ shareId: SHARE_ID });
+
+    expect(mockNotify.mock.lastCall?.[1]).toEqual([
+      {
+        recipientId: OWNER,
+        type: 'share.reaction',
+        actorId: mockUser.id,
+        objectType: 'share',
+        objectId: SHARE_ID,
+        groupKey: `share.reaction:${SHARE_ID}`,
+      },
+    ]);
+    expect(mockRetractActor).not.toHaveBeenCalled();
+  });
+
+  it('retracts the actor from the open aggregate when the heart comes off', async () => {
+    const OWNER = 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44';
+    lockShare([
+      {
+        id: SHARE_ID,
+        actorId: OWNER,
+        sharedAt: new Date('2026-07-18T00:00:00.000Z'),
+        visibility: 'circle',
+      },
+    ]);
+    deleteReturning([{ id: 'reaction' }]);
+    summary([{ count: 0, mine: false }]);
+
+    await toggleShareReactionAction({ shareId: SHARE_ID });
+
+    expect(mockRetractActor.mock.lastCall?.[1]).toEqual({
+      recipientId: OWNER,
+      groupKey: `share.reaction:${SHARE_ID}`,
+      actorId: mockUser.id,
+    });
+    expect(mockNotify).not.toHaveBeenCalled();
   });
 
   it('rejects an unauthorized share before any mutation', async () => {

@@ -75,6 +75,7 @@ another domain module is a smell worth a second look.
 | `ingredients/` | `search/` — the food-composition picker: recents, lexical + semantic arms, rank fusion |
 | `logging/` | meal logging and relog, plus the contracts its UI and hooks share: `types.ts`, `meal-input-handle.ts`, `stream-ticker.ts` |
 | `meals/` | dish quantity edits and the macro rescaling they imply, plus `save/` (the optimistic-meal builders and the cache choreography a save runs through) and `query-keys.ts`, the cache addresses that write side shares with `hooks/meals/` |
+| `notifications/` | the activity layer's shared vocabulary: `types.ts`, `group-keys.ts` (the aggregation identities), `notify.ts` (the single write path producers call inside their tx), the isomorphic `contracts.ts`, plus `client.ts` and `query-keys.ts` |
 | `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data |
 | `settings/` | the contracts the settings page's route, panels and hooks share: `anchors.ts` (scroll-target ids), `profile-form.ts` (the profile form's data model) |
@@ -154,6 +155,7 @@ another domain module is a smell worth a second look.
 | `meals/feed/` | the day-feed controller and its handler hooks | ok |
 | `meals/entry/` | the non-streaming ways into the composer: manual rows, label OCR, dashboard prefill | ok |
 | `meals/relog/` | relog composer state | **reference shape** |
+| `notifications/` | the activity feed, its badge poll and the seen/read mutations | ok |
 | `social/circle/` | friends, thread feed, circle wall, invites, group chats | ok |
 | `social/sharing/` | sharing a meal, logging a shared one, invites, replies, reactions | ok |
 | `ui/` | device and browser-surface hooks, zero domain knowledge | ok |

@@ -1,4 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Notifications: this suite asserts WHO gets told; the helper's own upsert and
+// retract semantics live in lib/domain/notifications/__tests__.
+const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
+  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+  mockRetractActor: vi.fn(
+    async (..._args: unknown[]): Promise<void> => undefined
+  ),
+}));
+vi.mock('@/lib/domain/notifications/notify', () => ({
+  notify: mockNotify,
+  retractActor: mockRetractActor,
+}));
+
 import { Errors } from '@/lib/core/errors/catalog';
 
 // ---------------------------------------------------------------------------
@@ -140,6 +154,35 @@ describe('createChatGroup', () => {
     });
     expect(mockAssertActor).toHaveBeenCalledWith(expect.anything(), USER_A);
     expect(mockAssertCapacity.mock.lastCall?.[1]).toEqual([USER_B, USER_C]);
+  });
+
+  it('notifies every added member and never the creator', async () => {
+    acceptedFriendsQuery([USER_B, USER_C]);
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: GROUP_ID }]),
+      }),
+    }));
+
+    await createChatGroup(USER_A, {
+      name: 'Trip',
+      memberUserIds: [USER_B, USER_C],
+    });
+
+    const inputs = mockNotify.mock.lastCall?.[1] as {
+      recipientId: string;
+      type: string;
+      actorId: string;
+      targetId: string;
+      data: unknown;
+    }[];
+    expect(inputs.map((input) => input.recipientId)).toEqual([USER_B, USER_C]);
+    expect(inputs.every((input) => input.type === 'group.added')).toBe(true);
+    expect(inputs.every((input) => input.actorId === USER_A)).toBe(true);
+    expect(inputs[0]).toMatchObject({
+      targetId: GROUP_ID,
+      data: { groupName: 'Trip' },
+    });
   });
 
   it('propagates the actor 402 without opening the transaction', async () => {

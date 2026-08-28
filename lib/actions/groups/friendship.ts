@@ -9,6 +9,8 @@ import {
   blockFriendSchema,
   removeFriendSchema,
 } from '@/lib/core/validation/social';
+import { friendJoinedKey } from '@/lib/domain/notifications/group-keys';
+import { type NotifyDb, notify } from '@/lib/domain/notifications/notify';
 import { orderedPair } from '@/lib/domain/social/friendship';
 import { assertFriendCapacity } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
@@ -101,6 +103,7 @@ export async function acceptInvite(
         type: 'friend_accepted',
         refId: existing[0].id,
       });
+      await notifyInviterOfJoin(tx, actorId, inviter.userId, existing[0].id);
     } else {
       // No edge yet. The locked read can't lock a row that doesn't exist, so
       // a racing accept/block may insert first; swallow the unique violation
@@ -125,6 +128,7 @@ export async function acceptInvite(
           type: 'friend_accepted',
           refId: inserted[0].id,
         });
+        await notifyInviterOfJoin(tx, actorId, inviter.userId, inserted[0].id);
       } else {
         // A concurrent writer won the insert — re-read and honour a block.
         const reconciled = await tx
@@ -150,6 +154,28 @@ export async function acceptInvite(
 
     return { status: 'accepted' as const, inviter };
   });
+}
+
+// Tell the inviter their link landed — the one signal the Locket-style
+// instant-connect flow would otherwise swallow. Called only on the two paths
+// that actually establish the accepted edge; the race-reconcile path stays
+// silent because the concurrent writer that won the insert already notified.
+function notifyInviterOfJoin(
+  tx: NotifyDb,
+  actorId: string,
+  inviterId: string,
+  friendshipId: string
+): Promise<string[]> {
+  return notify(tx, [
+    {
+      recipientId: inviterId,
+      type: 'friend.joined',
+      actorId,
+      objectType: 'friendship',
+      objectId: friendshipId,
+      groupKey: friendJoinedKey(friendshipId),
+    },
+  ]);
 }
 
 // ---------------------------------------------------------------------------

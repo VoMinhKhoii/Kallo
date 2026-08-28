@@ -1713,3 +1713,80 @@ export const waitlistSignups = pgTable(
     ),
   ]
 );
+
+// ---------------------------------------------------------------------------
+// Notifications — per-recipient activity rows
+// ---------------------------------------------------------------------------
+// The per-recipient layer that circle_events (actor-scoped spine) deliberately
+// is not: one row per (person who should be told, thing that happened), written
+// fan-out-on-write inside the producing transaction. Read and mutated only by
+// server actions on the Drizzle owner connection (RLS enabled, no policies —
+// see the companion RLS migration), so recipient_id in every WHERE is the
+// primary authorization control.
+//
+// Tri-state read model (Instagram): seen_at drives the badge (count where
+// NULL), read_at only dims the row, dismissed_at hides it. The partial unique
+// index on (recipient_id, group_key) WHERE the row is still open is the
+// aggregation target: ten people reacting to one meal upsert into ONE row
+// ("X and 2 others"), and once a row is read the index no longer matches it, so
+// later activity starts a fresh row instead of rewriting history.
+//
+// The type CHECK is pre-widened with the reserved coach/streak/recap types so
+// future producers need no ALTER, matching circle_events.
+
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    recipientId: uuid('recipient_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    // The ≤3 most recent actors, newest first — enough for "A, B and 2 others"
+    // without loading the full actor set. actor_count is the true total.
+    actorIds: uuid('actor_ids').array().notNull().default(sql`'{}'::uuid[]`),
+    actorCount: integer('actor_count').notNull().default(1),
+    // What happened (the invite / friendship row), versus where tapping goes
+    // (the chat group). Both are free-form + nullable: a notification never
+    // owns domain state, it points at it and the reader joins live.
+    objectType: text('object_type'),
+    objectId: uuid('object_id'),
+    targetType: text('target_type'),
+    targetId: uuid('target_id'),
+    // '<type>:<id>' — the aggregation identity (see lib/domain/notifications).
+    groupKey: text('group_key').notNull(),
+    data: jsonb('data'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    seenAt: timestamp('seen_at', { withTimezone: true }),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    dismissedAt: timestamp('dismissed_at', { withTimezone: true }),
+  },
+  (table) => [
+    // The feed page: one recipient's visible rows, newest first, tuple cursor.
+    index('notifications_recipient_created_idx')
+      .on(
+        table.recipientId,
+        sql`${table.createdAt} DESC`,
+        sql`${table.id} DESC`
+      )
+      .where(sql`dismissed_at IS NULL`),
+    // The 30s badge poll: count of unseen rows.
+    index('notifications_recipient_unseen_idx')
+      .on(table.recipientId)
+      .where(sql`seen_at IS NULL AND dismissed_at IS NULL`),
+    // One OPEN aggregate per (recipient, groupKey) — the upsert conflict
+    // target. Read/dismissed rows fall out of the index by design.
+    uniqueIndex('notifications_open_aggregate_idx')
+      .on(table.recipientId, table.groupKey)
+      .where(sql`read_at IS NULL AND dismissed_at IS NULL`),
+    check(
+      'notifications_type_check',
+      sql`${table.type} IN ('friend.joined', 'group.added', 'share.invite', 'share.invite_accepted', 'share.reaction', 'share.reply', 'share.logged', 'chat.message', 'coach.nudge', 'streak.milestone', 'recap.ready')`
+    ),
+  ]
+);

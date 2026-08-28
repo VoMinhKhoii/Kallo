@@ -1,20 +1,42 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockUser, mockCanViewShare, mockTxInsert, mockTxSelect, mockTx } =
-  vi.hoisted(() => {
-    const mockTxInsert = vi.fn();
-    const mockTxSelect = vi.fn();
-    return {
-      mockUser: { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' },
-      mockCanViewShare: vi.fn(),
-      mockTxInsert,
-      mockTxSelect,
-      mockTx: {
-        insert: mockTxInsert,
-        select: mockTxSelect,
-      },
-    };
-  });
+// Notifications: this suite asserts WHO gets told; the helper's own upsert and
+// retract semantics live in lib/domain/notifications/__tests__.
+const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
+  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+  mockRetractActor: vi.fn(
+    async (..._args: unknown[]): Promise<void> => undefined
+  ),
+}));
+vi.mock('@/lib/domain/notifications/notify', () => ({
+  notify: mockNotify,
+  retractActor: mockRetractActor,
+}));
+
+const {
+  mockUser,
+  mockCanViewShare,
+  mockTxInsert,
+  mockTxSelect,
+  mockTxSelectDistinct,
+  mockTx,
+} = vi.hoisted(() => {
+  const mockTxInsert = vi.fn();
+  const mockTxSelect = vi.fn();
+  const mockTxSelectDistinct = vi.fn();
+  return {
+    mockUser: { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' },
+    mockCanViewShare: vi.fn(),
+    mockTxInsert,
+    mockTxSelect,
+    mockTxSelectDistinct,
+    mockTx: {
+      insert: mockTxInsert,
+      select: mockTxSelect,
+      selectDistinct: mockTxSelectDistinct,
+    },
+  };
+});
 
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
@@ -87,10 +109,20 @@ function insertReturning(
   });
 }
 
+/** The distinct prior repliers on the share (the fan-out audience). */
+function repliers(userIds: string[]) {
+  mockTxSelectDistinct.mockReturnValue({
+    from: vi.fn(() => ({
+      where: vi.fn().mockResolvedValue(userIds.map((userId) => ({ userId }))),
+    })),
+  });
+}
+
 describe('createShareReplyAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCanViewShare.mockResolvedValue(true);
+    repliers([mockUser.id]);
   });
 
   it('locks and authorizes the share before inserting the client reply id', async () => {
@@ -132,6 +164,61 @@ describe('createShareReplyAction', () => {
       expect.objectContaining({ id: SHARE_ID }),
       mockTx
     );
+  });
+
+  it('fans out to the owner and prior repliers, minus the author, deduped', async () => {
+    const OWNER = 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44';
+    const OTHER_REPLIER = 'e4ccff33-d04f-4cc2-af01-affdf0724e55';
+    lockShare();
+    insertReturning([
+      {
+        id: REPLY_ID,
+        userId: mockUser.id,
+        body: 'Ngon quá',
+        createdAt: CREATED_AT,
+      },
+    ]);
+    // The owner has replied before, so they appear twice in the raw audience.
+    repliers([OWNER, OTHER_REPLIER, mockUser.id]);
+    selectRows([]);
+
+    await createShareReplyAction({
+      shareId: SHARE_ID,
+      replyId: REPLY_ID,
+      body: 'Ngon quá',
+    });
+
+    const inputs = mockNotify.mock.lastCall?.[1] as {
+      recipientId: string;
+      type: string;
+      data: { previewBody: string };
+    }[];
+    expect(inputs.map((input) => input.recipientId)).toEqual([
+      OWNER,
+      OTHER_REPLIER,
+    ]);
+    expect(inputs.every((input) => input.type === 'share.reply')).toBe(true);
+    expect(inputs[0].data.previewBody).toBe('Ngon quá');
+  });
+
+  it('truncates the reply preview to 140 characters', async () => {
+    const body = 'a'.repeat(200);
+    lockShare();
+    insertReturning([
+      { id: REPLY_ID, userId: mockUser.id, body, createdAt: CREATED_AT },
+    ]);
+    selectRows([]);
+
+    await createShareReplyAction({
+      shareId: SHARE_ID,
+      replyId: REPLY_ID,
+      body,
+    });
+
+    const inputs = mockNotify.mock.lastCall?.[1] as {
+      data: { previewBody: string };
+    }[];
+    expect(inputs[0].data.previewBody).toHaveLength(140);
   });
 
   it('returns not found before visibility checks when the share is missing', async () => {

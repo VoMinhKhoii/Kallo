@@ -18,6 +18,8 @@ import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareMealWithFriendsSchema } from '@/lib/core/validation/social';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
+import { shareInviteKey } from '@/lib/domain/notifications/group-keys';
+import { notify } from '@/lib/domain/notifications/notify';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -162,7 +164,7 @@ export async function shareMealWithFriendsAction(input: {
     // untouched — resetting it would re-prompt the friend and let them log a
     // second copy of the same meal.
     const now = new Date();
-    await tx
+    const offered = await tx
       .insert(mealShareInvites)
       .values(
         recipientIds.map((toUserId) => ({
@@ -184,7 +186,31 @@ export async function shareMealWithFriendsAction(input: {
           createdAt: now,
         },
         setWhere: sql`${mealShareInvites.status} <> 'accepted'`,
+      })
+      .returning({
+        id: mealShareInvites.id,
+        toUserId: mealShareInvites.toUserId,
       });
+
+    // RETURNING only yields the rows the statement actually wrote, so a
+    // recipient whose invite was already ACCEPTED (skipped by setWhere above)
+    // is never re-notified — exactly the set that has a live pending offer.
+    await notify(
+      tx,
+      offered.map((invite) => ({
+        recipientId: invite.toUserId,
+        type: 'share.invite' as const,
+        actorId: user.id,
+        objectType: 'invite',
+        objectId: invite.id,
+        groupKey: shareInviteKey(source.id),
+        data: {
+          mode: parsed.mode,
+          portionFactor,
+          mealName: source.rawInput,
+        },
+      }))
+    );
 
     // A split just shrank the source in place. Accept copies the source
     // verbatim (its current fraction), so any OTHER still-pending invite for

@@ -19,6 +19,8 @@ import {
   acceptMealShareInviteSchema,
   dismissMealShareInviteSchema,
 } from '@/lib/core/validation/social';
+import { shareInviteAcceptedKey } from '@/lib/domain/notifications/group-keys';
+import { notify } from '@/lib/domain/notifications/notify';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -154,6 +156,19 @@ export async function acceptMealShareInviteAction(input: {
       .update(mealShareInvites)
       .set({ acceptedMealId: mealId })
       .where(eq(mealShareInvites.id, parsed.inviteId));
+
+    // Tell the sender their offer landed. A dismiss deliberately stays silent
+    // (LinkedIn norm: no rejection signal).
+    await notify(tx, [
+      {
+        recipientId: invite.fromUserId,
+        type: 'share.invite_accepted',
+        actorId: user.id,
+        objectType: 'invite',
+        objectId: parsed.inviteId,
+        groupKey: shareInviteAcceptedKey(parsed.inviteId),
+      },
+    ]);
 
     return { mealId, meal };
   });

@@ -7,6 +7,8 @@
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { Errors } from '@/lib/core/errors/catalog';
+import { shareReplyKey } from '@/lib/domain/notifications/group-keys';
+import { notify } from '@/lib/domain/notifications/notify';
 import {
   publicProfileColumns,
   toPublicIdentity,
@@ -104,6 +106,32 @@ export async function createShareReplyAction(input: {
     if (!reply || reply.userId !== user.id) {
       throw Errors.validationFailed('Mã trả lời đã được sử dụng.');
     }
+
+    // Thread audience: the meal's owner plus everyone who already replied
+    // (the insert above is included, hence the author filter). One aggregated
+    // row per recipient per share — "X and 2 others replied".
+    const repliers = await tx
+      .selectDistinct({ userId: mealShareReplies.userId })
+      .from(mealShareReplies)
+      .where(eq(mealShareReplies.shareId, parsed.shareId));
+    const recipientIds = [
+      ...new Set([
+        lockedShares[0].actorId,
+        ...repliers.map((row) => row.userId),
+      ]),
+    ].filter((id) => id !== user.id);
+    await notify(
+      tx,
+      recipientIds.map((recipientId) => ({
+        recipientId,
+        type: 'share.reply' as const,
+        actorId: user.id,
+        objectType: 'share',
+        objectId: parsed.shareId,
+        groupKey: shareReplyKey(parsed.shareId),
+        data: { previewBody: parsed.body.slice(0, 140) },
+      }))
+    );
 
     const [author] = await tx
       .select({

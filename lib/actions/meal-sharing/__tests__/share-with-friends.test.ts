@@ -1,5 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Notifications: this suite asserts WHO gets told; the helper's own upsert and
+// retract semantics live in lib/domain/notifications/__tests__.
+const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
+  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+  mockRetractActor: vi.fn(
+    async (..._args: unknown[]): Promise<void> => undefined
+  ),
+}));
+vi.mock('@/lib/domain/notifications/notify', () => ({
+  notify: mockNotify,
+  retractActor: mockRetractActor,
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks — db.* is the singleton; tx.* is the transaction handle. Both are
 // distinct mocks (mirrors meals.test.ts) so lookups never collide.
@@ -173,6 +186,31 @@ describe('shareMealWithFriendsAction', () => {
     expect(invites[0]?.portionFactor).toBe('1');
     expect(invites[0]?.toUserId).toBe(UUID_FRIEND);
     expect(invites[0]?.fromUserId).toBe(mockUser.id);
+  });
+
+  it('notifies exactly the recipients whose invite row was written', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueWhereSelect([friendEdge]);
+    mockTxInsert.mockImplementation(routeInserts({}));
+
+    await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'copy',
+    });
+
+    expect(mockNotify.mock.lastCall?.[1]).toEqual([
+      {
+        recipientId: UUID_FRIEND,
+        type: 'share.invite',
+        actorId: mockUser.id,
+        objectType: 'invite',
+        objectId: 'invite-0',
+        groupKey: `share.invite:${UUID_MEAL}`,
+        data: { mode: 'copy', portionFactor: 1, mealName: 'Trà sữa' },
+      },
+    ]);
   });
 
   it('split mode: halves the meal for two participants and stores factor 0.5', async () => {
