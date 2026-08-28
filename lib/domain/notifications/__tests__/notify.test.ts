@@ -4,9 +4,9 @@
 // cannot execute without a database, and are covered by the constraint design
 // rather than here. What IS testable in isolation, and what this suite pins, is
 // the input shaping: which inputs reach the statement at all, how conflicting
-// keys are spread across statements, what notify() reports back (INSERTed rows
-// only — the anti-flood push gate), and the guards that make retractActor a
-// no-op.
+// keys are spread across statements, what notify() reports back (the push set:
+// inserts and seen→unseen re-badges, never a silent refresh), and the guards
+// that make retractActor a no-op.
 
 import { describe, expect, it, vi } from 'vitest';
 import { notify, retractActor } from '@/lib/domain/notifications/notify';
@@ -22,28 +22,63 @@ interface InsertedRow {
   groupKey: string;
 }
 
-/** A tx double capturing every insert batch and returning one row per value.
- *  `aggregated` names the recipients whose statement took the ON CONFLICT
- *  branch — Postgres reports those with `xmax <> 0`, i.e. `inserted: false`. */
-function insertingTx(aggregated: string[] = []) {
+interface OpenRow {
+  recipientId: string;
+  groupKey: string;
+  seenAt: Date | null;
+}
+
+const keyOf = (row: { recipientId: string; groupKey: string }) =>
+  `${row.recipientId}:${row.groupKey}`;
+
+/** A tx double standing in for the open-aggregate table. `open` seeds the rows
+ *  that already exist with `read_at`/`dismissed_at` null, each with its
+ *  `seen_at`: the pre-select reads exactly that state, and the upsert reports
+ *  `inserted` (Postgres's `xmax = 0`) for every key not already there, then
+ *  records the key as open-and-unseen — so a later round in the same call sees
+ *  what the earlier one wrote, as it would in a real transaction. */
+function insertingTx(open: OpenRow[] = []) {
   const batches: InsertedRow[][] = [];
+  const state = new Map(open.map((row) => [keyOf(row), row]));
+  const select = vi.fn(() => ({
+    from: () => ({ where: () => Promise.resolve([...state.values()]) }),
+  }));
   const insert = vi.fn(() => ({
     values: (rows: InsertedRow[]) => {
       batches.push(rows);
       return {
         onConflictDoUpdate: () => ({
-          returning: () =>
-            Promise.resolve(
-              rows.map((row) => ({
+          returning: () => {
+            const returned = rows.map((row) => ({
+              recipientId: row.recipientId,
+              groupKey: row.groupKey,
+              inserted: !state.has(keyOf(row)),
+            }));
+            for (const row of rows) {
+              state.set(keyOf(row), {
                 recipientId: row.recipientId,
-                inserted: !aggregated.includes(row.recipientId),
-              }))
-            ),
+                groupKey: row.groupKey,
+                seenAt: null,
+              });
+            }
+            return Promise.resolve(returned);
+          },
         }),
       };
     },
   }));
-  return { tx: { insert } as never, batches, insert };
+  return { tx: { select, insert } as never, batches, insert, select };
+}
+
+const SEEN_AT = new Date('2026-08-28T10:00:00.000Z');
+
+function openRow(overrides: Partial<OpenRow> = {}): OpenRow {
+  return {
+    recipientId: OWNER,
+    groupKey: 'share.reaction:share-1',
+    seenAt: null,
+    ...overrides,
+  };
 }
 
 function input(overrides: Partial<NotifyInput> = {}): NotifyInput {
@@ -81,10 +116,37 @@ describe('notify', () => {
     expect(batches[0].map((row) => row.recipientId)).toEqual([OWNER, OTHER]);
   });
 
-  // The push gate: one buzz per open aggregate. A row that absorbed the event
-  // into an aggregate the recipient has not read yet updates in-app only.
-  it('reports only the recipients whose row was freshly inserted', async () => {
-    const { tx } = insertingTx([OTHER]);
+  // The push gate, all three outcomes: one buzz per open aggregate PER VISIT
+  // CYCLE. Insert knocks; a re-badge of a row the recipient has already looked
+  // at knocks again; a refresh of a row still waiting to be looked at is silent.
+  it('pushes when the event opens a fresh aggregate', async () => {
+    const { tx } = insertingTx();
+
+    await expect(notify(tx, [input()])).resolves.toEqual([OWNER]);
+  });
+
+  it('pushes when the event re-badges a row the recipient had seen', async () => {
+    const { tx, insert } = insertingTx([openRow({ seenAt: SEEN_AT })]);
+
+    const notified = await notify(tx, [input()]);
+
+    expect(notified).toEqual([OWNER]);
+    expect(insert).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays silent when the event only refreshes a still-unseen row', async () => {
+    const { tx, insert } = insertingTx([openRow({ seenAt: null })]);
+
+    const notified = await notify(tx, [input()]);
+
+    expect(notified).toEqual([]);
+    expect(insert).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports only the push-eligible recipients of a fan-out', async () => {
+    const { tx } = insertingTx([
+      openRow({ recipientId: OTHER, groupKey: 'share.reply:share-1' }),
+    ]);
 
     const notified = await notify(tx, [
       input({ recipientId: OWNER }),
@@ -92,15 +154,6 @@ describe('notify', () => {
     ]);
 
     expect(notified).toEqual([OWNER]);
-  });
-
-  it('reports nobody when every row aggregated into an open one', async () => {
-    const { tx, insert } = insertingTx([OWNER]);
-
-    const notified = await notify(tx, [input()]);
-
-    expect(notified).toEqual([]);
-    expect(insert).toHaveBeenCalledTimes(1);
   });
 
   it('seeds each row with exactly one actor', async () => {

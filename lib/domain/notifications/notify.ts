@@ -18,7 +18,7 @@
 // previously-seen aggregate re-surfaces at the top of the feed and re-badges
 // exactly once.
 
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { notifications } from '@/lib/infra/db/schema';
 import type { NotifyInput } from './types';
@@ -57,12 +57,21 @@ const aggregateSet = () => {
  * Record one notification per input, aggregating into an open row when one
  * exists. Self-notifications are dropped (Gate 2).
  *
- * Returns the distinct recipients whose row was INSERTED — i.e. those for whom
- * this event opened a FRESH aggregate. Phase 4 hands exactly those to the push
- * sender after commit, so a device buzzes at most once per open aggregate: the
- * second reaction on a meal you have not read yet refreshes the in-app row
- * silently instead of re-buzzing, and a seen→unseen re-badge likewise only
- * updates the row. The durable record is always the row, never the push.
+ * Returns the distinct recipients this event should PUSH to. Each input has one
+ * of three outcomes, and only two of them buzz a device:
+ *
+ * - **INSERT** — no open row existed, so a fresh aggregate opened → **push**.
+ * - **Refresh of a SEEN row** — the recipient has already visited since the row
+ *   last badged, so resetting `seen_at` starts a new visit cycle → **push**
+ *   (the re-badge would otherwise be invisible on a device that never buzzed
+ *   again and on an app the user has since closed).
+ * - **Refresh of an already-UNSEEN row** — the row is still waiting to be
+ *   looked at and the device has already knocked for it → **silent**.
+ *
+ * So a device is knocked at most once per open aggregate *per visit cycle*: the
+ * eighth reaction on a meal you have not opened yet is silent, but the first
+ * one after you have looked knocks again. The durable record is always the row,
+ * never the push.
  */
 export async function notify(
   tx: NotifyDb,
@@ -71,12 +80,21 @@ export async function notify(
   const wanted = inputs.filter((input) => input.recipientId !== input.actorId);
   if (wanted.length === 0) return [];
 
-  const freshlyOpened = new Set<string>();
+  const pushRecipients = new Set<string>();
   // A single statement may not touch the same conflict row twice ("ON CONFLICT
   // DO UPDATE command cannot affect row a second time"), so inputs colliding on
   // (recipient, groupKey) are spread across successive statements instead of
   // being silently collapsed — each still contributes its actor.
   for (const round of splitByConflictKey(wanted)) {
+    // Which of this round's targets already have an open row, and whether it
+    // has been seen — the upsert's RETURNING cannot tell us, because its SET
+    // clause has already overwritten seen_at by then. A round holds at most one
+    // row per (recipient, groupKey) and audiences are bounded (≤50), so this is
+    // one small indexed lookup. The only writer that can change seen_at in the
+    // gap before the upsert takes its lock is the recipient's own markSeen, so
+    // the worst case is one skipped push to someone opening Activity in that
+    // instant — not worth a FOR UPDATE.
+    const openBefore = await openAggregates(tx, round);
     const rows = await tx
       .insert(notifications)
       .values(
@@ -100,16 +118,52 @@ export async function notify(
       })
       .returning({
         recipientId: notifications.recipientId,
+        groupKey: notifications.groupKey,
         // Postgres's upsert tell: a row this statement INSERTED has no
         // updating transaction stamped on it, so xmax is 0; a row it took the
         // ON CONFLICT branch on carries the locking xid.
         inserted: sql<boolean>`(xmax = 0)`,
       });
     for (const row of rows) {
-      if (row.inserted) freshlyOpened.add(row.recipientId);
+      const wasSeen = openBefore.get(conflictKey(row)) ?? false;
+      if (row.inserted || wasSeen) pushRecipients.add(row.recipientId);
     }
   }
-  return [...freshlyOpened];
+  return [...pushRecipients];
+}
+
+const conflictKey = (row: { recipientId: string; groupKey: string }) =>
+  `${row.recipientId}:${row.groupKey}`;
+
+/** The round's targets that already hold an open row, mapped to whether that
+ *  row has been seen. Absent key = no open row (this event will INSERT).
+ *  Drizzle has no tuple `IN`, and a round is tiny, so it is an OR-chain. */
+async function openAggregates(
+  tx: NotifyDb,
+  round: NotifyInput[]
+): Promise<Map<string, boolean>> {
+  const rows = await tx
+    .select({
+      recipientId: notifications.recipientId,
+      groupKey: notifications.groupKey,
+      seenAt: notifications.seenAt,
+    })
+    .from(notifications)
+    .where(
+      and(
+        sql`${notifications.readAt} IS NULL`,
+        sql`${notifications.dismissedAt} IS NULL`,
+        or(
+          ...round.map((input) =>
+            and(
+              eq(notifications.recipientId, input.recipientId),
+              eq(notifications.groupKey, input.groupKey)
+            )
+          )
+        )
+      )
+    );
+  return new Map(rows.map((row) => [conflictKey(row), row.seenAt !== null]));
 }
 
 /** Partition inputs into rounds, each holding at most one row per conflict key. */

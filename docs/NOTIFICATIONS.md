@@ -19,7 +19,7 @@ Goal: a **Threads/Instagram-style Activity page** (web, mobile-responsive) backe
 
 - **Slack**: ordered short-circuit decision gates; sparse preference overrides; push only when not active in-app. V1 has no prefs UI, but the dot-namespaced type taxonomy (`category.event`) lets a `notification_prefs(user_id, category, channel)` table bolt on later with zero data migration.
 - **Instagram tri-state**: `seenAt` (badge = count where null; bulk-cleared on opening Activity), `readAt` (per-item on tap → dim), sections "New / Last 30 days / Older" are presentation-only.
-- **Aggregation**: upsert on `(recipientId, groupKey)` partial unique index while the row is open — "X and 2 others reacted". `actorIds` holds the aggregate's **full** deduplicated membership, newest first, and `actorCount` is derived from it (`cardinality`), so the total is exact and any actor can be retracted. Audiences are bounded (≤10 friends, ≤50 group members), so the array stays small; the UI renders the first two faces.
+- **Aggregation**: upsert on `(recipientId, groupKey)` partial unique index while the row is open — "X and 2 others reacted". `actorIds` holds the aggregate's **full** deduplicated membership, newest first, and `actorCount` is derived from it (`cardinality`), so the total is exact and any actor can be retracted. Audiences are bounded (≤10 friends, ≤50 group members), so the array stays small; the UI renders the first two faces. Accepted operational bound: the audience cap holds at any *instant*, so a long-lived open aggregate can exceed it through churn (members who joined, acted, and left) — bounded in practice because aggregates close on read and retention caps their age.
 - **Actionable notifications** (the copy/split invite) reference the domain object, never own state: render live `meal_share_invites.status`; resolved elsewhere → buttons collapse to a status chip; mutations reuse the existing idempotent accept/dismiss actions.
 - **Fan-out on write** (single per-recipient table): audiences are ≤10 friends / ≤50 members. 90-day retention via pg_cron.
 
@@ -83,7 +83,8 @@ flowchart LR
     G2 -- no --> G3
     G3 -- "push-only: NO row is written<br/>(nothing lands in the feed)" --> PUSH
     G3 -- no --> G4
-    G4 -- "yes → UPDATE row<br/>(add actor, recount,<br/>re-badge only if was seen)<br/>NO push" --> N
+    G4 -- "yes, row still unseen →<br/>UPDATE (add actor, recount)<br/>NO badge, NO push" --> N
+    G4 -- "yes, row was seen →<br/>UPDATE + reset seenAt<br/>re-badge AND push" --> N
     G4 -- "no → INSERT row → push" --> N
     A6 -- "toggle OFF →<br/>retractActor (open rows only)" --> N
     N --> B
@@ -91,12 +92,12 @@ flowchart LR
     N -- "type=share.invite:<br/>join live status" --> AC
     AC -- "accept/dismiss" --> MI
     MI -- "accept → notify sender<br/>share.invite_accepted" --> G1
-    N -- "recipients of INSERTED rows,<br/>after commit" --> PUSH
+    N -- "recipients of INSERTED rows<br/>+ seen→unseen re-badges,<br/>after commit" --> PUSH
     PT --> PUSH
     CRON --> N
 ```
 
-Reading the picture: gates 1–4 all run **inside the producing transaction**, so a notification can never exist for a domain write that rolled back — the `notify()` upsert is part of the same tx. Gate 5 (push) runs **after that tx commits**, via `after()`, and only for recipients whose row was freshly INSERTED. `chat.message` short-circuits at gate 3 into push only: **no notification row is ever written for it**, so it never appears in `/activity` and never touches the badge — the group's existing `lastReadAt` dot is its unread surface.
+Reading the picture: gates 1–4 all run **inside the producing transaction**, so a notification can never exist for a domain write that rolled back — the `notify()` upsert is part of the same tx. Gate 5 (push) runs **after that tx commits**, via `after()`, for the recipients whose row was freshly INSERTED plus those whose event re-badged an already-seen row. `chat.message` short-circuits at gate 3 into push only: **no notification row is ever written for it**, so it never appears in `/activity` and never touches the badge — the group's existing `lastReadAt` dot is its unread surface.
 
 ## Notification lifecycle — FSM
 
@@ -104,42 +105,48 @@ Every notification row moves through this machine. The aggregation transitions (
 
 **"Open aggregate" is defined once, here, and used with exactly this meaning everywhere below:** a row with `read_at IS NULL AND dismissed_at IS NULL` — precisely the predicate of the partial unique index. **Seen rows are open**: `seen_at` plays no part in it. A new event on an open row aggregates into it, and `retractActor` can still remove an actor from it. Reading (or dismissing) a row is what closes it; a later event then starts a fresh row.
 
+A row leaves this machine on exactly two edges: 90-day retention deletes it (from any state), or a retraction takes its last actor away. Reading and dismissing are *states*, not exits — the row stays stored.
+
 ```mermaid
 stateDiagram-v2
-    [*] --> Unseen : notify() INSERT\n(badge +1, push sent —\nthe only push this row gets)
+    [*] --> Unseen : notify() INSERT\n(badge +1, push sent)
 
     state "Unseen (open aggregate)" as Unseen
     state "Seen (open aggregate)" as Seen
-    state "Read (closed)" as Read
-    state "Dismissed" as Dismissed
+    state "Read (closed — kept as history)" as Read
+    state "Dismissed (closed — hidden, still stored)" as Dismissed
 
     Unseen --> Unseen : same groupKey event\n→ UPSERT same row\n(add actor, recount,\ncreatedAt/updatedAt bump — NO new row,\nNO extra badge, NO push)
-    Seen --> Unseen : same groupKey event\n→ reset seenAt\n(re-badges ONCE, still one row,\nstill NO push)
+    Seen --> Unseen : same groupKey event\n→ reset seenAt\n(re-badges ONCE, still one row,\nAND pushes: the visit ended\nthe last cycle)
 
     Unseen --> Seen : user opens /activity\n(bulk markSeen — badge → 0)
-    Unseen --> Unseen : retractActor (un-react)\ncount--, delete row at 0
-    Seen --> Seen : retractActor\ncount--, delete row at 0
+    Unseen --> Unseen : retractActor (un-react)\ncount--, row survives while\nother actors remain
+    Seen --> Seen : retractActor\ncount--, row survives while\nother actors remain
 
     Seen --> Read : user taps the row\n(readAt set, row dims)
     Unseen --> Read : tap directly from feed\n(markRead also fills seenAt\nwhen null — a Read row\ncan never be badged)
 
-    Read --> [*] : same groupKey fires AGAIN\n→ unique index no longer matches\n→ FRESH row starts at Unseen\n(history preserved, new badge, new push)
+    Read --> Read : same groupKey fires AGAIN\n→ the unique index no longer matches\nTHIS row, so it is untouched: a SEPARATE\nfresh row starts at Unseen (new badge,\nnew push). This row REMAINS as history.
     Read --> Dismissed : user swipes/dismisses (optional v1)
-    Dismissed --> [*] : hidden from the feed\n(the row still exists\nuntil retention removes it)
+
+    Unseen --> [*] : retractActor removed the LAST\nactor → row deleted\n(or 90-day retention)
+    Seen --> [*] : retractActor removed the LAST\nactor → row deleted\n(or 90-day retention)
+    Read --> [*] : 90-day retention ONLY —\nno event and no un-reaction\never removes a Read row
+    Dismissed --> [*] : 90-day retention ONLY
 
     note right of Dismissed
       Retention (pg_cron, 90 days by createdAt)
       deletes rows in ANY state — unseen, seen,
-      read and dismissed alike. It is not a
-      transition out of Read only.
+      read and dismissed alike. Dismissed is a
+      stored, hidden state, not a deletion.
     end note
 ```
 
 Key invariants encoded above:
 - **One open aggregate per `(recipient, groupKey)`** — enforced by the partial unique index (`WHERE read_at IS NULL AND dismissed_at IS NULL`). 10 people reacting to your meal = **1 row**.
 - **At most one badge event per open aggregate per visit cycle.** The INSERT badges. Every later event that lands on the still-unseen row refreshes it silently. Once the user has visited (row seen) the next event resets `seen_at` and re-badges — once — and that is a new cycle. So the badge count is "how many conversations have something new since your last visit", not "how many events happened".
-- **At most one push per open aggregate, full stop** — `notify()` returns only recipients whose row was INSERTED, so silent refreshes and seen→unseen re-badges never reach a device. The in-app row is the durable record; the push is only the first knock.
-- **Read rows are immutable history** — `retractActor` and refresh never touch them (Instagram behavior: un-liking doesn't rewrite the past; a new like after you've read starts a fresh row). Seen-but-unread rows are *not* history: they are open, and both refresh and retract still apply to them.
+- **At most one push per open aggregate *per visit cycle*** — `notify()` returns the recipients whose row it INSERTED **plus** those whose event re-badged a row that had already been SEEN; a refresh of a row that is still unseen returns nobody. So the device knocks when an aggregate opens, stays quiet for the second through eighth reaction you have not looked at yet, and knocks again on the first event after you have looked. Push and badge therefore fire on exactly the same edges. The in-app row is the durable record; the push is only the knock.
+- **Read rows are immutable history and are never deleted by a new event** — `retractActor` and refresh never touch them (Instagram behavior: un-liking doesn't rewrite the past; a new like after you've read starts a *separate* fresh row while the old one stays in the feed). Seen-but-unread rows are *not* history: they are open, and both refresh and retract still apply to them.
 - **Reading implies seeing** — `markRead` sets `read_at` and fills `seen_at` when it is null (`lib/actions/notifications/state.ts`), so tapping a row straight out of an unseen feed cannot leave the badge stuck counting a row the user has already opened. A Read row is never badged.
 - **Badge = count(seenAt IS NULL)**; opening Activity zeroes it in bulk; per-row `readAt` only controls bold/dim.
 - **`created_at` is the aggregate's *latest* activity, not its birth** — a refresh resets it so the row jumps back to the top of the feed. Consequences: the feed is ordered by recency of activity (intended), retention ages rows out by last activity (intended), and mid-scroll re-ordering is possible (see the pagination tradeoff under mark-seen).
@@ -151,9 +158,9 @@ Opening `/activity` posts `markSeen(maxCreatedAt of the first page)`, which clea
 Two consequences worth naming:
 
 - **The "New" section is a client-held snapshot, not a live read of `seen_at`.** The mark-seen call invalidates the feed as well as the badge, so re-reading `seen_at` would empty the section a round trip after it painted. `activity-sections.tsx` freezes the ids that were unseen on first render, so rows keep their tint for the whole visit.
-- **The equal-timestamp edge is benign.** A row created in the same instant as the bound is cleared too. Under badge-clearing intent that is the desired outcome, not a lost notification: the row is still in the feed, still tinted for this visit's snapshot, and only its badge contribution is gone.
+- **A row can be cleared without the client ever having seen it (accepted).** The bound is `created_at <= maxCreatedAt of the page the client just fetched`, and the mark-seen call happens a round trip later. A row that commits in between — after the GET, before `markSeen`, with a `created_at` at or below the bound — is cleared server-side while never appearing in the client's unseen snapshot. It therefore comes back on the next feed load with no "New" tint and no badge contribution. Under badge-clearing intent that is acceptable: the gesture the user made was "I have looked", the row itself is never lost, and the alternative (a badge that outlives the visit) is worse. Equal timestamps fall out of the same rule.
 
-**Pagination tradeoff (accepted).** Because a refresh resets `created_at`, an aggregate can move *above* the cursor a reader has already scrolled past. That row is then missed by the in-flight pagination and only re-appears on the next 30-second refetch or invalidation, at the top where it belongs. This is standard for any re-surfacing feed (Instagram, Slack activity) and is accepted: nothing is lost, only briefly out of view, and the badge still counts it.
+**Pagination tradeoff (accepted).** Because a refresh resets `created_at`, an aggregate can move *above* the cursor a reader has already scrolled past, and the in-flight pagination misses it. The badge poll is what recovers it: `useNotificationBadge` invalidates `notificationKeys.feed` whenever the polled unseen count *rises*, so the re-surfaced row is refetched within 30 seconds and lands at the top where it belongs — no separate feed poll needed. This is standard for any re-surfacing feed (Instagram, Slack activity) and is accepted: nothing is lost, only briefly out of view, and the badge counts it throughout.
 
 ## Decision pipeline — "should this event notify?" (Slack-style ordered gates)
 
@@ -168,20 +175,24 @@ flowchart TD
     G1 -- yes --> G2{Gate 2 — Self-notification\nrecipient == actor?}
     G2 -- yes --> X2[Skip: never notify\nyourself]
     G2 -- no --> G3{Gate 3 — Double-badging\nDoes another surface already\ncarry this unread state?}
-    G3 -- "chat.message → lastReadAt\ndot already exists" --> P[Push-only:\nNO notification row —\nnothing to show in /activity]
+    G3 -- "chat.message → the group's\nlastReadAt dot already carries it" --> P[Push-only path:\nNO row, NO badge,\nnothing in /activity —\nskips the whole row branch]
     G3 -- no --> G4{Gate 4 — Aggregation\nOpen row for same\nrecipient + groupKey?\nopen = read_at IS NULL\nAND dismissed_at IS NULL}
-    G4 -- yes --> U[UPDATE existing row\nadd actor / recount\nreset seenAt if seen\nIN-APP ONLY]
+    G4 -- "yes, and it is still UNSEEN\n(not looked at yet)" --> U[UPDATE row: add actor,\nrecount, re-surface\nSILENT refresh]
+    G4 -- "yes, but it was already SEEN\n(looked at since it last badged)" --> RB[UPDATE row: add actor,\nrecount, reset seenAt\nRE-BADGE — new visit cycle]
     G4 -- no --> I[INSERT new row\n→ Unseen]
-    U -.-> C1
-    I --> G5{Gate 5 — Channel routing\nAFTER the tx commits.\nOnly INSERTed rows\nreach this gate}
-    P --> G5
-    G5 --> C1[In-app: row is already live\nvia 30s badge poll]
+    U --> C1
+    RB --> C1
+    I --> C1[In-app: the row is live on\nthe next 30s badge poll]
+    U -.-> X4[No push — the device already\nknocked for this aggregate\nand the user has not looked yet]
+    I --> G5{Gate 5 — Channel routing\nAFTER the tx commits.\nPush set = INSERTs\n+ seen→unseen re-badges}
+    RB --> G5
     G5 --> C2{Push eligible?\ntoken registered\n+ FCM configured}
+    P --> C2
     C2 -- yes --> S[after&#40;&#41; fire-and-forget\nFCM send, collapse-key\nper groupKey / chat group]
     C2 -- no --> X3[In-app only]
 ```
 
-**Gate 5 fires only on an aggregate INSERT.** `notify()` reports back the recipients whose row Postgres actually inserted (`RETURNING (xmax = 0)`), and the producers hand exactly that list to `after(() => sendNotificationPush(...))`. An event that aggregated into an already-open row updates the feed and the badge but does not buzz the device again — otherwise the eighth reaction on a meal you have not opened yet would be the eighth push. `chat.message` is the one path that reaches gate 5 without a row at all: it is push-only by design and writes nothing to the feed.
+**Gate 5 fires on the same edges the badge does.** `notify()` reports back the recipients whose row Postgres actually inserted (`RETURNING (xmax = 0)`) **plus** those whose event landed on an already-SEEN open row, and the producers hand exactly that list to `after(() => sendNotificationPush(...))`. An event that aggregated into a row the recipient has not looked at yet updates the feed silently — otherwise the eighth reaction on a meal you have not opened would be the eighth push — but once the visit has ended that cycle, the next event knocks again rather than re-badging into a device that stays quiet. (To tell the two apart, `notify()` reads the open rows' `seen_at` in the same transaction immediately before the upsert overwrites it — one small indexed lookup over at most one row per recipient in the round. The only thing that can change `seen_at` in the gap between that read and the upsert's lock is the recipient's own `markSeen`, i.e. the recipient opening Activity in that exact instant; the cost is one skipped push to someone who is looking at the app right then, which is why the read is not escalated to `FOR UPDATE`.) `chat.message` never enters the row branch at all: it is push-only by design, writes nothing, and joins the flow at the FCM eligibility check.
 
 Calibration ("not excessive, not minimal") per type:
 - **High-signal, always individual**: `friend.joined`, `group.added`, `share.invite`, `share.invite_accepted` — each is a distinct human action toward you; never collapsed across objects.
@@ -242,12 +253,12 @@ Indexes: `(recipientId, createdAt DESC, id DESC) WHERE dismissed_at IS NULL` (fe
 
 **Helper** — new `lib/domain/notifications/`:
 - `types.ts` — `NotificationType`, `NotifyInput { recipientId, type, actorId, objectType?, objectId?, targetType?, targetId?, groupKey, data? }`.
-- `notify.ts` — `notify(tx, inputs[]): Promise<string[]>`: skips self (recipient===actor), Drizzle `onConflictDoUpdate` against the partial unique index — prepend the actor into the deduplicated **full** membership array (no cap: audiences are bounded), recompute `actorCount` as its `cardinality`, reset `seenAt`/`createdAt` so aggregates re-badge and re-surface. **Returns only the recipients whose row was INSERTED** (`RETURNING (xmax = 0)`) — the Phase 4 push list, so a device is knocked once per open aggregate and never again while it stays open. `retractActor(tx, {recipientId, groupKey, actorId})` for un-react: remove the actor, decrement, delete at zero; applies to any OPEN row (seen ones included) and is a no-op on read/dismissed rows (Instagram behavior).
+- `notify.ts` — `notify(tx, inputs[]): Promise<string[]>`: skips self (recipient===actor), Drizzle `onConflictDoUpdate` against the partial unique index — prepend the actor into the deduplicated **full** membership array (no cap: audiences are bounded), recompute `actorCount` as its `cardinality`, reset `seenAt`/`createdAt` so aggregates re-badge and re-surface. **Returns the push set: recipients whose row was INSERTED** (`RETURNING (xmax = 0)`) **plus those whose event landed on an open row that had already been SEEN** (read from a small same-tx `SELECT ... WHERE (recipient, groupKey) IN <this round> AND read_at IS NULL AND dismissed_at IS NULL` taken just before the upsert overwrites `seen_at`) — the Phase 4 push list, so a device is knocked once per open aggregate per visit cycle. `retractActor(tx, {recipientId, groupKey, actorId})` for un-react: remove the actor, decrement, delete at zero; applies to any OPEN row (seen ones included) and is a no-op on read/dismissed rows (Instagram behavior).
 - `group-keys.ts` — pure key builders (`'share.reaction:'+shareId`, etc.), unit-tested.
 
 **Producer wiring** (7 files above, all inside the existing tx; carry recipient ids out of the tx closure — small mechanical refactor where actions `return db.transaction(...)` directly).
 
-Tests: `lib/domain/notifications/__tests__/` (input shaping, conflict-key spreading, inserted-only reporting, self-skip, retract paths) + per-producer recipient assertions in existing action test folders.
+Tests: `lib/domain/notifications/__tests__/` (input shaping, conflict-key spreading, the three push-set outcomes — insert, seen re-badge, silent refresh — self-skip, retract paths) + per-producer recipient assertions in existing action test folders.
 
 ## Phase 2 — API + hooks
 
@@ -255,7 +266,7 @@ Tests: `lib/domain/notifications/__tests__/` (input shaping, conflict-key spread
 - **Actions**: `lib/actions/notifications/list.ts` (recipient-scoped, tuple cursor reusing `lib/domain/social/feed/cursor.ts` helpers, actor hydration via `lib/domain/social/identity/public-identity.ts`, left-join `meal_share_invites` for invite rows); `state.ts` (`countUnseen`, bulk `markSeen(userId, before)`, `markRead(userId, ids)` — every query carries `recipientId`: the Drizzle handle **bypasses RLS**).
 - **Routes** (v1 REST so Flutter shares them, `requireUserId` + `handleRouteError` pattern): `GET /api/v1/notifications` (returns `{items, nextCursor, unseenCount}`), `GET /api/v1/notifications/badge`, `POST .../seen`, `POST .../read`.
 - **Client**: `lib/domain/notifications/client.ts` (via `lib/api/client-fetch`); `lib/domain/notifications/query-keys.ts` (`notificationKeys.feed/badge`).
-- **Hooks** — new `hooks/notifications/`: `use-notification-feed.ts` (`useInfiniteQuery`, staleTime 30s, per `use-friend-thread-feed.ts`), `use-notification-badge.ts` (`refetchInterval: 30_000`, exports `useUnseenNotificationCount()` mirroring `useMealShareInviteCount`), `use-notification-state.ts` (mark-seen invalidates badge; mark-read optimistic).
+- **Hooks** — new `hooks/notifications/`: `use-notification-feed.ts` (`useInfiniteQuery`, staleTime 30s, per `use-friend-thread-feed.ts`), `use-notification-badge.ts` (`refetchInterval: 30_000`, exports `useUnseenNotificationCount()` mirroring `useMealShareInviteCount`), `use-notification-state.ts` (mark-seen invalidates badge and feed; mark-read optimistic). The badge poll is the **only** timer in the client, so it doubles as the feed's liveness signal: when a poll returns a *higher* unseen count than the previous one it invalidates `notificationKeys.feed`, which is how a re-surfaced aggregate reaches an open Activity page. The first count after mount is a baseline, never an increase, so mounting cannot invalidate the fetch the page is in the middle of.
 
 Tests: schema round-trips, cursor pagination, invite live-status join, recipient-scoping (foreign id untouched), route 401/400.
 
@@ -281,7 +292,7 @@ Tests: section bucketing, template selection per type, invite card state machine
 
 Status: implemented.
 
-**Delivery decision**: fire-and-forget via Next 16 `after()` scheduled **after tx commit**, for the recipient ids returned by `notify()` — which are the recipients whose aggregate was freshly INSERTED, so an already-open aggregate absorbing another actor updates the feed without re-buzzing the device — behind a mockable `lib/infra/push` boundary. No queue table — in-app row is the durable record; lost push on process death is acceptable at this scale. Works self-hosted (repo ships a Dockerfile).
+**Delivery decision**: fire-and-forget via Next 16 `after()` scheduled **after tx commit**, for the recipient ids returned by `notify()` — freshly INSERTED aggregates plus seen→unseen re-badges, so an aggregate absorbing another actor while the recipient still has not looked at it updates the feed without re-buzzing the device — behind a mockable `lib/infra/push` boundary. No queue table — in-app row is the durable record; lost push on process death is acceptable at this scale. Works self-hosted (repo ships a Dockerfile).
 
 - `lib/infra/push/types.ts` — `PushMessage {token, title, body, data, collapseKey?, badge?}`, `PushSendResult {token, ok, shouldPrune}`, `PushSender`.
 - `lib/infra/push/fcm.ts` — FCM HTTP v1 **without new deps**: service-account JWT via `node:crypto` RSA-SHA256 → oauth2 token (module-level cache, 55 min) → `messages:send`, ten per `Promise.allSettled` wave; env `FCM_SERVICE_ACCOUNT_JSON` (whole service-account JSON in one var, documented in `.env.example`). The `apns`/`android` blocks are built conditionally — FCM 400s on unknown or null fields. Prune classification: HTTP 404 or `UNREGISTERED`, and 400 `INVALID_ARGUMENT`; 401/403/429/5xx keep the row. (`firebase-admin` is the drop-in alternative behind the same interface if preferred later.)
