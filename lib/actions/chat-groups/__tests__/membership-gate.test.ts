@@ -169,8 +169,16 @@ function stubUpdate() {
 // The whole send write: the activity bump, the message insert and the push
 // audience are ONE transaction, in that order — the bump takes the
 // chat_groups write lock before the message exists, so a concurrent join
-// cannot slip between the write and the audience capture.
-function stubSendTx(message: Record<string, unknown>, memberIds: string[]) {
+// cannot slip between the write and the audience capture. The select under
+// the lock returns the FULL member list (sender included) so the action can
+// re-verify the sender's membership post-lock; stubs list recipients and the
+// sender row is prepended here unless `senderPresent: false` simulates a
+// concurrent removal.
+function stubSendTx(
+  message: Record<string, unknown>,
+  memberIds: string[],
+  { senderPresent = true }: { senderPresent?: boolean } = {}
+) {
   mockTxUpdate.mockReturnValueOnce({
     set: vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) })),
   });
@@ -179,9 +187,12 @@ function stubSendTx(message: Record<string, unknown>, memberIds: string[]) {
       returning: vi.fn().mockResolvedValue([message]),
     }),
   });
+  const rows = (senderPresent ? [USER_A, ...memberIds] : memberIds).map(
+    (userId) => ({ userId })
+  );
   mockTxSelect.mockReturnValueOnce({
     from: vi.fn().mockReturnValue({
-      where: vi.fn().mockResolvedValue(memberIds.map((userId) => ({ userId }))),
+      where: vi.fn().mockResolvedValue(rows),
     }),
   });
 }
@@ -364,6 +375,18 @@ describe('membership-gated reads', () => {
     const audience = mockTxSelect.mock.invocationCallOrder[0];
     expect(bump).toBeLessThan(insert);
     expect(insert).toBeLessThan(audience);
+  });
+
+  // requireGroupAccess runs before the lock, so a removal can land in the
+  // gap; the post-lock member read is the authoritative re-check.
+  it('sendChatGroupMessage rejects a sender removed after the access check', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([accessRow()]));
+    stubSendTx(sentMessage(), [USER_B], { senderPresent: false });
+
+    await expect(
+      sendChatGroupMessage(USER_A, { groupId: GROUP_ID, body: 'hi' })
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect(mockAfter).not.toHaveBeenCalled();
   });
 
   it('does NOT gate a direct 1:1 send (direct chat stays free)', async () => {

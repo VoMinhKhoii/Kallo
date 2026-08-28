@@ -4,6 +4,7 @@ import {
   getChatGroupSchema,
   sendChatGroupMessageSchema,
 } from '@/lib/core/validation/chat';
+import { Errors } from '@/lib/core/errors/catalog';
 import { sendChatMessagePush } from '@/lib/domain/notifications/push';
 import { assertUnlimitedCircleActor } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
@@ -92,19 +93,23 @@ export async function sendChatGroupMessage(
       })
       .returning();
 
-    const recipients = await tx
+    // Full member list (sender included) read under the lock: it both
+    // re-verifies the sender's membership — requireGroupAccess above ran
+    // before the lock, so a concurrent removal could have landed since —
+    // and derives the push audience from the same snapshot.
+    const members = await tx
       .select({ userId: chatGroupMembers.userId })
       .from(chatGroupMembers)
-      .where(
-        and(
-          eq(chatGroupMembers.groupId, parsed.groupId),
-          ne(chatGroupMembers.userId, actorId)
-        )
-      );
+      .where(eq(chatGroupMembers.groupId, parsed.groupId));
+    if (!members.some((member) => member.userId === actorId)) {
+      throw Errors.notFound('Không tìm thấy nhóm chat.');
+    }
 
     return {
       row: message,
-      recipientIds: recipients.map((member) => member.userId),
+      recipientIds: members
+        .filter((member) => member.userId !== actorId)
+        .map((member) => member.userId),
     };
   });
 
