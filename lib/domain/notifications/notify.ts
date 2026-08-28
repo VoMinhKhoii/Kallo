@@ -90,10 +90,28 @@ export async function notify(
     // has been seen — the upsert's RETURNING cannot tell us, because its SET
     // clause has already overwritten seen_at by then. A round holds at most one
     // row per (recipient, groupKey) and audiences are bounded (≤50), so this is
-    // one small indexed lookup. The only writer that can change seen_at in the
-    // gap before the upsert takes its lock is the recipient's own markSeen, so
-    // the worst case is one skipped push to someone opening Activity in that
-    // instant — not worth a FOR UPDATE.
+    // one small indexed lookup.
+    //
+    // It reads FOR UPDATE, which is what makes the classification race-safe.
+    // Two concurrent notify() transactions landing on the same SEEN open row
+    // would otherwise both read seen_at as set and both call themselves a
+    // re-badge — two pushes for one badge edge. With the lock, the second
+    // transaction blocks here until the first commits and then re-reads the
+    // committed tuple: seen_at is NULL by then (the first tx's upsert reset
+    // it), so the second classifies itself as a silent refresh. Exactly one
+    // push per badge edge. (The recipient's own concurrent markSeen serialises
+    // through the same lock.)
+    //
+    // The insert race needs no lock, and gets none: when no row exists there is
+    // nothing to lock, so both transactions read an empty map and both attempt
+    // the INSERT. The open-aggregate unique index arbitrates — the loser blocks
+    // on the index entry, then takes the ON CONFLICT UPDATE branch, so its
+    // RETURNING says xmax ≠ 0 and its key has no pre-select entry: neither an
+    // insert nor a seen re-badge, therefore not push-worthy. One row, one push.
+    //
+    // Lock ordering is not a deadlock hazard: every caller locks through this
+    // one query shape, so the same rows come out of the same scan in the same
+    // order in every transaction.
     const openBefore = await openAggregates(tx, round);
     const rows = await tx
       .insert(notifications)
@@ -137,7 +155,9 @@ const conflictKey = (row: { recipientId: string; groupKey: string }) =>
 
 /** The round's targets that already hold an open row, mapped to whether that
  *  row has been seen. Absent key = no open row (this event will INSERT).
- *  Drizzle has no tuple `IN`, and a round is tiny, so it is an OR-chain. */
+ *  Drizzle has no tuple `IN`, and a round is tiny, so it is an OR-chain.
+ *  `FOR UPDATE` holds each matched row until this transaction commits, so the
+ *  seen/unseen classification cannot be read out from under the upsert. */
 async function openAggregates(
   tx: NotifyDb,
   round: NotifyInput[]
@@ -162,7 +182,8 @@ async function openAggregates(
           )
         )
       )
-    );
+    )
+    .for('update');
   return new Map(rows.map((row) => [conflictKey(row), row.seenAt !== null]));
 }
 

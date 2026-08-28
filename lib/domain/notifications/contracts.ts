@@ -86,3 +86,15 @@ export interface NotificationFeedPage {
   nextCursor: string | null;
   unseenCount: number;
 }
+
+/** GET /api/v1/notifications/badge response — the poll behind the nav badge,
+ *  and the client's only liveness signal for the feed. */
+export interface NotificationBadge {
+  /** Rows with `seenAt` null and `dismissedAt` null. */
+  unseen: number;
+  /** `max(updatedAt)` over the caller's undismissed rows, null when they have
+   *  none. Opaque to the client: it only compares it with the previous poll.
+   *  A change means SOMETHING moved — including a silent refresh that
+   *  re-surfaced an aggregate without changing `unseen`. */
+  latestActivityAt: string | null;
+}

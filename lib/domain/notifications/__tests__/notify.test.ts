@@ -36,12 +36,22 @@ const keyOf = (row: { recipientId: string; groupKey: string }) =>
  *  `seen_at`: the pre-select reads exactly that state, and the upsert reports
  *  `inserted` (Postgres's `xmax = 0`) for every key not already there, then
  *  records the key as open-and-unseen — so a later round in the same call sees
- *  what the earlier one wrote, as it would in a real transaction. */
+ *  what the earlier one wrote, as it would in a real transaction.
+ *  `lockedWith` records the row-lock strength the pre-select asked for: the
+ *  classification is only race-safe because it is taken FOR UPDATE. */
 function insertingTx(open: OpenRow[] = []) {
   const batches: InsertedRow[][] = [];
+  const lockedWith: string[] = [];
   const state = new Map(open.map((row) => [keyOf(row), row]));
   const select = vi.fn(() => ({
-    from: () => ({ where: () => Promise.resolve([...state.values()]) }),
+    from: () => ({
+      where: () => ({
+        for: (strength: string) => {
+          lockedWith.push(strength);
+          return Promise.resolve([...state.values()]);
+        },
+      }),
+    }),
   }));
   const insert = vi.fn(() => ({
     values: (rows: InsertedRow[]) => {
@@ -67,7 +77,13 @@ function insertingTx(open: OpenRow[] = []) {
       };
     },
   }));
-  return { tx: { select, insert } as never, batches, insert, select };
+  return {
+    tx: { select, insert } as never,
+    batches,
+    insert,
+    select,
+    lockedWith,
+  };
 }
 
 const SEEN_AT = new Date('2026-08-28T10:00:00.000Z');
@@ -141,6 +157,21 @@ describe('notify', () => {
 
     expect(notified).toEqual([]);
     expect(insert).toHaveBeenCalledTimes(1);
+  });
+
+  // Without the row lock, two transactions could both read the same SEEN row
+  // before either upsert cleared seen_at and both call themselves a re-badge —
+  // two pushes for one badge edge.
+  it('locks the rows it classifies, once per round', async () => {
+    const { tx, lockedWith } = insertingTx([openRow({ seenAt: SEEN_AT })]);
+
+    await notify(tx, [
+      input({ actorId: ACTOR }),
+      // A collider, so the call runs two rounds — each must lock its own read.
+      input({ actorId: OTHER }),
+    ]);
+
+    expect(lockedWith).toEqual(['update', 'update']);
   });
 
   it('reports only the push-eligible recipients of a fan-out', async () => {

@@ -15,22 +15,50 @@ import { notifications } from '@/lib/infra/db/schema';
 
 type Db = AppDb | AppTransaction;
 
-/** The 30-second badge poll. Dismissed rows never count. */
-export async function countUnseen(
+/** What the 30-second badge poll reads. */
+export interface BadgeState {
+  /** The nav badge itself: unseen, undismissed rows. */
+  unseen: number;
+  /**
+   * Activity watermark — `max(updated_at)` across the recipient's undismissed
+   * rows, ISO-8601, null when they have none. The client compares it against
+   * the previous poll to know whether ANYTHING moved, which the count alone
+   * cannot tell it: a silent refresh of an already-unseen aggregate resets
+   * `created_at` (the row jumps back above a cursor the reader scrolled past)
+   * while leaving the unseen count exactly where it was.
+   */
+  latestActivityAt: string | null;
+}
+
+/**
+ * The badge poll's single query: the unseen count and the activity watermark
+ * over the same recipient-scoped scan. Dismissed rows never count and never
+ * move the watermark.
+ */
+export async function readBadgeState(
   userId: string,
   db: Db = defaultDb
-): Promise<number> {
+): Promise<BadgeState> {
   const [row] = await db
-    .select({ count: sql<number>`count(*)::int` })
+    .select({
+      unseen: sql<number>`count(*) FILTER (WHERE ${notifications.seenAt} IS NULL)::int`,
+      latestActivityAt: sql<
+        Date | string | null
+      >`max(${notifications.updatedAt})`,
+    })
     .from(notifications)
     .where(
       and(
         eq(notifications.recipientId, userId),
-        isNull(notifications.seenAt),
         isNull(notifications.dismissedAt)
       )
     );
-  return Number(row?.count ?? 0);
+  const watermark = row?.latestActivityAt ?? null;
+  return {
+    unseen: Number(row?.unseen ?? 0),
+    latestActivityAt:
+      watermark === null ? null : new Date(watermark).toISOString(),
+  };
 }
 
 /**

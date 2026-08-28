@@ -5,7 +5,7 @@
 // hooks in hooks/notifications/. The same contract the Flutter client consumes.
 
 import { postJson, request } from '@/lib/api/client-fetch';
-import type { NotificationFeedPage } from './contracts';
+import type { NotificationBadge, NotificationFeedPage } from './contracts';
 
 /** One page of activity, newest first. Omit `before` for the first page. */
 export function fetchNotifications(
@@ -15,9 +15,10 @@ export function fetchNotifications(
   return request<NotificationFeedPage>(`/api/v1/notifications${query}`);
 }
 
-/** Unseen count for the nav badge. */
-export function fetchNotificationBadge(): Promise<{ unseen: number }> {
-  return request<{ unseen: number }>('/api/v1/notifications/badge');
+/** Unseen count for the nav badge, plus the activity watermark that tells the
+ *  feed something moved. */
+export function fetchNotificationBadge(): Promise<NotificationBadge> {
+  return request<NotificationBadge>('/api/v1/notifications/badge');
 }
 
 /** Clear the badge for everything at or before `before` (an ISO instant). */

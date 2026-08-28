@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { listNotifications } from '@/lib/actions/notifications/list';
-import { countUnseen } from '@/lib/actions/notifications/state';
+import { readBadgeState } from '@/lib/actions/notifications/state';
 import { requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 import { notificationsListQuerySchema } from '@/lib/domain/notifications/contracts';
@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
       before: params.get('before') ?? undefined,
       limit: params.get('limit') ?? undefined,
     });
-    const [page, unseenCount] = await Promise.all([
+    const [page, badge] = await Promise.all([
       listNotifications(userId, { cursor: before, limit }),
-      countUnseen(userId),
+      readBadgeState(userId),
     ]);
-    return NextResponse.json({ ...page, unseenCount });
+    return NextResponse.json({ ...page, unseenCount: badge.unseen });
   } catch (error) {
     return handleRouteError(error);
   }

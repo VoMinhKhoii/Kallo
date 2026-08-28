@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  countUnseen,
   markRead,
   markSeen,
+  readBadgeState,
 } from '@/lib/actions/notifications/state';
 
 const USER = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
@@ -53,19 +53,41 @@ function updatingDb(returned: unknown[]) {
   return { db: { update } as never, captured, update };
 }
 
-describe('countUnseen', () => {
-  it('counts only the recipient’s own rows', async () => {
-    const { db, captured } = countingDb([{ count: 3 }]);
+describe('readBadgeState', () => {
+  const WATERMARK = new Date('2026-08-28T10:00:00.000Z');
 
-    await expect(countUnseen(USER, db)).resolves.toBe(3);
+  it('counts only the recipient’s own rows', async () => {
+    const { db, captured } = countingDb([
+      { unseen: 3, latestActivityAt: WATERMARK },
+    ]);
+
+    await expect(readBadgeState(USER, db)).resolves.toEqual({
+      unseen: 3,
+      latestActivityAt: WATERMARK.toISOString(),
+    });
     const values = paramValues(captured.where);
     expect(values).toContain(USER);
     expect(values).not.toContain(OTHER);
   });
 
-  it('reports zero when nothing is pending', async () => {
-    const { db } = countingDb([]);
-    await expect(countUnseen(USER, db)).resolves.toBe(0);
+  // The watermark is what heals a cursor jump, so it must move for ANY
+  // activity — including a silent refresh that leaves the count alone.
+  it('reports the watermark even when nothing is unseen', async () => {
+    const { db } = countingDb([{ unseen: 0, latestActivityAt: WATERMARK }]);
+
+    await expect(readBadgeState(USER, db)).resolves.toEqual({
+      unseen: 0,
+      latestActivityAt: WATERMARK.toISOString(),
+    });
+  });
+
+  it('reports zero and no watermark when the recipient has no rows', async () => {
+    const { db } = countingDb([{ unseen: 0, latestActivityAt: null }]);
+
+    await expect(readBadgeState(USER, db)).resolves.toEqual({
+      unseen: 0,
+      latestActivityAt: null,
+    });
   });
 });
 

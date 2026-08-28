@@ -97,11 +97,15 @@ export const NOTIFICATION_PATHS: Record<string, PathItem> = {
     get: authed({
       operationId: 'getNotificationBadge',
       summary: 'Unseen activity count',
-      description: 'Backs the nav badge without downloading the feed.',
+      description:
+        'Backs the nav badge without downloading the feed. `latestActivityAt` is a watermark over the caller’s undismissed rows: poll both, and refetch the feed whenever the watermark changes — activity can re-surface an existing row without changing the count.',
       tags: TAGS,
       ok: {
         type: 'object',
-        properties: { unseen: { type: 'integer' } },
+        properties: {
+          unseen: { type: 'integer' },
+          latestActivityAt: { type: ['string', 'null'], format: 'date-time' },
+        },
       },
     }),
   },
