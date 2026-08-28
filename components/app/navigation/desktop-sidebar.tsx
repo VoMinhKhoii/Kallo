@@ -4,7 +4,7 @@ import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
-import { useMealShareInviteCount } from '@/hooks/social/sharing/use-meal-share-invites';
+import { useNavBadgeCounts } from '@/hooks/ui/use-nav-badges';
 import { useSidebarState } from '@/hooks/ui/use-sidebar-state';
 import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
@@ -90,7 +90,7 @@ export function DesktopSidebar({
 }: DesktopSidebarProps) {
   const pathname = usePathname();
   const t = useTranslations('app.mainSidebar');
-  const inviteCount = useMealShareInviteCount();
+  const badgeCounts = useNavBadgeCounts();
   const {
     pinnedCollapsed,
     effectiveCollapsed: collapsed,
@@ -198,7 +198,7 @@ export function DesktopSidebar({
                   item={item}
                   collapsed={collapsed}
                   isActive={isActiveRoute(pathname, item.href)}
-                  showBadge={item.id === 'groups' && inviteCount > 0}
+                  showBadge={(badgeCounts[item.id] ?? 0) > 0}
                 />
               </li>
             ))}

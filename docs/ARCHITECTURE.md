@@ -125,6 +125,7 @@ another domain module is a smell worth a second look.
 | Folder | Concern | Status |
 |---|---|---|
 | `ui/` | shadcn primitives — CLI-managed, never hand-edited | exempt |
+| `activity/` | the Activity page — the notification feed, its sections, rows and the mobile heart entry point | ok |
 | `admin/` | the admin surface — `requests/` `pipeline-summary/` `feedback/` `health/` `prompts/` | ok |
 | `brand/` | logo marks | ok |
 | `app/` | application chrome present on every page | split |
@@ -158,7 +159,7 @@ another domain module is a smell worth a second look.
 | `notifications/` | the activity feed, its badge poll and the seen/read mutations | ok |
 | `social/circle/` | friends, thread feed, circle wall, invites, group chats | ok |
 | `social/sharing/` | sharing a meal, logging a shared one, invites, replies, reactions | ok |
-| `ui/` | device and browser-surface hooks, zero domain knowledge | ok |
+| `ui/` | device and browser-surface hooks, plus the nav chrome's cross-surface state (sidebar open/collapse, badge counts) | ok |
 
 `hooks/auth/` also owns the landing page's waitlist signup — the pre-account end
 of the same "getting into the product" concern, folded in when `hooks/landing/`

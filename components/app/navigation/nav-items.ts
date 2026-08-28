@@ -1,5 +1,6 @@
 import {
   Activity,
+  Heart,
   LayoutDashboard,
   type LucideIcon,
   NotebookPen,
@@ -39,6 +40,13 @@ export const NAV_ITEMS: readonly NavItemConfig[] = [
     href: '/circle',
     labelKey: 'groups',
     icon: Users2,
+  },
+  {
+    // Heart, not Lucide's `Activity` — that glyph is the nutrition rail item.
+    id: 'activity',
+    href: '/activity',
+    labelKey: 'activity',
+    icon: Heart,
   },
   {
     id: 'admin',

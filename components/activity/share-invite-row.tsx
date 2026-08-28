@@ -1,0 +1,129 @@
+'use client';
+
+import { useQueryClient } from '@tanstack/react-query';
+import { Check, Loader2, X } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import {
+  useAcceptMealShareInvite,
+  useDismissMealShareInvite,
+} from '@/hooks/social/sharing/use-meal-share-invites';
+import { formatElapsed } from '@/lib/core/date/format-elapsed';
+import { cn } from '@/lib/core/ui/cn';
+import type { NotificationItem } from '@/lib/domain/notifications/contracts';
+import { notificationKeys } from '@/lib/domain/notifications/query-keys';
+import { inviteMode } from './notification-copy';
+import { NotificationAvatars, NotificationMessage } from './notification-row';
+
+/** The invite's terminal state, as a quiet chip. `null` invite (or a missing
+ *  object id) means the offer is gone — say so rather than showing dead
+ *  buttons. */
+function statusKey(status: string | undefined): string {
+  if (status === 'accepted') return 'invite.status.accepted';
+  if (status === 'dismissed') return 'invite.status.dismissed';
+  return 'invite.status.unavailable';
+}
+
+/**
+ * The one actionable row in the feed: a `share.invite` whose live
+ * `meal_share_invites.status` is still pending gets Accept / Dismiss inline.
+ * The notification never owns that state — acting from Circle, another device,
+ * or here all land on the same guarded mutation, so a resolved invite collapses
+ * to a status chip wherever it is rendered.
+ */
+export function ShareInviteRow({
+  item,
+  isNew,
+}: {
+  item: NotificationItem;
+  isNew: boolean;
+}) {
+  const t = useTranslations('activity');
+  const locale = useLocale();
+  const queryClient = useQueryClient();
+  const accept = useAcceptMealShareInvite();
+  const dismiss = useDismissMealShareInvite();
+
+  const inviteId = item.objectId;
+  const pending = item.invite?.status === 'pending' && inviteId !== null;
+  const busy = accept.isPending || dismiss.isPending;
+  const mode = inviteMode(item);
+
+  // The shared invite hooks refresh the circle surfaces; the activity feed and
+  // its badge are ours to refresh on top of them.
+  const refreshActivity = () => {
+    queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+  };
+
+  const handleAccept = () => {
+    if (busy || !inviteId) return;
+    accept.mutate(inviteId, {
+      onSuccess: refreshActivity,
+      onError: () => toast.error(t('invite.error')),
+    });
+  };
+
+  const handleDismiss = () => {
+    if (busy || !inviteId) return;
+    dismiss.mutate(inviteId, {
+      onSuccess: refreshActivity,
+      onError: () => toast.error(t('invite.error')),
+    });
+  };
+
+  return (
+    <div
+      className={cn(
+        'flex items-start gap-3 border-kallo-border border-b px-4 py-3.5 last:border-b-0',
+        isNew && 'bg-kallo-hover/30'
+      )}
+    >
+      <NotificationAvatars item={item} fallbackLabel={t('someone')} />
+      <div className="min-w-0 flex-1">
+        <p className="font-sans-display text-[15px] text-kallo-text leading-[1.45]">
+          <NotificationMessage item={item} fallbackLabel={t('someone')} />
+        </p>
+        <div className="flex flex-wrap items-center gap-x-2 font-sans-display text-[13px] text-kallo-text-muted">
+          <span>{formatElapsed(item.createdAt, locale)}</span>
+          {mode && (
+            <span>
+              {mode === 'split' ? t('invite.modeSplit') : t('invite.modeCopy')}
+            </span>
+          )}
+        </div>
+
+        {pending ? (
+          <div className="mt-2.5 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAccept}
+              disabled={busy}
+              aria-busy={accept.isPending}
+              className="inline-flex items-center gap-1.5 rounded-full bg-kallo-hover px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text transition-colors hover:bg-kallo-hover/70 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {accept.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Check className="h-3.5 w-3.5" />
+              )}
+              {t('invite.accept')}
+            </button>
+            <button
+              type="button"
+              onClick={handleDismiss}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text-muted transition-colors hover:bg-kallo-hover/40 hover:text-kallo-text disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <X className="h-3.5 w-3.5" />
+              {t('invite.dismiss')}
+            </button>
+          </div>
+        ) : (
+          <span className="mt-2 inline-flex rounded-full bg-kallo-hover px-2.5 py-0.5 font-medium font-sans-display text-[11px] text-kallo-text-muted">
+            {t(statusKey(item.invite?.status))}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}

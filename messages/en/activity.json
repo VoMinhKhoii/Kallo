@@ -1,0 +1,59 @@
+{
+  "title": "Activity",
+  "someone": "Someone",
+  "loading": "Loading activity",
+  "loadingMore": "Loading older activity",
+  "mobileButton": "Activity",
+  "sections": {
+    "new": "New",
+    "recent": "Last 30 days",
+    "older": "Older"
+  },
+  "error": {
+    "title": "Activity didn't load",
+    "body": "The connection dropped before your activity came through.",
+    "retry": "Try again"
+  },
+  "empty": {
+    "title": "Nothing new yet",
+    "description": "Reactions, replies and meals your circle sends you land here."
+  },
+  "row": {
+    "friendJoined": {
+      "one": "<b>{name}</b> joined your circle"
+    },
+    "groupAdded": {
+      "one": "<b>{name}</b> added you to {group}"
+    },
+    "shareInvite": {
+      "one": "<b>{name}</b> sent you a meal"
+    },
+    "shareInviteAccepted": {
+      "one": "<b>{name}</b> added your meal to their diary"
+    },
+    "shareReaction": {
+      "one": "<b>{name}</b> reacted to your meal",
+      "other": "<b>{name}</b> and {count} others reacted to your meal"
+    },
+    "shareReply": {
+      "one": "<b>{name}</b> replied to your meal",
+      "other": "<b>{name}</b> and {count} others replied to your meal"
+    },
+    "shareLogged": {
+      "one": "<b>{name}</b> logged your meal",
+      "other": "<b>{name}</b> and {count} others logged your meal"
+    }
+  },
+  "invite": {
+    "accept": "Accept",
+    "dismiss": "Dismiss",
+    "modeCopy": "Full portion",
+    "modeSplit": "Split portion",
+    "error": "That didn't go through. Try again.",
+    "status": {
+      "accepted": "Added",
+      "dismissed": "Dismissed",
+      "unavailable": "Unavailable"
+    }
+  }
+}

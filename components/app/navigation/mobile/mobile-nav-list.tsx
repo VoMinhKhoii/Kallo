@@ -8,8 +8,8 @@ import { isActiveRoute, type NavItemConfig } from '../nav-items';
 interface MobileNavListProps {
   items: readonly NavItemConfig[];
   pathname: string;
-  /** Pending copy/split offers — drives the ambient dot on the Circle row. */
-  inviteCount: number;
+  /** Ambient dot counts per nav id (pending offers, unseen notifications). */
+  badgeCounts: Record<string, number>;
   /** Closes the drawer after a nav tap. */
   onNavigate: () => void;
 }
@@ -17,13 +17,13 @@ interface MobileNavListProps {
 /**
  * The drawer's primary nav list — one row per visible destination, active row
  * as a filled umber pill. Mirrors the desktop `SidebarNavLink` and the Flutter
- * `SidebarNavList`; the Circle row carries an unread dot when invites are
- * pending.
+ * `SidebarNavList`; the Circle and Activity rows carry an unread dot while
+ * offers are pending or notifications are unseen.
  */
 export function MobileNavList({
   items,
   pathname,
-  inviteCount,
+  badgeCounts,
   onNavigate,
 }: MobileNavListProps) {
   const tNav = useTranslations('app.mainSidebar');
@@ -55,7 +55,7 @@ export function MobileNavList({
               >
                 {tNav(item.labelKey)}
               </span>
-              {item.id === 'groups' && inviteCount > 0 && (
+              {(badgeCounts[item.id] ?? 0) > 0 && (
                 <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-kallo-accent" />
               )}
             </Link>
