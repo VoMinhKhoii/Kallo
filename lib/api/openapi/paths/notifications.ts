@@ -7,8 +7,10 @@ import {
   ref,
 } from '@/lib/api/openapi/components';
 import {
+  deletePushTokenBodySchema,
   markReadBodySchema,
   markSeenBodySchema,
+  pushTokenBodySchema,
 } from '@/lib/domain/notifications/contracts';
 
 const TAGS = ['Activity'];
@@ -130,6 +132,33 @@ export const NOTIFICATION_PATHS: Record<string, PathItem> = {
       ok: {
         type: 'object',
         properties: { read: { type: 'integer' } },
+      },
+    }),
+  },
+
+  '/api/v1/notifications/push-tokens': {
+    post: authed({
+      operationId: 'registerPushToken',
+      summary: 'Register a device for push',
+      description:
+        'Registers (or refreshes) an FCM registration token for the caller. Idempotent — post it on every launch and on every token refresh. A token already registered to another account is reassigned to the caller, because the OS hands the same string to whoever signs in on that device next.',
+      tags: TAGS,
+      body: fromZod(pushTokenBodySchema),
+      ok: {
+        type: 'object',
+        properties: { registered: { type: 'boolean' } },
+      },
+    }),
+    delete: authed({
+      operationId: 'unregisterPushToken',
+      summary: 'Unregister a device',
+      description:
+        'Removes the caller’s registration for this token — call on sign-out. Scoped to the caller, so a token belonging to somebody else deletes nothing.',
+      tags: TAGS,
+      body: fromZod(deletePushTokenBodySchema),
+      ok: {
+        type: 'object',
+        properties: { removed: { type: 'integer' } },
       },
     }),
   },

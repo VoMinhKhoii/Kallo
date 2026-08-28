@@ -2,6 +2,7 @@
 // every query must carry an explicit actor predicate (see ./types.ts).
 
 import { and, eq, sql } from 'drizzle-orm';
+import { after } from 'next/server';
 import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups/direct-chats';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
@@ -11,6 +12,7 @@ import {
 } from '@/lib/core/validation/social';
 import { friendJoinedKey } from '@/lib/domain/notifications/group-keys';
 import { type NotifyDb, notify } from '@/lib/domain/notifications/notify';
+import { sendNotificationPush } from '@/lib/domain/notifications/push';
 import { orderedPair } from '@/lib/domain/social/friendship';
 import { assertFriendCapacity } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
@@ -53,7 +55,12 @@ export async function acceptInvite(
 
   const { userLow, userHigh } = orderedPair(actorId, inviter.userId);
 
-  return db.transaction(async (tx) => {
+  // Filled inside the transaction, drained after it commits: push must never
+  // fire for a friendship that rolled back.
+  let pushRecipients: string[] = [];
+  let friendshipId: string | null = null;
+
+  const result = await db.transaction(async (tx) => {
     // Lock the canonical edge row for the duration of the transaction so a
     // concurrent blockFriend/acceptInvite can't interleave between this read
     // and the promote below (which would let an accept land on top of a block).
@@ -103,7 +110,13 @@ export async function acceptInvite(
         type: 'friend_accepted',
         refId: existing[0].id,
       });
-      await notifyInviterOfJoin(tx, actorId, inviter.userId, existing[0].id);
+      pushRecipients = await notifyInviterOfJoin(
+        tx,
+        actorId,
+        inviter.userId,
+        existing[0].id
+      );
+      friendshipId = existing[0].id;
     } else {
       // No edge yet. The locked read can't lock a row that doesn't exist, so
       // a racing accept/block may insert first; swallow the unique violation
@@ -128,7 +141,13 @@ export async function acceptInvite(
           type: 'friend_accepted',
           refId: inserted[0].id,
         });
-        await notifyInviterOfJoin(tx, actorId, inviter.userId, inserted[0].id);
+        pushRecipients = await notifyInviterOfJoin(
+          tx,
+          actorId,
+          inviter.userId,
+          inserted[0].id
+        );
+        friendshipId = inserted[0].id;
       } else {
         // A concurrent writer won the insert — re-read and honour a block.
         const reconciled = await tx
@@ -154,6 +173,16 @@ export async function acceptInvite(
 
     return { status: 'accepted' as const, inviter };
   });
+
+  // Committed: the inviter can be told their link landed.
+  after(() =>
+    sendNotificationPush(pushRecipients, {
+      type: 'friend.joined',
+      actorId,
+      ...(friendshipId ? { groupKey: friendJoinedKey(friendshipId) } : {}),
+    })
+  );
+  return result;
 }
 
 // Tell the inviter their link landed — the one signal the Locket-style

@@ -1790,3 +1790,41 @@ export const notifications = pgTable(
     ),
   ]
 );
+
+// ---------------------------------------------------------------------------
+// Push tokens — device registrations for native (FCM/APNs) delivery
+// ---------------------------------------------------------------------------
+// One row per device, keyed by the FCM registration token. The token — not
+// (user, device) — is unique because a token is reassigned by the OS/Firebase
+// when a different account signs in on the same handset: the POST upsert moves
+// it to the new owner rather than fanning one device's push to two people.
+//
+// last_seen_at is refreshed on every registration ping; the retention cron
+// reaps rows idle past 270 days so an uninstalled app stops costing sends.
+// Dead tokens are also pruned inline whenever FCM answers UNREGISTERED.
+
+export const pushTokens = pgTable(
+  'push_tokens',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    token: text('token').notNull().unique(),
+    platform: text('platform').notNull(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // The send path's only lookup: every token for a set of recipients.
+    index('push_tokens_user_idx').on(table.userId),
+    check(
+      'push_tokens_platform_check',
+      sql`${table.platform} IN ('ios', 'android', 'web')`
+    ),
+  ]
+);

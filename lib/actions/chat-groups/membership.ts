@@ -1,4 +1,5 @@
 import { and, eq, inArray, or, sql } from 'drizzle-orm';
+import { after } from 'next/server';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   addChatGroupMembersSchema,
@@ -7,6 +8,7 @@ import {
 } from '@/lib/core/validation/chat';
 import { groupAddedKey } from '@/lib/domain/notifications/group-keys';
 import { notify } from '@/lib/domain/notifications/notify';
+import { sendNotificationPush } from '@/lib/domain/notifications/push';
 import { orderedPair } from '@/lib/domain/social/friendship';
 import {
   assertGroupCapacity,
@@ -220,7 +222,10 @@ export async function addChatGroupMembers(
     throw Errors.validationFailed('Chọn ít nhất một thành viên.');
   }
 
-  return db.transaction(async (tx) => {
+  let pushRecipients: string[] = [];
+  let groupName: string | null = null;
+
+  const added = await db.transaction(async (tx) => {
     const group = await lockChatGroup(parsed.groupId, tx);
     const access = await requireGroupAccess(actorId, parsed.groupId, tx);
     if (access.kind !== 'group') {
@@ -274,7 +279,8 @@ export async function addChatGroupMembers(
 
     // Only the rows this call actually created — a member who lost the race to
     // a concurrent add was told by the writer that won.
-    await notify(
+    groupName = group.name;
+    pushRecipients = await notify(
       tx,
       inserted.map((member) => ({
         recipientId: member.userId,
@@ -289,6 +295,18 @@ export async function addChatGroupMembers(
 
     return { added: inserted.length };
   });
+
+  after(() =>
+    sendNotificationPush(pushRecipients, {
+      type: 'group.added',
+      actorId,
+      data: { groupName: groupName ?? undefined },
+      targetType: 'chat_group',
+      targetId: parsed.groupId,
+      groupKey: groupAddedKey(parsed.groupId),
+    })
+  );
+  return added;
 }
 
 /** Owner-only: remove another member. Removing yourself is leaveChatGroup. */

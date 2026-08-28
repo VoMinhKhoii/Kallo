@@ -57,6 +57,7 @@ another domain module is a smell worth a second look.
 | `db/` | Drizzle schema and client |
 | `email/` | transactional send + templates |
 | `platform/` | runtime environment detection from the user agent |
+| `push/` | the native-push transport: the `PushSender` seam, the dependency-free FCM HTTP v1 sender, and the no-op used when `FCM_SERVICE_ACCOUNT_JSON` is unset |
 | `rate-limit/` | analysis abuse guards |
 | `security/` | webhook signatures, CSP, request IP |
 | `supabase/` | client factories (browser, server, admin, middleware) |
@@ -75,7 +76,7 @@ another domain module is a smell worth a second look.
 | `ingredients/` | `search/` — the food-composition picker: recents, lexical + semantic arms, rank fusion |
 | `logging/` | meal logging and relog, plus the contracts its UI and hooks share: `types.ts`, `meal-input-handle.ts`, `stream-ticker.ts` |
 | `meals/` | dish quantity edits and the macro rescaling they imply, plus `save/` (the optimistic-meal builders and the cache choreography a save runs through) and `query-keys.ts`, the cache addresses that write side shares with `hooks/meals/` |
-| `notifications/` | the activity layer's shared vocabulary: `types.ts`, `group-keys.ts` (the aggregation identities), `notify.ts` (the single write path producers call inside their tx), the isomorphic `contracts.ts`, plus `client.ts` and `query-keys.ts` |
+| `notifications/` | the activity layer's shared vocabulary: `types.ts`, `group-keys.ts` (the aggregation identities), `notify.ts` (the single write path producers call inside their tx), the isomorphic `contracts.ts`, the after-commit push fan-out (`push.ts` + its server-side `push-copy.ts` templates), plus `client.ts` and `query-keys.ts` |
 | `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data |
 | `settings/` | the contracts the settings page's route, panels and hooks share: `anchors.ts` (scroll-target ids), `profile-form.ts` (the profile form's data model) |

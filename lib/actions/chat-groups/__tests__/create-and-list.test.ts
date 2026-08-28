@@ -1,5 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Push (Phase 4) rides on next/server's `after()`, which needs a request scope
+// these unit suites don't have. The double runs the callback inline so the
+// scheduling itself is assertable; what the push then does is covered by
+// lib/domain/notifications/__tests__/push.test.ts.
+const { mockAfter, mockSendNotificationPush, mockSendChatMessagePush } =
+  vi.hoisted(() => ({
+    mockAfter: vi.fn((task: () => unknown) => {
+      void task();
+    }),
+    mockSendNotificationPush: vi.fn(async (): Promise<void> => undefined),
+    mockSendChatMessagePush: vi.fn(async (): Promise<void> => undefined),
+  }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  after: mockAfter,
+}));
+vi.mock('@/lib/domain/notifications/push', () => ({
+  sendNotificationPush: mockSendNotificationPush,
+  sendChatMessagePush: mockSendChatMessagePush,
+}));
+
 // Notifications: this suite asserts WHO gets told; the helper's own upsert and
 // retract semantics live in lib/domain/notifications/__tests__.
 const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
@@ -182,6 +203,31 @@ describe('createChatGroup', () => {
     expect(inputs[0]).toMatchObject({
       targetId: GROUP_ID,
       data: { groupName: 'Trip' },
+    });
+  });
+
+  it('schedules the group-added push after the transaction commits', async () => {
+    acceptedFriendsQuery([USER_B, USER_C]);
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: GROUP_ID }]),
+      }),
+    }));
+    mockNotify.mockResolvedValueOnce([USER_B, USER_C]);
+
+    await createChatGroup(USER_A, {
+      name: 'Trip',
+      memberUserIds: [USER_B, USER_C],
+    });
+
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendNotificationPush).toHaveBeenCalledWith([USER_B, USER_C], {
+      type: 'group.added',
+      actorId: USER_A,
+      data: { groupName: 'Trip' },
+      targetType: 'chat_group',
+      targetId: GROUP_ID,
+      groupKey: `group.added:${GROUP_ID}`,
     });
   });
 

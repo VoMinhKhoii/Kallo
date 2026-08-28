@@ -1,5 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Push (Phase 4) rides on next/server's `after()`, which needs a request scope
+// these unit suites don't have. The double runs the callback inline so the
+// scheduling itself is assertable; what the push then does is covered by
+// lib/domain/notifications/__tests__/push.test.ts.
+const { mockAfter, mockSendNotificationPush, mockSendChatMessagePush } =
+  vi.hoisted(() => ({
+    mockAfter: vi.fn((task: () => unknown) => {
+      void task();
+    }),
+    mockSendNotificationPush: vi.fn(async (): Promise<void> => undefined),
+    mockSendChatMessagePush: vi.fn(async (): Promise<void> => undefined),
+  }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  after: mockAfter,
+}));
+vi.mock('@/lib/domain/notifications/push', () => ({
+  sendNotificationPush: mockSendNotificationPush,
+  sendChatMessagePush: mockSendChatMessagePush,
+}));
+
 // Notifications: this suite asserts WHO gets told; the helper's own upsert and
 // retract semantics live in lib/domain/notifications/__tests__.
 const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
@@ -276,6 +297,32 @@ describe('acceptInvite', () => {
         groupKey: `friend.joined:${FRIENDSHIP_ID}`,
       },
     ]);
+  });
+
+  // Push is scheduled AFTER the transaction resolves — never from inside it,
+  // where a later rollback would leave a phone buzzing about a friendship
+  // that does not exist.
+  it('schedules the inviter push once the edge is committed', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect
+      .mockReturnValueOnce(txSelect([{ id: FRIENDSHIP_ID, status: 'pending' }]))
+      .mockReturnValueOnce(txSelect([{ id: DIRECT_GROUP_ID }]));
+    mockTxUpdate.mockReturnValue({
+      set: vi
+        .fn()
+        .mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+    });
+    captureInserts();
+    mockNotify.mockResolvedValueOnce([INVITER]);
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendNotificationPush).toHaveBeenCalledWith([INVITER], {
+      type: 'friend.joined',
+      actorId: ACTOR,
+      groupKey: `friend.joined:${FRIENDSHIP_ID}`,
+    });
   });
 
   // The writer that won the insert already notified — a second signal here

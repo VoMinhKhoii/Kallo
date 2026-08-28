@@ -1,11 +1,13 @@
 import { and, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import { after } from 'next/server';
 import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { createChatGroupSchema } from '@/lib/core/validation/chat';
 import { circleFeedSchema } from '@/lib/core/validation/social';
 import { groupAddedKey } from '@/lib/domain/notifications/group-keys';
 import { notify } from '@/lib/domain/notifications/notify';
+import { sendNotificationPush } from '@/lib/domain/notifications/push';
 import { todayLocalDate } from '@/lib/domain/social/feed/meal-feed';
 import {
   assertGroupCapacity,
@@ -49,7 +51,9 @@ export async function createChatGroup(
   // another group (their cap, their 409 — see circle-quota).
   await assertUnlimitedCircleActor(db, actorId);
 
-  return db.transaction(async (tx) => {
+  let pushRecipients: string[] = [];
+
+  const created = await db.transaction(async (tx) => {
     await assertGroupCapacity(tx, memberIds);
 
     const [group] = await tx
@@ -70,7 +74,7 @@ export async function createChatGroup(
     // asked. `memberIds` already excludes the creator (dropped above), so no
     // self-notification can reach notify(). Only named groups get here —
     // direct chats are created by the friendship flow, not this action.
-    await notify(
+    pushRecipients = await notify(
       tx,
       memberIds.map((userId) => ({
         recipientId: userId,
@@ -85,6 +89,19 @@ export async function createChatGroup(
 
     return { id: group.id };
   });
+
+  // After commit: the group exists, so the deep link in the push resolves.
+  after(() =>
+    sendNotificationPush(pushRecipients, {
+      type: 'group.added',
+      actorId,
+      data: { groupName: parsed.name },
+      targetType: 'chat_group',
+      targetId: created.id,
+      groupKey: groupAddedKey(created.id),
+    })
+  );
+  return created;
 }
 
 export async function listMyChatGroups(

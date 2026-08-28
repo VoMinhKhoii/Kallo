@@ -1,5 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Push (Phase 4) rides on next/server's `after()`, which needs a request scope
+// these unit suites don't have. The double runs the callback inline so the
+// scheduling itself is assertable; what the push then does is covered by
+// lib/domain/notifications/__tests__/push.test.ts.
+const { mockAfter, mockSendNotificationPush, mockSendChatMessagePush } =
+  vi.hoisted(() => ({
+    mockAfter: vi.fn((task: () => unknown) => {
+      void task();
+    }),
+    mockSendNotificationPush: vi.fn(async (): Promise<void> => undefined),
+    mockSendChatMessagePush: vi.fn(async (): Promise<void> => undefined),
+  }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  after: mockAfter,
+}));
+vi.mock('@/lib/domain/notifications/push', () => ({
+  sendNotificationPush: mockSendNotificationPush,
+  sendChatMessagePush: mockSendChatMessagePush,
+}));
+
 // Notifications: this suite asserts WHO gets told; the helper's own upsert and
 // retract semantics live in lib/domain/notifications/__tests__.
 const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
@@ -211,6 +232,27 @@ describe('shareMealWithFriendsAction', () => {
         data: { mode: 'copy', portionFactor: 1, mealName: 'Trà sữa' },
       },
     ]);
+  });
+
+  it('schedules the invite push after the offer commits', async () => {
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueWhereSelect([friendEdge]);
+    mockTxInsert.mockImplementation(routeInserts({}));
+    mockNotify.mockResolvedValueOnce([UUID_FRIEND]);
+
+    await shareMealWithFriendsAction({
+      mealId: UUID_MEAL,
+      friendUserIds: [UUID_FRIEND],
+      mode: 'copy',
+    });
+
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendNotificationPush).toHaveBeenCalledWith([UUID_FRIEND], {
+      type: 'share.invite',
+      actorId: mockUser.id,
+      groupKey: `share.invite:${UUID_MEAL}`,
+    });
   });
 
   it('split mode: halves the meal for two participants and stores factor 0.5', async () => {

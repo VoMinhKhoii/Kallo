@@ -243,20 +243,44 @@ Tests: section bucketing, template selection per type, invite card state machine
 
 ## Phase 4 — Push pipeline + token API
 
+Status: implemented.
+
 **Delivery decision**: fire-and-forget via Next 16 `after()` scheduled **after tx commit** (recipient ids returned by `notify()`), behind a mockable `lib/infra/push` boundary. No queue table — in-app row is the durable record; lost push on process death is acceptable at this scale. Works self-hosted (repo ships a Dockerfile).
 
-- `lib/infra/push/types.ts` — `PushSender` interface; `noop.ts` default when env unset (dev/test).
-- `lib/infra/push/fcm.ts` — FCM HTTP v1 **without new deps** (~120 LOC): service-account JWT via `node:crypto` RSA-SHA256 → oauth2 token (cached ~55min) → `messages:send`; env `FCM_SERVICE_ACCOUNT_JSON`; classify `UNREGISTERED` for pruning. (`firebase-admin` is the drop-in alternative behind the same interface if preferred later.)
-- `lib/domain/notifications/push.ts` — `sendNotificationPush(recipientIds, payload)`: load tokens, localize title/body server-side from `user_profiles.preferredLocale`, send, delete UNREGISTERED tokens; `sendChatMessagePush({groupId, senderId, preview})` with `apns-collapse-id: chat:<groupId>`.
-- `push_tokens` table (Drizzle, +RLS migration): userId, token (unique — upsert reassigns user), platform CHECK, lastSeenAt; prune >270 days idle in the retention cron.
-- `app/api/v1/notifications/push-tokens/route.ts` — POST upsert / DELETE (scoped userId+token).
-- Wire `after(() => sendNotificationPush(...))` at the 7 producer call sites + `sendChatMessagePush` in `lib/actions/chat-groups/messages.ts` (no notification row).
+- `lib/infra/push/types.ts` — `PushMessage {token, title, body, data, collapseKey?, badge?}`, `PushSendResult {token, ok, shouldPrune}`, `PushSender`.
+- `lib/infra/push/fcm.ts` — FCM HTTP v1 **without new deps**: service-account JWT via `node:crypto` RSA-SHA256 → oauth2 token (module-level cache, 55 min) → `messages:send`, ten per `Promise.allSettled` wave; env `FCM_SERVICE_ACCOUNT_JSON` (whole service-account JSON in one var, documented in `.env.example`). The `apns`/`android` blocks are built conditionally — FCM 400s on unknown or null fields. Prune classification: HTTP 404 or `UNREGISTERED`, and 400 `INVALID_ARGUMENT`; 401/403/429/5xx keep the row. (`firebase-admin` is the drop-in alternative behind the same interface if preferred later.)
+- `lib/infra/push/sender.ts` — `getPushSender()`: the FCM sender when `FCM_SERVICE_ACCOUNT_JSON` is set, otherwise a no-op sender, so dev/CI/tests never need Firebase config. (No separate `noop.ts`; the no-op is three lines beside the resolver.)
+- `lib/domain/notifications/push-copy.ts` — server-side en/vi push templates (`pushCopy(type, locale, values)`), same voice as `messages/*/activity.json` rows but a separate consumer: the device has no next-intl bundle. A push always uses the SINGULAR sentence — the aggregate count lives on the in-app row. `title` is `Kallo` for activity events and the SENDER's name for `chat.message`.
+- `lib/domain/notifications/push.ts` — `sendNotificationPush(recipientIds, payload, sender?)`: load tokens (one `IN` query), load `user_profiles.preferredLocale` per recipient, resolve the actor's display name from `public_profiles` when the producer did not already hold it, build one message per device, send, delete every token whose result says `shouldPrune`. **Never throws** — every path is caught and `console.error`'d, because it runs in `after()` on a request that already succeeded. `sendChatMessagePush({groupId, senderId, senderName?, preview})` fans out to group members minus the sender with collapse key `chat:<groupId>` and a ≤140-char preview.
+- `push_tokens` table (Drizzle `20260828131955_add_push_tokens`, + `..._rls_push_tokens.sql` enabling RLS with no policies): userId, token (unique — POST reassigns the owner, since the OS hands one token to whoever signs in next), platform CHECK, lastSeenAt, createdAt, index on userId. Idle reap lives in its own append-only migration `..._push_tokens_retention.sql` (`reap_stale_push_tokens()`, >270 days, same guarded pg_cron `DO` block) — the Phase 1 retention migration is not edited.
+- `app/api/v1/notifications/push-tokens/route.ts` — POST upsert (`onConflictDoUpdate` on the token, reassigning userId/platform and refreshing lastSeenAt) / DELETE (scoped `userId AND token`). Both documented in `lib/api/openapi/paths/notifications.ts`.
+- `after(() => sendNotificationPush(...))` is wired at the 7 producer call sites, plus `after(() => sendChatMessagePush(...))` in `lib/actions/chat-groups/messages.ts` (no notification row). Every producer is reached from a route handler, so plain `after()` is always in request scope; producers that returned `db.transaction(...)` directly now assign to a local first and drain the captured recipient ids afterwards.
 
-Tests: JWT/token-cache with mocked fetch, prune-on-UNREGISTERED, locale pick, chat fan-out minus sender, token route upsert/scoping.
+Tests: `lib/infra/push/__tests__/fcm.test.ts` (JWT assembly, token cache reuse, conditional apns/android blocks, prune classification), `lib/domain/notifications/__tests__/push.test.ts` (token load, per-recipient locale, data payload, prune, never-throws, chat fan-out and truncation), `app/api/v1/notifications/push-tokens/__tests__/route.test.ts` (upsert reassignment, delete scoping, 400/401), and a scheduled-push assertion added to each producer suite.
 
 ## Phase 5 — Flutter (contract only; separate branch)
 
-Token lifecycle (FCM token → POST push-tokens on login/refresh, DELETE on logout, Bearer auth); data payload contract `{type, targetType?, targetId?, notificationId}` + pre-localized title/body; deep-link map (`group.added|chat.message` → group screen, rest → circle); Activity tab later consumes the same `/api/v1/notifications*` endpoints; APNs badge = unseen count at send time (nice-to-have). Flutter nav parity for the new entry is part of this phase.
+**Token lifecycle**: `POST /api/v1/notifications/push-tokens` with `{token, platform: 'ios'|'android'|'web'}` on login and on every FCM token refresh (idempotent, reassigns the token to the caller); `DELETE` the same path with `{token}` on logout. Bearer auth, same as every other `/api/v1/*` route.
+
+**Payload contract** — title and body arrive **pre-localized** in the recipient's `preferred_locale`; the `data` map is flat strings:
+
+```jsonc
+{
+  "notification": { "title": "Kallo", "body": "Mai added you to Trip" },
+  "data": {
+    "type": "group.added",          // always present
+    "targetType": "chat_group",     // present when the tap has a destination
+    "targetId": "<uuid>",           // present with targetType
+    "notificationId": "<uuid>"      // RESERVED — not emitted by v1 producers
+  }
+}
+```
+
+`type` is one of the catalog types plus `chat.message`. `targetType`/`targetId` are emitted today only by `group.added` and `chat.message` (`chat_group` + the group id); the share/friend events carry neither, so their tap falls through to the default destination. `notificationId` is part of the contract and the sender supports it, but no v1 producer populates it (`notify()` returns recipient ids, not row ids) — the client must treat it as optional and must not key behaviour on its presence.
+
+**Collapse keys**: the notification's `groupKey` (`share.reaction:<shareId>`, `group.added:<groupId>`, …) for activity events, `chat:<groupId>` for messages — sent as `apns-collapse-id` and Android `collapse_key`, so a burst on one object supersedes itself rather than stacking.
+
+**Deep-link map**: `group.added` and `chat.message` → the group screen (`targetId`), everything else → circle. The Activity tab later consumes the same `/api/v1/notifications*` endpoints. APNs badge = unseen count at send time is supported by `PushMessage.badge` but not yet populated (nice-to-have). Flutter nav parity for the new entry is part of this phase.
 
 ---
 

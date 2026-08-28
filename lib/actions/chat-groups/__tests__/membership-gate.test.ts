@@ -1,5 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Push (Phase 4) rides on next/server's `after()`, which needs a request scope
+// these unit suites don't have. The double runs the callback inline so the
+// scheduling itself is assertable; what the push then does is covered by
+// lib/domain/notifications/__tests__/push.test.ts.
+const { mockAfter, mockSendNotificationPush, mockSendChatMessagePush } =
+  vi.hoisted(() => ({
+    mockAfter: vi.fn((task: () => unknown) => {
+      void task();
+    }),
+    mockSendNotificationPush: vi.fn(async (): Promise<void> => undefined),
+    mockSendChatMessagePush: vi.fn(async (): Promise<void> => undefined),
+  }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  after: mockAfter,
+}));
+vi.mock('@/lib/domain/notifications/push', () => ({
+  sendNotificationPush: mockSendNotificationPush,
+  sendChatMessagePush: mockSendChatMessagePush,
+}));
+
 // Notifications: this suite asserts WHO gets told; the helper's own upsert and
 // retract semantics live in lib/domain/notifications/__tests__.
 const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
@@ -281,6 +302,39 @@ describe('membership-gated reads', () => {
     expect(message.body).toBe('hi');
     expect(mockDbUpdate).toHaveBeenCalledTimes(1);
     expect(mockAssertActor).toHaveBeenCalledWith(expect.anything(), USER_A);
+  });
+
+  // Chat is the one producer that pushes WITHOUT writing a notification row —
+  // chat_group_members.lastReadAt already carries the unread state (Gate 3).
+  it('sendChatGroupMessage pushes without creating a notification row', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([accessRow()]));
+    mockDbInsert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: 'm1',
+            groupId: GROUP_ID,
+            senderId: USER_A,
+            body: 'Ăn cơm chưa',
+            createdAt: new Date('2026-01-01T00:00:00Z'),
+          },
+        ]),
+      }),
+    });
+    stubUpdate();
+
+    await sendChatGroupMessage(USER_A, {
+      groupId: GROUP_ID,
+      body: 'Ăn cơm chưa',
+    });
+
+    expect(mockNotify).not.toHaveBeenCalled();
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendChatMessagePush).toHaveBeenCalledWith({
+      groupId: GROUP_ID,
+      senderId: USER_A,
+      preview: 'Ăn cơm chưa',
+    });
   });
 
   it('does NOT gate a direct 1:1 send (direct chat stays free)', async () => {

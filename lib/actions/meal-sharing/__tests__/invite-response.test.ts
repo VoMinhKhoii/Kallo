@@ -1,5 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Push (Phase 4) rides on next/server's `after()`, which needs a request scope
+// these unit suites don't have. The double runs the callback inline so the
+// scheduling itself is assertable; what the push then does is covered by
+// lib/domain/notifications/__tests__/push.test.ts.
+const { mockAfter, mockSendNotificationPush, mockSendChatMessagePush } =
+  vi.hoisted(() => ({
+    mockAfter: vi.fn((task: () => unknown) => {
+      void task();
+    }),
+    mockSendNotificationPush: vi.fn(async (): Promise<void> => undefined),
+    mockSendChatMessagePush: vi.fn(async (): Promise<void> => undefined),
+  }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  after: mockAfter,
+}));
+vi.mock('@/lib/domain/notifications/push', () => ({
+  sendNotificationPush: mockSendNotificationPush,
+  sendChatMessagePush: mockSendChatMessagePush,
+}));
+
 // Notifications: this suite asserts WHO gets told; the helper's own upsert and
 // retract semantics live in lib/domain/notifications/__tests__.
 const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
@@ -164,6 +185,30 @@ describe('acceptMealShareInviteAction', () => {
     expect(result.meal.share).toEqual({
       shareId: 'share-1',
       visibility: 'circle',
+    });
+  });
+
+  it('schedules the sender push once the accept commits', async () => {
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([sourceMeal()]);
+    installUpdate({ returning: [{ id: UUID_INVITE }] });
+    queueLimitSelect([{ id: 'friendship-1' }]);
+    queueWhereSelect([sourceItem()]);
+    mockTxInsert.mockImplementation(routeInserts({}));
+    mockNotify.mockResolvedValueOnce([UUID_FRIEND]);
+
+    await acceptMealShareInviteAction({
+      inviteId: UUID_INVITE,
+      newMealId: UUID_NEW,
+      loggedDate: '2026-04-05',
+      timezoneOffset: -420,
+    });
+
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendNotificationPush).toHaveBeenCalledWith([UUID_FRIEND], {
+      type: 'share.invite_accepted',
+      actorId: mockUser.id,
+      groupKey: `share.invite_accepted:${UUID_INVITE}`,
     });
   });
 

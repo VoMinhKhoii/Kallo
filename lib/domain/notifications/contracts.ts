@@ -35,11 +35,29 @@ export const markReadBodySchema = z.object({
   ids: z.array(uuidSchema).min(1).max(50),
 });
 
+/** POST/DELETE /api/v1/notifications/push-tokens — device registration.
+ *  The token is the identity: FCM hands the same string to whoever is signed
+ *  in on that handset, so POST reassigns it and DELETE is scoped to the caller
+ *  so one account can never unregister another's device. */
+export const pushTokenBodySchema = z.object({
+  /** FCM registration token. Long and opaque; 4096 is well past today's ~200
+   *  chars and keeps a malformed body from reaching the database. */
+  token: z.string().min(1).max(4096),
+  platform: z.enum(['ios', 'android', 'web']),
+});
+
+/** DELETE only needs the token — the owner comes from the session. */
+export const deletePushTokenBodySchema = pushTokenBodySchema.pick({
+  token: true,
+});
+
 export type NotificationsListQuery = z.infer<
   typeof notificationsListQuerySchema
 >;
 export type MarkSeenBody = z.infer<typeof markSeenBodySchema>;
 export type MarkReadBody = z.infer<typeof markReadBodySchema>;
+export type PushTokenBody = z.infer<typeof pushTokenBodySchema>;
+export type DeletePushTokenBody = z.infer<typeof deletePushTokenBodySchema>;
 
 /** One rendered row. `actors` is the hydrated ≤3 recency list; `actorCount` is
  *  the true total behind "and N others". */

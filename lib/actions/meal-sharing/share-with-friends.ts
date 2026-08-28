@@ -14,12 +14,14 @@
 // (Drizzle bypasses RLS).
 
 import { and, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
+import { after } from 'next/server';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareMealWithFriendsSchema } from '@/lib/core/validation/social';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { shareInviteKey } from '@/lib/domain/notifications/group-keys';
 import { notify } from '@/lib/domain/notifications/notify';
+import { sendNotificationPush } from '@/lib/domain/notifications/push';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -59,7 +61,9 @@ export async function shareMealWithFriendsAction(input: {
     throw Errors.validationFailed('Hãy chọn ít nhất một người bạn.');
   }
 
-  return await db.transaction(async (tx) => {
+  let pushRecipients: string[] = [];
+
+  const shared = await db.transaction(async (tx) => {
     // Ownership + precise gate (mirrors duplicateMealAction). Cheat meals carry
     // no item rows, so there is nothing to copy or split. Locked FOR UPDATE so
     // two concurrent splits can't both read portionFactor = 1 and each scale
@@ -195,7 +199,7 @@ export async function shareMealWithFriendsAction(input: {
     // RETURNING only yields the rows the statement actually wrote, so a
     // recipient whose invite was already ACCEPTED (skipped by setWhere above)
     // is never re-notified — exactly the set that has a live pending offer.
-    await notify(
+    pushRecipients = await notify(
       tx,
       offered.map((invite) => ({
         recipientId: invite.toUserId,
@@ -232,4 +236,13 @@ export async function shareMealWithFriendsAction(input: {
 
     return { invitedCount: recipientIds.length, portionFactor, meal };
   });
+
+  after(() =>
+    sendNotificationPush(pushRecipients, {
+      type: 'share.invite',
+      actorId: user.id,
+      groupKey: shareInviteKey(parsed.mealId),
+    })
+  );
+  return shared;
 }

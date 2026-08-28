@@ -5,10 +5,12 @@
 // ---------------------------------------------------------------------------
 
 import { and, eq } from 'drizzle-orm';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareReplyKey } from '@/lib/domain/notifications/group-keys';
 import { notify } from '@/lib/domain/notifications/notify';
+import { sendNotificationPush } from '@/lib/domain/notifications/push';
 import {
   publicProfileColumns,
   toPublicIdentity,
@@ -51,7 +53,9 @@ export async function createShareReplyAction(input: {
   const parsed = createShareReplySchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  return db.transaction(async (tx) => {
+  let pushRecipients: string[] = [];
+
+  const posted = await db.transaction(async (tx) => {
     const lockedShares = await tx
       .select({
         id: mealShares.id,
@@ -120,7 +124,7 @@ export async function createShareReplyAction(input: {
         ...repliers.map((row) => row.userId),
       ]),
     ].filter((id) => id !== user.id);
-    await notify(
+    pushRecipients = await notify(
       tx,
       recipientIds.map((recipientId) => ({
         recipientId,
@@ -157,4 +161,17 @@ export async function createShareReplyAction(input: {
       createdAt: reply.createdAt.toISOString(),
     };
   });
+
+  // The author identity is already hydrated for the optimistic append, so the
+  // push reuses it instead of re-reading the profile.
+  after(() =>
+    sendNotificationPush(pushRecipients, {
+      type: 'share.reply',
+      actorName:
+        posted.author.displayName?.trim() || posted.author.handle || undefined,
+      actorId: user.id,
+      groupKey: shareReplyKey(parsed.shareId),
+    })
+  );
+  return posted;
 }

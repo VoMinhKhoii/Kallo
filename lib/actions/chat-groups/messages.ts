@@ -1,8 +1,10 @@
 import { and, desc, eq } from 'drizzle-orm';
+import { after } from 'next/server';
 import {
   getChatGroupSchema,
   sendChatGroupMessageSchema,
 } from '@/lib/core/validation/chat';
+import { sendChatMessagePush } from '@/lib/domain/notifications/push';
 import { assertUnlimitedCircleActor } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import {
@@ -79,6 +81,16 @@ export async function sendChatGroupMessage(
     .update(chatGroups)
     .set({ updatedAt: new Date() })
     .where(eq(chatGroups.id, parsed.groupId));
+
+  // Push only, never a notification row: chat unread is already carried by
+  // chat_group_members.lastReadAt, and a row here would double-badge (Gate 3).
+  after(() =>
+    sendChatMessagePush({
+      groupId: parsed.groupId,
+      senderId: actorId,
+      preview: parsed.body,
+    })
+  );
 
   return { ...row, createdAt: row.createdAt.toISOString() };
 }
