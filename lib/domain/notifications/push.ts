@@ -9,13 +9,13 @@
 // is wrapped and reported to the log instead.
 //
 // SECURITY: the Drizzle handle bypasses RLS. Recipient ids arrive from
-// notify(), which computed them inside the producer's own authorized tx; this
-// module only ever reads tokens/locales FOR those ids.
+// notify(), which computed them inside the producer's own authorized tx — or,
+// for the row-less chat push, from the producer's own membership read at write
+// time; this module only ever reads tokens/locales FOR those ids.
 
-import { and, eq, inArray, ne } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/lib/infra/db/client';
 import {
-  chatGroupMembers,
   publicProfiles,
   pushTokens,
   userProfiles,
@@ -137,14 +137,19 @@ async function pruneTokens(dead: string[]): Promise<void> {
 export async function sendNotificationPush(
   recipientIds: string[],
   payload: NotificationPushPayload,
-  sender: PushSender = getPushSender()
+  sender?: PushSender
 ): Promise<void> {
   try {
     const unique = [...new Set(recipientIds)];
     if (unique.length === 0) return;
     const messages = await buildMessages(unique, payload);
     if (messages.length === 0) return;
-    const results = await sender.send(messages);
+    // Resolved INSIDE the try, never as a default argument: default arguments
+    // evaluate before the function body, so a malformed
+    // FCM_SERVICE_ACCOUNT_JSON would throw past this boundary and reject the
+    // after() task on an already-successful request.
+    const resolved = sender ?? getPushSender();
+    const results = await resolved.send(messages);
     await pruneTokens(
       results.filter((result) => result.shouldPrune).map((r) => r.token)
     );
@@ -159,7 +164,9 @@ export async function sendNotificationPush(
  * The push-only chat event (Gate 3): chat unread already has a surface in
  * `chat_group_members.lastReadAt`, so a message must never create a
  * notification row — but it is still the one thing people expect their phone
- * to buzz for. Fan-out is the group's members minus the sender.
+ * to buzz for. Fan-out is the group's members minus the sender, as the
+ * producer captured them at write time — this module only loads their tokens
+ * and locales.
  */
 export async function sendChatMessagePush(
   input: {
@@ -167,22 +174,18 @@ export async function sendChatMessagePush(
     senderId: string;
     senderName?: string;
     preview: string;
+    /** The audience, captured by the producer at WRITE time (sender already
+     *  excluded). Resolving it here instead would read the membership as it
+     *  stands after the commit, so somebody who joined in between would get a
+     *  preview of a message sent before they were in the room. */
+    recipientIds: string[];
   },
-  sender: PushSender = getPushSender()
+  sender?: PushSender
 ): Promise<void> {
   try {
-    const members = await db
-      .select({ userId: chatGroupMembers.userId })
-      .from(chatGroupMembers)
-      .where(
-        and(
-          eq(chatGroupMembers.groupId, input.groupId),
-          ne(chatGroupMembers.userId, input.senderId)
-        )
-      );
-    if (members.length === 0) return;
+    if (input.recipientIds.length === 0) return;
     await sendNotificationPush(
-      members.map((member) => member.userId),
+      input.recipientIds,
       {
         type: 'chat.message',
         actorName: input.senderName,

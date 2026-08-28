@@ -7,14 +7,19 @@ import type { NotificationItem } from '@/lib/domain/notifications/contracts';
 import { notificationKeys } from '@/lib/domain/notifications/query-keys';
 import { ShareInviteRow } from '../share-invite-row';
 
-const { acceptMock, dismissMock } = vi.hoisted(() => ({
+const { acceptMock, dismissMock, markReadMock } = vi.hoisted(() => ({
   acceptMock: vi.fn(),
   dismissMock: vi.fn(),
+  markReadMock: vi.fn(),
 }));
 
 vi.mock('@/hooks/social/sharing/use-meal-share-invites', () => ({
   useAcceptMealShareInvite: () => ({ mutate: acceptMock, isPending: false }),
   useDismissMealShareInvite: () => ({ mutate: dismissMock, isPending: false }),
+}));
+
+vi.mock('@/hooks/notifications/use-notification-state', () => ({
+  useMarkNotificationRead: () => ({ mutate: markReadMock }),
 }));
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
@@ -67,6 +72,7 @@ describe('ShareInviteRow', () => {
   beforeEach(() => {
     acceptMock.mockReset();
     dismissMock.mockReset();
+    markReadMock.mockReset();
   });
 
   it('offers accept and dismiss while the live invite is pending', () => {
@@ -115,6 +121,7 @@ describe('ShareInviteRow', () => {
       expect.objectContaining({ onSuccess: expect.any(Function) })
     );
     acceptMock.mock.calls[0][1].onSuccess();
+    markReadMock.mock.calls[0][1].onSettled();
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: notificationKeys.all,
     });
@@ -132,8 +139,39 @@ describe('ShareInviteRow', () => {
       expect.objectContaining({ onSuccess: expect.any(Function) })
     );
     dismissMock.mock.calls[0][1].onSuccess();
+    markReadMock.mock.calls[0][1].onSettled();
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: notificationKeys.all,
     });
+  });
+
+  // Acting on the offer is the ONLY thing that can read this row — the card is
+  // not a link. Without it `readAt` stays null forever, the open aggregate
+  // never closes, and a later re-share rewrites this row instead of starting a
+  // fresh one beside it.
+  it.each([
+    ['invite.accept', () => acceptMock],
+    ['invite.dismiss', () => dismissMock],
+  ])('marks the notification read after %s succeeds', async (label, getMock) => {
+    const user = userEvent.setup();
+    renderRow(item());
+
+    await user.click(screen.getByRole('button', { name: label }));
+    getMock().mock.calls[0][1].onSuccess();
+
+    expect(markReadMock).toHaveBeenCalledWith(
+      ['n1'],
+      expect.objectContaining({ onSettled: expect.any(Function) })
+    );
+  });
+
+  it('does not mark the row read when the mutation fails', async () => {
+    const user = userEvent.setup();
+    renderRow(item());
+
+    await user.click(screen.getByRole('button', { name: 'invite.accept' }));
+    acceptMock.mock.calls[0][1].onError();
+
+    expect(markReadMock).not.toHaveBeenCalled();
   });
 });

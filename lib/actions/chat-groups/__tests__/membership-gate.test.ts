@@ -154,6 +154,16 @@ function accessRow(
   };
 }
 
+// The chat push audience, captured at write time: a bare
+// `.from().where()` that resolves to the member rows (no limit, no join).
+function queueMemberRows(userIds: string[]) {
+  mockDbSelect.mockReturnValueOnce({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue(userIds.map((userId) => ({ userId }))),
+    }),
+  });
+}
+
 // A stub update chain: db.update(table).set(vals).where(cond) -> resolves.
 function stubUpdate() {
   mockDbUpdate.mockReturnValue({
@@ -268,6 +278,7 @@ describe('membership-gated reads', () => {
         ]),
       }),
     });
+    queueMemberRows([USER_B]);
     stubUpdate();
 
     const message = await sendChatGroupMessage(USER_A, {
@@ -292,6 +303,7 @@ describe('membership-gated reads', () => {
         ]),
       }),
     });
+    queueMemberRows([USER_B]);
     stubUpdate();
 
     const message = await sendChatGroupMessage(USER_A, {
@@ -321,6 +333,7 @@ describe('membership-gated reads', () => {
         ]),
       }),
     });
+    queueMemberRows([USER_B]);
     stubUpdate();
 
     await sendChatGroupMessage(USER_A, {
@@ -330,11 +343,18 @@ describe('membership-gated reads', () => {
 
     expect(mockNotify).not.toHaveBeenCalled();
     expect(mockAfter).toHaveBeenCalledTimes(1);
+    // The audience is resolved HERE, in the write's scope — not inside the
+    // after() callback, where a member who joined in between would be handed a
+    // preview of a message sent before they were in the room.
     expect(mockSendChatMessagePush).toHaveBeenCalledWith({
       groupId: GROUP_ID,
       senderId: USER_A,
       preview: 'Ăn cơm chưa',
+      recipientIds: [USER_B],
     });
+    expect(
+      mockDbSelect.mock.invocationCallOrder.at(-1) ?? Number.POSITIVE_INFINITY
+    ).toBeLessThan(mockAfter.mock.invocationCallOrder[0]);
   });
 
   it('does NOT gate a direct 1:1 send (direct chat stays free)', async () => {
@@ -360,6 +380,7 @@ describe('membership-gated reads', () => {
         ]),
       }),
     });
+    queueMemberRows([USER_B]);
     stubUpdate();
 
     await sendChatGroupMessage(USER_A, {

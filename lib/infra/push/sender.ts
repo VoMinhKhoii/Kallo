@@ -17,8 +17,26 @@ import type { PushSender } from './types';
 
 const noopSender: PushSender = { send: async () => [] };
 
+/** Misconfiguration is a deploy-time fact, not a per-send one: one line in the
+ *  log, then silence, instead of a stack trace per notification. */
+let reportedBadConfig = false;
+
+/**
+ * Never throws. A malformed `FCM_SERVICE_ACCOUNT_JSON` degrades to the no-op
+ * sender exactly as an unset one does — callers run inside `after()` on a
+ * request that already succeeded, and a parse error there would surface as an
+ * unhandled rejection rather than as a missing push.
+ */
 export function getPushSender(): PushSender {
   const serviceAccount = process.env.FCM_SERVICE_ACCOUNT_JSON;
   if (!serviceAccount) return noopSender;
-  return createFcmSender(serviceAccount);
+  try {
+    return createFcmSender(serviceAccount);
+  } catch (error) {
+    if (!reportedBadConfig) {
+      reportedBadConfig = true;
+      console.error('FCM_SERVICE_ACCOUNT_JSON is not valid JSON', error);
+    }
+    return noopSender;
+  }
 }

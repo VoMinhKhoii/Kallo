@@ -111,41 +111,51 @@ export async function createShareReplyAction(input: {
       throw Errors.validationFailed('Mã trả lời đã được sử dụng.');
     }
 
-    // Thread audience: the meal's owner plus everyone who already replied
-    // (the insert above is included, hence the author filter). One aggregated
-    // row per recipient per share — "X and 2 others replied".
-    // Prior repliers are re-gated on their CURRENT visibility: notification
-    // content (previewBody) must never outlive the access it rode in on, so an
-    // unfriended replier drops out of the audience. The owner always sees
-    // their own share and skips the check.
-    const repliers = await tx
-      .selectDistinct({ userId: mealShareReplies.userId })
-      .from(mealShareReplies)
-      .where(eq(mealShareReplies.shareId, parsed.shareId));
-    const candidateIds = [...new Set(repliers.map((row) => row.userId))].filter(
-      (id) => id !== user.id && id !== lockedShares[0].actorId
-    );
-    const visibleReplierIds: string[] = [];
-    for (const candidateId of candidateIds) {
-      if (await canViewShareOwnedBy(candidateId, lockedShares[0], tx)) {
-        visibleReplierIds.push(candidateId);
+    // Only a reply this call actually CREATED is new activity. A retry of the
+    // same replyId took the conflict branch and loaded the row the first
+    // attempt already wrote — and already notified for — so re-notifying here
+    // would refresh the aggregate a second time and republish the preview.
+    // Worse, `parsed.body` on a retry need not equal what was persisted, so
+    // the preview would rewrite history; the persisted `reply.body` is the
+    // only authoritative text. `pushRecipients` stays empty on that path.
+    if (inserted) {
+      // Thread audience: the meal's owner plus everyone who already replied
+      // (the insert above is included, hence the author filter). One aggregated
+      // row per recipient per share — "X and 2 others replied".
+      // Prior repliers are re-gated on their CURRENT visibility: notification
+      // content (previewBody) must never outlive the access it rode in on, so
+      // an unfriended replier drops out of the audience. The owner always sees
+      // their own share and skips the check.
+      const repliers = await tx
+        .selectDistinct({ userId: mealShareReplies.userId })
+        .from(mealShareReplies)
+        .where(eq(mealShareReplies.shareId, parsed.shareId));
+      const candidateIds = [
+        ...new Set(repliers.map((row) => row.userId)),
+      ].filter((id) => id !== user.id && id !== lockedShares[0].actorId);
+      const visibleReplierIds: string[] = [];
+      for (const candidateId of candidateIds) {
+        if (await canViewShareOwnedBy(candidateId, lockedShares[0], tx)) {
+          visibleReplierIds.push(candidateId);
+        }
       }
+      const recipientIds = [
+        lockedShares[0].actorId,
+        ...visibleReplierIds,
+      ].filter((id) => id !== user.id);
+      pushRecipients = await notify(
+        tx,
+        recipientIds.map((recipientId) => ({
+          recipientId,
+          type: 'share.reply' as const,
+          actorId: user.id,
+          objectType: 'share',
+          objectId: parsed.shareId,
+          groupKey: shareReplyKey(parsed.shareId),
+          data: { previewBody: reply.body.slice(0, 140) },
+        }))
+      );
     }
-    const recipientIds = [lockedShares[0].actorId, ...visibleReplierIds].filter(
-      (id) => id !== user.id
-    );
-    pushRecipients = await notify(
-      tx,
-      recipientIds.map((recipientId) => ({
-        recipientId,
-        type: 'share.reply' as const,
-        actorId: user.id,
-        objectType: 'share',
-        objectId: parsed.shareId,
-        groupKey: shareReplyKey(parsed.shareId),
-        data: { previewBody: parsed.body.slice(0, 140) },
-      }))
-    );
 
     const [author] = await tx
       .select({

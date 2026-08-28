@@ -351,6 +351,63 @@ describe('createShareReplyAction', () => {
     });
   });
 
+  // A retry writes nothing — the first attempt already inserted the row AND
+  // notified for it. Notifying again would refresh the aggregate a second time
+  // and republish a preview, one that could even carry the retry's body rather
+  // than the text actually stored.
+  it('does not re-notify when the retry only loaded the existing reply', async () => {
+    lockShare();
+    insertReturning([]);
+    selectRows([
+      {
+        id: REPLY_ID,
+        userId: mockUser.id,
+        body: 'Nội dung trước đó',
+        createdAt: CREATED_AT,
+      },
+    ]);
+    selectRows([]);
+
+    await createShareReplyAction({
+      shareId: SHARE_ID,
+      replyId: REPLY_ID,
+      body: 'Nội dung gửi lại',
+    });
+
+    expect(mockNotify).not.toHaveBeenCalled();
+    expect(mockTxSelectDistinct).not.toHaveBeenCalled();
+    // The push still schedules, with nobody in it.
+    expect(mockSendNotificationPush).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ type: 'share.reply' })
+    );
+  });
+
+  // The preview must quote what is stored, never the request body.
+  it('previews the persisted reply body', async () => {
+    lockShare();
+    insertReturning([
+      {
+        id: REPLY_ID,
+        userId: mockUser.id,
+        body: 'Đã lưu',
+        createdAt: CREATED_AT,
+      },
+    ]);
+    selectRows([]);
+
+    await createShareReplyAction({
+      shareId: SHARE_ID,
+      replyId: REPLY_ID,
+      body: 'Đã lưu',
+    });
+
+    const inputs = mockNotify.mock.lastCall?.[1] as {
+      data: { previewBody: string };
+    }[];
+    expect(inputs[0].data.previewBody).toBe('Đã lưu');
+  });
+
   it('rejects a reply id already owned by another user', async () => {
     lockShare();
     insertReturning([]);

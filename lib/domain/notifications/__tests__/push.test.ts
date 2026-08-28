@@ -249,6 +249,25 @@ describe('sendNotificationPush', () => {
     errors.mockRestore();
   });
 
+  // The sender is resolved inside the try, not as a default argument: default
+  // arguments evaluate BEFORE the body, so a JSON.parse of a malformed service
+  // account would reject the after() task instead of being swallowed here.
+  it('survives a malformed FCM service account with no sender passed', async () => {
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [{ userId: OWNER, preferredLocale: 'en' }]
+    );
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubEnv('FCM_SERVICE_ACCOUNT_JSON', '{ not json');
+
+    await expect(
+      sendNotificationPush([OWNER], { type: 'share.reaction' })
+    ).resolves.toBeUndefined();
+
+    vi.unstubAllEnvs();
+    errors.mockRestore();
+  });
+
   it('swallows a database failure the same way', async () => {
     mockSelect.mockImplementation(() => {
       throw new Error('connection lost');
@@ -271,10 +290,8 @@ describe('sendChatMessagePush', () => {
     }));
   });
 
-  it('fans out to the group minus the sender, titled by the sender', async () => {
+  it('fans out to the audience the producer captured, titled by the sender', async () => {
     queueSelects(
-      // group members, already excluding the sender via the SQL predicate
-      [{ userId: OWNER }, { userId: FRIEND }],
       [
         { userId: OWNER, token: 'owner-phone' },
         { userId: FRIEND, token: 'friend-phone' },
@@ -292,6 +309,7 @@ describe('sendChatMessagePush', () => {
         groupId: GROUP,
         senderId: 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44',
         preview: 'Ăn cơm chưa',
+        recipientIds: [OWNER, FRIEND],
       },
       sender
     );
@@ -312,7 +330,6 @@ describe('sendChatMessagePush', () => {
 
   it('truncates a long message to a lock-screen-sized preview', async () => {
     queueSelects(
-      [{ userId: OWNER }],
       [{ userId: OWNER, token: 'owner-phone' }],
       [{ userId: OWNER, preferredLocale: 'en' }],
       [{ displayName: 'Mai', handle: 'mai' }]
@@ -320,22 +337,30 @@ describe('sendChatMessagePush', () => {
     const { sender, sent } = fakeSender(allOk);
 
     await sendChatMessagePush(
-      { groupId: GROUP, senderId: FRIEND, preview: 'a'.repeat(500) },
+      {
+        groupId: GROUP,
+        senderId: FRIEND,
+        preview: 'a'.repeat(500),
+        recipientIds: [OWNER],
+      },
       sender
     );
 
     expect(sent[0][0].body).toHaveLength(140);
   });
 
-  it('sends nothing when the sender is the only member', async () => {
-    queueSelects([]);
+  // The audience is fixed at write time, so an empty list means the sender was
+  // alone in the room WHEN THEY SENT — this module must not go look again and
+  // find whoever has joined since.
+  it('sends nothing, and reads nothing, for an empty audience', async () => {
     const { sender } = fakeSender(allOk);
 
     await sendChatMessagePush(
-      { groupId: GROUP, senderId: OWNER, preview: 'hi' },
+      { groupId: GROUP, senderId: OWNER, preview: 'hi', recipientIds: [] },
       sender
     );
 
+    expect(mockSelect).not.toHaveBeenCalled();
     expect(sender.send).not.toHaveBeenCalled();
   });
 });

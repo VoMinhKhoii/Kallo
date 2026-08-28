@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, ne } from 'drizzle-orm';
 import { after } from 'next/server';
 import {
   getChatGroupSchema,
@@ -82,6 +82,20 @@ export async function sendChatGroupMessage(
     .set({ updatedAt: new Date() })
     .where(eq(chatGroups.id, parsed.groupId));
 
+  // The push audience is captured HERE, in the write's own scope, rather than
+  // inside the after() callback: a member who joins between this write and the
+  // fan-out must not be handed a preview of a message sent before they were in
+  // the room.
+  const recipients = await db
+    .select({ userId: chatGroupMembers.userId })
+    .from(chatGroupMembers)
+    .where(
+      and(
+        eq(chatGroupMembers.groupId, parsed.groupId),
+        ne(chatGroupMembers.userId, actorId)
+      )
+    );
+
   // Push only, never a notification row: chat unread is already carried by
   // chat_group_members.lastReadAt, and a row here would double-badge (Gate 3).
   after(() =>
@@ -89,6 +103,7 @@ export async function sendChatGroupMessage(
       groupId: parsed.groupId,
       senderId: actorId,
       preview: parsed.body,
+      recipientIds: recipients.map((member) => member.userId),
     })
   );
 

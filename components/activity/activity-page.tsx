@@ -4,10 +4,12 @@ import { AlertCircle, Heart, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef } from 'react';
 import { EmptyState } from '@/components/ui/empty-state';
-import { useUnseenNotificationCount } from '@/hooks/notifications/use-notification-badge';
 import { useNotificationFeed } from '@/hooks/notifications/use-notification-feed';
 import { useMarkNotificationsSeen } from '@/hooks/notifications/use-notification-state';
-import type { NotificationItem } from '@/lib/domain/notifications/contracts';
+import type {
+  NotificationFeedPage,
+  NotificationItem,
+} from '@/lib/domain/notifications/contracts';
 import { ActivitySections } from './activity-sections';
 
 const SKELETON_COUNT = 4;
@@ -85,6 +87,20 @@ function newestCreatedAt(items: NotificationItem[]): string | null {
   return newest;
 }
 
+/** Is there anything to clear, according to the feed response we are actually
+ *  rendering? The badge query is a separate 30s poll, so gating on it would
+ *  skip mark-seen for a notification that arrived between two polls — rendered
+ *  here, never marked. The feed GET already answers this twice over: it
+ *  returns the server's `unseenCount` alongside the page, and each item
+ *  carries its own `seenAt`. */
+function hasUnseenInPages(pages: NotificationFeedPage[] | undefined): boolean {
+  if (!pages) return false;
+  return pages.some(
+    (page) =>
+      page.unseenCount > 0 || page.items.some((item) => item.seenAt === null)
+  );
+}
+
 /**
  * The Activity surface: one centered Threads-style column of notifications,
  * bucketed New / Last 30 days / Older. No tabs in v1 — the volume is tiny and
@@ -92,31 +108,34 @@ function newestCreatedAt(items: NotificationItem[]): string | null {
  * follow-request row.
  *
  * Opening the page clears the badge once: after the first page resolves, the
- * newest `createdAt` in it is posted as the seen watermark. The ref guard
- * matters because marking seen invalidates this very query — without it the
- * refetch would post again on every round trip.
+ * newest `createdAt` in it is posted as the seen watermark. Whether there is
+ * anything to clear is judged from THAT response — never from the badge poll,
+ * whose cached count can still read zero for a row this page is already
+ * showing. The ref guard matters because marking seen invalidates this very
+ * query — without it the refetch would post again on every round trip.
  */
 export function ActivityPage() {
   const t = useTranslations('activity');
   const feed = useNotificationFeed();
-  const unseenCount = useUnseenNotificationCount();
   const markSeen = useMarkNotificationsSeen();
   const markedSeenRef = useRef(false);
 
+  const pages = feed.data?.pages;
   const items = useMemo(
-    () => feed.data?.pages.flatMap((page) => page.items) ?? [],
-    [feed.data]
+    () => pages?.flatMap((page) => page.items) ?? [],
+    [pages]
   );
+  const hasUnseen = useMemo(() => hasUnseenInPages(pages), [pages]);
 
   const { isSuccess } = feed;
   const { mutate: postMarkSeen } = markSeen;
   useEffect(() => {
-    if (markedSeenRef.current || !isSuccess || unseenCount <= 0) return;
+    if (markedSeenRef.current || !isSuccess || !hasUnseen) return;
     const watermark = newestCreatedAt(items);
     if (!watermark) return;
     markedSeenRef.current = true;
     postMarkSeen(watermark);
-  }, [isSuccess, unseenCount, items, postMarkSeen]);
+  }, [isSuccess, hasUnseen, items, postMarkSeen]);
 
   return (
     <main className="mx-auto flex h-full min-h-0 w-full max-w-2xl flex-1 flex-col px-4 pt-4 pb-4 sm:px-5">

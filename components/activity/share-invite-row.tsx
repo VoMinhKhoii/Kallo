@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Check, Loader2, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { useMarkNotificationRead } from '@/hooks/notifications/use-notification-state';
 import {
   useAcceptMealShareInvite,
   useDismissMealShareInvite,
@@ -45,6 +46,7 @@ export function ShareInviteRow({
   const queryClient = useQueryClient();
   const accept = useAcceptMealShareInvite();
   const dismiss = useDismissMealShareInvite();
+  const markRead = useMarkNotificationRead();
 
   const inviteId = item.objectId;
   const pending = item.invite?.status === 'pending' && inviteId !== null;
@@ -53,14 +55,25 @@ export function ShareInviteRow({
 
   // The shared invite hooks refresh the circle surfaces; the activity feed and
   // its badge are ours to refresh on top of them.
-  const refreshActivity = () => {
-    queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+  //
+  // Acting on the offer is also what READS this row. Nothing else can: the
+  // card is not a link, so without this its `readAt` stays null forever, the
+  // aggregate never closes, and a later re-share would rewrite this row
+  // instead of opening a fresh one beside it as history (lifecycle FSM).
+  // Fire-and-forget — the mutation dims optimistically and rolls itself back;
+  // the feed refresh rides on its settle so the refetch cannot outrun the
+  // write and paint the row unread again.
+  const settleActivity = () => {
+    markRead.mutate([item.id], {
+      onSettled: () =>
+        queryClient.invalidateQueries({ queryKey: notificationKeys.all }),
+    });
   };
 
   const handleAccept = () => {
     if (busy || !inviteId) return;
     accept.mutate(inviteId, {
-      onSuccess: refreshActivity,
+      onSuccess: settleActivity,
       onError: () => toast.error(t('invite.error')),
     });
   };
@@ -68,7 +81,7 @@ export function ShareInviteRow({
   const handleDismiss = () => {
     if (busy || !inviteId) return;
     dismiss.mutate(inviteId, {
-      onSuccess: refreshActivity,
+      onSuccess: settleActivity,
       onError: () => toast.error(t('invite.error')),
     });
   };
