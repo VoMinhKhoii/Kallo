@@ -4,8 +4,10 @@
 // moves, something landed — a new aggregate, or a refresh that re-surfaced an
 // existing one above the reader's cursor without changing the count — and the
 // feed (which never polls) has to be told. What is pinned here is exactly that
-// edge — baseline on first load, invalidate whenever the watermark changes,
-// silence when it holds even if the count moves.
+// edge — invalidate whenever the watermark changes, silence when it holds even
+// if the count moves, and, on the FIRST observation (which has no previous
+// value to compare with), invalidate only when the feed already in cache is
+// older than the watermark.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -21,13 +23,33 @@ vi.mock('@/lib/domain/notifications/client', () => ({
 import { useNotificationBadge } from '@/hooks/notifications/use-notification-badge';
 import { notificationKeys } from '@/lib/domain/notifications/query-keys';
 
+const T0 = '2026-08-28T09:00:00.000Z';
 const T1 = '2026-08-28T10:00:00.000Z';
 const T2 = '2026-08-28T10:05:00.000Z';
 
-function setup() {
+/** A cached feed holding one row last touched at `updatedAt` — the shape
+ *  `useInfiniteQuery` stores. Pass no timestamps for a cached-but-empty feed. */
+function cachedFeed(...updatedAts: string[]) {
+  return {
+    pages: [
+      {
+        items: updatedAts.map((updatedAt, index) => ({
+          id: `notification-${index}`,
+          updatedAt,
+        })),
+        nextCursor: null,
+        unseenCount: updatedAts.length,
+      },
+    ],
+    pageParams: [undefined],
+  };
+}
+
+function setup(feed?: ReturnType<typeof cachedFeed>) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
+  if (feed) client.setQueryData(notificationKeys.feed, feed);
   const invalidateQueries = vi
     .spyOn(client, 'invalidateQueries')
     .mockResolvedValue(undefined);
@@ -43,11 +65,38 @@ describe('useNotificationBadge', () => {
     vi.clearAllMocks();
   });
 
-  it('treats the first poll as a baseline, not a change', async () => {
+  // Mounting must not invalidate the fetch the page is in the middle of, and
+  // with no cached feed there is nothing stale to heal either way.
+  it('baselines the first poll when no feed is cached', async () => {
     mockFetchBadge.mockResolvedValue({ unseen: 3, latestActivityAt: T1 });
     const { result, invalidateQueries } = setup();
 
     await waitFor(() => expect(result.current.data?.unseen).toBe(3));
+
+    expect(invalidateQueries).not.toHaveBeenCalled();
+  });
+
+  // The lost wakeup a plain baseline would swallow: the feed GET completes, an
+  // event commits, and the FIRST badge poll already carries the moved
+  // watermark. With nothing to compare it against, the page would sit on a
+  // known-stale feed until some later, unrelated activity moved the watermark
+  // again. Comparing against the cache is what closes that window.
+  it('heals a cached feed that is already older than the first watermark', async () => {
+    mockFetchBadge.mockResolvedValue({ unseen: 1, latestActivityAt: T2 });
+    const { result, invalidateQueries } = setup(cachedFeed(T1, T0));
+
+    await waitFor(() => expect(result.current.data?.unseen).toBe(1));
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: notificationKeys.feed,
+    });
+  });
+
+  it('leaves a cached feed as fresh as the first watermark alone', async () => {
+    mockFetchBadge.mockResolvedValue({ unseen: 1, latestActivityAt: T1 });
+    const { result, invalidateQueries } = setup(cachedFeed(T1, T0));
+
+    await waitFor(() => expect(result.current.data?.unseen).toBe(1));
 
     expect(invalidateQueries).not.toHaveBeenCalled();
   });

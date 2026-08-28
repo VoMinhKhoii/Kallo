@@ -109,9 +109,13 @@ export async function notify(
     // RETURNING says xmax ≠ 0 and its key has no pre-select entry: neither an
     // insert nor a seen re-badge, therefore not push-worthy. One row, one push.
     //
-    // Lock ordering is not a deadlock hazard: every caller locks through this
-    // one query shape, so the same rows come out of the same scan in the same
-    // order in every transaction.
+    // The pre-select can lock several rows (one per recipient in the round),
+    // so it takes them in an explicit `ORDER BY recipient_id, group_key`:
+    // deterministic lock acquisition is what prevents lock-order inversion
+    // between two concurrent notify() transactions whose rounds overlap. A
+    // planner's scan order is not a contract, so the ordering has to be stated.
+    // The upsert that follows then only touches rows this transaction already
+    // holds, so it adds no new ordering.
     const openBefore = await openAggregates(tx, round);
     const rows = await tx
       .insert(notifications)
@@ -157,7 +161,9 @@ const conflictKey = (row: { recipientId: string; groupKey: string }) =>
  *  row has been seen. Absent key = no open row (this event will INSERT).
  *  Drizzle has no tuple `IN`, and a round is tiny, so it is an OR-chain.
  *  `FOR UPDATE` holds each matched row until this transaction commits, so the
- *  seen/unseen classification cannot be read out from under the upsert. */
+ *  seen/unseen classification cannot be read out from under the upsert, and the
+ *  `ORDER BY` fixes the order those locks are taken in so two overlapping
+ *  rounds can never invert on each other. */
 async function openAggregates(
   tx: NotifyDb,
   round: NotifyInput[]
@@ -183,6 +189,7 @@ async function openAggregates(
         )
       )
     )
+    .orderBy(notifications.recipientId, notifications.groupKey)
     .for('update');
   return new Map(rows.map((row) => [conflictKey(row), row.seenAt !== null]));
 }

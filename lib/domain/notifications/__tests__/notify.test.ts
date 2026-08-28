@@ -37,18 +37,26 @@ const keyOf = (row: { recipientId: string; groupKey: string }) =>
  *  `inserted` (Postgres's `xmax = 0`) for every key not already there, then
  *  records the key as open-and-unseen — so a later round in the same call sees
  *  what the earlier one wrote, as it would in a real transaction.
- *  `lockedWith` records the row-lock strength the pre-select asked for: the
- *  classification is only race-safe because it is taken FOR UPDATE. */
+ *  `lockedWith` records the row-lock strength the pre-select asked for and
+ *  `orderedBy` the columns it ordered on: the classification is only race-safe
+ *  because it is taken FOR UPDATE, and only deadlock-free because the order
+ *  those locks are taken in is stated rather than left to the planner. */
 function insertingTx(open: OpenRow[] = []) {
   const batches: InsertedRow[][] = [];
   const lockedWith: string[] = [];
+  const orderedBy: string[][] = [];
   const state = new Map(open.map((row) => [keyOf(row), row]));
   const select = vi.fn(() => ({
     from: () => ({
       where: () => ({
-        for: (strength: string) => {
-          lockedWith.push(strength);
-          return Promise.resolve([...state.values()]);
+        orderBy: (...columns: { name: string }[]) => {
+          orderedBy.push(columns.map((column) => column.name));
+          return {
+            for: (strength: string) => {
+              lockedWith.push(strength);
+              return Promise.resolve([...state.values()]);
+            },
+          };
         },
       }),
     }),
@@ -83,6 +91,7 @@ function insertingTx(open: OpenRow[] = []) {
     insert,
     select,
     lockedWith,
+    orderedBy,
   };
 }
 
@@ -172,6 +181,21 @@ describe('notify', () => {
     ]);
 
     expect(lockedWith).toEqual(['update', 'update']);
+  });
+
+  // A round can lock several rows, and the planner's scan order is not a
+  // contract. Two concurrent notify() transactions with overlapping rounds
+  // would then be free to take the same two locks in opposite orders and
+  // deadlock; a stated ORDER BY is what removes the inversion.
+  it('takes those locks in a deterministic order', async () => {
+    const { tx, orderedBy } = insertingTx();
+
+    await notify(tx, [
+      input({ recipientId: OTHER }),
+      input({ recipientId: OWNER }),
+    ]);
+
+    expect(orderedBy).toEqual([['recipient_id', 'group_key']]);
   });
 
   it('reports only the push-eligible recipients of a fan-out', async () => {
