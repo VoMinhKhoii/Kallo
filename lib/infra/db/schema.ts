@@ -1767,6 +1767,13 @@ export const notifications = pgTable(
     seenAt: timestamp('seen_at', { withTimezone: true }),
     readAt: timestamp('read_at', { withTimezone: true }),
     dismissedAt: timestamp('dismissed_at', { withTimezone: true }),
+    // Transient per-upsert classification, meaningful ONLY in the statement's
+    // own RETURNING: the aggregation upsert sets it from the OLD row's seen_at
+    // inside the ON CONFLICT branch, so notify() can tell a seen→unseen
+    // re-badge (push) from a refresh of a still-unseen row (silent) without a
+    // second statement. Nothing reads it between statements; it is stored only
+    // because RETURNING can only return columns.
+    rebadged: boolean('rebadged').notNull().default(false),
   },
   (table) => [
     // The feed page: one recipient's visible rows, newest first, tuple cursor.

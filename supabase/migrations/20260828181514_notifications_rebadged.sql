@@ -1,0 +1,1 @@
+ALTER TABLE "notifications" ADD COLUMN "rebadged" boolean DEFAULT false NOT NULL;

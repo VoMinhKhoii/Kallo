@@ -28,7 +28,9 @@ import { notificationKeys } from '@/lib/domain/notifications/query-keys';
  *  sensitive and it subsumes the count rule.
  *
  *  The FIRST observation has no previous value to compare with, so it compares
- *  against the cached feed instead of baselining blind — see the effect. */
+ *  against the cached feed instead of baselining blind — and when the feed is
+ *  still in flight, it HOLDS the watermark until a page lands rather than
+ *  consuming it. See the effect. */
 export function useNotificationBadge() {
   const queryClient = useQueryClient();
   const query = useQuery({
@@ -42,54 +44,84 @@ export function useNotificationBadge() {
   // Undefined until the first successful poll. `null` (no rows at all) is a
   // real observed value, which is why the sentinel is `undefined`.
   const previousActivityAt = useRef<string | null | undefined>(undefined);
+  // A first-observation watermark that arrived while the feed request was still
+  // open, kept until a page reaches the cache and can be compared with it.
+  // `null` means nothing is held.
+  const heldWatermark = useRef<string | null>(null);
+
   useEffect(() => {
     if (!badge) return;
+    const invalidateFeed = () => {
+      heldWatermark.current = null;
+      queryClient.invalidateQueries({ queryKey: notificationKeys.feed });
+    };
     const previous = previousActivityAt.current;
     previousActivityAt.current = badge.latestActivityAt;
+
     if (previous === undefined) {
       // First observation. A plain baseline would lose one specific wakeup: the
       // feed GET completes, an event commits, and this poll — the first one —
       // baselines the already-moved watermark. Nothing moves it again until the
-      // next unrelated activity, so the page keeps rendering a page that is
+      // next unrelated activity, so the page keeps rendering a feed that is
       // known-stale right here. So instead of baselining blind, compare the
       // watermark against the feed already in cache: strictly newer means the
-      // cached page missed something and has to be refetched. No cached feed
-      // means there is nothing stale to heal — baseline, and stay quiet, which
-      // is what keeps mounting from invalidating a fetch still in flight.
-      if (isFeedBehind(queryClient, badge.latestActivityAt)) {
+      // cached page missed something and has to be refetched.
+      //
+      // With NO cached feed the comparison cannot be made yet — and the reason
+      // is usually that the feed request is still open, which is exactly the
+      // window where its response is about to land already stale. Discarding
+      // the watermark here would swallow that case (the response populates the
+      // cache uninvalidated and the watermark may never move again). So it is
+      // held, and judged below the moment a page appears.
+      const newest = newestCachedActivity(queryClient);
+      if (newest === undefined) {
+        heldWatermark.current = badge.latestActivityAt;
+      } else if (isNewer(badge.latestActivityAt, newest)) {
+        invalidateFeed();
+      }
+    } else if (previous !== badge.latestActivityAt) {
+      invalidateFeed();
+    }
+
+    // The held watermark can only be judged against a cached page, and the
+    // badge may never poll a different value again, so the cache itself drives
+    // the resolution: the check runs on the settle that populates the feed,
+    // not on the next 30s tick.
+    return queryClient.getQueryCache().subscribe(() => {
+      const held = heldWatermark.current;
+      if (held === null) return;
+      const newest = newestCachedActivity(queryClient);
+      if (newest === undefined) return;
+      heldWatermark.current = null;
+      if (isNewer(held, newest)) {
         queryClient.invalidateQueries({ queryKey: notificationKeys.feed });
       }
-      return;
-    }
-    if (previous !== badge.latestActivityAt) {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.feed });
-    }
+    });
   }, [badge, queryClient]);
 
   return query;
 }
 
-/** Is the cached feed older than the watermark the badge just reported?
- *  False when no feed has been cached yet — nothing to compare, nothing to
- *  heal. An empty cached page counts as infinitely old, so any real watermark
- *  beats it. */
-function isFeedBehind(
-  queryClient: QueryClient,
-  latestActivityAt: string | null
-): boolean {
-  if (latestActivityAt === null) return false;
+/** Newest `updatedAt` across the cached feed pages, in epoch ms. `undefined`
+ *  when no feed is cached at all — nothing to compare against, request very
+ *  possibly still in flight. A cached-but-empty feed is infinitely old, so any
+ *  real watermark beats it. */
+function newestCachedActivity(queryClient: QueryClient): number | undefined {
   const cached = queryClient.getQueryData<InfiniteData<NotificationFeedPage>>(
     notificationKeys.feed
   );
-  if (!cached?.pages.length) return false;
-  const newestCached = Math.max(
+  if (!cached?.pages.length) return undefined;
+  return Math.max(
     Number.NEGATIVE_INFINITY,
     ...cached.pages.flatMap((page) =>
       page.items.map((item) => Date.parse(item.updatedAt))
     )
   );
-  return Date.parse(latestActivityAt) > newestCached;
 }
+
+/** A null watermark (empty inbox) can never be newer than anything. */
+const isNewer = (watermark: string | null, newestCached: number): boolean =>
+  watermark !== null && Date.parse(watermark) > newestCached;
 
 /** Unseen count for the nav badge (0 while loading or on error). */
 export function useUnseenNotificationCount(): number {

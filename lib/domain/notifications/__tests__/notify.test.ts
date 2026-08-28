@@ -4,9 +4,10 @@
 // cannot execute without a database, and are covered by the constraint design
 // rather than here. What IS testable in isolation, and what this suite pins, is
 // the input shaping: which inputs reach the statement at all, how conflicting
-// keys are spread across statements, what notify() reports back (the push set:
-// inserts and seen→unseen re-badges, never a silent refresh), and the guards
-// that make retractActor a no-op.
+// keys are spread across statements, the deterministic order the rows of one
+// statement are offered in, how notify() reads the push set back out of the
+// upsert's own RETURNING (`inserted` OR `rebadged` — never a silent refresh),
+// and the guards that make retractActor a no-op.
 
 import { describe, expect, it, vi } from 'vitest';
 import { notify, retractActor } from '@/lib/domain/notifications/notify';
@@ -33,34 +34,15 @@ const keyOf = (row: { recipientId: string; groupKey: string }) =>
 
 /** A tx double standing in for the open-aggregate table. `open` seeds the rows
  *  that already exist with `read_at`/`dismissed_at` null, each with its
- *  `seen_at`: the pre-select reads exactly that state, and the upsert reports
- *  `inserted` (Postgres's `xmax = 0`) for every key not already there, then
- *  records the key as open-and-unseen — so a later round in the same call sees
- *  what the earlier one wrote, as it would in a real transaction.
- *  `lockedWith` records the row-lock strength the pre-select asked for and
- *  `orderedBy` the columns it ordered on: the classification is only race-safe
- *  because it is taken FOR UPDATE, and only deadlock-free because the order
- *  those locks are taken in is stated rather than left to the planner. */
+ *  `seen_at`, and the upsert reproduces what the real statement RETURNS:
+ *  `inserted` (Postgres's `xmax = 0`) for every key not already there, and
+ *  `rebadged` — written by the ON CONFLICT SET clause from the OLD row — for a
+ *  key whose existing row had been seen. It then records the key as
+ *  open-and-unseen, so a later round in the same call sees what the earlier one
+ *  wrote, as it would in a real transaction. */
 function insertingTx(open: OpenRow[] = []) {
   const batches: InsertedRow[][] = [];
-  const lockedWith: string[] = [];
-  const orderedBy: string[][] = [];
   const state = new Map(open.map((row) => [keyOf(row), row]));
-  const select = vi.fn(() => ({
-    from: () => ({
-      where: () => ({
-        orderBy: (...columns: { name: string }[]) => {
-          orderedBy.push(columns.map((column) => column.name));
-          return {
-            for: (strength: string) => {
-              lockedWith.push(strength);
-              return Promise.resolve([...state.values()]);
-            },
-          };
-        },
-      }),
-    }),
-  }));
   const insert = vi.fn(() => ({
     values: (rows: InsertedRow[]) => {
       batches.push(rows);
@@ -69,8 +51,8 @@ function insertingTx(open: OpenRow[] = []) {
           returning: () => {
             const returned = rows.map((row) => ({
               recipientId: row.recipientId,
-              groupKey: row.groupKey,
               inserted: !state.has(keyOf(row)),
+              rebadged: state.get(keyOf(row))?.seenAt != null,
             }));
             for (const row of rows) {
               state.set(keyOf(row), {
@@ -85,14 +67,7 @@ function insertingTx(open: OpenRow[] = []) {
       };
     },
   }));
-  return {
-    tx: { select, insert } as never,
-    batches,
-    insert,
-    select,
-    lockedWith,
-    orderedBy,
-  };
+  return { tx: { insert } as never, batches, insert };
 }
 
 const SEEN_AT = new Date('2026-08-28T10:00:00.000Z');
@@ -141,9 +116,11 @@ describe('notify', () => {
     expect(batches[0].map((row) => row.recipientId)).toEqual([OWNER, OTHER]);
   });
 
-  // The push gate, all three outcomes: one buzz per open aggregate PER VISIT
-  // CYCLE. Insert knocks; a re-badge of a row the recipient has already looked
-  // at knocks again; a refresh of a row still waiting to be looked at is silent.
+  // The push gate, all three outcomes, all decided by what the single upsert
+  // RETURNS: one buzz per open aggregate PER VISIT CYCLE. `inserted` knocks; a
+  // conflict onto a row whose OLD seen_at was set comes back `rebadged` and
+  // knocks again; a conflict onto a row still waiting to be looked at comes
+  // back neither, and is silent.
   it('pushes when the event opens a fresh aggregate', async () => {
     const { tx } = insertingTx();
 
@@ -168,34 +145,24 @@ describe('notify', () => {
     expect(insert).toHaveBeenCalledTimes(1);
   });
 
-  // Without the row lock, two transactions could both read the same SEEN row
-  // before either upsert cleared seen_at and both call themselves a re-badge —
-  // two pushes for one badge edge.
-  it('locks the rows it classifies, once per round', async () => {
-    const { tx, lockedWith } = insertingTx([openRow({ seenAt: SEEN_AT })]);
+  // Concurrent multi-row upserts acquire one unique-index entry per row, and
+  // caller order is arbitrary. Sorting the VALUES by (recipientId, groupKey)
+  // is what stops two overlapping rounds from taking the same two entries in
+  // opposite orders and deadlocking.
+  it('sorts each round of values into a deterministic key order', async () => {
+    const { tx, batches } = insertingTx();
 
     await notify(tx, [
-      input({ actorId: ACTOR }),
-      // A collider, so the call runs two rounds — each must lock its own read.
-      input({ actorId: OTHER }),
+      input({ recipientId: OTHER, groupKey: 'share.reply:share-1' }),
+      input({ recipientId: OWNER, groupKey: 'share.reply:share-1' }),
+      input({ recipientId: OWNER, groupKey: 'share.reaction:share-1' }),
     ]);
 
-    expect(lockedWith).toEqual(['update', 'update']);
-  });
-
-  // A round can lock several rows, and the planner's scan order is not a
-  // contract. Two concurrent notify() transactions with overlapping rounds
-  // would then be free to take the same two locks in opposite orders and
-  // deadlock; a stated ORDER BY is what removes the inversion.
-  it('takes those locks in a deterministic order', async () => {
-    const { tx, orderedBy } = insertingTx();
-
-    await notify(tx, [
-      input({ recipientId: OTHER }),
-      input({ recipientId: OWNER }),
+    expect(batches[0].map((row) => keyOf(row))).toEqual([
+      `${OWNER}:share.reaction:share-1`,
+      `${OWNER}:share.reply:share-1`,
+      `${OTHER}:share.reply:share-1`,
     ]);
-
-    expect(orderedBy).toEqual([['recipient_id', 'group_key']]);
   });
 
   it('reports only the push-eligible recipients of a fan-out', async () => {

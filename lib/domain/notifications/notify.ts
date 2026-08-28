@@ -16,9 +16,12 @@
 // become unretractable); actor_count is derived from that array, so it is
 // exactly the distinct actor set size; created_at/seen_at reset so a
 // previously-seen aggregate re-surfaces at the top of the feed and re-badges
-// exactly once.
+// exactly once. That same SET clause also stamps `rebadged` from the OLD row's
+// seen_at, so the push classification is decided inside the one statement that
+// invalidates the evidence for it — and is read straight back out of its
+// RETURNING. There is no second query and no row lock to order.
 
-import { and, eq, or, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { notifications } from '@/lib/infra/db/schema';
 import type { NotifyInput } from './types';
@@ -49,6 +52,14 @@ const aggregateSet = () => {
     // Re-surface and re-badge: the row returns to the top of the feed and to the
     // unseen count, still as ONE row.
     createdAt: sql`now()`,
+    // Was this refresh a seen→unseen re-badge? Inside ON CONFLICT DO UPDATE a
+    // bare table reference is the OLD row, evaluated before the SET lands, so
+    // this reads the committed pre-upsert seen_at — and it does so INSIDE the
+    // statement that overwrites it. That atomicity is the whole point: there is
+    // no window between classifying and resetting for another transaction to
+    // slip through. Read back via RETURNING on the next line down; never read
+    // between statements (see the column comment in schema.ts).
+    rebadged: sql`(${notifications.seenAt} IS NOT NULL)`,
     seenAt: sql`NULL`,
   };
 };
@@ -86,53 +97,41 @@ export async function notify(
   // (recipient, groupKey) are spread across successive statements instead of
   // being silently collapsed — each still contributes its actor.
   for (const round of splitByConflictKey(wanted)) {
-    // Which of this round's targets already have an open row, and whether it
-    // has been seen — the upsert's RETURNING cannot tell us, because its SET
-    // clause has already overwritten seen_at by then. A round holds at most one
-    // row per (recipient, groupKey) and audiences are bounded (≤50), so this is
-    // one small indexed lookup.
+    // Push classification rides INSIDE this one statement, so there is no
+    // interleaving to reason about: the ON CONFLICT branch reads the committed
+    // old row (`rebadged` ← `seen_at IS NOT NULL`) in the same expression
+    // evaluation that resets `seen_at`, and the INSERT branch stamps
+    // `rebadged = false` because a fresh row was never seen. Two concurrent
+    // events on one SEEN row therefore serialise on the row itself — the loser
+    // waits for the winner's commit and then reads `seen_at IS NULL`, so it
+    // classifies as a silent refresh. Two concurrent events on a MISSING row
+    // are arbitrated by the open-aggregate unique index — the loser blocks on
+    // the index entry, then takes the conflict branch with xmax ≠ 0 and
+    // `rebadged = false`. Either way: one row, one push, no pre-select, no row
+    // locks beyond the ones this upsert takes for itself.
     //
-    // It reads FOR UPDATE, which is what makes the classification race-safe.
-    // Two concurrent notify() transactions landing on the same SEEN open row
-    // would otherwise both read seen_at as set and both call themselves a
-    // re-badge — two pushes for one badge edge. With the lock, the second
-    // transaction blocks here until the first commits and then re-reads the
-    // committed tuple: seen_at is NULL by then (the first tx's upsert reset
-    // it), so the second classifies itself as a silent refresh. Exactly one
-    // push per badge edge. (The recipient's own concurrent markSeen serialises
-    // through the same lock.)
-    //
-    // The insert race needs no lock, and gets none: when no row exists there is
-    // nothing to lock, so both transactions read an empty map and both attempt
-    // the INSERT. The open-aggregate unique index arbitrates — the loser blocks
-    // on the index entry, then takes the ON CONFLICT UPDATE branch, so its
-    // RETURNING says xmax ≠ 0 and its key has no pre-select entry: neither an
-    // insert nor a seen re-badge, therefore not push-worthy. One row, one push.
-    //
-    // The pre-select can lock several rows (one per recipient in the round),
-    // so it takes them in an explicit `ORDER BY recipient_id, group_key`:
-    // deterministic lock acquisition is what prevents lock-order inversion
-    // between two concurrent notify() transactions whose rounds overlap. A
-    // planner's scan order is not a contract, so the ordering has to be stated.
-    // The upsert that follows then only touches rows this transaction already
-    // holds, so it adds no new ordering.
-    const openBefore = await openAggregates(tx, round);
+    // The VALUES are sorted by (recipientId, groupKey) so every concurrent
+    // multi-row upsert acquires its unique-index entries in one deterministic
+    // order; two overlapping rounds can then never take the same two entries
+    // in opposite orders and deadlock.
+    const values = round
+      .map((input) => ({
+        recipientId: input.recipientId,
+        type: input.type,
+        actorIds: [input.actorId],
+        actorCount: 1,
+        objectType: input.objectType ?? null,
+        objectId: input.objectId ?? null,
+        targetType: input.targetType ?? null,
+        targetId: input.targetId ?? null,
+        groupKey: input.groupKey,
+        data: input.data ?? null,
+        rebadged: false,
+      }))
+      .sort(byConflictKey);
     const rows = await tx
       .insert(notifications)
-      .values(
-        round.map((input) => ({
-          recipientId: input.recipientId,
-          type: input.type,
-          actorIds: [input.actorId],
-          actorCount: 1,
-          objectType: input.objectType ?? null,
-          objectId: input.objectId ?? null,
-          targetType: input.targetType ?? null,
-          targetId: input.targetId ?? null,
-          groupKey: input.groupKey,
-          data: input.data ?? null,
-        }))
-      )
+      .values(values)
       .onConflictDoUpdate({
         target: [notifications.recipientId, notifications.groupKey],
         targetWhere: sql`read_at is null and dismissed_at is null`,
@@ -140,15 +139,15 @@ export async function notify(
       })
       .returning({
         recipientId: notifications.recipientId,
-        groupKey: notifications.groupKey,
         // Postgres's upsert tell: a row this statement INSERTED has no
         // updating transaction stamped on it, so xmax is 0; a row it took the
         // ON CONFLICT branch on carries the locking xid.
         inserted: sql<boolean>`(xmax = 0)`,
+        // Only ever read here, out of the statement that just wrote it.
+        rebadged: notifications.rebadged,
       });
     for (const row of rows) {
-      const wasSeen = openBefore.get(conflictKey(row)) ?? false;
-      if (row.inserted || wasSeen) pushRecipients.add(row.recipientId);
+      if (row.inserted || row.rebadged) pushRecipients.add(row.recipientId);
     }
   }
   return [...pushRecipients];
@@ -157,41 +156,17 @@ export async function notify(
 const conflictKey = (row: { recipientId: string; groupKey: string }) =>
   `${row.recipientId}:${row.groupKey}`;
 
-/** The round's targets that already hold an open row, mapped to whether that
- *  row has been seen. Absent key = no open row (this event will INSERT).
- *  Drizzle has no tuple `IN`, and a round is tiny, so it is an OR-chain.
- *  `FOR UPDATE` holds each matched row until this transaction commits, so the
- *  seen/unseen classification cannot be read out from under the upsert, and the
- *  `ORDER BY` fixes the order those locks are taken in so two overlapping
- *  rounds can never invert on each other. */
-async function openAggregates(
-  tx: NotifyDb,
-  round: NotifyInput[]
-): Promise<Map<string, boolean>> {
-  const rows = await tx
-    .select({
-      recipientId: notifications.recipientId,
-      groupKey: notifications.groupKey,
-      seenAt: notifications.seenAt,
-    })
-    .from(notifications)
-    .where(
-      and(
-        sql`${notifications.readAt} IS NULL`,
-        sql`${notifications.dismissedAt} IS NULL`,
-        or(
-          ...round.map((input) =>
-            and(
-              eq(notifications.recipientId, input.recipientId),
-              eq(notifications.groupKey, input.groupKey)
-            )
-          )
-        )
-      )
-    )
-    .orderBy(notifications.recipientId, notifications.groupKey)
-    .for('update');
-  return new Map(rows.map((row) => [conflictKey(row), row.seenAt !== null]));
+/** Codepoint order, not `localeCompare`: the only thing that matters is that
+ *  every process sorts identically, and recipient ids are fixed-width uuids so
+ *  ordering the joined key orders the (recipientId, groupKey) tuple. */
+function byConflictKey(
+  a: { recipientId: string; groupKey: string },
+  b: { recipientId: string; groupKey: string }
+): number {
+  const left = conflictKey(a);
+  const right = conflictKey(b);
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
 }
 
 /** Partition inputs into rounds, each holding at most one row per conflict key. */

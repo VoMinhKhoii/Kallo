@@ -110,6 +110,7 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260828131955_add_push_tokens.sql` | A (Drizzle) | `push_tokens` table — device registrations (token unique so a re-signed-in handset is reassigned), platform CHECK, user index |
 | `20260828131956_rls_push_tokens.sql` | B (Manual) | RLS enabled, no policies — a registration token is a send capability |
 | `20260828131957_push_tokens_retention.sql` | B (Manual) | `reap_stale_push_tokens()` (270 days idle) on the guarded pg_cron schedule |
+| `20260828181514_notifications_rebadged.sql` | A (Drizzle) | `notifications.rebadged` bool — transient per-upsert push classification, read only from the aggregation statement's own `RETURNING` |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

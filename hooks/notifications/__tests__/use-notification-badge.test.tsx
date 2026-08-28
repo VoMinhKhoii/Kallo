@@ -6,8 +6,10 @@
 // feed (which never polls) has to be told. What is pinned here is exactly that
 // edge — invalidate whenever the watermark changes, silence when it holds even
 // if the count moves, and, on the FIRST observation (which has no previous
-// value to compare with), invalidate only when the feed already in cache is
-// older than the watermark.
+// value to compare with), invalidate only when the feed is older than the
+// watermark: against the cache when there is one, and otherwise against
+// whatever the still-open feed request settles into, since the watermark is
+// held rather than baselined away.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -57,7 +59,7 @@ function setup(feed?: ReturnType<typeof cachedFeed>) {
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
   const { result } = renderHook(() => useNotificationBadge(), { wrapper });
-  return { result, invalidateQueries };
+  return { result, invalidateQueries, client };
 }
 
 describe('useNotificationBadge', () => {
@@ -65,13 +67,45 @@ describe('useNotificationBadge', () => {
     vi.clearAllMocks();
   });
 
-  // Mounting must not invalidate the fetch the page is in the middle of, and
-  // with no cached feed there is nothing stale to heal either way.
-  it('baselines the first poll when no feed is cached', async () => {
+  // Mounting must not invalidate the fetch the page is in the middle of, so
+  // nothing happens while the feed is uncached — the watermark is held, not
+  // acted on.
+  it('does not invalidate on the first poll while no feed is cached', async () => {
     mockFetchBadge.mockResolvedValue({ unseen: 3, latestActivityAt: T1 });
     const { result, invalidateQueries } = setup();
 
     await waitFor(() => expect(result.current.data?.unseen).toBe(3));
+
+    expect(invalidateQueries).not.toHaveBeenCalled();
+  });
+
+  // The race the held watermark exists for: the first badge observation lands
+  // while the feed request is still open, so there is nothing to compare it
+  // with. Baselining it there would let the in-flight response populate the
+  // cache uninvalidated — and the watermark may never move again, so nothing
+  // would ever heal it. Holding it turns the settle itself into the comparison.
+  it('heals a feed that settles older than the held first watermark', async () => {
+    mockFetchBadge.mockResolvedValue({ unseen: 1, latestActivityAt: T2 });
+    const { result, invalidateQueries, client } = setup();
+    await waitFor(() => expect(result.current.data?.unseen).toBe(1));
+
+    act(() => {
+      client.setQueryData(notificationKeys.feed, cachedFeed(T1, T0));
+    });
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: notificationKeys.feed,
+    });
+  });
+
+  it('leaves a feed that settles as fresh as the held first watermark', async () => {
+    mockFetchBadge.mockResolvedValue({ unseen: 1, latestActivityAt: T1 });
+    const { result, invalidateQueries, client } = setup();
+    await waitFor(() => expect(result.current.data?.unseen).toBe(1));
+
+    act(() => {
+      client.setQueryData(notificationKeys.feed, cachedFeed(T1, T0));
+    });
 
     expect(invalidateQueries).not.toHaveBeenCalled();
   });
