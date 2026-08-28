@@ -387,6 +387,8 @@ The rule governs **new fan-out**, at write time: a notification (and its `data` 
 
 ## Known risks
 
+- Accepted pre-existing limitation (adversarial review, reclassified [P2]): a direct-chat message in flight while an unfriend/block commits is still delivered and pushed — `removeFriend`/`blockFriend` take no chat-group lock, and serializing them into the send path would couple friendship-row locks into chat for a microsecond window. Industry-norm in-flight delivery; not attacker-amplifiable.
+
 - `share.invite` re-offer after the old notification was read creates a fresh row — correct; the live join keys on `objectId` (inviteId, stable per meal+recipient).
 - Producers returning `db.transaction(...)` directly need a small refactor to carry recipient ids out for `after()` — mechanical, 7 files.
 - Cursor helper (`decodeSharedMealCursor`) carries a feed-specific error message — wrap or accept (cosmetic).
