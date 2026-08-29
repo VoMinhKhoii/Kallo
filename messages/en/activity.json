@@ -33,15 +33,15 @@
     },
     "shareReaction": {
       "one": "<b>{name}</b> reacted to your meal",
-      "other": "<b>{name}</b> and {count} others reacted to your meal"
+      "other": "<b>{name}</b> and {count, plural, one {# other} other {# others}} reacted to your meal"
     },
     "shareReply": {
       "one": "<b>{name}</b> replied to your meal",
-      "other": "<b>{name}</b> and {count} others replied to your meal"
+      "other": "<b>{name}</b> and {count, plural, one {# other} other {# others}} replied to your meal"
     },
     "shareLogged": {
       "one": "<b>{name}</b> logged your meal",
-      "other": "<b>{name}</b> and {count} others logged your meal"
+      "other": "<b>{name}</b> and {count, plural, one {# other} other {# others}} logged your meal"
     }
   },
   "invite": {

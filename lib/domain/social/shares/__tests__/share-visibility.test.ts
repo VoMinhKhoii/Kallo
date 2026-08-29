@@ -1,3 +1,5 @@
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/infra/db/client', () => ({ db: {} }));
@@ -16,7 +18,12 @@ function fakeDb(rows: unknown[]) {
   const where = vi.fn(() => ({ limit }));
   const from = vi.fn(() => ({ where, limit }));
   const select = vi.fn(() => ({ from }));
-  return { select };
+  const captured: { statement?: SQL } = {};
+  const execute = vi.fn((statement: SQL) => {
+    captured.statement = statement;
+    return Promise.resolve(rows);
+  });
+  return { select, execute, captured };
 }
 
 describe('canViewShare', () => {
@@ -81,6 +88,62 @@ describe('canViewShareOwnedBy', () => {
         db as never
       )
     ).resolves.toBe(true);
-    expect(db.select).toHaveBeenCalledTimes(1);
+    expect(db.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('masks a denied relationship as false', async () => {
+    const db = fakeDb([{ visible: false }]);
+
+    await expect(
+      canViewShareOwnedBy(
+        VIEWER_ID,
+        { actorId: OWNER_ID, sharedAt, visibility: 'circle' },
+        db as never
+      )
+    ).resolves.toBe(false);
+  });
+
+  // Regression (PostgresError 42702): built as a `db.select({...})` field with
+  // no join, Drizzle stripped the table prefix off every column in the
+  // membership self-join and emitted `ON "group_id" = "group_id"`, 500ing
+  // every cross-user reaction and reply. Render the statement and prove no
+  // column reference is left bare.
+  it('qualifies every column reference in the generated SQL', async () => {
+    const db = fakeDb([{ visible: true }]);
+
+    await canViewShareOwnedBy(
+      VIEWER_ID,
+      { actorId: OWNER_ID, sharedAt, visibility: 'circle' },
+      db as never
+    );
+
+    const { sql, params } = new PgDialect().sqlToQuery(
+      db.captured.statement as SQL
+    );
+    expect(sql).toContain(
+      '"share_owner_membership"."group_id" = "share_viewer_membership"."group_id"'
+    );
+    expect(sql).toContain(
+      '"chat_groups"."id" = "share_viewer_membership"."group_id"'
+    );
+    expect(sql).toContain('"friendships"."user_low"');
+    // Any of these column names appearing without a table/alias prefix is the
+    // ambiguity that produced 42702.
+    expect(
+      sql.match(/(?<![."\w])"(?:group_id|user_id|joined_at|kind|status)"/g)
+    ).toBeNull();
+    // The same bound values as before — the access contract is unchanged.
+    // `sharedAt` arrives as encoder-mapped text: a raw Date in a raw fragment
+    // reaches the driver unserialized and throws.
+    expect(params).toEqual([
+      VIEWER_ID,
+      OWNER_ID,
+      VIEWER_ID,
+      OWNER_ID,
+      VIEWER_ID,
+      OWNER_ID,
+      sharedAt.toISOString(),
+      sharedAt.toISOString(),
+    ]);
   });
 });

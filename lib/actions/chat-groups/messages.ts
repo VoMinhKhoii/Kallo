@@ -1,10 +1,10 @@
-import { and, desc, eq, ne } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { after } from 'next/server';
+import { Errors } from '@/lib/core/errors/catalog';
 import {
   getChatGroupSchema,
   sendChatGroupMessageSchema,
 } from '@/lib/core/validation/chat';
-import { Errors } from '@/lib/core/errors/catalog';
 import { sendChatMessagePush } from '@/lib/domain/notifications/push';
 import { assertUnlimitedCircleActor } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';

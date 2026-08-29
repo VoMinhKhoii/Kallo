@@ -1,3 +1,5 @@
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it, vi } from 'vitest';
 import {
   markRead,
@@ -105,7 +107,46 @@ describe('markSeen', () => {
     // Never touches read_at — seen and read are independent states.
     expect(captured.set).not.toHaveProperty('readAt');
   });
+
+  // Regression: every other case here uses a millisecond-precision instant, so
+  // none of them could see the defect. Postgres stores `created_at` in
+  // MICROseconds; the watermark the client posts is the feed's
+  // `toISOString()`, which truncates to milliseconds. A raw
+  // `created_at <= $1` therefore misses the newest row by its sub-millisecond
+  // remainder (observed live: watermark …34.246Z cleared 0 rows, …34.247Z
+  // cleared 1) and the badge never clears.
+  it('clears the newest row even when Postgres kept microseconds', async () => {
+    const { db, captured } = updatingDb([{ id: ID_A }]);
+    const stored = '2026-08-28T09:24:34.246789Z';
+    const watermark = new Date(stored).toISOString();
+
+    // The best watermark the Activity page can send has already lost the µs
+    // remainder, so it sits strictly below the stored instant — the defect.
+    expect(watermark).toBe('2026-08-28T09:24:34.246Z');
+
+    await expect(markSeen(USER, watermark, db)).resolves.toEqual({ seen: 1 });
+
+    const { sql, params } = new PgDialect().sqlToQuery(captured.where as SQL);
+    // Truncating the column to milliseconds compares like against like:
+    // date_trunc('milliseconds', …246789Z) = …246Z, which satisfies `<=`.
+    expect(sql).toContain(
+      `date_trunc('milliseconds', "notifications"."created_at") <=`
+    );
+    // Bound through the column's encoder, so the driver sees the ms watermark
+    // as text — never a raw Date, which this driver cannot serialize.
+    expect(params).toContain(watermark);
+    expect(truncateToMilliseconds(stored)).toBe(watermark);
+    // Still recipient-scoped and still only unseen rows.
+    expect(sql).toContain('"recipient_id"');
+    expect(sql).toContain('"seen_at" is null');
+  });
 });
+
+/** What `date_trunc('milliseconds', …)` does to a stored µs timestamp. JS
+ *  `Date` cannot hold microseconds, so the fixture is compared as text. */
+function truncateToMilliseconds(microIso: string): string {
+  return microIso.replace(/(\.\d{3})\d+/, '$1');
+}
 
 describe('markRead', () => {
   it('scopes the id list to the recipient', async () => {

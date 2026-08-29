@@ -8,7 +8,7 @@
 // `recipient_id = userId`, including the id-list update — an id belonging to
 // somebody else must be a no-op, never a cross-tenant write.
 
-import { and, eq, inArray, isNull, lte, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { notifications } from '@/lib/infra/db/schema';
@@ -65,6 +65,18 @@ export async function readBadgeState(
  * Clear the badge for everything at or before `beforeIso` — the newest row in
  * the snapshot the user actually saw. Bounding it (rather than using now())
  * means a notification that arrives mid-visit still badges.
+ *
+ * The watermark is compared at MILLISECOND precision on both sides. Postgres
+ * stores `created_at` in microseconds, but the feed hands the client an
+ * ISO-8601 string via `toISOString()`, which truncates to milliseconds — so a
+ * plain `created_at <= $1` misses the newest row by its sub-millisecond
+ * remainder almost every time, and the badge never clears. Truncating the
+ * column to milliseconds compares like against like.
+ *
+ * The sub-millisecond widening this creates sits inside the mark-seen race
+ * that already exists: a row committed in the same millisecond as the snapshot
+ * but after the fetch is marked seen. That is the intended badge-clearing
+ * semantic, not data loss — the row itself stays in the feed.
  */
 export async function markSeen(
   userId: string,
@@ -78,7 +90,9 @@ export async function markSeen(
       and(
         eq(notifications.recipientId, userId),
         isNull(notifications.seenAt),
-        lte(notifications.createdAt, new Date(beforeIso))
+        // `sql.param` binds through the column's encoder — a bare Date in a
+        // raw fragment reaches the driver unserialized and throws.
+        sql`date_trunc('milliseconds', ${notifications.createdAt}) <= ${sql.param(new Date(beforeIso), notifications.createdAt)}`
       )
     )
     .returning({ id: notifications.id });
