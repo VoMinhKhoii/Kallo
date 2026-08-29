@@ -27,25 +27,27 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 DO $$
 DECLARE
-  job record;
+  entry record;
   expected int := 0;
   actual int;
 BEGIN
-  FOR job IN
+  -- Loop variable deliberately NOT named "job": inside these queries plpgsql
+  -- would make `job.jobname` ambiguous against the cron.job table itself.
+  FOR entry IN
     SELECT * FROM (VALUES
       ('reap-pipeline-requests-daily', '17 3 * * *', 'public.reap_pipeline_requests()'),
       ('reap-old-notifications-daily', '41 3 * * *', 'public.reap_old_notifications()'),
       ('reap-stale-push-tokens-daily', '47 3 * * *', 'public.reap_stale_push_tokens()')
     ) AS t(jobname, schedule, fn)
   LOOP
-    IF to_regprocedure(job.fn) IS NULL THEN
+    IF to_regprocedure(entry.fn) IS NULL THEN
       CONTINUE;
     END IF;
     expected := expected + 1;
-    IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = job.jobname) THEN
-      PERFORM cron.unschedule(job.jobname);
+    IF EXISTS (SELECT 1 FROM cron.job c WHERE c.jobname = entry.jobname) THEN
+      PERFORM cron.unschedule(entry.jobname);
     END IF;
-    PERFORM cron.schedule(job.jobname, job.schedule, 'SELECT ' || job.fn || ';');
+    PERFORM cron.schedule(entry.jobname, entry.schedule, 'SELECT ' || entry.fn || ';');
   END LOOP;
 
   -- Assert the remediation actually took: one job per existing reap function.
