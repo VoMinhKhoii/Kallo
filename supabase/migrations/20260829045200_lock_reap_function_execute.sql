@@ -32,5 +32,10 @@ REVOKE EXECUTE ON FUNCTION public.reap_pipeline_requests() FROM anon, authentica
 
 -- Future functions created by the migration role no longer default to
 -- anon/authenticated EXECUTE; intentional RPCs must grant explicitly.
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
+-- Both revokes are needed: the schema-scoped one strips Supabase's explicit
+-- anon/authenticated defaults, and the global one overrides PostgreSQL's
+-- built-in PUBLIC EXECUTE default, which a schema-scoped revoke cannot remove.
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres
+  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
