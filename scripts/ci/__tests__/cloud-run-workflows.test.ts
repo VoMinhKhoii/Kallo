@@ -7,20 +7,19 @@ function readWorkflow(name: string): string {
 }
 
 describe('Cloud Run prod workflow', () => {
-  it('auto-triggers from a successful CI run on the main branch', () => {
+  it('deploys only via manual dispatch, scoped to main', () => {
     const workflow = readWorkflow('cloud-run-prod.yml');
 
-    // workflow_run is preferred over push so the container image CI publishes
-    // is guaranteed to exist by the time prod tries to deploy it, and so a
-    // failing CI on main blocks the deploy.
-    expect(workflow).toContain('workflow_run:');
-    expect(workflow).toContain(`workflows: ['CI']`);
+    // Prod deploys are a deliberate human action: merging to main must never
+    // auto-ship. The dispatch takes an optional sha (a green-CI commit whose
+    // image exists) and the job refuses non-main refs.
+    expect(workflow).toContain('workflow_dispatch:');
+    expect(workflow).not.toContain('workflow_run:');
+    expect(workflow).toContain(`if: github.ref == 'refs/heads/main'`);
     expect(workflow).toContain(
-      `github.event.workflow_run.conclusion == 'success'`
+      `DEPLOY_SHA: \${{ inputs.sha != '' && inputs.sha || github.sha }}`
     );
-    expect(workflow).toContain(
-      `github.event.workflow_run.head_branch == 'main'`
-    );
+    expect(workflow).not.toContain('github.event.workflow_run');
   });
 
   it('applies pending migrations on the deploy, then verifies them', () => {
