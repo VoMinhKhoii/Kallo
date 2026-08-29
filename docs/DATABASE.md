@@ -104,13 +104,13 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260728123331_add_billing_reconciliation.sql` | A + deny boundary | RevenueCat grants, CustomerInfo + deterministic ownership watermarks, webhook replay state, indexes, constraints, and same-transaction RLS/revokes |
 | `20260728123400_harden_billing_trial_anchor.sql` | B (Manual) | Preserve the server-created trial anchor when profiles are updated |
 | `20260801120000_curate_broth_search_names.sql` | B (Manual) | Curated Vietnamese broth names/variants; queues targeted embedding regeneration |
-| `20260828122644_add_notifications.sql` | A (Drizzle) | `notifications` table — per-recipient activity rows, feed/badge indexes and the open-aggregate partial unique index |
-| `20260828122645_rls_notifications.sql` | B (Manual) | RLS enabled, no policies — notifications are server-only |
-| `20260828122646_notifications_retention.sql` | B (Manual) | `reap_old_notifications()` (90 days) on the guarded pg_cron schedule |
-| `20260828131955_add_push_tokens.sql` | A (Drizzle) | `push_tokens` table — device registrations (token unique so a re-signed-in handset is reassigned), platform CHECK, user index |
-| `20260828131956_rls_push_tokens.sql` | B (Manual) | RLS enabled, no policies — a registration token is a send capability |
-| `20260828131957_push_tokens_retention.sql` | B (Manual) | `reap_stale_push_tokens()` (270 days idle) on the guarded pg_cron schedule |
-| `20260828181514_notifications_rebadged.sql` | A (Drizzle) | `notifications.rebadged` bool — transient per-upsert push classification, read only from the aggregation statement's own `RETURNING` |
+| `20260829080001_add_notifications.sql` | A (Drizzle) | `notifications` table — per-recipient activity rows, feed/badge indexes and the open-aggregate partial unique index |
+| `20260829080002_rls_notifications.sql` | B (Manual) | RLS enabled, no policies — notifications are server-only |
+| `20260829080003_notifications_retention.sql` | B (Manual) | `reap_old_notifications()` (90 days) on the guarded pg_cron schedule |
+| `20260829080004_add_push_tokens.sql` | A (Drizzle) | `push_tokens` table — device registrations (token unique so a re-signed-in handset is reassigned), platform CHECK, user index |
+| `20260829080005_rls_push_tokens.sql` | B (Manual) | RLS enabled, no policies — a registration token is a send capability |
+| `20260829080006_push_tokens_retention.sql` | B (Manual) | `reap_stale_push_tokens()` (270 days idle) on the guarded pg_cron schedule |
+| `20260829080007_notifications_rebadged.sql` | A (Drizzle) | `notifications.rebadged` bool — transient per-upsert push classification, read only from the aggregation statement's own `RETURNING` |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
