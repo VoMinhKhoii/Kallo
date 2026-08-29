@@ -223,7 +223,7 @@ describe('createChatGroup', () => {
     expect(mockAfter).toHaveBeenCalledTimes(1);
     expect(mockSendNotificationPush).toHaveBeenCalledWith([USER_B, USER_C], {
       type: 'group.added',
-      actorId: USER_A,
+      actor: { id: USER_A },
       data: { groupName: 'Trip' },
       targetType: 'chat_group',
       targetId: GROUP_ID,

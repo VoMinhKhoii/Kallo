@@ -47,12 +47,12 @@ describe('NotificationRow', () => {
   beforeEach(() => markReadMock.mockReset());
 
   it.each([
-    ['friend.joined', 'row.friendJoined.one'],
-    ['group.added', 'row.groupAdded.one'],
-    ['share.invite_accepted', 'row.shareInviteAccepted.one'],
-    ['share.reaction', 'row.shareReaction.one'],
-    ['share.reply', 'row.shareReply.one'],
-    ['share.logged', 'row.shareLogged.one'],
+    ['friend.joined', 'row.friend.joined.one'],
+    ['group.added', 'row.group.added.one'],
+    ['share.invite_accepted', 'row.share.invite_accepted.one'],
+    ['share.reaction', 'row.share.reaction.one'],
+    ['share.reply', 'row.share.reply.one'],
+    ['share.logged', 'row.share.logged.one'],
   ] as const)('renders the %s template', (type, key) => {
     render(<NotificationRow item={item({ type })} isNew={false} />);
 
@@ -72,7 +72,7 @@ describe('NotificationRow', () => {
       />
     );
 
-    expect(screen.getByText('row.shareReaction.other')).toBeInTheDocument();
+    expect(screen.getByText('row.share.reaction.other')).toBeInTheDocument();
   });
 
   it('interpolates the name and the count of the OTHER actors', () => {

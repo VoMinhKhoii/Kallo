@@ -214,12 +214,12 @@ describe('toggleShareReactionAction', () => {
 
     expect(mockSendNotificationPush).toHaveBeenCalledWith([OWNER], {
       type: 'share.reaction',
-      actorId: mockUser.id,
+      actor: { id: mockUser.id },
       groupKey: `share.reaction:${SHARE_ID}`,
     });
 
-    // Un-reacting: after() still fires (it is unconditional), but with the
-    // empty recipient list a retract produced — nobody is pushed.
+    // Un-reacting notifies nobody, so the wrapper has nothing queued: after()
+    // still fires (it is unconditional) but sends no push at all.
     mockSendNotificationPush.mockClear();
     lockShare([
       {
@@ -234,10 +234,7 @@ describe('toggleShareReactionAction', () => {
 
     await toggleShareReactionAction({ shareId: SHARE_ID });
 
-    expect(mockSendNotificationPush).toHaveBeenCalledWith(
-      [],
-      expect.anything()
-    );
+    expect(mockSendNotificationPush).not.toHaveBeenCalled();
   });
 
   it('retracts the actor from the open aggregate when the heart comes off', async () => {

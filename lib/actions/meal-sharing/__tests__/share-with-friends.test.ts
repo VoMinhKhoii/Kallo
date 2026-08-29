@@ -23,26 +23,26 @@ vi.mock('@/lib/domain/notifications/push', () => ({
 
 // Notifications: this suite asserts WHO gets told; the helper's own upsert and
 // retract semantics live in lib/domain/notifications/__tests__.
-const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
-  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
-  mockRetractActor: vi.fn(
-    async (..._args: unknown[]): Promise<void> => undefined
-  ),
-}));
+const { mockNotify, mockRetractActor, mockCloseAggregates } = vi.hoisted(
+  () => ({
+    mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+    mockRetractActor: vi.fn(
+      async (..._args: unknown[]): Promise<void> => undefined
+    ),
+    mockCloseAggregates: vi.fn(
+      async (..._args: unknown[]): Promise<void> => undefined
+    ),
+  })
+);
 vi.mock('@/lib/domain/notifications/notify', () => ({
   notify: mockNotify,
   retractActor: mockRetractActor,
+  closeAggregates: mockCloseAggregates,
 }));
 
 // Same split as notify: the helper's own predicates live in
-// lib/domain/notifications/__tests__/close-invite-notification.test.ts; this
-// suite only asserts WHOSE aggregate the split closes.
-const mockCloseInviteNotification = vi.hoisted(() =>
-  vi.fn(async (..._args: unknown[]): Promise<void> => undefined)
-);
-vi.mock('@/lib/domain/notifications/close-invite-notification', () => ({
-  closeInviteNotification: mockCloseInviteNotification,
-}));
+// lib/domain/notifications/__tests__/close-aggregates.test.ts; this suite only
+// asserts WHOSE aggregates the split closes.
 
 // ---------------------------------------------------------------------------
 // Mocks — db.* is the singleton; tx.* is the transaction handle. Both are
@@ -260,7 +260,7 @@ describe('shareMealWithFriendsAction', () => {
     expect(mockAfter).toHaveBeenCalledTimes(1);
     expect(mockSendNotificationPush).toHaveBeenCalledWith([UUID_FRIEND], {
       type: 'share.invite',
-      actorId: mockUser.id,
+      actor: { id: mockUser.id },
       groupKey: `share.invite:${UUID_MEAL}`,
     });
   });
@@ -362,10 +362,12 @@ describe('shareMealWithFriendsAction', () => {
       mode: 'split',
     });
 
-    expect(mockCloseInviteNotification).toHaveBeenCalledTimes(1);
-    expect(mockCloseInviteNotification).toHaveBeenCalledWith(mockTx, {
-      recipientId: UUID_FRIEND_2,
-      sourceMealId: UUID_MEAL,
+    // ONE statement for the whole set of auto-dismissed third parties, not a
+    // close per person.
+    expect(mockCloseAggregates).toHaveBeenCalledTimes(1);
+    expect(mockCloseAggregates).toHaveBeenCalledWith(mockTx, {
+      recipientIds: [UUID_FRIEND_2],
+      groupKey: `share.invite:${UUID_MEAL}`,
     });
   });
 
@@ -381,7 +383,7 @@ describe('shareMealWithFriendsAction', () => {
       mode: 'copy',
     });
 
-    expect(mockCloseInviteNotification).not.toHaveBeenCalled();
+    expect(mockCloseAggregates).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid mealId', async () => {

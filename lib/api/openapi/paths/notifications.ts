@@ -12,6 +12,7 @@ import {
   markSeenBodySchema,
   pushTokenBodySchema,
 } from '@/lib/domain/notifications/contracts';
+import { NOTIFICATION_TYPES } from '@/lib/domain/notifications/types';
 
 const TAGS = ['Activity'];
 
@@ -40,15 +41,7 @@ const notificationItem: JsonSchema = {
     id: { type: 'string', format: 'uuid' },
     type: {
       type: 'string',
-      enum: [
-        'friend.joined',
-        'group.added',
-        'share.invite',
-        'share.invite_accepted',
-        'share.reaction',
-        'share.reply',
-        'share.logged',
-      ],
+      enum: [...NOTIFICATION_TYPES],
     },
     actors: { type: 'array', items: ref('PublicProfile') },
     actorCount: { type: 'integer' },

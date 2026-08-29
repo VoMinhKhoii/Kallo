@@ -5,12 +5,11 @@
 // ---------------------------------------------------------------------------
 
 import { and, eq, sql } from 'drizzle-orm';
-import { after } from 'next/server';
 import { z } from 'zod';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareReactionKey } from '@/lib/domain/notifications/group-keys';
-import { notify, retractActor } from '@/lib/domain/notifications/notify';
-import { sendNotificationPush } from '@/lib/domain/notifications/push';
+import { retractActor } from '@/lib/domain/notifications/notify';
+import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
@@ -31,10 +30,9 @@ export async function toggleShareReactionAction(input: {
   const parsed = toggleShareReactionSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  // Only a reaction turning ON pushes; un-reacting is silent by design.
-  let pushRecipients: string[] = [];
-
-  const result = await db.transaction(async (tx) => {
+  // Only a reaction turning ON notifies; un-reacting is silent by design, so
+  // the else branch below queues no push at all.
+  return withNotifications(db, async (tx, notify) => {
     // Serialize concurrent toggles on this share. Without the row lock two
     // taps from "off" both see no deletion and both insert (onConflictDoNothing
     // then leaves it "on" instead of cancelling); locking forces the second
@@ -79,7 +77,7 @@ export async function toggleShareReactionAction(input: {
         })
         .returning({ id: mealShareReactions.id });
       // Aggregates per share: ten hearts are one row, "X and 9 others".
-      pushRecipients = await notify(tx, [
+      await notify([
         {
           recipientId: lockedShares[0].actorId,
           type: 'share.reaction',
@@ -112,13 +110,4 @@ export async function toggleShareReactionAction(input: {
       count: Number(summary?.count ?? 0),
     };
   });
-
-  after(() =>
-    sendNotificationPush(pushRecipients, {
-      type: 'share.reaction',
-      actorId: user.id,
-      groupKey: shareReactionKey(parsed.shareId),
-    })
-  );
-  return result;
 }

@@ -11,7 +11,6 @@
 // separate canViewShare-gated log-shared action instead.
 
 import { and, eq, or } from 'drizzle-orm';
-import { after } from 'next/server';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
@@ -20,10 +19,12 @@ import {
   acceptMealShareInviteSchema,
   dismissMealShareInviteSchema,
 } from '@/lib/core/validation/social';
-import { closeInviteNotification } from '@/lib/domain/notifications/close-invite-notification';
-import { shareInviteAcceptedKey } from '@/lib/domain/notifications/group-keys';
-import { notify } from '@/lib/domain/notifications/notify';
-import { sendNotificationPush } from '@/lib/domain/notifications/push';
+import {
+  shareInviteAcceptedKey,
+  shareInviteKey,
+} from '@/lib/domain/notifications/group-keys';
+import { closeAggregates } from '@/lib/domain/notifications/notify';
+import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -48,9 +49,7 @@ export async function acceptMealShareInviteAction(input: {
   // No premium gate here on purpose: the INITIATOR pays. By the time an invite
   // exists a split has already halved the sender's meal, so refusing the
   // recipient would strand that half against an offer they can never take.
-  let pushRecipients: string[] = [];
-
-  const accepted = await db.transaction(async (tx) => {
+  return withNotifications(db, async (tx, notify) => {
     // Discover the actor-scoped pending invite before touching cross-user data.
     // The source meal is then locked BEFORE the invite is claimed, matching the
     // split path's meal -> invite lock order and avoiding an accept/split
@@ -113,9 +112,9 @@ export async function acceptMealShareInviteAction(input: {
     // page, another device, or the sender's split auto-dismiss. A fresh
     // re-offer then INSERTs new history instead of rewriting this row. The
     // Activity card's markRead is a harmless second close (read_at IS NULL).
-    await closeInviteNotification(tx, {
-      recipientId: user.id,
-      sourceMealId: invite.sourceMealId,
+    await closeAggregates(tx, {
+      recipientIds: [user.id],
+      groupKey: shareInviteKey(invite.sourceMealId),
     });
 
     // The offer was created under an accepted friendship — re-check it still
@@ -174,7 +173,7 @@ export async function acceptMealShareInviteAction(input: {
 
     // Tell the sender their offer landed. A dismiss deliberately stays silent
     // (LinkedIn norm: no rejection signal).
-    pushRecipients = await notify(tx, [
+    await notify([
       {
         recipientId: invite.fromUserId,
         type: 'share.invite_accepted',
@@ -187,15 +186,6 @@ export async function acceptMealShareInviteAction(input: {
 
     return { mealId, meal };
   });
-
-  after(() =>
-    sendNotificationPush(pushRecipients, {
-      type: 'share.invite_accepted',
-      actorId: user.id,
-      groupKey: shareInviteAcceptedKey(parsed.inviteId),
-    })
-  );
-  return accepted;
 }
 
 // ---------------------------------------------------------------------------
@@ -237,9 +227,9 @@ export async function dismissMealShareInviteAction(input: {
     // Same close as accept: a dismiss from Circle or another device resolves
     // the offer just as finally as one from the Activity card, so the card is
     // not the only thing that can read this row.
-    await closeInviteNotification(tx, {
-      recipientId: user.id,
-      sourceMealId: updated.sourceMealId,
+    await closeAggregates(tx, {
+      recipientIds: [user.id],
+      groupKey: shareInviteKey(updated.sourceMealId),
     });
 
     return { success: true };

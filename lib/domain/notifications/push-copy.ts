@@ -1,31 +1,29 @@
 // ---------------------------------------------------------------------------
-// Notifications — push copy (server-side templates)
+// Notifications — push copy (server-rendered, from the shipped catalogue)
 // ---------------------------------------------------------------------------
 // Push text is rendered on the SERVER, at send time, in the recipient's
 // preferred locale — the device has no next-intl bundle and, for iOS, no
-// chance to run code before the shade paints. So these strings live here
-// rather than in messages/*/activity.json: same voice, different consumer.
-// (activity.json keeps the rich in-app rows, with their <b> markup and ICU
-// plurals, and must not be restructured to feed this.)
+// chance to run code before the shade paints. It is rendered from the SAME
+// `messages/{en,vi}/activity.json` rows the in-app feed uses, so a wording fix
+// lands on the lock screen and in the Activity list together; there is no
+// second copy of these sentences to drift.
 //
-// The lock-screen line is deliberately the SINGULAR sentence even when an
+// The lock-screen line is deliberately the SINGULAR row (`.one`) even when an
 // aggregate is behind it: a push says "someone did a thing", the badge and the
 // Activity row carry "and 4 others". Collapse keys mean the later notice
-// replaces the earlier one anyway.
+// replaces the earlier one anyway. The `<b>` around the actor name is markup
+// for the feed, so it is rendered away here (`b: (chunks) => chunks`).
+
+import { createTranslator } from 'next-intl';
+import enActivity from '@/messages/en/activity.json';
+import viActivity from '@/messages/vi/activity.json';
+import type { NotificationType } from './types';
 
 export type PushLocale = 'en' | 'vi';
 
-/** Every event that can reach a device — the in-app catalog plus the
+/** Every event that can reach a device — the in-app catalogue plus the
  *  push-only chat message (Gate 3: push, never a row). */
-export type PushCopyType =
-  | 'friend.joined'
-  | 'group.added'
-  | 'share.invite'
-  | 'share.invite_accepted'
-  | 'share.reaction'
-  | 'share.reply'
-  | 'share.logged'
-  | 'chat.message';
+export type PushCopyType = NotificationType | 'chat.message';
 
 export interface PushCopyValues {
   /** Display name of whoever acted; falls back to the anonymous label. */
@@ -38,54 +36,44 @@ export interface PushCopyValues {
 
 const APP_NAME = 'Kallo';
 
-const SOMEONE: Record<PushLocale, string> = {
-  en: 'Someone',
-  vi: 'Một người bạn',
-};
-
+/** Not in the catalogue: the feed always has a real group name to interpolate,
+ *  a push fired for a nameless group still has to say something. */
 const A_GROUP: Record<PushLocale, string> = {
   en: 'a group',
   vi: 'một nhóm',
 };
 
-type Template = (name: string, values: PushCopyValues) => string;
-
-const BODIES: Record<PushCopyType, Record<PushLocale, Template>> = {
-  'friend.joined': {
-    en: (name) => `${name} joined your circle`,
-    vi: (name) => `${name} đã tham gia vòng kết nối của bạn`,
-  },
-  'group.added': {
-    en: (name, v) => `${name} added you to ${v.groupName ?? A_GROUP.en}`,
-    vi: (name, v) => `${name} đã thêm bạn vào ${v.groupName ?? A_GROUP.vi}`,
-  },
-  'share.invite': {
-    en: (name) => `${name} sent you a meal`,
-    vi: (name) => `${name} đã gửi cho bạn một bữa ăn`,
-  },
-  'share.invite_accepted': {
-    en: (name) => `${name} added your meal to their diary`,
-    vi: (name) => `${name} đã thêm bữa ăn của bạn vào nhật ký`,
-  },
-  'share.reaction': {
-    en: (name) => `${name} reacted to your meal`,
-    vi: (name) => `${name} đã thích bữa ăn của bạn`,
-  },
-  'share.reply': {
-    en: (name) => `${name} replied to your meal`,
-    vi: (name) => `${name} đã phản hồi bữa ăn của bạn`,
-  },
-  'share.logged': {
-    en: (name) => `${name} logged your meal`,
-    vi: (name) => `${name} đã ghi lại bữa ăn của bạn`,
-  },
-  // A chat push is the message itself: the sender is the title, exactly as
-  // every messaging app renders it. The body template is unused (see below).
-  'chat.message': {
-    en: (_name, v) => v.preview ?? '',
-    vi: (_name, v) => v.preview ?? '',
-  },
+/** Both catalogues are typed off the English one, which the en/vi parity suite
+ *  keeps honest. */
+const CATALOGUE: Record<PushLocale, typeof enActivity> = {
+  en: enActivity,
+  vi: viActivity as typeof enActivity,
 };
+
+const translators = new Map<
+  PushLocale,
+  ReturnType<typeof createActivityTranslator>
+>();
+
+function createActivityTranslator(locale: PushLocale) {
+  return createTranslator({
+    locale,
+    messages: { activity: CATALOGUE[locale] },
+    namespace: 'activity',
+  });
+}
+
+/** One translator per locale, built on first use and kept — `markup` (not
+ *  `rich`) because the result must be a plain string for FCM, not a React tree.
+ *  Lazy rather than module-scope so importing this module costs nothing: most
+ *  of what reaches for `push.ts` never renders a line of copy. */
+function translatorFor(locale: PushLocale) {
+  const existing = translators.get(locale);
+  if (existing) return existing;
+  const created = createActivityTranslator(locale);
+  translators.set(locale, created);
+  return created;
+}
 
 /** Anything not 'vi' renders in English — preferred_locale is CHECKed to the
  *  two we ship, but a null column or a future third locale must still send. */
@@ -103,9 +91,18 @@ export function pushCopy(
   locale: PushLocale,
   values: PushCopyValues = {}
 ): { title: string; body: string } {
-  const name = values.actorName?.trim() || SOMEONE[locale];
+  const t = translatorFor(locale);
+  const name = values.actorName?.trim() || t('someone');
+  // A chat push is the message itself: the sender is the title, exactly as
+  // every messaging app renders it. It has no catalogue row — chat lives in
+  // its own surface and never becomes an Activity line.
   if (type === 'chat.message') {
     return { title: name, body: values.preview ?? '' };
   }
-  return { title: APP_NAME, body: BODIES[type][locale](name, values) };
+  const body = t.markup(`row.${type}.one`, {
+    name,
+    group: values.groupName ?? A_GROUP[locale],
+    b: (chunks) => chunks,
+  });
+  return { title: APP_NAME, body };
 }

@@ -1,19 +1,6 @@
 import type { NotificationItem } from '@/lib/domain/notifications/contracts';
 import type { NotificationType } from '@/lib/domain/notifications/types';
 
-/** i18n key stem per type — the `activity.row.*` message groups. The wire
- *  types are dot-namespaced (`share.reaction`), which next-intl would read as
- *  nesting, so the message catalogue uses camelCase stems instead. */
-const MESSAGE_STEM: Record<NotificationType, string> = {
-  'friend.joined': 'friendJoined',
-  'group.added': 'groupAdded',
-  'share.invite': 'shareInvite',
-  'share.invite_accepted': 'shareInviteAccepted',
-  'share.reaction': 'shareReaction',
-  'share.reply': 'shareReply',
-  'share.logged': 'shareLogged',
-};
-
 /** The three types that collapse into "X and N others…" per object. The rest
  *  are always one distinct human action toward you (docs/NOTIFICATIONS.md —
  *  calibration), so they never get an aggregate template. */
@@ -30,12 +17,13 @@ export function actorLabel(item: NotificationItem, fallback: string): string {
   return actor.displayName?.trim() || actor.handle || fallback;
 }
 
-/** `row.<stem>.<one|other>` — `other` only where the type aggregates AND more
- *  than one actor is actually behind the row. */
+/** `row.<type>.<one|other>` — the wire type IS the key path, because the
+ *  catalogue nests `share.reaction` exactly the way next-intl reads a dotted
+ *  key. `other` only where the type aggregates AND more than one actor is
+ *  actually behind the row. */
 export function messageKey(item: NotificationItem): string {
-  const stem = MESSAGE_STEM[item.type];
   const plural = AGGREGATED.has(item.type) && item.actorCount > 1;
-  return `row.${stem}.${plural ? 'other' : 'one'}`;
+  return `row.${item.type}.${plural ? 'other' : 'one'}`;
 }
 
 /** Values every row template may interpolate. `count` is the number of actors

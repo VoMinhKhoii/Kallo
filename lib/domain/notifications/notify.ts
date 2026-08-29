@@ -21,7 +21,7 @@
 // invalidates the evidence for it — and is read straight back out of its
 // RETURNING. There is no second query and no row lock to order.
 
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 import { notifications } from '@/lib/infra/db/schema';
 import type { NotifyInput } from './types';
@@ -97,18 +97,8 @@ export async function notify(
   // (recipient, groupKey) are spread across successive statements instead of
   // being silently collapsed — each still contributes its actor.
   for (const round of splitByConflictKey(wanted)) {
-    // Push classification rides INSIDE this one statement, so there is no
-    // interleaving to reason about: the ON CONFLICT branch reads the committed
-    // old row (`rebadged` ← `seen_at IS NOT NULL`) in the same expression
-    // evaluation that resets `seen_at`, and the INSERT branch stamps
-    // `rebadged = false` because a fresh row was never seen. Two concurrent
-    // events on one SEEN row therefore serialise on the row itself — the loser
-    // waits for the winner's commit and then reads `seen_at IS NULL`, so it
-    // classifies as a silent refresh. Two concurrent events on a MISSING row
-    // are arbitrated by the open-aggregate unique index — the loser blocks on
-    // the index entry, then takes the conflict branch with xmax ≠ 0 and
-    // `rebadged = false`. Either way: one row, one push, no pre-select, no row
-    // locks beyond the ones this upsert takes for itself.
+    // Push classification rides INSIDE this one statement — see the `rebadged`
+    // note in `aggregateSet()` above for why that atomicity is load-bearing.
     //
     // The VALUES are sorted by (recipientId, groupKey) so every concurrent
     // multi-row upsert acquires its unique-index entries in one deterministic
@@ -169,22 +159,66 @@ function byConflictKey(
   return left < right ? -1 : 1;
 }
 
-/** Partition inputs into rounds, each holding at most one row per conflict key. */
+/** Partition inputs into rounds, each holding at most one row per conflict key:
+ *  the Nth input sharing a key goes into round N. */
 function splitByConflictKey(inputs: NotifyInput[]): NotifyInput[][] {
   const rounds: NotifyInput[][] = [];
-  const seen: Set<string>[] = [];
+  const seenCount = new Map<string, number>();
   for (const input of inputs) {
-    const key = `${input.recipientId}:${input.groupKey}`;
-    let index = 0;
-    while (seen[index]?.has(key)) index += 1;
-    if (!rounds[index]) {
-      rounds[index] = [];
-      seen[index] = new Set();
-    }
+    const key = conflictKey(input);
+    const index = seenCount.get(key) ?? 0;
+    seenCount.set(key, index + 1);
+    if (!rounds[index]) rounds[index] = [];
     rounds[index].push(input);
-    seen[index].add(key);
   }
   return rounds;
+}
+
+/**
+ * Close the OPEN aggregate on one group key for a set of recipients, marking it
+ * read without telling anybody anything.
+ *
+ * This is what makes resolution a DOMAIN event rather than a UI one. The
+ * actionable `share.invite` card never owns the invite's state — it renders
+ * `meal_share_invites.status` live — so the row has to close wherever the offer
+ * is resolved: this card, the Circle page, another device, or the sender's
+ * split auto-dismissing a third party's offer out from under them. Left open,
+ * a later re-offer would land on that same row and REWRITE it instead of
+ * inserting fresh history beside it, breaking the "read rows are immutable
+ * history" invariant of the lifecycle FSM (docs/NOTIFICATIONS.md).
+ *
+ * Callers pass the group key themselves, so this helper knows nothing about
+ * invites or meals. Scoped to explicit recipients (never a cross-tenant write —
+ * the Drizzle handle bypasses RLS) and idempotent via `read_at IS NULL`: a
+ * second close — the card's own markRead, a retried mutation, an accept racing
+ * an auto-dismiss — matches zero rows rather than restamping history. Dismissed
+ * rows are already out of the open set and stay untouched.
+ *
+ * Called inside the producer's own transaction, exactly like notify(), so a
+ * notification can never be closed for a status transition that rolled back.
+ */
+export async function closeAggregates(
+  tx: NotifyDb,
+  input: { recipientIds: string[]; groupKey: string }
+): Promise<void> {
+  if (input.recipientIds.length === 0) return;
+  await tx
+    .update(notifications)
+    .set({
+      readAt: sql`now()`,
+      // A read row also counts as seen, but an existing sighting time survives
+      // (mirrors markRead).
+      seenAt: sql`COALESCE(${notifications.seenAt}, now())`,
+      updatedAt: sql`now()`,
+    })
+    .where(
+      and(
+        inArray(notifications.recipientId, input.recipientIds),
+        eq(notifications.groupKey, input.groupKey),
+        isNull(notifications.readAt),
+        isNull(notifications.dismissedAt)
+      )
+    );
 }
 
 /**
@@ -221,7 +255,10 @@ export async function retractActor(
       actorCount: notifications.actorCount,
     });
 
-  const emptied = updated.filter((row) => row.actorCount <= 0);
-  if (emptied.length === 0) return;
-  await tx.delete(notifications).where(eq(notifications.id, emptied[0].id));
+  // At most one row can match: the open-aggregate partial unique index admits a
+  // single (recipient, groupKey) row while it is unread and undismissed.
+  const [row] = updated;
+  if (row && row.actorCount <= 0) {
+    await tx.delete(notifications).where(eq(notifications.id, row.id));
+  }
 }

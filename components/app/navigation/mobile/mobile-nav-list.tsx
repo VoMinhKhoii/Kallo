@@ -3,13 +3,17 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
-import { isActiveRoute, type NavItemConfig } from '../nav-items';
+import {
+  isActiveRoute,
+  type NavItemConfig,
+  type NavItemId,
+} from '../nav-items';
 
 interface MobileNavListProps {
   items: readonly NavItemConfig[];
   pathname: string;
   /** Ambient dot counts per nav id (pending offers, unseen notifications). */
-  badgeCounts: Record<string, number>;
+  badgeCounts: Partial<Record<NavItemId, number>>;
   /** Closes the drawer after a nav tap. */
   onNavigate: () => void;
 }

@@ -8,8 +8,18 @@ import {
   Users2,
 } from 'lucide-react';
 
+/** The closed set of nav destinations. Naming them as a union lets the badge
+ *  hook be keyed by real ids instead of any string. */
+export type NavItemId =
+  | 'dashboard'
+  | 'nutrition'
+  | 'logging'
+  | 'groups'
+  | 'activity'
+  | 'admin';
+
 export interface NavItemConfig {
-  id: string;
+  id: NavItemId;
   href: string;
   labelKey: string;
   icon: LucideIcon;

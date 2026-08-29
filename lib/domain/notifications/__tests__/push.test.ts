@@ -9,6 +9,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
+// Push copy renders through next-intl's server-side translator; the global
+// key-echoing double would make every asserted body a key.
+vi.unmock('next-intl');
+
 const { mockSelect, mockDelete } = vi.hoisted(() => ({
   mockSelect: vi.fn(),
   mockDelete: vi.fn(),
@@ -21,6 +25,10 @@ import {
   sendChatMessagePush,
   sendNotificationPush,
 } from '@/lib/domain/notifications/push';
+// The copy itself is pinned against the shipped catalogue in push-copy.test.ts;
+// referencing it here keeps these assertions about WHICH locale reached WHICH
+// device, with no second copy of the sentences to drift.
+import { pushCopy } from '@/lib/domain/notifications/push-copy';
 import type {
   PushMessage,
   PushSender,
@@ -86,7 +94,11 @@ describe('sendNotificationPush', () => {
   it('does nothing at all without recipients', async () => {
     const { sender } = fakeSender(allOk);
 
-    await sendNotificationPush([], { type: 'share.reaction' }, sender);
+    await sendNotificationPush(
+      [],
+      { type: 'share.reaction', actor: { id: FRIEND } },
+      sender
+    );
 
     expect(mockSelect).not.toHaveBeenCalled();
     expect(sender.send).not.toHaveBeenCalled();
@@ -96,7 +108,11 @@ describe('sendNotificationPush', () => {
     queueSelects([]);
     const { sender } = fakeSender(allOk);
 
-    await sendNotificationPush([OWNER], { type: 'share.reaction' }, sender);
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'share.reaction', actor: { id: FRIEND } },
+      sender
+    );
 
     expect(sender.send).not.toHaveBeenCalled();
   });
@@ -117,15 +133,20 @@ describe('sendNotificationPush', () => {
 
     await sendNotificationPush(
       [OWNER, FRIEND],
-      { type: 'share.reaction', actorName: 'Mai' },
+      { type: 'share.reaction', actor: { id: FRIEND, name: 'Mai' } },
       sender
     );
 
+    const reaction = (locale: 'en' | 'vi') =>
+      pushCopy('share.reaction', locale, { actorName: 'Mai' }).body;
     expect(sent[0].map((message) => message.body)).toEqual([
-      'Mai đã thích bữa ăn của bạn',
-      'Mai đã thích bữa ăn của bạn',
-      'Mai reacted to your meal',
+      reaction('vi'),
+      reaction('vi'),
+      reaction('en'),
     ]);
+    // Both locales really are distinct — otherwise the routing above proves
+    // nothing.
+    expect(reaction('vi')).not.toBe(reaction('en'));
     expect(sent[0].every((message) => message.title === 'Kallo')).toBe(true);
   });
 
@@ -138,11 +159,13 @@ describe('sendNotificationPush', () => {
 
     await sendNotificationPush(
       [OWNER],
-      { type: 'friend.joined', actorName: 'Mai' },
+      { type: 'friend.joined', actor: { id: FRIEND, name: 'Mai' } },
       sender
     );
 
-    expect(sent[0][0].body).toBe('Mai joined your circle');
+    expect(sent[0][0].body).toBe(
+      pushCopy('friend.joined', 'en', { actorName: 'Mai' }).body
+    );
   });
 
   it('resolves the actor name from the profile when none was passed', async () => {
@@ -155,11 +178,14 @@ describe('sendNotificationPush', () => {
 
     await sendNotificationPush(
       [OWNER],
-      { type: 'share.logged', actorId: FRIEND },
+      { type: 'share.logged', actor: { id: FRIEND } },
       sender
     );
 
-    expect(sent[0][0].body).toBe('mai logged your meal');
+    // The handle stood in for a missing display name, resolved post-commit.
+    expect(sent[0][0].body).toBe(
+      pushCopy('share.logged', 'en', { actorName: 'mai' }).body
+    );
   });
 
   it('sends the flat string data payload and the group key as collapse key', async () => {
@@ -173,7 +199,7 @@ describe('sendNotificationPush', () => {
       [OWNER],
       {
         type: 'group.added',
-        actorName: 'Mai',
+        actor: { id: FRIEND, name: 'Mai' },
         data: { groupName: 'Trip' },
         targetType: 'chat_group',
         targetId: GROUP,
@@ -186,7 +212,10 @@ describe('sendNotificationPush', () => {
     expect(sent[0][0]).toEqual({
       token: 'owner-phone',
       title: 'Kallo',
-      body: 'Mai added you to Trip',
+      body: pushCopy('group.added', 'en', {
+        actorName: 'Mai',
+        groupName: 'Trip',
+      }).body,
       data: {
         type: 'group.added',
         targetType: 'chat_group',
@@ -214,7 +243,11 @@ describe('sendNotificationPush', () => {
       }))
     );
 
-    await sendNotificationPush([OWNER], { type: 'share.reply' }, sender);
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'share.reply', actor: { id: FRIEND } },
+      sender
+    );
 
     expect(mockDelete).toHaveBeenCalledTimes(1);
     expect(wheres).toHaveLength(1);
@@ -227,7 +260,11 @@ describe('sendNotificationPush', () => {
     );
     const { sender } = fakeSender(allOk);
 
-    await sendNotificationPush([OWNER], { type: 'share.reply' }, sender);
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'share.reply', actor: { id: FRIEND } },
+      sender
+    );
 
     expect(mockDelete).not.toHaveBeenCalled();
   });
@@ -243,7 +280,11 @@ describe('sendNotificationPush', () => {
     };
 
     await expect(
-      sendNotificationPush([OWNER], { type: 'share.reaction' }, sender)
+      sendNotificationPush(
+        [OWNER],
+        { type: 'share.reaction', actor: { id: FRIEND } },
+        sender
+      )
     ).resolves.toBeUndefined();
     expect(errors).toHaveBeenCalled();
     errors.mockRestore();
@@ -261,7 +302,10 @@ describe('sendNotificationPush', () => {
     vi.stubEnv('FCM_SERVICE_ACCOUNT_JSON', '{ not json');
 
     await expect(
-      sendNotificationPush([OWNER], { type: 'share.reaction' })
+      sendNotificationPush([OWNER], {
+        type: 'share.reaction',
+        actor: { id: FRIEND },
+      })
     ).resolves.toBeUndefined();
 
     vi.unstubAllEnvs();
@@ -275,7 +319,10 @@ describe('sendNotificationPush', () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await expect(
-      sendNotificationPush([OWNER], { type: 'share.reaction' })
+      sendNotificationPush([OWNER], {
+        type: 'share.reaction',
+        actor: { id: FRIEND },
+      })
     ).resolves.toBeUndefined();
     expect(errors).toHaveBeenCalled();
     errors.mockRestore();

@@ -5,7 +5,6 @@
 // ---------------------------------------------------------------------------
 
 import { and, eq, getTableColumns, or, sql } from 'drizzle-orm';
-import { after } from 'next/server';
 import { z } from 'zod';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
@@ -17,8 +16,7 @@ import {
 } from '@/lib/core/validation/primitives';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { shareLoggedKey } from '@/lib/domain/notifications/group-keys';
-import { notify } from '@/lib/domain/notifications/notify';
-import { sendNotificationPush } from '@/lib/domain/notifications/push';
+import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { canViewShare } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
@@ -59,9 +57,7 @@ export async function logSharedMealAction(input: {
     'copy_split'
   );
 
-  let pushRecipients: string[] = [];
-
-  const logged = await db.transaction(async (tx) => {
+  return withNotifications(db, async (tx, notify) => {
     if (!(await canViewShare(user.id, parsed.shareId, tx))) {
       throw Errors.notFound('Không tìm thấy bài chia sẻ.');
     }
@@ -109,7 +105,7 @@ export async function logSharedMealAction(input: {
 
     // "N people cooked this" — aggregated per share, and never fired at the
     // owner logging their own meal again (notify() drops self-actions).
-    pushRecipients = await notify(tx, [
+    await notify([
       {
         recipientId: source.shareActorId,
         type: 'share.logged',
@@ -122,13 +118,4 @@ export async function logSharedMealAction(input: {
 
     return copied;
   });
-
-  after(() =>
-    sendNotificationPush(pushRecipients, {
-      type: 'share.logged',
-      actorId: user.id,
-      groupKey: shareLoggedKey(parsed.shareId),
-    })
-  );
-  return logged;
 }

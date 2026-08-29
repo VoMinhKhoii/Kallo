@@ -285,7 +285,7 @@ describe('createShareReplyAction', () => {
       [OWNER, OTHER_REPLIER],
       expect.objectContaining({
         type: 'share.reply',
-        actorId: mockUser.id,
+        actor: { id: mockUser.id },
         groupKey: `share.reply:${SHARE_ID}`,
       })
     );
@@ -376,11 +376,10 @@ describe('createShareReplyAction', () => {
 
     expect(mockNotify).not.toHaveBeenCalled();
     expect(mockTxSelectDistinct).not.toHaveBeenCalled();
-    // The push still schedules, with nobody in it.
-    expect(mockSendNotificationPush).toHaveBeenCalledWith(
-      [],
-      expect.objectContaining({ type: 'share.reply' })
-    );
+    // Nothing was notified, so the wrapper queued nothing: after() still fires
+    // but there is no push to send.
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendNotificationPush).not.toHaveBeenCalled();
   });
 
   // The preview must quote what is stored, never the request body.

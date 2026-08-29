@@ -17,12 +17,14 @@ import { createTranslator } from 'next-intl';
 import enMessages from '@/messages/en/activity.json';
 import viMessages from '@/messages/vi/activity.json';
 
-type AggregateKey = 'shareReaction' | 'shareReply' | 'shareLogged';
+/** The wire types that collapse into "X and N others" — the catalogue nests
+ *  them exactly as the dotted type reads, so the type IS the key path. */
+type AggregateKey = 'share.reaction' | 'share.reply' | 'share.logged';
 
 const AGGREGATE_KEYS: AggregateKey[] = [
-  'shareReaction',
-  'shareReply',
-  'shareLogged',
+  'share.reaction',
+  'share.reply',
+  'share.logged',
 ];
 
 /** The rendered sentence, with the `<b>` wrapper reduced to plain text. */
@@ -65,10 +67,10 @@ describe('activity aggregate copy', () => {
   });
 
   it('names the actor and keeps the per-type verb', () => {
-    expect(renderAggregate(enMessages, 'en', 'shareLogged', 1)).toBe(
+    expect(renderAggregate(enMessages, 'en', 'share.logged', 1)).toBe(
       'Mai and 1 other logged your meal'
     );
-    expect(renderAggregate(enMessages, 'en', 'shareReaction', 2)).toBe(
+    expect(renderAggregate(enMessages, 'en', 'share.reaction', 2)).toBe(
       'Mai and 2 others reacted to your meal'
     );
   });

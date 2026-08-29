@@ -22,21 +22,25 @@ import {
 } from '@/lib/infra/db/schema';
 import { getPushSender } from '@/lib/infra/push/sender';
 import type { PushMessage, PushSender } from '@/lib/infra/push/types';
-import { type PushCopyType, pushCopy, toPushLocale } from './push-copy';
+import {
+  type PushCopyType,
+  type PushCopyValues,
+  pushCopy,
+  toPushLocale,
+} from './push-copy';
 
 /** Longest chat preview that still reads as one glance on a lock screen. */
 const PREVIEW_MAX = 140;
 
 export interface NotificationPushPayload {
   type: PushCopyType;
-  /** Display name of whoever acted — the subject of every template. Pass it
-   *  when the producer already holds it; otherwise pass `actorId` and this
-   *  module resolves it (one extra read, safely after the commit). */
-  actorName?: string;
-  /** Fallback source for `actorName`. */
-  actorId?: string;
-  /** Presentation extras the copy may use (currently `groupName`). */
-  data?: { groupName?: string; preview?: string };
+  /** Whoever acted — the subject of every template. `name` is optional: pass
+   *  it when the producer already holds the display name, otherwise this
+   *  module resolves it from `id` (one extra read, safely after the commit). */
+  actor: { id: string; name?: string };
+  /** Presentation extras the copy interpolates. Same bag `pushCopy` reads,
+   *  minus the actor name, which has its own field above. */
+  data?: Omit<PushCopyValues, 'actorName'>;
   /** Where the tap lands, mirrored into the FCM data payload as strings. */
   targetType?: string;
   targetId?: string;
@@ -65,16 +69,16 @@ function toDataPayload(
  * committed. Undefined falls through to the locale's anonymous label.
  */
 async function resolveActorName(
-  payload: NotificationPushPayload
+  actor: NotificationPushPayload['actor']
 ): Promise<string | undefined> {
-  if (!payload.actorId) return undefined;
+  if (actor.name !== undefined) return actor.name;
   const [row] = await db
     .select({
       displayName: publicProfiles.displayName,
       handle: publicProfiles.handle,
     })
     .from(publicProfiles)
-    .where(eq(publicProfiles.userId, payload.actorId))
+    .where(eq(publicProfiles.userId, actor.id))
     .limit(1);
   return row?.displayName?.trim() || row?.handle || undefined;
 }
@@ -102,7 +106,7 @@ async function buildMessages(
   );
 
   const data = toDataPayload(payload);
-  const actorName = payload.actorName ?? (await resolveActorName(payload));
+  const actorName = await resolveActorName(payload.actor);
   return tokens.map((row) => {
     const { title, body } = pushCopy(
       payload.type,
@@ -182,24 +186,20 @@ export async function sendChatMessagePush(
   },
   sender?: PushSender
 ): Promise<void> {
-  try {
-    if (input.recipientIds.length === 0) return;
-    await sendNotificationPush(
-      input.recipientIds,
-      {
-        type: 'chat.message',
-        actorName: input.senderName,
-        actorId: input.senderId,
-        data: { preview: input.preview.slice(0, PREVIEW_MAX) },
-        targetType: 'chat_group',
-        targetId: input.groupId,
-        // One conversation, one live notice — the newest message replaces the
-        // one before it rather than filling the shade with a transcript.
-        groupKey: `chat:${input.groupId}`,
-      },
-      sender
-    );
-  } catch (error) {
-    console.error('sendChatMessagePush failed', error);
-  }
+  // No try/catch of its own: `sendNotificationPush` already swallows every
+  // failure below it, and nothing here can throw on the way in.
+  await sendNotificationPush(
+    input.recipientIds,
+    {
+      type: 'chat.message',
+      actor: { id: input.senderId, name: input.senderName },
+      data: { preview: input.preview.slice(0, PREVIEW_MAX) },
+      targetType: 'chat_group',
+      targetId: input.groupId,
+      // One conversation, one live notice — the newest message replaces the
+      // one before it rather than filling the shade with a transcript.
+      groupKey: `chat:${input.groupId}`,
+    },
+    sender
+  );
 }

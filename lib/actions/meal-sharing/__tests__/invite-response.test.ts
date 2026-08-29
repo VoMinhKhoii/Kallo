@@ -23,26 +23,26 @@ vi.mock('@/lib/domain/notifications/push', () => ({
 
 // Notifications: this suite asserts WHO gets told; the helper's own upsert and
 // retract semantics live in lib/domain/notifications/__tests__.
-const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
-  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
-  mockRetractActor: vi.fn(
-    async (..._args: unknown[]): Promise<void> => undefined
-  ),
-}));
+const { mockNotify, mockRetractActor, mockCloseAggregates } = vi.hoisted(
+  () => ({
+    mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+    mockRetractActor: vi.fn(
+      async (..._args: unknown[]): Promise<void> => undefined
+    ),
+    mockCloseAggregates: vi.fn(
+      async (..._args: unknown[]): Promise<void> => undefined
+    ),
+  })
+);
 vi.mock('@/lib/domain/notifications/notify', () => ({
   notify: mockNotify,
   retractActor: mockRetractActor,
+  closeAggregates: mockCloseAggregates,
 }));
 
-// Closing the invite's own notification is a domain helper with its own suite
-// (lib/domain/notifications/__tests__/close-invite-notification.test.ts). Here
-// we only assert THAT every resolution path fires it, and for whom.
-const mockCloseInviteNotification = vi.hoisted(() =>
-  vi.fn(async (..._args: unknown[]): Promise<void> => undefined)
-);
-vi.mock('@/lib/domain/notifications/close-invite-notification', () => ({
-  closeInviteNotification: mockCloseInviteNotification,
-}));
+// Closing the aggregate is a domain helper with its own suite
+// (lib/domain/notifications/__tests__/close-aggregates.test.ts). Here we only
+// assert THAT every resolution path fires it, for whom, and on which key.
 
 // ---------------------------------------------------------------------------
 // Mocks — tx.* is the transaction handle both accept and dismiss open; the db
@@ -213,7 +213,7 @@ describe('acceptMealShareInviteAction', () => {
     expect(mockAfter).toHaveBeenCalledTimes(1);
     expect(mockSendNotificationPush).toHaveBeenCalledWith([UUID_FRIEND], {
       type: 'share.invite_accepted',
-      actorId: mockUser.id,
+      actor: { id: mockUser.id },
       groupKey: `share.invite_accepted:${UUID_INVITE}`,
     });
   });
@@ -237,7 +237,7 @@ describe('dismissMealShareInviteAction', () => {
     await expect(
       dismissMealShareInviteAction({ inviteId: UUID_INVITE })
     ).rejects.toThrow('Lời mời');
-    expect(mockCloseInviteNotification).not.toHaveBeenCalled();
+    expect(mockCloseAggregates).not.toHaveBeenCalled();
   });
 
   it('succeeds when a pending invite is dismissed', async () => {
@@ -280,10 +280,11 @@ describe('every resolution closes the invite notification server-side', () => {
       timezoneOffset: -420,
     });
 
-    expect(mockCloseInviteNotification).toHaveBeenCalledTimes(1);
-    expect(mockCloseInviteNotification).toHaveBeenCalledWith(mockTx, {
-      recipientId: mockUser.id,
-      sourceMealId: UUID_MEAL,
+    expect(mockCloseAggregates).toHaveBeenCalledTimes(1);
+    expect(mockCloseAggregates).toHaveBeenCalledWith(mockTx, {
+      recipientIds: [mockUser.id],
+      // Keyed by the SOURCE meal, which is what share.invite aggregates on.
+      groupKey: `share.invite:${UUID_MEAL}`,
     });
   });
 
@@ -294,10 +295,10 @@ describe('every resolution closes the invite notification server-side', () => {
 
     await dismissMealShareInviteAction({ inviteId: UUID_INVITE });
 
-    expect(mockCloseInviteNotification).toHaveBeenCalledTimes(1);
-    expect(mockCloseInviteNotification).toHaveBeenCalledWith(mockTx, {
-      recipientId: mockUser.id,
-      sourceMealId: UUID_MEAL,
+    expect(mockCloseAggregates).toHaveBeenCalledTimes(1);
+    expect(mockCloseAggregates).toHaveBeenCalledWith(mockTx, {
+      recipientIds: [mockUser.id],
+      groupKey: `share.invite:${UUID_MEAL}`,
     });
   });
 
@@ -313,7 +314,7 @@ describe('every resolution closes the invite notification server-side', () => {
         timezoneOffset: -420,
       })
     ).rejects.toThrow('Lời mời');
-    expect(mockCloseInviteNotification).not.toHaveBeenCalled();
+    expect(mockCloseAggregates).not.toHaveBeenCalled();
   });
 });
 

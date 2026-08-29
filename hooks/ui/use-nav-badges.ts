@@ -1,5 +1,6 @@
 'use client';
 
+import type { NavItemId } from '@/components/app/navigation/nav-items';
 import { useUnseenNotificationCount } from '@/hooks/notifications/use-notification-badge';
 import { useMealShareInviteCount } from '@/hooks/social/sharing/use-meal-share-invites';
 
@@ -8,9 +9,9 @@ import { useMealShareInviteCount } from '@/hooks/social/sharing/use-meal-share-i
  *
  * One place so the rail, the drawer and the mobile header can never disagree
  * about which destination is carrying unread state. Ids with no badge source
- * are simply absent — callers read `counts[id] ?? 0`.
+ * are simply absent — hence `Partial`, and callers read `counts[id] ?? 0`.
  */
-export function useNavBadgeCounts(): Record<string, number> {
+export function useNavBadgeCounts(): Partial<Record<NavItemId, number>> {
   const inviteCount = useMealShareInviteCount();
   const unseenCount = useUnseenNotificationCount();
   return { groups: inviteCount, activity: unseenCount };

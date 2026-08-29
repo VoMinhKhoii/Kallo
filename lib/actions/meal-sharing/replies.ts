@@ -5,12 +5,10 @@
 // ---------------------------------------------------------------------------
 
 import { and, eq } from 'drizzle-orm';
-import { after } from 'next/server';
 import { z } from 'zod';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareReplyKey } from '@/lib/domain/notifications/group-keys';
-import { notify } from '@/lib/domain/notifications/notify';
-import { sendNotificationPush } from '@/lib/domain/notifications/push';
+import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import {
   publicProfileColumns,
   toPublicIdentity,
@@ -53,9 +51,7 @@ export async function createShareReplyAction(input: {
   const parsed = createShareReplySchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  let pushRecipients: string[] = [];
-
-  const posted = await db.transaction(async (tx) => {
+  return withNotifications(db, async (tx, notify) => {
     const lockedShares = await tx
       .select({
         id: mealShares.id,
@@ -118,6 +114,18 @@ export async function createShareReplyAction(input: {
     // Worse, `parsed.body` on a retry need not equal what was persisted, so
     // the preview would rewrite history; the persisted `reply.body` is the
     // only authoritative text. `pushRecipients` stays empty on that path.
+    // Hydrated before the fan-out, not after it: the optimistic append needs
+    // this identity anyway, and reading it first lets the push reuse the name
+    // instead of making push.ts re-read the profile post-commit.
+    const [author] = await tx
+      .select({
+        userId: publicProfiles.userId,
+        ...publicProfileColumns,
+      })
+      .from(publicProfiles)
+      .where(eq(publicProfiles.userId, user.id))
+      .limit(1);
+
     if (inserted) {
       // Thread audience: the meal's owner plus everyone who already replied
       // (the insert above is included, hence the author filter). One aggregated
@@ -133,18 +141,19 @@ export async function createShareReplyAction(input: {
       const candidateIds = [
         ...new Set(repliers.map((row) => row.userId)),
       ].filter((id) => id !== user.id && id !== lockedShares[0].actorId);
-      const visibleReplierIds: string[] = [];
-      for (const candidateId of candidateIds) {
-        if (await canViewShareOwnedBy(candidateId, lockedShares[0], tx)) {
-          visibleReplierIds.push(candidateId);
-        }
-      }
+      const visible = await Promise.all(
+        candidateIds.map((candidateId) =>
+          canViewShareOwnedBy(candidateId, lockedShares[0], tx)
+        )
+      );
+      const visibleReplierIds = candidateIds.filter(
+        (_, index) => visible[index]
+      );
       const recipientIds = [
         lockedShares[0].actorId,
         ...visibleReplierIds,
       ].filter((id) => id !== user.id);
-      pushRecipients = await notify(
-        tx,
+      await notify(
         recipientIds.map((recipientId) => ({
           recipientId,
           type: 'share.reply' as const,
@@ -153,18 +162,12 @@ export async function createShareReplyAction(input: {
           objectId: parsed.shareId,
           groupKey: shareReplyKey(parsed.shareId),
           data: { previewBody: reply.body.slice(0, 140) },
-        }))
+        })),
+        {
+          actorName: author?.displayName?.trim() || author?.handle || undefined,
+        }
       );
     }
-
-    const [author] = await tx
-      .select({
-        userId: publicProfiles.userId,
-        ...publicProfileColumns,
-      })
-      .from(publicProfiles)
-      .where(eq(publicProfiles.userId, user.id))
-      .limit(1);
 
     return {
       id: reply.id,
@@ -181,17 +184,4 @@ export async function createShareReplyAction(input: {
       createdAt: reply.createdAt.toISOString(),
     };
   });
-
-  // The author identity is already hydrated for the optimistic append, so the
-  // push reuses it instead of re-reading the profile.
-  after(() =>
-    sendNotificationPush(pushRecipients, {
-      type: 'share.reply',
-      actorName:
-        posted.author.displayName?.trim() || posted.author.handle || undefined,
-      actorId: user.id,
-      groupKey: shareReplyKey(parsed.shareId),
-    })
-  );
-  return posted;
 }

@@ -71,6 +71,29 @@ function shareAccessSql(
   `;
 }
 
+/**
+ * Run one visibility predicate and read its single boolean back.
+ *
+ * Both gates go through `db.execute` rather than `db.select({...})`, because
+ * Drizzle strips the table prefix off every column sitting at the TOP level of
+ * a select field when the query has no joins (`buildSelection`'s
+ * `isSingleTable` path). That turned the membership self-join into
+ * `ON "group_id" = "group_id"` — Postgres 42702, "column reference group_id is
+ * ambiguous", on every cross-user reaction and reply. `sqlToQuery`, which
+ * `db.execute` renders through, qualifies everything. Using it for both gates
+ * is what makes that hazard structural rather than a comment somebody has to
+ * remember: there is no longer a query shape here that can regress into it.
+ *
+ * The `unknown` hop is Drizzle's untyped `execute` return, and it lives here
+ * once instead of at each call site.
+ */
+async function readVisible(db: Db, statement: SQL): Promise<boolean> {
+  const rows = (await db.execute(statement)) as unknown as Array<{
+    visible: boolean | null;
+  }>;
+  return Boolean(rows[0]?.visible);
+}
+
 /** Authorize a share id in exactly one statement. Owners retain access to
  * private shares; cross-user reads require a live friendship or a named-group
  * membership that predates the share for both people. */
@@ -79,32 +102,27 @@ export async function canViewShare(
   shareId: string,
   db: Db = defaultDb
 ): Promise<boolean> {
-  const [row] = await db
-    .select({
-      visible: shareAccessSql(
+  return readVisible(
+    db,
+    sql`
+      SELECT (${shareAccessSql(
         viewerId,
         mealShares.actorId,
         mealShares.sharedAt,
         mealShares.visibility
-      ),
-    })
-    .from(mealShares)
-    .where(eq(mealShares.id, shareId))
-    .limit(1);
-  return Boolean(row?.visible);
+      )}) AS visible
+      FROM ${mealShares}
+      WHERE ${eq(mealShares.id, shareId)}
+      LIMIT 1
+    `
+  );
 }
 
 /** Variant for callers that already locked and read the share row. This skips
- * the duplicate meal_shares read while preserving the same access contract.
- *
- * Executed as a raw statement rather than `db.select({...})`: Drizzle strips
- * the table prefix off every column that sits at the TOP level of a select
- * field when the query has no joins (`buildSelection`'s `isSingleTable` path),
- * which turned the membership self-join into `ON "group_id" = "group_id"` —
- * Postgres 42702, "column reference group_id is ambiguous", on every
- * cross-user reaction and reply. `canViewShare` escapes that only because its
- * columns sit one SQL nesting level deeper, inside `shareAccessSql`.
- * `db.execute` renders through `sqlToQuery`, which qualifies everything. */
+ * the duplicate meal_shares read while preserving the same access contract —
+ * the owner and private short-circuits are the two branches `shareAccessSql`
+ * evaluates in SQL, decided here in TypeScript because the row is already in
+ * hand. */
 export async function canViewShareOwnedBy(
   viewerId: string,
   share: { actorId: string; sharedAt: Date; visibility: string },
@@ -113,7 +131,8 @@ export async function canViewShareOwnedBy(
   if (share.actorId === viewerId) return true;
   if (share.visibility === 'private') return false;
 
-  const rows = (await db.execute(
+  return readVisible(
+    db,
     sql`SELECT (${relationshipAccessSql(
       viewerId,
       share.actorId,
@@ -121,6 +140,5 @@ export async function canViewShareOwnedBy(
       // reaches the driver unserialized and throws.
       sql.param(share.sharedAt, mealShares.sharedAt)
     )}) AS visible`
-  )) as unknown as Array<{ visible: boolean | null }>;
-  return Boolean(rows[0]?.visible);
+  );
 }

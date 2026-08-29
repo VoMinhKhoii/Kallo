@@ -14,7 +14,7 @@ import { cn } from '@/lib/core/ui/cn';
 import type { NotificationItem } from '@/lib/domain/notifications/contracts';
 import { notificationKeys } from '@/lib/domain/notifications/query-keys';
 import { inviteMode } from './notification-copy';
-import { NotificationAvatars, NotificationMessage } from './notification-row';
+import { NotificationAvatars, NotificationMessage } from './notification-parts';
 
 /** The invite's terminal state, as a quiet chip. Only "accepted" names an act:
  *  everything else — dismissed here, dismissed elsewhere, auto-dismissed
@@ -58,7 +58,7 @@ export function ShareInviteRow({
   //
   // Acting on the offer also READS this row, so the card dims immediately.
   // The durable close is server-side: accept/dismiss close the aggregate in
-  // the same transaction as the status transition (closeInviteNotification),
+  // the same transaction as the status transition (closeAggregates),
   // which is what covers resolutions this card never sees — Circle, another
   // device, a split's auto-dismiss. This markRead is the optimistic half and a
   // harmless second close (the server predicate is `read_at IS NULL`).

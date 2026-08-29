@@ -260,9 +260,10 @@ describe('chat-group membership locking', () => {
     expect(mockAfter).toHaveBeenCalledTimes(1);
     expect(mockSendNotificationPush).toHaveBeenCalledWith([MEMBER_ID], {
       type: 'group.added',
-      actorId: OWNER_ID,
-      // The locked group row is the copy source; this double carries no name.
-      data: { groupName: undefined },
+      actor: { id: OWNER_ID },
+      // The locked group row is the copy source; this double carries no name,
+      // and a nameless group contributes no `data` at all — push.ts then falls
+      // back to the locale's "a group".
       targetType: 'chat_group',
       targetId: GROUP_ID,
       groupKey: `group.added:${GROUP_ID}`,
