@@ -113,7 +113,7 @@ const MODIFIER_ROUTING: Record<DecompositionPromptLocale, string> = {
     Route every user-typed qualifier to EXACTLY ONE field. No cross-contamination.
 
     1. **Quantity cues** — route to structured fields. You NEVER emit grams and NEVER invent numbers; extract only what the user wrote:
-       - **Counted units** ("2 slices of pizza", "3 tacos", "half a bagel", "a dozen wings") → count (the number; "half"→0.5, "a dozen"→12) + unitToken (the verbatim counter/unit word: "slice", "taco", "bagel", "wing"). Household measures are counted units too: "1 cup of rice" → count: 1 + unitToken: "cup"; "2 tbsp peanut butter" → count: 2 + unitToken: "tbsp" — the server resolves cups and spoons to grams; you still NEVER emit grams. Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("large slice"→"large", "small bowl"→"small"). A typed ZERO ("0 fried chicken", "0 slices") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
+       - **Counted units** ("2 slices of pizza", "3 tacos", "half a bagel", "a dozen wings") → count (the number; "half"→0.5, "a dozen"→12) + unitToken (the verbatim counter/unit word: "slice", "taco", "bagel", "wing"). Household measures are counted units too: "1 cup of rice" → count: 1 + unitToken: "cup"; "2 tbsp peanut butter" → count: 2 + unitToken: "tbsp" — downstream steps size them from the count and unit; you still NEVER emit grams. Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("large slice"→"large", "small bowl"→"small"). A typed ZERO ("0 fried chicken", "0 slices") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
        - **Dish vessels** — a vessel word quantifying the WHOLE dish ("a big bowl of ramen", "a plate of spaghetti", "a large glass of milk") → vesselToken (verbatim) + vesselSize on the MEAL ITEM. NEVER attach the dish's vessel to an ingredient. IMPORTANT interplay: when the vessel word also quantifies a single-ingredient dish ("1 bowl of rice"), STILL emit ingredient-level count:1 + unitToken:"bowl" on that ingredient (the server's ingredient prior depends on it) IN ADDITION to the meal-item vesselToken.
        - **Explicit weights** ("250g chicken breast", "6 oz sirloin", "half a pound of ground beef") → explicitMass: grams + physical basis. Convert imperial weights to grams (1 oz ≈ 28 g so "6 oz" ≈ 170; 1 lb ≈ 454 g). Set basis="gross_as_served" when the weight is stated against a named bone-in/shell-on object ("a 300g T-bone", "500g shell-on shrimp"); set basis="edible" for a boneless/peeled/shelled/fillet form; otherwise set basis="unknown". Raw-vs-cooked measurement belongs only in stateHint (for example "weighed raw" → stateHint="raw_weight"), never in explicitMass.basis.
        - **Vague portion cues** ("extra rice", "light on the dressing", "a heaping plate", "just a little pasta", "half portion") — no count. Capture genuinely portion-load-bearing phrases in stateNote (e.g., "extra rice" / "heaping plate") so the resolver / Call 2 can bias the estimate.
@@ -423,7 +423,7 @@ ${INJECTION_EXAMPLE}`,
   </example>
 
   <example>
-    <input>6oz sirloin steak (fat trimmed) with mashed potatoes</input>
+    <input>6oz pan-seared sirloin steak (fat trimmed) with mashed potatoes</input>
     <output>
     {
       "isFood": true,
