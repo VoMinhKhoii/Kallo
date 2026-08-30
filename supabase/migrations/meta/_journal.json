@@ -456,6 +456,13 @@
       "when": 1788030914380,
       "tag": "20260830090000_fuzzy_symmetric_tiebreak",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1788034514380,
+      "tag": "20260830091000_fct_row_corrections",
+      "breakpoints": true
     }
   ]
 }
