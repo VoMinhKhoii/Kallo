@@ -1,5 +1,106 @@
 # Changelog
 
+## [1.13.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.12.0...v1.13.0) (2026-08-30)
+
+
+### Features
+
+* **activity:** Threads-style activity page, nav entries and unread badges ([43a4515](https://github.com/VoMinhKhoii/Kallo/commit/43a4515fc104882e23db37d618e2f6fe3aaea17d))
+* **api:** harden agent-facing contracts ([eb0c262](https://github.com/VoMinhKhoii/Kallo/commit/eb0c2623eb455b758491f1fcef2db04e761978f1))
+* **billing:** premium-tier gating across web and mobile ([487941f](https://github.com/VoMinhKhoii/Kallo/commit/487941f45c6b2e80ec55ba0119ad1b5bc746e040))
+* **billing:** re-enable copy/split under an initiator-pays gate ([f520488](https://github.com/VoMinhKhoii/Kallo/commit/f520488b401694bebe50b6388204d50968a6d9ba))
+* **gauge:** size the day's marks from the room they get ([c5cd091](https://github.com/VoMinhKhoii/Kallo/commit/c5cd091e95928cb476208975aa83d586999c495b))
+* **gauge:** size the day's marks from the room they get ([9737705](https://github.com/VoMinhKhoii/Kallo/commit/973770598ad556a803299dac765f844f3fa01b4e))
+* **logging:** staged-meal discard, message copy, and dialog/perf fixes ([d2196a7](https://github.com/VoMinhKhoii/Kallo/commit/d2196a785cefe5087beff78e7fb8d883e9b7dc54))
+* **mobile:** let a staged meal be discarded; fix the composer's tail ([d7432e8](https://github.com/VoMinhKhoii/Kallo/commit/d7432e8e8d37a61b463e4009cad1bb8aa2ff9eaf))
+* **mobile:** press and hold a sent message to copy it ([1540576](https://github.com/VoMinhKhoii/Kallo/commit/154057681519cf11b905ce9e761fe2de86eae8d6))
+* **notifications:** schema, aggregation write path, producers, API and hooks ([7777fb4](https://github.com/VoMinhKhoii/Kallo/commit/7777fb4e2ef2206ecaa96e998e9efec18986bf8f))
+* **nutrition:** explain the complete-day rule on the day summary card ([b383ff0](https://github.com/VoMinhKhoii/Kallo/commit/b383ff0f325bd8ed8626e7c40f3ad22e5ace20a8))
+* **nutrition:** port the gauge dial to the remaining surfaces ([483908d](https://github.com/VoMinhKhoii/Kallo/commit/483908d5b875dc39fe719d6e71418ce2d8a99b00))
+* **nutrition:** require 85% of the calorie target for a fully logged day ([f4fec7e](https://github.com/VoMinhKhoii/Kallo/commit/f4fec7e832af1d61caf5ee667642cbc2b09052e8))
+* **nutrition:** require 85% of the calorie target for a fully logged day ([b8008df](https://github.com/VoMinhKhoii/Kallo/commit/b8008df2b2bb07eb6ffc3e31155139fe737f2d7f))
+* **prompts:** deep composed-dish decomposition examples (vi + global) ([091ca8e](https://github.com/VoMinhKhoii/Kallo/commit/091ca8ea65aef5119a929ca4e3e18d00c4d91d63))
+* **prompts:** locale-block prompt split (vi/global) + locale-aware eval harness ([68bb65d](https://github.com/VoMinhKhoii/Kallo/commit/68bb65db78137437007f62d1b3b0e109b530b6b8))
+* **prompts:** split V2 prompts into base + vi/global locale blocks ([a25b84d](https://github.com/VoMinhKhoii/Kallo/commit/a25b84ded5182ca363773a165e65037ddb05827b))
+* **prompts:** teach ingredient-level decomposition with deep composed-dish examples ([b36e8a7](https://github.com/VoMinhKhoii/Kallo/commit/b36e8a73c2f40832d4f6a8c76517ea52c8d071bb))
+* **push:** FCM pipeline, device token API and producer fan-out ([3e1655a](https://github.com/VoMinhKhoii/Kallo/commit/3e1655aef4ba4f032ebd3bc20ac9f5c1ceda05bc))
+* **seo:** make kallo.fit legible to AI agents ([1a23669](https://github.com/VoMinhKhoii/Kallo/commit/1a236692aba210860acf4705dcd7b32eab9fde60))
+* **seo:** make kallo.fit legible to AI agents ([48bd241](https://github.com/VoMinhKhoii/Kallo/commit/48bd241ec223ce84cdbb5e9f813038ea3a0745e2))
+
+
+### Bug Fixes
+
+* address Codex adversarial review findings on the stack ([cd37bb1](https://github.com/VoMinhKhoii/Kallo/commit/cd37bb1a48084c14080f5cd975fe9d5521b2130e))
+* **auth:** return JSON from email hook ([2e9f71b](https://github.com/VoMinhKhoii/Kallo/commit/2e9f71b063402da81c5bd3fe0802168bd815af7a))
+* **auth:** return JSON from email hook ([e846faa](https://github.com/VoMinhKhoii/Kallo/commit/e846faa7a50e901482fb407ddedd0dc7692a7ad1))
+* **billing:** keep the OG card readable and invalidate on trial expiry ([63c963a](https://github.com/VoMinhKhoii/Kallo/commit/63c963a8a68d5aed49cb4ad2c044d15e33125efe))
+* **chat:** re-verify sender membership under the group lock before sending ([59af09c](https://github.com/VoMinhKhoii/Kallo/commit/59af09ccb2b4ad2f71b7c7db43ba17f4f285b44b))
+* **dashboard:** give the Today card its own height budget ([d487a3d](https://github.com/VoMinhKhoii/Kallo/commit/d487a3d93d4884c616dd1a326755e3efee8eae26))
+* **dashboard:** give the Today card its own height budget ([8494969](https://github.com/VoMinhKhoii/Kallo/commit/84949695b65e5c5d8420d670d326479f3b27befb))
+* **db:** audit remediations — reap grants, retention cron, meals check ([ed2b8a9](https://github.com/VoMinhKhoii/Kallo/commit/ed2b8a93fd1b0ba9d489088d3b6673c32884c693))
+* **db:** harden audit migrations per adversarial review ([cfc3812](https://github.com/VoMinhKhoii/Kallo/commit/cfc38129b54348f2b9cc449a8cfb67227593432c))
+* **db:** make audit migrations standalone-valid on main ([1d11531](https://github.com/VoMinhKhoii/Kallo/commit/1d115316b9814edc7b2acb181de95fbb24b8094e))
+* **db:** move the data-plane migration past main's newest timestamp ([a7532bb](https://github.com/VoMinhKhoii/Kallo/commit/a7532bb62d12ce26448f804c95e73ea6979ca1c8))
+* **db:** override global PUBLIC EXECUTE default for future functions ([5a6381d](https://github.com/VoMinhKhoii/Kallo/commit/5a6381d290e3fbc462768d70041a84dfb0a26138))
+* **db:** prod audit remediations — reap grants, retention cron, meals check ([90b480e](https://github.com/VoMinhKhoii/Kallo/commit/90b480e51e97c3ade2b49914680a5c4be873477f))
+* **db:** prod audit remediations — reap grants, retention cron, meals check ([ff37ecb](https://github.com/VoMinhKhoii/Kallo/commit/ff37ecbc67fda490056829f62e352443b842b8ef))
+* **db:** rename cron loop variable shadowing cron.job ([18d761b](https://github.com/VoMinhKhoii/Kallo/commit/18d761baba8858c09dab08dfd4959a3f43d0d1d3))
+* **eval,matching:** vessel check tolerates deep decomposition; tôm sú/thẻ aliases ([0835574](https://github.com/VoMinhKhoii/Kallo/commit/0835574d9554a46476d7eca8267604a2ee219103))
+* **eval:** derive per-fixture user context from locale tags ([17ab7ee](https://github.com/VoMinhKhoii/Kallo/commit/17ab7eeafd06e5d9321c6d0c70d779186a4d493b))
+* **gauge:** let the logging dial say what the dashboard dial says ([9f660dc](https://github.com/VoMinhKhoii/Kallo/commit/9f660dcba8f513ecf5a2019c896183fc24964505))
+* **gauge:** pick the dial's wording by fit, not by radius ([b96a502](https://github.com/VoMinhKhoii/Kallo/commit/b96a5022fd39dd56ffbfefe4da55b8c20cd13661))
+* **gauge:** pick the dial's wording by fit, not by radius ([f65d9f4](https://github.com/VoMinhKhoii/Kallo/commit/f65d9f404f416dd01b8b0b5aab2beacc3fa3c933))
+* **logging:** stop the feed collapsing to zero width ([50e33c8](https://github.com/VoMinhKhoii/Kallo/commit/50e33c80e540d96d4c6f8469df71379ca06e74c4))
+* **matching:** alias 'carne asada' to the broiled flank-steak row ([06494c7](https://github.com/VoMinhKhoii/Kallo/commit/06494c7ebeb2eb7b13f35dd9abf43499de09641b))
+* **matching:** alias 'carne asada' to the broiled flank-steak row ([172d409](https://github.com/VoMinhKhoii/Kallo/commit/172d409dcb817e054c2f5b1b5522ef13e56e4d77))
+* **matching:** break similarity-saturation ties and show Call 2 the English row name ([5dfd1ee](https://github.com/VoMinhKhoii/Kallo/commit/5dfd1eed1976886aca5b163ca20c6b4a56837f61))
+* **matching:** similarity-saturation tie-break + English row names for Call 2 ([1bb5530](https://github.com/VoMinhKhoii/Kallo/commit/1bb55301f3c3d4fd5d3a75863774845e6c583cb7))
+* **mobile-settings:** tighten the settings index and fix four defects ([693562c](https://github.com/VoMinhKhoii/Kallo/commit/693562cc9eaa0e0e74320b435ea7649cb56af55b))
+* **mobile:** define common.remove, which nothing did ([e4e4e7c](https://github.com/VoMinhKhoii/Kallo/commit/e4e4e7c7d129011dc2febb79b6caa45ee43b8a21))
+* **mobile:** four logging and shell UI fixes ([6434a3d](https://github.com/VoMinhKhoii/Kallo/commit/6434a3d6c33d6bc0d8ecb946c53771ade27ed4c2))
+* **mobile:** give the chat bubble the iOS system context menu ([abcf777](https://github.com/VoMinhKhoii/Kallo/commit/abcf777ae970ffd4433161368686cb7dff82994d))
+* **mobile:** make the swipe-to-delete reveal read as one shape ([8602934](https://github.com/VoMinhKhoii/Kallo/commit/8602934f93942ae30277e14bfe638bc084b93b67))
+* **mobile:** match the confirm dialog's buttons to the rest of the app ([8a73f20](https://github.com/VoMinhKhoii/Kallo/commit/8a73f201153ec9a99aaf74b275de6a919d0ba41b))
+* **mobile:** open the sidebar with a swipe from anywhere ([88bf22f](https://github.com/VoMinhKhoii/Kallo/commit/88bf22f31d5f60950e1060abf98f2e2eac3bb21d))
+* **mobile:** repair two defects the perf refactor introduced ([fe4a0bc](https://github.com/VoMinhKhoii/Kallo/commit/fe4a0bca58b811459507d9eced698f044e271d16))
+* **mobile:** stop the logging feed collapsing to zero width ([a8f5629](https://github.com/VoMinhKhoii/Kallo/commit/a8f56292a40c1273e5f6cdfd228bb6fa649dd16b))
+* **mobile:** travel the newest turn to the top on send ([420ed60](https://github.com/VoMinhKhoii/Kallo/commit/420ed601317daf29b0be754e27ffd1c7d613c845))
+* **mobile:** widen macro labels and unify the confirm dialog ([f6fb1b7](https://github.com/VoMinhKhoii/Kallo/commit/f6fb1b727801a21ce6a8059b6585b604ebaaa5ef))
+* **notifications:** atomic chat audience capture and server-side invite close ([792dbc9](https://github.com/VoMinhKhoii/Kallo/commit/792dbc9ee22f1cee5aa33445be557ef1b87eb7ca))
+* **notifications:** e2e defect fixes — mark-seen precision, plural copy, visibility 500 ([b6babd2](https://github.com/VoMinhKhoii/Kallo/commit/b6babd2e007244d46330481930ff0cee6087be2a))
+* **notifications:** exact aggregate membership, push once per open aggregate, neutral invite chip ([d6379f2](https://github.com/VoMinhKhoii/Kallo/commit/d6379f2ea23a12b7bcbc32a1604596784ecb70fb))
+* **notifications:** first-mount feed healing and deterministic lock order ([f7dc646](https://github.com/VoMinhKhoii/Kallo/commit/f7dc646ddc4bc6cc52a0f2bdb74a51bd51c459e8))
+* **notifications:** FOR UPDATE re-badge classification and activity watermark badge ([e38b502](https://github.com/VoMinhKhoii/Kallo/commit/e38b5026ab295dfcf5a4f0e2f4a01f1fb22af1e3))
+* **notifications:** push on insert or seen-to-unseen re-badge; badge poll invalidates feed ([574c54d](https://github.com/VoMinhKhoii/Kallo/commit/574c54d6232470cea86c4e1598402e4416324d69))
+* **notifications:** re-gate reply fan-out on live visibility; text-safe notify.ts ([695a3c4](https://github.com/VoMinhKhoii/Kallo/commit/695a3c4f702f1d066970f004d0bca2d50338b851))
+* **notifications:** stage-2 implementation review fixes ([44aa378](https://github.com/VoMinhKhoii/Kallo/commit/44aa3789c24bfe18578216d62d23d5a9bceefc84))
+* **nutrition:** scope all micronutrients by bucket ([565b54a](https://github.com/VoMinhKhoii/Kallo/commit/565b54a9b18a6eb7738e80d5df5fc31226a82818))
+* **nutrition:** scope all micronutrients by bucket ([ebc6d16](https://github.com/VoMinhKhoii/Kallo/commit/ebc6d161c7f1955bf8de11eea620ee9811b6a2c7))
+* **seo:** align canonical language signals ([c8d61d2](https://github.com/VoMinhKhoii/Kallo/commit/c8d61d223b8bcad2c04d3f01bd6e22c448ba2a0a))
+* **seo:** align canonical language signals ([09b94c6](https://github.com/VoMinhKhoii/Kallo/commit/09b94c6cd13f09fe422b819c3c8b4860cd33994a))
+
+
+### Performance
+
+* **mobile:** stop the drawer and date picker rebuilding as they animate ([3a86cb6](https://github.com/VoMinhKhoii/Kallo/commit/3a86cb606a3cfa472e87e7faf9f6fd2403347f67))
+
+
+### Refactor
+
+* **gauge:** give the dials one owner per concept ([bdf1827](https://github.com/VoMinhKhoii/Kallo/commit/bdf182715632288b4fbe9c996dce44806029f5b0))
+* **gauge:** split the strip along its own seams ([2bb3a16](https://github.com/VoMinhKhoii/Kallo/commit/2bb3a164d2895adb04c1bd3e1054328c597ec087))
+* **legal-links:** open privacy and terms in an in-app browser ([952686d](https://github.com/VoMinhKhoii/Kallo/commit/952686dbf88eaf3053a4ac6c5db5c9409797d94e))
+* **mobile:** address thermo-nuclear review findings ([c722528](https://github.com/VoMinhKhoii/Kallo/commit/c722528f14308726594fa52f9be4722fd2684e30))
+* **mobile:** split the week strip's chevron into its own file ([0b86786](https://github.com/VoMinhKhoii/Kallo/commit/0b867863721f1caad99550205c1174653ef48743))
+* **notifications:** atomic rebadge classification via upsert-set column ([905a642](https://github.com/VoMinhKhoii/Kallo/commit/905a64276c182436f401ae4b80e345c97d82b0ca))
+* **notifications:** quality-review cleanups — producer helper, single catalogues ([a1320d1](https://github.com/VoMinhKhoii/Kallo/commit/a1320d15e63690de92e4393e6bf09f96e08c00dd))
+
+
+### Documentation
+
+* notification system technical design ([5370400](https://github.com/VoMinhKhoii/Kallo/commit/537040086e378092907298d56b69396c7eee6798))
+* **notifications:** record accepted in-flight unfriend delivery limitation ([2c3b680](https://github.com/VoMinhKhoii/Kallo/commit/2c3b680cd4d6f1b406d48fe9d308530a24bb06eb))
+
 ## [1.12.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.11.0...v1.12.0) (2026-08-22)
 
 

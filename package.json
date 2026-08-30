@@ -1,6 +1,6 @@
 {
   "name": "nham",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "private": true,
   "scripts": {
     "setup:env": "node scripts/dev/link-worktree-env.mjs",
