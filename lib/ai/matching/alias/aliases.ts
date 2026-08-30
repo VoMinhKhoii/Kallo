@@ -81,6 +81,16 @@ export const EXACT_ALIASES: Record<string, ExactAlias> = {
   'instant noodles': { lang: 'en', target: INSTANT_NOODLE_ROW },
   'instant noodle': { lang: 'en', target: INSTANT_NOODLE_ROW },
   'instant ramen': { lang: 'en', target: INSTANT_NOODLE_ROW },
+  // Carne asada = grilled marinated flank/skirt steak. The dish name has no
+  // DB row and no trigram/embedding bridge to the beef-cut rows (golden-set
+  // gg-mx-tacos: unmatched → freeform ~80g-protein overestimate). Rewrites to
+  // the broiled flank row usda_13948_cooked (verified name_primary,
+  // 192 kcal / 27.7 P / 8.2 F per 100g — lean AND fat, all grades).
+  'carne asada': {
+    lang: 'en',
+    target:
+      'Thịt bò, phần sườn, bít tết, phần nạc và mỡ tách riêng, đã cắt bỏ phần mỡ (không còn mỡ), đủ mọi loại, đã nấu chín, nướng.',
+  },
 };
 
 /**
