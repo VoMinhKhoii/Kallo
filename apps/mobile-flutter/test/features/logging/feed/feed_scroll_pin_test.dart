@@ -35,7 +35,7 @@ void main() {
       _host(handle: handle, controller: controller, items: 10),
     );
 
-    handle.pinToBottom();
+    handle.pinToBottom('2026-01-01');
     await tester.pumpAndSettle();
 
     expect(controller.position.pixels, controller.position.maxScrollExtent);
@@ -48,7 +48,7 @@ void main() {
     await tester.pumpWidget(
       _host(handle: handle, controller: controller, items: 10),
     );
-    handle.pinToBottom();
+    handle.pinToBottom('2026-01-01');
     await tester.pumpAndSettle();
     final firstBottom = controller.position.maxScrollExtent;
 
@@ -71,7 +71,7 @@ void main() {
     await tester.pumpWidget(
       _host(handle: handle, controller: controller, items: 10),
     );
-    handle.pinToBottom();
+    handle.pinToBottom('2026-01-01');
     await tester.pumpAndSettle();
 
     // Drag downward — reading older cards.
@@ -102,7 +102,7 @@ void main() {
     await tester.pumpWidget(
       _host(handle: handle, controller: controller, items: 10),
     );
-    handle.pinToBottom();
+    handle.pinToBottom('2026-01-01');
     await tester.pumpAndSettle();
     await tester.drag(find.byType(ListView), const Offset(0, 250));
     await tester.pumpAndSettle();

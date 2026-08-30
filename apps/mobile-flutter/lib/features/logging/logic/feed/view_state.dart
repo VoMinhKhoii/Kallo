@@ -15,6 +15,7 @@ import 'feed_entries.dart';
 /// below it stay presentational.
 class FeedViewState {
   const FeedViewState({
+    required this.date,
     required this.persistedMeals,
     required this.pendingConfirmations,
     required this.entries,
@@ -166,6 +167,7 @@ class FeedViewState {
         isLikelyPartialDay(dailyCalories.toDouble(), profile.calorieTarget);
 
     return FeedViewState(
+      date: date,
       persistedMeals: persistedMeals,
       pendingConfirmations: pendingConfirmations,
       entries: entries,
@@ -185,6 +187,11 @@ class FeedViewState {
       showPartialDayNotice: showPartialDayNotice,
     );
   }
+
+  /// The day this state describes, `yyyy-MM-dd`. The feed stays mounted
+  /// across day changes, so anything that must reset when the user pages —
+  /// the tail room, for one — compares against this.
+  final String date;
 
   /// The day's saved meals, oldest first, minus the ones inside an undo window.
   final List<PersistedMeal> persistedMeals;
