@@ -433,4 +433,90 @@ describe('renderPriorLines', () => {
     expect(labels).toContain('lát bánh mì');
     expect(labels).toContain('ổ bánh mì');
   });
+
+  it('global locale translates every prior label (no untranslated VN fallback)', () => {
+    const viLabels = renderPriorLines('vi')
+      .split('\n')
+      .map((line) => line.match(/- 1 (.+) ≈/)?.[1]);
+    const globalLabels = renderPriorLines('global')
+      .split('\n')
+      .map((line) => line.match(/- 1 (.+) ≈/)?.[1]);
+
+    expect(globalLabels).toHaveLength(viLabels.length);
+    expect(new Set(globalLabels).size).toBe(globalLabels.length);
+    // Every VN label must map to a DIFFERENT English label — an identical
+    // pair means the GLOBAL map is missing that key and silently fell back.
+    for (let index = 0; index < viLabels.length; index++) {
+      expect(globalLabels[index]).not.toBe(viLabels[index]);
+    }
+    // Gross-basis qualifiers must survive translation.
+    expect(globalLabels).toContain('rib piece (bone-in)');
+    expect(globalLabels).toContain('whole crab (shell-on)');
+  });
+});
+
+describe('candidate db_name_en rendering (global locale)', () => {
+  const enUserContext: PromptPersonalizationContext = {
+    ...baseUserContext,
+    countryOfOrigin: 'United States',
+    countryOfResidence: 'United States',
+    inputLanguage: 'en',
+    outputLanguage: 'en',
+  };
+  const rollCandidate = candidate({
+    dbName: 'Ức gà, cuộn, nướng lò',
+    dbNameEn: 'Chicken breast, roll, oven-roasted',
+  });
+
+  it('vi locale renders NO db_name_en and no locale verdict note', () => {
+    const out = buildGroundedEstimationPrompt({
+      originalPrompt: 'ức gà nướng',
+      mealItems: [mealItemWithIng([rollCandidate])],
+      userContext: baseUserContext,
+    });
+    expect(out).not.toContain('db_name_en=');
+    expect(out).not.toContain('SAME row’s English name'.normalize());
+    expect(out).not.toContain('db_name_en (when present)');
+  });
+
+  it('global locale renders db_name_en beside db_name plus the verdict note', () => {
+    const out = buildGroundedEstimationPrompt({
+      originalPrompt: 'grilled chicken breast',
+      mealItems: [mealItemWithIng([rollCandidate])],
+      userContext: enUserContext,
+    });
+    expect(out).toContain(
+      'db_name="Ức gà, cuộn, nướng lò" db_name_en="Chicken breast, roll, oven-roasted"'
+    );
+    expect(out).toContain('db_name_en (when present)');
+  });
+
+  it('global locale omits db_name_en when missing or identical to db_name', () => {
+    const out = buildGroundedEstimationPrompt({
+      originalPrompt: 'grilled chicken breast',
+      mealItems: [
+        mealItemWithIng([
+          candidate({ dbName: 'Chicken broth', dbNameEn: 'Chicken broth' }),
+        ]),
+        mealItemWithIng([candidate({ dbNameEn: null })]),
+      ],
+      userContext: enUserContext,
+    });
+    expect(out).not.toContain('db_name_en=');
+  });
+});
+
+describe('buildStaticPrefix locale blocks', () => {
+  it('vi (default) keeps the VN density priors; global swaps them', () => {
+    const vi = buildStaticPrefix(false);
+    expect(vi).toContain('nem lụi ~250–290 kcal/100g');
+    expect(vi).not.toContain('pizza slice');
+
+    const global = buildStaticPrefix(false, 'global');
+    expect(global).toContain('pizza slice ~250–300 kcal/100g');
+    expect(global).not.toContain('nem lụi ~250–290');
+    // Shared cap and refuse anchors stay in both variants.
+    expect(global).toContain('Stay under 900 kcal/100g');
+    expect(global).toContain('rib ≈ 40–60%');
+  });
 });

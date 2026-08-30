@@ -15,6 +15,7 @@ import type {
  *   match_ingredients_all_sources / fuzzy_match_ingredients_all_sources
  *     — supabase/migrations/20260612181500_pipeline_matching_all_sources.sql
  *     — supabase/migrations/20260812062644_fuzzy_search_best_field_ranking.sql
+ *     — supabase/migrations/20260830090000_fuzzy_symmetric_tiebreak.sql
  *
  *   RETURNS TABLE (
  *     id text, name_primary text, name_alt text[], name_en text,

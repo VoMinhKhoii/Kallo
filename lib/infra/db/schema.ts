@@ -236,6 +236,12 @@ export const meals = pgTable(
       .notNull()
       .references(() => authUsers.id, { onDelete: 'cascade' }),
     rawInput: text('raw_input').notNull(),
+    // Nullable for legacy, manual, barcode, OCR, and relog rows. AI confirms
+    // copy the originating pipeline request id for request-to-meal joins.
+    pipelineRequestId: uuid('pipeline_request_id').references(
+      () => pipelineRequests.id,
+      { onDelete: 'set null' }
+    ),
     mealSlot: text('meal_slot'),
     slotOverride: boolean('slot_override').default(false),
     confidenceOverall: text('confidence_overall'),
@@ -676,6 +682,11 @@ export const pendingAnalyses = pgTable(
     // paths (barcode, cheat-repeat) have none, and PG treats NULLs as distinct
     // in the unique index below, so they never collide.
     attemptId: uuid('attempt_id'),
+    // Only the AI stream sets this; non-AI staging paths leave it NULL.
+    pipelineRequestId: uuid('pipeline_request_id').references(
+      () => pipelineRequests.id,
+      { onDelete: 'set null' }
+    ),
     // Mirrors meals.entry_mode so confirmAndSaveMealAction can branch without
     // unpacking the JSONB. 'precise' is the default pipeline.
     entryMode: text('entry_mode').notNull().default('precise'),
@@ -704,6 +715,74 @@ export const pendingAnalyses = pgTable(
     uniqueIndex('pending_analyses_user_attempt_key').on(
       table.userId,
       table.attemptId
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// First-party product telemetry
+// ---------------------------------------------------------------------------
+
+/**
+ * Client events accepted by POST /api/v1/telemetry. The API contract is the
+ * primary shape guard; these checks protect the table from future writers that
+ * bypass that route. No raw meal text, email, IP, or user-agent is stored.
+ */
+export const productTelemetryEvents = pgTable(
+  'product_telemetry_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => authUsers.id, {
+      onDelete: 'cascade',
+    }),
+    eventId: uuid('event_id').notNull(),
+    schemaVersion: smallint('schema_version').notNull(),
+    eventName: text('event_name').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    platform: text('platform').notNull(),
+    appVersion: text('app_version'),
+    anonymousId: text('anonymous_id'),
+    sessionId: text('session_id'),
+    consent: boolean('consent').notNull(),
+    locale: text('locale'),
+    pipelineRequestId: uuid('pipeline_request_id').references(
+      () => pipelineRequests.id,
+      { onDelete: 'set null' }
+    ),
+    mealId: uuid('meal_id').references(() => meals.id, {
+      onDelete: 'set null',
+    }),
+    // Properties are already constrained by lib/api/contracts/telemetry/events.ts.
+    properties: jsonb('properties')
+      .$type<Record<string, boolean | number | string>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    receivedAt: timestamp('received_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('product_telemetry_events_event_id_key').on(table.eventId),
+    check(
+      'product_telemetry_events_identity_check',
+      sql`${table.userId} IS NOT NULL OR (${table.anonymousId} IS NOT NULL AND ${table.consent} = true)`
+    ),
+    check(
+      'product_telemetry_events_schema_version_check',
+      sql`${table.schemaVersion} = 1`
+    ),
+    check(
+      'product_telemetry_events_name_check',
+      sql`${table.eventName} IN ('app_opened', 'screen_viewed', 'signup_started', 'signup_completed', 'meal_analysis_started', 'meal_analysis_completed', 'meal_analysis_failed', 'meal_saved', 'meal_discarded', 'meal_edited', 'onboarding_step_viewed', 'onboarding_step_completed', 'onboarding_completed', 'feature_viewed', 'feature_used', 'feature_adopted', 'feedback_submitted', 'api_request_failed', 'app_crashed', 'performance_measured', 'health_check_failed')`
+    ),
+    check(
+      'product_telemetry_events_platform_check',
+      sql`${table.platform} IN ('web', 'ios', 'android')`
+    ),
+    index('product_telemetry_events_occurred_at_idx').on(table.occurredAt),
+    index('product_telemetry_events_name_occurred_at_idx').on(
+      table.eventName,
+      table.occurredAt
     ),
   ]
 );

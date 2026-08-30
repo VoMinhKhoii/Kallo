@@ -113,6 +113,86 @@ describe('decomposition-v2 prompt', () => {
   });
 });
 
+describe('decomposition-v2 locale blocks', () => {
+  const enUserContext: PromptPersonalizationContext = {
+    ...baseUserContext,
+    countryOfOrigin: 'United States',
+    countryOfResidence: 'United States',
+    inputLanguage: 'en',
+    outputLanguage: 'en',
+  };
+
+  it('vi context renders the VN block-set plus the language contract', () => {
+    const out = buildDecompositionV2Prompt(baseUserContext);
+    expect(out).toMatch(/"đùi gà" \(thigh\)/);
+    expect(out).toMatch(/"nấu" means cook\/absorb water/);
+    expect(out).toMatch(/thịt kho trứng/);
+    expect(out).toMatch(/output_language=vi/);
+  });
+
+  it('en context renders the global block-set plus the language contract', () => {
+    const out = buildDecompositionV2Prompt(enUserContext);
+    expect(out).toMatch(/"chicken thigh" → keep as "chicken thigh"/);
+    expect(out).toMatch(/"grilled" usually means direct heat/);
+    expect(out).toMatch(/pepperoni pizza/);
+    expect(out).toMatch(/output_language=en/);
+    // VN-specific rules must NOT leak into the global variant.
+    expect(out).not.toMatch(/"đùi gà" \(thigh\)/);
+    expect(out).not.toMatch(/thịt kho trứng/);
+  });
+
+  it('global variant carries the new household-measure and imperial-weight cues', () => {
+    const out = buildDecompositionV2Prompt(enUserContext);
+    expect(out).toMatch(/unitToken: "cup"/);
+    expect(out).toMatch(/unitToken: "tbsp"/);
+    expect(out).toMatch(/1 oz ≈ 28 g/);
+    expect(out).toMatch(/1 lb ≈ 454 g/);
+    expect(out).toMatch(
+      /"explicitMass": \{ "grams": 170, "basis": "edible" \}/
+    );
+  });
+
+  it('both locales share the load-bearing invariants', () => {
+    for (const ctx of [baseUserContext, enUserContext]) {
+      const out = buildDecompositionV2Prompt(ctx);
+      // Injection hardening + adversarial example.
+      expect(out).toMatch(/<input_handling>/);
+      expect(out).toMatch(/plastic bottle smoothie/);
+      // Cooking-fat carrier contract (exact rawName list).
+      expect(out).toMatch(/"dầu ăn", "oil", "butter", "mỡ heo"/);
+      // Never-grams contract + the shared ramen vessel example.
+      expect(out).toMatch(/NEVER emit grams/);
+      expect(out).toMatch(/a big bowl of chicken ramen/);
+      // All 5 modifier-routing categories.
+      expect(out).toMatch(/Same-food density tweaks/);
+    }
+  });
+
+  it('both locales carry a deep composed-dish decomposition example', () => {
+    const vi = buildDecompositionV2Prompt(baseUserContext);
+    // cơm tấm plate: dish names become meal items, ingredients are single
+    // DB-matchable foods ("cơm tấm" → canonical "Cơm"; chả trứng decomposed).
+    expect(vi).toMatch(/cơm tấm sườn bì chả trứng/);
+    expect(vi).toMatch(/"rawName": "cơm tấm", "canonicalName": "Cơm"/);
+    expect(vi).toMatch(/"rawName": "mộc nhĩ", "canonicalName": "Mộc nhĩ"/);
+
+    const en = buildDecompositionV2Prompt(enUserContext);
+    expect(en).toMatch(/bbq plate: pulled pork, 2 pork ribs/);
+    expect(en).toMatch(/"count": 2, "unitToken": "rib"/);
+    expect(en).toMatch(/"rawName": "black beans"/);
+  });
+
+  it('undefined outputLanguage keeps the original vi rendering with no language section', () => {
+    const out = buildDecompositionV2Prompt({
+      ...baseUserContext,
+      inputLanguage: undefined,
+      outputLanguage: undefined,
+    });
+    expect(out).toMatch(/"đùi gà" \(thigh\)/);
+    expect(out).not.toMatch(/<language>/);
+  });
+});
+
 describe('wrapUserMealTextAsData — prompt-injection delimiter', () => {
   it('wraps plain input in the named data delimiter', () => {
     const out = wrapUserMealTextAsData('cơm gà');

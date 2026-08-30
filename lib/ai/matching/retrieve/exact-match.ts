@@ -26,6 +26,7 @@ const EXACT_MATCH_SIMILARITY = 1;
 type ExactMatchRow = {
   id: string;
   name_primary: string;
+  name_en: string | null;
   state: string;
 };
 
@@ -53,7 +54,7 @@ export async function resolveExactMatch(
 
   try {
     const rows = await db.execute<ExactMatchRow>(
-      sql`SELECT id, name_primary, state
+      sql`SELECT id, name_primary, name_en, state
           FROM vietnamese_food_composition
           WHERE source_id = 1
             AND (
@@ -75,6 +76,7 @@ export async function resolveExactMatch(
       ingredientName: matchingName,
       foodCompositionId: row.id,
       matchedName: row.name_primary,
+      ...(row.name_en ? { matchedNameEn: row.name_en } : {}),
       similarity: EXACT_MATCH_SIMILARITY,
       confidence: classifyConfidence(EXACT_MATCH_SIMILARITY),
       state: normalizeState(row.state),
