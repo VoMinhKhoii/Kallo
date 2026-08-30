@@ -18,6 +18,10 @@ class PersistedMealCardContent extends StatelessWidget {
     required this.curvedExpand,
     required this.onToggle,
     this.editorBody,
+    this.borderRadius = const BorderRadius.all(
+      Radius.circular(KalloRadii.containerLg),
+    ),
+    this.showShadow = true,
   });
 
   final PersistedMeal meal;
@@ -30,6 +34,14 @@ class PersistedMealCardContent extends StatelessWidget {
   /// enter/exit animation overlaps the swap, mirroring the web's amount editor.
   final Widget? editorBody;
 
+  /// The card's shape. Squared on the trailing side mid-swipe, so the card and
+  /// the removal panel behind it meet on a straight seam — see [SwipeToRemove].
+  final BorderRadius borderRadius;
+
+  /// Dropped mid-swipe: cast onto the red panel the lift reads as grime along
+  /// the seam.
+  final bool showShadow;
+
   @override
   Widget build(BuildContext context) {
     final n = meal.nutrition;
@@ -38,9 +50,9 @@ class PersistedMealCardContent extends StatelessWidget {
       padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: KalloColors.elev,
-        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        borderRadius: borderRadius,
         border: Border.all(color: KalloColors.borderSoft),
-        boxShadow: const [KalloShadows.sm],
+        boxShadow: showShadow ? const [KalloShadows.sm] : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

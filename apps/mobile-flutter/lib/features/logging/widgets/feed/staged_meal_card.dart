@@ -7,8 +7,8 @@ import '../../../../models/logging/meal.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
 import '../cheat/cheat_slider_card.dart';
-import '../entry/confirm_meal_removal.dart';
-import '../entry/meal_action_icon_button.dart';
+import '../entry/actions/confirm_meal_removal.dart';
+import '../entry/actions/meal_action_icon_button.dart';
 import '../entry/meal_entry.dart';
 import '../turn/turn_header.dart';
 

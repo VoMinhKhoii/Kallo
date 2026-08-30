@@ -11,9 +11,10 @@ import '../../logic/format.dart';
 import '../../logic/logging_spacing.dart';
 import 'cheat_meal_expanded_details.dart';
 import 'cheat_slider_card.dart' show CheatBadge;
-import '../entry/confirm_meal_removal.dart';
+import '../entry/actions/confirm_meal_removal.dart';
+import '../entry/actions/swipe_to_remove.dart';
 import '../turn/turn_header.dart';
-import '../entry/meal_action_icon_button.dart';
+import '../entry/actions/meal_action_icon_button.dart';
 
 /// A saved cheat meal in the day's feed — accent-tinted (never red), the
 /// PartyPopper badge, an `≈`-prefixed calorie total, and an expandable
@@ -67,41 +68,6 @@ class _CheatMealCardState extends State<CheatMealCard>
     super.dispose();
   }
 
-  Widget _maybeDismissible(Widget card) {
-    final onRemove = widget.onRemove;
-    if (onRemove == null) return card;
-    return Dismissible(
-      key: ValueKey('dismiss-${widget.meal.id}'),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (_) => confirmMealRemoval(context),
-      onDismissed: (_) => onRemove(),
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp5),
-        decoration: BoxDecoration(
-          color: KalloColors.danger,
-          borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              LucideIcons.trash2300,
-              size: LoggingIcons.size,
-              color: Colors.white,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'logging.remove'.tr(),
-              style: dashBody(color: Colors.white, weight: FontWeight.w500),
-            ),
-          ],
-        ),
-      ),
-      child: card,
-    );
-  }
-
   /// `P: … C: … F: …` plus alcohol when present — the shared macro line.
   String _macroLine(PersistedMeal meal) {
     final n = meal.nutrition;
@@ -135,98 +101,103 @@ class _CheatMealCardState extends State<CheatMealCard>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TurnHeader(time: time, message: meal.rawInput),
-        _maybeDismissible(
-          Container(
-            padding: LoggingSpacing.card,
-            decoration: BoxDecoration(
-              // Warm accent tint over the card white (web bg-kallo-accent/4).
-              color: Color.alphaBlend(KalloColors.accent05, KalloColors.elev),
-              borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-              border: Border.all(color: KalloColors.accent30),
-              boxShadow: const [KalloShadows.sm],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _toggle,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CheatBadge(
-                              label: 'logging.cheatMealCard.badge'.tr(),
+        SwipeToRemove(
+          mealId: meal.id,
+          onRemove: widget.onRemove,
+          builder:
+              (context, radius, swiping) => Container(
+                padding: LoggingSpacing.card,
+                decoration: BoxDecoration(
+                  // Warm accent tint over the card white (web bg-kallo-accent/4).
+                  color: Color.alphaBlend(
+                    KalloColors.accent05,
+                    KalloColors.elev,
+                  ),
+                  borderRadius: radius,
+                  border: Border.all(color: KalloColors.accent30),
+                  boxShadow: swiping ? null : const [KalloShadows.sm],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _toggle,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CheatBadge(
+                                  label: 'logging.cheatMealCard.badge'.tr(),
+                                ),
+                                const SizedBox(height: KalloSpacing.sp2),
+                                KalloText(
+                                  meal.rawInput,
+                                  variant: KalloTextVariant.mealQuote,
+                                  style: const TextStyle(
+                                    fontSize: 17,
+                                    height: 28 / 17,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: KalloSpacing.sp2),
-                            KalloText(
-                              meal.rawInput,
-                              variant: KalloTextVariant.mealQuote,
-                              style: const TextStyle(
-                                fontSize: 17,
-                                height: 28 / 17,
+                          ),
+                          const SizedBox(width: KalloSpacing.sp3),
+                          _ChevronToggle(expand: _expand, onTap: _toggle),
+                        ],
+                      ),
+                    ),
+
+                    // Collapsed summary — fades + collapses height as it expands.
+                    AnimatedBuilder(
+                      animation: curvedExpand,
+                      builder: (context, child) {
+                        final t = curvedExpand.value;
+                        final fade = (1 - (t / 0.75)).clamp(0.0, 1.0);
+                        return ClipRect(
+                          child: Align(
+                            heightFactor: (1 - t),
+                            child: Opacity(opacity: fade, child: child),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: KalloSpacing.sp2),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                _macroLine(meal),
+                                style: dashMeta(tabular: true),
                               ),
                             ),
+                            const SizedBox(width: KalloSpacing.sp3),
+                            Text(caloriesApprox, style: dashValue()),
                           ],
                         ),
                       ),
-                      const SizedBox(width: KalloSpacing.sp3),
-                      _ChevronToggle(expand: _expand, onTap: _toggle),
-                    ],
-                  ),
-                ),
+                    ),
 
-                // Collapsed summary — fades + collapses height as it expands.
-                AnimatedBuilder(
-                  animation: curvedExpand,
-                  builder: (context, child) {
-                    final t = curvedExpand.value;
-                    final fade = (1 - (t / 0.75)).clamp(0.0, 1.0);
-                    return ClipRect(
-                      child: Align(
-                        heightFactor: (1 - t),
-                        child: Opacity(opacity: fade, child: child),
+                    // Expanded details — the "you set" recap + total + reassurance.
+                    SizeTransition(
+                      sizeFactor: curvedExpand,
+                      alignment: Alignment.topCenter,
+                      child: FadeTransition(
+                        opacity: curvedExpand,
+                        child: CheatMealExpandedDetails(
+                          meal: meal,
+                          macroLine: _macroLine(meal),
+                          caloriesApprox: caloriesApprox,
+                        ),
                       ),
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: KalloSpacing.sp2),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            _macroLine(meal), style: dashMeta(tabular: true),),
-                        ),
-                        const SizedBox(width: KalloSpacing.sp3),
-                        Text(
-                          caloriesApprox,
-                          style: dashValue(),
-                        ),
-                      ],
                     ),
-                  ),
+                  ],
                 ),
-
-                // Expanded details — the "you set" recap + total + reassurance.
-                SizeTransition(
-                  sizeFactor: curvedExpand,
-                  alignment: Alignment.topCenter,
-                  child: FadeTransition(
-                    opacity: curvedExpand,
-                    child: CheatMealExpandedDetails(
-                      meal: meal,
-                      macroLine: _macroLine(meal),
-                      caloriesApprox: caloriesApprox,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
         ),
         if (widget.onRemove != null) ...[
           const SizedBox(height: LoggingSpacing.actions),

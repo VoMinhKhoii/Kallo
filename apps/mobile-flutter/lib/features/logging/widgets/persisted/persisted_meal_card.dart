@@ -1,13 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
-import '../entry/confirm_meal_removal.dart';
+import '../entry/actions/swipe_to_remove.dart';
 import '../turn/turn_header.dart';
 import 'persisted_meal_actions.dart';
 import 'persisted_meal_amount_editor.dart';
@@ -72,43 +69,6 @@ class _PersistedMealCardState extends State<PersistedMealCard>
     super.dispose();
   }
 
-  /// Wrap the card in a trailing-swipe-to-remove Dismissible (destructive red)
-  /// when [onRemove] is set; otherwise return the card untouched.
-  Widget _maybeDismissible(Widget card) {
-    final onRemove = widget.onRemove;
-    if (onRemove == null) return card;
-    return Dismissible(
-      key: ValueKey('dismiss-${widget.meal.id}'),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (_) => confirmMealRemoval(context),
-      onDismissed: (_) => onRemove(),
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp5),
-        decoration: BoxDecoration(
-          color: KalloColors.danger,
-          borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              LucideIcons.trash2300,
-              size: LoggingIcons.size,
-              color: Colors.white,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'logging.remove'.tr(),
-              style: dashBody(color: Colors.white, weight: FontWeight.w500),
-            ),
-          ],
-        ),
-      ),
-      child: card,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final meal = widget.meal;
@@ -139,12 +99,19 @@ class _PersistedMealCardState extends State<PersistedMealCard>
             )
             : null;
 
-    final cardBody = PersistedMealCardContent(
+    PersistedMealCardContent cardBody({
+      BorderRadius? radius,
+      bool showShadow = true,
+    }) => PersistedMealCardContent(
       meal: meal,
       expand: _expand,
       curvedExpand: curvedExpand,
       onToggle: _toggle,
       editorBody: editorBody,
+      borderRadius:
+          radius ??
+          const BorderRadius.all(Radius.circular(KalloRadii.containerLg)),
+      showShadow: showShadow,
     );
 
     // No bottom margin: the feed's list separator owns the gap to the next
@@ -156,9 +123,16 @@ class _PersistedMealCardState extends State<PersistedMealCard>
         // no left timeline gutter, so the card gets the full row width.
         TurnHeader(time: time, message: meal.rawInput),
         // Editing swaps the body in place AND hides the action row (the web
-        // hides the action bar while editing). While editing the card is not
-        // swipe-dismissible — a stray swipe must not delete the meal mid-edit.
-        _editing ? cardBody : _maybeDismissible(cardBody),
+        // hides the action bar while editing).
+        SwipeToRemove(
+          mealId: meal.id,
+          // Not swipe-dismissible mid-edit — a stray swipe must not delete the
+          // meal while its amounts are open.
+          onRemove: _editing ? null : widget.onRemove,
+          builder:
+              (context, radius, swiping) =>
+                  cardBody(radius: radius, showShadow: !swiping),
+        ),
         if (!_editing) ...[
           const SizedBox(height: LoggingSpacing.actions),
           PersistedMealActions(
