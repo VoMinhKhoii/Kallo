@@ -113,7 +113,7 @@ const MODIFIER_ROUTING: Record<DecompositionPromptLocale, string> = {
     Route every user-typed qualifier to EXACTLY ONE field. No cross-contamination.
 
     1. **Quantity cues** — route to structured fields. You NEVER emit grams and NEVER invent numbers; extract only what the user wrote:
-       - **Counted units** ("2 slices of pizza", "3 tacos", "half a bagel", "a dozen wings") → count (the number; "half"→0.5, "a dozen"→12) + unitToken (the verbatim counter/unit word: "slice", "taco", "bagel", "wing"). Household measures are counted units too: "1 cup of rice" → count: 1 + unitToken: "cup"; "2 tbsp peanut butter" → count: 2 + unitToken: "tbsp" — the server resolves cups and spoons to grams; you still NEVER emit grams. Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("large slice"→"large", "small bowl"→"small"). A typed ZERO ("0 fried chicken", "0 slices") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
+       - **Counted units** ("2 slices of pizza", "3 tacos", "half a bagel", "a dozen wings") → count (the number; "half"→0.5, "a dozen"→12) + unitToken (the verbatim counter/unit word: "slice", "taco", "bagel", "wing"). Household measures are counted units too: "1 cup of rice" → count: 1 + unitToken: "cup"; "2 tbsp peanut butter" → count: 2 + unitToken: "tbsp" — downstream steps size them from the count and unit; you still NEVER emit grams. Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("large slice"→"large", "small bowl"→"small"). A typed ZERO ("0 fried chicken", "0 slices") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
        - **Dish vessels** — a vessel word quantifying the WHOLE dish ("a big bowl of ramen", "a plate of spaghetti", "a large glass of milk") → vesselToken (verbatim) + vesselSize on the MEAL ITEM. NEVER attach the dish's vessel to an ingredient. IMPORTANT interplay: when the vessel word also quantifies a single-ingredient dish ("1 bowl of rice"), STILL emit ingredient-level count:1 + unitToken:"bowl" on that ingredient (the server's ingredient prior depends on it) IN ADDITION to the meal-item vesselToken.
        - **Explicit weights** ("250g chicken breast", "6 oz sirloin", "half a pound of ground beef") → explicitMass: grams + physical basis. Convert imperial weights to grams (1 oz ≈ 28 g so "6 oz" ≈ 170; 1 lb ≈ 454 g). Set basis="gross_as_served" when the weight is stated against a named bone-in/shell-on object ("a 300g T-bone", "500g shell-on shrimp"); set basis="edible" for a boneless/peeled/shelled/fillet form; otherwise set basis="unknown". Raw-vs-cooked measurement belongs only in stateHint (for example "weighed raw" → stateHint="raw_weight"), never in explicitMass.basis.
        - **Vague portion cues** ("extra rice", "light on the dressing", "a heaping plate", "just a little pasta", "half portion") — no count. Capture genuinely portion-load-bearing phrases in stateNote (e.g., "extra rice" / "heaping plate") so the resolver / Call 2 can bias the estimate.
@@ -332,6 +332,57 @@ ${RAMEN_EXAMPLE}
   </example>
 
   <example>
+    <input>1 dĩa cơm tấm sườn bì chả trứng</input>
+    <!-- Composed plate → decompose to DB-matchable INGREDIENTS: the composition DB has no "cơm tấm", "bì" or "chả trứng" rows. Broken rice matches as rice → canonicalName "Cơm". Standard calorie-bearing accompaniments of the plate (mỡ hành, nước mắm, đồ chua) are fundamental to cơm tấm → include. "dĩa" quantifies the plate → vesselToken on the base item. -->
+    <output>
+    {
+      "isFood": true,
+      "mealSlot": null,
+      "mealItems": [
+        {
+          "name": "cơm tấm",
+          "cookingMethod": "nấu",
+          "vesselToken": "dĩa",
+          "ingredients": [
+            { "rawName": "cơm tấm", "canonicalName": "Cơm" },
+            { "rawName": "hành lá", "canonicalName": "Hành lá" },
+            { "rawName": "dầu ăn", "canonicalName": "Dầu đậu nành" },
+            { "rawName": "nước mắm", "canonicalName": "Nước mắm" },
+            { "rawName": "đồ chua", "canonicalName": "Cà rốt", "prepNotes": ["muối chua"] }
+          ]
+        },
+        {
+          "name": "sườn nướng",
+          "cookingMethod": "nướng",
+          "ingredients": [
+            { "rawName": "sườn heo", "canonicalName": "Sườn lợn" }
+          ]
+        },
+        {
+          "name": "bì heo",
+          "cookingMethod": "luộc",
+          "ingredients": [
+            { "rawName": "da heo", "canonicalName": "Bì lợn" },
+            { "rawName": "thịt heo nạc", "canonicalName": "Thịt lợn nạc" }
+          ]
+        },
+        {
+          "name": "chả trứng",
+          "cookingMethod": "hấp",
+          "ingredients": [
+            { "rawName": "thịt heo xay", "canonicalName": "Thịt lợn xay" },
+            { "rawName": "trứng gà", "canonicalName": "Trứng gà" },
+            { "rawName": "mộc nhĩ", "canonicalName": "Mộc nhĩ" },
+            { "rawName": "bún tàu", "canonicalName": "Miến dong" }
+          ]
+        }
+      ]
+    }
+    </output>
+    <!-- mỡ hành = hành lá + dầu ăn (the plate's added fat routes to the "dầu ăn" carrier row). Granularity rule: name meal items the way the user eats them, but push ingredients down to single foods the composition DB can match. -->
+  </example>
+
+  <example>
     <input>xin chào bạn</input>
     <output>{ "isFood": false, "mealSlot": null, "mealItems": [] }</output>
   </example>
@@ -372,7 +423,7 @@ ${INJECTION_EXAMPLE}`,
   </example>
 
   <example>
-    <input>6oz sirloin steak (fat trimmed) with mashed potatoes</input>
+    <input>6oz pan-seared sirloin steak (fat trimmed) with mashed potatoes</input>
     <output>
     {
       "isFood": true,
@@ -429,8 +480,8 @@ ${INJECTION_EXAMPLE}`,
 ${RAMEN_EXAMPLE}
 
   <example>
-    <input>chicken burrito bowl, extra rice, no beans</input>
-    <!-- "bowl" here is part of the DISH NAME, not a vessel word sizing the serving → no vesselToken. "extra rice" is a vague portion cue → stateNote on the rice. "no beans" removes beans from the ingredient list. Unstated optional toppings (guacamole, sour cream, cheese) are omitted per strict adherence. -->
+    <input>chipotle chicken burrito bowl: white rice, black beans, grilled chicken, corn salsa, cheese, extra rice</input>
+    <!-- "bowl" here is part of the DISH NAME, not a vessel word sizing the serving → no vesselToken. Composed fast-casual order → decompose to DB-matchable INGREDIENTS (the composition DB has no "burrito bowl" row). "extra rice" is a vague portion cue → stateNote on the rice. Unstated optional toppings (guacamole, sour cream) are omitted per strict adherence. -->
     <output>
     {
       "isFood": true,
@@ -440,14 +491,70 @@ ${RAMEN_EXAMPLE}
           "name": "chicken burrito bowl",
           "cookingMethod": "assembled",
           "ingredients": [
+            { "rawName": "white rice", "canonicalName": "White rice, cooked", "stateNote": "extra rice" },
+            { "rawName": "black beans", "canonicalName": "Black beans, cooked" },
             { "rawName": "grilled chicken", "canonicalName": "Chicken breast, grilled" },
-            { "rawName": "rice", "canonicalName": "White rice, cooked", "stateNote": "extra rice" },
-            { "rawName": "salsa", "canonicalName": "Tomato salsa" }
+            { "rawName": "corn salsa", "canonicalName": "Corn salsa" },
+            { "rawName": "cheese", "canonicalName": "Cheddar cheese" }
           ]
         }
       ]
     }
     </output>
+  </example>
+
+  <example>
+    <input>bbq plate: pulled pork, 2 pork ribs, mac and cheese, coleslaw, cornbread</input>
+    <!-- Multi-item feast. Composed dishes WITHOUT a DB row decompose to single foods (pulled pork → pork shoulder + BBQ sauce; mac and cheese → macaroni + cheddar + milk + butter; coleslaw → cabbage + coleslaw dressing); cornbread exists as a bakery row → keep whole. "2 pork ribs" → count on the rib ingredient. Smoked/braised meats carry no separate frying fat. -->
+    <output>
+    {
+      "isFood": true,
+      "mealSlot": null,
+      "mealItems": [
+        {
+          "name": "pulled pork",
+          "cookingMethod": "smoked",
+          "ingredients": [
+            { "rawName": "pork shoulder", "canonicalName": "Pork shoulder, cooked" },
+            { "rawName": "bbq sauce", "canonicalName": "Barbecue sauce" }
+          ]
+        },
+        {
+          "name": "pork ribs",
+          "cookingMethod": "smoked",
+          "ingredients": [
+            { "rawName": "pork ribs", "canonicalName": "Pork spareribs", "count": 2, "unitToken": "rib" }
+          ]
+        },
+        {
+          "name": "mac and cheese",
+          "cookingMethod": "baked",
+          "ingredients": [
+            { "rawName": "macaroni", "canonicalName": "Macaroni, cooked" },
+            { "rawName": "cheddar cheese", "canonicalName": "Cheddar cheese" },
+            { "rawName": "milk", "canonicalName": "Whole milk" },
+            { "rawName": "butter", "canonicalName": "Butter" }
+          ]
+        },
+        {
+          "name": "coleslaw",
+          "cookingMethod": "raw",
+          "ingredients": [
+            { "rawName": "cabbage", "canonicalName": "Cabbage" },
+            { "rawName": "coleslaw dressing", "canonicalName": "Coleslaw dressing" }
+          ]
+        },
+        {
+          "name": "cornbread",
+          "cookingMethod": "baked",
+          "ingredients": [
+            { "rawName": "cornbread", "canonicalName": "Cornbread" }
+          ]
+        }
+      ]
+    }
+    </output>
+    <!-- Granularity rule: name meal items the way the user eats them, but push ingredients down to single foods the composition DB can match. -->
   </example>
 
   <example>
@@ -482,7 +589,7 @@ export function decompositionV2PromptText(
 <instructions>
   <task>
     1. Set isFood=true for food inputs, false otherwise (return empty mealItems and null mealSlot when false).
-    2. Identify each user-facing meal item, then list its ingredients.
+    2. Identify each user-facing meal item, then list its ingredients. Decompose composed dishes into SINGLE-FOOD ingredients the composition database can match — a dish or component name ("chả trứng", "coleslaw") is not an ingredient when it is itself made of simpler foods.
     3. Classify mealSlot (breakfast/brunch/lunch/dinner/snack) if inferable; null if uncertain.
     4. Emit the dish-wrapped schema exactly:
        mealItems[]: { name, cookingMethod, cuisineNote?, vesselToken?, vesselSize?, ingredients[] }

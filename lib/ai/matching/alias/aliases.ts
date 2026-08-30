@@ -54,6 +54,10 @@ export const INSTANT_NOODLE_ROW = 'Mì ăn liền (mì gói), khô';
 
 export const EXACT_ALIASES: Record<string, ExactAlias> = {
   tôm: { lang: 'vi', target: 'Tôm biển' },
+  // Specific shrimp varieties the naming rule (correctly) preserves but no
+  // dedicated row exists for — gvn-10-tom-nuong: "Tôm sú" went unmatched.
+  'tôm sú': { lang: 'vi', target: 'Tôm biển' },
+  'tôm thẻ': { lang: 'vi', target: 'Tôm biển' },
   shrimp: { lang: 'en', target: 'Tôm biển' },
   'bánh mì': { lang: 'vi', target: 'Bánh mỳ' },
   'bánh mỳ': { lang: 'vi', target: 'Bánh mỳ' },
