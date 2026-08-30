@@ -10,8 +10,8 @@ import {
   isProteinPortionDefaultEnabled,
   isVesselGuardEnabled,
 } from '@/lib/ai/pipeline/config/prompt-ablation-flags';
-import type { PromptLocale } from '@/lib/ai/prompts/locale';
 import { PORTION_PRIORS } from '@/lib/ai/portion/data/priors';
+import type { PromptLocale } from '@/lib/ai/prompts/locale';
 import { RICE_PORTION_DESCRIPTION } from '@/lib/ai/prompts/text/portion-descriptions';
 import { renderAbsorbedOilPromptRule } from '@/lib/domain/nutrition/absorbed-oil';
 
@@ -57,7 +57,9 @@ const PRIOR_LABELS_GLOBAL: Record<string, string> = {
   'gói mì': 'instant-noodle packet (dry)',
 };
 
-export function renderPriorLines(locale: EstimationPromptLocale = 'vi'): string {
+export function renderPriorLines(
+  locale: EstimationPromptLocale = 'vi'
+): string {
   const render = ({
     conceptId,
     perUnit,

@@ -147,7 +147,9 @@ describe('decomposition-v2 locale blocks', () => {
     expect(out).toMatch(/unitToken: "tbsp"/);
     expect(out).toMatch(/1 oz ≈ 28 g/);
     expect(out).toMatch(/1 lb ≈ 454 g/);
-    expect(out).toMatch(/"explicitMass": \{ "grams": 170, "basis": "edible" \}/);
+    expect(out).toMatch(
+      /"explicitMass": \{ "grams": 170, "basis": "edible" \}/
+    );
   });
 
   it('both locales share the load-bearing invariants', () => {
