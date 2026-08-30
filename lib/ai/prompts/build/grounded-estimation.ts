@@ -7,6 +7,7 @@ import {
   escapeXmlAttribute,
   type MealItemWithCandidates,
 } from '@/lib/ai/prompts/build/grounded-candidates';
+import { resolvePromptLocale } from '@/lib/ai/prompts/locale';
 import { buildPromptContextLine } from '@/lib/ai/prompts/sanitize';
 import { buildStaticPrefix } from '@/lib/ai/prompts/text/grounded-estimation';
 import {
@@ -88,7 +89,8 @@ export function buildGroundedEstimationPrompt(args: {
   userContext: PromptPersonalizationContext;
 }): string {
   const staticPrefix = buildStaticPrefix(
-    args.mealItems.some((mealItem) => mealItem.vesselEnvelope != null)
+    args.mealItems.some((mealItem) => mealItem.vesselEnvelope != null),
+    resolvePromptLocale(args.userContext)
   );
   const userContextBlock = buildUserContextBlock(args.userContext);
   const originalPromptBlock = `<original_prompt>\n${escapeXmlAttribute(args.originalPrompt)}\n</original_prompt>`;

@@ -20,6 +20,7 @@ import {
 import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
 import { buildLlmStageTrace } from '@/lib/ai/pipeline/telemetry/trace';
 import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
+import { promptTraceName, resolvePromptLocale } from '@/lib/ai/prompts/locale';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { MealItemOffset } from '@/lib/ai/streaming/grounded-parsers';
@@ -129,7 +130,10 @@ export async function runCallTwoStage(args: {
       const callTrace = buildLlmStageTrace({
         trace: traceContext,
         stageLogId,
-        name: 'grounded-estimation',
+        name: promptTraceName(
+          'grounded-estimation',
+          resolvePromptLocale(promptCtx)
+        ),
         builder: renderGeminiEstimatorPrompt as (...a: unknown[]) => string,
         templateSample: call2SystemPrompt,
         model: args.profile.nutritionModel,
