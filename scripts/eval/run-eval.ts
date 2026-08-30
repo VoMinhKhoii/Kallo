@@ -2,6 +2,7 @@
 
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { buildAiRequestContext } from '@/lib/ai/adapters/user-context';
 import {
   ESTIMATOR_PRICING,
   selectEstimator,
@@ -26,7 +27,7 @@ import {
 
 type StageKey = keyof EvalStageTimings;
 
-const USER_CONTEXT: UserContext = {
+const BASE_USER_CONTEXT: UserContext = {
   goal: 'maintaining',
   aggression: 0,
   countryOfOrigin: 'Vietnam',
@@ -39,6 +40,30 @@ const USER_CONTEXT: UserContext = {
     brothConsumption: 'some',
   },
 };
+
+/**
+ * Per-fixture user context derived from the case's locale tag, run through the
+ * production `buildAiRequestContext` so evals exercise the real language
+ * detection + locale fallback. Previously every case (including the 50+
+ * global/`en` ones) ran with a hardcoded Vietnam context and undefined
+ * input/outputLanguage, so locale-conditional prompt paths were untestable.
+ * `mixed-language` and untagged cases keep the VN base (a VN user typing
+ * mixed/edge input is the scenario those cases encode).
+ */
+function contextForFixture(fixture: EvalFixtureCase): UserContext {
+  const isEn = fixture.tags.includes('en');
+  const base: UserContext = isEn
+    ? {
+        ...BASE_USER_CONTEXT,
+        countryOfOrigin: 'United States',
+        countryOfResidence: 'United States',
+      }
+    : BASE_USER_CONTEXT;
+  return buildAiRequestContext(base, {
+    mealText: fixture.input,
+    requestLocale: isEn ? 'en' : fixture.tags.includes('vi') ? 'vi' : undefined,
+  });
+}
 
 export function parseEvalArgs(argv: string[]): EvalCliOptions {
   const raw: Record<string, unknown> = {};
@@ -122,7 +147,7 @@ async function runCase(
     response = await Promise.race([
       dependencies.analyzeMealV2(
         fixture.input,
-        USER_CONTEXT,
+        contextForFixture(fixture),
         dependencies.db,
         dependencies.gemini,
         tracker.onEvent,
