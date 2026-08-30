@@ -1,5 +1,39 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Push (Phase 4) rides on next/server's `after()`, which needs a request scope
+// these unit suites don't have. The double runs the callback inline so the
+// scheduling itself is assertable; what the push then does is covered by
+// lib/domain/notifications/__tests__/push.test.ts.
+const { mockAfter, mockSendNotificationPush, mockSendChatMessagePush } =
+  vi.hoisted(() => ({
+    mockAfter: vi.fn((task: () => unknown) => {
+      void task();
+    }),
+    mockSendNotificationPush: vi.fn(async (): Promise<void> => undefined),
+    mockSendChatMessagePush: vi.fn(async (): Promise<void> => undefined),
+  }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  after: mockAfter,
+}));
+vi.mock('@/lib/domain/notifications/push', () => ({
+  sendNotificationPush: mockSendNotificationPush,
+  sendChatMessagePush: mockSendChatMessagePush,
+}));
+
+// Notifications: this suite asserts WHO gets told; the helper's own upsert and
+// retract semantics live in lib/domain/notifications/__tests__.
+const { mockNotify, mockRetractActor } = vi.hoisted(() => ({
+  mockNotify: vi.fn(async (..._args: unknown[]): Promise<string[]> => []),
+  mockRetractActor: vi.fn(
+    async (..._args: unknown[]): Promise<void> => undefined
+  ),
+}));
+vi.mock('@/lib/domain/notifications/notify', () => ({
+  notify: mockNotify,
+  retractActor: mockRetractActor,
+}));
+
 const { mockUser, mockCanViewShare, mockTxSelect, mockTxInsert, mockTx } =
   vi.hoisted(() => {
     const mockTxSelect = vi.fn(() => ({
@@ -192,6 +226,23 @@ describe('logSharedMealAction', () => {
       caloriesKcal: 600,
     });
     expect(result.meal.portionFactor).toBe(0.5);
+  });
+
+  it('schedules the owner push once the copy commits', async () => {
+    const OWNER = 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44';
+    queueSource([{ ...sourceMeal(), shareActorId: OWNER }]);
+    queueItems([sourceItem()]);
+    captureCopies();
+    mockNotify.mockResolvedValueOnce([OWNER]);
+
+    await log(1);
+
+    expect(mockAfter).toHaveBeenCalledTimes(1);
+    expect(mockSendNotificationPush).toHaveBeenCalledWith([OWNER], {
+      type: 'share.logged',
+      actor: { id: mockUser.id },
+      groupKey: `share.logged:${SHARE_ID}`,
+    });
   });
 
   it('halves nutrition and multiplies the source portion factor', async () => {

@@ -3,10 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MobileNav } from '../mobile-nav';
 
-const { createClientMock, toastErrorMock } = vi.hoisted(() => ({
-  createClientMock: vi.fn(),
-  toastErrorMock: vi.fn(),
-}));
+const { createClientMock, toastErrorMock, unseenCountMock } = vi.hoisted(
+  () => ({
+    createClientMock: vi.fn(),
+    toastErrorMock: vi.fn(),
+    unseenCountMock: vi.fn(() => 0),
+  })
+);
 
 vi.mock('@/lib/infra/supabase/client', () => ({
   createClient: createClientMock,
@@ -22,6 +25,12 @@ vi.mock('sonner', () => ({
 // doesn't require a QueryClientProvider.
 vi.mock('@/hooks/social/sharing/use-meal-share-invites', () => ({
   useMealShareInviteCount: () => 0,
+}));
+
+// Activity badge — same reason as the invite count above, but drivable: the
+// heart button and the drawer's Activity row both key off this count.
+vi.mock('@/hooks/notifications/use-notification-badge', () => ({
+  useUnseenNotificationCount: () => unseenCountMock(),
 }));
 
 // Render Sheet primitives inline so the drawer content is queryable without
@@ -55,6 +64,7 @@ describe('MobileNav', () => {
   beforeEach(() => {
     createClientMock.mockReset();
     toastErrorMock.mockReset();
+    unseenCountMock.mockReturnValue(0);
   });
 
   it('renders the hamburger button and the standard nav destinations', () => {
@@ -78,6 +88,39 @@ describe('MobileNav', () => {
     expect(
       screen.queryByRole('link', { name: 'admin' })
     ).not.toBeInTheDocument();
+  });
+
+  it('offers the activity destination in the drawer and the header', () => {
+    render(<MobileNav user={baseUser} />);
+
+    expect(screen.getByRole('link', { name: 'activity' })).toHaveAttribute(
+      'href',
+      '/activity'
+    );
+    // The header's right slot used to be an aria-hidden spacer; it is now the
+    // heart entry point at the same size-11 footprint, so the centered slot
+    // between it and the hamburger still centers by symmetry.
+    const heart = screen.getByRole('link', { name: 'mobileButton' });
+    expect(heart).toHaveAttribute('href', '/activity');
+    expect(heart).toHaveClass(
+      'size-11',
+      'shrink-0',
+      'group-has-[[data-strip-mode=true]]/mobileheader:hidden'
+    );
+  });
+
+  it('dots the activity entry points only while notifications are unseen', () => {
+    const { container, unmount } = render(<MobileNav user={baseUser} />);
+    expect(container.querySelectorAll('.bg-kallo-accent')).toHaveLength(0);
+    unmount();
+
+    unseenCountMock.mockReturnValue(3);
+    const withBadge = render(<MobileNav user={baseUser} />);
+
+    // One dot on the drawer's Activity row, one on the header heart.
+    expect(
+      withBadge.container.querySelectorAll('.bg-kallo-accent')
+    ).toHaveLength(2);
   });
 
   it('shows the admin destination only when isAdmin is true', () => {

@@ -4,6 +4,7 @@ import { LogOut, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { MobileActivityButton } from '@/components/activity/mobile-activity-button';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import {
@@ -14,7 +15,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { useMealShareInviteCount } from '@/hooks/social/sharing/use-meal-share-invites';
+import { useNavBadgeCounts } from '@/hooks/ui/use-nav-badges';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 import { createClient } from '@/lib/infra/supabase/client';
@@ -60,7 +61,7 @@ export function MobileNav({
   const [signingOut, setSigningOut] = useState(false);
 
   const items = visibleNavItems(isAdmin);
-  const inviteCount = useMealShareInviteCount();
+  const badgeCounts = useNavBadgeCounts();
   const label = deriveLabel(user);
   const settingsActive = isActiveRoute(pathname, '/settings');
 
@@ -88,7 +89,7 @@ export function MobileNav({
             open={open}
             label={tShell('openMenu')}
             onboardingIncomplete={onboardingIncomplete}
-            inviteCount={inviteCount}
+            inviteCount={badgeCounts.groups ?? 0}
           />
         </SheetTrigger>
 
@@ -116,7 +117,7 @@ export function MobileNav({
             <MobileNavList
               items={items}
               pathname={pathname}
-              inviteCount={inviteCount}
+              badgeCounts={badgeCounts}
               onNavigate={() => setOpen(false)}
             />
           </nav>
@@ -194,13 +195,10 @@ export function MobileNav({
         id="app-mobile-header-slot"
         className="flex min-w-0 flex-1 items-center justify-center"
       />
-      {/* Mirror the hamburger width so the slot's center aligns with the
-          screen center in chip mode. Hidden in strip mode (paired with the
-          hamburger) so the strip can use the full row width. */}
-      <div
-        aria-hidden="true"
-        className="size-11 shrink-0 group-has-[[data-strip-mode=true]]/mobileheader:hidden"
-      />
+      {/* Was an aria-hidden spacer; now the activity entry point at the same
+          size-11 footprint, so the slot still centers by symmetry. Hides in
+          strip mode with the hamburger. */}
+      <MobileActivityButton />
     </header>
   );
 }

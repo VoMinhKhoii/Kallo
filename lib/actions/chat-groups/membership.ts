@@ -5,6 +5,8 @@ import {
   leaveChatGroupSchema,
   removeChatGroupMemberSchema,
 } from '@/lib/core/validation/chat';
+import { groupAddedKey } from '@/lib/domain/notifications/group-keys';
+import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { orderedPair } from '@/lib/domain/social/friendship';
 import {
   assertGroupCapacity,
@@ -191,9 +193,9 @@ export async function leaveChatGroup(
 export async function lockChatGroup(
   groupId: string,
   db: ChatGroupDb
-): Promise<{ id: string; kind: string }> {
+): Promise<{ id: string; kind: string; name: string | null }> {
   const [group] = await db
-    .select({ id: chatGroups.id, kind: chatGroups.kind })
+    .select({ id: chatGroups.id, kind: chatGroups.kind, name: chatGroups.name })
     .from(chatGroups)
     .where(eq(chatGroups.id, groupId))
     .limit(1)
@@ -218,8 +220,8 @@ export async function addChatGroupMembers(
     throw Errors.validationFailed('Chọn ít nhất một thành viên.');
   }
 
-  return db.transaction(async (tx) => {
-    await lockChatGroup(parsed.groupId, tx);
+  return withNotifications(db, async (tx, notify) => {
+    const group = await lockChatGroup(parsed.groupId, tx);
     const access = await requireGroupAccess(actorId, parsed.groupId, tx);
     if (access.kind !== 'group') {
       throw Errors.notFound('Không tìm thấy nhóm chat.');
@@ -265,7 +267,24 @@ export async function addChatGroupMembers(
       .onConflictDoNothing({
         target: [chatGroupMembers.groupId, chatGroupMembers.userId],
       })
-      .returning({ id: chatGroupMembers.id });
+      .returning({
+        id: chatGroupMembers.id,
+        userId: chatGroupMembers.userId,
+      });
+
+    // Only the rows this call actually created — a member who lost the race to
+    // a concurrent add was told by the writer that won.
+    await notify(
+      inserted.map((member) => ({
+        recipientId: member.userId,
+        type: 'group.added' as const,
+        actorId,
+        targetType: 'chat_group',
+        targetId: parsed.groupId,
+        groupKey: groupAddedKey(parsed.groupId),
+        data: { groupName: group.name },
+      }))
+    );
 
     return { added: inserted.length };
   });

@@ -2,6 +2,10 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MainSidebar } from '../main-sidebar';
 
+const { unseenCountMock } = vi.hoisted(() => ({
+  unseenCountMock: vi.fn(() => 0),
+}));
+
 vi.mock('@/lib/infra/supabase/client', () => ({
   createClient: () => ({
     auth: {
@@ -14,6 +18,12 @@ vi.mock('@/lib/infra/supabase/client', () => ({
 // doesn't require a QueryClientProvider.
 vi.mock('@/hooks/social/sharing/use-meal-share-invites', () => ({
   useMealShareInviteCount: () => 0,
+}));
+
+// Activity badge — same reason as the invite count above, but drivable: the
+// rail dots the Activity row from it.
+vi.mock('@/hooks/notifications/use-notification-badge', () => ({
+  useUnseenNotificationCount: () => unseenCountMock(),
 }));
 
 describe('MainSidebar (back-compat re-export of DesktopSidebar)', () => {
@@ -49,5 +59,20 @@ describe('MainSidebar (back-compat re-export of DesktopSidebar)', () => {
     expect(screen.getByText('khoi@example.com')).toBeInTheDocument();
     expect(screen.queryByText('VMKHOIII')).not.toBeInTheDocument();
     expect(screen.queryByText('minhkhoitdn@gmail.com')).not.toBeInTheDocument();
+  });
+
+  it('badges the activity row only while notifications are unseen', () => {
+    const quiet = render(<MainSidebar />);
+    expect(
+      quiet.container.querySelectorAll('a[href="/activity"] .bg-kallo-accent')
+    ).toHaveLength(0);
+    quiet.unmount();
+
+    unseenCountMock.mockReturnValue(2);
+    const badged = render(<MainSidebar />);
+
+    expect(
+      badged.container.querySelectorAll('a[href="/activity"] .bg-kallo-accent')
+    ).toHaveLength(1);
   });
 });

@@ -13,7 +13,12 @@ if (process.env.PIPELINE_V2_ENABLED === undefined) {
 // server-only throws on import outside RSC; stub it for tests
 vi.mock('server-only', () => ({}));
 
-// Global mock for next-intl — returns translation keys as-is
+// Global mock for next-intl — returns translation keys as-is.
+//
+// Deliberately synchronous and message-free: it is installed for all ~415 test
+// files, so pulling the real module in here (via importOriginal) doubled total
+// setup time. A suite that needs the REAL ICU renderer — push copy, the
+// aggregate row templates — calls `vi.unmock('next-intl')` for itself instead.
 vi.mock('next-intl', () => ({
   useTranslations: () => {
     const t = (key: string, params?: Record<string, unknown>) => {

@@ -7,7 +7,7 @@
  * every literal hex token, the ring geometry, the seeded swatch and the
  * font-size branch, so an extraction that changes one pixel fails loudly.
  */
-import { getTableName, is, Table } from 'drizzle-orm';
+import { getTableName } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -48,9 +48,9 @@ vi.mock('@/lib/infra/supabase/server', () => ({
 }));
 
 /**
- * A Drizzle select stub good enough for the three table reads and for the
- * relationship probe inside `canViewShareOwnedBy` — which selects from a SQL
- * literal rather than a table, so the two are told apart by the `from` source.
+ * A Drizzle select stub good enough for the three table reads. The
+ * relationship probe inside `canViewShareOwnedBy` is a raw `db.execute`
+ * statement, stubbed separately below.
  */
 function selectStub() {
   let source: unknown;
@@ -63,10 +63,7 @@ function selectStub() {
       return query;
     },
     limit() {
-      if (!is(source, Table)) {
-        return Promise.resolve([{ visible: relationshipVisible }]);
-      }
-      const table = getTableName(source);
+      const table = getTableName(source as Parameters<typeof getTableName>[0]);
       selectedTables.push(table);
       return Promise.resolve(tableRows.get(table) ?? []);
     },
@@ -83,6 +80,7 @@ vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
 vi.mock('@/lib/infra/db/client', () => {
   const chain = {
     select: () => selectStub(),
+    execute: () => Promise.resolve([{ visible: relationshipVisible }]),
     insert: (table?: unknown) => {
       mockDbInsert(table);
       return chain;

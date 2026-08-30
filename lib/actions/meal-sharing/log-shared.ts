@@ -15,6 +15,8 @@ import {
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
+import { shareLoggedKey } from '@/lib/domain/notifications/group-keys';
+import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { canViewShare } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
@@ -55,13 +57,13 @@ export async function logSharedMealAction(input: {
     'copy_split'
   );
 
-  return db.transaction(async (tx) => {
+  return withNotifications(db, async (tx, notify) => {
     if (!(await canViewShare(user.id, parsed.shareId, tx))) {
       throw Errors.notFound('Không tìm thấy bài chia sẻ.');
     }
 
     const [source] = await tx
-      .select(getTableColumns(meals))
+      .select({ ...getTableColumns(meals), shareActorId: mealShares.actorId })
       .from(meals)
       .innerJoin(mealShares, eq(mealShares.mealId, meals.id))
       .where(
@@ -94,11 +96,26 @@ export async function logSharedMealAction(input: {
       parsed.loggedDate,
       parsed.timezoneOffset
     );
-    return copyMealVerbatim(tx, source, sourceItems, {
+    const copied = await copyMealVerbatim(tx, source, sourceItems, {
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt,
       factor: parsed.factor,
     });
+
+    // "N people cooked this" — aggregated per share, and never fired at the
+    // owner logging their own meal again (notify() drops self-actions).
+    await notify([
+      {
+        recipientId: source.shareActorId,
+        type: 'share.logged',
+        actorId: user.id,
+        objectType: 'share',
+        objectId: parsed.shareId,
+        groupKey: shareLoggedKey(parsed.shareId),
+      },
+    ]);
+
+    return copied;
   });
 }

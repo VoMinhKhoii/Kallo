@@ -4,6 +4,8 @@ import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { createChatGroupSchema } from '@/lib/core/validation/chat';
 import { circleFeedSchema } from '@/lib/core/validation/social';
+import { groupAddedKey } from '@/lib/domain/notifications/group-keys';
+import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { todayLocalDate } from '@/lib/domain/social/feed/meal-feed';
 import {
   assertGroupCapacity,
@@ -47,7 +49,7 @@ export async function createChatGroup(
   // another group (their cap, their 409 — see circle-quota).
   await assertUnlimitedCircleActor(db, actorId);
 
-  return db.transaction(async (tx) => {
+  return withNotifications(db, async (tx, notify) => {
     await assertGroupCapacity(tx, memberIds);
 
     const [group] = await tx
@@ -63,6 +65,22 @@ export async function createChatGroup(
         role: 'member' as const,
       })),
     ]);
+
+    // Locket model: adding is instant, the added member is told rather than
+    // asked. `memberIds` already excludes the creator (dropped above), so no
+    // self-notification can reach notify(). Only named groups get here —
+    // direct chats are created by the friendship flow, not this action.
+    await notify(
+      memberIds.map((userId) => ({
+        recipientId: userId,
+        type: 'group.added' as const,
+        actorId,
+        targetType: 'chat_group',
+        targetId: group.id,
+        groupKey: groupAddedKey(group.id),
+        data: { groupName: parsed.name },
+      }))
+    );
 
     return { id: group.id };
   });

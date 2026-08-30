@@ -57,6 +57,7 @@ another domain module is a smell worth a second look.
 | `db/` | Drizzle schema and client |
 | `email/` | transactional send + templates |
 | `platform/` | runtime environment detection from the user agent |
+| `push/` | the native-push transport: the `PushSender` seam, the dependency-free FCM HTTP v1 sender, and the no-op used when `FCM_SERVICE_ACCOUNT_JSON` is unset |
 | `rate-limit/` | analysis abuse guards |
 | `security/` | webhook signatures, CSP, request IP |
 | `supabase/` | client factories (browser, server, admin, middleware) |
@@ -75,6 +76,7 @@ another domain module is a smell worth a second look.
 | `ingredients/` | `search/` — the food-composition picker: recents, lexical + semantic arms, rank fusion |
 | `logging/` | meal logging and relog, plus the contracts its UI and hooks share: `types.ts`, `meal-input-handle.ts`, `stream-ticker.ts` |
 | `meals/` | dish quantity edits and the macro rescaling they imply, plus `save/` (the optimistic-meal builders and the cache choreography a save runs through) and `query-keys.ts`, the cache addresses that write side shares with `hooks/meals/` |
+| `notifications/` | the activity layer's shared vocabulary: `types.ts`, `group-keys.ts` (the aggregation identities), `notify.ts` (the single write path producers call inside their tx), the isomorphic `contracts.ts`, the after-commit push fan-out (`push.ts` + its server-side `push-copy.ts` templates), plus `client.ts` and `query-keys.ts` |
 | `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data |
 | `settings/` | the contracts the settings page's route, panels and hooks share: `anchors.ts` (scroll-target ids), `profile-form.ts` (the profile form's data model) |
@@ -124,6 +126,7 @@ another domain module is a smell worth a second look.
 | Folder | Concern | Status |
 |---|---|---|
 | `ui/` | shadcn primitives — CLI-managed, never hand-edited | exempt |
+| `activity/` | the Activity page — the notification feed, its sections, rows and the mobile heart entry point | ok |
 | `admin/` | the admin surface — `requests/` `pipeline-summary/` `feedback/` `health/` `prompts/` | ok |
 | `brand/` | logo marks | ok |
 | `app/` | application chrome present on every page | split |
@@ -154,9 +157,10 @@ another domain module is a smell worth a second look.
 | `meals/feed/` | the day-feed controller and its handler hooks | ok |
 | `meals/entry/` | the non-streaming ways into the composer: manual rows, label OCR, dashboard prefill | ok |
 | `meals/relog/` | relog composer state | **reference shape** |
+| `notifications/` | the activity feed, its badge poll and the seen/read mutations | ok |
 | `social/circle/` | friends, thread feed, circle wall, invites, group chats | ok |
 | `social/sharing/` | sharing a meal, logging a shared one, invites, replies, reactions | ok |
-| `ui/` | device and browser-surface hooks, zero domain knowledge | ok |
+| `ui/` | device and browser-surface hooks, plus the nav chrome's cross-surface state (sidebar open/collapse, badge counts) | ok |
 
 `hooks/auth/` also owns the landing page's waitlist signup — the pre-account end
 of the same "getting into the product" concern, folded in when `hooks/landing/`

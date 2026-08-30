@@ -4,16 +4,13 @@ import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
-import { useMealShareInviteCount } from '@/hooks/social/sharing/use-meal-share-invites';
+import { useNavBadgeCounts } from '@/hooks/ui/use-nav-badges';
 import { useSidebarState } from '@/hooks/ui/use-sidebar-state';
 import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
-import {
-  type SidebarNavItem,
-  SidebarNavLink,
-} from './sidebar/sidebar-nav-link';
+import { SidebarNavLink } from './sidebar/sidebar-nav-link';
 import { SidebarBrandHeader } from './sidebar-brand-header';
 import { UserMenu, type UserMenuUser } from './user-menu';
 
@@ -90,7 +87,7 @@ export function DesktopSidebar({
 }: DesktopSidebarProps) {
   const pathname = usePathname();
   const t = useTranslations('app.mainSidebar');
-  const inviteCount = useMealShareInviteCount();
+  const badgeCounts = useNavBadgeCounts();
   const {
     pinnedCollapsed,
     effectiveCollapsed: collapsed,
@@ -155,13 +152,16 @@ export function DesktopSidebar({
     onFocusLeave();
   };
 
-  const navItems: SidebarNavItem[] = visibleNavItems(isAdmin).map((item) => {
+  const navItems = visibleNavItems(isAdmin).map((item) => {
     const Icon = item.icon;
     return {
       id: item.id,
       label: t(item.labelKey),
       href: item.href,
       icon: <Icon className="h-5 w-5" />,
+      // Resolved here, where `item.id` is still the nav-id union: a
+      // SidebarNavItem widens it to string for the settings link below.
+      showBadge: (badgeCounts[item.id] ?? 0) > 0,
     };
   });
 
@@ -198,7 +198,7 @@ export function DesktopSidebar({
                   item={item}
                   collapsed={collapsed}
                   isActive={isActiveRoute(pathname, item.href)}
-                  showBadge={item.id === 'groups' && inviteCount > 0}
+                  showBadge={item.showBadge}
                 />
               </li>
             ))}

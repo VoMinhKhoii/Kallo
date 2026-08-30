@@ -1713,3 +1713,127 @@ export const waitlistSignups = pgTable(
     ),
   ]
 );
+
+// ---------------------------------------------------------------------------
+// Notifications — per-recipient activity rows
+// ---------------------------------------------------------------------------
+// The per-recipient layer that circle_events (actor-scoped spine) deliberately
+// is not: one row per (person who should be told, thing that happened), written
+// fan-out-on-write inside the producing transaction. Read and mutated only by
+// server actions on the Drizzle owner connection (RLS enabled, no policies —
+// see the companion RLS migration), so recipient_id in every WHERE is the
+// primary authorization control.
+//
+// Tri-state read model (Instagram): seen_at drives the badge (count where
+// NULL), read_at only dims the row, dismissed_at hides it. The partial unique
+// index on (recipient_id, group_key) WHERE the row is still open is the
+// aggregation target: ten people reacting to one meal upsert into ONE row
+// ("X and 2 others"), and once a row is read the index no longer matches it, so
+// later activity starts a fresh row instead of rewriting history.
+//
+// The type CHECK is pre-widened with the reserved coach/streak/recap types so
+// future producers need no ALTER, matching circle_events.
+
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    recipientId: uuid('recipient_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    // The aggregate's FULL membership, newest actor first — audiences are
+    // bounded (≤10 friends, ≤50 group members), so nobody ages out to be
+    // re-counted as new or to become unretractable. The UI renders the first
+    // two faces; actor_count (= cardinality of this array) carries the rest.
+    actorIds: uuid('actor_ids').array().notNull().default(sql`'{}'::uuid[]`),
+    actorCount: integer('actor_count').notNull().default(1),
+    // What happened (the invite / friendship row), versus where tapping goes
+    // (the chat group). Both are free-form + nullable: a notification never
+    // owns domain state, it points at it and the reader joins live.
+    objectType: text('object_type'),
+    objectId: uuid('object_id'),
+    targetType: text('target_type'),
+    targetId: uuid('target_id'),
+    // '<type>:<id>' — the aggregation identity (see lib/domain/notifications).
+    groupKey: text('group_key').notNull(),
+    data: jsonb('data'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    seenAt: timestamp('seen_at', { withTimezone: true }),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    dismissedAt: timestamp('dismissed_at', { withTimezone: true }),
+    // Transient per-upsert classification, meaningful ONLY in the statement's
+    // own RETURNING: the aggregation upsert sets it from the OLD row's seen_at
+    // inside the ON CONFLICT branch, so notify() can tell a seen→unseen
+    // re-badge (push) from a refresh of a still-unseen row (silent) without a
+    // second statement. Nothing reads it between statements; it is stored only
+    // because RETURNING can only return columns.
+    rebadged: boolean('rebadged').notNull().default(false),
+  },
+  (table) => [
+    // The feed page: one recipient's visible rows, newest first, tuple cursor.
+    index('notifications_recipient_created_idx')
+      .on(
+        table.recipientId,
+        sql`${table.createdAt} DESC`,
+        sql`${table.id} DESC`
+      )
+      .where(sql`dismissed_at IS NULL`),
+    // The 30s badge poll: count of unseen rows.
+    index('notifications_recipient_unseen_idx')
+      .on(table.recipientId)
+      .where(sql`seen_at IS NULL AND dismissed_at IS NULL`),
+    // One OPEN aggregate per (recipient, groupKey) — the upsert conflict
+    // target. Read/dismissed rows fall out of the index by design.
+    uniqueIndex('notifications_open_aggregate_idx')
+      .on(table.recipientId, table.groupKey)
+      .where(sql`read_at IS NULL AND dismissed_at IS NULL`),
+    check(
+      'notifications_type_check',
+      sql`${table.type} IN ('friend.joined', 'group.added', 'share.invite', 'share.invite_accepted', 'share.reaction', 'share.reply', 'share.logged', 'chat.message', 'coach.nudge', 'streak.milestone', 'recap.ready')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Push tokens — device registrations for native (FCM/APNs) delivery
+// ---------------------------------------------------------------------------
+// One row per device, keyed by the FCM registration token. The token — not
+// (user, device) — is unique because a token is reassigned by the OS/Firebase
+// when a different account signs in on the same handset: the POST upsert moves
+// it to the new owner rather than fanning one device's push to two people.
+//
+// last_seen_at is refreshed on every registration ping; the retention cron
+// reaps rows idle past 270 days so an uninstalled app stops costing sends.
+// Dead tokens are also pruned inline whenever FCM answers UNREGISTERED.
+
+export const pushTokens = pgTable(
+  'push_tokens',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    token: text('token').notNull().unique(),
+    platform: text('platform').notNull(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // The send path's only lookup: every token for a set of recipients.
+    index('push_tokens_user_idx').on(table.userId),
+    check(
+      'push_tokens_platform_check',
+      sql`${table.platform} IN ('ios', 'android', 'web')`
+    ),
+  ]
+);
