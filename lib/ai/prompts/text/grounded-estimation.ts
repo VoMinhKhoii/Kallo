@@ -133,6 +133,14 @@ export function buildStaticPrefix(
     '    - protein, carb, calories: emit your best estimate for the EDIBLE portion (grossG after refusePct), but know the server OVERRIDES them with DB-anchored base = (per_100g × edible mass) / 100 and derives kcal from 4P + 4C + 9F — keep these three brief (flat triples are fine); your effort belongs in grossG, refusePct, and fat.';
   const finalSanityRule =
     '    - Sanity-check: edible mass × db_per_100g_kcal / 100 must be a believable kcal for that ingredient. ~250g edible against a ~440 kcal/100g dry-noodle row is ~1100 kcal — wrong basis; the dry packet is ~80g.';
+  // Global-locale users get candidates with a paired English name; without
+  // this note the verdict reads only the Vietnamese db_name and misses
+  // disqualifiers ("roll", "breaded", "deli") for a plain-cut query. The vi
+  // variant stays byte-identical (empty string).
+  const verdictLocaleNote =
+    locale === 'global'
+      ? '\n  db_name is the row\'s Vietnamese name; db_name_en (when present) is the SAME row\'s English name — judge food identity using both. Reject processed variants (roll, breaded, deli, canned, luncheon) when the user described a plain cut or dish ("chicken breast" ≠ "Chicken breast, roll, oven-roasted").'
+      : '';
   return `You are a grounded nutrition estimator. Return JSON only.
 
 <role>
@@ -156,7 +164,7 @@ export function buildStaticPrefix(
     - cut mismatch: "ức gà" matched only to "Thịt gà ta" (52 % inedible, aggregate whole-bird);
     - category mismatch: "gan gà" (liver) matched to "thịt gà" generic;
     - density mismatch: vegetable matched to a sauce/seasoning row.
-  When a higher-similarity candidate is wrong and a lower-similarity one is right, pick the right one. similarity is a hint, not a vote.
+  When a higher-similarity candidate is wrong and a lower-similarity one is right, pick the right one. similarity is a hint, not a vote.${verdictLocaleNote}
 </verdict_rule>
 
 <grams_rule>
