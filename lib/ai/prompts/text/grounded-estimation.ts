@@ -11,8 +11,11 @@ import {
   isVesselGuardEnabled,
 } from '@/lib/ai/pipeline/config/prompt-ablation-flags';
 import { PORTION_PRIORS } from '@/lib/ai/portion/data/priors';
+import type { PromptLocale } from '@/lib/ai/prompts/locale';
 import { RICE_PORTION_DESCRIPTION } from '@/lib/ai/prompts/text/portion-descriptions';
 import { renderAbsorbedOilPromptRule } from '@/lib/domain/nutrition/absorbed-oil';
+
+export type EstimationPromptLocale = PromptLocale;
 
 const PRIOR_LABELS: Record<string, string> = {
   'banh-bao': 'bánh bao',
@@ -24,18 +27,64 @@ const PRIOR_LABELS: Record<string, string> = {
   'pan-seared-protein-serving': 'phần protein áp chảo',
 };
 
-export function renderPriorLines(): string {
+/**
+ * English prior labels for the global prompt variant, keyed by the prior's
+ * promptLabel when set, otherwise its conceptId. Basis qualifiers
+ * ("cả xương"/bone-in) MUST survive translation — they mark gross-as-served
+ * priors.
+ */
+const PRIOR_LABELS_GLOBAL: Record<string, string> = {
+  'banh-bao': 'steamed bun (bánh bao)',
+  'quail-egg': 'quail egg',
+  'lát bánh mì': 'slice of bread',
+  'ổ bánh mì': 'small baguette loaf (bread only)',
+  'cooked-rice': 'rice bowl (cooked)',
+  'chicken-breast': 'chicken breast fillet',
+  'miếng sườn (cả xương)': 'rib piece (bone-in)',
+  'cánh gà (cả xương)': 'chicken wing (bone-in)',
+  'đùi gà (cả xương)': 'chicken thigh/drumstick (bone-in)',
+  'con cá nguyên (cả đầu/xương)': 'whole fish (head/bones on)',
+  'khúc/khoanh cá (còn xương)': 'fish steak/section (bone-in)',
+  'miếng cá phi lê (không xương)': 'fish fillet (boneless)',
+  'con tôm nguyên vỏ': 'shell-on shrimp',
+  'con tôm đã bóc vỏ': 'peeled shrimp',
+  'con cua/ghẹ nguyên (cả vỏ)': 'whole crab (shell-on)',
+  'phần thịt cua/ghẹ đã gỡ': 'picked crab meat',
+  'quả trứng còn vỏ': 'egg in shell',
+  'quả trứng luộc đã bóc vỏ': 'peeled boiled egg',
+  'nem-lui': 'nem lụi skewer',
+  'pan-seared-protein-serving': 'pan-seared protein serving',
+  'gói mì': 'instant-noodle packet (dry)',
+};
+
+export function renderPriorLines(
+  locale: EstimationPromptLocale = 'vi'
+): string {
   const render = ({
     conceptId,
     perUnit,
     promptLabel,
   }: (typeof PORTION_PRIORS)[number]): string => {
-    const label = promptLabel ?? PRIOR_LABELS[conceptId] ?? conceptId;
+    const viLabel = promptLabel ?? PRIOR_LABELS[conceptId] ?? conceptId;
+    const label =
+      locale === 'global'
+        ? (PRIOR_LABELS_GLOBAL[promptLabel ?? conceptId] ?? viLabel)
+        : viLabel;
     return `    - 1 ${label} ≈ ${perUnit.mid}g (${perUnit.low}–${perUnit.high}g).`;
   };
 
   return PORTION_PRIORS.map(render).join('\n');
 }
+
+/**
+ * Fallback kcal-density anchors for UNMATCHED ingredients, per locale. The
+ * shared "Stay under 900 kcal/100g" cap follows in the template.
+ */
+const DENSITY_PRIORS: Record<EstimationPromptLocale, string> = {
+  vi: 'Density priors for common Vietnamese items: nem lụi ~250–290 kcal/100g; chả giò ~250–320 kcal/100g; bún tươi ~100–130 kcal/100g; light broth ~5–50 kcal/100g; sốt đậu phộng ~250–350 kcal/100g.',
+  global:
+    'Density priors for common items: pizza slice ~250–300 kcal/100g; french fries ~290–330 kcal/100g; beef burger patty ~250–290 kcal/100g; cooked pasta ~130–160 kcal/100g; creamy dressings/sauces ~300–450 kcal/100g; light broth ~5–50 kcal/100g.',
+};
 
 const REFUSE_VESSEL_RULE = `
 
@@ -43,12 +92,15 @@ const REFUSE_VESSEL_RULE = `
   When a <meal_item> carries serve_total_guard_g="L-H": the SERVED EDIBLE total of that dish — every ingredient's grossG after refusePct, with broth/liquid at 100% — must land inside [L, H] grams. resolved_grams anchors and explicit user weights are AUTHORITATIVE EDIBLE mass: never rescale them; fit the band by adjusting only non-anchored ingredients. If the anchored ingredients alone already exceed the band, the band yields — anchors always win; never distort other ingredients to compensate for an over-band anchored total. EATEN vs SERVED: macro triples cover what was EATEN — solids fully eaten; broth/liquid mass = served broth × broth_consumption from <user_context> (leave_it ≈ 10%, some ≈ 50%, finish_it = 100%). The eaten total may fall below the band when broth is not drunk; the SERVED total must still be plausible for the vessel. Portion cues on ingredients shift within the band: ít/little ≈ −30%, nhiều/extra ≈ +40%, nửa/half = ×0.5.
 </vessel_rule>`;
 
-export function buildStaticPrefix(hasVessel = false): string {
+export function buildStaticPrefix(
+  hasVessel = false,
+  locale: EstimationPromptLocale = 'vi'
+): string {
   const sizingHintsEnabled = isPromptSizingHintsEnabled();
   const vesselRule =
     hasVessel && isVesselGuardEnabled() ? REFUSE_VESSEL_RULE : '';
   const cuisinePriors = sizingHintsEnabled
-    ? `  Use cuisine priors:\n${renderPriorLines()}\n`
+    ? `  Use cuisine priors:\n${renderPriorLines(locale)}\n`
     : '';
   const stapleCarbRule = sizingHintsEnabled
     ? `  Staple carb base: when rice/noodles/bread is the base of a plate or bowl dish (cơm tấm, cơm gà, katsu curry, bibimbap, fried rice), size it as a FULL meal portion — rice follows default_rice_portion in <user_context> (${RICE_PORTION_DESCRIPTION.small}; ${RICE_PORTION_DESCRIPTION.medium}; ${RICE_PORTION_DESCRIPTION.large}); noodles are typically 150–250g cooked — never a side garnish. (An as-eaten figure — the BASIS RULE still applies when the matched row is dry/raw.)\n`
@@ -147,7 +199,7 @@ ${matchedMacroRule}
       - "extra sauce", "thêm đường": carb up if sweet.
       - Flavor / sodium / spice only ("ít muối", "no MSG", "extra spicy"): keep ALL macros at base.
 
-  For UNMATCHED ingredients (match_status="unmatched"): you MUST emit ABSOLUTE LOW/MID/HIGH for caloriesKcal, proteinG, carbohydrateG, and fatG for the as-eaten portion from cuisine knowledge (these are the truth — nothing overrides them). Density priors for common Vietnamese items: nem lụi ~250–290 kcal/100g; chả giò ~250–320 kcal/100g; bún tươi ~100–130 kcal/100g; light broth ~5–50 kcal/100g; sốt đậu phộng ~250–350 kcal/100g. Stay under 900 kcal/100g.
+  For UNMATCHED ingredients (match_status="unmatched"): you MUST emit ABSOLUTE LOW/MID/HIGH for caloriesKcal, proteinG, carbohydrateG, and fatG for the as-eaten portion from cuisine knowledge (these are the truth — nothing overrides them). ${DENSITY_PRIORS[locale]} Stay under 900 kcal/100g.
 
   Macro identity: kcal ≈ 4P + 4C + 9F. The server enforces this for matched ingredients.
 </macro_rule>

@@ -17,6 +17,7 @@ import {
   buildDecompositionV2Prompt,
   wrapUserMealTextAsData,
 } from '@/lib/ai/prompts/build/decomposition-v2';
+import { promptTraceName, resolvePromptLocale } from '@/lib/ai/prompts/locale';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
@@ -121,7 +122,10 @@ export async function runGroundedDecomposition(args: {
     const callTrace = buildLlmStageTrace({
       trace: traceContext,
       stageLogId,
-      name: 'decomposition-grounded',
+      name: promptTraceName(
+        'decomposition-grounded',
+        resolvePromptLocale(promptCtx)
+      ),
       builder: buildDecompositionV2Prompt as (...a: unknown[]) => string,
       templateSample: decompSystemPrompt,
       model: profile.decompositionModel,

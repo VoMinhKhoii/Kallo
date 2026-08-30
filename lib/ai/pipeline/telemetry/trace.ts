@@ -207,13 +207,18 @@ export function buildLlmStageTrace(args: {
    * Prompt name as recorded in `prompt_versions` (and surfaced in the admin
    * /prompts catalog). v1 uses `decomposition` / `nutrition`; v2 (the
    * grounded pipeline) uses `decomposition-grounded` / `grounded-estimation`
-   * so admin can distinguish which prompt version each request used.
+   * so admin can distinguish which prompt version each request used. The
+   * `:global` suffix marks the global locale block-set (`promptTraceName`) —
+   * without it, both locales would collapse into one version row because
+   * `hashPromptBuilder` hashes builder source, identical across locales.
    */
   name:
     | 'decomposition'
     | 'nutrition'
     | 'decomposition-grounded'
-    | 'grounded-estimation';
+    | 'decomposition-grounded:global'
+    | 'grounded-estimation'
+    | 'grounded-estimation:global';
   builder: (...a: unknown[]) => string;
   templateSample: string;
   model: string;

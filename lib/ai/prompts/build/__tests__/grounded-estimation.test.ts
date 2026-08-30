@@ -433,4 +433,39 @@ describe('renderPriorLines', () => {
     expect(labels).toContain('lát bánh mì');
     expect(labels).toContain('ổ bánh mì');
   });
+
+  it('global locale translates every prior label (no untranslated VN fallback)', () => {
+    const viLabels = renderPriorLines('vi')
+      .split('\n')
+      .map((line) => line.match(/- 1 (.+) ≈/)?.[1]);
+    const globalLabels = renderPriorLines('global')
+      .split('\n')
+      .map((line) => line.match(/- 1 (.+) ≈/)?.[1]);
+
+    expect(globalLabels).toHaveLength(viLabels.length);
+    expect(new Set(globalLabels).size).toBe(globalLabels.length);
+    // Every VN label must map to a DIFFERENT English label — an identical
+    // pair means the GLOBAL map is missing that key and silently fell back.
+    for (let index = 0; index < viLabels.length; index++) {
+      expect(globalLabels[index]).not.toBe(viLabels[index]);
+    }
+    // Gross-basis qualifiers must survive translation.
+    expect(globalLabels).toContain('rib piece (bone-in)');
+    expect(globalLabels).toContain('whole crab (shell-on)');
+  });
+});
+
+describe('buildStaticPrefix locale blocks', () => {
+  it('vi (default) keeps the VN density priors; global swaps them', () => {
+    const vi = buildStaticPrefix(false);
+    expect(vi).toContain('nem lụi ~250–290 kcal/100g');
+    expect(vi).not.toContain('pizza slice');
+
+    const global = buildStaticPrefix(false, 'global');
+    expect(global).toContain('pizza slice ~250–300 kcal/100g');
+    expect(global).not.toContain('nem lụi ~250–290');
+    // Shared cap and refuse anchors stay in both variants.
+    expect(global).toContain('Stay under 900 kcal/100g');
+    expect(global).toContain('rib ≈ 40–60%');
+  });
 });
