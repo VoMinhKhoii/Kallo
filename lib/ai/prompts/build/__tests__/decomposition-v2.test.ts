@@ -168,6 +168,20 @@ describe('decomposition-v2 locale blocks', () => {
     }
   });
 
+  it('both locales carry a deep composed-dish decomposition example', () => {
+    const vi = buildDecompositionV2Prompt(baseUserContext);
+    // cơm tấm plate: dish names become meal items, ingredients are single
+    // DB-matchable foods ("cơm tấm" → canonical "Cơm"; chả trứng decomposed).
+    expect(vi).toMatch(/cơm tấm sườn bì chả trứng/);
+    expect(vi).toMatch(/"rawName": "cơm tấm", "canonicalName": "Cơm"/);
+    expect(vi).toMatch(/"rawName": "mộc nhĩ", "canonicalName": "Mộc nhĩ"/);
+
+    const en = buildDecompositionV2Prompt(enUserContext);
+    expect(en).toMatch(/bbq plate: pulled pork, 2 pork ribs/);
+    expect(en).toMatch(/"count": 2, "unitToken": "rib"/);
+    expect(en).toMatch(/"rawName": "black beans"/);
+  });
+
   it('undefined outputLanguage keeps the original vi rendering with no language section', () => {
     const out = buildDecompositionV2Prompt({
       ...baseUserContext,
