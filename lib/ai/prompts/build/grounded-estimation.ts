@@ -88,13 +88,16 @@ export function buildGroundedEstimationPrompt(args: {
   mealItems: MealItemWithCandidates[];
   userContext: PromptPersonalizationContext;
 }): string {
+  const locale = resolvePromptLocale(args.userContext);
   const staticPrefix = buildStaticPrefix(
     args.mealItems.some((mealItem) => mealItem.vesselEnvelope != null),
-    resolvePromptLocale(args.userContext)
+    locale
   );
   const userContextBlock = buildUserContextBlock(args.userContext);
   const originalPromptBlock = `<original_prompt>\n${escapeXmlAttribute(args.originalPrompt)}\n</original_prompt>`;
-  const ingredientDataBlock = buildIngredientDataBlock(args.mealItems);
+  const ingredientDataBlock = buildIngredientDataBlock(args.mealItems, {
+    includeNameEn: locale === 'global',
+  });
 
   return `${staticPrefix}
 

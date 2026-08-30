@@ -98,6 +98,13 @@ export interface MatchInfo {
   /** Authoritative DB food-group taxonomy, attached with row metadata. */
   foodGroupEn?: string;
   matchedName: string;
+  /**
+   * The row's English name (`name_en`), when the source provides one. Shown
+   * to Call 2 alongside the Vietnamese `matchedName` for global-locale users
+   * so the verdict can read disqualifiers ("roll", "breaded", "deli") the VN
+   * name obscures.
+   */
+  matchedNameEn?: string;
   similarity: number;
   confidence: MatchConfidence;
   state: DbIngredientState;
