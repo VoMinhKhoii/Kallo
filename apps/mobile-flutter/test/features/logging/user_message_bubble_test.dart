@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -117,6 +118,23 @@ void main() {
       await EasyLocalization.ensureInitialized();
     });
 
+    /// Hold the bubble until the iOS context menu opens.
+    ///
+    /// `tester.longPress` is Material's 500ms, which is short of
+    /// `CupertinoContextMenu`'s own 800ms preview timeout — the route only
+    /// pushes once that lift animation completes, so the press has to outlast
+    /// it before the menu exists to be found.
+    Future<void> holdBubble(WidgetTester tester) async {
+      final press = await tester.startGesture(
+        tester.getCenter(find.byType(UserMessageBubble)),
+      );
+      // Settling under the finger is what drives the lift: the tap deadline,
+      // then the 800ms preview animation whose completion pushes the route.
+      await tester.pumpAndSettle();
+      await press.up();
+      await tester.pumpAndSettle();
+    }
+
     /// Capture what the app hands the platform clipboard.
     List<String> interceptClipboard(WidgetTester tester) {
       final written = <String>[];
@@ -152,10 +170,25 @@ void main() {
       await tester.pumpWidget(_wrapLocalized(sent));
       await tester.pumpAndSettle();
 
-      await tester.longPress(find.byType(UserMessageBubble));
-      await tester.pumpAndSettle();
+      await holdBubble(tester);
 
       expect(find.text('Copy'), findsOneWidget);
+    });
+
+    testWidgets('the menu arrives with the iOS backdrop, not a flat card', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrapLocalized(sent));
+      await tester.pumpAndSettle();
+      expect(find.byType(BackdropFilter), findsNothing);
+
+      await holdBubble(tester);
+
+      // The blurred, dimmed page behind the lifted bubble is the entire
+      // difference from the `showMenu` card this replaced — a flat panel
+      // dropped on top of the bubble with no backdrop at all.
+      expect(find.byType(BackdropFilter), findsWidgets);
+      expect(find.byType(CupertinoContextMenuAction), findsOneWidget);
     });
 
     testWidgets('choosing Copy puts the message on the clipboard', (
@@ -165,8 +198,7 @@ void main() {
       await tester.pumpWidget(_wrapLocalized(sent));
       await tester.pumpAndSettle();
 
-      await tester.longPress(find.byType(UserMessageBubble));
-      await tester.pumpAndSettle();
+      await holdBubble(tester);
       await tester.tap(find.text('Copy'));
       await tester.pumpAndSettle();
 
@@ -181,11 +213,14 @@ void main() {
       await tester.pumpWidget(_wrapLocalized(sent));
       await tester.pumpAndSettle();
 
-      await tester.longPress(find.byType(UserMessageBubble));
-      await tester.pumpAndSettle();
+      await holdBubble(tester);
+      expect(find.text('Copy'), findsOneWidget);
+
+      // The dimming barrier, not the page underneath it.
       await tester.tapAt(const Offset(8, 8));
       await tester.pumpAndSettle();
 
+      expect(find.text('Copy'), findsNothing);
       expect(written, isEmpty);
     });
   });

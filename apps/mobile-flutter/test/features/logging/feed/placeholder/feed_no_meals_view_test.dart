@@ -15,6 +15,7 @@ import 'package:kallo_mobile/shared/widgets/brand/kallo_mark.dart';
 import '../../../../l10n_test_loader.dart';
 
 const _empty = FeedViewState(
+  date: '2026-01-01',
   persistedMeals: [],
   pendingConfirmations: [],
   entries: [],
