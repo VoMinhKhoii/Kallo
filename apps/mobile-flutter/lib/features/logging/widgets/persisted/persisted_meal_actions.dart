@@ -4,8 +4,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../circle/widgets/share/share_meal_sheet.dart';
 import '../../data/logging_models.dart';
-import '../entry/actions/confirm_meal_removal.dart';
-import '../entry/actions/meal_action_icon_button.dart';
+import '../actions/confirm_meal_removal.dart';
+import '../actions/meal_action_icon_button.dart';
 import 'persisted_meal_share_to_circle_button.dart';
 
 class PersistedMealActions extends StatelessWidget {

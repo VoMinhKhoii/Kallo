@@ -7,6 +7,8 @@ import 'package:kallo_mobile/features/logging/widgets/feed/feed_tail_room.dart';
 const double _viewport = 600;
 const double _dock = 120;
 const double _turn = 80;
+const String _day1 = 'day-1';
+const String _day2 = 'day-2';
 
 /// A three-item list standing in for a short day: two saved cards and the turn
 /// the user just sent. Mirrors how `FeedList` wires the room — same floor on
@@ -14,7 +16,7 @@ const double _turn = 80;
 Widget _host({
   required FeedScrollPinHandle handle,
   required ScrollController controller,
-  String date = 'day-1',
+  String date = _day1,
   int items = 3,
 }) => MaterialApp(
   home: Scaffold(
@@ -71,7 +73,7 @@ void main() {
     addTearDown(controller.dispose);
     await tester.pumpWidget(_host(handle: handle, controller: controller));
 
-    handle.pinToBottom();
+    handle.pinToBottom(_day1);
     await tester.pumpAndSettle();
 
     final viewport = tester.getRect(find.byType(FeedTailRoom));
@@ -85,7 +87,7 @@ void main() {
     addTearDown(controller.dispose);
     await tester.pumpWidget(_host(handle: handle, controller: controller));
 
-    handle.pinToBottom();
+    handle.pinToBottom(_day1);
     await tester.pumpAndSettle();
     final settled = controller.position.pixels;
 
@@ -108,7 +110,7 @@ void main() {
       _host(handle: handle, controller: controller, items: 20),
     );
 
-    handle.pinToBottom();
+    handle.pinToBottom(_day1);
     await tester.pumpAndSettle();
 
     // Twenty turns overflow the viewport on their own, so the room adds
@@ -125,17 +127,43 @@ void main() {
     addTearDown(controller.dispose);
     await tester.pumpWidget(_host(handle: handle, controller: controller));
 
-    handle.pinToBottom();
+    handle.pinToBottom(_day1);
     await tester.pumpAndSettle();
     expect(controller.position.maxScrollExtent, greaterThan(0));
 
     await tester.pumpWidget(
-      _host(handle: handle, controller: controller, date: 'day-2'),
+      _host(handle: handle, controller: controller, date: _day2),
     );
     await tester.pumpAndSettle();
 
     // An old day's last meal must not sit above a screen of nothing.
-    expect(handle.tailRoomOpen.value, isFalse);
     expect(controller.position.maxScrollExtent, 0);
+  });
+
+  testWidgets('paging back to the day you sent on finds the room again', (
+    tester,
+  ) async {
+    final handle = FeedScrollPinHandle();
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(_host(handle: handle, controller: controller));
+
+    handle.pinToBottom(_day1);
+    await tester.pumpAndSettle();
+
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, date: _day2),
+    );
+    await tester.pumpAndSettle();
+    expect(controller.position.maxScrollExtent, 0);
+
+    // The room belongs to the day, not to a flag that a day change threw away.
+    await tester.pumpWidget(
+      _host(handle: handle, controller: controller, date: _day1),
+    );
+    await tester.pumpAndSettle();
+
+    expect(handle.tailRoomFor.value, _day1);
+    expect(controller.position.maxScrollExtent, greaterThan(0));
   });
 }

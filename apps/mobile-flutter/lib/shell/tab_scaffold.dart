@@ -61,12 +61,12 @@ class _TabScaffoldState extends State<TabScaffold>
 
   void _close() => _controller.reverse();
 
-  /// A finger has landed in the edge strip. Inflate the drawer NOW, before it
-  /// starts moving — the same reason [_open] defers its own forward() by a
-  /// frame. Doing it on the first drag update instead put the SVG parse and the
-  /// provider subscriptions inside a frame that was already animating the
+  /// A finger has landed on a drag that could open the drawer. Inflate it NOW,
+  /// before it starts moving — the same reason [_open] defers its own forward()
+  /// by a frame. Doing it on the first drag update instead put the SVG parse and
+  /// the provider subscriptions inside a frame that was already animating the
   /// panel, which is the hitch this whole path exists to avoid.
-  void _onEdgeDragDown() {
+  void _onDrawerDragDown() {
     if (!_drawerMounted) setState(() => _drawerMounted = true);
   }
 
@@ -76,13 +76,16 @@ class _TabScaffoldState extends State<TabScaffold>
   /// A closed drawer ignores leftward travel. The full-width recognizer wins
   /// plenty of drags that were never aimed at it, and a drawer that inches out
   /// on a leftward flick over blank canvas reads as a glitch.
-  void _onEdgeDragUpdate(double delta, double panelWidth) {
+  void _onDrawerDragUpdate(double delta, double panelWidth) {
     if (_controller.value == 0 && delta <= 0) return;
-    _controller.value = (_controller.value + delta / panelWidth).clamp(0.0, 1.0);
+    _controller.value = (_controller.value + delta / panelWidth).clamp(
+      0.0,
+      1.0,
+    );
   }
 
-  /// Edge-swipe release: fling/threshold decides whether it settles open.
-  void _onEdgeDragEnd(double velocity) {
+  /// Drag release: fling/threshold decides whether it settles open.
+  void _onDrawerDragEnd(double velocity) {
     final opening =
         velocity > 200 || (velocity >= -200 && _controller.value > 0.4);
     if (opening) {
@@ -103,9 +106,8 @@ class _TabScaffoldState extends State<TabScaffold>
   Widget build(BuildContext context) {
     // Mirror the panel width the drawer itself uses, so an edge-drag maps the
     // finger to the panel travel 1:1.
-    final panelWidth = (MediaQuery.of(context).size.width * 0.88)
-        .clamp(0.0, 320.0)
-        .toDouble();
+    final panelWidth =
+        (MediaQuery.of(context).size.width * 0.88).clamp(0.0, 320.0).toDouble();
 
     return NavDrawerScope(
       open: _open,
@@ -130,9 +132,9 @@ class _TabScaffoldState extends State<TabScaffold>
             // them on every frame of the slide.
             DrawerDragTarget(
               panelWidth: panelWidth,
-              onDown: _onEdgeDragDown,
-              onUpdate: _onEdgeDragUpdate,
-              onEnd: _onEdgeDragEnd,
+              onDown: _onDrawerDragDown,
+              onUpdate: _onDrawerDragUpdate,
+              onEnd: _onDrawerDragEnd,
               child: RepaintBoundary(child: widget.navigationShell),
             ),
             // The edge still gets a guarantee. Over the one PageView or meal
@@ -146,9 +148,9 @@ class _TabScaffoldState extends State<TabScaffold>
               width: 20,
               child: DrawerDragTarget(
                 panelWidth: panelWidth,
-                onDown: _onEdgeDragDown,
-                onUpdate: _onEdgeDragUpdate,
-                onEnd: _onEdgeDragEnd,
+                onDown: _onDrawerDragDown,
+                onUpdate: _onDrawerDragUpdate,
+                onEnd: _onDrawerDragEnd,
               ),
             ),
             NavDrawer(

@@ -7,8 +7,8 @@ import '../../../../models/logging/meal.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
 import '../cheat/cheat_slider_card.dart';
-import '../entry/actions/confirm_meal_removal.dart';
-import '../entry/actions/meal_action_icon_button.dart';
+import '../actions/confirm_meal_removal.dart';
+import '../actions/meal_action_icon_button.dart';
 import '../entry/meal_entry.dart';
 import '../turn/turn_header.dart';
 
@@ -32,7 +32,8 @@ class StagedMealCard extends StatelessWidget {
   final PendingMealConfirmation pending;
   final bool busy;
 
-  final void Function(String analysisId, List<MealQuantityEdit> edits) onConfirm;
+  final void Function(String analysisId, List<MealQuantityEdit> edits)
+  onConfirm;
   final void Function(String analysisId, CheatSliderLevels levels)
   onConfirmCheat;
 

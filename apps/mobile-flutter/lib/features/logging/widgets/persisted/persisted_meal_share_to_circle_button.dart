@@ -9,7 +9,7 @@ import '../../../../services/env/env.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../circle/data/circle_providers.dart';
 import '../../data/logging_models.dart';
-import '../entry/actions/meal_action_icon_button.dart';
+import '../actions/meal_action_icon_button.dart';
 
 /// The per-meal "Share to circle" toggle plus, once shared, the "Share card"
 /// action (the shareable Macro Card link). Optimistically flips its own state,

@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:kallo_mobile/features/logging/widgets/entry/actions/swipe_to_remove.dart';
+import 'package:kallo_mobile/features/logging/widgets/actions/swipe_to_remove.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
-import '../../../../l10n_test_loader.dart';
+import '../../../l10n_test_loader.dart';
 
 const Key _card = ValueKey('card');
 
@@ -27,14 +27,13 @@ Widget _app({VoidCallback? onRemove}) => EasyLocalization(
                 mealId: 'meal-1',
                 onRemove: onRemove,
                 builder:
-                    (context, radius, swiping) => Container(
+                    (context, shape) => Container(
                       key: _card,
                       height: 80,
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFFFFF),
-                        borderRadius: radius,
-                        boxShadow:
-                            swiping ? null : const [KalloShadows.sm],
+                        borderRadius: shape.radius,
+                        boxShadow: shape.shadow,
                       ),
                     ),
               ),

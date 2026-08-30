@@ -11,10 +11,10 @@ import '../../logic/format.dart';
 import '../../logic/logging_spacing.dart';
 import 'cheat_meal_expanded_details.dart';
 import 'cheat_slider_card.dart' show CheatBadge;
-import '../entry/actions/confirm_meal_removal.dart';
-import '../entry/actions/swipe_to_remove.dart';
+import '../actions/confirm_meal_removal.dart';
+import '../actions/swipe_to_remove.dart';
 import '../turn/turn_header.dart';
-import '../entry/actions/meal_action_icon_button.dart';
+import '../actions/meal_action_icon_button.dart';
 
 /// A saved cheat meal in the day's feed — accent-tinted (never red), the
 /// PartyPopper badge, an `≈`-prefixed calorie total, and an expandable
@@ -105,7 +105,7 @@ class _CheatMealCardState extends State<CheatMealCard>
           mealId: meal.id,
           onRemove: widget.onRemove,
           builder:
-              (context, radius, swiping) => Container(
+              (context, shape) => Container(
                 padding: LoggingSpacing.card,
                 decoration: BoxDecoration(
                   // Warm accent tint over the card white (web bg-kallo-accent/4).
@@ -113,9 +113,9 @@ class _CheatMealCardState extends State<CheatMealCard>
                     KalloColors.accent05,
                     KalloColors.elev,
                   ),
-                  borderRadius: radius,
+                  borderRadius: shape.radius,
                   border: Border.all(color: KalloColors.accent30),
-                  boxShadow: swiping ? null : const [KalloShadows.sm],
+                  boxShadow: shape.shadow,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

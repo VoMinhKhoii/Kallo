@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../../theme/kallo_colors.dart';
-import '../../../../../theme/kallo_theme.dart';
-import '../../../logic/logging_spacing.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
+import '../../logic/logging_spacing.dart';
 
 class MealActionIconButton extends StatelessWidget {
   const MealActionIconButton({

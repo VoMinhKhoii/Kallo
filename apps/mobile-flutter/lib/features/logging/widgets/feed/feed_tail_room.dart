@@ -25,7 +25,7 @@ import 'feed_scroll_pin.dart';
 /// viewport ignores the floor and rides to the bottom exactly as before.
 ///
 /// Hands [builder] the floor to apply — `0` while the room is closed.
-class FeedTailRoom extends StatefulWidget {
+class FeedTailRoom extends StatelessWidget {
   const FeedTailRoom({
     super.key,
     required this.pin,
@@ -43,63 +43,23 @@ class FeedTailRoom extends StatefulWidget {
   /// padding, and subtracted here so the two do not stack.
   final double dockHeight;
 
-  /// The day on screen. Paging to another one is a fresh read, not a
-  /// continuation of the turn that opened the room.
+  /// The day on screen. The room is the armed day's, so this comparison is the
+  /// whole of the open/closed question — no reset, no mirrored flag, and no
+  /// setState landing mid-build to make a day change take effect in time.
   final String date;
 
   final Widget Function(BuildContext context, double tailRoom) builder;
 
   @override
-  State<FeedTailRoom> createState() => _FeedTailRoomState();
-}
-
-class _FeedTailRoomState extends State<FeedTailRoom> {
-  /// Mirrors [FeedScrollPinHandle.tailRoomOpen]. Held locally so a day change
-  /// can close the room and have it gone in the SAME build, rather than a
-  /// frame later with a screen of blank space on show.
-  bool _open = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _open = widget.pin.tailRoomOpen.value;
-    widget.pin.tailRoomOpen.addListener(_sync);
-  }
-
-  @override
-  void didUpdateWidget(FeedTailRoom old) {
-    super.didUpdateWidget(old);
-    if (old.pin != widget.pin) {
-      old.pin.tailRoomOpen.removeListener(_sync);
-      widget.pin.tailRoomOpen.addListener(_sync);
-      _open = widget.pin.tailRoomOpen.value;
-    }
-    // `_open` is cleared alongside the notifier, so the listener below finds
-    // nothing to change and never calls setState mid-build.
-    if (old.date != widget.date && _open) {
-      _open = false;
-      widget.pin.closeTailRoom();
-    }
-  }
-
-  void _sync() {
-    if (mounted && _open != widget.pin.tailRoomOpen.value) {
-      setState(() => _open = widget.pin.tailRoomOpen.value);
-    }
-  }
-
-  @override
-  void dispose() {
-    widget.pin.tailRoomOpen.removeListener(_sync);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final room = constraints.maxHeight - widget.dockHeight;
-      return widget.builder(context, _open && room > 0 ? room : 0.0);
-    },
+  Widget build(BuildContext context) => ValueListenableBuilder<String?>(
+    valueListenable: pin.tailRoomFor,
+    builder:
+        (context, armedFor, _) => LayoutBuilder(
+          builder: (context, constraints) {
+            final room = constraints.maxHeight - dockHeight;
+            return builder(context, armedFor == date && room > 0 ? room : 0.0);
+          },
+        ),
   );
 }
 

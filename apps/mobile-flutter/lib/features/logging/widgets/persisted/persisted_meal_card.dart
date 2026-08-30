@@ -1,10 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
-import '../entry/actions/swipe_to_remove.dart';
+import '../actions/swipe_to_remove.dart';
 import '../turn/turn_header.dart';
 import 'persisted_meal_actions.dart';
 import 'persisted_meal_amount_editor.dart';
@@ -99,21 +98,6 @@ class _PersistedMealCardState extends State<PersistedMealCard>
             )
             : null;
 
-    PersistedMealCardContent cardBody({
-      BorderRadius? radius,
-      bool showShadow = true,
-    }) => PersistedMealCardContent(
-      meal: meal,
-      expand: _expand,
-      curvedExpand: curvedExpand,
-      onToggle: _toggle,
-      editorBody: editorBody,
-      borderRadius:
-          radius ??
-          const BorderRadius.all(Radius.circular(KalloRadii.containerLg)),
-      showShadow: showShadow,
-    );
-
     // No bottom margin: the feed's list separator owns the gap to the next
     // card, so a card never adds spacing of its own.
     return Column(
@@ -130,8 +114,15 @@ class _PersistedMealCardState extends State<PersistedMealCard>
           // meal while its amounts are open.
           onRemove: _editing ? null : widget.onRemove,
           builder:
-              (context, radius, swiping) =>
-                  cardBody(radius: radius, showShadow: !swiping),
+              (context, shape) => PersistedMealCardContent(
+                meal: meal,
+                expand: _expand,
+                curvedExpand: curvedExpand,
+                onToggle: _toggle,
+                editorBody: editorBody,
+                borderRadius: shape.radius,
+                boxShadow: shape.shadow,
+              ),
         ),
         if (!_editing) ...[
           const SizedBox(height: LoggingSpacing.actions),

@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../../../../shared/widgets/dialog/kallo_confirm.dart';
+import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 
 /// "Xoá bữa ăn này?" — the confirm behind both removal affordances on a SAVED
 /// meal card (the trailing swipe and the trash action).

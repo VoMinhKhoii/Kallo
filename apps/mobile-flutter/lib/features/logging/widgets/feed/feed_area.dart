@@ -63,7 +63,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     composer: _textController,
     input: _inputController,
     onChanged: _rebuild,
-    onScrollToAnswer: _pin.pinToBottom,
+    onScrollToAnswer: () => _pin.pinToBottom(widget.date),
   );
 
   /// Which of the three shapes a submit is, and running it.
@@ -71,7 +71,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     composer: _textController,
     run: _analysis,
     onChanged: _rebuild,
-    onStaged: _pin.pinToBottom,
+    onStaged: () => _pin.pinToBottom(widget.date),
   );
 
   /// True while a "log it again" occasion is being re-staged server-side.
@@ -240,7 +240,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       input: _inputController,
       isStaging: () => _stagingRepeat,
       onStagingChange: (staging) => setState(() => _stagingRepeat = staging),
-      onStaged: _pin.pinToBottom,
+      onStaged: () => _pin.pinToBottom(widget.date),
     );
 
     final sheets = FeedSheets(

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -70,11 +68,11 @@ class UserMessageBubble extends StatelessWidget {
               actions: [
                 CupertinoContextMenuAction(
                   trailingIcon: CupertinoIcons.doc_on_clipboard,
-                  onPressed: () {
+                  onPressed: () async {
                     // Close the route first: the toast is an OverlayEntry and
                     // would otherwise land under the dimming barrier.
                     Navigator.of(context).pop();
-                    unawaited(_copy(context));
+                    await _copy(context);
                   },
                   child: Text('logging.copyMessage'.tr()),
                 ),

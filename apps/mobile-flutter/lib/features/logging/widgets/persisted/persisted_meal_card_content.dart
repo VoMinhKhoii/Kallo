@@ -21,7 +21,7 @@ class PersistedMealCardContent extends StatelessWidget {
     this.borderRadius = const BorderRadius.all(
       Radius.circular(KalloRadii.containerLg),
     ),
-    this.showShadow = true,
+    this.boxShadow = const [KalloShadows.sm],
   });
 
   final PersistedMeal meal;
@@ -39,8 +39,8 @@ class PersistedMealCardContent extends StatelessWidget {
   final BorderRadius borderRadius;
 
   /// Dropped mid-swipe: cast onto the red panel the lift reads as grime along
-  /// the seam.
-  final bool showShadow;
+  /// the seam. [SwipeToRemove] decides that, so this is handed the answer.
+  final List<BoxShadow>? boxShadow;
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +52,7 @@ class PersistedMealCardContent extends StatelessWidget {
         color: KalloColors.elev,
         borderRadius: borderRadius,
         border: Border.all(color: KalloColors.borderSoft),
-        boxShadow: showShadow ? const [KalloShadows.sm] : null,
+        boxShadow: boxShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

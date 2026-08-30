@@ -2,10 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../../theme/calm_tokens.dart';
-import '../../../../../theme/kallo_colors.dart';
-import '../../../../../theme/kallo_theme.dart';
-import '../../../logic/logging_spacing.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
+import '../../logic/logging_spacing.dart';
 import 'confirm_meal_removal.dart';
 
 /// iOS trailing-swipe removal for a meal card: pull left to uncover the
@@ -23,6 +23,15 @@ import 'confirm_meal_removal.dart';
 ///
 /// The card's shadow goes with them. Cast onto a saturated red it read as
 /// grime along the seam rather than as lift.
+///
+/// Both are handed over as one resolved [SwipeCardShape] rather than as a
+/// progress number or a `swiping` flag: the seam rule is one decision, and
+/// every card that spelled it out for itself was a second place to get it
+/// wrong.
+/// The shape a card takes at a point in the swipe — straight-edged and flat
+/// while the panel is uncovered, rounded and lifted at rest.
+typedef SwipeCardShape = ({BorderRadius radius, List<BoxShadow>? shadow});
+
 class SwipeToRemove extends StatefulWidget {
   const SwipeToRemove({
     super.key,
@@ -38,10 +47,10 @@ class SwipeToRemove extends StatefulWidget {
   /// the swipe entirely, and the card is returned at rest.
   final VoidCallback? onRemove;
 
-  /// Builds the card, given the shape it should take at this point in the
-  /// swipe. [swiping] is false at rest, so a card at rest is untouched.
-  final Widget Function(BuildContext context, BorderRadius radius, bool swiping)
-  builder;
+  /// Builds the card in the shape it should take at this point in the swipe.
+  /// At rest that is the resting shape, so a card that never swipes is
+  /// untouched.
+  final Widget Function(BuildContext context, SwipeCardShape shape) builder;
 
   @override
   State<SwipeToRemove> createState() => _SwipeToRemoveState();
@@ -58,15 +67,23 @@ class _SwipeToRemoveState extends State<SwipeToRemove> {
 
   double _progress = 0;
 
-  BorderRadius get _radius {
-    if (_progress <= 0) return _rest;
+  static const SwipeCardShape _restShape = (
+    radius: _rest,
+    shadow: [KalloShadows.sm],
+  );
+
+  SwipeCardShape get _shape {
+    if (_progress <= 0) return _restShape;
     final t = (_progress / _flattenOver).clamp(0.0, 1.0);
     final trailing = Radius.circular(KalloRadii.containerLg * (1 - t));
-    return BorderRadius.only(
-      topLeft: const Radius.circular(KalloRadii.containerLg),
-      bottomLeft: const Radius.circular(KalloRadii.containerLg),
-      topRight: trailing,
-      bottomRight: trailing,
+    return (
+      radius: BorderRadius.only(
+        topLeft: const Radius.circular(KalloRadii.containerLg),
+        bottomLeft: const Radius.circular(KalloRadii.containerLg),
+        topRight: trailing,
+        bottomRight: trailing,
+      ),
+      shadow: null,
     );
   }
 
@@ -78,7 +95,7 @@ class _SwipeToRemoveState extends State<SwipeToRemove> {
   @override
   Widget build(BuildContext context) {
     final onRemove = widget.onRemove;
-    if (onRemove == null) return widget.builder(context, _rest, false);
+    if (onRemove == null) return widget.builder(context, _restShape);
     return Dismissible(
       key: ValueKey('dismiss-${widget.mealId}'),
       direction: DismissDirection.endToStart,
@@ -108,7 +125,7 @@ class _SwipeToRemoveState extends State<SwipeToRemove> {
           ],
         ),
       ),
-      child: widget.builder(context, _radius, _progress > 0),
+      child: widget.builder(context, _shape),
     );
   }
 }
