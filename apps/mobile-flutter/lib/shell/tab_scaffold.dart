@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../theme/kallo_colors.dart';
 import '../theme/kallo_motion.dart';
+import 'sidebar/drawer_drag_target.dart';
 import 'sidebar/nav_drawer.dart';
 
 /// App shell for the primary surfaces.
@@ -12,7 +13,7 @@ import 'sidebar/nav_drawer.dart';
 /// navigation is a hamburger (in [AppHeader]) that opens a LEFT slide-in
 /// drawer. This scaffold reproduces that — a body hosting the active branch,
 /// plus [NavDrawer] (88vw≤320px, dim black/50 scrim, tap-scrim / swipe-left to
-/// close, left-edge swipe to open).
+/// close, swipe-right anywhere to open).
 ///
 /// go_router's [StatefulNavigationShell] still backs the branches so each
 /// destination keeps its state/scroll across switches; only the bottom bar is
@@ -69,9 +70,14 @@ class _TabScaffoldState extends State<TabScaffold>
     if (!_drawerMounted) setState(() => _drawerMounted = true);
   }
 
-  /// Edge-swipe driver: while the user drags in from the left edge, advance the
-  /// open animation 1:1 with the finger.
+  /// Drag driver: while the user pulls the panel in, advance the open
+  /// animation 1:1 with the finger.
+  ///
+  /// A closed drawer ignores leftward travel. The full-width recognizer wins
+  /// plenty of drags that were never aimed at it, and a drawer that inches out
+  /// on a leftward flick over blank canvas reads as a glitch.
   void _onEdgeDragUpdate(double delta, double panelWidth) {
+    if (_controller.value == 0 && delta <= 0) return;
     _controller.value = (_controller.value + delta / panelWidth).clamp(0.0, 1.0);
   }
 
@@ -107,30 +113,42 @@ class _TabScaffoldState extends State<TabScaffold>
         backgroundColor: KalloColors.surface,
         body: Stack(
           children: [
+            // Swipe-to-open from anywhere on the page. It wraps the shell
+            // rather than covering it, and that is the whole trick: hit-test
+            // results run deepest-first, so a descendant recognizer enters the
+            // gesture arena first and wins by default. Every nested horizontal
+            // gesture therefore keeps working untouched — the dashboard day
+            // pager, the logging week strip, a meal card's swipe-to-delete,
+            // the Circle pill strip, the draggable FAB, the sliders. An
+            // overlay (which is what the edge strip below is) would have won
+            // those instead, which is why the gesture was pinned to 20px in
+            // the first place. Nothing pushed ever sits under this: every
+            // detail route goes on the root navigator, above the shell.
+            //
             // All five branches stay alive in the indexedStack behind this, so
             // the scrim fading over them would otherwise repaint every one of
             // them on every frame of the slide.
-            RepaintBoundary(child: widget.navigationShell),
-            // Left-edge swipe-to-open zone. A narrow strip (matching the native
-            // Android drawer affordance) so it never steals horizontal swipes
-            // from page content. Only claims horizontal drags — vertical scroll
-            // in the strip still reaches the list beneath. Sits below the
-            // drawer so once open, the drawer's own gestures take over.
+            DrawerDragTarget(
+              panelWidth: panelWidth,
+              onDown: _onEdgeDragDown,
+              onUpdate: _onEdgeDragUpdate,
+              onEnd: _onEdgeDragEnd,
+              child: RepaintBoundary(child: widget.navigationShell),
+            ),
+            // The edge still gets a guarantee. Over the one PageView or meal
+            // card that legitimately wins the drag above, this strip sits ON
+            // TOP and claims it back, so the drawer is never unreachable.
+            // Sits below the drawer so once open, its own gestures take over.
             Positioned(
               left: 0,
               top: 0,
               bottom: 0,
               width: 20,
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onHorizontalDragDown: (_) => _onEdgeDragDown(),
-                onHorizontalDragUpdate:
-                    (d) => _onEdgeDragUpdate(d.primaryDelta ?? 0, panelWidth),
-                onHorizontalDragEnd:
-                    (d) => _onEdgeDragEnd(d.primaryVelocity ?? 0),
-                // An interrupted swipe (recognizer loses the arena) never fires
-                // dragEnd — settle from rest so the drawer can't stick halfway.
-                onHorizontalDragCancel: () => _onEdgeDragEnd(0),
+              child: DrawerDragTarget(
+                panelWidth: panelWidth,
+                onDown: _onEdgeDragDown,
+                onUpdate: _onEdgeDragUpdate,
+                onEnd: _onEdgeDragEnd,
               ),
             ),
             NavDrawer(
