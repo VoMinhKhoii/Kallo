@@ -11,8 +11,30 @@ import '../../../../theme/kallo_motion.dart';
 class FeedScrollPinHandle {
   _FeedScrollPinState? _state;
 
-  /// Ride the bottom of the list until the user scrolls away from it.
-  void pinToBottom() => _state?._pin();
+  /// Whether the list should hold a viewport of room after its last item, so
+  /// that riding to the bottom lands the newest turn at the TOP of the screen
+  /// rather than flush against the composer.
+  ///
+  /// It belongs to the handle rather than the list because it is the same
+  /// request: "put the tail where the user can read it". Without the room,
+  /// `maxScrollExtent` has nowhere to go on a short day and a send appears to
+  /// do nothing — the feed only travelled later, when the keyboard's inset
+  /// grew the extent and the still-armed pin re-aimed at it.
+  ///
+  /// Owned by `FeedArea`, which outlives every list that reads it, so nothing
+  /// disposes this — `ValueListenableBuilder` drops its own listener.
+  final ValueNotifier<bool> tailRoomOpen = ValueNotifier<bool>(false);
+
+  /// Ride the bottom of the list until the user scrolls away from it, opening
+  /// the tail room so the bottom IS the top of the newest turn.
+  void pinToBottom() {
+    tailRoomOpen.value = true;
+    _state?._pin();
+  }
+
+  /// Give the room back — the day changed, and an old day's last meal should
+  /// not sit above a screen of nothing.
+  void closeTailRoom() => tailRoomOpen.value = false;
 }
 
 /// Keeps the feed's tail in view while an answer arrives.

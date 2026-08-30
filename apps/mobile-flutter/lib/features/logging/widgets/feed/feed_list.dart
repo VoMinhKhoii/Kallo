@@ -10,6 +10,7 @@ import '../../logic/logging_spacing.dart';
 import '../terminal/logging_day_error_state.dart';
 import 'feed_meal_card.dart';
 import 'feed_scroll_pin.dart';
+import 'feed_tail_room.dart';
 import 'placeholder/feed_no_meals_view.dart';
 import 'staged_meal_card.dart';
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
@@ -96,48 +97,66 @@ class FeedList extends StatelessWidget {
       return FeedNoMealsView(view: view, dockHeight: dockHeight);
     }
 
+    final itemCount = entries.length + (view.hasLiveTail ? 1 : 0);
+
     return KalloRefresh(
       onRefresh: onRefresh,
-      child: ListView.separated(
-        controller: scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: EdgeInsets.fromLTRB(
-          KalloSpacing.sp3,
-          0,
-          KalloSpacing.sp3,
-          dockHeight,
-        ),
-        itemCount: entries.length + (view.hasLiveTail ? 1 : 0),
-        // The ONE gap between turns — no card carries a bottom margin of its
-        // own, so this separator is the whole story.
-        separatorBuilder:
-            (_, __) => const SizedBox(height: LoggingSpacing.turn),
-        itemBuilder: (context, index) {
-          if (index >= entries.length) return footer;
-          // Keyed by the entry's own id, so confirming one meal leaves every
-          // other card's element — and its scroll slot — exactly where it was.
-          return switch (entries[index]) {
-            SavedEntry(:final meal) => FeedMealCard(
-              key: ValueKey(meal.id),
-              meal: meal,
-              onRemove: () => onRemoveMeal(meal),
-              onUpdate:
-                  ({required edits, required removeIds}) =>
-                      onUpdateMeal(meal, edits: edits, removeIds: removeIds),
-              onLogAgain: () => onLogAgain(meal),
+      // The last item carries a viewport-tall floor once a send has asked for
+      // the tail, so riding to the bottom puts the newest turn at the top.
+      child: FeedTailRoom(
+        pin: pin,
+        dockHeight: dockHeight,
+        date: view.date,
+        builder:
+            (context, tailRoom) => ListView.separated(
+              controller: scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
+                KalloSpacing.sp3,
+                0,
+                KalloSpacing.sp3,
+                dockHeight,
+              ),
+              itemCount: itemCount,
+              // The ONE gap between turns — no card carries a bottom margin of
+              // its own, so this separator is the whole story.
+              separatorBuilder:
+                  (_, __) => const SizedBox(height: LoggingSpacing.turn),
+              itemBuilder: (context, index) {
+                final item = _itemAt(index, entries);
+                return index == itemCount - 1
+                    ? withTailRoom(tailRoom, item)
+                    : item;
+              },
             ),
-            StagedEntry(:final pending) => StagedMealCard(
-              key: ValueKey(pending.id),
-              pending: pending,
-              busy: confirmPending,
-              onConfirm: onConfirm,
-              onConfirmCheat: onConfirmCheat,
-              onDiscard: () => onDiscardPending(pending),
-            ),
-          };
-        },
       ),
     );
+  }
+
+  Widget _itemAt(int index, List<FeedEntry> entries) {
+    if (index >= entries.length) return footer;
+    // Keyed by the entry's own id, so confirming one meal leaves every other
+    // card's element — and its scroll slot — exactly where it was.
+    return switch (entries[index]) {
+      SavedEntry(:final meal) => FeedMealCard(
+        key: ValueKey(meal.id),
+        meal: meal,
+        onRemove: () => onRemoveMeal(meal),
+        onUpdate:
+            ({required edits, required removeIds}) =>
+                onUpdateMeal(meal, edits: edits, removeIds: removeIds),
+        onLogAgain: () => onLogAgain(meal),
+      ),
+      StagedEntry(:final pending) => StagedMealCard(
+        key: ValueKey(pending.id),
+        pending: pending,
+        busy: confirmPending,
+        onConfirm: onConfirm,
+        onConfirmCheat: onConfirmCheat,
+        onDiscard: () => onDiscardPending(pending),
+      ),
+    };
   }
 }
