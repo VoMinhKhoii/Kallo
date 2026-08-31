@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
@@ -74,38 +75,42 @@ FeedViewState _view({
   hasFailedAttempt: false,
 );
 
-Widget _wrap(FeedViewState view, {Widget? footer}) => EasyLocalization(
-  supportedLocales: const [Locale('en'), Locale('vi')],
-  path: 'assets/l10n',
-  fallbackLocale: const Locale('en'),
-  assetLoader: const FsL10nLoader(),
-  child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: MediaQuery(
-        // The loaders tick forever; without this pumpAndSettle never returns.
-        data: const MediaQueryData(disableAnimations: true),
-        child: Scaffold(
-          body: FeedList(
-            view: view,
-            dockHeight: 0,
-            scrollController: ScrollController(),
-            pin: FeedScrollPinHandle(),
-            onDiscardPending: (_) {},
-            footer: footer ?? const SizedBox.shrink(),
-            confirmPending: false,
-            onRefresh: () async {},
-            onRetryDay: () {},
-            onRemoveMeal: (_) {},
-            onUpdateMeal: (_, {required edits, required removeIds}) async {},
-            onLogAgain: (_) async {},
-            onConfirm: (_, _) {},
-            onConfirmCheat: (_, _) {},
+Widget _wrap(FeedViewState view, {Widget? footer}) => ProviderScope(
+  child: EasyLocalization(
+    supportedLocales: const [Locale('en'), Locale('vi')],
+    path: 'assets/l10n',
+    fallbackLocale: const Locale('en'),
+    assetLoader: const FsL10nLoader(),
+    child: Builder(
+      builder:
+          (context) => MaterialApp(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            home: MediaQuery(
+              // The loaders tick forever; without this pumpAndSettle never returns.
+              data: const MediaQueryData(disableAnimations: true),
+              child: Scaffold(
+                body: FeedList(
+                  view: view,
+                  dockHeight: 0,
+                  scrollController: ScrollController(),
+                  pin: FeedScrollPinHandle(),
+                  onDiscardPending: (_) {},
+                  footer: footer ?? const SizedBox.shrink(),
+                  confirmPending: false,
+                  onRefresh: () async {},
+                  onRetryDay: () {},
+                  onRemoveMeal: (_) {},
+                  onUpdateMeal:
+                      (_, {required edits, required removeIds}) async {},
+                  onLogAgain: (_) async {},
+                  onConfirm: (_, _) {},
+                  onConfirmCheat: (_, _) {},
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
     ),
   ),
 );
@@ -175,68 +180,76 @@ void main() {
     expect(top(tester, 'p-afternoon'), lessThan(top(tester, 'm-evening')));
   });
 
-  testWidgets('saving the middle of three staged meals changes one card in place', (
-    tester,
-  ) async {
-    tall(tester);
-    final before = _view(
-      staged: [
-        _staged('p1', '2026-08-11T12:00:00.000Z'),
-        _staged('p2', '2026-08-11T12:30:00.000Z'),
-        _staged('p3', '2026-08-11T13:00:00.000Z'),
-      ],
-    );
-    await tester.pumpWidget(_wrap(before));
-    await tester.pumpAndSettle();
-    final firstElement = tester.element(find.byKey(const ValueKey('p1')));
-    final lastElement = tester.element(find.byKey(const ValueKey('p3')));
+  testWidgets(
+    'saving the middle of three staged meals changes one card in place',
+    (tester) async {
+      tall(tester);
+      final before = _view(
+        staged: [
+          _staged('p1', '2026-08-11T12:00:00.000Z'),
+          _staged('p2', '2026-08-11T12:30:00.000Z'),
+          _staged('p3', '2026-08-11T13:00:00.000Z'),
+        ],
+      );
+      await tester.pumpWidget(_wrap(before));
+      await tester.pumpAndSettle();
+      final firstElement = tester.element(find.byKey(const ValueKey('p1')));
+      final lastElement = tester.element(find.byKey(const ValueKey('p3')));
 
-    // What the confirm refetch returns: p2 is now a saved meal, and it kept
-    // the analysis's timestamp (confirm-and-save.ts reads `pending.loggedAt`).
-    await tester.pumpWidget(
-      _wrap(
-        _view(
-          saved: [_saved('m2', '2026-08-11T12:30:00.000Z')],
-          staged: [
-            _staged('p1', '2026-08-11T12:00:00.000Z'),
-            _staged('p3', '2026-08-11T13:00:00.000Z'),
-          ],
+      // What the confirm refetch returns: p2 is now a saved meal, and it kept
+      // the analysis's timestamp (confirm-and-save.ts reads `pending.loggedAt`).
+      await tester.pumpWidget(
+        _wrap(
+          _view(
+            saved: [_saved('m2', '2026-08-11T12:30:00.000Z')],
+            staged: [
+              _staged('p1', '2026-08-11T12:00:00.000Z'),
+              _staged('p3', '2026-08-11T13:00:00.000Z'),
+            ],
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    // The saved meal holds the slot its staged card had. It used to jump to the
-    // top of the day, above both of its unconfirmed neighbours.
-    expect(top(tester, 'p1'), lessThan(top(tester, 'm2')));
-    expect(top(tester, 'm2'), lessThan(top(tester, 'p3')));
+      // The saved meal holds the slot its staged card had. It used to jump to the
+      // top of the day, above both of its unconfirmed neighbours.
+      expect(top(tester, 'p1'), lessThan(top(tester, 'm2')));
+      expect(top(tester, 'm2'), lessThan(top(tester, 'p3')));
 
-    // And the neighbours are the SAME elements — a remount here replays every
-    // card's entrance, which is the flicker the user sees around a save.
-    expect(tester.element(find.byKey(const ValueKey('p1'))), same(firstElement));
-    expect(tester.element(find.byKey(const ValueKey('p3'))), same(lastElement));
-  });
+      // And the neighbours are the SAME elements — a remount here replays every
+      // card's entrance, which is the flicker the user sees around a save.
+      expect(
+        tester.element(find.byKey(const ValueKey('p1'))),
+        same(firstElement),
+      );
+      expect(
+        tester.element(find.byKey(const ValueKey('p3'))),
+        same(lastElement),
+      );
+    },
+  );
 
-  testWidgets('the first save does not swap the scroll view out from under the feed', (
-    tester,
-  ) async {
-    tall(tester);
-    await tester.pumpWidget(
-      _wrap(_view(staged: [_staged('p1', '2026-08-11T12:00:00.000Z')])),
-    );
-    await tester.pumpAndSettle();
-    final scrollable = tester.element(find.byType(Scrollable));
+  testWidgets(
+    'the first save does not swap the scroll view out from under the feed',
+    (tester) async {
+      tall(tester);
+      await tester.pumpWidget(
+        _wrap(_view(staged: [_staged('p1', '2026-08-11T12:00:00.000Z')])),
+      );
+      await tester.pumpAndSettle();
+      final scrollable = tester.element(find.byType(Scrollable));
 
-    await tester.pumpWidget(
-      _wrap(_view(saved: [_saved('m1', '2026-08-11T12:00:00.000Z')])),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        _wrap(_view(saved: [_saved('m1', '2026-08-11T12:00:00.000Z')])),
+      );
+      await tester.pumpAndSettle();
 
-    // A day with no saved meals used to render through a different scrollable
-    // entirely, so the very first confirm tore the whole feed down and rebuilt
-    // it — every remaining card re-entered at once.
-    expect(tester.element(find.byType(Scrollable)), same(scrollable));
-  });
+      // A day with no saved meals used to render through a different scrollable
+      // entirely, so the very first confirm tore the whole feed down and rebuilt
+      // it — every remaining card re-entered at once.
+      expect(tester.element(find.byType(Scrollable)), same(scrollable));
+    },
+  );
 
   testWidgets('a live turn sits below an unconfirmed meal, not around it', (
     tester,

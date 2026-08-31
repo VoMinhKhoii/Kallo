@@ -111,6 +111,30 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
+  testWidgets('bar hugs the bottom and leaves the body its height',
+      (tester) async {
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+
+    // Regression (TestFlight 2026-08-31): Center inside the
+    // bottomNavigationBar expanded to the Scaffold's full bounded height, so
+    // the nav claimed the whole screen — pill at mid-screen, and (via
+    // extendBody rewriting the body's MediaQuery.padding.bottom) every tab
+    // body SafeArea'd down to zero height.
+    final surface = tester.getSize(find.byType(MaterialApp));
+    final bar = tester.getRect(find.byType(PillNavBar));
+    expect(bar.height, lessThan(160),
+        reason: 'nav bar must wrap the pill, not fill the screen');
+    expect(bar.bottom, surface.height,
+        reason: 'nav bar must sit flush at the scaffold bottom');
+
+    // The branch body must keep real height: its content renders at the top.
+    final content = tester.getRect(find.text('dash:0'));
+    expect(content.height, greaterThan(0));
+    expect(content.top, lessThan(surface.height / 4),
+        reason: 'body content must not be padded off-screen');
+  });
+
   testWidgets('tab switch preserves branch state', (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();

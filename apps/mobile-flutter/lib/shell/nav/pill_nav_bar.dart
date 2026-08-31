@@ -53,7 +53,12 @@ class PillNavBar extends ConsumerWidget {
         KalloSpacing.sp4,
         bottomInset > 0 ? bottomInset : KalloSpacing.sp6,
       ),
+      // heightFactor pins the bar to the pill's own height: a bare Center
+      // EXPANDS to the Scaffold's bounded bottomNavigationBar constraints,
+      // claiming the full screen (pill mid-screen, every extendBody tab
+      // SafeArea'd to zero height — the 2026-08-31 TestFlight regression).
       child: Center(
+        heightFactor: 1,
         child: Container(
           constraints: const BoxConstraints(maxWidth: kNavWidth),
           height: kNavHeight,

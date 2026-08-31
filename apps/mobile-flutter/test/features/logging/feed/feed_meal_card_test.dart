@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_meal_card.dart';
@@ -34,7 +35,34 @@ const _blankInput = PersistedMeal(
   mealItemGroups: [],
 );
 
-Widget _wrap(PersistedMeal meal) => EasyLocalization(
+const _grouped = PersistedMeal(
+  id: 'm3',
+  rawInput: _raw,
+  loggedAt: '2026-08-11T12:15:00.000Z',
+  nutrition: MealNutrition(
+    caloriesKcal: 480,
+    proteinG: 30,
+    carbohydrateG: 50,
+    fatG: 12,
+  ),
+  mealItemGroups: [
+    PersistedMealItemGroup(
+      name: 'Beef slices',
+      order: 0,
+      nutrition: MealNutrition(caloriesKcal: 220, proteinG: 24),
+      ingredients: [],
+    ),
+  ],
+);
+
+Widget _card(PersistedMeal meal) => FeedMealCard(
+  meal: meal,
+  onRemove: () {},
+  onUpdate: ({required edits, required removeIds}) async {},
+  onLogAgain: () async {},
+);
+
+Widget _localized(Widget child) => EasyLocalization(
   supportedLocales: const [Locale('en'), Locale('vi')],
   path: 'assets/l10n',
   fallbackLocale: const Locale('en'),
@@ -46,20 +74,14 @@ Widget _wrap(PersistedMeal meal) => EasyLocalization(
       locale: context.locale,
       home: MediaQuery(
         data: const MediaQueryData(disableAnimations: true),
-        child: Scaffold(
-          body: SingleChildScrollView(
-            child: FeedMealCard(
-              meal: meal,
-              onRemove: () {},
-              onUpdate: ({required edits, required removeIds}) async {},
-              onLogAgain: () async {},
-            ),
-          ),
-        ),
+        child: Scaffold(body: SingleChildScrollView(child: child)),
       ),
     ),
   ),
 );
+
+Widget _wrap(PersistedMeal meal) =>
+    ProviderScope(child: _localized(_card(meal)));
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -71,6 +93,35 @@ void main() {
           (call) async => call.method == 'getAll' ? <String, Object>{} : null,
         );
     await EasyLocalization.ensureInitialized();
+  });
+
+  testWidgets('an opened card stays open across a Log-screen remount', (
+    tester,
+  ) async {
+    // Log is a full-screen PUSH now, not a kept-alive shell branch: every
+    // visit rebuilds the feed from scratch. Expansion must live outside the
+    // route (TestFlight regression, 2026-08-31) — same container, fresh tree.
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    Widget host(Widget child) => UncontrolledProviderScope(
+      container: container,
+      child: _localized(child),
+    );
+
+    await tester.pumpWidget(host(_card(_grouped)));
+    await tester.pumpAndSettle();
+    expect(find.text('Beef slices').hitTestable(), findsNothing);
+
+    // The whole meal block is the toggle target.
+    await tester.tap(find.text(_raw).last);
+    await tester.pumpAndSettle();
+    expect(find.text('Beef slices').hitTestable(), findsOneWidget);
+
+    // Leave Log (route popped, subtree disposed) and come back.
+    await tester.pumpWidget(host(const SizedBox.shrink()));
+    await tester.pumpWidget(host(_card(_grouped)));
+    await tester.pumpAndSettle();
+    expect(find.text('Beef slices').hitTestable(), findsOneWidget);
   });
 
   testWidgets('a saved meal keeps the user message that produced it', (

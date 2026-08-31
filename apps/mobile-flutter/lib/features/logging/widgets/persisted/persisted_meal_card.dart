@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/logging_ui_state.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
 import '../actions/swipe_to_remove.dart';
@@ -15,7 +17,7 @@ import 'persisted_meal_card_content.dart';
 /// `components/logging/feed/persisted/persisted-meal-card.tsx`: the
 /// chevron rotates 0°↔180° (200ms), the collapsed summary cross-fades out, and
 /// the detail block animates its height open/closed (200ms).
-class PersistedMealCard extends StatefulWidget {
+class PersistedMealCard extends ConsumerStatefulWidget {
   const PersistedMealCard({
     super.key,
     required this.meal,
@@ -39,27 +41,38 @@ class PersistedMealCard extends StatefulWidget {
   final Future<void> Function()? onLogAgain;
 
   @override
-  State<PersistedMealCard> createState() => _PersistedMealCardState();
+  ConsumerState<PersistedMealCard> createState() => _PersistedMealCardState();
 }
 
-class _PersistedMealCardState extends State<PersistedMealCard>
+class _PersistedMealCardState extends ConsumerState<PersistedMealCard>
     with SingleTickerProviderStateMixin {
-  bool _collapsed = true;
+  // Seeded from the app-lifetime expansion set, not `true`: the Log route is
+  // a fresh push per visit, so a card that only remembered itself in State
+  // snapped shut every time the user left the screen (TestFlight regression,
+  // 2026-08-31). A restored-open card starts at progress 1 — no replay of the
+  // open animation on re-entry.
+  late bool _collapsed =
+      !ref.read(expandedMealCardsProvider).contains(widget.meal.id);
   bool _editing = false;
 
   // expandProgress 0 (collapsed) → 1 (expanded), 200ms.
   late final AnimationController _expand = AnimationController(
     vsync: this,
+    value: _collapsed ? 0 : 1,
     duration: const Duration(milliseconds: 200),
   );
 
   void _toggle() {
     setState(() => _collapsed = !_collapsed);
+    final expanded = {...ref.read(expandedMealCardsProvider)};
     if (_collapsed) {
+      expanded.remove(widget.meal.id);
       _expand.reverse();
     } else {
+      expanded.add(widget.meal.id);
       _expand.forward();
     }
+    ref.read(expandedMealCardsProvider.notifier).state = expanded;
   }
 
   @override

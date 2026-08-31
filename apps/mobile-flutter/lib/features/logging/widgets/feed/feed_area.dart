@@ -7,6 +7,7 @@ import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../models/logging/relog.dart';
 import '../../data/logging_models.dart';
 import '../../data/logging_providers.dart';
+import '../../data/logging_ui_state.dart';
 import '../../data/stream_analysis_controller.dart';
 import '../../logic/feed/analysis_actions.dart';
 import '../../logic/feed/analysis_run.dart';
@@ -44,11 +45,11 @@ class FeedArea extends ConsumerStatefulWidget {
 class _FeedAreaState extends ConsumerState<FeedArea> {
   final MealInputController _inputController = MealInputController();
 
-  /// The composer's text AND the relog picks living inside it as tinted runs.
-  /// Owned here, not by [MealInput], because the submit path reads the picks
-  /// and the free text around them.
-  final MentionTextEditingController _textController =
-      MentionTextEditingController();
+  /// The composer's text AND relog picks — owned by
+  /// [composerControllerProvider], never disposed here: Log is a fresh push
+  /// per visit, and a State-owned controller dropped the draft on every pop.
+  late final MentionTextEditingController _textController =
+      ref.read(composerControllerProvider);
 
   /// The `/` picker: whether it is open, on which token, and the debounced
   /// query behind it.
@@ -120,7 +121,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   @override
   void dispose() {
     _picker.dispose();
-    _textController.dispose();
     _scrollController.dispose();
     super.dispose();
   }

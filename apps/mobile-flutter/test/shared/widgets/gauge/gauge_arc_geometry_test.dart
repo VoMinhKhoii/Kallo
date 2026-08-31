@@ -129,6 +129,34 @@ void main() {
     });
   });
 
+  group('gaugeOverCapPath', () {
+    Path cap(double progress) => gaugeOverCapPath(
+      center: Offset.zero,
+      outerRadius: 90,
+      progress: progress,
+    );
+
+    test('exists only past the target', () {
+      expect(cap(0.9).getBounds().isEmpty, isTrue);
+      expect(cap(1.0).getBounds().isEmpty, isTrue);
+      expect(cap(1.4).getBounds().isEmpty, isFalse);
+    });
+
+    test('degenerate progress draws nothing', () {
+      // 0 eaten / 0 target is NaN; a 0-target day with meals is infinite.
+      // Neither may poison the paint with non-finite angles.
+      expect(cap(double.nan).getBounds().isEmpty, isTrue);
+      expect(cap(0).getBounds().isEmpty, isTrue);
+      expect(cap(double.infinity).getBounds().isFinite, isTrue);
+    });
+
+    test('grows with the overshoot but never floods the dial', () {
+      final slight = cap(1.05).getBounds().width;
+      final heavy = cap(2.0).getBounds().width;
+      expect(slight, lessThanOrEqualTo(heavy));
+    });
+  });
+
   test('gaugeTipOffset puts the tips half a radius below centre', () {
     // 210° and −30° both sit at sin = −0.5, so the tips are at r/2 below the
     // centre. The readout leans on this to sit level with them.

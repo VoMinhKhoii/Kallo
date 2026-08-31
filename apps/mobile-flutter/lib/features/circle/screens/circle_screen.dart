@@ -48,6 +48,7 @@ class CircleScreen extends ConsumerWidget {
             ?.title ??
         '';
     return Screen(
+      bottom: false,
       child: ScrollSeparator(
         // A large LEFT-aligned page title, not a centred header line (native
         // pass, 2026-08-31): 28/700 is the top of the header ramp, and the

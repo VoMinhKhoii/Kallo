@@ -21,6 +21,7 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/dashboard_providers.dart';
 import '../../logic/dashboard_spacing.dart';
+import 'weight_submit_button.dart';
 import '../../../../theme/calm_tokens.dart';
 
 const double _weightMin = 30;
@@ -234,7 +235,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
         // thumb-friendly target than a cramped side-by-side button.
         SizedBox(
           width: double.infinity,
-          child: _SubmitButton(
+          child: WeightSubmitButton(
             label: submitLabel,
             pending: _pending,
             pressed: _pressed,
@@ -283,62 +284,4 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
           width: color == Colors.transparent ? 0 : 1.5,
         ),
       );
-}
-
-class _SubmitButton extends StatelessWidget {
-  const _SubmitButton({
-    required this.label,
-    required this.pending,
-    required this.pressed,
-    required this.onTapDown,
-    required this.onTapUp,
-    required this.onTapCancel,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool pending;
-  final bool pressed;
-  final VoidCallback onTapDown;
-  final VoidCallback onTapUp;
-  final VoidCallback onTapCancel;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: pending ? null : (_) => onTapDown(),
-      onTapUp: pending ? null : (_) => onTapUp(),
-      onTapCancel: pending ? null : onTapCancel,
-      onTap: onTap,
-      child: Opacity(
-        opacity: pending ? 0.55 : 1,
-        child: Container(
-          // Stands on its own row now — own comfortable vertical height.
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp5,
-            vertical: KalloSpacing.sp3,
-          ),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: pressed && !pending ? KalloColors.btnHover : KalloColors.btn,
-            borderRadius: BorderRadius.circular(KalloRadii.xl),
-          ),
-          child: pending
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
-                )
-              : Text(
-                  label,
-                  // Sentence-case, body-sized label — a native button reads as
-                  // a word, not a techy 11px all-caps eyebrow.
-                  style: dashBody(color: Colors.white, weight: FontWeight.w600),
-                ),
-        ),
-      ),
-    );
-  }
 }

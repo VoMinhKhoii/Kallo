@@ -75,6 +75,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
 
     if (userId == null) {
       return Screen(
+        bottom: false,
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -108,6 +109,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     final isFetching = async.isLoading && async.hasValue;
 
     return Screen(
+      bottom: false,
       child: ScrollSeparator(
         header: Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -141,13 +143,15 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                 // refetch landed, and with nothing cached for the new selection
                 // the fallback below flashed 7d on the way from 30d to 90d.
                 // `auto` still defers — that is the whole point of it.
-                resolvedRange: _range == NutritionRangeInput.auto
-                    ? (async.valueOrNull?.resolvedRange ?? '7d')
-                    : _range.value,
-                onRangeChange: (range) => setState(() {
-                  _range = range;
-                  _selectedIndex = null;
-                }),
+                resolvedRange:
+                    _range == NutritionRangeInput.auto
+                        ? (async.valueOrNull?.resolvedRange ?? '7d')
+                        : _range.value,
+                onRangeChange:
+                    (range) => setState(() {
+                      _range = range;
+                      _selectedIndex = null;
+                    }),
                 disabled: isFetching,
               ),
             ],
@@ -225,33 +229,44 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     // `active`, not `_selectedIndex`: tapping a column with nothing logged in
     // it resolves to no detail, and the page stays on the range rather than
     // greying every other column around an empty one.
-    final detail = _selectedIndex == null
-        ? null
-        : buildBucketDetail(overview.daySeries, _selectedIndex!);
+    final detail =
+        _selectedIndex == null
+            ? null
+            : buildBucketDetail(overview.daySeries, _selectedIndex!);
     final active = detail == null ? null : _selectedIndex;
-    final macros = detail == null
-        ? overview.macros
-        : scopeMacrosToBucket(overview.macros, detail);
-    final all = detail == null
-        ? [...overview.micronutrients, ...overview.moreNutrients]
-        : scopeCardsToBucket(
-            [...overview.micronutrients, ...overview.moreNutrients], detail);
+    final macros =
+        detail == null
+            ? overview.macros
+            : scopeMacrosToBucket(overview.macros, detail);
+    final all =
+        detail == null
+            ? [...overview.micronutrients, ...overview.moreNutrients]
+            : scopeCardsToBucket([
+              ...overview.micronutrients,
+              ...overview.moreNutrients,
+            ], detail);
     final vitamins =
         all.where((c) => c.group == NutrientGroup.vitamin).toList();
     final minerals =
         all.where((c) => c.group != NutrientGroup.vitamin).toList();
     // The CTA is off, so its input is not worth computing on every build.
-    final foodNutrients = kShowSuggestedFoods
-        ? suggestedFoodNutrients(overview)
-        : const <NutrientCardData>[];
-    final buckets = overview.daySeries.series.isEmpty
-        ? const <DaySeriesBucket>[]
-        : overview.daySeries.series.first.buckets;
+    final foodNutrients =
+        kShowSuggestedFoods
+            ? suggestedFoodNutrients(overview)
+            : const <NutrientCardData>[];
+    final buckets =
+        overview.daySeries.series.isEmpty
+            ? const <DaySeriesBucket>[]
+            : overview.daySeries.series.first.buckets;
     final locale = context.locale.toString();
-    final dateSpan = detail == null
-        ? formatDateSpan(
-            overview.period.startDate, overview.period.endDate, locale)
-        : formatDateSpan(detail.startDate, detail.endDate, locale);
+    final dateSpan =
+        detail == null
+            ? formatDateSpan(
+              overview.period.startDate,
+              overview.period.endDate,
+              locale,
+            )
+            : formatDateSpan(detail.startDate, detail.endDate, locale);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -263,10 +278,11 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         // not an average over a day scope, so it drops the qualifier.
         SectionHeaderRow(
           title: tr('nutrition.macros.calories'),
-          meta: active != null
-              ? tr('nutrition.cardTitle')
-              : '${tr('nutrition.cardTitle')} · '
-                  '${tr(overview.loggedDays == 0 || _dayScope == NutritionDayScope.all ? 'nutrition.rhythm.loggedDays' : 'nutrition.rhythm.completeDays')}',
+          meta:
+              active != null
+                  ? tr('nutrition.cardTitle')
+                  : '${tr('nutrition.cardTitle')} · '
+                      '${tr(overview.loggedDays == 0 || _dayScope == NutritionDayScope.all ? 'nutrition.rhythm.loggedDays' : 'nutrition.rhythm.completeDays')}',
         ),
         const SizedBox(height: _gap),
         DaySummary(
@@ -280,8 +296,10 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           dateSpan: dateSpan,
           todayIndex: findTodayIndex(buckets, localIsoDate()),
           selectedIndex: active,
-          onSelect: (index) => setState(
-              () => _selectedIndex = _selectedIndex == index ? null : index),
+          onSelect:
+              (index) => setState(
+                () => _selectedIndex = _selectedIndex == index ? null : index,
+              ),
           isEmpty: overview.loggedDays == 0,
         ),
         // The three macros belong to the calorie section — same average, same
@@ -326,9 +344,10 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       const SizedBox(height: _gap),
       SectionHeaderRow(
         title: title,
-        meta: cards.any((c) => isLowConfidence(c.displayState))
-            ? tr('nutrition.summary.limitedData')
-            : null,
+        meta:
+            cards.any((c) => isLowConfidence(c.displayState))
+                ? tr('nutrition.summary.limitedData')
+                : null,
       ),
       const SizedBox(height: _gap),
       NutrientRowsCard(cards: cards),

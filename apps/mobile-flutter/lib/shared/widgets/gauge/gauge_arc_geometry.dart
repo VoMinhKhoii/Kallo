@@ -131,7 +131,9 @@ Path gaugeOverCapPath({
   required double outerRadius,
   required double progress,
 }) {
-  if (progress <= 1) return Path();
+  // `> 1` rather than `!(<= 1)`: a NaN progress (0 eaten / 0 target) fails
+  // both comparisons, and must fall out here instead of poisoning the path.
+  if (!(progress > 1)) return Path();
   final band = outerRadius * _bandRatio;
   final innerRadius = outerRadius - band;
   final cornerRadius = band * _cornerRatio;

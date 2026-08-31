@@ -7,6 +7,12 @@ import '../../../theme/kallo_colors.dart';
 /// Defaults to applying top + bottom safe-area padding; pass [top]/[bottom] to
 /// opt out of an edge. No web counterpart file — the web screen frame is CSS
 /// layout, not a component.
+///
+/// Shell-branch screens pass `bottom: false`: under `extendBody` the floating
+/// pill nav reports its whole height as bottom padding, and consuming it here
+/// pins the page above the pill. Their scroll views own a [kNavClearance]
+/// inset instead, so content slides under the bar. Pushed routes (Settings,
+/// Log, sheets' hosts) keep the default and clear the home indicator.
 class Screen extends StatelessWidget {
   const Screen({
     super.key,

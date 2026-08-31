@@ -75,12 +75,15 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
 
   @override
   Widget build(BuildContext context) {
+    // The affirmative follows the button tiers: red only when something is
+    // destroyed, the beige in-app primary otherwise (the umber fill predated
+    // the button retirement — missed on the first native pass).
     final Color resting =
-        widget.destructive ? KalloColors.danger : KalloColors.btn;
-    // Both pressed fills are tokens, the way every other pill in the app names
-    // its own: btn → btnHover, danger → dangerHover.
-    final Color held =
-        widget.destructive ? KalloColors.dangerHover : KalloColors.btnHover;
+        widget.destructive ? KalloColors.danger : KalloColors.btnPrimarySoft;
+    final Color held = widget.destructive
+        ? KalloColors.dangerHover
+        : Color.alphaBlend(KalloColors.pressWash, KalloColors.btnPrimarySoft);
+    final Color label = widget.destructive ? Colors.white : KalloColors.text;
 
     return Semantics(
       button: true,
@@ -113,7 +116,7 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
             child: Text(
               widget.label,
               textAlign: TextAlign.center,
-              style: dashBody(color: Colors.white, weight: FontWeight.w500),
+              style: dashBody(color: label, weight: FontWeight.w500),
             ),
           ),
         ),

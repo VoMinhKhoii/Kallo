@@ -58,6 +58,7 @@ class DashboardScreen extends ConsumerWidget {
 
     if (userId == null) {
       return Screen(
+        bottom: false,
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(KalloSpacing.sp6),
@@ -75,6 +76,7 @@ class DashboardScreen extends ConsumerWidget {
     final bundle = ref.watch(dashboardBundleProvider(args));
 
     return Screen(
+      bottom: false,
       child: ScrollSeparator(
         header: Padding(
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
