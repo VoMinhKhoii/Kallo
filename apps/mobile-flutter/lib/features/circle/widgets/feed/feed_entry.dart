@@ -44,7 +44,11 @@ class _FeedEntryState extends State<FeedEntry> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ProfileAvatarDisc(profile: entry.friend, size: 36),
+        // 32, TOP-aligned (native pass, 2026-08-31): inside the day card the
+        // disc is an identity marker beside the content column, not a second
+        // column of its own, so it steps down one size and the separator
+        // under the post starts where the text does.
+        ProfileAvatarDisc(profile: entry.friend, size: 32),
         const SizedBox(width: KalloSpacing.sp3),
         Expanded(
           child: Column(
@@ -60,15 +64,13 @@ class _FeedEntryState extends State<FeedEntry> {
                       children: [
                         TextSpan(
                           text: name,
-                          // Bold + ink against the muted timestamp beside it:
-                          // the Threads relationship, where a bold author sits
-                          // over regular body copy. w600 is above the w500 that
-                          // `mobile.md` caps DATA at — a name is identity, not
-                          // a figure, and the cap exists to stop numbers
-                          // shouting at each other.
-                          style: dashMeta(
-                            weight: FontWeight.w600,
-                          ).copyWith(color: kInk),
+                          // 14/600 ink against the 12 muted timestamp beside
+                          // it: the Threads relationship, where a bold author
+                          // sits over regular body copy. w600 is above the
+                          // w500 that `mobile.md` caps DATA at — a name is
+                          // identity, not a figure, and the cap exists to stop
+                          // numbers shouting at each other.
+                          style: dashBody(weight: FontWeight.w600),
                         ),
                         // A backfilled (past-date) meal carries a sharedAt of
                         // "now", so its clock time describes when it was typed
@@ -108,9 +110,9 @@ class _FeedEntryState extends State<FeedEntry> {
                 ],
               ),
               const SizedBox(height: kFeedTight),
-              // The hero: the only ink-coloured body text on the post.
-              Text(meal.rawInput, style: dashBody()),
-              const SizedBox(height: kFeedStandard),
+              // Meal text, calorie-share bar and macro legend are one block
+              // now — the app-wide [MealBlock] anatomy, shared with Recent
+              // meals and the logging card.
               FeedNutrition(meal: meal),
               // No gap: the action row's own tap slack supplies it.
               FeedEntryActions(

@@ -33,9 +33,7 @@ class ReplyRow extends StatelessWidget {
                     // author of the thing being replied to.
                     TextSpan(
                       text: name,
-                      style: dashMeta(
-                        weight: FontWeight.w600,
-                      ).copyWith(color: kInk),
+                      style: dashBody(weight: FontWeight.w600),
                     ),
                     TextSpan(
                       text:

@@ -796,7 +796,9 @@
       "rateLimited": "Too many attempts — give it a moment, then try again.",
       "accountExists": "You already have an account with this email. Sign in with the method you used originally.",
       "generic": "Something went wrong — please try again."
-    }
+    },
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "landing": {
     "localeSwitcher": {

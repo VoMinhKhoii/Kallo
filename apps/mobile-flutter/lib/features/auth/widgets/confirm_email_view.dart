@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
 import '../providers/auth_form_controller.dart';
+import 'auth_controls.dart';
 
 /// The post-sign-up "Check your email" state.
 ///
@@ -25,7 +27,7 @@ class ConfirmEmailView extends ConsumerStatefulWidget {
   });
 
   final AutoDisposeStateNotifierProvider<AuthFormController, AuthFormState>
-      provider;
+  provider;
   final void Function(String message) onNotice;
 
   @override
@@ -109,71 +111,52 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: KalloSpacing.sp5),
         Text(
           tr('auth.confirm.title'),
           textAlign: TextAlign.center,
           style: KalloTextStyles.serifRegular(
-            fontSize: KalloFontSize.h3,
-          ).copyWith(color: KalloColors.text),
+            fontSize: kAuthHeading,
+          ).copyWith(color: KalloColors.text, letterSpacing: -0.4),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: KalloSpacing.sp2),
         Text(
           tr('auth.confirm.description'),
           textAlign: TextAlign.center,
           style: dashBody(color: kInkMuted),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: KalloSpacing.sp0_5),
         Text(
           email,
           textAlign: TextAlign.center,
           style: dashBody(weight: FontWeight.w500),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: KalloSpacing.sp3),
         Text(
           tr('auth.confirm.hint'),
           textAlign: TextAlign.center,
           style: dashMeta(),
         ),
-        const SizedBox(height: 24),
-        // Resend (cooldown-gated).
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: canResend ? _resend : null,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: KalloSpacing.sp4,
-              vertical: KalloSpacing.sp3,
-            ),
-            decoration: BoxDecoration(
-              color: KalloColors.elev,
-              borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-              border: Border.all(color: KalloColors.border),
-            ),
-            alignment: Alignment.center,
-            child: Text(
+        const SizedBox(height: KalloSpacing.sp6),
+        // Resend (cooldown-gated) — quiet, since the mail is already on its
+        // way and this only exists for when it did not arrive.
+        KalloButton(
+          title:
               canResend
                   ? tr('auth.confirm.resend')
                   : tr(
-                      'auth.confirm.resendIn',
-                      namedArgs: {'seconds': '$_remaining'},
-                    ),
-              style: dashBody(
-                weight: FontWeight.w500,
-                color: canResend ? KalloColors.text : kInkMuted,
-              ),
-            ),
-          ),
+                    'auth.confirm.resendIn',
+                    namedArgs: {'seconds': '$_remaining'},
+                  ),
+          variant: KalloButtonVariant.secondary,
+          disabled: !canResend,
+          onPressed: _resend,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: KalloSpacing.sp2),
         Center(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
+          child: AuthQuietLink(
+            label: tr('auth.confirm.back'),
             onTap: busy ? null : _controller.clearPendingEmail,
-            child: Text(
-              tr('auth.confirm.back'),
-              style: dashBody(color: kInkMuted),
-            ),
           ),
         ),
       ],

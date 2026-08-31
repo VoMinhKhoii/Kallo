@@ -1,9 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_colors.dart';
-import '../../../theme/kallo_theme.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
+import '../auth_controls.dart' show kAuthButtonHeight;
 
 /// "Continue with Apple" — a custom button matching the Google / email buttons.
 ///
@@ -39,21 +40,18 @@ class _AppleButtonState extends State<AppleButton> {
     return Opacity(
       opacity: widget.busy ? 0.6 : 1.0,
       child: GestureDetector(
-        onTapDown:
-            widget.busy ? null : (_) => setState(() => _pressed = true),
+        onTapDown: widget.busy ? null : (_) => setState(() => _pressed = true),
         onTapUp: widget.busy ? null : (_) => setState(() => _pressed = false),
         onTapCancel:
             widget.busy ? null : () => setState(() => _pressed = false),
         onTap: widget.busy ? null : widget.onPressed,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp4,
-            vertical: KalloSpacing.sp3,
-          ),
+          constraints: const BoxConstraints(minHeight: kAuthButtonHeight),
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
           decoration: BoxDecoration(
             color: _pressed ? _blackPressed : _black,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+            borderRadius: BorderRadius.circular(KalloRadii.button),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -71,8 +69,9 @@ class _AppleButtonState extends State<AppleButton> {
               const SizedBox(width: 8),
               Text(
                 tr('auth.dialog.continueWithApple'),
-                style: dashBody(weight: FontWeight.w500)
-                    .copyWith(color: KalloColors.elev, letterSpacing: -0.2),
+                style: dashBody(
+                  weight: FontWeight.w600,
+                ).copyWith(color: KalloColors.elev, letterSpacing: -0.2),
               ),
             ],
           ),

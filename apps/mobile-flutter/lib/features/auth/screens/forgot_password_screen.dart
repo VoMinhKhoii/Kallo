@@ -7,7 +7,10 @@ import '../../../services/auth/supabase_service.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
+import '../widgets/auth_controls.dart';
+
 import '../widgets/auth_submit_button.dart';
 import '../widgets/auth_text_field.dart';
 
@@ -77,7 +80,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           _BackHeader(onBack: () => Navigator.of(context).maybePop()),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              padding: const EdgeInsets.symmetric(
+                horizontal: kAuthInset,
+                vertical: KalloSpacing.sp6,
+              ),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: _sent ? _sentBody() : _formBody(),
@@ -97,16 +103,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           tr('auth.forgot.title'),
           textAlign: TextAlign.center,
           style: KalloTextStyles.serifRegular(
-            fontSize: KalloFontSize.h3,
-          ).copyWith(color: KalloColors.text),
+            fontSize: kAuthHeading,
+          ).copyWith(color: KalloColors.text, letterSpacing: -0.4),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: KalloSpacing.sp2),
         Text(
           tr('auth.forgot.description'),
           textAlign: TextAlign.center,
           style: dashBody(color: kInkMuted),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: KalloSpacing.sp5),
         AuthTextField(
           controller: _email,
           label: tr('auth.forgot.email'),
@@ -121,7 +127,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             if (_emailError != null) setState(() => _emailError = null);
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: KalloSpacing.sp4),
         AuthSubmitButton(
           label: tr('auth.forgot.submit'),
           busy: _busy,
@@ -138,46 +144,45 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       children: [
         Center(
           child: Container(
-            width: 48,
-            height: 48,
+            width: 56,
+            height: 56,
             decoration: const BoxDecoration(
-              color: Color(0x26C9A87C), // accent @ 15%
+              color: KalloColors.hover,
               shape: BoxShape.circle,
             ),
             child: const Icon(
               LucideIcons.mailCheck300,
-              size: 20,
-              color: Color(0xFFA88B63),
+              size: KalloIcons.size,
+              color: KalloColors.textMuted,
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: KalloSpacing.sp5),
         Text(
           tr('auth.forgot.sentTitle'),
           textAlign: TextAlign.center,
           style: KalloTextStyles.serifRegular(
-            fontSize: KalloFontSize.h3,
-          ).copyWith(color: KalloColors.text),
+            fontSize: kAuthHeading,
+          ).copyWith(color: KalloColors.text, letterSpacing: -0.4),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: KalloSpacing.sp2),
         Text(
           tr('auth.forgot.sentDescription'),
           textAlign: TextAlign.center,
           style: dashBody(color: kInkMuted),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: KalloSpacing.sp0_5),
         Text(
           _email.text.trim(),
           textAlign: TextAlign.center,
-          style: KalloTextStyles.serifRegular(
-            fontSize: 16,
-          ).copyWith(color: KalloColors.text),
+          style: dashBody(weight: FontWeight.w500),
         ),
-        const SizedBox(height: 24),
-        AuthSubmitButton(
-          label: tr('auth.forgot.backToSignIn'),
-          busy: false,
-          loading: false,
+        const SizedBox(height: KalloSpacing.sp6),
+        // Quiet, not the black CTA: the mail is already sent, so this is a way
+        // back rather than the commitment the CTA tier is reserved for.
+        KalloButton(
+          title: tr('auth.forgot.backToSignIn'),
+          variant: KalloButtonVariant.secondary,
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ],
@@ -192,28 +197,10 @@ class _BackHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp1),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onBack,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                LucideIcons.arrowLeft300,
-                size: 16,
-                color: KalloColors.textMuted,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                tr('auth.forgot.back'),
-                style: dashBody(color: kInkMuted),
-              ),
-            ],
-          ),
-        ),
+        child: AuthBackButton(onBack: onBack),
       ),
     );
   }

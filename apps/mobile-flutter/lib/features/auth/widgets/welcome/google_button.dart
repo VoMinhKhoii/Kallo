@@ -1,10 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_colors.dart';
-import '../../../theme/kallo_theme.dart';
-import '../../../shared/widgets/brand/google_logo.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../auth_controls.dart' show kAuthButtonHeight;
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
+import '../../../../shared/widgets/brand/google_logo.dart';
 
 /// "Continue with Google" button.
 ///
@@ -14,7 +15,8 @@ import '../../../shared/widgets/brand/google_logo.dart';
 /// tracking-tight transition-all duration-200 hover:bg-[#FFFCF8]
 /// disabled:opacity-60`. While busy a Loader2 spinner (h-4 w-4, currentColor
 /// = #2C2416) replaces the logo. rounded-xl → 12, gap-2.5 → 10, px-4 → 16,
-/// py-3 → 12.
+/// py-3 → 12. Restyled to the canvas' 50pt full-round pill in the native pass
+/// (2026-08-31) — see [kAuthButtonHeight].
 class GoogleButton extends StatefulWidget {
   const GoogleButton({
     super.key,
@@ -53,13 +55,11 @@ class _GoogleButtonState extends State<GoogleButton> {
         onTap: widget.busy ? null : widget.onPressed,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp4,
-            vertical: KalloSpacing.sp3,
-          ),
+          constraints: const BoxConstraints(minHeight: kAuthButtonHeight),
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
           decoration: BoxDecoration(
             color: fill,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+            borderRadius: BorderRadius.circular(KalloRadii.button),
             border: Border.all(color: KalloColors.border),
           ),
           child: Row(
@@ -79,8 +79,9 @@ class _GoogleButtonState extends State<GoogleButton> {
               const SizedBox(width: 10), // gap-2.5
               Text(
                 tr('auth.dialog.continueWithGoogle'),
-                style: dashBody(weight: FontWeight.w500)
-                    .copyWith(color: KalloColors.text, letterSpacing: -0.2),
+                style: dashBody(
+                  weight: FontWeight.w600,
+                ).copyWith(color: KalloColors.text, letterSpacing: -0.2),
               ),
             ],
           ),

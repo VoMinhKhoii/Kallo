@@ -1,13 +1,15 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
 import '../providers/auth_form_controller.dart';
 import '../screens/forgot_password_screen.dart';
+import 'auth_controls.dart';
+
 import 'auth_submit_button.dart';
 import 'auth_text_field.dart';
 
@@ -23,7 +25,7 @@ class EmailAuthForm extends ConsumerStatefulWidget {
   });
 
   final AutoDisposeStateNotifierProvider<AuthFormController, AuthFormState>
-      provider;
+  provider;
   final VoidCallback onBack;
 
   @override
@@ -74,41 +76,30 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Back to the welcome screen.
+        // Back to the welcome screen — the app's 24-on-44 chevron, aligned to
+        // the leading edge like every other pushed screen's back control.
         Align(
           alignment: Alignment.centerLeft,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: busy ? null : widget.onBack,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    LucideIcons.arrowLeft300,
-                    size: 16,
-                    color: KalloColors.textMuted,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    tr('auth.confirm.back'),
-                    style: dashBody(color: kInkMuted),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          child: AuthBackButton(onBack: busy ? null : widget.onBack),
         ),
+        const SizedBox(height: KalloSpacing.sp3),
+        // The screen's one serif moment, at the canvas' 26.
         Text(
           _createMode
               ? tr('auth.dialog.signUpTitle')
               : tr('auth.dialog.signInTitle'),
           style: KalloTextStyles.serifRegular(
-            fontSize: KalloFontSize.h3,
-          ).copyWith(color: KalloColors.text),
+            fontSize: kAuthHeading,
+          ).copyWith(color: KalloColors.text, letterSpacing: -0.4),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: KalloSpacing.sp3),
+        Text(
+          _createMode
+              ? tr('auth.dialog.signUpSubtitle')
+              : tr('auth.dialog.signInSubtitle'),
+          style: dashBody(color: kInkMuted),
+        ),
+        const SizedBox(height: KalloSpacing.sp5),
         AuthTextField(
           controller: _email,
           label: tr('auth.signIn.email'),
@@ -123,18 +114,20 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
             _controller.clearMessages();
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: KalloSpacing.sp3),
         AuthTextField(
           controller: _password,
           label: tr('auth.signIn.password'),
-          placeholder: _createMode
-              ? tr('auth.signUp.passwordPlaceholder')
-              : tr('auth.signIn.passwordPlaceholder'),
+          placeholder:
+              _createMode
+                  ? tr('auth.signUp.passwordPlaceholder')
+                  : tr('auth.signIn.passwordPlaceholder'),
           obscureText: true,
           textInputAction: TextInputAction.done,
-          autofillHints: _createMode
-              ? const [AutofillHints.newPassword]
-              : const [AutofillHints.password],
+          autofillHints:
+              _createMode
+                  ? const [AutofillHints.newPassword]
+                  : const [AutofillHints.password],
           onSubmitted: (_) => _submit(),
           enabled: !busy,
           errorText: _passwordError,
@@ -143,70 +136,62 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
             _controller.clearMessages();
           },
         ),
-        if (!_createMode) ...[
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: busy
-                  ? null
-                  : () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const ForgotPasswordScreen(),
-                        ),
-                      ),
-              child: Text(
-                tr('auth.signIn.forgotPassword'),
-                style: dashMeta(),
-              ),
-            ),
-          ),
-        ],
         // Inline auth error — stays put (unlike a toast) and the fields keep
         // their values so the user can correct and retry in place.
         if (state.error != null) ...[
-          const SizedBox(height: 12),
-          Text(
-            state.error!,
-            style: dashMeta(color: KalloColors.danger),
-          ),
+          const SizedBox(height: KalloSpacing.sp3),
+          Text(state.error!, style: dashMeta(color: KalloColors.danger)),
         ],
-        const SizedBox(height: 16),
+        const SizedBox(height: KalloSpacing.sp5),
         AuthSubmitButton(
-          label: _createMode
-              ? tr('auth.signUp.submit')
-              : tr('auth.signIn.submit'),
+          label:
+              _createMode ? tr('auth.signUp.submit') : tr('auth.signIn.submit'),
           busy: busy,
           loading: state.emailBusy,
           onPressed: _submit,
         ),
-        const SizedBox(height: 20),
+        // Forgot password sits UNDER the CTA now, centred (native pass,
+        // 2026-08-31): above it, right-aligned, it competed with the field it
+        // hung off and pushed the two inputs apart. Below the button it reads
+        // as the quiet alternative to the action just offered.
+        if (!_createMode)
+          Center(
+            child: AuthQuietLink(
+              label: tr('auth.signIn.forgotPassword'),
+              onTap:
+                  busy
+                      ? null
+                      : () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const ForgotPasswordScreen(),
+                        ),
+                      ),
+            ),
+          ),
+        const SizedBox(height: KalloSpacing.sp5),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               _createMode
-                  ? '${tr('auth.signUp.hasAccount')} '
-                  : '${tr('auth.signIn.noAccount')} ',
-              style: dashBody(color: kInkMuted),
+                  ? tr('auth.signUp.hasAccount')
+                  : tr('auth.signIn.noAccount'),
+              style: dashMeta().copyWith(fontSize: kAuthFootnote),
             ),
             Opacity(
               opacity: busy ? 0.6 : 1.0,
               child: IgnorePointer(
                 ignoring: busy,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+                child: AuthQuietLink(
+                  label:
+                      _createMode
+                          ? tr('auth.signUp.signInLink')
+                          : tr('auth.signIn.signUpLink'),
+                  emphasis: true,
                   onTap: () {
                     _controller.clearMessages();
                     setState(() => _createMode = !_createMode);
                   },
-                  child: Text(
-                    _createMode
-                        ? tr('auth.signUp.signInLink')
-                        : tr('auth.signIn.signUpLink'),
-                    style: dashBody(color: KalloColors.textMuted, weight: FontWeight.w500),
-                  ),
                 ),
               ),
             ),

@@ -1,23 +1,22 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 
-/// The auth email/password field, matching web `components/auth/form-input.tsx`.
+/// The auth email/password field (native pass, 2026-08-31): a 52pt full-round
+/// pill on the app's field metrics — white fill, hairline border, 18 left
+/// inset, 17pt input text, and a 2px warm-accent border when focused. Above it
+/// sits a 12/500 muted label; below it, the validation message.
 ///
-/// Layout (`space-y-1.5` = 6px stack):
-///   • Label: `block font-medium text-[#2C2416] text-xs tracking-wide`
-///     (DM Sans w500, 12px, ~0.6px tracking).
-///   • Input: `w-full rounded-xl border bg-white px-4 py-3 text-[#2C2416]
-///     text-sm placeholder:text-[#B0A695] transition-all duration-200`.
-///       resting border `#E8E6DC/60`; focus border `#C9A87C` + a 2px ring
-///       `#C9A87C/10`. Error state: border `red-400`, focus `red-500`, ring
-///       `red-500/10`.
-///   • Password fields render an Eye/EyeOff toggle at `right-3` (12px),
-///     vertically centered, `#8B7355/50` → `#8B7355` on press.
-///   • Error message below: `text-red-500 text-xs` (12px).
+/// Shape and metrics match [KalloTextField] and the app-level
+/// [InputDecorationTheme] exactly. This keeps its own decoration rather than
+/// wrapping that widget for one reason: an invalid field has to turn the
+/// BORDER red, not just print red copy under it — "red on the affordance, not
+/// the copy" (`mobile.md`) — and the shared field has no error state to drive.
 class AuthTextField extends StatefulWidget {
   const AuthTextField({
     super.key,
@@ -47,7 +46,7 @@ class AuthTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final bool enabled;
 
-  /// Per-field validation message (zod). Null = valid/untouched.
+  /// Per-field validation message. Null = valid/untouched.
   final String? errorText;
 
   @override
@@ -59,10 +58,8 @@ class _AuthTextFieldState extends State<AuthTextField> {
   bool _focused = false;
   bool _reveal = false;
 
-  // Tailwind red-400 / red-500 used for the error border + message.
-  static const Color _red400 = Color(0xFFF87171);
-  static const Color _red500 = Color(0xFFEF4444);
-  static const Color _placeholder = Color(0xFFB0A695);
+  /// Field height and the reveal toggle's target — the app's pill metrics.
+  static const double _height = 52;
 
   @override
   void initState() {
@@ -82,78 +79,75 @@ class _AuthTextFieldState extends State<AuthTextField> {
   Widget build(BuildContext context) {
     final hasError = widget.errorText != null;
 
-    // Border + ring resolve from error → focus → resting, mirroring the web's
-    // class precedence.
+    // Error → focus → resting, and the focused state is the one that gets the
+    // 2px stroke: a field taking focus is the only moment the border is doing
+    // more than outlining the pill.
     final Color borderColor;
-    final Color? ringColor;
+    final double borderWidth;
     if (hasError) {
-      borderColor = _focused ? _red500 : _red400;
-      ringColor = _focused ? _red500.withValues(alpha: 0.10) : null;
+      borderColor = KalloColors.danger;
+      borderWidth = _focused ? 2 : 1;
     } else if (_focused) {
-      borderColor = KalloColors.accent;
-      ringColor = KalloColors.accent.withValues(alpha: 0.10);
+      borderColor = KalloColors.accent40;
+      borderWidth = 2;
     } else {
-      borderColor = KalloColors.borderSoft; // hairline #E8E6DC @ 60%
-      ringColor = null;
+      borderColor = KalloColors.border;
+      borderWidth = 1;
     }
 
     final isPassword = widget.obscureText;
+    const inputStyle = TextStyle(
+      fontFamily: KalloTextStyles.sansFamily,
+      fontSize: 17,
+      color: KalloColors.text,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Label.
-        Text(
-          widget.label,
-          style: dashMeta(),
-        ),
-        const SizedBox(height: 6), // space-y-1.5
-        // Input (with optional focus ring drawn as a boxShadow).
+        Text(widget.label, style: dashMeta(weight: FontWeight.w500)),
+        const SizedBox(height: KalloSpacing.sp1_5),
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
+          constraints: const BoxConstraints(minHeight: _height),
+          // The reveal toggle needs a 44pt box of its own, so a password field
+          // trades the right inset for it rather than padding both.
+          padding: EdgeInsets.only(right: isPassword ? KalloSpacing.sp1 : 0),
           decoration: BoxDecoration(
-            color: KalloColors.elev,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-            border: Border.all(color: borderColor),
-            boxShadow: ringColor == null
-                ? null
-                : [
-                    // focus:ring-2 → a 2px ring around the border.
-                    BoxShadow(color: ringColor, spreadRadius: 2),
-                  ],
+            color: kFieldFill,
+            borderRadius: BorderRadius.circular(KalloRadii.input),
+            border: Border.all(color: borderColor, width: borderWidth),
           ),
-          child: Stack(
-            alignment: Alignment.centerRight,
+          child: Row(
             children: [
-              TextField(
-                controller: widget.controller,
-                focusNode: _focusNode,
-                enabled: widget.enabled,
-                obscureText: isPassword && !_reveal,
-                keyboardType: widget.keyboardType,
-                textInputAction: widget.textInputAction,
-                autofillHints: widget.autofillHints,
-                onSubmitted: widget.onSubmitted,
-                onChanged: widget.onChanged,
-                autocorrect: false,
-                enableSuggestions: !isPassword,
-                cursorColor: KalloColors.text,
-                style: dashBody(),
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: widget.placeholder,
-                  hintStyle: dashBody(color: _placeholder),
-                  filled: false,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  disabledBorder: InputBorder.none,
-                  // px-4 py-3; reserve room on the right for the eye toggle.
-                  contentPadding: EdgeInsets.only(
-                    left: KalloSpacing.sp4,
-                    right: isPassword ? 40 : KalloSpacing.sp4,
-                    top: KalloSpacing.sp3,
-                    bottom: KalloSpacing.sp3,
+              Expanded(
+                child: TextField(
+                  controller: widget.controller,
+                  focusNode: _focusNode,
+                  enabled: widget.enabled,
+                  obscureText: isPassword && !_reveal,
+                  keyboardType: widget.keyboardType,
+                  textInputAction: widget.textInputAction,
+                  autofillHints: widget.autofillHints,
+                  onSubmitted: widget.onSubmitted,
+                  onChanged: widget.onChanged,
+                  autocorrect: false,
+                  enableSuggestions: !isPassword,
+                  cursorColor: KalloColors.text,
+                  style: inputStyle,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: widget.placeholder,
+                    hintStyle: inputStyle.copyWith(color: kInkMuted),
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: KalloSpacing.sp3_5,
+                    ),
                   ),
                 ),
               ),
@@ -166,19 +160,16 @@ class _AuthTextFieldState extends State<AuthTextField> {
           ),
         ),
         if (hasError) ...[
-          const SizedBox(height: 6), // space-y-1.5
-          Text(
-            widget.errorText!,
-            style: dashMeta(color: _red500),
-          ),
+          const SizedBox(height: KalloSpacing.sp1_5),
+          Text(widget.errorText!, style: dashMeta(color: KalloColors.danger)),
         ],
       ],
     );
   }
 }
 
-/// Eye / EyeOff reveal toggle pinned `right-3` (12px), `#8B7355/50` resting,
-/// `#8B7355` while pressed (replicating `hover:text-[#8B7355]`).
+/// Eye / EyeOff reveal toggle — the app-wide 24pt glyph in a 44pt target,
+/// sitting inside the pill's right edge.
 class _RevealToggle extends StatefulWidget {
   const _RevealToggle({required this.revealed, required this.onTap});
 
@@ -194,20 +185,23 @@ class _RevealToggleState extends State<_RevealToggle> {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        _pressed ? KalloColors.textMuted : KalloColors.textMuted.withValues(alpha: 0.5);
-    return Padding(
-      padding: const EdgeInsets.only(right: 12), // right-3
+    return Semantics(
+      button: true,
+      toggled: widget.revealed,
+      label: tr(widget.revealed ? 'auth.hidePassword' : 'auth.showPassword'),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: (_) => setState(() => _pressed = true),
         onTapUp: (_) => setState(() => _pressed = false),
         onTapCancel: () => setState(() => _pressed = false),
         onTap: widget.onTap,
-        child: Icon(
-          widget.revealed ? LucideIcons.eyeOff300 : LucideIcons.eye300,
-          size: 16,
-          color: color,
+        child: SizedBox.square(
+          dimension: KalloIcons.hit,
+          child: Icon(
+            widget.revealed ? LucideIcons.eyeOff300 : LucideIcons.eye300,
+            size: KalloIcons.size,
+            color: _pressed ? kInk : kInkMuted,
+          ),
         ),
       ),
     );

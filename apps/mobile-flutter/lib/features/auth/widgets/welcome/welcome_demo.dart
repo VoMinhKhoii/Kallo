@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_colors.dart';
-import '../../../theme/kallo_theme.dart';
-import '../../../theme/kallo_typography.dart';
+import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
+import '../../../../theme/kallo_typography.dart';
 
 /// The pre-auth typing demo: a Vietnamese meal string types itself in, then a
 /// small result chip springs in with a point calorie value.
@@ -97,10 +97,11 @@ class _WelcomeDemoState extends State<WelcomeDemo>
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      // A card, so it wears the card anatomy: white, radius 22, no border and
+      // no shadow — on the #F4F3EF canvas the surface alone separates it.
       decoration: BoxDecoration(
         color: KalloColors.elev,
-        borderRadius: BorderRadius.circular(KalloRadii.xxl),
-        border: Border.all(color: KalloColors.border),
+        borderRadius: BorderRadius.circular(KalloRadii.card),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,11 +141,16 @@ class _WelcomeDemoState extends State<WelcomeDemo>
 
   Widget _resultChip() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: KalloSpacing.sp3,
+        vertical: KalloSpacing.sp1_5,
+      ),
+      // Beige, the warm "this is the answer" family the button system uses for
+      // every selected state — not the tan accent wash, which the native pass
+      // reserves for rings, chart strokes and focus.
       decoration: BoxDecoration(
-        color: KalloColors.accentSelectedFill,
-        borderRadius: BorderRadius.circular(KalloRadii.xl),
-        border: Border.all(color: KalloColors.accentSelectedBorder),
+        color: KalloColors.btnPrimarySoft,
+        borderRadius: BorderRadius.circular(KalloRadii.pill),
       ),
       child: Text(
         tr('auth.welcome.demoResult', namedArgs: {'kcal': '620'}),
