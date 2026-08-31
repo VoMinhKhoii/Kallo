@@ -1,0 +1,104 @@
+model_list:
+  # Primary model group for meal analysis & decomposition (Gemini Flash pool)
+  - model_name: gemini-3.1-flash-lite
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY_1
+  - model_name: gemini-3.1-flash-lite
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY_2
+  - model_name: gemini-3.1-flash-lite
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY_3
+
+  - model_name: gemini-3-flash-preview
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY_1
+  - model_name: gemini-3-flash-preview
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY_2
+  - model_name: gemini-3-flash-preview
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY_3
+
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY_1
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY_2
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY_3
+
+  - model_name: gemini-1.5-flash
+    litellm_params:
+      model: gemini/gemini-flash-latest
+      api_key: os.environ/GEMINI_API_KEY_1
+  - model_name: gemini-1.5-flash
+    litellm_params:
+      model: gemini/gemini-flash-latest
+      api_key: os.environ/GEMINI_API_KEY_2
+
+  - model_name: gemini-flash-latest
+    litellm_params:
+      model: gemini/gemini-flash-latest
+      api_key: os.environ/GEMINI_API_KEY_1
+  - model_name: gemini-flash-latest
+    litellm_params:
+      model: gemini/gemini-flash-latest
+      api_key: os.environ/GEMINI_API_KEY_2
+
+  # Fallback model group for failover when Gemini key pool is exhausted / 429 cooled
+  - model_name: meal-analyzer-fallback
+    litellm_params:
+      model: anthropic/claude-3-5-haiku-20241022
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: meal-analyzer-fallback
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+  # Embedding model group: STRICTLY PINNED to 768-dim Gemini embeddings
+  # CRITICAL: Do NOT add 1536-dim OpenAI embedding fallbacks here (Postgres schema vector size is 768)
+  - model_name: gemini-embedding-001
+    litellm_params:
+      model: gemini/gemini-embedding-001
+      custom_llm_provider: gemini
+      api_key: os.environ/GEMINI_API_KEY_1
+  - model_name: gemini-embedding-001
+    litellm_params:
+      model: gemini/gemini-embedding-001
+      custom_llm_provider: gemini
+      api_key: os.environ/GEMINI_API_KEY_2
+
+router_settings:
+  routing_strategy: usage-based-routing-v2
+  fallbacks:
+    - gemini-3.1-flash-lite: ["meal-analyzer-fallback"]
+    - gemini-3-flash-preview: ["meal-analyzer-fallback"]
+    - gemini-2.5-flash: ["meal-analyzer-fallback"]
+    - gemini-1.5-flash: ["meal-analyzer-fallback"]
+  cooldown_time: 60 # Cool down API key for 60 seconds on 429 Quota Exceeded
+  num_retries: 3
+  allowed_fails: 2
+  stream_options:
+    include_usage: true
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+pass_through_endpoints:
+  - path: "/v1beta"
+    target: "https://generativelanguage.googleapis.com/v1beta"
+    include_subpath: true
+    headers:
+      x-goog-api-key: "os.environ/GEMINI_API_KEY_1"

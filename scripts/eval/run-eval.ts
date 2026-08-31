@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   ESTIMATOR_PRICING,
   selectEstimator,
@@ -374,7 +374,12 @@ async function main() {
   if (report.aggregate.failed > 0) process.exitCode = 1;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isDirectExecution =
+  import.meta.url === `file://${process.argv[1]}` ||
+  (process.argv[1] &&
+    import.meta.url === pathToFileURL(process.argv[1]).href);
+
+if (isDirectExecution) {
   main()
     .catch((error) => {
       console.error(error instanceof Error ? error.message : error);
