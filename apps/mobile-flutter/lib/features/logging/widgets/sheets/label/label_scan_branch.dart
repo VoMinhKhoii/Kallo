@@ -10,7 +10,7 @@ import '../../../logic/meal_log_mode.dart';
 import '../../../../../models/nutrition_label.dart';
 import 'label_capture_step.dart';
 import 'review/label_review_step.dart';
-import '../scan_error_card.dart';
+import '../scan/scan_error_card.dart';
 
 /// The nutrition-label branch of the scan sheet: photograph the printed table,
 /// have it read, check the values, log the meal.

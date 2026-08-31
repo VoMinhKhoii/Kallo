@@ -5,17 +5,15 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
-import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
 import '../../data/circle_providers.dart';
 import '../../logic/handle_validation.dart';
 import 'invite_controls.dart';
 
-/// "How you appear" — the display name your circle sees on shared meals.
-/// Read-only (value or muted fallback) with a pencil that opens the inline
-/// editor; an empty draft clears the name back to the handle. Mirrors
-/// `components/groups/invite/display-name-row.tsx`.
+/// "How you appear" — the display name your circle sees on shared meals, as
+/// one 64pt row with a pencil; the pencil swaps the value line for an inline
+/// field. An empty draft clears the name back to the handle.
 class DisplayNameRow extends ConsumerStatefulWidget {
   const DisplayNameRow({super.key, required this.profile});
 
@@ -71,15 +69,33 @@ class _DisplayNameRowState extends ConsumerState<DisplayNameRow> {
 
   @override
   Widget build(BuildContext context) {
-    if (_editing) {
-      return Column(
+    if (_editing) return _buildEditor();
+    return InviteValueRow(
+      label: tr('groups.invite.appearTitle'),
+      value: _current.isNotEmpty
+          ? _current
+          : tr('groups.invite.appearFallback'),
+      muted: _current.isEmpty,
+      actions: [
+        InviteGlyphAction(
+          icon: LucideIcons.pencil300,
+          semanticsLabel: tr('groups.invite.appearEdit'),
+          onTap: () {
+            _controller.text = _current;
+            setState(() => _editing = true);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditor() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InviteFieldLabel(
-            icon: LucideIcons.user300,
-            label: tr('groups.invite.appearTitle'),
-          ),
-          const SizedBox(height: KalloSpacing.sp1_5),
+          InviteEditorLabel(label: tr('groups.invite.appearTitle')),
           Row(
             children: [
               Expanded(
@@ -89,78 +105,33 @@ class _DisplayNameRowState extends ConsumerState<DisplayNameRow> {
                   maxLength: kDisplayNameMax,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _save(),
+                  style: dashBody(weight: FontWeight.w500),
                   decoration: InputDecoration(
                     hintText: tr('groups.invite.appearPlaceholder'),
                     isDense: true,
                     counterText: '',
                   ),
-                  style: KalloTextStyles.sansRegular(
-                    fontSize: KalloFontSize.sm,
-                  ).copyWith(color: KalloColors.text),
                 ),
               ),
               const SizedBox(width: KalloSpacing.sp2),
-              InviteIconAction(
+              InviteGlyphAction(
                 icon: LucideIcons.check300,
                 semanticsLabel: tr('groups.invite.save'),
                 loading: _saving,
+                emphasis: true,
                 onTap: _save,
-                filled: true,
               ),
-              const SizedBox(width: KalloSpacing.sp2),
-              InviteIconAction(
+              InviteGlyphAction(
                 icon: LucideIcons.x300,
                 semanticsLabel: tr('groups.invite.cancel'),
                 onTap: () => setState(() => _editing = false),
               ),
             ],
           ),
-          const SizedBox(height: KalloSpacing.sp1_5),
-          Text(
-            tr('groups.invite.appearHint'),
-            style: KalloTextStyles.sansRegular(
-              fontSize: KalloFontSize.xxs,
-            ).copyWith(color: KalloColors.textMuted),
-          ),
+          const SizedBox(height: KalloSpacing.sp1),
+          Text(tr('groups.invite.appearHint'), style: dashMeta()),
         ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InviteFieldLabel(
-          icon: LucideIcons.user300,
-          label: tr('groups.invite.appearTitle'),
-        ),
-        const SizedBox(height: KalloSpacing.sp1_5),
-        Row(
-          children: [
-            Expanded(
-              child: InviteValuePill(
-                text:
-                    _current.isNotEmpty
-                        ? _current
-                        : tr('groups.invite.appearFallback'),
-                fontSize: KalloFontSize.detail,
-                color:
-                    _current.isNotEmpty
-                        ? KalloColors.text
-                        : KalloColors.textMuted70,
-              ),
-            ),
-            const SizedBox(width: KalloSpacing.sp2),
-            InviteIconAction(
-              icon: LucideIcons.pencil300,
-              semanticsLabel: tr('groups.invite.appearEdit'),
-              onTap: () {
-                _controller.text = _current;
-                setState(() => _editing = true);
-              },
-            ),
-          ],
-        ),
-      ],
+      ),
     );
   }
 }

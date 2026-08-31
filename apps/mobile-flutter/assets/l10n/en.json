@@ -1128,6 +1128,9 @@
       "back": "Back",
       "scanAgain": "Scan again",
       "logByText": "Describe it instead",
+      "frameHint": "Center the barcode in the frame",
+      "manualTitle": "Enter barcode",
+      "lookUp": "Look up",
       "savedMeal": "Meal added",
       "error": {
         "invalidInput": "That barcode doesn't look right. Enter digits only.",
@@ -1317,6 +1320,13 @@
       "kcalPer100g": "kcal/100g",
       "removeItem": "Remove food",
       "save": "Save meal",
+      "saveWithKcal": "Save · {kcal} kcal",
+      "sheetTitle": "Add ingredients",
+      "added": "Added",
+      "resultsFor": "Results for \"{query}\" · closest first",
+      "addFood": "Add {name}",
+      "editGrams": "Amount in grams",
+      "clearSearch": "Clear search",
       "relatedMatch": "related"
     },
     "relog": {
@@ -1332,6 +1342,7 @@
       "stagedFull": "You can stage up to {max} at a time."
     },
     "scan": {
+      "title": "Scan",
       "barcodeTab": "Barcode",
       "labelTab": "Nutrition label",
       "tryLabelInstead": "Scan the nutrition label instead",
@@ -1583,7 +1594,8 @@
       "appearEdit": "Edit display name",
       "appearSaved": "Display name updated",
       "appearError": "Couldn't update your name",
-      "appearFallback": "Set a display name"
+      "appearFallback": "Set a display name",
+      "shareLink": "Share link"
     },
     "circle": {
       "title": "Your circle ({count})",

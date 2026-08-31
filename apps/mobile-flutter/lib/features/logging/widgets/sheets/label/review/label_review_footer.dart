@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../../shared/widgets/form/sheet_action_buttons.dart';
+import '../../../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../../../theme/kallo_colors.dart';
 import '../../../../../../theme/kallo_theme.dart';
 
@@ -42,10 +43,10 @@ class LabelReviewFooter extends StatelessWidget {
           // Always tappable. A gap is reported by the fields that have it,
           // when the user asks to save — not by a sentence under a dead
           // button explaining why nothing happens.
-          SheetPrimaryButton(
-            label: 'logging.labelScan.addMeal'.tr(),
-            busy: saving,
-            onTap: onConfirm,
+          KalloButton(
+            title: 'logging.labelScan.addMeal'.tr(),
+            loading: saving,
+            onPressed: onConfirm,
           ),
           if (!saving) ...[
             const SizedBox(height: KalloSpacing.sp1),

@@ -5,8 +5,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../../shared/widgets/form/sheet_action_buttons.dart';
-import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
+import '../scan/scan_camera_stage.dart';
 import 'barcode_scan_frame_painter.dart';
 import 'barcode_status_views.dart';
 
@@ -59,9 +59,13 @@ class BarcodeCameraSession {
   }
 }
 
-/// Live camera viewport with a scan-frame overlay, torch toggle, and a manual
-/// entry escape hatch. Camera and permission failures render via
+/// Live camera viewport on the shared dark [ScanCameraStage], with the torch
+/// in the stage's bottom-left control slot and a quiet manual-entry escape
+/// hatch below. Camera and permission failures render via
 /// [MobileScanner.errorBuilder] — the path the iOS simulator takes too.
+///
+/// There is no shutter here: a barcode decodes continuously, so a capture
+/// button would be an inert control on a live target.
 class BarcodeCameraView extends StatelessWidget {
   const BarcodeCameraView({
     super.key,
@@ -76,64 +80,51 @@ class BarcodeCameraView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         KalloSpacing.sp4,
         KalloSpacing.sp2,
         KalloSpacing.sp4,
-        bottomInset + KalloSpacing.sp3,
+        bottomInset + KalloSpacing.sp2,
       ),
       child: Column(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-            child: AspectRatio(
-              aspectRatio: 3 / 4,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final size = constraints.biggest;
-                  // Use one rectangle for both decoding and the visible target
-                  // so neighboring shelf packages cannot win the scan.
-                  final frameWidth = size.width * 0.88;
-                  final frameHeight = frameWidth * 0.65;
-                  final scanWindow = Rect.fromCenter(
-                    center: size.center(Offset.zero),
-                    width: frameWidth,
-                    height: frameHeight,
-                  );
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      MobileScanner(
-                        controller: controller,
-                        fit: BoxFit.cover,
-                        scanWindow: scanWindow,
-                        onDetect: onDetect,
-                        errorBuilder:
-                            (context, error) => BarcodeCameraErrorState(
-                              error: error,
-                              onEnterManually: onEnterManually,
-                            ),
-                      ),
-                      IgnorePointer(
-                        child: CustomPaint(
-                          painter: ScanFramePainter(scanWindow: scanWindow),
-                        ),
-                      ),
-                      // Torch toggle, bottom-right of the viewport.
-                      Positioned(
-                        right: KalloSpacing.sp3,
-                        bottom: KalloSpacing.sp3,
-                        child: _TorchButton(controller: controller),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
+          ScanCameraStage(
+            hint: 'logging.barcode.frameHint'.tr(),
+            leading: _TorchButton(controller: controller),
+            builder: (context, size) {
+              // Use one rectangle for both decoding and the visible target so
+              // neighboring shelf packages cannot win the scan.
+              final frameWidth = size.width * 0.88;
+              final scanWindow = Rect.fromCenter(
+                center: size.center(Offset.zero),
+                width: frameWidth,
+                height: frameWidth * 0.65,
+              );
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  MobileScanner(
+                    controller: controller,
+                    fit: BoxFit.cover,
+                    scanWindow: scanWindow,
+                    onDetect: onDetect,
+                    errorBuilder: (context, error) => BarcodeCameraErrorState(
+                      error: error,
+                      onEnterManually: onEnterManually,
+                    ),
+                  ),
+                  IgnorePointer(
+                    child: CustomPaint(
+                      painter: ScanFramePainter(scanWindow: scanWindow),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
-          const SizedBox(height: KalloSpacing.sp3),
+          const SizedBox(height: KalloSpacing.sp1),
           QuietIconButton(
             icon: LucideIcons.keyboard300,
             label: 'logging.barcode.manualEntry'.tr(),
@@ -145,7 +136,8 @@ class BarcodeCameraView extends StatelessWidget {
   }
 }
 
-/// Torch toggle — filled tan while on; hidden when the device has no torch.
+/// Torch toggle — filled white while on, translucent while off; hidden when
+/// the device has no torch.
 class _TorchButton extends StatelessWidget {
   const _TorchButton({required this.controller});
 
@@ -165,24 +157,26 @@ class _TorchButton extends StatelessWidget {
           toggled: on,
           label: 'logging.barcode.torch'.tr(),
           child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
               HapticFeedback.selectionClick();
               controller.toggleTorch();
             },
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color:
-                    on
-                        ? KalloColors.accent
-                        : Colors.black.withValues(alpha: 0.35),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                on ? LucideIcons.flashlight300 : LucideIcons.flashlightOff300,
-                size: 18,
-                color: Colors.white,
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: on
+                      ? Colors.white
+                      : Colors.black.withValues(alpha: 0.35),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  on ? LucideIcons.flashlight300 : LucideIcons.flashlightOff300,
+                  size: 20,
+                  color: on ? const Color(0xFF141413) : Colors.white,
+                ),
               ),
             ),
           ),

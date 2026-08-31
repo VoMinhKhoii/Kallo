@@ -16,7 +16,7 @@ import '../../logic/meal_log_mode.dart';
 import '../cheat/cheat_intensity_row.dart';
 import '../composer/composer_actions.dart';
 import '../composer/meal_input.dart';
-import 'manual_log_sheet.dart';
+import 'manual/manual_log_sheet.dart';
 import '../../../../shell/nav/nav_actions.dart';
 
 /// Opens the quick-log sheet — the dashboard FAB's composer.
@@ -136,7 +136,9 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final keyboardInset = media.viewInsets.bottom;
-    final bottomInset = media.padding.bottom;
+    // viewPadding, not padding: the home-indicator inset is what the sheet
+    // owes at rest, and `padding` is already zeroed while the keyboard is up.
+    final bottomInset = media.viewPadding.bottom;
     final mode = ref.watch(mealLogModeProvider);
     final isCheat = mode == MealLogMode.cheat;
 
@@ -153,10 +155,12 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
               // The keyboard's inset already clears the home indicator when it
               // is up; only pay the safe-area bottom when it is down.
               padding: EdgeInsets.fromLTRB(
-                KalloSpacing.sp3,
+                KalloSpacing.sp4,
                 KalloSpacing.sp2,
-                KalloSpacing.sp3,
-                (keyboardInset > 0 ? 0 : bottomInset) + KalloSpacing.sp4,
+                KalloSpacing.sp4,
+                keyboardInset > 0
+                    ? KalloSpacing.sp3
+                    : bottomInset + KalloSpacing.sp1,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,8 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../models/profile/weight.dart';
 import '../../../../services/auth/session_provider.dart';
+import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
-import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/logic/display_format.dart';
 import '../../data/dashboard_providers.dart';
@@ -42,49 +44,43 @@ void showWeightLogSheetWithData(
   required DashboardArgs args,
 }) {
   HapticFeedback.lightImpact(); // open cue, matching the meal trigger
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: kCardSurface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(kCardRadius)),
-    ),
+  showNhamSheet<void>(
+    context,
     builder: (sheetContext) {
       final mq = MediaQuery.of(sheetContext);
       // Keypad-first sheet: it wraps its content (header + field + Save)
       // instead of claiming a fixed slice of the screen, and the viewInsets
       // padding lifts that compact stack to ride right above the keyboard.
-      // SingleChildScrollView + MainAxisSize.min keep it scroll-safe when
-      // the height is tight (landscape, split-screen).
+      // `scrollable` keeps it safe when the height is tight (landscape,
+      // split-screen).
       return Padding(
         padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
-        child: SingleChildScrollView(
+        child: KalloSheetSurface(
+          scrollable: true,
+          padding: EdgeInsets.only(
+            left: KalloSpacing.sp4,
+            right: KalloSpacing.sp4,
+            // The keyboard's own inset clears the home indicator while the
+            // pad is up; at rest the 34pt inset is the sheet's bottom gap.
+            bottom: mq.viewInsets.bottom > 0
+                ? KalloSpacing.sp3
+                : math.max(mq.viewPadding.bottom, KalloSpacing.sp4),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               KalloSheetHeader(
                 title: tr('dashboard.weightCard.todaysWeight'),
               ),
-              const SizedBox(height: KalloSpacing.sp3),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: KalloSpacing.sp5,
-                ),
-                child: CompactWeightLog(
-                  currentWeight: data.currentWeight,
-                  todayWeight: data.todayWeight,
-                  todayDate: todayDate,
-                  args: args,
-                  autofocus: true,
-                  onSaved: () => Navigator.of(sheetContext).pop(),
-                ),
-              ),
-              // Breathing gap above the keypad. viewPadding.bottom is NOT
-              // reduced by the keyboard, so only add the home-indicator inset
-              // while the keypad is dismissed.
-              SizedBox(
-                height: KalloSpacing.sp4 +
-                    (mq.viewInsets.bottom > 0 ? 0 : mq.viewPadding.bottom),
+              const SizedBox(height: KalloSpacing.sp2),
+              CompactWeightLog(
+                currentWeight: data.currentWeight,
+                todayWeight: data.todayWeight,
+                todayDate: todayDate,
+                args: args,
+                autofocus: true,
+                onSaved: () => Navigator.of(sheetContext).pop(),
               ),
             ],
           ),

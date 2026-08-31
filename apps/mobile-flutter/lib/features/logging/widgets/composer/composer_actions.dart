@@ -8,7 +8,7 @@ import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../data/logging_providers.dart';
 import '../../logic/meal_log_mode.dart';
-import '../sheets/scan_sheet.dart';
+import '../sheets/scan/scan_sheet.dart';
 import '../sheets/meal_mode_sheet.dart';
 
 /// The first step: choose how to log. Normal and Cheat set the persistent

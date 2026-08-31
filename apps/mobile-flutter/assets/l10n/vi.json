@@ -1128,6 +1128,9 @@
       "back": "Quay lại",
       "scanAgain": "Quét lại",
       "logByText": "Mô tả bằng lời",
+      "frameHint": "Đưa mã vạch vào giữa khung",
+      "manualTitle": "Nhập mã vạch",
+      "lookUp": "Tra cứu",
       "savedMeal": "Đã thêm bữa ăn",
       "error": {
         "invalidInput": "Mã vạch không hợp lệ. Vui lòng chỉ nhập chữ số.",
@@ -1314,6 +1317,13 @@
       "kcalPer100g": "kcal/100g",
       "removeItem": "Xoá món",
       "save": "Lưu bữa ăn",
+      "saveWithKcal": "Lưu · {kcal} kcal",
+      "sheetTitle": "Thêm nguyên liệu",
+      "added": "Đã thêm",
+      "resultsFor": "Kết quả cho \"{query}\" · gần nhất ở dưới",
+      "addFood": "Thêm {name}",
+      "editGrams": "Khối lượng theo gam",
+      "clearSearch": "Xoá tìm kiếm",
       "relatedMatch": "liên quan"
     },
     "relog": {
@@ -1329,6 +1339,7 @@
       "stagedFull": "Mỗi lần chỉ ghi lại được tối đa {max} món."
     },
     "scan": {
+      "title": "Quét",
       "barcodeTab": "Mã vạch",
       "labelTab": "Bảng dinh dưỡng",
       "tryLabelInstead": "Quét bảng dinh dưỡng thay vì mã vạch",
@@ -1580,7 +1591,8 @@
       "appearEdit": "Sửa tên hiển thị",
       "appearSaved": "Đã cập nhật tên hiển thị",
       "appearError": "Không thể cập nhật tên của bạn",
-      "appearFallback": "Đặt tên hiển thị"
+      "appearFallback": "Đặt tên hiển thị",
+      "shareLink": "Chia sẻ liên kết"
     },
     "circle": {
       "title": "Vòng kết nối ({count})",

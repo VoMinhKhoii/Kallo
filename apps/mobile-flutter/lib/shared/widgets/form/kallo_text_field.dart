@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
@@ -28,6 +29,8 @@ class KalloTextField extends StatelessWidget {
     this.onSubmitted,
     this.prefixIcon,
     this.suffixIcon,
+    this.autofocus = false,
+    this.inputFormatters,
   });
 
   final TextEditingController? controller;
@@ -54,6 +57,14 @@ class KalloTextField extends StatelessWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
 
+  /// Opens the keyboard on mount — for a sheet that exists to be typed into
+  /// (manual-log search, barcode entry).
+  final bool autofocus;
+
+  /// Character-class restrictions (digits-only for a barcode). Shape and type
+  /// scale stay pinned above; only what the field ACCEPTS varies.
+  final List<TextInputFormatter>? inputFormatters;
+
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
@@ -61,6 +72,8 @@ class KalloTextField extends StatelessWidget {
       child: TextField(
         controller: controller,
         focusNode: focusNode,
+        autofocus: autofocus,
+        inputFormatters: inputFormatters,
         keyboardType: keyboardType,
         textInputAction: textInputAction,
         obscureText: obscureText,

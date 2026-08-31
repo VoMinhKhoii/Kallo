@@ -10,6 +10,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../../shared/widgets/form/sheet_action_buttons.dart';
 import '../../../../../shared/widgets/typography/kallo_text.dart';
+import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 
@@ -72,20 +73,29 @@ class BarcodeCameraErrorState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            denied ? LucideIcons.cameraOff300 : LucideIcons.camera300,
-            size: 28,
-            color: KalloColors.danger,
+          // The one error shape: icon badge, then the reason, then ONE action.
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: KalloColors.danger10,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              denied ? LucideIcons.cameraOff300 : LucideIcons.camera300,
+              size: KalloIcons.size,
+              color: KalloColors.danger,
+            ),
           ),
-          const SizedBox(height: KalloSpacing.sp2),
-          KalloText(
+          const SizedBox(height: KalloSpacing.sp3),
+          Text(
             (denied
                     ? 'logging.barcode.cameraDenied'
                     : 'logging.barcode.cameraError')
                 .tr(),
-            variant: KalloTextVariant.small,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: KalloColors.textMuted),
+            style: dashMeta(),
           ),
           const SizedBox(height: KalloSpacing.sp3),
           QuietIconButton(

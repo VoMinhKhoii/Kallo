@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../logic/meal_log_mode.dart';
 import '../composer/composer_actions.dart';
-import 'manual_log_sheet.dart';
+import 'manual/manual_log_sheet.dart';
 
 /// The sheets the feed composer can open over itself.
 ///

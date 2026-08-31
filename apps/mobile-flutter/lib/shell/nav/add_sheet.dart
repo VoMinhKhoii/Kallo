@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import '../../features/logging/widgets/sheets/quick_log_sheet.dart';
 import '../../shared/widgets/list/list_row.dart';
 import '../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../shared/widgets/sheet/kallo_sheet_header.dart';
+import '../../theme/calm_tokens.dart';
 import '../../theme/kallo_theme.dart';
 
 /// The tab bar's center "+" sheet (native pass, 2026-08-31): two 64pt rows —
@@ -21,11 +24,17 @@ Future<void> showAddSheet(BuildContext context, WidgetRef ref) {
       padding: EdgeInsets.only(
         left: KalloSpacing.sp4,
         right: KalloSpacing.sp4,
-        bottom: MediaQuery.viewPaddingOf(sheetContext).bottom +
-            KalloSpacing.sp2,
+        // The 34pt home inset IS the sheet's bottom gap — a spacing token on
+        // top of it reads as a stray band under the last row. Phones without
+        // a home indicator report 0, so the gap floors at sp4.
+        bottom: math.max(
+          MediaQuery.viewPaddingOf(sheetContext).bottom,
+          KalloSpacing.sp4,
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           KalloSheetHeader(title: tr('app.addSheet.title')),
           ListRow(
@@ -37,6 +46,11 @@ Future<void> showAddSheet(BuildContext context, WidgetRef ref) {
               Navigator.of(sheetContext).pop();
               showQuickLogSheet(context, ref);
             },
+          ),
+          // Separator inset to the text column, as in every grouped card.
+          const Padding(
+            padding: EdgeInsets.only(left: 36),
+            child: ColoredBox(color: kHairline, child: SizedBox(height: 1)),
           ),
           ListRow(
             icon: LucideIcons.gauge300,

@@ -2,12 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/widgets/sheet/kallo_sheet.dart';
-import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
-import '../../data/barcode_providers.dart';
-import '../../data/label_scan_providers.dart';
-import 'barcode/barcode_scanner_sheet.dart';
-import 'label/label_scan_branch.dart';
+import '../../../../../shared/widgets/sheet/kallo_sheet.dart';
+import '../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
+import '../../../data/barcode_providers.dart';
+import '../../../data/label_scan_providers.dart';
+import '../barcode/barcode_scanner_sheet.dart';
+import '../label/label_scan_branch.dart';
 import 'scan_type_toggle.dart';
 
 /// Open the scan sheet: read a packaged product either by its barcode or by
@@ -72,10 +72,6 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
         label.phase == LabelScanPhase.saving;
     final maxHeight = MediaQuery.of(context).size.height * 0.9;
     final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
-    final reviewing =
-        _scanType == ScanType.label &&
-        (label.phase == LabelScanPhase.review ||
-            label.phase == LabelScanPhase.saving);
 
     // While a log request is in flight the sheet must not be dismissable: the
     // POST would still complete server-side, silently logging a meal the user
@@ -95,7 +91,7 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 KalloSheetHeader(
-                  title: _title(reviewing),
+                  title: _title(barcode, label),
                   closeEnabled: !saving,
                 ),
                 // Switching scan type once a product or a scanned label is on
@@ -125,16 +121,35 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
           onScanBarcodeInstead: () => _switchTo(ScanType.barcode),
         );
 
+  /// Manual barcode entry is its OWN surface within the sheet (its artboard is
+  /// `BarcodeEntry`): the toggle would offer a camera switch to someone who
+  /// has just told us the camera is not working.
+  bool _typingBarcode(BarcodeFlowState barcode) =>
+      _scanType == ScanType.barcode &&
+      barcode.phase == BarcodeFlowPhase.manualEntry;
+
   bool _showsToggle(BarcodeFlowState barcode, LabelScanState label) =>
       _scanType == ScanType.barcode
-      ? barcode.phase != BarcodeFlowPhase.product &&
-            barcode.phase != BarcodeFlowPhase.saving
+      ? barcode.phase == BarcodeFlowPhase.scanning ||
+            barcode.phase == BarcodeFlowPhase.searching
       : label.phase != LabelScanPhase.review &&
             label.phase != LabelScanPhase.saving;
 
-  String _title(bool reviewing) => switch ((_scanType, reviewing)) {
-    (ScanType.barcode, _) => 'logging.barcode.title'.tr(),
-    (ScanType.label, true) => 'logging.labelScan.reviewTitle'.tr(),
-    (ScanType.label, false) => 'logging.labelScan.title'.tr(),
-  };
+  /// One neutral "Scan" over the toggle — the title used to name the branch,
+  /// which read as a contradiction sitting directly above a control offering
+  /// the other one. It only specialises where the toggle is gone.
+  String _title(BarcodeFlowState barcode, LabelScanState label) {
+    if (_typingBarcode(barcode)) return 'logging.barcode.manualTitle'.tr();
+    if (_scanType == ScanType.label &&
+        (label.phase == LabelScanPhase.review ||
+            label.phase == LabelScanPhase.saving)) {
+      return 'logging.labelScan.reviewTitle'.tr();
+    }
+    if (_scanType == ScanType.barcode &&
+        (barcode.phase == BarcodeFlowPhase.product ||
+            barcode.phase == BarcodeFlowPhase.saving)) {
+      return 'logging.barcode.title'.tr();
+    }
+    return 'logging.scan.title'.tr();
+  }
 }
