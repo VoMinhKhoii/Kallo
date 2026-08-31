@@ -99,6 +99,20 @@
       "signOutError": "Could not sign out. Please try again.",
       "account": "Account",
       "expandOnHover": "Expand on hover"
+    },
+    "nav": {
+      "today": "Today",
+      "log": "Log",
+      "nutrition": "Nutrition",
+      "circle": "Circle",
+      "add": "Add"
+    },
+    "addSheet": {
+      "title": "Add",
+      "logMeal": "Log a meal",
+      "logMealHint": "Describe it, scan, or pick ingredients",
+      "logWeight": "Log weight",
+      "logWeightHint": "Today's weigh-in"
     }
   },
   "nutrition": {
@@ -531,6 +545,7 @@
       "completeDays": "Complete days",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
+      "avgValue": "{value} avg",
       "days": "days",
       "noCompleteDays": "No fully-logged days yet — keep logging, or tap All.",
       "compositionLabel": "{macro} {pct}%",
@@ -781,7 +796,9 @@
       "rateLimited": "Too many attempts — give it a moment, then try again.",
       "accountExists": "You already have an account with this email. Sign in with the method you used originally.",
       "generic": "Something went wrong — please try again."
-    }
+    },
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "landing": {
     "localeSwitcher": {
@@ -1114,6 +1131,9 @@
       "back": "Back",
       "scanAgain": "Scan again",
       "logByText": "Describe it instead",
+      "frameHint": "Center the barcode in the frame",
+      "manualTitle": "Enter barcode",
+      "lookUp": "Look up",
       "savedMeal": "Meal added",
       "error": {
         "invalidInput": "That barcode doesn't look right. Enter digits only.",
@@ -1303,6 +1323,13 @@
       "kcalPer100g": "kcal/100g",
       "removeItem": "Remove food",
       "save": "Save meal",
+      "saveWithKcal": "Save · {kcal} kcal",
+      "sheetTitle": "Add ingredients",
+      "added": "Added",
+      "resultsFor": "Results for \"{query}\" · closest first",
+      "addFood": "Add {name}",
+      "editGrams": "Amount in grams",
+      "clearSearch": "Clear search",
       "relatedMatch": "related"
     },
     "relog": {
@@ -1318,6 +1345,7 @@
       "stagedFull": "You can stage up to {max} at a time."
     },
     "scan": {
+      "title": "Scan",
       "barcodeTab": "Barcode",
       "labelTab": "Nutrition label",
       "tryLabelInstead": "Scan the nutrition label instead",
@@ -1569,7 +1597,8 @@
       "appearEdit": "Edit display name",
       "appearSaved": "Display name updated",
       "appearError": "Couldn't update your name",
-      "appearFallback": "Set a display name"
+      "appearFallback": "Set a display name",
+      "shareLink": "Share link"
     },
     "circle": {
       "title": "Your circle ({count})",
@@ -1632,7 +1661,7 @@
     "profile": "Profile",
     "preferences": "Preferences",
     "bodyMetrics": "Body Metrics",
-    "goals": "Goals & Targets",
+    "goals": "Targets",
     "cooking": "Cooking Habits",
     "regional": "Regional",
     "save": "Save changes",

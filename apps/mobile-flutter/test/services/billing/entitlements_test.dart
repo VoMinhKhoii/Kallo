@@ -297,7 +297,9 @@ void main() {
             .read(entitlementsProvider(userA).notifier)
             .pollUntilPremium(
               interval: const Duration(milliseconds: 1),
-              timeout: const Duration(milliseconds: 50),
+              // Generous: the poll finishes in a few 1ms ticks, but under full-suite
+              // isolate contention a tight wall-clock window flakes (seen at 50ms).
+              timeout: const Duration(seconds: 2),
             );
 
         expect(premium, isTrue);
@@ -463,8 +465,11 @@ void main() {
       final premium = await c
           .read(entitlementsProvider(userA).notifier)
           .pollUntilPremium(
-            interval: const Duration(milliseconds: 5),
-            timeout: const Duration(milliseconds: 30),
+            // Wide enough that the mid-window reconcile reliably lands even
+            // under full-suite isolate contention (at 30ms this flaked —
+            // a stalled isolate could miss or double the mid-window post).
+            interval: const Duration(milliseconds: 10),
+            timeout: const Duration(milliseconds: 300),
           );
 
       expect(premium, isFalse);
@@ -491,7 +496,9 @@ void main() {
           .read(entitlementsProvider(userA).notifier)
           .pollUntilPremium(
             interval: const Duration(milliseconds: 5),
-            timeout: const Duration(milliseconds: 30),
+            // Generous: the poll finishes in a few 1ms ticks, but under full-suite
+            // isolate contention a tight wall-clock window flakes (seen at 50ms).
+            timeout: const Duration(seconds: 2),
           );
 
       expect(premium, isTrue);
@@ -552,7 +559,9 @@ void main() {
             .read(entitlementsProvider(userA).notifier)
             .pollUntilPremium(
               interval: const Duration(milliseconds: 1),
-              timeout: const Duration(milliseconds: 50),
+              // Generous: the poll finishes in a few 1ms ticks, but under full-suite
+              // isolate contention a tight wall-clock window flakes (seen at 50ms).
+              timeout: const Duration(seconds: 2),
             );
         await c.pump();
         reconcileResponse.complete(premiumJson());

@@ -114,14 +114,13 @@ class _PersistedMealCardState extends State<PersistedMealCard>
           // meal while its amounts are open.
           onRemove: _editing ? null : widget.onRemove,
           builder:
-              (context, shape) => PersistedMealCardContent(
+              (context, radius) => PersistedMealCardContent(
                 meal: meal,
                 expand: _expand,
                 curvedExpand: curvedExpand,
                 onToggle: _toggle,
                 editorBody: editorBody,
-                borderRadius: shape.radius,
-                boxShadow: shape.shadow,
+                borderRadius: radius,
               ),
         ),
         if (!_editing) ...[

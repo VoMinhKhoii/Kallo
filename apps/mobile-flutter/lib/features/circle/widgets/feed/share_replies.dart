@@ -156,9 +156,26 @@ class _ShareRepliesState extends ConsumerState<ShareReplies> {
       ),
       if (_controller.text.trim().isNotEmpty) ...[
         const SizedBox(width: KalloSpacing.sp2),
-        TextButton(
-          onPressed: _submitting ? null : _submit,
-          child: Text(tr('groups.feed.reply'), style: dashMeta(color: kInk)),
+        Semantics(
+          button: true,
+          enabled: !_submitting,
+          label: tr('groups.feed.reply'),
+          excludeSemantics: true,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _submitting ? null : _submit,
+            child: Container(
+              constraints: const BoxConstraints(
+                minHeight: KalloIcons.hit,
+                minWidth: KalloIcons.hit,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                tr('groups.feed.reply'),
+                style: dashBody(weight: FontWeight.w500),
+              ),
+            ),
+          ),
         ),
       ],
     ],

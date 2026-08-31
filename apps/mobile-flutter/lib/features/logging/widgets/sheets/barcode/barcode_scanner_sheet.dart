@@ -6,7 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../data/barcode_providers.dart';
-import '../scan_error_card.dart';
+import '../scan/scan_error_card.dart';
 import 'barcode_camera_view.dart';
 import 'barcode_manual_input.dart';
 import 'barcode_product_step.dart';

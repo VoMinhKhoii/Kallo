@@ -99,6 +99,20 @@
       "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
       "account": "Tài khoản",
       "expandOnHover": "Mở rộng khi di chuột"
+    },
+    "nav": {
+      "today": "Hôm nay",
+      "log": "Nhật ký",
+      "nutrition": "Dinh dưỡng",
+      "circle": "Vòng tròn",
+      "add": "Thêm"
+    },
+    "addSheet": {
+      "title": "Thêm",
+      "logMeal": "Ghi bữa ăn",
+      "logMealHint": "Mô tả, quét mã, hoặc chọn nguyên liệu",
+      "logWeight": "Ghi cân nặng",
+      "logWeightHint": "Cân nặng hôm nay"
     }
   },
   "nutrition": {
@@ -531,6 +545,7 @@
       "completeDays": "Ngày đủ bữa",
       "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
       "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
+      "avgValue": "TB {value}",
       "days": "ngày",
       "noCompleteDays": "Chưa có ngày nào ghi đủ — hãy tiếp tục ghi, hoặc chạm Tất cả.",
       "compositionLabel": "{macro} {pct}%",
@@ -781,7 +796,9 @@
       "rateLimited": "Bạn thao tác hơi nhanh — đợi một chút rồi thử lại nhé.",
       "accountExists": "Bạn đã có tài khoản với email này. Hãy đăng nhập bằng phương thức bạn đã dùng ban đầu.",
       "generic": "Đã có lỗi xảy ra — bạn thử lại nhé."
-    }
+    },
+    "showPassword": "Hiện mật khẩu",
+    "hidePassword": "Ẩn mật khẩu"
   },
   "landing": {
     "localeSwitcher": {
@@ -1114,6 +1131,9 @@
       "back": "Quay lại",
       "scanAgain": "Quét lại",
       "logByText": "Mô tả bằng lời",
+      "frameHint": "Đưa mã vạch vào giữa khung",
+      "manualTitle": "Nhập mã vạch",
+      "lookUp": "Tra cứu",
       "savedMeal": "Đã thêm bữa ăn",
       "error": {
         "invalidInput": "Mã vạch không hợp lệ. Vui lòng chỉ nhập chữ số.",
@@ -1300,6 +1320,13 @@
       "kcalPer100g": "kcal/100g",
       "removeItem": "Xoá món",
       "save": "Lưu bữa ăn",
+      "saveWithKcal": "Lưu · {kcal} kcal",
+      "sheetTitle": "Thêm nguyên liệu",
+      "added": "Đã thêm",
+      "resultsFor": "Kết quả cho \"{query}\" · gần nhất ở dưới",
+      "addFood": "Thêm {name}",
+      "editGrams": "Khối lượng theo gam",
+      "clearSearch": "Xoá tìm kiếm",
       "relatedMatch": "liên quan"
     },
     "relog": {
@@ -1315,6 +1342,7 @@
       "stagedFull": "Mỗi lần chỉ ghi lại được tối đa {max} món."
     },
     "scan": {
+      "title": "Quét",
       "barcodeTab": "Mã vạch",
       "labelTab": "Bảng dinh dưỡng",
       "tryLabelInstead": "Quét bảng dinh dưỡng thay vì mã vạch",
@@ -1566,7 +1594,8 @@
       "appearEdit": "Sửa tên hiển thị",
       "appearSaved": "Đã cập nhật tên hiển thị",
       "appearError": "Không thể cập nhật tên của bạn",
-      "appearFallback": "Đặt tên hiển thị"
+      "appearFallback": "Đặt tên hiển thị",
+      "shareLink": "Chia sẻ liên kết"
     },
     "circle": {
       "title": "Vòng kết nối ({count})",

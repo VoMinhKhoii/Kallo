@@ -3,8 +3,14 @@ import 'package:flutter/material.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 
-/// The composer card's own surface: an opaque white block that lifts off the
-/// feed, whose border and accent glow warm as the field takes focus.
+/// The composer card's own surface: an opaque white block on the dock, which
+/// grows a tan focus ring as the field takes focus.
+///
+/// Flat and borderless at rest since the native pass — a white card on the
+/// `#F4F3EF` canvas separates by surface alone, and the dock beneath it is
+/// already an opaque band, so the lift had nothing left to lift off. Tan is a
+/// focus-ring colour in this system, which is the one thing the border still
+/// says.
 ///
 /// Split out of `meal_input.dart` because none of it touches the field's state
 /// — it needs the focus animation and nothing else. Keeping it here also means
@@ -30,9 +36,11 @@ class ComposerCardSurface extends StatelessWidget {
       child: child,
       builder: (context, child) {
         final t = focus.value;
+        // Transparent at rest rather than absent, so the card's size never
+        // changes as the ring arrives.
         final borderColor =
             Color.lerp(
-              KalloColors.borderBiscotti40,
+              const Color(0x00000000),
               KalloColors.borderAccent40,
               t,
             )!;
@@ -42,15 +50,13 @@ class ComposerCardSurface extends StatelessWidget {
           decoration: BoxDecoration(
             // Opaque: the feed reads through the DOCK, never through the field.
             color: KalloColors.elev,
-            borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+            borderRadius: BorderRadius.circular(KalloRadii.card),
             border: Border.all(color: borderColor),
-            // Ink contact + ambient under the accent glow — what lifts the
-            // card off the feed scrolling behind it.
+            // The only lift left, and only while focused: the field is the one
+            // live control on the screen while the keyboard is up.
             boxShadow: [
-              KalloShadows.md,
-              KalloShadows.xs,
               BoxShadow(
-                color: KalloColors.accent.withValues(alpha: 0.06 + t * 0.06),
+                color: KalloColors.accent.withValues(alpha: t * 0.10),
                 blurRadius: 20,
                 offset: const Offset(0, 4),
               ),

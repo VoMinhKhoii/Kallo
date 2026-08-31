@@ -9,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/shared/logic/display_format.dart';
+import 'package:kallo_mobile/features/circle/widgets/feed/feed_day_group.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/feed_entry.dart';
 import 'package:kallo_mobile/features/circle/widgets/feed/share_replies.dart';
 import 'package:kallo_mobile/shared/widgets/nutrition/composition_bar.dart';
@@ -222,8 +223,15 @@ void main() {
   ) async {
     await pump(tester, FeedEntry(entry: entry()));
     // Reply lives beside the heart now, not under the replies list: one row,
-    // one interaction system.
-    expect(find.text('Reply'), findsOneWidget);
+    // one interaction system. Its glyph carries no visible label (native pass,
+    // 2026-08-31) — a bubble is unambiguous and the row reads as controls
+    // rather than as a caption — so the name is spoken, not printed.
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.label == 'Reply',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Log this too'), findsOneWidget);
     for (final icon in [
       LucideIcons.heart300,
@@ -260,10 +268,11 @@ void main() {
 
   testWidgets('reply opens composer and empty blur closes it', (tester) async {
     await pump(tester, FeedEntry(entry: entry()));
-    await tester.tap(find.text('Reply'));
+    await tester.tap(find.byIcon(LucideIcons.messageCircle300));
     await tester.pump();
     expect(find.byKey(const Key('reply-composer')), findsOneWidget);
-    expect(find.widgetWithText(TextButton, 'Reply'), findsNothing);
+    // The send affordance only appears once something is typed.
+    expect(find.text('Reply'), findsNothing);
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pump();
     expect(find.byKey(const Key('reply-composer')), findsNothing);
@@ -284,20 +293,27 @@ void main() {
     final bar = tester.getSize(find.byType(CompositionBar));
     final column = tester.getSize(find.text('Bún chả Hà Nội'));
     expect(bar.height, 6);
-    expect(bar.width, greaterThan(column.width));
+    expect(bar.width, greaterThan(100));
+    // Bar and meal text are the same block now, so they share one column.
+    expect(bar.width, column.width);
 
-    // Each figure is centred under its own slice: the label's centre should sit
-    // inside the segment it describes, not merely somewhere on the row.
+    // Circle's documented kcal placement (native pass, 2026-08-31): the figure
+    // LEADS the legend row, with the macro grams trailing it. A post's title
+    // line is already spoken for by the author and the time, so kcal cannot
+    // sit at its right the way an own meal's does.
     final barLeft = tester.getTopLeft(find.byType(CompositionBar)).dx;
-    final proteinCentre = tester.getCenter(find.text('P 38g')).dx;
-    expect(proteinCentre, greaterThan(barLeft));
-    expect(proteinCentre, lessThan(barLeft + bar.width * 0.5));
+    final kcalLeft = tester.getTopLeft(find.text('540 kcal')).dx;
+    expect(kcalLeft, closeTo(barLeft, 1));
+    expect(
+      tester.getTopLeft(find.text('P 38g')).dx,
+      greaterThan(tester.getBottomRight(find.text('540 kcal')).dx),
+    );
   });
 
-  testWidgets('a day boundary carries one rule, not two', (tester) async {
-    // Two posts today, one yesterday: rules go between posts WITHIN a day, and
-    // the day separator alone marks the boundary. A rule after every post left
-    // a stray hairline sitting a few points above each separator.
+  testWidgets('a day boundary starts a new card, not a rule', (tester) async {
+    // Two posts today, one yesterday. Rules go between posts WITHIN a day's
+    // card; the boundary itself is the gap between two cards, so it can never
+    // pick up a stray hairline the way the old label-plus-rule layout did.
     final state = SharedMealFeedState(
       entries: [
         entry(shareId: 's1'),
@@ -312,13 +328,14 @@ void main() {
     await pump(tester, _StaticThread(state: state));
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('Yesterday'), findsOneWidget);
-    // Post rules are the ones indented to the content rail; the two day
-    // separators carry a Divider of their own, so count only the indented set.
-    // Before the fix this found three — one trailing every post, including the
-    // two that butt up against a separator.
+    expect(find.byType(FeedDayGroup), findsNWidgets(2));
+    // One separator in total: between today's two posts. Yesterday's single
+    // post has none, and neither does the boundary.
     expect(
       find.byWidgetPredicate(
-        (w) => w is Padding && w.padding == const EdgeInsets.only(left: 48),
+        (w) =>
+            w is Container &&
+            w.margin == const EdgeInsets.only(left: kContentRail),
       ),
       findsOneWidget,
     );
@@ -354,7 +371,7 @@ void main() {
     addTearDown(entries.dispose);
     await pump(tester, _MutableThread(entries: entries));
 
-    await tester.tap(find.text('Reply').first);
+    await tester.tap(find.byIcon(LucideIcons.messageCircle300).first);
     await tester.pump();
     await tester.enterText(find.byKey(const Key('reply-composer')), 'Draft A');
 

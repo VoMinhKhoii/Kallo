@@ -2,9 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../../../theme/kallo_typography.dart';
 
 /// Retryable error state for the Circle read surfaces (wall, circle list,
 /// invite preview). A failed fetch must not masquerade as an empty state — a
@@ -31,7 +31,9 @@ class CircleErrorCard extends StatelessWidget {
           padding: const EdgeInsets.all(KalloSpacing.sp4),
           decoration: BoxDecoration(
             color: KalloColors.danger06,
-            borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+            // The one card radius — an error is still a card (native pass,
+            // 2026-08-31); its danger tint is what marks it, not its shape.
+            borderRadius: BorderRadius.circular(KalloRadii.card),
             border: Border.all(color: KalloColors.danger30),
           ),
           child: Row(
@@ -52,18 +54,10 @@ class CircleErrorCard extends StatelessWidget {
                   children: [
                     Text(
                       tr('groups.error.title'),
-                      style: KalloTextStyles.sansSemiBold(
-                        fontSize: KalloFontSize.detail,
-                      ).copyWith(color: KalloColors.text),
+                      style: dashBody(weight: FontWeight.w600),
                     ),
                     const SizedBox(height: KalloSpacing.sp1),
-                    Text(
-                      tr('groups.error.body'),
-                      style: KalloTextStyles.sansRegular(
-                        fontSize: KalloFontSize.detail,
-                        height: KalloLeading.normal,
-                      ).copyWith(color: KalloColors.textMuted),
-                    ),
+                    Text(tr('groups.error.body'), style: dashMeta()),
                     const SizedBox(height: KalloSpacing.sp3),
                     _RetryPill(onRetry: onRetry, isRetrying: isRetrying),
                   ],
@@ -122,35 +116,42 @@ class _RetryPillState extends State<_RetryPill>
   Widget build(BuildContext context) {
     return Opacity(
       opacity: widget.isRetrying ? 0.6 : 1,
-      child: GestureDetector(
-        onTap: widget.isRetrying ? null : widget.onRetry,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp3_5,
-            vertical: KalloSpacing.sp2,
-          ),
-          decoration: BoxDecoration(
-            color: KalloColors.danger10,
-            borderRadius: BorderRadius.circular(KalloRadii.pill),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RotationTransition(
-                turns: _spin,
-                child: const Icon(
-                  LucideIcons.refreshCw300,
-                  size: 16,
-                  color: KalloColors.danger,
+      child: Semantics(
+        button: true,
+        enabled: !widget.isRetrying,
+        label: tr('groups.error.retry'),
+        excludeSemantics: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.isRetrying ? null : widget.onRetry,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: KalloIcons.hit),
+            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp5),
+            decoration: BoxDecoration(
+              color: KalloColors.danger10,
+              borderRadius: BorderRadius.circular(KalloRadii.button),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RotationTransition(
+                  turns: _spin,
+                  child: const Icon(
+                    LucideIcons.refreshCw300,
+                    size: 16,
+                    color: KalloColors.danger,
+                  ),
                 ),
-              ),
-              const SizedBox(width: KalloSpacing.sp2),
-              Text(
-                tr('groups.error.retry'),
-                style: KalloTextStyles.sansMedium(fontSize: KalloFontSize.detail)
-                    .copyWith(color: KalloColors.danger),
-              ),
-            ],
+                const SizedBox(width: KalloSpacing.sp2),
+                Text(
+                  tr('groups.error.retry'),
+                  style: dashBody(
+                    color: KalloColors.danger,
+                    weight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

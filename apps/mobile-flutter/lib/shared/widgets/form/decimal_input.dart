@@ -161,7 +161,7 @@ class _DecimalInputState extends State<DecimalInput> {
   }
 
   OutlineInputBorder _border(Color color) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(KalloRadii.md),
+        borderRadius: BorderRadius.circular(KalloRadii.lg),
         borderSide: BorderSide(color: color),
       );
 }

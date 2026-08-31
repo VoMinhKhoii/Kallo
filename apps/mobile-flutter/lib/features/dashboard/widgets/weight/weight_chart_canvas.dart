@@ -1,10 +1,10 @@
 /// WeightChartCanvas — the weight card's trend chart.
 ///
-/// A clean, uniform line chart: round-number weight values in a left gutter with
-/// a subtle gridline at each step, the plot filling from the gutter to the right
-/// edge; short localized date ticks (…"Jun 9", "Now"), a short dotted forecast
-/// tail, a faint "today" marker, and a dot at every logged point with the most
-/// recent emphasized.
+/// Native pass (2026-08-31): an unframed plot running the FULL inner width of
+/// the card (334 on a 390pt phone), dashed hairline gridlines, the Y domain's
+/// two bounds against the right edge instead of in a left gutter, numeric date
+/// ticks below ("2/8" … "Now"), a short dotted forecast tail, a faint "today"
+/// marker, and a dot at every logged point with the most recent emphasized.
 ///
 /// The forecast (`projectedEndWeight` / `canProject`) is computed once
 /// server-side and passed in as data — the chart only positions and draws it.
@@ -23,9 +23,11 @@ import '../../../../theme/calm_tokens.dart';
 import '../../logic/weight_chart_axis.dart';
 import 'weight_chart_dot_painter.dart';
 
-const double _chartAspect = 1.95; // canvas width : height (framed chart)
+/// Canvas width : height — 334 × ~139 on a 390pt phone, of which the date row
+/// takes [_dateAxisHeight] and the plot itself keeps the artboard's ~120.
+const double _chartAspect = 2.4;
 const int _rangeDays = 30; // mobile resolves the weight window to 30 days
-const double _leftGutter = 34; // reservedSize of the Y-label gutter
+const double _dateAxisHeight = 22; // date ticks + their 4px lead
 
 class WeightChartCanvas extends StatelessWidget {
   const WeightChartCanvas({
@@ -93,9 +95,13 @@ class WeightChartCanvas extends StatelessWidget {
     // and drops ticks until they fit, so the axis adapts instead of needing
     // its own size.
     final axisLabel = dashMeta(color: kInkMuted);
-    final gridLine = FlLine(
-      color: KalloColors.border.withValues(alpha: 0.5),
+    // Dashed, at full hairline weight: the plot carries no frame any more, so
+    // the gridlines are the only structure and a 50%-alpha solid rule read as
+    // a smudge rather than a scale.
+    const gridLine = FlLine(
+      color: kHairline,
       strokeWidth: 1,
+      dashArray: [3, 4],
     );
 
     return AspectRatio(
@@ -106,11 +112,11 @@ class WeightChartCanvas extends StatelessWidget {
             pointCount: weights.length,
             dates: weightDates,
             locale: context.locale.toString(),
-            plotWidth: math.max(constraints.maxWidth - _leftGutter, 1),
+            plotWidth: math.max(constraints.maxWidth, 1),
             style: axisLabel,
             textScaler: MediaQuery.textScalerOf(context),
           );
-          return LineChart(
+          final chart = LineChart(
             LineChartData(
               minX: 0,
               maxX: maxX,
@@ -118,58 +124,31 @@ class WeightChartCanvas extends StatelessWidget {
               maxY: axis.max,
               clipData: const FlClipData.all(),
               backgroundColor: Colors.transparent,
-              // Uniform gridline at every round-number Y step (spans the plot,
-              // which fills from the label gutter to the right edge).
+              // Uniform gridline at every round-number Y step, spanning the
+              // full card width now that the label gutter is gone.
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
                 horizontalInterval: yStep,
                 getDrawingHorizontalLine: (_) => gridLine,
               ),
-              // Left + bottom axis lines only — the card already carries a
-              // shadow, and a full box around the plot reads heavy.
-              borderData: FlBorderData(
-                show: true,
-                border: Border(
-                  left: BorderSide(
-                    color: KalloColors.border.withValues(alpha: 0.5),
-                  ),
-                  bottom: BorderSide(
-                    color: KalloColors.border.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
+              // No frame: the dashed gridlines carry the scale, and an axis box
+              // around a card-width plot reads as a second card edge.
+              borderData: FlBorderData(show: false),
               titlesData: FlTitlesData(
                 show: true,
                 topTitles:
                     const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 rightTitles:
                     const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                // Round-number weight values in a left gutter — outside the plot,
-                // so they never sit on top of the line.
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: _leftGutter,
-                    interval: yStep,
-                    getTitlesWidget: (value, meta) => SideTitleWidget(
-                      meta: meta,
-                      child: Text(
-                        yStep >= 1
-                            ? value.toStringAsFixed(0)
-                            : value.toStringAsFixed(1),
-                        style: axisLabel,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                      ),
-                    ),
-                  ),
-                ),
+                // The Y bounds are labelled by the overlay below, not by a
+                // gutter — the gutter cost the plot 34 of its 334.
+                leftTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 18,
+                    reservedSize: _dateAxisHeight,
                     interval: 1,
                     getTitlesWidget: (value, meta) {
                       final i = value.round();
@@ -265,6 +244,27 @@ class WeightChartCanvas extends StatelessWidget {
             ),
             duration: const Duration(milliseconds: 1500),
             curve: Curves.easeInOut,
+          );
+
+          // The Y domain's two bounds, set against the right edge at the top
+          // and bottom of the plot. The line is drawn from the left, so the
+          // right edge is the one place a label rarely lands on data.
+          String bound(double value) =>
+              yStep >= 1 ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
+          return Stack(
+            children: [
+              Positioned.fill(child: chart),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Text(bound(axis.max), style: axisLabel),
+              ),
+              Positioned(
+                bottom: _dateAxisHeight,
+                right: 0,
+                child: Text(bound(axis.min), style: axisLabel),
+              ),
+            ],
           );
         },
       ),

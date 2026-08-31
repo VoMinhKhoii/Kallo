@@ -54,9 +54,11 @@ class _PersistedMealChevronToggleState
               turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
               child: const Icon(
                 LucideIcons.chevronDown300, // lucide ChevronDown
-                // Same glyph size and ink as the action icons beneath the card.
-                size: LoggingIcons.size,
-                color: KalloColors.text,
+                // 20, between the card's 14pt text and the 24pt action row
+                // below it, and muted: this is furniture ON the card, not one
+                // of the card's actions.
+                size: 20,
+                color: KalloColors.textMuted,
               ),
             ),
           ),

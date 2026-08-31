@@ -7,7 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../services/auth/session_provider.dart';
 import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
-import '../list/settings_row.dart';
+import '../../../../shared/widgets/list/list_row.dart';
 
 /// Sign out — the bottom-most action on the settings screen, in danger red.
 ///
@@ -59,7 +59,7 @@ class _SignOutRowState extends ConsumerState<SignOutRow> {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsRow(
+    return ListRow(
       icon: LucideIcons.logOut300,
       label: tr('settings.account.signOut'),
       danger: true,

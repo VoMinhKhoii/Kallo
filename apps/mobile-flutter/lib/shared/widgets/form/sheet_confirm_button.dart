@@ -5,10 +5,10 @@ import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
 
-/// A sheet footer's commit action: an umber pill that hugs its label rather
-/// than filling the row, and swaps in an inline spinner while the write is in
-/// flight. Sits beside a quiet Back link, which is why it is not the
-/// full-width `SheetPrimaryButton`.
+/// A sheet footer's commit action: a beige in-app-primary pill (native pass,
+/// 2026-08-31 — umber retired from buttons) that hugs its label rather than
+/// filling the row, and swaps in an inline spinner while the write is in
+/// flight. Sits beside a quiet Back link, which is why it is not full-width.
 class SheetConfirmButton extends StatefulWidget {
   const SheetConfirmButton({
     super.key,
@@ -56,8 +56,11 @@ class _SheetConfirmButtonState extends State<SheetConfirmButton> {
               vertical: KalloSpacing.sp3,
             ),
             decoration: BoxDecoration(
-              color: _pressed ? KalloColors.btnHover : KalloColors.btn,
-              borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
+              color: _pressed
+                  ? Color.alphaBlend(
+                      KalloColors.pressWash, KalloColors.btnPrimarySoft)
+                  : KalloColors.btnPrimarySoft,
+              borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
             child:
                 widget.saving
@@ -66,14 +69,14 @@ class _SheetConfirmButtonState extends State<SheetConfirmButton> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: KalloColors.text,
                       ),
                     )
                     : Text(
                       widget.label,
                       style: KalloTextStyles.sansSemiBold(
                         fontSize: KalloFontSize.sm,
-                      ).copyWith(color: Colors.white),
+                      ).copyWith(color: KalloColors.text),
                     ),
           ),
         ),

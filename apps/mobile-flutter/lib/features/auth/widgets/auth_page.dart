@@ -1,21 +1,14 @@
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../theme/calm_tokens.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
-import '../../../theme/kallo_typography.dart';
 import '../providers/auth_form_controller.dart';
-import 'apple_button.dart';
-import 'auth_brand_hero.dart';
-import 'auth_divider.dart';
+import 'auth_controls.dart';
 import 'confirm_email_view.dart';
-import '../../../shared/widgets/toast/top_toast.dart';
 import 'email_auth_form.dart';
-import 'google_button.dart';
-import 'welcome_demo.dart';
+import 'welcome/welcome_view.dart';
 
 /// Which face of the auth surface is showing.
 enum _AuthMode { welcome, email }
@@ -71,9 +64,10 @@ class _AuthPageState extends ConsumerState<AuthPage> {
 
     // Which face: confirm-email > email form > welcome. The key also tells the
     // switcher's transitionBuilder which child is incoming vs outgoing.
-    final Key currentKey = showConfirm
-        ? const ValueKey('confirm')
-        : _mode == _AuthMode.email
+    final Key currentKey =
+        showConfirm
+            ? const ValueKey('confirm')
+            : _mode == _AuthMode.email
             ? const ValueKey('email')
             : const ValueKey('welcome');
 
@@ -83,13 +77,24 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     } else if (_mode == _AuthMode.email) {
       face = EmailAuthForm(
         provider: _provider,
-        onBack: () => setState(() {
-          _forward = false;
-          _mode = _AuthMode.welcome;
-        }),
+        onBack:
+            () => setState(() {
+              _forward = false;
+              _mode = _AuthMode.welcome;
+            }),
       );
     } else {
-      face = _welcome(state);
+      face = WelcomeView(
+        busy: state.busy,
+        googleBusy: state.googleBusy,
+        onApple: _controller.signInWithApple,
+        onGoogle: _controller.signInWithGoogle,
+        onEmail:
+            () => setState(() {
+              _forward = true;
+              _mode = _AuthMode.email;
+            }),
+      );
     }
 
     // Each face is a full-screen, opaque page so switching reads as an
@@ -101,7 +106,14 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+            // 24 side inset — auth's documented exception to the app's 12pt
+            // page rhythm (native pass, 2026-08-31). Nothing here is a card on
+            // a canvas; it is a single centred column, and 12 let a 50pt pill
+            // run almost edge to edge.
+            padding: const EdgeInsets.symmetric(
+              horizontal: kAuthInset,
+              vertical: KalloSpacing.sp8,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: face,
@@ -129,129 +141,21 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         );
         final begin = incoming ? Offset(dir, 0) : Offset(-dir * 0.25, 0);
         return SlideTransition(
-          position: Tween<Offset>(begin: begin, end: Offset.zero)
-              .animate(curved),
+          position: Tween<Offset>(
+            begin: begin,
+            end: Offset.zero,
+          ).animate(curved),
           child: child,
         );
       },
-      layoutBuilder: (currentChild, previousChildren) => Stack(
-        children: [
-          ...previousChildren,
-          if (currentChild != null) currentChild,
-        ],
-      ),
-      child: page,
-    );
-  }
-
-  Widget _welcome(AuthFormState state) {
-    final showApple =
-        defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.macOS;
-    return Column(
-      key: const ValueKey('welcome'),
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const AuthBrandHero(),
-        const SizedBox(height: 14),
-        // Tagline — sentence, with the second clause italic-tan.
-        Text.rich(
-          TextSpan(
+      layoutBuilder:
+          (currentChild, previousChildren) => Stack(
             children: [
-              TextSpan(text: '${tr('auth.welcome.tagline')} '),
-              TextSpan(
-                text: tr('auth.welcome.taglineHighlight'),
-                style: KalloTextStyles.serifItalic(
-                  fontSize: KalloFontSize.h3,
-                ).copyWith(color: KalloColors.accent),
-              ),
+              ...previousChildren,
+              if (currentChild != null) currentChild,
             ],
           ),
-          textAlign: TextAlign.center,
-          style: KalloTextStyles.serifRegular(
-            fontSize: KalloFontSize.h3,
-            height: KalloLeading.snug,
-          ).copyWith(color: KalloColors.text),
-        ),
-        const SizedBox(height: 28),
-        const WelcomeDemo(),
-        const SizedBox(height: 28),
-        if (showApple) ...[
-          AppleButton(busy: state.busy, onPressed: _controller.signInWithApple),
-          const SizedBox(height: 12),
-        ],
-        GoogleButton(
-          busy: state.busy,
-          loading: state.googleBusy,
-          onPressed: _controller.signInWithGoogle,
-        ),
-        const SizedBox(height: 12),
-        const AuthDivider(),
-        const SizedBox(height: 12),
-        _EmailEntryButton(
-          busy: state.busy,
-          onPressed: () => setState(() {
-            _forward = true;
-            _mode = _AuthMode.email;
-          }),
-        ),
-        const SizedBox(height: 18),
-        Text(
-          tr('auth.welcome.terms'),
-          textAlign: TextAlign.center,
-          style: dashMeta(),
-        ),
-      ],
-    );
-  }
-}
-
-/// "Continue with email" — a ghost button matching the Google button shape but
-/// without a logo, so the three options read as one stack.
-class _EmailEntryButton extends StatefulWidget {
-  const _EmailEntryButton({required this.onPressed, required this.busy});
-
-  final VoidCallback onPressed;
-  final bool busy;
-
-  @override
-  State<_EmailEntryButton> createState() => _EmailEntryButtonState();
-}
-
-class _EmailEntryButtonState extends State<_EmailEntryButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final fill = _pressed ? KalloColors.cardCream : KalloColors.elev;
-    return Opacity(
-      opacity: widget.busy ? 0.6 : 1.0,
-      child: GestureDetector(
-        onTapDown: widget.busy ? null : (_) => setState(() => _pressed = true),
-        onTapUp: widget.busy ? null : (_) => setState(() => _pressed = false),
-        onTapCancel:
-            widget.busy ? null : () => setState(() => _pressed = false),
-        onTap: widget.busy ? null : widget.onPressed,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp4,
-            vertical: KalloSpacing.sp3,
-          ),
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-            border: Border.all(color: KalloColors.border),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            tr('auth.welcome.continueWithEmail'),
-            style: dashBody(weight: FontWeight.w500)
-                .copyWith(color: KalloColors.text, letterSpacing: -0.2),
-          ),
-        ),
-      ),
+      child: page,
     );
   }
 }

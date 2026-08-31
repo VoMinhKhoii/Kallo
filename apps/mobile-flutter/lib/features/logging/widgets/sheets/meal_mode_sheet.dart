@@ -1,20 +1,19 @@
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../shared/widgets/list/list_row.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
-import '../../../../shared/widgets/typography/kallo_text.dart';
-import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
-import '../../logic/logging_spacing.dart';
 import '../../logic/meal_log_mode.dart';
 
-/// Opens the "select mode" chooser — the first step before the composer. Minimal
-/// list (bare colored icon · title · description · check), mirroring the Claude
-/// Code mobile mode selector. Returns the picked mode (or null if dismissed).
+/// Opens the "select mode" chooser — the first step before the composer.
+/// Returns the picked mode (or null if dismissed).
 Future<MealLogMode?> showMealModeSheet(
   BuildContext context, {
   required MealLogMode current,
@@ -25,6 +24,13 @@ Future<MealLogMode?> showMealModeSheet(
   );
 }
 
+/// The mode rows in the app's shared row anatomy (native pass, 2026-08-31):
+/// leading 24pt ink glyph, 14/500 title over a 12 muted description (64pt with
+/// the subline), the selected row washed beige with an ink check.
+///
+/// The icons lost their per-mode colours here: the palette keeps tan and umber
+/// for non-text moments, and four differently-tinted glyphs in one list read as
+/// four categories rather than one choice. Selection carries the state instead.
 class _MealModeSheet extends StatelessWidget {
   const _MealModeSheet({required this.current});
 
@@ -32,146 +38,83 @@ class _MealModeSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
+    // Floors at sp4 for phones with no home indicator to inset against.
+    final bottomInset = math.max(
+      MediaQuery.viewPaddingOf(context).bottom,
+      KalloSpacing.sp4,
+    );
     return KalloSheetSurface(
       // Four description rows overflowed a short phone at large Dynamic Type
       // (104px past the old 9/16 cap) — the last mode was unreachable.
       scrollable: true,
+      padding: EdgeInsets.only(
+        left: KalloSpacing.sp4,
+        right: KalloSpacing.sp4,
+        bottom: bottomInset,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           KalloSheetHeader(title: 'logging.modeSelector.title'.tr()),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              KalloSpacing.sp3,
-              KalloSpacing.sp2,
-              KalloSpacing.sp3,
-              bottomInset + KalloSpacing.sp4,
-            ),
-            child: Column(
-              children: [
-                _ModeRow(
-                  icon: mealModeIcon(MealLogMode.normal),
-                  iconColor: KalloColors.btn, // umber — 6.3:1
-                  title: 'logging.modeSelector.normal'.tr(),
-                  desc: 'logging.modeSelector.normalDesc'.tr(),
-                  selected: current == MealLogMode.normal,
-                  onTap: () => Navigator.of(context).pop(MealLogMode.normal),
-                ),
-                _ModeRow(
-                  icon: mealModeIcon(MealLogMode.cheat),
-                  // Warm, not red: a cheat meal is a logging category, not a
-                  // destructive act. It only looked acceptable while `danger`
-                  // was terracotta.
-                  iconColor: KalloColors.cheatMark, // deep tan — 4.5:1
-                  title: 'logging.modeSelector.cheat'.tr(),
-                  desc: 'logging.modeSelector.cheatDesc'.tr(),
-                  selected: current == MealLogMode.cheat,
-                  onTap: () => Navigator.of(context).pop(MealLogMode.cheat),
-                ),
-                _ModeRow(
-                  icon: mealModeIcon(MealLogMode.manual),
-                  iconColor: KalloColors.successDark, // emerald — 4.6:1
-                  title: 'logging.modeSelector.manual'.tr(),
-                  desc: 'logging.modeSelector.manualDesc'.tr(),
-                  selected: current == MealLogMode.manual,
-                  onTap: () => Navigator.of(context).pop(MealLogMode.manual),
-                ),
-                if (isBarcodeLoggingSupported)
-                  _ModeRow(
-                    icon: mealModeIcon(MealLogMode.barcode),
-                    iconColor: KalloColors.textMuted, // neutral — 5.2:1
-                    title: 'logging.modeSelector.barcode'.tr(),
-                    desc: 'logging.modeSelector.barcodeDesc'.tr(),
-                    selected: current == MealLogMode.barcode,
-                    onTap: () => Navigator.of(context).pop(MealLogMode.barcode),
-                  ),
-              ],
-            ),
-          ),
+          for (final mode in MealLogMode.values)
+            if (mode != MealLogMode.barcode || isBarcodeLoggingSupported)
+              _ModeRow(
+                mode: mode,
+                selected: current == mode,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  Navigator.of(context).pop(mode);
+                },
+              ),
         ],
       ),
     );
   }
 }
 
-class _ModeRow extends StatefulWidget {
+class _ModeRow extends StatelessWidget {
   const _ModeRow({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.desc,
+    required this.mode,
     required this.selected,
     required this.onTap,
   });
 
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String desc;
+  final MealLogMode mode;
   final bool selected;
   final VoidCallback onTap;
 
-  @override
-  State<_ModeRow> createState() => _ModeRowState();
-}
-
-class _ModeRowState extends State<_ModeRow> {
-  bool _pressed = false;
+  static String _key(MealLogMode mode) => switch (mode) {
+    MealLogMode.normal => 'normal',
+    MealLogMode.cheat => 'cheat',
+    MealLogMode.manual => 'manual',
+    MealLogMode.barcode => 'barcode',
+  };
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: () {
-        HapticFeedback.selectionClick();
-        widget.onTap();
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        padding: const EdgeInsets.symmetric(
-          horizontal: KalloSpacing.sp2,
-          vertical: KalloSpacing.sp3,
-        ),
-        decoration: BoxDecoration(
-          color: _pressed ? KalloColors.hover40 : Colors.transparent,
-          borderRadius: BorderRadius.circular(KalloRadii.container20),
-        ),
-        child: Row(
-          children: [
-            Icon(widget.icon, size: LoggingIcons.size, color: widget.iconColor),
-            const SizedBox(width: KalloSpacing.sp3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  KalloText(
-                    widget.title,
-                    variant: KalloTextVariant.body,
-                    style: dashBody(weight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 1),
-                  KalloText(
-                    widget.desc,
-                    variant: KalloTextVariant.small,
-                    style: dashMeta(),
-                  ),
-                ],
-              ),
-            ),
-            if (widget.selected)
-              const Icon(
-                LucideIcons.check300,
-                size: LoggingIcons.size,
-                color: KalloColors.text,
-              ),
-          ],
+    final key = _key(mode);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+      child: ColoredBox(
+        color: selected ? KalloColors.hover : Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp2),
+          child: ListRow(
+            icon: mealModeIcon(mode),
+            label: 'logging.modeSelector.$key'.tr(),
+            subline: 'logging.modeSelector.${key}Desc'.tr(),
+            onTap: onTap,
+            trailing: selected
+                ? const Icon(
+                    LucideIcons.check300,
+                    size: KalloIcons.size,
+                    color: KalloColors.text,
+                  )
+                : null,
+          ),
         ),
       ),
     );
   }
 }
-

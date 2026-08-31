@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
+import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 import '../../l10n_test_loader.dart';
@@ -51,15 +52,13 @@ void main() {
     expect(find.text('phở bò tái nạm'), findsOneWidget);
   });
 
-  testWidgets('is umber with white copy, not the tan accent', (tester) async {
+  testWidgets('is the beige in-app wash with ink copy', (tester) async {
     await tester.pumpWidget(_wrap('phở bò'));
-    // Tan behind running text would break the palette rule AND fail contrast
-    // against white at 2.1:1; umber clears AA at 5.9:1.
-    expect(_decoration(tester).color, KalloColors.btn);
-    expect(
-      tester.widget<Text>(find.text('phở bò')).style?.color,
-      KalloColors.bandForeground,
-    );
+    // The one warm wash the app uses for "mine" — the same one on the confirm
+    // circle and the send button. Tan behind running text would break the
+    // palette rule and fail contrast; ink on beige clears AA at 13:1.
+    expect(_decoration(tester).color, KalloColors.btnPrimarySoft);
+    expect(tester.widget<Text>(find.text('phở bò')).style?.color, kInk);
   });
 
   testWidgets('sits against the right edge, like a sent message', (

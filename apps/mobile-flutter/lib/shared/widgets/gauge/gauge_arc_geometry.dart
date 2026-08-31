@@ -121,6 +121,32 @@ Path roundedSectorPath({
   );
 }
 
+/// The over-target cap: the tail of a FULL dial repainted in the off-target
+/// colour, sized to the share of consumption past the target (consumed 2,485
+/// of 1,844 → the last ~26% of the sweep). Native pass, 2026-08-31 — "over"
+/// is information, not an alarm, so the cap is terracotta, never red, and a
+/// tiny overshoot still gets a legible 8° sliver.
+Path gaugeOverCapPath({
+  required Offset center,
+  required double outerRadius,
+  required double progress,
+}) {
+  if (progress <= 1) return Path();
+  final band = outerRadius * _bandRatio;
+  final innerRadius = outerRadius - band;
+  final cornerRadius = band * _cornerRatio;
+  final span = (kGaugeStartAngle - kGaugeEndAngle) - kGaugePadAngle;
+  final overShare = (1 - 1 / progress).clamp(8 / span, 1.0);
+  return roundedSectorPath(
+    center: center,
+    innerRadius: innerRadius,
+    outerRadius: outerRadius,
+    startAngle: kGaugeStartAngle - span * (1 - overShare),
+    endAngle: kGaugeStartAngle - span,
+    cornerRadius: cornerRadius,
+  );
+}
+
 /// Where the dial's two tips sit below its centre — the line the readout's
 /// secondary text is centred on, so type and dial share one baseline.
 double gaugeTipOffset(double outerRadius) => outerRadius / 2;

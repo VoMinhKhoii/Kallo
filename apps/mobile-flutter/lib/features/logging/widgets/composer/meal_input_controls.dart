@@ -53,15 +53,18 @@ class _ComposerModeButtonState extends State<ComposerModeButton> {
               scale: _pressed ? 0.96 : 1,
               duration: const Duration(milliseconds: 200),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp1),
+                // No left inset: the mode mark lines up with the field's text
+                // above it, and the composer card's own 16 is the gutter.
+                padding: const EdgeInsets.only(right: KalloSpacing.sp2_5),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(widget.icon,
-                        size: LoggingIcons.size, color: KalloColors.btn),
+                        size: LoggingIcons.size, color: KalloColors.text),
                     const SizedBox(width: 6),
-                    // Regular weight, same as the field's own text.
-                    Text(widget.label, style: dashBody(color: kInkMuted)),
+                    // Ink at 500: this names the mode the next send will use —
+                    // state to read at a glance, not a hint.
+                    Text(widget.label, style: dashBody(weight: FontWeight.w500)),
                   ],
                 ),
               ),
@@ -109,8 +112,8 @@ class _ComposerBarcodeButtonState extends State<ComposerBarcodeButton> {
               duration: const Duration(milliseconds: 200),
               child: const Icon(
                 LucideIcons.scanBarcode300,
-                size: LoggingIcons.size,
-                color: KalloColors.btn,
+                size: 20,
+                color: KalloColors.textMuted,
               ),
             ),
           ),
@@ -120,20 +123,21 @@ class _ComposerBarcodeButtonState extends State<ComposerBarcodeButton> {
   }
 }
 
-/// The 32x32, rounded-md, btn-umber submit/stop button. Pressed → scale 0.95 +
-/// btn-hover bg (RN `active:bg-kallo-btn-hover active:scale-95`). Disabled → 0.3.
+/// The send / stop button: a 32pt circle in a 44pt tap target (Log artboard).
+/// Armed it wears the beige in-app primary wash with an ink glyph, like the
+/// sent bubble and the confirm circle; unarmed it drops to the track grey
+/// rather than to a dimmed copy of itself — "nothing to send yet" is a resting
+/// state, not a failure.
 class ComposerActionButton extends StatefulWidget {
   const ComposerActionButton({
     super.key,
     required this.icon,
-    required this.iconSize,
     required this.label,
     this.onTap,
     this.enabled = true,
   });
 
   final IconData icon;
-  final double iconSize;
   final String label;
   final VoidCallback? onTap;
   final bool enabled;
@@ -148,6 +152,7 @@ class _ComposerActionButtonState extends State<ComposerActionButton> {
   @override
   Widget build(BuildContext context) {
     final tappable = widget.onTap != null;
+    final armed = widget.enabled && tappable;
     return Semantics(
       button: true,
       enabled: tappable,
@@ -167,24 +172,21 @@ class _ComposerActionButtonState extends State<ComposerActionButton> {
               duration: const Duration(
                 milliseconds: 200,
               ), // transition-all duration-200
-              child: Opacity(
-                opacity: widget.enabled ? 1 : 0.3,
-                child: Container(
-                  // Sized off the glyph, not a magic number: the pill has to
-                  // keep visible padding around the icon, and the icon is now
-                  // the app-wide 24 rather than 16.
-                  width: widget.iconSize + KalloSpacing.sp3,
-                  height: widget.iconSize + KalloSpacing.sp3,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: _pressed ? KalloColors.btnHover : KalloColors.btn,
-                    borderRadius: BorderRadius.circular(KalloRadii.md),
-                  ),
-                  child: Icon(
-                    widget.icon,
-                    size: widget.iconSize,
-                    color: Colors.white,
-                  ),
+              child: Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  // The press is carried by the scale above, not by a second
+                  // fill: beige has nowhere lighter to go on white.
+                  color:
+                      armed ? KalloColors.btnPrimarySoft : KalloColors.track,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  widget.icon,
+                  size: 18,
+                  color: armed ? KalloColors.text : KalloColors.textMuted,
                 ),
               ),
             ),

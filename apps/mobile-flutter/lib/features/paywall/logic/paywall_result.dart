@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../data/paywall_controller.dart';
+import '../../../shell/nav/nav_actions.dart';
 
 /// Applies the shared navigation/toast behavior for purchase and restore
 /// outcomes. User cancellation is intentionally silent.
@@ -14,7 +15,7 @@ void handlePaywallResult(BuildContext context, PaywallActionResult result) {
       if (router.canPop()) {
         router.pop();
       } else {
-        context.go('/logging');
+        landInLogging(context);
       }
     case PaywallActionResult.pending:
     case PaywallActionResult.paymentPending:

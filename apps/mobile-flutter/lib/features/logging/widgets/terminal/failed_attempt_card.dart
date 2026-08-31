@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../logic/logging_spacing.dart';
-import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -37,17 +36,14 @@ class FailedAttemptCard extends StatelessWidget {
       padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: KalloColors.elev,
-        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-        border: Border.all(color: KalloColors.borderSoft),
-        boxShadow: const [KalloShadows.sm],
+        borderRadius: BorderRadius.circular(KalloRadii.card),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          KalloText(
+          Text(
             rawInput,
-            variant: KalloTextVariant.mealQuote,
-            style: const TextStyle(fontSize: 17, height: 28 / 17),
+            style: dashBody(),
           ),
           const SizedBox(height: KalloSpacing.sp3),
           Text(

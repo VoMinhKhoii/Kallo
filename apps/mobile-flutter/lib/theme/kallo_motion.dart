@@ -43,18 +43,6 @@ abstract final class KalloMotion {
   /// A deliberate journey down the feed to a new answer.
   static const Duration scrollTo = Duration(milliseconds: 400);
 
-  /// The nav drawer coming in, and going back out slightly faster.
-  ///
-  /// These deliberately DIVERGE from the web sheet (`components/ui/sheet.tsx`,
-  /// 500/300 ease-in-out) that the drawer was otherwise ported from 1:1. Half a
-  /// second is roughly twice Material's own drawer, and on a phone it reads as
-  /// lag even when every frame lands — the web sheet is a pointer-driven
-  /// surface where the longer travel reads as deliberate instead. Closing is
-  /// quicker than opening because a dismissal should feel like getting out of
-  /// the way, not like a second animation to sit through.
-  static const Duration drawerOpen = Duration(milliseconds: 280);
-  static const Duration drawerClose = Duration(milliseconds: 220);
-
   /// How long a passive toast sits before it withdraws.
   static const Duration toast = Duration(milliseconds: 2200);
 
@@ -83,7 +71,8 @@ abstract final class KalloEase {
   /// scroll-to and the week pager.
   static const Curve decelerate = Cubic(0.16, 1, 0.3, 1);
 
-  /// Panels that slide in from an edge — Material's own drawer curve, and what
-  /// makes [drawerOpen] read as immediate rather than abrupt.
+  /// Panels that slide in from an edge — Material's own drawer curve. The
+  /// drawer itself retired with the pill nav (native pass, 2026-08-31);
+  /// kept for any edge-sliding surface.
   static const Curve drawer = Curves.fastOutSlowIn;
 }

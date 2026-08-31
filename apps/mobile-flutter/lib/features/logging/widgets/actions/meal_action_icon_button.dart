@@ -30,9 +30,16 @@ class MealActionIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Active is carried by the warm hover wash behind the icon, not the icon
-    // colour — the glyph stays ink (never tan) in every non-danger state.
-    final foreground = danger ? KalloColors.danger : KalloColors.text;
+    // Quiet by default and ink once selected (never tan): at the action row's
+    // 24pt these are the card's controls, not its content, so muted is what
+    // keeps them from out-weighing the meal above them — and the warm wash plus
+    // the step to ink is then a real change of state rather than a wash alone.
+    final foreground =
+        danger
+            ? KalloColors.danger
+            : active
+            ? KalloColors.text
+            : KalloColors.textMuted;
     final enabled = onTap != null && !pending;
 
     return Tooltip(
@@ -82,7 +89,9 @@ class MealActionIconButton extends StatelessWidget {
                     child:
                         pending
                             ? SizedBox.square(
-                              dimension: 13,
+                              // Sits in the glyph's own footprint, so the row
+                              // doesn't jump when an action goes pending.
+                              dimension: LoggingIcons.action - 6,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 color: foreground,
@@ -90,7 +99,7 @@ class MealActionIconButton extends StatelessWidget {
                             )
                             : Icon(
                               icon,
-                              size: LoggingIcons.size,
+                              size: LoggingIcons.action,
                               color: foreground,
                             ),
                   ),

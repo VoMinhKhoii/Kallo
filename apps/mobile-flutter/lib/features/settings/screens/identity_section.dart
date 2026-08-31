@@ -6,17 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../services/http/api_client.dart';
 import '../../../models/social/circle.dart';
+import '../../../shared/widgets/form/kallo_text_field.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/avatar/profile_avatar.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../shared/widgets/feedback/skeleton.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../circle/data/circle_providers.dart';
 import '../logic/settings_spacing.dart';
@@ -161,7 +160,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
 
   Widget _body(CircleProfile profile) {
     return ListView(
-      padding: SettingsSpacing.page,
+      padding: SettingsSpacing.page(context),
       children: [
         // No title here — it lives in the header bar. This is the description
         // that used to sit under it.
@@ -181,19 +180,22 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
                 spacing: KalloSpacing.sp2,
                 runSpacing: KalloSpacing.sp2,
                 children: [
-                  _PillButton(
-                    icon: LucideIcons.upload300,
-                    label: profile.hasCustomAvatar
+                  // Quiet pair: neither picking a photo nor removing one is
+                  // THE action on this screen — saving the name is.
+                  KalloButton(
+                    title: profile.hasCustomAvatar
                         ? tr('settings.identity.avatarChange')
                         : tr('settings.identity.avatarUpload'),
-                    onTap: _busy ? null : _pickAndUpload,
+                    variant: KalloButtonVariant.secondary,
+                    disabled: _busy,
+                    onPressed: _pickAndUpload,
                   ),
                   if (profile.hasCustomAvatar)
-                    _PillButton(
-                      icon: LucideIcons.x300,
-                      label: tr('settings.identity.avatarRemove'),
-                      onTap: _busy ? null : _removeAvatar,
-                      subdued: true,
+                    KalloButton(
+                      title: tr('settings.identity.avatarRemove'),
+                      variant: KalloButtonVariant.ghost,
+                      disabled: _busy,
+                      onPressed: _removeAvatar,
                     ),
                 ],
               ),
@@ -208,39 +210,18 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
           style: dashBody(weight: FontWeight.w500),
         ),
         const SizedBox(height: KalloSpacing.sp2),
-        TextField(
+        KalloTextField(
           controller: _name,
           maxLength: _displayNameMax,
+          hintText: tr('settings.identity.namePlaceholder'),
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _saveName(profile),
-          decoration: InputDecoration(
-            counterText: '',
-            hintText: tr('settings.identity.namePlaceholder'),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-              borderSide: const BorderSide(color: KalloColors.inputBorder),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-              borderSide: const BorderSide(color: KalloColors.inputBorder),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-              borderSide: const BorderSide(color: KalloColors.accent),
-            ),
-          ),
-          style: dashBody(),
         ),
         const SizedBox(height: KalloSpacing.sp3),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: _PillButton(
-            icon: LucideIcons.check300,
-            label: tr('settings.identity.nameSave'),
-            onTap: _busy ? null : () => unawaited(_saveName(profile)),
-          ),
+        KalloButton(
+          title: tr('settings.identity.nameSave'),
+          disabled: _busy,
+          onPressed: () => unawaited(_saveName(profile)),
         ),
         const SizedBox(height: KalloSpacing.sp4),
         Text(
@@ -263,7 +244,7 @@ class _IdentitySkeleton extends StatelessWidget {
       label: tr('common.loading'),
       child: SkeletonPulse(
         child: ListView(
-          padding: SettingsSpacing.page,
+          padding: SettingsSpacing.page(context),
           children: const [
             // Mirrors the real body: description line, then the avatar row.
             SkeletonBar(widthFactor: 0.9, height: 12, radius: 6),
@@ -282,56 +263,4 @@ class _IdentitySkeleton extends StatelessWidget {
   }
 }
 
-/// Small pill action button in the brand's warm register.
-class _PillButton extends StatelessWidget {
-  const _PillButton({
-    required this.icon,
-    required this.label,
-    this.onTap,
-    this.subdued = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-  final bool subdued;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = subdued ? kInkMuted : KalloColors.text;
-    return Semantics(
-      button: true,
-      enabled: onTap != null,
-      label: label,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Opacity(
-          opacity: onTap == null ? 0.5 : 1,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: KalloSpacing.sp4,
-              vertical: 10,
-            ),
-            decoration: BoxDecoration(
-              color: subdued ? Colors.transparent : Colors.white,
-              borderRadius: BorderRadius.circular(KalloRadii.pill),
-              border: Border.all(color: KalloColors.inputBorder),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 14, color: color),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: dashBody(weight: FontWeight.w500, color: color),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 

@@ -19,6 +19,7 @@ import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/dashboard_providers.dart';
+import '../../logic/dashboard_spacing.dart';
 import '../../logic/heatmap_colors.dart';
 import '../../logic/heatmap_month_labels.dart';
 import 'heatmap_grid_painter.dart';
@@ -62,34 +63,29 @@ class AdherenceHeatmap extends ConsumerWidget {
       // grid for the range (unlogged days are the "not logged" track).
       data: (data) => _HeatmapBody(data: data),
       error:
-          (_, __) => Container(
-            constraints: const BoxConstraints(minHeight: 180),
-            alignment: Alignment.center,
-            padding: const EdgeInsets.all(KalloSpacing.sp4),
-            decoration: BoxDecoration(
-              color: kCardSurface,
-              borderRadius: BorderRadius.circular(kCardRadius),
-              boxShadow: kCardShadows,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 280),
-                  child: Text(
-                    tr('dashboard.heatmapLoadError'),
-                    textAlign: TextAlign.center,
-                    style: dashMeta(color: kInkMuted),
+          (_, __) => KalloCard(
+            padding: DashboardSpacing.card,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 180),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 280),
+                    child: Text(
+                      tr('dashboard.heatmapLoadError'),
+                      textAlign: TextAlign.center,
+                      style: dashMeta(color: kInkMuted),
+                    ),
                   ),
-                ),
-                const SizedBox(height: KalloSpacing.sp3),
-                KalloButton(
-                  title: tr('dashboard.retry'),
-                  variant: KalloButtonVariant.ghost,
-                  onPressed:
-                      () => ref.invalidate(dashboardBundleProvider(args)),
-                ),
-              ],
+                  const SizedBox(height: DashboardSpacing.section),
+                  KalloButton(
+                    title: tr('dashboard.retry'),
+                    onPressed:
+                        () => ref.invalidate(dashboardBundleProvider(args)),
+                  ),
+                ],
+              ),
             ),
           ),
     );
@@ -205,13 +201,8 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     final dayLabelStyle = dashMeta(color: kInkMuted);
     final dayLabelWidth = _dayLabelWidth(dayLabels, dayLabelStyle);
 
-    return Container(
-      padding: const EdgeInsets.all(KalloSpacing.sp4),
-      decoration: BoxDecoration(
-        color: kCardSurface, // solid white
-        borderRadius: BorderRadius.circular(kCardRadius),
-        boxShadow: kCardShadows, // shadow only, no border
-      ),
+    return KalloCard(
+      padding: DashboardSpacing.card,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final contentWidth = constraints.maxWidth;
@@ -389,47 +380,52 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                 ],
               ),
 
-              // Legend.
+              // Legend: the full-width scale with its two ends named UNDER it.
+              // Flanking the bar cost it ~120pt of width, which at five equal
+              // segments left each tier too narrow to read as a step.
               Padding(
-                padding: const EdgeInsets.only(top: KalloSpacing.sp2),
-                child: Row(
+                padding: const EdgeInsets.only(top: DashboardSpacing.section),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      tr('dashboard.adherenceHeatmap.offTarget'),
-                      style: dashMeta(color: kInkMuted),
-                    ),
-                    const SizedBox(width: KalloSpacing.sp2),
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          _legendBarHeight / 2,
-                        ),
-                        child: Container(
-                          height: _legendBarHeight,
-                          decoration: const BoxDecoration(
-                            // Five equal discrete segments, one per tier — the
-                            // same five flat colours the cells use, each
-                            // repeated so its slice has hard edges.
-                            gradient: LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: [
-                                HeatmapColors.far, HeatmapColors.far,
-                                HeatmapColors.moderate, HeatmapColors.moderate,
-                                HeatmapColors.slight, HeatmapColors.slight,
-                                HeatmapColors.close, HeatmapColors.close,
-                                HeatmapColors.onTarget, HeatmapColors.onTarget,
-                              ],
-                              stops: HeatmapBands.legendStops,
-                            ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        _legendBarHeight / 2,
+                      ),
+                      child: Container(
+                        height: _legendBarHeight,
+                        decoration: const BoxDecoration(
+                          // Five equal discrete segments, one per tier — the
+                          // same five flat colours the cells use, each
+                          // repeated so its slice has hard edges.
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              HeatmapColors.far, HeatmapColors.far,
+                              HeatmapColors.moderate, HeatmapColors.moderate,
+                              HeatmapColors.slight, HeatmapColors.slight,
+                              HeatmapColors.close, HeatmapColors.close,
+                              HeatmapColors.onTarget, HeatmapColors.onTarget,
+                            ],
+                            stops: HeatmapBands.legendStops,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: KalloSpacing.sp2),
-                    Text(
-                      tr('dashboard.adherenceHeatmap.onTarget'),
-                      style: dashMeta(color: kInkMuted),
+                    const SizedBox(height: DashboardSpacing.row),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          tr('dashboard.adherenceHeatmap.offTarget'),
+                          style: dashMeta(color: kInkMuted),
+                        ),
+                        Text(
+                          tr('dashboard.adherenceHeatmap.onTarget'),
+                          style: dashMeta(color: kInkMuted),
+                        ),
+                      ],
                     ),
                   ],
                 ),

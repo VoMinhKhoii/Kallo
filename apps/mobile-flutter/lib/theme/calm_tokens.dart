@@ -45,9 +45,10 @@ const Color kInkMuted = KalloColors.textMuted;
 // ── Shape ────────────────────────────────────────────────────────────────
 const double kCardRadius = 22; // one card radius — modern iOS grouped-card feel
 
-/// Layered ink card shadow — a tight contact shadow plus a soft ambient
-/// one. Two stacked shadows read like a real iOS card lifting off the page,
-/// where one flat blur read as a smudge. Cards use shadow, not border.
+/// Sheet/menu elevation shadows. On the `#F4F3EF` canvas (native pass,
+/// 2026-08-31) ordinary cards separate by surface alone — NO border, NO
+/// shadow. These shadows are reserved for TRUE elevation: sheets, menus, the
+/// pill nav, a dragged card.
 const List<BoxShadow> kCardShadows = [
   BoxShadow(
     color: Color(0x14141413), // ambient (~8%)
@@ -136,10 +137,10 @@ TextStyle dashMeta({
       fontFeatures: tabular ? _tnum : null,
     );
 
-/// 11 / 500 — ALL-CAPS labels (PROTEIN/CARBS/FAT, section headers). Quiet:
-/// muted taupe by default, medium weight, minimal tracking — they structure the
-/// screen without shouting. Callers should NOT force espresso (kInk) here;
-/// let labels recede so the data reads first (the Apple Health move).
+/// 11 / 500 — ALL-CAPS labels, COMPONENT-INTERNAL ONLY (the macro dial
+/// PROTEIN/CARBS/FAT eyebrows). Retired as a section header in the native
+/// pass (2026-08-31): visible section headers are mixed-case ink — use
+/// [kSectionHeader] (17/600) or [kGroupLabel] (14/500 muted) instead.
 TextStyle dashEyebrow({
   Color color = kInkMuted,
   FontWeight weight = FontWeight.w500,
@@ -178,3 +179,72 @@ TextStyle dashHeadline({Color color = kInk}) => GoogleFonts.lora(
       letterSpacing: -0.3,
       color: color,
     );
+
+// ── Header ramp (native pass, 2026-08-31 — Threads scale) ─────────────────
+// page title 28/700 → section header 17/600 (optional 12 muted meta right) →
+// group label 14/500 muted (Settings-style card qualifier) → content.
+
+/// 28 / 700 / -0.5 — the page title (Nutrition, Circle, Settings).
+TextStyle kPageTitle({Color color = kInk}) => TextStyle(
+      fontFamily: KalloTextStyles.sansFamily,
+      fontSize: 28,
+      fontWeight: FontWeight.w700,
+      height: 1.15,
+      letterSpacing: -0.5,
+      color: color,
+    );
+
+/// 17 / 600 / -0.2 — section headers ("Vitamins", "Progress", "Recent
+/// meals") and centered sheet titles. Same metrics as [dashPageTitle], which
+/// keeps that role on header lines.
+TextStyle kSectionHeader({Color color = kInk}) => TextStyle(
+      fontFamily: KalloTextStyles.sansFamily,
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
+      height: 1.2,
+      letterSpacing: -0.2,
+      color: color,
+    );
+
+/// 14 / 500 muted — group labels above grouped cards ("Targets",
+/// "Preferences", "Today").
+TextStyle kGroupLabel({Color color = kInkMuted}) => TextStyle(
+      fontFamily: KalloTextStyles.sansFamily,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      height: 1.3,
+      color: color,
+    );
+
+// ── Pill nav (native pass, 2026-08-31) ────────────────────────────────────
+const double kNavWidth = 358; // effective pill width
+const double kNavHeight = 72;
+const double kNavRadius = 36;
+const double kNavAddSize = 52; // center "+" circle (beige, ink plus)
+
+/// Bottom padding scroll views need so content clears the floating pill nav.
+const double kNavClearance = 120;
+
+/// The bottom-sheet shadow — sheets are TRUE elevation and keep it even
+/// though ordinary cards carry none.
+const List<BoxShadow> kSheetShadows = [
+  BoxShadow(
+    color: Color(0x2E141413), // ~18%
+    blurRadius: 30,
+    offset: Offset(0, -8),
+  ),
+];
+
+/// The pill nav's two-layer shadow (it is TRUE elevation, like a sheet).
+const List<BoxShadow> kNavShadows = [
+  BoxShadow(
+    color: Color(0x24141413), // ~14%
+    blurRadius: 30,
+    offset: Offset(0, 10),
+  ),
+  BoxShadow(
+    color: Color(0x0F141413), // ~6%
+    blurRadius: 8,
+    offset: Offset(0, 2),
+  ),
+];

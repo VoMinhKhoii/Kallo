@@ -6,7 +6,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../shared/widgets/surface/kallo_screen.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
-import '../../../shell/header/app_header.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../data/chat_group_providers.dart';
@@ -50,17 +49,14 @@ class CircleScreen extends ConsumerWidget {
         '';
     return Screen(
       child: ScrollSeparator(
-        // Title on the header line, sans at Value 17 rather than the Lora
-        // headline: at 17 its cap-height sits level with the 24pt hamburger
-        // beside it. The screen runs on 12/14/17 — the three sizes `mobile.md`
-        // locks a surface to — and 17 is now spent HERE alone, the feed below
-        // holding to 12 and 14.
-        header: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-          child: AppHeader(
-            trailing: const CircleAddMenu(),
-            child: Text(tr('groups.page.title'), style: dashPageTitle()),
-          ),
+        // A large LEFT-aligned page title, not a centred header line (native
+        // pass, 2026-08-31): 28/700 is the top of the header ramp, and the
+        // iOS large-title idiom anchors it to the leading edge with the one
+        // action opposite. The 44pt add control sits in the trailing slot, so
+        // the title's optical baseline and the glyph's centre still agree.
+        header: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
+          child: _CircleTitleRow(),
         ),
         child: KalloRefresh(
           onRefresh: () => _refresh(ref, selected),
@@ -117,6 +113,22 @@ class CircleScreen extends ConsumerWidget {
   }
 }
 
+/// Page title 28/700 left, the add control 44pt right.
+class _CircleTitleRow extends StatelessWidget {
+  const _CircleTitleRow();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: KalloSpacing.sp1),
+    child: Row(
+      children: [
+        Expanded(child: Text(tr('groups.page.title'), style: kPageTitle())),
+        const CircleAddMenu(),
+      ],
+    ),
+  );
+}
+
 class _GroupHeader extends StatelessWidget {
   const _GroupHeader({
     required this.groupId,
@@ -145,7 +157,16 @@ class _GroupHeader extends StatelessWidget {
       IconButton(
         tooltip: tr('groups.info.title'),
         onPressed: () => _showGroupInfoSheet(context, groupId),
-        icon: const Icon(LucideIcons.info300, size: 18, color: kInkMuted),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints.tightFor(
+          width: KalloIcons.hit,
+          height: KalloIcons.hit,
+        ),
+        icon: const Icon(
+          LucideIcons.info300,
+          size: KalloIcons.size,
+          color: kInkMuted,
+        ),
       ),
     ],
   );

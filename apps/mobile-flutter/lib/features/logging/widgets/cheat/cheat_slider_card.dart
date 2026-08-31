@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../models/logging/cheat.dart';
-import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -108,11 +107,7 @@ class _CheatSliderCardState extends State<CheatSliderCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: KalloText(
-                      widget.rawInput,
-                      variant: KalloTextVariant.mealQuote,
-                      style: const TextStyle(fontSize: 17, height: 1.625),
-                    ),
+                    child: Text(widget.rawInput, style: dashBody()),
                   ),
                   const SizedBox(width: KalloSpacing.sp3),
                   CheatBadge(label: 'logging.cheatSliders.badge'.tr()),
@@ -370,11 +365,7 @@ class _ClarifyCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (rawInput.isNotEmpty) ...[
-            KalloText(
-              rawInput,
-              variant: KalloTextVariant.mealQuote,
-              style: const TextStyle(fontSize: 17, height: 1.625),
-            ),
+            Text(rawInput, style: dashBody()),
             const SizedBox(height: KalloSpacing.sp3),
           ],
           Text(
@@ -528,25 +519,33 @@ class _SaveButtonState extends State<_SaveButton> {
           onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
           onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
           onTap: widget.onTap,
+          // The in-app primary tier: beige fill, ink label, fully rounded.
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color:
-                  _pressed && tappable ? KalloColors.btnHover : KalloColors.btn,
-              borderRadius: BorderRadius.circular(KalloRadii.xl),
-              boxShadow: [
-                _pressed && tappable ? KalloShadows.md : KalloShadows.sm,
-              ],
+              color: _pressed && tappable
+                  ? Color.alphaBlend(
+                      KalloColors.pressWash,
+                      KalloColors.btnPrimarySoft,
+                    )
+                  : KalloColors.btnPrimarySoft,
+              borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(LucideIcons.check300, size: 14, color: Colors.white),
+                const Icon(
+                  LucideIcons.check400,
+                  size: 16,
+                  color: KalloColors.text,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'logging.cheatSliders.confirm'.tr(),
-                  style: dashBody(color: Colors.white, weight: FontWeight.w500),
+                  style: dashBody(weight: FontWeight.w500),
                 ),
               ],
             ),
@@ -557,7 +556,7 @@ class _SaveButtonState extends State<_SaveButton> {
   }
 }
 
-/// Card: rounded-2xl, border/60 hairline, shadow.sm, padding 16 — the same
+/// Card: white, radius 22, no border and no shadow, padding 16/12 — the same
 /// shell the precise `MealEntry` uses.
 class _Card extends StatelessWidget {
   const _Card({required this.child});
@@ -569,9 +568,7 @@ class _Card extends StatelessWidget {
       padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: KalloColors.elev,
-        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-        border: Border.all(color: KalloColors.borderSoft),
-        boxShadow: const [KalloShadows.sm],
+        borderRadius: BorderRadius.circular(KalloRadii.card),
       ),
       child: child,
     );

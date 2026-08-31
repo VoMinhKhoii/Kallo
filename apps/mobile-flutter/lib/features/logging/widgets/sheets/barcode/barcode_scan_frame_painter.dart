@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../theme/kallo_colors.dart';
-
-/// Dimmed surround + tan corner brackets around the scan window.
+/// Dimmed surround + white corner brackets around the scan window.
+///
+/// White, not the signature tan (native pass, 2026-08-31): the brackets sit on
+/// the `#1C1C1E` camera stage, where tan reads muddy and stops looking like a
+/// camera affordance. Tan survives on light surfaces.
 class ScanFramePainter extends CustomPainter {
   const ScanFramePainter({required this.scanWindow});
 
@@ -26,10 +28,10 @@ class ScanFramePainter extends CustomPainter {
       dim,
     );
 
-    // Corner brackets in the signature tan.
+    // Corner brackets, white on the dark stage.
     final bracket =
         Paint()
-          ..color = KalloColors.accent
+          ..color = const Color(0xFFFFFFFF)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3
           ..strokeCap = StrokeCap.round;

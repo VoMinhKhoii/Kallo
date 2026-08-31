@@ -10,6 +10,18 @@ or the web scale here.
 Throughline: **hierarchy comes from weight + colour, not size**; a compact,
 uniform vertical rhythm; exactly one editorial serif moment per viewport.
 
+> **Native pass (2026-08-31).** The redesign on branch
+> `claude/ios-native-design-system-wizyvk` supersedes several entries below:
+> canvas `#F4F3EF` (borderless cards, third canvas decision — see
+> `kallo_colors.dart`), icon hit target 44, the drawer/hamburger replaced by a
+> floating pill tab bar (`lib/shell/nav/`), Log pushed full-screen, a two-tier
+> button system (black auth CTA / beige in-app primary, fully rounded),
+> full-round 52pt input pills, header ramp 28/700 → 17/600 → 14/500-muted with
+> uppercase eyebrows confined to dial labels, and shared
+> `GroupedListCard`/`ListRow`/`SectionHeaderRow`/`MealBlock`/`KalloTextField`
+> primitives. The approved reference canvas:
+> https://claude.ai/code/artifact/aab19668-d483-49b9-b618-9340aed28fe6
+
 **Live across the app** and validated on device. Logging, Dashboard, Settings,
 Feedback and the shell run the full system — three sizes, two colours, one
 named spacing rhythm per surface; Circle and Nutrition are partly ported and
@@ -80,7 +92,7 @@ surface-tinted cards that would read grey on the canvas become solid white.
 
 | Token | Hex | Role |
 |-------|-----|------|
-| `kPage` | `#F1F1EE` | app canvas — neutral gray |
+| `kPage` | `#F4F3EF` | app canvas — one step below white; cards need NO border/shadow (3rd canvas decision, 2026-08-31) |
 | `kCardSurface` | `#FFFFFF` | cards / sheets — solid white |
 | `kTrack` | `#EDECE7` | ring/bar tracks (warm), the only low-contrast surface |
 | `kHairline` | `#E2DFD4` | the one border — neutral hairline |
@@ -88,7 +100,7 @@ surface-tinted cards that would read grey on the canvas become solid white.
 | `kInkMuted` | `#6E6D66` | everything secondary — labels, units, captions, dates |
 
 `KalloColors` mirrors these plus `textSoft #3D3D3A` (long body), `hover #F0EAE0`
-(warm select wash), and the unchanged accent `#C9A87C`, button umber `#695E4E`,
+(warm select wash — also the in-app primary button fill `btnPrimarySoft`), the accent `#C9A87C`, umber `#695E4E` (toggles/progress only — no longer a button fill),
 `success`, and macro colours.
 
 **Red means "this destroys something", not "your numbers are off."** Those were
@@ -147,11 +159,12 @@ before setting the outermost one; a control-dense card needs less than a
 text-only one to land in the same place. Within-card gaps (e.g. meal rows) are tighter and deliberate;
 the 12px rule governs the *between-component* rhythm.
 
-This is the default for **presentational** surfaces — the dashboard, settings,
-onboarding. A dense scrolling **list** surface may run tighter; the logging feed
-does, at 8px, and names it (see *Spacing — one rhythm per surface* below). Going
-tighter than 12 is a per-surface decision that must be captured in a named token
-set, never improvised gap by gap.
+This is the default for every surface. The logging feed's dense-8 exemption
+was RETIRED in the native pass (2026-08-31): with borderless cards separating
+by surface alone, 8 read as one bruised block — the feed now runs the same
+12px rhythm (`logging_spacing.dart`). Going tighter than 12 is a per-surface
+decision that must be captured in a named token set, never improvised gap by
+gap — and today no surface does.
 
 ## Spacing — one rhythm per surface
 
@@ -178,7 +191,8 @@ is how cards ended up 20px apart when the separator said 8.
 ### Icons
 
 One glyph size and one hit target, app-wide: `KalloIcons.size` **24** on
-`KalloIcons.hit` 36 for every icon-only control and every row-leading glyph —
+`KalloIcons.hit` **44** (grown from 36 in the native pass — the iOS minimum)
+for every icon-only control and every row-leading glyph —
 chevrons, steppers, row-removes, composer controls, send/stop, settings rows.
 (`LoggingIcons.size`/`.hit` are aliases of these, not independent values.) The
 pressed wash hugs the glyph rather than filling the hit box: the target can grow
@@ -244,7 +258,6 @@ at 150, 15 at 200 — which is a system that existed but was never written down.
 | `morph` | 340 | the date chip ↔ week strip crossfade |
 | `page` | 280 | one week of the strip paging |
 | `scrollTo` | 400 | a deliberate journey down the feed |
-| `drawerOpen` / `drawerClose` | 280 / 220 | the nav drawer |
 | `toast` | 2200 | a passive toast's dwell |
 | `undoWindow` | 5s | the grace period on anything destructive |
 | `stagger` | 50 | between staggered siblings |
@@ -253,13 +266,11 @@ at 150, 15 at 200 — which is a system that existed but was never written down.
 becoming 140; one spelling `Duration(milliseconds: 150)` does not, and a reviewer
 can't tell it from a typo.
 
-**The drawer's timing forks from web on purpose.** `tab_scaffold.dart` cited
-`components/ui/sheet.tsx` (500ms open / 300ms close, `ease-in-out`) as its source
-of truth. Half a second is about twice Material's own drawer, and on a phone it
-reads as lag *even when every frame lands*; the web sheet is a pointer-driven
-surface where the longer travel reads as deliberate instead. Mobile runs 280/220
-on `Curves.fastOutSlowIn`, and closes faster than it opens — a dismissal should
-feel like getting out of the way, not like a second animation to sit through.
+**The drawer retired with the pill nav** (native pass, 2026-08-31), and its
+280/220 timings went with it. The lesson it taught stays: a mobile surface
+ported from a pointer-driven web sheet must re-derive its motion — half a
+second reads as lag on a phone even when every frame lands, and a dismissal
+should always run faster than an arrival.
 This is the same kind of decision as "the canvas is grey, not near-white": a
 considered divergence, not drift. Do not resync the two without re-deciding it.
 
@@ -298,11 +309,11 @@ mobile UI — no longer provisional.
 
 | Surface | Type + colour | Named spacing | Notes |
 |---------|---------------|---------------|-------|
-| **Logging** | ✅ 17/14/12 | `logging/logic/logging_spacing.dart` (8px block) | the reference implementation |
+| **Logging** | ✅ 17/14/12 | `logging/logic/logging_spacing.dart` (12px block) | the reference implementation |
 | **Dashboard** | ✅ 40/14/12 + Lora 22 | `dashboard/logic/dashboard_spacing.dart` (12px) | Hero replaces Value here |
 | **Settings** | ✅ 22/14/12 | `settings/logic/settings_spacing.dart` | rows split 4+8 (below) |
 | **Feedback** | ✅ | uses the 12px default | |
-| **Shell / drawer** | ✅ | `KalloSpacing` directly | selected state matches web |
+| **Shell / pill nav** | ✅ | `KalloSpacing` + `kNav*` tokens | drawer/hamburger retired 2026-08-31; Log pushes full-screen |
 | **Circle** | 🔸 header + add-menu + padding only | 12px root inset | the feed's 35 files are unported |
 | **Nutrition** | 🔸 range selector + padding | 12px root inset | `dashEyebrow` + raw sizes remain |
 | **Logging `sheets/`** | ❌ | — | 4 files, 35 `KalloText` calls, still the old scale |
@@ -342,22 +353,18 @@ Reach for these before writing a local variant:
   Unsaved cards pass the moment they were entered, so the timeline doesn't
   break at the card being worked on.
 
-### The drawer's selected state
+### The pill nav (replaces the drawer, 2026-08-31)
 
-Selected = `KalloColors.hover` (#F0EAE0) wash + `kInk` + semibold. Idle =
-`kInkMuted`. This is web parity
-(`components/app/navigation/mobile/mobile-nav-list.tsx`). Flutter had it
-*inverted* — solid umber with white content, and ink when idle, i.e. the colour
-web reserves for selected. Two consequences: a selected row keeps its full wash
-while pressed (hover@40 over an opaque wash renders *lighter*, i.e. inverted
-feedback), and the badge dot is always tan (white vanished on the wash).
-
-Open question since the canvas went grey: the drawer panel paints `kPage`
-(`shell/sidebar.dart`), and the warm wash is now much closer to it, so the
-selected row leans harder on ink + semibold than on the wash. If it reads mushy,
-the fix is to paint the drawer `kCardSurface` — a slide-in panel is a sheet, and
-sheets are white in this system — not to darken `hover`, which is mostly used on
-white.
+`lib/shell/nav/pill_nav_bar.dart`: a floating 358×72 white capsule (radius 36,
+`kNavShadows` — the nav is TRUE elevation), four tabs at 24pt stroke glyphs +
+10pt labels (ink when active, muted idle), and a 52pt beige `+` circle opening
+the Add sheet (Log a meal / Log weight). Today/Nutrition/Circle switch shell
+branches; **Log pushes the feed full-screen** (root CupertinoPage — the
+composer owns that screen's bottom edge; a back chevron in the timeline picker
+returns to the previous tab). The bar slides away while the keyboard is up.
+Settings pushes from the dashboard avatar (`profile_avatar_button.dart`),
+which carries the onboarding pulse-dot; the invite badge moved to the Circle
+tab. This is a sanctioned divergence from the web mobile drawer.
 
 ## Traps — each of these shipped a visible bug
 

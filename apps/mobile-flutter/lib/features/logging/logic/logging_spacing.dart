@@ -8,16 +8,24 @@ import '../../../theme/kallo_theme.dart';
 abstract final class LoggingSpacing {
   /// Between the feed's big blocks: date strip ↔ macro summary ↔ card list ↔
   /// composer.
-  static const double block = KalloSpacing.sp2; // 8
+  ///
+  /// **The dense-8 exemption is retired** (native pass, 2026-08-31). This was 8
+  /// — the one surface allowed to run tighter than the app's 12px rhythm,
+  /// because the feed is a dense scrolling list. On the native canvas the cards
+  /// are borderless and separate by surface alone, so at 8 a sent bubble and
+  /// the meal card answering it read as one bruised block rather than as two
+  /// cards. Everything on the tab is now on the house step, and this token
+  /// stays only to keep naming the ROLE ([turn] names the conversational beat).
+  static const double block = KalloSpacing.sp3; // 12
 
   /// The conversational rhythm: one turn to the next, and the parts WITHIN a
   /// turn — divider ↔ message ↔ card. One value for all of them, because the
   /// eye reads them as the same beat and any difference registers as a mistake
   /// rather than as hierarchy.
   ///
-  /// Wider than [block]: at 8 the turns ran together, with a card's CTA nearly
-  /// touching the next turn's timestamp. 12 is the app-wide rhythm
-  /// (`kallo-design/mobile.md`), so this is the house step rather than a new one.
+  /// 12 is the app-wide rhythm (`kallo-design/mobile.md`), so this is the house
+  /// step rather than a new one — and since the native pass it is the ONLY step
+  /// between anything stacked on this tab (see [block]).
   static const double turn = KalloSpacing.sp3; // 12
 
   /// Inside a card: the space above/below every hairline and between the
@@ -43,24 +51,25 @@ abstract final class LoggingSpacing {
     KalloSpacing.sp3,
   );
 
-  /// The composer card's inset — tighter than [card] on three sides because the
-  /// composer stacks two more insets of its own: the field's min-height centres
-  /// its single line (~7px above the glyphs) and the send button's 44pt tap
-  /// target wraps a 32pt visual (~6px below it).
+  /// The composer card's inset — ASYMMETRIC, because only one side of the card
+  /// opens on text (Log artboard).
   ///
-  /// The top is the generous edge (10) because it is the only one above running
-  /// text; the sides and bottom come right in to 4, where the field and the
-  /// button row already carry inset of their own.
+  /// Left is the full card gutter (16), so the placeholder, the typed sentence
+  /// and the mode mark under it all start on the same line a meal card's text
+  /// does. Right comes in to 8, where the send button's 44pt tap target already
+  /// carries 6 of its own around a 32pt visual — at 16 the circle floated a
+  /// quarter-inch off the edge. Top is 0 and bottom 6: the field owns its own
+  /// 8/6 content padding, and the control row below is a 44pt target wrapping a
+  /// 32pt button.
   ///
-  /// At 4 the container is no longer what positions things: the text starts at
-  /// 4 from the border, the mode icon at 8 (its own 4), and the send button's
-  /// visual edge at 10 (a 32pt button centred in a 44pt tap target). That
-  /// stagger was proportionally invisible at 12; it is not at 4.
+  /// Count every inset in the stack before setting the outermost one; a
+  /// control-dense card needs less than a text-only one to land in the same
+  /// place.
   static const EdgeInsets composer = EdgeInsets.fromLTRB(
-    KalloSpacing.sp1, // 4
-    KalloSpacing.sp2_5, // 10 — above text, the one edge that keeps its room
-    KalloSpacing.sp1,
-    KalloSpacing.sp1, // 4 — under the buttons, which carry their own mass
+    KalloSpacing.sp4, // 16 — the text gutter
+    0, // the field carries its own top padding
+    KalloSpacing.sp2, // 8 — the send target carries the rest
+    KalloSpacing.sp1_5, // 6
   );
 }
 
@@ -78,11 +87,20 @@ abstract final class LoggingIcons {
   /// compact, and the divergence is the point rather than an oversight.
   static const double size = 16;
 
+  /// The action row under a card is the ONE cluster that goes back to the
+  /// app-wide 24 (native pass, 2026-08-31 — the Log artboard draws them at 24).
+  /// Those five glyphs are the card's controls rather than furniture inside it,
+  /// and at 16 they read as a row of specks under a card that is now
+  /// borderless. Everything else on this surface — steppers, the collapse
+  /// chevron, the composer's mode mark — stays at [size].
+  static const double action = KalloIcons.size; // 24
+
   /// Square tap target around that glyph — the app-wide target, unchanged.
   static const double hit = KalloIcons.hit;
 
   /// The visible wash behind a selected/pressed control: it hugs the glyph
-  /// instead of filling [hit], so the tap target can stay 36 for accessibility
-  /// without the chosen state reading as a 36pt block under the card.
-  static const double wash = 28;
+  /// instead of filling [hit], so the tap target can stay at the iOS 44 for
+  /// accessibility without the chosen state reading as a 44pt block under the
+  /// card. Sized off [action] (24 + 4 either side), the largest glyph it wraps.
+  static const double wash = 32;
 }

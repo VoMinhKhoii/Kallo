@@ -117,21 +117,18 @@ class _DayCell extends StatelessWidget {
 
     final cell0 = Container(
       // Equal margin/padding on every cell keeps the weekday letters aligned;
-      // only the SELECTED day gets the solid white chip + soft lift.
+      // only the SELECTED day gets the white chip.
       margin: const EdgeInsets.symmetric(horizontal: 3),
       // The chip's own inset — one row's padding on each side of the cell.
       padding: const EdgeInsets.symmetric(vertical: DashboardSpacing.row * 2),
       decoration: isSelected
+          // A chip this small is the one card-like surface that still takes a
+          // hairline: at 36pt across, white-on-#F4F3EF alone does not read as
+          // a selected state. Shadow retired with the rest of the cards.
           ? BoxDecoration(
               color: kCardSurface,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x14141413), // ink @8% — small-chip lift
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
+              border: Border.all(color: kHairline),
             )
           : null,
       child: Column(

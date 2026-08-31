@@ -6,26 +6,23 @@ import 'dart:ui';
 /// `--kallo-*` values). Visual direction: neutral canvas / ink / hairline with
 /// warm interaction washes; tan accent kept for non-text moments only.
 ///
-/// The canvas is `#FCFCFC`, matching the web token exactly — the two were
-/// resynced deliberately after the brighter page was chosen on the nutrition
-/// surface and adopted app-wide.
-///
-/// This REVERSES an earlier divergence (`#F1F1EE`), taken because at one step
-/// off white every surface — white cards, hairlines, washes — had almost
-/// nothing to separate from on a phone. That trade-off is back, and more so:
-/// a white card on this canvas separates by shadow alone. `track` (#EDECE7)
-/// and `border` (#E2DFD4) were darkened for the old canvas and are left as
-/// they were — both still sit comfortably below a brighter page, so a track
-/// still reads recessed. If cards start reading flat, THAT is the knob to
-/// re-decide, not the canvas.
+/// The canvas is `#F4F3EF` — the THIRD canvas decision, superseding both the
+/// original warm `#F1F1EE` and the web-parity `#FCFCFC` resync. The `#FCFCFC`
+/// comment predicted "if cards start reading flat, THAT is the knob to
+/// re-decide" — they did, and this is that re-decision (2026-08-31, native
+/// pass): one step below white, chosen on-device so white cards separate by
+/// surface alone with NO border and NO shadow. This is a sanctioned
+/// divergence from the web token; do not resync without re-deciding again.
+/// `track` (#EDECE7) sits close to this canvas — if bars read flat, `track`
+/// is the next knob, not the canvas.
 ///
 /// The `surface*` alpha ramps below MUST keep this hue: a scrim that fades
 /// toward a stale canvas colour is a visible seam.
 abstract final class KalloColors {
   // ── Core surfaces ────────────────────────────────────────────────────
   static const Color surface = Color(
-    0xFFFCFCFC,
-  ); // app background — neutral canvas
+    0xFFF4F3EF,
+  ); // app background — one step below white, cards need no border/shadow
   static const Color elev = Color(0xFFFFFFFF); // cards / sheets
   static const Color hover = Color(0xFFF0EAE0); // warm hover/select wash
   // Kept where it was when the canvas darkened: the canvas↔track step is the
@@ -79,13 +76,13 @@ abstract final class KalloColors {
 
   // ── Translucent surfaces ─────────────────────────────────────────────
   static const Color elevTranslucent = Color(0xCCFFFFFF); // card/elev @ 80%
-  static const Color surface80 = Color(0xCCFCFCFC); // canvas @ 80%
+  static const Color surface80 = Color(0xCCF4F3EF); // canvas @ 80%
   // Scrim ramp (composer dock). These MUST stay the same hue as [surface] —
   // a scrim that fades toward a stale canvas colour is a visible seam, which
   // is the exact thing the ramp exists to remove.
-  static const Color surface0 = Color(0x00FCFCFC); // canvas @ 0%
-  static const Color surface35 = Color(0x59FCFCFC); // canvas @ 35%
-  static const Color surface85 = Color(0xD9FCFCFC); // canvas @ 85%
+  static const Color surface0 = Color(0x00F4F3EF); // canvas @ 0%
+  static const Color surface35 = Color(0x59F4F3EF); // canvas @ 35%
+  static const Color surface85 = Color(0xD9F4F3EF); // canvas @ 85%
   static const Color cardWhite55 = Color(0x8CFFFFFF); // card white @ 55%
   static const Color cardWhite40 = Color(0x66FFFFFF); // card white @ 40%
   static const Color cardWhite30 = Color(0x4DFFFFFF); // card white @ 30%
@@ -109,7 +106,18 @@ abstract final class KalloColors {
   static const Color timelineDotFill = accent30;
 
   // ── Button ───────────────────────────────────────────────────────────
-  static const Color btn = Color(0xFF695E4E); // solid CTA — warm umber
+  // Two-tier button system (native pass, 2026-08-31):
+  //  - auth & paywall CTAs (sign in, start free trial): [btnPrimary] fill,
+  //    white label, 50pt, fully rounded;
+  //  - every in-app primary (save, share, retry, tab-bar "+"): [btnPrimarySoft]
+  //    fill, ink label, fully rounded. Same value as [hover] on purpose — one
+  //    warm family for "actionable/active" (buttons, sent bubble, selected
+  //    states, micro add-circles).
+  // Umber [btn] is retired as a button fill — it survives only on toggles and
+  // progress fills until those call sites migrate to their own semantics.
+  static const Color btnPrimary = text; // black & white CTA — auth/paywall
+  static const Color btnPrimarySoft = hover; // beige + ink — in-app primary
+  static const Color btn = Color(0xFF695E4E); // legacy umber — toggles/progress
   static const Color btnHover = Color(0xFF5A5043);
   static const Color btnBorderGhost = Color(0x66695E4E); // btn umber @ 40%
 

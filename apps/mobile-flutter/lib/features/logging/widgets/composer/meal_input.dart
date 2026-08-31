@@ -95,8 +95,12 @@ class MealInput extends StatefulWidget {
 
 class _MealInputState extends State<MealInput>
     with SingleTickerProviderStateMixin {
-  static const double _maxHeight = 200;
-  static const double _minHeight = 24;
+  /// One line, growing to about eight before the field scrolls itself.
+  static const _fieldBox = BoxConstraints(minHeight: 24, maxHeight: 200);
+
+  /// 17 (iOS's body size) — the ONE place this surface goes above 14: a
+  /// sentence typed under a keyboard, not a data row being scanned.
+  static final _fieldText = dashBody().copyWith(fontSize: 17, height: 1.35);
 
   /// Owned only when the caller didn't supply one — a controller belongs to
   /// whoever created it, and disposing a borrowed one would break the feed the
@@ -235,17 +239,14 @@ class _MealInputState extends State<MealInput>
               children: [
                 // Line 1 — the composer field, full width.
                 ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: _minHeight,
-                    maxHeight: _maxHeight,
-                  ),
+                  constraints: _fieldBox,
                   child: TextField(
                     controller: _controller,
                     focusNode: _focusNode,
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
                     textInputAction: TextInputAction.newline,
-                    style: dashBody(),
+                    style: _fieldText,
                     cursorColor: KalloColors.accent,
                     decoration: InputDecoration(
                       isCollapsed: true,
@@ -253,14 +254,14 @@ class _MealInputState extends State<MealInput>
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       disabledBorder: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                      contentPadding: const EdgeInsets.fromLTRB(0, 8, 0, 6),
                       hintText:
                           widget.hintText ?? 'logging.composerPlaceholder'.tr(),
-                      hintStyle: dashBody(color: kInkMuted),
+                      hintStyle: _fieldText.copyWith(color: kInkMuted),
                     ),
                   ),
                 ),
-                const SizedBox(height: KalloSpacing.sp2),
+                const SizedBox(height: KalloSpacing.sp0_5),
                 // Line 2 — mode selector on the left, send/stop on the right.
                 Row(
                   children: [
@@ -280,14 +281,12 @@ class _MealInputState extends State<MealInput>
                         widget.onCancel != null)
                       ComposerActionButton(
                         icon: LucideIcons.square300, // lucide Square (filled)
-                        iconSize: LoggingIcons.size,
                         label: 'common.cancel'.tr(),
                         onTap: widget.onCancel,
                       )
                     else
                       ComposerActionButton(
-                        icon: LucideIcons.arrowUp300, // lucide ArrowUp
-                        iconSize: LoggingIcons.size,
+                        icon: LucideIcons.arrowUp400, // lucide ArrowUp
                         label: 'logging.submit'.tr(),
                         enabled: _canSubmit,
                         onTap: _canSubmit ? _submit : null,

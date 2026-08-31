@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -105,7 +104,7 @@ class _CheatMealCardState extends State<CheatMealCard>
           mealId: meal.id,
           onRemove: widget.onRemove,
           builder:
-              (context, shape) => Container(
+              (context, radius) => Container(
                 padding: LoggingSpacing.card,
                 decoration: BoxDecoration(
                   // Warm accent tint over the card white (web bg-kallo-accent/4).
@@ -113,9 +112,8 @@ class _CheatMealCardState extends State<CheatMealCard>
                     KalloColors.accent05,
                     KalloColors.elev,
                   ),
-                  borderRadius: shape.radius,
+                  borderRadius: radius,
                   border: Border.all(color: KalloColors.accent30),
-                  boxShadow: shape.shadow,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,14 +132,9 @@ class _CheatMealCardState extends State<CheatMealCard>
                                   label: 'logging.cheatMealCard.badge'.tr(),
                                 ),
                                 const SizedBox(height: KalloSpacing.sp2),
-                                KalloText(
-                                  meal.rawInput,
-                                  variant: KalloTextVariant.mealQuote,
-                                  style: const TextStyle(
-                                    fontSize: 17,
-                                    height: 28 / 17,
-                                  ),
-                                ),
+                                // Plain 14, not the Lora quote: the greeting
+                                // is the app's one serif moment again.
+                                Text(meal.rawInput, style: dashBody()),
                               ],
                             ),
                           ),
