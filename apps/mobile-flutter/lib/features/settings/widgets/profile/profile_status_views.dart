@@ -1,11 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../theme/kallo_typography.dart';
+import '../../../../shell/nav/nav_actions.dart';
 
 /// Empty state when no profile exists yet (onboarding never ran).
 class ProfileEmpty extends StatelessWidget {
@@ -43,9 +43,9 @@ class ProfileEmpty extends StatelessWidget {
               button: true,
               excludeSemantics: true,
               label: tr('settings.profilePage.startSetup'),
-              onTap: () => context.go('/logging'),
+              onTap: () => landInLogging(context),
               child: GestureDetector(
-                onTap: () => context.go('/logging'),
+                onTap: () => landInLogging(context),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: KalloSpacing.sp5,

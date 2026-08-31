@@ -36,7 +36,8 @@ abstract final class KalloIcons {
 
   /// Square tap target around the glyph. The pressed wash hugs the glyph, so
   /// the target can grow for accessibility without the affordance growing too.
-  static const double hit = 36;
+  /// 44 — the iOS minimum; grown from 36 in the native pass (2026-08-31).
+  static const double hit = 44;
 }
 
 /// Border-radius scale.
@@ -52,6 +53,12 @@ abstract final class KalloRadii {
   static const double xxxl = 22;
   static const double xxxxl = 26;
   static const double pill = 9999;
+
+  // Semantic aliases (native pass, 2026-08-31) — prefer these in new code.
+  static const double card = xxxl; // 22 — every card, no border/shadow
+  static const double sheet = xxxl; // 22 22 0 0 top corners
+  static const double input = xxxxl; // 26 — full-round 52pt text fields
+  static const double button = pill; // full-round on any full-width button
 }
 
 /// Neutral ink-tinted, very low-contrast shadows (never #000-based).
@@ -143,12 +150,13 @@ abstract final class KalloTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
+      // Cards separate by surface alone on the #F4F3EF canvas: solid white,
+      // radius 22, NO border, NO shadow (native pass, 2026-08-31).
       cardTheme: CardThemeData(
         color: KalloColors.elev,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KalloRadii.xxl),
-          side: const BorderSide(color: KalloColors.border, width: 1),
+          borderRadius: BorderRadius.circular(KalloRadii.card),
         ),
       ),
       // The one context menu in the app (long-press a sent message). Same
@@ -181,47 +189,49 @@ abstract final class KalloTheme {
         // The same black/50 scrim the nav drawer and the web dialog use.
         barrierColor: const Color(0x80000000),
       ),
+      // In-app primary: beige + ink, fully rounded (auth/paywall CTAs use
+      // [KalloColors.btnPrimary] black-and-white explicitly at call sites).
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: KalloColors.btn,
-          foregroundColor: KalloColors.elev,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-          ),
+          backgroundColor: KalloColors.btnPrimarySoft,
+          foregroundColor: KalloColors.text,
+          shape: const StadiumBorder(),
           textStyle: KalloTextStyles.buttonLabel(),
         ),
       ),
+      // Quiet: white + hairline, fully rounded.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: KalloColors.btn,
-          side: const BorderSide(color: KalloColors.btnBorderGhost),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-          ),
+          backgroundColor: KalloColors.elev,
+          foregroundColor: KalloColors.text,
+          side: const BorderSide(color: KalloColors.border),
+          shape: const StadiumBorder(),
           textStyle: KalloTextStyles.buttonLabel(),
         ),
       ),
+      // Full-width fields are full-round pills: 52pt, radius 26, 18 left
+      // inset, 2px tan focus border (native pass, 2026-08-31).
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: KalloColors.elev,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KalloRadii.lg),
-          borderSide: const BorderSide(color: KalloColors.borderBiscotti40),
+          borderRadius: BorderRadius.circular(KalloRadii.input),
+          borderSide: const BorderSide(color: KalloColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KalloRadii.lg),
-          borderSide: const BorderSide(color: KalloColors.borderBiscotti40),
+          borderRadius: BorderRadius.circular(KalloRadii.input),
+          borderSide: const BorderSide(color: KalloColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KalloRadii.lg),
-          borderSide: const BorderSide(color: KalloColors.accent, width: 1.5),
+          borderRadius: BorderRadius.circular(KalloRadii.input),
+          borderSide: const BorderSide(color: KalloColors.accent40, width: 2),
         ),
         hintStyle: KalloTextStyles.body().copyWith(
           color: KalloColors.placeholderMuted40,
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: KalloSpacing.sp4,
-          vertical: KalloSpacing.sp3,
+          horizontal: 18,
+          vertical: KalloSpacing.sp3_5,
         ),
       ),
       dividerTheme: const DividerThemeData(

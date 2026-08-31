@@ -6,10 +6,11 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 
-/// The unified sheet header: a centered grab handle, then a row with the X
-/// close button on the LEFT, a bold centered title (with an optional
-/// [subtitle]), and a 48×48 right-hand mirror so the title stays optically
-/// centered against the close button.
+/// The unified sheet header: the X close button on the LEFT, a bold centered
+/// 17/600 title (with an optional [subtitle]), and a 48×48 right-hand mirror
+/// so the title stays optically centered against the close button. No grab
+/// handle — retired in the native pass (2026-08-31); the header carries the
+/// sheet chrome alone.
 ///
 /// Pass [title] for the common case, or [titleWidget] to supply a dynamic
 /// header (e.g. an inline-editable name). [onClose] defaults to popping the
@@ -45,18 +46,7 @@ class KalloSheetHeader extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Grab handle, top-center.
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),
-          child: Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: KalloColors.border,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ),
+        const SizedBox(height: KalloSpacing.sp2),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             KalloSpacing.sp2,

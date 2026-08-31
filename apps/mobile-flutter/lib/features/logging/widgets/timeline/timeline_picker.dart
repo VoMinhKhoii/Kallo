@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../shell/header/app_header.dart';
+import '../../../../shell/header/app_header_back_button.dart';
 import '../../../../theme/kallo_motion.dart';
 import 'timeline_chip.dart';
 import 'timeline_strip.dart';
@@ -128,7 +128,11 @@ class _DateMorphState extends State<DateMorph>
                   scale: _chipScale,
                   child: Row(
                     children: [
-                      const AppMenuButton(),
+                      // Log is pushed full-screen over the shell now — the
+                      // leading slot is a back chevron, not the hamburger.
+                      AppHeaderBackButton(
+                        onBack: () => Navigator.of(context).maybePop(),
+                      ),
                       Expanded(
                         child: Center(
                           child: TimelineChip(

@@ -11,15 +11,17 @@ import '../typography/kallo_text.dart';
 export 'kallo_screen.dart';
 
 
-/// White card with a hairline border (hierarchy from borders, not elevation).
-///
-/// RN port of `Card`. `borderRadius: radii['2xl']` (18), `padding: space[4]`
-/// (16), 1px [border] hairline, and the warm low-contrast [KalloShadows.xs].
+/// White card separating by surface alone on the `#F4F3EF` canvas — radius
+/// 22, NO border, NO shadow (native pass, 2026-08-31; shadows are reserved
+/// for true elevation: sheets, menus, the pill nav).
 class KalloCard extends StatelessWidget {
   const KalloCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(KalloSpacing.sp4),
+    this.padding = const EdgeInsets.symmetric(
+      horizontal: KalloSpacing.sp4,
+      vertical: KalloSpacing.sp3,
+    ),
     this.borderRadius,
   });
 
@@ -29,29 +31,30 @@ class KalloCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = borderRadius ?? BorderRadius.circular(KalloRadii.xxl);
+    final radius = borderRadius ?? BorderRadius.circular(KalloRadii.card);
     return Container(
       padding: padding,
       decoration: BoxDecoration(
         color: KalloColors.elev,
         borderRadius: radius,
-        border: Border.all(color: KalloColors.border),
-        boxShadow: const [KalloShadows.xs],
       ),
       child: child,
     );
   }
 }
 
-/// Button visual variants — RN `'primary' | 'secondary' | 'danger' | 'ghost'`.
-enum KalloButtonVariant { primary, secondary, danger, ghost }
-
-/// RN port of `Button`. `borderRadius: radii.xl` (14), `paddingVertical:
-/// space[4]` (16), `paddingHorizontal: space[5]` (20), centered label.
+/// Button visual variants (native pass, 2026-08-31).
 ///
-/// Press feedback follows the shadcn button affordance — a background
-/// color-shift (e.g. `kallo-btn` → `kallo-btn-hover`) animated over ~150ms
-/// (`transition-all`), NOT an opacity dim. Disabled dims to 0.55.
+/// [cta] — black & white, AUTH/PAYWALL ONLY (sign in, start free trial).
+/// [primary] — beige `#F0EAE0` + ink: every in-app primary (save, share…).
+/// [secondary] — quiet: white + hairline.
+/// [danger] / [ghost] — unchanged roles.
+enum KalloButtonVariant { primary, secondary, danger, ghost, cta }
+
+/// Fully rounded (stadium) buttons, 50pt primaries / 44pt quiet.
+///
+/// Press feedback is a background color-shift animated over ~150ms,
+/// NOT an opacity dim. Disabled dims to 0.55.
 class KalloButton extends StatefulWidget {
   const KalloButton({
     super.key,
@@ -86,8 +89,12 @@ class _NhamButtonState extends State<KalloButton> {
     Color? bg;
     BoxBorder? border;
     switch (variant) {
+      case KalloButtonVariant.cta:
+        bg = _pressed ? KalloColors.btnDarkHover : KalloColors.btnPrimary;
       case KalloButtonVariant.primary:
-        bg = _pressed ? KalloColors.btnHover : KalloColors.btn;
+        bg = _pressed
+            ? Color.alphaBlend(KalloColors.pressWash, KalloColors.btnPrimarySoft)
+            : KalloColors.btnPrimarySoft;
       case KalloButtonVariant.secondary:
         bg = _pressed ? KalloColors.hover : KalloColors.elev;
         border = Border.all(color: KalloColors.border);
@@ -98,9 +105,9 @@ class _NhamButtonState extends State<KalloButton> {
         bg = _pressed ? KalloColors.pressWash : Colors.transparent;
     }
 
-    // Label color: primary → white, danger → red, else espresso text.
+    // Label color: cta → white, danger → red, else ink.
     final Color labelColor = switch (variant) {
-      KalloButtonVariant.primary => KalloColors.elev,
+      KalloButtonVariant.cta => KalloColors.elev,
       KalloButtonVariant.danger => KalloColors.danger,
       _ => KalloColors.text,
     };
@@ -115,9 +122,9 @@ class _NhamButtonState extends State<KalloButton> {
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 color:
-                    variant == KalloButtonVariant.primary
+                    variant == KalloButtonVariant.cta
                         ? KalloColors.elev
-                        : KalloColors.btn,
+                        : KalloColors.text,
               ),
             )
             : KalloText(
@@ -145,13 +152,19 @@ class _NhamButtonState extends State<KalloButton> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeInOut,
+          constraints: BoxConstraints(
+            minHeight: switch (variant) {
+              KalloButtonVariant.cta || KalloButtonVariant.primary => 50,
+              _ => 44,
+            },
+          ),
           padding: const EdgeInsets.symmetric(
-            vertical: KalloSpacing.sp4,
+            vertical: KalloSpacing.sp3,
             horizontal: KalloSpacing.sp5,
           ),
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(KalloRadii.xl),
+            borderRadius: BorderRadius.circular(KalloRadii.button),
             border: border,
           ),
           alignment: Alignment.center,

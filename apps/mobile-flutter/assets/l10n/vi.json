@@ -99,6 +99,20 @@
       "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
       "account": "Tài khoản",
       "expandOnHover": "Mở rộng khi di chuột"
+    },
+    "nav": {
+      "today": "Hôm nay",
+      "log": "Nhật ký",
+      "nutrition": "Dinh dưỡng",
+      "circle": "Vòng tròn",
+      "add": "Thêm"
+    },
+    "addSheet": {
+      "title": "Thêm",
+      "logMeal": "Ghi bữa ăn",
+      "logMealHint": "Mô tả, quét mã, hoặc chọn nguyên liệu",
+      "logWeight": "Ghi cân nặng",
+      "logWeightHint": "Cân nặng hôm nay"
     }
   },
   "nutrition": {

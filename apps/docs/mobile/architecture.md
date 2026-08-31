@@ -35,7 +35,7 @@ lib/
                        toast/ typography/
   shared/logic/        pure functions >1 feature reads: tdee.dart, display_format.dart
   shared/data/         static tables >1 feature reads: countries.dart
-  shell/               app shell: header/, sidebar/ (drawer), tab_scaffold.dart,
+  shell/               app shell: header/, nav/ (pill tab bar), tab_scaffold.dart,
                        placeholder_screen.dart
   theme/               kallo_colors, kallo_typography, kallo_theme, calm_tokens
 ```
@@ -92,11 +92,13 @@ settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `p
 
 - **State:** Riverpod providers per feature (`*_providers.dart`); the Supabase session drives
   auth-gated routing. Riverpod controllers wrap streaming (`stream_analysis_controller.dart`).
-- **Navigation:** `go_router` with a shell route. The shell is a **left slide-in drawer**
-  (hamburger), not a bottom tab bar — matching the web mobile nav. Its chrome is
-  `shell/sidebar/nav_drawer.dart` (`tab_scaffold.dart` owns only the controller and the
-  edge-swipe zone). Its **timing deliberately diverges** from the web sheet it was ported
-  from — 280/220 rather than 500/300 — see the Motion section of `kallo-design/mobile.md`.
+- **Navigation:** `go_router` with a `StatefulShellRoute` behind a **floating pill
+  tab bar** (`shell/nav/pill_nav_bar.dart`; the web-parity drawer/hamburger retired in
+  the 2026-08-31 native pass). Branches: dashboard, nutrition, circle (+ off-bar
+  admin); the bar's center `+` opens the Add sheet (meal / weight). **Log pushes
+  full-screen** over the shell as a root `CupertinoPage` (the composer owns its
+  bottom edge; swipe-back returns to the previous tab), like `/settings`, which now
+  pushes from the dashboard avatar.
 - **Motion:** durations and curves are tokens (`theme/kallo_motion.dart`: `KalloMotion`,
   `KalloEase`), named by role. Full rules, and the traps behind them, in `kallo-design/mobile.md`.
 - **Dialogs:** one confirmation surface, `shared/widgets/dialog/kallo_confirm.dart`

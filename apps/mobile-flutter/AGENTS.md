@@ -37,9 +37,10 @@ lib/services/   — infrastructure edges, one subfolder per concern:
 lib/models/     — data models (ported from web lib/*/types.ts), grouped by domain:
                   nutrition/, logging/, social/, profile/
 lib/shell/      — app scaffold and navigation shell: header/ (the in-flow app bar
-                  and its slots), sidebar/ (the left drawer), plus tab_scaffold.dart
-                  and placeholder_screen.dart — the two routed surfaces the shell
-                  itself hands the router
+                  and its slots), nav/ (the floating pill tab bar, its Add sheet
+                  and the goToLogging helpers), plus tab_scaffold.dart and
+                  placeholder_screen.dart — the routed surfaces the shell itself
+                  hands the router
 lib/theme/      — colors, typography, spacing tokens — the reference shape
 test/           — mirrors lib/; only widget_test.dart, app_fonts.dart and
                   l10n_test_loader.dart sit at its root
@@ -54,7 +55,7 @@ test/           — mirrors lib/; only widget_test.dart, app_fonts.dart and
   - A real module **may** re-export a file in its own folder — that is the folder's public entry speaking for its own internals (`toast/top_toast.dart` → `top_toast_pill.dart`, `surface/kallo_primitives.dart` → `kallo_screen.dart`). It may **not** re-export another folder's module: `dashboard/widgets/states/card_skeletons.dart` and `circle/widgets/states/friend_list_skeleton.dart` both re-exported `shared/widgets/feedback/skeleton.dart`, which let dashboard and circle widgets reach a shared primitive through a feature file. Both re-exports were removed.
 - `test/` mirrors `lib/`, and the mirror collapses the `widgets/`/`logic/` layer: a test lives in the folder its subject lives in — `test/features/<f>/[<sub-concern>/]`, `test/services/<concern>/`, `test/shared/<layer>/`. The block above claimed this mirror while most test files sat flat at the root, so the claim was worth nothing as a gate; they were moved and it is now true. Exactly three files stay at the root: `l10n_test_loader.dart` and `app_fonts.dart` (helpers any test may reach for — §4 quotes the l10n path, so it must not move), and `widget_test.dart`, which boots the whole app and therefore mirrors nothing.
 - Sub-concern folder names are shared vocabulary, not per-feature invention. `states/` is the loading/error/empty states of a surface (circle, dashboard, nutrition all use it); `chrome/` is a surface's own furniture — its header, its navigator, the bar it always shows.
-- Parity work must match the web source 1:1 — interactions, transitions, and exact sizing/spacing, not just static layout.
+- Parity work must match the web source 1:1 — interactions, transitions, and exact sizing/spacing, not just static layout. EXCEPTION: the iOS-native pass (2026-08-31) is a sanctioned app-wide divergence — canvas, buttons, inputs, hit targets and the shell (pill nav instead of the web drawer) follow `.agents/skills/kallo-design/mobile.md` and the approved canvas, not the web source.
 
 ## 4. Gotchas
 

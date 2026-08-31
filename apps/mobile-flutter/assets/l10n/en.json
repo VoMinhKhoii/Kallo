@@ -99,6 +99,20 @@
       "signOutError": "Could not sign out. Please try again.",
       "account": "Account",
       "expandOnHover": "Expand on hover"
+    },
+    "nav": {
+      "today": "Today",
+      "log": "Log",
+      "nutrition": "Nutrition",
+      "circle": "Circle",
+      "add": "Add"
+    },
+    "addSheet": {
+      "title": "Add",
+      "logMeal": "Log a meal",
+      "logMealHint": "Describe it, scan, or pick ingredients",
+      "logWeight": "Log weight",
+      "logWeightHint": "Today's weigh-in"
     }
   },
   "nutrition": {

@@ -9,7 +9,6 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
@@ -17,6 +16,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../../logging/data/logging_providers.dart' show pendingMealProvider;
 import '../../logic/dashboard_spacing.dart';
 import 'fade_in_down.dart';
+import '../../../../shell/nav/nav_actions.dart';
 
 /// First-run collapse: a single Lora question, no ring, no "% on track", plus
 /// three time-of-day-aware suggestion chips that open the meal composer
@@ -41,7 +41,7 @@ class FirstRunCard extends ConsumerWidget {
     // Park the text for the feed to claim, then land on it (as the FAB does).
     void openWithMeal(String meal) {
       ref.read(pendingMealProvider.notifier).state = meal;
-      context.go('/logging');
+      goToLogging(context);
     }
 
     return FadeInDown(

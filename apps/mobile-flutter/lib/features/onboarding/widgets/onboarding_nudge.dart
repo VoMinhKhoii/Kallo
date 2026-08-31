@@ -2,12 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../features/onboarding/providers/onboarding_providers.dart';
-import '../../theme/calm_tokens.dart';
-import '../../theme/kallo_colors.dart';
-import '../../theme/kallo_theme.dart';
+import '../providers/onboarding_providers.dart';
+import '../../../theme/calm_tokens.dart';
+import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_theme.dart';
 
-/// Mobile onboarding nudge — the drawer's one attention object: a white card
+/// Mobile onboarding nudge — now the top card in Settings (it lived in the
+/// retired drawer): a white card
 /// with an accent ring, a step counter, title, description, progress bar and
 /// the umber CTA.
 ///

@@ -18,6 +18,10 @@ import '../logic/settings_spacing.dart';
 import 'cooking.dart';
 import '../widgets/profile/instant_commit_editor.dart';
 import '../widgets/account/auto_share_to_circle_toggle.dart';
+import '../../onboarding/providers/onboarding_providers.dart'
+    show onboardingResumeProvider;
+import '../../onboarding/widgets/onboarding_dialog.dart';
+import '../../onboarding/widgets/onboarding_nudge.dart';
 import '../widgets/profile/profile_form.dart';
 import '../widgets/profile/profile_status_views.dart';
 import '../widgets/profile/region_editor.dart';
@@ -79,6 +83,14 @@ class _SettingsList extends ConsumerWidget {
         child: ListView(
           padding: SettingsSpacing.rowList,
           children: [
+            // Resume-onboarding nudge — re-homed here from the retired
+            // drawer footer; the dashboard avatar's pulse-dot points at it.
+            if (ref.watch(onboardingResumeProvider)) ...[
+              OnboardingNudge(
+                onResume: () => showOnboardingDialog(context, ref),
+              ),
+              const SizedBox(height: KalloSpacing.sp3),
+            ],
             // ── Preferences ─────────────────────────────────────────────
             SettingsGroup(
               label: tr('settings.preferences'),

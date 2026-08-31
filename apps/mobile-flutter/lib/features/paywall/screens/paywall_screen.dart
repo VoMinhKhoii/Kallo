@@ -12,6 +12,7 @@ import '../data/paywall_controller.dart';
 import '../widgets/paywall_premium_body.dart';
 import '../widgets/paywall_purchase_body.dart';
 import '../widgets/paywall_status.dart';
+import '../../../shell/nav/nav_actions.dart';
 
 /// AI-analysis-focused paywall. Free users see an upsell or trial-expired
 /// variant, while premium users see their active plan and store-management CTA.
@@ -75,7 +76,7 @@ class PaywallScreen extends ConsumerWidget {
     if (router.canPop()) {
       router.pop();
     } else {
-      context.go('/logging');
+      landInLogging(context);
     }
   }
 }

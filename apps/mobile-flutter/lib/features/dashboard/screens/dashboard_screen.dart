@@ -24,6 +24,7 @@ import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../widgets/states/card_skeletons.dart';
 import '../../../services/auth/session_provider.dart';
 import '../../../shell/header/app_header.dart';
+import '../../../shell/header/profile_avatar_button.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../logging/logic/timeline_utils.dart' hide WeekStrip;
 import '../data/dashboard_providers.dart';
@@ -31,7 +32,6 @@ import '../../../shared/logic/display_format.dart';
 import '../logic/dashboard_spacing.dart';
 import '../widgets/heatmap/adherence_heatmap.dart';
 import '../../../theme/calm_tokens.dart';
-import '../widgets/chrome/floating_meal_trigger.dart';
 import '../widgets/chrome/section_header.dart';
 import '../widgets/today/dock_targets.dart';
 import '../widgets/today/day_pager.dart';
@@ -78,6 +78,8 @@ class DashboardScreen extends ConsumerWidget {
         header: Padding(
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(
+            // Settings moved behind the avatar when the drawer retired.
+            leading: const ProfileAvatarButton(),
             child: Text(_greeting().tr(), style: dashPageTitle()),
           ),
         ),
@@ -296,8 +298,6 @@ class _ContentState extends State<_Content> {
             ),
           ],
         ),
-        // Mobile-only FAB (web `md:hidden` FloatingMealTrigger).
-        const FloatingMealTrigger(),
       ],
     );
   }

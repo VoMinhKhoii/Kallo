@@ -17,6 +17,7 @@ import '../cheat/cheat_intensity_row.dart';
 import '../composer/composer_actions.dart';
 import '../composer/meal_input.dart';
 import 'manual_log_sheet.dart';
+import '../../../../shell/nav/nav_actions.dart';
 
 /// Opens the quick-log sheet — the dashboard FAB's composer.
 ///
@@ -106,7 +107,7 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
     // defunct and `context.go` would look up a dead element.
     final router = GoRouter.of(context);
     Navigator.of(context).pop();
-    router.go('/logging');
+    landInLoggingWith(router);
   }
 
   /// The same chooser the feed composer opens — one menu, one dispatch.

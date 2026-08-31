@@ -85,6 +85,8 @@ class KalloSheetSurface extends StatelessWidget {
       decoration: const BoxDecoration(
         color: kCardSurface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(kCardRadius)),
+        // Sheets are TRUE elevation on the borderless-card canvas.
+        boxShadow: kSheetShadows,
       ),
       child: body,
     );
