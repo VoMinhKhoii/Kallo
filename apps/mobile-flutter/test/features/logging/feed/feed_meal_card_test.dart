@@ -11,6 +11,7 @@ import 'package:kallo_mobile/features/logging/logic/logging_spacing.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
 
+import '../../../app_fonts.dart';
 import '../../../l10n_test_loader.dart';
 
 const _raw = 'phở bò tái nạm';
@@ -58,7 +59,8 @@ const _grouped = PersistedMeal(
 
 /// A meal text long enough to wrap — the case the chevron used to drift on.
 const _longRaw =
-    'phở bò tái nạm gầu gân sách với rất nhiều hành lá và rau thơm các loại';
+    'phở bò tái nạm gầu gân sách với rất nhiều hành lá và rau thơm các loại, '
+    'thêm một chén nước béo và bánh phở tươi đặc biệt của quán';
 
 const _longTitled = PersistedMeal(
   id: 'm4',
@@ -126,6 +128,10 @@ Widget _wrap(PersistedMeal meal) =>
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  // Real fonts: this file measures legend/name geometry, and the placeholder
+  // test font's 1-em glyphs invent overflows the device never has.
+  setUpAll(loadAppFonts);
 
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
