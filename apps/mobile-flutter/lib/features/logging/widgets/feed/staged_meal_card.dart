@@ -83,7 +83,7 @@ class StagedMealCard extends StatelessWidget {
             showTimeDivider: false,
             busy: busy,
             onConfirm: (edits) => onConfirm(pending.id, edits),
-            // The way out, in the same action row as the confirm circle.
+            // The way out: a quiet trash in its own row under the confirm pill.
             actions: [_discard(context)],
           ),
         ],

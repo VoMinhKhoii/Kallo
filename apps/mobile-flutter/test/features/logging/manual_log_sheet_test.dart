@@ -39,14 +39,32 @@ class _FakeApiClient extends ApiClient {
   } as T;
 }
 
+/// A results list long enough to fill the sheet — the state in which the added
+/// summary lands off-screen.
+class _LongResultsApiClient extends ApiClient {
+  @override
+  Future<T> get<T>(String path) async => {
+    'results': [
+      for (var i = 0; i < 12; i++)
+        {
+          'id': 'fct-$i',
+          'namePrimary': 'Món số $i',
+          'nameEn': 'Dish number $i',
+          'state': 'cooked',
+          'per100g': {'caloriesKcal': 100.0 + i, 'proteinG': 5.0},
+        },
+    ],
+  } as T;
+}
+
 const _viewports = <String, Size>{
   'short phone': Size(320, 568),
   'android': Size(360, 640),
   'landscape': Size(667, 375),
 };
 
-Widget _wrap(Widget child) => ProviderScope(
-  overrides: [apiClientProvider.overrideWithValue(_FakeApiClient())],
+Widget _wrap(Widget child, {ApiClient? api}) => ProviderScope(
+  overrides: [apiClientProvider.overrideWithValue(api ?? _FakeApiClient())],
   child: EasyLocalization(
     supportedLocales: const [Locale('en'), Locale('vi')],
     path: 'assets/l10n',
@@ -143,4 +161,41 @@ void main() {
       });
     }
   }
+
+  testWidgets('adding an item scrolls its confirmation into view',
+      (tester) async {
+    // The body opens scrolled to the BOTTOM (`reverse: true`), so the "Added"
+    // summary and "Save · N kcal" insert ABOVE the current scroll position.
+    // With a full results list that put the only confirmation a tap had landed
+    // off-screen: the row seemed to do nothing. The add must reveal it.
+    _sizeTo(tester, const Size(320, 568), 1.0);
+    await tester.pumpWidget(
+      _wrap(
+        Builder(
+          builder: (c) => TextButton(
+            onPressed: () =>
+                showManualLogSheet(c, userId: 'u1', date: '2026-01-01'),
+            child: const Text('open'),
+          ),
+        ),
+        api: _LongResultsApiClient(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Món số 0'));
+    await tester.pumpAndSettle();
+
+    await _expectOnScreen(
+      tester,
+      find.text('Added'),
+      const Size(320, 568),
+      'the Added summary',
+    );
+    // Visible AND reachable — not merely inside the viewport rect.
+    expect(tester.any(find.text('Added').hitTestable()), isTrue,
+        reason: 'the Added summary is not hit-testable');
+  });
 }

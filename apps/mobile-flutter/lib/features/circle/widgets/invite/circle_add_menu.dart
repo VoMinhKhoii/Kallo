@@ -132,24 +132,33 @@ class _AnchoredMenu extends StatelessWidget {
             child: ScaleTransition(
               scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
               alignment: Alignment.topRight,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(KalloRadii.card),
-                  boxShadow: kCardShadows,
-                ),
-                child: GroupedListCard(
-                  children: [
-                    ListRow(
-                      icon: LucideIcons.userPlus300,
-                      label: tr('groups.page.addFriend'),
-                      onTap: () => onPick(_AddAction.friend),
-                    ),
-                    ListRow(
-                      icon: LucideIcons.users300,
-                      label: tr('groups.page.createGroup'),
-                      onTap: () => onPick(_AddAction.group),
-                    ),
-                  ],
+              // This tree hangs off the Overlay, not off the page's Scaffold,
+              // and nothing below introduces a Material — so the row labels
+              // fell back to the framework's un-styled default (red monospace
+              // on a double YELLOW underline). Transparent: it restores the
+              // inherited text style without painting over the card's own
+              // surface or shadow.
+              child: Material(
+                type: MaterialType.transparency,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(KalloRadii.card),
+                    boxShadow: kCardShadows,
+                  ),
+                  child: GroupedListCard(
+                    children: [
+                      ListRow(
+                        icon: LucideIcons.userPlus300,
+                        label: tr('groups.page.addFriend'),
+                        onTap: () => onPick(_AddAction.friend),
+                      ),
+                      ListRow(
+                        icon: LucideIcons.users300,
+                        label: tr('groups.page.createGroup'),
+                        onTap: () => onPick(_AddAction.group),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

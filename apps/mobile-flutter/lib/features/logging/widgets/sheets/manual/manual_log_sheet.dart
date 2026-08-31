@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../../shared/widgets/sheet/kallo_sheet_header.dart';
+import '../../../../../theme/kallo_motion.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../data/manual_log_providers.dart';
 import 'manual_added_block.dart';
@@ -46,6 +47,10 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
   static const _debounce = Duration(milliseconds: 300);
 
   final TextEditingController _searchController = TextEditingController();
+
+  /// The "Added" block, so an add can scroll its own confirmation into view.
+  final GlobalKey _addedKey = GlobalKey();
+
   Timer? _debounceTimer;
   String _query = '';
   String? _errorText;
@@ -68,6 +73,30 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
     _debounceTimer = Timer(_debounce, () {
       if (!mounted) return;
       setState(() => _query = _searchController.text.trim());
+    });
+  }
+
+  /// Reveal the "Added" summary after an add.
+  ///
+  /// The body opens scrolled to the BOTTOM (`reverse: true`) so the closest
+  /// match sits against the search pill — which means the summary and
+  /// "Save · N kcal" insert ABOVE the current scroll position. On a full
+  /// results list that put the only confirmation the tap had registered
+  /// off-screen, and the row read as dead. Runs after the frame that inserts
+  /// the block, since before it there is nothing to scroll to.
+  void _revealAdded() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final target = _addedKey.currentContext;
+      if (target == null) return;
+      Scrollable.ensureVisible(
+        target,
+        duration: KalloMotion.quick,
+        curve: Curves.easeOut,
+        // Align its TOP to the viewport's: the summary leads, the rows and
+        // Save follow beneath it.
+        alignment: 0,
+      );
     });
   }
 
@@ -120,6 +149,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           ManualAddedBlock(
+                            key: _addedKey,
                             onSave: _save,
                             errorText: _errorText,
                           ),
@@ -128,9 +158,12 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                           ManualResultsList(
                             query: _query,
                             resultsAsync: resultsAsync,
-                            onPick: (ingredient) => ref
-                                .read(manualLogProvider.notifier)
-                                .addIngredient(ingredient),
+                            onPick: (ingredient) {
+                              ref
+                                  .read(manualLogProvider.notifier)
+                                  .addIngredient(ingredient);
+                              _revealAdded();
+                            },
                           ),
                         ],
                       ),

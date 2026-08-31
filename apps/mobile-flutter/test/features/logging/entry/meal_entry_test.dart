@@ -164,6 +164,63 @@ void main() {
     });
   }
 
+  testWidgets('the staged total is the server\'s, not a re-sum of the rows', (
+    tester,
+  ) async {
+    // Device QA: a staged card read 490 kcal where the saved card read 489.
+    // The API rounds each item's macros once, so adding those rounded figures
+    // back up (round-then-sum) drifts from the server's own sum-then-round
+    // total — which is already on the wire as `totalMacros`, and is what the
+    // saved card renders.
+    const drifting = ParsedMeal(
+      mealName: 'Bữa tối',
+      // The server's figure. The three items below sum to 490.
+      totalMacros: MacroBreakdown(calories: 489, protein: 30, carbs: 60, fat: 10),
+      items: [
+        MealItem(
+          id: 'd1',
+          name: 'Món một',
+          quantity: 100,
+          unit: 'g',
+          macros: MacroBreakdown(calories: 163, protein: 10, carbs: 20, fat: 3),
+        ),
+        MealItem(
+          id: 'd2',
+          name: 'Món hai',
+          quantity: 100,
+          unit: 'g',
+          macros: MacroBreakdown(calories: 163, protein: 10, carbs: 20, fat: 3),
+        ),
+        MealItem(
+          id: 'd3',
+          name: 'Món ba',
+          quantity: 100,
+          unit: 'g',
+          macros: MacroBreakdown(calories: 164, protein: 10, carbs: 20, fat: 4),
+        ),
+      ],
+    );
+
+    await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      _wrap(
+        MealEntry(
+          parsedMeal: drifting,
+          rawInput: 'ba món',
+          onConfirm: (_) {},
+        ),
+        width: _phone390,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('489 kcal'), findsOneWidget,
+        reason: 'the staged card must show the server total');
+    expect(find.text('490 kcal'), findsNothing,
+        reason: 'round-then-sum drift is back');
+  });
+
   testWidgets('the totals line sits in the item rows own columns', (
     tester,
   ) async {

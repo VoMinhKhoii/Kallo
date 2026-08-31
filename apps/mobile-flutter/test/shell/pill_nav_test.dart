@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
+import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
 import 'package:kallo_mobile/shell/nav/pill_nav_bar.dart';
 import 'package:kallo_mobile/shell/tab_scaffold.dart';
 
@@ -35,6 +36,17 @@ class _CounterPageState extends State<_CounterPage> {
           TextButton(
             onPressed: () => setState(() => count++),
             child: const Text('bump'),
+          ),
+          // A branch-screen sheet trigger, standing in for Circle's
+          // invite / create-group sheets.
+          TextButton(
+            onPressed: () => showNhamSheet<void>(
+              context,
+              builder: (_) => const KalloSheetSurface(
+                child: SizedBox(height: 400, child: Text('sheet-body')),
+              ),
+            ),
+            child: const Text('sheet'),
           ),
         ],
       );
@@ -173,6 +185,38 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('dash:0'), findsOneWidget);
     expect(find.byType(PillNavBar), findsOneWidget);
+  });
+
+  testWidgets('a sheet opened from a branch screen paints above the pill nav',
+      (tester) async {
+    // Regression (TestFlight 2026-09-01): `showNhamSheet` pushed onto the
+    // BRANCH navigator, which lives inside the shell Scaffold's `body` — so
+    // the bottomNavigationBar, painted after the body, sat on top of the open
+    // sheet. On Circle's create-group sheet the pill covered the CTA and a tap
+    // on it switched tabs behind the sheet. `useRootNavigator: true` puts the
+    // sheet's route above the whole shell instead.
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('sheet'));
+    await tester.pumpAndSettle();
+    expect(find.text('sheet-body'), findsOneWidget);
+
+    // Precondition: the sheet really does cover the nav. Without this the tap
+    // assertion below could pass for the wrong reason.
+    final navRect = tester.getRect(find.byType(PillNavBar));
+    final sheetRect = tester.getRect(find.byType(KalloSheetSurface));
+    expect(sheetRect.overlaps(navRect), isTrue,
+        reason: 'the sheet must overlap the nav for this to test anything');
+
+    // A tap where the covered pill sits must not reach it. (With the sheet on
+    // top the tap lands on its barrier and dismisses it — either way the tab
+    // must not change.)
+    await tester.tap(find.text('Nutrition'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(find.text('nutrition:0'), findsNothing,
+        reason: 'the nav stole a tap through the open sheet');
+    expect(find.text('dash:0'), findsOneWidget);
   });
 
   testWidgets('center "+" opens the Add sheet', (tester) async {

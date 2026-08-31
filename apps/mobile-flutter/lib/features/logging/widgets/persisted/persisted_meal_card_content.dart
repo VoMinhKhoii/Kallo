@@ -81,22 +81,24 @@ class PersistedMealCardContent extends StatelessWidget {
                 expand: expand,
                 onTap: onToggle,
               ),
+              // The breakdown opens BETWEEN the title and the bar+legend, so
+              // the bar and its total always close the card. The details grow
+              // in place and push the bar down with them — no jump-cut.
+              middle: editorBody == null
+                  ? SizeTransition(
+                      sizeFactor: curvedExpand,
+                      alignment: Alignment.topCenter,
+                      child: FadeTransition(
+                        opacity: curvedExpand,
+                        child: PersistedMealExpandedDetails(meal: meal),
+                      ),
+                    )
+                  : null,
             ),
           ),
 
           // Edit mode swaps the read-only body for the amount editor in place.
           if (editorBody != null) editorBody!,
-
-          // Expanded details — animate height open (easeInOut).
-          if (editorBody == null)
-            SizeTransition(
-              sizeFactor: curvedExpand,
-              alignment: Alignment.topCenter,
-              child: FadeTransition(
-                opacity: curvedExpand,
-                child: PersistedMealExpandedDetails(meal: meal),
-              ),
-            ),
         ],
       ),
     );

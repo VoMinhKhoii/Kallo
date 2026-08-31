@@ -38,7 +38,6 @@
     "components/logging/feed/cheat/cheat-meal-card.tsx": 207,
     "components/design-system/colors-section.tsx": 205,
     "components/app/navigation/mobile-nav.tsx": 204,
-    "apps/mobile-flutter/lib/features/auth/widgets/email_auth_form.dart": 203,
     "apps/mobile-flutter/lib/features/logging/widgets/composer/entrances.dart": 201
   },
   "folders": {

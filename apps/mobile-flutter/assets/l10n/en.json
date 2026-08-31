@@ -1011,6 +1011,7 @@
       "update": "Update",
       "editHint": "Editing today's entry — saves overwrite the previous value.",
       "saveFailed": "Failed to save weight",
+      "loadFailed": "Couldn't open the weight logger. Please try again.",
       "netChange": "Net change",
       "steady": "Steady"
     },

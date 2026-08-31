@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/profile/dashboard.dart';
+import '../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../shared/widgets/feedback/skeleton.dart';
 import '../../../shared/widgets/surface/kallo_screen.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
@@ -116,6 +117,10 @@ class DashboardScreen extends ConsumerWidget {
                 todayDate: todayDate,
                 targets: _targetsFor(data),
                 isFirstRun: _isFirstRun(data),
+                // Awaiting the refetch is what makes the spinner honest: it
+                // lives exactly as long as the load it stands for.
+                onRefresh:
+                    () => ref.refresh(dashboardBundleProvider(args).future),
               ),
         ),
       ),
@@ -172,7 +177,11 @@ class _Content extends StatefulWidget {
     required this.todayDate,
     required this.targets,
     required this.isFirstRun,
+    required this.onRefresh,
   });
+
+  /// Pull-to-refresh: refetches the one aggregate the whole screen reads.
+  final Future<void> Function() onRefresh;
 
   /// Today-anchored args — Progress (30d), Consistency (90d) and the week
   /// strip's rings stay "as of today" regardless of the selected day.
@@ -244,7 +253,13 @@ class _ContentState extends State<_Content> {
 
     return Stack(
       children: [
-        ListView(
+        KalloRefresh(
+          onRefresh: widget.onRefresh,
+          child: ListView(
+          // The list must accept an overscroll drag even when its content is
+          // short enough not to scroll, or a pull on a near-empty Today does
+          // nothing.
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(
             left: KalloSpacing.sp3,
             right: KalloSpacing.sp3,
@@ -308,6 +323,7 @@ class _ContentState extends State<_Content> {
               ],
             ),
           ],
+          ),
         ),
       ],
     );

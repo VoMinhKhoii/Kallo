@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../../../../shared/widgets/form/sheet_action_buttons.dart';
 import '../../../../../shared/widgets/typography/kallo_text.dart';
 import '../../../../../theme/calm_tokens.dart';
 import '../../../../../theme/kallo_colors.dart';
@@ -53,16 +52,16 @@ class BarcodeSearchingView extends StatelessWidget {
 
 /// Camera failure inside the viewport: permission denied gets settings
 /// guidance; anything else (including the simulator's missing camera) gets a
-/// generic error. Both offer manual entry.
+/// generic error.
+///
+/// It states the reason and nothing else. The manual-entry escape hatch is the
+/// quiet action BELOW the frame ([BarcodeCameraView]), which stays put through
+/// every camera state — offering it in here as well printed "Enter barcode
+/// manually" twice on the one screen where it matters most.
 class BarcodeCameraErrorState extends StatelessWidget {
-  const BarcodeCameraErrorState({
-    super.key,
-    required this.error,
-    required this.onEnterManually,
-  });
+  const BarcodeCameraErrorState({super.key, required this.error});
 
   final MobileScannerException error;
-  final VoidCallback onEnterManually;
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +72,8 @@ class BarcodeCameraErrorState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // The one error shape: icon badge, then the reason, then ONE action.
+          // The one error shape: icon badge, then the reason. The action sits
+          // below the frame.
           Container(
             width: 44,
             height: 44,
@@ -96,12 +96,6 @@ class BarcodeCameraErrorState extends StatelessWidget {
                 .tr(),
             textAlign: TextAlign.center,
             style: dashMeta(),
-          ),
-          const SizedBox(height: KalloSpacing.sp3),
-          QuietIconButton(
-            icon: LucideIcons.keyboard300,
-            label: 'logging.barcode.manualEntry'.tr(),
-            onTap: onEnterManually,
           ),
         ],
       ),

@@ -9,6 +9,7 @@ import '../../../../models/profile/weight.dart';
 import '../../../../services/auth/session_provider.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
+import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/logic/display_format.dart';
 import '../../data/dashboard_providers.dart';
@@ -23,7 +24,21 @@ Future<void> showWeightLogSheet(BuildContext context, WidgetRef ref) async {
   if (userId == null) return;
   final todayDate = todayDateString();
   final args = (userId: userId, date: todayDate);
-  final bundle = await ref.read(dashboardBundleProvider(args).future);
+  final DashboardBundle bundle;
+  try {
+    bundle = await ref.read(dashboardBundleProvider(args).future);
+  } catch (_) {
+    // A failed bundle used to dead-end here: the Add sheet had already closed
+    // and no weight sheet ever arrived, so the row read as broken. Say so.
+    if (context.mounted) {
+      showTopToast(
+        context,
+        tr('dashboard.weightCard.loadFailed'),
+        variant: TopToastVariant.error,
+      );
+    }
+    return;
+  }
   if (!context.mounted) return;
   showWeightLogSheetWithData(
     context,

@@ -9,6 +9,7 @@ import '../../../theme/kallo_typography.dart';
 import '../providers/auth_form_controller.dart';
 import '../screens/forgot_password_screen.dart';
 import 'auth_controls.dart';
+import 'auth_mode_toggle.dart';
 
 import 'auth_submit_button.dart';
 import 'auth_text_field.dart';
@@ -57,6 +58,22 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
       _passwordError = passOk ? null : tr('auth.signIn.passwordError');
     });
     return emailOk && passOk;
+  }
+
+  /// Flip sign-in ↔ sign-up in place.
+  ///
+  /// The field errors were raised against the submit the user just attempted,
+  /// so they do not survive the flip: a red line under an untouched field on
+  /// the mode you have only now arrived at reads as a complaint about THIS
+  /// form. The typed text DOES survive — changing your mind should not cost a
+  /// retype.
+  void _switchMode() {
+    _controller.clearMessages();
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+      _createMode = !_createMode;
+    });
   }
 
   void _submit() {
@@ -169,33 +186,10 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
             ),
           ),
         const SizedBox(height: KalloSpacing.sp5),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              _createMode
-                  ? tr('auth.signUp.hasAccount')
-                  : tr('auth.signIn.noAccount'),
-              style: dashMeta().copyWith(fontSize: kAuthFootnote),
-            ),
-            Opacity(
-              opacity: busy ? 0.6 : 1.0,
-              child: IgnorePointer(
-                ignoring: busy,
-                child: AuthQuietLink(
-                  label:
-                      _createMode
-                          ? tr('auth.signUp.signInLink')
-                          : tr('auth.signIn.signUpLink'),
-                  emphasis: true,
-                  onTap: () {
-                    _controller.clearMessages();
-                    setState(() => _createMode = !_createMode);
-                  },
-                ),
-              ),
-            ),
-          ],
+        AuthModeToggle(
+          createMode: _createMode,
+          busy: busy,
+          onToggle: _switchMode,
         ),
       ],
     );

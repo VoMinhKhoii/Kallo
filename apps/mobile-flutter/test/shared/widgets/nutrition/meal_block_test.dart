@@ -110,4 +110,75 @@ void main() {
     expect(kcal.left, lessThan(fat.left),
         reason: 'kcal leads the legend on Circle posts');
   });
+
+  testWidgets('the legend spaces its entries evenly, kcal included',
+      (tester) async {
+    // The old rule clustered P/C/F at the left on fixed 14pt gaps and shoved
+    // kcal to the right with a Spacer, so the same legend read differently on
+    // a Circle post and on the Log card. One distribution now, everywhere.
+    await tester.pumpWidget(
+      _wrap(
+        MealBlock(
+          title: 'even legend',
+          segments: composition.segments,
+          gramLabels: const {
+            'protein': 'P 30g',
+            'carbohydrate': 'C 50g',
+            'fat': 'F 12g',
+          },
+          kcalLabel: '480 kcal',
+          kcalPlacement: MealBlockKcal.legendTrailing,
+        ),
+      ),
+    );
+
+    // Measure the ENTRY boxes, not the text: each macro entry is a glyph plus
+    // its label, so text-to-text gaps would fold in the next entry's icon.
+    Rect macroEntry(String label) => tester.getRect(
+          find.ancestor(of: find.text(label), matching: find.byType(Row)).first,
+        );
+    final entries = <Rect>[
+      macroEntry('P 30g'),
+      macroEntry('C 50g'),
+      macroEntry('F 12g'),
+      tester.getRect(find.text('480 kcal')),
+    ];
+    final gaps = <double>[
+      for (var i = 1; i < entries.length; i++)
+        entries[i].left - entries[i - 1].right,
+    ];
+    for (final gap in gaps) {
+      expect(gap, closeTo(gaps.first, 1.0),
+          reason: 'legend gaps must be uniform, got $gaps');
+    }
+  });
+
+  testWidgets('the bar and legend END the block, below any middle content',
+      (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        MealBlock(
+          title: 'expanded card',
+          segments: composition.segments,
+          gramLabels: const {
+            'protein': 'P 30g',
+            'carbohydrate': 'C 50g',
+            'fat': 'F 12g',
+          },
+          kcalLabel: '480 kcal',
+          kcalPlacement: MealBlockKcal.legendTrailing,
+          middle: const SizedBox(height: 120, child: Text('per-dish detail')),
+        ),
+      ),
+    );
+
+    final detail = tester.getRect(find.text('per-dish detail'));
+    final title = tester.getRect(find.text('expanded card'));
+    final legend = tester.getRect(find.text('P 30g'));
+
+    expect(detail.top, greaterThan(title.top),
+        reason: 'the detail opens under the title');
+    expect(legend.top, greaterThan(detail.bottom),
+        reason: 'the bar + legend must close the card, under the detail rows');
+  });
 }

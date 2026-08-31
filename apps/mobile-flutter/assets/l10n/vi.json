@@ -1011,6 +1011,7 @@
       "update": "Cập nhật",
       "editHint": "Đang sửa số liệu hôm nay — lần lưu sau sẽ ghi đè giá trị trước.",
       "saveFailed": "Không thể lưu cân nặng",
+      "loadFailed": "Không mở được mục ghi cân nặng. Vui lòng thử lại.",
       "netChange": "Thay đổi",
       "steady": "Ổn định"
     },

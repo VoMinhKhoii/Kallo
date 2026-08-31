@@ -36,13 +36,19 @@ class _PersistedMealChevronToggleState
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
       onTap: widget.onTap,
-      child: SizedBox.square(
-        dimension: LoggingIcons.hit,
-        // Right-aligned, not centred: the glyph lands on the card's content
-        // edge (level with the kcal below it) while the 36pt target keeps its
-        // size by extending inward.
+      child: SizedBox(
+        // Width only. As a 36pt SQUARE this box was taller than one line of
+        // title, and centring the glyph inside it dropped the chevron below
+        // the title's first line — obvious on the two- and three-line meal
+        // texts this card is built for. Hugging the glyph's own height keeps
+        // it level with line one; the card's whole block is the toggle target
+        // anyway, so the target loses nothing that matters.
+        width: LoggingIcons.hit,
+        // Top-right: the glyph lands on the card's content edge (level with
+        // the kcal below it) while the target keeps its width by extending
+        // inward.
         child: Align(
-          alignment: Alignment.centerRight,
+          alignment: Alignment.topRight,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150), // transition-colors
             padding: const EdgeInsets.all(4), // p-1

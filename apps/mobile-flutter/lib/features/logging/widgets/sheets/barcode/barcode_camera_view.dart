@@ -110,10 +110,8 @@ class BarcodeCameraView extends StatelessWidget {
                     fit: BoxFit.cover,
                     scanWindow: scanWindow,
                     onDetect: onDetect,
-                    errorBuilder: (context, error) => BarcodeCameraErrorState(
-                      error: error,
-                      onEnterManually: onEnterManually,
-                    ),
+                    errorBuilder: (context, error) =>
+                        BarcodeCameraErrorState(error: error),
                   ),
                   IgnorePointer(
                     child: CustomPaint(

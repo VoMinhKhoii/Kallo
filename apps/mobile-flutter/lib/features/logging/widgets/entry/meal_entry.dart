@@ -33,9 +33,9 @@ class MealEntry extends StatefulWidget {
     this.actions = const [],
   });
 
-  /// Extra action targets appended after the confirm circle, so a staged card's
-  /// discard sits in the SAME row as its confirm rather than in a second row
-  /// under it (Log artboard: one action row per card).
+  /// Extra action targets for the quiet icon row BENEATH the confirm pill — a
+  /// staged card's discard lives here. Empty means no second row is drawn at
+  /// all.
   final List<Widget> actions;
 
   /// When the analysis was staged, for a card restored from the server. Null
@@ -132,7 +132,13 @@ class _MealEntryState extends State<MealEntry> {
 
   @override
   Widget build(BuildContext context) {
-    final totals = recalculateTotals(_items);
+    // Untouched (`_items` starts AS `_original`; edits assign a new list) →
+    // the SERVER's total, as the saved card shows. Re-summing per-item macros
+    // re-adds figures the API already rounded once each: staged read "490
+    // kcal" where saved read "489". After an edit, only the local sum is right.
+    final totals = identical(_items, _original)
+        ? widget.parsedMeal.totalMacros
+        : recalculateTotals(_items);
 
     // No bottom margin — the feed's list/footer stack owns the gap below.
     return Column(
@@ -166,30 +172,27 @@ class _MealEntryState extends State<MealEntry> {
             onAdjustPortion: _adjustPortion,
           ),
         ),
-        // The confirm circle is an action row of one, so it sits where every
-        // other card puts its actions — tight under the card, which carries
-        // its own centring inset.
+        // The one thing this card asks for, full width under the content it
+        // commits. On reveal it slides up into the spinner row's slot.
         const SizedBox(height: LoggingSpacing.actions),
-        Row(
-          children: [
-            const Spacer(),
-            // On reveal the CTA slides up into the slot the spinner row
-            // vacated.
-            _maybeReveal(
-              MealEntryConfirmButton(
-                editing: _editing,
-                disabled: _confirmDisabled,
-                onTap:
-                    _confirmDisabled
-                        ? null
-                        : () => widget.onConfirm(
-                          deriveQuantityEdits(_items, _original),
-                        ),
-              ),
-            ),
-            ...widget.actions,
-          ],
+        _maybeReveal(
+          MealEntryConfirmButton(
+            editing: _editing,
+            disabled: _confirmDisabled,
+            onTap:
+                _confirmDisabled
+                    ? null
+                    : () => widget.onConfirm(
+                      deriveQuantityEdits(_items, _original),
+                    ),
+          ),
         ),
+        // A staged card's discard: a quiet icon row BENEATH the button, never
+        // beside it, where a trash target would read as the confirm's equal.
+        if (widget.actions.isNotEmpty) ...[
+          const SizedBox(height: LoggingSpacing.actions),
+          Row(children: [const Spacer(), ...widget.actions]),
+        ],
       ],
     );
   }

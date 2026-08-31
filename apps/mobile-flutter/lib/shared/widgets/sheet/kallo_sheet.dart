@@ -16,6 +16,16 @@ import '../../../theme/calm_tokens.dart';
 /// the three sheets that hadn't opted out all overflowed on a short phone or in
 /// landscape. Safe by default now. Sizing to content is only half of it: see
 /// [KalloSheetSurface.scrollable]. Guarded by `test/sheet_overflow_test.dart`.
+///
+/// [useRootNavigator] is TRUE and not optional. Opened from a shell BRANCH
+/// screen (Circle, Nutrition, …) the nearest navigator is the branch's own,
+/// which lives inside the shell Scaffold's `body` — and a Scaffold paints its
+/// `bottomNavigationBar` after the body, so the pill nav sat ON TOP of the
+/// open sheet: it covered Circle's create-group CTA, and a tap on it switched
+/// tabs behind the sheet. Pushing onto the root navigator puts the sheet above
+/// the whole shell. `Navigator.of(sheetContext).pop()` inside a sheet still
+/// dismisses it — that context sits under the sheet's own route, which is now
+/// the root navigator's. Guarded by `test/shell/pill_nav_test.dart`.
 Future<T?> showNhamSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
@@ -27,6 +37,7 @@ Future<T?> showNhamSheet<T>(
     isScrollControlled: isScrollControlled,
     backgroundColor: Colors.transparent,
     barrierColor: barrierColor,
+    useRootNavigator: true,
     builder: builder,
   );
 }
