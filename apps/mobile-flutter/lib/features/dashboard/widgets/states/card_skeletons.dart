@@ -10,6 +10,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/feedback/skeleton.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/dashboard_spacing.dart';
 
@@ -71,10 +72,11 @@ List<Widget> weightCardSkeletonChildren() => const [
       SkeletonBar(height: 96, radius: 10),
     ];
 
-/// The out-of-card section eyebrow placeholder. Unlike the shared
+/// The out-of-card section-header placeholder. Unlike the shared
 /// [SkeletonHeader] it is spaced at [DashboardSpacing.block] and sized to the
-/// Meta-12 label, matching the real `SectionHeader` (which carries no margin of
-/// its own — the parent stack owns the gap), so loading→data doesn't jump.
+/// 17/600 title beside its 12 muted meta, matching [SectionHeaderRow] (which
+/// carries no margin of its own — the parent stack owns the gap), so
+/// loading→data doesn't jump.
 class DashSkeletonHeader extends StatelessWidget {
   const DashSkeletonHeader({super.key});
   @override
@@ -84,7 +86,7 @@ class DashSkeletonHeader extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SkeletonBar(width: 120, height: 12, radius: 4),
+              SkeletonBar(width: 120, height: 18, radius: 4),
               SkeletonBar(width: 52, height: 12, radius: 4),
             ],
           ),
@@ -116,15 +118,14 @@ class DashboardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
     // The pulse comes from the caller (one outer SkeletonPulse); every card /
     // header / bar below inherits it and fades in phase.
     return ListView(
-      padding: EdgeInsets.only(
+      padding: const EdgeInsets.only(
         left: KalloSpacing.sp3,
         right: KalloSpacing.sp3,
-        top: DashboardSpacing.block,
-        bottom: bottomInset + 76,
+        top: KalloSpacing.sp2,
+        bottom: kNavClearance,
       ),
       children: const [
         // Week-strip row — four day pills (the strip's own height, then the

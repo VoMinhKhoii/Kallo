@@ -21,7 +21,9 @@ import '../../../models/profile/dashboard.dart';
 import '../../../shared/widgets/feedback/skeleton.dart';
 import '../../../shared/widgets/surface/kallo_screen.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../../../shared/widgets/typography/section_header_row.dart';
 import '../widgets/states/card_skeletons.dart';
+import '../widgets/states/section_state.dart';
 import '../../../services/auth/session_provider.dart';
 import '../../../shell/header/app_header.dart';
 import '../../../shell/header/profile_avatar_button.dart';
@@ -32,7 +34,6 @@ import '../../../shared/logic/display_format.dart';
 import '../logic/dashboard_spacing.dart';
 import '../widgets/heatmap/adherence_heatmap.dart';
 import '../../../theme/calm_tokens.dart';
-import '../widgets/chrome/section_header.dart';
 import '../widgets/today/dock_targets.dart';
 import '../widgets/today/day_pager.dart';
 import '../widgets/today/today_section.dart';
@@ -78,9 +79,16 @@ class DashboardScreen extends ConsumerWidget {
         header: Padding(
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(
+            // Greeting hard left, avatar hard right: the leading slot is
+            // collapsed so the serif line starts at the page inset rather than
+            // 44pt in behind an empty spacer.
+            leading: const SizedBox.shrink(),
             // Settings moved behind the avatar when the drawer retired.
-            leading: const ProfileAvatarButton(),
-            child: Text(_greeting().tr(), style: dashPageTitle()),
+            trailing: const ProfileAvatarButton(),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(_greeting().tr(), style: dashHeadline()),
+            ),
           ),
         ),
         child: bundle.when(
@@ -230,19 +238,20 @@ class _ContentState extends State<_Content> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
     final locale = context.locale.toString();
 
     return Stack(
       children: [
         ListView(
-          padding: EdgeInsets.only(
+          padding: const EdgeInsets.only(
             left: KalloSpacing.sp3,
             right: KalloSpacing.sp3,
-            top: DashboardSpacing.block,
-            // Clear the FAB's resting footprint (44 + 20 bottom) with a small
-            // gap — no more than that, so the scroll doesn't end in dead space.
-            bottom: bottomInset + 76,
+            // AppHeader already pays sp1 below itself; sp2 here nets the one
+            // 12px step between the greeting and the week strip.
+            top: KalloSpacing.sp2,
+            // The floating pill nav is not part of the layout (the shell runs
+            // extendBody), so the scroll owes it its own clearance.
+            bottom: kNavClearance,
           ),
           children: [
             // SECTION 1 — week strip + the paged day-viewer (greeting now lives
@@ -277,11 +286,11 @@ class _ContentState extends State<_Content> {
             // SECTION 2 — Progress.
             _Section(
               children: [
-                SectionHeader(
+                SectionHeaderRow(
                   title: tr('dashboard.progress'),
-                  range: tr('dashboard.ranges.thirtyDays'),
+                  meta: tr('dashboard.ranges.thirtyDays'),
                 ),
-                WeightChart(todayDate: widget.todayDate, args: widget.args),
+                WeightChart(args: widget.args),
               ],
             ),
             // SECTION 3 — Consistency. Last section: no trailing margin, so the
@@ -289,9 +298,9 @@ class _ContentState extends State<_Content> {
             _Section(
               last: true,
               children: [
-                SectionHeader(
+                SectionHeaderRow(
                   title: tr('dashboard.consistency'),
-                  range: tr('dashboard.ranges.ninetyDays'),
+                  meta: tr('dashboard.ranges.ninetyDays'),
                 ),
                 AdherenceHeatmap(args: widget.args),
               ],

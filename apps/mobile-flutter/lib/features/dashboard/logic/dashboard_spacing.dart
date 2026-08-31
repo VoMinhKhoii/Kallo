@@ -6,29 +6,28 @@ import '../../../theme/kallo_theme.dart';
 /// these steps, so greeting → week strip → section → section reads as a single
 /// stack instead of a pile of blocks each with its own margin.
 ///
-/// The tab moved off the design system's flat 12 when the dock became a set of
-/// dials sitting straight on the canvas rather than one bordered card. A card
-/// draws its own edge, so 12 between two of them is legible; unenclosed content
-/// has no edge, and at 12 the calorie dial, the macro dials and the meal list
-/// ran together into one undifferentiated column. The steps below are what
-/// replaced the missing borders — four sizes, each with one job.
+/// The native pass (2026-08-31) brought [block] back to the design system's
+/// flat 12. The 20 it ran at was compensation for a canvas one step off white,
+/// where unenclosed dials had nothing to separate them; on `#F4F3EF` a white
+/// card reads as its own object and the extra 8 only made the tab scroll
+/// longer. The one deliberate exception is [majorBreak].
 ///
 /// The logging feed's tighter 8px block is a separate documented exception for
 /// a dense scrolling list and does not apply here.
 abstract final class DashboardSpacing {
-  /// A label to the thing it labels: an eyebrow over its section, a macro
-  /// title over its dial. Deliberately the smallest step between two separate
-  /// elements, because a heading that floats reads as its own block.
+  /// A label to the thing it labels: a macro title over its dial. Deliberately
+  /// the smallest step between two separate elements, because a heading that
+  /// floats reads as its own block.
   static const double label = KalloSpacing.sp2; // 8
 
   /// Between the tab's stacked components: week strip ↔ section ↔ section, and
   /// the calorie dial ↔ the macro dials that qualify it.
-  static const double block = KalloSpacing.sp5; // 20
+  static const double block = KalloSpacing.sp3; // 12
 
   /// The one break that separates SUBJECTS rather than blocks: today's numbers
   /// from the meals behind them. Used once per section at most — a second one
   /// on the same screen and neither reads as a break any more.
-  static const double majorBreak = KalloSpacing.sp10; // 40
+  static const double majorBreak = KalloSpacing.sp5; // 20
 
   /// Inside a card: the space above/below the hairline and between the card's
   /// zones, and the vertical padding on one meal row.
