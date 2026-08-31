@@ -395,4 +395,47 @@ void main() {
       tester.getTopRight(find.text('776 kcal')).dx.roundToDouble(),
     }, hasLength(1));
   });
+
+  testWidgets('three-digit macros keep a real gutter between the columns', (
+    tester,
+  ) async {
+    // Reported from a device: a day's totals reach three digits routinely, and
+    // the Total row rendered `C:490gF: 184g` — the carb figure filled its cell
+    // exactly and the next label started 2pt later, so the two runs touched.
+    // The columns used to be parted by whatever air a short figure happened to
+    // leave over, which is nothing once every figure is three digits.
+    await tester.pumpWidget(_row('Bún bò', 153, 490, 184, 1794));
+
+    // Each figure ends before the next LABEL begins, by a gutter that is
+    // actually reserved rather than left over.
+    for (final pair in [('153g', 'C:'), ('490g', 'F:')]) {
+      final figureRight = tester.getRect(find.text(pair.$1)).right;
+      final nextLabelLeft = tester.getRect(find.text(pair.$2)).left;
+      expect(
+        nextLabelLeft - figureRight,
+        greaterThanOrEqualTo(8.0),
+        reason:
+            '${pair.$1} runs into ${pair.$2} — the gutter collapsed to '
+            '${(nextLabelLeft - figureRight).toStringAsFixed(1)}pt',
+      );
+    }
+
+    // The figures are taken in to pay for it, never clipped to a different
+    // number: a clipped `490g` reads as `49g`.
+    for (final figure in ['153g', '490g', '184g']) {
+      expect(find.text(figure), findsOneWidget);
+      expect(_paintedScale(tester, find.text(figure)), greaterThan(0.8));
+    }
+  });
+
+  testWidgets('the dish name still clears its longest word', (tester) async {
+    // The gutter above is paid for out of the figure columns, not this one.
+    // "Top blade" alone measures 83.0 at Body 17, so anything under ~84 sends
+    // the name back to the ellipsis the second line exists to prevent.
+    await tester.pumpWidget(_row('Top blade áp chảo', 37, 0, 14, 268));
+    expect(
+      tester.getSize(find.text('Top blade áp chảo')).width,
+      greaterThanOrEqualTo(84.0),
+    );
+  });
 }

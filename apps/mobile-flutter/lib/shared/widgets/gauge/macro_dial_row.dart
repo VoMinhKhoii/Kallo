@@ -152,6 +152,11 @@ class _MacroDial extends StatelessWidget {
           progress: target > 0 ? current / target : 0,
           radius: radius,
           fill: color,
+          // Both lines here are bare figures, so they must stay inside the
+          // ring: on device (2026-09-01) `202g` and `547g` ran across the
+          // stroke on both sides once a macro reached three digits, on the
+          // Today row and the Log header alike.
+          clampReadout: true,
           // Like the compact calorie dial beside it, the embedded variant's
           // gram readouts sit ONE tier under the full dial's (2026-09-01).
           // The Threads ramp had taken the compact figure to Body 17 — the

@@ -5,6 +5,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../logic/format.dart';
 import 'count_up.dart';
 import 'macro_columns.dart';
+import 'macro_split.dart';
 
 /// The `P: 65g  C: 0g  F: 2g   280 kcal` tail of a meal row, laid out in the
 /// shared [MacroColumns] rather than as a plain [Row] of variable-width text.
