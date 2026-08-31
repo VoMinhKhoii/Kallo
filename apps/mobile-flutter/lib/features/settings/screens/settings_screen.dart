@@ -8,6 +8,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../services/auth/session_provider.dart';
 import '../../../services/billing/entitlements_provider.dart';
+import '../../../shared/widgets/list/grouped_list_card.dart';
+import '../../../shared/widgets/list/list_row.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../theme/calm_tokens.dart';
@@ -25,22 +27,21 @@ import '../../onboarding/widgets/onboarding_nudge.dart';
 import '../widgets/profile/profile_form.dart';
 import '../widgets/profile/profile_status_views.dart';
 import '../widgets/profile/region_editor.dart';
+import '../widgets/profile/settings_profile_card.dart';
 import '../widgets/list/settings_group.dart';
 import '../widgets/chrome/settings_header.dart';
 import '../widgets/chrome/settings_navigator.dart';
-import '../widgets/list/settings_row.dart';
 import '../widgets/profile/settings_skeleton.dart';
 import '../widgets/account/sign_out_row.dart';
 import '../widgets/account/subscription_section.dart';
-import '../../circle/data/circle_providers.dart';
 import 'about_section.dart';
 import 'account_section.dart';
 import 'identity_section.dart';
 
-/// Settings tab — a single scrollable root of grouped preference rows, each
-/// pushing ONE focused editor. The numeric goal editor keeps the felt save bar;
-/// toggle/select editors instant-commit. A nested [Navigator] owns the drill-in
-/// so the `/settings` route stays one widget.
+/// Settings — a single scrollable root of grouped preference cards, each row
+/// pushing ONE focused editor. The numeric goal editor keeps the felt save
+/// bar; toggle/select editors instant-commit. A nested [Navigator] owns the
+/// drill-in so the `/settings` route stays one widget.
 ///
 /// Every route here — the root and each drill-in — is a [CupertinoPageRoute],
 /// so the whole stack swipes back edge-to-edge like the rest of the app.
@@ -54,8 +55,12 @@ class SettingsScreen extends StatelessWidget {
       const SettingsNavigator(root: _SettingsList());
 }
 
-/// Settings root: grouped preference rows with current-value sublines, the
-/// account group, and an about/legal group.
+/// Settings root: the person's card, grouped preference cards with
+/// current-value sublines, the account and about groups, sign out, version.
+///
+/// The whole list is one uniform 12pt stack (label, card, label, card…) —
+/// since the rows moved inside white cards the CARD is the grouping device,
+/// so no section needs a wider gap to be read as separate.
 class _SettingsList extends ConsumerWidget {
   const _SettingsList();
 
@@ -67,93 +72,92 @@ class _SettingsList extends ConsumerWidget {
     final profile = profileAsync.valueOrNull;
     final showSubscription = ref.watch(subscriptionSectionVisibleProvider);
 
+    final items = <Widget>[
+      // Resume-onboarding nudge — re-homed here from the retired drawer
+      // footer; the dashboard avatar's pulse-dot points at it.
+      if (ref.watch(onboardingResumeProvider))
+        OnboardingNudge(onResume: () => showOnboardingDialog(context, ref)),
+
+      SettingsProfileCard(onTap: () => _openIdentity(context)),
+
+      // ── Targets ─────────────────────────────────────────────────────────
+      SettingsGroup(
+        label: tr('settings.goals'),
+        children: [
+          ListRow(
+            icon: LucideIcons.target300,
+            label: tr('settings.rows.goalPace'),
+            subline: _goalPaceSubline(context, profile),
+            showChevron: true,
+            onTap: () => _push(context, _EditorKind.goal),
+          ),
+          // No subline: its description is the first thing the cooking editor
+          // itself shows, and in a single-line ellipsised slot it only ever
+          // rendered as a truncated fragment.
+          ListRow(
+            icon: LucideIcons.utensilsCrossed300,
+            label: tr('settings.rows.cooking'),
+            showChevron: true,
+            onTap: () => _push(context, _EditorKind.cooking),
+          ),
+        ],
+      ),
+
+      // ── Preferences ─────────────────────────────────────────────────────
+      SettingsGroup(
+        label: tr('settings.preferences'),
+        children: [
+          ListRow(
+            icon: LucideIcons.globe300,
+            label: tr('settings.rows.region'),
+            subline: _regionSubline(context, profile),
+            showChevron: true,
+            onTap: () => _push(context, _EditorKind.region),
+          ),
+          // Hidden until the profile loads (web parity) — an enabled switch
+          // with no profile row can only produce an error.
+          if (profile != null)
+            AutoShareToCircleToggle(value: profile.autoShareToCircle),
+        ],
+      ),
+
+      if (showSubscription) const SubscriptionSection(),
+
+      const AccountSection(),
+
+      // ── About — legal and the feedback row ─────────────────────────────
+      // It sits between the delete-account row and sign out, which is what
+      // keeps the session action people reach for by habit from stacking
+      // against the irreversible one.
+      const AboutSection(),
+
+      // ── Sign out — the last card on the screen ─────────────────────────
+      const GroupedListCard(children: [SignOutRow()]),
+
+      // The build's identity, quiet and unadorned under everything else.
+      Center(
+        child: Text(
+          '${tr('settings.about.version')} $kAppVersion',
+          style: dashMeta(),
+        ),
+      ),
+    ];
+
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        // The title sits on the header line itself, beside the back chevron —
-        // the same slot and the same serif the dashboard greeting uses, so
-        // every tab's title lands on one line across the app. Drill-ins render
-        // the identical bar with only this text swapped.
         header: SettingsHeader(
           title: tr('settings.title'),
-          // The root's back leaves the tab entirely, so it pops the ROUTER,
+          // The root's back leaves settings entirely, so it pops the ROUTER,
           // not the nested navigator.
           onBack: () => GoRouter.of(context).pop(),
         ),
-        child: ListView(
-          padding: SettingsSpacing.rowList,
-          children: [
-            // Resume-onboarding nudge — re-homed here from the retired
-            // drawer footer; the dashboard avatar's pulse-dot points at it.
-            if (ref.watch(onboardingResumeProvider)) ...[
-              OnboardingNudge(
-                onResume: () => showOnboardingDialog(context, ref),
-              ),
-              const SizedBox(height: KalloSpacing.sp3),
-            ],
-            // ── Preferences ─────────────────────────────────────────────
-            SettingsGroup(
-              label: tr('settings.preferences'),
-              children: [
-                SettingsRow(
-                  icon: LucideIcons.user300,
-                  label: tr('settings.identity.title'),
-                  subline: _identitySubline(ref),
-                  showChevron: true,
-                  onTap: () => _openIdentity(context),
-                ),
-                SettingsRow(
-                  icon: LucideIcons.target300,
-                  label: tr('settings.rows.goalPace'),
-                  subline: _goalPaceSubline(context, profile),
-                  showChevron: true,
-                  onTap: () => _push(context, _EditorKind.goal),
-                ),
-                // No subline: its description is the first thing the cooking
-                // editor itself shows, and in a single-line ellipsised slot it
-                // only ever rendered as a truncated fragment.
-                SettingsRow(
-                  icon: LucideIcons.utensilsCrossed300,
-                  label: tr('settings.rows.cooking'),
-                  showChevron: true,
-                  onTap: () => _push(context, _EditorKind.cooking),
-                ),
-                SettingsRow(
-                  icon: LucideIcons.globe300,
-                  label: tr('settings.rows.region'),
-                  subline: _regionSubline(context, profile),
-                  showChevron: true,
-                  onTap: () => _push(context, _EditorKind.region),
-                ),
-                // Hidden until the profile loads (web parity) — an enabled
-                // switch with no profile row can only produce an error.
-                if (profile != null)
-                  AutoShareToCircleToggle(value: profile.autoShareToCircle),
-              ],
-            ),
-
-            // The one conditional section on the screen, so the gap above it
-            // belongs to the condition too: a section that hid itself while
-            // the parent kept emitting both gaps left a 48px void behind.
-            if (showSubscription) ...[
+        child: ListView.separated(
+          padding: SettingsSpacing.rowList(context),
+          itemCount: items.length,
+          itemBuilder: (_, i) => items[i],
+          separatorBuilder: (_, __) =>
               const SizedBox(height: SettingsSpacing.group),
-              const SubscriptionSection(),
-            ],
-
-            const SizedBox(height: SettingsSpacing.group),
-            const AccountSection(),
-
-            // ── About — version, legal, and the feedback row ───────────
-            // It sits between the delete-account row and sign out, which is
-            // what keeps the session action people reach for by habit from
-            // stacking against the irreversible one.
-            const SizedBox(height: SettingsSpacing.group),
-            const AboutSection(),
-
-            // ── Sign out — the last row on the screen ──────────────────
-            const SizedBox(height: SettingsSpacing.group),
-            const SignOutRow(),
-          ],
         ),
       ),
     );
@@ -169,13 +173,6 @@ class _SettingsList extends ConsumerWidget {
     Navigator.of(
       context,
     ).push(CupertinoPageRoute<void>(builder: (_) => const IdentityScreen()));
-  }
-
-  /// The saved display name, else the invite handle, else "Not set".
-  String _identitySubline(WidgetRef ref) {
-    final profile = ref.watch(myCircleProfileProvider).valueOrNull;
-    if (profile == null) return tr('settings.rows.notSet');
-    return profile.label;
   }
 
   /// "Cutting · 0.50 kg/wk" — the saved goal + pace, or "Not set" when no

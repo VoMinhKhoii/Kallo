@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../services/http/api_client.dart';
 import '../../../services/billing/entitlements_provider.dart';
 import '../../../services/auth/session_provider.dart';
+import '../../../shared/widgets/form/kallo_text_field.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
@@ -84,7 +85,7 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
       child: ScrollSeparator(
         header: SettingsHeader(title: tr('settings.account.deleteScreenTitle')),
         child: SingleChildScrollView(
-          padding: SettingsSpacing.page,
+          padding: SettingsSpacing.page(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -93,13 +94,14 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
               Text(tr('settings.account.deleteConsequence'), style: dashBody()),
               const SizedBox(height: KalloSpacing.sp3),
               Container(
-                padding: const EdgeInsets.all(KalloSpacing.sp3),
+                padding: const EdgeInsets.all(KalloSpacing.sp4),
                 decoration: BoxDecoration(
                   color: KalloColors.danger.withValues(alpha: 0.06),
                   border: Border.all(
                     color: KalloColors.danger.withValues(alpha: 0.3),
                   ),
-                  borderRadius: BorderRadius.circular(KalloRadii.xxxl),
+                  // Card radius: it IS a card, just the one tinted red.
+                  borderRadius: BorderRadius.circular(KalloRadii.card),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -132,28 +134,14 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
                 style: dashMeta(),
               ),
               const SizedBox(height: 6),
-              TextField(
+              KalloTextField(
                 controller: _controller,
+                hintText: tr('settings.account.deleteConfirmWord'),
+                // The value has to match a literal word — autocorrect and
+                // suggestions can only get in the way of typing it.
                 autocorrect: false,
                 enableSuggestions: false,
                 textCapitalization: TextCapitalization.characters,
-                style: dashBody(),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: KalloColors.surface,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-                    borderSide: const BorderSide(color: KalloColors.border),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-                    borderSide: const BorderSide(color: KalloColors.danger),
-                  ),
-                ),
               ),
               const SizedBox(height: KalloSpacing.sp4),
               _DeleteButton(
@@ -169,6 +157,13 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
   }
 }
 
+/// The one SOLID-red button in the app.
+///
+/// It is not a [KalloButton] variant on purpose: the system's `danger` is a
+/// quiet red-on-transparent affordance for reversible destructive rows, and
+/// this is the irreversible confirm at the end of a type-to-confirm gate — the
+/// one place a filled red belongs. Everything else about it is the button
+/// system: 50pt, fully rounded, 14/500 label.
 class _DeleteButton extends StatelessWidget {
   const _DeleteButton({
     required this.enabled,
@@ -182,34 +177,42 @@ class _DeleteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: enabled ? 1.0 : 0.4,
-      child: GestureDetector(
-        onTap: enabled ? onTap : null,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: KalloColors.danger,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
-          ),
-          child: Center(
-            child:
-                deleting
-                    ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      excludeSemantics: true,
+      label: tr('settings.account.deleteConfirmAction'),
+      onTap: enabled ? onTap : null,
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.4,
+        child: GestureDetector(
+          onTap: enabled ? onTap : null,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 50),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              color: KalloColors.danger,
+              borderRadius: BorderRadius.circular(KalloRadii.button),
+            ),
+            child: Center(
+              child:
+                  deleting
+                      ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : Text(
+                        tr('settings.account.deleteConfirmAction'),
+                        style: dashBody(
+                          weight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
                       ),
-                    )
-                    : Text(
-                      tr('settings.account.deleteConfirmAction'),
-                      style: dashBody(
-                        weight: FontWeight.w500,
-                        color: Colors.white,
-                      ),
-                    ),
+            ),
           ),
         ),
       ),

@@ -25,6 +25,7 @@ class ListRow extends StatefulWidget {
     this.onTap,
     this.danger = false,
     this.enabled = true,
+    this.busy = false,
     this.showChevron = false,
     this.trailing,
   });
@@ -46,6 +47,12 @@ class ListRow extends StatefulWidget {
   final VoidCallback? onTap;
   final bool danger;
   final bool enabled;
+
+  /// An action started from this row is in flight — a 14pt spinner replaces
+  /// the value/chevron until it settles (account link/unlink, export, restore,
+  /// sign out). Pair with `enabled: false` to gate re-taps.
+  final bool busy;
+
   final bool showChevron;
   final Widget? trailing;
 
@@ -136,6 +143,15 @@ class _ListRowState extends State<ListRow> {
   }
 
   Widget _trailing() {
+    // A row waiting on its own action shows the spinner INSTEAD of its
+    // value/chevron — the affordance it replaces is exactly what is pending.
+    if (widget.busy) {
+      return const SizedBox(
+        width: 14,
+        height: 14,
+        child: CircularProgressIndicator(strokeWidth: 2, color: kInkMuted),
+      );
+    }
     final List<Widget> parts = [
       if (widget.value != null)
         Text(widget.value!, style: dashMeta(tabular: true)),

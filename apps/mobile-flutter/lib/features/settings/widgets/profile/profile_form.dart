@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../logging/widgets/macros/count_up.dart';
+import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -21,7 +22,7 @@ import 'profile_form_values.dart';
 /// The "Goal & pace" focused editor — the one numeric settings surface, so it
 /// keeps the felt floating Save/Cancel bar (toggle/select editors instant-commit
 /// instead). Renders the body-metrics + goal/pace/split/target panel inside a
-/// cream card; the bar fades in when the form is dirty and morphs into a
+/// white card; the bar fades in when the form is dirty and morphs into a
 /// "Changes saved · N kcal/day" confirmation on save.
 class ProfileForm extends ConsumerStatefulWidget {
   const ProfileForm({super.key, required this.profile});
@@ -136,14 +137,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   style: dashMeta(),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(KalloSpacing.sp3),
-                decoration: BoxDecoration(
-                  color: KalloColors.cream,
-                  borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-                  border: Border.all(color: KalloColors.inputBorder),
-                ),
-                child: const BodyMetrics(),
+              const KalloCard(
+                padding: EdgeInsets.all(KalloSpacing.sp4),
+                child: BodyMetrics(),
               ),
             ],
           ),
@@ -284,8 +280,10 @@ class _SaveBarState extends State<_SaveBar>
   }
 }
 
-/// The floating rounded-2xl card: full border, cream/95 fill, shadow-lg,
-/// backdrop blur. Right-aligned Cancel + Save.
+/// The floating save card: radius 22, translucent surface + backdrop blur,
+/// and the sheet-grade shadow. It is TRUE elevation (it floats over scrolling
+/// content), which is the one case the native pass still lets a surface cast a
+/// shadow — and the reason it needs no border to separate.
 class _BackdropCard extends StatelessWidget {
   const _BackdropCard({
     required this.errorText,
@@ -306,18 +304,17 @@ class _BackdropCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(KalloRadii.containerLg), // rounded-2xl
+      borderRadius: BorderRadius.circular(KalloRadii.card),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // backdrop-blur-sm
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp5, // px-5
-            vertical: 14, // py-3.5
+            horizontal: KalloSpacing.sp4,
+            vertical: KalloSpacing.sp2,
           ),
           decoration: BoxDecoration(
-            color: KalloColors.cream95,
-            borderRadius: BorderRadius.circular(KalloRadii.containerLg),
-            border: Border.all(color: KalloColors.inputBorder),
+            color: KalloColors.elevTranslucent,
+            borderRadius: BorderRadius.circular(KalloRadii.card),
             boxShadow: const [
               // shadow-lg
               BoxShadow(
@@ -353,62 +350,25 @@ class _BackdropCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        _GhostButton(
-                          label: tr('common.cancel'),
-                          onTap: saving ? null : onCancel,
+                        KalloButton(
+                          title: tr('common.cancel'),
+                          variant: KalloButtonVariant.ghost,
+                          disabled: saving,
+                          onPressed: onCancel,
                         ),
-                        const SizedBox(width: KalloSpacing.sp3),
-                        _SaveButton(
-                          saving: saving,
-                          onTap: saving ? null : onSave,
+                        const SizedBox(width: KalloSpacing.sp2),
+                        // Beige, not the black CTA it used to be: black is
+                        // reserved for auth and paywall since the native pass,
+                        // and this is an ordinary in-app primary.
+                        KalloButton(
+                          title: tr('settings.save'),
+                          loading: saving,
+                          onPressed: onSave,
                         ),
                       ],
                     ),
                   ],
                 ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GhostButton extends StatefulWidget {
-  const _GhostButton({required this.label, required this.onTap});
-  final String label;
-  final VoidCallback? onTap;
-
-  @override
-  State<_GhostButton> createState() => _GhostButtonState();
-}
-
-class _GhostButtonState extends State<_GhostButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    // Cancel hover: bg → #F5F4F0 AND text darkens #7B6F62 → #2C2416.
-    return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150), // transition-colors
-        padding: const EdgeInsets.symmetric(
-          horizontal: KalloSpacing.sp5, // px-5
-          vertical: 10, // py-2.5
-        ),
-        decoration: BoxDecoration(
-          color: _pressed ? KalloColors.track : Colors.transparent,
-          borderRadius: BorderRadius.circular(KalloRadii.buttonXl), // rounded-xl
-        ),
-        child: AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 150),
-          style: dashBody(
-            weight: FontWeight.w500,
-            color: _pressed ? kInk : kInkMuted,
-          ),
-          child: Text(widget.label),
         ),
       ),
     );
@@ -459,60 +419,6 @@ class _SavedConfirmation extends StatelessWidget {
           style: dashBody(weight: FontWeight.w500, tabular: true),
         ),
       ],
-    );
-  }
-}
-
-class _SaveButton extends StatefulWidget {
-  const _SaveButton({required this.saving, required this.onTap});
-  final bool saving;
-  final VoidCallback? onTap;
-
-  @override
-  State<_SaveButton> createState() => _SaveButtonState();
-}
-
-class _SaveButtonState extends State<_SaveButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    // bg #2C2416, hover:bg-#1C1917, text #FDFCF8, shadow-sm, transition-all.
-    return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: Opacity(
-        opacity: widget.saving ? 0.5 : 1,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150), // transition-all
-          constraints: const BoxConstraints(minWidth: 88),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(
-            horizontal: KalloSpacing.sp5, // px-5
-            vertical: 10, // py-2.5
-          ),
-          decoration: BoxDecoration(
-            color: _pressed ? KalloColors.btnDarkHover : KalloColors.text,
-            borderRadius: BorderRadius.circular(KalloRadii.buttonXl), // rounded-xl
-            boxShadow: const [KalloShadows.sm],
-          ),
-          child: widget.saving
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(KalloColors.cream),
-                  ),
-                )
-              : Text(
-                  tr('settings.save'),
-                  style: dashBody(weight: FontWeight.w500, color: KalloColors.cream),
-                ),
-        ),
-      ),
     );
   }
 }

@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/onboarding_providers.dart';
+import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 
-/// Mobile onboarding nudge — now the top card in Settings (it lived in the
-/// retired drawer): a white card
-/// with an accent ring, a step counter, title, description, progress bar and
-/// the umber CTA.
+/// Mobile onboarding nudge — the top card in Settings (it lived in the retired
+/// drawer): a white card with an accent ring, a step counter, title,
+/// description, progress bar and one CTA.
 ///
 /// On the calm scale like everything else: Body 14 for the title, Meta 12 for
 /// the counter and description, `kInk`/`kInkMuted` only. It kept a 10px
@@ -18,10 +18,12 @@ import '../../../theme/kallo_theme.dart';
 /// the app moved — three sizes none of which were on the scale, and the loose
 /// leading that made every surface read padded.
 ///
-/// The ring stays: this is a nudge, not a data card, and the accent hairline
-/// is what separates it from the nav rows above it. The umber CTA stays too —
-/// it is the single primary action on the surface, which is exactly what the
-/// umber is reserved for.
+/// It shares the grouped cards' metrics (`kCardRadius` 22, 16 padding) so it
+/// reads as the first card of the same list. The ring is the ONE thing that
+/// separates it: this is a nudge, not a data card. The CTA is an ordinary
+/// in-app primary — beige [KalloButton] — since the native pass reserved umber
+/// for toggles and progress fills, and its own progress bar is already umber's
+/// job on this very card.
 class OnboardingNudge extends ConsumerWidget {
   const OnboardingNudge({required this.onResume, super.key});
 
@@ -88,60 +90,13 @@ class OnboardingNudge extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: KalloSpacing.sp3),
-          NudgeCta(onTap: onResume),
+          KalloButton(
+            title: tr('app.onboardingNudge.cta'),
+            onPressed: onResume,
+          ),
         ],
       ),
     );
   }
 }
 
-/// Umber CTA inside the nudge — full-width, radius 8, Body 14 medium in white,
-/// btn→btnHover press shift over ~150ms.
-class NudgeCta extends StatefulWidget {
-  const NudgeCta({required this.onTap, super.key});
-
-  final VoidCallback onTap;
-
-  @override
-  State<NudgeCta> createState() => _NudgeCtaState();
-}
-
-class _NudgeCtaState extends State<NudgeCta> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeInOut,
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: KalloSpacing.sp3,
-          vertical: KalloSpacing.sp2,
-        ),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: _pressed ? KalloColors.btnHover : KalloColors.btn,
-          borderRadius: BorderRadius.circular(KalloRadii.md),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x33695E4E),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Text(
-          tr('app.onboardingNudge.cta'),
-          style: dashBody(color: Colors.white, weight: FontWeight.w500),
-        ),
-      ),
-    );
-  }
-}

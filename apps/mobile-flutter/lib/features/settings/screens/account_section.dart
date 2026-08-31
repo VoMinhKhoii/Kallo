@@ -14,10 +14,10 @@ import '../../../services/auth/session_provider.dart';
 import '../../../shared/widgets/brand/apple_logo.dart';
 import '../../../shared/widgets/dialog/kallo_confirm.dart';
 import '../../../shared/widgets/brand/google_logo.dart';
+import '../../../shared/widgets/list/list_row.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
+import '../../../theme/kallo_theme.dart';
 import '../widgets/list/settings_group.dart';
-import '../widgets/list/settings_row.dart';
-import '../widgets/list/settings_row_leading.dart';
 import 'account_delete_screen.dart';
 
 /// OAuth redirect for the manual-link browser flow — reuses the `nham://`
@@ -179,7 +179,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     final key = provider.name;
     final total = _identities?.length ?? 0;
     if (_isLinked(key)) {
-      return SettingsRow(
+      return ListRow(
         leading: leading,
         label: connectedLabel,
         busy: _busyProvider == key,
@@ -190,7 +190,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
                 _disconnect(_identities!.firstWhere((i) => i.provider == key)),
       );
     }
-    return SettingsRow(
+    return ListRow(
       leading: leading,
       label: connectLabel,
       busy: _busyProvider == key,
@@ -234,7 +234,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     // user's linked methods).
     if (_identities == null && _loadFailed) {
       rows.add(
-        SettingsRow(
+        ListRow(
           icon: LucideIcons.refreshCw300,
           label: tr('settings.account.loadError'),
           busy: _retrying,
@@ -246,7 +246,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       rows.add(
         _providerRow(
           OAuthProvider.google,
-          const GoogleLogo(size: kSettingsRowIcon),
+          const GoogleLogo(size: KalloIcons.size),
           tr('settings.account.connectGoogle'),
           tr('settings.account.googleConnected'),
         ),
@@ -256,7 +256,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         rows.add(
           _providerRow(
             OAuthProvider.apple,
-            const AppleLogo(size: kSettingsRowIcon),
+            const AppleLogo(size: KalloIcons.size),
             tr('settings.account.connectApple'),
             tr('settings.account.appleConnected'),
           ),
@@ -265,7 +265,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     }
 
     rows.add(
-      SettingsRow(
+      ListRow(
         icon: LucideIcons.download300,
         label: tr('settings.account.exportTitle'),
         busy: _exporting,
@@ -274,7 +274,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       ),
     );
     rows.add(
-      SettingsRow(
+      ListRow(
         icon: LucideIcons.trash2300,
         label: tr('settings.account.delete'),
         danger: true,
