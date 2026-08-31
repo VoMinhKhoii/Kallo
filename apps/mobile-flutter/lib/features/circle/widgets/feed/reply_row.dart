@@ -33,7 +33,7 @@ class ReplyRow extends StatelessWidget {
                     // author of the thing being replied to.
                     TextSpan(
                       text: name,
-                      style: dashBody(weight: FontWeight.w600),
+                      style: dashName(),
                     ),
                     TextSpan(
                       text:

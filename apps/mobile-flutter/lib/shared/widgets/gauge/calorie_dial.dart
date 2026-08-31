@@ -56,8 +56,9 @@ class CalorieDial extends StatelessWidget {
   /// The variant for a surface that draws the dial inside a fixed header above
   /// a scrolling day, rather than giving it the top of the screen.
   ///
-  /// Half the radius, the headline steps from Hero 40 to Value 17, and both
-  /// lower lines shorten. The radius forces that: on the tip line the mouth is
+  /// Half the radius, the headline steps from Hero 40 to Meta 15/500, and both
+  /// lower lines shorten AND step down a tier with it (Meta 15 unit, Caption 13
+  /// detail — 2026-09-01). The radius forces that: on the tip line the mouth is
   /// only ~0.56× the radius each side, so at 52 it holds ~58pt, and the dock's
   /// "kcal remaining" measures 102. The unit becomes one word, and the detail
   /// drops to the bare fraction — figures and a slash, which every locale
@@ -95,17 +96,25 @@ class CalorieDial extends StatelessWidget {
       radius: radius,
       // The calorie mark's own colour, as on the ring and the week strip.
       fill: KalloColors.accent,
+      // The compact dial's three readouts each sit ONE tier under the full
+      // dial's (2026-09-01). The Threads ramp lifted every one of them — and
+      // inside a 52pt arc in a fixed header, that is the one place in the app
+      // where bigger type buys nothing: the figures are glanced at, not read,
+      // and at Body 17 / Meta 15 they crowded the mouth of the arc and pushed
+      // the header down over the day. The full-size dial keeps the ramp.
       primary: GaugeLine(
         fmt(readout.headline),
-        _isCompact ? dashValue() : dashHero(),
+        _isCompact
+            ? dashMeta(color: kInk, weight: FontWeight.w500, tabular: true)
+            : dashHero(),
       ),
       secondary: GaugeLine(
         tr(_isCompact ? unit.compact : unit.full),
-        dashBody(color: kInkMuted),
+        _isCompact ? dashMeta() : dashBody(color: kInkMuted),
       ),
       tertiary: GaugeLine(
         _detail(readout, fmt, fraction),
-        dashMeta(tabular: true),
+        _isCompact ? dashCaption(tabular: true) : dashMeta(tabular: true),
       ),
     );
   }

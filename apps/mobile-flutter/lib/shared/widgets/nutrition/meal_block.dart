@@ -109,7 +109,13 @@ class MealBlock extends StatelessWidget {
                       color: kCompositionColors[key],
                     ),
                     const SizedBox(width: 4),
-                    Text(gramLabels[key]!, style: dashMeta()),
+                    // Caption 13, not Meta 15 (Threads scale, 2026-09-01).
+                    // This legend is three icon+figure pairs and a kcal total
+                    // on ONE line: at Meta 15 it measures 253.4pt of legend
+                    // plus a 73.9pt kcal, which does not fit a 320pt phone's
+                    // card. The tier exists for exactly this — a compact
+                    // component the secondary size visibly breaks.
+                    Text(gramLabels[key]!, style: dashCaption()),
                   ],
                 ),
             if (kcalPlacement == MealBlockKcal.legendTrailing && kcal != null)

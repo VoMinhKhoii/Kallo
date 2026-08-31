@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_motion.dart';
+import '../../logic/logging_spacing.dart';
 import '../../logic/timeline_utils.dart';
 import 'timeline_day_cell.dart';
 import 'timeline_nav_button.dart';
@@ -151,7 +152,7 @@ class _TimelineStripState extends State<TimelineStrip> {
     final locale = context.locale.toString();
 
     return SizedBox(
-      height: 56,
+      height: LoggingSpacing.strip,
       child: Row(
         children: [
           TimelineNavButton(

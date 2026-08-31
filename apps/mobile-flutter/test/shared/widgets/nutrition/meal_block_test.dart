@@ -4,11 +4,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/shared/logic/macro_composition.dart';
 import 'package:kallo_mobile/shared/widgets/nutrition/meal_block.dart';
 
+import '../../../app_fonts.dart';
+
 Widget _wrap(MealBlock block) => MaterialApp(
   home: Scaffold(body: SizedBox(width: 358, child: block)),
 );
 
 void main() {
+  // The legend row is width-critical — three icon+figure pairs and a kcal
+  // total on one 358pt line — and a RenderFlex overflow fails these tests by
+  // itself. Without the real typeface every glyph is one em wide, which
+  // inflates the row past 358 and reports an overflow the app does not have.
+  // See `app_fonts.dart`.
+  setUpAll(loadAppFonts);
+
   final composition = compositionFromGrams((
     protein: 30,
     carbohydrate: 50,

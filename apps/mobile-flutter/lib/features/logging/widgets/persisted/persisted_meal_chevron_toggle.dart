@@ -60,10 +60,10 @@ class _PersistedMealChevronToggleState
               turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
               child: const Icon(
                 LucideIcons.chevronDown300, // lucide ChevronDown
-                // 20, between the card's 14pt text and the 24pt action row
-                // below it, and muted: this is furniture ON the card, not one
-                // of the card's actions.
-                size: 20,
+                // The tertiary tier (18), under the 21pt action row below it,
+                // and muted: this is furniture ON the card, not one of the
+                // card's actions (Threads icon tiers, 2026-09-01 — was 20).
+                size: LoggingIcons.size,
                 color: KalloColors.textMuted,
               ),
             ),

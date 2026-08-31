@@ -50,7 +50,7 @@ class ManualAddedSummary extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            for (final key in kCompositionKeys)
+for (final key in kCompositionKeys)
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -60,7 +60,10 @@ class ManualAddedSummary extends StatelessWidget {
                     color: kCompositionColors[key],
                   ),
                   const SizedBox(width: 4),
-                  Text(labels[key]!, style: dashMeta()),
+                  // Caption 13, not Meta 15 — same one-line macro legend as
+                  // [MealBlock]; on a 320pt phone Meta 15 needed 288.2pt of a
+                  // 288pt row (Threads scale, 2026-09-01).
+                  Text(labels[key]!, style: dashCaption()),
                 ],
               ),
             Text(

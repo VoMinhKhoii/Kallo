@@ -152,3 +152,7 @@ Path gaugeOverCapPath({
 /// Where the dial's two tips sit below its centre — the line the readout's
 /// secondary text is centred on, so type and dial share one baseline.
 double gaugeTipOffset(double outerRadius) => outerRadius / 2;
+
+/// The inner edge of the band — the radius of the dial's clear middle.
+double gaugeInnerRadius(double outerRadius) =>
+    outerRadius - outerRadius * _bandRatio;
