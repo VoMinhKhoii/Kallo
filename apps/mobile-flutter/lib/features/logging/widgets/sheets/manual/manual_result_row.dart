@@ -124,7 +124,11 @@ class _AddCircle extends StatelessWidget {
       ),
       // Stroke 2.0 (the `400` family): at 18pt inside a filled 32 disc the
       // 1.5 default reads hairline against the beige.
-      child: const Icon(LucideIcons.plus400, size: 18, color: kInk),
+      child: const Icon(
+        LucideIcons.plus400,
+        size: KalloIcons.tertiary,
+        color: kInk,
+      ),
     );
   }
 }

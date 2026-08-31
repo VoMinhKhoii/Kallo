@@ -157,7 +157,14 @@ class _ListRowState extends State<ListRow> {
         Text(widget.value!, style: dashMeta(tabular: true)),
       if (widget.trailing != null) widget.trailing!,
       if (widget.showChevron)
-        const Icon(LucideIcons.chevronRight300, size: 16, color: kInkMuted),
+        // Disclosure chevrons join the tertiary tier (18) rather than keeping
+        // a private 16 (Threads icon tiers, 2026-09-01): beside a 17pt row
+        // label a 16pt chevron read as a speck.
+        const Icon(
+          LucideIcons.chevronRight300,
+          size: KalloIcons.tertiary,
+          color: kInkMuted,
+        ),
     ];
     if (parts.isEmpty) return const SizedBox.shrink();
     return Row(

@@ -177,18 +177,23 @@ void main() {
   });
 
   testWidgets('keeps it at the app\'s largest text scale too', (tester) async {
-    // `app.dart` clamps scaling at 1.3, where `240 kcal` grows to 78.5 against
-    // a 74pt column. It is taken in a little — NOT clipped, which is the
-    // guarantee that matters and the one the reported bug broke.
+    // `app.dart` clamps scaling at 1.3, where `240 kcal` grows to 95.4 against
+    // a 74pt column. It is taken in — NOT clipped, which is the guarantee that
+    // matters and the one the reported bug broke.
     //
     // The column used to be 80, which absorbed 1.3x outright. It was narrowed
     // deliberately: its width is what sets where the P/C/F block stops, and at
-    // 80 the macros sat a visible hole away from the calories on every row. A
-    // 4% reduction at the largest accessibility scale is the price.
+    // 80 the macros sat a visible hole away from the calories on every row.
+    //
+    // The bound was 0.9 while the row figure was Body 14 (73.4 → 78.5 at
+    // 1.3x). On the Threads scale (2026-09-01) that figure is Body 17, so it
+    // already fills the column at 1.0x and 1.3x now costs ~22%. The user still
+    // gains from scaling — 17 × 1.3 × 0.78 ≈ 17.5pt is larger than the 17pt
+    // they started at — and the figure is still whole, which is the claim.
     await tester.pumpWidget(_row('Cơm trắng', 5, 54, 0, 240, textScale: 1.3));
     expect(find.text('240 kcal'), findsOneWidget);
     final scale = _paintedScale(tester, find.text('240 kcal'));
-    expect(scale, greaterThan(0.9), reason: 'taken in further than intended');
+    expect(scale, greaterThan(0.75), reason: 'taken in further than intended');
     expect(scale, lessThanOrEqualTo(1.0));
   });
 

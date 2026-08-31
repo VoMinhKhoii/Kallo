@@ -14,7 +14,10 @@ import '../../../../theme/kallo_theme.dart';
 /// as well as off the layout — the pull is paid by the day card's post padding
 /// instead (see `feed_day_group.dart`), which moves the same pixels with all
 /// 44pt intact.
-const double _glyph = KalloIcons.size;
+// Heart / comment / Eat-this are actions ON a post, so they take the
+// card-action tier (21) rather than the navigation 24 (Threads icon tiers,
+// 2026-09-01). The 44pt target is untouched.
+const double _glyph = KalloIcons.action;
 const double _hit = KalloIcons.hit;
 
 /// Actions sit one step darker than the calm secondary.
@@ -27,7 +30,7 @@ const double _hit = KalloIcons.hit;
 /// controls need to look pressable.
 const Color _actionInk = KalloColors.textSoft;
 
-/// One Circle-post action: a 24pt glyph centred in a 44pt square, with an
+/// One Circle-post action: a 21pt glyph centred in a 44pt square, with an
 /// optional label riding alongside it INSIDE the same target — so a labelled
 /// action grows sideways rather than growing a second hit box.
 class FeedActionButton extends StatelessWidget {

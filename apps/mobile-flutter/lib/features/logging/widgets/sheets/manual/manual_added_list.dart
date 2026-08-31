@@ -111,7 +111,7 @@ class _AddedRow extends StatelessWidget {
             child: IconButton(
               padding: EdgeInsets.zero,
               onPressed: disabled ? null : onRemove,
-              icon: const Icon(LucideIcons.x300, size: 18),
+              icon: const Icon(LucideIcons.x300, size: KalloIcons.tertiary),
               color: KalloColors.textMuted,
               tooltip: 'logging.manualLogging.removeItem'.tr(),
             ),

@@ -12,18 +12,24 @@ import '../../../../theme/kallo_theme.dart';
 /// each row's text decide them, is what makes the column true down the card and
 /// across the card's item rows, its totals line, and the `/` picker's options.
 abstract final class MacroColumns {
-  /// The `P:` box. Fits the widest label (`C:` at 12.7 in Be Vietnam Pro at
-  /// Meta 12) and nothing else, so the label sits tight against its own figure
-  /// instead of being flung to the far side of the cell.
-  static const double label = 14;
+  /// The `P:` box. Fits the widest label (`C:` at 13.8 in Be Vietnam Pro at
+  /// Caption 13) and nothing else, so the label sits tight against its own
+  /// figure instead of being flung to the far side of the cell.
+  ///
+  /// Re-measured for the Threads scale (2026-09-01): the cluster sits on
+  /// Caption 13 rather than the new Meta 15 — see [MacroSplit] for why — and at
+  /// the old 14 the colon of `C:` clipped outright.
+  static const double label = 15;
 
-  /// Sized for the widest figure a meal actually reaches — `277g` at 29.2 —
-  /// not for the widest one arithmetic allows (`999g` at 32.2, which scales to
-  /// 0.94 and does not occur in a meal). The difference is 3pt of dead air per
+  /// Sized for the widest figure a meal actually reaches — `277g` at 31.6 —
+  /// not for the widest one arithmetic allows (`999g` at 34.9, which scales to
+  /// 0.95 and does not occur in a meal). The difference is ~3pt of dead air per
   /// cell, times three cells, in a row that has none to spare.
   ///
+  /// Re-measured for the Threads scale (2026-09-01, Caption 13).
+  ///
   /// The font ignores the `tnum` feature this style asks for, so digits are
-  /// genuinely variable-width: `188g` is 27.6 and `277g` is 29.2. There is no
+  /// genuinely variable-width: `188g` is 29.8 and `277g` is 31.6. There is no
   /// single "three digits" width to size to, which is the other reason the
   /// figures are pinned left rather than right — a right-aligned column of
   /// non-tabular digits is ragged on both edges.
@@ -38,13 +44,22 @@ abstract final class MacroColumns {
   /// the same numbers just as well, but it strands each label 17pt from its own
   /// one-digit figure — `P:` and `0g` at opposite ends of the cell with a hole
   /// between them.
-  static const double value = 30;
+  static const double value = 33;
 
   /// One macro's full cell.
   static const double cell = label + value;
 
-  /// Sized for `999 kcal` at Value 17 (72.9) — every three-digit total at full
-  /// size, and every item row's Body 14 figure with room to spare.
+  /// Sized for `999 kcal` at Value 17 (73.9) — every three-digit total at full
+  /// size.
+  ///
+  /// The item rows used to clear it with room to spare at Body 14; on the
+  /// Threads scale (2026-09-01) their figure is also 17, so a three-digit row
+  /// kcal now fills the column exactly at 1.0x and is taken in by the
+  /// [MacroKcal] `FittedBox` past that. Never clipped — that is the guarantee
+  /// this column exists to make — but the slack at the 1.3x Dynamic Type
+  /// ceiling is gone. Widening it is not the fix: this width is what sets
+  /// where the P/C/F block stops, and every extra point reads as a hole
+  /// between the macros and the calories on every row.
   ///
   /// This column is SHARED with the totals line by necessity: both readouts end
   /// at the card's right edge, so its width is what sets where the P/C/F block
@@ -67,7 +82,7 @@ abstract final class MacroColumns {
 /// `P: 65g  C: 0g  F: 2g` in the shared cells: labels at one fixed x, figures
 /// at another a label-width over.
 ///
-/// [dashMeta] still asks for tabular figures. Be Vietnam Pro ignores `tnum`, so
+/// [dashCaption] still asks for tabular figures. Be Vietnam Pro ignores `tnum`, so
 /// it buys nothing here — but the request costs nothing and holds if the family
 /// ever ships the feature.
 class MacroSplit extends StatelessWidget {
@@ -142,7 +157,15 @@ class _Cell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = dashMeta(tabular: true);
+    // Caption 13, not Meta 15 (Threads scale, 2026-09-01). This is the card's
+    // densest component: three label+figure cells sharing one row with a 17pt
+    // dish name and a 74pt kcal column, inside the 334pt a row really gets on
+    // a 390pt phone. At Meta 15 the cells grew to 54 each and squeezed the
+    // name column from 96pt to 78 — at which point a real dish name
+    // ("Top blade áp chảo", 155.4pt) no longer fit the two lines it is
+    // allowed. The figures are a dense numeric cluster, the name is reading
+    // text: the cluster gives way.
+    final style = dashCaption(tabular: true);
     final value = grams == null ? 'N/A' : '${grams!.round()}g';
 
     Widget fit(String text) => Align(

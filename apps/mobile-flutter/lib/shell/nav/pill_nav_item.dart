@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/circle/data/circle_providers.dart';
 import '../../theme/calm_tokens.dart';
+import '../../theme/kallo_theme.dart';
 import '../../theme/kallo_typography.dart';
 import '../header/app_header_status_dots.dart';
 
@@ -54,7 +55,7 @@ class PillNavItem extends ConsumerWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Icon(icon, size: 24, color: color),
+                  Icon(icon, size: KalloIcons.primary, color: color),
                   if (hasInvites)
                     const Positioned(top: -2, right: -2, child: InviteBadge()),
                 ],

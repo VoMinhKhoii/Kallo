@@ -77,7 +77,14 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
                     height: LoggingIcons.wash,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
-                    child: Icon(LucideIcons.check400, size: 18, color: fg),
+                    // The confirm check is an action ON the card, so it takes
+                    // the card-action tier (Threads icon tiers, 2026-09-01 —
+                    // was 18) inside its 32pt circle.
+                    child: Icon(
+                      LucideIcons.check400,
+                      size: LoggingIcons.action,
+                      color: fg,
+                    ),
                   ),
                 ),
               ),

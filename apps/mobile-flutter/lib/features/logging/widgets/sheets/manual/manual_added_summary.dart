@@ -49,7 +49,10 @@ class ManualAddedSummary extends StatelessWidget {
             for (final key in kCompositionKeys) ...[
               Icon(kMacroIcons[key], size: 14, color: kCompositionColors[key]),
               const SizedBox(width: 4),
-              Text(labels[key]!, style: dashMeta()),
+              // Caption 13, not Meta 15 — same one-line macro legend as
+              // `MealBlock`, and on a 320pt phone it needed 288.2pt of a
+              // 288pt row at Meta 15 (Threads scale, 2026-09-01).
+              Text(labels[key]!, style: dashCaption()),
               if (key != kCompositionKeys.last) const SizedBox(width: 14),
             ],
             const Spacer(),
