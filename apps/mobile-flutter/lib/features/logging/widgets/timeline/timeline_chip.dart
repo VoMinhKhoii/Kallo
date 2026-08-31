@@ -36,51 +36,63 @@ class _TimelineChipState extends State<TimelineChip> {
     final hasMeal = widget.dates.contains(widget.selectedDate);
     final formatted = formatTimelineDayLabel(widget.selectedDate, locale);
 
+    // 36pt visual on a 44pt tap target — the app-wide chip metric. The chip is
+    // white on the canvas, so it needs no border to separate.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
       onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _pressed ? 0.96 : 1,
-        duration: KalloMotion.press,
-        curve: KalloEase.press,
-        child: Container(
-          height: 44,
-          constraints: const BoxConstraints(maxWidth: 288), // max-w-72
-          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
-          decoration: BoxDecoration(
-            color: KalloColors.surface,
-            borderRadius: BorderRadius.circular(KalloRadii.pill),
-            border: Border.all(color: KalloColors.borderHalf), // border/50
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(LucideIcons.calendar300,
-                  size: 14, color: KalloColors.textMuted),
-              const SizedBox(width: KalloSpacing.sp2), // gap-2
-              Flexible(
-                child: Text(
-                  formatted,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: dashMeta().merge(const TextStyle(color: kInk)),
-                ),
+      child: SizedBox(
+        height: 44,
+        child: Center(
+          child: AnimatedScale(
+            scale: _pressed ? 0.96 : 1,
+            duration: KalloMotion.press,
+            curve: KalloEase.press,
+            child: Container(
+              height: 36,
+              constraints: const BoxConstraints(maxWidth: 288), // max-w-72
+              padding: const EdgeInsets.symmetric(
+                horizontal: KalloSpacing.sp3_5, // 14
               ),
-              if (hasMeal) ...[
-                const SizedBox(width: KalloSpacing.sp2),
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: KalloColors.accent,
+              decoration: BoxDecoration(
+                color: KalloColors.elev,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Ink, not muted: inside a chip the glyph reads with the
+                  // label rather than as a caption beside it.
+                  const Icon(LucideIcons.calendar300, size: 18, color: kInk),
+                  const SizedBox(width: KalloSpacing.sp2), // gap-2
+                  Flexible(
+                    child: Text(
+                      formatted,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: dashBody(weight: FontWeight.w500),
+                    ),
                   ),
-                ),
-              ],
-            ],
+                  // "This day has meals on it" — ink, like every other mark in
+                  // the chip. Tan is reserved for non-text moments elsewhere,
+                  // but here it was the only coloured thing in the header.
+                  if (hasMeal) ...[
+                    const SizedBox(width: KalloSpacing.sp2),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: kInk,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),

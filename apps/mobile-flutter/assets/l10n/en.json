@@ -545,6 +545,7 @@
       "completeDays": "Complete days",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
+      "avgValue": "{value} avg",
       "days": "days",
       "noCompleteDays": "No fully-logged days yet — keep logging, or tap All.",
       "compositionLabel": "{macro} {pct}%",

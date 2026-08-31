@@ -26,9 +26,7 @@ class LoggingDayErrorState extends StatelessWidget {
           padding: LoggingSpacing.card,
           decoration: BoxDecoration(
             color: KalloColors.elev,
-            borderRadius: BorderRadius.circular(KalloRadii.containerLg), // 2xl
-            border: Border.all(color: KalloColors.borderSoft),
-            boxShadow: const [KalloShadows.sm],
+            borderRadius: BorderRadius.circular(KalloRadii.card),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

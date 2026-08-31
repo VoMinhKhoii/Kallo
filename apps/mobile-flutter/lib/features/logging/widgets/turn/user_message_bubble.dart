@@ -14,10 +14,13 @@ import '../../../../theme/kallo_theme.dart';
 /// why the reveal card is handed an empty `rawInput` — its own Lora quote would
 /// otherwise print the same sentence a second line below this one.
 ///
-/// Umber (`KalloColors.btn`), not the tan accent: this bubble carries running
-/// text, and the palette rule is that tan "survives only on non-text moments"
-/// and never colours running text. Tan would also fail contrast against white
-/// (2.1:1); umber clears AA at 5.9:1.
+/// Beige (`KalloColors.btnPrimarySoft`) with INK text — the same wash that
+/// marks every in-app primary, a selected choice and the confirm circle, so a
+/// sent message reads as "mine" in the app's one warm colour rather than in a
+/// colour used nowhere else. It replaced solid umber with white text (native
+/// pass, 2026-08-31): a dark block was the heaviest thing on a page of white
+/// cards, and the umber tier is now toggles and progress fills only. Ink on
+/// #F0EAE0 clears AA at 13:1.
 ///
 /// **Press and hold to copy.** What the user typed is the only copy of it — the
 /// composer clears on send — so a mis-parsed meal previously had to be retyped
@@ -83,19 +86,16 @@ class UserMessageBubble extends StatelessWidget {
                   vertical: KalloSpacing.sp2_5, // 10
                 ),
                 decoration: const BoxDecoration(
-                  color: KalloColors.btn,
+                  color: KalloColors.btnPrimarySoft,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(KalloRadii.xxl), // 18
                     topRight: Radius.circular(KalloRadii.xxl),
                     bottomLeft: Radius.circular(KalloRadii.xxl),
                     // The tightened corner that makes it read as sent.
-                    bottomRight: Radius.circular(KalloRadii.sm), // 6
+                    bottomRight: Radius.circular(4),
                   ),
                 ),
-                child: Text(
-                  text,
-                  style: dashBody(color: KalloColors.bandForeground),
-                ),
+                child: Text(text, style: dashBody()),
               ),
             ),
           ),

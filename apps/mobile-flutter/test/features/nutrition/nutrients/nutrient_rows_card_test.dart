@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:kallo_mobile/features/nutrition/widgets/nutrients/nutrient_grid_card.dart';
+import 'package:kallo_mobile/features/nutrition/widgets/nutrients/nutrient_rows_card.dart';
 import 'package:kallo_mobile/models/nutrition/nutrition.dart';
 
 import '../../../l10n_test_loader.dart';
@@ -56,12 +56,21 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      _wrap(NutrientGridCard(card: _sodiumCard(averagePerDay: null))),
+      _wrap(NutrientRowsCard(cards: [_sodiumCard(averagePerDay: null)])),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('—'), findsOneWidget);
     expect(find.text('— / 2,000 mg'), findsOneWidget);
     expect(find.text('0 / 2,000 mg'), findsNothing);
+  });
+
+  testWidgets('the row reports its figure, never a percentage', (tester) async {
+    await tester.pumpWidget(
+      _wrap(NutrientRowsCard(cards: [_sodiumCard(averagePerDay: 1500)])),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1,500 / 2,000 mg'), findsOneWidget);
+    expect(find.textContaining('%'), findsNothing);
   });
 }

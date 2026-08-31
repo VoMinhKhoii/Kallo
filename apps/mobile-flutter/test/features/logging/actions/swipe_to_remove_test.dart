@@ -27,13 +27,12 @@ Widget _app({VoidCallback? onRemove}) => EasyLocalization(
                 mealId: 'meal-1',
                 onRemove: onRemove,
                 builder:
-                    (context, shape) => Container(
+                    (context, radius) => Container(
                       key: _card,
                       height: 80,
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFFFFF),
-                        borderRadius: shape.radius,
-                        boxShadow: shape.shadow,
+                        borderRadius: radius,
                       ),
                     ),
               ),
@@ -69,14 +68,13 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('at rest the card is fully rounded and lifted', (tester) async {
+  testWidgets('at rest the card is fully rounded', (tester) async {
     await tester.pumpWidget(_app(onRemove: () {}));
     await tester.pumpAndSettle();
 
     final radius = _decoration(tester).borderRadius! as BorderRadius;
-    expect(radius.topRight.x, KalloRadii.containerLg);
-    expect(radius.topLeft.x, KalloRadii.containerLg);
-    expect(_decoration(tester).boxShadow, isNotNull);
+    expect(radius.topRight.x, KalloRadii.card);
+    expect(radius.topLeft.x, KalloRadii.card);
   });
 
   testWidgets('the trailing corners square off as the red is uncovered', (
@@ -94,10 +92,8 @@ void main() {
     expect(radius.topRight.x, 0);
     expect(radius.bottomRight.x, 0);
     // The outer edge of the group keeps its shape.
-    expect(radius.topLeft.x, KalloRadii.containerLg);
-    expect(radius.bottomLeft.x, KalloRadii.containerLg);
-    // A shadow cast onto saturated red reads as grime along the seam.
-    expect(_decoration(tester).boxShadow, isNull);
+    expect(radius.topLeft.x, KalloRadii.card);
+    expect(radius.bottomLeft.x, KalloRadii.card);
 
     await drag.up();
     await tester.pumpAndSettle();
@@ -114,8 +110,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final radius = _decoration(tester).borderRadius! as BorderRadius;
-    expect(radius.topRight.x, KalloRadii.containerLg);
-    expect(_decoration(tester).boxShadow, isNotNull);
+    expect(radius.topRight.x, KalloRadii.card);
   });
 
   testWidgets('a card that cannot be removed does not swipe', (tester) async {

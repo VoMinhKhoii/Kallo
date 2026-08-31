@@ -6,6 +6,7 @@ import '../../../../services/billing/feature_lock.dart';
 import '../../../../shared/widgets/feedback/kallo_empty_state.dart';
 import '../../../../shared/widgets/motion/fade_in_down.dart';
 import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_theme.dart';
 
 /// Stands in for the vitamin and mineral grids when the account isn't entitled
 /// to micronutrients (`micronutrientsLocked` on the overview — the server has
@@ -20,7 +21,8 @@ class MicronutrientsLockedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 28),
+      // The page's one step, like every other gap on it.
+      padding: const EdgeInsets.only(top: KalloSpacing.sp3),
       child: FadeInDown(
         duration: const Duration(milliseconds: 550),
         delay: const Duration(milliseconds: 100),

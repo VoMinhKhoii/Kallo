@@ -194,14 +194,16 @@ void main() {
                         .firstWhere(
                           (c) =>
                               (c.decoration as BoxDecoration?)?.borderRadius ==
-                              BorderRadius.circular(KalloRadii.containerLg),
+                              BorderRadius.circular(KalloRadii.card),
                         )
                         .decoration
                     as BoxDecoration)
                 .border!
             as Border;
 
-    expect(cardBorder().top.color, KalloColors.borderSoft);
+    // Borderless at rest on the native canvas — the ring is drawn transparent
+    // so the card never changes size as edit mode arrives.
+    expect(cardBorder().top.color, const Color(0x00000000));
 
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
@@ -241,7 +243,7 @@ void main() {
                   .firstWhere(
                     (c) =>
                         (c.decoration as BoxDecoration?)?.borderRadius ==
-                        BorderRadius.circular(KalloRadii.containerLg),
+                        BorderRadius.circular(KalloRadii.card),
                   )
                   .decoration
               as BoxDecoration;

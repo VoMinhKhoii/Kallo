@@ -30,7 +30,13 @@ class MealEntry extends StatefulWidget {
     this.revealing = false,
     this.showTimeDivider = true,
     this.loggedAt,
+    this.actions = const [],
   });
+
+  /// Extra action targets appended after the confirm circle, so a staged card's
+  /// discard sits in the SAME row as its confirm rather than in a second row
+  /// under it (Log artboard: one action row per card).
+  final List<Widget> actions;
 
   /// When the analysis was staged, for a card restored from the server. Null
   /// for the live reveal, which has not been staged with a time yet.
@@ -160,19 +166,29 @@ class _MealEntryState extends State<MealEntry> {
             onAdjustPortion: _adjustPortion,
           ),
         ),
-        const SizedBox(height: LoggingSpacing.block),
-        // On reveal the CTA slides up into the slot the spinner row vacated.
-        _maybeReveal(
-          MealEntryConfirmButton(
-            editing: _editing,
-            disabled: _confirmDisabled,
-            onTap:
-                _confirmDisabled
-                    ? null
-                    : () => widget.onConfirm(
-                      deriveQuantityEdits(_items, _original),
-                    ),
-          ),
+        // The confirm circle is an action row of one, so it sits where every
+        // other card puts its actions — tight under the card, which carries
+        // its own centring inset.
+        const SizedBox(height: LoggingSpacing.actions),
+        Row(
+          children: [
+            const Spacer(),
+            // On reveal the CTA slides up into the slot the spinner row
+            // vacated.
+            _maybeReveal(
+              MealEntryConfirmButton(
+                editing: _editing,
+                disabled: _confirmDisabled,
+                onTap:
+                    _confirmDisabled
+                        ? null
+                        : () => widget.onConfirm(
+                          deriveQuantityEdits(_items, _original),
+                        ),
+              ),
+            ),
+            ...widget.actions,
+          ],
         ),
       ],
     );

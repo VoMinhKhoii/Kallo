@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/typography/kallo_text.dart';
+import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_theme.dart';
 
-/// Port of web `components/nutrition/states/inline-error.tsx`.
-class InlineError extends StatefulWidget {
+/// The nutrition page when the overview will not load: what went wrong, in
+/// muted copy, and the one way out.
+///
+/// Red lives on the affordance, never on the copy — and here the affordance is
+/// a retry, not a destruction, so it takes the app's in-app primary (beige +
+/// ink, fully rounded) rather than anything alarming. The card itself is the
+/// page's own card: white, radius 22, no border.
+class InlineError extends StatelessWidget {
   const InlineError({
     super.key,
     required this.isRetrying,
@@ -20,73 +26,25 @@ class InlineError extends StatefulWidget {
   final String retryLabel;
 
   @override
-  State<InlineError> createState() => _InlineErrorState();
-}
-
-class _InlineErrorState extends State<InlineError> {
-  bool _pressed = false;
-
-  @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: KalloSpacing.sp4,
+        vertical: KalloSpacing.sp3,
+      ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: KalloColors.borderSoft),
-        color: KalloColors.elev,
+        borderRadius: BorderRadius.circular(kCardRadius),
+        color: kCardSurface,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          KalloText(widget.message, variant: KalloTextVariant.body),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Semantics(
-              button: true,
-              enabled: !widget.isRetrying,
-              excludeSemantics: true,
-              label: widget.retryLabel,
-              onTap: widget.isRetrying ? null : widget.onRetry,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapDown:
-                    widget.isRetrying
-                        ? null
-                        : (_) => setState(() => _pressed = true),
-                onTapUp:
-                    widget.isRetrying
-                        ? null
-                        : (_) => setState(() => _pressed = false),
-                onTapCancel:
-                    widget.isRetrying
-                        ? null
-                        : () => setState(() => _pressed = false),
-                onTap: widget.isRetrying ? null : widget.onRetry,
-                child: Opacity(
-                  opacity: widget.isRetrying ? 0.5 : 1,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: KalloColors.borderSoft),
-                      color:
-                          (_pressed && !widget.isRetrying)
-                              ? KalloColors.hover
-                              : null,
-                    ),
-                    child: KalloText(
-                      widget.retryLabel,
-                      variant: KalloTextVariant.small,
-                      style: dashBody(weight: FontWeight.w500),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          Text(message, style: dashBody(color: kInkMuted)),
+          const SizedBox(height: KalloSpacing.sp3),
+          KalloButton(
+            title: retryLabel,
+            loading: isRetrying,
+            onPressed: onRetry,
           ),
         ],
       ),

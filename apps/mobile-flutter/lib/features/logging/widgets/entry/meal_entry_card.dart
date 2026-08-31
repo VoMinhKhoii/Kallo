@@ -4,7 +4,9 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
 
-/// The unconfirmed meal's card: solid white on the neutral canvas.
+/// The unconfirmed meal's card: solid white on the neutral canvas, borderless
+/// and flat like every other card since the native pass — the surface step is
+/// what separates it.
 ///
 /// White is not negotiable per-instance. The reveal path used to paint it
 /// [KalloColors.surface] "to match the streaming card's background" — but the
@@ -34,11 +36,12 @@ class MealEntryCard extends StatelessWidget {
       padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: KalloColors.elev, // solid white card on neutral canvas
-        borderRadius: BorderRadius.circular(KalloRadii.containerLg),
+        borderRadius: BorderRadius.circular(KalloRadii.card),
+        // Only the editing ring is drawn; at rest the border is transparent
+        // rather than absent, so the card's size never changes with its state.
         border: Border.all(
-          color: editing ? KalloColors.accent40 : KalloColors.borderSoft,
+          color: editing ? KalloColors.accent40 : const Color(0x00000000),
         ),
-        boxShadow: const [KalloShadows.sm],
       ),
       child: child,
     );

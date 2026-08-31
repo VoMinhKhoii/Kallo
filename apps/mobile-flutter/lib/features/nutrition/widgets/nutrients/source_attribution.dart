@@ -15,10 +15,15 @@ class SourceAttribution extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A tappable line still owes the finger 44pt, even where its glyphs are 13
+    // because they sit inside a text run.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _showCitations(context),
-      child: Row(
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
+        alignment: Alignment.center,
+        child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
@@ -37,6 +42,7 @@ class SourceAttribution extends StatelessWidget {
           const SizedBox(width: KalloSpacing.sp1),
           const Icon(LucideIcons.info300, size: 13, color: kInkMuted),
         ],
+        ),
       ),
     );
   }

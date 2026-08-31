@@ -83,34 +83,33 @@ class StagedMealCard extends StatelessWidget {
             showTimeDivider: false,
             busy: busy,
             onConfirm: (edits) => onConfirm(pending.id, edits),
+            // The way out, in the same action row as the confirm circle.
+            actions: [_discard(context)],
           ),
         ],
-        // The way out, in the slot a saved card puts its actions in — and
-        // outside the branch above, so the cheat slider gets it too without
-        // reaching into CheatSliderCard.
-        const SizedBox(height: LoggingSpacing.actions),
-        Row(
-          children: [
-            const Spacer(),
-            MealActionIconButton(
-              icon: LucideIcons.trash2300,
-              label: 'logging.stagedMealCard.discard'.tr(),
-              danger: true,
-              // Inert while a confirm is in flight: the row is about to become
-              // a saved meal, and deleting it mid-flight would race that.
-              onTap:
-                  busy
-                      ? null
-                      : () async {
-                        if (await confirmPendingDiscard(context) &&
-                            context.mounted) {
-                          onDiscard();
-                        }
-                      },
-            ),
-          ],
-        ),
+        // The cheat slider draws its own body but no action row, so it gets
+        // one here rather than by reaching into CheatSliderCard.
+        if (cheatSpec != null) ...[
+          const SizedBox(height: LoggingSpacing.actions),
+          Row(children: [const Spacer(), _discard(context)]),
+        ],
       ],
     );
   }
+
+  Widget _discard(BuildContext context) => MealActionIconButton(
+    icon: LucideIcons.trash2300,
+    label: 'logging.stagedMealCard.discard'.tr(),
+    danger: true,
+    // Inert while a confirm is in flight: the row is about to become a saved
+    // meal, and deleting it mid-flight would race that.
+    onTap:
+        busy
+            ? null
+            : () async {
+              if (await confirmPendingDiscard(context) && context.mounted) {
+                onDiscard();
+              }
+            },
+  );
 }
