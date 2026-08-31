@@ -152,13 +152,21 @@ class _MacroDial extends StatelessWidget {
           progress: target > 0 ? current / target : 0,
           radius: radius,
           fill: color,
+          // Like the compact calorie dial beside it, the embedded variant's
+          // gram readouts sit ONE tier under the full dial's (2026-09-01).
+          // The Threads ramp had taken the compact figure to Body 17 — the
+          // same size as the full dial's Value 17, which erased the
+          // distinction between the two variants entirely.
           primary: GaugeLine(
             '${current}g',
             isCompact
-                ? dashBody(weight: FontWeight.w500, tabular: true)
+                ? dashMeta(color: kInk, weight: FontWeight.w500, tabular: true)
                 : dashValue(),
           ),
-          secondary: GaugeLine('/${target}g', dashMeta(tabular: true)),
+          secondary: GaugeLine(
+            '/${target}g',
+            isCompact ? dashCaption(tabular: true) : dashMeta(tabular: true),
+          ),
         ),
       ],
     );
