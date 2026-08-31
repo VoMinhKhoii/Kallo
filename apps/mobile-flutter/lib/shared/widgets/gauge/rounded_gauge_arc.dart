@@ -14,6 +14,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
+import '../../../theme/kallo_colors.dart';
 import 'gauge_arc_geometry.dart';
 
 /// How tall the dial draws at [outerRadius]: the top half, the drop to the
@@ -30,11 +31,15 @@ class RoundedGaugeArc extends StatefulWidget {
     super.key,
   });
 
-  /// Consumed ÷ target. Over 1 the dial simply reads full.
+  /// Consumed ÷ target. Over 1 the dial reads full with a terracotta
+  /// over-target cap on its tail (see [gaugeOverCapPath]).
   final double progress;
   final double outerRadius;
   final Color fill;
   final Color track;
+
+  /// The over-target cap colour — information, never alarm.
+  static const Color overFill = KalloColors.offTarget;
 
   @override
   State<RoundedGaugeArc> createState() => _RoundedGaugeArcState();
@@ -125,6 +130,16 @@ class _GaugePainter extends CustomPainter {
     canvas
       ..drawPath(paths.remainder, paint..color = track)
       ..drawPath(paths.filled, paint..color = fill);
+    if (progress > 1) {
+      canvas.drawPath(
+        gaugeOverCapPath(
+          center: Offset(size.width / 2, outerRadius),
+          outerRadius: outerRadius,
+          progress: progress,
+        ),
+        paint..color = RoundedGaugeArc.overFill,
+      );
+    }
   }
 
   @override

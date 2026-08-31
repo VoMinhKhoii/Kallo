@@ -159,11 +159,12 @@ before setting the outermost one; a control-dense card needs less than a
 text-only one to land in the same place. Within-card gaps (e.g. meal rows) are tighter and deliberate;
 the 12px rule governs the *between-component* rhythm.
 
-This is the default for **presentational** surfaces — the dashboard, settings,
-onboarding. A dense scrolling **list** surface may run tighter; the logging feed
-does, at 8px, and names it (see *Spacing — one rhythm per surface* below). Going
-tighter than 12 is a per-surface decision that must be captured in a named token
-set, never improvised gap by gap.
+This is the default for every surface. The logging feed's dense-8 exemption
+was RETIRED in the native pass (2026-08-31): with borderless cards separating
+by surface alone, 8 read as one bruised block — the feed now runs the same
+12px rhythm (`logging_spacing.dart`). Going tighter than 12 is a per-surface
+decision that must be captured in a named token set, never improvised gap by
+gap — and today no surface does.
 
 ## Spacing — one rhythm per surface
 
@@ -308,7 +309,7 @@ mobile UI — no longer provisional.
 
 | Surface | Type + colour | Named spacing | Notes |
 |---------|---------------|---------------|-------|
-| **Logging** | ✅ 17/14/12 | `logging/logic/logging_spacing.dart` (8px block) | the reference implementation |
+| **Logging** | ✅ 17/14/12 | `logging/logic/logging_spacing.dart` (12px block) | the reference implementation |
 | **Dashboard** | ✅ 40/14/12 + Lora 22 | `dashboard/logic/dashboard_spacing.dart` (12px) | Hero replaces Value here |
 | **Settings** | ✅ 22/14/12 | `settings/logic/settings_spacing.dart` | rows split 4+8 (below) |
 | **Feedback** | ✅ | uses the 12px default | |

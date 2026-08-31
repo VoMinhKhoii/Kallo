@@ -140,7 +140,7 @@ class _CustomSelectState extends State<CustomSelect>
             // Outer ring: `ring-1 ring-accent/20` when open, sitting 1px outside
             // the 1px border at the same `rounded-lg` (8px) radius.
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(KalloRadii.md + 1),
+              borderRadius: BorderRadius.circular(KalloRadii.lg + 1),
               border: Border.all(
                 color: _open ? KalloColors.accent20 : Colors.transparent,
                 width: 1,
@@ -149,7 +149,7 @@ class _CustomSelectState extends State<CustomSelect>
             child: Container(
               decoration: BoxDecoration(
                 color: KalloColors.elev,
-                borderRadius: BorderRadius.circular(KalloRadii.md),
+                borderRadius: BorderRadius.circular(KalloRadii.lg),
                 border: Border.all(color: borderColor, width: 1),
                 boxShadow: _open ? const [KalloShadows.sm] : null,
               ),

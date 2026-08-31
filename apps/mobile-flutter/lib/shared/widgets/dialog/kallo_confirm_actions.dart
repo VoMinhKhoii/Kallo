@@ -54,7 +54,7 @@ class KalloConfirmActions extends StatelessWidget {
 
 /// The affirmative: a full-width filled pill, umber by default and [danger] red
 /// when the action destroys something. Press behaviour copies
-/// `SheetPrimaryButton` so the app has ONE press language.
+/// the retired `SheetPrimaryButton` so the app has ONE press language.
 class _ConfirmButton extends StatefulWidget {
   const _ConfirmButton({
     required this.label,

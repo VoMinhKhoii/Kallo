@@ -78,22 +78,33 @@ class MealBlock extends StatelessWidget {
         CompositionBar.compact(segments: segments),
         const SizedBox(height: 6),
         Row(
+          // Circle posts spread kcal and the three macros across the full
+          // width (the artboard's space-between); own-meal legends cluster.
+          mainAxisAlignment:
+              kcalPlacement == MealBlockKcal.legendLeading && kcal != null
+                  ? MainAxisAlignment.spaceBetween
+                  : MainAxisAlignment.start,
           children: [
             if (kcalPlacement == MealBlockKcal.legendLeading &&
-                kcal != null) ...[
+                kcal != null)
               kcal,
-              const Spacer(),
-            ],
             for (final key in kCompositionKeys)
               if (gramLabels[key] != null) ...[
-                Icon(
-                  kMacroIcons[key],
-                  size: 14,
-                  color: kCompositionColors[key],
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      kMacroIcons[key],
+                      size: 14,
+                      color: kCompositionColors[key],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(gramLabels[key]!, style: dashMeta()),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                Text(gramLabels[key]!, style: dashMeta()),
-                if (key != kCompositionKeys.last) const SizedBox(width: 14),
+                if (key != kCompositionKeys.last &&
+                    kcalPlacement != MealBlockKcal.legendLeading)
+                  const SizedBox(width: 14),
               ],
             if (kcalPlacement == MealBlockKcal.legendTrailing &&
                 kcal != null) ...[
