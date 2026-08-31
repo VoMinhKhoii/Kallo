@@ -55,4 +55,28 @@ void main() {
     container.read(expandedMealCardsProvider.notifier).state = {'m1'};
     expect(container.read(expandedMealCardsProvider), contains('m1'));
   });
+
+  test('an account switch resets the draft and the expansion set', () {
+    // Sticky state outliving the ROUTE is the fix; outliving the ACCOUNT on a
+    // shared device would be a leak (CodeRabbit, PR #329).
+    final owner = StateProvider<String?>((ref) => 'user-a');
+    final container = ProviderContainer(
+      overrides: [
+        loggingUiOwnerProvider.overrideWith((ref) => ref.watch(owner)),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final first = container.read(composerControllerProvider)
+      ..text = 'gà nướng';
+    container.read(expandedMealCardsProvider.notifier).state = {'m1'};
+
+    container.read(owner.notifier).state = 'user-b';
+
+    final second = container.read(composerControllerProvider);
+    expect(identical(first, second), isFalse,
+        reason: 'the next account gets a fresh controller');
+    expect(second.text, isEmpty);
+    expect(container.read(expandedMealCardsProvider), isEmpty);
+  });
 }

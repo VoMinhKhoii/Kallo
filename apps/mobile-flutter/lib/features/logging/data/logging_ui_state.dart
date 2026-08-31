@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../services/auth/session_provider.dart';
 import '../widgets/relog/mention_text_controller.dart';
 
 /// Ephemeral Log-screen UI state that must OUTLIVE the route.
@@ -11,12 +12,22 @@ import '../widgets/relog/mention_text_controller.dart';
 /// regression). These providers pin that state to the app-lifetime container
 /// instead of the route.
 
+/// Whose sticky Log state this is. Both providers below watch it, so a
+/// sign-out or account switch rebuilds them — one user's half-typed draft
+/// must never greet the next account on a shared device. (Day switches within
+/// a session deliberately keep the draft: the composer always submits to the
+/// day open at send time, matching the pre-native-pass behavior.)
+final loggingUiOwnerProvider = Provider<String?>(
+  (ref) => ref.watch(currentSessionProvider.select((s) => s?.user.id)),
+);
+
 /// The composer's controller — text AND the relog mention picks living inside
 /// it as tinted runs. [FeedArea] reads it and must never dispose it; disposal
 /// belongs to the container.
 final composerControllerProvider = Provider<MentionTextEditingController>((
   ref,
 ) {
+  ref.watch(loggingUiOwnerProvider);
   final controller = MentionTextEditingController();
   ref.onDispose(controller.dispose);
   return controller;
@@ -25,6 +36,7 @@ final composerControllerProvider = Provider<MentionTextEditingController>((
 /// Ids of persisted meal cards the user has opened. A card checks in on mount
 /// and reports every toggle, so re-entering Log (or scrolling a card back
 /// into a recycling list) restores it open.
-final expandedMealCardsProvider = StateProvider<Set<String>>(
-  (ref) => const <String>{},
-);
+final expandedMealCardsProvider = StateProvider<Set<String>>((ref) {
+  ref.watch(loggingUiOwnerProvider);
+  return const <String>{};
+});
