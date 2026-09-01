@@ -14,7 +14,6 @@ class PersistedMealCardContent extends StatelessWidget {
   const PersistedMealCardContent({
     super.key,
     required this.meal,
-    required this.expand,
     required this.curvedExpand,
     required this.onToggle,
     this.editorBody,
@@ -22,7 +21,11 @@ class PersistedMealCardContent extends StatelessWidget {
   });
 
   final PersistedMeal meal;
-  final Animation<double> expand;
+
+  /// The disclosure's single eased progress 0→1. EVERYTHING that moves when
+  /// the card opens rides this one animation — the chevron's rotation, the
+  /// details' height and fade, and the bar + legend the details push down —
+  /// so no part of the card can lag another.
   final Animation<double> curvedExpand;
   final VoidCallback onToggle;
 
@@ -78,7 +81,7 @@ class PersistedMealCardContent extends StatelessWidget {
               kcalLabel: fmtKcal(n.caloriesKcal),
               kcalPlacement: MealBlockKcal.legendTrailing,
               titleTrailing: PersistedMealChevronToggle(
-                expand: expand,
+                expand: curvedExpand,
                 onTap: onToggle,
               ),
               // The breakdown opens BETWEEN the title and the bar+legend, so

@@ -270,7 +270,19 @@ TextStyle kGroupLabel({Color color = kInkMuted}) => TextStyle(
     );
 
 // ── Pill nav (native pass, 2026-08-31) ────────────────────────────────────
-const double kNavWidth = 358; // effective pill width
+/// Gap from each screen edge to the floating pill nav.
+///
+/// The bar has NO width of its own — it fills whatever this leaves, so it
+/// adapts to the device instead of pinning one phone's number. It replaced
+/// `kNavWidth = 358` (a 390pt iPhone less a 16pt gutter each side), which on
+/// any wider screen left the capsule stranded mid-screen with its five targets
+/// bunched into the middle of it.
+///
+/// 8, not 0: the capsule still has to read as an object floating over the
+/// content — it needs a sliver of canvas to clear and to catch the outer edge
+/// of [kNavShadows]. Flush to the edge it stops being a pill and becomes a
+/// bar, which is the thing this nav is deliberately not.
+const double kNavInset = 8;
 const double kNavHeight = 72;
 const double kNavRadius = 36;
 const double kNavAddSize = 52; // center "+" circle (beige, ink plus)

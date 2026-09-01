@@ -28,6 +28,16 @@ abstract final class KalloMotion {
   /// A small state change in place — a chevron turning, a wash crossfading.
   static const Duration quick = Duration(milliseconds: 200);
 
+  /// A card disclosing its own detail — the meal card opening its per-dish
+  /// breakdown, and anything else that grows in place under a chevron.
+  ///
+  /// Deliberately NOT [quick]. At 200 the opening card read as a drawer being
+  /// pulled rather than a row answering a tap; the iOS disclosure band is
+  /// 160–180. The CLOSING direction runs at [press] instead — a disclosure
+  /// closes faster than it opens, because the user has already read what is
+  /// inside and is asking for it to get out of the way.
+  static const Duration disclosure = Duration(milliseconds: 180);
+
   /// A control changing shape: a field taking focus, a card expanding.
   static const Duration emphasis = Duration(milliseconds: 300);
 
@@ -66,6 +76,13 @@ abstract final class KalloEase {
 
   /// Something entering: quick off the mark, long settle.
   static const Curve enter = Curves.easeOutCubic;
+
+  /// The mirror of [enter], for the same thing leaving: it commits to going
+  /// immediately, so a closing panel is visibly gone before its duration is
+  /// spent. Use it as the `reverseCurve` beside [enter] — reusing [enter] in
+  /// reverse holds the panel near full height for half the close, which is
+  /// exactly the lag it is supposed to remove.
+  static const Curve exit = Curves.easeInCubic;
 
   /// The app's long decelerating tail, already spelled inline at the feed's
   /// scroll-to and the week pager.
