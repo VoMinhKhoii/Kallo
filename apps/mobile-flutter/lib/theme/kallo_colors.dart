@@ -6,12 +6,14 @@ import 'dart:ui';
 /// `--kallo-*` values). Visual direction: neutral canvas / ink / hairline with
 /// warm interaction washes; tan accent kept for non-text moments only.
 ///
-/// The canvas is `#F4F3EF` — the THIRD canvas decision, superseding both the
+/// The canvas is `#F8F7F4` — the FOURTH canvas decision (2026-09-01), one
+/// step lighter than the `#F4F3EF` it replaces, which itself superseded the
 /// original warm `#F1F1EE` and the web-parity `#FCFCFC` resync. The `#FCFCFC`
 /// comment predicted "if cards start reading flat, THAT is the knob to
-/// re-decide" — they did, and this is that re-decision (2026-08-31, native
-/// pass): one step below white, chosen on-device so white cards separate by
-/// surface alone with NO border and NO shadow. This is a sanctioned
+/// re-decide" — they did, and `#F4F3EF` was that re-decision (2026-08-31,
+/// native pass). `#F8F7F4` keeps its whole logic — still below white, still
+/// borderless and shadowless cards — with a lighter, cooler-reading page,
+/// chosen on-device. This is a sanctioned
 /// divergence from the web token; do not resync without re-deciding again.
 /// `track` (#EDECE7) sits close to this canvas — if bars read flat, `track`
 /// is the next knob, not the canvas.
@@ -21,8 +23,8 @@ import 'dart:ui';
 abstract final class KalloColors {
   // ── Core surfaces ────────────────────────────────────────────────────
   static const Color surface = Color(
-    0xFFF4F3EF,
-  ); // app background — one step below white, cards need no border/shadow
+    0xFFF8F7F4,
+  ); // app background — below white; cards need no border/shadow
   static const Color elev = Color(0xFFFFFFFF); // cards / sheets
   static const Color hover = Color(0xFFF0EAE0); // warm hover/select wash
   // Kept where it was when the canvas darkened: the canvas↔track step is the
@@ -76,13 +78,13 @@ abstract final class KalloColors {
 
   // ── Translucent surfaces ─────────────────────────────────────────────
   static const Color elevTranslucent = Color(0xCCFFFFFF); // card/elev @ 80%
-  static const Color surface80 = Color(0xCCF4F3EF); // canvas @ 80%
+  static const Color surface80 = Color(0xCCF8F7F4); // canvas @ 80%
   // Scrim ramp (composer dock). These MUST stay the same hue as [surface] —
   // a scrim that fades toward a stale canvas colour is a visible seam, which
   // is the exact thing the ramp exists to remove.
-  static const Color surface0 = Color(0x00F4F3EF); // canvas @ 0%
-  static const Color surface35 = Color(0x59F4F3EF); // canvas @ 35%
-  static const Color surface85 = Color(0xD9F4F3EF); // canvas @ 85%
+  static const Color surface0 = Color(0x00F8F7F4); // canvas @ 0%
+  static const Color surface35 = Color(0x59F8F7F4); // canvas @ 35%
+  static const Color surface85 = Color(0xD9F8F7F4); // canvas @ 85%
   static const Color cardWhite55 = Color(0x8CFFFFFF); // card white @ 55%
   static const Color cardWhite40 = Color(0x66FFFFFF); // card white @ 40%
   static const Color cardWhite30 = Color(0x4DFFFFFF); // card white @ 30%

@@ -12,7 +12,7 @@ uniform vertical rhythm; exactly one editorial serif moment per viewport.
 
 > **Native pass (2026-08-31).** The redesign on branch
 > `claude/ios-native-design-system-wizyvk` supersedes several entries below:
-> canvas `#F4F3EF` (borderless cards, third canvas decision — see
+> canvas `#F8F7F4` (borderless cards, fourth canvas decision — see
 > `kallo_colors.dart`), icon hit target 44, the drawer/hamburger replaced by a
 > floating pill tab bar (`lib/shell/nav/`), Log pushed full-screen, a two-tier
 > button system (black auth CTA / beige in-app primary, fully rounded),
@@ -126,7 +126,7 @@ surface-tinted cards that would read grey on the canvas become solid white.
 
 | Token | Hex | Role |
 |-------|-----|------|
-| `kPage` | `#F4F3EF` | app canvas — one step below white; cards need NO border/shadow (3rd canvas decision, 2026-08-31) |
+| `kPage` | `#F8F7F4` | app canvas — one step below white; cards need NO border/shadow (4th canvas decision, 2026-09-01) |
 | `kCardSurface` | `#FFFFFF` | cards / sheets — solid white |
 | `kTrack` | `#EDECE7` | ring/bar tracks (warm), the only low-contrast surface |
 | `kHairline` | `#E2DFD4` | the one border — neutral hairline |

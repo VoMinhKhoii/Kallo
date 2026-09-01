@@ -98,7 +98,7 @@ class _WelcomeDemoState extends State<WelcomeDemo>
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       // A card, so it wears the card anatomy: white, radius 22, no border and
-      // no shadow — on the #F4F3EF canvas the surface alone separates it.
+      // no shadow — on the #F8F7F4 canvas the surface alone separates it.
       decoration: BoxDecoration(
         color: KalloColors.elev,
         borderRadius: BorderRadius.circular(KalloRadii.card),

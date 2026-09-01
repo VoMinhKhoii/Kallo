@@ -123,7 +123,7 @@ class _DayCell extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: DashboardSpacing.row * 2),
       decoration: isSelected
           // A chip this small is the one card-like surface that still takes a
-          // hairline: at 36pt across, white-on-#F4F3EF alone does not read as
+          // hairline: at 36pt across, white-on-#F8F7F4 alone does not read as
           // a selected state. Shadow retired with the rest of the cards.
           ? BoxDecoration(
               color: kCardSurface,

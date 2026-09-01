@@ -11,7 +11,7 @@ import '../typography/kallo_text.dart';
 export 'kallo_screen.dart';
 
 
-/// White card separating by surface alone on the `#F4F3EF` canvas — radius
+/// White card separating by surface alone on the `#F8F7F4` canvas — radius
 /// 22, NO border, NO shadow (native pass, 2026-08-31; shadows are reserved
 /// for true elevation: sheets, menus, the pill nav).
 class KalloCard extends StatelessWidget {

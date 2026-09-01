@@ -8,7 +8,7 @@ import '../../../theme/kallo_theme.dart';
 ///
 /// The native pass (2026-08-31) brought [block] back to the design system's
 /// flat 12. The 20 it ran at was compensation for a canvas one step off white,
-/// where unenclosed dials had nothing to separate them; on `#F4F3EF` a white
+/// where unenclosed dials had nothing to separate them; on `#F8F7F4` a white
 /// card reads as its own object and the extra 8 only made the tab scroll
 /// longer. The one deliberate exception is [majorBreak].
 ///

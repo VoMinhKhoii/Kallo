@@ -45,7 +45,7 @@ const Color kInkMuted = KalloColors.textMuted;
 // ── Shape ────────────────────────────────────────────────────────────────
 const double kCardRadius = 22; // one card radius — modern iOS grouped-card feel
 
-/// Sheet/menu elevation shadows. On the `#F4F3EF` canvas (native pass,
+/// Sheet/menu elevation shadows. On the `#F8F7F4` canvas (native pass,
 /// 2026-08-31) ordinary cards separate by surface alone — NO border, NO
 /// shadow. These shadows are reserved for TRUE elevation: sheets, menus, the
 /// pill nav, a dragged card.

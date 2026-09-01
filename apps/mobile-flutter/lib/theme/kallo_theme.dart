@@ -176,7 +176,7 @@ abstract final class KalloTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      // Cards separate by surface alone on the #F4F3EF canvas: solid white,
+      // Cards separate by surface alone on the #F8F7F4 canvas: solid white,
       // radius 22, NO border, NO shadow (native pass, 2026-08-31).
       cardTheme: CardThemeData(
         color: KalloColors.elev,
