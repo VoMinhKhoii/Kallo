@@ -111,9 +111,10 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   LoggingDayArgs get _dayArgs =>
       LoggingDayArgs(widget.profile.userId, widget.date);
 
-  /// What the controllers above call when something they own changed.
-  void _rebuild() {
-    if (mounted) setState(() {});
+  /// What the controllers call when something changed — and the one door every
+  /// `setState` goes through, so late work never lands on a dead State.
+  void _rebuild([VoidCallback? change]) {
+    if (mounted) setState(change ?? () {});
   }
 
   @override
@@ -163,7 +164,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
 
   /// An action failed: surface it as the composer's inline error line.
   void _showActionError() =>
-      setState(() => _errorText = 'errors.internal'.tr());
+      _rebuild(() => _errorText = 'errors.internal'.tr());
 
   @override
   Widget build(BuildContext context) {
@@ -223,13 +224,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       ref: ref,
       userId: profile.userId,
       date: widget.date,
-      onHoldRemoval: (id) => setState(() => _pendingRemovalIds.add(id)),
-      onReleaseRemoval: (id) => setState(() => _pendingRemovalIds.remove(id)),
-      onRemovalFailed:
-          (id) => setState(() {
-            _pendingRemovalIds.remove(id);
-            _errorText = 'errors.internal'.tr();
-          }),
+      onHoldRemoval: (id) => _rebuild(() => _pendingRemovalIds.add(id)),
+      onReleaseRemoval: (id) => _rebuild(() => _pendingRemovalIds.remove(id)),
+      onRemovalFailed: (id) => _rebuild(() {
+        _pendingRemovalIds.remove(id);
+        _errorText = 'errors.internal'.tr();
+      }),
     );
 
     final cheatActions = FeedCheatActions(
@@ -240,7 +240,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       run: _analysis,
       input: _inputController,
       isStaging: () => _stagingRepeat,
-      onStagingChange: (staging) => setState(() => _stagingRepeat = staging),
+      onStagingChange: (staging) => _rebuild(() => _stagingRepeat = staging),
       onStaged: () => _pin.pinToBottom(widget.date),
     );
 
@@ -303,8 +303,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           onBarcodePressed: sheets.openBarcode,
           noticeDismissed: _noticeDismissedFor == widget.date,
           onDismissNotice:
-              () => setState(() => _noticeDismissedFor = widget.date),
-          onHeightChanged: (height) => setState(() => _dockHeight = height),
+              () => _rebuild(() => _noticeDismissedFor = widget.date),
+          onHeightChanged: (height) => _rebuild(() => _dockHeight = height),
         ),
       ),
       // The card list. The composer floats over its bottom edge as an

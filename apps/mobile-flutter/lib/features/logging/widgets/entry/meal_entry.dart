@@ -6,7 +6,6 @@ import '../../../../models/logging/meal.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_utils.dart';
 import '../../logic/quantity_editing.dart';
-import '../composer/entrances.dart';
 import 'meal_entry_card.dart';
 import 'meal_entry_confirm_button.dart';
 import 'meal_entry_body.dart';
@@ -61,17 +60,12 @@ class _MealEntryState extends State<MealEntry> {
   /// The card's editable quantities, and whether they would really be sent.
   late QuantityDraft _draft = QuantityDraft(widget.parsedMeal.items);
 
-  /// What the divider shows.
-  ///
-  /// A card staged server-side carries a real [MealEntry.loggedAt] and must use
-  /// it: reading the clock instead stamped a meal analysed at 12:15 with the
-  /// time the app happened to be REOPENED, which is how a pending meal from an
-  /// hour ago showed up as "just now".
-  ///
-  /// Only the live reveal has no `loggedAt` yet, and there "now" is right.
-  /// Captured once at mount rather than read in `build`, so the time doesn't
-  /// creep forward every time a stepper rebuilds the card.
-  late final DateTime _enteredAt = widget.loggedAt ?? DateTime.now();
+  /// What the divider shows. A card staged server-side carries a real
+  /// [MealEntry.loggedAt] and must use it: reading the clock instead stamped a
+  /// meal analysed at 12:15 with the time the app happened to be REOPENED.
+  /// Only the live reveal has no `loggedAt`, and there "now" is right. Seeded
+  /// rather than read in `build`, so a stepper cannot creep it forward.
+  late DateTime _enteredAt = widget.loggedAt ?? DateTime.now();
   bool _editing = false;
 
   /// Confirm waits a beat after each tap; [dispose] cancels the window, so it
@@ -88,14 +82,18 @@ class _MealEntryState extends State<MealEntry> {
   }
 
   /// A re-stage arrives at this very card with a different meal in it — see
-  /// [QuantityDraft.sameDishes].
+  /// [QuantityDraft.sameDishes] — and brings its own staging time. As a
+  /// `late final`, [_enteredAt] kept the divider of the analysis it REPLACED.
   @override
   void didUpdateWidget(MealEntry oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (QuantityDraft.sameDishes(oldWidget.parsedMeal, widget.parsedMeal)) {
       return;
     }
-    setState(() => _draft = QuantityDraft(widget.parsedMeal.items));
+    setState(() {
+      _draft = QuantityDraft(widget.parsedMeal.items);
+      _enteredAt = widget.loggedAt ?? DateTime.now();
+    });
   }
 
   void _change(String itemId, double delta) {
@@ -117,21 +115,22 @@ class _MealEntryState extends State<MealEntry> {
   /// Commits whatever the portion picker previewed. No debounce, matching web's
   /// `handleApply`: dismissing the sheet already separates this from Confirm.
   Future<void> _adjustPortion(MealItem item) async {
+    // The picker answers from a SNAPSHOT of these items, and a re-stage can
+    // land while it is open — committing then would put the superseded
+    // analysis's dishes back onto a card that has already moved on.
+    final staged = widget.parsedMeal;
     final next = await pickPortion(
       context,
       item: item,
       items: _draft.items,
       original: _draft.original,
     );
-    if (next != null && mounted) _edit(() => next, debounce: false);
+    if (next == null || !mounted) return;
+    if (!QuantityDraft.sameDishes(staged, widget.parsedMeal)) return;
+    _edit(() => next, debounce: false);
   }
 
   bool get _confirmDisabled => widget.busy || (_editing && _cooldown.active);
-
-  /// Wrap the confirm CTA in a slide-up entrance only on the reveal morph's
-  /// opening frame (the spinner row has just slid out of the same slot).
-  Widget _maybeReveal(Widget child) =>
-      widget.revealing ? FadeInUp(offset: 12, child: child) : child;
 
   @override
   Widget build(BuildContext context) {
@@ -176,24 +175,14 @@ class _MealEntryState extends State<MealEntry> {
           ),
         ),
         // The one thing this card asks for, full width under the content it
-        // commits. On reveal it slides up into the spinner row's slot.
-        const SizedBox(height: LoggingSpacing.actions),
-        _maybeReveal(
-          MealEntryConfirmButton(
-            editing: _editing,
-            disabled: _confirmDisabled,
-            onTap:
-                _confirmDisabled
-                    ? null
-                    : () => widget.onConfirm(_draft.edits),
-          ),
+        // commits. See [MealEntryCommitRow].
+        MealEntryCommitRow(
+          editing: _editing,
+          revealing: widget.revealing,
+          disabled: _confirmDisabled,
+          onConfirm: () => widget.onConfirm(_draft.edits),
+          actions: widget.actions,
         ),
-        // A staged card's discard: a quiet icon row BENEATH the button, never
-        // beside it, where a trash target would read as the confirm's equal.
-        if (widget.actions.isNotEmpty) ...[
-          const SizedBox(height: LoggingSpacing.actions),
-          Row(children: [const Spacer(), ...widget.actions]),
-        ],
       ],
     );
   }

@@ -21,7 +21,14 @@ const Set<String> _shellRoots = {'/dashboard', '/nutrition', '/circle', '/admin'
 /// — post-welcome, post-paywall, a Settings deep action — there is no branch
 /// underneath, so Today goes down first and back has somewhere to go.
 void openLogging(GoRouter router) {
-  if (!_shellRoots.contains(router.state.matchedLocation)) {
+  final location = router.state.matchedLocation;
+  // Already there — do nothing. `/logging` is not a shell root, so falling
+  // through would `go('/dashboard')` and push a SECOND logging route over the
+  // first: back would then land on Today instead of the tab the user came
+  // from, and a double-fired call (two taps on the pill's Log item, a tap plus
+  // a deep link) would stack duplicate logging routes to pop through.
+  if (location == '/logging') return;
+  if (!_shellRoots.contains(location)) {
     router.go('/dashboard');
   }
   router.push('/logging');

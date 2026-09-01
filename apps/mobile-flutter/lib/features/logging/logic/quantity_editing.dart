@@ -41,7 +41,15 @@ class QuantityDraft {
   /// True only when confirming would really change something.
   bool get dirty => edits.isNotEmpty;
 
-  /// Whether two analyses hold the same dishes at the same amounts.
+  /// Whether two analyses hold the same dishes, at the same amounts, with the
+  /// same nutrition.
+  ///
+  /// Nutrition is part of the comparison because it is part of what the card
+  /// DRAWS. A re-stage that lands on the same dish ids at the same grams but
+  /// re-estimated macros (the cheat clarify does exactly this — same occasion,
+  /// same amounts, a different reading of it) was treated as "no change", so
+  /// the rows kept the old per-item calories while the header total came from
+  /// the new [ParsedMeal]: a card whose parts did not add up to its sum.
   ///
   /// What a card re-seeds on. A RE-STAGE lands on the very same card —
   /// `StagedMealCard` is keyed by the analysis id and `analysis_run`
@@ -52,16 +60,25 @@ class QuantityDraft {
   /// progress every time the day reloaded.
   static bool sameDishes(ParsedMeal a, ParsedMeal b) {
     if (a.items.length != b.items.length) return false;
+    if (!_sameMacros(a.totalMacros, b.totalMacros)) return false;
     for (var i = 0; i < a.items.length; i++) {
       final (x, y) = (a.items[i], b.items[i]);
       if (x.id != y.id ||
+          x.name != y.name ||
           x.quantity != y.quantity ||
-          x.macros.calories != y.macros.calories) {
+          x.unit != y.unit ||
+          !_sameMacros(x.macros, y.macros)) {
         return false;
       }
     }
     return true;
   }
+
+  static bool _sameMacros(MacroBreakdown a, MacroBreakdown b) =>
+      a.calories == b.calories &&
+      a.protein == b.protein &&
+      a.carbs == b.carbs &&
+      a.fat == b.fat;
 }
 
 /// Blocks Confirm for a moment after a quantity tap, so a fast double-tap on a

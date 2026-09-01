@@ -22,6 +22,11 @@ import 'package:flutter/painting.dart';
 /// Deliberately more generous than the web chart's axis (which has no clipped
 /// halo to protect); both still bucket on the same round-number steps.
 ({double min, double max, double step}) niceYAxis(List<double> values) {
+  // No series, no domain — `reduce` below would throw on an empty list. The
+  // chart guards the empty case before it paints, but this is a public pure
+  // function that exists to be called (and tested) on its own, so it answers
+  // for itself: the same band a single point at zero would get.
+  if (values.isEmpty) return niceYAxis(const [0]);
   final rawMin = values.reduce(math.min);
   final rawMax = values.reduce(math.max);
   final rawSpan = math.max(rawMax - rawMin, 0.5);

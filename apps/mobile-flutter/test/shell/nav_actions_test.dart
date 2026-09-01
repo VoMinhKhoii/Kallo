@@ -95,4 +95,50 @@ void main() {
     expect(find.text('dash'), findsOneWidget);
     expect(find.text('welcome-page'), findsNothing);
   });
+
+  testWidgets('asking for logging while already on it changes nothing', (
+    tester,
+  ) async {
+    // The pill nav's Log item is still on screen with the feed open, and the
+    // "+" sheet can be reached from it. `/logging` is not a shell root, so the
+    // reset-then-push branch fired on itself: Today went down UNDER the open
+    // feed and a second /logging went on top, so backing out of the feed
+    // landed on Today instead of the tab the user came from.
+    final router = await _pump(tester);
+    router.go('/circle');
+    await tester.pumpAndSettle();
+
+    openLogging(router);
+    await tester.pumpAndSettle();
+    expect(find.text('logging-page'), findsOneWidget);
+
+    openLogging(router);
+    await tester.pumpAndSettle();
+    expect(find.text('logging-page'), findsOneWidget);
+
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(
+      find.text('circle'),
+      findsOneWidget,
+      reason: 'one pop must clear the feed, not reveal a second copy of it',
+    );
+  });
+
+  testWidgets('a double-fired open pushes the feed once', (tester) async {
+    // Two calls inside one frame — a double tap, or a tap racing a deep link.
+    // The second must not stack a duplicate route to pop back through.
+    final router = await _pump(tester);
+    router.go('/circle');
+    await tester.pumpAndSettle();
+
+    openLogging(router);
+    openLogging(router);
+    await tester.pumpAndSettle();
+    expect(find.text('logging-page'), findsOneWidget);
+
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(find.text('circle'), findsOneWidget);
+  });
 }

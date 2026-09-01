@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../logic/logging_spacing.dart';
+import '../composer/entrances.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../theme/kallo_typography.dart';
@@ -89,6 +91,57 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Everything the staged card ASKS for, under the content it commits: the
+/// full-width confirm pill and the quiet icon row beneath it.
+///
+/// Split out of [MealEntry] because the card's own file is at its size budget
+/// and this is the seam — nothing here reads the quantity draft, only the
+/// decision to submit it.
+class MealEntryCommitRow extends StatelessWidget {
+  const MealEntryCommitRow({
+    super.key,
+    required this.editing,
+    required this.revealing,
+    required this.disabled,
+    required this.onConfirm,
+    required this.actions,
+  });
+
+  final bool editing;
+
+  /// The reveal morph's opening frame: the pill slides up into the slot the
+  /// spinner row has just slid out of.
+  final bool revealing;
+
+  final bool disabled;
+  final VoidCallback onConfirm;
+
+  /// A staged card's discard lives here — BENEATH the button, never beside it,
+  /// where a trash target would read as the confirm's equal. Empty draws no
+  /// second row at all.
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = MealEntryConfirmButton(
+      editing: editing,
+      disabled: disabled,
+      onTap: disabled ? null : onConfirm,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: LoggingSpacing.actions),
+        revealing ? FadeInUp(offset: 12, child: button) : button,
+        if (actions.isNotEmpty) ...[
+          const SizedBox(height: LoggingSpacing.actions),
+          Row(children: [const Spacer(), ...actions]),
+        ],
+      ],
     );
   }
 }

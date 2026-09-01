@@ -8,7 +8,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/composer/entrances.dart';
 import 'package:kallo_mobile/features/logging/widgets/entry/meal_entry.dart';
+import 'package:kallo_mobile/features/logging/widgets/portion/portion_assumption_line.dart';
 import 'package:kallo_mobile/models/logging/meal.dart';
+import 'package:kallo_mobile/models/nutrition/vessel.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
@@ -481,5 +483,223 @@ void main() {
       expect(find.byType(FadeInLeft), findsWidgets);
       await tester.pumpAndSettle();
     });
+  });
+
+  group('a re-stage that keeps the dish list', () {
+    // The cheat clarify and the retry both re-analyse the SAME occasion under
+    // the SAME attemptId, so the answer comes back at the same card with the
+    // same dish ids at the same grams — and only the numbers moved. Matching
+    // on ids and amounts alone called that "unchanged".
+    const one = ParsedMeal(
+      mealName: 'Bữa trưa',
+      totalMacros: MacroBreakdown(calories: 300, protein: 20, carbs: 30, fat: 8),
+      items: [
+        MealItem(
+          id: 'r1',
+          name: 'Bánh mì trứng',
+          quantity: 200,
+          unit: 'g',
+          macros: MacroBreakdown(calories: 300, protein: 20, carbs: 30, fat: 8),
+        ),
+      ],
+    );
+    // Same dish id, same grams, same CALORIES — only the macro split moved.
+    // Matching on ids, quantities and calories alone saw no change at all.
+    const reEstimated = ParsedMeal(
+      mealName: 'Bữa trưa',
+      totalMacros: MacroBreakdown(calories: 300, protein: 44, carbs: 30, fat: 8),
+      items: [
+        MealItem(
+          id: 'r1',
+          name: 'Bánh mì trứng',
+          quantity: 200,
+          unit: 'g',
+          macros: MacroBreakdown(calories: 300, protein: 44, carbs: 30, fat: 8),
+        ),
+      ],
+    );
+
+    Widget card(ParsedMeal meal, {DateTime? loggedAt}) => _wrap(
+      MealEntry(
+        parsedMeal: meal,
+        rawInput: 'lại lần nữa',
+        loggedAt: loggedAt,
+        onConfirm: (_) {},
+      ),
+      width: _phone390,
+    );
+
+    testWidgets('re-seeds the per-item nutrition, not just the total', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(card(one));
+      await tester.pumpAndSettle();
+      expect(find.text('20g'), findsNWidgets(2));
+
+      await tester.pumpWidget(card(reEstimated));
+      await tester.pumpAndSettle();
+
+      // The dish row AND the totals line. Held stale, the row kept 20g under a
+      // totals line reading 44g — a card whose parts did not add up to its sum
+      // (the total is read straight off the new [ParsedMeal], the row was not).
+      expect(
+        find.text('44g'),
+        findsNWidgets(2),
+        reason: 'the dish row must move with the analysis, not lag it',
+      );
+      expect(find.text('20g'), findsNothing);
+    });
+
+    testWidgets('re-seeds the divider time', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(card(one, loggedAt: DateTime(2026, 8, 11, 12, 15)));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('12:15'), findsOneWidget);
+
+      await tester.pumpWidget(
+        card(reEstimated, loggedAt: DateTime(2026, 8, 11, 13, 40)),
+      );
+      await tester.pumpAndSettle();
+
+      // `_enteredAt` was `late final`, so the card kept saying the meal was
+      // logged when the attempt it REPLACED was staged.
+      expect(find.textContaining('1:40'), findsOneWidget);
+      expect(find.textContaining('12:15'), findsNothing);
+    });
+
+    testWidgets('a plain refetch of the same analysis keeps its time', (
+      tester,
+    ) async {
+      // The other half of the invariant: a day refetch hands over an
+      // equal-but-new ParsedMeal every time, and re-seeding on that would
+      // throw away an edit in progress (and, with a null loggedAt, creep the
+      // divider forward on every rebuild).
+      await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final at = DateTime(2026, 8, 11, 12, 15);
+      await tester.pumpWidget(card(one, loggedAt: at));
+      await tester.pumpAndSettle();
+
+      await tester.pumpWidget(
+        card(
+          const ParsedMeal(
+            mealName: 'Bữa trưa',
+            totalMacros: MacroBreakdown(
+              calories: 300,
+              protein: 20,
+              carbs: 30,
+              fat: 8,
+            ),
+            items: [
+              MealItem(
+                id: 'r1',
+                name: 'Bánh mì trứng',
+                quantity: 200,
+                unit: 'g',
+                macros: MacroBreakdown(
+                  calories: 300,
+                  protein: 20,
+                  carbs: 30,
+                  fat: 8,
+                ),
+              ),
+            ],
+          ),
+          loggedAt: at,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('12:15'), findsOneWidget);
+    });
+  });
+
+  testWidgets('a re-stage under an open portion picker wins', (tester) async {
+    // The picker computes its answer from a SNAPSHOT of the items as they were
+    // when it opened — its own comment says nothing can move the row while it
+    // is modal, and for the ROW that holds. A re-stage is not the row moving:
+    // it replaces the whole analysis under the sheet. Applying the snapshot
+    // then wrote the superseded meal back over it, so a user who opened the
+    // picker just before a retry landed undid the retry by pressing Apply.
+    await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    const vessel = PieceVessel(tier: 3, count: 1, kind: PieceKind.fish);
+    const before = ParsedMeal(
+      mealName: 'Bữa tối',
+      totalMacros: MacroBreakdown(calories: 300, protein: 30, carbs: 4, fat: 18),
+      items: [
+        MealItem(
+          id: 'p1',
+          name: 'Cá kho',
+          quantity: 150,
+          unit: 'g',
+          macros: MacroBreakdown(calories: 300, protein: 30, carbs: 4, fat: 18),
+          vessel: vessel,
+        ),
+      ],
+    );
+    const restaged = ParsedMeal(
+      mealName: 'Bữa tối',
+      totalMacros: MacroBreakdown(calories: 520, protein: 52, carbs: 7, fat: 31),
+      items: [
+        MealItem(
+          id: 'p1',
+          name: 'Cá kho',
+          quantity: 260,
+          unit: 'g',
+          macros: MacroBreakdown(calories: 520, protein: 52, carbs: 7, fat: 31),
+          vessel: vessel,
+        ),
+      ],
+    );
+
+    // The meal changes WITHOUT rebuilding the app root — a `pumpWidget` would
+    // tear down the Navigator the sheet is living in.
+    final meal = ValueNotifier<ParsedMeal>(before);
+    addTearDown(meal.dispose);
+
+    await tester.pumpWidget(
+      _wrap(
+        ValueListenableBuilder<ParsedMeal>(
+          valueListenable: meal,
+          builder: (_, value, _) => MealEntry(
+            parsedMeal: value,
+            rawInput: 'cá kho',
+            onConfirm: (_) {},
+          ),
+        ),
+        width: _phone390,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final line = find.byType(PortionAssumptionLine);
+    await tester.ensureVisible(line);
+    await tester.pumpAndSettle();
+    await tester.tap(line);
+    await tester.pumpAndSettle();
+    expect(find.text('Apply'), findsOneWidget);
+
+    // The retry's answer lands while the sheet is up.
+    meal.value = restaged;
+    await tester.pumpAndSettle();
+
+    // Apply commits the picker's view of a meal that no longer exists.
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('520 kcal'),
+      findsNWidgets(2),
+      reason: 'the re-stage must survive a sheet that opened before it',
+    );
+    expect(find.text('300 kcal'), findsNothing);
   });
 }

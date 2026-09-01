@@ -60,7 +60,7 @@ class FeedCheatActions {
   /// it on the same text with the answer the user picked attached (mirrors web
   /// `handleCheatClarify`).
   void clarify(String answer) {
-    final retake = run.retakeReveal();
+    final retake = run.retakeReveal(date: date);
     if (retake == null) return;
     startMealAnalysis(
       ref,
