@@ -289,9 +289,6 @@ const double kNavHeight = 72;
 const double kNavRadius = 36;
 const double kNavAddSize = 52; // center "+" circle (beige, ink plus)
 
-/// Bottom padding scroll views need so content clears the floating pill nav.
-const double kNavClearance = 120;
-
 /// The bottom-sheet shadow — sheets are TRUE elevation and keep it even
 /// though ordinary cards carry none.
 const List<BoxShadow> kSheetShadows = [

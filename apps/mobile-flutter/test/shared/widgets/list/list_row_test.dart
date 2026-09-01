@@ -83,6 +83,27 @@ void main() {
     await tester.pump(const Duration(seconds: 1)); // let the spinner spin
   });
 
+  testWidgets('a busy row ignores taps without being told twice', (
+    tester,
+  ) async {
+    // `busy` shows a spinner where the chevron was, so the row is visibly
+    // mid-action — but it stayed tappable unless every call site ALSO passed
+    // `enabled: false`, and one forgetting that renders a spinner on a live
+    // target. Busy IS not-tappable.
+    var taps = 0;
+    await tester.pumpWidget(
+      _wrap(
+        SizedBox(
+          width: 358,
+          child: ListRow(label: 'Restore', busy: true, onTap: () => taps++),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Restore'), warnIfMissed: false);
+    expect(taps, 0);
+    await tester.pump(const Duration(seconds: 1)); // let the spinner spin
+  });
+
   testWidgets('a disabled row ignores taps and dims', (tester) async {
     var taps = 0;
     await tester.pumpWidget(

@@ -50,7 +50,8 @@ class ListRow extends StatefulWidget {
 
   /// An action started from this row is in flight — a 14pt spinner replaces
   /// the value/chevron until it settles (account link/unlink, export, restore,
-  /// sign out). Pair with `enabled: false` to gate re-taps.
+  /// sign out), and the row stops taking taps for the duration. Pass [enabled]
+  /// only for a reason BEYOND this row's own action being busy.
   final bool busy;
 
   final bool showChevron;
@@ -63,7 +64,11 @@ class ListRow extends StatefulWidget {
 class _ListRowState extends State<ListRow> {
   bool _pressed = false;
 
-  bool get _interactive => widget.enabled && widget.onTap != null;
+  /// A row whose own action is in flight is not a target: [busy] already
+  /// replaced its affordance with a spinner, so leaving it tappable only let a
+  /// second tap through while the first was still running.
+  bool get _interactive =>
+      widget.enabled && !widget.busy && widget.onTap != null;
 
   @override
   Widget build(BuildContext context) {
@@ -115,8 +120,11 @@ class _ListRowState extends State<ListRow> {
       ),
     );
 
+    // Dimmed whenever the row is not taking taps, so look and behavior agree.
+    final double opacity = widget.enabled && !widget.busy ? 1.0 : 0.6;
+
     if (widget.onTap == null) {
-      return Opacity(opacity: widget.enabled ? 1.0 : 0.6, child: row);
+      return Opacity(opacity: opacity, child: row);
     }
 
     final Widget content = _interactive
@@ -132,13 +140,16 @@ class _ListRowState extends State<ListRow> {
 
     return Semantics(
       button: true,
-      enabled: widget.enabled,
+      enabled: _interactive,
       excludeSemantics: true,
       label: widget.subline != null
           ? '${widget.label}, ${widget.subline}'
           : widget.label,
-      onTap: widget.enabled ? widget.onTap : null,
-      child: Opacity(opacity: widget.enabled ? 1.0 : 0.6, child: content),
+      // The accessibility action goes the same way the gesture does: a busy
+      // row that still exposed `onTap` could be fired from VoiceOver while the
+      // touch target was already inert.
+      onTap: _interactive ? widget.onTap : null,
+      child: Opacity(opacity: opacity, child: content),
     );
   }
 

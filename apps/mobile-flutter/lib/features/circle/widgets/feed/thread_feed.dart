@@ -66,25 +66,23 @@ class ThreadFeed extends ConsumerWidget {
     );
   }
 
-  /// The page's scroll padding. The bottom clears the floating pill nav —
-  /// without [kNavClearance] the last post's action row sits under it.
-  static const EdgeInsets _pagePadding = EdgeInsets.fromLTRB(
-    KalloSpacing.sp3,
-    KalloSpacing.sp2,
-    KalloSpacing.sp3,
-    kNavClearance,
-  );
-
   Widget _list(Widget body) =>
       _scroll([header, const SizedBox(height: KalloSpacing.sp3), body]);
 
-  /// The page's one scroll view: the refresh control, then the content.
-  Widget _scroll(List<Widget> children) => CustomScrollView(
-    physics: kRefreshPhysics,
-    slivers: [
-      KalloRefresh(onRefresh: onRefresh),
+  /// The page's one scroll view: the refresh control, then the content. The
+  /// bottom inset clears the floating pill nav — without it the last post's
+  /// action row sits under the bar — and it is the bar's measured height,
+  /// which the shell reports as the body's bottom padding.
+  Widget _scroll(List<Widget> children) => KalloRefreshableScroll(
+    onRefresh: onRefresh,
+    slivers: (bottomInset) => [
       SliverPadding(
-        padding: _pagePadding,
+        padding: EdgeInsets.fromLTRB(
+          KalloSpacing.sp3,
+          KalloSpacing.sp2,
+          KalloSpacing.sp3,
+          bottomInset,
+        ),
         sliver: SliverList(delegate: SliverChildListDelegate(children)),
       ),
     ],

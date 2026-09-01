@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../data/paywall_controller.dart';
@@ -11,12 +10,7 @@ import '../../../shell/nav/nav_actions.dart';
 void handlePaywallResult(BuildContext context, PaywallActionResult result) {
   switch (result) {
     case PaywallActionResult.unlocked:
-      final router = GoRouter.of(context);
-      if (router.canPop()) {
-        router.pop();
-      } else {
-        landInLogging(context);
-      }
+      popOrOpenLogging(context);
     case PaywallActionResult.pending:
     case PaywallActionResult.paymentPending:
       showTopToast(context, tr('paywall.verifyPending'));

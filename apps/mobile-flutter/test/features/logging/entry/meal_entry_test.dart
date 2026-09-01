@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/composer/entrances.dart';
 import 'package:kallo_mobile/features/logging/widgets/entry/meal_entry.dart';
@@ -219,6 +220,129 @@ void main() {
         reason: 'the staged card must show the server total');
     expect(find.text('490 kcal'), findsNothing,
         reason: 'round-then-sum drift is back');
+  });
+
+  group('the total tracks what will actually be SUBMITTED', () {
+    /// The server's figure against three items that re-sum to 490 (see the
+    /// test above).
+    const drifting = ParsedMeal(
+      mealName: 'Bữa tối',
+      totalMacros: MacroBreakdown(calories: 489, protein: 30, carbs: 60, fat: 10),
+      items: [
+        MealItem(
+          id: 'd1',
+          name: 'Món một',
+          quantity: 100,
+          unit: 'g',
+          macros: MacroBreakdown(calories: 163, protein: 10, carbs: 20, fat: 3),
+        ),
+        MealItem(
+          id: 'd2',
+          name: 'Món hai',
+          quantity: 100,
+          unit: 'g',
+          macros: MacroBreakdown(calories: 163, protein: 10, carbs: 20, fat: 3),
+        ),
+        MealItem(
+          id: 'd3',
+          name: 'Món ba',
+          quantity: 100,
+          unit: 'g',
+          macros: MacroBreakdown(calories: 164, protein: 10, carbs: 20, fat: 4),
+        ),
+      ],
+    );
+
+    Future<void> pumpEditing(WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        _wrap(
+          MealEntry(
+            parsedMeal: drifting,
+            rawInput: 'ba món',
+            onConfirm: (_) {},
+          ),
+          width: _phone390,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a real edit shows the recalculated figure', (tester) async {
+      await pumpEditing(tester);
+
+      await tester.tap(find.byIcon(LucideIcons.plus300).first);
+      await tester.pumpAndSettle();
+
+      // 100g → 110g scales the first dish to 179.3, so 506 is the honest sum.
+      expect(find.text('506 kcal'), findsOneWidget);
+    });
+
+    testWidgets('plus then minus returns to the server figure', (tester) async {
+      // The sentinel was `identical(_items, _original)`, and
+      // `applyQuantityChange` ends in `.toList()` — a NEW list every call, no-op
+      // or not. So stepping up and back down flipped the display to the
+      // round-then-sum figure (490) while `deriveQuantityEdits` reported NO
+      // edits: the user watched the number change, confirmed, and the saved
+      // card came back at the original.
+      await pumpEditing(tester);
+
+      await tester.tap(find.byIcon(LucideIcons.plus300).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(LucideIcons.minus300).first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('489 kcal'),
+        findsOneWidget,
+        reason: 'nothing is being submitted, so nothing may have changed',
+      );
+      expect(find.text('490 kcal'), findsNothing);
+    });
+  });
+
+  testWidgets('a re-staged analysis replaces the card\'s items', (tester) async {
+    // StagedMealCard is keyed by `pending.id`, and analysis_run REUSES the
+    // attemptId for a retry / cheat-clarify — so a re-staged analysis arrives
+    // at the SAME card with a new parsedMeal. Without didUpdateWidget the
+    // state seeded at mount stayed, and the card rendered the old dishes.
+    await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    const restaged = ParsedMeal(
+      mealName: 'Bữa trưa',
+      totalMacros: MacroBreakdown(calories: 300, protein: 20, carbs: 30, fat: 8),
+      items: [
+        MealItem(
+          id: 'r1',
+          name: 'Bánh mì trứng',
+          quantity: 200,
+          unit: 'g',
+          macros: MacroBreakdown(calories: 300, protein: 20, carbs: 30, fat: 8),
+        ),
+      ],
+    );
+
+    Widget card(ParsedMeal meal) => _wrap(
+      MealEntry(parsedMeal: meal, rawInput: 'lại lần nữa', onConfirm: (_) {}),
+      width: _phone390,
+    );
+
+    await tester.pumpWidget(card(_meal));
+    await tester.pumpAndSettle();
+    expect(find.text('Cơm gà Hải Nam'), findsOneWidget);
+
+    await tester.pumpWidget(card(restaged));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bánh mì trứng'), findsOneWidget);
+    expect(find.text('Cơm gà Hải Nam'), findsNothing);
+    // The one dish's row and the totals line, both on the new analysis.
+    expect(find.text('300 kcal'), findsNWidgets(2));
+    expect(find.text('776 kcal'), findsNothing);
   });
 
   testWidgets('the totals line sits in the item rows own columns', (

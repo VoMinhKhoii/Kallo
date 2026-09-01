@@ -161,17 +161,13 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: _clearSelection,
-          child: CustomScrollView(
-            physics: kRefreshPhysics,
-            slivers: [
-              // First sliver: it holds the page down for the whole refetch.
-              KalloRefresh(
-                onRefresh:
-                    () =>
-                        ref
-                            .read(nutritionOverviewProvider(_arg).notifier)
-                            .refetch(),
-              ),
+          child: KalloRefreshableScroll(
+            onRefresh:
+                () =>
+                    ref
+                        .read(nutritionOverviewProvider(_arg).notifier)
+                        .refetch(),
+            slivers: (bottomInset) => [
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(
                   KalloSpacing.sp3,
@@ -187,16 +183,18 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
               // it. `hasScrollBody: false` hands this sliver whatever height
               // is left over, so the line sits on the bottom edge on a short
               // page and simply follows the content on a long one.
-              const SliverPadding(
+              SliverPadding(
                 // The tail clears the floating pill nav — this is a tab, and
-                // the bar hovers over the last thing on the page.
+                // the bar hovers over the last thing on the page. The inset
+                // belongs INSIDE this padding: a trailing spacer sliver would
+                // push the fill-remaining tail off the viewport.
                 padding: EdgeInsets.fromLTRB(
                   KalloSpacing.sp3,
                   KalloSpacing.sp5,
                   KalloSpacing.sp3,
-                  kNavClearance,
+                  bottomInset,
                 ),
-                sliver: SliverFillRemaining(
+                sliver: const SliverFillRemaining(
                   hasScrollBody: false,
                   child: Align(
                     alignment: Alignment.bottomCenter,

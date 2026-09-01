@@ -64,7 +64,6 @@ class _SignOutRowState extends ConsumerState<SignOutRow> {
       label: tr('settings.account.signOut'),
       danger: true,
       busy: _signingOut,
-      enabled: !_signingOut,
       onTap: _confirm,
     );
   }

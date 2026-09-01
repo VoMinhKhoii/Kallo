@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,16 +5,13 @@ import 'package:flutter/services.dart';
 import '../../../../models/logging/meal.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/meal_utils.dart';
+import '../../logic/quantity_editing.dart';
 import '../composer/entrances.dart';
 import 'meal_entry_card.dart';
 import 'meal_entry_confirm_button.dart';
 import 'meal_entry_body.dart';
 import '../turn/meal_time_divider.dart';
 import '../portion/portion_pick_flow.dart';
-
-// Briefly block Confirm after a quantity tap so a fast double-tap on a stepper
-// can't slip through and save before the user is done adjusting.
-const _confirmDebounce = Duration(milliseconds: 300);
 
 /// An unconfirmed analysis: editable dish quantities (+/- steppers) + confirm.
 /// Reuses the web's pure quantity helpers so scaling math is identical.
@@ -63,8 +58,8 @@ class MealEntry extends StatefulWidget {
 }
 
 class _MealEntryState extends State<MealEntry> {
-  late List<MealItem> _items = widget.parsedMeal.items;
-  late final List<MealItem> _original = widget.parsedMeal.items;
+  /// The card's editable quantities, and whether they would really be sent.
+  late QuantityDraft _draft = QuantityDraft(widget.parsedMeal.items);
 
   /// What the divider shows.
   ///
@@ -78,21 +73,34 @@ class _MealEntryState extends State<MealEntry> {
   /// creep forward every time a stepper rebuilds the card.
   late final DateTime _enteredAt = widget.loggedAt ?? DateTime.now();
   bool _editing = false;
-  bool _confirmCoolingDown = false;
-  Timer? _confirmTimer;
+
+  /// Confirm waits a beat after each tap; [dispose] cancels the window, so it
+  /// can never settle onto a dead State. See [ConfirmCooldown].
+  late final ConfirmCooldown _cooldown = ConfirmCooldown(() => setState(() {}));
   // After the first totals count-up, edits should jump rather than re-animate
   // from zero — only the reveal's opening frame counts up.
   late bool _countUp = widget.revealing;
 
   @override
   void dispose() {
-    _confirmTimer?.cancel();
+    _cooldown.dispose();
     super.dispose();
+  }
+
+  /// A re-stage arrives at this very card with a different meal in it — see
+  /// [QuantityDraft.sameDishes].
+  @override
+  void didUpdateWidget(MealEntry oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (QuantityDraft.sameDishes(oldWidget.parsedMeal, widget.parsedMeal)) {
+      return;
+    }
+    setState(() => _draft = QuantityDraft(widget.parsedMeal.items));
   }
 
   void _change(String itemId, double delta) {
     HapticFeedback.selectionClick();
-    _edit(() => applyQuantityChange(_items, _original, itemId, delta));
+    _edit(() => _draft.changed(itemId, delta));
   }
 
   /// Every quantity edit — stepper or portion picker — lands here: it snaps the
@@ -101,14 +109,9 @@ class _MealEntryState extends State<MealEntry> {
   void _edit(List<MealItem> Function() mutate, {bool debounce = true}) {
     setState(() {
       _countUp = false;
-      _items = mutate();
-      if (debounce) _confirmCoolingDown = true;
+      _draft.items = mutate();
     });
-    if (!debounce) return;
-    _confirmTimer?.cancel();
-    _confirmTimer = Timer(_confirmDebounce, () {
-      if (mounted) setState(() => _confirmCoolingDown = false);
-    });
+    if (debounce) _cooldown.arm();
   }
 
   /// Commits whatever the portion picker previewed. No debounce, matching web's
@@ -117,13 +120,13 @@ class _MealEntryState extends State<MealEntry> {
     final next = await pickPortion(
       context,
       item: item,
-      items: _items,
-      original: _original,
+      items: _draft.items,
+      original: _draft.original,
     );
     if (next != null && mounted) _edit(() => next, debounce: false);
   }
 
-  bool get _confirmDisabled => widget.busy || (_editing && _confirmCoolingDown);
+  bool get _confirmDisabled => widget.busy || (_editing && _cooldown.active);
 
   /// Wrap the confirm CTA in a slide-up entrance only on the reveal morph's
   /// opening frame (the spinner row has just slid out of the same slot).
@@ -132,13 +135,13 @@ class _MealEntryState extends State<MealEntry> {
 
   @override
   Widget build(BuildContext context) {
-    // Untouched (`_items` starts AS `_original`; edits assign a new list) →
-    // the SERVER's total, as the saved card shows. Re-summing per-item macros
-    // re-adds figures the API already rounded once each: staged read "490
-    // kcal" where saved read "489". After an edit, only the local sum is right.
-    final totals = identical(_items, _original)
-        ? widget.parsedMeal.totalMacros
-        : recalculateTotals(_items);
+    // Nothing to submit → the SERVER's total, as the saved card shows: summing
+    // the per-item macros re-adds figures the API already rounded once each
+    // ("490 kcal" staged against "489" saved). Only an edit that will really be
+    // sent makes the local sum the right number.
+    final totals = _draft.dirty
+        ? recalculateTotals(_draft.items)
+        : widget.parsedMeal.totalMacros;
 
     // No bottom margin — the feed's list/footer stack owns the gap below.
     return Column(
@@ -157,7 +160,7 @@ class _MealEntryState extends State<MealEntry> {
           editing: _editing,
           child: MealEntryBody(
             rawInput: widget.rawInput,
-            items: _items,
+            items: _draft.items,
             totals: totals,
             editing: _editing,
             revealing: widget.revealing,
@@ -182,9 +185,7 @@ class _MealEntryState extends State<MealEntry> {
             onTap:
                 _confirmDisabled
                     ? null
-                    : () => widget.onConfirm(
-                      deriveQuantityEdits(_items, _original),
-                    ),
+                    : () => widget.onConfirm(_draft.edits),
           ),
         ),
         // A staged card's discard: a quiet icon row BENEATH the button, never

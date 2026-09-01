@@ -76,6 +76,10 @@ class DashboardScreen extends ConsumerWidget {
     final todayDate = todayDateString();
     final args = (userId: userId, date: todayDate);
     final bundle = ref.watch(dashboardBundleProvider(args));
+    // Awaiting the refetch is what makes the spinner honest: it lives exactly
+    // as long as the load it stands for. The skeleton pulls the same one — a
+    // first load that hangs is where a pull is most wanted.
+    Future<void> refresh() => ref.refresh(dashboardBundleProvider(args).future);
 
     return Screen(
       bottom: false,
@@ -98,7 +102,8 @@ class DashboardScreen extends ConsumerWidget {
         child: bundle.when(
           // Skeleton of the real layout, not a spinner, so the load previews
           // its own shape; one outer pulse keeps nested pulses in phase.
-          loading: () => const SkeletonPulse(child: DashboardSkeleton()),
+          loading:
+              () => SkeletonPulse(child: DashboardSkeleton(onRefresh: refresh)),
           error:
               (_, __) => Center(
                 child: Padding(
@@ -118,10 +123,7 @@ class DashboardScreen extends ConsumerWidget {
                 todayDate: todayDate,
                 targets: _targetsFor(data),
                 isFirstRun: _isFirstRun(data),
-                // Awaiting the refetch is what makes the spinner honest: it
-                // lives exactly as long as the load it stands for.
-                onRefresh:
-                    () => ref.refresh(dashboardBundleProvider(args).future),
+                onRefresh: refresh,
               ),
         ),
       ),
@@ -246,22 +248,23 @@ class _ContentState extends State<_Content> {
   Widget build(BuildContext context) {
     final locale = context.locale.toString();
 
-    // A CustomScrollView so the refresh control can be a sliver and hold the
-    // page down for the whole refetch — see [KalloRefresh].
-    return CustomScrollView(
-      physics: kRefreshPhysics,
-      slivers: [
-        KalloRefresh(onRefresh: widget.onRefresh),
+    // The shared refreshable page scroll: bouncing physics and the refresh
+    // control as the first sliver, so the page holds down for the whole
+    // refetch — see [KalloRefreshableScroll].
+    return KalloRefreshableScroll(
+      onRefresh: widget.onRefresh,
+      slivers: (bottomInset) => [
         SliverPadding(
-          padding: const EdgeInsets.only(
+          padding: EdgeInsets.only(
             left: KalloSpacing.sp3,
             right: KalloSpacing.sp3,
             // AppHeader already pays sp1 below itself; sp2 here nets the one
             // 12px step between the wordmark and the week strip.
             top: KalloSpacing.sp2,
             // The floating pill nav is not part of the layout (the shell runs
-            // extendBody), so the scroll owes it its own clearance.
-            bottom: kNavClearance,
+            // extendBody), so it arrives as the body's bottom padding — its
+            // MEASURED height, on this device, with this home indicator.
+            bottom: bottomInset,
           ),
           sliver: SliverList(
             delegate: SliverChildListDelegate([

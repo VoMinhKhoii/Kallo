@@ -154,6 +154,46 @@ void main() {
     expect(loads, 2, reason: 'the pull must refetch the bundle');
   });
 
+  testWidgets('a dashboard stuck on its skeleton can still be pulled', (
+    tester,
+  ) async {
+    // The skeleton was a plain ListView: no refresh control and no bouncing
+    // physics, so the one state where a refetch is most wanted — the first
+    // load hanging — was the one state that could not be pulled, and the
+    // bounce changed under the finger when the bundle finally resolved.
+    final gate = Completer<DashboardBundle>();
+    var loads = 0;
+    await tester.pumpWidget(
+      app(
+        load: () {
+          loads++;
+          return loads == 1
+              ? gate.future
+              : Future.value(DashboardBundle.fromJson(_bundleJson()));
+        },
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.byType(KalloRefresh, skipOffstage: false),
+      findsOneWidget,
+      reason: 'the skeleton must carry the same pull-to-refresh',
+    );
+
+    final gesture = await tester.startGesture(const Offset(200, 200));
+    for (var i = 0; i < 15; i++) {
+      await gesture.moveBy(const Offset(0, 20));
+      await tester.pump();
+    }
+    await gesture.up();
+    await tester.pump();
+
+    expect(loads, 2, reason: 'pulling a stuck skeleton must refetch');
+    gate.complete(DashboardBundle.fromJson(_bundleJson()));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('the list stays held down until the load actually finishes', (
     tester,
   ) async {

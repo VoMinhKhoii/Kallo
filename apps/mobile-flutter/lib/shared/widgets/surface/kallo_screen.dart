@@ -10,9 +10,10 @@ import '../../../theme/kallo_colors.dart';
 ///
 /// Shell-branch screens pass `bottom: false`: under `extendBody` the floating
 /// pill nav reports its whole height as bottom padding, and consuming it here
-/// pins the page above the pill. Their scroll views own a [kNavClearance]
-/// inset instead, so content slides under the bar. Pushed routes (Settings,
-/// Log, sheets' hosts) keep the default and clear the home indicator.
+/// pins the page above the pill. Their scroll views read that same
+/// `MediaQuery.padding.bottom` as their own tail inset instead, so content
+/// slides under the bar. Pushed routes (Settings, Log, sheets' hosts) keep the
+/// default and clear the home indicator.
 class Screen extends StatelessWidget {
   const Screen({
     super.key,

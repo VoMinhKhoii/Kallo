@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../services/billing/entitlements_provider.dart';
@@ -71,14 +70,7 @@ class PaywallScreen extends ConsumerWidget {
     );
   }
 
-  void _dismiss(BuildContext context) {
-    final router = GoRouter.of(context);
-    if (router.canPop()) {
-      router.pop();
-    } else {
-      landInLogging(context);
-    }
-  }
+  void _dismiss(BuildContext context) => popOrOpenLogging(context);
 }
 
 class _CloseHeader extends StatelessWidget {

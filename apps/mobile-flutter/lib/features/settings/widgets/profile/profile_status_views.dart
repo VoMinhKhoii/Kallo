@@ -27,7 +27,7 @@ class ProfileEmpty extends StatelessWidget {
       // resumes). go_router resolves via the root navigator from any
       // descendant context, so this crosses tabs correctly.
       action: tr('settings.profilePage.startSetup'),
-      onAction: () => landInLogging(context),
+      onAction: () => goToLogging(context),
     );
   }
 }

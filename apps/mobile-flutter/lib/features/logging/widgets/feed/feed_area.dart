@@ -45,11 +45,9 @@ class FeedArea extends ConsumerStatefulWidget {
 class _FeedAreaState extends ConsumerState<FeedArea> {
   final MealInputController _inputController = MealInputController();
 
-  /// The composer's text AND relog picks — owned by
-  /// [composerControllerProvider], never disposed here: Log is a fresh push
-  /// per visit, and a State-owned controller dropped the draft on every pop.
-  late final MentionTextEditingController _textController =
-      ref.read(composerControllerProvider);
+  /// The composer's text AND relog picks, for this visit — [ComposerDraftHost].
+  late final ComposerDraftHost _draft = ComposerDraftHost(ref);
+  MentionTextEditingController get _textController => _draft.controller;
 
   /// The `/` picker: whether it is open, on which token, and the debounced
   /// query behind it.
@@ -121,6 +119,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   @override
   void dispose() {
     _picker.dispose();
+    _draft.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -169,6 +168,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   @override
   Widget build(BuildContext context) {
     final profile = widget.profile;
+
+    _draft.followOwner(ref);
 
     listenToAnalysisStream(
       ref,

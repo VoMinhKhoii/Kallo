@@ -106,12 +106,14 @@ class FeedList extends StatelessWidget {
       dockHeight: dockHeight,
       date: view.date,
       builder:
-          (context, tailRoom) => CustomScrollView(
+          (context, tailRoom) => KalloRefreshableScroll(
             controller: scrollController,
-            physics: kRefreshPhysics,
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            slivers: [
-              KalloRefresh(onRefresh: onRefresh),
+            onRefresh: onRefresh,
+            // Log is a pushed route, not a shell branch: no floating nav
+            // reports itself here, and the composer dock the feed scrolls
+            // under already measures its own safe-area inset.
+            slivers: (_) => [
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(
                   KalloSpacing.sp3,

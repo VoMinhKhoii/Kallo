@@ -119,10 +119,13 @@ class PillNavBar extends ConsumerWidget {
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
       offset: keyboardUp ? const Offset(0, 1) : Offset.zero,
+      // The bar stays BUILT while it slides: collapsing it to a zero-size box
+      // on the same frame the offset starts animating killed both the slide
+      // and the fade — it simply vanished.
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 150),
         opacity: keyboardUp ? 0 : 1,
-        child: keyboardUp ? const SizedBox.shrink() : bar,
+        child: bar,
       ),
     );
   }

@@ -40,3 +40,46 @@ class KalloRefresh extends StatelessWidget {
   Widget build(BuildContext context) =>
       CupertinoSliverRefreshControl(onRefresh: onRefresh);
 }
+
+/// A refreshable page scroll: the three things above, assembled.
+///
+/// The contract this file documents — bouncing physics, the control FIRST in
+/// the sliver list — was previously re-typed at every call site, and one copy
+/// (the dashboard skeleton) quietly shipped neither. This owns all of it, so a
+/// page only says what its content is.
+///
+/// [slivers] is a builder because the bottom inset is the caller's to place:
+/// the shell's floating pill nav reports its measured height through
+/// `MediaQuery.padding.bottom` under `extendBody`, and a page pays it inside
+/// the padding of whichever sliver it ends on (Nutrition's tail is a
+/// `SliverFillRemaining`, which a trailing spacer sliver would push off the
+/// viewport). Pushed routes report 0 there and pay their own dock instead.
+class KalloRefreshableScroll extends StatelessWidget {
+  const KalloRefreshableScroll({
+    super.key,
+    required this.onRefresh,
+    required this.slivers,
+    this.controller,
+    this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
+  });
+
+  final Future<void> Function() onRefresh;
+
+  /// The page's own slivers, given the bottom inset the nav (or the home
+  /// indicator) is asking for.
+  final List<Widget> Function(double bottomInset) slivers;
+
+  final ScrollController? controller;
+  final ScrollViewKeyboardDismissBehavior keyboardDismissBehavior;
+
+  @override
+  Widget build(BuildContext context) => CustomScrollView(
+    controller: controller,
+    physics: kRefreshPhysics,
+    keyboardDismissBehavior: keyboardDismissBehavior,
+    slivers: [
+      KalloRefresh(onRefresh: onRefresh),
+      ...slivers(MediaQuery.paddingOf(context).bottom),
+    ],
+  );
+}

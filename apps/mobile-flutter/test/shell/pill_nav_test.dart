@@ -219,6 +219,30 @@ void main() {
     expect(find.text('dash:0'), findsOneWidget);
   });
 
+  testWidgets('the bar slides away with the keyboard rather than vanishing', (
+    tester,
+  ) async {
+    // The slide + fade were dead: the child collapsed to SizedBox.shrink on
+    // the same frame the offset started animating, so the bar disappeared
+    // instantly and there was nothing left to move.
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pump();
+
+    expect(
+      find.text('Today'),
+      findsOneWidget,
+      reason: 'the bar must still be laid out for the slide to animate it',
+    );
+    expect(
+      tester.widget<AnimatedSlide>(find.byType(AnimatedSlide)).offset,
+      const Offset(0, 1),
+    );
+  });
+
   testWidgets('center "+" opens the Add sheet', (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();

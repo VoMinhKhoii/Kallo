@@ -105,7 +105,7 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
     // defunct and `context.go` would look up a dead element.
     final router = GoRouter.of(context);
     Navigator.of(context).pop();
-    landInLoggingWith(router);
+    openLogging(router);
   }
 
   /// The same chooser the feed composer opens — one menu, one dispatch.
