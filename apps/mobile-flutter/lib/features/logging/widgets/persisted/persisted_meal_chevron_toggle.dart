@@ -5,7 +5,12 @@ import '../../../../theme/kallo_colors.dart';
 import '../../logic/logging_spacing.dart';
 
 /// The collapse chevron: its OWN button — a round pressed wash sized to the
-/// glyph, not to the row. Rotates 0°↔180° over 200ms.
+/// glyph, not to the row.
+///
+/// Rotates 0°↔180° on whatever animation the card hands it. That MUST be the
+/// card's eased disclosure animation, not the bare controller: the rotation is
+/// read against the height opening beneath it, so the two have to share a
+/// curve or the chevron visibly leads.
 class PersistedMealChevronToggle extends StatefulWidget {
   const PersistedMealChevronToggle({
     super.key,

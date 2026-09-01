@@ -26,9 +26,12 @@ class NutrientRowsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     return GroupedListCard(
-      // Text-only rows, so the separator runs the full width of the text
-      // column rather than clearing a leading glyph.
-      separatorInset: 0,
+      // No hairlines: every row here ends in a full-width bar whose grey track
+      // spans the same text column the separator would, so the line landed
+      // directly above a track that was already dividing the rows and read as
+      // noise. Safe because this card has no bar-less row — a missing or
+      // low-confidence reading still draws its bar, just with an empty fill.
+      showSeparators: false,
       children: [
         for (final (index, card) in cards.indexed)
           NutrientRow(
