@@ -64,41 +64,37 @@ void showWeightLogSheetWithData(
     builder: (sheetContext) {
       final mq = MediaQuery.of(sheetContext);
       // Keypad-first sheet: it wraps its content (header + field + Save)
-      // instead of claiming a fixed slice of the screen, and the viewInsets
-      // padding lifts that compact stack to ride right above the keyboard.
+      // instead of claiming a fixed slice of the screen, and rides right above
+      // the keyboard — `KalloSheetSurface` owns that inset for every sheet now.
       // `scrollable` keeps it safe when the height is tight (landscape,
       // split-screen).
-      return Padding(
-        padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
-        child: KalloSheetSurface(
-          scrollable: true,
-          padding: EdgeInsets.only(
-            left: KalloSpacing.sp4,
-            right: KalloSpacing.sp4,
-            // The keyboard's own inset clears the home indicator while the
-            // pad is up; at rest the 34pt inset is the sheet's bottom gap.
-            bottom: mq.viewInsets.bottom > 0
-                ? KalloSpacing.sp3
-                : math.max(mq.viewPadding.bottom, KalloSpacing.sp4),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              KalloSheetHeader(
-                title: tr('dashboard.weightCard.todaysWeight'),
-              ),
-              const SizedBox(height: KalloSpacing.sp2),
-              CompactWeightLog(
-                currentWeight: data.currentWeight,
-                todayWeight: data.todayWeight,
-                todayDate: todayDate,
-                args: args,
-                autofocus: true,
-                onSaved: () => Navigator.of(sheetContext).pop(),
-              ),
-            ],
-          ),
+      return KalloSheetSurface(
+        scrollable: true,
+        padding: EdgeInsets.only(
+          left: KalloSpacing.sp4,
+          right: KalloSpacing.sp4,
+          // The keyboard's own inset clears the home indicator while the
+          // pad is up; at rest the 34pt inset is the sheet's bottom gap.
+          bottom:
+              mq.viewInsets.bottom > 0
+                  ? KalloSpacing.sp3
+                  : math.max(mq.viewPadding.bottom, KalloSpacing.sp4),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            KalloSheetHeader(title: tr('dashboard.weightCard.todaysWeight')),
+            const SizedBox(height: KalloSpacing.sp2),
+            CompactWeightLog(
+              currentWeight: data.currentWeight,
+              todayWeight: data.todayWeight,
+              todayDate: todayDate,
+              args: args,
+              autofocus: true,
+              onSaved: () => Navigator.of(sheetContext).pop(),
+            ),
+          ],
         ),
       );
     },

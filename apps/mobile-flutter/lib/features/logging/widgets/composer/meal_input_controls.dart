@@ -1,7 +1,8 @@
-/// The three controls on the composer's second line: the mode chooser, the
-/// one-tap barcode trigger, and the send/stop button.
+/// The two icon buttons on the composer's second line: the one-tap scan
+/// trigger and the send/stop button.
 ///
-/// Split out of meal_input.dart so that file stays about the field itself.
+/// The row that arranges them, and the mode pill beside them, live in
+/// composer_action_row.dart.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
@@ -9,72 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
-import '../../../../theme/kallo_theme.dart';
-import '../../logic/logging_spacing.dart';
-
-/// The mode control on the input bar's second line — a minimal icon + label
-/// (no border, no chevron), like the Claude composer's "Auto". Tapping opens the
-/// mode chooser. 44pt tap target, scales 0.96 on press.
-class ComposerModeButton extends StatefulWidget {
-  const ComposerModeButton({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  State<ComposerModeButton> createState() => _ComposerModeButtonState();
-}
-
-class _ComposerModeButtonState extends State<ComposerModeButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: widget.label,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: SizedBox(
-          height: 44, // HIG tap target
-          child: Center(
-            child: AnimatedScale(
-              scale: _pressed ? 0.96 : 1,
-              duration: const Duration(milliseconds: 200),
-              child: Padding(
-                // No left inset: the mode mark lines up with the field's text
-                // above it, and the composer card's own 16 is the gutter.
-                padding: const EdgeInsets.only(right: KalloSpacing.sp2_5),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(widget.icon,
-                        size: LoggingIcons.size, color: KalloColors.text),
-                    const SizedBox(width: 6),
-                    // Ink at 500: this names the mode the next send will use —
-                    // state to read at a glance, not a hint.
-                    Text(widget.label, style: dashBody(weight: FontWeight.w500)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// Icon-only barcode trigger beside the mode control — same quiet styling,
 /// 44pt tap target.
@@ -179,8 +115,7 @@ class _ComposerActionButtonState extends State<ComposerActionButton> {
                 decoration: BoxDecoration(
                   // The press is carried by the scale above, not by a second
                   // fill: beige has nowhere lighter to go on white.
-                  color:
-                      armed ? KalloColors.btnPrimarySoft : KalloColors.track,
+                  color: armed ? KalloColors.btnPrimarySoft : KalloColors.track,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

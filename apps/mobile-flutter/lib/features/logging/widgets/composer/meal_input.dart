@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../theme/calm_tokens.dart';
@@ -8,7 +7,7 @@ import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
 import 'composer_card_surface.dart';
-import 'meal_input_controls.dart';
+import 'composer_action_row.dart';
 import '../relog/mention_text_controller.dart';
 
 /// Imperative handle for [MealInput] — the RN `MealInputHandle`
@@ -35,6 +34,7 @@ class MealInput extends StatefulWidget {
     this.onModePressed,
     this.onBarcodePressed,
     this.modeLabel,
+    this.modeDetail,
     this.modeIcon,
     this.hintText,
     this.notice,
@@ -64,6 +64,10 @@ class MealInput extends StatefulWidget {
   /// Label + icon of the currently selected mode, shown on the mode control.
   final String? modeLabel;
   final IconData? modeIcon;
+
+  /// The muted qualifier trailing [modeLabel] — cheat's intensity. Null for
+  /// modes that carry none, which then render as the bare mode name.
+  final String? modeDetail;
 
   /// Placeholder override — cheat mode swaps in the occasion-flavored hint.
   final String? hintText;
@@ -262,36 +266,17 @@ class _MealInputState extends State<MealInput>
                   ),
                 ),
                 const SizedBox(height: KalloSpacing.sp0_5),
-                // Line 2 — mode selector on the left, send/stop on the right.
-                Row(
-                  children: [
-                    if (widget.onModePressed != null && !widget.analyzing)
-                      ComposerModeButton(
-                        icon: widget.modeIcon ?? LucideIcons.zap300,
-                        label:
-                            widget.modeLabel ??
-                            'logging.modeSelector.button'.tr(),
-                        onTap: widget.onModePressed!,
-                      ),
-                    if (widget.onBarcodePressed != null && !widget.analyzing)
-                      ComposerBarcodeButton(onTap: widget.onBarcodePressed!),
-                    const Spacer(),
-                    if (!_canSubmit &&
-                        widget.analyzing &&
-                        widget.onCancel != null)
-                      ComposerActionButton(
-                        icon: LucideIcons.square300, // lucide Square (filled)
-                        label: 'common.cancel'.tr(),
-                        onTap: widget.onCancel,
-                      )
-                    else
-                      ComposerActionButton(
-                        icon: LucideIcons.arrowUp400, // lucide ArrowUp
-                        label: 'logging.submit'.tr(),
-                        enabled: _canSubmit,
-                        onTap: _canSubmit ? _submit : null,
-                      ),
-                  ],
+                // Line 2 — mode, scan, send.
+                ComposerActionRow(
+                  analyzing: widget.analyzing,
+                  canSubmit: _canSubmit,
+                  modeIcon: widget.modeIcon,
+                  modeLabel: widget.modeLabel,
+                  modeDetail: widget.modeDetail,
+                  onModePressed: widget.onModePressed,
+                  onBarcodePressed: widget.onBarcodePressed,
+                  onCancel: widget.onCancel,
+                  onSubmit: _submit,
                 ),
               ],
             ),

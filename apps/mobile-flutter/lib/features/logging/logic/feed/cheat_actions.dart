@@ -56,10 +56,6 @@ class FeedCheatActions {
     input.focus();
   }
 
-  void setIntensity(CheatIntensity intensity) {
-    ref.read(cheatIntensityProvider.notifier).state = intensity;
-  }
-
   /// Vague-input fallback: the estimator could not read the occasion, so re-run
   /// it on the same text with the answer the user picked attached (mirrors web
   /// `handleCheatClarify`).

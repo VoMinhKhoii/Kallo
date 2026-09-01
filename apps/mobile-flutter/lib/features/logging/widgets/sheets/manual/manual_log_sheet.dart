@@ -120,69 +120,68 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
     final media = MediaQuery.of(context);
     final keyboardInset = media.viewInsets.bottom;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: keyboardInset),
-      child: KalloSheetSurface(
-        constraints: BoxConstraints(maxHeight: media.size.height * 0.9),
-        padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            KalloSheetHeader(title: 'logging.manualLogging.sheetTitle'.tr()),
-            // ONE scroll view for the whole body: added card at the top,
-            // results at the bottom, and a Spacer between them that hands its
-            // space back the moment the content needs it (landscape). It
-            // opens scrolled to the BOTTOM (`reverse`), so the closest match
-            // is the row already sitting against the search pill.
-            Flexible(
-              child: LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
-                  reverse: true,
-                  physics: const ClampingScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ManualAddedBlock(
-                            key: _addedKey,
-                            onSave: _save,
-                            errorText: _errorText,
-                          ),
-                          const Spacer(),
-                          const SizedBox(height: KalloSpacing.sp3),
-                          ManualResultsList(
-                            query: _query,
-                            resultsAsync: resultsAsync,
-                            onPick: (ingredient) {
-                              ref
-                                  .read(manualLogProvider.notifier)
-                                  .addIngredient(ingredient);
-                              _revealAdded();
-                            },
-                          ),
-                        ],
-                      ),
+    // The surface lifts itself clear of the keyboard; the cap it is given
+    // has to come off the height the keyboard LEAVES, not the whole screen.
+    return KalloSheetSurface(
+      constraints: BoxConstraints(maxHeight: (media.size.height - keyboardInset) * 0.9),
+      padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          KalloSheetHeader(title: 'logging.manualLogging.sheetTitle'.tr()),
+          // ONE scroll view for the whole body: added card at the top,
+          // results at the bottom, and a Spacer between them that hands its
+          // space back the moment the content needs it (landscape). It
+          // opens scrolled to the BOTTOM (`reverse`), so the closest match
+          // is the row already sitting against the search pill.
+          Flexible(
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                reverse: true,
+                physics: const ClampingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ManualAddedBlock(
+                          key: _addedKey,
+                          onSave: _save,
+                          errorText: _errorText,
+                        ),
+                        const Spacer(),
+                        const SizedBox(height: KalloSpacing.sp3),
+                        ManualResultsList(
+                          query: _query,
+                          resultsAsync: resultsAsync,
+                          onPick: (ingredient) {
+                            ref
+                                .read(manualLogProvider.notifier)
+                                .addIngredient(ingredient);
+                            _revealAdded();
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: KalloSpacing.sp2),
-            ManualSearchField(controller: _searchController),
-            // 34pt home inset at rest (floored for phones without one); the
-            // pad's own inset covers it when the keyboard is up.
-            SizedBox(
-              height: keyboardInset > 0
-                  ? KalloSpacing.sp2
-                  : math.max(media.viewPadding.bottom, KalloSpacing.sp4),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: KalloSpacing.sp2),
+          ManualSearchField(controller: _searchController),
+          // 34pt home inset at rest (floored for phones without one); the
+          // pad's own inset covers it when the keyboard is up.
+          SizedBox(
+            height: keyboardInset > 0
+                ? KalloSpacing.sp2
+                : math.max(media.viewPadding.bottom, KalloSpacing.sp4),
+          ),
+        ],
       ),
     );
   }

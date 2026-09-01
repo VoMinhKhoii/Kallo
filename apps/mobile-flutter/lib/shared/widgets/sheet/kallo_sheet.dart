@@ -51,6 +51,16 @@ Future<T?> showNhamSheet<T>(
 /// the body scroll past that, keeping the action row reachable on a short
 /// phone, at 1.3x Dynamic Type, and in landscape. Sheets that already own a
 /// `ListView`/`SingleChildScrollView` must NOT set it — two nested scrollables.
+///
+/// **The keyboard is handled HERE, once.** `showModalBottomSheet` does not do
+/// it, so every sheet with a field was paying for it by hand — five did it as
+/// an outer padding, three folded it into an inner scroll view, and
+/// `group_info_sheet` (inline rename + member search) simply did not, so the
+/// keyboard covered both of its fields. The surface now lifts itself clear of
+/// `viewInsets` and takes the keyboard out of its own height cap, which is the
+/// other half: a 0.9-of-SCREEN cap while the keyboard owns 300pt of that
+/// screen is an overflow waiting for a short phone. Sheets must NOT re-apply
+/// the inset on top of this.
 class KalloSheetSurface extends StatelessWidget {
   const KalloSheetSurface({
     super.key,
@@ -76,11 +86,14 @@ class KalloSheetSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     var effective = constraints;
     var body = child;
     if (scrollable) {
       effective ??= BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * maxHeightFraction,
+        maxHeight:
+            (MediaQuery.sizeOf(context).height - keyboardInset) *
+            maxHeightFraction,
       );
       // shrinkWrap semantics: the sheet still hugs its content and only
       // scrolls once the content exceeds the cap.
@@ -89,17 +102,24 @@ class KalloSheetSurface extends StatelessWidget {
         child: child,
       );
     }
-    return Container(
-      constraints: effective,
-      padding: padding,
-      clipBehavior: clipBehavior,
-      decoration: const BoxDecoration(
-        color: kCardSurface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(kCardRadius)),
-        // Sheets are TRUE elevation on the borderless-card canvas.
-        boxShadow: kSheetShadows,
+    // OUTSIDE the decoration: the surface has to end where the keyboard
+    // begins, not merely inset its contents and paint white behind it.
+    return Padding(
+      padding: EdgeInsets.only(bottom: keyboardInset),
+      child: Container(
+        constraints: effective,
+        padding: padding,
+        clipBehavior: clipBehavior,
+        decoration: const BoxDecoration(
+          color: kCardSurface,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(kCardRadius),
+          ),
+          // Sheets are TRUE elevation on the borderless-card canvas.
+          boxShadow: kSheetShadows,
+        ),
+        child: body,
       ),
-      child: body,
     );
   }
 }

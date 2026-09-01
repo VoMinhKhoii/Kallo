@@ -39,7 +39,9 @@ class _AddFriendSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    final maxHeight = MediaQuery.of(context).size.height * 0.85;
+    // `KalloSheetSurface` lifts the sheet clear of the keyboard, so the cap
+    // comes off the height the keyboard leaves.
+    final maxHeight = (MediaQuery.of(context).size.height - viewInsets) * 0.85;
 
     return KalloSheetSurface(
       constraints: BoxConstraints(maxHeight: maxHeight),
@@ -53,10 +55,9 @@ class _AddFriendSheet extends ConsumerWidget {
                 KalloSpacing.sp4,
                 0,
                 KalloSpacing.sp4,
-                viewInsets +
-                    (viewInsets > 0
-                        ? KalloSpacing.sp3
-                        : math.max(bottomInset, KalloSpacing.sp4)),
+                viewInsets > 0
+                    ? KalloSpacing.sp3
+                    : math.max(bottomInset, KalloSpacing.sp4),
               ),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
