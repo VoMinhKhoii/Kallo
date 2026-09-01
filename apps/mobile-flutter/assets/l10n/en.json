@@ -543,6 +543,7 @@
       "calories": "kcal",
       "loggedDays": "All",
       "completeDays": "Complete days",
+      "completeDaysHint": "Only days logging at least 85% of your calorie target are counted here - the rest are counted in \u201c{allLabel}\u201d.",
       "avgPerLoggedDay": "avg per logged day",
       "avgPerCompleteDay": "avg per complete day",
       "avgValue": "{value} avg",
@@ -944,12 +945,6 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "greeting": {
-      "morning": "Good morning",
-      "afternoon": "Good afternoon",
-      "evening": "Good evening",
-      "night": "Good evening"
-    },
     "today": "Today",
     "thisWeek": "This Week",
     "caloriesConsumed": "Calories consumed",
@@ -1011,6 +1006,7 @@
       "update": "Update",
       "editHint": "Editing today's entry — saves overwrite the previous value.",
       "saveFailed": "Failed to save weight",
+      "loadFailed": "Couldn't open the weight logger. Please try again.",
       "netChange": "Net change",
       "steady": "Steady"
     },
@@ -1077,8 +1073,9 @@
       "title": "Log a meal"
     },
     "cheatIntensity": {
+      "title": "Intensity",
       "label": "How much did you eat?",
-      "helper": "Scales the estimate",
+      "helper": "Scales the estimate to how big the treat was.",
       "light": "Light",
       "medium": "Medium",
       "heavy": "Heavy"
@@ -1347,7 +1344,7 @@
     "scan": {
       "title": "Scan",
       "barcodeTab": "Barcode",
-      "labelTab": "Nutrition label",
+      "labelTab": "Nutrition",
       "tryLabelInstead": "Scan the nutrition label instead",
       "tryBarcodeInstead": "Scan the barcode instead",
       "savedMeal": "Meal added"

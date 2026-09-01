@@ -319,6 +319,7 @@ void main() {
           SharedMealFeedState(entries: [], nextCursor: null),
         ),
         header: const SizedBox.shrink(),
+        onRefresh: () async {},
         onRetry: () {},
         onAddFriend: () {},
         emptyTitleKey: 'groups.page.groupNoActivity',

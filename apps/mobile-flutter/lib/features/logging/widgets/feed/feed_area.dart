@@ -7,6 +7,7 @@ import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../models/logging/relog.dart';
 import '../../data/logging_models.dart';
 import '../../data/logging_providers.dart';
+import '../../data/logging_ui_state.dart';
 import '../../data/stream_analysis_controller.dart';
 import '../../logic/feed/analysis_actions.dart';
 import '../../logic/feed/analysis_run.dart';
@@ -44,11 +45,9 @@ class FeedArea extends ConsumerStatefulWidget {
 class _FeedAreaState extends ConsumerState<FeedArea> {
   final MealInputController _inputController = MealInputController();
 
-  /// The composer's text AND the relog picks living inside it as tinted runs.
-  /// Owned here, not by [MealInput], because the submit path reads the picks
-  /// and the free text around them.
-  final MentionTextEditingController _textController =
-      MentionTextEditingController();
+  /// The composer's text AND relog picks, for this visit — [ComposerDraftHost].
+  late final ComposerDraftHost _draft = ComposerDraftHost(ref);
+  MentionTextEditingController get _textController => _draft.controller;
 
   /// The `/` picker: whether it is open, on which token, and the debounced
   /// query behind it.
@@ -112,15 +111,16 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   LoggingDayArgs get _dayArgs =>
       LoggingDayArgs(widget.profile.userId, widget.date);
 
-  /// What the controllers above call when something they own changed.
-  void _rebuild() {
-    if (mounted) setState(() {});
+  /// What the controllers call when something changed — and the one door every
+  /// `setState` goes through, so late work never lands on a dead State.
+  void _rebuild([VoidCallback? change]) {
+    if (mounted) setState(change ?? () {});
   }
 
   @override
   void dispose() {
     _picker.dispose();
-    _textController.dispose();
+    _draft.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -164,11 +164,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
 
   /// An action failed: surface it as the composer's inline error line.
   void _showActionError() =>
-      setState(() => _errorText = 'errors.internal'.tr());
+      _rebuild(() => _errorText = 'errors.internal'.tr());
 
   @override
   Widget build(BuildContext context) {
     final profile = widget.profile;
+
+    _draft.followOwner(ref);
 
     listenToAnalysisStream(
       ref,
@@ -222,13 +224,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       ref: ref,
       userId: profile.userId,
       date: widget.date,
-      onHoldRemoval: (id) => setState(() => _pendingRemovalIds.add(id)),
-      onReleaseRemoval: (id) => setState(() => _pendingRemovalIds.remove(id)),
-      onRemovalFailed:
-          (id) => setState(() {
-            _pendingRemovalIds.remove(id);
-            _errorText = 'errors.internal'.tr();
-          }),
+      onHoldRemoval: (id) => _rebuild(() => _pendingRemovalIds.add(id)),
+      onReleaseRemoval: (id) => _rebuild(() => _pendingRemovalIds.remove(id)),
+      onRemovalFailed: (id) => _rebuild(() {
+        _pendingRemovalIds.remove(id);
+        _errorText = 'errors.internal'.tr();
+      }),
     );
 
     final cheatActions = FeedCheatActions(
@@ -239,7 +240,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       run: _analysis,
       input: _inputController,
       isStaging: () => _stagingRepeat,
-      onStagingChange: (staging) => setState(() => _stagingRepeat = staging),
+      onStagingChange: (staging) => _rebuild(() => _stagingRepeat = staging),
       onStaged: () => _pin.pinToBottom(widget.date),
     );
 
@@ -286,7 +287,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           errorText: _errorText,
           mode: mode,
           cheatIntensity: cheatIntensity,
-          onCheatIntensityChange: cheatActions.setIntensity,
           userId: profile.userId,
           stagingRepeat: _stagingRepeat,
           onRepeatCheat: cheatActions.repeat,
@@ -303,8 +303,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           onBarcodePressed: sheets.openBarcode,
           noticeDismissed: _noticeDismissedFor == widget.date,
           onDismissNotice:
-              () => setState(() => _noticeDismissedFor = widget.date),
-          onHeightChanged: (height) => setState(() => _dockHeight = height),
+              () => _rebuild(() => _noticeDismissedFor = widget.date),
+          onHeightChanged: (height) => _rebuild(() => _dockHeight = height),
         ),
       ),
       // The card list. The composer floats over its bottom edge as an

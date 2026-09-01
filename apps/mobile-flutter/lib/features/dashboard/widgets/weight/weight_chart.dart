@@ -77,6 +77,25 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final kg = tr('dashboard.units.kg');
 
+    // Nothing LOGGED yet: the empty state and nothing else.
+    //
+    // `currentWeight` is non-null from the onboarding profile even when the
+    // user has never weighed in, so the card used to headline "65.9 kg" over
+    // the words "Log your first weight to start tracking your trend" — a
+    // number and a denial that there is one, on the same card. The profile
+    // weight still prefills the log sheet; it just isn't a reading.
+    if (data.weights.isEmpty) {
+      return Container(
+        constraints: const BoxConstraints(minHeight: 200),
+        alignment: Alignment.center,
+        child: Text(
+          tr('dashboard.noWeightData'),
+          textAlign: TextAlign.center,
+          style: dashMeta(color: kInkMuted),
+        ),
+      );
+    }
+
     // Net change over the window (current − period start), shown as a small
     // badge right beside the hero number.
     final delta = data.currentWeight - data.periodStartWeight;

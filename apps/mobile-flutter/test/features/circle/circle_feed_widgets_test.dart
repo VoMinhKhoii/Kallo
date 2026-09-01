@@ -405,6 +405,7 @@ class _StaticThread extends StatelessWidget {
   Widget build(BuildContext context) => ThreadFeed(
     feed: AsyncData(state),
     header: const SizedBox.shrink(),
+    onRefresh: () async {},
     onRetry: () {},
     onAddFriend: () {},
   );

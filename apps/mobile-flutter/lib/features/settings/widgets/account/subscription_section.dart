@@ -67,7 +67,6 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
         icon: LucideIcons.refreshCw300,
         label: tr('settings.subscription.restore'),
         busy: _restoring,
-        enabled: !_restoring,
         onTap: _restore,
       ),
     );

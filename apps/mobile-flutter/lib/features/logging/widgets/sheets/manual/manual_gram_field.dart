@@ -8,10 +8,17 @@ import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../../../theme/kallo_typography.dart';
 
-/// The gram amount on an added row: a small bordered FIELD showing "180 g"
-/// (36pt, radius 10, hairline), not a chip with a chevron — a chevron reads as
-/// a dropdown, and tapping this opens the number pad instead (native pass,
+/// The gram amount on an added row: a bordered FIELD showing "180 g" (44pt,
+/// radius 12, hairline), not a chip with a chevron — a chevron reads as a
+/// dropdown, and tapping this opens the number pad instead (native pass,
 /// 2026-08-31).
+///
+/// It sizes itself from SYMMETRIC vertical padding rather than being forced to
+/// a height. A fixed box was the bug: `InputDecorator` anchors its input to
+/// `contentPadding.top` and leaves any surplus height at the bottom, so a 36pt
+/// box with zero vertical padding hung the number 6.5pt above the squircle's
+/// centre. Symmetric padding centres it by construction, and lets the field
+/// grow with Dynamic Type instead of clipping.
 ///
 /// Keeps the raw text locally and reports the parsed number upstream, the same
 /// contract [DecimalInput] uses, so an in-progress "18," is not erased on each
@@ -58,12 +65,12 @@ class _ManualGramFieldState extends State<ManualGramField> {
   @override
   Widget build(BuildContext context) {
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(KalloRadii.lg),
+      borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
       borderSide: const BorderSide(color: kHairline),
     );
     return SizedBox(
-      height: 36,
-      width: 76,
+      // Four digits and the unit ("9999 g") without the number reflowing.
+      width: 88,
       child: TextField(
         controller: _controller,
         enabled: widget.enabled,
@@ -85,12 +92,17 @@ class _ManualGramFieldState extends State<ManualGramField> {
           suffixStyle: KalloTextStyles.sansRegular(
             fontSize: 14,
           ).copyWith(color: kInkMuted),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+          // Vertical 11 over a 17/1.35 line lands the box on ~45pt — the 44pt
+          // minimum, paid symmetrically so the value is centred in it.
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 11,
+          ),
           border: border,
           enabledBorder: border,
           disabledBorder: border,
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(KalloRadii.lg),
+            borderRadius: BorderRadius.circular(KalloRadii.buttonXl),
             borderSide: const BorderSide(
               color: KalloColors.accent40,
               width: 2,

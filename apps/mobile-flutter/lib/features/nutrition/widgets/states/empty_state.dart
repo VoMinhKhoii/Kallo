@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../shared/widgets/feedback/kallo_empty_state.dart';
 import '../../../../shared/widgets/brand/seed_mark.dart';
 import '../../../../shared/widgets/motion/fade_in_down.dart';
+import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../shell/nav/nav_actions.dart';
 
 /// The nutrition page with nothing logged in range: the shared empty-state
@@ -21,9 +22,13 @@ class EmptyState extends StatelessWidget {
         mark: const SeedMark(),
         title: tr('nutrition.emptyV2.title'),
         description: tr('nutrition.emptyV2.description'),
-        action: KalloEmptyStateAction(
-          label: tr('nutrition.emptyV2.logMeal'),
-          onTap: () => goToLogging(context),
+        // The in-app primary: beige + ink. [KalloEmptyStateAction]'s black
+        // pill is the CTA variant, which is reserved for auth and paywall —
+        // "Log a meal" is neither. (The locked-micronutrients card next door
+        // keeps the black pill: it opens the paywall.)
+        action: KalloButton(
+          title: tr('nutrition.emptyV2.logMeal'),
+          onPressed: () => goToLogging(context),
         ),
       ),
     );

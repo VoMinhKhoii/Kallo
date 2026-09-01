@@ -99,39 +99,49 @@ class FeedList extends StatelessWidget {
 
     final itemCount = entries.length + (view.hasLiveTail ? 1 : 0);
 
-    return KalloRefresh(
-      onRefresh: onRefresh,
-      // The last item carries a viewport-tall floor once a send has asked for
-      // the tail, so riding to the bottom puts the newest turn at the top.
-      child: FeedTailRoom(
-        pin: pin,
-        dockHeight: dockHeight,
-        date: view.date,
-        builder:
-            (context, tailRoom) => ListView.separated(
-              controller: scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              keyboardDismissBehavior:
-                  ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: EdgeInsets.fromLTRB(
-                KalloSpacing.sp3,
-                0,
-                KalloSpacing.sp3,
-                dockHeight,
+    // The last item carries a viewport-tall floor once a send has asked for
+    // the tail, so riding to the bottom puts the newest turn at the top.
+    return FeedTailRoom(
+      pin: pin,
+      dockHeight: dockHeight,
+      date: view.date,
+      builder:
+          (context, tailRoom) => KalloRefreshableScroll(
+            controller: scrollController,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            onRefresh: onRefresh,
+            // Log is a pushed route, not a shell branch: no floating nav
+            // reports itself here, and the composer dock the feed scrolls
+            // under already measures its own safe-area inset.
+            slivers: (_) => [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  KalloSpacing.sp3,
+                  0,
+                  KalloSpacing.sp3,
+                  dockHeight,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    // `.separated`'s own arithmetic, since a sliver list has no
+                    // separator slot: odd indices ARE the gap. The ONE gap
+                    // between turns — no card carries a bottom margin of its
+                    // own, so this separator is the whole story.
+                    (context, index) {
+                      if (index.isOdd) {
+                        return const SizedBox(height: LoggingSpacing.turn);
+                      }
+                      final item = _itemAt(index ~/ 2, entries);
+                      return index ~/ 2 == itemCount - 1
+                          ? withTailRoom(tailRoom, item)
+                          : item;
+                    },
+                    childCount: itemCount * 2 - 1,
+                  ),
+                ),
               ),
-              itemCount: itemCount,
-              // The ONE gap between turns — no card carries a bottom margin of
-              // its own, so this separator is the whole story.
-              separatorBuilder:
-                  (_, __) => const SizedBox(height: LoggingSpacing.turn),
-              itemBuilder: (context, index) {
-                final item = _itemAt(index, entries);
-                return index == itemCount - 1
-                    ? withTailRoom(tailRoom, item)
-                    : item;
-              },
-            ),
-      ),
+            ],
+          ),
     );
   }
 

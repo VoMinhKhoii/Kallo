@@ -225,8 +225,6 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
 
   @override
   Widget build(BuildContext context) {
-    final busy = _exporting;
-
     final rows = <Widget>[];
 
     // Linked sign-in methods — or a single retry row if the initial fetch
@@ -238,7 +236,6 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
           icon: LucideIcons.refreshCw300,
           label: tr('settings.account.loadError'),
           busy: _retrying,
-          enabled: !_retrying,
           onTap: _load,
         ),
       );
@@ -269,7 +266,6 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         icon: LucideIcons.download300,
         label: tr('settings.account.exportTitle'),
         busy: _exporting,
-        enabled: !busy,
         onTap: _export,
       ),
     );
@@ -278,7 +274,9 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         icon: LucideIcons.trash2300,
         label: tr('settings.account.delete'),
         danger: true,
-        enabled: !busy,
+        // Not this row's own action: deleting the account while an export is
+        // still writing out is what this guards.
+        enabled: !_exporting,
         onTap: _openDelete,
       ),
     );

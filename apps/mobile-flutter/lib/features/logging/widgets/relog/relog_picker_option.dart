@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../shared/logic/display_format.dart';
 import '../../../../models/logging/relog.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
@@ -119,7 +120,12 @@ class _RelogPickerOptionState extends State<RelogPickerOption> {
                   alignment: Alignment.centerRight,
                   child: Text(
                     'logging.relog.optionKcal'.tr(
-                      namedArgs: {'kcal': fmtKcalValue(summary.caloriesKcal)},
+                      namedArgs: {
+                        'kcal': fmtKcalValue(
+                          summary.caloriesKcal,
+                          locale: localeOf(context),
+                        ),
+                      },
                     ),
                     maxLines: 1,
                     softWrap: false,

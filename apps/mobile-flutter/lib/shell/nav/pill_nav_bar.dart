@@ -12,9 +12,13 @@ import 'add_sheet.dart';
 import 'nav_actions.dart';
 import 'pill_nav_item.dart';
 
-/// The floating pill tab bar (native pass, 2026-08-31): a 358×72 white
+/// The floating pill tab bar (native pass, 2026-08-31): a 72pt-tall white
 /// capsule with the two-layer nav shadow, four tabs (Today / Log / Nutrition
 /// / Circle) around a 52pt beige "+" that opens the Add sheet.
+///
+/// It spans the screen less [kNavInset] either side — still a floating pill
+/// with fully-rounded ends and its shadow, just no longer a fixed 358pt island
+/// with its targets bunched in the middle.
 ///
 /// Today, Nutrition and Circle switch shell branches; Log PUSHES the logging
 /// feed full-screen over the shell (see [goToLogging]) — the composer owns
@@ -48,14 +52,23 @@ class PillNavBar extends ConsumerWidget {
 
     final bar = Padding(
       padding: EdgeInsets.fromLTRB(
-        KalloSpacing.sp4,
+        kNavInset,
         KalloSpacing.sp3,
-        KalloSpacing.sp4,
+        kNavInset,
         bottomInset > 0 ? bottomInset : KalloSpacing.sp6,
       ),
+      // heightFactor pins the bar to the pill's own height: a bare Center
+      // EXPANDS to the Scaffold's bounded bottomNavigationBar constraints,
+      // claiming the full screen (pill mid-screen, every extendBody tab
+      // SafeArea'd to zero height — the 2026-08-31 TestFlight regression).
       child: Center(
+        heightFactor: 1,
         child: Container(
-          constraints: const BoxConstraints(maxWidth: kNavWidth),
+          // No max width: the capsule takes everything [kNavInset] leaves it,
+          // so it is derived from the screen rather than pinned to one phone.
+          // Under Center's loose constraints `infinity` resolves to exactly
+          // that padded width.
+          width: double.infinity,
           height: kNavHeight,
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3_5),
           decoration: BoxDecoration(
@@ -106,10 +119,13 @@ class PillNavBar extends ConsumerWidget {
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
       offset: keyboardUp ? const Offset(0, 1) : Offset.zero,
+      // The bar stays BUILT while it slides: collapsing it to a zero-size box
+      // on the same frame the offset starts animating killed both the slide
+      // and the fade — it simply vanished.
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 150),
         opacity: keyboardUp ? 0 : 1,
-        child: keyboardUp ? const SizedBox.shrink() : bar,
+        child: bar,
       ),
     );
   }

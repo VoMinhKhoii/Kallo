@@ -131,7 +131,9 @@ Path gaugeOverCapPath({
   required double outerRadius,
   required double progress,
 }) {
-  if (progress <= 1) return Path();
+  // `> 1` rather than `!(<= 1)`: a NaN progress (0 eaten / 0 target) fails
+  // both comparisons, and must fall out here instead of poisoning the path.
+  if (!(progress > 1)) return Path();
   final band = outerRadius * _bandRatio;
   final innerRadius = outerRadius - band;
   final cornerRadius = band * _cornerRatio;
@@ -150,3 +152,7 @@ Path gaugeOverCapPath({
 /// Where the dial's two tips sit below its centre — the line the readout's
 /// secondary text is centred on, so type and dial share one baseline.
 double gaugeTipOffset(double outerRadius) => outerRadius / 2;
+
+/// The inner edge of the band — the radius of the dial's clear middle.
+double gaugeInnerRadius(double outerRadius) =>
+    outerRadius - outerRadius * _bandRatio;

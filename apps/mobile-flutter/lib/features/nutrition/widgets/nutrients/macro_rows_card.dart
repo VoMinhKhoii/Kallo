@@ -45,7 +45,12 @@ class MacroRowsCard extends StatelessWidget {
       );
     }
     if (rows.isEmpty) return const SizedBox.shrink();
-    return GroupedListCard(children: rows);
+    // No hairlines: every row ends in a full-width bar whose grey track starts
+    // at the same 36pt inset the separator did — the two were collinear, so
+    // the line was a second divider drawn on top of one that was already
+    // there. A macro with no target still draws its bar (empty fill), so the
+    // card has no bar-less row that would need the line back.
+    return GroupedListCard(showSeparators: false, children: rows);
   }
 
   /// "125 / 138 g avg" — the qualifier rides on the row because this card

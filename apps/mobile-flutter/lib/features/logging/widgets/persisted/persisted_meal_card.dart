@@ -1,7 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/logging_ui_state.dart';
 import '../../data/logging_models.dart';
+import '../../../../theme/kallo_motion.dart';
 import '../../logic/logging_spacing.dart';
 import '../actions/swipe_to_remove.dart';
 import '../turn/turn_header.dart';
@@ -11,11 +14,17 @@ import 'persisted_meal_card_content.dart';
 
 /// A saved meal in the day's feed — collapsed by default, expandable.
 ///
-/// Ported 1:1 from web
-/// `components/logging/feed/persisted/persisted-meal-card.tsx`: the
-/// chevron rotates 0°↔180° (200ms), the collapsed summary cross-fades out, and
-/// the detail block animates its height open/closed (200ms).
-class PersistedMealCard extends StatefulWidget {
+/// Ported from web
+/// `components/logging/feed/persisted/persisted-meal-card.tsx`: the chevron
+/// rotates 0°↔180°, the detail block animates its height open/closed, and the
+/// bar + legend it pushes down travel with it.
+///
+/// The web's flat 200ms ease-in-out is NOT kept. It opened like a drawer being
+/// pulled rather than a row answering a tap, and the chevron ran off the raw
+/// controller while the height ran through the curve, so the two disagreed on
+/// screen. One eased animation now drives every moving part — see
+/// [_PersistedMealCardState._curvedExpand].
+class PersistedMealCard extends ConsumerStatefulWidget {
   const PersistedMealCard({
     super.key,
     required this.meal,
@@ -39,31 +48,60 @@ class PersistedMealCard extends StatefulWidget {
   final Future<void> Function()? onLogAgain;
 
   @override
-  State<PersistedMealCard> createState() => _PersistedMealCardState();
+  ConsumerState<PersistedMealCard> createState() => _PersistedMealCardState();
 }
 
-class _PersistedMealCardState extends State<PersistedMealCard>
+class _PersistedMealCardState extends ConsumerState<PersistedMealCard>
     with SingleTickerProviderStateMixin {
-  bool _collapsed = true;
+  // Seeded from the app-lifetime expansion set, not `true`: the Log route is
+  // a fresh push per visit, so a card that only remembered itself in State
+  // snapped shut every time the user left the screen (TestFlight regression,
+  // 2026-08-31). A restored-open card starts at progress 1 — no replay of the
+  // open animation on re-entry.
+  late bool _collapsed =
+      !ref.read(expandedMealCardsProvider).contains(widget.meal.id);
   bool _editing = false;
 
-  // expandProgress 0 (collapsed) → 1 (expanded), 200ms.
+  // expandProgress 0 (collapsed) → 1 (expanded). Opens on [disclosure] (180),
+  // closes on [press] (150) — see the token docs for why the two differ.
   late final AnimationController _expand = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 200),
+    value: _collapsed ? 0 : 1,
+    duration: KalloMotion.disclosure,
+    reverseDuration: KalloMotion.press,
+  );
+
+  /// The ONE curve every moving part of the disclosure rides: the details'
+  /// height and fade, the bar + legend they push down, and the chevron above
+  /// them. Built once, not per build — a CurvedAnimation with a reverseCurve
+  /// registers a status listener on its parent, so rebuilding it would orphan
+  /// one per frame.
+  ///
+  /// The chevron used to be driven by the raw [_expand] controller while the
+  /// height ran through this curve, so the two visibly disagreed: the linear
+  /// chevron was already half-turned while the eased height had barely begun.
+  late final CurvedAnimation _curvedExpand = CurvedAnimation(
+    parent: _expand,
+    curve: KalloEase.enter,
+    reverseCurve: KalloEase.exit,
   );
 
   void _toggle() {
     setState(() => _collapsed = !_collapsed);
+    final expanded = {...ref.read(expandedMealCardsProvider)};
     if (_collapsed) {
+      expanded.remove(widget.meal.id);
       _expand.reverse();
     } else {
+      expanded.add(widget.meal.id);
       _expand.forward();
     }
+    ref.read(expandedMealCardsProvider.notifier).state = expanded;
   }
 
   @override
   void dispose() {
+    _curvedExpand.dispose();
     _expand.dispose();
     super.dispose();
   }
@@ -74,12 +112,6 @@ class _PersistedMealCardState extends State<PersistedMealCard>
     final time = DateFormat.jm(
       context.locale.toString(),
     ).format(DateTime.parse(meal.loggedAt).toLocal());
-
-    // Details height open/close: 200ms ease-in-out (persisted-meal-card.tsx:231).
-    final curvedExpand = CurvedAnimation(
-      parent: _expand,
-      curve: Curves.easeInOut,
-    );
 
     // Only meals with a gram-bearing ingredient row can be amount-edited; a
     // legacy/empty meal has nothing to step. Mirrors the web card's `canEdit`.
@@ -116,8 +148,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
           builder:
               (context, radius) => PersistedMealCardContent(
                 meal: meal,
-                expand: _expand,
-                curvedExpand: curvedExpand,
+                curvedExpand: _curvedExpand,
                 onToggle: _toggle,
                 editorBody: editorBody,
                 borderRadius: radius,

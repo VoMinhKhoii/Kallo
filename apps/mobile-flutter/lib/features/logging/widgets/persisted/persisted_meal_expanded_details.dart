@@ -35,6 +35,11 @@ class PersistedMealExpandedDetails extends StatelessWidget {
                 vertical: LoggingSpacing.row,
               ),
               child: Row(
+                // The macro figures hug the FIRST line of the dish name. A
+                // two-line Vietnamese name used to drag them down to its
+                // centre, so the numbers floated between the two lines they
+                // belong to the top of.
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // TWO lines, not one. The macro tail is fixed-width, so the
                   // name gets ~96pt on a 390 phone — under half of what "Top

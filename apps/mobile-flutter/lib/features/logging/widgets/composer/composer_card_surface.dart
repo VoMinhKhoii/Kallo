@@ -7,7 +7,7 @@ import '../../../../theme/kallo_theme.dart';
 /// grows a tan focus ring as the field takes focus.
 ///
 /// Flat and borderless at rest since the native pass — a white card on the
-/// `#F4F3EF` canvas separates by surface alone, and the dock beneath it is
+/// `#F8F7F4` canvas separates by surface alone, and the dock beneath it is
 /// already an opaque band, so the lift had nothing left to lift off. Tan is a
 /// focus-ring colour in this system, which is the one thing the border still
 /// says.

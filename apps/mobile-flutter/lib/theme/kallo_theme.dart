@@ -32,7 +32,33 @@ abstract final class KalloIcons {
   /// Glyph size. 24 — Material's own default, and the size a row glyph has to
   /// be to carry its row rather than trail it (the Threads settings reference).
   /// 16 read as a decoration beside 14pt labels.
-  static const double size = 24;
+  ///
+  /// Kept as the alias of [primary] so existing call sites stay correct; new
+  /// code should name the tier it means.
+  static const double size = primary;
+
+  // ── Three tiers (Threads-derived, 2026-09-01) ───────────────────────────
+  // Icons carry the same hierarchy the type ramp does: navigation and row
+  // furniture read at full size, a control ON a card sits a step under it, and
+  // a small inline affordance sits a step under that. Stroke stays 1.5 and the
+  // tap target stays [hit] at every tier — only the GLYPH shrinks, so
+  // accessibility is unchanged.
+
+  /// 24 — navigation and primary utility: pill-nav glyphs, settings row
+  /// leading icons, header icons. The glyph that carries a row or a screen.
+  static const double primary = 24;
+
+  /// 21 — an action ON a card: the Log meal-card action row, the Circle
+  /// heart / comment / Eat-this row, discard, the confirm-circle check. At 24
+  /// these clusters out-weighed the meal they belong to; at 21 they still read
+  /// as controls rather than furniture.
+  static const double action = 21;
+
+  /// 18 — tertiary inline affordances: the collapse chevron, copy/remove
+  /// minis, quiet suffix actions, and plain disclosure chevrons (which moved
+  /// 16 → 18 so the tier has ONE size rather than two neighbouring ones —
+  /// 16 read as a speck beside the new 17pt row label).
+  static const double tertiary = 18;
 
   /// Square tap target around the glyph. The pressed wash hugs the glyph, so
   /// the target can grow for accessibility without the affordance growing too.
@@ -150,7 +176,7 @@ abstract final class KalloTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      // Cards separate by surface alone on the #F4F3EF canvas: solid white,
+      // Cards separate by surface alone on the #F8F7F4 canvas: solid white,
       // radius 22, NO border, NO shadow (native pass, 2026-08-31).
       cardTheme: CardThemeData(
         color: KalloColors.elev,

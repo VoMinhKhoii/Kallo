@@ -136,7 +136,11 @@ class BarcodeStepperButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(KalloRadii.lg),
               border: Border.all(color: KalloColors.inputBorder),
             ),
-            child: Icon(icon, size: 18, color: KalloColors.text),
+            child: Icon(
+              icon,
+              size: KalloIcons.tertiary,
+              color: KalloColors.text,
+            ),
           ),
         ),
       ),

@@ -16,11 +16,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/nutrition/nutrition_enums.dart';
-import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../logic/calorie_readout.dart';
 import '../../logic/display_format.dart';
 import 'gauge_dial.dart';
+import 'gauge_readout_type.dart';
 
 /// Big enough to hold a four-figure headline in its mouth at 1.3 text scale.
 const double kCalorieDialRadius = 104;
@@ -56,7 +56,7 @@ class CalorieDial extends StatelessWidget {
   /// The variant for a surface that draws the dial inside a fixed header above
   /// a scrolling day, rather than giving it the top of the screen.
   ///
-  /// Half the radius, the headline steps from Hero 40 to Value 17, and both
+  /// Half the radius, the headline steps from Hero 40 to Figure 17, and both
   /// lower lines shorten. The radius forces that: on the tip line the mouth is
   /// only ~0.56× the radius each side, so at 52 it holds ~58pt, and the dock's
   /// "kcal remaining" measures 102. The unit becomes one word, and the detail
@@ -95,17 +95,21 @@ class CalorieDial extends StatelessWidget {
       radius: radius,
       // The calorie mark's own colour, as on the ring and the week strip.
       fill: KalloColors.accent,
+      // Only the HEADLINE changes between the variants. The word under it and
+      // the fraction under that are the same size in both — the dial's own
+      // type, sized by the arc rather than by the reading ramp (see
+      // [gaugeDenominator]).
       primary: GaugeLine(
         fmt(readout.headline),
-        _isCompact ? dashValue() : dashHero(),
+        _isCompact ? gaugeFigure() : gaugeHeroFigure(),
       ),
       secondary: GaugeLine(
         tr(_isCompact ? unit.compact : unit.full),
-        dashBody(color: kInkMuted),
+        gaugeUnit(),
       ),
       tertiary: GaugeLine(
         _detail(readout, fmt, fraction),
-        dashMeta(tabular: true),
+        gaugeDenominator(),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/logic/display_format.dart';
 import '../../logic/logging_spacing.dart';
 import '../../../../shared/logic/macro_composition.dart';
 import '../../../../shared/widgets/nutrition/meal_block.dart';
@@ -14,7 +15,6 @@ class PersistedMealCardContent extends StatelessWidget {
   const PersistedMealCardContent({
     super.key,
     required this.meal,
-    required this.expand,
     required this.curvedExpand,
     required this.onToggle,
     this.editorBody,
@@ -22,7 +22,11 @@ class PersistedMealCardContent extends StatelessWidget {
   });
 
   final PersistedMeal meal;
-  final Animation<double> expand;
+
+  /// The disclosure's single eased progress 0→1. EVERYTHING that moves when
+  /// the card opens rides this one animation — the chevron's rotation, the
+  /// details' height and fade, and the bar + legend the details push down —
+  /// so no part of the card can lag another.
   final Animation<double> curvedExpand;
   final VoidCallback onToggle;
 
@@ -75,28 +79,33 @@ class PersistedMealCardContent extends StatelessWidget {
                   'carbohydrate': 'C ${fmtG(n.carbohydrateG)}',
                 if (n.fatG != null) 'fat': 'F ${fmtG(n.fatG)}',
               },
-              kcalLabel: fmtKcal(n.caloriesKcal),
+              kcalLabel: fmtKcal(
+                n.caloriesKcal,
+                locale: localeOf(context),
+              ),
               kcalPlacement: MealBlockKcal.legendTrailing,
               titleTrailing: PersistedMealChevronToggle(
-                expand: expand,
+                expand: curvedExpand,
                 onTap: onToggle,
               ),
+              // The breakdown opens BETWEEN the title and the bar+legend, so
+              // the bar and its total always close the card. The details grow
+              // in place and push the bar down with them — no jump-cut.
+              middle: editorBody == null
+                  ? SizeTransition(
+                      sizeFactor: curvedExpand,
+                      alignment: Alignment.topCenter,
+                      child: FadeTransition(
+                        opacity: curvedExpand,
+                        child: PersistedMealExpandedDetails(meal: meal),
+                      ),
+                    )
+                  : null,
             ),
           ),
 
           // Edit mode swaps the read-only body for the amount editor in place.
           if (editorBody != null) editorBody!,
-
-          // Expanded details — animate height open (easeInOut).
-          if (editorBody == null)
-            SizeTransition(
-              sizeFactor: curvedExpand,
-              alignment: Alignment.topCenter,
-              child: FadeTransition(
-                opacity: curvedExpand,
-                child: PersistedMealExpandedDetails(meal: meal),
-              ),
-            ),
         ],
       ),
     );

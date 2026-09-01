@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../shared/logic/display_format.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -85,13 +86,12 @@ class _CheatMealCardState extends State<CheatMealCard>
   @override
   Widget build(BuildContext context) {
     final meal = widget.meal;
-    final time = DateFormat.jm(
-      context.locale.toString(),
-    ).format(DateTime.parse(meal.loggedAt).toLocal());
+    final locale = localeOf(context);
+    final time = DateFormat.jm(locale).format(DateTime.parse(meal.loggedAt).toLocal());
 
     // Cheat calories are an estimate the user placed themselves — flag with ≈.
     final kcal = meal.nutrition.caloriesKcal;
-    final caloriesApprox = kcal == null ? fmtKcal(kcal) : '≈ ${fmtKcal(kcal)}';
+    final caloriesApprox = kcal == null ? fmtKcal(kcal, locale: locale) : '≈ ${fmtKcal(kcal, locale: locale)}';
 
     final curvedExpand = _curvedExpand;
 

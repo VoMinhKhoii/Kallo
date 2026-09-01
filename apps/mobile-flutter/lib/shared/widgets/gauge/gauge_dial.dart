@@ -17,6 +17,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'gauge_arc_geometry.dart';
+import 'gauge_clear_area.dart';
+import 'gauge_readout_line.dart';
 import 'rounded_gauge_arc.dart';
 
 /// The gap between the readout's stacked lines.
@@ -40,6 +42,7 @@ class GaugeDial extends StatelessWidget {
     required this.primary,
     required this.secondary,
     this.tertiary,
+    this.clampReadout = false,
     super.key,
   });
 
@@ -56,6 +59,21 @@ class GaugeDial extends StatelessWidget {
 
   /// An optional third line, which hangs below the arc.
   final GaugeLine? tertiary;
+
+  /// Hold every readout line inside the dial's own clear area, taking it in
+  /// (never clipping it) when it will not fit.
+  ///
+  /// OFF by default, because the calorie dial deliberately lets its unit
+  /// SENTENCE size the dial — "kcal remaining" is wider than the arc and the
+  /// box grows to hold it, which is the fix recorded on [GaugeDial]'s
+  /// `ConstrainedBox` below. Clamping that would take a sentence down to ~0.57
+  /// to satisfy geometry it was never meant to obey.
+  ///
+  /// ON for the macro dials, whose lines are bare figures that must sit inside
+  /// the ring: on device (2026-09-01) `202g` and `547g` ran across the stroke
+  /// on both sides at three digits. A figure has no business leaving the mark
+  /// it belongs to; a sentence never fitted inside one to begin with.
+  final bool clampReadout;
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +102,23 @@ class GaugeDial extends StatelessWidget {
     // and the dial simply reserves the extra height.
     final arcTop = wanted < 0 ? -wanted : 0.0;
     final readoutTop = wanted + arcTop;
+
+    // The clear width line [i] may occupy, measured against the arc's own
+    // centre (which sits `radius` below the top of the arc box, itself at
+    // [arcTop]). Only consulted when [clampReadout] is on.
+    double clearWidthFor(int i) {
+      var top = readoutTop;
+      for (var j = 0; j < i; j++) {
+        top += heightOf(readout[j]) + _lineGap;
+      }
+      final centreY = arcTop + radius;
+      return 2 *
+          gaugeClearHalfWidthForBand(
+            radius,
+            top - centreY,
+            top + heightOf(readout[i]) - centreY,
+          );
+    }
 
     // The READOUT sizes the dial, and the arc is painted behind it. The other
     // way round — a box the width of the arc, with the lines clamped into it —
@@ -121,17 +156,15 @@ class GaugeDial extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(height: readoutTop),
-              for (final line in readout) ...[
-                if (line != readout.first) const SizedBox(height: _lineGap),
+              for (final (i, line) in readout.indexed) ...[
+                if (i > 0) const SizedBox(height: _lineGap),
                 // One line each, always: the placement above measures a single
                 // line per [GaugeLine], and a wrapped one would slide every
                 // line below it off the tips.
-                Text(
-                  line.text,
-                  style: line.style,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.visible,
+                GaugeReadoutLine(
+                  line: line,
+                  maxWidth: clampReadout ? clearWidthFor(i) : null,
+                  height: heightOf(line),
                 ),
               ],
             ],

@@ -543,6 +543,7 @@
       "calories": "kcal",
       "loggedDays": "Tất cả",
       "completeDays": "Ngày đủ bữa",
+      "completeDaysHint": "Chỉ tính những ngày ghi được từ 85% mục tiêu calo - những ngày còn lại được tính trong \u201c{allLabel}\u201d.",
       "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
       "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
       "avgValue": "TB {value}",
@@ -944,12 +945,6 @@
   },
   "dashboard": {
     "title": "Tổng quan",
-    "greeting": {
-      "morning": "Chào buổi sáng",
-      "afternoon": "Chào buổi chiều",
-      "evening": "Chào buổi tối",
-      "night": "Chào buổi tối"
-    },
     "today": "Hôm nay",
     "thisWeek": "Tuần này",
     "caloriesConsumed": "Calo đã nạp",
@@ -1011,6 +1006,7 @@
       "update": "Cập nhật",
       "editHint": "Đang sửa số liệu hôm nay — lần lưu sau sẽ ghi đè giá trị trước.",
       "saveFailed": "Không thể lưu cân nặng",
+      "loadFailed": "Không mở được mục ghi cân nặng. Vui lòng thử lại.",
       "netChange": "Thay đổi",
       "steady": "Ổn định"
     },
@@ -1077,8 +1073,9 @@
       "title": "Ghi nhận bữa ăn"
     },
     "cheatIntensity": {
+      "title": "Mức độ",
       "label": "Bạn đã ăn nhiều cỡ nào?",
-      "helper": "Điều chỉnh mức ước tính",
+      "helper": "Điều chỉnh mức ước tính theo lượng bạn đã ăn.",
       "light": "Nhẹ",
       "medium": "Vừa",
       "heavy": "Nhiều"
@@ -1344,7 +1341,7 @@
     "scan": {
       "title": "Quét",
       "barcodeTab": "Mã vạch",
-      "labelTab": "Bảng dinh dưỡng",
+      "labelTab": "Dinh dưỡng",
       "tryLabelInstead": "Quét bảng dinh dưỡng thay vì mã vạch",
       "tryBarcodeInstead": "Quét mã vạch thay vì bảng dinh dưỡng",
       "savedMeal": "Đã thêm bữa ăn"

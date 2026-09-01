@@ -104,7 +104,7 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
       context.go('/circle/invite/$pendingInvite');
       return;
     }
-    landInLogging(context);
+    goToLogging(context);
   }
 
   @override

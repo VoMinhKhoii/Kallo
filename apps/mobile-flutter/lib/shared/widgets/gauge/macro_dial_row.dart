@@ -21,6 +21,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../logic/macro_composition.dart';
 import 'gauge_dial.dart';
+import 'gauge_readout_type.dart';
 
 /// Full size on a 390pt screen; [MacroDialRow] shrinks it on narrower ones.
 const double kMacroDialRadius = 44;
@@ -147,18 +148,33 @@ class _MacroDial extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: KalloSpacing.sp0_5),
+        // The FULL-SIZE dial gets air here, the compact one does not. Both
+        // gaps used to be 2, which on a 44pt arc reads as a label resting on
+        // the stroke — proportionally half the room the same 2 buys on the
+        // compact dial's 30pt arc, which is the one the reference screenshot
+        // shows and which looked right on device. So the compact keeps 2, and
+        // the Today row's dials get the 6 that restores the same optical gap
+        // at their size.
+        SizedBox(height: isCompact ? KalloSpacing.sp0_5 : KalloSpacing.sp1_5),
         GaugeDial(
           progress: target > 0 ? current / target : 0,
           radius: radius,
           fill: color,
+          // Both lines here are bare figures, so they must stay inside the
+          // ring: on device (2026-09-01) `202g` and `547g` ran across the
+          // stroke on both sides once a macro reached three digits, on the
+          // Today row and the Log header alike.
+          clampReadout: true,
+          // The figure steps down with the radius; the denominator does not.
+          // Holding `/140g` at one size across both variants is what makes the
+          // pair read as a value over its target rather than as two numbers of
+          // arbitrary weight — and it is the relationship the reference
+          // screenshot measures (14 over 12 compact, 17 over 12 full).
           primary: GaugeLine(
             '${current}g',
-            isCompact
-                ? dashBody(weight: FontWeight.w500, tabular: true)
-                : dashValue(),
+            isCompact ? gaugeCompactFigure() : gaugeFigure(),
           ),
-          secondary: GaugeLine('/${target}g', dashMeta(tabular: true)),
+          secondary: GaugeLine('/${target}g', gaugeDenominator()),
         ),
       ],
     );

@@ -34,9 +34,10 @@ Future<bool> showKalloConfirm(
   final confirmed = await showDialog<bool>(
     context: context,
     barrierDismissible: true,
-    // The group confirms open from inside a bottom sheet. Without this the
-    // sheet's own navigator owns the dialog, and popping the sheet takes the
-    // dialog with it.
+    // These confirms open from inside bottom sheets, which now live on the
+    // root navigator too (see `showNhamSheet`). Keeping the dialog explicitly
+    // rooted means it is never owned by a surface that can be dismissed out
+    // from under it.
     useRootNavigator: true,
     builder:
         (dialogContext) => _KalloConfirmDialog(

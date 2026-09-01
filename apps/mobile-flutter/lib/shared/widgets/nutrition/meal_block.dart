@@ -25,6 +25,7 @@ class MealBlock extends StatelessWidget {
     this.kcalPlacement = MealBlockKcal.titleRight,
     this.titleMaxLines = 2,
     this.titleTrailing,
+    this.middle,
   });
 
   /// The meal text — 14pt regular ink (no serif; the greeting is the app's
@@ -46,6 +47,15 @@ class MealBlock extends StatelessWidget {
 
   /// Optional control on the title row (the logging card's collapse chevron).
   final Widget? titleTrailing;
+
+  /// Content inserted BETWEEN the title and the bar+legend — the logging
+  /// card's per-dish breakdown.
+  ///
+  /// The bar and legend always END the block. They are the meal's identity and
+  /// its running total, so they read as the block's floor; opening the card
+  /// under them used to leave the total stranded mid-card with detail rows
+  /// below it, which reads as a second, contradicting summary.
+  final Widget? middle;
 
   @override
   Widget build(BuildContext context) {
@@ -74,22 +84,22 @@ class MealBlock extends StatelessWidget {
             if (titleTrailing != null) titleTrailing!,
           ],
         ),
+        if (middle != null) middle!,
         const SizedBox(height: 8),
         CompositionBar.compact(segments: segments),
         const SizedBox(height: 6),
+        // ONE spacing rule for every placement: the legend's entries are
+        // distributed across the row, so each sits in equal space. The old
+        // mix — fixed 14pt gaps clustering the macros at the left, then a
+        // Spacer shoving kcal to the right — made the same legend read
+        // differently on a Circle post and on the Log card.
         Row(
-          // Circle posts spread kcal and the three macros across the full
-          // width (the artboard's space-between); own-meal legends cluster.
-          mainAxisAlignment:
-              kcalPlacement == MealBlockKcal.legendLeading && kcal != null
-                  ? MainAxisAlignment.spaceBetween
-                  : MainAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            if (kcalPlacement == MealBlockKcal.legendLeading &&
-                kcal != null)
+            if (kcalPlacement == MealBlockKcal.legendLeading && kcal != null)
               kcal,
             for (final key in kCompositionKeys)
-              if (gramLabels[key] != null) ...[
+              if (gramLabels[key] != null)
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -99,18 +109,17 @@ class MealBlock extends StatelessWidget {
                       color: kCompositionColors[key],
                     ),
                     const SizedBox(width: 4),
-                    Text(gramLabels[key]!, style: dashMeta()),
+                    // Caption 13, not Meta 15 (Threads scale, 2026-09-01).
+                    // This legend is three icon+figure pairs and a kcal total
+                    // on ONE line: at Meta 15 it measures 253.4pt of legend
+                    // plus a 73.9pt kcal, which does not fit a 320pt phone's
+                    // card. The tier exists for exactly this — a compact
+                    // component the secondary size visibly breaks.
+                    Text(gramLabels[key]!, style: dashCaption()),
                   ],
                 ),
-                if (key != kCompositionKeys.last &&
-                    kcalPlacement != MealBlockKcal.legendLeading)
-                  const SizedBox(width: 14),
-              ],
-            if (kcalPlacement == MealBlockKcal.legendTrailing &&
-                kcal != null) ...[
-              const Spacer(),
+            if (kcalPlacement == MealBlockKcal.legendTrailing && kcal != null)
               kcal,
-            ],
           ],
         ),
       ],

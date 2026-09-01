@@ -44,15 +44,28 @@ class ManualAddedSummary extends StatelessWidget {
         const SizedBox(height: 6),
         CompositionBar.compact(segments: composition.segments),
         const SizedBox(height: 6),
+        // Same legend spacing rule as [MealBlock]: the entries are distributed
+        // across the row so each sits in equal space, rather than the macros
+        // clustering at the left with kcal pushed out to the right.
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            for (final key in kCompositionKeys) ...[
-              Icon(kMacroIcons[key], size: 14, color: kCompositionColors[key]),
-              const SizedBox(width: 4),
-              Text(labels[key]!, style: dashMeta()),
-              if (key != kCompositionKeys.last) const SizedBox(width: 14),
-            ],
-            const Spacer(),
+for (final key in kCompositionKeys)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    kMacroIcons[key],
+                    size: 14,
+                    color: kCompositionColors[key],
+                  ),
+                  const SizedBox(width: 4),
+                  // Caption 13, not Meta 15 — same one-line macro legend as
+                  // [MealBlock]; on a 320pt phone Meta 15 needed 288.2pt of a
+                  // 288pt row (Threads scale, 2026-09-01).
+                  Text(labels[key]!, style: dashCaption()),
+                ],
+              ),
             Text(
               kcal == null
                   ? '—'

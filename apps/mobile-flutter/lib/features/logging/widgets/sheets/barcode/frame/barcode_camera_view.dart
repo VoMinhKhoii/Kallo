@@ -4,11 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../../../../shared/widgets/form/sheet_action_buttons.dart';
-import '../../../../../theme/kallo_theme.dart';
-import '../scan/scan_camera_stage.dart';
+import '../../../../../../shared/widgets/form/sheet_action_buttons.dart';
+import '../../../../../../theme/kallo_theme.dart';
+import '../../scan/scan_camera_stage.dart';
+import 'barcode_frame_notice.dart';
 import 'barcode_scan_frame_painter.dart';
-import 'barcode_status_views.dart';
+import '../barcode_status_views.dart';
 
 /// Owns the scanner's controller so the camera runs during the scanning phase
 /// and nowhere else — it must not keep streaming behind the quantity step.
@@ -66,17 +67,26 @@ class BarcodeCameraSession {
 ///
 /// There is no shutter here: a barcode decodes continuously, so a capture
 /// button would be an inert control on a live target.
+///
+/// The lookup's status ([notice]) rides INSIDE the frame, so this view is what
+/// the user sees from the first frame through a miss and into the next scan —
+/// the sheet's height never moves.
 class BarcodeCameraView extends StatelessWidget {
   const BarcodeCameraView({
     super.key,
     required this.controller,
     required this.onDetect,
     required this.onEnterManually,
+    this.notice,
   });
 
   final MobileScannerController controller;
   final ValueChanged<BarcodeCapture> onDetect;
   final VoidCallback onEnterManually;
+
+  /// The searching/miss capsule, when there is one. It takes the frame hint's
+  /// place — the hint has nothing to add once the frame is talking back.
+  final BarcodeFrameNotice? notice;
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +101,9 @@ class BarcodeCameraView extends StatelessWidget {
       child: Column(
         children: [
           ScanCameraStage(
-            hint: 'logging.barcode.frameHint'.tr(),
+            // The hint has nothing to add once the frame is talking back.
+            hint: notice == null ? 'logging.barcode.frameHint'.tr() : null,
+            notice: notice,
             leading: _TorchButton(controller: controller),
             builder: (context, size) {
               // Use one rectangle for both decoding and the visible target so
@@ -110,10 +122,9 @@ class BarcodeCameraView extends StatelessWidget {
                     fit: BoxFit.cover,
                     scanWindow: scanWindow,
                     onDetect: onDetect,
-                    errorBuilder: (context, error) => BarcodeCameraErrorState(
-                      error: error,
-                      onEnterManually: onEnterManually,
-                    ),
+                    errorBuilder:
+                        (context, error) =>
+                            BarcodeCameraErrorState(error: error),
                   ),
                   IgnorePointer(
                     child: CustomPaint(
@@ -167,9 +178,8 @@ class _TorchButton extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: on
-                      ? Colors.white
-                      : Colors.black.withValues(alpha: 0.35),
+                  color:
+                      on ? Colors.white : Colors.black.withValues(alpha: 0.35),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

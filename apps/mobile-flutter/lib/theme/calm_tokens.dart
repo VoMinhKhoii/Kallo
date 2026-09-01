@@ -45,7 +45,7 @@ const Color kInkMuted = KalloColors.textMuted;
 // ── Shape ────────────────────────────────────────────────────────────────
 const double kCardRadius = 22; // one card radius — modern iOS grouped-card feel
 
-/// Sheet/menu elevation shadows. On the `#F4F3EF` canvas (native pass,
+/// Sheet/menu elevation shadows. On the `#F8F7F4` canvas (native pass,
 /// 2026-08-31) ordinary cards separate by surface alone — NO border, NO
 /// shadow. These shadows are reserved for TRUE elevation: sheets, menus, the
 /// pill nav, a dragged card.
@@ -71,9 +71,13 @@ const BoxShadow kCardShadow = BoxShadow(
 
 const List<FontFeature> _tnum = [FontFeature.tabularFigures()];
 
-// ── Type — Be Vietnam Pro only, 5 sizes (40 / 17 / 14 / 12 / 11) ──────────
-// Threads / Apple Health calm: labels recede (muted taupe, never espresso),
-// content is small + regular, hierarchy comes from weight + colour, not size.
+// ── Type — Be Vietnam Pro only (40 / 28 / 17 / 16 / 15 / 13 / 11) ─────────
+// Threads-scale ramp (2026-09-01). Measured against Threads on iOS: body 17,
+// names 16 semibold, secondary 15, captions 13 by exception. Labels still
+// recede (muted grey, regular weight) and hierarchy is still carried by weight
+// + colour — but the ramp now sits at iOS-native sizes rather than below them.
+// The density Threads has comes from a narrow measure and controlled leading,
+// which this system keeps; it never came from small type.
 
 /// 40 / 500 — the ONE hero number per card (calories remaining, weight).
 /// Full size (the number is the point) but MEDIUM, not semibold — Be Vietnam
@@ -98,9 +102,15 @@ TextStyle dashValue({Color color = kInk}) => TextStyle(
       fontFeatures: _tnum,
     );
 
-/// 14 / 400·500 — meal names, callout detail, the "/ target" denominator.
-/// Leading 1.3: these are scannable rows, not prose. 1.45 read airy enough
-/// that cards looked padded even after their gaps were tightened.
+/// 17 / 400·500 — the app's reading size: meal names, post bodies, list-row
+/// labels, composer input, button labels.
+///
+/// Threads-scale (2026-09-01). Measured against Threads on iOS, whose feed
+/// body is NOT small — its density comes from a narrow measure and controlled
+/// leading, not from tiny type. The old 14 read undersized next to it and
+/// below every iOS system surface (a Settings row label is 17). Leading 1.35
+/// (~23pt) is the Threads relationship: enough air for two-line wraps without
+/// the paragraph feel 1.5 would bring.
 TextStyle dashBody({
   Color color = kInk,
   FontWeight weight = FontWeight.w400,
@@ -108,21 +118,42 @@ TextStyle dashBody({
 }) =>
     TextStyle(
       fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 14,
+      fontSize: 17,
       fontWeight: weight,
-      height: 1.3,
+      height: 1.35,
       color: color,
       fontFeatures: tabular ? _tnum : null,
     );
 
-/// 12 / 400 — secondary captions, stat values (quiet, Threads-light meta).
+/// 16 / 600 — an emphasised NAME sitting directly against 17 body copy: the
+/// Circle post author over the post text, a reply author over the reply.
+///
+/// Threads-scale (2026-09-01). Two 17s stacked — a w600 name over a w400 body
+/// — read as a wall; stepping the name down one notch while taking it up to
+/// semibold keeps the identity/content relationship without the collision.
+/// This tier is for identity ONLY. A label that IS the row's body (a Settings
+/// row label, a button, a sheet title) stays at 17 — see [dashBody] and
+/// [kSectionHeader].
+TextStyle dashName({Color color = kInk}) => TextStyle(
+      fontFamily: KalloTextStyles.sansFamily,
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      height: 1.3,
+      color: color,
+    );
+
+/// 15 / 400 — the secondary tier: timestamps, units, quiet values, captions.
 /// Leading 1.25 — meta lines are short and rarely wrap; the extra leading only
 /// grew the rows around them.
 ///
-/// [weight] exists for the one case where Meta-12 is NOT secondary: a section
+/// Threads-scale (2026-09-01), 12 → 15. At 12 against a 17 body the meta line
+/// had fallen out of the type system and read as fine print; 15 keeps it
+/// clearly subordinate (colour + size) while staying legible at arm's length.
+///
+/// [weight] exists for the one case where Meta is NOT secondary: a section
 /// header in ink. At w400 it reads as small body text sitting above the rows
 /// rather than labelling them, since size is then the only thing separating it
-/// from a 14 label of the same colour.
+/// from a body label of the same colour.
 TextStyle dashMeta({
   Color color = kInkMuted,
   FontWeight weight = FontWeight.w400,
@@ -130,7 +161,28 @@ TextStyle dashMeta({
 }) =>
     TextStyle(
       fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 12,
+      fontSize: 15,
+      fontWeight: weight,
+      height: 1.25,
+      color: color,
+      fontFeatures: tabular ? _tnum : null,
+    );
+
+/// 13 / 400·500 — the caption tier, COMPONENT-INTERNAL ONLY.
+///
+/// Threads-scale (2026-09-01) introduced this as the escape hatch for compact
+/// components that 15 visibly breaks: a fixed-width chip, a legend crammed
+/// under an icon, a number pinned inside a gauge. It is NOT a general
+/// secondary tier — reach for [dashMeta] first, and only drop here when the
+/// component measurably overflows. Every use is justified at its call site.
+TextStyle dashCaption({
+  Color color = kInkMuted,
+  FontWeight weight = FontWeight.w400,
+  bool tabular = false,
+}) =>
+    TextStyle(
+      fontFamily: KalloTextStyles.sansFamily,
+      fontSize: 13,
       fontWeight: weight,
       height: 1.25,
       color: color,
@@ -154,7 +206,9 @@ TextStyle dashEyebrow({
       color: color,
     );
 
-/// Lora 22 / 400 — the single editorial serif moment per viewport (greeting).
+/// Lora 22 / 400 — the single editorial serif moment per viewport. The
+/// dashboard's serif slot is now the "Kallo" wordmark (2026-09-01), set at 28;
+/// this stays for editorial moments inside a screen.
 /// 17 / 600 — the page title on the header line.
 ///
 /// Sans, not the Lora [dashHeadline] this replaced on headers: at 17 its
@@ -206,24 +260,34 @@ TextStyle kSectionHeader({Color color = kInk}) => TextStyle(
       color: color,
     );
 
-/// 14 / 500 muted — group labels above grouped cards ("Targets",
-/// "Preferences", "Today").
+/// 15 / 500 muted — group labels above grouped cards ("Targets",
+/// "Preferences", "Today"). Moved 14 → 15 with the Threads-scale ramp so it
+/// sits on the secondary tier ([dashMeta]) rather than between tiers.
 TextStyle kGroupLabel({Color color = kInkMuted}) => TextStyle(
       fontFamily: KalloTextStyles.sansFamily,
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: FontWeight.w500,
       height: 1.3,
       color: color,
     );
 
 // ── Pill nav (native pass, 2026-08-31) ────────────────────────────────────
-const double kNavWidth = 358; // effective pill width
+/// Gap from each screen edge to the floating pill nav.
+///
+/// The bar has NO width of its own — it fills whatever this leaves, so it
+/// adapts to the device instead of pinning one phone's number. It replaced
+/// `kNavWidth = 358` (a 390pt iPhone less a 16pt gutter each side), which on
+/// any wider screen left the capsule stranded mid-screen with its five targets
+/// bunched into the middle of it.
+///
+/// 8, not 0: the capsule still has to read as an object floating over the
+/// content — it needs a sliver of canvas to clear and to catch the outer edge
+/// of [kNavShadows]. Flush to the edge it stops being a pill and becomes a
+/// bar, which is the thing this nav is deliberately not.
+const double kNavInset = 8;
 const double kNavHeight = 72;
 const double kNavRadius = 36;
 const double kNavAddSize = 52; // center "+" circle (beige, ink plus)
-
-/// Bottom padding scroll views need so content clears the floating pill nav.
-const double kNavClearance = 120;
 
 /// The bottom-sheet shadow — sheets are TRUE elevation and keep it even
 /// though ordinary cards carry none.

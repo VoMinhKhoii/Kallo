@@ -17,7 +17,6 @@ import '../widgets/groups/group_info_sheet.dart';
 import '../widgets/invite/meal_invites.dart';
 import '../widgets/feed/thread_feed.dart';
 import '../widgets/feed/view_switcher.dart';
-import '../../../shared/widgets/feedback/kallo_refresh.dart';
 
 Future<void> _showGroupInfoSheet(BuildContext context, String groupId) =>
     showNhamSheet<void>(
@@ -48,6 +47,7 @@ class CircleScreen extends ConsumerWidget {
             ?.title ??
         '';
     return Screen(
+      bottom: false,
       child: ScrollSeparator(
         // A large LEFT-aligned page title, not a centred header line (native
         // pass, 2026-08-31): 28/700 is the top of the header ramp, and the
@@ -58,42 +58,40 @@ class CircleScreen extends ConsumerWidget {
           padding: EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: _CircleTitleRow(),
         ),
-        child: KalloRefresh(
+        child: ThreadFeed(
+          scope: selected,
           onRefresh: () => _refresh(ref, selected),
-          child: ThreadFeed(
-            scope: selected,
-            feed: feed,
-            header: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const ViewSwitcher(),
-                // MealInvitesSection collapses to nothing when there are no
-                // invites, so it owns the gap above itself rather than having
-                // one reserved here for a widget that usually is not there.
-                const MealInvitesSection(),
-                if (selected != null) ...[
-                  const SizedBox(height: KalloSpacing.sp3),
-                  _GroupHeader(
-                    groupId: selected,
-                    name: name,
-                    count: group?.members.length,
-                  ),
-                ],
+          feed: feed,
+          header: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ViewSwitcher(),
+              // MealInvitesSection collapses to nothing when there are no
+              // invites, so it owns the gap above itself rather than having
+              // one reserved here for a widget that usually is not there.
+              const MealInvitesSection(),
+              if (selected != null) ...[
+                const SizedBox(height: KalloSpacing.sp3),
+                _GroupHeader(
+                  groupId: selected,
+                  name: name,
+                  count: group?.members.length,
+                ),
               ],
-            ),
-            onRetry: () => ref.invalidate(sharedMealFeedProvider(selected)),
-            onAddFriend: () => showAddFriendSheet(context),
-            emptyTitleKey:
-                selected == null
-                    ? 'groups.page.friendsEmptyTitle'
-                    : 'groups.page.groupNoActivity',
-            emptyDescriptionKey:
-                selected == null
-                    ? 'groups.page.friendsNoMealToday'
-                    : 'groups.page.groupNoActivity',
-            emptyNamedArgs: {'name': name},
-            showAddFriend: selected == null,
+            ],
           ),
+          onRetry: () => ref.invalidate(sharedMealFeedProvider(selected)),
+          onAddFriend: () => showAddFriendSheet(context),
+          emptyTitleKey:
+              selected == null
+                  ? 'groups.page.friendsEmptyTitle'
+                  : 'groups.page.groupNoActivity',
+          emptyDescriptionKey:
+              selected == null
+                  ? 'groups.page.friendsNoMealToday'
+                  : 'groups.page.groupNoActivity',
+          emptyNamedArgs: {'name': name},
+          showAddFriend: selected == null,
         ),
       ),
     );

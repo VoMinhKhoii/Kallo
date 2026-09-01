@@ -70,8 +70,11 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
     final saving =
         barcode.phase == BarcodeFlowPhase.saving ||
         label.phase == LabelScanPhase.saving;
-    final maxHeight = MediaQuery.of(context).size.height * 0.9;
+    // The cap comes off the height the keyboard LEAVES: the surface lifts
+    // itself clear of `viewInsets`, so a full-screen 0.9 would overflow.
     final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
+    final maxHeight =
+        (MediaQuery.of(context).size.height - keyboardInset) * 0.9;
 
     // While a log request is in flight the sheet must not be dismissable: the
     // POST would still complete server-side, silently logging a meal the user
@@ -83,25 +86,22 @@ class _ScanSheetState extends ConsumerState<ScanSheet> {
       canPop: !saving,
       child: IgnorePointer(
         ignoring: saving,
-        child: Padding(
-          padding: EdgeInsets.only(bottom: keyboardInset),
-          child: KalloSheetSurface(
-            constraints: BoxConstraints(maxHeight: maxHeight),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                KalloSheetHeader(
-                  title: _title(barcode, label),
-                  closeEnabled: !saving,
-                ),
-                // Switching scan type once a product or a scanned label is on
-                // screen would throw that work away, so the toggle only shows
-                // while the active branch is still at its entry step.
-                if (_showsToggle(barcode, label))
-                  ScanTypeToggle(value: _scanType, onChange: _switchTo),
-                Flexible(child: _buildBranch()),
-              ],
-            ),
+        child: KalloSheetSurface(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              KalloSheetHeader(
+                title: _title(barcode, label),
+                closeEnabled: !saving,
+              ),
+              // Switching scan type once a product or a scanned label is on
+              // screen would throw that work away, so the toggle only shows
+              // while the active branch is still at its entry step.
+              if (_showsToggle(barcode, label))
+                ScanTypeToggle(value: _scanType, onChange: _switchTo),
+              Flexible(child: _buildBranch()),
+            ],
           ),
         ),
       ),

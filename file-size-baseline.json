@@ -12,13 +12,13 @@
     "components/onboarding/wizard-shell.tsx": 387,
     "components/onboarding/screen-origin.tsx": 358,
     "apps/mobile-flutter/lib/features/settings/widgets/inputs/custom_select.dart": 354,
-    "apps/mobile-flutter/lib/features/dashboard/widgets/weight/compact_weight_log.dart": 344,
     "apps/mobile-flutter/lib/features/logging/widgets/feed/feed_area.dart": 332,
     "apps/mobile-flutter/lib/features/onboarding/widgets/country_select.dart": 323,
     "apps/mobile-flutter/lib/features/onboarding/widgets/custom_select.dart": 321,
     "components/onboarding/screen-cooking.tsx": 312,
     "components/logging/sidebar/timeline-sidebar.tsx": 311,
     "apps/mobile-flutter/lib/features/logging/widgets/composer/meal_input.dart": 303,
+    "apps/mobile-flutter/lib/features/dashboard/widgets/weight/compact_weight_log.dart": 287,
     "components/logging/feed/cheat/cheat-slider-card.tsx": 283,
     "apps/mobile-flutter/lib/features/dashboard/widgets/weight/weight_chart_canvas.dart": 273,
     "apps/mobile-flutter/lib/features/nutrition/widgets/nutrients/suggested_foods_sheet.dart": 273,
@@ -38,7 +38,6 @@
     "components/logging/feed/cheat/cheat-meal-card.tsx": 207,
     "components/design-system/colors-section.tsx": 205,
     "components/app/navigation/mobile-nav.tsx": 204,
-    "apps/mobile-flutter/lib/features/auth/widgets/email_auth_form.dart": 203,
     "apps/mobile-flutter/lib/features/logging/widgets/composer/entrances.dart": 201
   },
   "folders": {

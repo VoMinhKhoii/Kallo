@@ -40,6 +40,17 @@ abstract final class LoggingSpacing {
   /// carry their own centring inset.
   static const double actions = KalloSpacing.sp0_5; // 2
 
+  /// The header strip that the week picker morphs inside — its collapsed chip
+  /// layer and its expanded day row share this height, or the morph pushes the
+  /// feed as it runs. ONE number, because the two layers must agree exactly.
+  ///
+  /// 56 → 60 with the Threads scale (2026-09-01): a day cell stacks weekday
+  /// (Meta 15 → 18.75), day number (Body 17 → 22.95), the meal dot (6) and two
+  /// 2pt gaps inside 4pt of vertical padding — 59.7 in total, which overflowed
+  /// the old 56 by 4. Grown to the content rather than shrinking the type: the
+  /// day number is the thing being read here.
+  static const double strip = 60;
+
   /// A card's own inset. Vertical is 12, not the horizontal 16, so the padding
   /// reads EQUAL on all four sides: the first and last lines each carry ~4px of
   /// line-height slack above/below their glyphs, which a flat 16 would stack on
@@ -79,21 +90,28 @@ abstract final class LoggingSpacing {
 abstract final class LoggingIcons {
   /// Glyph size for every icon-only control.
   ///
-  /// Deliberately NOT [KalloIcons.size]. The app-wide glyph is 24, which suits a
-  /// row-leading icon that carries its label; these are dense clusters of
-  /// icon-only controls — five actions under a card, steppers flanking a
-  /// number, a chevron on the card edge — where 24 crowds the card and the
-  /// controls start to out-weigh the meal they belong to. This surface stays
-  /// compact, and the divergence is the point rather than an oversight.
-  static const double size = 16;
+  /// Deliberately NOT [KalloIcons.primary]. The app-wide glyph is 24, which
+  /// suits a row-leading icon that carries its label; these are dense clusters
+  /// of icon-only controls — steppers flanking a number, a chevron on the card
+  /// edge, a row-remove — where 24 crowds the card and the controls start to
+  /// out-weigh the meal they belong to. This surface stays compact, and the
+  /// divergence is the point rather than an oversight.
+  ///
+  /// 16 → [KalloIcons.tertiary] (18) with the Threads scale (2026-09-01): the
+  /// divergence stands, but it now names the app's tertiary tier instead of a
+  /// private number, and 16 read as a speck beside a 17pt row label.
+  static const double size = KalloIcons.tertiary; // 18
 
-  /// The action row under a card is the ONE cluster that goes back to the
-  /// app-wide 24 (native pass, 2026-08-31 — the Log artboard draws them at 24).
-  /// Those five glyphs are the card's controls rather than furniture inside it,
-  /// and at 16 they read as a row of specks under a card that is now
-  /// borderless. Everything else on this surface — steppers, the collapse
-  /// chevron, the composer's mode mark — stays at [size].
-  static const double action = KalloIcons.size; // 24
+  /// The action row under a card is the ONE cluster that leaves [size] for the
+  /// app's card-action tier (native pass, 2026-08-31 — the Log artboard drew
+  /// them at 24). Those five glyphs are the card's controls rather than
+  /// furniture inside it, and at 16 they read as a row of specks under a card
+  /// that is now borderless. Everything else on this surface — steppers, the
+  /// collapse chevron, the composer's mode mark — stays at [size].
+  ///
+  /// 24 → 21 with the Threads icon tiers (2026-09-01): a control ON a card
+  /// sits one step under navigation, so the row no longer out-weighs the meal.
+  static const double action = KalloIcons.action; // 21
 
   /// Square tap target around that glyph — the app-wide target, unchanged.
   static const double hit = KalloIcons.hit;

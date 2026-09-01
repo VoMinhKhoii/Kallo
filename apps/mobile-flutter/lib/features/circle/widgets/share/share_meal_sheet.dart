@@ -82,8 +82,10 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // `KalloSheetSurface` lifts the sheet clear of the keyboard, so the cap
+    // comes off the height the keyboard leaves.
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
-    final maxHeight = MediaQuery.of(context).size.height * 0.85;
+    final maxHeight = (MediaQuery.of(context).size.height - viewInsets) * 0.85;
     final friendsAsync = ref.watch(circleFriendsProvider);
     final count = _selected.length;
     final portion = count > 0 ? '1/${count + 1}' : '—';
@@ -96,11 +98,11 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
           KalloSheetHeader(title: tr('groups.shareMeal.title')),
           Flexible(
             child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 KalloSpacing.sp4,
                 0,
                 KalloSpacing.sp4,
-                viewInsets + KalloSpacing.sp5,
+                KalloSpacing.sp5,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
