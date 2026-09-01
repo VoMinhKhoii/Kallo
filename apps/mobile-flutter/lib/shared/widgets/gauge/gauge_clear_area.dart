@@ -37,25 +37,40 @@ double gaugeClearHalfWidth(double outerRadius, double depth) {
 }
 
 /// The clear half-width guaranteed across a whole line box spanning [depthTop]
-/// to [depthBottom] below the centre.
+/// to [depthBottom] below the centre — the TIGHT bound, i.e. the true minimum
+/// of [gaugeClearHalfWidth] over that band.
 ///
-/// A safe LOWER bound rather than a sample: the ring term only shrinks as a
-/// point moves away from the centre and the mouth term only grows as it moves
-/// down, so evaluating the ring at the deeper edge and the mouth at the
-/// shallower one bounds the true clearance everywhere between them. Sampling a
-/// few points instead could step over the crossing where the two terms swap
-/// and report more room than the line actually has.
+/// It is worth being exact here rather than merely safe. The first version
+/// took the ring at the band's deeper edge and the mouth at its shallower one
+/// and returned the larger: a valid lower bound, but a badly loose one for any
+/// line that straddles the tips, because it credits neither term with the
+/// width it actually has where the other is at its worst. On the Log header's
+/// compact dial that bound read 24pt for a line with 39pt of real clearance,
+/// so `/138g` was scaled to ~0.67 and shipped at an effective 8.7pt against
+/// the 12 it asks for — the "goals too small" the device QA reported
+/// (2026-09-01).
+///
+/// The exact minimum is cheap because the shape of the function is known:
+/// above the centre only the shrinking ring is in play, below it the ring
+/// keeps shrinking while the mouth opens, so the two cross exactly once — at
+/// `depth = inner / 2`, where both equal `inner·√3/2`. That crossing is the
+/// only interior minimum, which makes three samples exhaustive: the two edges,
+/// plus the crossing when the band contains it.
 double gaugeClearHalfWidthForBand(
   double outerRadius,
   double depthTop,
   double depthBottom,
 ) {
-  final inner = gaugeInnerRadius(outerRadius);
-  final deepest = math.max(depthTop.abs(), depthBottom.abs());
-  final ring = deepest < inner
-      ? math.sqrt(inner * inner - deepest * deepest)
-      : 0.0;
-  final shallowest = math.min(depthTop, depthBottom);
-  final mouth = shallowest > 0 ? shallowest * math.tan(60 * _deg) : 0.0;
-  return math.max(ring, mouth);
+  var narrowest = math.min(
+    gaugeClearHalfWidth(outerRadius, depthTop),
+    gaugeClearHalfWidth(outerRadius, depthBottom),
+  );
+  final crossing = gaugeInnerRadius(outerRadius) / 2;
+  if (crossing > depthTop && crossing < depthBottom) {
+    narrowest = math.min(
+      narrowest,
+      gaugeClearHalfWidth(outerRadius, crossing),
+    );
+  }
+  return narrowest;
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/logic/display_format.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/format.dart';
@@ -53,7 +54,7 @@ class MacroTrio extends StatelessWidget {
         const SizedBox(width: MacroColumns.gap),
         MacroKcal(
           child: Text(
-            fmtKcal(calories),
+            fmtKcal(calories, locale: localeOf(context)),
             maxLines: 1,
             softWrap: false,
             style: dashBody(weight: FontWeight.w500, tabular: true),
@@ -96,6 +97,7 @@ class MealTotalsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final kcal = calories;
+    final locale = localeOf(context);
     final animate =
         countUp && kcal != null && !MediaQuery.disableAnimationsOf(context);
     return Row(
@@ -116,11 +118,11 @@ class MealTotalsRow extends StatelessWidget {
               animate
                   ? CountUpText(
                     value: kcal,
-                    format: fmtKcal,
+                    format: (value) => fmtKcal(value, locale: locale),
                     style: dashValue(),
                   )
                   : Text(
-                    fmtKcal(kcal),
+                    fmtKcal(kcal, locale: locale),
                     maxLines: 1,
                     softWrap: false,
                     style: dashValue(),

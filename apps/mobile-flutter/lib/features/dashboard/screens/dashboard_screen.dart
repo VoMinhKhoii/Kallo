@@ -29,6 +29,7 @@ import '../../../services/auth/session_provider.dart';
 import '../../../shell/header/app_header.dart';
 import '../../../shell/header/profile_avatar_button.dart';
 import '../../../theme/kallo_theme.dart';
+import '../../../theme/kallo_typography.dart';
 import '../../logging/logic/timeline_utils.dart' hide WeekStrip;
 import '../data/dashboard_providers.dart';
 import '../../../shared/logic/display_format.dart';
@@ -79,18 +80,18 @@ class DashboardScreen extends ConsumerWidget {
     return Screen(
       bottom: false,
       child: ScrollSeparator(
-        header: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
+        header: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
           child: AppHeader(
-            // Greeting hard left, avatar hard right: the leading slot is
+            // Wordmark hard left, avatar hard right: the leading slot is
             // collapsed so the serif line starts at the page inset rather than
             // 44pt in behind an empty spacer.
-            leading: const SizedBox.shrink(),
+            leading: SizedBox.shrink(),
             // Settings moved behind the avatar when the drawer retired.
-            trailing: const ProfileAvatarButton(),
+            trailing: ProfileAvatarButton(),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text(_greeting().tr(), style: dashHeadline()),
+              child: _Wordmark(),
             ),
           ),
         ),
@@ -161,14 +162,29 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-/// The l10n key for a time-of-day greeting, driven by the device clock. A
-/// greeting, not an interpretation — the only Lora moment on the screen.
-String _greeting() {
-  final hour = DateTime.now().hour;
-  if (hour < 12) return 'dashboard.greeting.morning';
-  if (hour < 17) return 'dashboard.greeting.afternoon';
-  if (hour < 21) return 'dashboard.greeting.evening';
-  return 'dashboard.greeting.night';
+/// The app's name, set as type — the home screen's masthead.
+///
+/// Replaces the time-of-day greeting (2026-09-01). "Good morning" is a warm
+/// line the first time and furniture by the third: it changes four times a day
+/// while saying nothing about the day it sits above, and it left the app's own
+/// name nowhere on its own home screen. The wordmark says one thing and keeps
+/// saying it, which is what a masthead is for.
+///
+/// Drawn rather than dropped in: there is no lockup asset in the repo, and one
+/// word in the brand serif IS the lockup. Lora at the page-title size, in ink,
+/// never bold — the single serif moment per viewport, which is exactly the slot
+/// the greeting used to hold. Not localised: a name is not translated.
+class _Wordmark extends StatelessWidget {
+  const _Wordmark();
+
+  @override
+  Widget build(BuildContext context) => Text(
+    'Kallo',
+    style: KalloTextStyles.serifRegular(
+      fontSize: 28,
+      height: 1.15,
+    ).copyWith(color: kInk, letterSpacing: -0.3),
+  );
 }
 
 class _Content extends StatefulWidget {
@@ -251,78 +267,73 @@ class _ContentState extends State<_Content> {
   Widget build(BuildContext context) {
     final locale = context.locale.toString();
 
-    return Stack(
-      children: [
-        KalloRefresh(
-          onRefresh: widget.onRefresh,
-          child: ListView(
-          // The list must accept an overscroll drag even when its content is
-          // short enough not to scroll, or a pull on a near-empty Today does
-          // nothing.
-          physics: const AlwaysScrollableScrollPhysics(),
+    // A CustomScrollView so the refresh control can be a sliver and hold the
+    // page down for the whole refetch — see [KalloRefresh].
+    return CustomScrollView(
+      physics: kRefreshPhysics,
+      slivers: [
+        KalloRefresh(onRefresh: widget.onRefresh),
+        SliverPadding(
           padding: const EdgeInsets.only(
             left: KalloSpacing.sp3,
             right: KalloSpacing.sp3,
             // AppHeader already pays sp1 below itself; sp2 here nets the one
-            // 12px step between the greeting and the week strip.
+            // 12px step between the wordmark and the week strip.
             top: KalloSpacing.sp2,
             // The floating pill nav is not part of the layout (the shell runs
             // extendBody), so the scroll owes it its own clearance.
             bottom: kNavClearance,
           ),
-          children: [
-            // SECTION 1 — week strip + the paged day-viewer (greeting now lives
-            // in the header row, beside the hamburger).
-            WeekStrip(
-              args: widget.args,
-              todayDate: widget.todayDate,
-              selectedDate: _selectedDate,
-              onSelectDay: _onSelectDay,
-            ),
-            Padding(
-              // The card owns no margin; this stack owns the gap under it.
-              padding: const EdgeInsets.only(bottom: DashboardSpacing.block),
-              child:
-                  widget.isFirstRun
-                      ? TodaySection(
-                        args: widget.args,
-                        targets: widget.targets,
-                        dateLabel: _dateLabel(widget.todayDate, locale),
-                        isFirstRun: true,
-                      )
-                      : DayPager(
-                        controller: _pageController,
-                        days: _days,
-                        todayPage: _todayPage,
-                        userId: widget.args.userId,
-                        targets: widget.targets,
-                        onPageChanged: _onPageChanged,
-                        dateLabel: (d) => _dateLabel(d, locale),
-                      ),
-            ),
-            // SECTION 2 — Progress.
-            _Section(
-              children: [
-                SectionHeaderRow(
-                  title: tr('dashboard.progress'),
-                  meta: tr('dashboard.ranges.thirtyDays'),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              // SECTION 1 — week strip + the paged day-viewer (the wordmark
+              // lives in the header row, beside the avatar).
+              WeekStrip(
+                args: widget.args,
+                todayDate: widget.todayDate,
+                selectedDate: _selectedDate,
+                onSelectDay: _onSelectDay,
+              ),
+              // No trailing margin: each _Section below pays its own break.
+              if (widget.isFirstRun)
+                TodaySection(
+                  args: widget.args,
+                  targets: widget.targets,
+                  dateLabel: _dateLabel(widget.todayDate, locale),
+                  isFirstRun: true,
+                )
+              else
+                DayPager(
+                  controller: _pageController,
+                  days: _days,
+                  todayPage: _todayPage,
+                  userId: widget.args.userId,
+                  targets: widget.targets,
+                  onPageChanged: _onPageChanged,
+                  dateLabel: (d) => _dateLabel(d, locale),
                 ),
-                WeightChart(args: widget.args),
-              ],
-            ),
-            // SECTION 3 — Consistency. Last section: no trailing margin, so the
-            // scroll ends right under the heatmap instead of a dead gap.
-            _Section(
-              last: true,
-              children: [
-                SectionHeaderRow(
-                  title: tr('dashboard.consistency'),
-                  meta: tr('dashboard.ranges.ninetyDays'),
-                ),
-                AdherenceHeatmap(args: widget.args),
-              ],
-            ),
-          ],
+              // SECTION 2 — Progress.
+              _Section(
+                children: [
+                  SectionHeaderRow(
+                    title: tr('dashboard.progress'),
+                    meta: tr('dashboard.ranges.thirtyDays'),
+                  ),
+                  WeightChart(args: widget.args),
+                ],
+              ),
+              // SECTION 3 — Consistency. The padding's bottom is the nav
+              // clearance, so the scroll ends right under the heatmap.
+              _Section(
+                children: [
+                  SectionHeaderRow(
+                    title: tr('dashboard.consistency'),
+                    meta: tr('dashboard.ranges.ninetyDays'),
+                  ),
+                  AdherenceHeatmap(args: widget.args),
+                ],
+              ),
+            ]),
           ),
         ),
       ],
@@ -330,18 +341,22 @@ class _ContentState extends State<_Content> {
   }
 }
 
-/// A dashboard section: header + card on the one [DashboardSpacing.block]
-/// rhythm. Neither the header nor the card carries a margin — this stack owns
-/// every gap; [last] drops the trailing one so the scroll ends under the card.
+/// A dashboard section: header + card, bound together on the
+/// [DashboardSpacing.block] rhythm and pushed away from whatever precedes them
+/// by [DashboardSpacing.sectionBreak].
+///
+/// The break is paid on TOP, by the section that needs it, rather than as a
+/// trailing margin on the block above — so a section is separated by the fact
+/// of being one, and the last section needs no special case to avoid a dead
+/// gap under the scroll.
 class _Section extends StatelessWidget {
-  const _Section({required this.children, this.last = false});
+  const _Section({required this.children});
   final List<Widget> children;
-  final bool last;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: last ? 0 : DashboardSpacing.block),
+      padding: const EdgeInsets.only(top: DashboardSpacing.sectionBreak),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

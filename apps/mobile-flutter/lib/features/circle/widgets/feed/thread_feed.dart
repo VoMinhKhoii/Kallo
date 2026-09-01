@@ -7,6 +7,7 @@ import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
+import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../data/feed_providers.dart';
 import '../../data/feed_time.dart';
 import '../states/circle_error.dart';
@@ -17,6 +18,7 @@ class ThreadFeed extends ConsumerWidget {
   const ThreadFeed({
     required this.feed,
     required this.header,
+    required this.onRefresh,
     required this.onRetry,
     required this.onAddFriend,
     this.scope,
@@ -29,6 +31,11 @@ class ThreadFeed extends ConsumerWidget {
 
   final AsyncValue<SharedMealFeedState> feed;
   final Widget header;
+
+  /// The pull-to-refresh refetch. It lives HERE rather than around this widget
+  /// because the scroll view it must hold open is built in this file — the
+  /// iOS control is a sliver, not a wrapper.
+  final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
   final VoidCallback onAddFriend;
   final String? scope;
@@ -68,10 +75,19 @@ class ThreadFeed extends ConsumerWidget {
     kNavClearance,
   );
 
-  Widget _list(Widget body) => ListView(
-    physics: const AlwaysScrollableScrollPhysics(),
-    padding: _pagePadding,
-    children: [header, const SizedBox(height: KalloSpacing.sp3), body],
+  Widget _list(Widget body) =>
+      _scroll([header, const SizedBox(height: KalloSpacing.sp3), body]);
+
+  /// The page's one scroll view: the refresh control, then the content.
+  Widget _scroll(List<Widget> children) => CustomScrollView(
+    physics: kRefreshPhysics,
+    slivers: [
+      KalloRefresh(onRefresh: onRefresh),
+      SliverPadding(
+        padding: _pagePadding,
+        sliver: SliverList(delegate: SliverChildListDelegate(children)),
+      ),
+    ],
   );
 
   Widget _dataList(BuildContext context, SharedMealFeedState state) {
@@ -103,11 +119,7 @@ class ThreadFeed extends ConsumerWidget {
         ),
       );
     }
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: _pagePadding,
-      children: children,
-    );
+    return _scroll(children);
   }
 
   /// Consecutive runs of entries sharing a day key, in feed order. A run, not

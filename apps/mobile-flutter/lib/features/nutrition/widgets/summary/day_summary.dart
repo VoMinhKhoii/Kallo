@@ -126,6 +126,27 @@ class DaySummary extends StatelessWidget {
             else
               CompositionBar(segments: composition.segments),
           ],
+          // The complete-day rule, said once where the filtered figure lives.
+          // Ported from the web card (`components/nutrition/sections/
+          // day-summary.tsx`), which shows it on the COMPLETE scope only and
+          // hides it — rather than swapping the copy — everywhere else: on All
+          // nothing is being set aside, so the note would explain a rule the
+          // card is not applying, and with a column selected the figure is one
+          // bucket rather than an average over a scope at all.
+          if (scope == NutritionDayScope.complete &&
+              selectedIndex == null &&
+              !isEmpty) ...[
+            const SizedBox(height: KalloSpacing.sp4),
+            const Divider(height: 1, thickness: 1, color: kHairline),
+            const SizedBox(height: KalloSpacing.sp3),
+            Text(
+              tr(
+                'nutrition.rhythm.completeDaysHint',
+                namedArgs: {'allLabel': tr('nutrition.rhythm.loggedDays')},
+              ),
+              style: dashMeta(),
+            ),
+          ],
         ],
       ),
     );

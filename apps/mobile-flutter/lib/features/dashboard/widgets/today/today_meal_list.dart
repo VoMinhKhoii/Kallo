@@ -10,6 +10,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../shared/logic/display_format.dart';
+import '../../../logging/logic/format.dart';
 import '../../../../shared/logic/macro_composition.dart';
 import '../../../../shared/widgets/nutrition/meal_block.dart';
 import '../../../../theme/calm_tokens.dart';
@@ -93,9 +94,12 @@ class _MealRow extends StatelessWidget {
           'carbohydrate': _gramLabel('C', macros.carbohydrate),
           'fat': _gramLabel('F', macros.fat),
         },
-        // "kcal" is the unit symbol in every locale the app ships, so it is
-        // spelled inline here as it is in the Circle feed.
-        kcalLabel: '${round0(meal.nutrition.caloriesKcal)} kcal',
+        // Grouped through the shared formatter, so this card and the dial
+        // above it say a four-figure calorie count the same way.
+        kcalLabel: fmtKcal(
+          meal.nutrition.caloriesKcal,
+          locale: localeOf(context),
+        ),
       ),
     );
   }

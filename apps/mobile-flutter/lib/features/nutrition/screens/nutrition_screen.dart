@@ -12,6 +12,7 @@ import '../../../shared/widgets/typography/kallo_text.dart';
 import '../../../shared/widgets/typography/section_header_row.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/kallo_theme.dart';
+import '../../dashboard/logic/dashboard_spacing.dart';
 import '../logic/bucket_detail.dart';
 import '../logic/helpers.dart';
 import '../providers/nutrition_overview_provider.dart';
@@ -157,52 +158,53 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
             ],
           ),
         ),
-        child: KalloRefresh(
-          onRefresh:
-              () =>
-                  ref.read(nutritionOverviewProvider(_arg).notifier).refetch(),
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _clearSelection,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: _clearSelection,
+          child: CustomScrollView(
+            physics: kRefreshPhysics,
+            slivers: [
+              // First sliver: it holds the page down for the whole refetch.
+              KalloRefresh(
+                onRefresh:
+                    () =>
+                        ref
+                            .read(nutritionOverviewProvider(_arg).notifier)
+                            .refetch(),
               ),
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    KalloSpacing.sp3,
-                    0,
-                    KalloSpacing.sp3,
-                    0,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildBody(async, isFetching),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  KalloSpacing.sp3,
+                  0,
+                  KalloSpacing.sp3,
+                  0,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: _buildBody(async, isFetching),
+                ),
+              ),
+              // The source line belongs to the PAGE, not to the section above
+              // it. `hasScrollBody: false` hands this sliver whatever height
+              // is left over, so the line sits on the bottom edge on a short
+              // page and simply follows the content on a long one.
+              const SliverPadding(
+                // The tail clears the floating pill nav — this is a tab, and
+                // the bar hovers over the last thing on the page.
+                padding: EdgeInsets.fromLTRB(
+                  KalloSpacing.sp3,
+                  KalloSpacing.sp5,
+                  KalloSpacing.sp3,
+                  kNavClearance,
+                ),
+                sliver: SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: SourceAttribution(),
                   ),
                 ),
-                // The source line belongs to the PAGE, not to the section above
-                // it. `hasScrollBody: false` hands this sliver whatever height
-                // is left over, so the line sits on the bottom edge on a short
-                // page and simply follows the content on a long one.
-                const SliverPadding(
-                  // The tail clears the floating pill nav — this is a tab, and
-                  // the bar hovers over the last thing on the page.
-                  padding: EdgeInsets.fromLTRB(
-                    KalloSpacing.sp3,
-                    KalloSpacing.sp5,
-                    KalloSpacing.sp3,
-                    kNavClearance,
-                  ),
-                  sliver: SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: SourceAttribution(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -341,7 +343,10 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   List<Widget> _group(String title, List<NutrientCardData> cards) {
     if (cards.isEmpty) return const [];
     return [
-      const SizedBox(height: _gap),
+      // The same asymmetry the dashboard uses: a doubled break above the
+      // header, the plain rhythm below it, so the two screens separate their
+      // sections the same way.
+      const SizedBox(height: DashboardSpacing.sectionBreak),
       SectionHeaderRow(
         title: title,
         meta:

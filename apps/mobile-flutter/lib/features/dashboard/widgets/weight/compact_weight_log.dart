@@ -18,9 +18,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../services/http/api_client.dart';
 import '../../../../shared/widgets/form/decimal_input.dart';
 import '../../../../theme/kallo_colors.dart';
-import '../../../../theme/kallo_theme.dart';
 import '../../data/dashboard_providers.dart';
 import '../../logic/dashboard_spacing.dart';
+import 'weight_amount_field.dart';
 import 'weight_submit_button.dart';
 import '../../../../theme/calm_tokens.dart';
 
@@ -189,46 +189,12 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
       children: [
         // Field on its own row, full width. The "Today's weight" label now
         // lives in the hosting sheet's header (KalloSheetHeader title).
-        TextField(
+        WeightAmountField(
           controller: _controller,
           onChanged: _onChanged,
           enabled: !_pending,
           autofocus: widget.autofocus,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-          ],
-          autocorrect: false,
-          cursorColor: KalloColors.accent,
-          // Body at medium weight — the surface holds three sizes (Hero /
-          // Body / Meta), so a number entry reads as data via weight, not a
-          // size of its own.
-          style: dashBody(color: kInk, weight: FontWeight.w500, tabular: true),
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            // Soft track fill instead of a hairline outline — reads as a tappable
-            // surface, border only on focus / error. (kFieldFill is white now,
-            // which would vanish on the white bottom sheet.)
-            fillColor: hasError
-                ? KalloColors.danger.withValues(alpha: 0.06)
-                : KalloColors.track,
-            // Off the DashboardSpacing scale on purpose: this is the field's
-            // own inset, tuned so the single line clears a 48pt tap target.
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: KalloSpacing.sp4,
-              vertical: 15,
-            ),
-            // Suffix in-flow (no Positioned overlay → no overlap).
-            suffixText: tr('dashboard.units.kg'),
-            suffixStyle: dashMeta(color: kInkMuted),
-            border: _border(Colors.transparent),
-            enabledBorder:
-                _border(hasError ? KalloColors.danger : Colors.transparent),
-            focusedBorder:
-                _border(hasError ? KalloColors.danger : KalloColors.accent),
-            disabledBorder: _border(Colors.transparent),
-          ),
+          hasError: hasError,
         ),
         const SizedBox(height: DashboardSpacing.row * 2),
         // Submit button beneath the field, full width — a clearer, more
@@ -277,11 +243,4 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
     );
   }
 
-  OutlineInputBorder _border(Color color) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(KalloRadii.xl),
-        borderSide: BorderSide(
-          color: color,
-          width: color == Colors.transparent ? 0 : 1.5,
-        ),
-      );
 }

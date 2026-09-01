@@ -110,12 +110,16 @@ class _Dock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Which day this is showing, as the header ramp's quiet tier. The
-          // dock pages to other days and nothing else inside it says which one
-          // you are looking at.
+          // Which day this is showing. On the SECTION tier (17/600 ink), not
+          // the quieter group-label one it used to wear: it is the first
+          // section header on the page, and at 15/500 muted it announced
+          // itself in a smaller voice than "Recent meals" directly below and
+          // "Progress" below that. Same widget, same inset, same rhythm as its
+          // siblings — the dock pages to other days and this is the only line
+          // that says which one.
           Padding(
             padding: const EdgeInsets.only(bottom: DashboardSpacing.block),
-            child: GroupLabel(dateLabel),
+            child: SectionHeaderRow(title: dateLabel),
           ),
 
           // (a) The calorie dial, straight on the canvas. No card: the arc
@@ -143,7 +147,7 @@ class _Dock extends StatelessWidget {
             },
           ),
 
-          const SizedBox(height: DashboardSpacing.majorBreak),
+          const SizedBox(height: DashboardSpacing.sectionBreak),
 
           // (c) The meals behind those numbers — the one place on the section
           // that still takes a card, because a list needs an edge to sit on.
